@@ -197,7 +197,7 @@
                 <div class="col-md-9">
                     {% if self.breadcrumb() %}
                         <h6 id="bc-title" class="sr-only">{% trans %}You are here:{% endtrans %}</h6>
-                        <nav>
+                        <nav id="breadcrumb">
                             <ol class="breadcrumb breadcrumb-hanging" aria-labelledby="bc-title">
                                 {% block breadcrumb %}{% endblock %}
                             </ol>
@@ -270,7 +270,11 @@
                 {% trans %}Version{% endtrans %} {{ GIT_COMMIT }}
                 {% if CDEDB_DEV %}
                     <br /><br />
-                    <div style="word-wrap: break-word;">{{ debugstring }}</div>
+                    <div style="word-wrap: break-word;" id="debug-data">
+                        {% for key, value in debug_data.items() -%}
+                            <div>{{ key }}: <span id="debug-data-{{ key }}">{{ value }}</span></div>
+                        {% endfor %}
+                    </div>
                 {% endif %}
                 {% if "persona" in user.roles %}
                     <br />

@@ -247,6 +247,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             'stats': stats,
             'years': years,
             'shortnames': shortnames,
+            'institution': institution,
         })
 
     @access("cde_admin")

@@ -19,6 +19,7 @@
 {% endblock %}
 
 {% block content %}
+    {{ util.h(n_("By Type"), 4) }}
     <table id="event-fee-stats" class="table table-stats">
         <thead>
             <tr>
@@ -32,7 +33,9 @@
         <tbody>
             {% for fee_kind, kind_stats in fee_stats %}
                 <tr>
-                    <td>{{ util.make_icon(fee_kind.get_icon()) + nbsp }}{{ gettext(fee_kind|string) }}</td>
+                    <td>
+                        {{ generic_event.print_fee_type_icon(fee_kind, print_name=True) }}
+                    </td>
                     <td class="text-right {{ 'text-danger' if kind_stats.total_owed < 0 }}">
                         <strong>
                             {{ kind_stats.total_owed|money(lang=lang) }}
@@ -41,7 +44,7 @@
                     <td class="">
                         {{ generic_event.active_fee_registration_query_link(
                                 kind_stats.registrations_owed, gettext("Registrations"),
-                                anid="{}_owed_query".format(fee_kind.name), kind=fee_kind) }}
+                                anid="kind_{}_owed_query".format(fee_kind.name), kind=fee_kind) }}
                     </td>
                     <td class="text-right {{ 'text-danger' if kind_stats.total_paid < 0 }}">
                         <strong>
@@ -50,7 +53,7 @@
                     <td class="">
                         {{ generic_event.active_fee_registration_query_link(
                                 kind_stats.registrations_paid, gettext("Registrations"),
-                                anid="{}_paid_query".format(fee_kind.name), kind=fee_kind) }}
+                                anid="kind_{}_paid_query".format(fee_kind.name), kind=fee_kind) }}
                     </td>
                 </tr>
             {% endfor %}
@@ -92,6 +95,90 @@
             </tr>
         </tfoot>
     </table>
+
+
+    {{ util.h(n_("By Category"), 4) }}
+    <table id="event-fee-stats-by-category" class="table table-stats">
+        <thead>
+            <tr>
+                <th>{% trans %}Category{% endtrans %}</th>
+                <th class="text-right">{% trans %}Owed{% endtrans %}</th>
+                <th></th>
+                <th class="text-right">{% trans %}Paid{% endtrans %}</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for fee_category, category_stats in fee_stats.by_category.items()|sort %}
+                <tr>
+                    <td>
+                        {{- util.make_icon(fee_category.get_icon(), title=gettext(fee_category|string)) }}{{ nbsp }}{{ gettext(fee_category|string) -}}
+                    </td>
+                    <td class="text-right {{ 'text-danger' if category_stats.total_owed < 0 }}">
+                        <strong>
+                            {{ category_stats.total_owed|money(lang=lang) }}
+                        </strong>
+                    </td>
+                    <td class="">
+                        {{ generic_event.active_fee_registration_query_link(
+                                category_stats.registrations_owed, gettext("Registrations"),
+                                anid="category_{}_owed_query".format(fee_category.name), kind=fee_category) }}
+                    </td>
+                    <td class="text-right {{ 'text-danger' if category_stats.total_paid < 0 }}">
+                        <strong>
+                            {{ category_stats.total_paid|money(lang=lang) }}
+                        </strong>
+                    <td class="">
+                        {{ generic_event.active_fee_registration_query_link(
+                                category_stats.registrations_paid, gettext("Registrations"),
+                                anid="category_{}_paid_query".format(fee_category.name), kind=fee_category) }}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {{ util.h(n_("By Budget"), 4) }}
+    <table id="event-fee-stats-by-budget" class="table table-stats">
+        <thead>
+            <tr>
+                <th>{% trans %}Budget{% endtrans %}</th>
+                <th class="text-right">{% trans %}Owed{% endtrans %}</th>
+                <th></th>
+                <th class="text-right">{% trans %}Paid{% endtrans %}</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for fee_budget, budget_stats in fee_stats.by_budget.items()|sort %}
+                <tr>
+                    <td>
+                        {{- util.make_icon(fee_budget.get_icon(), title=gettext(fee_budget|string)) }}{{ nbsp }}{{ gettext(fee_budget|string) -}}
+                    </td>
+                    <td class="text-right {{ 'text-danger' if budget_stats.total_owed < 0 }}">
+                        <strong>
+                            {{ budget_stats.total_owed|money(lang=lang) }}
+                        </strong>
+                    </td>
+                    <td class="">
+                        {{ generic_event.active_fee_registration_query_link(
+                                budget_stats.registrations_owed, gettext("Registrations"),
+                                anid="budget_{}_owed_query".format(fee_budget.name), kind=fee_budget) }}
+                    </td>
+                    <td class="text-right {{ 'text-danger' if budget_stats.total_paid < 0 }}">
+                        <strong>
+                            {{ budget_stats.total_paid|money(lang=lang) }}
+                        </strong>
+                    <td class="">
+                        {{ generic_event.active_fee_registration_query_link(
+                                budget_stats.registrations_paid, gettext("Registrations"),
+                                anid="budget_{}_paid_query".format(fee_budget.name), kind=fee_budget) }}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
     {% if fee_stats.insufficient_registrations or fee_stats.unpaid_registrations %}
     <hr />
         {% if fee_stats.insufficient_registrations %}
@@ -121,4 +208,49 @@
         </p>
         {% endif %}
     {% endif %}
+
+    {{ util.h(n_("Fee Type Reference"), level=4) }}
+
+    <table class="table table">
+        <thead>
+            <tr>
+                <th></th>
+                {% for category in enums["EventFeeCategory"] %}
+                <th style="padding-left: .5em;">
+                    {{ util.make_icon(category.get_icon(), title=gettext("Category_[[EventFee]]") + ": " + gettext(category|string)) }}
+                    {{- nbsp -}}
+                    {{ gettext(category|string) }}
+                </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for budget in enums["EventFeeBudget"] %}
+            <tr>
+                <th>
+                    {{ util.make_icon(budget.get_icon(), title=gettext("Budget_[[EventFee]]") + ": " + gettext(budget|string)) }}
+                    {{- nbsp -}}
+                    {{ gettext(budget|string) }}
+                </th>
+                {% for category in enums["EventFeeCategory"] %}
+                <td style="padding-left: .5em;">
+                    {% for kind in enums["EventFeeType"] if kind.category == category and kind.budget == budget %}
+                        {{ util.make_icon(kind.get_icon(), title=gettext(kind|string)) }}
+                        {{- nbsp -}}
+                        {{ gettext(kind|string) }}
+                        <br />
+                    {% endfor %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p class="text-info">
+        {{ util.make_icon("info-circle") }}{{ nbsp -}}
+        {% trans %}
+            Each fee types belongs to one category and one budget.
+            This table lists the available fee types according to their category and budget.
+        {% endtrans %}
+    </p>
 {% endblock %}

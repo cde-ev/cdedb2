@@ -6,6 +6,7 @@ for managing courses belonging to an event.
 """
 
 import abc
+import collections
 from collections.abc import Collection
 from typing import Optional, Protocol
 
@@ -34,9 +35,9 @@ from cdedb.common.privileges import (
     EventPrivileges,
     is_privileged_event as is_privileged,
 )
-from cdedb.common.sorting import xsorted
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.database.connection import Atomizer
-from cdedb.database.query import DatabaseValue_s
+from cdedb.database.query import DatabaseValue_s, ParamDict
 
 
 class EventCourseBackend(EventBaseBackend, abc.ABC):
@@ -455,3 +456,83 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
                     {"type": "course", "block": blockers.keys()},
                 )
         return ret
+
+    @access("event")
+    def get_attendee_stats(
+        self, rs: RequestState, course_id: int
+    ) -> models.CourseAttendees:
+        """Retrieve a list of personas assigned to the given course in each track.
+
+        This is only available for instrcutors of the given course.
+        """
+        course_id = affirm(vtypes.ID, course_id)
+
+        with Atomizer(rs):
+            query = f"""
+                SELECT reg.id
+                FROM
+                    {models.Registration.database_table} AS reg
+                    JOIN {models.RegistrationTrack.database_table} AS rt
+                        ON rt.registration_id = reg.id
+                WHERE
+                    reg.persona_id = %(persona_id)s
+                    AND rt.course_instructor = %(course_id)s
+            """
+            params: ParamDict = {
+                "persona_id": rs.user.persona_id,
+                "course_id": course_id,
+            }
+            if not self.query_one(rs, query, params):
+                raise PrivilegeError(
+                    n_("Only available for instructors of this course.")
+                )
+            query = f"""
+                SELECT
+                    reg.persona_id,
+                    rt.track_id,
+                    COALESCE(rt.course_id = rt.course_instructor, False) AS is_instructor
+                FROM
+                    {models.RegistrationTrack.database_table} AS rt
+                    JOIN {models.CourseTrack.database_table} AS ct
+                        ON rt.track_id = ct.id
+                    JOIN {models.RegistrationPart.database_table} AS rp
+                        ON rt.registration_id = rp.registration_id AND ct.part_id = rp.part_id
+                    JOIN {models.Registration.database_table} AS reg
+                        ON rt.registration_id = reg.id
+                WHERE
+                    rt.course_id = %(course_id)s
+                    AND rp.status = ANY(%(stati)s)
+            """
+            params: ParamDict = {
+                "course_id": course_id,
+                "stati": const.RegistrationPartStati.involved_states(),
+            }
+            persona_ids = set()
+            attendees_by_track = collections.defaultdict(list)
+            instructors_by_track = collections.defaultdict(list)
+            for e in self.query_all(rs, query, params):
+                persona_ids.add(e["persona_id"])
+                if e["is_instructor"]:
+                    instructors_by_track[e["track_id"]].append(e["persona_id"])
+                else:
+                    attendees_by_track[e["track_id"]].append(e["persona_id"])
+            personas = self.core.get_personas(rs, persona_ids)
+            return models.CourseAttendees({
+                track_id: models.CourseSegmentAttendees(
+                    learners=xsorted(
+                        (
+                            personas[persona_id]
+                            for persona_id in attendees_by_track[track_id]
+                        ),
+                        key=EntitySorter.persona,
+                    ),
+                    instructors=xsorted(
+                        (
+                            personas[persona_id]
+                            for persona_id in instructors_by_track[track_id]
+                        ),
+                        key=EntitySorter.persona,
+                    ),
+                )
+                for track_id in attendees_by_track.keys() | instructors_by_track.keys()
+            })

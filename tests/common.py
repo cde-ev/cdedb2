@@ -1791,7 +1791,10 @@ class FrontendTest(BackendTest):
             if f"has-{kind}" in ancestor.classes
         ]
         if not error_containers:
-            self.fail(f"Input with name {f!r} is not contained in an .has-{kind} box.")
+            msg = f"Input with name {f!r} is not contained in an .has-{kind} box."
+            if errors := self.get_content("debug-data-errors", check_exists=False):
+                msg += " I found these errors in the debug data: " + errors
+            self.fail(msg)
 
         normalized = [re.sub(r'[\n\s]+', ' ', content) for content in error_containers]
         if not any(message in content for content in normalized):

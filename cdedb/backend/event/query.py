@@ -217,11 +217,26 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
             # Step 2.2: Construct table for complex amount_owed.
             def complex_amount_owed_table() -> str:
                 fee_kind_columns = [
-                    f'''(amount_owed_by_kind->>'{kind.value}')::numeric AS "{kind.name}"'''
+                    f'''
+                        (amount_owed_by_kind->>'{kind.value}')::numeric AS "kind_{kind.name}"
+                    '''
                     for kind in const.EventFeeType
                 ]
+                fee_category_columns = [
+                    f'''
+                        (amount_owed_by_category->>'{category.value}')::numeric AS "category_{category.name}"
+                    '''
+                    for category in const.EventFeeCategory
+                ]
+                fee_budget_columns = [
+                    f'''
+                        (amount_owed_by_budget->>'{budget.value}')::numeric AS "budget_{budget.name}"
+                    '''
+                    for budget in const.EventFeeBudget
+                ]
+                columns = fee_kind_columns + fee_category_columns + fee_budget_columns
                 return f"""
-                    SELECT {', '.join(fee_kind_columns + ['id'])}
+                    SELECT {', '.join(columns + ['id'])}
                     FROM event.registrations
                     WHERE event_id = {event_id}
                 """

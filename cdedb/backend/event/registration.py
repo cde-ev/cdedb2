@@ -15,7 +15,7 @@ import itertools
 from collections import defaultdict
 from collections.abc import Collection, Iterator, Mapping, Sequence
 from functools import cached_property
-from typing import NamedTuple, Optional, Protocol, TypeVar
+from typing import NamedTuple, Optional, Protocol, Self, TypeVar
 
 import psycopg2.extensions
 
@@ -112,6 +112,9 @@ class FeeStatsOneKind:
     def registrations_paid(self) -> set[int]:
         return set().union(*(stat.registrations_paid for stat in self.by_fee.values()))
 
+    def __add__(self, other: Self) -> Self:
+        return self.__class__(self.by_fee | other.by_fee)
+
 
 @dataclasses.dataclass
 class FeeStatsTotal:
@@ -127,8 +130,16 @@ class FeeStatsTotal:
 
     unpaid_registrations: set[int] = dataclasses.field(default_factory=set)
 
-    def __getitem__(self, item: const.EventFeeType) -> FeeStatsOneKind:
-        return self.by_kind[item]
+    def __getitem__(
+        self, item: const.EventFeeType | const.EventFeeCategory | const.EventFeeBudget
+    ) -> FeeStatsOneKind:
+        if isinstance(item, const.EventFeeType):
+            return self.by_kind[item]
+        elif isinstance(item, const.EventFeeCategory):
+            return self.by_category[item]
+        elif isinstance(item, const.EventFeeBudget):
+            return self.by_budget[item]
+        raise KeyError(item)
 
     def __iter__(self) -> Iterator[tuple[const.EventFeeType, FeeStatsOneKind]]:
         return iter(xsorted(self.by_kind.items()))
@@ -140,6 +151,22 @@ class FeeStatsTotal:
     @cached_property
     def total_paid(self) -> decimal.Decimal:
         return sum(s.total_paid for s in self.by_kind.values()) or decimal.Decimal(0)
+
+    @cached_property
+    def by_category(self) -> dict[const.EventFeeCategory, FeeStatsOneKind]:
+        ret: dict[const.EventFeeCategory, FeeStatsOneKind] = defaultdict(
+            FeeStatsOneKind
+        )
+        for fee_kind, stats in self:
+            ret[fee_kind.category] += stats
+        return ret
+
+    @cached_property
+    def by_budget(self) -> dict[const.EventFeeBudget, FeeStatsOneKind]:
+        ret: dict[const.EventFeeBudget, FeeStatsOneKind] = defaultdict(FeeStatsOneKind)
+        for fee_kind, stats in self:
+            ret[fee_kind.budget] += stats
+        return ret
 
 
 @dataclasses.dataclass
@@ -155,11 +182,25 @@ class ComplexRegistrationFee:
 
     @cached_property
     def by_kind(self) -> dict[const.EventFeeType, decimal.Decimal]:
-        ret = {}
+        ret: dict[const.EventFeeType, decimal.Decimal] = defaultdict(decimal.Decimal)
         for fee, amount in self.fees:
-            if fee.kind not in ret:
-                ret[fee.kind] = decimal.Decimal(0)
             ret[fee.kind] += amount
+        return ret
+
+    @cached_property
+    def by_category(self) -> dict[const.EventFeeCategory, decimal.Decimal]:
+        ret: dict[const.EventFeeCategory, decimal.Decimal] = defaultdict(
+            decimal.Decimal
+        )
+        for fee, amount in self.fees:
+            ret[fee.kind.category] += amount
+        return ret
+
+    @cached_property
+    def by_budget(self) -> dict[const.EventFeeBudget, decimal.Decimal]:
+        ret: dict[const.EventFeeBudget, decimal.Decimal] = defaultdict(decimal.Decimal)
+        for fee, amount in self.fees:
+            ret[fee.kind.budget] += amount
         return ret
 
     @cached_property
@@ -1604,7 +1645,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
         return unwrap(self.query_one(rs, query, params))
 
-    @access("finance_admin")
+    @access("event")
     def get_registration_id(
         self, rs: RequestState, persona_id: int, event_id: int
     ) -> Optional[int]:
@@ -1660,15 +1701,25 @@ class EventRegistrationBackend(EventBaseBackend):
 
         query = f"""
             UPDATE {models.Registration.database_table} AS r
-            SET amount_owed = u.amount_owed, amount_owed_by_kind = u.by_kind::jsonb
+            SET
+                amount_owed = u.amount_owed,
+                amount_owed_by_kind = u.by_kind::jsonb,
+                amount_owed_by_category = u.by_category::jsonb,
+                amount_owed_by_budget = u.by_budget::jsonb
             FROM (
-                VALUES {",".join(["(%s, %s, %s)"] * len(fees))}
-            ) AS u (id, amount_owed, by_kind)
+                VALUES {",".join(["(%s, %s, %s, %s, %s)"] * len(fees))}
+            ) AS u (id, amount_owed, by_kind, by_category, by_budget)
             WHERE r.id = u.id
         """
         params: Params = list(
             itertools.chain.from_iterable(
-                (registration_id, fee.amount, PsycoJson(fee.by_kind))
+                (
+                    registration_id,
+                    fee.amount,
+                    PsycoJson(fee.by_kind),
+                    PsycoJson(fee.by_category),
+                    PsycoJson(fee.by_budget),
+                )
                 for registration_id, fee in fees.items()
             ),
         )
