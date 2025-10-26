@@ -267,11 +267,9 @@ class CdEPastEventMixin(CdEBaseFrontend):
         if rs.has_validation_errors():
             rs.notify('warning', n_("Institution parameter got lost."))
         events = self.pasteventproxy.list_past_events(rs)
+        pevents = self.pasteventproxy.get_past_events(rs, events)
         shortnames = {
-            pevent_id: value['shortname']
-            for pevent_id, value in self.pasteventproxy.get_past_events(
-                rs, events
-            ).items()
+            pevent_id: value['shortname'] for pevent_id, value in pevents.items()
         }
         stats = self.pasteventproxy.past_event_stats(rs)
 
