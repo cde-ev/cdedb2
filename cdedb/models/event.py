@@ -596,7 +596,7 @@ class EventField(EventDataclass):
     # Usage configuration, i.e. where is this field used.
     checkin: bool = False
 
-    entries: dict[str, str] | None = None
+    entries: dict[Any, str] | None = None
 
     @property
     def request_name(self) -> str:

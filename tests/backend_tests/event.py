@@ -158,8 +158,9 @@ class TestEventBackend(BackendTest):
                     'sortkey': 0,
                     'checkin': True,
                     'entries': {
-                        "2109-08-16": "In the first coming",
-                        "2110-08-16": "During the second coming",
+                        None: "never",
+                        datetime.date.fromisoformat("2109-08-16"): "In the first coming",
+                        datetime.date.fromisoformat("2110-08-16"): "During the second coming",
                     },
                 },
                 -3: {
@@ -337,8 +338,8 @@ class TestEventBackend(BackendTest):
         changed_field = {
             'kind': const.FieldDatatypes.date,
             'entries': {
-                "2110-08-15": "early second coming",
-                "2110-08-17": "late second coming",
+                datetime.date.fromisoformat("2110-08-15"): "early second coming",
+                datetime.date.fromisoformat("2110-08-17"): "late second coming",
             },
             'checkin': True,
         }
