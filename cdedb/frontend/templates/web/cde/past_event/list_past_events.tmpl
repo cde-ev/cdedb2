@@ -3,8 +3,12 @@
 {% import "web/util.tmpl" as util with context %}
 {% block title %}{% trans %}Past Events_[[long form]]{% endtrans %}{% endblock %}
 {% block breadcrumb %}
-{{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events"), active="True") }}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events"), active=not institution) }}
+    {% if institution %}
+        {{ util.breadcrumb_link(cdedblink("cde/list_past_events", {'institution': values['institution']}),
+                                gettext(institution.shortname), active=True) }}
+    {% endif %}
 {% endblock %}
 {% block content %}
     {% if "past_event" in user.admin_views %}
