@@ -22,6 +22,7 @@ from werkzeug.datastructures import FileStorage
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.past_event as models_past_event
 from cdedb.backend.cde.base import BatchAdmissionStats
 from cdedb.common import (
     CdEDBObject,
@@ -64,7 +65,6 @@ from cdedb.frontend.common import (
 from cdedb.models.past_event import (
     # past_course_by_past_event_selectize_options,
     past_course_entries,
-    past_event_entries,
 )
 
 MEMBERSEARCH_DEFAULTS = {
@@ -223,7 +223,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         # all_pcourses = self.pasteventproxy.get_past_courses(rs, all_pcourse_ids)
         choices = {
             'pevents': pevents,
-            'pevent_entries': past_event_entries(pevents),
+            'pevent_entries': models_past_event.PastEvent.get_entries(pevents),
             'near_radius': self.conf["NEARBY_SEARCH_RADII"],
             "pcourse_entries": [],
             # "pcourse_entries_by_event": past_course_by_past_event_selectize_options(all_pcourses),

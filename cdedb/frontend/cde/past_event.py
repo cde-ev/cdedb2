@@ -41,7 +41,6 @@ from cdedb.frontend.common import (
     access,
     check_validation as check,
 )
-from cdedb.models.past_event import past_event_entries
 
 COURSESEARCH_DEFAULTS = {
     'qsel_courses.title': True,
@@ -561,6 +560,6 @@ class CdEPastEventMixin(CdEBaseFrontend):
             template="past_event/view_past_log",
             template_kwargs={
                 'pevents': pevents,
-                'pevent_entries': past_event_entries(pevents),
+                'pevent_entries': models.PastEvent.get_entries(pevents),
             },
         )

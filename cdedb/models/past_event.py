@@ -1,5 +1,3 @@
-"""Contains only some helpers for now, that might become dataclass methods later."""
-
 import dataclasses
 import datetime
 from collections import defaultdict
@@ -46,9 +44,9 @@ class PastEvent(CdEDataclass):
     def get_sortkey(self) -> Sortkey:
         return (self.tempus,)
 
-
-def past_event_entries(pevents: CdEDataclassMap["PastEvent"]) -> list[tuple[int, str]]:
-    return [(pevent.id, pevent.title) for pevent in xsorted(pevents.values())]
+    @staticmethod
+    def get_entries(pevents: CdEDataclassMap["PastEvent"]) -> list[tuple[int, str]]:
+        return [(pevent.id, pevent.title) for pevent in xsorted(pevents.values())]
 
 
 def past_course_entries(pcourses: CdEDBObjectMap) -> list[tuple[int, str]]:
