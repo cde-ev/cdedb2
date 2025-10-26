@@ -377,7 +377,7 @@ class EventBackend(
                     ret *= self.sql_update(rs, models.Event.database_table, deletor)
                     with Silencer(rs):
                         for anid in blockers["field_definitions"]:
-                            ret *= self._delete_event_field(rs, anid)
+                            ret *= self._delete_event_field(rs, anid, event_id=event_id)
                 if "custom_query_filters" in cascade:
                     with Silencer(rs):
                         for anid in blockers["custom_query_filters"]:

@@ -532,20 +532,10 @@ class EventEventMixin(EventBaseFrontend):
         if self.eventproxy.has_registrations(rs, event_id):
             raise ValueError(n_("Registrations exist, no part creation possible."))
 
-        data = check(rs, vtypes.EventPart, data, creation=True)
+        data = check(rs, vtypes.EventPart, data, creation=True, event=rs.ambience["event"])
         if rs.has_validation_errors():
             return self.add_part_form(rs, event_id)
         assert data is not None
-
-        # check non-static dependencies
-        fields = self._valid_event_part_fields(rs.ambience['event'].fields)
-        for key in ('waitlist_field_id', 'camping_mat_field_id'):
-            field_ids = [field[0] for field in fields[key]]
-            if data[key] and data[key] not in field_ids:
-                rs.append_validation_error((key, ValueError(
-                    n_("Linked to non-fitting field."))))
-        if rs.has_validation_errors():
-            return self.add_part_form(rs, event_id)
 
         recipients = []
         if rs.ambience['event'].orga_address:
@@ -619,21 +609,11 @@ class EventEventMixin(EventBaseFrontend):
     def change_part(self, rs: RequestState, event_id: int, part_id: int,
                     data: CdEDBObject) -> Response:
         """Change one part, including the associated tracks and fee modifiers."""
-        data = check(rs, vtypes.EventPart, data)
+        data = check(rs, vtypes.EventPart, data, event=rs.ambience["event"])
         if rs.has_validation_errors():
             return self.change_part_form(rs, event_id, part_id)
         assert data is not None
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
-
-        #
-        # Check part specific stuff which can not be checked statically
-        #
-        fields = self._valid_event_part_fields(rs.ambience['event'].fields)
-        for key in ('waitlist_field_id', 'camping_mat_field_id'):
-            field_ids = [field[0] for field in fields[key]]
-            if data[key] and data[key] not in field_ids:
-                rs.append_validation_error((key, ValueError(
-                    n_("Linked to non-fitting field."))))
 
         #
         # process the dynamic track input
@@ -666,11 +646,6 @@ class EventEventMixin(EventBaseFrontend):
         sync_groups = set()
 
         for track_id, track in xsorted(track_data.items()):
-            for key in ('course_room_field_id',):
-                field_ids = [field[0] for field in fields[key]]
-                if track and track[key] and track[key] not in field_ids:
-                    rs.append_validation_error((key, ValueError(
-                        n_("Linked to non-fitting field."))))
             # Only existing tracks are relevant, new ones are not part of a group.
             if track and track_id in track_existing:
                 for tg_id, tg in track_existing[track_id].track_groups.items():
