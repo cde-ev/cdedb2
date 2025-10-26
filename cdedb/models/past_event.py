@@ -7,13 +7,14 @@ import cdedb.database.constants as const
 import cdedb.models.event
 from cdedb.common import CdEDBObjectMap
 from cdedb.common.sorting import EntitySorter, Sortkey, xsorted
-from cdedb.models.common import CdEDataclass, CdEDataclassMap
+from cdedb.models.common import CdEDataclass, CdEDataclassMap, MetaFlag as Meta
 
 
 @dataclasses.dataclass
 class PastEvent(CdEDataclass):
     database_table = "past_event.events"
 
+    id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
     title: str
     shortname: str
     institution: const.PastInstitutions

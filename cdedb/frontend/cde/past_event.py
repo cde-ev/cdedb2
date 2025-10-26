@@ -309,12 +309,11 @@ class CdEPastEventMixin(CdEBaseFrontend):
         self, rs: RequestState, pevent_id: int, data: CdEDBObject
     ) -> Response:
         """Modify a concluded event."""
-        data['id'] = pevent_id
         data = check(rs, models.PastEvent, data)
         if rs.has_validation_errors():
             return self.change_past_event_form(rs, pevent_id)
         assert data is not None
-        code = self.pasteventproxy.set_past_event(rs, data)
+        code = self.pasteventproxy.set_past_event(rs, pevent_id, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/show_past_event")
 

@@ -221,13 +221,17 @@ class PastEventBackend(AbstractBackend):
     )
 
     @access("cde_admin", "event_admin")
-    def set_past_event(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
+    def set_past_event(
+        self, rs: RequestState, pevent_id: int, data: CdEDBObject
+    ) -> DefaultReturnCode:
         """Update some keys of a concluded event."""
+        pevent_id = affirm(vtypes.ID, pevent_id)
         data = affirm(models.PastEvent, data)
+        data["id"] = pevent_id
         with Atomizer(rs):
             ret = self.sql_update(rs, models.PastEvent.database_table, data)
             self.past_event_log(
-                rs, code=const.PastEventLogCodes.event_changed, pevent_id=data['id']
+                rs, code=const.PastEventLogCodes.event_changed, pevent_id=pevent_id
             )
         return ret
 

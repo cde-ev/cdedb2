@@ -54,7 +54,7 @@ class TestPastEventBackend(BackendTest):
         data.id = vtypes.ID(new_id)
         self.assertEqual(data, self.pastevent.get_past_event(self.key, new_id))
         data.title = "Alternate Universe Academy"
-        self.pastevent.set_past_event(self.key, {'id': new_id, 'title': data.title})
+        self.pastevent.set_past_event(self.key, new_id, {'title': data.title})
         self.assertEqual(data, self.pastevent.get_past_event(self.key, new_id))
         self.assertNotIn(new_id, old_events)
         new_events = self.pastevent.list_past_events(self.key)
@@ -84,7 +84,9 @@ class TestPastEventBackend(BackendTest):
         # create a log entry for this past event
         pevent = self.pastevent.get_past_event(self.key, 1)
         pevent.description = "changed"
-        self.assertTrue(self.pastevent.set_past_event(self.key, pevent.as_dict()))
+        data = pevent.to_database()
+        data.pop("id")
+        self.assertTrue(self.pastevent.set_past_event(self.key, pevent.id, data))
         # add the past event to a genesis case
         update = {"id": 3, "pevent_id": 1}
         self.assertTrue(self.core.genesis_modify_case(self.key, update))
@@ -239,8 +241,7 @@ class TestPastEventBackend(BackendTest):
             'tempus': datetime.date(2000, 1, 1),
         }
         new_id = self.pastevent.create_past_event(self.key, data)
-        self.pastevent.set_past_event(self.key, {
-            'id': new_id, 'title': "Alternate Universe Academy"})
+        self.pastevent.set_past_event(self.key, new_id, {'title': "Alternate Universe Academy"})
         data = {
             'pevent_id': 1,
             'nr': '0',
