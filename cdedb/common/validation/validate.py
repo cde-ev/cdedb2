@@ -2937,7 +2937,7 @@ def _event_field_dataclass(
     elif entries := val.get("entries"):
         if isinstance(entries, str):
             try:
-                entries = dict(
+                entries = list(
                     cast(tuple[Any, Any], tuple(map(str.strip, line.split(";", 1))))
                     for line in entries.splitlines()
                 )
@@ -2945,7 +2945,8 @@ def _event_field_dataclass(
                 raise ValidationSummary(
                     ValueError("entries", n_("Value not well-formed."))
                 ) from e
-        elif isinstance(entries, Sequence):
+        raw_length = len(entries)
+        if isinstance(entries, Sequence):
             try:
                 entries = dict(entries)
             except ValueError as e:
@@ -2959,7 +2960,7 @@ def _event_field_dataclass(
             )
             new_entries = normalize_field_entries(new_entries, kind)
 
-            if new_entries is None or len(new_entries) != len(entries):
+            if new_entries is None or len(new_entries) != raw_length:
                 errs.append(ValueError("entries", n_("Duplicate value(s).")))
 
             val["entries"] = new_entries
