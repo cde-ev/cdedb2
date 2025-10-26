@@ -356,7 +356,7 @@ class TestPastEventBackend(BackendTest):
             tempus=datetime.date(2003, 2, 2),
             participant_info=None
         )
-        self.assertEqual(expectation, pevent_data[0])
+        self.assertEqual(expectation, pevent_data[2])
         expectation = models.PastEvent(
             id=vtypes.ID(1003),
             description='Everybody come!',
@@ -376,11 +376,11 @@ class TestPastEventBackend(BackendTest):
             tempus=datetime.date(2003, 11, 11),
             participant_info=None
         )
-        self.assertEqual(expectation, pevent_data[2])
+        self.assertEqual(expectation, pevent_data[0])
         self.assertEqual(
             set(),
             set(self.pastevent.list_past_courses(
-                self.key, pevent_data[0].id).values()))
+                self.key, pevent_data[2].id).values()))
         expectation = {'Lustigsein für Fortgeschrittene'}
         self.assertEqual(
             expectation,
@@ -390,7 +390,7 @@ class TestPastEventBackend(BackendTest):
         self.assertEqual(
             expectation,
             set(self.pastevent.list_past_courses(
-                self.key, pevent_data[2].id).values()))
+                self.key, pevent_data[0].id).values()))
         expectation = {
             (7, 1008): {'pcourse_id': 1008,
                         'is_instructor': False,
