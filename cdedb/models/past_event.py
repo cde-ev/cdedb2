@@ -46,7 +46,14 @@ class PastEvent(CdEDataclass):
 
     @staticmethod
     def get_entries(pevents: CdEDataclassMap["PastEvent"]) -> list[tuple[int, str]]:
-        return [(pevent.id, pevent.title) for pevent in xsorted(pevents.values())]
+        # This groups the events by year descending, and then orders them by title for
+        #  better UX in _very_ long select inputs.
+        return [
+            (pevent.id, pevent.title)
+            for pevent in xsorted(
+                pevents.values(), key=lambda x: (-x.tempus.year, x.title, x.id)
+            )
+        ]
 
 
 def past_course_entries(pcourses: CdEDBObjectMap) -> list[tuple[int, str]]:
