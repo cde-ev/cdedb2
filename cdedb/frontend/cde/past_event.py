@@ -210,9 +210,11 @@ class CdEPastEventMixin(CdEBaseFrontend):
             rs, pevent_id, orgas_only=True
         )
         for p in participants.values():
-            p['pcourse_ids'] = xsorted(
-                filter(None, p['pcourse_ids']), key=lambda x: courses[x]
-            )
+            p['pcourses'] = [
+                pcourse
+                for pcourse in courses.values()
+                if pcourse.id in p['pcourse_ids']
+            ]
         participant_infos = self.pasteventproxy.list_participants(
             rs, pevent_id=pevent_id
         )
