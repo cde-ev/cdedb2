@@ -52,6 +52,7 @@ f.e. ``check_validation`` registers all errors in the RequestState object.
 """
 
 import base64
+import contextlib
 import copy
 import csv
 import datetime
@@ -70,13 +71,14 @@ import string
 import typing
 import unicodedata
 import urllib.parse
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from types import TracebackType, UnionType
 from typing import (
     Any,
     Callable,
     Optional,
     Protocol,
+    Self,
     TypeVar,
     Union,
     cast,
@@ -186,8 +188,37 @@ class ValidationSummary(ValueError, Sequence[Exception]):
     def append(self, error: Exception) -> None:
         self.args += (error,)
 
-    def __enter__(self) -> None:
-        pass
+    @contextlib.contextmanager
+    def callback(
+        self, callback: Callable[[Iterable[Exception]], Iterable[Exception]]
+    ) -> Iterator[Self]:
+        """
+        Context manager that allows modifying the collected errors before appending them.
+        """
+        with self.__class__() as tmp:
+            yield tmp
+        self.extend(callback(tmp))
+
+    @contextlib.contextmanager
+    def as_argname(self, argname: str, replace: bool = False) -> Iterator[Self]:
+        """
+        Context manager that collects all validation errors raised inside under the given argname.
+
+        :param replace: If True, do not append the originally raised errors.
+            If False, the originally raised errors are also collected.
+        """
+
+        def callback(errors: Iterable[Exception]) -> list[Exception]:
+            ret = [exc.__class__(argname, *exc.args[1:]) for exc in errors]
+            if not replace:
+                ret.extend(exc for exc in errors if exc.args[0] != argname)
+            return ret
+
+        with self.callback(callback):
+            yield self
+
+    def __enter__(self) -> Self:
+        return self
 
     def __exit__(
         self,
@@ -1226,15 +1257,16 @@ def make_dict_validator(type_: type[T]) -> DictValidator[T]:
         errs = ValidationSummary()
         new_val = {}
         for i, (key_val, val_val) in enumerate(val.items()):
-            with errs:
-                key_argname = f"{argname or ''}.key"
-                val_argname = f"{argname or ''}.value"
-                if enumerate_:
-                    key_argname += str(i)
-                    val_argname += str(i)
+            key_argname = f"{argname or ''}.key"
+            val_argname = f"{argname or ''}.value"
+            if enumerate_:
+                key_argname += str(i)
+                val_argname += str(i)
+            with errs.as_argname(key_argname):
                 key_val = _ALL_TYPED[key_type](key_val, key_argname, **kwargs)
+            with errs.as_argname(val_argname):
                 val_val = _ALL_TYPED[value_type](val_val, val_argname, **kwargs)
-                new_val[key_val] = val_val
+            new_val[key_val] = val_val
 
         if errs:
             raise errs
@@ -2954,7 +2986,7 @@ def _event_field_dataclass(
                     ValueError("entries", n_("Could not convert sequence to dict."))
                 ) from e
 
-        with errs:
+        with errs.as_argname("entries"):
             new_entries = _ALL_TYPED[dict[ByFieldDatatype, str]](
                 entries, "entries", kind=kind, enumerate_=True, **kwargs
             )
