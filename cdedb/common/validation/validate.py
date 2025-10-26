@@ -704,7 +704,7 @@ def _int(val: Any, argname: Optional[str] = None, **kwargs: Any) -> int:
             raise ValidationSummary(
                 ValueError(argname, n_("Invalid input for integer."))
             ) from e
-    elif isinstance(val, float):
+    elif isinstance(val, (float, decimal.Decimal)):
         if not math.isclose(val, int(val), abs_tol=EPSILON):
             raise ValidationSummary(ValueError(argname, n_("Precision loss.")))
         val = int(val)
@@ -2972,6 +2972,7 @@ def _event_field_dataclass(
                 entries = list(
                     cast(tuple[Any, Any], tuple(map(str.strip, line.split(";", 1))))
                     for line in entries.splitlines()
+                    if line.strip()
                 )
             except ValueError as e:
                 raise ValidationSummary(
@@ -3399,12 +3400,11 @@ def _by_field_datatype(
     kind: FieldDatatypes,
     **kwargs: Any,
 ) -> ByFieldDatatype:
-    kind = FieldDatatypes(kind)
-    # using Any seems fine, otherwise this would need a big Union
-    val: Any = _ALL_TYPED[StringType | None](val, argname, **kwargs)
-    if not val:
+    if val is None or val == "":  # noqa: PLC1901
         return ByFieldDatatype(None)
 
+    kind = FieldDatatypes(kind)
+    # using Any seems fine, otherwise this would need a big Union
     val: Any = _ALL_TYPED[FIELD_DATATYPE_VALIDATORS[kind] | None](
         val, argname, **kwargs
     )
