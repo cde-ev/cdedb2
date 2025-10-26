@@ -22,16 +22,12 @@ from cdedb.common import (
     CdEDBObject,
     CdEDBObjectMap,
     RequestState,
-    get_mandatory_form_fields,
     merge_dicts,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import PastEventLogFilter
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation.validate import (
-    PAST_COURSE_COMMON_FIELDS,
-)
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect,
@@ -213,9 +209,13 @@ class CdEPastEventMixin(CdEBaseFrontend):
         orgas, _, extra_orgas = self._process_participants(
             rs, pevent_id, orgas_only=True
         )
-        for p_id, p in participants.items():
+        for p in participants.values():
             p['pcourses'] = {
-                pc_id: {k: courses[pc_id][k] for k in ('id', 'title', 'nr')}
+                pc_id: {
+                    "id": courses[pc_id].id,
+                    "nr": courses[pc_id].nr,
+                    "title": courses[pc_id].title,
+                }
                 for pc_id in p['pcourse_ids']
                 if pc_id
             }
@@ -351,7 +351,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
                 # later. The typechecker expects a str here.
                 assert pcourse is not None
                 pcourse['pevent_id'] = "1"
-                pcourse = check(rs, vtypes.PastCourse, pcourse, creation=True)
+                pcourse = check(rs, models.PastCourse, pcourse, creation=True)
                 if pcourse:
                     thecourses.append(pcourse)
                 else:
@@ -394,22 +394,21 @@ class CdEPastEventMixin(CdEBaseFrontend):
         self, rs: RequestState, pevent_id: int, pcourse_id: int
     ) -> Response:
         """Render form."""
-        merge_dicts(rs.values, rs.ambience['pcourse'])
+        merge_dicts(rs.values, rs.ambience['pcourse'].as_dict())
         return self.render(
             rs,
             "past_event/change_past_course",
-            {},
-            get_mandatory_form_fields(PAST_COURSE_COMMON_FIELDS),
+            mandatory_fields=models.PastCourse.mandatory_form_fields(creation=False),
         )
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdatadict(*PAST_COURSE_COMMON_FIELDS)
+    @REQUESTdatadict(*models.PastCourse.requestdict_fields(creation=False))
     def change_past_course(
         self, rs: RequestState, pevent_id: int, pcourse_id: int, data: CdEDBObject
     ) -> Response:
         """Modify a concluded course."""
         data['id'] = pcourse_id
-        data = check(rs, vtypes.PastCourse, data)
+        data = check(rs, models.PastCourse, data)
         if rs.has_validation_errors():
             return self.change_past_course_form(rs, pevent_id, pcourse_id)
         assert data is not None
@@ -423,18 +422,17 @@ class CdEPastEventMixin(CdEBaseFrontend):
         return self.render(
             rs,
             "past_event/create_past_course",
-            {},
-            get_mandatory_form_fields(PAST_COURSE_COMMON_FIELDS),
+            mandatory_fields=models.PastCourse.mandatory_form_fields(creation=True),
         )
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdatadict(*PAST_COURSE_COMMON_FIELDS)
+    @REQUESTdatadict(*models.PastCourse.requestdict_fields(creation=True))
     def create_past_course(
         self, rs: RequestState, pevent_id: int, data: CdEDBObject
     ) -> Response:
         """Add new concluded course."""
         data['pevent_id'] = pevent_id
-        data = check(rs, vtypes.PastCourse, data, creation=True)
+        data = check(rs, models.PastCourse, data, creation=True)
         if rs.has_validation_errors():
             return self.create_past_course_form(rs, pevent_id)
         assert data is not None

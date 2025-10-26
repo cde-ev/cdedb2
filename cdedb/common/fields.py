@@ -180,15 +180,6 @@ FIELD_DEFINITION_FIELDS = (
     "entries",
 )
 
-#: Fields of a concluded course
-PAST_COURSE_FIELDS = (
-    "id",
-    "pevent_id",
-    "nr",
-    "title",
-    "description",
-)
-
 #: Fields of a registration to an event organized via the CdEDB
 REGISTRATION_FIELDS = (
     "id",

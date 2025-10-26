@@ -627,9 +627,9 @@
                                 (Orga) <br />
                             {% endif %}
                             {% if pevent['courses'] -%}
-                                {% for pcourse_id, pcourse in pevent['courses']|keydictsort(EntitySorter.past_course) %}
+                                {% for pcourse in pevent['courses'].values()|sort %}
                                     {{ pcourse['nr'] }}.
-                                    {{ util.href(cdedblink("cde/show_past_course", {"pevent_id": pevent.id, "pcourse_id": pcourse_id}),
+                                    {{ util.href(cdedblink("cde/show_past_course", {"pevent_id": pevent.id, "pcourse_id": pcourse.id}),
                                                  pcourse['title'], readonly='member' not in user.roles and 'cde_admin' not in user.roles) }}
                                     {%- if pcourse['is_instructor'] %}
                                         ({% trans %}Instructor{% endtrans %})

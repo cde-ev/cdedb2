@@ -114,7 +114,7 @@ class TestPastEventBackend(BackendTest):
 
     @as_users("vera")
     def test_entity_past_course(self) -> None:
-        pevent_id = 1
+        pevent_id = vtypes.ID(1)
         expectation = {
             1: 'Swish -- und alles ist gut',
             2: 'Goethe zum Anfassen',
@@ -122,23 +122,21 @@ class TestPastEventBackend(BackendTest):
         }
         self.assertEqual(expectation, self.pastevent.list_past_courses(self.key))
         old_courses = self.pastevent.list_past_courses(self.key, pevent_id)
-        data = {
-            'pevent_id': pevent_id,
-            'nr': '0',
-            'title': "Topos theory for the kindergarden",
-            'description': """This is an interesting topic
+        data = models.PastCourse(
+            id=vtypes.ID(-1),
+            pevent_id=pevent_id,
+            nr='0',
+            title="Topos theory for the kindergarden",
+            description="""This is an interesting topic
 
             which will be treated.""",
-        }
-        new_id = self.pastevent.create_past_course(self.key, data)
-        data['id'] = new_id
-        self.assertEqual(data,
-                         self.pastevent.get_past_course(self.key, new_id))
-        data['title'] = "Alternate Universe Academy"
-        self.pastevent.set_past_course(self.key, {
-            'id': new_id, 'title': data['title']})
-        self.assertEqual(data,
-                         self.pastevent.get_past_course(self.key, new_id))
+        )
+        new_id = self.pastevent.create_past_course(self.key, data.to_database())
+        data.id = vtypes.ID(new_id)
+        self.assertEqual(data, self.pastevent.get_past_course(self.key, new_id))
+        data.title = "Alternate Universe Academy"
+        self.pastevent.set_past_course(self.key, {'id': new_id, 'title': data.title})
+        self.assertEqual(data, self.pastevent.get_past_course(self.key, new_id))
         self.assertNotIn(new_id, old_courses)
         new_courses = self.pastevent.list_past_courses(self.key, pevent_id)
         self.assertIn(new_id, new_courses)

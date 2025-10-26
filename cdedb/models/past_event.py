@@ -5,9 +5,8 @@ from collections import defaultdict
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event
-from cdedb.common import CdEDBObjectMap
-from cdedb.common.sorting import EntitySorter, Sortkey, xsorted
-from cdedb.models.common import CdEDataclass, CdEDataclassMap
+from cdedb.common.sorting import Sortkey, xsorted
+from cdedb.models.common import CdEDataclass, CdEDataclassMap, MetaFlag as Meta
 
 
 @dataclasses.dataclass
@@ -56,22 +55,44 @@ class PastEvent(CdEDataclass):
         ]
 
 
-def past_course_entries(pcourses: CdEDBObjectMap) -> list[tuple[int, str]]:
-    sortkey = EntitySorter.past_course
+@dataclasses.dataclass
+class PastCourse(CdEDataclass):
+    database_table = "past_event.courses"
 
-    pcourse_entries = [
-        (pcourse["id"], f"{pcourse['nr']}. {pcourse['title']}")
-        for pcourse in xsorted(pcourses.values(), key=sortkey)
+    pevent_id: vtypes.ID = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
+    nr: str
+    title: str
+    description: str | None
+
+    @classmethod
+    def from_event(
+        cls, course: cdedb.models.event.Course, pevent_id: int
+    ) -> "PastCourse":
+        return cls(
+            id=vtypes.ID(-1),
+            pevent_id=vtypes.ID(pevent_id),
+            nr=course.nr,
+            title=course.title,
+            description=course.description,
+        )
+
+    def get_sortkey(self) -> Sortkey:
+        return (self.nr, self.title)
+
+
+def past_course_entries(pcourses: CdEDataclassMap[PastCourse]) -> list[tuple[int, str]]:
+    return [
+        (pcourse.id, f"{pcourse.nr}. {pcourse.title}")
+        for pcourse in xsorted(pcourses.values())
     ]
-    return pcourse_entries
 
 
 def past_course_by_past_event_selectize_options(
-    pcourses: CdEDBObjectMap,
+    pcourses: CdEDataclassMap[PastCourse],
 ) -> dict[int, list[dict[str, str | int]]]:
-    pcourses_by_event: dict[int, CdEDBObjectMap] = defaultdict(dict)
-    for pcourse_id, pcourse in pcourses.items():
-        pcourses_by_event[pcourse['pevent_id']][pcourse_id] = pcourse
+    pcourses_by_event: dict[int, CdEDataclassMap[PastCourse]] = defaultdict(dict)
+    for pcourse in pcourses.values():
+        pcourses_by_event[pcourse.pevent_id][pcourse.id] = pcourse
 
     return {
         pevent_id: [
