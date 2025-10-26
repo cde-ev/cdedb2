@@ -126,10 +126,14 @@ class EventFieldSpec(AbstractMetaData):
     @classmethod
     def _get_spec(cls, entity: type[EventDataclass], field_name: str) -> Self:
         field_name = f"{field_name}_field_id"
-        if spec := cls.get_specs(entity).get(field_name):
+        if field_name not in (specs := cls.get_specs(entity)):
+            raise KeyError(
+                f"Entity {entity.__qualname__!r} has no field {field_name!r}."
+            )
+        if spec := specs.get(field_name):
             return spec
         raise TypeError(
-            f"Field '{entity.__qualname__}.{field_name}' has no metadata '{cls.get_metadata_name()}'."
+            f"Field '{entity.__qualname__}.{field_name}' has no metadata {cls.get_metadata_name()!r}."
         )
 
     def _accepts_association(self, association: const.FieldAssociations) -> bool:

@@ -4223,7 +4223,7 @@ def _serialized_event_configuration(
         else:
             field = current.fields[reimbursement_field]
             if not models_event.EventFieldSpec.field_accepts_association(
-                models_event.Event, "reimbursement", field.association
+                models_event.Event, "reimbursement_iban", field.association
             ):
                 errs.append(
                     ValueError(
@@ -4232,7 +4232,7 @@ def _serialized_event_configuration(
                     )
                 )
             if not models_event.EventFieldSpec.field_accepts_kind(
-                models_event.Event, "reimbursement", field.kind
+                models_event.Event, "reimbursement_iban", field.kind
             ):
                 errs.append(
                     ValueError(
