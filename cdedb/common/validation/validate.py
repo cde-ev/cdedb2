@@ -2974,11 +2974,11 @@ def _event_field_dataclass(
         if isinstance(entries, str):
             try:
                 entries = list(
-                    cast(tuple[Any, Any], tuple(map(str.strip, line.split(";", 1))))
+                    (split[0].strip(), split[1].strip())
                     for line in entries.splitlines()
-                    if line.strip()
+                    if line.strip() and (split := line.split(";", 1))
                 )
-            except ValueError as e:
+            except (ValueError, IndexError) as e:
                 raise ValidationSummary(
                     ValueError("entries", n_("Value not well-formed."))
                 ) from e
