@@ -39,20 +39,25 @@ class PastEvent(CdEDataclass):
             institution=event.institution,
             tempus=part.part_begin,
             description=event.description,
+            # The event field 'participant_info' usually contains information
+            # no longer relevant, so we do not keep it here
             participant_info=None,
         )
 
     def get_sortkey(self) -> Sortkey:
         return (-self.tempus.toordinal(), self.title)
 
-    @staticmethod
-    def get_entries_sortkey(pevent: "PastEvent") -> Sortkey:
-        return (-pevent.tempus.year, pevent.title, pevent.id)
+    def get_entries_sortkey(self) -> Sortkey:
+        return (-self.tempus.year, self.title, self.id)
 
     @classmethod
     def get_entries(
         cls, pevents: CdEDataclassMap["PastEvent"]
     ) -> list[tuple[int, str]]:
+        """Used for better UX in _very_ long select inputs.
+
+        Groups the events by year descending, and then orders them by title.
+        """
         return [
             (pevent.id, pevent.title)
             for pevent in xsorted(pevents.values(), key=cls.get_entries_sortkey)

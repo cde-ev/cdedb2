@@ -619,7 +619,7 @@
                 {% for pevent in past_events.values() %}
                     <tr>
                         <td>
-                            {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent.id}), pevent['title'],
+                            {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent.id}), pevent.title,
                                                    readonly='member' not in user.roles and 'cde_admin' not in user.roles) -}}
                         </td>
                         <td>
