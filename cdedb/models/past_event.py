@@ -60,6 +60,7 @@ class PastCourse(CdEDataclass):
     database_table = "past_event.courses"
 
     pevent_id: vtypes.ID = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
+    pevent: PastEvent = dataclasses.field(init=False, compare=False, repr=False)
     nr: str
     title: str
     description: str | None
