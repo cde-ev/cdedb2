@@ -79,25 +79,26 @@ class PastCourse(CdEDataclass):
     def get_sortkey(self) -> Sortkey:
         return (self.nr, self.title)
 
-
-def past_course_entries(pcourses: CdEDataclassMap[PastCourse]) -> list[tuple[int, str]]:
-    return [
-        (pcourse.id, f"{pcourse.nr}. {pcourse.title}")
-        for pcourse in xsorted(pcourses.values())
-    ]
-
-
-def past_course_by_past_event_selectize_options(
-    pcourses: CdEDataclassMap[PastCourse],
-) -> dict[int, list[dict[str, str | int]]]:
-    pcourses_by_event: dict[int, CdEDataclassMap[PastCourse]] = defaultdict(dict)
-    for pcourse in pcourses.values():
-        pcourses_by_event[pcourse.pevent_id][pcourse.id] = pcourse
-
-    return {
-        pevent_id: [
-            {'id': pcourse_id, 'title': label}
-            for pcourse_id, label in past_course_entries(pevent_pcourses)
+    @staticmethod
+    def get_entries(pcourses: CdEDataclassMap["PastCourse"]) -> list[tuple[int, str]]:
+        return [
+            (pcourse.id, f"{pcourse.nr}. {pcourse.title}")
+            for pcourse in xsorted(pcourses.values())
         ]
-        for pevent_id, pevent_pcourses in pcourses_by_event.items()
-    }
+
+    @classmethod
+    def get_combined_entries(
+        cls,
+        pcourses: CdEDataclassMap["PastCourse"],
+    ) -> dict[int, list[dict[str, str | int]]]:
+        pcourses_by_event: dict[int, CdEDataclassMap[PastCourse]] = defaultdict(dict)
+        for pcourse in pcourses.values():
+            pcourses_by_event[pcourse.pevent_id][pcourse.id] = pcourse
+
+        return {
+            pevent_id: [
+                {'id': pcourse_id, 'title': label}
+                for pcourse_id, label in cls.get_entries(pevent_pcourses)
+            ]
+            for pevent_id, pevent_pcourses in pcourses_by_event.items()
+        }

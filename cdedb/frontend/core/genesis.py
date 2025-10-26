@@ -30,10 +30,6 @@ from cdedb.frontend.common import (
     periodic,
 )
 from cdedb.frontend.core.base import CoreBaseFrontend
-from cdedb.models.past_event import (
-    past_course_by_past_event_selectize_options,
-    past_course_entries,
-)
 
 
 class CoreGenesisMixin(CoreBaseFrontend):
@@ -359,8 +355,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
             "pevents": pevents,
             "pevent_entries": models_past_event.PastEvent.get_entries(pevents),
             "pcourses": pcourses,
-            "pcourse_entries": past_course_entries(pcourses),
-            "pcourse_entries_by_event": past_course_by_past_event_selectize_options(all_pcourses),
+            "pcourse_entries": models_past_event.PastCourse.get_entries(pcourses),
+            "pcourse_entries_by_event": models_past_event.PastCourse.get_combined_entries(all_pcourses),
         }
 
         return self.render(
