@@ -1464,14 +1464,16 @@ def cast_field_value(
     return val
 
 
-def normalize_field_value(value: Any | None, kind: const.FieldDatatypes) -> str:
+def normalize_field_value(
+    value: Any | None, kind: const.FieldDatatypes, coalesce: str | None
+) -> str | None:
     normalizers: dict[const.FieldDatatypes, Callable[[Any], str]] = {
         const.FieldDatatypes.date: datetime.date.isoformat,
         const.FieldDatatypes.datetime: datetime.datetime.isoformat,
         const.FieldDatatypes.phone: parse_phone,
     }
-    if value is None:
-        return ""
+    if value is None or value == "":  # noqa: PLC1901
+        return coalesce
     if normalizer := normalizers.get(kind):
         return normalizer(value)
     return str(value)
@@ -1513,12 +1515,14 @@ def cast_field_entries(
 
 
 def normalize_field_entries(
-    entries: dict[Any, str] | None, kind: const.FieldDatatypes
-) -> dict[str, str] | None:
+    entries: dict[Any, str] | None,
+    kind: const.FieldDatatypes,
+    coalesce: str | None = None,
+) -> dict[str | None, str] | None:
     if not entries:
         return None
     return {
-        normalize_field_value(value, kind): description
+        normalize_field_value(value, kind, coalesce): description
         for value, description in entries.items()
     }
 

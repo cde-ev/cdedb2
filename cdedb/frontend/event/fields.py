@@ -51,7 +51,7 @@ class EventFieldMixin(EventBaseFrontend):
     def field_summary_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form."""
         formatter = lambda k, v: (v if k != 'entries' or not v else
-                                  '\n'.join(f'{value};{description}'
+                                  '\n'.join(f'{value or ""};{description}'
                                             for value, description in v.items()))
         current = {
             f"{key}_{field_id}": formatter(key, value)

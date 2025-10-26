@@ -45,6 +45,7 @@ from cdedb.common import (
     DefaultReturnCode,
     DeletionBlockers,
     RequestState,
+    cast_field_entries,
     cast_field_value,
     cast_fields,
     json_serialize,
@@ -1538,6 +1539,12 @@ class EventBaseBackend(EventLowLevelBackend):
                         personas.add(e['persona_id'])
                     if e.get('submitted_by'):  # for log entries
                         personas.add(e['submitted_by'])
+            for e in ret[models.EventField.database_table].values():
+                if entries := e["entries"]:
+                    kind = const.FieldDatatypes(e["kind"])
+                    entries = cast_field_entries(entries, kind)
+                    entries = normalize_field_entries(entries, kind, coalesce="") or {}
+                    e["entries"] = list(map(list, entries.items()))
             ret['core.personas'] = list_to_dict(
                 self.sql_select(rs, "core.personas", PERSONA_EVENT_FIELDS, personas)
             )
@@ -1825,7 +1832,9 @@ class EventBaseBackend(EventLowLevelBackend):
             del field['field_name']
             del field['event_id']
             del field['id']
-            field["entries"] = normalize_field_entries(field["entries"], field["kind"])
+            field["entries"] = normalize_field_entries(
+                field["entries"], field["kind"], coalesce=""
+            )
         # personas
         for reg_id, registration in ret['registrations'].items():
             persona = personas[registration['persona_id']]
