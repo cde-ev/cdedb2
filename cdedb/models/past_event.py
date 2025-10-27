@@ -73,9 +73,7 @@ class PastCourse(CdEDataclass):
     description: str | None
 
     @classmethod
-    def from_course(
-        cls, course: cdedb.models.event.Course, pevent_id: int
-    ) -> "PastCourse":
+    def from_course(cls, course: cdedb.models.event.Course, pevent_id: int) -> Self:
         return cls(
             id=vtypes.ID(-1),
             pevent_id=vtypes.ID(pevent_id),
@@ -87,8 +85,8 @@ class PastCourse(CdEDataclass):
     def get_sortkey(self) -> Sortkey:
         return (self.nr, self.title)
 
-    @staticmethod
-    def get_entries(pcourses: CdEDataclassMap["PastCourse"]) -> list[tuple[int, str]]:
+    @classmethod
+    def get_entries(cls, pcourses: CdEDataclassMap[Self]) -> list[tuple[int, str]]:
         return [
             (pcourse.id, f"{pcourse.nr}. {pcourse.title}")
             for pcourse in xsorted(pcourses.values())
@@ -97,9 +95,9 @@ class PastCourse(CdEDataclass):
     @classmethod
     def get_combined_entries(
         cls,
-        pcourses: CdEDataclassMap["PastCourse"],
+        pcourses: CdEDataclassMap[Self],
     ) -> dict[int, list[dict[str, str | int]]]:
-        pcourses_by_event: dict[int, CdEDataclassMap[PastCourse]] = defaultdict(dict)
+        pcourses_by_event: dict[int, CdEDataclassMap[Self]] = defaultdict(dict)
         for pcourse in pcourses.values():
             pcourses_by_event[pcourse.pevent_id][pcourse.id] = pcourse
 
