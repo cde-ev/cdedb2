@@ -920,7 +920,7 @@ class TestValidation(TestValidationBase):
                             "2": "Zwei",
                             "3": "Drei",
                             "4": "Vier",
-                            "": "Nix",
+                            None: "Nix",
                         }
                     },
                     None,
@@ -946,7 +946,7 @@ class TestValidation(TestValidationBase):
                         "entries": {
                             "0": "Null",
                             "1": "Eins",
-                            "": "Nix",
+                            None: "Nix",
                         }
                     },
                     None,
@@ -958,7 +958,7 @@ class TestValidation(TestValidationBase):
                         "kind": const.FieldDatatypes.date,
                         "association": const.FieldAssociations.registration,
                         "entries": {
-                            "": "Nix",
+                            None: "Nix",
                             now().date().isoformat(): "Heute",
                         }},
                     INVAL,
