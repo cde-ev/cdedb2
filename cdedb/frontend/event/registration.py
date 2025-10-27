@@ -678,8 +678,8 @@ class EventRegistrationMixin(EventBaseFrontend):
                 if field.kind == const.FieldDatatypes.bool and not field.entries:
                     # Skip checkboxes
                     continue
-                if field.kind == const.FieldDatatypes.str:
-                    # Skip text inputs
+                if field.kind == const.FieldDatatypes.str and not field.entries:
+                    # Skip text inputs with no choices.
                     continue
                 # questionnaire_fields contains validated values.
                 #  That means that empty inputs are already mapped to False, etc.
