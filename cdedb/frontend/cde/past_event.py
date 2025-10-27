@@ -9,6 +9,7 @@ administrative tasks, like creating and modifying past events and courses requir
 
 import copy
 import csv
+import itertools
 from collections import OrderedDict
 from collections.abc import Sequence
 from typing import Optional
@@ -261,32 +262,24 @@ class CdEPastEventMixin(CdEBaseFrontend):
         """List all concluded events."""
         if rs.has_validation_errors():
             rs.notify('warning', n_("Institution parameter got lost."))
-        events = self.pasteventproxy.list_past_events(rs)
-        pevents = self.pasteventproxy.get_past_events(rs, events)
-        shortnames = {pevent.id: pevent.shortname for pevent in pevents.values()}
+
+        pevent_ids = self.pasteventproxy.list_past_events(rs)
+        pevents = list(self.pasteventproxy.get_past_events(rs, pevent_ids).values())
+
         stats = self.pasteventproxy.past_event_stats(rs)
 
-        # Generate (reverse) chronologically sorted list of past event ids
-        stats_sorter = xsorted(stats, key=lambda x: events[x])
-        stats_sorter.sort(key=lambda x: stats[x]['tempus'], reverse=True)
-        # Bunch past events by years
-        # Using idea from http://stackoverflow.com/a/8983196
-        years: dict[int, list[int]] = {}
-        for anid in stats_sorter:
-            if institution and stats[anid]['institution'] != institution:
-                continue
-            years.setdefault(stats[anid]['tempus'].year, []).append(anid)
+        # group past events of the given institution by the year they took place
+        if institution:
+            pevents = list(filter(lambda x: x.institution == institution, pevents))
+        years = [
+            (year, list(events))
+            for year, events in itertools.groupby(pevents, lambda x: x.tempus.year)
+        ]
 
         return self.render(
             rs,
             "past_event/list_past_events",
-            {
-                'events': events,
-                'stats': stats,
-                'years': years,
-                'shortnames': shortnames,
-                'institution': institution,
-            },
+            {'years': years, 'stats': stats, 'institution': institution},
         )
 
     @access("cde_admin")
@@ -305,12 +298,11 @@ class CdEPastEventMixin(CdEBaseFrontend):
         self, rs: RequestState, pevent_id: int, data: CdEDBObject
     ) -> Response:
         """Modify a concluded event."""
-        data['id'] = pevent_id
         data = check(rs, models.PastEvent, data)
         if rs.has_validation_errors():
             return self.change_past_event_form(rs, pevent_id)
         assert data is not None
-        code = self.pasteventproxy.set_past_event(rs, data)
+        code = self.pasteventproxy.set_past_event(rs, pevent_id, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/show_past_event")
 

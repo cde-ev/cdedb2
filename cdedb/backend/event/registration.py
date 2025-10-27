@@ -1062,9 +1062,7 @@ class EventRegistrationBackend(EventBaseBackend):
             personalized_fees = models.PersonalizedFee.many_from_database(
                 personalized_fee_data
             )
-            event_fields = models.EventField.many_from_database(
-                self._get_event_fields(rs, event_id).values()
-            )
+            event_fields = self._get_event_fields(rs, event_id)
             for reg in ret.values():
                 reg['tracks'] = {}
                 reg['checkin_periods'] = []

@@ -31,22 +31,22 @@
         </ul>
     </nav>
 
-    {% for year, year_events in years|dictsort|reverse %}
+    {% for year, past_events in years %}
         {{ util.h(year, level=4, underline=True, translate=False) }}
         <ul id="events-{{ year }}">
-            {% for pevent_id in year_events %}
+            {% for pevent in past_events %}
                 <li>
-                    {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}), events[pevent_id]) }}
-                    {% if "past_event" in user.admin_views %}[{{ shortnames[pevent_id] }}]{% endif %}
-                    {% if not values.get('institution') %}({{ stats[pevent_id]['institution'].shortname }}){% endif %}
+                    {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent.id}), pevent.title) }}
+                    {% if "past_event" in user.admin_views %}[{{ pevent.shortname }}]{% endif %}
+                    {% if not values.get('institution') %}({{ pevent.institution.shortname }}){% endif %}
                     {% if "past_event" in user.admin_views %}
                         <small class="text-muted nowrap">
-                            {% trans count=stats[pevent_id]['courses'] %}
+                            {% trans count=stats[pevent.id]['courses'] %}
                                 {{ count }} Course
                             {%- pluralize count -%}
                                 {{ count }} Courses
                             {% endtrans %},
-                            {% trans count=stats[pevent_id]['participants'] %}
+                            {% trans count=stats[pevent.id]['participants'] %}
                                 {{ count }} Participant
                             {%- pluralize count -%}
                                 {{ count }} Participants
