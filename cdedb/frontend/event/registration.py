@@ -670,13 +670,16 @@ class EventRegistrationMixin(EventBaseFrontend):
                 rs, const.QuestionnaireUsages.registration
             )
 
-            # Take special care to disallow empty fields (except checkboxes).
+            # Take special care to disallow empty fields (except checkboxes and strings).
             for field in event.fields.values():
                 if field.field_name not in questionnaire_fields:
                     # Skip fields not present in the questionnaire.
                     continue
                 if field.kind == const.FieldDatatypes.bool and not field.entries:
                     # Skip checkboxes
+                    continue
+                if field.kind == const.FieldDatatypes.str:
+                    # Skip text inputs
                     continue
                 # questionnaire_fields contains validated values.
                 #  That means that empty inputs are already mapped to False, etc.

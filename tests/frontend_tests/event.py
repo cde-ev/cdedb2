@@ -2178,9 +2178,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f, check_notification=False)
         f = self.response.forms['registerform']
         self.assertValidationError(
-            'fields.anzahl_kissen', "Ungültige Eingabe für eine Ganzzahl.")
+            'fields.anzahl_kissen', "Darf nicht leer sein.")
         f['fields.anzahl_kissen'] = 3
-        self.assertValidationError('fields.favorite_day', "Kein Datum gefunden.")
+        self.assertValidationError('fields.favorite_day', "Darf nicht leer sein.")
         f['fields.favorite_day'] = now().date().isoformat()
         self.submit(f)
         self.assertTitle("Deine Anmeldung (CdE-Party 2050)")
