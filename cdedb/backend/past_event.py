@@ -390,8 +390,12 @@ class PastEventBackend(AbstractBackend):
         They do not need to be associated to the same event.
         """
         pcourse_ids = affirm_set(vtypes.ID, pcourse_ids)
-        query = """SELECT pevent_id FROM past_events.courses WHERE id = ANY(%s)"""
-        pevent_ids = {e['pevent_id'] for e in self.query_all(rs, query, [pcourse_ids])}
+        pevent_ids = {
+            e["pevent_id"]
+            for e in self.sql_select(
+                rs, models.PastCourse.database_table, ["pevent_id"], pcourse_ids
+            )
+        }
         pevents = self.get_past_events(rs, pevent_ids)
         ret = models.PastCourse.many_from_database(
             self.query_all(rs, *models.PastCourse.get_select_query(pcourse_ids))
