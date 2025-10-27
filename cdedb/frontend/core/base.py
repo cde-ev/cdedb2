@@ -22,6 +22,7 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.core as models
+import cdedb.models.past_event as models_past_event
 from cdedb.common import (
     CdEDBObject,
     CdEDBObjectMap,
@@ -97,7 +98,6 @@ from cdedb.models.ml import MailinglistGroup
 from cdedb.models.past_event import (
     past_course_by_past_event_selectize_options,
     past_course_entries,
-    past_event_entries,
 )
 from cdedb.uncommon.submanshim import SubscriptionPolicy
 
@@ -1980,7 +1980,7 @@ class CoreBaseFrontend(AbstractFrontend):
         mandatory_fields = get_mandatory_form_fields(
             CDE_TRANSITION_FIELDS, self.promote_user)
         return self.render(rs, "promote_user", {
-            "pevent_entries": past_event_entries(pevents),
+            "pevent_entries": models_past_event.PastEvent.get_entries(pevents),
             "pcourse_entries": past_course_entries(pcourses),
             "pcourse_entries_by_event": past_course_by_past_event_selectize_options(all_pcourses),
         }, mandatory_fields)

@@ -101,6 +101,7 @@ import cdedb.models.core as models_core
 import cdedb.models.droid as models_droid
 import cdedb.models.event as models_event
 import cdedb.models.ml as models_ml
+import cdedb.models.past_event as models_past_event
 from cdedb.common import (
     ASSEMBLY_BAR_SHORTNAME,
     EPSILON,
@@ -2398,39 +2399,9 @@ def _meta_info(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
     return val
 
 
-PAST_EVENT_COMMON_FIELDS: Mapping[str, Any] = {
-    'title': str,
-    'shortname': str,
-    'institution': const.PastInstitutions,
-    'tempus': datetime.date,
-    'description': Optional[str],
-}
-
-PAST_EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {'participant_info': Optional[str]}
-
-
-PAST_EVENT_FIELDS = {**PAST_EVENT_COMMON_FIELDS, **PAST_EVENT_OPTIONAL_FIELDS}
-
-
-@_add_typed_validator
-def _past_event(
-    val: Any, argname: str = "past_event", *, creation: bool = False, **kwargs: Any
-) -> PastEvent:
-    """
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    """
-    val = _mapping(val, argname, **kwargs)
-
-    if creation:
-        mandatory_fields = {**PAST_EVENT_COMMON_FIELDS}
-        optional_fields = {**PAST_EVENT_OPTIONAL_FIELDS}
-    else:
-        mandatory_fields = {'id': ID}
-        optional_fields = {**PAST_EVENT_COMMON_FIELDS, **PAST_EVENT_OPTIONAL_FIELDS}
-    return PastEvent(
-        _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
-    )
+@_create_dataclass_validator(models_past_event.PastEvent)
+def _past_event(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
+    return val
 
 
 EVENT_COMMON_FIELDS: Mapping[str, Any] = {

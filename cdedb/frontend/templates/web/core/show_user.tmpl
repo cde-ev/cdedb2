@@ -616,10 +616,10 @@
             <h4 class="heading-underline">{% trans %}Past Events{% endtrans %}</h4>
             <table class="table table-hover past-event-table">
             <tbody>
-                {% for pevent_id, pevent in past_events|keydictsort(EntitySorter.past_event, reverse=True) %}
+                {% for pevent in past_events.values() %}
                     <tr>
                         <td>
-                            {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent_id}), pevent['title'],
+                            {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent.id}), pevent.title,
                                                    readonly='member' not in user.roles and 'cde_admin' not in user.roles) -}}
                         </td>
                         <td>
@@ -629,8 +629,7 @@
                             {% if pevent['courses'] -%}
                                 {% for pcourse_id, pcourse in pevent['courses']|keydictsort(EntitySorter.past_course) %}
                                     {{ pcourse['nr'] }}.
-                                    {{ util.href(cdedblink("cde/show_past_course", {"pevent_id": pevent_id,
-                                                                                    "pcourse_id": pcourse_id}),
+                                    {{ util.href(cdedblink("cde/show_past_course", {"pevent_id": pevent.id, "pcourse_id": pcourse_id}),
                                                  pcourse['title'], readonly='member' not in user.roles and 'cde_admin' not in user.roles) }}
                                     {%- if pcourse['is_instructor'] %}
                                         ({% trans %}Instructor{% endtrans %})

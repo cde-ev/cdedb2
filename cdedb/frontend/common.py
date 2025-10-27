@@ -83,6 +83,7 @@ import cdedb.models.core as models_core
 import cdedb.models.droid as models_droid
 import cdedb.models.event as models_event
 import cdedb.models.ml as models_ml
+import cdedb.models.past_event as models_past_event
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
@@ -1810,7 +1811,7 @@ class AmbienceDict(typing.TypedDict):
     lastschrift: NotRequired[CdEDBObject]
     transaction: NotRequired[CdEDBObject]
     event: NotRequired[models_event.Event]
-    pevent: NotRequired[CdEDBObject]
+    pevent: NotRequired[models_past_event.PastEvent]
     course: NotRequired[models_event.Course]
     pcourse: NotRequired[CdEDBObject]
     registration: NotRequired[CdEDBObject]
@@ -1868,8 +1869,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               ((lambda a: do_assert(a['course'].event_id == a['event'].id)),)),
         Scout(lambda anid: obj.pasteventproxy.get_past_course(rs, anid),
               'pcourse_id', 'pcourse',
-              ((lambda a: do_assert(a['pcourse']['pevent_id']
-                                    == a['pevent']['id'])),)),
+              ((lambda a: do_assert(a['pcourse']['pevent_id'] == a['pevent'].id)),)),
         Scout(None, 'part_id', None,
               ((lambda a: do_assert(rs.requestargs['part_id'] in a['event'].parts)),)),
         Scout(lambda anid: obj.eventproxy.get_registration(rs, anid),
