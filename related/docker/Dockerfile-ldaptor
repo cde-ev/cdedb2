@@ -1,4 +1,4 @@
-FROM debian:bookworm-20240130
+FROM debian:trixie-20251020
 
 # python and utilities to install packages via pip
 # dependencies:
