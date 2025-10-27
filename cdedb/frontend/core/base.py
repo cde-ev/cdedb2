@@ -13,7 +13,7 @@ import operator
 import pathlib
 import quopri
 import tempfile
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 import segno
 import segno.helpers
@@ -603,7 +603,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
         # use a special sentinel object to mark redacted properties
         # we can't use None, since some of them are Nonable
-        REDACTED = object()
+        REDACTED = cast(Any, object())
 
         # Let users see themselves
         if persona_id == rs.user.persona_id:
@@ -699,8 +699,8 @@ class CoreBaseFrontend(AbstractFrontend):
             persona = self.coreproxy.new_get_persona(rs, persona_id)
             # The base version of the data set should only contain the name,
             # so we take care to not expose the username.
-            persona.username = REDACTED  # type: ignore[assignment]
-            persona.legal_given_names = REDACTED  # type: ignore[assignment]
+            persona.username = REDACTED
+            persona.legal_given_names = REDACTED
         else:
             raise RuntimeError("Impossible")
 
@@ -711,18 +711,18 @@ class CoreBaseFrontend(AbstractFrontend):
                     rs, persona_ids=(persona_id,), active=True))
                 # hide the donation property if no active lastschrift exists, to avoid confusion
                 if not has_lastschrift:
-                    persona.donation = REDACTED  # type: ignore[assignment]
+                    persona.donation = REDACTED
             else:
-                persona.balance = REDACTED  # type: ignore[assignment]
-                persona.decided_search = REDACTED  # type: ignore[assignment]
-                persona.trial_member = REDACTED  # type: ignore[assignment]
-                persona.bub_search = REDACTED  # type: ignore[assignment]
-                persona.paper_expuls = REDACTED  # type: ignore[assignment]
-                persona.donation = REDACTED  # type: ignore[assignment]
+                persona.balance = REDACTED
+                persona.decided_search = REDACTED
+                persona.trial_member = REDACTED
+                persona.bub_search = REDACTED
+                persona.paper_expuls = REDACTED
+                persona.donation = REDACTED
                 if not persona.show_address2:
                     # keep showing the rough location, postal code and country
-                    persona.address2 = REDACTED  # type: ignore[assignment]
-                    persona.address_supplement2 = REDACTED  # type: ignore[assignment]
+                    persona.address2 = REDACTED
+                    persona.address_supplement2 = REDACTED
 
         if self.AccessLevel.meta not in access_levels:
             status_bits = persona.get_status_bits()
@@ -735,18 +735,18 @@ class CoreBaseFrontend(AbstractFrontend):
         if self.AccessLevel.orga not in access_levels:
             # May be hidden from member search, but not from orga view.
             if not persona.show_legal_given_names:
-                persona.legal_given_names = REDACTED  # type: ignore[assignment]
+                persona.legal_given_names = REDACTED
             if isinstance(persona, models.EventPersona):
-                persona.gender = REDACTED  # type: ignore[assignment]
-                persona.pronouns_nametag = REDACTED  # type: ignore[assignment]
-                persona.show_legal_given_names = REDACTED  # type: ignore[assignment]
+                persona.gender = REDACTED
+                persona.pronouns_nametag = REDACTED
+                persona.show_legal_given_names = REDACTED
                 # May be hidden from member search, but not from orga view.
                 # In addition, never show the address of non-cde users.
                 if (isinstance(persona, models.CdEPersona) and not persona.show_address
                         or not isinstance(persona, models.CdEPersona)):
                     # keep showing the rough location, postal code and country
-                    persona.address = REDACTED  # type: ignore[assignment]
-                    persona.address_supplement = REDACTED  # type: ignore[assignment]
+                    persona.address = REDACTED
+                    persona.address_supplement = REDACTED
 
         notes = REDACTED
         if is_relative_or_meta_admin and is_relative_or_meta_admin_view:
