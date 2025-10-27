@@ -1,6 +1,7 @@
 import dataclasses
 import datetime
 from collections import defaultdict
+from typing import Self
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -23,7 +24,7 @@ class PastEvent(CdEDataclass):
     participant_info: str | None
 
     @classmethod
-    def from_event(cls, event: cdedb.models.event.Event, part_id: int) -> "PastEvent":
+    def from_event(cls, event: cdedb.models.event.Event, part_id: int) -> Self:
         if part_id not in event.parts:
             raise ValueError
         part = event.parts[part_id]
@@ -51,9 +52,7 @@ class PastEvent(CdEDataclass):
         return (-self.tempus.year, self.title, self.id)
 
     @classmethod
-    def get_entries(
-        cls, pevents: CdEDataclassMap["PastEvent"]
-    ) -> list[tuple[int, str]]:
+    def get_entries(cls, pevents: CdEDataclassMap[Self]) -> list[tuple[int, str]]:
         """Used for better UX in _very_ long select inputs.
 
         Groups the events by year descending, and then orders them by title.
