@@ -739,8 +739,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 persona.show_legal_given_names = REDACTED
                 # May be hidden from member search, but not from orga view.
                 # In addition, never show the address of non-cde users.
-                if (isinstance(persona, models.CdEPersona) and not persona.show_address
-                        or not isinstance(persona, models.CdEPersona)):
+                if not isinstance(persona, models.CdEPersona) or not persona.show_address:
                     # keep showing the rough location, postal code and country
                     persona.address = REDACTED
                     persona.address_supplement = REDACTED
