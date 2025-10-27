@@ -1837,16 +1837,9 @@ def _datetime(
     return val
 
 
-@_add_typed_validator
-def _frozen_datetime(
-    val: Any, argname: Optional[str] = None, **kwargs: Any
-) -> freezegun.api.FakeDatetime:  # type: ignore[name-defined]
-    """Our tests pass objects of this mock time.
-
-    Since freezegun does magic type stuff, this is required
-    when calling `affirm(datetime.datetime, ...)` on a FakeDatetime.
-    """
-    return _datetime(val, argname, **kwargs)
+# freezegun patches datetime objects so this allows the validator retrieval to still work.
+_add_typed_validator(_date, freezegun.api.FakeDate)  # type: ignore[attr-defined]
+_add_typed_validator(_datetime, freezegun.api.FakeDatetime)  # type: ignore[attr-defined]
 
 
 @_add_typed_validator
