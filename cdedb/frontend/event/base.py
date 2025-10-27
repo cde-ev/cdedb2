@@ -93,6 +93,8 @@ def event_associated_fields_extractor(
         event: models.Event,
         association: const.FieldAssociations,
         field_ids: set[int] | None = None,
+        *,
+        filter_params: Callable[[vtypes.TypeMapping], vtypes.TypeMapping] | None = None,
         suffix: str = "",
 ) -> CdEDBObject:
     """Given an event, extract inputs for all event fields of the given association."""
@@ -104,6 +106,8 @@ def event_associated_fields_extractor(
         f"{field.request_name}{suffix}": field.get_validator()
         for field in fields
     }
+    if filter_params:
+        field_params = filter_params(field_params)
     raw_fields = request_extractor(rs, field_params)
     return {
         field.field_name: raw_fields.get(f"{field.request_name}{suffix}")

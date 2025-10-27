@@ -662,7 +662,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         # Custom data field data:
         if orga_input:
             registration["fields"] = event_associated_fields_extractor(
-                rs, rs.ambience["event"], const.FieldAssociations.registration
+                rs, rs.ambience["event"], const.FieldAssociations.registration,
+                filter_params=filter_params,
             )
         else:
             questionnaire_fields = self.extract_questionnaire_fields(
