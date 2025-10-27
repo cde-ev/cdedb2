@@ -267,11 +267,9 @@ class CdEPastEventMixin(CdEBaseFrontend):
         if rs.has_validation_errors():
             rs.notify('warning', n_("Institution parameter got lost."))
 
-        pevents = list(
-            self.pasteventproxy.get_past_events(
-                rs, self.pasteventproxy.list_past_events(rs)
-            ).values()
-        )
+        pevent_ids = self.pasteventproxy.list_past_events(rs)
+        pevents = list(self.pasteventproxy.get_past_events(rs, pevent_ids).values())
+
         stats = self.pasteventproxy.past_event_stats(rs)
 
         # group past events of the given institution by the year they took place
