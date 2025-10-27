@@ -10,7 +10,7 @@ import functools
 import re
 from enum import auto
 from secrets import token_urlsafe
-from typing import TYPE_CHECKING, Any, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, cast
 
 from cryptography.fernet import Fernet
 
@@ -275,6 +275,21 @@ class PersonaName(CdEDataclass):
         if with_titles and self.name_supplement:
             ret.append(self.name_supplement)
         return " ".join(ret)
+
+    # Sentinel object to mark redacted properties.
+    REDACTED = cast(Any, object())
+
+    def hasattr(self, attr: str) -> bool:
+        return hasattr(self, attr) and getattr(self, attr) is not self.REDACTED
+
+    def has(self, attr: str) -> bool:
+        return self.hasattr(attr) and getattr(self, attr) is not None
+
+    def is_true(self, attr: str) -> bool:
+        return self.hasattr(attr) and getattr(self, attr) is True
+
+    def is_false(self, attr: str) -> bool:
+        return self.hasattr(attr) and getattr(self, attr) is False
 
 
 @dataclasses.dataclass(kw_only=True)

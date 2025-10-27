@@ -13,7 +13,7 @@ import operator
 import pathlib
 import quopri
 import tempfile
-from typing import Any, Optional, cast
+from typing import Any, Optional
 
 import segno
 import segno.helpers
@@ -600,10 +600,7 @@ class CoreBaseFrontend(AbstractFrontend):
         access_realms = self.AccessRealm(0)
         access_levels = self.AccessLevel(0)
         access_mode = self.AccessMode(0)
-
-        # use a special sentinel object to mark redacted properties
-        # we can't use None, since some of them are Nonable
-        REDACTED = cast(Any, object())
+        REDACTED = models.Persona.REDACTED
 
         # Let users see themselves
         if persona_id == rs.user.persona_id:
@@ -787,29 +784,9 @@ class CoreBaseFrontend(AbstractFrontend):
         mandatory_fields = get_mandatory_form_fields(
             self.archive_persona, self.invalidate_password)
 
-        def _hasattr(persona: models.Persona, attr: str) -> bool:
-            return hasattr(persona, attr) and getattr(persona, attr) != REDACTED
-
-        def _has(persona: models.Persona, attr: str) -> bool:
-            return _hasattr(persona, attr) and getattr(persona, attr) is not None
-
-        def _is(persona: models.Persona, attr: str) -> bool:
-            return _hasattr(persona, attr) and getattr(persona, attr) is True
-
-        def _is_not(persona: models.Persona, attr: str) -> bool:
-            return _hasattr(persona, attr) and getattr(persona, attr) is False
-
-        self.jinja_env.filters.update({
-            'hasattr': _hasattr,
-            'has': _has,
-            'is': _is,
-            'is_not': _is_not,
-        })
-
         return self.render(rs, "show_user", {
             # TODO rename in template
             'data': persona,
-            'REDACTED': REDACTED,
             'past_events': past_events,
             'meta_info': meta_info,
             'is_relative_admin_view': is_relative_admin_view,
