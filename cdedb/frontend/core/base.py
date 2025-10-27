@@ -6,6 +6,7 @@ import base64
 import collections
 import datetime
 import decimal
+import enum
 import io
 import itertools
 import operator
@@ -514,6 +515,41 @@ class CoreBaseFrontend(AbstractFrontend):
         assert rs.user.persona_id is not None
         return self.redirect_show_user(rs, rs.user.persona_id)
 
+    class AccessRealm(enum.Flag):
+        """Manage realm access in show_user.
+
+        Realms the viewer may access of the users.
+        This is independent of the actual realms the user possesses.
+        Additionally, each viewer is eligible to view some basic infos.
+        """
+        persona = 0
+        ml = enum.auto()
+        assembly = enum.auto()
+        event = enum.auto()
+        cde = enum.auto()
+        all = persona | ml | assembly | event | cde
+
+    class AccessLevel(enum.Flag):
+        """Manage redaction of data in show_user."""
+        # access based on special roles of the viewer
+        orga = enum.auto()
+        moderator = enum.auto()
+        # access to status bits for meta admins
+        meta = enum.auto()
+        # full access, do not strip any data, for core and relative admins,
+        #  and access to your own profile
+        _full = enum.auto()
+        full = orga | moderator | meta | _full
+
+    class AccessMode(enum.Flag):
+        """Manage soft hides of data in show_user.
+
+        Depends on the admin view of the viewer, and determines available admin views.
+        """
+        orga = enum.auto()
+        moderator = enum.auto()
+        any_admin = enum.auto()
+
     @access("persona")
     @REQUESTdata("#confirm_id", "quote_me", "event_id", "ml_id")
     def show_user(self, rs: RequestState, persona_id: int, confirm_id: int,
@@ -561,30 +597,9 @@ class CoreBaseFrontend(AbstractFrontend):
                                 and rs.ambience['persona']['is_member']
                                 and rs.ambience['persona']['is_searchable'])
 
-        # all realms the viewer may access of the users
-        # this is independent of the actual realms the user possesses
-        # in addition, each viewer is eligible to view some basic infos
-        access_realms = {"persona"}
-        all_access_realms = {
-            "persona", "ml", "assembly", "event", "cde",
-        }
-        # level of access to the data, determines if some data is stripped
-        access_levels = set()
-        all_access_levels = {
-            # access based on special roles of the viewer
-            "orga", "moderator",
-            # access to status bits for meta admins
-            "meta",
-            # full access, do not strip any data, for core and relative admins,
-            #  and access to your own profile
-            "full",
-        }
-        # soft hides of data, depending on chosen admin view
-        #  (and determines available admin views)
-        access_mode = set()
-        all_access_modes = {
-            "any_admin", "orga", "moderator"
-        }
+        access_realms = self.AccessRealm(0)
+        access_levels = self.AccessLevel(0)
+        access_mode = self.AccessMode(0)
 
         # use a special sentinel object to mark redacted properties
         # we can't use None, since some of them are Nonable
@@ -592,34 +607,35 @@ class CoreBaseFrontend(AbstractFrontend):
 
         # Let users see themselves
         if persona_id == rs.user.persona_id:
-            access_realms.update(all_access_realms)
-            access_levels.add("full")
+            access_realms |= self.AccessRealm.all
+            access_levels |= self.AccessLevel.full
         # Core admins see everything
         if ("core_admin" in rs.user.roles and "core_user" in rs.user.admin_views):
-            access_realms.update(all_access_realms)
-            access_levels.add("full")
+            access_realms |= self.AccessRealm.all
+            access_levels |= self.AccessLevel.full
         # Meta admins see the status bits
         if ("meta_admin" in rs.user.roles and "meta_admin" in rs.user.admin_views):
-            access_levels.add("meta")
+            access_levels |= self.AccessLevel.meta
         # Other admins see their realm if they are relative admin
         if is_relative_admin:
-            access_mode.add("any_admin")
-            for realm in ("ml", "assembly", "event", "cde"):
-                if (f"{realm}_admin" in rs.user.roles
-                        and f"{realm}_user" in rs.user.admin_views):
-                    access_realms.add(realm)
+            access_mode |= self.AccessMode.any_admin
+            for realm in [self.AccessRealm.ml, self.AccessRealm.assembly,
+                          self.AccessRealm.event, self.AccessRealm.cde]:
+                if (f"{realm.name}_admin" in rs.user.roles
+                        and f"{realm.name}_user" in rs.user.admin_views):
+                    access_realms |= realm
                     # Relative admins can see all data
-                    access_levels.add("full")
+                    access_levels |= self.AccessLevel.full
         # Admins with special buttons (like viewing account requests in the nav, or
         #  links to realm-related info pages) which shall change their admin view.
         if {"core_admin", "cde_admin", "event_admin", "ml_admin"} & rs.user.roles:
-            access_mode.add("any_admin")
+            access_mode |= self.AccessMode.any_admin
         # Members see other members (modulo quota)
         if "searchable" in rs.user.roles and quote_me:
-            if not is_searchable_to_you and "cde" not in access_levels:
+            if not is_searchable_to_you and self.AccessRealm.cde not in access_realms:
                 raise werkzeug.exceptions.Forbidden(n_(
                     "Access to non-searchable member data."))
-            access_realms.add("cde")
+            access_realms |= self.AccessRealm.cde
         # Orgas see their participants
         if event_id:
             is_admin = "event_admin" in rs.user.roles
@@ -629,11 +645,11 @@ class CoreBaseFrontend(AbstractFrontend):
                 is_participant = self.eventproxy.list_registrations(
                     rs, event_id, persona_id)
                 if (is_orga or is_viewing_admin) and is_participant:
-                    access_realms.add("event")
-                    access_levels.add("orga")
+                    access_realms |= self.AccessRealm.event
+                    access_levels |= self.AccessLevel.orga
                 # Admins who are also orgas can not disable this admin view
                 if is_admin and not is_orga and is_participant:
-                    access_mode.add("orga")
+                    access_mode |= self.AccessMode.orga
         # Mailinglist moderators see all users related to their mailinglist.
         # This excludes users with relation "unsubscribed", since their email address
         # is not relevant.
@@ -645,7 +661,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 rs, rs.user.persona_id)
             # Admins who are also moderators can not disable this admin view
             if is_admin and not is_moderator:
-                access_mode.add("moderator")
+                access_mode |= self.AccessMode.moderator
             relevant_stati = [s for s in const.SubscriptionState
                               if s not in {const.SubscriptionState.unsubscribed,
                                            const.SubscriptionState.none}]
@@ -653,18 +669,10 @@ class CoreBaseFrontend(AbstractFrontend):
                 subscriptions = self.mlproxy.get_subscription_states(
                     rs, ml_id, states=relevant_stati)
                 if persona_id in subscriptions:
-                    access_realms.add("ml")
+                    access_realms |= self.AccessRealm.ml
                     # the moderator access level currently does nothing, but we
                     # add it anyway to be less confusing
-                    access_levels.add("moderator")
-
-        # perform a sanity check against programming errors
-        if not access_realms.issubset(all_access_realms):
-            raise RuntimeError("Encountered unknown access realm.")
-        if not access_levels.issubset(all_access_levels):
-            raise RuntimeError("Encountered unknown access level.")
-        if not access_mode.issubset(all_access_modes):
-            raise RuntimeError("Encountered unknown access mode.")
+                    access_levels |= self.AccessLevel.moderator
 
         # Retrieve data
         #
@@ -672,22 +680,22 @@ class CoreBaseFrontend(AbstractFrontend):
         # add attributes for which an access level is provided.
         target_roles = extract_roles(rs.ambience['persona'], introspection_only=True)
         persona: models.AnyPersona
-        if "cde" in access_realms and "cde" in target_roles:
+        if self.AccessRealm.cde in access_realms and "cde" in target_roles:
             persona = self.coreproxy.new_get_cde_user(rs, persona_id)
         # event and assembly are independent realms, users may have both at the same time
-        elif ("event" in access_realms and "event" in target_roles
-                and "assembly" in access_realms and "assembly" in target_roles):
+        elif (self.AccessRealm.event in access_realms and "event" in target_roles
+                and self.AccessRealm.assembly in access_realms and "assembly" in target_roles):
             persona = models.EventAssemblyPersona(**{
                 **self.coreproxy.new_get_assembly_user(rs, persona_id).as_dict(),
                 **self.coreproxy.new_get_event_user(rs, persona_id, event_id).as_dict(),
             })
-        elif "event" in access_realms and "event" in target_roles:
+        elif self.AccessRealm.event in access_realms and "event" in target_roles:
             persona = self.coreproxy.new_get_event_user(rs, persona_id, event_id)
-        elif "assembly" in access_realms and "assembly" in target_roles:
+        elif self.AccessRealm.assembly in access_realms and "assembly" in target_roles:
             persona = self.coreproxy.new_get_assembly_user(rs, persona_id)
-        elif "ml" in access_realms and "ml" in target_roles:
+        elif self.AccessRealm.ml in access_realms and "ml" in target_roles:
             persona = self.coreproxy.new_get_ml_user(rs, persona_id)
-        elif "persona" in access_realms:
+        elif self.AccessRealm.persona in access_realms:
             persona = self.coreproxy.new_get_persona(rs, persona_id)
             # The base version of the data set should only contain the name,
             # so we take care to not expose the username.
@@ -698,7 +706,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
         has_lastschrift = REDACTED
         if isinstance(persona, models.CdEPersona):
-            if "full" in access_levels:
+            if self.AccessLevel.full in access_levels:
                 has_lastschrift = bool(self.cdeproxy.list_lastschrift(
                     rs, persona_ids=(persona_id,), active=True))
                 # hide the donation property if no active lastschrift exists, to avoid confusion
@@ -716,15 +724,15 @@ class CoreBaseFrontend(AbstractFrontend):
                     persona.address2 = REDACTED  # type: ignore[assignment]
                     persona.address_supplement2 = REDACTED  # type: ignore[assignment]
 
-        if access_levels.isdisjoint({"full", "meta"}):
+        if self.AccessLevel.meta not in access_levels:
             status_bits = persona.get_status_bits()
             # allow orgas to view member status
-            if "orga" in access_levels and "is_member" in status_bits:
+            if self.AccessLevel.orga in access_levels and "is_member" in status_bits:
                 status_bits.remove("is_member")
             for field in status_bits:
                 setattr(persona, field, REDACTED)
 
-        if access_levels.isdisjoint({"full", "orga"}):
+        if self.AccessLevel.orga not in access_levels:
             # May be hidden from member search, but not from orga view.
             if not persona.show_legal_given_names:
                 persona.legal_given_names = REDACTED  # type: ignore[assignment]
@@ -749,11 +757,11 @@ class CoreBaseFrontend(AbstractFrontend):
             persona.username = total['username']
 
         # Determine if vcard should be visible
-        show_vcard = "cde" in access_realms and is_searchable_to_you
+        show_vcard = self.AccessRealm.cde in access_realms and is_searchable_to_you
 
         # Add past event participation info
         past_events = None
-        if "cde" in access_realms and {"event", "cde"} & target_roles:
+        if self.AccessRealm.cde in access_realms and {"event", "cde"} & target_roles:
             past_events = self.pasteventproxy.participation_info(rs, persona_id)
 
         # Retrieve number of active sessions if the user is viewing his own profile
@@ -772,7 +780,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 email_report = tmp.get(persona.username)
 
         # Check whether we should display an option for using the quota
-        quoteable = (not quote_me and "cde" not in access_realms
+        quoteable = (not quote_me and self.AccessRealm.cde not in access_realms
                      and is_searchable_to_you)
 
         meta_info = self.coreproxy.get_meta_info(rs)
@@ -806,6 +814,7 @@ class CoreBaseFrontend(AbstractFrontend):
             'meta_info': meta_info,
             'is_relative_admin_view': is_relative_admin_view,
             'quoteable': quoteable,
+            'AccessMode': self.AccessMode,
             'access_mode': access_mode,
             'active_session_count': active_session_count,
             'email_report': email_report,
