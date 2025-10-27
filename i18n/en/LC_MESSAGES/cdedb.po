@@ -1400,7 +1400,7 @@ msgstr "Subscribed"
 
 #: cdedb/.i18n_additional.py:348
 msgid "MlLogCodes.subscription_changed"
-msgstr "Subcription changed"
+msgstr "Subscription changed"
 
 #: cdedb/.i18n_additional.py:349
 msgid "MlLogCodes.unsubscribed"
