@@ -628,11 +628,12 @@ class CoreBaseFrontend(AbstractFrontend):
         if {"core_admin", "cde_admin", "event_admin", "ml_admin"} & rs.user.roles:
             access_mode |= self.AccessMode.any_admin
         # Members see other members (modulo quota)
-        if "searchable" in rs.user.roles and quote_me:
-            if not is_searchable_to_you and self.AccessRealm.cde not in access_realms:
+        if quote_me and self.AccessRealm.cde not in access_realms:
+            if is_searchable_to_you:
+                access_realms |= self.AccessRealm.cde
+            else:
                 raise werkzeug.exceptions.Forbidden(n_(
                     "Access to non-searchable member data."))
-            access_realms |= self.AccessRealm.cde
         # Orgas see their participants
         if event_id:
             is_admin = "event_admin" in rs.user.roles
