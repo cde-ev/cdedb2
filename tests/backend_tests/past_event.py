@@ -139,7 +139,7 @@ class TestPastEventBackend(BackendTest):
         self.assertNotIn(new_id, old_courses)
         new_courses = self.pastevent.list_past_courses(self.key, pevent_id)
         self.assertIn(new_id, new_courses)
-        self.pastevent.delete_past_course(self.key, new_id)
+        self.pastevent.delete_past_course(self.key, new_id, cascade=("log", ))
         newer_courses = self.pastevent.list_past_courses(self.key, pevent_id)
         self.assertNotIn(new_id, newer_courses)
 
