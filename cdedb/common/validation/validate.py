@@ -1798,13 +1798,13 @@ def _datetime(
 @_add_typed_validator
 def _frozen_datetime(
     val: Any, argname: Optional[str] = None, **kwargs: Any
-) -> freezegun.api.FakeDatetime:  # type: ignore[name-defined]
+) -> freezegun.api.FakeDatetime:
     """Our tests pass objects of this mock time.
 
     Since freezegun does magic type stuff, this is required
     when calling `affirm(datetime.datetime, ...)` on a FakeDatetime.
     """
-    return _datetime(val, argname, **kwargs)
+    return cast(freezegun.api.FakeDatetime, _datetime(val, argname, **kwargs))
 
 
 @_add_typed_validator
