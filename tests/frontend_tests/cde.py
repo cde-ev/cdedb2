@@ -3073,12 +3073,16 @@ class TestCdEFrontend(FrontendTest):
         logs.append((1006, const.PastEventLogCodes.participant_removed))
 
         # delete course
+        # this deletes an other course, because deletion includes log codes
+        self.traverse('Verg. Veranstaltungen', 'FingerAkademie 2020',
+                      'Torheiten im Zwiebelrouter')
         f = self.response.forms['deletecourseform']
         f['ack_delete'].checked = True
         self.submit(f)
         logs.append((1007, const.PastEventLogCodes.course_deleted))
 
         # add participant (to past event)
+        self.traverse('Verg. Veranstaltungen', 'Piraten Arrrkademie')
         f = self.response.forms['addparticipantform']
         f['persona_ids'] = "DB-7-8"
         self.submit(f)

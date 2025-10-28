@@ -872,6 +872,7 @@ CREATE TABLE past_event.log (
         code                    integer NOT NULL,
         submitted_by            integer REFERENCES core.personas(id),
         pevent_id               integer REFERENCES past_event.events(id),
+        pcourse_id              integer REFERENCES past_event.courses(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
         change_note             varchar

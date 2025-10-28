@@ -446,7 +446,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             return self.show_past_course(rs, pevent_id, pcourse_id)
 
         code = self.pasteventproxy.delete_past_course(
-            rs, pcourse_id, cascade=("participants", "genesis_cases")
+            rs, pcourse_id, cascade=("participants", "genesis_cases", "log")
         )
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/show_past_event")
@@ -537,6 +537,8 @@ class CdEPastEventMixin(CdEBaseFrontend):
         """View activities concerning concluded events."""
         pevent_ids = self.pasteventproxy.list_past_events(rs)
         pevents = self.pasteventproxy.get_past_events(rs, pevent_ids)
+        pcourse_ids = self.pasteventproxy.list_past_courses(rs)
+        pcourses = self.pasteventproxy.get_past_courses(rs, pcourse_ids)
         return self.generic_view_log(
             rs,
             data,
@@ -547,5 +549,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             template_kwargs={
                 'pevents': pevents,
                 'pevent_entries': models.PastEvent.get_entries(pevents),
+                'pcourses': pcourses,
+                'pcourse_entries': models.PastCourse.get_entries(pcourses),
             },
         )

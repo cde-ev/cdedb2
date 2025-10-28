@@ -50,7 +50,12 @@ class TestPastEventBackend(BackendTest):
 
     @as_users("vera")
     def test_delete_past_course_cascade(self) -> None:
-        self.assertIn(1, self.pastevent.list_past_courses(self.key, 1))
+        # create a log entry for this past course
+        pcourse = self.pastevent.get_past_course(self.key, 1)
+        pcourse.description = "changed"
+        data = pcourse.to_database()
+        data.pop("pevent_id")
+        self.assertTrue(self.pastevent.set_past_course(self.key, data))
         # add the past course to a genesis case
         update = {'id': 3, 'pevent_id': 1, 'pcourse_id': 1}
         self.assertTrue(self.core.genesis_modify_case(self.key, update))
@@ -63,8 +68,12 @@ class TestPastEventBackend(BackendTest):
             self.pastevent.delete_past_course(
                 self.key, 1, cascade=("participants",))
         self.assertIn("genesis_cases", e.exception.args[1].get('block'))
+        with self.assertRaises(ValueError) as e:
+            self.pastevent.delete_past_course(
+                self.key, 1, cascade=("genesis_cases", "participants"))
+        self.assertIn("log", e.exception.args[1].get('block'))
         self.pastevent.delete_past_course(
-            self.key, 1, cascade=("participants", "genesis_cases"))
+            self.key, 1, cascade=("participants", "genesis_cases", "log"))
         self.assertNotIn(1, self.pastevent.list_past_courses(self.key, 1))
 
     @as_users("vera")
@@ -239,17 +248,15 @@ class TestPastEventBackend(BackendTest):
         new_id = self.pastevent.create_past_course(self.key, data)
         self.pastevent.set_past_course(self.key, {
             'id': new_id, 'title': "New improved title"})
-        self.pastevent.delete_past_course(self.key, new_id)
-        self.pastevent.add_participant(self.key, 1, None, 5, False, False)
-        self.pastevent.remove_participant(self.key, 1, None, 5)
 
-        # now check it
+        # now check it (first round)
         expectation = (
             {'id': 1001,
              'change_note': None,
              'code': const.PastEventLogCodes.event_created,
              'ctime': nearly_now(),
              'pevent_id': 1001,
+             'pcourse_id': None,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1002,
@@ -257,20 +264,48 @@ class TestPastEventBackend(BackendTest):
              'code': const.PastEventLogCodes.event_changed,
              'ctime': nearly_now(),
              'pevent_id': 1001,
+             'pcourse_id': None,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1003,
-             'change_note': 'Topos theory for the kindergarden',
+             'change_note': None,
              'code': const.PastEventLogCodes.course_created,
              'ctime': nearly_now(),
              'pevent_id': 1,
+             'pcourse_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1004,
-             'change_note': 'New improved title',
+             'change_note': None,
              'code': const.PastEventLogCodes.course_changed,
              'ctime': nearly_now(),
              'pevent_id': 1,
+             'pcourse_id': 1001,
+             'persona_id': None,
+             'submitted_by': self.user['id']})
+        self.assertLogEqual(expectation, 'past_event')
+
+        # now, delete the course, add more log codes
+        self.pastevent.delete_past_course(self.key, new_id, cascade=("log",))
+        self.pastevent.add_participant(self.key, 1, None, 5, False, False)
+        self.pastevent.remove_participant(self.key, 1, None, 5)
+
+        # check the data, note that the log codes regarding the course are deleted
+        expectation = (
+            {'id': 1001,
+             'change_note': None,
+             'code': const.PastEventLogCodes.event_created,
+             'ctime': nearly_now(),
+             'pevent_id': 1001,
+             'pcourse_id': None,
+             'persona_id': None,
+             'submitted_by': self.user['id']},
+            {'id': 1002,
+             'change_note': None,
+             'code': const.PastEventLogCodes.event_changed,
+             'ctime': nearly_now(),
+             'pevent_id': 1001,
+             'pcourse_id': None,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1005,
@@ -278,6 +313,7 @@ class TestPastEventBackend(BackendTest):
              'code': const.PastEventLogCodes.course_deleted,
              'ctime': nearly_now(),
              'pevent_id': 1,
+             'pcourse_id': None,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1006,
@@ -285,6 +321,7 @@ class TestPastEventBackend(BackendTest):
              'code': const.PastEventLogCodes.participant_added,
              'ctime': nearly_now(),
              'pevent_id': 1,
+             'pcourse_id': None,
              'persona_id': 5,
              'submitted_by': self.user['id']},
             {'id': 1007,
@@ -292,6 +329,7 @@ class TestPastEventBackend(BackendTest):
              'code': const.PastEventLogCodes.participant_removed,
              'ctime': nearly_now(),
              'pevent_id': 1,
+             'pcourse_id': None,
              'persona_id': 5,
              'submitted_by': self.user['id']})
         self.assertLogEqual(expectation, 'past_event')

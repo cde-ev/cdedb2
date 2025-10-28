@@ -344,15 +344,22 @@ class MlLogFilter(GenericLogFilter):
 class PastEventLogFilter(GenericLogFilter):
     log_table = "past_event.log"
     log_code_class = const.PastEventLogCodes
-    additional_columns = ("pevent_id",)
+    additional_columns = ("pevent_id", "pcourse_id")
 
     pevent_id: Optional[int] = None
     _pevent_ids: list[int] = dataclasses.field(default_factory=list)
+    pcourse_id: int | None = None
+    _pcourse_ids: list[int] = dataclasses.field(default_factory=list)
 
     def pevent_ids(self) -> list[int]:
         if self.pevent_id:
             return [self.pevent_id]
         return self._pevent_ids
+
+    def pcourse_ids(self) -> list[int]:
+        if self.pcourse_id:
+            return [self.pcourse_id]
+        return self._pcourse_ids
 
     def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
         conditions, params = super()._get_sql_conditions()
@@ -360,6 +367,9 @@ class PastEventLogFilter(GenericLogFilter):
         if self.pevent_ids():
             conditions.append("pevent_id = ANY(%s)")
             params.append(self.pevent_ids())
+        if self.pcourse_ids():
+            conditions.append("pcourse_id = ANY(%s)")
+            params.append(self.pcourse_ids())
 
         return conditions, params
 

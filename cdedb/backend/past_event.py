@@ -94,6 +94,7 @@ class PastEventBackend(AbstractBackend):
         *,
         code: const.PastEventLogCodes,
         pevent_id: Optional[int],
+        pcourse_id: Optional[int] = None,
         persona_id: Optional[int] = None,
         change_note: Optional[str] = None,
     ) -> int:
@@ -110,6 +111,7 @@ class PastEventBackend(AbstractBackend):
         data = {
             "code": code,
             "pevent_id": pevent_id,
+            "pcourse_id": pcourse_id,
             "submitted_by": rs.user.persona_id,
             "persona_id": persona_id,
             "change_note": change_note,
@@ -302,7 +304,9 @@ class PastEventBackend(AbstractBackend):
                 if "courses" in cascade:
                     with Silencer(rs):
                         for pcourse_id in blockers["courses"]:
-                            casc = {"participants"} | ({"genesis_cases"} & cascade)
+                            casc = {"participants"} | (
+                                {"genesis_cases", "log"} & cascade
+                            )
                             ret *= self.delete_past_course(rs, pcourse_id, cascade=casc)
                 if "log" in cascade:
                     ret *= self.sql_delete(rs, "past_event.log", blockers["log"])
@@ -397,7 +401,7 @@ class PastEventBackend(AbstractBackend):
                 rs,
                 code=const.PastEventLogCodes.course_changed,
                 pevent_id=current.pevent_id,
-                change_note=current.title,
+                pcourse_id=current.id,
             )
         return ret
 
@@ -413,7 +417,7 @@ class PastEventBackend(AbstractBackend):
                 rs,
                 code=const.PastEventLogCodes.course_created,
                 pevent_id=data['pevent_id'],
-                change_note=data['title'],
+                pcourse_id=ret,
             )
         return ret
 
@@ -443,6 +447,11 @@ class PastEventBackend(AbstractBackend):
         )
         if participants:
             blockers["participants"] = [e["id"] for e in participants]
+        log = self.sql_select(
+            rs, "past_event.log", ("id",), (pcourse_id,), entity_key="pcourse_id"
+        )
+        if log:
+            blockers["log"] = [e["id"] for e in log]
         genesis_cases = self.sql_select(
             rs, "core.genesis_cases", ("id",), (pcourse_id,), entity_key="pcourse_id"
         )
@@ -486,6 +495,8 @@ class PastEventBackend(AbstractBackend):
                     ret *= self.sql_delete(
                         rs, "past_event.participants", blockers["participants"]
                     )
+                if "log" in cascade:
+                    ret *= self.sql_delete(rs, "past_event.log", blockers["log"])
                 if "genesis_cases" in cascade:
                     for case_id in blockers["genesis_cases"]:
                         # we use sql_update instead of core.modify_genesis_case here,
@@ -787,7 +798,7 @@ class PastEventBackend(AbstractBackend):
         # Delete empty courses because they were cancelled
         for course_id in courses.keys():
             if course_id not in courses_seen:
-                self.delete_past_course(rs, course_map[course_id])
+                self.delete_past_course(rs, course_map[course_id], cascade=("log",))
             elif not courses[course_id].active_segments:
                 self.logger.warning(f"Course {course_id} remains without active parts.")
         return new_id
