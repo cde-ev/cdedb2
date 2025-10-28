@@ -167,7 +167,7 @@ def datetime_filter(
         # if isinstance(val, freezegun.api.FakeDatetime):
         if type(val) is freezegun.api.FakeDatetime:
             # icu cannot deal with FakeDatetime objects, convert them
-            val = datetime.datetime.fromtimestamp(val.timestamp())
+            val = freezegun.api.real_datetime.fromtimestamp(val.timestamp())
         return datetime_formatter.format(val)
     else:
         return val.strftime(formatstr)
