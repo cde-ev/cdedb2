@@ -865,7 +865,7 @@ GRANT SELECT, UPDATE ON past_event.participants_id_seq TO cdb_admin;
 
 CREATE TABLE past_event.course_participants (
         id                      serial PRIMARY KEY,
-        participant_id          integer NOT NULL REFERENCES past_event.participants(id) ON DELETE CASCADE,
+        participant_id          integer NOT NULL REFERENCES past_event.participants(id),
         pcourse_id              integer REFERENCES past_event.courses(id),
         instructor_status       integer NOT NULL DEFAULT 0, -- const.PastInstructorKind
         UNIQUE (participant_id, pcourse_id)

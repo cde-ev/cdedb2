@@ -427,6 +427,8 @@ class CdEPastEventMixin(CdEBaseFrontend):
 
         code = 1
         for persona_id in persona_ids:
+            if not self.pasteventproxy.is_participant(rs, pevent_id, persona_id):
+                code *= self.pasteventproxy.set_participant(rs, pevent_id, persona_id)
             code *= self.pasteventproxy.set_course_participant(
                 rs, pcourse_id, persona_id, instructor_status
             )

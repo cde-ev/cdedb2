@@ -563,6 +563,12 @@ class PastEventBackend(AbstractBackend):
                 )
         return ret
 
+    @access("core_admin", "cde_admin", "event_admin")
+    def is_participant(self, rs: RequestState, pevent_id: int, persona_id: int) -> bool:
+        pevent_id = affirm(vtypes.ID, pevent_id)
+        persona_id = affirm(vtypes.ID, persona_id)
+        return bool(self.get_participant_id(rs, pevent_id, persona_id))
+
     @internal
     def get_participant_id(
         self, rs: RequestState, pevent_id: int, persona_id: int
@@ -598,7 +604,7 @@ class PastEventBackend(AbstractBackend):
             ret = 1
             participant_id = self.get_participant_id(rs, pevent_id, persona_id)
             if participant_id is None:
-                ret = participant_id = self.set_participant(rs, pevent_id, persona_id)
+                raise ValueError(n_("This user does not participate at this event."))
 
             data = {
                 'pcourse_id': pcourse_id,
@@ -638,9 +644,8 @@ class PastEventBackend(AbstractBackend):
         ret = 1
         with Atomizer(rs):
             # remove manually from courses to ensure correct logging
-            pcourses = unwrap(self.list_persona_courses(rs, pevent_id, [persona_id]))
-            if pcourses:
-                for pcourse_id in pcourses:
+            if pcourses := self.list_persona_courses(rs, pevent_id, [persona_id]):
+                for pcourse_id in pcourses[persona_id]:
                     ret *= self.remove_course_participant(rs, pcourse_id, persona_id)
 
             query = """
