@@ -954,8 +954,8 @@ class PastEventBackend(AbstractBackend):
         courses = self.event.get_courses(rs, list(course_ids.keys()))
         course_map: dict[int, int] = {}
         for course in courses.values():
-            # do not create past events for cancelled courses
-            if not course.active_segments:
+            # do not create courses which didn't took place at this event part
+            if not course.active_segments & set(part.tracks):
                 continue
             pcourse = models.PastCourse.from_course(course, pevent_id=new_id)
             pcourse_id = self.create_past_course(rs, pcourse.to_database())
@@ -964,30 +964,33 @@ class PastEventBackend(AbstractBackend):
         reg_ids = self.event.list_registrations(rs, event.id)
         regs = self.event.get_registrations(rs, list(reg_ids.keys()))
 
-        # map all persona_ids of participants to the courses they attended
-        course_participants: dict[int, dict[int, bool]] = {}
+        # maps persona_ids to their dicts of courses, the bool signals instructorship
+        participants_to_courses: dict[int, dict[int, bool]] = {}
         for reg in regs.values():
             participant_status = const.RegistrationPartStati.participant
             if reg['parts'][part_id]['status'] != participant_status:
                 continue
-            course_participants[reg['persona_id']] = {}
+            participants_to_courses[reg['persona_id']] = collections.defaultdict(bool)
             for track_id in part.tracks:
                 rtrack = reg['tracks'][track_id]
                 if course_id := rtrack['course_id']:
-                    course_participants[reg['persona_id']][course_id] = (
-                        course_id == rtrack['course_instructor']
-                    )
+                    # Take care to not overwrite the instructor state when the course
+                    #  is present in multiple tracks of this part.
+                    tmp = participants_to_courses[reg['persona_id']][course_id]
+                    participants_to_courses[reg['persona_id']][course_id] = tmp
+                    if course_id == rtrack['course_instructor']:
+                        participants_to_courses[reg['persona_id']][course_id] = True
 
         # now add the participants to the past event
-        for persona_id, courses in course_participants.items():
+        for persona_id, courses in participants_to_courses.items():
             orga_status = const.PastOrgaKind.none
             if persona_id in event.orgas:
                 orga_status = const.PastOrgaKind.orga
             self.set_participant(rs, new_id, persona_id, orga_status=orga_status)
             for course_id, is_instructor in courses.items():
-                if not course.active_segments:
+                if not course.active_segments & set(part.tracks):
                     self.logger.warning(
-                        f"Persona {persona_id} participated in cancelled course {course_id}."
+                        f"Persona {persona_id} participated in cancelled course {course_id} in part {part.id}."
                     )
                     continue
                 instructor_status = const.PastInstructorKind.none
@@ -998,7 +1001,7 @@ class PastEventBackend(AbstractBackend):
                 )
 
         # Delete past event if it has no participants.
-        if not course_participants:
+        if not participants_to_courses:
             self.delete_past_event(rs, new_id, cascade=("log",))
             return 0
 
