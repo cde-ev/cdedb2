@@ -112,8 +112,8 @@
                 <h4 class="panel-title">{{util.make_icon('plus') }} {% trans %}Add Participant <u>without</u> Course{% endtrans %}</h4>
             </div>
             <div class="panel-body">
-                <form action="{{ cdedblink('cde/add_participants') }}" method="POST" id="addparticipantform">
-                    {{ util.anti_csrf_token('cde/add_participants') }}
+                <form action="{{ cdedblink('cde/set_participants') }}" method="POST" id="addparticipantform">
+                    {{ util.anti_csrf_token('cde/set_participants') }}
                     <div class="row">
                         <div class="col-sm-6 {% if 'persona_ids' in errors %}has-error{% endif %}">
                             {% call util.output_errors('persona_ids') %}

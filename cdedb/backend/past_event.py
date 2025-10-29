@@ -582,7 +582,7 @@ class PastEventBackend(AbstractBackend):
         return unwrap(self.query_one(rs, query, params))
 
     @access("core_admin", "cde_admin", "event_admin")
-    def set_course_participant(
+    def set_course_assignment(
         self,
         rs: RequestState,
         pcourse_id: int,
@@ -646,7 +646,7 @@ class PastEventBackend(AbstractBackend):
             # remove manually from courses to ensure correct logging
             if pcourses := self.list_persona_courses(rs, pevent_id, [persona_id]):
                 for pcourse_id in pcourses[persona_id]:
-                    ret *= self.remove_course_participant(rs, pcourse_id, persona_id)
+                    ret *= self.remove_course_assignment(rs, pcourse_id, persona_id)
 
             query = """
                 DELETE FROM past_event.participants
@@ -663,7 +663,7 @@ class PastEventBackend(AbstractBackend):
         return ret
 
     @access("core_admin", "cde_admin", "event_admin")
-    def remove_course_participant(
+    def remove_course_assignment(
         self,
         rs: RequestState,
         pcourse_id: int,
@@ -993,7 +993,7 @@ class PastEventBackend(AbstractBackend):
                 instructor_status = const.PastInstructorKind.none
                 if is_instructor:
                     instructor_status = const.PastInstructorKind.kl
-                self.set_course_participant(
+                self.set_course_assignment(
                     rs, course_map[course_id], persona_id, instructor_status
                 )
 

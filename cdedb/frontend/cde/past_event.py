@@ -359,7 +359,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata("persona_ids", "orga_status", "music_status")
-    def add_participants(
+    def set_participants(
         self,
         rs: RequestState,
         pevent_id: int,
@@ -397,7 +397,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata("pcourse_id", "persona_ids", "instructor_status")
-    def add_course_participants(
+    def set_course_assignment(
         self,
         rs: RequestState,
         pevent_id: int,
@@ -405,7 +405,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         persona_ids: vtypes.CdedbIDList,
         instructor_status: const.PastInstructorKind,
     ) -> Response:
-        """Add participant to concluded event."""
+        """Mark a persona as participant of a concluded course."""
         pcourse_id = check(rs, vtypes.ID, pcourse_id)
         instructor_status = check(rs, const.PastInstructorKind, instructor_status)
         if rs.has_validation_errors():
@@ -428,8 +428,8 @@ class CdEPastEventMixin(CdEBaseFrontend):
         code = 1
         for persona_id in persona_ids:
             if not self.pasteventproxy.is_participant(rs, pevent_id, persona_id):
-                code *= self.pasteventproxy.set_participant(rs, pevent_id, persona_id)
-            code *= self.pasteventproxy.set_course_participant(
+                code *= self.pasteventproxy.set_participant(rs, pcourse_id, persona_id)
+            code *= self.pasteventproxy.set_course_assignment(
                 rs, pcourse_id, persona_id, instructor_status
             )
         rs.notify_return_code(code)
@@ -466,7 +466,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         pcourse_id: vtypes.ID,
         ack_delete: bool,
     ) -> Response:
-        """Remove participant."""
+        """Remove participant assignment to a concluded course."""
         if not ack_delete:
             rs.append_validation_error((
                 "ack_delete",
@@ -474,7 +474,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             ))
         if rs.has_validation_errors():
             return self.show_past_course(rs, pevent_id, pcourse_id)
-        code = self.pasteventproxy.remove_course_participant(rs, pcourse_id, persona_id)
+        code = self.pasteventproxy.remove_course_assignment(rs, pcourse_id, persona_id)
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/show_past_course", {'pcourse_id': pcourse_id})
 
