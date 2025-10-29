@@ -368,8 +368,6 @@ class CdEPastEventMixin(CdEBaseFrontend):
         music_status: const.PastMusicKind,
     ) -> Response:
         """Add participant to concluded event."""
-        orga_status = check(rs, const.PastOrgaKind, orga_status)
-        music_status = check(rs, const.PastMusicKind, music_status)
         if rs.has_validation_errors():
             return self.show_past_event(rs, pevent_id)
 
@@ -406,8 +404,6 @@ class CdEPastEventMixin(CdEBaseFrontend):
         instructor_status: const.PastInstructorKind,
     ) -> Response:
         """Mark a persona as participant of a concluded course."""
-        pcourse_id = check(rs, vtypes.ID, pcourse_id)
-        instructor_status = check(rs, const.PastInstructorKind, instructor_status)
         if rs.has_validation_errors():
             return self.show_past_course(rs, pevent_id, pcourse_id)
 
