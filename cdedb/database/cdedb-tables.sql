@@ -870,7 +870,6 @@ CREATE TABLE past_event.course_participants (
         instructor_status       integer, -- const.PastInstructorKind
         UNIQUE (participant_id, pcourse_id)
 );
-CREATE INDEX participants_participant_id_idx ON past_event.course_participants(participant_id);
 CREATE INDEX participants_pcourse_id_idx ON past_event.course_participants(pcourse_id);
 GRANT SELECT ON past_event.course_participants TO cdb_persona;
 GRANT INSERT, UPDATE, DELETE ON past_event.course_participants TO cdb_admin;

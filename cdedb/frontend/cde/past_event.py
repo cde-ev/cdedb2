@@ -405,12 +405,12 @@ class CdEPastEventMixin(CdEBaseFrontend):
         code = 1
         if pcourse_id:
             for persona_id in persona_ids:
-                code *= self.pasteventproxy.add_course_participant(
+                code *= self.pasteventproxy.set_course_participant(
                     rs, pcourse_id, persona_id, instructor_status
                 )
         else:
             for persona_id in persona_ids:
-                code *= self.pasteventproxy.add_participant(
+                code *= self.pasteventproxy.set_participant(
                     rs, pevent_id, persona_id, orga_status, music_status
                 )
         rs.notify_return_code(code)

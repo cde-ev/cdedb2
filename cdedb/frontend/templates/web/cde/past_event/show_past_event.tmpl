@@ -57,9 +57,7 @@
         </dt>
         <dd id="orgas">
             {% for persona_id in orgas %} {# This is already sorted. #}
-                {% if event_participants[persona_id]["orga_status"] %}
-                    {{ print_persona(persona_id) }}
-                {% endif %}
+                {{ print_persona(persona_id) }}
                 {% if not loop.last %},{% endif %}
             {% endfor %}
         </dd>
@@ -132,20 +130,14 @@
                             {% endcall %}
                         </div>
                         <div class="col-sm-2">
-                            {%- set myentries = [] %}
-                            {%- for kind in enums['PastOrgaKind'] %}
-                                {%- do myentries.append((kind.value, gettext(kind|string))) %}
-                            {%- endfor %}
                             {{ util.input_select(name="orga_status", aclass="form-control select-action input-sm",
-                                                    entries=myentries, nulloption=nbsp) }}
+                                                    entries=enums['PastOrgaKind']|enum_entries(processing=gettext),
+                                                    nulloption=nbsp) }}
                         </div>
                         <div class="col-sm-2">
-                            {%- set myentries = [] %}
-                            {%- for kind in enums['PastMusicKind'] %}
-                                {%- do myentries.append((kind.value, gettext(kind|string))) %}
-                            {%- endfor %}
                             {{ util.input_select(name="music_status", aclass="form-control select-action input-sm",
-                                                    entries=myentries, nulloption=nbsp) }}
+                                                    entries=enums['PastMusicKind']|enum_entries(processing=gettext),
+                                                    nulloption=nbsp) }}
                         </div>
                         <div class="col-sm-2">
                             {{ util.input_submit(label=gettext("Add"), aclass="btn btn-primary btn-sm") }}
@@ -165,11 +157,11 @@
                         {%- for pcourse_id, info in persona_courses[persona_id].items() -%}
                             {{ courses[pcourse_id]['nr'] }}.
                             {% if info['instructor_status'] -%}
-                                <strong title="{% trans %}Instructor{% endtrans %}">
+                                <strong title="{{ gettext(info['instructor_status']|string) }}">
                             {%- endif -%}
                             {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : pcourse_id}), courses[pcourse_id]['title']) }}
                             {%- if info['instructor_status'] -%}
-                                <span class="sr-only"> ({% trans %}Instructor{% endtrans %})</span></strong>
+                                <span class="sr-only"> ({{ gettext(info['instructor_status']|string) }})</span></strong>
                             {%- endif -%}
                             {%- if not loop.last %}, {% endif -%}
                         {% endfor -%}
