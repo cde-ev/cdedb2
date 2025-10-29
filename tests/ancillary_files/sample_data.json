@@ -5201,73 +5201,70 @@
     "past_event.participants": [
         {
             "persona_id": 2,
-            "pevent_id": 1,
-            "pcourse_id": 1,
-            "is_instructor": true,
-            "is_orga": false
+            "pevent_id": 1
         },
         {
             "persona_id": 3,
-            "pevent_id": 1,
-            "pcourse_id": null,
-            "is_instructor": false,
-            "is_orga": false
+            "pevent_id": 1
         },
         {
             "persona_id": 4,
-            "pevent_id": 1,
-            "pcourse_id": 2,
-            "is_instructor": false,
-            "is_orga": false
+            "pevent_id": 1
         },
         {
             "persona_id": 5,
-            "pevent_id": 1,
-            "pcourse_id": 2,
-            "is_instructor": false,
-            "is_orga": false
+            "pevent_id": 1
         },
         {
             "persona_id": 6,
             "pevent_id": 1,
-            "pcourse_id": 2,
-            "is_instructor": false,
-            "is_orga": true
+            "orga_status": 1
         },
         {
             "persona_id": 100,
-            "pevent_id": 1,
-            "pcourse_id": 2,
-            "is_instructor": false,
-            "is_orga": false
+            "pevent_id": 1
         },
         {
             "persona_id": 3,
             "pevent_id": 4,
-            "pcourse_id": null,
-            "is_instructor": false,
-            "is_orga": true
+            "orga_status": 1
         },
         {
             "persona_id": 5,
             "pevent_id": 4,
-            "pcourse_id": null,
-            "is_instructor": false,
-            "is_orga": true
+            "orga_status": 1
         },
         {
             "persona_id": 6,
             "pevent_id": 4,
-            "pcourse_id": null,
-            "is_instructor": false,
-            "is_orga": true
+            "orga_status": 1
         },
         {
             "persona_id": 7,
-            "pevent_id": 4,
-            "pcourse_id": null,
-            "is_instructor": false,
-            "is_orga": false
+            "pevent_id": 4
+        }
+    ],
+    "past_event.course_participants": [
+        {
+            "participant_id": 1,
+            "pcourse_id": 1,
+            "instructor_status": 1
+        },
+        {
+            "participant_id": 3,
+            "pcourse_id": 2
+        },
+        {
+            "participant_id": 4,
+            "pcourse_id": 2
+        },
+        {
+            "participant_id": 5,
+            "pcourse_id": 2
+        },
+        {
+            "participant_id": 6,
+            "pcourse_id": 2
         }
     ],
     "past_event.log": [],

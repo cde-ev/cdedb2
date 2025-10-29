@@ -580,6 +580,29 @@ class PastInstitutions(CdEIntEnum):
 
 
 @enum.unique
+class PastOrgaKind(CdEIntEnum):
+    """CdE, DSA, JGW etc have different notions of 'Orgas'."""
+
+    orga = 1  # of CdE events
+    al = 2  # of DSAs etc,
+    co_al = 4
+
+
+@enum.unique
+class PastMusicKind(CdEIntEnum):
+    """Kinds of 'Kursübergreifende Musik' organizers."""
+
+    ensemble = 1
+    kuemu = 2
+
+
+@enum.unique
+class PastInstructorKind(CdEIntEnum):
+    kl = 1
+    co_kl = 2
+
+
+@enum.unique
 class ComplaintKind(CdEIntEnum):
     """Rough kinds a complaint may have"""
 

@@ -4,6 +4,7 @@
 concluded events.
 """
 
+import collections
 import datetime
 from collections.abc import Collection
 from typing import Any, Optional, Protocol
@@ -19,6 +20,7 @@ from cdedb.backend.common import (
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
+    internal,
     singularize,
 )
 from cdedb.backend.event import EventBackend
@@ -58,7 +60,7 @@ class PastEventBackend(AbstractBackend):
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
-        return super().is_admin(rs)
+        return "cde_admin" in rs.user.roles
 
     @access("cde", "event")
     def participation_info(self, rs: RequestState, persona_id: int) -> CdEDBObjectMap:
@@ -521,44 +523,29 @@ class PastEventBackend(AbstractBackend):
         self,
         rs: RequestState,
         pevent_id: int,
-        pcourse_id: Optional[int],
         persona_id: int,
-        is_instructor: bool = False,
-        is_orga: bool = False,
+        orga_status: const.PastOrgaKind | None = None,
+        music_status: const.PastMusicKind | None = None,
     ) -> DefaultReturnCode:
-        """Add a participant to a concluded event.
-
-        A persona can participate multiple times in a single event. For
-        example if they took several courses in different parts of the event.
-
-        :param pcourse_id: If None the persona participated in the event, but
-          not in a course (this should be common for orgas).
-        """
+        """Add a participant to a concluded event."""
+        pevent_id = affirm(vtypes.ID, pevent_id)
         data = {
+            'pevent_id': pevent_id,
             'persona_id': affirm(vtypes.ID, persona_id),
-            'pevent_id': affirm(vtypes.ID, pevent_id),
-            'pcourse_id': affirm_optional(vtypes.ID, pcourse_id),
-            'is_instructor': affirm(bool, is_instructor),
-            'is_orga': affirm(bool, is_orga),
+            'orga_status': affirm_optional(const.PastOrgaKind, orga_status),
+            'music_status': affirm_optional(const.PastMusicKind, music_status),
         }
         with Atomizer(rs):
             # Validate data consistency
             if not self.core.verify_persona(rs, persona_id, {"event"}):
                 raise ValueError(n_("This past event participant is no event user."))
-            if pcourse_id and pcourse_id not in self.list_past_courses(rs, pevent_id):
-                raise ValueError(n_("Course not associated with past event specified."))
 
-            # Check that participant is no pure pevent participant if they are
-            # course participant as well.
-            if self._check_pure_event_participation(rs, persona_id, pevent_id):
-                if pcourse_id:
-                    self.remove_participant(
-                        rs, pevent_id, pcourse_id=None, persona_id=persona_id
-                    )
-                else:
-                    return 0
             ret = self.sql_insert(
-                rs, "past_event.participants", data, drop_on_conflict=True
+                rs,
+                "past_event.participants",
+                data,
+                update_on_conflict=True,
+                conflict_target="pevent_id, persona_id",
             )
             if ret:
                 self.past_event_log(
@@ -569,30 +556,85 @@ class PastEventBackend(AbstractBackend):
                 )
         return ret
 
+    @internal
+    def get_participant_id(
+        self, rs: RequestState, pevent_id: int, persona_id: int
+    ) -> int | None:
+        query = """
+            SELECT id
+            FROM past_event.participants
+            WHERE pevent_id = %s AND persona_id = %s
+        """
+        return unwrap(self.query_one(rs, query, (pevent_id, persona_id)))
+
+    @access("core_admin", "cde_admin", "event_admin")
+    def add_course_participant(
+        self,
+        rs: RequestState,
+        pcourse_id: int,
+        persona_id: int,
+        instructor_status: const.PastInstructorKind | None = None,
+    ) -> DefaultReturnCode:
+        """Add a participant to a course of a concluded event."""
+        persona_id = affirm(vtypes.ID, persona_id)
+        pcourse_id = affirm(vtypes.ID, pcourse_id)
+        instructor_status = affirm_optional(const.PastInstructorKind, instructor_status)
+        ret = 1
+        with Atomizer(rs):
+            # Validate data consistency
+            if not self.core.verify_persona(rs, persona_id, {"event"}):
+                raise ValueError(n_("This past event participant is no event user."))
+
+            pevent_id: int = unwrap(  # type: ignore[assignment]
+                self.sql_select_one(rs, "past_event.courses", ["pevent_id"], pcourse_id)
+            )
+            participant_id = self.get_participant_id(rs, pevent_id, persona_id)
+            if participant_id is None:
+                with Silencer(rs):
+                    ret *= self.add_participant(rs, pevent_id, persona_id)
+                participant_id = self.get_participant_id(rs, pevent_id, persona_id)
+
+            data = {
+                'pcourse_id': pcourse_id,
+                'participant_id': participant_id,
+                'instructor_status': instructor_status,
+            }
+            ret *= self.sql_insert(
+                rs,
+                "past_event.course_participants",
+                data,
+                update_on_conflict=True,
+                conflict_target="pcourse_id, participant_id",
+            )
+            if ret:
+                self.past_event_log(
+                    rs,
+                    code=const.PastEventLogCodes.participant_added,
+                    pevent_id=pevent_id,
+                    pcourse_id=pcourse_id,
+                    persona_id=persona_id,
+                )
+        return ret
+
     @access("core_admin", "cde_admin", "event_admin")
     def remove_participant(
         self,
         rs: RequestState,
         pevent_id: int,
-        pcourse_id: Optional[int],
         persona_id: int,
     ) -> DefaultReturnCode:
         """Remove a participant from a concluded event.
 
-        All attributes have to match exactly, so that if someone
-        participated multiple times (for example in different courses) we
-        are able to delete an exact instance.
+        Also removes the participant from all courses of the concluded event.
         """
         pevent_id = affirm(vtypes.ID, pevent_id)
-        pcourse_id = affirm_optional(vtypes.ID, pcourse_id)
         persona_id = affirm(vtypes.ID, persona_id)
         query = """
             DELETE FROM past_event.participants
-            WHERE pevent_id = %s AND persona_id = %s AND pcourse_id {} %s
+            WHERE pevent_id = %s AND persona_id = %s
         """
-        query = query.format("IS" if pcourse_id is None else "=")
         with Atomizer(rs):
-            ret = self.query_exec(rs, query, (pevent_id, persona_id, pcourse_id))
+            ret = self.query_exec(rs, query, (pevent_id, persona_id))
             self.past_event_log(
                 rs,
                 code=const.PastEventLogCodes.participant_removed,
@@ -601,51 +643,171 @@ class PastEventBackend(AbstractBackend):
             )
         return ret
 
-    @access("cde", "event")
-    def list_participants(
+    @access("core_admin", "cde_admin", "event_admin")
+    def remove_course_participant(
         self,
         rs: RequestState,
-        *,
-        pevent_id: Optional[int] = None,
-        pcourse_id: Optional[int] = None,
-    ) -> dict[tuple[int, Optional[int]], CdEDBObject]:
-        """List all participants of a concluded event or course.
-
-        Exactly one of the inputs has to be provided.
-
-        .. note:: The return value uses two integers as key, since only the
-          persona id is not unique.
+        pcourse_id: int,
+        persona_id: int,
+    ) -> DefaultReturnCode:
+        """Remove a participant from a course of a concluded event."""
+        pcourse_id = affirm(vtypes.ID, pcourse_id)
+        persona_id = affirm(vtypes.ID, persona_id)
+        pevent_id: int = unwrap(  # type: ignore[assignment]
+            self.sql_select_one(rs, "past_event.courses", ["pevent_id"], pcourse_id)
+        )
+        participant_id = self.get_participant_id(rs, pevent_id, persona_id)
+        # nothing left to do
+        if participant_id is None:
+            return 1
+        query = """
+            DELETE FROM past_event.course_participants
+            WHERE pcourse_id = %s AND participant_id = %s
         """
-        if pevent_id is not None and pcourse_id is not None:
-            raise ValueError(n_("Too many inputs specified."))
-        elif pevent_id is not None:
-            anid = affirm(vtypes.ID, pevent_id)
-            entity_key = "pevent_id"
-        elif pcourse_id is not None:
-            anid = affirm(vtypes.ID, pcourse_id)
-            entity_key = "pcourse_id"
-        else:  # pevent_id is None and pcourse_id is None:
-            raise ValueError(n_("No input specified."))
+        with Atomizer(rs):
+            ret = self.query_exec(rs, query, (pcourse_id, participant_id))
+            self.past_event_log(
+                rs,
+                code=const.PastEventLogCodes.participant_removed,
+                pevent_id=pevent_id,
+                pcourse_id=pcourse_id,
+                persona_id=persona_id,
+            )
+        return ret
 
+    @access("cde", "event")
+    def list_event_participants(
+        self,
+        rs: RequestState,
+        pevent_id: int,
+        honour_admins: bool = True,
+    ) -> tuple[int, CdEDBObjectMap]:
+        """List all participants of a concluded event.
+
+        Participants are removed from the result if they are not searchable and the
+        viewing user is neither admin nor participant of the past event themselves.
+
+        :param honour_admins: if False, ignore admin privileges in privilege check.
+        :returns: The total number of participants, and a dict of the participants
+            which are accessible by this user.
+        """
+        pevent_id = affirm(vtypes.ID, pevent_id)
+        honour_admins = affirm(bool, honour_admins)
         data = self.sql_select(
             rs,
             "past_event.participants",
-            ("persona_id", "pcourse_id", "is_instructor", "is_orga"),
-            (anid,),
-            entity_key=entity_key,
+            ["persona_id", "orga_status", "music_status"],
+            [pevent_id],
+            entity_key="pevent_id",
         )
-        return {(e['persona_id'], e['pcourse_id']): e for e in data}
+        ret: CdEDBObjectMap = {}
+        for e in data:
+            if e["orga_status"]:
+                e["orga_status"] = const.PastOrgaKind(e["orga_status"])
+            if e["music_status"]:
+                e["music_status"] = const.PastMusicKind(e["music_status"])
+            ret[e["persona_id"]] = e
 
-    def _check_pure_event_participation(
-        self, rs: RequestState, persona_id: int, pevent_id: int
-    ) -> bool:
-        """Return if user participates at an event without any course."""
-        query = """
-            SELECT persona_id
-            FROM past_event.participants
-            WHERE persona_id = %s AND pevent_id = %s AND pcourse_id IS null
+        if rs.user.persona_id in ret or self.is_admin(rs) and honour_admins:
+            pass
+        elif "searchable" in rs.user.roles:
+            personas = self.core.get_personas(rs, ret.keys())
+            for persona in personas.values():
+                if not persona["is_member"] or not persona["is_searchable"]:
+                    del ret[persona["id"]]
+        else:
+            ret = {}
+
+        return len(data), ret
+
+    @access("cde", "event")
+    def list_course_participants(
+        self, rs: RequestState, pcourse_id: int, honour_admins: bool = True
+    ) -> tuple[int, CdEDBObjectMap]:
+        """List all participants of the given concluded course.
+
+        Participants are removed from the result if they are not searchable and the
+        viewing user is neither admin nor participant of the past event themselves.
+
+        :param honour_admins: if False, ignore admin privileges in privilege check.
+        :returns: The total number of participants, and a dict of the participants
+            which are accessible by this user.
         """
-        return bool(self.query_one(rs, query, (persona_id, pevent_id)))
+        pcourse_id = affirm(vtypes.ID, pcourse_id)
+        honour_admins = affirm(bool, honour_admins)
+        query = """
+            SELECT persona_id, instructor_status, pcourse_id
+            FROM past_event.participants
+                JOIN past_event.course_participants
+                ON participant_id = past_event.participants.id
+            WHERE pcourse_id = %s
+        """
+        data = self.query_all(rs, query, [pcourse_id])
+        ret: CdEDBObjectMap = collections.defaultdict(dict)
+        for e in data:
+            if e["instructor_status"]:
+                e["instructor_status"] = const.PastInstructorKind(
+                    e["instructor_status"]
+                )
+            ret[e["persona_id"]] = e
+
+        if rs.user.persona_id in ret or self.is_admin(rs) and honour_admins:
+            pass
+        elif "searchable" in rs.user.roles:
+            personas = self.core.get_personas(rs, ret.keys())
+            for persona in personas.values():
+                if not persona["is_member"] or not persona["is_searchable"]:
+                    del ret[persona["id"]]
+        else:
+            ret = {}
+
+        return len(data), ret
+
+    @access("cde", "event")
+    def list_persona_courses(
+        self,
+        rs: RequestState,
+        pevent_id: int,
+        persona_ids: list[int],
+        honour_admins: bool = True,
+    ) -> dict[int, CdEDBObjectMap]:
+        """List all courses of the given participants at a concluded event.
+
+        Participants are removed from the result if they are not searchable and the
+        viewing user is neither admin nor participant of the past event themselves.
+
+        :param honour_admins: if False, ignore admin privileges in privilege check.
+        """
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        pevent_id = affirm(vtypes.ID, pevent_id)
+        honour_admins = affirm(bool, honour_admins)
+        query = """
+            SELECT persona_id, instructor_status, pcourse_id
+            FROM past_event.participants
+                JOIN past_event.course_participants
+                ON participant_id = past_event.participants.id
+            WHERE persona_id = ANY(%s) AND pevent_id = %s
+        """
+        data = self.query_all(rs, query, [persona_ids, pevent_id])
+        ret: dict[int, CdEDBObjectMap] = collections.defaultdict(dict)
+        for e in data:
+            if e["instructor_status"]:
+                e["instructor_status"] = const.PastInstructorKind(
+                    e["instructor_status"]
+                )
+            ret[e['persona_id']][e["pcourse_id"]] = e
+
+        if rs.user.persona_id in ret or self.is_admin(rs) and honour_admins:
+            pass
+        elif "searchable" in rs.user.roles:
+            personas = self.core.get_personas(rs, ret.keys())
+            for persona in personas.values():
+                if not persona["is_member"] or not persona["is_searchable"]:
+                    del ret[persona["id"]]
+        else:
+            ret = {}
+
+        return ret
 
     @access("cde_admin", "event_admin")
     def find_past_event(
@@ -745,62 +907,55 @@ class PastEventBackend(AbstractBackend):
         courses = self.event.get_courses(rs, list(course_ids.keys()))
         course_map: dict[int, int] = {}
         for course in courses.values():
+            # do not create past events for cancelled courses
+            if not course.active_segments:
+                continue
             pcourse = models.PastCourse.from_course(course, pevent_id=new_id)
             pcourse_id = self.create_past_course(rs, pcourse.to_database())
             course_map[course.id] = pcourse_id
 
         reg_ids = self.event.list_registrations(rs, event.id)
         regs = self.event.get_registrations(rs, list(reg_ids.keys()))
-        # Remember if there were registrations for this part.
-        registrations_seen = False
-        # we want to later delete empty courses
-        courses_seen = set()
-        # we want to add each participant/course combination at
-        # most once
-        combinations_seen: set[tuple[int, Optional[int]]] = set()
+
+        # map all persona_ids of participants to the courses they attended
+        course_participants: dict[int, dict[int, bool]] = {}
         for reg in regs.values():
             participant_status = const.RegistrationPartStati.participant
             if reg['parts'][part_id]['status'] != participant_status:
                 continue
-            registrations_seen = True
-            is_orga = reg['persona_id'] in event.orgas
+            course_participants[reg['persona_id']] = {}
             for track_id in part.tracks:
                 rtrack = reg['tracks'][track_id]
-                is_instructor = False
-                if rtrack['course_id']:
-                    is_instructor = rtrack['course_id'] == rtrack['course_instructor']
-                    courses_seen.add(rtrack['course_id'])
-                combination = (reg['persona_id'], course_map.get(rtrack['course_id']))
-                if combination not in combinations_seen:
-                    combinations_seen.add(combination)
-                    self.add_participant(
-                        rs,
-                        new_id,
-                        course_map.get(rtrack['course_id']),
-                        reg['persona_id'],
-                        is_instructor,
-                        is_orga,
+                if course_id := rtrack['course_id']:
+                    course_participants[reg['persona_id']][course_id] = False
+                    if course_id == rtrack['course_instructor']:
+                        course_participants[reg['persona_id']][course_id] = True
+
+        # now add the participants to the past event
+        for persona_id, courses in course_participants.items():
+            orga_status = None
+            if persona_id in event.orgas:
+                orga_status = const.PastOrgaKind.orga
+            if not courses or orga_status:
+                self.add_participant(rs, new_id, persona_id, orga_status=orga_status)
+            for course_id, is_instructor in courses.items():
+                if not course.active_segments:
+                    self.logger.warning(
+                        f"Persona {persona_id} participated in cancelled course {course_id}."
                     )
-            if not part.tracks:
-                # parts without courses
-                self.add_participant(
-                    rs,
-                    new_id,
-                    None,
-                    reg['persona_id'],
-                    is_instructor=False,
-                    is_orga=is_orga,
+                    continue
+                instructor_status = None
+                if is_instructor:
+                    instructor_status = const.PastInstructorKind.kl
+                self.add_course_participant(
+                    rs, course_map[course_id], persona_id, instructor_status
                 )
+
         # Delete past event if it has no participants.
-        if not registrations_seen:
+        if not course_participants:
             self.delete_past_event(rs, new_id, cascade=("log",))
             return 0
-        # Delete empty courses because they were cancelled
-        for course_id in courses.keys():
-            if course_id not in courses_seen:
-                self.delete_past_course(rs, course_map[course_id], cascade=("log",))
-            elif not courses[course_id].active_segments:
-                self.logger.warning(f"Course {course_id} remains without active parts.")
+
         return new_id
 
     @access("cde_admin", "event_admin")

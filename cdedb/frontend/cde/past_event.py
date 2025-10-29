@@ -10,7 +10,6 @@ administrative tasks, like creating and modifying past events and courses requir
 import copy
 import csv
 import itertools
-from collections import OrderedDict
 from collections.abc import Sequence
 from typing import Optional
 
@@ -21,7 +20,6 @@ import cdedb.database.constants as const
 import cdedb.models.past_event as models
 from cdedb.common import (
     CdEDBObject,
-    CdEDBObjectMap,
     RequestState,
     merge_dicts,
 )
@@ -37,6 +35,7 @@ from cdedb.frontend.common import (
     TransactionObserver,
     access,
     check_validation as check,
+    check_validation_optional as check_optional,
 )
 
 COURSESEARCH_DEFAULTS = {
@@ -101,126 +100,28 @@ class CdEPastEventMixin(CdEBaseFrontend):
             {'spec': spec, 'result': result, 'count': count},
         )
 
-    def _process_participants(
-        self,
-        rs: RequestState,
-        pevent_id: int,
-        pcourse_id: Optional[int] = None,
-        orgas_only: bool = False,
-    ) -> tuple[CdEDBObjectMap, CdEDBObjectMap, int]:
-        """Helper to pretty up participation infos.
-
-        The problem is, that multiple participations can be logged for a
-        persona per event (easiest example multiple courses in multiple
-        parts). So here we fuse these entries into one per persona.
-
-        Additionally, this function takes care of privacy: Participants
-        are removed from the result if they are not searchable and the viewing
-        user is neither admin nor participant of the past event themselves.
-
-        Note that the returned dict of participants is already sorted.
-
-        :param pcourse_id: if not None, restrict to participants of this
-          course
-        :returns: This returns three things: the processed participants,
-          the persona data sets of the participants and the number of
-          redacted participants.
-        """
-        participant_infos = self.pasteventproxy.list_participants(
-            rs, pevent_id=pevent_id
-        )
-        is_participant = any(
-            anid == rs.user.persona_id for anid, _ in participant_infos.keys()
-        )
-        # We are privileged to see other participants if we are admin (and have
-        # the relevant admin view enabled) or participant by ourselves
-        privileged = is_participant or "past_event" in rs.user.admin_views
-        proto_participants = {}
-        participants = {}
-        personas: CdEDBObjectMap = {}
-        extra_participants = 0
-
-        persona_ids = {persona_id for persona_id, _ in participant_infos.keys()}
-        for persona_id in persona_ids:
-            base_set = tuple(
-                x for x in participant_infos.values() if x['persona_id'] == persona_id
-            )
-            entry: CdEDBObject = {
-                'pevent_id': pevent_id,
-                'persona_id': persona_id,
-                'is_orga': any(x['is_orga'] for x in base_set),
-                'pcourse_ids': tuple(x['pcourse_id'] for x in base_set),
-                'instructor': set(
-                    x['pcourse_id']
-                    for x in base_set
-                    if (
-                        x['is_instructor']
-                        and (x['pcourse_id'] == pcourse_id or not pcourse_id)
-                    )
-                ),
-            }
-            if pcourse_id and pcourse_id not in entry['pcourse_ids']:
-                # remove non-participants with respect to the relevant
-                # course if there is a relevant course
-                continue
-            if orgas_only and not entry['is_orga']:
-                # remove non-orgas
-                continue
-            proto_participants[persona_id] = entry
-
-        if privileged or ("searchable" in rs.user.roles):
-            # Commit to releasing the information
-            participants = proto_participants
-            personas = self.coreproxy.get_personas(rs, participants.keys())
-            participants = OrderedDict(
-                xsorted(
-                    participants.items(),
-                    key=lambda x: EntitySorter.persona(personas[x[0]]),
-                )
-            )
-
-            # Delete unsearchable participants if we are not privileged
-            if not privileged:
-                for anid, persona in personas.items():
-                    if not persona['is_searchable'] or not persona['is_member']:
-                        del participants[anid]
-                        extra_participants += 1
-        else:
-            extra_participants = len(proto_participants)
-        # Flag linkable user profiles (own profile + all searchable profiles
-        # + all (if we are admin))
-        for anid in participants:
-            participants[anid]['viewable'] = (
-                self.is_admin(rs) or anid == rs.user.persona_id
-            )
-        if "searchable" in rs.user.roles:
-            for anid in participants:
-                if personas[anid]['is_searchable'] and personas[anid]['is_member']:
-                    participants[anid]['viewable'] = True
-        return participants, personas, extra_participants
-
     @access("member", "cde_admin")
     def show_past_event(self, rs: RequestState, pevent_id: int) -> Response:
         """Display concluded event."""
         course_ids = self.pasteventproxy.list_past_courses(rs, pevent_id)
         courses = self.pasteventproxy.get_past_courses(rs, course_ids)
-        participants, personas, extra_participants = self._process_participants(
-            rs, pevent_id
+        total_num, event_participants = self.pasteventproxy.list_event_participants(
+            rs, pevent_id, honour_admins="past_event" in rs.user.admin_views
         )
-        orgas, _, extra_orgas = self._process_participants(
-            rs, pevent_id, orgas_only=True
-        )
-        for p in participants.values():
-            p['pcourses'] = [
-                pcourse
-                for pcourse in courses.values()
-                if pcourse.id in p['pcourse_ids']
-            ]
-        participant_infos = self.pasteventproxy.list_participants(
-            rs, pevent_id=pevent_id
-        )
-        is_participant = any(
-            anid == rs.user.persona_id for anid, _ in participant_infos.keys()
+        personas = {
+            persona['id']: persona
+            for persona in xsorted(
+                self.coreproxy.get_personas(rs, event_participants.keys()).values(),
+                key=EntitySorter.persona,
+            )
+        }
+        # keep the sorting of orgas
+        orgas = [p_id for p_id in personas if event_participants[p_id]["orga_status"]]
+        persona_courses = self.pasteventproxy.list_persona_courses(
+            rs,
+            pevent_id,
+            event_participants.keys(),
+            honour_admins="past_event" in rs.user.admin_views,
         )
         return self.render(
             rs,
@@ -228,11 +129,10 @@ class CdEPastEventMixin(CdEBaseFrontend):
             {
                 'courses': courses,
                 'personas': personas,
-                'participants': participants,
-                'extra_participants': extra_participants,
                 'orgas': orgas,
-                'extra_orgas': extra_orgas,
-                'is_participant': is_participant,
+                'total_participant_number': total_num,
+                'event_participants': event_participants,
+                'persona_courses': persona_courses,
             },
         )
 
@@ -241,16 +141,23 @@ class CdEPastEventMixin(CdEBaseFrontend):
         self, rs: RequestState, pevent_id: int, pcourse_id: int
     ) -> Response:
         """Display concluded course."""
-        participants, personas, extra_participants = self._process_participants(
-            rs, pevent_id, pcourse_id=pcourse_id
+        total_num, participants = self.pasteventproxy.list_course_participants(
+            rs, pcourse_id, honour_admins="past_event" in rs.user.admin_views
         )
+        personas = {
+            persona['id']: persona
+            for persona in xsorted(
+                self.coreproxy.get_personas(rs, participants.keys()).values(),
+                key=EntitySorter.persona,
+            )
+        }
         return self.render(
             rs,
             "past_event/show_past_course",
             {
                 'participants': participants,
                 'personas': personas,
-                'extra_participants': extra_participants,
+                'total_participant_number': total_num,
             },
         )
 
@@ -452,17 +359,26 @@ class CdEPastEventMixin(CdEBaseFrontend):
         return self.redirect(rs, "cde/show_past_event")
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata("pcourse_id", "persona_ids", "is_instructor", "is_orga")
+    @REQUESTdata(
+        "pcourse_id", "persona_ids", "orga_status", "music_status", "instructor_status"
+    )
     def add_participants(
         self,
         rs: RequestState,
         pevent_id: int,
         pcourse_id: Optional[vtypes.ID],
         persona_ids: vtypes.CdedbIDList,
-        is_instructor: bool,
-        is_orga: bool,
+        orga_status: const.PastOrgaKind | None,
+        music_status: const.PastMusicKind | None,
+        instructor_status: const.PastInstructorKind | None,
     ) -> Response:
         """Add participant to concluded event."""
+        pcourse_id = check_optional(rs, vtypes.ID, pcourse_id)
+        orga_status = check_optional(rs, const.PastOrgaKind, orga_status)
+        music_status = check_optional(rs, const.PastMusicKind, music_status)
+        instructor_status = check_optional(
+            rs, const.PastInstructorKind, instructor_status
+        )
         if rs.has_validation_errors():
             if pcourse_id:
                 return self.show_past_course(rs, pevent_id, pcourse_id)
@@ -487,11 +403,16 @@ class CdEPastEventMixin(CdEBaseFrontend):
                 return self.show_past_event(rs, pevent_id)
 
         code = 1
-        # TODO: Check if participants are already present.
-        for persona_id in persona_ids:
-            code *= self.pasteventproxy.add_participant(
-                rs, pevent_id, pcourse_id, persona_id, is_instructor, is_orga
-            )
+        if pcourse_id:
+            for persona_id in persona_ids:
+                code *= self.pasteventproxy.add_course_participant(
+                    rs, pcourse_id, persona_id, instructor_status
+                )
+        else:
+            for persona_id in persona_ids:
+                code *= self.pasteventproxy.add_participant(
+                    rs, pevent_id, persona_id, orga_status, music_status
+                )
         rs.notify_return_code(code)
         if pcourse_id:
             return self.redirect(rs, "cde/show_past_course", {'pcourse_id': pcourse_id})
@@ -519,9 +440,12 @@ class CdEPastEventMixin(CdEBaseFrontend):
                 return self.show_past_course(rs, pevent_id, pcourse_id)
             else:
                 return self.show_past_event(rs, pevent_id)
-        code = self.pasteventproxy.remove_participant(
-            rs, pevent_id, pcourse_id, persona_id
-        )
+        if pcourse_id:
+            code = self.pasteventproxy.remove_course_participant(
+                rs, pcourse_id, persona_id
+            )
+        else:
+            code = self.pasteventproxy.remove_participant(rs, pevent_id, persona_id)
         rs.notify_return_code(code)
         if pcourse_id:
             return self.redirect(rs, "cde/show_past_course", {'pcourse_id': pcourse_id})
