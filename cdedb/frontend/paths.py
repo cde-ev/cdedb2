@@ -385,9 +385,9 @@ CDEDB_PATHS = werkzeug.routing.Map((
                          endpoint="remove_participant"),
                     sub('/course/<int:pcourse_id>', (
                         rule("/participant/add", methods=_POST,
-                             endpoint="add_participants"),
+                             endpoint="add_course_participants"),
                         rule("/participant/remove", methods=_POST,
-                             endpoint="remove_participant"),
+                             endpoint="remove_course_participant"),
                         rule("/show", methods=_GET,
                              endpoint="show_past_course"),
                         rule("/change", methods=_GET,

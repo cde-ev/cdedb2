@@ -35,7 +35,6 @@ from cdedb.frontend.common import (
     TransactionObserver,
     access,
     check_validation as check,
-    check_validation_optional as check_optional,
 )
 
 COURSESEARCH_DEFAULTS = {
@@ -359,29 +358,20 @@ class CdEPastEventMixin(CdEBaseFrontend):
         return self.redirect(rs, "cde/show_past_event")
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata(
-        "pcourse_id", "persona_ids", "orga_status", "music_status", "instructor_status"
-    )
+    @REQUESTdata("persona_ids", "orga_status", "music_status")
     def add_participants(
         self,
         rs: RequestState,
         pevent_id: int,
-        pcourse_id: Optional[vtypes.ID],
         persona_ids: vtypes.CdedbIDList,
         orga_status: const.PastOrgaKind,
         music_status: const.PastMusicKind,
-        instructor_status: const.PastInstructorKind,
     ) -> Response:
         """Add participant to concluded event."""
-        pcourse_id = check_optional(rs, vtypes.ID, pcourse_id)
         orga_status = check(rs, const.PastOrgaKind, orga_status)
         music_status = check(rs, const.PastMusicKind, music_status)
-        instructor_status = check(rs, const.PastInstructorKind, instructor_status)
         if rs.has_validation_errors():
-            if pcourse_id:
-                return self.show_past_course(rs, pevent_id, pcourse_id)
-            else:
-                return self.show_past_event(rs, pevent_id)
+            return self.show_past_event(rs, pevent_id)
 
         # Check presence of valid event users for the given ids
         if not self.coreproxy.verify_ids(rs, persona_ids, is_archived=None):
@@ -395,36 +385,61 @@ class CdEPastEventMixin(CdEBaseFrontend):
                 ValueError(n_("Some of these users are not event users.")),
             ))
         if rs.has_validation_errors():
-            if pcourse_id:
-                return self.show_past_course(rs, pevent_id, pcourse_id)
-            else:
-                return self.show_past_event(rs, pevent_id)
+            return self.show_past_event(rs, pevent_id)
 
         code = 1
-        if pcourse_id:
-            for persona_id in persona_ids:
-                code *= self.pasteventproxy.set_course_participant(
-                    rs, pcourse_id, persona_id, instructor_status
-                )
-        else:
-            for persona_id in persona_ids:
-                code *= self.pasteventproxy.set_participant(
-                    rs, pevent_id, persona_id, orga_status, music_status
-                )
+        for persona_id in persona_ids:
+            code *= self.pasteventproxy.set_participant(
+                rs, pevent_id, persona_id, orga_status, music_status
+            )
         rs.notify_return_code(code)
-        if pcourse_id:
-            return self.redirect(rs, "cde/show_past_course", {'pcourse_id': pcourse_id})
-        else:
-            return self.redirect(rs, "cde/show_past_event")
+        return self.redirect(rs, "cde/show_past_event")
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata("persona_id", "pcourse_id", "ack_delete")
+    @REQUESTdata("pcourse_id", "persona_ids", "instructor_status")
+    def add_course_participants(
+        self,
+        rs: RequestState,
+        pevent_id: int,
+        pcourse_id: vtypes.ID,
+        persona_ids: vtypes.CdedbIDList,
+        instructor_status: const.PastInstructorKind,
+    ) -> Response:
+        """Add participant to concluded event."""
+        pcourse_id = check(rs, vtypes.ID, pcourse_id)
+        instructor_status = check(rs, const.PastInstructorKind, instructor_status)
+        if rs.has_validation_errors():
+            return self.show_past_course(rs, pevent_id, pcourse_id)
+
+        # Check presence of valid event users for the given ids
+        if not self.coreproxy.verify_ids(rs, persona_ids, is_archived=None):
+            rs.append_validation_error((
+                "persona_ids",
+                ValueError(n_("Some of these users do not exist.")),
+            ))
+        if not self.coreproxy.verify_personas(rs, persona_ids, {"event"}):
+            rs.append_validation_error((
+                "persona_ids",
+                ValueError(n_("Some of these users are not event users.")),
+            ))
+        if rs.has_validation_errors():
+            return self.show_past_course(rs, pevent_id, pcourse_id)
+
+        code = 1
+        for persona_id in persona_ids:
+            code *= self.pasteventproxy.set_course_participant(
+                rs, pcourse_id, persona_id, instructor_status
+            )
+        rs.notify_return_code(code)
+        return self.redirect(rs, "cde/show_past_course", {'pcourse_id': pcourse_id})
+
+    @access("cde_admin", modi={"POST"})
+    @REQUESTdata("persona_id", "ack_delete")
     def remove_participant(
         self,
         rs: RequestState,
         pevent_id: int,
         persona_id: vtypes.ID,
-        pcourse_id: Optional[vtypes.ID],
         ack_delete: bool,
     ) -> Response:
         """Remove participant."""
@@ -434,21 +449,32 @@ class CdEPastEventMixin(CdEBaseFrontend):
                 ValueError(n_("Must be checked.")),
             ))
         if rs.has_validation_errors():
-            if pcourse_id:
-                return self.show_past_course(rs, pevent_id, pcourse_id)
-            else:
-                return self.show_past_event(rs, pevent_id)
-        if pcourse_id:
-            code = self.pasteventproxy.remove_course_participant(
-                rs, pcourse_id, persona_id
-            )
-        else:
-            code = self.pasteventproxy.remove_participant(rs, pevent_id, persona_id)
+            return self.show_past_event(rs, pevent_id)
+        code = self.pasteventproxy.remove_participant(rs, pevent_id, persona_id)
         rs.notify_return_code(code)
-        if pcourse_id:
-            return self.redirect(rs, "cde/show_past_course", {'pcourse_id': pcourse_id})
-        else:
-            return self.redirect(rs, "cde/show_past_event")
+        return self.redirect(rs, "cde/show_past_event")
+
+    @access("cde_admin", modi={"POST"})
+    @REQUESTdata("persona_id", "pcourse_id", "ack_delete")
+    def remove_course_participant(
+        self,
+        rs: RequestState,
+        pevent_id: int,
+        persona_id: vtypes.ID,
+        pcourse_id: vtypes.ID,
+        ack_delete: bool,
+    ) -> Response:
+        """Remove participant."""
+        if not ack_delete:
+            rs.append_validation_error((
+                "ack_delete",
+                ValueError(n_("Must be checked.")),
+            ))
+        if rs.has_validation_errors():
+            return self.show_past_course(rs, pevent_id, pcourse_id)
+        code = self.pasteventproxy.remove_course_participant(rs, pcourse_id, persona_id)
+        rs.notify_return_code(code)
+        return self.redirect(rs, "cde/show_past_course", {'pcourse_id': pcourse_id})
 
     @REQUESTdatadict(*PastEventLogFilter.requestdict_fields())
     @REQUESTdata("download")
