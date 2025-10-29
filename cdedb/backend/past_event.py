@@ -615,7 +615,7 @@ class PastEventBackend(AbstractBackend):
             if ret:
                 self.past_event_log(
                     rs,
-                    code=const.PastEventLogCodes.participant_added,
+                    code=const.PastEventLogCodes.course_participant_added,
                     pevent_id=pevent_id,
                     pcourse_id=pcourse_id,
                     persona_id=persona_id,
@@ -635,12 +635,19 @@ class PastEventBackend(AbstractBackend):
         """
         pevent_id = affirm(vtypes.ID, pevent_id)
         persona_id = affirm(vtypes.ID, persona_id)
-        query = """
-            DELETE FROM past_event.participants
-            WHERE pevent_id = %(pevent_id)s AND persona_id = %(persona_id)s
-        """
-        params: ParamDict = {"pevent_id": pevent_id, "persona_id": persona_id}
+        ret = 1
         with Atomizer(rs):
+            # remove manually from courses to ensure correct logging
+            pcourses = unwrap(self.list_persona_courses(rs, pevent_id, [persona_id]))
+            if pcourses:
+                for pcourse_id in pcourses:
+                    ret *= self.remove_course_participant(rs, pcourse_id, persona_id)
+
+            query = """
+                DELETE FROM past_event.participants
+                WHERE pevent_id = %(pevent_id)s AND persona_id = %(persona_id)s
+            """
+            params: ParamDict = {"pevent_id": pevent_id, "persona_id": persona_id}
             ret = self.query_exec(rs, query, params)
             self.past_event_log(
                 rs,
@@ -660,23 +667,27 @@ class PastEventBackend(AbstractBackend):
         """Remove a participant from a course of a concluded event."""
         pcourse_id = affirm(vtypes.ID, pcourse_id)
         persona_id = affirm(vtypes.ID, persona_id)
-        pevent_id: int = unwrap(  # type: ignore[assignment]
-            self.sql_select_one(rs, "past_event.courses", ["pevent_id"], pcourse_id)
-        )
-        participant_id = self.get_participant_id(rs, pevent_id, persona_id)
-        # nothing left to do
-        if participant_id is None:
-            return 1
-        query = """
-            DELETE FROM past_event.course_participants
-            WHERE pcourse_id = %(pcourse_id)s AND participant_id = %(participant_id)s
-        """
-        params: ParamDict = {"pcourse_id": pcourse_id, "participant_id": participant_id}
         with Atomizer(rs):
+            pevent_id: int = unwrap(  # type: ignore[assignment]
+                self.sql_select_one(rs, "past_event.courses", ["pevent_id"], pcourse_id)
+            )
+            participant_id = self.get_participant_id(rs, pevent_id, persona_id)
+            # nothing left to do
+            if participant_id is None:
+                return 1
+
+            query = """
+                DELETE FROM past_event.course_participants
+                WHERE pcourse_id = %(pcourse_id)s AND participant_id = %(participant_id)s
+            """
+            params: ParamDict = {
+                "pcourse_id": pcourse_id,
+                "participant_id": participant_id,
+            }
             ret = self.query_exec(rs, query, params)
             self.past_event_log(
                 rs,
-                code=const.PastEventLogCodes.participant_removed,
+                code=const.PastEventLogCodes.course_participant_removed,
                 pevent_id=pevent_id,
                 pcourse_id=pcourse_id,
                 persona_id=persona_id,
@@ -975,8 +986,7 @@ class PastEventBackend(AbstractBackend):
             orga_status = None
             if persona_id in event.orgas:
                 orga_status = const.PastOrgaKind.orga
-            if not courses or orga_status:
-                self.set_participant(rs, new_id, persona_id, orga_status=orga_status)
+            self.set_participant(rs, new_id, persona_id, orga_status=orga_status)
             for course_id, is_instructor in courses.items():
                 if not course.active_segments:
                     self.logger.warning(
