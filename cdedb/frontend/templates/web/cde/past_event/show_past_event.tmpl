@@ -115,6 +115,7 @@
                 <form action="{{ cdedblink('cde/add_participants') }}" method="POST" id="addparticipantform">
                     {{ util.anti_csrf_token('cde/add_participants') }}
                     {{ util.input_hidden(name="pcourse_id", value="") }}
+                    {{ util.input_hidden(name="instructor_status", value=enums['PastInstructorKind'].none) }}
                     <div class="row">
                         <div class="col-sm-6 {% if 'persona_ids' in errors %}has-error{% endif %}">
                             {% call util.output_errors('persona_ids') %}
@@ -131,13 +132,11 @@
                         </div>
                         <div class="col-sm-2">
                             {{ util.input_select(name="orga_status", aclass="form-control select-action input-sm",
-                                                    entries=enums['PastOrgaKind']|enum_entries(processing=gettext),
-                                                    nulloption=nbsp) }}
+                                                    entries=enums['PastOrgaKind']|enum_entries(processing=gettext)) }}
                         </div>
                         <div class="col-sm-2">
                             {{ util.input_select(name="music_status", aclass="form-control select-action input-sm",
-                                                    entries=enums['PastMusicKind']|enum_entries(processing=gettext),
-                                                    nulloption=nbsp) }}
+                                                    entries=enums['PastMusicKind']|enum_entries(processing=gettext)) }}
                         </div>
                         <div class="col-sm-2">
                             {{ util.input_submit(label=gettext("Add"), aclass="btn btn-primary btn-sm") }}

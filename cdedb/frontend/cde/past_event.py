@@ -368,17 +368,15 @@ class CdEPastEventMixin(CdEBaseFrontend):
         pevent_id: int,
         pcourse_id: Optional[vtypes.ID],
         persona_ids: vtypes.CdedbIDList,
-        orga_status: const.PastOrgaKind | None,
-        music_status: const.PastMusicKind | None,
-        instructor_status: const.PastInstructorKind | None,
+        orga_status: const.PastOrgaKind,
+        music_status: const.PastMusicKind,
+        instructor_status: const.PastInstructorKind,
     ) -> Response:
         """Add participant to concluded event."""
         pcourse_id = check_optional(rs, vtypes.ID, pcourse_id)
-        orga_status = check_optional(rs, const.PastOrgaKind, orga_status)
-        music_status = check_optional(rs, const.PastMusicKind, music_status)
-        instructor_status = check_optional(
-            rs, const.PastInstructorKind, instructor_status
-        )
+        orga_status = check(rs, const.PastOrgaKind, orga_status)
+        music_status = check(rs, const.PastMusicKind, music_status)
+        instructor_status = check(rs, const.PastInstructorKind, instructor_status)
         if rs.has_validation_errors():
             if pcourse_id:
                 return self.show_past_course(rs, pevent_id, pcourse_id)

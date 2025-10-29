@@ -854,8 +854,8 @@ CREATE TABLE past_event.participants (
         id                      serial PRIMARY KEY,
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         pevent_id               integer NOT NULL REFERENCES past_event.events(id),
-        orga_status             integer, -- const.PastOrgaKind
-        music_status            integer, -- const.PastMusicKind
+        orga_status             integer NOT NULL DEFAULT 0, -- const.PastOrgaKind
+        music_status            integer NOT NULL DEFAULT 0, -- const.PastMusicKind
         UNIQUE (persona_id, pevent_id)
 );
 CREATE INDEX participants_pevent_id_idx ON past_event.participants(pevent_id);
@@ -867,7 +867,7 @@ CREATE TABLE past_event.course_participants (
         id                      serial PRIMARY KEY,
         participant_id          integer NOT NULL REFERENCES past_event.participants(id) ON DELETE CASCADE,
         pcourse_id              integer REFERENCES past_event.courses(id),
-        instructor_status       integer, -- const.PastInstructorKind
+        instructor_status       integer NOT NULL DEFAULT 0, -- const.PastInstructorKind
         UNIQUE (participant_id, pcourse_id)
 );
 CREATE INDEX participants_pcourse_id_idx ON past_event.course_participants(pcourse_id);

@@ -583,6 +583,7 @@ class PastInstitutions(CdEIntEnum):
 class PastOrgaKind(CdEIntEnum):
     """CdE, DSA, JGW etc have different notions of 'Orgas'."""
 
+    none = 0
     orga = 1  # of CdE events
     al = 2  # of DSAs etc,
     co_al = 4
@@ -592,12 +593,14 @@ class PastOrgaKind(CdEIntEnum):
 class PastMusicKind(CdEIntEnum):
     """Kinds of 'Kursübergreifende Musik' organizers."""
 
+    none = 0
     ensemble = 1
     kuemu = 2
 
 
 @enum.unique
 class PastInstructorKind(CdEIntEnum):
+    none = 0
     kl = 1
     co_kl = 2
 

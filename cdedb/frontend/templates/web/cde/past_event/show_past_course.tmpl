@@ -55,8 +55,10 @@
                 <form action="{{ cdedblink('cde/add_participants') }}" method="POST" id="addparticipantform">
                     {{ util.anti_csrf_token('cde/add_participants') }}
                     {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
+                    {{ util.input_hidden(name="orga_status", value=enums['PastOrgaKind'].none) }}
+                    {{ util.input_hidden(name="music_status", value=enums['PastMusicKind'].none) }}
                     <div class="row">
-                        <div class="col-sm-5 {% if 'persona_ids' in errors %}has-error{% endif %}">
+                        <div class="col-sm-8 {% if 'persona_ids' in errors %}has-error{% endif %}">
                             {% call util.output_errors('persona_ids') %}
                                 {{ util.input_text(name="persona_ids", placeholder="DB-XXXX-X,DB-XXXX-X,…",
                                                    anid='input-add-participant', aclass='form-control input-sm',
@@ -69,12 +71,11 @@
                                 </script>
                             {% endcall %}
                         </div>
-                        <div class="col-sm-4">
+                        <div class="col-sm-2">
                                 {{ util.input_select(name="instructor_status", aclass="form-control select-action input-sm",
-                                                     entries=enums['PastInstructorKind']|enum_entries(processing=gettext),
-                                                     nulloption=nbsp) }}
+                                                     entries=enums['PastInstructorKind']|enum_entries(processing=gettext)) }}
                         </div>
-                        <div class="col-sm-3">
+                        <div class="col-sm-2">
                             {{ util.input_submit(label=gettext("Add"), aclass="btn btn-primary btn-sm") }}
                         </div>
                     </div>

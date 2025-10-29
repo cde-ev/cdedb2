@@ -528,14 +528,14 @@ class PastEventBackend(AbstractBackend):
         rs: RequestState,
         pevent_id: int,
         persona_id: int,
-        orga_status: const.PastOrgaKind | None = None,
-        music_status: const.PastMusicKind | None = None,
+        orga_status: const.PastOrgaKind = const.PastOrgaKind.none,
+        music_status: const.PastMusicKind = const.PastMusicKind.none,
     ) -> DefaultReturnCode:
         """Mark a persona as participant of a concluded event."""
         pevent_id = affirm(vtypes.ID, pevent_id)
         persona_id = affirm(vtypes.ID, persona_id)
-        orga_status = affirm_optional(const.PastOrgaKind, orga_status)
-        music_status = affirm_optional(const.PastMusicKind, music_status)
+        orga_status = affirm(const.PastOrgaKind, orga_status)
+        music_status = affirm(const.PastMusicKind, music_status)
         with Atomizer(rs):
             # Validate data consistency
             if not self.core.verify_persona(rs, persona_id, {"event"}):
@@ -581,12 +581,12 @@ class PastEventBackend(AbstractBackend):
         rs: RequestState,
         pcourse_id: int,
         persona_id: int,
-        instructor_status: const.PastInstructorKind | None = None,
+        instructor_status: const.PastInstructorKind = const.PastInstructorKind.none,
     ) -> DefaultReturnCode:
         """Mark a persona as participant of a concluded course."""
         persona_id = affirm(vtypes.ID, persona_id)
         pcourse_id = affirm(vtypes.ID, pcourse_id)
-        instructor_status = affirm_optional(const.PastInstructorKind, instructor_status)
+        instructor_status = affirm(const.PastInstructorKind, instructor_status)
         with Atomizer(rs):
             # Validate data consistency
             if not self.core.verify_persona(rs, persona_id, {"event"}):
@@ -768,10 +768,8 @@ class PastEventBackend(AbstractBackend):
         )
         ret: CdEDBObjectMap = {}
         for e in data:
-            if e["orga_status"]:
-                e["orga_status"] = const.PastOrgaKind(e["orga_status"])
-            if e["music_status"]:
-                e["music_status"] = const.PastMusicKind(e["music_status"])
+            e["orga_status"] = const.PastOrgaKind(e["orga_status"])
+            e["music_status"] = const.PastMusicKind(e["music_status"])
             ret[e["persona_id"]] = e
 
         ret = self.filter_participants(
@@ -806,10 +804,7 @@ class PastEventBackend(AbstractBackend):
         data = self.query_all(rs, query, params)
         ret: CdEDBObjectMap = collections.defaultdict(dict)
         for e in data:
-            if e["instructor_status"]:
-                e["instructor_status"] = const.PastInstructorKind(
-                    e["instructor_status"]
-                )
+            e["instructor_status"] = const.PastInstructorKind(e["instructor_status"])
             ret[e["persona_id"]] = e
 
         ret = self.filter_participants(
@@ -847,10 +842,7 @@ class PastEventBackend(AbstractBackend):
         data = self.query_all(rs, query, params)
         ret: dict[int, CdEDBObjectMap] = collections.defaultdict(dict)
         for e in data:
-            if e["instructor_status"]:
-                e["instructor_status"] = const.PastInstructorKind(
-                    e["instructor_status"]
-                )
+            e["instructor_status"] = const.PastInstructorKind(e["instructor_status"])
             ret[e['persona_id']][e["pcourse_id"]] = e
 
         ret = self.filter_participants(
@@ -983,7 +975,7 @@ class PastEventBackend(AbstractBackend):
 
         # now add the participants to the past event
         for persona_id, courses in course_participants.items():
-            orga_status = None
+            orga_status = const.PastOrgaKind.none
             if persona_id in event.orgas:
                 orga_status = const.PastOrgaKind.orga
             self.set_participant(rs, new_id, persona_id, orga_status=orga_status)
@@ -993,7 +985,7 @@ class PastEventBackend(AbstractBackend):
                         f"Persona {persona_id} participated in cancelled course {course_id}."
                     )
                     continue
-                instructor_status = None
+                instructor_status = const.PastInstructorKind.none
                 if is_instructor:
                     instructor_status = const.PastInstructorKind.kl
                 self.set_course_participant(
