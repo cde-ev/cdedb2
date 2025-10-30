@@ -179,6 +179,14 @@ class EntitySorter:
         return (version['attachment_id'], version['version_nr'])
 
     @staticmethod
+    def past_event(past_event: CdEDBObject) -> Sortkey:
+        return (
+            -past_event["tempus"].toordinal(),
+            past_event['title'],
+            past_event['id'],
+        )
+
+    @staticmethod
     def past_course(past_course: CdEDBObject) -> Sortkey:
         return (past_course['nr'], past_course['title'], past_course['id'])
 
