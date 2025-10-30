@@ -41,7 +41,7 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import PastEventLogFilter
-from cdedb.common.sorting import xsorted
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import ParamDict
 from cdedb.models.common import CdEDataclassMap
@@ -645,8 +645,10 @@ class PastEventBackend(AbstractBackend):
         with Atomizer(rs):
             # remove manually from courses to ensure correct logging
             if pcourses := self.list_persona_courses(rs, pevent_id, [persona_id]):
-                for pcourse_id in pcourses[persona_id]:
-                    ret *= self.remove_course_assignment(rs, pcourse_id, persona_id)
+                for assignment in pcourses[persona_id].values():
+                    ret *= self.remove_course_assignment(
+                        rs, assignment.pcourse_id, persona_id
+                    )
 
             query = """
                 DELETE FROM past_event.participants
@@ -704,6 +706,7 @@ class PastEventBackend(AbstractBackend):
         self,
         rs: RequestState,
         participants: T,
+        personas: CdEDBObjectMap,
         honour_admins: bool,
         pevent_id: int | None = None,
         pcourse_id: int | None = None,
@@ -728,18 +731,11 @@ class PastEventBackend(AbstractBackend):
                 self.sql_select_one(rs, "past_event.courses", ["pevent_id"], pcourse_id)
             )
         assert pevent_id is not None
-        query = """
-            SELECT TRUE
-            FROM past_event.participants
-            WHERE persona_id = %(persona_id)s AND pevent_id = %(pevent_id)s
-        """
-        params = {"persona_id": rs.user.persona_id, "pevent_id": pevent_id}
-        if unwrap(self.query_one(rs, query, params)):
+        if self.is_participant(rs, pevent_id, rs.user.persona_id):
             return participants
 
         # if the user is neither admin nor participant, we filter the data
         if "searchable" in rs.user.roles:
-            personas = self.core.get_personas(rs, participants.keys())
             for persona in personas.values():
                 if not persona["is_member"] or not persona["is_searchable"]:
                     del participants[persona["id"]]
@@ -752,7 +748,7 @@ class PastEventBackend(AbstractBackend):
         rs: RequestState,
         pevent_id: int,
         honour_admins: bool = True,
-    ) -> tuple[int, CdEDBObjectMap]:
+    ) -> tuple[int, CdEDataclassMap[models.PastEventParticipant]]:
         """List all participants of a concluded event.
 
         Participants are removed from the result if they are not searchable and the
@@ -766,27 +762,32 @@ class PastEventBackend(AbstractBackend):
         honour_admins = affirm(bool, honour_admins)
         data = self.sql_select(
             rs,
-            "past_event.participants",
-            ["persona_id", "orga_status", "music_status"],
+            models.PastEventParticipant.database_table,
+            models.PastEventParticipant.database_fields(),
             [pevent_id],
             entity_key="pevent_id",
         )
-        ret: CdEDBObjectMap = {}
-        for e in data:
-            e["orga_status"] = const.PastOrgaKind(e["orga_status"])
-            e["music_status"] = const.PastMusicKind(e["music_status"])
-            ret[e["persona_id"]] = e
-
+        personas = self.core.get_personas(rs, {e['persona_id'] for e in data})
+        ret = models.PastEventParticipant.many_from_database(data, sort=False)
+        for participant in ret.values():
+            participant.persona = personas[participant.persona_id]
+        ret = {
+            participant.persona_id: participant for participant in xsorted(ret.values())
+        }
         ret = self.filter_participants(
-            rs, participants=ret, honour_admins=honour_admins, pevent_id=pevent_id
+            rs,
+            participants=ret,
+            personas=personas,
+            honour_admins=honour_admins,
+            pevent_id=pevent_id,
         )
 
         return len(data), ret
 
     @access("cde", "event")
-    def list_course_participants(
+    def list_course_assignments(
         self, rs: RequestState, pcourse_id: int, honour_admins: bool = True
-    ) -> tuple[int, CdEDBObjectMap]:
+    ) -> tuple[int, CdEDataclassMap[models.PastCourseAssignment]]:
         """List all participants of the given concluded course.
 
         Participants are removed from the result if they are not searchable and the
@@ -798,22 +799,28 @@ class PastEventBackend(AbstractBackend):
         """
         pcourse_id = affirm(vtypes.ID, pcourse_id)
         honour_admins = affirm(bool, honour_admins)
-        query = """
-            SELECT persona_id, instructor_status, pcourse_id
-            FROM past_event.participants
-                JOIN past_event.course_participants
-                ON participant_id = past_event.participants.id
+        query = f"""
+            SELECT course_assignments.id, persona_id, instructor_status, pcourse_id, participant_id
+            FROM {models.PastEventParticipant.database_table} AS event_participants
+                JOIN {models.PastCourseAssignment.database_table} AS course_assignments
+                ON participant_id = event_participants.id
             WHERE pcourse_id = %(pcourse_id)s
         """
         params: ParamDict = {"pcourse_id": pcourse_id}
         data = self.query_all(rs, query, params)
-        ret: CdEDBObjectMap = collections.defaultdict(dict)
-        for e in data:
-            e["instructor_status"] = const.PastInstructorKind(e["instructor_status"])
-            ret[e["persona_id"]] = e
-
+        personas = self.core.get_personas(rs, {e['persona_id'] for e in data})
+        ret = models.PastCourseAssignment.many_from_database(data, sort=False)
+        for participant in ret.values():
+            participant.persona = personas[participant.persona_id]
+        ret = {
+            assignment.persona_id: assignment for assignment in xsorted(ret.values())
+        }
         ret = self.filter_participants(
-            rs, participants=ret, honour_admins=honour_admins, pcourse_id=pcourse_id
+            rs,
+            participants=ret,
+            personas=personas,
+            honour_admins=honour_admins,
+            pcourse_id=pcourse_id,
         )
 
         return len(data), ret
@@ -825,7 +832,7 @@ class PastEventBackend(AbstractBackend):
         pevent_id: int,
         persona_ids: list[int],
         honour_admins: bool = True,
-    ) -> dict[int, CdEDBObjectMap]:
+    ) -> dict[int, CdEDataclassMap[models.PastCourseAssignment]]:
         """List all courses of the given participants at a concluded event.
 
         Participants are removed from the result if they are not searchable and the
@@ -836,22 +843,37 @@ class PastEventBackend(AbstractBackend):
         persona_ids = affirm_set(vtypes.ID, persona_ids)
         pevent_id = affirm(vtypes.ID, pevent_id)
         honour_admins = affirm(bool, honour_admins)
-        query = """
-            SELECT persona_id, instructor_status, pcourse_id
-            FROM past_event.participants
-                JOIN past_event.course_participants
-                ON participant_id = past_event.participants.id
+        query = f"""
+            SELECT course_assignments.id, persona_id, instructor_status, pcourse_id, participant_id
+            FROM {models.PastEventParticipant.database_table} AS event_participants
+                JOIN {models.PastCourseAssignment.database_table} AS course_assignments
+                ON participant_id = event_participants.id
             WHERE persona_id = ANY(%(persona_ids)s) AND pevent_id = %(pevent_id)s
         """
         params: ParamDict = {"persona_ids": persona_ids, "pevent_id": pevent_id}
         data = self.query_all(rs, query, params)
-        ret: dict[int, CdEDBObjectMap] = collections.defaultdict(dict)
+        personas = self.core.get_personas(rs, {e['persona_id'] for e in data})
+        ret: dict[int, CdEDataclassMap[models.PastCourseAssignment]] = (
+            collections.defaultdict(dict)
+        )
         for e in data:
-            e["instructor_status"] = const.PastInstructorKind(e["instructor_status"])
-            ret[e['persona_id']][e["pcourse_id"]] = e
+            assignment = models.PastCourseAssignment.from_database(e)
+            assignment.persona = personas[assignment.persona_id]
+            ret[e['persona_id']][e["pcourse_id"]] = assignment
+        ret = {
+            persona["id"]: {
+                assignment.pcourse_id: assignment
+                for assignment in xsorted(ret[persona["id"]].values())
+            }
+            for persona in xsorted(personas.values(), key=EntitySorter.persona)
+        }
 
         ret = self.filter_participants(
-            rs, participants=ret, honour_admins=honour_admins, pevent_id=pevent_id
+            rs,
+            participants=ret,
+            personas=personas,
+            honour_admins=honour_admins,
+            pevent_id=pevent_id,
         )
 
         return ret

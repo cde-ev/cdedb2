@@ -1,7 +1,7 @@
 import dataclasses
 import datetime
 from collections import defaultdict
-from typing import Self
+from typing import Any, Self
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -108,3 +108,45 @@ class PastCourse(CdEDataclass):
             ]
             for pevent_id, pevent_pcourses in pcourses_by_event.items()
         }
+
+
+@dataclasses.dataclass
+class PastEventParticipant(CdEDataclass):
+    database_table = "past_event.participants"
+
+    persona_id: vtypes.ID
+    persona: dict[str, Any] = dataclasses.field(
+        init=False, compare=False, repr=False, metadata=Meta.exclude.as_dict
+    )
+    pevent_id: vtypes.ID
+    orga_status: const.PastOrgaKind
+    music_status: const.PastMusicKind
+
+    def get_sortkey(self) -> Sortkey:
+        return (
+            self.persona["family_name"],
+            self.persona["given_names"],
+            self.persona_id,
+            self.pevent_id,
+        )
+
+
+@dataclasses.dataclass
+class PastCourseAssignment(CdEDataclass):
+    database_table = "past_event.course_participants"
+
+    persona_id: vtypes.ID
+    persona: dict[str, Any] = dataclasses.field(
+        init=False, compare=False, repr=False, metadata=Meta.exclude.as_dict
+    )
+    participant_id: vtypes.ID
+    pcourse_id: vtypes.ID
+    instructor_status: const.PastInstructorKind
+
+    def get_sortkey(self) -> Sortkey:
+        return (
+            self.persona["family_name"],
+            self.persona["given_names"],
+            self.persona_id,
+            self.pcourse_id,
+        )

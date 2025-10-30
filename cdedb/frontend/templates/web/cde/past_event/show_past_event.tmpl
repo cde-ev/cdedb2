@@ -23,13 +23,13 @@
             ambience['pevent']['title'], icon="calendar-alt", active=True) }}
 {% endblock %}
 
-{% macro print_persona(persona_id) %}
-    {% if "past_event" in user.admin_views or persona_id == user.persona_id %}
-        {{ util.persona_anchor(personas[persona_id], include_nickname=true) -}}
-    {% elif personas[persona_id]['is_member'] and personas[persona_id]['is_searchable'] %}
-        {{ util.persona_anchor(personas[persona_id], include_nickname=true, quote_me=true) -}}
+{% macro print_persona(participant) %}
+    {% if "past_event" in user.admin_views or participant.persona_id == user.persona_id %}
+        {{ util.persona_anchor(participant.persona, include_nickname=true) -}}
+    {% elif participant.persona['is_member'] and participant.persona['is_searchable'] %}
+        {{ util.persona_anchor(participant.persona, include_nickname=true, quote_me=true) -}}
     {% else %}
-        {{ personas[persona_id]|persona_name(include_nickname=true) -}}
+        {{ participant.persona|persona_name(include_nickname=true) -}}
     {% endif -%}
 {% endmacro %}
 
@@ -56,8 +56,8 @@
             {% trans %}Orgas{% endtrans %}
         </dt>
         <dd id="orgas">
-            {% for persona_id in orgas %} {# This is already sorted. #}
-                {{ print_persona(persona_id) }}
+            {% for orga in orgas %} {# This is already sorted. #}
+                {{ print_persona(orga) }}
                 {% if not loop.last %},{% endif %}
             {% endfor %}
         </dd>
@@ -70,8 +70,8 @@
     {% if ambience['pevent']['description'] and ambience['pevent']['participant_info']%}
     <hr />
     {% endif %}
-    {% if ambience['pevent']['participant_info'] and ("past_event" in user.admin_views or user.persona_id in event_participants) %}
-        {% if "past_event" in user.admin_views and user.persona_id not in event_participants %}
+    {% if ambience['pevent']['participant_info'] and ("past_event" in user.admin_views or user.persona_id in participants) %}
+        {% if "past_event" in user.admin_views and user.persona_id not in participants %}
             <p class="text-info" id="gallery-admin-info">{{ util.make_icon('info-circle') }}
                 {% trans %}
                     As you are no participant of this past event, you can only
@@ -144,48 +144,48 @@
             </div>
         </div>
     {% endif %}
-    {% if personas %}
+    {% if participants %}
         <ul id="list-participants" class="flex-width">
-            {% for persona_id, persona in personas.items() %} {# This dict is already sorted. #}
+            {% for participant in participants.values() %} {# This dict is already sorted. #}
                 <li class="hide-hover-container clearfix-after">
-                    {{ print_persona(persona_id) }}
-                    {% if persona_courses[persona_id] %}
+                    {{ print_persona(participant) }}
+                    {% if persona_courses[participant.persona_id] %}
                         (
-                        {%- for pcourse_id, info in persona_courses[persona_id].items() -%}
-                            {{ courses[pcourse_id]['nr'] }}.
-                            {% if info['instructor_status'] -%}
-                                <strong title="{{ gettext(info['instructor_status']|string) }}">
+                        {%- for assignment in persona_courses[participant.persona_id].values() -%}
+                            {{ courses[assignment.pcourse_id]['nr'] }}.
+                            {% if assignment.instructor_status -%}
+                                <strong title="{{ gettext(assignment.instructor_status|string) }}">
                             {%- endif -%}
-                            {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : pcourse_id}), courses[pcourse_id]['title']) }}
-                            {%- if info['instructor_status'] -%}
-                                <span class="sr-only"> ({{ gettext(info['instructor_status']|string) }})</span></strong>
+                            {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : assignment.pcourse_id}), courses[assignment.pcourse_id]['title']) }}
+                            {%- if assignment.instructor_status -%}
+                                <span class="sr-only"> ({{ gettext(assignment.instructor_status|string) }})</span></strong>
                             {%- endif -%}
                             {%- if not loop.last %}, {% endif -%}
                         {% endfor -%}
                         )
                     {% endif %}
-                    {% if event_participants[persona_id]['orga_status'] %}
-                        ({{ gettext(event_participants[persona_id]['orga_status']|string) }})
+                    {% if participant.orga_status %}
+                        ({{ gettext(participant.orga_status|string) }})
                     {% endif %}
-                    {% if event_participants[persona_id]['music_status'] %}
-                        ({{ gettext(event_participants[persona_id]['music_status']|string) }})
+                    {% if participant.music_status %}
+                        ({{ gettext(participant.music_status|string) }})
                     {% endif %}
 
                     {% if "past_event" in user.admin_views %}
                         <form action="{{ cdedblink('cde/remove_participant') }}" method="POST"
-                              id="removeparticipantform{{ persona_id }}" style="display: inline;"
+                              id="removeparticipantform{{ participant.persona_id }}" style="display: inline;"
                               class="delete-participant-form hide-hover display-inline">
                             {{ util.anti_csrf_token('cde/remove_participant') }}
-                            {{ util.input_hidden(name="persona_id", value=persona_id) }}
+                            {{ util.input_hidden(name="persona_id", value=participant.persona_id) }}
                             {{ util.ack_delete(gettext("The Participant will be removed from the Event.")) }}
                             {{ util.input_submit(title=gettext("Remove"), icon="minus", aclass="btn btn-xs btn-danger list-button-float", label="") }}
                         </form>
                     {% endif %}
                 </li>
             {% endfor %}
-            {% if event_participants|length != total_participant_number %}
+            {% if participants|length != total_participant_number %}
                 <li id="count-extra-participants">
-                    {% trans count=total_participant_number-event_participants|length %}
+                    {% trans count=total_participant_number-participants|length %}
                         and_one_more
                     {%- pluralize count -%}
                         and_count_more

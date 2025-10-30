@@ -26,7 +26,6 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import PastEventLogFilter
-from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect,
@@ -104,22 +103,14 @@ class CdEPastEventMixin(CdEBaseFrontend):
         """Display concluded event."""
         course_ids = self.pasteventproxy.list_past_courses(rs, pevent_id)
         courses = self.pasteventproxy.get_past_courses(rs, course_ids)
-        total_num, event_participants = self.pasteventproxy.list_event_participants(
+        total_num, participants = self.pasteventproxy.list_event_participants(
             rs, pevent_id, honour_admins="past_event" in rs.user.admin_views
         )
-        personas = {
-            persona['id']: persona
-            for persona in xsorted(
-                self.coreproxy.get_personas(rs, event_participants.keys()).values(),
-                key=EntitySorter.persona,
-            )
-        }
-        # keep the sorting of orgas
-        orgas = [p_id for p_id in personas if event_participants[p_id]["orga_status"]]
+        orgas = [p for p in participants.values() if p.orga_status]
         persona_courses = self.pasteventproxy.list_persona_courses(
             rs,
             pevent_id,
-            event_participants.keys(),
+            participants.keys(),
             honour_admins="past_event" in rs.user.admin_views,
         )
         return self.render(
@@ -127,10 +118,9 @@ class CdEPastEventMixin(CdEBaseFrontend):
             "past_event/show_past_event",
             {
                 'courses': courses,
-                'personas': personas,
                 'orgas': orgas,
                 'total_participant_number': total_num,
-                'event_participants': event_participants,
+                'participants': participants,
                 'persona_courses': persona_courses,
             },
         )
@@ -140,22 +130,14 @@ class CdEPastEventMixin(CdEBaseFrontend):
         self, rs: RequestState, pevent_id: int, pcourse_id: int
     ) -> Response:
         """Display concluded course."""
-        total_num, participants = self.pasteventproxy.list_course_participants(
+        total_num, participants = self.pasteventproxy.list_course_assignments(
             rs, pcourse_id, honour_admins="past_event" in rs.user.admin_views
         )
-        personas = {
-            persona['id']: persona
-            for persona in xsorted(
-                self.coreproxy.get_personas(rs, participants.keys()).values(),
-                key=EntitySorter.persona,
-            )
-        }
         return self.render(
             rs,
             "past_event/show_past_course",
             {
                 'participants': participants,
-                'personas': personas,
                 'total_participant_number': total_num,
             },
         )
@@ -424,7 +406,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         code = 1
         for persona_id in persona_ids:
             if not self.pasteventproxy.is_participant(rs, pevent_id, persona_id):
-                code *= self.pasteventproxy.set_participant(rs, pcourse_id, persona_id)
+                code *= self.pasteventproxy.set_participant(rs, pevent_id, persona_id)
             code *= self.pasteventproxy.set_course_assignment(
                 rs, pcourse_id, persona_id, instructor_status
             )

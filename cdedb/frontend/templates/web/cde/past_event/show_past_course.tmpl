@@ -26,13 +26,13 @@
             ambience['pcourse']['title'], icon="book", active=True) }}
 {% endblock %}
 
-{% macro print_persona(persona_id) %}
-    {% if "past_event" in user.admin_views or persona_id == user.persona_id %}
-        {{ util.persona_anchor(personas[persona_id], include_nickname=true) -}}
-    {% elif personas[persona_id]['is_member'] and personas[persona_id]['is_searchable'] %}
-        {{ util.persona_anchor(personas[persona_id], include_nickname=true, quote_me=true) -}}
+{% macro print_persona(participant) %}
+    {% if "past_event" in user.admin_views or participant.persona_id == user.persona_id %}
+        {{ util.persona_anchor(participant.persona, include_nickname=true) -}}
+    {% elif "searchable" in user.roles and participant.persona['is_member'] and participant.persona['is_searchable'] %}
+        {{ util.persona_anchor(participant.persona, include_nickname=true, quote_me=true) -}}
     {% else %}
-        {{ personas[persona_id]|persona_name(include_nickname=true) -}}
+        {{ participant.persona|persona_name(include_nickname=true) -}}
     {% endif -%}
 {% endmacro %}
 
@@ -80,27 +80,26 @@
                 </form>
         {% endcall %}
     {% endif %}
-    {% if personas %}
+    {% if participants %}
         <ul id="list-participants" class="flex-width">
-            {% for persona_id, persona in personas.items() %} {# This dict is already sorted. #}
+            {% for participant in participants.values() %} {# This dict is already sorted. #}
                 <li class="hide-hover-container clearfix-after">
-                    {% if participants[persona_id]['instructor_status'] %}<strong>{% endif %}
-                    {{ print_persona(persona_id) }}
-                    {% if participants[persona_id]['instructor_status'] %}</strong>{% endif %}
-                    {% if participants[persona_id]['instructor_status'] %}
-                        ({{ gettext(participants[persona_id]['instructor_status']|string) }})
+                    {% if participant.instructor_status %}<strong>{% endif %}
+                    {{ print_persona(participant) }}
+                    {% if participant.instructor_status %}</strong>{% endif %}
+                    {% if participant.instructor_status %}
+                        ({{ gettext(participant.instructor_status|string) }})
                     {% endif %}
                     {% if "past_event" in user.admin_views %}
                         <form action="{{ cdedblink('cde/remove_course_participant') }}" method="POST"
-                              id="removeparticipantform{{ persona_id }}" style="display: inline;"
+                              id="removeparticipantform{{ participant.persona_id }}" style="display: inline;"
                               class="delete-participant-form hide-hover display-inline">
                             {{ util.anti_csrf_token('cde/remove_course_participant') }}
-                            {{ util.input_hidden(name="persona_id", value=persona_id) }}
+                            {{ util.input_hidden(name="persona_id", value=participant.persona_id) }}
                             {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
                             {{ util.ack_delete(gettext("The Participant will be removed from this Course.")) }}
                             {{ util.input_submit(title=gettext("Remove"), icon="minus",
-                                    aclass="btn btn-xs btn-danger list-button-float",
-                                    label="") }}
+                                    aclass="btn btn-xs btn-danger list-button-float", label="") }}
                         </form>
                     {% endif %}
                 </li>
