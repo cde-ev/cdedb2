@@ -7,6 +7,7 @@ FORMAT_TARGETS= \
     cdedb/fee_condition_parser/ \
     cdedb/frontend/cde/ \
     cdedb/frontend/core/complaint.py \
+    cdedb/frontend/ml/ \
     cdedb/frontend/paths.py \
     cdedb/ldap/ \
     cdedb/models/ \

@@ -54,16 +54,22 @@ from cdedb.uncommon.submanshim import SubscriptionAction
 class MlBaseFrontend(AbstractUserFrontend):
     realm = "ml"
 
-    def render(self, rs: RequestState, templatename: str,
-               params: Optional[CdEDBObject] = None,
-               mandatory_fields: Optional[Collection[str]] = None) -> Response:
+    def render(
+        self,
+        rs: RequestState,
+        templatename: str,
+        params: Optional[CdEDBObject] = None,
+        mandatory_fields: Optional[Collection[str]] = None,
+    ) -> Response:
         params = params or {}
         if 'mailinglist' in rs.ambience:
             params['may_view_roster'] = self.mlproxy.may_view_roster(
-                rs, rs.ambience['mailinglist'], respect_admin_view=True)
+                rs, rs.ambience['mailinglist'], respect_admin_view=True
+            )
 
-        return super().render(rs, templatename, params=params,
-                              mandatory_fields=mandatory_fields)
+        return super().render(
+            rs, templatename, params=params, mandatory_fields=mandatory_fields
+        )
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
@@ -81,8 +87,10 @@ class MlBaseFrontend(AbstractUserFrontend):
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
         sub_states = const.SubscriptionState.subscribing_states()
         subscriptions = self.mlproxy.get_user_subscriptions(
-            rs, rs.user.persona_id,
-            states=sub_states | {const.SubscriptionState.pending})
+            rs,
+            rs.user.persona_id,
+            states=sub_states | {const.SubscriptionState.pending},
+        )
         grouped: dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
         for mailinglist_id, title in mailinglists.items():
@@ -91,11 +99,16 @@ class MlBaseFrontend(AbstractUserFrontend):
                 'title': title,
                 'id': mailinglist_id,
             }
-        return self.render(rs, "index", {
-            'groups': MailinglistGroup,
-            'mailinglists': grouped,
-            'subscriptions': subscriptions,
-            'mailinglist_infos': mailinglist_infos})
+        return self.render(
+            rs,
+            "index",
+            {
+                'groups': MailinglistGroup,
+                'mailinglists': grouped,
+                'subscriptions': subscriptions,
+                'mailinglist_infos': mailinglist_infos,
+            },
+        )
 
     def write_subscription_states(self, rs: RequestState) -> DefaultReturnCode:
         """Write the current state of implicit subscribers to the database."""
@@ -141,12 +154,17 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("core_admin", "ml_admin")
     @REQUESTdata("download", "is_search")
-    def user_search(self, rs: RequestState, download: Optional[str],
-                    is_search: bool) -> Response:
+    def user_search(
+        self, rs: RequestState, download: Optional[str], is_search: bool
+    ) -> Response:
         """Perform search."""
         return self.generic_user_search(
-            rs, download, is_search, QueryScope.all_ml_users,
-            self.mlproxy.submit_general_query)
+            rs,
+            download,
+            is_search,
+            QueryScope.all_ml_users,
+            self.mlproxy.submit_general_query,
+        )
 
     @access("ml")
     def list_mailinglists(self, rs: RequestState) -> Response:
@@ -154,18 +172,20 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         ml_admins can administrate all mailinglists."""
         mailinglists = self.mlproxy.list_mailinglists(
-            rs, active_only=False, managed='admin').keys()
-        return self._build_mailinglist_list(rs, "list_mailinglists",
-                                            mailinglists)
+            rs, active_only=False, managed='admin'
+        ).keys()
+        return self._build_mailinglist_list(rs, "list_mailinglists", mailinglists)
 
     @access("ml")
     def moderated_mailinglists(self, rs: RequestState) -> Response:
         """Show all moderated mailinglists."""
-        return self._build_mailinglist_list(rs, "moderated_mailinglists",
-                                            rs.user.moderator)
+        return self._build_mailinglist_list(
+            rs, "moderated_mailinglists", rs.user.moderator
+        )
 
-    def _build_mailinglist_list(self, rs: RequestState, endpoint: str,
-                                mailinglists: Collection[int]) -> Response:
+    def _build_mailinglist_list(
+        self, rs: RequestState, endpoint: str, mailinglists: Collection[int]
+    ) -> Response:
         """Collect all information required to build a comprehensive overview.
 
         For a collection of given mailinglist ids, this retrieves all relevant
@@ -175,43 +195,56 @@ class MlBaseFrontend(AbstractUserFrontend):
         mailinglist_infos = self.mlproxy.get_mailinglists(rs, mailinglists)
         sub_states = const.SubscriptionState.subscribing_states()
         subscriptions = self.mlproxy.get_user_subscriptions(
-            rs, rs.user.persona_id,
-            states=sub_states | {const.SubscriptionState.pending})
+            rs,
+            rs.user.persona_id,
+            states=sub_states | {const.SubscriptionState.pending},
+        )
         grouped: dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
         for ml_id in mailinglists:
             group_id = self.mlproxy.get_ml_type(rs, ml_id).sortkey
             grouped[group_id][ml_id] = {
-                'title': mailinglist_infos[ml_id].title, 'id': ml_id}
+                'title': mailinglist_infos[ml_id].title,
+                'id': ml_id,
+            }
         event_ids = self.eventproxy.list_events(rs)
         events = self.eventproxy.get_events(rs, event_ids)
         assemblies = self.assemblyproxy.list_assemblies(rs)
         for assembly_id, assembly in assemblies.items():
             assembly['is_visible'] = self.assemblyproxy.may_assemble(
-                rs, assembly_id=assembly_id)
+                rs, assembly_id=assembly_id
+            )
         subs = self.mlproxy.get_many_subscription_states(
-            rs, mailinglist_ids=mailinglists, states=sub_states)
+            rs, mailinglist_ids=mailinglists, states=sub_states
+        )
         mailman = self.get_mailman()
         additional_infos = {
             ml_id: {
                 "num_subscribers": len(subs[ml_id]),
                 "held_mails": mailman.get_held_message_count(ml),
-            } for ml_id, ml in mailinglist_infos.items()
+            }
+            for ml_id, ml in mailinglist_infos.items()
         }
 
-        return self.render(rs, endpoint, {
-            'groups': MailinglistGroup,
-            'mailinglists': grouped,
-            'subscriptions': subscriptions,
-            'mailinglist_infos': mailinglist_infos,
-            'additional_infos': additional_infos,
-            'events': events,
-            'assemblies': assemblies})
+        return self.render(
+            rs,
+            endpoint,
+            {
+                'groups': MailinglistGroup,
+                'mailinglists': grouped,
+                'subscriptions': subscriptions,
+                'mailinglist_infos': mailinglist_infos,
+                'additional_infos': additional_infos,
+                'events': events,
+                'assemblies': assemblies,
+            },
+        )
 
     @access("ml")
     @REQUESTdata("ml_type")
-    def create_mailinglist_form(self, rs: RequestState,
-                                ml_type: Optional[const.MailinglistTypes]) -> Response:
+    def create_mailinglist_form(
+        self, rs: RequestState, ml_type: Optional[const.MailinglistTypes]
+    ) -> Response:
         """Render form."""
         rs.ignore_validation_errors()
         available_types = self.mlproxy.get_available_types(rs)
@@ -219,15 +252,20 @@ class MlBaseFrontend(AbstractUserFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if ml_type is None:
             return self.render(
-                rs, "configure_mailinglist", {
+                rs,
+                "configure_mailinglist",
+                {
                     'available_types': available_types,
                     'ml_type': None,
-                }, mandatory_fields=['ml_type'])
+                },
+                mandatory_fields=['ml_type'],
+            )
         else:
             atype = get_ml_type(ml_type)
             if not atype.is_relevant_admin(rs.user):
-                raise werkzeug.exceptions.Forbidden(n_(
-                        "May not create mailinglist of this type."))
+                raise werkzeug.exceptions.Forbidden(
+                    n_("May not create mailinglist of this type.")
+                )
             available_domains = atype.available_domains
             additional_fields = atype.get_additional_fields().keys()
             if "event_id" in additional_fields:
@@ -236,34 +274,45 @@ class MlBaseFrontend(AbstractUserFrontend):
             else:
                 events = {}
             assemblies = self.assemblyproxy.list_assemblies(rs)
-            sorted_assemblies = keydictsort_filter(
-                assemblies, EntitySorter.assembly)
+            sorted_assemblies = keydictsort_filter(assemblies, EntitySorter.assembly)
             assembly_entries = [(k, v['title']) for k, v in sorted_assemblies]
             mandatory_fields = atype.mandatory_form_fields(creation=True)
-            return self.render(rs, "configure_mailinglist", {
-                'events': events,
-                'part_groups': [],  # Can be configured later if necessary.
-                'assembly_entries': assembly_entries,
-                'ml_type': ml_type,
-                'available_domains': available_domains,
-                'additional_fields': additional_fields,
-                'maxsize_default': atype.maxsize_default,
-            }, mandatory_fields)
+            return self.render(
+                rs,
+                "configure_mailinglist",
+                {
+                    'events': events,
+                    'part_groups': [],  # Can be configured later if necessary.
+                    'assembly_entries': assembly_entries,
+                    'ml_type': ml_type,
+                    'available_domains': available_domains,
+                    'additional_fields': additional_fields,
+                    'maxsize_default': atype.maxsize_default,
+                },
+                mandatory_fields,
+            )
 
     @access("ml", modi={"POST"})
-    @REQUESTdatadict(*Mailinglist.requestdict_fields(creation=True),
-                     *ADDITIONAL_REQUEST_FIELDS.items())
+    @REQUESTdatadict(
+        *Mailinglist.requestdict_fields(creation=True),
+        *ADDITIONAL_REQUEST_FIELDS.items(),
+    )
     @REQUESTdata("ml_type", "moderators")
-    def create_mailinglist(self, rs: RequestState, data: dict[str, Any],
-                           ml_type: const.MailinglistTypes,
-                           moderators: vtypes.CdedbIDList) -> Response:
+    def create_mailinglist(
+        self,
+        rs: RequestState,
+        data: dict[str, Any],
+        ml_type: const.MailinglistTypes,
+        moderators: vtypes.CdedbIDList,
+    ) -> Response:
         """Make a new list."""
         data["moderators"] = moderators
         data["whitelist"] = []
         ml_class = get_ml_type(ml_type)
         if not ml_class.is_relevant_admin(rs.user):
-            raise werkzeug.exceptions.Forbidden(n_(
-                "May not create mailinglist of this type."))
+            raise werkzeug.exceptions.Forbidden(
+                n_("May not create mailinglist of this type.")
+            )
         # silently discard superfluous fields
         for field in ADDITIONAL_REQUEST_FIELDS:
             if field not in ml_class.get_additional_fields():
@@ -279,7 +328,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 if (
                     part_group_id not in event.part_groups
                     or event.part_groups[part_group_id].constraint_type
-                        != const.EventPartGroupType.mailinglist_link
+                    != const.EventPartGroupType.mailinglist_link
                 ):
                     rs.append_validation_error((
                         'event_part_group_id',
@@ -288,13 +337,15 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         ml = ml_class(id=vtypes.ID(-1), **data)
         if not self.coreproxy.verify_ids(rs, moderators, is_archived=False):
-            rs.append_validation_error(
-                ("moderators", ValueError(n_(
-                    "Some of these users do not exist or are archived."))))
+            rs.append_validation_error((
+                "moderators",
+                ValueError(n_("Some of these users do not exist or are archived.")),
+            ))
         if not self.coreproxy.verify_personas(rs, moderators, {"ml"}):
-            rs.append_validation_error(
-                ("moderators", ValueError(n_(
-                    "Some of these users are not ml users."))))
+            rs.append_validation_error((
+                "moderators",
+                ValueError(n_("Some of these users are not ml users.")),
+            ))
         if rs.has_validation_errors():
             return self.create_mailinglist_form(rs, ml_type=ml_type)
         assert ml is not None
@@ -309,21 +360,24 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         new_id = self.mlproxy.create_mailinglist(rs, ml)
         rs.notify_return_code(new_id)
-        return self.redirect(rs, "ml/show_mailinglist", {
-            'mailinglist_id': new_id})
+        return self.redirect(rs, "ml/show_mailinglist", {'mailinglist_id': new_id})
 
     @access("ml_admin")
     def merge_accounts_form(self, rs: RequestState) -> Response:
         """Render form."""
-        return self.render(rs, "merge_accounts", {},
-                           get_mandatory_form_fields(self.merge_accounts))
+        return self.render(
+            rs, "merge_accounts", {}, get_mandatory_form_fields(self.merge_accounts)
+        )
 
     @access("ml_admin", modi={"POST"})
     @REQUESTdata("source_persona_id", "target_persona_id", "clone_addresses")
-    def merge_accounts(self, rs: RequestState,
-                       source_persona_id: vtypes.CdedbID,
-                       target_persona_id: vtypes.CdedbID,
-                       clone_addresses: bool) -> Response:
+    def merge_accounts(
+        self,
+        rs: RequestState,
+        source_persona_id: vtypes.CdedbID,
+        target_persona_id: vtypes.CdedbID,
+        clone_addresses: bool,
+    ) -> Response:
         """Merge a ml only user (source) into an other user (target).
 
         This mirrors the subscription states and moderator privileges of the source
@@ -335,29 +389,38 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.merge_accounts_form(rs)
         if not self.coreproxy.verify_id(rs, source_persona_id, is_archived=False):
-            rs.append_validation_error(
-                ("source_persona_id", ValueError(n_(
-                    "User does not exist or is archived."))))
+            rs.append_validation_error((
+                "source_persona_id",
+                ValueError(n_("User does not exist or is archived.")),
+            ))
         if not self.coreproxy.verify_id(rs, target_persona_id, is_archived=None):
-            rs.append_validation_error(
-                ("target_persona_id", ValueError(n_("User does not exist."))))
+            rs.append_validation_error((
+                "target_persona_id",
+                ValueError(n_("User does not exist.")),
+            ))
         elif not self.coreproxy.verify_id(rs, target_persona_id, is_archived=False):
             if not self.coreproxy.is_relative_admin(rs, target_persona_id):
-                rs.append_validation_error(
-                    ("target_persona_id", ValueError(n_("May not dearchive user."))))
-        if not self.coreproxy.verify_persona(rs, source_persona_id,
-                                             allowed_roles={"ml"}):
-            rs.append_validation_error(
-                ("source_persona_id", ValueError(n_(
-                    "Source persona must be a ml-only user and no admin."))))
+                rs.append_validation_error((
+                    "target_persona_id",
+                    ValueError(n_("May not dearchive user.")),
+                ))
+        if not self.coreproxy.verify_persona(
+            rs, source_persona_id, allowed_roles={"ml"}
+        ):
+            rs.append_validation_error((
+                "source_persona_id",
+                ValueError(n_("Source persona must be a ml-only user and no admin.")),
+            ))
         if source_persona_id == target_persona_id:
-            rs.append_validation_error(
-                ("target_persona_id", ValueError(n_(
-                    "Can not merge user into himself."))))
+            rs.append_validation_error((
+                "target_persona_id",
+                ValueError(n_("Can not merge user into himself.")),
+            ))
         if rs.has_validation_errors():
             return self.merge_accounts_form(rs)
         code = self.mlproxy.merge_accounts(
-            rs, source_persona_id, target_persona_id, clone_addresses)
+            rs, source_persona_id, target_persona_id, clone_addresses
+        )
         if not code:
             return self.merge_accounts_form(rs)
         rs.notify_return_code(code)
@@ -369,25 +432,31 @@ class MlBaseFrontend(AbstractUserFrontend):
     def view_log(self, rs: RequestState, data: CdEDBObject, download: bool) -> Response:
         """View activities."""
         relevant_mls = self.mlproxy.list_mailinglists(
-            rs, active_only=False, managed='managed')
+            rs, active_only=False, managed='managed'
+        )
         mailinglists = self.mlproxy.get_mailinglists(rs, relevant_mls)
 
         return self.generic_view_log(
-            rs, data, MlLogFilter, self.mlproxy.retrieve_log,
-            download=download, template="view_log", template_kwargs={
+            rs,
+            data,
+            MlLogFilter,
+            self.mlproxy.retrieve_log,
+            download=download,
+            template="view_log",
+            template_kwargs={
                 'all_mailinglists': mailinglists,
                 'may_view': lambda ml: self.mlproxy.may_view(rs, ml),
             },
         )
 
     @access("ml")
-    def show_mailinglist(self, rs: RequestState,
-                         mailinglist_id: int) -> Response:
+    def show_mailinglist(self, rs: RequestState, mailinglist_id: int) -> Response:
         """Details of a list."""
         assert rs.user.persona_id is not None
         ml = rs.ambience['mailinglist']
         state = self.mlproxy.get_subscription(
-            rs, rs.user.persona_id, mailinglist_id=mailinglist_id)
+            rs, rs.user.persona_id, mailinglist_id=mailinglist_id
+        )
 
         if not self.mlproxy.may_view(rs, ml):
             raise werkzeug.exceptions.Forbidden()
@@ -395,44 +464,63 @@ class MlBaseFrontend(AbstractUserFrontend):
         sub_address = None
         if state and state.is_subscribed():
             sub_address = self.mlproxy.get_subscription_address(
-                rs, mailinglist_id, rs.user.persona_id, explicits_only=True)
+                rs, mailinglist_id, rs.user.persona_id, explicits_only=True
+            )
 
         event = is_registered = None
         if isinstance(ml, EventAssociatedMetaMailinglist) and ml.event_id:
             event = self.eventproxy.get_event(rs, ml.event_id)
             if 'event' in rs.user.roles:
-                is_registered = bool(self.eventproxy.list_registrations(
-                    rs, ml.event_id, rs.user.persona_id))
+                is_registered = bool(
+                    self.eventproxy.list_registrations(
+                        rs, ml.event_id, rs.user.persona_id
+                    )
+                )
 
         assembly = None
         if isinstance(ml, AssemblyAssociatedMailinglist) and ml.assembly_id:
             all_assemblies = self.assemblyproxy.list_assemblies(rs)
             assembly = all_assemblies[ml.assembly_id]
             assembly['is_visible'] = self.assemblyproxy.may_assemble(
-                rs, assembly_id=assembly['id'])
+                rs, assembly_id=assembly['id']
+            )
 
         subscription_policy = self.mlproxy.get_subscription_policy(
-            rs, rs.user.persona_id, mailinglist=ml)
+            rs, rs.user.persona_id, mailinglist=ml
+        )
         personas = self.coreproxy.get_personas(rs, ml.moderators)
         moderators = [
-            personas[anid] for anid in xsorted(
-                personas, key=lambda anid: EntitySorter.persona(personas[anid]))]
+            personas[anid]
+            for anid in xsorted(
+                personas, key=lambda anid: EntitySorter.persona(personas[anid])
+            )
+        ]
 
         email_report = None
         if state and state.is_subscribed():
             tmp = self.coreproxy.get_email_reports(rs, [rs.user.persona_id])
             email_report = tmp.get(sub_address or rs.user.username)
 
-        return self.render(rs, "show_mailinglist", {
-            'sub_address': sub_address, 'state': state, 'moderators': moderators,
-            'subscription_policy': subscription_policy, 'assembly': assembly,
-            'event': event, 'is_registered': is_registered,
-            'email_report': email_report})
+        return self.render(
+            rs,
+            "show_mailinglist",
+            {
+                'sub_address': sub_address,
+                'state': state,
+                'moderators': moderators,
+                'subscription_policy': subscription_policy,
+                'assembly': assembly,
+                'event': event,
+                'is_registered': is_registered,
+                'email_report': email_report,
+            },
+        )
 
     @access("ml")
     @mailinglist_guard()
-    def change_mailinglist_form(self, rs: RequestState,
-                                mailinglist_id: int) -> Response:
+    def change_mailinglist_form(
+        self, rs: RequestState, mailinglist_id: int
+    ) -> Response:
         """Render form."""
         ml = rs.ambience["mailinglist"]
         additional_fields = ml.get_additional_fields().keys()
@@ -446,45 +534,52 @@ class MlBaseFrontend(AbstractUserFrontend):
             event_id = rs.values.get("event_id", ml.event_id)
             if event_id:
                 part_groups = xsorted(
-                    pg for pg in events[int(event_id)].part_groups.values()
+                    pg
+                    for pg in events[int(event_id)].part_groups.values()
                     if pg.constraint_type == const.EventPartGroupType.mailinglist_link
                 )
         if "assembly_id" in additional_fields:
             assemblies = self.assemblyproxy.list_assemblies(rs)
-            sorted_assemblies = keydictsort_filter(
-                assemblies, EntitySorter.assembly)
+            sorted_assemblies = keydictsort_filter(assemblies, EntitySorter.assembly)
             assembly_entries = [(k, v['title']) for k, v in sorted_assemblies]
         else:
             assembly_entries = []
         merge_dicts(rs.values, ml.to_database())
         # restricted is only set if there are actually fields to which access is
         # restricted
-        restricted = (
-            not self.mlproxy.may_manage(rs, mailinglist_id, allow_restricted=False)
-            and bool(ml.full_moderator_fields)
-        )
+        restricted = not self.mlproxy.may_manage(
+            rs, mailinglist_id, allow_restricted=False
+        ) and bool(ml.full_moderator_fields)
         readonly = not rs.ambience['mailinglist'].has_management_view(rs.user)
         mandatory_fields = ml.mandatory_form_fields(creation=False)
-        return self.render(rs, "configure_mailinglist", {
-            'events': events,
-            'event_parts_by_event': {
-                event.id: {part.id: part.title for part in event.parts.values()}
-                for event in events.values()
+        return self.render(
+            rs,
+            "configure_mailinglist",
+            {
+                'events': events,
+                'event_parts_by_event': {
+                    event.id: {part.id: part.title for part in event.parts.values()}
+                    for event in events.values()
+                },
+                'part_groups': part_groups,
+                'assembly_entries': assembly_entries,
+                'additional_fields': additional_fields,
+                'restricted': restricted,
+                'readonly': readonly,
+                'available_domains': ml.available_domains,
             },
-            'part_groups': part_groups,
-            'assembly_entries': assembly_entries,
-            'additional_fields': additional_fields,
-            'restricted': restricted,
-            'readonly': readonly,
-            'available_domains': ml.available_domains,
-        }, mandatory_fields)
+            mandatory_fields,
+        )
 
     @access("ml", modi={"POST"})
     @mailinglist_guard()
-    @REQUESTdatadict(*Mailinglist.requestdict_fields(creation=False),
-                     *ADDITIONAL_REQUEST_FIELDS.items())
-    def change_mailinglist(self, rs: RequestState, mailinglist_id: int,
-                           data: CdEDBObject) -> Response:
+    @REQUESTdatadict(
+        *Mailinglist.requestdict_fields(creation=False),
+        *ADDITIONAL_REQUEST_FIELDS.items(),
+    )
+    def change_mailinglist(
+        self, rs: RequestState, mailinglist_id: int, data: CdEDBObject
+    ) -> Response:
         """Modify simple attributes of mailinglists."""
         ml = rs.ambience["mailinglist"]
         data['id'] = mailinglist_id
@@ -514,7 +609,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 if (
                     part_group_id not in event.part_groups
                     or event.part_groups[part_group_id].constraint_type
-                        != const.EventPartGroupType.mailinglist_link
+                    != const.EventPartGroupType.mailinglist_link
                 ):
                     rs.append_validation_error((
                         'event_part_group_id',
@@ -538,8 +633,7 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml")
     @mailinglist_guard(allow_moderators=False)
-    def change_ml_type_form(self, rs: RequestState,
-                            mailinglist_id: int) -> Response:
+    def change_ml_type_form(self, rs: RequestState, mailinglist_id: int) -> Response:
         """Render form."""
         ml = rs.ambience['mailinglist']
         available_types = self.mlproxy.get_available_types(rs)
@@ -547,19 +641,28 @@ class MlBaseFrontend(AbstractUserFrontend):
         events = self.eventproxy.get_events(rs, event_ids)
         assemblies = self.assemblyproxy.list_assemblies(rs)
         merge_dicts(rs.values, ml.to_database())
-        return self.render(rs, "change_ml_type", {
-            'available_types': available_types,
-            'events': events,
-            'assemblies': assemblies,
-        }, get_mandatory_form_fields(self.change_ml_type))
+        return self.render(
+            rs,
+            "change_ml_type",
+            {
+                'available_types': available_types,
+                'events': events,
+                'assemblies': assemblies,
+            },
+            get_mandatory_form_fields(self.change_ml_type),
+        )
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(allow_moderators=False)
     @REQUESTdatadict(*ADDITIONAL_REQUEST_FIELDS.items())
     @REQUESTdata("ml_type", "domain")
     def change_ml_type(
-        self, rs: RequestState, mailinglist_id: int, ml_type: const.MailinglistTypes,
-        domain: const.MailinglistDomain, data: CdEDBObject,
+        self,
+        rs: RequestState,
+        mailinglist_id: int,
+        ml_type: const.MailinglistTypes,
+        domain: const.MailinglistDomain,
+        data: CdEDBObject,
     ) -> Response:
         update = {"id": mailinglist_id, "domain": domain}
         new_type = get_ml_type(ml_type)
@@ -577,18 +680,23 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml", modi={"POST"})
     @mailinglist_guard(allow_moderators=False)
     @REQUESTdata("ack_delete")
-    def delete_mailinglist(self, rs: RequestState, mailinglist_id: int,
-                           ack_delete: bool) -> Response:
+    def delete_mailinglist(
+        self, rs: RequestState, mailinglist_id: int, ack_delete: bool
+    ) -> Response:
         """Remove a mailinglist."""
         if not ack_delete:
-            rs.append_validation_error(
-                ("ack_delete", ValueError(n_("Must be checked."))))
+            rs.append_validation_error((
+                "ack_delete",
+                ValueError(n_("Must be checked.")),
+            ))
         if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
 
         code = self.mlproxy.delete_mailinglist(
-            rs, mailinglist_id, cascade={"subscriptions", "log", "addresses",
-                                         "whitelist", "moderators"})
+            rs,
+            mailinglist_id,
+            cascade={"subscriptions", "log", "addresses", "whitelist", "moderators"},
+        )
 
         rs.notify_return_code(code)
         return self.redirect(rs, "ml/list_mailinglists")
@@ -597,13 +705,18 @@ class MlBaseFrontend(AbstractUserFrontend):
     @REQUESTdata("download")
     @access("ml")
     @mailinglist_guard()
-    def view_ml_log(self, rs: RequestState, mailinglist_id: int, data: CdEDBObject,
-                    download: bool) -> Response:
+    def view_ml_log(
+        self, rs: RequestState, mailinglist_id: int, data: CdEDBObject, download: bool
+    ) -> Response:
         """View activities pertaining to one list."""
         rs.values['mailinglist_id'] = data['mailinglist_id'] = mailinglist_id
         return self.generic_view_log(
-            rs, data, MlLogFilter, self.mlproxy.retrieve_log,
-            download=download, template="view_ml_log",
+            rs,
+            data,
+            MlLogFilter,
+            self.mlproxy.retrieve_log,
+            download=download,
+            template="view_ml_log",
         )
 
     @access("ml")
@@ -615,8 +728,10 @@ class MlBaseFrontend(AbstractUserFrontend):
             raise werkzeug.exceptions.Forbidden
 
         roster_ids = self.mlproxy.get_roster(rs, mailinglist_id)
-        roster = xsorted(self.coreproxy.get_personas(rs, roster_ids).values(),
-                         key=EntitySorter.persona)
+        roster = xsorted(
+            self.coreproxy.get_personas(rs, roster_ids).values(),
+            key=EntitySorter.persona,
+        )
 
         return self.render(rs, "roster", {'roster': roster})
 
@@ -627,40 +742,64 @@ class MlBaseFrontend(AbstractUserFrontend):
         ml = rs.ambience["mailinglist"]
         sub_states = const.SubscriptionState.subscribing_states()
         subscribers = self.mlproxy.get_subscription_states(
-            rs, mailinglist_id, states=sub_states)
+            rs, mailinglist_id, states=sub_states
+        )
         explicits = self.mlproxy.get_subscription_addresses(
-            rs, mailinglist_id, explicits_only=True)
+            rs, mailinglist_id, explicits_only=True
+        )
         explicits = {k: v for (k, v) in explicits.items() if v is not None}
         defect_addresses = self.coreproxy.list_email_states(
-            rs, const.EmailStatus.defect_states())
+            rs, const.EmailStatus.defect_states()
+        )
         requests = self.mlproxy.get_subscription_states(
-            rs, mailinglist_id, states=(const.SubscriptionState.pending,))
-        persona_ids = (set(ml.moderators) | set(subscribers.keys()) | set(requests))
+            rs, mailinglist_id, states=(const.SubscriptionState.pending,)
+        )
+        persona_ids = set(ml.moderators) | set(subscribers.keys()) | set(requests)
         personas = self.coreproxy.get_personas(rs, persona_ids)
         # determine which subscribers use a defect address for this mailinglist
         defects = {
-            anid for anid in subscribers
-            if anid not in explicits and personas[anid]["username"] in defect_addresses
-            or anid in explicits and explicits[anid] in defect_addresses}
+            anid
+            for anid in subscribers
+            if anid not in explicits
+            and personas[anid]["username"] in defect_addresses
+            or anid in explicits
+            and explicits[anid] in defect_addresses
+        }
         subscribers = collections.OrderedDict(
-            (anid, personas[anid]) for anid in xsorted(
-                subscribers,
-                key=lambda anid: EntitySorter.persona(personas[anid])))
+            (anid, personas[anid])
+            for anid in xsorted(
+                subscribers, key=lambda anid: EntitySorter.persona(personas[anid])
+            )
+        )
         moderators = collections.OrderedDict(
-            (anid, personas[anid]) for anid in xsorted(
-                ml.moderators,
-                key=lambda anid: EntitySorter.persona(personas[anid])))
+            (anid, personas[anid])
+            for anid in xsorted(
+                ml.moderators, key=lambda anid: EntitySorter.persona(personas[anid])
+            )
+        )
         requests = collections.OrderedDict(
-            (anid, personas[anid]) for anid in xsorted(
-            requests, key=lambda anid: EntitySorter.persona(personas[anid])))
-        restricted = not self.mlproxy.may_manage(rs, mailinglist_id,
-                                                 allow_restricted=False)
+            (anid, personas[anid])
+            for anid in xsorted(
+                requests, key=lambda anid: EntitySorter.persona(personas[anid])
+            )
+        )
+        restricted = not self.mlproxy.may_manage(
+            rs, mailinglist_id, allow_restricted=False
+        )
         allow_unsub = self.mlproxy.get_ml_type(rs, mailinglist_id).allow_unsub
-        return self.render(rs, "management", {
-            'subscribers': subscribers, 'requests': requests,
-            'moderators': moderators, 'explicits': explicits,
-            'restricted': restricted, 'allow_unsub': allow_unsub,
-            'defects': defects})
+        return self.render(
+            rs,
+            "management",
+            {
+                'subscribers': subscribers,
+                'requests': requests,
+                'moderators': moderators,
+                'explicits': explicits,
+                'restricted': restricted,
+                'allow_unsub': allow_unsub,
+                'defects': defects,
+            },
+        )
 
     @access("ml")
     @mailinglist_guard()
@@ -668,64 +807,98 @@ class MlBaseFrontend(AbstractUserFrontend):
         """Render form."""
         ml = rs.ambience["mailinglist"]
         subscription_overrides = self.mlproxy.get_subscription_states(
-            rs, mailinglist_id,
-            states=(const.SubscriptionState.subscription_override,))
+            rs, mailinglist_id, states=(const.SubscriptionState.subscription_override,)
+        )
         unsubscription_overrides = self.mlproxy.get_subscription_states(
-            rs, mailinglist_id,
-            states=(const.SubscriptionState.unsubscription_override,))
+            rs,
+            mailinglist_id,
+            states=(const.SubscriptionState.unsubscription_override,),
+        )
         all_unsubscriptions = self.mlproxy.get_subscription_states(
-            rs, mailinglist_id, states=(const.SubscriptionState.unsubscribed,))
+            rs, mailinglist_id, states=(const.SubscriptionState.unsubscribed,)
+        )
         redundant_unsubscriptions = self.mlproxy.get_redundant_unsubscriptions(
-            rs, mailinglist_id)
-        persona_ids = (set(ml.moderators)
-                       | set(subscription_overrides.keys())
-                       | set(unsubscription_overrides.keys())
-                       | set(all_unsubscriptions.keys()))
+            rs, mailinglist_id
+        )
+        persona_ids = (
+            set(ml.moderators)
+            | set(subscription_overrides.keys())
+            | set(unsubscription_overrides.keys())
+            | set(all_unsubscriptions.keys())
+        )
         personas = self.coreproxy.get_personas(rs, persona_ids)
         subscription_overrides = collections.OrderedDict(
-            (anid, personas[anid]) for anid in xsorted(
+            (anid, personas[anid])
+            for anid in xsorted(
                 subscription_overrides,
-                key=lambda anid: EntitySorter.persona(personas[anid])))
+                key=lambda anid: EntitySorter.persona(personas[anid]),
+            )
+        )
         unsubscription_overrides = collections.OrderedDict(
-            (anid, personas[anid]) for anid in xsorted(
+            (anid, personas[anid])
+            for anid in xsorted(
                 unsubscription_overrides,
-                key=lambda anid: EntitySorter.persona(personas[anid])))
+                key=lambda anid: EntitySorter.persona(personas[anid]),
+            )
+        )
         all_unsubscriptions = collections.OrderedDict(
-            (anid, personas[anid]) for anid in xsorted(
+            (anid, personas[anid])
+            for anid in xsorted(
                 all_unsubscriptions,
-                key=lambda anid: EntitySorter.persona(personas[anid])))
-        restricted = not self.mlproxy.may_manage(rs, mailinglist_id,
-                                                 allow_restricted=False)
+                key=lambda anid: EntitySorter.persona(personas[anid]),
+            )
+        )
+        restricted = not self.mlproxy.may_manage(
+            rs, mailinglist_id, allow_restricted=False
+        )
         # determine defect addresses used as subscription_override
         defect_addresses = self.coreproxy.list_email_states(
-            rs, const.EmailStatus.defect_states())
+            rs, const.EmailStatus.defect_states()
+        )
         subscription_addresses = self.mlproxy.get_subscription_addresses(
-            rs, mailinglist_id, subscription_overrides)
-        defects = {anid for anid in subscription_overrides
-                   if subscription_addresses[anid] in defect_addresses}
-        return self.render(rs, "advanced_management", {
-            'subscription_overrides': subscription_overrides,
-            'unsubscription_overrides': unsubscription_overrides,
-            'all_unsubscriptions': all_unsubscriptions,
-            'redundant_unsubscriptions': redundant_unsubscriptions,
-            'restricted': restricted, 'defects': defects})
+            rs, mailinglist_id, subscription_overrides
+        )
+        defects = {
+            anid
+            for anid in subscription_overrides
+            if subscription_addresses[anid] in defect_addresses
+        }
+        return self.render(
+            rs,
+            "advanced_management",
+            {
+                'subscription_overrides': subscription_overrides,
+                'unsubscription_overrides': unsubscription_overrides,
+                'all_unsubscriptions': all_unsubscriptions,
+                'redundant_unsubscriptions': redundant_unsubscriptions,
+                'restricted': restricted,
+                'defects': defects,
+            },
+        )
 
     @access("ml")
     @mailinglist_guard()
-    def download_csv_subscription_states(self, rs: RequestState,
-                                         mailinglist_id: int) -> Response:
+    def download_csv_subscription_states(
+        self, rs: RequestState, mailinglist_id: int
+    ) -> Response:
         """Create CSV file with all subscribers and their subscription state"""
         ml = rs.ambience["mailinglist"]
-        personas_state = self.mlproxy.get_subscription_states(
-            rs, mailinglist_id)
+        personas_state = self.mlproxy.get_subscription_states(rs, mailinglist_id)
         if not personas_state:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "ml/management")
         personas = self.coreproxy.get_personas(rs, personas_state.keys())
         addresses = self.mlproxy.get_subscription_addresses(
-            rs, mailinglist_id, explicits_only=True)
-        columns = ['db_id', 'given_names', 'family_name',
-                   'subscription_state', 'email', 'subscription_address']
+            rs, mailinglist_id, explicits_only=True
+        )
+        columns = [
+            'db_id',
+            'given_names',
+            'family_name',
+            'subscription_state',
+            'email',
+            'subscription_address',
+        ]
         output = []
 
         for persona in personas:
@@ -744,30 +917,37 @@ class MlBaseFrontend(AbstractUserFrontend):
             output.append(pair)
 
         csv_data = csv_output(
-            xsorted(output, key=lambda e: EntitySorter.persona(
-                personas[int(e["db_id"][3:-2])])),
-            columns, tzinfo=self.conf['DEFAULT_TIMEZONE'])
+            xsorted(
+                output,
+                key=lambda e: EntitySorter.persona(personas[int(e["db_id"][3:-2])]),
+            ),
+            columns,
+            tzinfo=self.conf['DEFAULT_TIMEZONE'],
+        )
         return self.send_csv_file(
-            rs, data=csv_data, inline=False,
-            filename=f"{ml.id}_subscription_states.csv")
+            rs, data=csv_data, inline=False, filename=f"{ml.id}_subscription_states.csv"
+        )
 
     @access("ml", modi={"POST"})
     @mailinglist_guard()
     @REQUESTdata("moderators")
-    def add_moderators(self, rs: RequestState, mailinglist_id: int,
-                       moderators: vtypes.CdedbIDList) -> Response:
+    def add_moderators(
+        self, rs: RequestState, mailinglist_id: int, moderators: vtypes.CdedbIDList
+    ) -> Response:
         """Promote personas to moderator."""
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
 
         if not self.coreproxy.verify_ids(rs, moderators, is_archived=False):
-            rs.append_validation_error(
-                ("moderators", ValueError(n_(
-                    "Some of these users do not exist or are archived."))))
+            rs.append_validation_error((
+                "moderators",
+                ValueError(n_("Some of these users do not exist or are archived.")),
+            ))
         if not self.coreproxy.verify_personas(rs, moderators, {"ml"}):
-            rs.append_validation_error(
-                ("moderators", ValueError(n_(
-                    "Some of these users are not ml users."))))
+            rs.append_validation_error((
+                "moderators",
+                ValueError(n_("Some of these users are not ml users.")),
+            ))
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
 
@@ -778,18 +958,21 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml", modi={"POST"})
     @mailinglist_guard()
     @REQUESTdata("moderator_id")
-    def remove_moderator(self, rs: RequestState, mailinglist_id: int,
-                         moderator_id: vtypes.ID) -> Response:
+    def remove_moderator(
+        self, rs: RequestState, mailinglist_id: int, moderator_id: vtypes.ID
+    ) -> Response:
         """Demote persona from moderator status."""
         ml = rs.ambience["mailinglist"]
         if moderator_id not in ml.moderators:
-            rs.append_validation_error(
-                ("moderator_id", ValueError(n_("User is no moderator."))))
+            rs.append_validation_error((
+                "moderator_id",
+                ValueError(n_("User is no moderator.")),
+            ))
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
-        if (moderator_id == rs.user.persona_id
-                and not self.mlproxy.is_relevant_admin(
-                    rs, mailinglist_id=mailinglist_id)):
+        if moderator_id == rs.user.persona_id and not self.mlproxy.is_relevant_admin(
+            rs, mailinglist_id=mailinglist_id
+        ):
             rs.notify("error", n_("Not allowed to remove yourself as moderator."))
             return self.management(rs, mailinglist_id)
 
@@ -803,8 +986,9 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml", modi={"POST"})
     @mailinglist_guard()
     @REQUESTdata("email")
-    def add_whitelist(self, rs: RequestState, mailinglist_id: int,
-                      email: vtypes.Email) -> Response:
+    def add_whitelist(
+        self, rs: RequestState, mailinglist_id: int, email: vtypes.Email
+    ) -> Response:
         """Allow address to write to the list."""
         if rs.has_validation_errors():
             return self.advanced_management(rs, mailinglist_id)
@@ -816,8 +1000,9 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml", modi={"POST"})
     @mailinglist_guard()
     @REQUESTdata("email")
-    def remove_whitelist(self, rs: RequestState, mailinglist_id: int,
-                         email: vtypes.Email) -> Response:
+    def remove_whitelist(
+        self, rs: RequestState, mailinglist_id: int, email: vtypes.Email
+    ) -> Response:
         """Withdraw privilege of writing to list."""
         if rs.has_validation_errors():
             return self.advanced_management(rs, mailinglist_id)
@@ -826,9 +1011,9 @@ class MlBaseFrontend(AbstractUserFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "ml/advanced_management")
 
-    def _subscription_action_handler(self, rs: RequestState,
-                                     action: SubscriptionAction,
-                                     **kwargs: Any) -> None:
+    def _subscription_action_handler(
+        self, rs: RequestState, action: SubscriptionAction, **kwargs: Any
+    ) -> None:
         """Un-inlined code from all single subscription action initiating endpoints."""
         try:
             code = self.mlproxy.do_subscription_action(rs, action, **kwargs)
@@ -843,26 +1028,34 @@ class MlBaseFrontend(AbstractUserFrontend):
             else:
                 rs.notify_return_code(code)
 
-    def _subscription_multi_action_handler(self, rs: RequestState,
-                                           field: str,
-                                           action: SubscriptionAction,
-                                           mailinglist_id: int,
-                                           persona_ids: Collection[int]) -> None:
+    def _subscription_multi_action_handler(
+        self,
+        rs: RequestState,
+        field: str,
+        action: SubscriptionAction,
+        mailinglist_id: int,
+        persona_ids: Collection[int],
+    ) -> None:
         """Un-inlined code from all multi subscription action initiating endpoints.
 
         Falls back to _subscription_action_handler if only a single action is
         done."""
         if not self.coreproxy.verify_ids(rs, persona_ids, is_archived=False):
-            rs.append_validation_error(
-                (field, ValueError(n_(
-                    "Some of these users do not exist or are archived."))))
+            rs.append_validation_error((
+                field,
+                ValueError(n_("Some of these users do not exist or are archived.")),
+            ))
             rs.notify_return_code(0)
             return
 
         # Use different error pattern if only one action is done
         if len(persona_ids) == 1:
-            self._subscription_action_handler(rs, action, mailinglist_id=mailinglist_id,
-                                              persona_id=unwrap(persona_ids))
+            self._subscription_action_handler(
+                rs,
+                action,
+                mailinglist_id=mailinglist_id,
+                persona_id=unwrap(persona_ids),
+            )
             return
         # Iterate over all subscriber_ids
         code = 0
@@ -872,7 +1065,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         for persona_id in persona_ids:
             try:
                 code += self.mlproxy.do_subscription_action(
-                    rs, action, mailinglist_id=mailinglist_id, persona_id=persona_id)
+                    rs, action, mailinglist_id=mailinglist_id, persona_id=persona_id
+                )
                 infos_only = False
             except SubscriptionError as se:
                 rs.notify("warning" if se.kind == "error" else se.kind, se.msg)
@@ -889,8 +1083,9 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml", modi={"POST"})
     @mailinglist_guard(requires_privilege=True)
     @REQUESTdata("persona_id", "action")
-    def handle_request(self, rs: RequestState, mailinglist_id: int,
-                       persona_id: vtypes.ID, action: str) -> Response:
+    def handle_request(
+        self, rs: RequestState, mailinglist_id: int, persona_id: vtypes.ID, action: str
+    ) -> Response:
         """Evaluate whether to admit subscribers."""
         action_map = {
             'accept': SubscriptionAction.approve_request,
@@ -903,21 +1098,29 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.notify("error", n_("User does not exist or is archived."))
             return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, action=action_map[action], mailinglist_id=mailinglist_id,
-            persona_id=persona_id)
+            rs,
+            action=action_map[action],
+            mailinglist_id=mailinglist_id,
+            persona_id=persona_id,
+        )
         return self.redirect(rs, "ml/management")
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(requires_privilege=True)
     @REQUESTdata("subscriber_ids")
-    def add_subscribers(self, rs: RequestState, mailinglist_id: int,
-                        subscriber_ids: vtypes.CdedbIDList) -> Response:
+    def add_subscribers(
+        self, rs: RequestState, mailinglist_id: int, subscriber_ids: vtypes.CdedbIDList
+    ) -> Response:
         """Administratively subscribe somebody."""
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
         self._subscription_multi_action_handler(
-            rs, 'subscriber_ids', SubscriptionAction.add_subscriber,
-            mailinglist_id=mailinglist_id, persona_ids=subscriber_ids)
+            rs,
+            'subscriber_ids',
+            SubscriptionAction.add_subscriber,
+            mailinglist_id=mailinglist_id,
+            persona_ids=subscriber_ids,
+        )
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
         else:
@@ -926,8 +1129,9 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml_admin", modi={"POST"})
     @mailinglist_guard(requires_privilege=True)
     @REQUESTdata("subscriber_id")
-    def readd_subscriber(self, rs: RequestState, mailinglist_id: int,
-                         subscriber_id: vtypes.ID) -> Response:
+    def readd_subscriber(
+        self, rs: RequestState, mailinglist_id: int, subscriber_id: vtypes.ID
+    ) -> Response:
         """Administratively subscribe somebody previously unsubscribed.
 
         This is used as a shortcut to re-subscribe an unsubscribed user from the list
@@ -943,15 +1147,19 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.notify("error", n_("User does not exist or is archived."))
             return self.advanced_management(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionAction.add_subscriber,
-            mailinglist_id=mailinglist_id, persona_id=subscriber_id)
+            rs,
+            SubscriptionAction.add_subscriber,
+            mailinglist_id=mailinglist_id,
+            persona_id=subscriber_id,
+        )
         return self.redirect(rs, "ml/advanced_management")
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(requires_privilege=True)
     @REQUESTdata("subscriber_id")
-    def remove_subscriber(self, rs: RequestState, mailinglist_id: int,
-                          subscriber_id: vtypes.ID) -> Response:
+    def remove_subscriber(
+        self, rs: RequestState, mailinglist_id: int, subscriber_id: vtypes.ID
+    ) -> Response:
         """Administratively unsubscribe somebody."""
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)
@@ -959,15 +1167,19 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.notify("error", n_("User does not exist or is archived."))
             return self.management(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionAction.remove_subscriber,
-            mailinglist_id=mailinglist_id, persona_id=subscriber_id)
+            rs,
+            SubscriptionAction.remove_subscriber,
+            mailinglist_id=mailinglist_id,
+            persona_id=subscriber_id,
+        )
         return self.redirect(rs, "ml/management")
 
     @access("ml_admin", modi={"POST"})
     @REQUESTdata("unsubscription_id")
     @mailinglist_guard(requires_privilege=True)
-    def reset_unsubscription(self, rs: RequestState, mailinglist_id: int,
-                             unsubscription_id: vtypes.ID) -> Response:
+    def reset_unsubscription(
+        self, rs: RequestState, mailinglist_id: int, unsubscription_id: vtypes.ID
+    ) -> Response:
         """Administratively reset an unsubscription state.
 
         This is the only way to remove an explicit association of an user with a
@@ -986,21 +1198,32 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.notify("error", n_("User does not exist or is archived."))
             return self.advanced_management(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionAction.reset,
-            mailinglist_id=mailinglist_id, persona_id=unsubscription_id)
+            rs,
+            SubscriptionAction.reset,
+            mailinglist_id=mailinglist_id,
+            persona_id=unsubscription_id,
+        )
         return self.redirect(rs, "ml/advanced_management")
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(requires_privilege=True)
     @REQUESTdata("modsubscriber_ids")
-    def add_subscription_overrides(self, rs: RequestState, mailinglist_id: int,
-                                   modsubscriber_ids: vtypes.CdedbIDList) -> Response:
+    def add_subscription_overrides(
+        self,
+        rs: RequestState,
+        mailinglist_id: int,
+        modsubscriber_ids: vtypes.CdedbIDList,
+    ) -> Response:
         """Administratively subscribe somebody with moderator override."""
         if rs.has_validation_errors():
             return self.advanced_management(rs, mailinglist_id)
         self._subscription_multi_action_handler(
-            rs, 'modsubscriber_ids', SubscriptionAction.add_subscription_override,
-            mailinglist_id=mailinglist_id, persona_ids=modsubscriber_ids)
+            rs,
+            'modsubscriber_ids',
+            SubscriptionAction.add_subscription_override,
+            mailinglist_id=mailinglist_id,
+            persona_ids=modsubscriber_ids,
+        )
         if rs.has_validation_errors():
             return self.advanced_management(rs, mailinglist_id)
         else:
@@ -1009,9 +1232,9 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml", modi={"POST"})
     @mailinglist_guard(requires_privilege=True)
     @REQUESTdata("modsubscriber_id")
-    def remove_subscription_override(self, rs: RequestState,
-                                     mailinglist_id: int,
-                                     modsubscriber_id: vtypes.ID) -> Response:
+    def remove_subscription_override(
+        self, rs: RequestState, mailinglist_id: int, modsubscriber_id: vtypes.ID
+    ) -> Response:
         """Administratively remove somebody with moderator override."""
         if rs.has_validation_errors():
             return self.advanced_management(rs, mailinglist_id)
@@ -1019,22 +1242,32 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.notify("error", n_("User does not exist or is archived."))
             return self.advanced_management(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionAction.remove_subscription_override,
-            mailinglist_id=mailinglist_id, persona_id=modsubscriber_id)
+            rs,
+            SubscriptionAction.remove_subscription_override,
+            mailinglist_id=mailinglist_id,
+            persona_id=modsubscriber_id,
+        )
         return self.redirect(rs, "ml/advanced_management")
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(requires_privilege=True)
     @REQUESTdata("modunsubscriber_ids")
-    def add_unsubscription_overrides(self, rs: RequestState, mailinglist_id: int,
-                                     modunsubscriber_ids: vtypes.CdedbIDList,
-                                     ) -> Response:
+    def add_unsubscription_overrides(
+        self,
+        rs: RequestState,
+        mailinglist_id: int,
+        modunsubscriber_ids: vtypes.CdedbIDList,
+    ) -> Response:
         """Administratively block somebody."""
         if rs.has_validation_errors():
             return self.advanced_management(rs, mailinglist_id)
         self._subscription_multi_action_handler(
-            rs, 'modunsubscriber_ids', SubscriptionAction.add_unsubscription_override,
-            mailinglist_id=mailinglist_id, persona_ids=modunsubscriber_ids)
+            rs,
+            'modunsubscriber_ids',
+            SubscriptionAction.add_unsubscription_override,
+            mailinglist_id=mailinglist_id,
+            persona_ids=modunsubscriber_ids,
+        )
         if rs.has_validation_errors():
             return self.advanced_management(rs, mailinglist_id)
         else:
@@ -1043,9 +1276,9 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml", modi={"POST"})
     @mailinglist_guard(requires_privilege=True)
     @REQUESTdata("modunsubscriber_id")
-    def remove_unsubscription_override(self, rs: RequestState,
-                                       mailinglist_id: int,
-                                       modunsubscriber_id: vtypes.ID) -> Response:
+    def remove_unsubscription_override(
+        self, rs: RequestState, mailinglist_id: int, modunsubscriber_id: vtypes.ID
+    ) -> Response:
         """Administratively remove block."""
         if rs.has_validation_errors():
             return self.advanced_management(rs, mailinglist_id)
@@ -1053,8 +1286,11 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.notify("error", n_("User does not exist or is archived."))
             return self.advanced_management(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionAction.remove_unsubscription_override,
-            mailinglist_id=mailinglist_id, persona_id=modunsubscriber_id)
+            rs,
+            SubscriptionAction.remove_unsubscription_override,
+            mailinglist_id=mailinglist_id,
+            persona_id=modunsubscriber_id,
+        )
         return self.redirect(rs, "ml/advanced_management")
 
     @access("ml", modi={"POST"})
@@ -1063,8 +1299,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionAction.subscribe,
-            mailinglist_id=mailinglist_id)
+            rs, SubscriptionAction.subscribe, mailinglist_id=mailinglist_id
+        )
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})
@@ -1073,8 +1309,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionAction.request_subscription,
-            mailinglist_id=mailinglist_id)
+            rs, SubscriptionAction.request_subscription, mailinglist_id=mailinglist_id
+        )
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})
@@ -1083,8 +1319,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionAction.unsubscribe,
-            mailinglist_id=mailinglist_id)
+            rs, SubscriptionAction.unsubscribe, mailinglist_id=mailinglist_id
+        )
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})
@@ -1093,14 +1329,15 @@ class MlBaseFrontend(AbstractUserFrontend):
         if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
         self._subscription_action_handler(
-            rs, SubscriptionAction.cancel_request,
-            mailinglist_id=mailinglist_id)
+            rs, SubscriptionAction.cancel_request, mailinglist_id=mailinglist_id
+        )
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml", modi={"POST"})
     @REQUESTdata("email")
-    def change_address(self, rs: RequestState, mailinglist_id: int,
-                       email: Optional[vtypes.Email]) -> Response:
+    def change_address(
+        self, rs: RequestState, mailinglist_id: int, email: Optional[vtypes.Email]
+    ) -> Response:
         """Modify address to which emails are delivered for this list.
 
         If this address has not been used before, we verify it.
@@ -1114,29 +1351,39 @@ class MlBaseFrontend(AbstractUserFrontend):
         known_addresses = self.mlproxy.get_persona_addresses(rs)
         if not email:
             code = self.mlproxy.remove_subscription_address(
-                rs, mailinglist_id=mailinglist_id,
-                persona_id=rs.user.persona_id)
+                rs, mailinglist_id=mailinglist_id, persona_id=rs.user.persona_id
+            )
             rs.notify_return_code(code)
         elif email in known_addresses:
             code = self.mlproxy.set_subscription_address(
-                rs, mailinglist_id=mailinglist_id,
-                persona_id=rs.user.persona_id, email=email)
+                rs,
+                mailinglist_id=mailinglist_id,
+                persona_id=rs.user.persona_id,
+                email=email,
+            )
             rs.notify_return_code(code)
         else:
             self.do_mail(
-                rs, "confirm_address",
-                {'To': (email,),
-                 'Subject': "E-Mail-Adresse für Mailingliste bestätigen"},
-                {'email': self.encode_parameter(
-                    "ml/do_address_change", "email", email,
-                    rs.user.persona_id)})
+                rs,
+                "confirm_address",
+                {
+                    'To': (email,),
+                    'Subject': "E-Mail-Adresse für Mailingliste bestätigen",
+                },
+                {
+                    'email': self.encode_parameter(
+                        "ml/do_address_change", "email", email, rs.user.persona_id
+                    )
+                },
+            )
             rs.notify("info", n_("Confirmation email sent."))
         return self.redirect(rs, "ml/show_mailinglist")
 
     @access("ml")
     @REQUESTdata("#email")
-    def do_address_change(self, rs: RequestState, mailinglist_id: int,
-                          email: vtypes.Email) -> Response:
+    def do_address_change(
+        self, rs: RequestState, mailinglist_id: int, email: vtypes.Email
+    ) -> Response:
         """Successful verification for new address in :py:meth:`change_address`.
 
         This is not a POST since the link is shared via email.
@@ -1148,13 +1395,16 @@ class MlBaseFrontend(AbstractUserFrontend):
             return self.redirect(rs, "ml/show_mailinglist")
 
         code = self.mlproxy.set_subscription_address(
-            rs, mailinglist_id=mailinglist_id, persona_id=rs.user.persona_id,
-            email=email)
+            rs,
+            mailinglist_id=mailinglist_id,
+            persona_id=rs.user.persona_id,
+            email=email,
+        )
         rs.notify_return_code(code)
         return self.redirect(rs, "ml/show_mailinglist")
 
     def _check_address_change_requirements(
-        self, rs: RequestState, mailinglist_id: int, email: Optional[vtypes.Email],
+        self, rs: RequestState, mailinglist_id: int, email: Optional[vtypes.Email]
     ) -> bool:
         """Check if all conditions required to change a subscription address
         are fulfilled."""
@@ -1172,14 +1422,16 @@ class MlBaseFrontend(AbstractUserFrontend):
         return True
 
     @periodic("subscription_request_remind")
-    def subscription_request_remind(self, rs: RequestState,
-                                    store: CdEDBObject) -> CdEDBObject:
+    def subscription_request_remind(
+        self, rs: RequestState, store: CdEDBObject
+    ) -> CdEDBObject:
         """Send reminder email to moderators for pending subrequests."""
         ml_ids = self.mlproxy.list_mailinglists(rs)
         current = now().timestamp()
         for ml_id in ml_ids:
             requests = self.mlproxy.get_subscription_states(
-                rs, ml_id, states=(const.SubscriptionState.pending,))
+                rs, ml_id, states=(const.SubscriptionState.pending,)
+            )
             requests = list(requests)  # convert from dict which breaks JSON
 
             ml_store = store.get(str(ml_id))
@@ -1191,15 +1443,20 @@ class MlBaseFrontend(AbstractUserFrontend):
 
             if requests:
                 new_request = set(requests) - set(ml_store['persona_ids'])
-                if new_request or current > ml_store['tstamp'] + 7*24*60*60:
+                if new_request or current > ml_store['tstamp'] + 7 * 24 * 60 * 60:
                     ml_store['tstamp'] = current
                     ml = self.mlproxy.get_mailinglist(rs, ml_id)
                     owner = ml.address.replace("@", "-owner@")
-                    self.do_mail(rs, "subscription_request_remind",
-                                 {'To': (owner,),
-                                  'Subject': "Offene Abonnement-Anfragen"},
-                                 {'count_all': len(requests), 'ml': ml,
-                                  'count_new': len(new_request)})
+                    self.do_mail(
+                        rs,
+                        "subscription_request_remind",
+                        {'To': (owner,), 'Subject': "Offene Abonnement-Anfragen"},
+                        {
+                            'count_all': len(requests),
+                            'ml': ml,
+                            'count_new': len(new_request),
+                        },
+                    )
 
             ml_store['persona_ids'] = requests
             store[str(ml_id)] = ml_store
