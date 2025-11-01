@@ -20556,7 +20556,7 @@ msgid ""
 "contact with you."
 msgstr ""
 "Du hast %(to_pay)s mehr bezahlt als deinen Teilnahmebeitrag von %(fee)s. Die "
-"Orgas werden sich disebezüglich bei dir melden."
+"Orgas werden sich diesbezüglich bei dir melden."
 
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:137
 msgid "Bank transfer data as QR code"
