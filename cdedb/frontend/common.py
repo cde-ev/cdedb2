@@ -264,7 +264,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         return self.encode_parameter(
             '_/notification', 'displaynote', message,
             persona_id=rs.user.persona_id,
-            timeout=self.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
+            timeout=self.conf["EXTENDED_PARAMETER_TIMEOUT"])
 
     def decode_notification(self, rs: RequestState, note: str,
                             ) -> Union[Notification, tuple[None, None, None]]:
@@ -404,8 +404,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'CDEDB_OFFLINE_DEPLOYMENT': self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
             'CDEDB_TEST': self.conf["CDEDB_TEST"],
             'CDEDB_DEV': self.conf["CDEDB_DEV"],
-            'UNCRITICAL_PARAMETER_TIMEOUT': self.conf[
-                "UNCRITICAL_PARAMETER_TIMEOUT"],
+            'EXTENDED_PARAMETER_TIMEOUT': self.conf["EXTENDED_PARAMETER_TIMEOUT"],
             'ANTI_CSRF_TOKEN_NAME': ANTI_CSRF_TOKEN_NAME,
             'ANTI_CSRF_TOKEN_PAYLOAD': ANTI_CSRF_TOKEN_PAYLOAD,
             'IGNORE_WARNINGS_NAME': IGNORE_WARNINGS_NAME,
@@ -968,10 +967,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         Therefore, we send this mail again if a persona was granted the cde realm.
         """
         success, cookie = self.coreproxy.make_reset_cookie(
-            rs, persona['username'], timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+            rs, persona['username'], timeout=self.conf["EXTENDED_PARAMETER_TIMEOUT"])
         reset_link = self.encode_parameter(
             "core/do_password_reset_form", "email", persona['username'],
-            persona_id=None, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+            persona_id=None, timeout=self.conf["EXTENDED_PARAMETER_TIMEOUT"])
         transaction_subject = make_membership_fee_reference(persona)
         if persona['is_member']:
             subject = "Aufnahme in den CdE"
@@ -2005,7 +2004,7 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                         'wants': obj.encode_parameter(
                             "core/index", "wants", rs.request.url,
                             persona_id=rs.user.persona_id,
-                            timeout=obj.conf["UNCRITICAL_PARAMETER_TIMEOUT"]),
+                            timeout=obj.conf["EXTENDED_PARAMETER_TIMEOUT"]),
                     }
                     ret = basic_redirect(rs, cdedburl(rs, "core/index", params))
                     # noinspection PyProtectedMember
