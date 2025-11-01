@@ -134,7 +134,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 rs.values['wants'] = self.encode_parameter(
                     "core/login", "wants", wants,
                     persona_id=rs.user.persona_id,
-                    timeout=self.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
+                    timeout=self.conf["EXTENDED_PARAMETER_TIMEOUT"])
             return self.render(rs, "login", {'meta_info': meta_info},
                                get_mandatory_form_fields(self.login))
 
@@ -1899,11 +1899,11 @@ class CoreBaseFrontend(AbstractFrontend):
                 # We didn't actually issue the success message above.
                 rs.notify("success", success)
                 successful, cookie = self.coreproxy.make_reset_cookie(
-                    rs, email, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+                    rs, email, timeout=self.conf["EXTENDED_PARAMETER_TIMEOUT"])
                 if successful:
                     params["email"] = self.encode_parameter(
                         "core/do_password_reset_form", "email", email, persona_id=None,
-                        timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+                        timeout=self.conf["EXTENDED_PARAMETER_TIMEOUT"])
                     params["cookie"] = cookie
             if case_status == const.PrivilegeChangeStati.approved:
                 headers: Headers = {
@@ -2335,7 +2335,7 @@ class CoreBaseFrontend(AbstractFrontend):
         else:
             email = rs.ambience['persona']['username']
         success, message = self.coreproxy.make_reset_cookie(
-            rs, email, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+            rs, email, timeout=self.conf["EXTENDED_PARAMETER_TIMEOUT"])
         if not success:
             rs.notify("error", message)
         else:
@@ -2345,7 +2345,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 {'email': self.encode_parameter(
                     "core/do_password_reset_form", "email", email,
                     persona_id=None,
-                    timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"]),
+                    timeout=self.conf["EXTENDED_PARAMETER_TIMEOUT"]),
                     'cookie': message})
             self.logger.info(f"Sent password reset mail to {email}"
                              f" for admin {rs.user.persona_id}.")

@@ -486,10 +486,10 @@ class CoreGenesisMixin(CoreBaseFrontend):
         elif decision.is_update():
             persona = self.coreproxy.get_persona(rs, persona_id)
             _, cookie = self.coreproxy.make_reset_cookie(
-                rs, persona['username'], timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+                rs, persona['username'], timeout=self.conf["EXTENDED_PARAMETER_TIMEOUT"])
             email = self.encode_parameter(
                 "core/do_password_reset_form", "email", persona['username'],
-                persona_id=None, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+                persona_id=None, timeout=self.conf["EXTENDED_PARAMETER_TIMEOUT"])
             self.do_mail(
                 rs, "genesis/genesis_updated",
                 {'To': (persona['username'],), 'Subject': "CdEDB-Account reaktiviert"},

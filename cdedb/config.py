@@ -171,11 +171,9 @@ _DEFAULTS = {
     ##################
 
     # timeout for protected url parameters to prevent replay
-    "PARAMETER_TIMEOUT": datetime.timedelta(hours=1),
-    # timeout for protected parameters, that are not security related
-    "UNCRITICAL_PARAMETER_TIMEOUT": datetime.timedelta(days=1),
-    # timeoue for parameters, in unsuspected emails (triggered by another user)
-    "EMAIL_PARAMETER_TIMEOUT": datetime.timedelta(days=2),
+    "PARAMETER_TIMEOUT": datetime.timedelta(hours=3),
+    # timeout for protected parameters, that are not security related or are triggered by another user.
+    "EXTENDED_PARAMETER_TIMEOUT": datetime.timedelta(days=5),
     # maximum length of rationale for requesting an account
     "MAX_RATIONALE": 500,
     # for shortnames longer than this, a ValidationWarning will be raised
