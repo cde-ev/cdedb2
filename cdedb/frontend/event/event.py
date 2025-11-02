@@ -147,12 +147,21 @@ class EventEventMixin(EventBaseFrontend):
         return self.render(rs, "event/show_event", params)
 
     @access("event")
-    @REQUESTdata("event_id")
-    def redirect_event(self, rs: RequestState, event_id: int) -> Response:
+    @REQUESTdata("event_id", "endpoint")
+    def redirect_event(self, rs: RequestState, event_id: int, endpoint: str | None) -> Response:
         if rs.has_validation_errors():
             rs.notify("error", rs.gettext("Unknown event."))
-            return self.list_events(rs)
-        return self.redirect(rs, "event/show_event", {"event_id": event_id})
+            params = {}
+            default_endpoint = "event/list_events"
+        else:
+            params = {"event_id": event_id}
+            default_endpoint = "event/show_event"
+        try:
+            return self.redirect(rs, endpoint or default_endpoint, params)
+        except werkzeug.routing.exceptions.BuildError:
+            if not rs.notifications:
+                rs.notify("info", n_("Could not redirect to entity page."))
+            return self.redirect(rs, default_endpoint, params)
 
     @access("event")
     @event_guard(EventPrivileges.basic_read)

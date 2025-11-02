@@ -59,11 +59,12 @@
             <div class="sr-only">{% trans %}Quickly navigate to an event by name{% endtrans %}</div>
             <div class="input-group">
                 {{ util.input_select(name="event_id", entries=all_events|entries('id', 'title'),
-                                     nulloption=gettext("Event Quick-Access")) }}
+                                     nulloption=gettext("Event Quick-Access"), force_noselect=True) }}
                 <span class="input-group-btn">
                     {{ util.input_submit("", icon='chevron-right', title=gettext("Go!")) }}
                 </span>
             </div>
+            {{ util.input_hidden("endpoint", original_endpoint) }}
         </form>
         <script nonce="{{ csp_nonce }}">
             form = $("#quickeventform{% if mobile %}-mobile{% endif %}");
@@ -126,6 +127,9 @@
         {% endif %}
     </div>
 
+    {% if 'event_list' in user.admin_views %}
+        {{ event_quicksearch() }}
+    {% endif %}
     {% if is_privileged_for('quick_show_registration') %}
         {{ registration_quicksearch() }}
     {% endif %}
@@ -197,6 +201,9 @@
             </div>
         {% endif %}
 
+        {% if 'event_list' in user.admin_views %}
+            {{ event_quicksearch(mobile=True) }}
+        {% endif %}
         {% if is_privileged_for('quick_show_registration') %}
             {{ registration_quicksearch(mobile=True) }}
         {% endif %}
@@ -211,12 +218,12 @@
             {% endif %}
             {{ util.cdedb_script('cdedb_searchregistration.js') }}
         {% endif %}
-    {% elif "event_list" in user.admin_views %}
+    {% endif %}
+    {% if "event_list" in user.admin_views %}
         {% if not jshint %}
             {% set jshint='weak' %}
         {% endif %}
         {{ util.cdedb_script('cdedb_search_event.js') }}
-        {{ util.cdedb_script('selectize/selectize.min.js') }}
     {% endif %}
 {% endblock %}
 

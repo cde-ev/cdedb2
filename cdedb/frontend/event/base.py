@@ -215,18 +215,17 @@ class EventBaseFrontend(AbstractUserFrontend):
                         rt["course_instructor"] for rt in registration['tracks'].values()
                     )
 
-        else:
-            all_events = self.eventproxy.get_events(rs, self.eventproxy.list_events(rs))
-            event_options = [
-                {
-                    'title': event.title,
-                    'shortname': event.shortname,
-                    'id': event.id,
-                }
-                for event in xsorted(all_events.values(), reverse=True)
-            ]
-            params['all_events'] = all_events
-            params['event_options'] = event_options
+        all_events = self.eventproxy.get_events(rs, self.eventproxy.list_events(rs))
+        event_options = [
+            {
+                'title': event.title,
+                'shortname': event.shortname,
+                'id': event.id,
+            }
+            for event in xsorted(all_events.values(), reverse=True)
+        ]
+        params['all_events'] = all_events
+        params['event_options'] = event_options
 
         params['is_privileged'] = is_privileged
         params['is_privileged_for'] = is_privileged_for
