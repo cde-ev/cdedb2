@@ -659,7 +659,7 @@
 
 
 {% macro input_select(name, entries, readonly=False, actualreadonly=False, defaultvalue=none, anid=none,
-        aclass='form-control', nulloption=none, arialabel=none, attributes="", sort=False, enforce_required=True, selectize=False) %}
+        aclass='form-control', nulloption=none, arialabel=none, attributes="", sort=False, enforce_required=True, selectize=False, force_noselect=False) %}
     <select{{ dict(
         name=name if not actualreadonly else ("readonly" + name),
         id=anid,
@@ -674,7 +674,7 @@
             </option>
         {%- endif %}
         {# Relevant for default: Use default value if key is unset or empty string or none #}
-        {% set former_value = values.get(name, "")|string if values.get(name, "") is not none else "" %}
+        {% set former_value = values.get(name, "")|string if values.get(name, "") is not none and not force_noselect else "" %}
         {% if value in ("", none) and defaultvalue %}
             {# This leads to problems regarding defaultvalues. #}
             {{ raise(gettext("Empty string values with defaultvalue not supported. default: {} value: {}")
