@@ -721,18 +721,9 @@ class CdELastschriftMixin(CdEBaseFrontend):
 
     @access("anonymous")
     @REQUESTdata(
-        "full_name",
-        "db_id",
-        "username",
-        "address_supplement",
-        "address",
-        "postal_code",
-        "location",
-        "country",
-        "iban",
-        "donation",
-        "account_holder",
-    )
+        "full_name", "db_id", "username", "address_supplement", "address",
+        "postal_code", "location", "country", "iban", "donation", "account_holder",
+    )  # fmt: skip
     def lastschrift_subscription_form(
         self,
         rs: RequestState,

@@ -134,11 +134,7 @@ class ExportFields:
         "iban",
     )
 
-    festgeld = (
-        "date",
-        "amount_german",
-        "reference",
-    )
+    festgeld = ("date", "amount_german", "reference")
 
 
 class PostingPatterns:
@@ -327,18 +323,13 @@ class Transaction:
             raw_amount = raw[StatementCSVKeys.amount]
             reconstructed_amount = number_to_german(data["amount"])
             if raw_amount != reconstructed_amount:
-                errors.append((
-                    "amount",
-                    ValueError(
-                        "Problem in line %(t_id)s: raw value "
-                        "%(amt_r)s != parsed value %(amt_p)s.",
-                        {
-                            "t_id": t_id,
-                            "amt_r": raw_amount,
-                            "amt_p": reconstructed_amount,
-                        },
-                    ),
-                ))
+                msg = "Problem in line %(t_id)s: raw value %(amt_r)s != parsed value %(amt_p)s."
+                params = {
+                    "t_id": t_id,
+                    "amt_r": raw_amount,
+                    "amt_p": reconstructed_amount,
+                }
+                errors.append(("amount", ValueError(msg, params)))
 
         data["reference"] = raw[StatementCSVKeys.reference]
 
@@ -616,18 +607,11 @@ class Transaction:
         elif self.compile_pattern(event.title, strict=False).search(self.reference):
             ret = EventMatch(event, ConfidenceLevel.High)
         elif amount_owed is not None and self.amount == amount_owed:
+            msg = n_("Matched event %(title)s via amount owed only.")
             ret = EventMatch(
                 event=event,
                 confidence=ConfidenceLevel.High,
-                warnings=[
-                    (
-                        'event',
-                        ValueError(
-                            n_("Matched event %(title)s via amount owed only."),
-                            {'title': event.title},
-                        ),
-                    )
-                ],
+                warnings=[('event', ValueError(msg, {'title': event.title}))],
             )
         else:
             return None
