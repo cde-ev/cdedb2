@@ -568,17 +568,15 @@ class BackendTest(CdEDBTest):
                 exp['ctime'] = nearly_now()
             if 'submitted_by' not in exp:
                 exp['submitted_by'] = self.user['id']
-            for k in ('event_id', 'assembly_id', 'mailinglist_id', 'case_id'):
-                if k in kwargs and 'entity_ids' not in exp:
-                    exp[k] = kwargs[k]
-            for k in ('persona_id', 'change_note'):
+            if 'persona_id' not in exp:
+                exp['persona_id'] = None
+            if 'change_note' not in exp:
+                exp['change_note'] = None
+            for k in log_filter_class.additional_columns:
                 if k not in exp:
-                    exp[k] = None
-            for k in ('droid_id', 'delta', 'new_balance', 'transaction_date', 'companion_id'):
-                if k not in exp and k in real:
-                    exp[k] = None
+                    exp[k] = kwargs.get(k)
             for k in ('total', 'delta', 'new_balance', 'member_total'):
-                if exp.get(k):
+                if exp.get(k) is not None:
                     exp[k] = decimal.Decimal(exp[k])
             if real['change_note']:
                 real['change_note'] = real['change_note'].replace("\xa0", " ")
