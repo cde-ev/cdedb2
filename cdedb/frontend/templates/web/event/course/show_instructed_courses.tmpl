@@ -43,7 +43,7 @@
     {% else %}
         {% for track in ambience["event"].tracks.values() %}
             {% set course_id = registration["tracks"][track.id]["course_instructor"] %}
-            {% if course_id %}
+            {% if course_id and track.id in courses[course_id].segments %}
                 {% set course = courses[course_id] %}
                 {% set course_attendees = attendees[(course_id, track.id)] %}
                 {{ util.context_heading(course.label, track.title, "book", gettext("Course Track"), level=4, anchor="track" + track.id|string) }}
