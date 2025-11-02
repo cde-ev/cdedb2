@@ -13,7 +13,6 @@ import cdedb.models.event as models_event
 from cdedb.common import (
     PARSE_OUTPUT_DATEFORMAT,
     CdEDBObject,
-    CdEDBObjectMap,
     Error,
     RequestState,
     asciificator,
@@ -32,31 +31,12 @@ from cdedb.common.parse.util import (
 )
 from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import inspect_validation as inspect
-from cdedb.models.common import CdEDataclassMap
 
 if TYPE_CHECKING:
     from cdedb.backend.core import CoreBackend
     from cdedb.backend.event import EventBackend
 
 BackendGetter = Callable[[int], CdEDBObject]
-
-
-@dataclasses.dataclass
-class MatchedEntities:
-    persona_matches: dict[int, ConfidenceLevel]
-    personas: CdEDBObjectMap
-    event_matches: dict[int, ConfidenceLevel]
-    events: CdEDataclassMap[models_event.Event]
-
-    def unpack(
-        self,
-    ) -> tuple[
-        dict[int, ConfidenceLevel],
-        CdEDBObjectMap,
-        dict[int, ConfidenceLevel],
-        CdEDataclassMap[models_event.Event],
-    ]:
-        return (self.persona_matches, self.personas, self.event_matches, self.events)
 
 
 @dataclasses.dataclass
