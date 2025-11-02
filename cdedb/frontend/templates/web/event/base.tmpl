@@ -65,6 +65,7 @@
                 </span>
             </div>
             {{ util.input_hidden("endpoint", original_endpoint) }}
+            {{ util.input_hidden("args", value=requestargs) }}
         </form>
         <script nonce="{{ csp_nonce }}">
             form = $("#quickeventform{% if mobile %}-mobile{% endif %}");

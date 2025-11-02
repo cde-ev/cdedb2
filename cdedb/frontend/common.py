@@ -587,6 +587,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'user': rs.user,
             'values': rs.values,
             'original_endpoint': rs.endpoint,
+            'requestargs': rs.requestargs,
         }
 
         # check that default values are not overridden

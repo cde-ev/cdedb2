@@ -9,6 +9,7 @@ This also includes all functionality directly avalable on the `show_event` page.
 
 import copy
 import datetime
+import json
 from collections import OrderedDict
 from collections.abc import Collection
 from typing import Optional, cast
@@ -147,14 +148,22 @@ class EventEventMixin(EventBaseFrontend):
         return self.render(rs, "event/show_event", params)
 
     @access("event")
-    @REQUESTdata("event_id", "endpoint")
-    def redirect_event(self, rs: RequestState, event_id: int, endpoint: str | None) -> Response:
+    @REQUESTdata("event_id", "endpoint", "args")
+    def redirect_event(self, rs: RequestState, event_id: int, endpoint: str | None, args: str | None) -> Response:
         if rs.has_validation_errors():
             rs.notify("error", rs.gettext("Unknown event."))
             params = {}
             default_endpoint = "event/list_events"
         else:
-            params = {"event_id": event_id}
+            original_params = {}
+            if args:
+                original_params = json.loads(args.replace("'", '"'))
+            if original_params.get("event_id") == event_id:
+                # Allow redirect to the original entity page.
+                params = original_params
+            else:
+                # If going to a different event, drop subentity params.
+                params = {"event_id": event_id}
             default_endpoint = "event/show_event"
         try:
             return self.redirect(rs, endpoint or default_endpoint, params)
