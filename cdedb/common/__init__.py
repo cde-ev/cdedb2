@@ -200,6 +200,7 @@ class RequestState(ConnectionContainer):
         begin: Optional[datetime.datetime],
         lang: str,
         translations: Mapping[str, gettext.NullTranslations],
+        endpoint: str | None = None,
     ) -> None:
         """
         :param mapadapter: URL generator (specific for this request)
@@ -239,6 +240,7 @@ class RequestState(ConnectionContainer):
         # is executed and then to True with the corresponding methods
         # of this class
         self.validation_appraised: Optional[bool] = None
+        self.endpoint = endpoint
 
     @property
     def gettext(self) -> Callable[[str], str]:
