@@ -16,6 +16,10 @@ class FilenameConverter(werkzeug.routing.BaseConverter):
 def get_(
     string: str, endpoint: str, redirect_to: str | None = None
 ) -> werkzeug.routing.Rule:
+    """Light wrapper to avoid having to specify the methods everytime.
+
+    The _ in the name is so that the length aligns with `post` below.
+    """
     return werkzeug.routing.Rule(
         string=string,
         endpoint=endpoint,
@@ -25,16 +29,19 @@ def get_(
 
 
 def post(string: str, endpoint: str) -> werkzeug.routing.Rule:
+    """Light wrapper to avoid having to specify the methods everytime."""
     return werkzeug.routing.Rule(string=string, endpoint=endpoint, methods=("POST",))
 
 
 def sub(path: str, *rules: werkzeug.routing.RuleFactory) -> werkzeug.routing.Submount:
+    """Light wrapper to remove one level of indentation for the list of rules."""
     return werkzeug.routing.Submount(path, rules)
 
 
 def prefix(
     prefix_: str, *rules: werkzeug.routing.RuleFactory
 ) -> werkzeug.routing.EndpointPrefix:
+    """Light wrapper to remove one level of indentation for the list of rules."""
     return werkzeug.routing.EndpointPrefix(prefix_, rules)
 
 
