@@ -48,8 +48,12 @@ from cdedb.frontend.common import (
 
 class CdEParseMixin(CdEBaseFrontend):
     @access("finance_admin")
-    def parse_statement_form(self, rs: RequestState, data: Optional[CdEDBObject] = None,
-                             params: Optional[CdEDBObject] = None) -> Response:
+    def parse_statement_form(
+        self,
+        rs: RequestState,
+        data: Optional[CdEDBObject] = None,
+        params: Optional[CdEDBObject] = None,
+    ) -> Response:
         """Render form.
 
         The ``data`` parameter contains all extra information assembled
@@ -61,7 +65,9 @@ class CdEParseMixin(CdEBaseFrontend):
         events = self.eventproxy.get_events(rs, event_ids)
         event_entries = xsorted(
             [(event.id, event.title) for event in events.values()],
-            key=lambda e: events[e[0]], reverse=True)
+            key=lambda e: events[e[0]],
+            reverse=True,
+        )
         event_options = [
             {
                 'title': event.title,
@@ -75,21 +81,26 @@ class CdEParseMixin(CdEBaseFrontend):
             'data': data,
             'transaction_keys': parse.Transaction.get_request_params(hidden_only=True),
             'TransactionType': parse.TransactionType,
-            'event_entries': event_entries, 'event_options': event_options,
+            'event_entries': event_entries,
+            'event_options': event_options,
             'events': events,
         }
-        return self.render(rs, "parse/parse_statement", params,
-                           get_mandatory_form_fields(self.parse_statement))
+        return self.render(
+            rs,
+            "parse/parse_statement",
+            params,
+            get_mandatory_form_fields(self.parse_statement),
+        )
 
     def organize_transaction_data(
-        self, rs: RequestState, transactions: list[parse.Transaction],
+        self,
+        rs: RequestState,
+        transactions: list[parse.Transaction],
         date: datetime.date,
     ) -> tuple[CdEDBObject, CdEDBObject]:
         """Organize transactions into data and params usable in the form."""
 
-        data = {f"{k}{t.t_id}": v
-                for t in transactions
-                for k, v in t.to_dict().items()}
+        data = {f"{k}{t.t_id}": v for t in transactions for k, v in t.to_dict().items()}
         data["count"] = len(transactions)
         data["date"] = date
         params: CdEDBObject = {
@@ -118,7 +129,8 @@ class CdEParseMixin(CdEBaseFrontend):
                 params["has_none"].append(t.t_id)
             if t.event and t.persona:
                 reg_id = self.eventproxy.get_registration_id(
-                    rs, persona_id=t.persona['id'], event_id=t.event.id)
+                    rs, persona_id=t.persona['id'], event_id=t.event.id
+                )
                 params["registration_ids"][(t.persona['id'], t.event.id)] = reg_id
             params["accounts"][t.account] += 1
             if t.event and t.type == TransactionType.EventFee:
@@ -129,8 +141,9 @@ class CdEParseMixin(CdEBaseFrontend):
 
     @access("finance_admin", modi={"POST"})
     @REQUESTfile("statement_file")
-    def parse_statement(self, rs: RequestState,
-                        statement_file: FileStorage) -> Response:
+    def parse_statement(
+        self, rs: RequestState, statement_file: FileStorage
+    ) -> Response:
         """
         Parse the statement into multiple CSV files.
 
@@ -169,11 +182,13 @@ class CdEParseMixin(CdEBaseFrontend):
 
         for i, line in enumerate(reversed(list(reader))):
             if not line.keys() <= ALL_KEYS:
-                p = ("statement_file",
-                     ValueError(n_("Line %(lineno)s does not have "
-                                   "the correct columns."),
-                                {'lineno': i + 1},
-                                ))
+                p = (
+                    "statement_file",
+                    ValueError(
+                        n_("Line %(lineno)s does not have the correct columns."),
+                        {'lineno': i + 1},
+                    ),
+                )
                 rs.append_validation_error(p)
                 continue
             line["id"] = i
@@ -191,12 +206,16 @@ class CdEParseMixin(CdEBaseFrontend):
 
     @access("finance_admin", modi={"POST"}, check_anti_csrf=False)
     @REQUESTdata("count", "date", "validate", "excel", "db_import", "ignore_warnings")
-    def parse_download(self, rs: RequestState, count: int, date: datetime.date,
-                       validate: Optional[str] = None,
-                       excel: Optional[str] = None,
-                       db_import: Optional[str] = None,
-                       ignore_warnings: bool = False,
-                       ) -> Response:
+    def parse_download(
+        self,
+        rs: RequestState,
+        count: int,
+        date: datetime.date,
+        validate: Optional[str] = None,
+        excel: Optional[str] = None,
+        db_import: Optional[str] = None,
+        ignore_warnings: bool = False,
+    ) -> Response:
         """
         Provide data as CSV-Download with the given filename.
 
@@ -216,8 +235,11 @@ class CdEParseMixin(CdEBaseFrontend):
         data, params = self.organize_transaction_data(rs, transactions, date)
 
         fields: Sequence[str]
-        if validate is not None or params["has_error"] \
-                or (params["has_warning"] and not ignore_warnings):
+        if (
+            validate is not None
+            or params["has_error"]
+            or (params["has_warning"] and not ignore_warnings)
+        ):
             return self.parse_statement_form(rs, data, params)
         elif excel is not None:
             account, _ = inspect(Accounts, excel)
@@ -237,8 +259,10 @@ class CdEParseMixin(CdEBaseFrontend):
             else:
                 filename = "DB-Import"
             transactions = [
-                t for t in transactions
-                if t.type in {
+                t
+                for t in transactions
+                if t.type
+                in {
                     TransactionType.MembershipFee,
                     TransactionType.EventFee,
                     TransactionType.EventFeeRefund,
@@ -251,26 +275,30 @@ class CdEParseMixin(CdEBaseFrontend):
             return self.parse_statement_form(rs, data, params)
         filename += f"_{date}.csv"
         csv_data = [t.to_dict() for t in transactions]
-        csv_data = csv_output(csv_data, fields, write_header,
-                              tzinfo=self.conf['DEFAULT_TIMEZONE'])
+        csv_data = csv_output(
+            csv_data, fields, write_header, tzinfo=self.conf['DEFAULT_TIMEZONE']
+        )
         return self.send_csv_file(rs, "text/csv", filename, data=csv_data)
 
     @access("finance_admin")
     def money_transfers_form(
-            self, rs: RequestState,
-            data: Optional[list[CdEDBObject]] = None,
-            csvfields: Optional[tuple[str, ...]] = None,
-            saldos: Optional[dict[int, decimal.Decimal]] = None,
+        self,
+        rs: RequestState,
+        data: Optional[list[CdEDBObject]] = None,
+        csvfields: Optional[tuple[str, ...]] = None,
+        saldos: Optional[dict[int, decimal.Decimal]] = None,
     ) -> Response:
-        # TODO: What if an event is offline locked?
         events = self.eventproxy.get_events(rs, self.eventproxy.list_events(rs))
         data = data or []
         csvfields = csvfields or tuple()
         csv_position = {key: ind for ind, key in enumerate(csvfields)}
         return self.render(
-            rs, "parse/money_transfers",
+            rs,
+            "parse/money_transfers",
             {
-                'data': data, 'csvfields': csv_position, 'saldos': saldos,
+                'data': data,
+                'csvfields': csv_position,
+                'saldos': saldos,
                 'events': events,
             },
             get_mandatory_form_fields(self.money_transfers),
@@ -279,10 +307,14 @@ class CdEParseMixin(CdEBaseFrontend):
     @access("finance_admin", modi={"POST"})
     @REQUESTfile("transfers_file")
     @REQUESTdata("send_notifications", "transfers", "checksum")
-    def money_transfers(self, rs: RequestState, send_notifications: bool,
-                        transfers: Optional[str], checksum: Optional[str],
-                        transfers_file: Optional[FileStorage],
-                        ) -> Response:
+    def money_transfers(
+        self,
+        rs: RequestState,
+        send_notifications: bool,
+        transfers: Optional[str],
+        checksum: Optional[str],
+        transfers_file: Optional[FileStorage],
+    ) -> Response:
         """Update member balances.
 
         The additional parameter sendmail modifies the behaviour and can
@@ -293,7 +325,8 @@ class CdEParseMixin(CdEBaseFrontend):
         be committed (for the second purpose it works like a boolean).
         """
         transfers_file = check_optional(
-            rs, vtypes.CSVFile, transfers_file, "transfers_file")
+            rs, vtypes.CSVFile, transfers_file, "transfers_file"
+        )
         if rs.has_validation_errors():
             return self.money_transfers_form(rs)
         if transfers_file and transfers:
@@ -313,34 +346,44 @@ class CdEParseMixin(CdEBaseFrontend):
         events_by_shortname = {event.shortname: event for event in events.values()}
         fields = parse.ExportFields.db_import
         reader = csv.DictReader(
-            transferlines, fieldnames=fields, dialect=CustomCSVDialect())
+            transferlines, fieldnames=fields, dialect=CustomCSVDialect()
+        )
         data = []
         amounts_paid: dict[int, decimal.Decimal] = {}
         for lineno, raw_entry in enumerate(reader):
             dataset: CdEDBObject = {'raw': raw_entry, 'lineno': lineno}
             data.append(
                 self.examine_money_transfer(
-                    rs, dataset, events_by_shortname=events_by_shortname,
+                    rs,
+                    dataset,
+                    events_by_shortname=events_by_shortname,
                     amounts_paid=amounts_paid,
                 ),
             )
         for ds1, ds2 in itertools.combinations(data, 2):
             if (ds1['persona_id'], ds1['category']) == (
-                    ds2['persona_id'], ds2['category']):
+                ds2['persona_id'],
+                ds2['category'],
+            ):
                 if ds1['persona_id']:
                     info = (
                         None,
                         ValueError(
-                            n_("More than one transfer for this account"
-                               " (lines %(first)s and %(second)s)."),
-                            {'first': ds1['lineno'] + 1, 'second': ds2['lineno'] + 1}),
+                            n_(
+                                "More than one transfer for this account"
+                                " (lines %(first)s and %(second)s)."
+                            ),
+                            {'first': ds1['lineno'] + 1, 'second': ds2['lineno'] + 1},
+                        ),
                     )
                     ds1['infos'].append(info)
                     ds2['infos'].append(info)
 
         if len(data) != len(transferlines):
-            rs.append_validation_error(
-                ("transfers", ValueError(n_("Lines didn’t match up."))))
+            rs.append_validation_error((
+                "transfers",
+                ValueError(n_("Lines didn’t match up.")),
+            ))
 
         open_issues = any(e['problems'] for e in data)
         saldos: dict[int, decimal.Decimal] = defaultdict(decimal.Decimal)
@@ -356,13 +399,15 @@ class CdEParseMixin(CdEBaseFrontend):
         if rs.has_validation_errors() or not data or open_issues:
             rs.values['checksum'] = None
             return self.money_transfers_form(
-                rs, data=data, csvfields=fields, saldos=saldos)
+                rs, data=data, csvfields=fields, saldos=saldos
+            )
 
         current_checksum = get_hash(transfers.encode())
         if checksum != current_checksum:
             rs.values['checksum'] = current_checksum
             return self.money_transfers_form(
-                rs, data=data, csvfields=fields, saldos=saldos)
+                rs, data=data, csvfields=fields, saldos=saldos
+            )
 
         # Here validation is finished
         transfers = [
@@ -378,8 +423,11 @@ class CdEParseMixin(CdEBaseFrontend):
         with TransactionObserver(rs, self, "money_transfers", recipients=recipients):
             if result := self.cdeproxy.book_money_transfers(rs, transfers):
                 result.send_notifications(
-                    rs, send_individual_notifications=send_notifications, by_orga=False,
-                    do_mail=self.do_mail, events=events,
+                    rs,
+                    send_individual_notifications=send_notifications,
+                    by_orga=False,
+                    do_mail=self.do_mail,
+                    events=events,
                 )
 
                 headers: Headers = {
@@ -388,8 +436,11 @@ class CdEParseMixin(CdEBaseFrontend):
                     'Prefix': "",
                 }
                 self.do_mail(
-                    rs, "parse/transfers_booked", headers,
-                    {'saldos': saldos, 'counts': counts, 'events': events})
+                    rs,
+                    "parse/transfers_booked",
+                    headers,
+                    {'saldos': saldos, 'counts': counts, 'events': events},
+                )
                 return self.redirect(rs, "cde/index")
             elif result.index < 0:
                 rs.notify("warning", n_("DB serialization error."))
@@ -400,4 +451,5 @@ class CdEParseMixin(CdEBaseFrontend):
                     {'num': result.index + 1},
                 )
             return self.money_transfers_form(
-                rs, data=data, csvfields=fields, saldos=saldos)
+                rs, data=data, csvfields=fields, saldos=saldos
+            )
