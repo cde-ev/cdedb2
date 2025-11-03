@@ -191,8 +191,8 @@ findet, der mitmacht. Frag in Deiner Lokalgruppe nach, oder schreibe
 an die DSA-Mailingliste: Denn der CdE ist das, was Du daraus machst!
 {% endif %}
 
-{% if email and cookie %}
-[1] {{ cdedblink('core/do_password_reset_form', {'email': email, 'cookie': cookie}) }}
+{% if reset_link %}
+[1] {{ reset_link }}
     Der Link ist 48 Stunden gültig, danach führt er auf die allgemeine
     Passwortrücksetzseite, auf der Du einen neuen Link erzeugen kannst.
 {% else %}
