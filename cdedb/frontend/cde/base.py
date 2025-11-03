@@ -215,14 +215,14 @@ class CdEBaseFrontend(AbstractUserFrontend):
 
         pevent_ids = self.pasteventproxy.list_past_events(rs)
         pevents = self.pasteventproxy.get_past_events(rs, pevent_ids)
-        # all_pcourse_ids = self.pasteventproxy.list_past_courses(rs)
-        # all_pcourses = self.pasteventproxy.get_past_courses(rs, all_pcourse_ids)
+        all_pcourse_ids = self.pasteventproxy.list_past_courses(rs)
+        all_pcourses = self.pasteventproxy.get_past_courses(rs, all_pcourse_ids)
         choices = {
             'pevents': pevents,
             'pevent_entries': models_past_event.PastEvent.get_entries(pevents),
             'near_radius': self.conf["NEARBY_SEARCH_RADII"],
             "pcourse_entries": [],
-            # "pcourse_entries_by_event": models_past_event.PastCourse.get_combined_entries(all_pcourses),
+            "pcourse_entries_by_event": models_past_event.PastCourse.get_combined_entries(all_pcourses),
         }
 
         result: Optional[Sequence[CdEDBObject]] = None

@@ -20,7 +20,7 @@ from cdedb.common import CdEDBObject, now
 from cdedb.common.exceptions import CryptographyError
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
-from cdedb.common.sorting import EntitySorter, Sortkey
+from cdedb.common.sorting import Sortkey
 from cdedb.models.common import AbstractFlag, CdEDataclass, MetaFlag as Meta
 
 if TYPE_CHECKING:
@@ -285,7 +285,7 @@ class Persona(PersonaName):
 
     # TODO implement this properly
     def get_sortkey(self) -> Sortkey:
-        return EntitySorter.persona(self.as_dict())
+        return (self.family_name, self.given_names)
 
 
 @dataclasses.dataclass(kw_only=True)

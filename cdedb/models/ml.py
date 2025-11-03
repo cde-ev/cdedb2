@@ -476,6 +476,7 @@ class AssemblyMailinglist(GeneralMailinglist):
     sortkey = MailinglistGroup.assembly
     viewer_roles = {"assembly"}
     relevant_admins = {"assembly_admin"}
+    notify_owner_on_bounce = True
 
 
 @dataclass
