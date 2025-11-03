@@ -122,7 +122,12 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.attachment import AttachmentStore
-from cdedb.common.exceptions import PrivilegeError, ValidationWarning
+from cdedb.common.exceptions import (
+    ParameterInvalidError,
+    ParameterTimeoutError,
+    PrivilegeError,
+    ValidationWarning,
+)
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
@@ -957,6 +962,25 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         msg["Date"] = email.utils.format_datetime(now())
         return msg
 
+    def _validate_password_reset_cookie(self, rs: RequestState, persona_id: int, cookie: str) -> bool:
+        try:
+            self.coreproxy.check_reset_cookie(rs, persona_id, cookie)
+        except ParameterTimeoutError:
+            rs.notify("warning", n_("Link expired."))
+            return False
+        except ParameterInvalidError:
+            rs.notify("warning", n_("Link invalid or already used."))
+            return False
+        return True
+
+    def _password_reset_link(
+            self, rs: RequestState, persona_id: int, timeout: datetime.timedelta | None = None,
+    ) -> str:
+        if not timeout:
+            timeout = self.conf["EXTENDED_PARAMETER_TIMEOUT"]
+        confirm = self.coreproxy.make_reset_cookie(rs, persona_id, timeout)
+        return cdedburl(rs, "core/do_password_reset", {"persona_id": persona_id, "confirm": confirm}, force_external=True)
+
     def send_welcome_mail(self, rs: RequestState, persona: CdEDBObject) -> None:
         """Send a welcome mail to new personas.
 
@@ -966,11 +990,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         Therefore, we send this mail again if a persona was granted the cde realm.
         """
-        success, cookie = self.coreproxy.make_reset_cookie(
-            rs, persona['username'], timeout=self.conf["EXTENDED_PARAMETER_TIMEOUT"])
-        reset_link = self.encode_parameter(
-            "core/do_password_reset_form", "email", persona['username'],
-            persona_id=None, timeout=self.conf["EXTENDED_PARAMETER_TIMEOUT"])
+        reset_link = self._password_reset_link(rs, persona["id"])
         transaction_subject = make_membership_fee_reference(persona)
         if persona['is_member']:
             subject = "Aufnahme in den CdE"
@@ -985,8 +1005,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                       },
                      {'data': persona,
                       'fee': self.conf["MEMBERSHIP_FEE"],
-                      'email': reset_link if success else "",
-                      'cookie': cookie if success else "",
+                      'reset_link': reset_link,
                       'meta_info': meta_info,
                       'transaction_subject': transaction_subject,
                       })
