@@ -42,6 +42,7 @@ from cdedb.common.exceptions import (
     AdminPasswordResetError,
     ArchiveError,
     CryptographyError,
+    IncorrectPasswordError,
     PrivilegeError,
     ValidationWarning,
 )
@@ -2220,34 +2221,37 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.notify("error", n_("Passwords don’t match."))
             return self.change_password_form(rs)
 
-        new_password, errs = self.coreproxy.check_password_strength(
-            rs, new_password, persona_id=rs.user.persona_id,
-            argname="new_password")
-
-        if errs:
+        if errs := self.coreproxy.check_password_strength(
+            rs, new_password, persona_id=rs.user.persona_id
+        ):
+            rs.notify("error", n_("Password too weak."))
             rs.extend_validation_errors(errs)
-            if any(name == "new_password"
-                   for name, _ in rs.retrieve_validation_errors()):
-                rs.notify("error", n_("Password too weak."))
             rs.ignore_validation_errors()
             return self.change_password_form(rs)
-        assert new_password is not None
 
-        code, message = self.coreproxy.change_password(
-            rs, old_password, new_password)
-        rs.notify_return_code(code, success=n_("Password changed."),
-                                error=message)
+        try:
+            code = self.coreproxy.change_password(rs, old_password, new_password)
+        except ValueError as e:
+            if isinstance(e, IncorrectPasswordError):
+                rs.append_validation_error(("old_password", ValueError("Wrong password.")))
+                rs.ignore_validation_errors()
+            self.logger.error(
+                f"Unsuccessful password change for persona {rs.user.persona_id}. {e}"
+            )
+            rs.notify("error", *e.args)
+            return self.change_password_form(rs)
+
+        rs.notify_return_code(code, success=n_("Password changed."))
         if not code:
-            rs.append_validation_error(
-                ("old_password", ValueError(n_("Wrong password."))))
-            rs.ignore_validation_errors()
             self.logger.info(
-                f"Unsuccessful password change for persona {rs.user.persona_id}.")
+                f"Unsuccessful password change for persona {rs.user.persona_id}."
+            )
             return self.change_password_form(rs)
         else:
             count = self.coreproxy.logout(rs, other_sessions=True, this_session=False)
             rs.notify(
-                "success", n_("%(count)s session(s) terminated."), {'count': count})
+                "success", n_("%(count)s session(s) terminated."), {'count': count}
+            )
             return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("anonymous")
@@ -2362,6 +2366,9 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.do_password_reset_form(rs)  # type: ignore[call-arg]
         if not self._validate_password_reset_cookie(rs, persona_id, confirm):
             return self.reset_password_form(rs)
+        if self.coreproxy.is_locked_down(rs):
+            rs.notify("error", n_("Lockdown active. Try again later."))
+            return self.index(rs)
 
         if new_password != new_password2:
             msg = n_("Passwords don’t match.")
@@ -2370,22 +2377,22 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.ignore_validation_errors()
             rs.notify("error", msg)
             return self.do_password_reset_form(rs, internal=True)  # type: ignore[call-arg]
-        new_password, errs = self.coreproxy.check_password_strength(
-            rs, new_password, persona_id=persona_id, argname="new_password"
-        )
 
-        if errs:
+        if errs := self.coreproxy.check_password_strength(
+            rs, new_password, persona_id=persona_id
+        ):
+            rs.notify("error", n_("Password too weak."))
             rs.extend_validation_errors(errs)
-            if any(name == "new_password"
-                   for name, _ in rs.retrieve_validation_errors()):
-                rs.notify("error", n_("Password too weak."))
             return self.do_password_reset_form(rs, internal=True)  # type: ignore[call-arg]
-        assert new_password is not None
 
-        code, message = self.coreproxy.reset_password(rs, persona_id, new_password, cookie=confirm)
-        rs.notify_return_code(code, success=n_("Password reset."), error=message)
+        try:
+            code = self.coreproxy.reset_password(rs, persona_id, new_password, cookie=confirm)
+        except ValueError as e:
+            rs.notify("error", *e.args)
+            return self.do_password_reset_form(rs, internal=True)  # type: ignore[call-arg]
+        rs.notify_return_code(code, success=n_("Password reset."))
         if not code:
-            return self.redirect(rs, "core/reset_password_form")
+            return self.do_password_reset_form(rs, internal=True)  # type: ignore[call-arg]
         else:
             return self.redirect(rs, "core/index")
 

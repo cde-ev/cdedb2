@@ -56,6 +56,7 @@ from cdedb.common.attachment import AttachmentStore
 from cdedb.common.exceptions import (
     AdminPasswordResetError,
     ArchiveError,
+    IncorrectPasswordError,
     ParameterInvalidError,
     ParameterTimeoutError,
     PrivilegeError,
@@ -3197,42 +3198,41 @@ class CoreBaseBackend(AbstractBackend):
         old_password: Optional[str] = None,
         reset_cookie: Optional[str] = None,
         persona_id: Optional[int] = None,
-    ) -> tuple[bool, str]:
+    ) -> DefaultReturnCode:
         """Helper for manipulating password entries.
+
+        Authorization must be provided wither via the old password or
+        via a reset cookie plus a persona_id.
 
         The persona_id parameter is only for the password reset case. We
         intentionally only allow to change the own password.
 
-        An authorization must be provided, either by ``old_password`` or
-        ``reset_cookie``.
-
         This escalates database connection privileges in the case of a
         password reset (which is by its nature anonymous).
-
-        :param persona_id: Must be provided only in case of reset.
-        :returns: The ``bool`` indicates success and the ``str`` is
-          either the new password or an error message.
         """
+        # 1. Validate inputs.
         if persona_id and not reset_cookie:
-            return False, n_("Selecting persona allowed for reset only.")
+            raise ValueError(n_("Selecting persona allowed for reset only."))
         persona_id = persona_id or rs.user.persona_id
         if not persona_id:
-            return False, n_("Could not determine persona to reset.")
-        if not old_password and not reset_cookie:
-            return False, n_("No authorization provided.")
-        if old_password:
+            raise ValueError(n_("Could not determine persona to reset."))
+        if old_password and reset_cookie:
+            raise ValueError(n_("May not provide both old password and reset_cookie."))
+        elif old_password:
             if not self.verify_persona_password(rs, old_password, persona_id):
-                return False, n_("Password verification failed.")
-        if reset_cookie:
+                raise IncorrectPasswordError(n_("Password verification failed."))
+        elif reset_cookie:
             try:
                 self.verify_reset_cookie(rs, persona_id, reset_cookie)
-            except (ParameterTimeoutError, ParameterInvalidError, ValueError):
-                return False, n_("Link invalid or already used.")
-        if not new_password:
-            return False, n_("No new password provided.")
-        _, errs = inspect(vtypes.PasswordStrength, new_password)
-        if errs:
-            return False, n_("Password too weak.")
+            except (ParameterTimeoutError, ParameterInvalidError, ValueError) as e:
+                raise ValueError(n_("Link invalid or already used.")) from e
+        else:
+            raise ValueError(n_("No authorization provided."))
+
+        if self.check_password_strength(rs, new_password, persona_id=persona_id):
+            raise ValueError(n_("Password too weak."))
+
+        # 2. perform modification.
         # escalate db privilege role in case of resetting passwords
         orig_conn = None
         try:
@@ -3260,12 +3260,12 @@ class CoreBaseBackend(AbstractBackend):
             # deescalate
             if orig_conn:
                 rs.conn = orig_conn
-        return bool(ret), new_password
+        return ret
 
     @access("persona")
     def change_password(
         self, rs: RequestState, old_password: str, new_password: str
-    ) -> tuple[bool, str]:
+    ) -> DefaultReturnCode:
         """
         :returns: see :py:meth:`modify_password`
         """
@@ -3283,8 +3283,7 @@ class CoreBaseBackend(AbstractBackend):
         password: str,
         *,
         persona_id: int,
-        argname: Optional[str] = None,
-    ) -> tuple[Optional[vtypes.PasswordStrength], list[Error]]:
+    ) -> list[Error]:
         """Check the password strength using some additional userdate.
 
         This escalates database connection privileges in the case of an
@@ -3292,7 +3291,6 @@ class CoreBaseBackend(AbstractBackend):
         """
         password = affirm(str, password)
         persona_id = affirm(vtypes.ID, persona_id)
-        argname = affirm_optional(str, argname)
 
         columns_of_interest = [
             *ADMIN_KEYS, "username", "given_names", "family_name", "nickname", "title",
@@ -3333,15 +3331,15 @@ class CoreBaseBackend(AbstractBackend):
         if persona['birthday']:
             inputs.extend(persona['birthday'].isoformat().split('-'))
 
-        password, errs = inspect(
+        _, errs = inspect(
             vtypes.PasswordStrength,
             password,
-            argname=argname,
+            argname="new_password",
             admin=admin,
             inputs=inputs,
         )
 
-        return password, errs
+        return errs
 
     @access("anonymous")
     def make_reset_cookie(
@@ -3374,7 +3372,7 @@ class CoreBaseBackend(AbstractBackend):
     @access("anonymous")
     def reset_password(
         self, rs: RequestState, persona_id: int, new_password: str, cookie: str
-    ) -> tuple[bool, str]:
+    ) -> DefaultReturnCode:
         """Perform a recovery.
 
         Authorization is guaranteed by the cookie.
@@ -3385,18 +3383,15 @@ class CoreBaseBackend(AbstractBackend):
         new_password = affirm(str, new_password)
         cookie = affirm(str, cookie)
         if self.is_locked_down(rs):
-            return False, n_("Lockdown active.")
-        success, msg = self.modify_password(
+            raise ValueError(n_("Lockdown active."))
+        ret = self.modify_password(
             rs, new_password, reset_cookie=cookie, persona_id=persona_id
         )
-        if success:
-            # Since they should usually be called inside an atomized context, logs
-            # demand an Atomizer by default. However, due to privilege escalation inside
-            # modify_password, this does not work and relax that claim.
-            self.core_log(
-                rs, const.CoreLogCodes.password_reset, persona_id, atomized=False
-            )
-        return success, msg
+        # Since they should usually be called inside an atomized context, logs
+        # demand an Atomizer by default. However, due to privilege escalation inside
+        # modify_password, this does not work and relax that claim.
+        self.core_log(rs, const.CoreLogCodes.password_reset, persona_id, atomized=False)
+        return ret
 
     @access("core_admin", *models.GenesisCase.all_admins)
     def find_doppelgangers(
