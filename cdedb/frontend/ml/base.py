@@ -758,12 +758,10 @@ class MlBaseFrontend(AbstractUserFrontend):
         personas = self.coreproxy.get_personas(rs, persona_ids)
         # determine which subscribers use a defect address for this mailinglist
         defects = {
-            anid
-            for anid in subscribers
-            if anid not in explicits
-            and personas[anid]["username"] in defect_addresses
-            or anid in explicits
-            and explicits[anid] in defect_addresses
+            id_
+            for id_ in subscribers
+            if (id_ not in explicits and personas[id_]["username"] in defect_addresses)
+            or (id_ in explicits and explicits[id_] in defect_addresses)
         }
         subscribers = collections.OrderedDict(
             (anid, personas[anid])
