@@ -22,8 +22,9 @@ __all__ = ['MlFrontend']
 class MlFrontend(MlMailmanMixin, MlBaseFrontend):
     @access("ml")
     @mailinglist_guard()
-    def message_moderation_form(self, rs: RequestState, mailinglist_id: int,
-                                ) -> Response:
+    def message_moderation_form(
+        self, rs: RequestState, mailinglist_id: int
+    ) -> Response:
         """Render form."""
         ml = rs.ambience["mailinglist"]
         held = self.get_mailman().get_held_messages(ml)
@@ -36,12 +37,18 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
         "discard": const.MlLogCodes.moderate_discard,
     }
 
-    def _moderate_messages(self, rs: RequestState, request_ids: Collection[int],
-                           action: str, reason: Optional[str] = None) -> Response:
+    def _moderate_messages(
+        self,
+        rs: RequestState,
+        request_ids: Collection[int],
+        action: str,
+        reason: Optional[str] = None,
+    ) -> Response:
         """Helper to take care of the communication with mailman."""
         dblist = rs.ambience['mailinglist']
-        if (self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
-                self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"])):  # pragma: no cover
+        if self.conf["CDEDB_OFFLINE_DEPLOYMENT"] or (
+            self.conf["CDEDB_DEV"] and not self.conf["CDEDB_TEST"]
+        ):  # pragma: no cover
             self.logger.info("Skipping mailman request in dev/offline mode.")
             rs.notify('info', n_("Skipping mailman request in dev/offline mode."))
         else:
@@ -56,8 +63,9 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
                     held = mmlist.get_held_message(request_id)
                     sender, subject, msg = held.sender, held.subject, held.msg
                     # This destroys the information we just queried.
-                    response = mmlist.moderate_message(request_id, action,
-                                                       comment=reason)
+                    response = mmlist.moderate_message(
+                        request_id, action, comment=reason
+                    )
                 except urllib.error.HTTPError:
                     rs.notify("error", n_("Message unavailable."))
                 else:
@@ -66,46 +74,71 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
                         headers = email.parser.HeaderParser().parsestr(msg)
                         change_note = (
                             f'{sender} / {subject} / '
-                            f'Spam score: {headers.get("X-Spam-Score", "—")}')
+                            f'Spam score: {headers.get("X-Spam-Score", "—")}'
+                        )
                         if action == 'reject':
                             owner = dblist.address.replace("@", "-owner@")
-                            self.do_mail(rs, "reject_message",
-                                         {'To': (owner,),
-                                          'Reply-To': owner,
-                                          'Subject': "E-Mail zurückgewiesen"},
-                                         {'ml': dblist, 'sender': sender,
-                                          'subject': subject, 'reason': reason})
+                            self.do_mail(
+                                rs,
+                                "reject_message",
+                                {
+                                    'To': (owner,),
+                                    'Reply-To': owner,
+                                    'Subject': "E-Mail zurückgewiesen",
+                                },
+                                {
+                                    'ml': dblist,
+                                    'sender': sender,
+                                    'subject': subject,
+                                    'reason': reason,
+                                },
+                            )
                         self.mlproxy.log_moderation(
-                            rs, self._moderate_action_logcodes[action],
-                            dblist.id, change_note=change_note)
+                            rs,
+                            self._moderate_action_logcodes[action],
+                            dblist.id,
+                            change_note=change_note,
+                        )
                     elif response.status_code // 100 == 4:
                         warning += 1
                     else:
                         error += 1
             if success:
-                rs.notify("success", n_("%(count)s messages moderated."),
-                          {"count": success})
+                rs.notify(
+                    "success", n_("%(count)s messages moderated."), {"count": success}
+                )
             if warning:
-                rs.notify("warning", n_("%(count)s messages not moderated."),
-                          {"count": warning})
+                rs.notify(
+                    "warning",
+                    n_("%(count)s messages not moderated."),
+                    {"count": warning},
+                )
             if error:
-                rs.notify("error", n_("%(count)s messages not moderated."),
-                          {"count": error})
+                rs.notify(
+                    "error", n_("%(count)s messages not moderated."), {"count": error}
+                )
 
         return self.redirect(rs, "ml/message_moderation")
 
     @access("ml", modi={"POST"})
     @mailinglist_guard()
     @REQUESTdata("request_ids", "action")
-    def message_moderation_multi(self, rs: RequestState, mailinglist_id: int,
-                                 request_ids: Collection[int], action: str) -> Response:
+    def message_moderation_multi(
+        self,
+        rs: RequestState,
+        mailinglist_id: int,
+        request_ids: Collection[int],
+        action: str,
+    ) -> Response:
         """Moderate multiple held messages at once.
 
         Valid actions are: accept and discard.
         """
         if action not in {"accept", "discard"}:
-            rs.append_validation_error(
-                ("action", ValueError(n_("Invalid moderation action."))))
+            rs.append_validation_error((
+                "action",
+                ValueError(n_("Invalid moderation action.")),
+            ))
         if rs.has_validation_errors():
             return self.message_moderation_form(rs, mailinglist_id)
         return self._moderate_messages(rs, request_ids, action)
@@ -113,15 +146,24 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
     @access("ml", modi={"POST"})
     @mailinglist_guard()
     @REQUESTdata("request_id", "action", "sender", "reason")
-    def message_moderation(self, rs: RequestState, mailinglist_id: int, request_id: int,
-                           action: str, sender: str, reason: Optional[str]) -> Response:
+    def message_moderation(
+        self,
+        rs: RequestState,
+        mailinglist_id: int,
+        request_id: int,
+        action: str,
+        sender: str,
+        reason: Optional[str],
+    ) -> Response:
         """Moderate a held message.
 
         Valid actions are: whitelist, accept, reject, discard
         """
         if action not in self._moderate_action_logcodes:
-            rs.append_validation_error(
-                ("action", ValueError(n_("Invalid moderation action."))))
+            rs.append_validation_error((
+                "action",
+                ValueError(n_("Invalid moderation action.")),
+            ))
         if rs.has_validation_errors():
             return self.message_moderation_form(rs, mailinglist_id)
         dblist = rs.ambience['mailinglist']
