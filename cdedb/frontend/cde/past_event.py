@@ -440,7 +440,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata("persona_id", "pcourse_id", "ack_delete")
-    def remove_course_participant(
+    def remove_course_assignment(
         self,
         rs: RequestState,
         pevent_id: int,

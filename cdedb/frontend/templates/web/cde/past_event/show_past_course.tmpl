@@ -82,10 +82,10 @@
                         ({{ gettext(participant.instructor_status|string) }})
                     {% endif %}
                     {% if "past_event" in user.admin_views %}
-                        <form action="{{ cdedblink('cde/remove_course_participant') }}" method="POST"
+                        <form action="{{ cdedblink('cde/remove_course_assignment') }}" method="POST"
                               id="removeparticipantform{{ participant.persona_id }}" style="display: inline;"
                               class="delete-participant-form hide-hover display-inline">
-                            {{ util.anti_csrf_token('cde/remove_course_participant') }}
+                            {{ util.anti_csrf_token('cde/remove_course_assignment') }}
                             {{ util.input_hidden(name="persona_id", value=participant.persona_id) }}
                             {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
                             {{ util.ack_delete(gettext("The Participant will be removed from this Course.")) }}
