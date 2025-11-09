@@ -41,7 +41,7 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import PastEventLogFilter
-from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import ParamDict
 from cdedb.models.common import CdEDataclassMap
@@ -644,8 +644,8 @@ class PastEventBackend(AbstractBackend):
         ret = 1
         with Atomizer(rs):
             # remove manually from courses to ensure correct logging
-            if pcourses := self.list_persona_courses(rs, pevent_id, [persona_id]):
-                for assignment in pcourses[persona_id].values():
+            if pcourses := self.list_course_assignments(rs, pevent_id).get(persona_id):
+                for assignment in pcourses:
                     ret *= self.remove_course_assignment(
                         rs, assignment.pcourse_id, persona_id
                     )
@@ -742,7 +742,7 @@ class PastEventBackend(AbstractBackend):
             return participants
         return {}
 
-    @access("cde", "event")
+    @access("event")
     def list_event_participants(
         self,
         rs: RequestState,
@@ -784,8 +784,8 @@ class PastEventBackend(AbstractBackend):
 
         return len(data), ret
 
-    @access("cde", "event")
-    def list_course_assignments(
+    @access("event")
+    def get_course_assignments(
         self, rs: RequestState, pcourse_id: int, honour_admins: bool = True
     ) -> tuple[int, CdEDataclassMap[models.PastCourseAssignment]]:
         """List all participants of the given concluded course.
@@ -794,8 +794,8 @@ class PastEventBackend(AbstractBackend):
         viewing user is neither admin nor participant of the past event themselves.
 
         :param honour_admins: if False, ignore admin privileges in privilege check.
-        :returns: The total number of participants, and a dict of the participants
-            which are accessible by this user.
+        :returns: The total number of participants, and a dict mapping persona_ids to
+            their course assignment, if they are accessible by this user.
         """
         pcourse_id = affirm(vtypes.ID, pcourse_id)
         honour_admins = affirm(bool, honour_admins)
@@ -810,8 +810,6 @@ class PastEventBackend(AbstractBackend):
         data = self.query_all(rs, query, params)
         personas = self.core.get_personas(rs, {e['persona_id'] for e in data})
         ret = models.PastCourseAssignment.many_from_database(data, sort=False)
-        for participant in ret.values():
-            participant.persona = personas[participant.persona_id]
         ret = {
             assignment.persona_id: assignment for assignment in xsorted(ret.values())
         }
@@ -825,57 +823,37 @@ class PastEventBackend(AbstractBackend):
 
         return len(data), ret
 
-    @access("cde", "event")
-    def list_persona_courses(
-        self,
-        rs: RequestState,
-        pevent_id: int,
-        persona_ids: list[int],
-        honour_admins: bool = True,
-    ) -> dict[int, CdEDataclassMap[models.PastCourseAssignment]]:
-        """List all courses of the given participants at a concluded event.
+    @access("event")
+    def list_course_assignments(
+        self, rs: RequestState, pevent_id: int
+    ) -> CdEDataclassMap[list[models.PastCourseAssignment]]:
+        """Get the courses assigned to each participant of a given past event.
 
-        Participants are removed from the result if they are not searchable and the
-        viewing user is neither admin nor participant of the past event themselves.
-
-        :param honour_admins: if False, ignore admin privileges in privilege check.
+        :returns: Mapping of persona_id to list of course assignments.
         """
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
         pevent_id = affirm(vtypes.ID, pevent_id)
-        honour_admins = affirm(bool, honour_admins)
+        _, participants = self.list_event_participants(rs, pevent_id)
+        # no precise privilege check needed, no sensitive data
+        if not (
+            self.is_admin(rs)
+            or rs.persona_id in participants
+            or 'searchable' in rs.user.roles
+        ):
+            raise PrivilegeError
         query = f"""
             SELECT course_assignments.id, persona_id, instructor_status, pcourse_id, participant_id
             FROM {models.PastEventParticipant.database_table} AS event_participants
                 JOIN {models.PastCourseAssignment.database_table} AS course_assignments
                 ON participant_id = event_participants.id
-            WHERE persona_id = ANY(%(persona_ids)s) AND pevent_id = %(pevent_id)s
+            WHERE pevent_id = %(pevent_id)s
         """
-        params: ParamDict = {"persona_ids": persona_ids, "pevent_id": pevent_id}
-        data = self.query_all(rs, query, params)
-        personas = self.core.get_personas(rs, {e['persona_id'] for e in data})
-        ret: dict[int, CdEDataclassMap[models.PastCourseAssignment]] = (
-            collections.defaultdict(dict)
-        )
+        data = self.query_all(rs, query, {"pevent_id": pevent_id})
+        pcourses = self.get_past_courses(rs, {e["pcourse_id"] for e in data})
+        ret = collections.defaultdict(list)
         for e in data:
-            assignment = models.PastCourseAssignment.from_database(e)
-            assignment.persona = personas[assignment.persona_id]
-            ret[e['persona_id']][e["pcourse_id"]] = assignment
-        ret = {
-            persona["id"]: {
-                assignment.pcourse_id: assignment
-                for assignment in xsorted(ret[persona["id"]].values())
-            }
-            for persona in xsorted(personas.values(), key=EntitySorter.persona)
-        }
-
-        ret = self.filter_participants(
-            rs,
-            participants=ret,
-            personas=personas,
-            honour_admins=honour_admins,
-            pevent_id=pevent_id,
-        )
-
+            ret[e["persona_id"]].append(models.PastCourseAssignment.from_database(e))
+        for pevent_id, assignments in ret.items():
+            ret[pevent_id] = xsorted(assignments, key=lambda x: pcourses[x.pcourse_id])
         return ret
 
     @access("cde_admin", "event_admin")

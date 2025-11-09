@@ -136,17 +136,9 @@ class PastCourseAssignment(CdEDataclass):
     database_table = "past_event.course_participants"
 
     persona_id: vtypes.ID
-    persona: dict[str, Any] = dataclasses.field(
-        init=False, compare=False, repr=False, metadata=Meta.exclude.as_dict
-    )
     participant_id: vtypes.ID
     pcourse_id: vtypes.ID
     instructor_status: const.PastInstructorKind
 
     def get_sortkey(self) -> Sortkey:
-        return (
-            self.persona["family_name"],
-            self.persona["given_names"],
-            self.persona_id,
-            self.pcourse_id,
-        )
+        return self.persona_id, self.pcourse_id

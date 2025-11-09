@@ -26,6 +26,7 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import PastEventLogFilter
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect,
@@ -107,12 +108,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             rs, pevent_id, honour_admins="past_event" in rs.user.admin_views
         )
         orgas = [p for p in participants.values() if p.orga_status]
-        persona_courses = self.pasteventproxy.list_persona_courses(
-            rs,
-            pevent_id,
-            participants.keys(),
-            honour_admins="past_event" in rs.user.admin_views,
-        )
+        course_assignment = self.pasteventproxy.list_course_assignments(rs, pevent_id)
         return self.render(
             rs,
             "past_event/show_past_event",
@@ -121,7 +117,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
                 'orgas': orgas,
                 'total_participant_number': total_num,
                 'participants': participants,
-                'persona_courses': persona_courses,
+                'course_assignment': course_assignment,
             },
         )
 
@@ -130,14 +126,22 @@ class CdEPastEventMixin(CdEBaseFrontend):
         self, rs: RequestState, pevent_id: int, pcourse_id: int
     ) -> Response:
         """Display concluded course."""
-        total_num, participants = self.pasteventproxy.list_course_assignments(
+        total_num, participants = self.pasteventproxy.get_course_assignments(
             rs, pcourse_id, honour_admins="past_event" in rs.user.admin_views
         )
+        personas = {
+            persona['id']: persona
+            for persona in xsorted(
+                self.coreproxy.get_personas(rs, participants.keys()).values(),
+                key=EntitySorter.persona,
+            )
+        }
         return self.render(
             rs,
             "past_event/show_past_course",
             {
                 'participants': participants,
+                'personas': personas,
                 'total_participant_number': total_num,
             },
         )

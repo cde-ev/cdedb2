@@ -140,9 +140,9 @@
             {% for participant in participants.values() %} {# This dict is already sorted. #}
                 <li class="hide-hover-container clearfix-after">
                     {{ generic.print_persona(participant.persona) }}
-                    {% if persona_courses[participant.persona_id] %}
+                    {% if course_assignment[participant.persona_id] %}
                         (
-                        {%- for assignment in persona_courses[participant.persona_id].values() -%}
+                        {%- for assignment in course_assignment[participant.persona_id] -%}{# already sorted #}
                             {{ courses[assignment.pcourse_id]['nr'] }}.
                             {% if assignment.instructor_status -%}
                                 <strong title="{{ gettext(assignment.instructor_status|string) }}">
