@@ -467,9 +467,11 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
         if ((decision.is_create() or decision.is_update()) and case.pevent_id
                 and case.realm == 'cde'):
-            code = self.pasteventproxy.add_participant(
-                rs, pevent_id=case.pevent_id, pcourse_id=case.pcourse_id,
-                persona_id=persona_id)
+            code = 1
+            if not self.pasteventproxy.is_participant(rs, case.pevent_id, persona_id):
+                code *= self.pasteventproxy.set_participant(rs, case.pevent_id, persona_id)
+            if case.pcourse_id:
+                code *= self.pasteventproxy.set_course_assignment(rs, case.pcourse_id, persona_id)
             if not code:  # pragma: no cover
                 rs.notify(
                     "error", n_("Past event attendance could not be established."))

@@ -2040,10 +2040,18 @@ class CoreBaseFrontend(AbstractFrontend):
         code = self.coreproxy.change_persona_realms(rs, data, change_note)
         rs.notify_return_code(code)
         if code > 0 and target_realm == "cde":
-            if pevent_id is not None:
-                self.pasteventproxy.add_participant(
-                    rs, pevent_id, pcourse_id, persona_id,
-                    is_instructor=is_instructor, is_orga=is_orga)
+            if pevent_id:
+                orga_status = const.PastOrgaKind.none
+                if is_orga:
+                    orga_status = const.PastOrgaKind.orga
+                self.pasteventproxy.set_participant(
+                    rs, pevent_id, persona_id, orga_status=orga_status)
+            if pcourse_id:
+                instructor_status = const.PastInstructorKind.none
+                if is_instructor:
+                    instructor_status = const.PastInstructorKind.kl
+                self.pasteventproxy.set_course_assignment(
+                    rs, pcourse_id, persona_id, instructor_status=instructor_status)
             persona = self.coreproxy.get_total_persona(rs, persona_id)
             self.send_welcome_mail(rs, persona)
         return self.redirect_show_user(rs, persona_id)
