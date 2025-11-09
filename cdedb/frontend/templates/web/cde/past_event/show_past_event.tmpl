@@ -1,6 +1,7 @@
 {% set sidenav_active='cde_past_events' %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/cde/past_event/generic.tmpl" as generic with context %}
 
 {% if "past_event" in user.admin_views %}
     {% set jshint='weak' %}
@@ -22,16 +23,6 @@
     {{ util.breadcrumb_link(cdedblink("cde/show_past_event", {"pevent_id": ambience['pevent']['id']}),
             ambience['pevent']['title'], icon="calendar-alt", active=True) }}
 {% endblock %}
-
-{% macro print_persona(participant) %}
-    {% if "past_event" in user.admin_views or participant.persona_id == user.persona_id %}
-        {{ util.persona_anchor(participant.persona, include_nickname=true) -}}
-    {% elif participant.persona['is_member'] and participant.persona['is_searchable'] %}
-        {{ util.persona_anchor(participant.persona, include_nickname=true, quote_me=true) -}}
-    {% else %}
-        {{ participant.persona|persona_name(include_nickname=true) -}}
-    {% endif -%}
-{% endmacro %}
 
 {% block content %}
     {% if "past_event" in user.admin_views %}
@@ -57,7 +48,7 @@
         </dt>
         <dd id="orgas">
             {% for orga in orgas %} {# This is already sorted. #}
-                {{ print_persona(orga) }}
+                {{ generic.print_persona(orga.persona) }}
                 {% if not loop.last %},{% endif %}
             {% endfor %}
         </dd>
@@ -148,7 +139,7 @@
         <ul id="list-participants" class="flex-width">
             {% for participant in participants.values() %} {# This dict is already sorted. #}
                 <li class="hide-hover-container clearfix-after">
-                    {{ print_persona(participant) }}
+                    {{ generic.print_persona(participant.persona) }}
                     {% if persona_courses[participant.persona_id] %}
                         (
                         {%- for assignment in persona_courses[participant.persona_id].values() -%}

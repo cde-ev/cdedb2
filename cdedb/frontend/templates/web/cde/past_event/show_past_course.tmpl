@@ -1,6 +1,7 @@
 {% set sidenav_active='cde_past_events' %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/cde/past_event/generic.tmpl" as generic with context %}
 
 {% if "past_event" in user.admin_views %}
     {% set jshint='weak' %}
@@ -25,16 +26,6 @@
     {{ util.breadcrumb_link(cdedblink("cde/show_past_course", {'pcourse_id' : ambience['pcourse']['id']}),
             ambience['pcourse']['title'], icon="book", active=True) }}
 {% endblock %}
-
-{% macro print_persona(participant) %}
-    {% if "past_event" in user.admin_views or participant.persona_id == user.persona_id %}
-        {{ util.persona_anchor(participant.persona, include_nickname=true) -}}
-    {% elif "searchable" in user.roles and participant.persona['is_member'] and participant.persona['is_searchable'] %}
-        {{ util.persona_anchor(participant.persona, include_nickname=true, quote_me=true) -}}
-    {% else %}
-        {{ participant.persona|persona_name(include_nickname=true) -}}
-    {% endif -%}
-{% endmacro %}
 
 {% block content %}
     {% if "past_event" in user.admin_views %}
@@ -85,7 +76,7 @@
             {% for participant in participants.values() %} {# This dict is already sorted. #}
                 <li class="hide-hover-container clearfix-after">
                     {% if participant.instructor_status %}<strong>{% endif %}
-                    {{ print_persona(participant) }}
+                    {{ generic.print_persona(personas[participant.persona_id]) }}
                     {% if participant.instructor_status %}</strong>{% endif %}
                     {% if participant.instructor_status %}
                         ({{ gettext(participant.instructor_status|string) }})
