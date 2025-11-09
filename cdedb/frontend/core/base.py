@@ -705,11 +705,13 @@ class CoreBaseFrontend(AbstractFrontend):
                     del data[key]
 
         # Add past event participation info
-        past_events = past_courses = past_event_info = None
+        past_events = past_courses = None
+        persona_past_events = persona_past_courses = None
         if "cde" in access_levels and {"event", "cde"} & roles:
-            past_event_info = self.pasteventproxy.participation_info(rs, persona_id)
-            past_events = self.pasteventproxy.get_past_events(rs, past_event_info.keys())
-            past_course_ids = {c_id for pevent in past_event_info.values() for c_id in pevent["courses"]}
+            persona_past_events = self.pasteventproxy.list_persona_events(rs, persona_id)
+            past_events = self.pasteventproxy.get_past_events(rs, persona_past_events.keys())
+            persona_past_courses = self.pasteventproxy.list_persona_courses(rs, persona_id)
+            past_course_ids = {p.pcourse_id for p in itertools.chain.from_iterable(persona_past_courses.values())}
             past_courses = self.pasteventproxy.get_past_courses(rs, past_course_ids)
 
         # Retrieve number of active sessions if the user is viewing his own profile
@@ -741,7 +743,8 @@ class CoreBaseFrontend(AbstractFrontend):
             'quoteable': quoteable, 'access_mode': access_mode,
             'active_session_count': active_session_count, 'ADMIN_KEYS': ADMIN_KEYS,
             'email_report': email_report,
-            'past_courses': past_courses, 'past_event_info': past_event_info,
+            'past_courses': past_courses, 'persona_past_events': persona_past_events,
+            'persona_past_courses': persona_past_courses,
         }, mandatory_fields)
 
     @access("member")

@@ -66,34 +66,6 @@ class PastEventBackend(AbstractBackend):
     def is_admin(cls, rs: RequestState) -> bool:
         return "cde_admin" in rs.user.roles
 
-    @access("cde", "event")
-    def participation_info(self, rs: RequestState, persona_id: int) -> CdEDBObjectMap:
-        """List concluded events and courses visited by the given persona."""
-        persona_id = affirm(vtypes.ID, persona_id)
-        query = """
-            SELECT e.id, p.is_orga
-            FROM past_event.participants AS p
-                INNER JOIN past_event.events AS e ON (p.pevent_id = e.id)
-            WHERE p.persona_id = %s
-        """
-        pevents = self.query_all(rs, query, [persona_id])
-        query = """
-            SELECT c.id, c.pevent_id, p.is_instructor
-            FROM past_event.participants AS p
-                LEFT OUTER JOIN past_event.courses AS c ON (p.pcourse_id = c.id)
-            WHERE p.persona_id = %s
-        """
-        pcourses = self.query_all(rs, query, [persona_id])
-        ret = {}
-        for pevent in pevents:
-            pevent['courses'] = {
-                c['id']: {'id': c['id'], 'is_instructor': c['is_instructor']}
-                for c in pcourses
-                if c['pevent_id'] == pevent['id']
-            }
-            ret[pevent['id']] = pevent
-        return ret
-
     def past_event_log(
         self,
         rs: RequestState,
@@ -852,6 +824,77 @@ class PastEventBackend(AbstractBackend):
         ret = collections.defaultdict(list)
         for e in data:
             ret[e["persona_id"]].append(models.PastCourseAssignment.from_database(e))
+        for pevent_id, assignments in ret.items():
+            ret[pevent_id] = xsorted(assignments, key=lambda x: pcourses[x.pcourse_id])
+        return ret
+
+    @access("event")
+    def list_persona_events(
+        self,
+        rs: RequestState,
+        persona_id: int,
+    ) -> CdEDataclassMap[models.PastEventParticipant]:
+        """List all past events of the given persona."""
+        persona_id = affirm(vtypes.ID, persona_id)
+        persona = self.core.get_persona(rs, persona_id)
+        if not (
+            self.is_admin(rs)
+            or persona_id == rs.user.persona_id
+            or (
+                "searchable" in rs.user.roles
+                and persona["is_member"]
+                and persona["is_searchable"]
+            )
+        ):
+            raise PrivilegeError
+        data = self.sql_select(
+            rs,
+            models.PastEventParticipant.database_table,
+            models.PastEventParticipant.database_fields(),
+            [persona_id],
+            entity_key="persona_id",
+        )
+        ret = models.PastEventParticipant.many_from_database(data, sort=False)
+        for participant in ret.values():
+            participant.persona = persona
+        ret = {p.pevent_id: p for p in ret.values()}
+        return ret
+
+    @access("event")
+    def list_persona_courses(
+        self,
+        rs: RequestState,
+        persona_id: int,
+    ) -> CdEDataclassMap[list[models.PastCourseAssignment]]:
+        """List all courses of the given persona at any past event.
+
+        :returns: Mapping of pevent_id to list of course assignments.
+        """
+        persona_id = affirm(vtypes.ID, persona_id)
+        persona = self.core.get_persona(rs, persona_id)
+        if not (
+            self.is_admin(rs)
+            or persona_id == rs.user.persona_id
+            or (
+                "searchable" in rs.user.roles
+                and persona["is_member"]
+                and persona["is_searchable"]
+            )
+        ):
+            raise PrivilegeError
+        query = f"""
+            SELECT course_assignments.id, pevent_id, persona_id, participant_id, pcourse_id, instructor_status
+            FROM {models.PastEventParticipant.database_table} AS event_participants
+                JOIN {models.PastCourseAssignment.database_table} AS course_assignments
+                ON participant_id = event_participants.id
+            WHERE persona_id = %(persona_id)s
+        """
+        data = self.query_all(rs, query, {"persona_id": persona_id})
+        pcourses = self.get_past_courses(rs, {e["pcourse_id"] for e in data})
+        ret = collections.defaultdict(list)
+        for e in data:
+            pevent_id = e.pop("pevent_id")
+            ret[pevent_id].append(models.PastCourseAssignment.from_database(e))
         for pevent_id, assignments in ret.items():
             ret[pevent_id] = xsorted(assignments, key=lambda x: pcourses[x.pcourse_id])
         return ret
