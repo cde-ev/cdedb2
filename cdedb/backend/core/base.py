@@ -17,7 +17,7 @@ import datetime
 import decimal
 from collections.abc import Collection
 from secrets import token_hex
-from typing import Any, Optional, Protocol, Union, overload
+from typing import Any, Literal, Optional, Protocol, Union, overload
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -3143,6 +3143,9 @@ class CoreBaseBackend(AbstractBackend):
                 raise AdminPasswordResetError(n_("Preventing reset of admin."))
 
         # This defines a specific account/password combination as purpose
+        # The persona_id parameter is usually autofilled by the frontend as
+        #  `rs.user.persona_id`, but here we use this mechanism differently
+        #  _and_ we need to allow bot anonymous usage and usage for other users.
         cookie = encode_parameter(
             salt,
             "reset_password",
@@ -3155,10 +3158,10 @@ class CoreBaseBackend(AbstractBackend):
 
     def _verify_reset_cookie(
         self, rs: RequestState, persona_id: int, salt: str, cookie: str
-    ) -> None:
+    ) -> Literal[True]:
         """Check a provided cookie for correctness.
 
-        :returns: None on success, an error message otherwise.
+        Returns True on success and raises an appropriate error otherwise.
         """
         data = self.sql_select_one(
             rs, "core.personas", ["username", "password_hash"], persona_id
@@ -3167,6 +3170,9 @@ class CoreBaseBackend(AbstractBackend):
         if data is None:
             raise ValueError(n_("Persona does not exist."))
 
+        # The persona_id parameter is usually autofilled by the frontend as
+        #  `rs.user.persona_id`, but here we use this mechanism differently
+        #  _and_ we need to allow anonymous usage.
         timeout, payload = decode_parameter(
             salt,
             "reset_password",
@@ -3181,6 +3187,8 @@ class CoreBaseBackend(AbstractBackend):
                 raise ParameterInvalidError
         if payload != self.RESET_COOKIE_PAYLOAD:
             raise ParameterInvalidError
+
+        return True
 
     def modify_password(
         self,
@@ -3347,9 +3355,6 @@ class CoreBaseBackend(AbstractBackend):
         This generates a reset cookie which can be used in a second step
         to actually reset the password. To reset the password for a
         privileged account you need to have privileges yourself.
-
-        :returns: The ``bool`` indicates success and the ``str`` is
-          either the reset cookie or an error message.
         """
         persona_id = affirm(vtypes.ID, persona_id)
         # timeout = affirm(datetime.timedelta, timeout)
@@ -3361,7 +3366,7 @@ class CoreBaseBackend(AbstractBackend):
     @access("anonymous")
     def check_reset_cookie(
         self, rs: RequestState, persona_id: int, cookie: str
-    ) -> None:
+    ) -> Literal[True]:
         persona_id = affirm(vtypes.ID, persona_id)
         cookie = affirm(str, cookie)
         return self.verify_reset_cookie(rs, persona_id, cookie)

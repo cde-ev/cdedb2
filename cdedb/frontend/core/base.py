@@ -2272,8 +2272,11 @@ class CoreBaseFrontend(AbstractFrontend):
 
         persona_id = self.coreproxy.resolve_username(rs, email)
         if not persona_id:
+            # This leaks information on valid usernames but we live with this fact in
+            #  favor of a better user experience.
             rs.append_validation_error(("email", ValueError(n_("Nonexistent user."))))
             rs.ignore_validation_errors()
+            # TODO: Add fail2ban for this?
             self.logger.info(
                 f"Password reset requested for unknown username {email} for IP {rs.request.remote_addr}."
             )
@@ -2289,6 +2292,7 @@ class CoreBaseFrontend(AbstractFrontend):
             self.logger.info(
                 f"Sent password reset denial mail to admin {email} for IP {rs.request.remote_addr}."
             )
+            # Display success notification anyway to prevent leaking admin accounts.
             rs.notify("success", n_("Email sent."))
         else:
             self.do_mail(
@@ -2309,10 +2313,6 @@ class CoreBaseFrontend(AbstractFrontend):
 
         This is the only way to reset the password of an administrator (for
         security reasons).
-
-        If the `internal` parameter is True, this was called internally to
-        send a reset link. In that case we do not have the appropriate
-        ambience dict, so we retrieve the username.
         """
         if rs.has_validation_errors():
             return self.redirect_show_user(rs, persona_id)
