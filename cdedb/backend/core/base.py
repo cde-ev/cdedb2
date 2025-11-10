@@ -3149,7 +3149,7 @@ class CoreBaseBackend(AbstractBackend):
         cookie = encode_parameter(
             salt,
             "reset_password",
-            f"{data['username']}-{data['password_hash']}",
+            get_hash(f"{data['username']}-{data['password_hash']}".encode()),
             self.RESET_COOKIE_PAYLOAD,
             persona_id=persona_id,
             timeout=timeout,
@@ -3176,7 +3176,7 @@ class CoreBaseBackend(AbstractBackend):
         timeout, payload = decode_parameter(
             salt,
             "reset_password",
-            f"{data['username']}-{data['password_hash']}",
+            get_hash(f"{data['username']}-{data['password_hash']}".encode()),
             cookie,
             persona_id=persona_id,
         )
