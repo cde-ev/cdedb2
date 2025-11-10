@@ -3357,7 +3357,7 @@ class CoreBaseBackend(AbstractBackend):
         privileged account you need to have privileges yourself.
         """
         persona_id = affirm(vtypes.ID, persona_id)
-        # timeout = affirm(datetime.timedelta, timeout)
+        timeout = affirm(datetime.timedelta, timeout)
         with Atomizer(rs):
             ret = self.generate_reset_cookie(rs, persona_id, timeout=timeout)
             self.core_log(rs, const.CoreLogCodes.password_reset_cookie, persona_id)
