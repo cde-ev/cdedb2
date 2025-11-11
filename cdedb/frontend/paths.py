@@ -105,11 +105,11 @@ rules = [
                 post("/change", endpoint="do_username_change"),
             ),
             sub(
-                "/password",
-                get_("/reset", endpoint="reset_password_form"),
-                get_("/reset/mail", endpoint="send_password_reset_link"),
-                get_("/reset/confirm", endpoint="do_password_reset_form"),
-                post("/reset", endpoint="do_password_reset"),
+                "/password/reset",
+                get_("/", endpoint="reset_password_form"),
+                post("/", endpoint="send_password_reset_link"),
+                get_("/confirm", endpoint="do_password_reset_form"),
+                post("/confirm", endpoint="do_password_reset"),
             ),
             get_("/search/user", endpoint="user_search"),
             sub(

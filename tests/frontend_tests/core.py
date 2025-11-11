@@ -19,7 +19,7 @@ from cdedb.common import (
     make_persona_name,
     now,
 )
-from cdedb.common.exceptions import CryptographyError
+from cdedb.common.exceptions import CryptographyError, ParameterInvalidError
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query import QueryOperators
 from cdedb.common.query.log_filter import ChangelogLogFilter
@@ -1087,17 +1087,12 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         # Second reset with same link should fail
         self.get(link)
-        self.assertTitle("Neues Passwort setzen")
-        f = self.response.forms['passwordresetform']
-        f['new_password'] = new_password
-        f['new_password2'] = new_password
-        self.submit(f, check_notification=False)
+        self.assertTitle("Passwort zurücksetzen")
         self.assertPresence("Link ist ungültig oder wurde bereits verwendet.",
                             div="notifications")
 
     @prepsql("DELETE FROM core.email_states")
     def test_password_reset_username_change(self) -> None:
-        new_password = "krce63koLe#$e"
         user = USER_DICT['berta']
         username = user['username']
         self.get("/")
@@ -1106,16 +1101,14 @@ class TestCoreFrontend(FrontendTest):
         f['email'] = username
         self.submit(f)
         link = self.fetch_link()
+        cookie = self.core.make_reset_cookie(self.key, user["id"], datetime.timedelta(seconds=10))
         with self.switch_user('vera'):
             self.core.change_username(
                 self.key, user['id'], "new_username@example.cde", password=None)
         self.get(link)
-        f = self.response.forms['passwordresetform']
-        f['new_password'] = f['new_password2'] = new_password
-        self.submit(f, check_notification=False)
-        self.assertPresence("Unbekannte E-Mail-Adresse", div="notifications")
-        with self.assertRaises(ValueError):
-            self.core.check_password_strength(self.key, new_password, email=username)
+        self.assertPresence("Link ist ungültig oder wurde bereits verwendet.", div="notifications")
+        with self.assertRaises(ParameterInvalidError):
+            self.core.check_reset_cookie(self.key, persona_id=user["id"], cookie=cookie)
 
     def test_admin_reset_password(self) -> None:
         new_password = "krce63koLe#$e"

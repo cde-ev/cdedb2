@@ -97,5 +97,17 @@ class AdverseCompanionError(Exception):
         super().__init__(msg, *args)
 
 
+class ParameterTimeoutError(Exception):
+    """Exception signalling that a secured parameter has timed out."""
+
+
+class ParameterInvalidError(Exception):
+    """Exception signalling that a secured parameter has expired or been manipulated."""
+
+
+class AdminPasswordResetError(Exception):
+    """Exception signalling that an admin password reset was prevented."""
+
+
 class ValidationWarning(Exception):
     """Exception which should be suppressable by the user."""

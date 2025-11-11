@@ -1809,6 +1809,16 @@ def _frozen_datetime(
 
 
 @_add_typed_validator
+def _timedelta(
+    val: Any, argname: str | None = None, **kwargs: Any
+) -> datetime.timedelta:
+    """For simplicity, do not attempt to coerce this."""
+    if not isinstance(val, datetime.timedelta):
+        raise ValidationSummary(TypeError(argname, n_("Must be a datetime.timedelta.")))
+    return val
+
+
+@_add_typed_validator
 def _single_digit_int(
     val: Any, argname: Optional[str] = None, **kwargs: Any
 ) -> SingleDigitInt:
