@@ -127,7 +127,7 @@ class LDAPsqlBackend:
         # concept of 'sessions' in this backend, we can not create one database
         # connection per session. So, to avoid creating a new connection for each
         # transaction, we utilize the psycopg connection pool for this.
-        self.pool = cast(AsyncConnectionPool[AsyncConnection[DictRow]], pool)
+        self.pool = cast("AsyncConnectionPool[AsyncConnection[DictRow]]", pool)
         # load the ldap schemas (and overlays) which are supported
         self.schema = self.load_schemas("core.schema", "partial-base.schema",
             "cosine.schema", "inetorgperson.schema", "ipauniqueid.schema",
