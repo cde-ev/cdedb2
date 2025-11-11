@@ -149,23 +149,20 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event")
     @REQUESTdata("event_id", "endpoint", "args")
-    def redirect_event(self, rs: RequestState, event_id: int, endpoint: str | None, args: str | None) -> Response:
-        if rs.has_validation_errors():
+    def redirect_event(self, rs: RequestState, event_id: int, endpoint: str, args: str) -> Response:
+        original_params = json.loads(args.replace("'", '"')) if args else {}
+        original_event_id = original_params.get("event_id")
+        params = original_params
+        if rs.has_validation_errors() or not event_id:
             rs.notify("error", rs.gettext("Unknown event."))
-            params = {}
             default_endpoint = "event/list_events"
         else:
             default_endpoint = "event/show_event"
-            original_params = {}
-            if args:
-                original_params = json.loads(args.replace("'", '"'))
-            if (original_event_id := original_params.get("event_id")) == event_id:
-                # Allow redirect to the original entity page.
-                params = original_params
-            else:
-                if not original_event_id:
-                    endpoint = default_endpoint
-                # If going to a different event, drop subentity params.
+            if not original_event_id:
+                # If coming from no event, override original endpoint.
+                endpoint = default_endpoint
+            if original_event_id != event_id:
+                # If going to a (different) event, drop subentity params.
                 params = {"event_id": event_id}
         try:
             return self.redirect(rs, endpoint or default_endpoint, params)

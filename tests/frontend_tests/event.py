@@ -8330,3 +8330,43 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Emilia (Emmy) Eventis (KL) emilia@example.cde", div="attendee-list3")
         self.assertPresence("Akira Abukara akira@example.cde", div="attendee-list3")
         self.assertPresence("Inga Iota inga@example.cde", div="attendee-list3")
+
+    @as_users("annika")
+    def test_event_quicksearch(self) -> None:
+        self.traverse("Veranstaltungen", "Veranstaltungs-Betreuer")
+        self.assertTitle("Veranstaltungs-Betreuer [1]")
+        f = self.response.forms["quickeventform"]
+        f["event_id"] = ""
+        self.submit(f)
+        self.assertTitle("Veranstaltungs-Betreuer [1]")
+        self.assertNotification("Unbekannte Veranstaltung.", "error")
+        f = self.response.forms["quickeventform"]
+        f["event_id"] = 1
+        self.submit(f)
+        self.assertTitle("Große Testakademie 2222")
+        f = self.response.forms["quickeventform"]
+        f["event_id"] = ""
+        self.submit(f)
+        self.assertTitle("Große Testakademie 2222")
+        self.assertNotification("Unbekannte Veranstaltung.", "error")
+        f = self.response.forms["quickeventform"]
+        f["event_id"] = 2
+        self.submit(f)
+        self.assertTitle("CdE-Party 2050")
+        self.traverse("Teilnahmebeiträge")
+        self.assertTitle("Teilnahmebeiträge (CdE-Party 2050)")
+        f = self.response.forms["quickeventform"]
+        f["event_id"] = 1
+        self.submit(f)
+        self.assertTitle("Teilnahmebeiträge (Große Testakademie 2222)")
+        self.traverse("Kurse", "Heldentum")
+        self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
+        f = self.response.forms["quickeventform"]
+        f["event_id"] = 1
+        self.submit(f)
+        self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
+        f = self.response.forms["quickeventform"]
+        f["event_id"] = 2
+        self.submit(f)
+        self.assertTitle("CdE-Party 2050")
+        self.assertNotification("Could not redirect to entity page.", "info")
