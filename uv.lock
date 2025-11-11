@@ -126,6 +126,8 @@ dev = [
 ldap = [
     { name = "ldaptor" },
     { name = "psycopg", extra = ["binary", "pool"] },
+    { name = "subman" },
+    { name = "systemd-python" },
 ]
 playwright = [
     { name = "playwright" },
@@ -187,6 +189,8 @@ dev = [
 ldap = [
     { name = "ldaptor", specifier = "==21.2.0" },
     { name = "psycopg", extras = ["binary", "pool"], specifier = "==3.2.12" },
+    { name = "subman", specifier = "==0.1.1" },
+    { name = "systemd-python", specifier = "==235" },
 ]
 playwright = [{ name = "playwright", specifier = "==1.55.0" }]
 
