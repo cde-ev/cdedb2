@@ -53,7 +53,7 @@
 
 
 {% macro event_quicksearch(mobile=false) %}
-    <div class="list-group tear-down {% if mobile %}hidden-md hidden-lg{% else %}hidden-xs hidden-sm{% endif %}">
+    <div class="list-group tear-down {% if mobile %}hidden-md hidden-lg{% elif mobile is sameas false %}hidden-xs hidden-sm{% endif %}">
         <form action="{{ cdedblink('event/redirect_event') }}" method="GET"
                 id="quickeventform{% if mobile %}-mobile{% endif %}">
             <div class="sr-only">{% trans %}Quickly navigate to an event by name{% endtrans %}</div>
@@ -88,6 +88,11 @@
 
 
 {% macro one_event_links(event) %}
+
+    {% if 'event_list' in user.admin_views %}
+        {{ event_quicksearch() }}
+    {% endif %}
+
     <div class="list-group tear-down">
         {% if event.is_visible_for(user, is_registered, privileged=False) or event['id'] in user.orga or user.admin_views.intersection(('event_mgmt', 'event_orga')) %}
         {{ util.href(cdedblink("event/show_event", {"event_id": event['id']}), gettext("Overview"),
@@ -128,9 +133,6 @@
         {% endif %}
     </div>
 
-    {% if 'event_list' in user.admin_views %}
-        {{ event_quicksearch() }}
-    {% endif %}
     {% if is_privileged_for('quick_show_registration') %}
         {{ registration_quicksearch() }}
     {% endif %}
@@ -202,12 +204,14 @@
             </div>
         {% endif %}
 
-        {% if 'event_list' in user.admin_views %}
-            {{ event_quicksearch(mobile=True) }}
-        {% endif %}
         {% if is_privileged_for('quick_show_registration') %}
             {{ registration_quicksearch(mobile=True) }}
         {% endif %}
+
+        {% if 'event_list' in user.admin_views %}
+            {{ event_quicksearch(mobile=True) }}
+        {% endif %}
+
     {% endif %}
 {% endmacro %}
 
