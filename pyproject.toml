@@ -34,9 +34,9 @@ dependencies = [
     "subman==0.1.1",  # not in debian
     "systemd-python==235",
     "tabulate==0.9.0",
-    "webtest==3.0.4",
+    "webtest==3.0.6",  # This is more up-to-date than trixie.
     "werkzeug==3.1.3",
-    "zxcvbn==4.5.0",  # not in debian stable yet, only testing
+    "zxcvbn==4.5.0",  # not in trixie.
 ]
 
 [dependency-groups]
