@@ -6538,7 +6538,7 @@ msgstr "Nicht-wohlgeformte URL."
 
 #: cdedb/common/validation/validate.py:915
 msgid "Cannot convert {val_type} to bytes."
-msgstr "Kann Wert {val} nicht in bytes konvertieren."
+msgstr "Kann Wert {val_type} nicht in bytes konvertieren."
 
 #: cdedb/common/validation/validate.py:920
 msgid "Must be a bytes object."
