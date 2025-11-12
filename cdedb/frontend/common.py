@@ -1901,7 +1901,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         Scout(lambda anid: obj.eventproxy.get_registration(rs, anid),
               'registration_id', 'registration',
               ((lambda a: do_assert(a['registration']['event_id'] == a['event'].id)),)),
-        Scout(lambda anid: obj.eventproxy.get_lodgement_groups(rs, ambience['event'].id)[anid],  # type: ignore[has-type]
+        Scout(lambda anid: obj.eventproxy.get_lodgement_groups(rs, ambience['event'].id)[anid],
               'group_id', 'group',
               ((lambda a: do_assert(a['group'].event_id == a['event'].id)),)),
         Scout(lambda anid: obj.eventproxy.new_get_lodgement(rs, anid),
@@ -1911,22 +1911,22 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               ((lambda a: do_assert(rs.requestargs['field_id']
                                     in a['event'].fields)),)),
         # Dirty hack, that relies on the event being retrieved into ambience first.
-        Scout(lambda anid: ambience['event'].part_groups[anid],  # type: ignore[has-type]
+        Scout(lambda anid: ambience['event'].part_groups[anid],
               'part_group_id', 'part_group',
               ((lambda a: do_assert(a['part_group'].event_id == a['event'].id)),)),
         # Dirty hack, that relies on the event being retrieved into ambience first.
-        Scout(lambda anid: ambience['event'].track_groups[anid],  # type: ignore[has-type]
+        Scout(lambda anid: ambience['event'].track_groups[anid],
               'track_group_id', 'track_group',
               ((lambda a: do_assert(a['track_group'].event_id == a['event'].id)),)),
         # Dirty hack, that relies on the event being retrieved into ambience first.
-        Scout(lambda anid: ambience['event'].fees[anid],  # type: ignore[has-type]
+        Scout(lambda anid: ambience['event'].fees[anid],
               'fee_id', 'fee',
               ((lambda a: do_assert(a['fee'].event_id == a['event'].id)),)),
         Scout(lambda anid: obj.eventproxy.get_orga_token(rs, anid),
               'orga_token_id', 'orga_token',
               ((lambda a: do_assert(a['orga_token'].event_id == a['event'].id)),)),
         # Dirty hack, that relies on the event being retrieved into ambience first.
-        Scout(lambda anid: ambience['event'].custom_query_filters[anid],  # type: ignore[has-type]
+        Scout(lambda anid: ambience['event'].custom_query_filters[anid],
               'custom_filter_id', 'custom_filter',
               ((lambda a: do_assert(a['custom_filter'].event_id == a['event'].id)),)),
         Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
@@ -1949,20 +1949,20 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'mailinglist_id', 'mailinglist', ()),
         Scout(lambda anid: obj.complaintproxy.get_case(rs, anid),
               'case_id', 'case', ()),
-        Scout(lambda anid: ambience['case'].entries[anid],  # type: ignore[has-type]
+        Scout(lambda anid: ambience['case'].entries[anid],
               'entry_id', 'entry', ()),
-        Scout(lambda anid: ambience['case'].entries[anid],  # type: ignore[has-type]
+        Scout(lambda anid: ambience['case'].entries[anid],
               'parent_id', 'entry', ()),
         Scout(lambda idx: ambience['entry'].all_versions[idx - 1],
               'version_nr', 'entry_version', ())
     )
     scouts_dict = {s.param_name: s for s in scouts}
-    ambience = {}
+    ambience: AmbienceDict = {}
     for param, value in rs.requestargs.items():
         s = scouts_dict.get(param)
         if s and s.getter:
             try:
-                ambience[s.object_name] = s.getter(value)
+                ambience[s.object_name] = s.getter(value)  # type: ignore[literal-required]
             except KeyError:
                 raise werkzeug.exceptions.NotFound(
                     rs.gettext("Object {param}={value} not found").format(
@@ -1978,7 +1978,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         if param in scouts_dict:
             for consistency_checker in scouts_dict[param].dependencies:
                 consistency_checker(ambience)
-    return cast("AmbienceDict", ambience)
+    return ambience
 
 
 F = TypeVar('F', bound=Callable[..., Any])
