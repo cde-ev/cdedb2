@@ -138,7 +138,7 @@ def sql2json(
                         sorted_entity[field] = (
                             models_complaint.ComplaintEntryVersion.decrypt(
                                 bytes(value), secrets["COMPLAINT_SECRET"]
-                            )
+                            ).decode("utf-8")
                         )
             sorted_entities.append(sorted_entity)
 

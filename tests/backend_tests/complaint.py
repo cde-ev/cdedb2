@@ -3,10 +3,10 @@ import functools
 
 import cdedb.database.constants as const
 import cdedb.models.complaint as models
-from cdedb.common import CdEDBObject, PrivilegeError, nearly_now, now
+from cdedb.common import CdEDBObject, PrivilegeError, get_hash, nearly_now, now
 from cdedb.common.exceptions import AdverseCompanionError
 from cdedb.common.query import Query, QueryOperators, QueryScope
-from tests.common import USER_DICT, BackendTest, as_users, execsql
+from tests.common import USER_DICT, BackendTest, as_users, execsql, storage
 from tests.other_tests.test_validation import INVAL, TestValidationBase
 
 
@@ -71,6 +71,9 @@ class TestComplaintBackend(BackendTest):
                             timestamp=datetime.datetime(
                                 2025, 5, 28, 14, tzinfo=datetime.timezone.utc
                             ),
+                            attachment_filehash="d28c1a205a1dfb4fd6f655d0e69e6512c676c9cd675f760ec41b6e8a57bde89d313f521d4fafc2f294a28bd8aff4a106032e904470b3249f9436f68ea1ec8020",
+                            attachment_title="Aussage von Charly",
+                            attachment_filename="aussage_charly.pdf",
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
                             authors={3},  # type: ignore[arg-type]
@@ -1210,6 +1213,63 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(1, self.complaint.remove_enforcer(self.key, janis_id))
         self.assertEqual(-1, self.complaint.remove_enforcer(self.key, janis_id))
 
+    @as_users("simon")
+    @storage
+    def test_attachment_store(self) -> None:
+        invalid_pdf = b"abc"
+        with self.assertRaisesRegex(ValueError, "Only pdf allowed."):
+            self.complaint.store_attachment(self.key, invalid_pdf)
+
+        sample_attachment_content = (self.testfile_dir / "form.pdf").read_bytes()
+        sample_attachment_hash = self.get_sample_datum(
+            models.ComplaintEntryVersion.database_table, 2
+        )["attachment_filehash"]
+        self.assertEqual(
+            sample_attachment_content,
+            self.complaint.retrieve_attachment(self.key, sample_attachment_hash),
+        )
+
+        valid_pdf = (self.testfile_dir / "rechen.pdf").read_bytes()
+        attachment_hash = self.complaint.store_attachment(self.key, valid_pdf)
+        self.assertEqual(
+            valid_pdf, self.complaint.retrieve_attachment(self.key, attachment_hash)
+        )
+        stored_path = self.complaint.get_attachment_store(self.key).get_path(
+            attachment_hash
+        )
+        self.assertNotEqual(valid_pdf, stored_path.read_bytes())
+        self.assertEqual(
+            valid_pdf,
+            models.ComplaintEntryVersion.decrypt(
+                data=stored_path.read_bytes(), key=self.secrets["COMPLAINT_SECRET"]
+            ),
+        )
+
+        case_id = 1
+        entry_data = {
+            "entry_type": const.ComplaintEntryType.provisional_statement_given,
+            "concerned_id": 2,
+        }
+        version_data = {
+            "description": "Test",
+            "timestamp": now(),
+            "authors": [1],
+            "attachment_filehash": "abc",
+            "attachment_title": "Test",
+            "attachment_filename": "test.pdf",
+        }
+        with self.assertRaisesRegex(RuntimeError, "File has been lost."):
+            self.complaint.add_entry(self.key, case_id, entry_data, version_data)
+        version_data["attachment_filehash"] = attachment_hash
+        self.complaint.add_entry(self.key, case_id, entry_data, version_data)
+
+        self.assertTrue(
+            self.complaint.get_attachment_store(self.key).forget_one(
+                self.key, lambda rs, attachment_hash: False, attachment_hash
+            )
+        )
+        self.assertIsNone(self.complaint.retrieve_attachment(self.key, attachment_hash))
+
 
 class TestComplaintValidation(TestValidationBase):
     def test_case(self) -> None:
@@ -1506,6 +1566,9 @@ class TestComplaintValidation(TestValidationBase):
                         ),
                         "authors": [1],
                         "etime": None,
+                        "attachment_filehash": None,
+                        "attachment_title": None,
+                        "attachment_filename": None,
                     },
                     None,
                 ),
@@ -1515,6 +1578,9 @@ class TestComplaintValidation(TestValidationBase):
                         "timestamp": now(),
                         "authors": [1, 2, 3],
                         "etime": None,
+                        "attachment_filehash": None,
+                        "attachment_title": None,
+                        "attachment_filename": None,
                     },
                     INVAL,
                     None,
@@ -1533,6 +1599,9 @@ class TestComplaintValidation(TestValidationBase):
                         ),
                         "authors": [1],
                         "etime": None,
+                        "attachment_filehash": None,
+                        "attachment_title": None,
+                        "attachment_filename": None,
                     },
                     None,
                 ),
@@ -1563,6 +1632,9 @@ class TestComplaintValidation(TestValidationBase):
                         "etime": datetime.datetime(
                             2025, 5, 31, 20, 25, tzinfo=datetime.timezone.utc
                         ),
+                        "attachment_filehash": None,
+                        "attachment_title": None,
+                        "attachment_filename": None,
                     },
                     None,
                 ),
@@ -1583,6 +1655,9 @@ class TestComplaintValidation(TestValidationBase):
                         "timestamp": now(),
                         "authors": [1],
                         "etime": None,
+                        "attachment_filehash": None,
+                        "attachment_title": None,
+                        "attachment_filename": None,
                     },
                     INVAL,
                     None,
@@ -1592,5 +1667,103 @@ class TestComplaintValidation(TestValidationBase):
                 "creation": True,
                 "passthrough": True,
                 "entry_type": const.ComplaintEntryType.generic_information,
+            },
+        )
+        # Test successful creation of entry version with attachment:
+        self.do_validator_test(
+            models.ComplaintEntryVersion,
+            [
+                (
+                    {
+                        "description": "Test.",
+                        "timestamp": now(),
+                        "authors": [1],
+                        "etime": None,
+                        "attachment_filehash": get_hash(b"abc"),
+                        "attachment_title": "Test",
+                        "attachment_filename": "test.pdf",
+                    },
+                    INVAL,
+                    None,
+                )
+            ],
+            {
+                "creation": True,
+                "passthrough": True,
+                "entry_type": const.ComplaintEntryType.provisional_statement_given,
+            },
+        )
+        # Test creation of entry version with attachment with invalid entry type.
+        self.do_validator_test(
+            models.ComplaintEntryVersion,
+            [
+                (
+                    {
+                        "description": "Test.",
+                        "timestamp": now(),
+                        "authors": [1],
+                        "etime": None,
+                        "attachment_filehash": get_hash(b"abc"),
+                        "attachment_title": "Test",
+                        "attachment_filename": "test.pdf",
+                    },
+                    None,
+                    ValueError("Must be empty. (attachment_filehash)"),
+                )
+            ],
+            {
+                "creation": True,
+                "passthrough": True,
+                "entry_type": const.ComplaintEntryType.generic_information,
+            },
+        )
+        # Test invalid input for entry version with attachment:
+        self.do_validator_test(
+            models.ComplaintEntryVersion,
+            [
+                (
+                    {
+                        "description": "Test.",
+                        "timestamp": now(),
+                        "authors": [1],
+                        "etime": None,
+                        "attachment_filehash": "",
+                        "attachment_title": "Test",
+                        "attachment_filename": "test.pdf",
+                    },
+                    None,
+                    ValueError("Incomplete attachment. (attachment_filehash)"),
+                ),
+                (
+                    {
+                        "description": "Test.",
+                        "timestamp": now(),
+                        "authors": [1],
+                        "etime": None,
+                        "attachment_filehash": get_hash(b"abc"),
+                        "attachment_title": "",
+                        "attachment_filename": "test.pdf",
+                    },
+                    None,
+                    ValueError("Incomplete attachment. (attachment_title)"),
+                ),
+                (
+                    {
+                        "description": "Test.",
+                        "timestamp": now(),
+                        "authors": [1],
+                        "etime": None,
+                        "attachment_filehash": get_hash(b"abc"),
+                        "attachment_title": "Test",
+                        "attachment_filename": "",
+                    },
+                    None,
+                    ValueError("Incomplete attachment. (attachment_filename)"),
+                ),
+            ],
+            {
+                "creation": True,
+                "passthrough": True,
+                "entry_type": const.ComplaintEntryType.provisional_statement_given,
             },
         )

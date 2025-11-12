@@ -346,6 +346,10 @@ class ComplaintEntryVersion(CdEDataclass):
     timestamp: datetime.datetime
     etime: datetime.datetime | None = None
 
+    attachment_title: str | None = None
+    attachment_filehash: str | None = None
+    attachment_filename: str | None = None
+
     ctime: datetime.datetime = dataclasses.field(metadata=Meta.input_exclude.as_dict)
     submitted_by: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
@@ -367,12 +371,14 @@ class ComplaintEntryVersion(CdEDataclass):
     )
 
     @staticmethod
-    def encrypt(description: str, key: bytes) -> bytes:
-        return Fernet(key).encrypt(description.encode("utf-8"))
+    def encrypt(data: str | bytes, key: bytes) -> bytes:
+        if isinstance(data, str):
+            data = data.encode("utf-8")
+        return Fernet(key).encrypt(data)
 
     @staticmethod
-    def decrypt(description: bytes, key: bytes) -> str:
-        return Fernet(key).decrypt(description).decode("utf-8")
+    def decrypt(data: bytes, key: bytes) -> bytes:
+        return Fernet(key).decrypt(data)
 
     def get_sortkey(self) -> Sortkey:
         return (self.entry_id, self.ctime)
@@ -388,7 +394,7 @@ class ComplaintEntryVersion(CdEDataclass):
     ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
         query = f"""
             SELECT
-                {','.join(cls.database_fields())},
+                {', '.join(cls.database_fields())},
                 array(
                     SELECT persona_id
                     FROM {ComplaintAuthors.database_table} AS authors

@@ -4643,6 +4643,9 @@
             "ctime": "---now---",
             "timestamp": "2025-05-28T14:00:00+00:00",
             "etime": null,
+            "attachment_filehash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
             "dtime": null,
             "dreason": null,
             "deleted_by": null
@@ -4656,6 +4659,9 @@
             "ctime": "---now---",
             "timestamp": "2025-05-28T14:00:00+00:00",
             "etime": null,
+            "attachment_filehash": "af2b730a3700f257e715843cd67552635fe9a3e9b6622a3a843560f325425a2999c9d392e4678a090c889d55ee14fe878cd3722ad234e507ccfdae94ef7392dd",
+            "attachment_title": "Aussage von Charly",
+            "attachment_filename": "aussage_charly.pdf",
             "dtime": null,
             "dreason": null,
             "deleted_by": null
@@ -4669,6 +4675,9 @@
             "ctime": "---now---",
             "timestamp": "2025-05-28T15:00:00+00:00",
             "etime": null,
+            "attachment_filehash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
             "dtime": null,
             "dreason": null,
             "deleted_by": null
@@ -4682,6 +4691,9 @@
             "ctime": "---now---",
             "timestamp": "2025-05-28T16:00:00+00:00",
             "etime": null,
+            "attachment_filehash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
             "dtime": "---now---",
             "dreason": "Ungünstige Wortwahl.",
             "deleted_by": 1
@@ -4695,6 +4707,9 @@
             "ctime": "---now---",
             "timestamp": "2025-05-28T16:00:00+00:00",
             "etime": null,
+            "attachment_filehash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
             "dtime": null,
             "dreason": null,
             "deleted_by": null
@@ -4708,6 +4723,9 @@
             "ctime": "---now---",
             "timestamp": "2025-05-28T16:00:00+00:00",
             "etime": null,
+            "attachment_filehash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
             "dtime": null,
             "dreason": null,
             "deleted_by": null
@@ -4721,6 +4739,9 @@
             "ctime": "---now---",
             "timestamp": "2025-05-31T23:06:25+00:00",
             "etime": "2025-06-08T06:06:25+00:00",
+            "attachment_filehash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
             "dtime": null,
             "dreason": null,
             "deleted_by": null
@@ -4734,6 +4755,9 @@
             "ctime": "---now---",
             "timestamp": "2025-06-09T12:00:00+00:00",
             "etime": null,
+            "attachment_filehash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
             "dtime": null,
             "dreason": null,
             "deleted_by": null
@@ -4747,6 +4771,9 @@
             "ctime": "---now---",
             "timestamp": "2025-06-10T12:00:00+00:00",
             "etime": null,
+            "attachment_filehash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
             "dtime": null,
             "dreason": null,
             "deleted_by": null

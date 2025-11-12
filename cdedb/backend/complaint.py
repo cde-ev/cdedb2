@@ -23,6 +23,7 @@ from cdedb.common import (
     RequestState,
     now,
 )
+from cdedb.common.attachment import AttachmentStore
 from cdedb.common.exceptions import AdverseCompanionError, PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
@@ -60,25 +61,48 @@ class ComplaintBackend(AbstractBackend):
         secrets = SecretsConfig()
         complaint_secret = secrets["COMPLAINT_SECRET"]
 
-        def encrypt(description: str | None) -> bytes | None:
-            if description is None:
+        def encrypt(data: str | bytes | None) -> bytes | None:
+            if data is None:
                 return None
-            return models.ComplaintEntryVersion.encrypt(description, complaint_secret)
+            return models.ComplaintEntryVersion.encrypt(data=data, key=complaint_secret)
 
         self.encrypt = staticmethod(encrypt)
 
-        def decrypt(description: BytesLike | None) -> str | None:
-            if description is None:
+        def decrypt(data: BytesLike | None) -> bytes | None:
+            if data is None:
                 return None
-            if not isinstance(description, bytes):
-                description = bytes(description)
-            return models.ComplaintEntryVersion.decrypt(description, complaint_secret)
+            if not isinstance(data, bytes):
+                data = bytes(data)
+            return models.ComplaintEntryVersion.decrypt(data=data, key=complaint_secret)
 
         self.decrypt = staticmethod(decrypt)
+
+        self._attachment_store = AttachmentStore(
+            self.conf['STORAGE_DIR'] / "complaint_attachment",
+            type_=bytes,
+        )
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
+
+    @access("complaint_admin")
+    def get_attachment_store(self, rs: RequestState) -> AttachmentStore:
+        return self._attachment_store
+
+    @access("complaint_admin")
+    def store_attachment(self, rs: RequestState, content: bytes) -> str:
+        content = affirm(vtypes.PDFFile, content, file_storage=False)
+        content = self.encrypt(content)
+        assert content is not None
+        return self.get_attachment_store(rs).store(content)
+
+    @access("complaint_admin")
+    def retrieve_attachment(
+        self, rs: RequestState, attachment_hash: str
+    ) -> bytes | None:
+        content = self.get_attachment_store(rs).get(attachment_hash)
+        return self.decrypt(content)
 
     @access("persona")
     def list_enforcers(self, rs: RequestState) -> set[vtypes.ID]:
@@ -361,6 +385,9 @@ class ComplaintBackend(AbstractBackend):
         new_version_id = self.sql_insert(
             rs, models.ComplaintEntryVersion.database_table, data
         )
+        if filehash := data.get("attachment_filehash"):
+            if not self.get_attachment_store(rs).is_available(filehash):
+                raise RuntimeError(n_("File has been lost."))
         self.sql_insert_many(
             rs,
             "complaint.authors",
@@ -972,7 +999,7 @@ class ComplaintBackend(AbstractBackend):
             query += "WHERE " + " AND ".join(conditions)
 
         return {
-            e["id"]: self.decrypt(e["description"]) or ""
+            e["id"]: (self.decrypt(e["description"]) or b"").decode("utf-8")
             for e in self.query_all(rs, query, params)
         }
 
