@@ -346,9 +346,15 @@ class ComplaintEntryVersion(CdEDataclass):
     timestamp: datetime.datetime
     etime: datetime.datetime | None = None
 
+    # filehas and filename are retrieved from the request manually to feed to the
+    #  attachment store.
     attachment_title: str | None = None
-    attachment_filehash: str | None = None
-    attachment_filename: str | None = None
+    attachment_filehash: str | None = dataclasses.field(
+        default=None, metadata=Meta.request_exclude.as_dict
+    )
+    attachment_filename: str | None = dataclasses.field(
+        default=None, metadata=Meta.request_exclude.as_dict
+    )
 
     ctime: datetime.datetime = dataclasses.field(metadata=Meta.input_exclude.as_dict)
     submitted_by: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)

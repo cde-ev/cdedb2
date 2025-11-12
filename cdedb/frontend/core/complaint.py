@@ -30,6 +30,7 @@ from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import (
     REQUESTdata,
     REQUESTdatadict,
+    REQUESTfile,
     TransactionObserver,
     access,
     check_validation as check,
@@ -788,23 +789,41 @@ class CoreComplaintMixin(CoreBaseFrontend):
         )
 
     @access("complaint_admin", modi={"POST"})
-    @REQUESTdata("dreason")
+    @REQUESTfile("attachment")
+    @REQUESTdata("dreason", "attachment_filehash", "attachment_filename")
     def replace_entry(
         self,
         rs: RequestState,
         case_id: int,
         entry_id: int,
         dreason: str,
+        attachment: werkzeug.datastructures.FileStorage | None,
+        attachment_filehash: vtypes.Identifier | None,
+        attachment_filename: str | None,
     ) -> Response:
         # the check that the entry belongs to the case is already done in
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
+
+        if attachment or attachment_filehash:
+            attachment_filehash, attachment_filename = self.locate_or_store_attachment(
+                rs,
+                self.complaintproxy.get_attachment_store(rs),
+                attachment,
+                attachment_filehash,
+                attachment_filename,
+            )
+
         data = extract_and_check_dataclass(
             rs,
             models.ComplaintEntryVersion,
             creation=False,
             entry_type=rs.ambience['entry'].entry_type,
+            additional_data={
+                "attachment_filehash": attachment_filehash,
+                "attachment_filename": attachment_filename,
+            },
         )
         if rs.has_validation_errors() or not data:
             return self.replace_entry_form(rs, case_id, entry_id, internal=True)
