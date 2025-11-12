@@ -1220,19 +1220,29 @@ class TestComplaintBackend(BackendTest):
         with self.assertRaisesRegex(ValueError, "Only pdf allowed."):
             self.complaint.store_attachment(self.key, invalid_pdf)
 
+        case_id, entry_id, version_nr = 1, 2, 1
         sample_attachment_content = (self.testfile_dir / "form.pdf").read_bytes()
         sample_attachment_hash = self.get_sample_datum(
-            models.ComplaintEntryVersion.database_table, 2
+            models.ComplaintEntryVersion.database_table,
+            entry_id,
         )["attachment_filehash"]
         self.assertEqual(
             sample_attachment_content,
-            self.complaint.retrieve_attachment(self.key, sample_attachment_hash),
+            self.complaint._retrieve_attachment(self.key, sample_attachment_hash),
+        )
+        with self.assertRaises(PrivilegeError):
+            self.complaint.retrieve_attachment(self.key, entry_id, version_nr)
+
+        self.complaint.unlock_case(self.key, case_id, "testing")
+        self.assertEqual(
+            sample_attachment_content,
+            self.complaint.retrieve_attachment(self.key, entry_id, version_nr),
         )
 
         valid_pdf = (self.testfile_dir / "rechen.pdf").read_bytes()
         attachment_hash = self.complaint.store_attachment(self.key, valid_pdf)
         self.assertEqual(
-            valid_pdf, self.complaint.retrieve_attachment(self.key, attachment_hash)
+            valid_pdf, self.complaint._retrieve_attachment(self.key, attachment_hash)
         )
         stored_path = self.complaint.get_attachment_store(self.key).get_path(
             attachment_hash
@@ -1268,7 +1278,9 @@ class TestComplaintBackend(BackendTest):
                 self.key, lambda rs, attachment_hash: False, attachment_hash
             )
         )
-        self.assertIsNone(self.complaint.retrieve_attachment(self.key, attachment_hash))
+        self.assertIsNone(
+            self.complaint._retrieve_attachment(self.key, attachment_hash)
+        )
 
 
 class TestComplaintValidation(TestValidationBase):

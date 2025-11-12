@@ -1007,9 +1007,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 {"entry_link": entry_link(rs, entry_id)},
             )
             return self.redirect(rs, "core/show_case")
-        content = self.complaintproxy.retrieve_attachment(
-            rs, rs.ambience["entry_version"].attachment_filehash
-        )
+        content = self.complaintproxy.retrieve_attachment(rs, entry_id, version_nr)
         if content is None:
             raise FileNotFoundError(n_("File has been lost."))
         return self.send_file(

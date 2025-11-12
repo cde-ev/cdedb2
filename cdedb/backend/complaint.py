@@ -13,6 +13,7 @@ from cdedb.backend.common import (
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
+    internal,
     singularize,
 )
 from cdedb.common import (
@@ -97,12 +98,31 @@ class ComplaintBackend(AbstractBackend):
         assert content is not None
         return self.get_attachment_store(rs).store(content)
 
+    @internal
     @access("complaint_admin")
-    def retrieve_attachment(
+    def _retrieve_attachment(
         self, rs: RequestState, attachment_hash: str
     ) -> bytes | None:
         content = self.get_attachment_store(rs).get(attachment_hash)
         return self.decrypt(content)
+
+    @access("complaint_admin")
+    def retrieve_attachment(
+        self, rs: RequestState, entry_id: int, version_nr: int
+    ) -> bytes | None:
+        entry_id = affirm(vtypes.ID, entry_id)
+        version_nr = affirm(vtypes.ID, version_nr)
+        case_id = self._get_case_id(rs, entry_id)
+        entry = self.get_case(rs, case_id).entries[entry_id]
+        entry_version = entry.all_versions[version_nr - 1]
+
+        if not entry_version.attachment_filehash:
+            raise ValueError("Entry version has no attachment.")
+
+        if entry.entry_type.is_hidden and not self.is_unlocked(rs, case_id):
+            raise PrivilegeError
+
+        return self._retrieve_attachment(rs, entry_version.attachment_filehash)
 
     @access("persona")
     def list_enforcers(self, rs: RequestState) -> set[vtypes.ID]:
