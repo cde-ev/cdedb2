@@ -13,7 +13,6 @@ from cdedb.backend.common import (
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
-    internal,
     singularize,
 )
 from cdedb.common import (
@@ -24,7 +23,7 @@ from cdedb.common import (
     RequestState,
     now,
 )
-from cdedb.common.attachment import AttachmentStore
+from cdedb.common.attachment import EncryptedAttachmentStore
 from cdedb.common.exceptions import AdverseCompanionError, PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
@@ -78,9 +77,10 @@ class ComplaintBackend(AbstractBackend):
 
         self.decrypt = staticmethod(decrypt)
 
-        self._attachment_store = AttachmentStore(
+        self._attachment_store = EncryptedAttachmentStore(
             self.conf['STORAGE_DIR'] / "complaint_attachment",
-            type_=bytes,
+            encrypt=self.encrypt,
+            decrypt=self.decrypt,
         )
 
     @classmethod
@@ -88,23 +88,8 @@ class ComplaintBackend(AbstractBackend):
         return super().is_admin(rs)
 
     @access("complaint_admin")
-    def get_attachment_store(self, rs: RequestState) -> AttachmentStore:
+    def get_attachment_store(self, rs: RequestState) -> EncryptedAttachmentStore:
         return self._attachment_store
-
-    @access("complaint_admin")
-    def store_attachment(self, rs: RequestState, content: bytes) -> str:
-        content = affirm(vtypes.PDFFile, content, file_storage=False)
-        content = self.encrypt(content)
-        assert content is not None
-        return self.get_attachment_store(rs).store(content)
-
-    @internal
-    @access("complaint_admin")
-    def _retrieve_attachment(
-        self, rs: RequestState, attachment_hash: str
-    ) -> bytes | None:
-        content = self.get_attachment_store(rs).get(attachment_hash)
-        return self.decrypt(content)
 
     @access("complaint_admin")
     def retrieve_attachment(
@@ -122,7 +107,7 @@ class ComplaintBackend(AbstractBackend):
         if entry.entry_type.is_hidden and not self.is_unlocked(rs, case_id):
             raise PrivilegeError
 
-        return self._retrieve_attachment(rs, entry_version.attachment_filehash)
+        return self.get_attachment_store(rs).get(entry_version.attachment_filehash)
 
     @access("persona")
     def list_enforcers(self, rs: RequestState) -> set[vtypes.ID]:

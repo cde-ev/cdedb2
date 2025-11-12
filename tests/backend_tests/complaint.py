@@ -1218,7 +1218,7 @@ class TestComplaintBackend(BackendTest):
     def test_attachment_store(self) -> None:
         invalid_pdf = b"abc"
         with self.assertRaisesRegex(ValueError, "Only pdf allowed."):
-            self.complaint.store_attachment(self.key, invalid_pdf)
+            self.complaint.get_attachment_store(self.key).store(invalid_pdf)
 
         case_id, entry_id, version_nr = 1, 2, 1
         sample_attachment_content = (self.testfile_dir / "form.pdf").read_bytes()
@@ -1228,7 +1228,7 @@ class TestComplaintBackend(BackendTest):
         )["attachment_filehash"]
         self.assertEqual(
             sample_attachment_content,
-            self.complaint._retrieve_attachment(self.key, sample_attachment_hash),
+            self.complaint.get_attachment_store(self.key).get(sample_attachment_hash),
         )
         with self.assertRaises(PrivilegeError):
             self.complaint.retrieve_attachment(self.key, entry_id, version_nr)
@@ -1240,9 +1240,10 @@ class TestComplaintBackend(BackendTest):
         )
 
         valid_pdf = (self.testfile_dir / "rechen.pdf").read_bytes()
-        attachment_hash = self.complaint.store_attachment(self.key, valid_pdf)
+        attachment_hash = self.complaint.get_attachment_store(self.key).store(valid_pdf)
         self.assertEqual(
-            valid_pdf, self.complaint._retrieve_attachment(self.key, attachment_hash)
+            valid_pdf,
+            self.complaint.get_attachment_store(self.key).get(attachment_hash),
         )
         stored_path = self.complaint.get_attachment_store(self.key).get_path(
             attachment_hash
@@ -1279,7 +1280,10 @@ class TestComplaintBackend(BackendTest):
             )
         )
         self.assertIsNone(
-            self.complaint._retrieve_attachment(self.key, attachment_hash)
+            self.complaint.get_attachment_store(self.key).get(attachment_hash)
+        )
+        self.assertFalse(
+            self.complaint.get_attachment_store(self.key).is_available(attachment_hash)
         )
 
 

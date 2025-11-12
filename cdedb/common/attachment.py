@@ -1,6 +1,6 @@
 import builtins
 import pathlib
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, TypeAlias
 
 import magic
 
@@ -89,3 +89,34 @@ class AttachmentStore:
         for f in self._dir.iterdir():
             ret += self.forget_one(rs, usage, f.name)
         return ret
+
+
+_Encrypt: TypeAlias = Callable[[str | bytes | None], bytes | None]
+_Decrypt: TypeAlias = Callable[[bytes | None], bytes | None]
+
+
+class EncryptedAttachmentStore(AttachmentStore):
+    def __init__(
+        self,
+        dir_: pathlib.Path,
+        type_: builtins.type[Any] = vtypes.PDFFile,
+        *,
+        encrypt: _Encrypt,
+        decrypt: _Decrypt,
+    ):
+        super().__init__(dir_=dir_, type_=bytes)
+        self.raw_type = type_
+        self.encrypt = encrypt
+        self.decrypt = decrypt
+
+    def store(self, attachment: bytes) -> vtypes.Identifier:
+        attachment = affirm(self.raw_type, attachment, file_storage=False)
+        encrypted = self.encrypt(attachment)
+        assert encrypted is not None
+        return super().store(encrypted)
+
+    def _store_encrypted(self, encrypted: bytes) -> vtypes.Identifier:
+        return super().store(encrypted)
+
+    def get(self, attachment_hash: str) -> bytes | None:
+        return self.decrypt(super().get(attachment_hash))
