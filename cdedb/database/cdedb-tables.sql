@@ -588,6 +588,7 @@ CREATE TABLE complaint.entry_versions (
         CHECK ((dtime IS NULL) = (deleted_by IS NULL))
 );
 CREATE UNIQUE INDEX entry_versions_id_current ON complaint.entry_versions(entry_id) WHERE dtime IS NULL;
+CREATE INDEX entry_versions_attachment_hash ON complaint.entry_versions(attachment_hash);
 GRANT SELECT, INSERT, UPDATE (dtime, dreason, deleted_by) ON complaint.entry_versions TO cdb_persona;
 GRANT SELECT, UPDATE ON complaint.entry_versions_id_seq TO cdb_persona;
 
