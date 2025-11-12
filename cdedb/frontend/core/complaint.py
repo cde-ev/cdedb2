@@ -673,21 +673,39 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs.append_validation_error(('authors', ValidationWarning(msg)))
 
     @access("complaint_admin", modi={"POST"})
-    @REQUESTdata("entry_type")
+    @REQUESTfile("attachment")
+    @REQUESTdata("entry_type", "attachment_filehash", "attachment_filename")
     def add_entry(
         self,
         rs: RequestState,
         case_id: int,
         entry_type: const.ComplaintEntryType,
+        attachment: werkzeug.datastructures.FileStorage | None,
+        attachment_filehash: vtypes.Identifier | None,
+        attachment_filename: str | None,
         parent_id: int | None = None,
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
+
+        if attachment or attachment_filehash:
+            attachment_filehash, attachment_filename = self.locate_or_store_attachment(
+                rs,
+                self.complaintproxy.get_attachment_store(rs),
+                attachment,
+                attachment_filehash,
+                attachment_filename,
+            )
+
         entry_data = (
             extract_and_check_dataclass(
                 rs,
                 models.ComplaintEntry,
-                additional_data={'parent_id': parent_id},
+                additional_data={
+                    'parent_id': parent_id,
+                    "attachment_filehash": attachment_filehash,
+                    "attachment_filename": attachment_filename,
+                },
                 creation=True,
                 entries=rs.ambience['case'].entries,
                 passthrough=True,
