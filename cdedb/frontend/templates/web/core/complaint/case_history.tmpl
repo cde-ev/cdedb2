@@ -115,6 +115,11 @@
                                 <p>
                                     {{ descriptions[version.id]|md }}
                                 </p>
+                                {% if version.attachment_filehash %}
+                                    <p>
+                                        {{ util.href(cdedblink("core/get_complaint_attachment", {"entry_id": entry.id, "version_nr": loop.index}), version.attachment_title, icon="download") }}
+                                    </p>
+                                {% endif %}
                             {% endif %}
                         </div>
                     </div>

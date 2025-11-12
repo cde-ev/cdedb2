@@ -222,6 +222,10 @@ rules = [
                         post("/revoke", endpoint="revoke_entry"),
                         get_("/remove", endpoint="remove_entry_form"),
                         post("/remove", endpoint="remove_entry"),
+                        sub(
+                            "/version/<int:version_nr>",
+                            get_("/attachment", endpoint="get_complaint_attachment"),
+                        ),
                     ),
                     sub(
                         "/entry/<int:parent_id>",

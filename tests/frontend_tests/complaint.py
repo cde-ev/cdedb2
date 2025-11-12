@@ -5,11 +5,13 @@ from tests.common import (
     USER_DICT,
     FrontendTest,
     as_users,
+    storage,
 )
 
 
 class TestComplaintFrontend(FrontendTest):
     @as_users("simon")
+    @storage
     def test_entity_case(self) -> None:
         self.traverse("Fallarchiv")
         self.assertTitle("Fallarchiv")
@@ -141,6 +143,9 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence(
             "Berta muss bei Anmeldung ein Einzelzimmer beantragen.", div='entry5'
         )
+        self.assertDivNotExists("entry2-description")
+        self.assertPresence("Aussage von Charly", div="entry2-attachment")
+        self.assertNoLink("entry/2/version/1/attachment")
         self.assertNonPresence("Beteiligten hinzugefügt")
         self.traverse("Zeige Log-Einträge")
         self.assertPresence(
@@ -232,6 +237,15 @@ class TestComplaintFrontend(FrontendTest):
         f = self.response.forms['unlockcaseform']
         f['reason'] = "Ich bin halt leider viel zu neugierig."
         self.submit(f)
+        self.assertPresence("Philosophiekurs", div="entry2-description")
+        self.assertPresence("Aussage von Charly", div="entry2-attachment")
+        saved_response = self.response
+        self.traverse({"href": "entry/2/version/1/attachment"})
+        self.assertTrue(self.response.body.startswith(b"%PDF"))
+        self.assertEqual(
+            (self.testfile_dir / "form.pdf").read_bytes(), self.response.body
+        )
+        self.response = saved_response
         self.assertNoLink("entry/2/remove")
         self.assertNoLink("entry/4/remove")
         self.traverse(
@@ -316,7 +330,9 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence("Version 1 von Simon Struktur. 26 Zeichen.")
         self.assertPresence("Gelöscht am", div='entry1003')
         self.assertNonPresence("Ersetzt am", div='entry1003')
-        self.assertNoLink("/entry/")
+        self.assertNoLink(r"/entry/\d+/remove")
+        self.assertNoLink(r"/entry/\d+/revoke")
+        self.assertNoLink(r"/entry/\d+/replace")
         self.assertPresence(
             "Beteiligten hinzugefügt: Daniel Dino von Anton Administrator; Betroffene",
             div='logentry2',

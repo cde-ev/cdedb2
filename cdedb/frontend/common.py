@@ -1854,6 +1854,7 @@ class AmbienceDict(typing.TypedDict):
     mailinglist: NotRequired[models_ml.Mailinglist]
     case: NotRequired[models_complaint.Case]
     entry: NotRequired[models_complaint.ComplaintEntry]
+    entry_version: NotRequired[models_complaint.ComplaintEntryVersion]
 
 
 def reconnoitre_ambience(obj: AbstractFrontend,
@@ -1952,6 +1953,8 @@ def reconnoitre_ambience(obj: AbstractFrontend,
               'entry_id', 'entry', ()),
         Scout(lambda anid: ambience['case'].entries[anid],  # type: ignore[has-type]
               'parent_id', 'entry', ()),
+        Scout(lambda idx: ambience['entry'].all_versions[idx - 1],
+              'version_nr', 'entry_version', ())
     )
     scouts_dict = {s.param_name: s for s in scouts}
     ambience = {}

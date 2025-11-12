@@ -986,6 +986,39 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs.notify_return_code(ret)
         return self.redirect(rs, "core/show_case")
 
+    @access("complaint_admin")
+    def get_complaint_attachment(
+        self, rs: RequestState, case_id: int, entry_id: int, version_nr: int
+    ) -> Response:
+        # the check that the entry belongs to the case is already done in
+        # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
+        if not rs.ambience["case"].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
+        if not rs.ambience["entry_version"].attachment_filehash:
+            rs.notify("error", n_("Entry version has no attachment."))
+            return self.redirect(rs, "core/show_case")
+        if (
+            rs.ambience["entry"].entry_type.is_hidden
+            and not self.complaintproxy.is_unlocked(rs, case_id)
+        ):  # fmt: skip
+            rs.notify(
+                "error",
+                n_("Need to unlock case to access %(entry_link)s attachment."),
+                {"entry_link": entry_link(rs, entry_id)},
+            )
+            return self.redirect(rs, "core/show_case")
+        content = self.complaintproxy.retrieve_attachment(
+            rs, rs.ambience["entry_version"].attachment_filehash
+        )
+        if content is None:
+            raise FileNotFoundError(n_("File has been lost."))
+        return self.send_file(
+            rs,
+            mimetype="application/pdf",
+            data=content,
+            filename=rs.ambience["entry_version"].attachment_filename,
+        )
+
     @access("complaint_admin", "complaint.enforcer")
     def measures(self, rs: RequestState) -> Response:
         """Search for active measures against a persona."""
