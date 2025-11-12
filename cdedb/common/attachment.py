@@ -32,8 +32,11 @@ class AttachmentStore:
         self.type = type_
 
     def store(self, attachment: bytes) -> vtypes.Identifier:
-        """Store a file. Returns the file hash."""
         attachment = affirm(self.type, attachment, file_storage=False)
+        return self._store(attachment)
+
+    def _store(self, attachment: bytes) -> vtypes.Identifier:
+        """Store a file. Returns the file hash."""
         myhash: vtypes.Identifier = get_hash(attachment)  # type: ignore[assignment]
         path = self.get_path(myhash)
         if not path.exists():
@@ -104,19 +107,15 @@ class EncryptedAttachmentStore(AttachmentStore):
         encrypt: _Encrypt,
         decrypt: _Decrypt,
     ):
-        super().__init__(dir_=dir_, type_=bytes)
-        self.raw_type = type_
+        super().__init__(dir_=dir_, type_=type_)
         self.encrypt = encrypt
         self.decrypt = decrypt
 
     def store(self, attachment: bytes) -> vtypes.Identifier:
-        attachment = affirm(self.raw_type, attachment, file_storage=False)
+        attachment = affirm(self.type, attachment, file_storage=False)
         encrypted = self.encrypt(attachment)
         assert encrypted is not None
-        return super().store(encrypted)
-
-    def _store_encrypted(self, encrypted: bytes) -> vtypes.Identifier:
-        return super().store(encrypted)
+        return self._store(encrypted)
 
     def get(self, attachment_hash: str) -> bytes | None:
         return self.decrypt(super().get(attachment_hash))
