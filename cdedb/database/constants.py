@@ -760,7 +760,7 @@ class ComplaintEntryType(CdEIntEnum):
         }
 
     @property
-    def has_attachment(self) -> bool:
+    def allows_attachment(self) -> bool:
         return self in {
             ComplaintEntryType.provisional_statement_given,
         }
