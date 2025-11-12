@@ -71,7 +71,7 @@ class TestComplaintBackend(BackendTest):
                             timestamp=datetime.datetime(
                                 2025, 5, 28, 14, tzinfo=datetime.timezone.utc
                             ),
-                            attachment_filehash="af2b730a3700f257e715843cd67552635fe9a3e9b6622a3a843560f325425a2999c9d392e4678a090c889d55ee14fe878cd3722ad234e507ccfdae94ef7392dd",
+                            attachment_hash="af2b730a3700f257e715843cd67552635fe9a3e9b6622a3a843560f325425a2999c9d392e4678a090c889d55ee14fe878cd3722ad234e507ccfdae94ef7392dd",
                             attachment_title="Aussage von Charly",
                             attachment_filename="aussage_charly.pdf",
                             ctime=nearly_now(),
@@ -1225,7 +1225,7 @@ class TestComplaintBackend(BackendTest):
         sample_attachment_hash = self.get_sample_datum(
             models.ComplaintEntryVersion.database_table,
             entry_id,
-        )["attachment_filehash"]
+        )["attachment_hash"]
         self.assertEqual(
             sample_attachment_content,
             self.complaint.get_attachment_store(self.key).get(sample_attachment_hash),
@@ -1265,13 +1265,13 @@ class TestComplaintBackend(BackendTest):
             "description": "Test",
             "timestamp": now(),
             "authors": [1],
-            "attachment_filehash": "abc",
+            "attachment_hash": "abc",
             "attachment_title": "Test",
             "attachment_filename": "test.pdf",
         }
         with self.assertRaisesRegex(RuntimeError, "File has been lost."):
             self.complaint.add_entry(self.key, case_id, entry_data, version_data)
-        version_data["attachment_filehash"] = attachment_hash
+        version_data["attachment_hash"] = attachment_hash
         self.complaint.add_entry(self.key, case_id, entry_data, version_data)
 
         self.assertTrue(
@@ -1582,7 +1582,7 @@ class TestComplaintValidation(TestValidationBase):
                         ),
                         "authors": [1],
                         "etime": None,
-                        "attachment_filehash": None,
+                        "attachment_hash": None,
                         "attachment_title": None,
                         "attachment_filename": None,
                     },
@@ -1594,7 +1594,7 @@ class TestComplaintValidation(TestValidationBase):
                         "timestamp": now(),
                         "authors": [1, 2, 3],
                         "etime": None,
-                        "attachment_filehash": None,
+                        "attachment_hash": None,
                         "attachment_title": None,
                         "attachment_filename": None,
                     },
@@ -1615,7 +1615,7 @@ class TestComplaintValidation(TestValidationBase):
                         ),
                         "authors": [1],
                         "etime": None,
-                        "attachment_filehash": None,
+                        "attachment_hash": None,
                         "attachment_title": None,
                         "attachment_filename": None,
                     },
@@ -1648,7 +1648,7 @@ class TestComplaintValidation(TestValidationBase):
                         "etime": datetime.datetime(
                             2025, 5, 31, 20, 25, tzinfo=datetime.timezone.utc
                         ),
-                        "attachment_filehash": None,
+                        "attachment_hash": None,
                         "attachment_title": None,
                         "attachment_filename": None,
                     },
@@ -1671,7 +1671,7 @@ class TestComplaintValidation(TestValidationBase):
                         "timestamp": now(),
                         "authors": [1],
                         "etime": None,
-                        "attachment_filehash": None,
+                        "attachment_hash": None,
                         "attachment_title": None,
                         "attachment_filename": None,
                     },
@@ -1695,7 +1695,7 @@ class TestComplaintValidation(TestValidationBase):
                         "timestamp": now(),
                         "authors": [1],
                         "etime": None,
-                        "attachment_filehash": get_hash(b"abc"),
+                        "attachment_hash": get_hash(b"abc"),
                         "attachment_title": "Test",
                         "attachment_filename": "test.pdf",
                     },
@@ -1719,12 +1719,12 @@ class TestComplaintValidation(TestValidationBase):
                         "timestamp": now(),
                         "authors": [1],
                         "etime": None,
-                        "attachment_filehash": get_hash(b"abc"),
+                        "attachment_hash": get_hash(b"abc"),
                         "attachment_title": "Test",
                         "attachment_filename": "test.pdf",
                     },
                     None,
-                    ValueError("Must be empty. (attachment_filehash)"),
+                    ValueError("Must be empty. (attachment_hash)"),
                 )
             ],
             {
@@ -1743,12 +1743,12 @@ class TestComplaintValidation(TestValidationBase):
                         "timestamp": now(),
                         "authors": [1],
                         "etime": None,
-                        "attachment_filehash": "",
+                        "attachment_hash": "",
                         "attachment_title": "Test",
                         "attachment_filename": "test.pdf",
                     },
                     None,
-                    ValueError("Incomplete attachment. (attachment_filehash)"),
+                    ValueError("Incomplete attachment. (attachment_hash)"),
                 ),
                 (
                     {
@@ -1756,7 +1756,7 @@ class TestComplaintValidation(TestValidationBase):
                         "timestamp": now(),
                         "authors": [1],
                         "etime": None,
-                        "attachment_filehash": get_hash(b"abc"),
+                        "attachment_hash": get_hash(b"abc"),
                         "attachment_title": "",
                         "attachment_filename": "test.pdf",
                     },
@@ -1769,7 +1769,7 @@ class TestComplaintValidation(TestValidationBase):
                         "timestamp": now(),
                         "authors": [1],
                         "etime": None,
-                        "attachment_filehash": get_hash(b"abc"),
+                        "attachment_hash": get_hash(b"abc"),
                         "attachment_title": "Test",
                         "attachment_filename": "",
                     },

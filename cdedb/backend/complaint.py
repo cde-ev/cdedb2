@@ -101,13 +101,13 @@ class ComplaintBackend(AbstractBackend):
         entry = self.get_case(rs, case_id).entries[entry_id]
         entry_version = entry.all_versions[version_nr - 1]
 
-        if not entry_version.attachment_filehash:
+        if not entry_version.attachment_hash:
             raise ValueError("Entry version has no attachment.")
 
         if entry.entry_type.is_hidden and not self.is_unlocked(rs, case_id):
             raise PrivilegeError
 
-        return self.get_attachment_store(rs).get(entry_version.attachment_filehash)
+        return self.get_attachment_store(rs).get(entry_version.attachment_hash)
 
     @access("persona")
     def list_enforcers(self, rs: RequestState) -> set[vtypes.ID]:
@@ -390,7 +390,7 @@ class ComplaintBackend(AbstractBackend):
         new_version_id = self.sql_insert(
             rs, models.ComplaintEntryVersion.database_table, data
         )
-        if filehash := data.get("attachment_filehash"):
+        if filehash := data.get("attachment_hash"):
             if not self.get_attachment_store(rs).is_available(filehash):
                 raise RuntimeError(n_("File has been lost."))
         self.sql_insert_many(

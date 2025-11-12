@@ -570,13 +570,13 @@ CREATE TABLE complaint.entry_versions (
     timestamp     timestamp WITH TIME ZONE NOT NULL DEFAULT NOW(),
     etime         timestamp WITH TIME ZONE DEFAULT NULL,
     -- attachment contents are stored encrypted. Metadata is not.
-    attachment_filehash     varchar DEFAULT NULL,
+    attachment_hash     varchar DEFAULT NULL,
     attachment_title        varchar DEFAULT NULL,
     attachment_filename     varchar DEFAULT NULL,
     CONSTRAINT complaint_entry_attachment_title
-        CHECK ((attachment_filehash IS NULL) = (attachment_title IS NULL)),
+        CHECK ((attachment_hash IS NULL) = (attachment_title IS NULL)),
     CONSTRAINT complaint_entry_attachment_filename
-        CHECK ((attachment_filehash IS NULL) = (attachment_filename IS NULL)),
+        CHECK ((attachment_hash IS NULL) = (attachment_filename IS NULL)),
     -- is_shared     boolean NOT NULL DEFAULT TRUE, -- with companions with shared involved personas
     dtime         timestamp WITH TIME ZONE DEFAULT NULL,  -- to be updated on deletion
     dreason       varchar DEFAULT NULL,

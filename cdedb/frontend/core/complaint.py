@@ -674,38 +674,36 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("complaint_admin", modi={"POST"})
     @REQUESTfile("attachment")
-    @REQUESTdata("entry_type", "attachment_filehash", "attachment_filename")
+    @REQUESTdata("entry_type", "attachment_hash", "attachment_filename")
     def add_entry(
         self,
         rs: RequestState,
         case_id: int,
         entry_type: const.ComplaintEntryType,
         attachment: werkzeug.datastructures.FileStorage | None,
-        attachment_filehash: vtypes.Identifier | None,
+        attachment_hash: vtypes.Identifier | None,
         attachment_filename: str | None,
         parent_id: int | None = None,
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
 
-        if attachment or attachment_filehash:
-            attachment_filehash, attachment_filename = self.locate_or_store_attachment(
-                rs,
-                self.complaintproxy.get_attachment_store(rs),
-                attachment,
-                attachment_filehash,
-                attachment_filename,
+        if attachment or attachment_hash:
+            rs.values["attachment_hash"], rs.values["attachment_filename"] = (
+                self.locate_or_store_attachment(
+                    rs,
+                    self.complaintproxy.get_attachment_store(rs),
+                    attachment,
+                    attachment_hash,
+                    attachment_filename,
+                )
             )
 
         entry_data = (
             extract_and_check_dataclass(
                 rs,
                 models.ComplaintEntry,
-                additional_data={
-                    'parent_id': parent_id,
-                    "attachment_filehash": attachment_filehash,
-                    "attachment_filename": attachment_filename,
-                },
+                additional_data={'parent_id': parent_id},
                 creation=True,
                 entries=rs.ambience['case'].entries,
                 passthrough=True,
@@ -717,6 +715,10 @@ class CoreComplaintMixin(CoreBaseFrontend):
             models.ComplaintEntryVersion,
             creation=True,
             entry_type=entry_type,
+            additional_data={
+                "attachment_hash": rs.values["attachment_hash"],
+                "attachment_filename": rs.values["attachment_filename"],
+            },
         )
         if version_data:
             self._append_author_validation_warning(rs, version_data.get('authors', {}))
@@ -808,7 +810,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("complaint_admin", modi={"POST"})
     @REQUESTfile("attachment")
-    @REQUESTdata("dreason", "attachment_filehash", "attachment_filename")
+    @REQUESTdata("dreason", "attachment_hash", "attachment_filename")
     def replace_entry(
         self,
         rs: RequestState,
@@ -816,7 +818,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         entry_id: int,
         dreason: str,
         attachment: werkzeug.datastructures.FileStorage | None,
-        attachment_filehash: vtypes.Identifier | None,
+        attachment_hash: vtypes.Identifier | None,
         attachment_filename: str | None,
     ) -> Response:
         # the check that the entry belongs to the case is already done in
@@ -824,13 +826,15 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
 
-        if attachment or attachment_filehash:
-            attachment_filehash, attachment_filename = self.locate_or_store_attachment(
-                rs,
-                self.complaintproxy.get_attachment_store(rs),
-                attachment,
-                attachment_filehash,
-                attachment_filename,
+        if attachment or attachment_hash:
+            rs.values["attachment_hash"], rs.values["attachment_filename"] = (
+                self.locate_or_store_attachment(
+                    rs,
+                    self.complaintproxy.get_attachment_store(rs),
+                    attachment,
+                    attachment_hash,
+                    attachment_filename,
+                )
             )
 
         data = extract_and_check_dataclass(
@@ -839,8 +843,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
             creation=False,
             entry_type=rs.ambience['entry'].entry_type,
             additional_data={
-                "attachment_filehash": attachment_filehash,
-                "attachment_filename": attachment_filename,
+                "attachment_hash": rs.values["attachment_hash"],
+                "attachment_filename": rs.values["attachment_filename"],
             },
         )
         if rs.has_validation_errors() or not data:
@@ -1031,7 +1035,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
         if not rs.ambience["case"].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        if not rs.ambience["entry_version"].attachment_filehash:
+        if not rs.ambience["entry_version"].attachment_hash:
             rs.notify("error", n_("Entry version has no attachment."))
             return self.redirect(rs, "core/show_case")
         if (
@@ -1046,13 +1050,22 @@ class CoreComplaintMixin(CoreBaseFrontend):
             return self.redirect(rs, "core/show_case")
         content = self.complaintproxy.retrieve_attachment(rs, entry_id, version_nr)
         if content is None:
-            raise FileNotFoundError(n_("File has been lost."))
+            raise werkzeug.exceptions.NotFound(n_("File does not exist."))
         return self.send_file(
             rs,
             mimetype="application/pdf",
             data=content,
             filename=rs.ambience["entry_version"].attachment_filename,
         )
+
+    @access("complaint_admin")
+    def get_cached_complaint_attachment(
+        self, rs: RequestState, attachment_hash: str
+    ) -> Response:
+        content = self.complaintproxy.get_attachment_store(rs).get(attachment_hash)
+        if content is None:
+            raise werkzeug.exceptions.NotFound(n_("File does not exist."))
+        return self.send_file(rs, mimetype="application/pdf", data=content)
 
     @access("complaint_admin", "complaint.enforcer")
     def measures(self, rs: RequestState) -> Response:

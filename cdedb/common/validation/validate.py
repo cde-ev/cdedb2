@@ -5117,7 +5117,7 @@ def _complaint_entry_version(
         with errs:
             val['etime'] = _ALL_TYPED[NoneType](val.get('etime'), 'etime', **kwargs)
 
-    attachment_keys = ("attachment_filehash", "attachment_title", "attachment_filename")
+    attachment_keys = ("attachment_hash", "attachment_title", "attachment_filename")
     if not entry_type.allows_attachment:
         for key in attachment_keys:
             with errs:

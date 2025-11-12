@@ -356,7 +356,7 @@
                         {{ descriptions[entry.active_version.id]|md }}
                     </div>
                 {% endif %}
-                {% if entry.active_version.attachment_filehash %}
+                {% if entry.active_version.attachment_hash %}
                     <hr class="nosp" />
                     <p id="entry{{ entry.id }}-attachment">
                         {{ util.href(cdedblink("core/get_complaint_attachment", {"entry_id": entry.id, "version_nr": entry.all_versions|length}),
