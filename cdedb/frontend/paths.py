@@ -227,7 +227,7 @@ rules = [
                         get_("/remove", endpoint="remove_entry_form"),
                         post("/remove", endpoint="remove_entry"),
                         sub(
-                            "/version/<int:version_nr>",
+                            "/version/<int:version_idx>",
                             get_("/attachment", endpoint="get_complaint_attachment"),
                         ),
                     ),

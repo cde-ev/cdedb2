@@ -1954,7 +1954,7 @@ def reconnoitre_ambience(obj: AbstractFrontend,
         Scout(lambda anid: ambience['case'].entries[anid],
               'parent_id', 'entry', ()),
         Scout(lambda idx: ambience['entry'].all_versions[idx - 1],
-              'version_nr', 'entry_version', ())
+              'version_idx', 'entry_version', ())
     )
     scouts_dict = {s.param_name: s for s in scouts}
     ambience: AmbienceDict = {}

@@ -1029,7 +1029,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("complaint_admin")
     def get_complaint_attachment(
-        self, rs: RequestState, case_id: int, entry_id: int, version_nr: int
+        self, rs: RequestState, case_id: int, entry_id: int, version_idx: int
     ) -> Response:
         # the check that the entry belongs to the case is already done in
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
@@ -1048,7 +1048,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 {"entry_link": entry_link(rs, entry_id)},
             )
             return self.redirect(rs, "core/show_case")
-        content = self.complaintproxy.retrieve_attachment(rs, entry_id, version_nr)
+        content = self.complaintproxy.retrieve_attachment(rs, entry_id, version_idx)
         if content is None:
             raise werkzeug.exceptions.NotFound(n_("File does not exist."))
         return self.send_file(
