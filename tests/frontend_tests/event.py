@@ -8369,4 +8369,4 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f["event_id"] = 2
         self.submit(f)
         self.assertTitle("CdE-Party 2050")
-        self.assertNotification("Could not redirect to entity page.", "info")
+        self.assertNotification("Weiterleitung auf spezifische Unterseite nicht möglich.", "info")
