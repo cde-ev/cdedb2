@@ -185,10 +185,6 @@ rules = [
                 get_("/log", endpoint="view_complaint_log"),
                 get_("/measures", endpoint="measures"),
                 get_("/helpers", endpoint="list_complaint_helpers"),
-                get_(
-                    "/attachment/<filename:attachment_hash>",
-                    endpoint="get_cached_complaint_attachment",
-                ),
                 post("/helpers/enforcer/add", endpoint="add_enforcer"),
                 post("/helpers/enforcer/remove", endpoint="remove_enforcer"),
                 get_("/case/create", endpoint="create_case_form"),
@@ -199,6 +195,10 @@ rules = [
                     get_("/history", endpoint="case_history"),
                     get_("/change", endpoint="change_case_form"),
                     post("/change", endpoint="change_case"),
+                    get_(
+                        "/attachment/<filename:attachment_hash>",
+                        endpoint="get_cached_complaint_attachment",
+                    ),
                     post("/involved/add", endpoint="add_involved"),
                     sub(
                         "/involved/<int:persona_id>",

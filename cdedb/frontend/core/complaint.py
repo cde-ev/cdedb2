@@ -1060,8 +1060,16 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("complaint_admin")
     def get_cached_complaint_attachment(
-        self, rs: RequestState, attachment_hash: str
+        self, rs: RequestState, case_id: int, attachment_hash: str
     ) -> Response:
+        if not rs.ambience["case"].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
+        if not self.complaintproxy.is_unlocked(rs, case_id):
+            rs.notify(
+                "error",
+                n_("Need to unlock case to access attachment."),
+            )
+            return self.redirect(rs, "core/show_case")
         content = self.complaintproxy.get_attachment_store(rs).get(attachment_hash)
         if content is None:
             raise werkzeug.exceptions.NotFound(n_("File does not exist."))
