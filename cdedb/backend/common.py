@@ -26,12 +26,14 @@ from typing import (
     overload,
 )
 
+import cryptography.fernet
 import psycopg2.errors
 import psycopg2.extensions
 import psycopg2.extras
 from passlib.hash import sha512_crypt
 
 from cdedb.common import (
+    BytesLike,
     CdEDBLog,
     CdEDBObject,
     Error,
@@ -777,6 +779,39 @@ def verify_password(password: str, password_hash: str) -> bool:
 def encrypt_password(password: str) -> str:
     """We currently use passlib for password protection."""
     return sha512_crypt.hash(password)
+
+
+def encrypt(data: str | bytes | None, *, key: bytes) -> bytes | None:
+    if data is None:
+        return None
+    if isinstance(data, str):
+        data = data.encode("utf-8")
+    return cryptography.fernet.Fernet(key).encrypt(data)
+
+
+def get_encrypt(key: bytes) -> Callable[[str | bytes | None], bytes | None]:
+    return functools.partial(encrypt, key=key)
+
+
+def decrypt(data: BytesLike | None, *, key: bytes) -> bytes | None:
+    if data is None:
+        return None
+    return cryptography.fernet.Fernet(key).decrypt(bytes(data))
+
+
+def decrypt_decode(data: BytesLike | None, key: bytes) -> str | None:
+    ret = decrypt(data=data, key=key)
+    if ret is None:
+        return None
+    return ret.decode("utf-8")
+
+
+def get_decrypt(key: bytes) -> Callable[[BytesLike | None], bytes | None]:
+    return functools.partial(decrypt, key=key)
+
+
+def get_decrypt_decode(key: bytes) -> Callable[[BytesLike | None], str | None]:
+    return functools.partial(decrypt_decode, key=key)
 
 
 #: Translate between validator names and sql data types.

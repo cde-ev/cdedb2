@@ -3,6 +3,7 @@ import functools
 
 import cdedb.database.constants as const
 import cdedb.models.complaint as models
+from cdedb.backend.common import decrypt
 from cdedb.common import CdEDBObject, PrivilegeError, get_hash, nearly_now, now
 from cdedb.common.exceptions import AdverseCompanionError
 from cdedb.common.query import Query, QueryOperators, QueryScope
@@ -1251,7 +1252,7 @@ class TestComplaintBackend(BackendTest):
         self.assertNotEqual(valid_pdf, stored_path.read_bytes())
         self.assertEqual(
             valid_pdf,
-            models.ComplaintEntryVersion.decrypt(
+            decrypt(
                 data=stored_path.read_bytes(), key=self.secrets["COMPLAINT_SECRET"]
             ),
         )

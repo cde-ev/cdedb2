@@ -13,16 +13,12 @@ from cdedb.backend.common import (
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
+    get_decrypt,
+    get_decrypt_decode,
+    get_encrypt,
     singularize,
 )
-from cdedb.common import (
-    BytesLike,
-    CdEDBLog,
-    CdEDBObject,
-    DefaultReturnCode,
-    RequestState,
-    now,
-)
+from cdedb.common import CdEDBLog, CdEDBObject, DefaultReturnCode, RequestState, now
 from cdedb.common.attachment import EncryptedAttachmentStore
 from cdedb.common.exceptions import AdverseCompanionError, PrivilegeError
 from cdedb.common.n_ import n_
@@ -61,26 +57,14 @@ class ComplaintBackend(AbstractBackend):
         secrets = SecretsConfig()
         complaint_secret = secrets["COMPLAINT_SECRET"]
 
-        def encrypt(data: str | bytes | None) -> bytes | None:
-            if data is None:
-                return None
-            return models.ComplaintEntryVersion.encrypt(data=data, key=complaint_secret)
+        self.encrypt = get_encrypt(complaint_secret)
 
-        self.encrypt = staticmethod(encrypt)
-
-        def decrypt(data: BytesLike | None) -> bytes | None:
-            if data is None:
-                return None
-            if not isinstance(data, bytes):
-                data = bytes(data)
-            return models.ComplaintEntryVersion.decrypt(data=data, key=complaint_secret)
-
-        self.decrypt = staticmethod(decrypt)
+        self.decrypt = get_decrypt(complaint_secret)
+        self.decrypt_decode = get_decrypt_decode(complaint_secret)
 
         self._attachment_store = EncryptedAttachmentStore(
             self.conf['STORAGE_DIR'] / "complaint_attachment",
-            encrypt=self.encrypt,
-            decrypt=self.decrypt,
+            secret=complaint_secret,
         )
 
     @classmethod
@@ -1004,7 +988,7 @@ class ComplaintBackend(AbstractBackend):
             query += "WHERE " + " AND ".join(conditions)
 
         return {
-            e["id"]: (self.decrypt(e["description"]) or b"").decode("utf-8")
+            e["id"]: self.decrypt_decode(e["description"]) or ""
             for e in self.query_all(rs, query, params)
         }
 

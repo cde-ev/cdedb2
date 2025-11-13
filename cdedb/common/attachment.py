@@ -1,11 +1,10 @@
-import builtins
 import pathlib
-from typing import Any, Callable, Optional, TypeAlias
+from typing import Callable
 
 import magic
 
 import cdedb.common.validation.types as vtypes
-from cdedb.backend.common import affirm_validation as affirm
+from cdedb.backend.common import affirm_validation as affirm, get_decrypt, get_encrypt
 from cdedb.common import RequestState, get_hash
 
 UsageFunction = Callable[[RequestState, str], bool]
@@ -27,16 +26,17 @@ class AttachmentStore:
     affirms that it `is_available`.
     """
 
-    def __init__(self, dir_: pathlib.Path, type_: builtins.type[Any] = vtypes.PDFFile):
+    def __init__(self, dir_: pathlib.Path, type_: type[bytes] = vtypes.PDFFile):
         self._dir = dir_
         self.type = type_
 
     def store(self, attachment: bytes) -> vtypes.Identifier:
+        """Validate a file, then store it. Returns the file hash."""
         attachment = affirm(self.type, attachment, file_storage=False)
         return self._store(attachment)
 
     def _store(self, attachment: bytes) -> vtypes.Identifier:
-        """Store a file. Returns the file hash."""
+        """Store a already validated file. Returns the file hash."""
         myhash: vtypes.Identifier = get_hash(attachment)  # type: ignore[assignment]
         path = self.get_path(myhash)
         if not path.exists():
@@ -47,19 +47,18 @@ class AttachmentStore:
     def is_available(self, attachment_hash: str) -> bool:
         """Check whether an attachment with the given hash is available.
 
-        Contrary to `get` this does not retrieve it's
-        content.
+        Contrary to `get` this does not retrieve it's content.
         """
         return self.get_path(attachment_hash).is_file()
 
-    def get_mime_type(self, attachment_hash: str) -> Optional[str]:
+    def get_mime_type(self, attachment_hash: str) -> str | None:
         """Determine the mime type of a stored attachment."""
         path = self.get_path(attachment_hash)
         if path.is_file():
             return magic.from_buffer(open(path, 'rb').read(2048), mime=True)
         return None
 
-    def get(self, attachment_hash: str) -> Optional[bytes]:
+    def get(self, attachment_hash: str) -> bytes | None:
         """Retrieve a stored attachment.
 
         Only to be used by backend tests, frontend code should stream from path."""
@@ -94,28 +93,35 @@ class AttachmentStore:
         return ret
 
 
-_Encrypt: TypeAlias = Callable[[str | bytes | None], bytes | None]
-_Decrypt: TypeAlias = Callable[[bytes | None], bytes | None]
-
-
 class EncryptedAttachmentStore(AttachmentStore):
+    """Storage variant that encrypts files with the given secret.
+
+    Using `store` first validates a file, then encrypts it before writing to disk.
+    In order to decrypt a file we need to read it via `get` first.
+    This means that streaming files via `get_path` won't work.
+    """
+
     def __init__(
-        self,
-        dir_: pathlib.Path,
-        type_: builtins.type[Any] = vtypes.PDFFile,
-        *,
-        encrypt: _Encrypt,
-        decrypt: _Decrypt,
+        self, dir_: pathlib.Path, type_: type[bytes] = vtypes.PDFFile, *, secret: bytes
     ):
         super().__init__(dir_=dir_, type_=type_)
-        self.encrypt = encrypt
-        self.decrypt = decrypt
+        self.encrypt = get_encrypt(secret)
+        self.decrypt = get_decrypt(secret)
 
     def store(self, attachment: bytes) -> vtypes.Identifier:
+        """Validate a file, then encrypt and store it. Returns the file hash."""
         attachment = affirm(self.type, attachment, file_storage=False)
         encrypted = self.encrypt(attachment)
         assert encrypted is not None
         return self._store(encrypted)
 
     def get(self, attachment_hash: str) -> bytes | None:
+        """Retrieve a stored attachment and decrypt it."""
         return self.decrypt(super().get(attachment_hash))
+
+    def get_mime_type(self, attachment_hash: str) -> str | None:
+        """Determine the mime type of a stored attachment after decrypting."""
+        content = self.get(attachment_hash)
+        if content is None:
+            return None
+        return magic.from_buffer(content, mime=True)
