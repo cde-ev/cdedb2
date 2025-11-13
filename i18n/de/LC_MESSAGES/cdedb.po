@@ -7154,7 +7154,7 @@ msgstr "Ungültiger Elterntyp."
 
 #: cdedb/common/validation/validate.py:5130
 msgid "Incomplete attachment."
-msgstr "Unvollständiger Anhang"
+msgstr "Unvollständiger Anhang."
 
 #: cdedb/common/validation/validate.py:5136
 msgid "Must be after timestamp."

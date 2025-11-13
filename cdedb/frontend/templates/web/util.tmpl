@@ -520,7 +520,7 @@
     {% if values.get('attachment_hash') %}
         {{ util.input_hidden(name="attachment_hash") }}
         {{ util.input_hidden(name="attachment_filename") }}
-        {{ util.form_input_static(label=label,
+        {{ util.form_input_static(label=label, anid="cached_attachment",
                                   value=util.href(link, values['attachment_filename'], icon="download"), small=small, displayerrors=True, errorname="cached_attachment",
                                   info=gettext("We already saved your uploaded file, but you can provide a different file below.")) }}
         {% set label = gettext("New Attachment") %}

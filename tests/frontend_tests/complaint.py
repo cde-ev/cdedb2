@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import webtest
 
 import cdedb.database.constants as const
 from tests.common import (
@@ -185,6 +186,40 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence("75 Zeichen.", div='entry1001')
         self.assertNonPresence("Versionen", div='entry1001')
 
+        # Create an entry with an attachment.
+        self.traverse("Eigenständigen Eintrag hinzufügen")
+        f = self.response.forms["selectentrytypeform"]
+        f["entry_type"] = const.ComplaintEntryType.provisional_statement_given
+        self.submit(f)
+        f = self.response.forms["configureentryform"]
+        f["concerned_id"] = "DB-2-7"
+        f["authors"] = "DB-1-9"
+        f["description"] = ""
+        f["attachment"] = ""
+        f["attachment_filename"] = "foo"
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
+        self.assertValidationError("description", "Muss eine Zeichenkette sein.")
+        self.assertValidationError("attachment", "Unvollständiger Anhang.")
+        self.assertValidationError("attachment_title", "Unvollständiger Anhang.")
+        f = self.response.forms["configureentryform"]
+        f["attachment_filename"] = ""
+        f["attachment_title"] = "bar"
+        f["attachment"] = webtest.Upload(
+            "form.pdf",
+            (self.testfile_dir / "form.pdf").read_bytes(),
+            content_type="application/octet-stream",
+        )
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
+        self.assertValidationError("description", "Muss eine Zeichenkette sein.")
+        f = self.response.forms["configureentryform"]
+        self.assertEqual("form.pdf", f.get("attachment_filename", 0).value)
+        self.assertEqual("form.pdf", f.get("attachment_filename", 1).value)
+        self.assertTrue(f["attachment_hash"])
+        self.assertPresence("Dein Upload wurde bereits gespeichert")
+        self.assertPresence("form.pdf", div="cached_attachment")
+        f["description"] = "baz"
+        self.submit(f)
+
         # Excursion part 1: Check measure is displayed in overview
         self.traverse("Maßnahmenübersicht")
         self.assertTitle("Maßnahmenübersicht")
@@ -210,11 +245,11 @@ class TestComplaintFrontend(FrontendTest):
         )
         pre_submit_response = self.response
         self.submit(f)
-        self.assertPresence("Maßnahme: widerrufen", div='entry1002')
-        self.assertPresence("99 Zeichen. Erstellt am ", div='entry1002')
+        self.assertPresence("Maßnahme: widerrufen", div='entry1003')
+        self.assertPresence("99 Zeichen. Erstellt am ", div='entry1003')
         self.assertNonPresence("Wäscheklammer")
         self.assertNoLink("entry/4/revoke")
-        self.assertNoLink("entry/1002/revoke")
+        self.assertNoLink("entry/1003/revoke")
 
         # Try revocation once more
         self.response = pre_submit_response
@@ -265,18 +300,18 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence("Schnarchzimmer", div='entry4')
 
         # Revoke recovation
-        self.traverse({'href': "entry/1002/revoke"})
+        self.traverse({'href': "entry/1003/revoke"})
         f = self.response.forms['configureentryform']
         f['authors'] = "DB-19-1"
         f['description'] = "Hat leider nicht geklappt…"
         self.submit(f)
-        self.assertNoLink("entry/1003/revoke")
-        self.get("/core/complaint/case/1/entry/1003/revoke")
+        self.assertNoLink("entry/1004/revoke")
+        self.get("/core/complaint/case/1/entry/1004/revoke")
         self.follow()
         self.assertTitle("Fall 1")
         msg = "Widerruf eines Widerrufs kann nicht widerrufen werden."
         self.assertNotification(msg, 'error')
-        self.post("/core/complaint/case/1/entry/1003/revoke", {}, evade_anti_csrf=True)
+        self.post("/core/complaint/case/1/entry/1004/revoke", {}, evade_anti_csrf=True)
         self.follow()
         self.assertTitle("Fall 1")
         self.assertNotification(msg, 'error')
@@ -288,19 +323,19 @@ class TestComplaintFrontend(FrontendTest):
         self.traverse("Fall 1")
 
         # Remove entry
-        self.traverse({'href': "entry/1003/remove"})
+        self.traverse({'href': "entry/1004/remove"})
         f = self.response.forms['removeentryform']
         f['dreason'] = "War ein Versehen."
         self.submit(f)
         self.assertNonPresence("Widerruf: widerrufen")
-        self.get("/core/complaint/case/1/entry/1003/remove")
+        self.get("/core/complaint/case/1/entry/1004/remove")
         self.follow()
         self.assertTitle("Fall 1")
         msg = "Eintrag ist bereits entfernt."
         self.assertNotification(msg, 'info')
         self.get("/core/complaint/case/1/show")
         self.post(
-            "/core/complaint/case/1/entry/1003/remove",
+            "/core/complaint/case/1/entry/1004/remove",
             {'dreason': "Piep."},
             evade_anti_csrf=True,
         )
@@ -326,10 +361,10 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence("Version 2 von Charly Clown. 77 Zeichen.", div='entry4')
         self.assertPresence("Version 3 von Charly Clown. 59 Zeichen.", div='entry4')
         self.assertPresence("Schnarchzimmer", div='entry4')
-        self.assertPresence("Widerruf: widerrufen", div='entry1003')
+        self.assertPresence("Widerruf: widerrufen", div='entry1004')
         self.assertPresence("Version 1 von Simon Struktur. 26 Zeichen.")
-        self.assertPresence("Gelöscht am", div='entry1003')
-        self.assertNonPresence("Ersetzt am", div='entry1003')
+        self.assertPresence("Gelöscht am", div='entry1004')
+        self.assertNonPresence("Ersetzt am", div='entry1004')
         self.assertNoLink(r"/entry/\d+/remove")
         self.assertNoLink(r"/entry/\d+/revoke")
         self.assertNoLink(r"/entry/\d+/replace")
@@ -388,8 +423,8 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence("Startdatum 02.01.2222")
         self.assertPresence("Enddatum 06.01.2222")
         self.assertPresence("Anton", div='involved_affected')
-        self.assertPresence("Information", div='entry1004')
-        self.assertPresence("43 Zeichen", div='entry1004')
+        self.assertPresence("Information", div='entry1005')
+        self.assertPresence("43 Zeichen", div='entry1005')
         self.assertNonPresence("Tür und Angel")
 
         # ##
@@ -469,7 +504,7 @@ class TestComplaintFrontend(FrontendTest):
         f['authors'] = "DB-19-1"
         f['description'] = "Hat sich nie wieder gemeldet."
         self.submit(f)
-        self.assertPresence("29 Zeichen.", div='entry1005')
+        self.assertPresence("29 Zeichen.", div='entry1006')
         self.assertNonPresence("Hat sich nie wieder gemeldet.")
         # with concerned_id
         self.traverse("Eigenständigen Eintrag hinzufügen")
@@ -484,7 +519,7 @@ class TestComplaintFrontend(FrontendTest):
         self.assertValidationError('concerned_id')
         f['concerned_id'] = "DB-6-X"
         self.submit(f, verbose=True)
-        self.assertPresence("24 Zeichen", div='entry1006')
+        self.assertPresence("24 Zeichen", div='entry1007')
         self.assertNonPresence("Ich will auch was sagen!")
 
         self.traverse("Fallarchiv")
@@ -532,8 +567,8 @@ class TestComplaintFrontend(FrontendTest):
 
             urls = {
                 "/core/complaint/case/1001/change",
-                "/core/complaint/case/1001/entry/1004/remove",
-                "/core/complaint/case/1001/entry/1004/revoke",
+                "/core/complaint/case/1001/entry/1005/remove",
+                "/core/complaint/case/1001/entry/1005/revoke",
                 "/core/complaint/case/1001/entry/add",
             }
             for url in urls:

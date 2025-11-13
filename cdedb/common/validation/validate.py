@@ -5131,6 +5131,8 @@ def _complaint_entry_version(
             for key in attachment_keys
             if not val.get(key)
         )
+        if not val.get("attachment_hash"):
+            errs.append(ValueError("attachment", n_("Incomplete attachment.")))
 
     if val.get('etime') and val['etime'] <= val['timestamp']:
         errs.append(ValueError('etime', n_("Must be after timestamp.")))
