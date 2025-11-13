@@ -70,6 +70,8 @@
         <form action="{{ cdedblink(action_target) }}" method="POST" id="configureentryform" class="form-horizontal"
               {% if entry_type.allows_attachment %}enctype="multipart/form-data"{% endif %}>
             {{ util.anti_csrf_token(action_target) }}
+
+            {{ util.h(n_("Meta"), level=4, underline=True) }}
             {% if not is_revocation %}
                 {{ util.input_hidden(name="entry_type", value=entry_type) }}
 
@@ -107,7 +109,9 @@
                     [], false, true, "{{ gettext("ID, name, email") }}"
                 );
             </script>
+
             {% if entry_type.has_description %}
+                {{ util.h(n_("Content"), level=4, underline=True) }}
                 {{ util.form_input_textarea(name="description", label=gettext("Description"), rows="20", markdown=True,
                                             info=infotext) }}
             {% endif %}
@@ -116,9 +120,10 @@
                                       value=gettext("Warning: This entry will be visible to all enforcers and the user themselves. Pseudonymize other involved people here, and defer details to other entries.")) }}
             {% endif %}
             {% if entry_type.allows_attachment %}
+                {{ util.h(gettext("Attachment"), level=4, underline=True) }}
                 {{ util.form_input_attachment(link=cdedblink("core/get_cached_complaint_attachment", {'attachment_hash': values.get('attachment_hash')}),
                                               accept="application/pdf", info=gettext("Only PDFs allowed.")) }}
-                {{ util.form_input_text(name="attachment_title", label=gettext("Title")) }}
+                {{ util.form_input_text(name="attachment_title", label=gettext("Label")) }}
                 {{ util.form_input_text(name="attachment_filename", label=gettext("Filename"), info=(gettext("Leave empty for current filename.") if not ambience['entry'] else "")) }}
             {% endif %}
             {# Add some conditional warnings here. #}

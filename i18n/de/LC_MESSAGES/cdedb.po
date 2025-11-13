@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-11-12 18:06+0100\n"
+"POT-Creation-Date: 2025-11-13 02:17+0100\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -2140,7 +2140,7 @@ msgstr "Abbrechen"
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:147
 #: cdedb/frontend/templates/web/core/change_user.tmpl:144
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:53
-#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:136
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:141
 #: cdedb/frontend/templates/web/core/genesis/genesis_modify_form.tmpl:74
 #: cdedb/frontend/templates/web/core/meta_info.tmpl:43
 #: cdedb/frontend/templates/web/core/modify_balance.tmpl:32
@@ -3231,7 +3231,7 @@ msgstr "Nur Admins dürfen auf das globale Log zugreifen."
 #: cdedb/frontend/core/base.py:1061 cdedb/frontend/core/base.py:1073
 #: cdedb/frontend/core/base.py:2142 cdedb/frontend/core/base.py:2157
 #: cdedb/frontend/core/base.py:2572 cdedb/frontend/core/base.py:2595
-#: cdedb/frontend/core/complaint.py:1095 cdedb/frontend/core/genesis.py:295
+#: cdedb/frontend/core/complaint.py:1103 cdedb/frontend/core/genesis.py:295
 #: cdedb/frontend/core/genesis.py:342 cdedb/frontend/core/genesis.py:395
 #: cdedb/frontend/core/genesis.py:416 cdedb/frontend/core/genesis.py:442
 #: cdedb/frontend/event/query.py:603 cdedb/frontend/ml/base.py:252
@@ -3239,7 +3239,7 @@ msgid "Not privileged."
 msgstr "Nicht die nötige Zugriffsberechtigung."
 
 #: cdedb/backend/assembly.py:402 cdedb/backend/cde/base.py:667
-#: cdedb/backend/complaint.py:1142 cdedb/backend/core/base.py:3636
+#: cdedb/backend/complaint.py:1126 cdedb/backend/core/base.py:3636
 #: cdedb/backend/event/query.py:780 cdedb/backend/ml.py:372
 #: cdedb/backend/past_event.py:867
 msgid "Bad scope."
@@ -3459,7 +3459,7 @@ msgid "Something went wrong."
 msgstr "Irgendetwas ist schiefgegangen."
 
 #: cdedb/backend/assembly.py:2021 cdedb/backend/assembly.py:2494
-#: cdedb/backend/complaint.py:395 cdedb/backend/core/base.py:1277
+#: cdedb/backend/complaint.py:379 cdedb/backend/core/base.py:1277
 #: cdedb/backend/core/genesis.py:64
 msgid "File has been lost."
 msgstr "Datei ist verloren gegangen."
@@ -3560,8 +3560,8 @@ msgstr ""
 "Die letzte verbleibende Version einer Datei kann nicht gelöscht werden."
 
 #: cdedb/backend/assembly.py:2782 cdedb/backend/cde/base.py:547
-#: cdedb/backend/cde/lastschrift.py:543 cdedb/backend/common.py:458
-#: cdedb/backend/common.py:464 cdedb/backend/core/base.py:2914
+#: cdedb/backend/cde/lastschrift.py:543 cdedb/backend/common.py:460
+#: cdedb/backend/common.py:466 cdedb/backend/core/base.py:2914
 #: cdedb/backend/event/base.py:1533 cdedb/common/__init__.py:313
 #: cdedb/frontend/assembly/ballot.py:538 cdedb/frontend/cde/base.py:894
 #: cdedb/frontend/cde/lastschrift.py:648
@@ -3778,98 +3778,98 @@ msgstr "Adressabfrage für diesen ExPuls bereits durchgeführt."
 msgid "Balance too low."
 msgstr "Guthaben zu niedrig."
 
-#: cdedb/backend/common.py:136
+#: cdedb/backend/common.py:138
 #, python-format
 msgid "%(user_roles)s is disjoint from %(roles)s for method %(method)s."
 msgstr "%(user_roles)s ist disjunkt zu %(roles)s für Methode %(method)s."
 
-#: cdedb/backend/common.py:168 cdedb/database/connection.py:256
+#: cdedb/backend/common.py:170 cdedb/database/connection.py:256
 msgid "No contamination!"
 msgstr "Keine Kontaminierung!"
 
-#: cdedb/backend/common.py:424
+#: cdedb/backend/common.py:426
 msgid "Need to specify exactly two columns."
 msgstr "Genau zwei Spalten müssen angegeben werden."
 
-#: cdedb/backend/common.py:427
+#: cdedb/backend/common.py:429
 msgid "Operator only allowed for registration query."
 msgstr "Operation nur bei der Anmelundgssuche möglich."
 
-#: cdedb/backend/common.py:430
+#: cdedb/backend/common.py:432
 msgid "Operator only alloed for checkin times."
 msgstr "Operation nur für Checkin-Zeitpunkt möglich."
 
-#: cdedb/backend/complaint.py:125 cdedb/backend/complaint.py:147
+#: cdedb/backend/complaint.py:109 cdedb/backend/complaint.py:131
 #: cdedb/backend/event/registration.py:1383 cdedb/frontend/assembly/base.py:489
-#: cdedb/frontend/core/complaint.py:1141
+#: cdedb/frontend/core/complaint.py:1149
 #: cdedb/frontend/event/registration.py:1394
 msgid "This user does not exist or is archived."
 msgstr "Dieser Benutzer existiert nicht oder ist archiviert."
 
-#: cdedb/backend/complaint.py:383
+#: cdedb/backend/complaint.py:367
 msgid "No authors specified."
 msgstr "Keine Autoren angegeben."
 
-#: cdedb/backend/complaint.py:385
+#: cdedb/backend/complaint.py:369
 msgid "Unknown authors."
 msgstr "Unbekannte Autoren."
 
-#: cdedb/backend/complaint.py:419
+#: cdedb/backend/complaint.py:403
 msgid "Deletion reason given, but entry has no active version."
 msgstr "Löschungsgrund angegeben für Eintrag ohne aktive Version."
 
-#: cdedb/backend/complaint.py:438
+#: cdedb/backend/complaint.py:422
 msgid "Unknown entry."
 msgstr "Unbekannter Eintrag."
 
-#: cdedb/backend/complaint.py:552
+#: cdedb/backend/complaint.py:536
 msgid "Entry already revoked."
 msgstr "Eintrag ist bereits widerrufen."
 
-#: cdedb/backend/complaint.py:554
+#: cdedb/backend/complaint.py:538
 msgid "Entry has no active version."
 msgstr "Eintrag hat keine aktive Version."
 
-#: cdedb/backend/complaint.py:566
+#: cdedb/backend/complaint.py:550
 msgid "Revocation entry without parent."
 msgstr "Widerruf ohne Eltern-Eintrag."
 
-#: cdedb/backend/complaint.py:568 cdedb/frontend/core/complaint.py:886
+#: cdedb/backend/complaint.py:552 cdedb/frontend/core/complaint.py:886
 #: cdedb/frontend/core/complaint.py:936
 msgid "Cannot chain revoke."
 msgstr "Widerruf eines Widerrufs kann nicht widerrufen werden."
 
-#: cdedb/backend/complaint.py:615 cdedb/backend/complaint.py:726
+#: cdedb/backend/complaint.py:599 cdedb/backend/complaint.py:710
 msgid "Unknown users."
 msgstr "Unbekannte Nutzer."
 
-#: cdedb/backend/complaint.py:647
+#: cdedb/backend/complaint.py:631
 #, python-format
 msgid "%(num)s involved lost their informed status."
 msgstr "%(num)s Personen sind nun nicht mehr informiert."
 
-#: cdedb/backend/complaint.py:652
+#: cdedb/backend/complaint.py:636
 msgid "Already active companions."
 msgstr "Bereits aktive Fallbegleitung."
 
-#: cdedb/backend/complaint.py:776 cdedb/backend/complaint.py:832
-#: cdedb/backend/complaint.py:924
+#: cdedb/backend/complaint.py:760 cdedb/backend/complaint.py:816
+#: cdedb/backend/complaint.py:908
 msgid "Uninvolved user."
 msgstr "Unbeteiligter Nutzer."
 
-#: cdedb/backend/complaint.py:817
+#: cdedb/backend/complaint.py:801
 msgid "Unknown companions."
 msgstr "Unbekannte Fallbegleitung."
 
-#: cdedb/backend/complaint.py:839
+#: cdedb/backend/complaint.py:823
 msgid "Involved companion."
 msgstr "Beteiligte Fallbegleitung."
 
-#: cdedb/backend/complaint.py:926
+#: cdedb/backend/complaint.py:910
 msgid "Not a companion."
 msgstr "Keine Fallbegleitung."
 
-#: cdedb/backend/complaint.py:1258
+#: cdedb/backend/complaint.py:1242
 msgid "Can only list measures."
 msgstr "Kann nur Maßnahmen abrufen."
 
@@ -3886,8 +3886,8 @@ msgid "Persona and Changelog are inconsistent."
 msgstr "Nutzer und Änderungshistorie sind inkonsistent."
 
 #: cdedb/backend/core/base.py:596 cdedb/backend/core/base.py:1635
-#: cdedb/frontend/core/base.py:2117 cdedb/frontend/core/complaint.py:1147
-#: cdedb/frontend/core/complaint.py:1161
+#: cdedb/frontend/core/base.py:2117 cdedb/frontend/core/complaint.py:1155
+#: cdedb/frontend/core/complaint.py:1169
 #: cdedb/frontend/event/registration.py:1297 cdedb/frontend/ml/base.py:631
 msgid "Nothing changed."
 msgstr "Keine Änderungen."
@@ -5624,7 +5624,7 @@ msgstr "Letzter Eintrag"
 
 #: cdedb/common/query/__init__.py:754
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:62
-#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:76
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:78
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:31
 msgid "Entry Type"
 msgstr "Art des Eintrags"
@@ -5640,7 +5640,7 @@ msgstr "Länge der Beschreibung"
 #: cdedb/common/query/__init__.py:757
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:21
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:98
-#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:95
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:97
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:38
 #: cdedb/frontend/templates/web/core/show_history.tmpl:342
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:21
@@ -7357,7 +7357,7 @@ msgid "File already known for earlier version of this attachment."
 msgstr "Datei bereits für frühere Version hinterlegt."
 
 #: cdedb/frontend/assembly/attachment.py:291 cdedb/frontend/core/base.py:2134
-#: cdedb/frontend/core/complaint.py:1053 cdedb/frontend/core/complaint.py:1067
+#: cdedb/frontend/core/complaint.py:1053 cdedb/frontend/core/complaint.py:1075
 #: cdedb/frontend/core/genesis.py:263
 msgid "File does not exist."
 msgstr "Datei existiert nicht."
@@ -8460,7 +8460,11 @@ msgstr "Eintragsversion hat keinen Anhang."
 msgid "Need to unlock case to access %(entry_link)s attachment."
 msgstr "Fall muss entsperrt sein um auf Anhang von %(entry_link)s zuzugreifen."
 
-#: cdedb/frontend/core/complaint.py:1157
+#: cdedb/frontend/core/complaint.py:1070
+msgid "Need to unlock case to access attachment."
+msgstr "Fall muss entsperrt sein um auf Anhang zuzugreifen."
+
+#: cdedb/frontend/core/complaint.py:1165
 msgid "This user does not exist or is no enforcer."
 msgstr "Dieser Benutzer existiert nicht oder ist kein Maßnahmenmanager."
 
@@ -9567,31 +9571,32 @@ msgstr "Dateien"
 
 #: cdedb/frontend/templates/web/assembly/attachment/add_attachment.tmpl:25
 #: cdedb/frontend/templates/web/assembly/attachment/configure_attachment_version.tmpl:55
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:126
 msgid "Label"
 msgstr "Bezeichnung"
 
 #: cdedb/frontend/templates/web/assembly/attachment/add_attachment.tmpl:26
 #: cdedb/frontend/templates/web/assembly/attachment/configure_attachment_version.tmpl:56
-#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:101
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:103
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:39
 msgid "Authors"
 msgstr "Autoren"
 
 #: cdedb/frontend/templates/web/assembly/attachment/add_attachment.tmpl:27
 #: cdedb/frontend/templates/web/assembly/attachment/configure_attachment_version.tmpl:57
-#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:122
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:127
 msgid "Filename"
 msgstr "Dateiname"
 
 #: cdedb/frontend/templates/web/assembly/attachment/add_attachment.tmpl:27
 #: cdedb/frontend/templates/web/assembly/attachment/configure_attachment_version.tmpl:57
-#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:122
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:127
 msgid "Leave empty for current filename."
 msgstr "Leer lassen, um den derzeitigen Dateinamen beizubehalten."
 
 #: cdedb/frontend/templates/web/assembly/attachment/add_attachment.tmpl:29
 #: cdedb/frontend/templates/web/assembly/attachment/configure_attachment_version.tmpl:60
-#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:120
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:125
 msgid "Only PDFs allowed."
 msgstr "Nur PDF-Dokumente sind möglich."
 
@@ -9614,9 +9619,9 @@ msgstr "Version hinzufügen"
 
 #: cdedb/frontend/templates/web/assembly/attachment/configure_attachment_version.tmpl:26
 #: cdedb/frontend/templates/web/assembly/util.tmpl:3
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:123
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:184
 #: cdedb/frontend/templates/web/util.tmpl:519
-#: cdedb/frontend/templates/web/util.tmpl:524
 msgid "Attachment"
 msgstr "Anhang"
 
@@ -10373,7 +10378,7 @@ msgstr "Abstimmung bearbeiten"
 #: cdedb/frontend/templates/web/cde/past_event/create_past_event.tmpl:25
 #: cdedb/frontend/templates/web/cde/past_event/create_past_event.tmpl:32
 #: cdedb/frontend/templates/web/cde/past_event/past_course_search.tmpl:69
-#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:111
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:115
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:41
 #: cdedb/frontend/templates/web/event/course/configure_course.tmpl:50
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:193
@@ -10940,8 +10945,8 @@ msgstr "Versammlungsleitung"
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:78
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:86
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:94
-#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:90
-#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:107
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:92
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:109
 #: cdedb/frontend/templates/web/core/complaint/index.tmpl:166
 #: cdedb/frontend/templates/web/core/complaint/index.tmpl:185
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:277
@@ -12161,7 +12166,7 @@ msgid "New Direct Debit Authorization"
 msgstr "Neue Einzugsermächtigung"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_create.tmpl:46
-#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:86
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:88
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:42
 msgid "DB-XXXX-X"
 msgstr "DB-XXXX_X"
@@ -13717,7 +13722,7 @@ msgstr ""
 "Heimatanschrift bei den Eltern."
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:141
-#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:131
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:136
 #: cdedb/frontend/templates/web/core/modify_balance.tmpl:31
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:115
 #: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:79
@@ -14187,7 +14192,7 @@ msgstr "Du kannst später weitere Beteiligte hinzufügen."
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:74
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:82
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:90
-#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:102
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:104
 msgid "DB-XXXX-X,DB-XXXX-X,…"
 msgstr "DB-XXXX-X,DB-XXXX-X,…"
 
@@ -14239,24 +14244,30 @@ msgstr "Eintrag hinzufügen"
 msgid "Change type"
 msgstr "Typ ändern"
 
-#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:83
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:74
+#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:46
+#: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:94
+msgid "Meta"
+msgstr "Meta"
+
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:85
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:87
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:36
 msgid "Concerns"
 msgstr "Betrifft"
 
-#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:97
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:99
 msgid "When did the event you describe here occur?"
 msgstr "Wann ist das Ereignis geschehen"
 
-#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:99
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:101
 #: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:60
 #: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:63
 #: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:49
 msgid "Expiration"
 msgstr "Ablaufdatum"
 
-#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:103
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:105
 msgid ""
 "The companions, arbcom members, coordinators responsible for this entry. In "
 "a later update, the may get access to this entry. Do not specify involved "
@@ -14266,7 +14277,11 @@ msgstr ""
 "verantwortlich sind. Zu einem späteren Zeitpunkt erhalten diese Personen "
 "möglicherweise Zugang zu diesem Eintrag. Trage hier keine Beteiligten ein."
 
-#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:116
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:114
+msgid "Content"
+msgstr "Inhalt"
+
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:120
 msgid ""
 "Warning: This entry will be visible to all enforcers and the user "
 "themselves. Pseudonymize other involved people here, and defer details to "
@@ -14277,28 +14292,12 @@ msgstr ""
 "hier nur pseudonymisiert erwähnt und weitere Details in anderen Einträgen "
 "festgehalten werden."
 
-#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:121
-#: cdedb/frontend/templates/web/event/event/add_part.tmpl:25
-#: cdedb/frontend/templates/web/event/event/change_part.tmpl:42
-#: cdedb/frontend/templates/web/event/event/configure_part_group.tmpl:50
-#: cdedb/frontend/templates/web/event/event/configure_track_group.tmpl:50
-#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:56
-#: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:46
-#: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:67
-#: cdedb/frontend/templates/web/event/event/group_summary.tmpl:47
-#: cdedb/frontend/templates/web/event/event/group_summary.tmpl:123
-#: cdedb/frontend/templates/web/event/generic.tmpl:479
-#: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:83
-#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:94
-msgid "Title"
-msgstr "Titel"
-
-#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:126
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:131
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:334
 msgid "Revoke"
 msgstr "Widerrufen"
 
-#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:127
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:132
 msgid ""
 "Only revoke entries if they are no longer valid or have been rescinded. If "
 "you made a mistake specifying an entry, remove it instead."
@@ -14306,7 +14305,7 @@ msgstr ""
 "Widerrufe Einträge, die nicht mehr gültig sind oder zurückgezogen wurden. "
 "Wenn du einen verkehrten Eintrag angelegt hast, lösche ihn stattdessen."
 
-#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:134
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:139
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:325
 msgid "Replace"
 msgstr "Ersetzen"
@@ -16648,11 +16647,6 @@ msgstr "%(course)s bearbeiten (%(event)s)"
 msgid "Add Course (%(title)s)"
 msgstr "Kurs hinzufügen (%(title)s)"
 
-#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:46
-#: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:94
-msgid "Meta"
-msgstr "Meta"
-
 #: cdedb/frontend/templates/web/event/course/configure_course.tmpl:47
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:69
 msgid "Coursenumber"
@@ -17430,6 +17424,21 @@ msgstr "Veranstaltungsteil hinzufügen (%(event_title)s)"
 #: cdedb/frontend/templates/web/event/event/add_part.tmpl:19
 msgid "Add part"
 msgstr "Veranstaltungsteil hinzufügen"
+
+#: cdedb/frontend/templates/web/event/event/add_part.tmpl:25
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:42
+#: cdedb/frontend/templates/web/event/event/configure_part_group.tmpl:50
+#: cdedb/frontend/templates/web/event/event/configure_track_group.tmpl:50
+#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:56
+#: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:46
+#: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:67
+#: cdedb/frontend/templates/web/event/event/group_summary.tmpl:47
+#: cdedb/frontend/templates/web/event/event/group_summary.tmpl:123
+#: cdedb/frontend/templates/web/event/generic.tmpl:479
+#: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:83
+#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:94
+msgid "Title"
+msgstr "Titel"
 
 #: cdedb/frontend/templates/web/event/event/add_part.tmpl:25
 msgid "e.g. \"1. Hälfte\" or \"1. Hälfte Oberwesel\"."
@@ -21894,17 +21903,17 @@ msgstr "Datum und Uhrzeit im Format YYYY-MM-DD HH:MM"
 msgid "IBAN in the usual format, spaces are allowed"
 msgstr "IBAN im üblichen Format, Leerzeichen sind erlaubt"
 
-#: cdedb/frontend/templates/web/util.tmpl:521
-msgid "New Attachment"
-msgstr "Neuer Anhang"
-
-#: cdedb/frontend/templates/web/util.tmpl:526
+#: cdedb/frontend/templates/web/util.tmpl:525
 msgid ""
 "We already saved your uploaded file, but you can provide a different file "
 "below."
 msgstr ""
 "Dein Upload wurde bereits gespeichert, aber du kannst unten nochmal eine "
 "alternative Datei hochladen."
+
+#: cdedb/frontend/templates/web/util.tmpl:526
+msgid "New Attachment"
+msgstr "Neuer Anhang"
 
 #: cdedb/frontend/templates/web/util.tmpl:680
 msgid ""
