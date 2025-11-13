@@ -18,7 +18,14 @@ from cdedb.backend.common import (
     get_encrypt,
     singularize,
 )
-from cdedb.common import CdEDBLog, CdEDBObject, DefaultReturnCode, RequestState, now
+from cdedb.common import (
+    CdEDBLog,
+    CdEDBObject,
+    DefaultReturnCode,
+    RequestState,
+    now,
+    unwrap,
+)
 from cdedb.common.attachment import EncryptedAttachmentStore
 from cdedb.common.exceptions import AdverseCompanionError, PrivilegeError
 from cdedb.common.n_ import n_
@@ -102,7 +109,7 @@ class ComplaintBackend(AbstractBackend):
             WHERE attachment_hash = %(attachment_hash)s
         """
         return bool(
-            self.query_one(rs, query, {"attachment_hash": attachment_hash})["count"]
+            unwrap(self.query_one(rs, query, {"attachment_hash": attachment_hash}))
         )
 
     @access("persona")
