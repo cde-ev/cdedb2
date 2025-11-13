@@ -99,6 +99,9 @@ class EncryptedAttachmentStore(AttachmentStore):
     Using `store` first validates a file, then encrypts it before writing to disk.
     In order to decrypt a file we need to read it via `get` first.
     This means that streaming files via `get_path` won't work.
+
+    Encryption is salted, so encrypting and storing the same file twice will result
+    in different hashes, i.e. the file being duplicated on disk.
     """
 
     def __init__(
