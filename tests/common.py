@@ -2288,6 +2288,7 @@ class CronTest(CdEDBTest):
     event: ClassVar[EventBackend]
     pastevent: ClassVar[PastEventBackend]
     assembly: ClassVar[AssemblyBackend]
+    complaint: ClassVar[ComplaintBackend]
     ml: ClassVar[MlBackend]
 
     @classmethod
@@ -2299,6 +2300,7 @@ class CronTest(CdEDBTest):
         cls.event = make_cron_backend_proxy(cls.cron, cls.cron.core.eventproxy)
         cls.assembly = make_cron_backend_proxy(cls.cron, cls.cron.core.assemblyproxy)
         cls.ml = make_cron_backend_proxy(cls.cron, cls.cron.core.mlproxy)
+        cls.complaint = make_cron_backend_proxy(cls.cron, cls.cron.core.complaintproxy)
         cls._remaining_periodics = {
             job.cron['name']
             for frontend in (cls.cron.core, cls.cron.cde, cls.cron.event,

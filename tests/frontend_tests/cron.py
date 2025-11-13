@@ -540,8 +540,12 @@ class TestCron(CronTest):
 
     @storage
     def test_forget_complaint_attachments(self) -> None:
-        # We just want to test that no exception is raised.
+        attachment = (self.testfile_dir / "form.pdf").read_bytes()
+        store = self.complaint.get_attachment_store(RS)
+        attachment_hash = store.store(attachment)
+        self.assertTrue(store.is_available(attachment_hash))
         self.execute('forget_complaint_attachments')
+        self.assertFalse(store.is_available(attachment_hash))
 
     @storage
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
