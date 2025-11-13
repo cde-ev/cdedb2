@@ -539,6 +539,11 @@ class TestCron(CronTest):
         self.execute('forget_profile_fotos')
 
     @storage
+    def test_forget_complaint_attachments(self) -> None:
+        # We just want to test that no exception is raised.
+        self.execute('forget_complaint_attachments')
+
+    @storage
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
     def test_mailman_sync(self, client_class: unittest.mock.Mock) -> None:
         #

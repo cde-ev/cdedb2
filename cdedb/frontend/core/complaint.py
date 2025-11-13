@@ -35,6 +35,7 @@ from cdedb.frontend.common import (
     access,
     check_validation as check,
     extract_and_check_dataclass_validation as extract_and_check_dataclass,
+    periodic,
     request_extractor,
 )
 from cdedb.frontend.core.base import CoreBaseFrontend
@@ -1074,6 +1075,14 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if content is None:
             raise werkzeug.exceptions.NotFound(n_("File does not exist."))
         return self.send_file(rs, mimetype="application/pdf", data=content)
+
+    @periodic("forget_complaint_attachments", period=16)
+    def forget_attachments(self, rs: RequestState, store: CdEDBObject) -> CdEDBObject:
+        """Periodically delete all attachments no longer referenced."""
+        self.complaintproxy.get_attachment_store(rs).forget(
+            rs, self.complaintproxy.get_attachment_usage
+        )
+        return store
 
     @access("complaint_admin", "complaint.enforcer")
     def measures(self, rs: RequestState) -> Response:

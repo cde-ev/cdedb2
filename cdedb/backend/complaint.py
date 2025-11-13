@@ -93,6 +93,18 @@ class ComplaintBackend(AbstractBackend):
 
         return self.get_attachment_store(rs).get(entry_version.attachment_hash)
 
+    @access("complaint_admin")
+    def get_attachment_usage(self, rs: RequestState, attachment_hash: str) -> bool:
+        attachment_hash = affirm(vtypes.Identifier, attachment_hash)
+        query = f"""
+            SELECT COUNT(*)
+            FROM {models.ComplaintEntryVersion.database_table}
+            WHERE attachment_hash = %(attachment_hash)s
+        """
+        return bool(
+            self.query_one(rs, query, {"attachment_hash": attachment_hash})["count"]
+        )
+
     @access("persona")
     def list_enforcers(self, rs: RequestState) -> set[vtypes.ID]:
         """List all enforcers."""
