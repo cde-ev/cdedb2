@@ -20,6 +20,7 @@ from typing import (
     ClassVar,
     Literal,
     Optional,
+    Protocol,
     TypeVar,
     Union,
     cast,
@@ -789,8 +790,18 @@ def encrypt(data: str | bytes | None, *, key: bytes) -> bytes | None:
     return cryptography.fernet.Fernet(key).encrypt(data)
 
 
-def get_encrypt(key: bytes) -> Callable[[str | bytes | None], bytes | None]:
-    return functools.partial(encrypt, key=key)
+class _EncryptProtocol(Protocol):
+    @overload
+    def __call__(self, data: None) -> None: ...
+
+    @overload
+    def __call__(self, data: str | bytes) -> bytes: ...
+
+    def __call__(self, data: str | bytes | None) -> bytes | None: ...
+
+
+def get_encrypt(key: bytes) -> _EncryptProtocol:
+    return cast(_EncryptProtocol, functools.partial(encrypt, key=key))
 
 
 def decrypt(data: BytesLike | None, *, key: bytes) -> bytes | None:
@@ -806,12 +817,32 @@ def decrypt_decode(data: BytesLike | None, key: bytes) -> str | None:
     return ret.decode("utf-8")
 
 
-def get_decrypt(key: bytes) -> Callable[[BytesLike | None], bytes | None]:
-    return functools.partial(decrypt, key=key)
+class _DecryptProtocol(Protocol):
+    @overload
+    def __call__(self, data: None) -> None: ...
+
+    @overload
+    def __call__(self, data: BytesLike) -> bytes: ...
+
+    def __call__(self, data: BytesLike | None) -> bytes | None: ...
 
 
-def get_decrypt_decode(key: bytes) -> Callable[[BytesLike | None], str | None]:
-    return functools.partial(decrypt_decode, key=key)
+def get_decrypt(key: bytes) -> _DecryptProtocol:
+    return cast(_DecryptProtocol, functools.partial(decrypt, key=key))
+
+
+class _DecryptDecodeProtocol(Protocol):
+    @overload
+    def __call__(self, data: None) -> None: ...
+
+    @overload
+    def __call__(self, data: BytesLike) -> str: ...
+
+    def __call__(self, data: BytesLike | None) -> str | None: ...
+
+
+def get_decrypt_decode(key: bytes) -> _DecryptDecodeProtocol:
+    return cast(_DecryptDecodeProtocol, functools.partial(decrypt_decode, key=key))
 
 
 #: Translate between validator names and sql data types.
