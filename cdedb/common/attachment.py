@@ -33,15 +33,8 @@ class AttachmentStore:
     def store(self, attachment: bytes) -> vtypes.Identifier:
         """Validate a file, then store it. Returns the file hash."""
         attachment = affirm(self.type, attachment, file_storage=False)
-        return self._store(attachment)
-
-    def _store(self, attachment: bytes) -> vtypes.Identifier:
-        """Store a already validated file. Returns the file hash."""
         myhash: vtypes.Identifier = get_hash(attachment)  # type: ignore[assignment]
-        path = self.get_path(myhash)
-        if not path.exists():
-            with open(path, 'wb') as f:
-                f.write(attachment)
+        self.get_path(myhash).write_bytes(attachment)
         return myhash
 
     def is_available(self, attachment_hash: str) -> bool:
@@ -62,11 +55,10 @@ class AttachmentStore:
         """Retrieve a stored attachment.
 
         Only to be used by backend tests, frontend code should stream from path."""
-        path = self.get_path(attachment_hash)
-        if path.is_file():
-            with open(path, 'rb') as f:
-                return f.read()
-        return None
+        try:
+            return self.get_path(attachment_hash).read_bytes()
+        except FileNotFoundError:
+            return None
 
     def get_path(self, attachment_hash: str) -> pathlib.Path:
         """Get path for attachment.
@@ -79,11 +71,10 @@ class AttachmentStore:
         self, rs: RequestState, usage: UsageFunction, attachment_hash: str
     ) -> bool:
         """Delete a single attachment, if it is no longer in use."""
-        path = self.get_path(attachment_hash)
-        if path.is_file() and not usage(rs, attachment_hash):
-            path.unlink()
-            return True
-        return False
+        if usage(rs, attachment_hash):
+            return False
+        self.get_path(attachment_hash).unlink(missing_ok=True)
+        return True
 
     def forget(self, rs: RequestState, usage: UsageFunction) -> int:
         """Delete all attachments that are no longer in use."""
@@ -114,9 +105,9 @@ class EncryptedAttachmentStore(AttachmentStore):
     def store(self, attachment: bytes) -> vtypes.Identifier:
         """Validate a file, then encrypt and store it. Returns the file hash."""
         attachment = affirm(self.type, attachment, file_storage=False)
-        encrypted = self.encrypt(attachment)
-        assert encrypted is not None
-        return self._store(encrypted)
+        myhash: vtypes.Identifier = get_hash(attachment)  # type: ignore[assignment]
+        self.get_path(myhash).write_bytes(self.encrypt(attachment))
+        return myhash
 
     def get(self, attachment_hash: str) -> bytes | None:
         """Retrieve a stored attachment and decrypt it."""
@@ -124,7 +115,6 @@ class EncryptedAttachmentStore(AttachmentStore):
 
     def get_mime_type(self, attachment_hash: str) -> str | None:
         """Determine the mime type of a stored attachment after decrypting."""
-        content = self.get(attachment_hash)
-        if content is None:
-            return None
-        return magic.from_buffer(content, mime=True)
+        if content := self.get(attachment_hash):
+            return magic.from_buffer(content, mime=True)
+        return None

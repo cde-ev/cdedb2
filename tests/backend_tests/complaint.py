@@ -72,7 +72,7 @@ class TestComplaintBackend(BackendTest):
                             timestamp=datetime.datetime(
                                 2025, 5, 28, 14, tzinfo=datetime.timezone.utc
                             ),
-                            attachment_hash="af2b730a3700f257e715843cd67552635fe9a3e9b6622a3a843560f325425a2999c9d392e4678a090c889d55ee14fe878cd3722ad234e507ccfdae94ef7392dd",
+                            attachment_hash="d28c1a205a1dfb4fd6f655d0e69e6512c676c9cd675f760ec41b6e8a57bde89d313f521d4fafc2f294a28bd8aff4a106032e904470b3249f9436f68ea1ec8020",
                             attachment_title="Aussage von Charly",
                             attachment_filename="aussage_charly.pdf",
                             ctime=nearly_now(),
@@ -1228,6 +1228,10 @@ class TestComplaintBackend(BackendTest):
             entry_id,
         )["attachment_hash"]
         self.assertEqual(
+            get_hash(sample_attachment_content),
+            sample_attachment_hash,
+        )
+        self.assertEqual(
             sample_attachment_content,
             self.complaint.get_attachment_store(self.key).get(sample_attachment_hash),
         )
@@ -1246,15 +1250,26 @@ class TestComplaintBackend(BackendTest):
             valid_pdf,
             self.complaint.get_attachment_store(self.key).get(attachment_hash),
         )
-        stored_path = self.complaint.get_attachment_store(self.key).get_path(
-            attachment_hash
+        encrypted = (
+            self.complaint.get_attachment_store(self.key)
+            .get_path(attachment_hash)
+            .read_bytes()
         )
-        self.assertNotEqual(valid_pdf, stored_path.read_bytes())
+        self.assertNotEqual(valid_pdf, encrypted)
         self.assertEqual(
             valid_pdf,
-            decrypt(
-                data=stored_path.read_bytes(), key=self.secrets["COMPLAINT_SECRET"]
-            ),
+            decrypt(data=encrypted, key=self.secrets["COMPLAINT_SECRET"]),
+        )
+        self.complaint.get_attachment_store(self.key).store(valid_pdf)
+        new_encrypted = (
+            self.complaint.get_attachment_store(self.key)
+            .get_path(attachment_hash)
+            .read_bytes()
+        )
+        self.assertNotEqual(encrypted, new_encrypted)
+        self.assertEqual(
+            valid_pdf,
+            decrypt(data=new_encrypted, key=self.secrets["COMPLAINT_SECRET"]),
         )
 
         case_id = 1

@@ -204,9 +204,10 @@ class TestComplaintFrontend(FrontendTest):
         f = self.response.forms["configureentryform"]
         f["attachment_filename"] = ""
         f["attachment_title"] = "bar"
+        valid_pdf = (self.testfile_dir / "form.pdf").read_bytes()
         f["attachment"] = webtest.Upload(
             "form.pdf",
-            (self.testfile_dir / "form.pdf").read_bytes(),
+            valid_pdf,
             content_type="application/octet-stream",
         )
         self.submit(f, check_notification=False, check_mandatory_filled=False)
@@ -217,8 +218,24 @@ class TestComplaintFrontend(FrontendTest):
         self.assertTrue(f["attachment_hash"])
         self.assertPresence("Dein Upload wurde bereits gespeichert")
         self.assertPresence("form.pdf", div="cached_attachment")
+        self.assertFalse(self.complaint.is_unlocked(self.key, 1))
+        saved = self.response
+        self.traverse("form.pdf")
+        self.assertNotification(
+            "Fall muss entsperrt sein um auf Anhang zuzugreifen.", "error"
+        )
+        self.assertTrue(self.complaint.unlock_case(self.key, 1, "cached attachment"))
+        self.response = saved
+        self.traverse("form.pdf")
+        self.assertEqual(valid_pdf, self.response.body)
         f["description"] = "baz"
         self.submit(f)
+        self.assertPresence("bar", div="entry1002")
+        saved = self.response
+        self.traverse("bar")
+        self.assertEqual(valid_pdf, self.response.body)
+        self.response = saved
+        self.assertTrue(self.complaint.lock_case(self.key, 1))
 
         # Excursion part 1: Check measure is displayed in overview
         self.traverse("Maßnahmenübersicht")
@@ -685,6 +702,11 @@ class TestComplaintFrontend(FrontendTest):
                 'change_note': 'Versteckt vor',
                 'code': const.ComplaintLogCodes.involved_added,
                 'persona_id': 7,
+            },
+            {
+                'case_id': 1,
+                'change_note': 'cached attachment',
+                'code': const.ComplaintLogCodes.case_unlocked,
             },
             {
                 'case_id': 1,

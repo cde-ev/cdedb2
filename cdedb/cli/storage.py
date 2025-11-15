@@ -126,7 +126,7 @@ def populate_storage(conf: Config) -> None:
     core._genesis_attachment_store.store((testfile_dir / genesis).read_bytes())
 
     complaint = ComplaintBackend()
-    complaint._attachment_store._store((testfile_dir / "form.encrypted").read_bytes())
+    complaint._attachment_store.store((testfile_dir / "form.pdf").read_bytes())
 
     assembly = AssemblyBackend()
     for filename in ("rechen.pdf", "kassen.pdf", "kassen2.pdf", "kandidaten.pdf"):
