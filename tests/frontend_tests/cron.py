@@ -540,7 +540,7 @@ class TestCron(CronTest):
 
     @storage
     def test_forget_complaint_attachments(self) -> None:
-        attachment = (self.testfile_dir / "form.pdf").read_bytes()
+        attachment = (self.testfile_dir / "rechen.pdf").read_bytes()
         store = self.complaint.get_attachment_store(RS)
         attachment_hash = store.store(attachment)
         self.assertTrue(store.is_available(attachment_hash))
