@@ -9,7 +9,7 @@ FORMAT_TARGETS= \
     cdedb/frontend/cde/ \
     cdedb/frontend/core/complaint.py \
     cdedb/frontend/ml/ \
-    cdedb/frontend/paths.py \
+    cdedb/frontend/*.py \
     cdedb/ldap/ \
     cdedb/models/ \
     cdedb/uncommon/ \
