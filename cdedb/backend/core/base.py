@@ -3119,6 +3119,11 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("anonymous")
     def resolve_username(self, rs: RequestState, username: str) -> int | None:
+        """Retrieve the persona id associated with the given username.
+
+        This is used for the password reset, but not login since the latter is
+        more involved and needs more data than just the persona id.
+        """
         username = affirm(vtypes.Email, username)
         query = "SELECT id FROM core.personas WHERE username = %(username)s"
         return unwrap(self.query_one(rs, query, {"username": username}))
@@ -3365,6 +3370,7 @@ class CoreBaseBackend(AbstractBackend):
     def check_reset_cookie(
         self, rs: RequestState, persona_id: int, cookie: str
     ) -> Literal[True]:
+        """Public interface for verifying a reset cookie."""
         persona_id = affirm(vtypes.ID, persona_id)
         cookie = affirm(str, cookie)
         return self.verify_reset_cookie(rs, persona_id, cookie)

@@ -963,6 +963,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return msg
 
     def _validate_password_reset_cookie(self, rs: RequestState, persona_id: int, cookie: str) -> bool:
+        """
+        Helper to validate a reset cookie. Produces an appropriate notification on failure.
+        """
         try:
             return self.coreproxy.check_reset_cookie(rs, persona_id, cookie)
         except ParameterTimeoutError:
@@ -975,6 +978,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def _password_reset_link(
             self, rs: RequestState, persona_id: int, timeout: datetime.timedelta | None = None,
     ) -> str:
+        """Helper to create a password reset link.
+
+        The default is the (somewhat less secure) longer timeout for unprompted mails
+        since this is used more frequently.
+        """
         if not timeout:
             timeout = self.conf["EXTENDED_PARAMETER_TIMEOUT"]
         confirm = self.coreproxy.make_reset_cookie(rs, persona_id, timeout)
