@@ -13,9 +13,6 @@ from cdedb.backend.common import (
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
-    get_decrypt,
-    get_decrypt_decode,
-    get_encrypt,
     singularize,
 )
 from cdedb.common import (
@@ -27,6 +24,7 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.attachment import EncryptedAttachmentStore
+from cdedb.common.crypt import get_decrypt, get_decrypt_decode, get_encrypt
 from cdedb.common.exceptions import AdverseCompanionError, PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope

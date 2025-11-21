@@ -8,9 +8,9 @@ import re
 from typing import Any
 
 import cdedb.models.complaint as models_complaint
-from cdedb.backend.common import decrypt_decode
 from cdedb.cli.util import connect, fake_rs
 from cdedb.common import CdEDBObject, nearly_now
+from cdedb.common.crypt import _decrypt_decode
 from cdedb.common.sorting import xsorted
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.query import SqlQueryBackend
@@ -136,7 +136,7 @@ def sql2json(
                     sorted_entity[field] = value
                 if table == models_complaint.ComplaintEntryVersion.database_table:
                     if field == "description" and value:
-                        sorted_entity[field] = decrypt_decode(
+                        sorted_entity[field] = _decrypt_decode(
                             bytes(value), key=secrets["COMPLAINT_SECRET"]
                         )
             sorted_entities.append(sorted_entity)

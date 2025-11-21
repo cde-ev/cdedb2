@@ -20,21 +20,17 @@ from typing import (
     ClassVar,
     Literal,
     Optional,
-    Protocol,
     TypeVar,
     Union,
     cast,
     overload,
 )
 
-import cryptography.fernet
 import psycopg2.errors
 import psycopg2.extensions
 import psycopg2.extras
-from passlib.hash import sha512_crypt
 
 from cdedb.common import (
-    BytesLike,
     CdEDBLog,
     CdEDBObject,
     Error,
@@ -768,81 +764,6 @@ def inspect_validation(
     return validate.validate_check(
         type_, value, ignore_warnings=ignore_warnings, **kwargs
     )
-
-
-def verify_password(password: str, password_hash: str) -> bool:
-    """Central function, so that the actual implementation may be easily
-    changed.
-    """
-    return sha512_crypt.verify(password, password_hash)
-
-
-def encrypt_password(password: str) -> str:
-    """We currently use passlib for password protection."""
-    return sha512_crypt.hash(password)
-
-
-def encrypt(data: str | bytes | None, *, key: bytes) -> bytes | None:
-    if data is None:
-        return None
-    if isinstance(data, str):
-        data = data.encode("utf-8")
-    return cryptography.fernet.Fernet(key).encrypt(data)
-
-
-class _EncryptProtocol(Protocol):
-    @overload
-    def __call__(self, data: None) -> None: ...
-
-    @overload
-    def __call__(self, data: str | bytes) -> bytes: ...
-
-    def __call__(self, data: str | bytes | None) -> bytes | None: ...
-
-
-def get_encrypt(key: bytes) -> _EncryptProtocol:
-    return cast(_EncryptProtocol, functools.partial(encrypt, key=key))
-
-
-def decrypt(data: BytesLike | None, *, key: bytes) -> bytes | None:
-    if data is None:
-        return None
-    return cryptography.fernet.Fernet(key).decrypt(bytes(data))
-
-
-def decrypt_decode(data: BytesLike | None, key: bytes) -> str | None:
-    ret = decrypt(data=data, key=key)
-    if ret is None:
-        return None
-    return ret.decode("utf-8")
-
-
-class _DecryptProtocol(Protocol):
-    @overload
-    def __call__(self, data: None) -> None: ...
-
-    @overload
-    def __call__(self, data: BytesLike) -> bytes: ...
-
-    def __call__(self, data: BytesLike | None) -> bytes | None: ...
-
-
-def get_decrypt(key: bytes) -> _DecryptProtocol:
-    return cast(_DecryptProtocol, functools.partial(decrypt, key=key))
-
-
-class _DecryptDecodeProtocol(Protocol):
-    @overload
-    def __call__(self, data: None) -> None: ...
-
-    @overload
-    def __call__(self, data: BytesLike) -> str: ...
-
-    def __call__(self, data: BytesLike | None) -> str | None: ...
-
-
-def get_decrypt_decode(key: bytes) -> _DecryptDecodeProtocol:
-    return cast(_DecryptDecodeProtocol, functools.partial(decrypt_decode, key=key))
 
 
 #: Translate between validator names and sql data types.

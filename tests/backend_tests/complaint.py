@@ -3,8 +3,8 @@ import functools
 
 import cdedb.database.constants as const
 import cdedb.models.complaint as models
-from cdedb.backend.common import decrypt
 from cdedb.common import CdEDBObject, PrivilegeError, get_hash, nearly_now, now
+from cdedb.common.crypt import get_decrypt
 from cdedb.common.exceptions import AdverseCompanionError
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from tests.common import USER_DICT, BackendTest, as_users, execsql, storage
@@ -1217,6 +1217,7 @@ class TestComplaintBackend(BackendTest):
     @as_users("simon")
     @storage
     def test_attachment_store(self) -> None:
+        decrypt = get_decrypt(self.secrets["COMPLAINT_SECRET"])
         invalid_pdf = b"abc"
         with self.assertRaisesRegex(ValueError, "Only pdf allowed."):
             self.complaint.get_attachment_store(self.key).store(invalid_pdf)
@@ -1256,10 +1257,7 @@ class TestComplaintBackend(BackendTest):
             .read_bytes()
         )
         self.assertNotEqual(valid_pdf, encrypted)
-        self.assertEqual(
-            valid_pdf,
-            decrypt(data=encrypted, key=self.secrets["COMPLAINT_SECRET"]),
-        )
+        self.assertEqual(valid_pdf, decrypt(encrypted))
         self.complaint.get_attachment_store(self.key).store(valid_pdf)
         new_encrypted = (
             self.complaint.get_attachment_store(self.key)
@@ -1267,10 +1265,7 @@ class TestComplaintBackend(BackendTest):
             .read_bytes()
         )
         self.assertNotEqual(encrypted, new_encrypted)
-        self.assertEqual(
-            valid_pdf,
-            decrypt(data=new_encrypted, key=self.secrets["COMPLAINT_SECRET"]),
-        )
+        self.assertEqual(valid_pdf, decrypt(new_encrypted))
 
         case_id = 1
         entry_data = {

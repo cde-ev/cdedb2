@@ -30,11 +30,9 @@ from cdedb.backend.common import (
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
-    encrypt_password,
     inspect_validation as inspect,
     internal,
     singularize,
-    verify_password,
 )
 from cdedb.common import (
     CdEDBLog,
@@ -53,6 +51,7 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.attachment import AttachmentStore
+from cdedb.common.crypt import encrypt_password, verify_password
 from cdedb.common.exceptions import (
     AdminPasswordResetError,
     ArchiveError,

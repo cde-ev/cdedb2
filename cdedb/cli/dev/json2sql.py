@@ -9,9 +9,9 @@ from typing import Any, Callable, Optional, TypedDict
 from psycopg2.extensions import cursor
 
 import cdedb.models.complaint as models_complaint
-from cdedb.backend.common import encrypt
 from cdedb.backend.core import CoreBackend
 from cdedb.common import CdEDBObject, PsycoJson
+from cdedb.common.crypt import _encrypt
 from cdedb.config import SecretsConfig
 from cdedb.database.conversions import to_db_input
 from cdedb.database.query import DatabaseValue_s
@@ -170,7 +170,7 @@ def json2sql(data: CdEDBObject, xss_payload: Optional[str] = None) -> list[SQLCo
                         entry[k] += xss_payload
                 if table == models_complaint.ComplaintEntryVersion.database_table:
                     if k == "description" and entry[k]:
-                        entry[k] = encrypt(
+                        entry[k] = _encrypt(
                             entry[k], key=aux["secrets"]["COMPLAINT_SECRET"]
                         )
             for k, f in aux["entry_replacements"].get(table, {}).items():

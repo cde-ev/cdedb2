@@ -4,8 +4,9 @@ from typing import Callable
 import magic
 
 import cdedb.common.validation.types as vtypes
-from cdedb.backend.common import affirm_validation as affirm, get_decrypt, get_encrypt
+from cdedb.backend.common import affirm_validation as affirm
 from cdedb.common import RequestState, get_hash
+from cdedb.common.crypt import get_decrypt, get_encrypt
 
 UsageFunction = Callable[[RequestState, str], bool]
 
