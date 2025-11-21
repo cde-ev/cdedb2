@@ -8,7 +8,7 @@ import functools
 from typing import Protocol, cast, overload
 
 import cryptography.fernet
-import passlib
+import passlib.hash
 
 from cdedb.common import BytesLike
 
