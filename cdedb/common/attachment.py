@@ -40,7 +40,7 @@ class AttachmentStore:
     def is_available(self, attachment_hash: str) -> bool:
         """Check whether an attachment with the given hash is available.
 
-        Contrary to `get` this does not retrieve it's content.
+        Contrary to `get` this does not retrieve its content.
         """
         return self.get_path(attachment_hash).is_file()
 
