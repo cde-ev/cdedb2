@@ -358,10 +358,9 @@
                 {% endif %}
                 {% if entry.active_version.attachment_hash %}
                     <hr class="nosp" />
-                    <p id="entry{{ entry.id }}-attachment">
-                        {{ util.href(cdedblink("core/get_complaint_attachment", {"entry_id": entry.id, "version_idx": entry.all_versions|length}),
-                                     entry.active_version.attachment_title, icon="download", readonly=is_locked) }}
-                    </p>
+                    {{ util.href(cdedblink("core/get_complaint_attachment", {"entry_id": entry.id, "version_idx": entry.all_versions|length}),
+                                 entry.active_version.attachment_title, icon="download", readonly=is_locked,
+                                 anid="entry" ~ entry.id ~ "-attachment") }}
                 {% endif %}
                 {% if entry.active_children %}
                     <hr class="nosp" />
