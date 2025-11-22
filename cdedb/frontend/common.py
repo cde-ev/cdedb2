@@ -69,6 +69,7 @@ import jinja2
 import mailmanclient.restobjects.held_message
 import mailmanclient.restobjects.mailinglist
 import markupsafe
+import segno.helpers
 import werkzeug
 import werkzeug.datastructures
 import werkzeug.exceptions
@@ -132,7 +133,7 @@ from cdedb.common.exceptions import (
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
-from cdedb.common.parse.util import TransactionType
+from cdedb.common.parse.util import Accounts, TransactionType
 from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.common.query.log_filter import GenericLogFilter
@@ -1826,6 +1827,15 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         })
         return datum
 
+    def serve_qrcode(self, rs: RequestState, qrcode: segno.QRCode | str) -> Response:
+        if isinstance(qrcode, str):
+            qrcode = segno.make_qr(qrcode)
+
+        buffer = io.BytesIO()
+        qrcode.save(buffer, kind='svg', scale=4)
+
+        return self.send_file(rs, afile=buffer, mimetype="image/svg+xml")
+
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     """Base class for all frontends which have their own user realm.
@@ -3403,6 +3413,35 @@ def calculate_loglinks(
     ret: dict[str, CdEDBMultiDict | list[CdEDBMultiDict]]
     ret = dict(**loglinks, **{"pre-current": pre, "post-current": post})
     return ret
+
+
+# Monkey patch segnos epc qr code generation to allow qrcodes with empty amount.
+
+
+def make_epc_qr_data(
+    account: Accounts, reference: str, amount: decimal.Decimal | None
+) -> bytes:
+    data = {
+        "name": account.get_account_holder()[:70],
+        "iban": account.get_iban(),
+        "bic": account.get_bic(),
+        "text": reference[:140],
+    }
+    if amount:
+        return segno.helpers._make_epc_qr_data(**data, amount=amount)  # type: ignore[attr-defined]
+
+    # Monkey patch to create epc qrcode without a specified amount.
+    qrcode_data = segno.helpers._make_epc_qr_data(**data, amount=1).splitlines()  # type: ignore[attr-defined]
+    qrcode_data[7] = b""
+    return b"\n".join(qrcode_data)
+
+
+def make_epc_qr(
+    account: Accounts, reference: str, amount: decimal.Decimal | None
+) -> segno.QRCode:
+    return segno.make_qr(
+        make_epc_qr_data(account, reference, amount), error="m", boost_error=True
+    )
 
 
 class TransactionObserver:

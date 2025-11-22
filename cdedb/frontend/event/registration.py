@@ -8,7 +8,6 @@ for managing registrations both by orgas and participants.
 import csv
 import datetime
 import decimal
-import io
 import itertools
 from collections import OrderedDict
 from collections.abc import Collection
@@ -54,6 +53,7 @@ from cdedb.frontend.common import (
     access,
     cdedbid_filter,
     check_validation as check,
+    make_epc_qr,
     make_event_fee_reference,
     periodic,
     request_extractor,
@@ -2534,33 +2534,14 @@ class EventRegistrationMixin(EventBaseFrontend):
     def registration_fee_qr(self, rs: RequestState, event_id: int) -> Response:
         payment_data = self._get_payment_data(rs, event_id)
         if not payment_data:
-            return self.redirect(rs, "event/show_event")
+            raise werkzeug.exceptions.BadRequest()
+
         qrcode = self._registration_fee_qr(payment_data)
-        if not qrcode:
-            return self.redirect(rs, "event/show_event")
+        return self.serve_qrcode(rs, qrcode)
 
-        buffer = io.BytesIO()
-        qrcode.save(buffer, kind='svg', scale=4)
-
-        return self.send_file(rs, afile=buffer, mimetype="image/svg+xml")
-
-    @staticmethod
-    def _registration_fee_qr_data(payment_data: CdEDBObject) -> Optional[CdEDBObject]:
-        if not payment_data['account']:
-            return None
-        # Ensure that the "free-"text parts are not too long. The exact size is limited
-        # by third parties.
-        account: Accounts = payment_data['account']
-        return {
-            'name': account.get_account_holder()[:70],
-            'text': payment_data['reference'][:140],
-            'amount': payment_data['to_pay'],
-            'iban': account.get_iban(),
-            'bic': account.get_bic(),
-        }
-
-    def _registration_fee_qr(self, payment_data: CdEDBObject) -> Optional[segno.QRCode]:
-        data = self._registration_fee_qr_data(payment_data)
-        if not data:
-            return None
-        return segno.helpers.make_epc_qr(**data)
+    def _registration_fee_qr(self, payment_data: CdEDBObject) -> segno.QRCode:
+        return make_epc_qr(
+            account=payment_data["account"],
+            reference=payment_data["reference"],
+            amount=payment_data["to_pay"],
+        )
