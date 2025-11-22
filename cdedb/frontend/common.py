@@ -2211,7 +2211,7 @@ def reconnoitre_ambience(obj: AbstractFrontend, rs: RequestState) -> AmbienceDic
         ),
         Scout(
             lambda anid: (
-                obj.eventproxy.get_lodgement_groups(rs, ambience['event'].id)[anid]  # type: ignore[has-type]
+                obj.eventproxy.get_lodgement_groups(rs, ambience['event'].id)[anid]
             ),
             'group_id',
             'group',
@@ -2231,21 +2231,21 @@ def reconnoitre_ambience(obj: AbstractFrontend, rs: RequestState) -> AmbienceDic
         ),
         # Dirty hack, that relies on the event being retrieved into ambience first.
         Scout(
-            lambda anid: ambience['event'].part_groups[anid],  # type: ignore[has-type]
+            lambda anid: ambience['event'].part_groups[anid],
             'part_group_id',
             'part_group',
             (lambda a: do_assert(a['part_group'].event_id == a['event'].id),),
         ),
         # Dirty hack, that relies on the event being retrieved into ambience first.
         Scout(
-            lambda anid: ambience['event'].track_groups[anid],  # type: ignore[has-type]
+            lambda anid: ambience['event'].track_groups[anid],
             'track_group_id',
             'track_group',
             (lambda a: do_assert(a['track_group'].event_id == a['event'].id),),
         ),
         # Dirty hack, that relies on the event being retrieved into ambience first.
         Scout(
-            lambda anid: ambience['event'].fees[anid],  # type: ignore[has-type]
+            lambda anid: ambience['event'].fees[anid],
             'fee_id',
             'fee',
             (lambda a: do_assert(a['fee'].event_id == a['event'].id),),
@@ -2258,7 +2258,7 @@ def reconnoitre_ambience(obj: AbstractFrontend, rs: RequestState) -> AmbienceDic
         ),
         # Dirty hack, that relies on the event being retrieved into ambience first.
         Scout(
-            lambda anid: ambience['event'].custom_query_filters[anid],  # type: ignore[has-type]
+            lambda anid: ambience['event'].custom_query_filters[anid],
             'custom_filter_id',
             'custom_filter',
             (lambda a: do_assert(a['custom_filter'].event_id == a['event'].id),),
@@ -2313,13 +2313,13 @@ def reconnoitre_ambience(obj: AbstractFrontend, rs: RequestState) -> AmbienceDic
             lambda anid: obj.complaintproxy.get_case(rs, anid), 'case_id', 'case', ()
         ),
         Scout(
-            lambda anid: ambience['case'].entries[anid],  # type: ignore[has-type]
+            lambda anid: ambience['case'].entries[anid],
             'entry_id',
             'entry',
             (),
         ),
         Scout(
-            lambda anid: ambience['case'].entries[anid],  # type: ignore[has-type]
+            lambda anid: ambience['case'].entries[anid],
             'parent_id',
             'entry',
             (),
