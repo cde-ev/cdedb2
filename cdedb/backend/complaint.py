@@ -97,14 +97,19 @@ class ComplaintBackend(AbstractBackend):
             raise PrivilegeError
 
         # attachment hash is obscured upon retrieval.
-        data = self.sql_select_one(
-            rs,
-            models.ComplaintEntryVersion.database_table,
-            ["attachment_hash"],
-            entry_version.id,
+        attachment_hash = cast(
+            str,
+            unwrap(
+                self.sql_select_one(
+                    rs,
+                    models.ComplaintEntryVersion.database_table,
+                    ["attachment_hash"],
+                    entry_version.id,
+                )
+            ),
         )
 
-        return self.get_attachment_store(rs).get(data["attachment_hash"])
+        return self.get_attachment_store(rs).get(attachment_hash)
 
     @access("complaint_admin")
     def get_attachment_usage(self, rs: RequestState, attachment_hash: str) -> bool:
