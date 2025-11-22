@@ -2545,3 +2545,36 @@ class EventRegistrationMixin(EventBaseFrontend):
             reference=payment_data["reference"],
             amount=payment_data["to_pay"],
         )
+
+    @access("event")
+    @event_guard(EventPrivileges.basic_read)
+    @REQUESTdata("reference", "amount")
+    def event_payment_qrcode(
+        self,
+        rs: RequestState,
+        event_id: int,
+        reference: str,
+        amount: decimal.Decimal | None,
+    ) -> Response:
+        account = rs.ambience["event"].iban
+        if not account:
+            account = Accounts.Skatbank
+        if not reference:
+            reference = rs.ambience["event"].title
+        rs.ignore_validation_errors()
+
+        qrcode = make_epc_qr(account, reference, amount=amount)
+        return self.serve_qrcode(rs, qrcode)
+
+    @access("event")
+    @event_guard(EventPrivileges.basic_read)
+    @REQUESTdata("reference", "amount")
+    def event_payment(
+        self,
+        rs: RequestState,
+        event_id: int,
+        reference: str | None,
+        amount: decimal.Decimal | None,
+    ) -> Response:
+        rs.ignore_validation_errors()
+        return self.render(rs, "registration/payment")

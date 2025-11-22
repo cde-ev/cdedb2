@@ -13,7 +13,6 @@ import quopri
 import tempfile
 from typing import Any, Optional
 
-import segno
 import segno.helpers
 import werkzeug.datastructures
 import werkzeug.exceptions

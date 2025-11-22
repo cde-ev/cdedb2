@@ -1,0 +1,49 @@
+{% set sidenav_active='event_show' %}
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic_event with context %}
+{% block scripts %}
+    {{ super() }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
+{% block title %}
+    {% trans title=ambience['event']['title'] %}
+    	Payment ({{ title }})
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/event_payment"), gettext("Payment"), active=True) }}
+{% endblock %}
+{% block heading %}
+    <div class="print-zoom">
+        {{ util.context_heading(gettext("Payment"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    </div>
+{% endblock %}
+{% block content %}
+    <div class="center-block print-zoom">
+        {% set reference_text = ((values["reference"] or "") ~ " " ~ ambience["event"].title).strip() %}
+        <img src="{{ cdedblink("event/event_payment_qrcode", {"reference": reference_text, "amount": values["amount"]}) }}"
+             alt="{{ reference_text }}" width="50%" class="center-block">
+        <dl class="dl-horizontal">
+            <dt>{% trans %}Account holder{% endtrans %}</dt>
+            <dd>{{ ambience['event'].iban.get_account_holder() }}</dd>
+            <dt>{% trans %}IBAN{% endtrans %}</dt>
+            <dd>{{ ambience['event'].iban.get_iban()|iban }}</dd>
+            <dt>{% trans %}BIC{% endtrans %}</dt>
+            <dd>{{ ambience['event'].iban.get_bic() }}</dd>
+            <dt>{% trans %}Bank{% endtrans %}</dt>
+            <dd>{{ ambience['event'].iban.get_bank() }}</dd>
+            <dt>{% trans %}Amount{% endtrans %}</dt>
+            <dd>{{ (values["amount"] or None)|money(lang=lang) }}</dd>
+            <dt>{% trans %}Reference{% endtrans %}</dt>
+            <dd>{{ reference_text }}</dd>
+        </dl>
+    </div>
+    <form action="{{ cdedblink("event/event_payment") }}" class="form-horizontal hidden-print">
+        {{ util.form_input_text("reference", gettext("Reference"), small=True) }}
+        {{ util.form_input_text("amount", gettext("Amount"), small=True, addon="€", type="number", attributes='min="0" step="0.01"'|s) }}
+        {{ util.form_input_submit(label=gettext("Refresh"), small=True) }}
+    </form>
+{% endblock %}
