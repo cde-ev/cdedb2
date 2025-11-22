@@ -368,19 +368,14 @@ class Application(BaseApp):
                 # Beware that this means that quota violations will only be logged if
                 # they happen through the frontend.
                 self.coreproxy.log_quota_violation(rs)
-                return self.make_error_page(
-                    e,
-                    request,
-                    user,
-                    begin,
-                    n_(
-                        "You reached the internal limit for user profile views. "
-                        "This is a privacy feature to prevent users from cloning "
-                        "the address database. Unfortunatetly, this may also yield "
-                        "some false positive restrictions. Your limit will be "
-                        "reset in the next days."
-                    ),
+                msg = n_(
+                    "You reached the internal limit for user profile views."
+                    " This is a privacy feature to prevent users from cloning"
+                    " the address database. Unfortunatetly, this may also yield"
+                    " some false positive restrictions. Your limit will be"
+                    " reset in the next days."
                 )
+                return self.make_error_page(e, request, user, begin, msg)
             finally:
                 # noinspection PyProtectedMember
                 rs._conn.commit()
@@ -392,17 +387,12 @@ class Application(BaseApp):
             return self.make_error_page(e, request, user, begin)
         except psycopg2.extensions.TransactionRollbackError as e:
             # Serialization error
-            return self.make_error_page(
-                werkzeug.exceptions.InternalServerError(str(e.args)),
-                request,
-                user,
-                begin,
-                n_(
-                    "A modification to the database could not be executed due "
-                    "to simultaneous access. Please reload the page to try "
-                    "again."
-                ),
+            msg = n_(
+                "A modification to the database could not be executed due"
+                " to simultaneous access. Please reload the page to try again."
             )
+            err = werkzeug.exceptions.InternalServerError(str(e.args))
+            return self.make_error_page(err, request, user, begin, msg)
         except Exception as e:
             self.logger.error(
                 f">>>\n>>>\n>>>\n>>> Exception while serving"
@@ -430,6 +420,7 @@ class Application(BaseApp):
 
             # generic errors
             # TODO add original_error after upgrading to werkzeug 1.0
+            #  We are at werkzeug 2.2.2 …
             return self.make_error_page(e, request, user, begin)
 
     def get_locale(self, request: werkzeug.wrappers.Request) -> str:
