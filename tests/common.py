@@ -1690,14 +1690,16 @@ class FrontendTest(BackendTest):
             other_selector = f"div#{div} div.alert"
             msg = msg or f"Couldn't find any such notification: {selector!r}."
             if other_notifications := self._get_nodes(other_selector, check_exists=False):
-                msg += " I found these notifications instead:\n"
+                msg += "\nI found these notifications instead:\n"
                 msg += "\n".join(
-                    f"{' '.join(sorted(node.classes))}:"
+                    f"\t{' '.join(sorted(node.classes))}:"
                     f" {self._normalize_whitespace(node.text_content())}"
                     for node in other_notifications
                 )
             else:
                 msg += " (There were no notifications)."
+            if errors := self.get_content("debug-data-errors", check_exists=False):
+                msg += "\nI found these errors in the debug data:\n\t" + errors
             self.fail(msg)
         if ntext is not None:
             # joining them this way is useful for meaningful failure message
@@ -1793,7 +1795,7 @@ class FrontendTest(BackendTest):
         if not error_containers:
             msg = f"Input with name {f!r} is not contained in an .has-{kind} box."
             if errors := self.get_content("debug-data-errors", check_exists=False):
-                msg += " I found these errors in the debug data: " + errors
+                msg += "\nI found these errors in the debug data:\n\t" + errors
             self.fail(msg)
 
         normalized = [re.sub(r'[\n\s]+', ' ', content) for content in error_containers]
@@ -2286,6 +2288,7 @@ class CronTest(CdEDBTest):
     event: ClassVar[EventBackend]
     pastevent: ClassVar[PastEventBackend]
     assembly: ClassVar[AssemblyBackend]
+    complaint: ClassVar[ComplaintBackend]
     ml: ClassVar[MlBackend]
 
     @classmethod
@@ -2297,6 +2300,7 @@ class CronTest(CdEDBTest):
         cls.event = make_cron_backend_proxy(cls.cron, cls.cron.core.eventproxy)
         cls.assembly = make_cron_backend_proxy(cls.cron, cls.cron.core.assemblyproxy)
         cls.ml = make_cron_backend_proxy(cls.cron, cls.cron.core.mlproxy)
+        cls.complaint = make_cron_backend_proxy(cls.cron, cls.cron.core.complaintproxy)
         cls._remaining_periodics = {
             job.cron['name']
             for frontend in (cls.cron.core, cls.cron.cde, cls.cron.event,

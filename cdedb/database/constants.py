@@ -759,6 +759,12 @@ class ComplaintEntryType(CdEIntEnum):
             ComplaintEntryType.agreement_measure,
         }
 
+    @property
+    def allows_attachment(self) -> bool:
+        return self in {
+            ComplaintEntryType.provisional_statement_given,
+        }
+
     def get_icon(self) -> str:
         et = ComplaintEntryType
         return {

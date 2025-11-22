@@ -6,6 +6,9 @@ import pathlib
 import shutil
 from collections.abc import Collection
 
+from cdedb.backend.assembly import AssemblyBackend
+from cdedb.backend.complaint import ComplaintBackend
+from cdedb.backend.core import CoreBackend
 from cdedb.backend.entity_keeper import EntityKeeper
 from cdedb.cli.util import (
     SAMPLE_DATA_JSON,
@@ -13,7 +16,6 @@ from cdedb.cli.util import (
     sanity_check_production,
     switch_user,
 )
-from cdedb.common import get_hash
 from cdedb.config import Config, SecretsConfig, get_configpath
 
 
@@ -78,6 +80,7 @@ def create_storage(conf: Config) -> None:
         "ballot_result",  # assembly: ballot result files
         "assembly_attachment",  # assembly: attachment files
         "testfiles",  # tests: all testfiles
+        "complaint_attachment",  # complaint: encrypted attachment files
     )
 
     _recreate_directory(storage_dir)
@@ -95,7 +98,7 @@ def populate_storage(conf: Config) -> None:
         raise RuntimeError("Create storage before you populate it.")
 
     foto = "e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9"
-    genesis = "71186e9b6f29e6c984b85a59bfb644a771dc58d286dcb40e5768d15258c0a8f1dac091feb7943d2d2fd4b038459585e8e42edaf3f493fff1c6c99d12b5f2d93d"
+    genesis = "picture.pdf"
     files = (
         "picture.pdf",  # core: genesis request file
         "picture.png",  # core: profile foto
@@ -117,16 +120,18 @@ def populate_storage(conf: Config) -> None:
     )
 
     testfile_dir = repo_path / "tests" / "ancillary_files"
-    attachment_dir = storage_dir / "assembly_attachment"
-    genesis_dir = storage_dir / "genesis_attachment"
 
-    shutil.copy(testfile_dir / foto, storage_dir / "foto")
-    shutil.copy(testfile_dir / "picture.pdf", genesis_dir / genesis)
+    core = CoreBackend()
+    core._foto_store.store((testfile_dir / foto).read_bytes())
+    core._genesis_attachment_store.store((testfile_dir / genesis).read_bytes())
 
+    complaint = ComplaintBackend()
+    complaint._attachment_store.store((testfile_dir / "form.pdf").read_bytes())
+
+    assembly = AssemblyBackend()
     for filename in ("rechen.pdf", "kassen.pdf", "kassen2.pdf", "kandidaten.pdf"):
         with open(testfile_dir / filename, "rb") as f:
-            hash_ = get_hash(f.read())
-        shutil.copy(testfile_dir / filename, attachment_dir / hash_)
+            assembly._attachment_store.store(f.read())
 
     for file in files:
         shutil.copy(testfile_dir / file, storage_dir / "testfiles")

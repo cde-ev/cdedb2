@@ -518,12 +518,12 @@
         small=False, horizontal=True, enforce_required=True) %}
     {% set label = gettext("Attachment") %}
     {% if values.get('attachment_hash') %}
-        {% set label = gettext("New Attachment") %}
         {{ util.input_hidden(name="attachment_hash") }}
         {{ util.input_hidden(name="attachment_filename") }}
-        {{ util.form_input_static(label=gettext("Attachment"),
+        {{ util.form_input_static(label=label, anid="cached_attachment",
                                   value=util.href(link, values['attachment_filename'], icon="download"), small=small, displayerrors=True, errorname="cached_attachment",
                                   info=gettext("We already saved your uploaded file, but you can provide a different file below.")) }}
+        {% set label = gettext("New Attachment") %}
     {% endif %}
     {{ form_input_file("attachment", label, info, displayerrors, readonly, accept, anid, aclass, small, horizontal,
                        enforce_required=enforce_required) }}

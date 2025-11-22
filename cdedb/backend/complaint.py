@@ -16,13 +16,15 @@ from cdedb.backend.common import (
     singularize,
 )
 from cdedb.common import (
-    BytesLike,
     CdEDBLog,
     CdEDBObject,
     DefaultReturnCode,
     RequestState,
     now,
+    unwrap,
 )
+from cdedb.common.attachment import EncryptedAttachmentStore
+from cdedb.common.crypt import get_decrypt, get_decrypt_decode, get_encrypt
 from cdedb.common.exceptions import AdverseCompanionError, PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
@@ -60,25 +62,66 @@ class ComplaintBackend(AbstractBackend):
         secrets = SecretsConfig()
         complaint_secret = secrets["COMPLAINT_SECRET"]
 
-        def encrypt(description: str | None) -> bytes | None:
-            if description is None:
-                return None
-            return models.ComplaintEntryVersion.encrypt(description, complaint_secret)
+        self.encrypt = get_encrypt(complaint_secret)
 
-        self.encrypt = staticmethod(encrypt)
+        self.decrypt = get_decrypt(complaint_secret)
+        self.decrypt_decode = get_decrypt_decode(complaint_secret)
 
-        def decrypt(description: BytesLike | None) -> str | None:
-            if description is None:
-                return None
-            if not isinstance(description, bytes):
-                description = bytes(description)
-            return models.ComplaintEntryVersion.decrypt(description, complaint_secret)
-
-        self.decrypt = staticmethod(decrypt)
+        self._attachment_store = EncryptedAttachmentStore(
+            self.conf['STORAGE_DIR'] / "complaint_attachment",
+            secret=complaint_secret,
+        )
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
+
+    @access("complaint_admin")
+    def get_attachment_store(self, rs: RequestState) -> EncryptedAttachmentStore:
+        return self._attachment_store
+
+    @access("complaint_admin")
+    def retrieve_attachment(
+        self, rs: RequestState, entry_id: int, version_nr: int
+    ) -> bytes | None:
+        entry_id = affirm(vtypes.ID, entry_id)
+        version_nr = affirm(vtypes.ID, version_nr)
+        case_id = self._get_case_id(rs, entry_id)
+        entry = self.get_case(rs, case_id).entries[entry_id]
+        entry_version = entry.all_versions[version_nr - 1]
+
+        if not entry_version.attachment_hash:
+            raise ValueError("Entry version has no attachment.")
+
+        if entry.entry_type.is_hidden and not self.is_unlocked(rs, case_id):
+            raise PrivilegeError
+
+        # attachment hash is obscured upon retrieval.
+        attachment_hash = cast(
+            str,
+            unwrap(
+                self.sql_select_one(
+                    rs,
+                    models.ComplaintEntryVersion.database_table,
+                    ["attachment_hash"],
+                    entry_version.id,
+                )
+            ),
+        )
+
+        return self.get_attachment_store(rs).get(attachment_hash)
+
+    @access("complaint_admin")
+    def get_attachment_usage(self, rs: RequestState, attachment_hash: str) -> bool:
+        attachment_hash = affirm(vtypes.Identifier, attachment_hash)
+        query = f"""
+            SELECT COUNT(*)
+            FROM {models.ComplaintEntryVersion.database_table}
+            WHERE attachment_hash = %(attachment_hash)s
+        """
+        return bool(
+            unwrap(self.query_one(rs, query, {"attachment_hash": attachment_hash}))
+        )
 
     @access("persona")
     def list_enforcers(self, rs: RequestState) -> set[vtypes.ID]:
@@ -361,6 +404,9 @@ class ComplaintBackend(AbstractBackend):
         new_version_id = self.sql_insert(
             rs, models.ComplaintEntryVersion.database_table, data
         )
+        if filehash := data.get("attachment_hash"):
+            if not self.get_attachment_store(rs).is_available(filehash):
+                raise RuntimeError(n_("File has been lost."))
         self.sql_insert_many(
             rs,
             "complaint.authors",
@@ -972,7 +1018,7 @@ class ComplaintBackend(AbstractBackend):
             query += "WHERE " + " AND ".join(conditions)
 
         return {
-            e["id"]: self.decrypt(e["description"]) or ""
+            e["id"]: self.decrypt_decode(e["description"]) or ""
             for e in self.query_all(rs, query, params)
         }
 

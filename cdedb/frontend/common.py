@@ -2124,6 +2124,7 @@ class AmbienceDict(typing.TypedDict):
     mailinglist: NotRequired[models_ml.Mailinglist]
     case: NotRequired[models_complaint.Case]
     entry: NotRequired[models_complaint.ComplaintEntry]
+    entry_version: NotRequired[models_complaint.ComplaintEntryVersion]
 
 
 def reconnoitre_ambience(obj: AbstractFrontend, rs: RequestState) -> AmbienceDict:
@@ -2323,14 +2324,20 @@ def reconnoitre_ambience(obj: AbstractFrontend, rs: RequestState) -> AmbienceDic
             'entry',
             (),
         ),
+        Scout(
+            lambda idx: ambience['entry'].all_versions[idx - 1],
+            'version_idx',
+            'entry_version',
+            (),
+        ),
     )
     scouts_dict = {s.param_name: s for s in scouts}
-    ambience = {}
+    ambience: AmbienceDict = {}
     for param, value in rs.requestargs.items():
         s = scouts_dict.get(param)
         if s and s.getter:
             try:
-                ambience[s.object_name] = s.getter(value)
+                ambience[s.object_name] = s.getter(value)  # type: ignore[literal-required]
             except KeyError:
                 raise werkzeug.exceptions.NotFound(
                     rs.gettext("Object {param}={value} not found").format(
@@ -2349,7 +2356,7 @@ def reconnoitre_ambience(obj: AbstractFrontend, rs: RequestState) -> AmbienceDic
         if param in scouts_dict:
             for consistency_checker in scouts_dict[param].dependencies:
                 consistency_checker(ambience)
-    return cast("AmbienceDict", ambience)
+    return ambience
 
 
 F = TypeVar('F', bound=Callable[..., Any])

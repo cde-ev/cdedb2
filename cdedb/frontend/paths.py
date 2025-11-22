@@ -195,6 +195,10 @@ rules = [
                     get_("/history", endpoint="case_history"),
                     get_("/change", endpoint="change_case_form"),
                     post("/change", endpoint="change_case"),
+                    get_(
+                        "/attachment/<filename:attachment_hash>",
+                        endpoint="get_cached_complaint_attachment",
+                    ),
                     post("/involved/add", endpoint="add_involved"),
                     sub(
                         "/involved/<int:persona_id>",
@@ -222,6 +226,10 @@ rules = [
                         post("/revoke", endpoint="revoke_entry"),
                         get_("/remove", endpoint="remove_entry_form"),
                         post("/remove", endpoint="remove_entry"),
+                        sub(
+                            "/version/<int:version_idx>",
+                            get_("/attachment", endpoint="get_complaint_attachment"),
+                        ),
                     ),
                     sub(
                         "/entry/<int:parent_id>",
