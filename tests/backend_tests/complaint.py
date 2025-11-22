@@ -72,7 +72,7 @@ class TestComplaintBackend(BackendTest):
                             timestamp=datetime.datetime(
                                 2025, 5, 28, 14, tzinfo=datetime.timezone.utc
                             ),
-                            attachment_hash="d28c1a205a1dfb4fd6f655d0e69e6512c676c9cd675f760ec41b6e8a57bde89d313f521d4fafc2f294a28bd8aff4a106032e904470b3249f9436f68ea1ec8020",
+                            attachment_hash="REDACTED:d28c1a205a1d",
                             attachment_title="Aussage von Charly",
                             attachment_filename="aussage_charly.pdf",
                             ctime=nearly_now(),

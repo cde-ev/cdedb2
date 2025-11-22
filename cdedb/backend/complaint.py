@@ -96,7 +96,15 @@ class ComplaintBackend(AbstractBackend):
         if entry.entry_type.is_hidden and not self.is_unlocked(rs, case_id):
             raise PrivilegeError
 
-        return self.get_attachment_store(rs).get(entry_version.attachment_hash)
+        # attachment hash is obscured upon retrieval.
+        data = self.sql_select_one(
+            rs,
+            models.ComplaintEntryVersion.database_table,
+            ["attachment_hash"],
+            entry_version.id,
+        )
+
+        return self.get_attachment_store(rs).get(data["attachment_hash"])
 
     @access("complaint_admin")
     def get_attachment_usage(self, rs: RequestState, attachment_hash: str) -> bool:

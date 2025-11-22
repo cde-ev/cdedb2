@@ -380,6 +380,8 @@ class ComplaintEntryVersion(CdEDataclass):
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:
         data["authors"] = set(data["authors"])
+        if data["attachment_hash"]:
+            data["attachment_hash"] = f"REDACTED:{data['attachment_hash'][:12]}"
         return super().from_database(data)
 
     @classmethod
