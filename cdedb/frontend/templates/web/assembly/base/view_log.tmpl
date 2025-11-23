@@ -25,7 +25,7 @@
             {% endif %}
             {% if entry['ballot_id'] %}
                 {% set ballot_link = util.href(
-                    cdedblink("assembly/shoe_ballot", {"assembly_id": entry['assembly_id'], "ballot_id": entry['ballot_id']}),
+                    cdedblink("assembly/show_ballot", {"assembly_id": entry['assembly_id'], "ballot_id": entry['ballot_id']}),
                     all_ballots[entry['ballot_id']], readonly=not may_view(entry['assembly_id'])
                 ) %}
             {% endif %}

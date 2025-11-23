@@ -268,7 +268,7 @@ class ComplaintLogFilter(GenericLogFilter):
 class AssemblyLogFilter(GenericLogFilter):
     log_table = "assembly.log"
     log_code_class = const.AssemblyLogCodes
-    additional_columns = ("assembly_id",)
+    additional_columns = ("assembly_id", "ballot_id")
 
     assembly_id: Optional[int] = None
     _assembly_ids: list[int] = dataclasses.field(default_factory=list)
