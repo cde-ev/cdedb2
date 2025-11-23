@@ -343,14 +343,8 @@ class AssemblyBackend(AbstractBackend):
         query = """
             INSERT INTO assembly.log
                 (code, assembly_id, ballot_id, submitted_by, persona_id, change_note)
-                VALUES (
-                    %(code)s,
-                    %(assembly_id)s,
-                    %(ballot_id)s,
-                    %(submitted_by)s,
-                    %(persona_id)s,
-                    %(change_note)s
-                )
+                VALUES (%(code)s, %(assembly_id)s, %(ballot_id)s, %(submitted_by)s,
+                        %(persona_id)s, %(change_note)s)
         """
         params = {
             "code": code,
@@ -1008,21 +1002,28 @@ class AssemblyBackend(AbstractBackend):
         return ret
 
     @access("assembly")
-    def list_ballots(self, rs: RequestState, assembly_id: int) -> dict[int, str]:
+    def list_ballots(self, rs: RequestState, assembly_id: int | None) -> dict[int, str]:
         """List all ballots of an assembly.
 
         :returns: Mapping of ballot ids to titles.
         """
-        assembly_id = affirm(vtypes.ID, assembly_id)
-        if not self.may_access(rs, assembly_id=assembly_id):
-            raise PrivilegeError(n_("Not privileged."))
-        data = self.sql_select(
-            rs,
-            "assembly.ballots",
-            ("id", "title"),
-            (assembly_id,),
-            entity_key="assembly_id",
-        )
+        assembly_id = affirm_optional(vtypes.ID, assembly_id)
+        if assembly_id:
+            if not self.may_access(rs, assembly_id=assembly_id):
+                raise PrivilegeError(n_("Not privileged."))
+            data = self.sql_select(
+                rs,
+                "assembly.ballots",
+                ("id", "title"),
+                (assembly_id,),
+                entity_key="assembly_id",
+            )
+        else:
+            # The latter two need this for AssemblyFrontend.view_log
+            if not {'member', 'auditor', 'assembly_admin'} & rs.user.roles:
+                raise PrivilegeError
+            query = "SELECT id, title FROM assembly.ballots"
+            data = self.query_all(rs, query, tuple())
         return {e['id']: e['title'] for e in data}
 
     @access("assembly")
@@ -1260,7 +1261,7 @@ class AssemblyBackend(AbstractBackend):
                         rs,
                         const.AssemblyLogCodes.candidate_added,
                         current['assembly_id'],
-                        ballot_id=new_candidate['ballot_id'],
+                        ballot_id=data['ballot_id'],
                         change_note=data['candidates'][x]['shortname'],
                     )
                 # updated
@@ -1272,7 +1273,7 @@ class AssemblyBackend(AbstractBackend):
                         rs,
                         const.AssemblyLogCodes.candidate_updated,
                         current['assembly_id'],
-                        ballot_id=new_candidate['ballot_id'],
+                        ballot_id=data['ballot_id'],
                         change_note=current['candidates'][x]['shortname'],
                     )
                 # deleted
@@ -1283,7 +1284,7 @@ class AssemblyBackend(AbstractBackend):
                             rs,
                             const.AssemblyLogCodes.candidate_removed,
                             current['assembly_id'],
-                            ballot_id=new_candidate['ballot_id'],
+                            ballot_id=data['ballot_id'],
                             change_note=current['candidates'][x]['shortname'],
                         )
         return ret

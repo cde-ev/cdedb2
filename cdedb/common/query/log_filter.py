@@ -272,11 +272,18 @@ class AssemblyLogFilter(GenericLogFilter):
 
     assembly_id: Optional[int] = None
     _assembly_ids: list[int] = dataclasses.field(default_factory=list)
+    ballot_id: Optional[int] = None
+    _ballot_ids: list[int] = dataclasses.field(default_factory=list)
 
     def assembly_ids(self) -> list[int]:
         if self.assembly_id:
             return [self.assembly_id]
         return self._assembly_ids
+
+    def ballot_ids(self) -> list[int]:
+        if self.ballot_id:
+            return [self.ballot_id]
+        return self._ballot_ids
 
     def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
         conditions, params = super()._get_sql_conditions()
@@ -284,6 +291,9 @@ class AssemblyLogFilter(GenericLogFilter):
         if self.assembly_ids():
             conditions.append("assembly_id = ANY(%s)")
             params.append(self.assembly_ids())
+        if self.ballot_ids():
+            conditions.append("ballot_id = ANY(%s)")
+            params.append(self.ballot_ids())
 
         return conditions, params
 
