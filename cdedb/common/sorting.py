@@ -180,15 +180,11 @@ class EntitySorter:
 
     @staticmethod
     def past_event(past_event: CdEDBObject) -> Sortkey:
-        return (past_event['tempus'], past_event['id'])
-
-    @staticmethod
-    def past_event_select_entries(past_event: CdEDBObject) -> Sortkey:
-        """
-        This groups the events by year descending, and then orders them by title for
-        better UX in _very_ long select inputs.
-        """
-        return (-past_event['tempus'].year, past_event['title'], past_event['id'])
+        return (
+            -past_event["tempus"].toordinal(),
+            past_event['title'],
+            past_event['id'],
+        )
 
     @staticmethod
     def past_course(past_course: CdEDBObject) -> Sortkey:

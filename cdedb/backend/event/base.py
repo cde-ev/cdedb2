@@ -31,7 +31,6 @@ from cdedb.backend.common import (
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
-    encrypt_password,
     internal,
     singularize,
 )
@@ -51,6 +50,7 @@ from cdedb.common import (
     now,
     unwrap,
 )
+from cdedb.common.crypt import encrypt_password
 from cdedb.common.exceptions import EventIsBalancedError, PrivilegeError
 from cdedb.common.fields import (
     PERSONA_EVENT_FIELDS,
@@ -281,10 +281,8 @@ class EventBaseBackend(EventLowLevelBackend):
             )
         return models.Event.many_from_database(event_data.values())
 
-    class _NewGetEventProtocol(Protocol):
-        def __call__(self, rs: RequestState, event_id: int) -> models.Event: ...
-
-    get_event: _NewGetEventProtocol = singularize(get_events, "event_ids", "event_id")
+    # The annonation for this lives in the lowlevel backend.
+    get_event = singularize(get_events, "event_ids", "event_id")
 
     @access("event")
     def verify_shortname_existence(self, rs: RequestState, shortname: str) -> bool:
@@ -855,36 +853,6 @@ class EventBaseBackend(EventLowLevelBackend):
             }
             # Set top-level event fields.
             if len(edata) > 1:
-                # Do additional validation for these references to custom datafields.
-                indirect_fields = set(
-                    edata[f]
-                    for f in ("lodge_field_id", "reimbursement_iban_field_id")
-                    if f in edata
-                )
-                if indirect_fields:
-                    indirect_data = {
-                        e['id']: e
-                        for e in self.sql_select(
-                            rs,
-                            "event.field_definitions",
-                            ("id", "event_id", "kind", "association"),
-                            indirect_fields,
-                        )
-                    }
-                    if edata.get('lodge_field_id'):
-                        self._validate_special_event_field(
-                            rs,
-                            data['id'],
-                            "lodge_field",
-                            indirect_data[edata['lodge_field_id']],
-                        )
-                    if edata.get('reimbursement_iban_field_id'):
-                        self._validate_special_event_field(
-                            rs,
-                            data['id'],
-                            "reimbursement_field",
-                            indirect_data[edata['reimbursement_iban_field_id']],
-                        )
                 ret *= self.sql_update(rs, "event.events", edata)
                 self.event_log(
                     rs,

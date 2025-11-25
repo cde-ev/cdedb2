@@ -39,7 +39,7 @@ help:
 
 PYTHONBIN ?= python3
 UV ?= uv
-RUFF ?= $(UV) run ruff --config pyproject.toml
+RUFF ?= $(UV) run ruff
 ISORT ?= $(RUFF) check --select I
 COVERAGE ?= $(PYTHONBIN) -m coverage
 MYPY ?= $(UV) run --all-groups mypy

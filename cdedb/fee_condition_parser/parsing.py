@@ -3,8 +3,10 @@ from functools import lru_cache
 import pyparsing as pp
 
 # Created according to https://stackoverflow.com/a/37903645/10315508
-_ALL_UNICODE_WHITESPACE = '\t\n\x0b\x0c\r\x1c\x1d\x1e\x1f \x85\xa0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006' \
-                          '\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000'
+_ALL_UNICODE_WHITESPACE = (
+    '\t\n\x0b\x0c\r\x1c\x1d\x1e\x1f \x85\xa0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006'
+    '\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000'
+)
 
 
 def create_parser() -> pp.ParserElement:
@@ -12,29 +14,33 @@ def create_parser() -> pp.ParserElement:
     operator_part_name = pp.CharsNotIn(_ALL_UNICODE_WHITESPACE + "()[]").set_name("part shortname")
     operator_field_name = pp.Word(pp.alphanums + "_").set_name("field name")
 
-    operator_field = pp.Group(pp.Combine(pp.Suppress(pp.CaselessKeyword("field") + '.') - operator_field_name))\
-        .set_results_name("field")
-    operator_part = pp.Group(pp.Combine(pp.Suppress(pp.CaselessKeyword("part") + '.') - operator_part_name))\
-        .set_results_name("part")
+    operator_field = pp.Group(
+        pp.Combine(pp.Suppress(pp.CaselessKeyword("field") + '.') - operator_field_name)
+    ).set_results_name("field")
+    operator_part = pp.Group(
+        pp.Combine(pp.Suppress(pp.CaselessKeyword("part") + '.') - operator_part_name)
+    ).set_results_name("part")
     operator_true = pp.Group(pp.CaselessKeyword("true").suppress()).setResultsName("true")
     operator_false = pp.Group(pp.CaselessKeyword("false").suppress()).setResultsName("false")
-    operator_other_bool = pp.Group(pp.CaselessKeyword("is_orga") | pp.CaselessKeyword("is_member")
-                                   | pp.CaselessKeyword("any_part") | pp.CaselessKeyword("all_parts"))\
-        .setResultsName("bool")
+    operator_other_bool = pp.Group(
+        pp.CaselessKeyword("is_orga")
+        | pp.CaselessKeyword("is_member")
+        | pp.CaselessKeyword("any_part")
+        | pp.CaselessKeyword("all_parts")
+    ).setResultsName("bool")
 
-    operator_age = pp.Group(pp.Combine(pp.Suppress(pp.CaselessKeyword("age") + ".U") - pp.Word(pp.nums)))\
-        .setResultsName("age")
+    operator_age = pp.Group(
+        pp.Combine(pp.Suppress(pp.CaselessKeyword("age") + ".U") - pp.Word(pp.nums))
+    ).setResultsName("age")
 
-    operator_bool_atom = (operator_field | operator_part | operator_true | operator_false | operator_other_bool | operator_age)\
-        .set_name("field, part, special bool, true or false")
+    operator_bool_atom = (
+        operator_field | operator_part | operator_true | operator_false | operator_other_bool | operator_age
+    ).set_name("field, part, special bool, true or false")
 
     # full expressions (forward declaration) and parenthesized expressions
     operator_or = pp.Forward().set_name("expression")
 
-    operator_parenthesis = (
-        (pp.Suppress("(") - operator_or - pp.Suppress(")"))
-        | operator_bool_atom
-    )
+    operator_parenthesis = (pp.Suppress("(") - operator_or - pp.Suppress(")")) | operator_bool_atom
 
     # Operators (right-chainable) in order of precendence
     operator_not = pp.Forward()

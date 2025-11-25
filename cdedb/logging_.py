@@ -28,7 +28,7 @@ def setup_root_logger() -> None:
 
     # setup handler
     handler: logging.Handler = MyJournalHandler(SYSLOG_IDENTIFIER="cdedb")
-    if (is_container := pathlib.Path("/CONTAINER").is_file()):
+    if is_container := pathlib.Path("/CONTAINER").is_file():
         # do not log anything in the CI
         if os.environ.get("CI"):
             handler = logging.NullHandler()
@@ -41,7 +41,7 @@ def setup_root_logger() -> None:
         " [{funcName} in {pathname} line {lineno}]"
         " [{CDB_DATABASE_NAME}]"
         " {message}"
-    ).strip()
+    ).strip()  # fmt: skip
     handler.setFormatter(MyFormatter(formatstr, style="{"))
     handler.setLevel(loglevel)
     logger.addHandler(handler)

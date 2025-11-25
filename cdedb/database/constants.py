@@ -10,6 +10,7 @@ their symbolic names provided by this module should be used.
 import builtins
 import collections
 import enum
+from functools import cached_property
 from typing import Optional
 
 from cdedb.uncommon.intenum import CdEIntEnum
@@ -29,6 +30,7 @@ def n_(x: str) -> str:  # pragma: no cover
 @enum.unique
 class Genders(CdEIntEnum):
     """Spec for field gender of core.personas."""
+
     female = 1  #:
     male = 2  #:
     #: this is a catch-all for complicated reality
@@ -39,6 +41,7 @@ class Genders(CdEIntEnum):
 @enum.unique
 class PersonaChangeStati(CdEIntEnum):
     """Spec for field code of core.changelog."""
+
     pending = 1  #:
     committed = 2  #:
     superseded = 10  #:
@@ -55,6 +58,7 @@ class EmailStatus(CdEIntEnum):
     states are: whitelist, unconfirmed, mailinglists_disabled, all_disabled,
     removed, unsuccessful_transmission.
     """
+
     normal = 1
     defect = 10
 
@@ -74,6 +78,7 @@ class EmailStatus(CdEIntEnum):
 @enum.unique
 class RegistrationPartStati(CdEIntEnum):
     """Spec for field status of event.registration_parts."""
+
     not_applied = -1  #:
     applied = 1  #:
     participant = 2  #:
@@ -84,10 +89,12 @@ class RegistrationPartStati(CdEIntEnum):
 
     @classmethod
     def involved_states(cls) -> tuple["RegistrationPartStati", ...]:
-        return (RegistrationPartStati.applied,
-                RegistrationPartStati.participant,
-                RegistrationPartStati.waitlist,
-                RegistrationPartStati.guest)
+        return (
+            RegistrationPartStati.applied,
+            RegistrationPartStati.participant,
+            RegistrationPartStati.waitlist,
+            RegistrationPartStati.guest,
+        )
 
     def is_involved(self) -> bool:
         """Any status which warrants further attention by the orgas."""
@@ -95,22 +102,34 @@ class RegistrationPartStati(CdEIntEnum):
 
     def is_present(self) -> bool:
         """Any status which will be on site for the event."""
-        return self in {RegistrationPartStati.participant,
-                        RegistrationPartStati.guest}
+        return self in {RegistrationPartStati.participant, RegistrationPartStati.guest}
 
     def has_to_pay(self) -> bool:
         """Any status which should pay the participation fee."""
-        return self in {RegistrationPartStati.applied,
-                        RegistrationPartStati.participant,
-                        RegistrationPartStati.waitlist}
+        return self in {
+            RegistrationPartStati.applied,
+            RegistrationPartStati.participant,
+            RegistrationPartStati.waitlist,
+        }
 
 
 @enum.unique
 class FieldAssociations(CdEIntEnum):
     """Coordinates fields to the entities they are attached to."""
+
     registration = 1  #:
     course = 2  #:
     lodgement = 3  #:
+
+    @cached_property
+    def database_table(self) -> str:
+        import cdedb.models.event as models_event  # noqa: PLC0415
+
+        return {
+            FieldAssociations.registration: models_event.Registration.database_table,
+            FieldAssociations.course: models_event.Course.database_table,
+            FieldAssociations.lodgement: models_event.Lodgement.database_table,
+        }[self]
 
     def get_icon(self) -> str:
         icons = {
@@ -124,6 +143,7 @@ class FieldAssociations(CdEIntEnum):
 @enum.unique
 class FieldDatatypes(CdEIntEnum):
     """Spec for the datatypes available as custom data fields."""
+
     str = 1  #:
     bool = 2  #:
     int = 3  #:
@@ -147,6 +167,7 @@ class FieldDatatypes(CdEIntEnum):
 @enum.unique
 class QuestionnaireUsages(CdEIntEnum):
     """Where a questionnaire row will be displayed."""
+
     registration = 1
     additional = 2
 
@@ -202,6 +223,7 @@ class CourseTrackGroupType(CdEIntEnum):
 @enum.unique
 class EventFeeType(CdEIntEnum):
     """Different kinds of event fees, to be displayed and/or treated differently."""
+
     common = 1
     storno = 2
     external = 3
@@ -313,6 +335,7 @@ class EventFeeBudget(CdEIntEnum):
 @enum.unique
 class NotifyOnRegistration(CdEIntEnum):
     """Options for how often orgas want to be notified about new registrations."""
+
     # Values > 0 are multiple of the periodic cycle (usually 15 minutes).
     everytime = -1
     never = 0
@@ -330,6 +353,7 @@ class NotifyOnRegistration(CdEIntEnum):
 @enum.unique
 class GenesisStati(CdEIntEnum):
     """Spec for field status of core.genesis_cases."""
+
     #: created, data logged, email unconfirmed
     unconfirmed = 1
     #: email confirmed, awaiting review
@@ -363,6 +387,7 @@ class GenesisStati(CdEIntEnum):
 @enum.unique
 class PrivilegeChangeStati(CdEIntEnum):
     """Spec for field status of core.privilege_changes."""
+
     #: initialized, pending for review
     pending = 1
     #: approved by another admin
@@ -413,6 +438,7 @@ class MailinglistTypes(CdEIntEnum):
 
     def optgroup_label(self) -> str:
         from cdedb.models.ml import ML_TYPE_MAP  # noqa: PLC0415
+
         if self in ML_TYPE_MAP:
             return str(ML_TYPE_MAP[self].sortkey)
         return ""
@@ -471,6 +497,7 @@ class MailinglistRosterVisibility(CdEIntEnum):
 
     Roster of inactive mailinglists are always hidden.
     """
+
     none = 1
     subscribable = 10
     viewers = 20
@@ -479,6 +506,7 @@ class MailinglistRosterVisibility(CdEIntEnum):
 @enum.unique
 class ModerationPolicy(CdEIntEnum):
     """Regulate posting of mail to a list."""
+
     unmoderated = 1  #:
     #: subscribers may post without moderation, but external mail is reviewed
     non_subscribers = 2
@@ -491,6 +519,7 @@ class AttachmentPolicy(CdEIntEnum):
 
     This is currently only a tri-state, so we implement it as an enum.
     """
+
     allow = 1  #:
     #: allow the mime-type application/pdf but nothing else
     pdf_only = 2
@@ -500,6 +529,7 @@ class AttachmentPolicy(CdEIntEnum):
 @enum.unique
 class LastschriftTransactionStati(CdEIntEnum):
     """Basically store the outcome (if it exists) of a transaction."""
+
     issued = 1  #:
     skipped = 2  #:
     success = 10  #:
@@ -509,15 +539,18 @@ class LastschriftTransactionStati(CdEIntEnum):
 
     def is_finalized(self) -> bool:
         """Whether the transaction was already tallied."""
-        return self in {LastschriftTransactionStati.success,
-                        LastschriftTransactionStati.failure,
-                        LastschriftTransactionStati.cancelled,
-                        LastschriftTransactionStati.rollback}
+        return self in {
+            LastschriftTransactionStati.success,
+            LastschriftTransactionStati.failure,
+            LastschriftTransactionStati.cancelled,
+            LastschriftTransactionStati.rollback,
+        }
 
 
 @enum.unique
 class PastInstitutions(CdEIntEnum):
     """Insitutions for (primarily past) events, used for sorting into categories."""
+
     cde = 1  #:
     dsa = 20  #:
     dja = 40  #:
@@ -549,6 +582,7 @@ class PastInstitutions(CdEIntEnum):
 @enum.unique
 class ComplaintKind(CdEIntEnum):
     """Rough kinds a complaint may have"""
+
     physical_sexual_transgression = 1
     physical_nonsexual_violence = 2
     nonphysical_sexual_transgression = 3
@@ -563,6 +597,7 @@ class ComplaintKind(CdEIntEnum):
 @enum.unique
 class ComplaintInvolvementType(CdEIntEnum):
     """Types of involvements in a complaint case."""
+
     affected = 1
     appellant = 11  #: presumed not to be primarily affected. Always informed
     target = 21  #: whom a complaint is "against"
@@ -604,6 +639,7 @@ class ComplaintEntryType(CdEIntEnum):
     Some things are shown in the entries, even though they are pulled in
     from the logs instead. Those can not be replaced later on.
     """
+
     # Initial
     generic_information = 101  #:
 
@@ -705,7 +741,9 @@ class ComplaintEntryType(CdEIntEnum):
     def has_description(self) -> bool:
         et = ComplaintEntryType
         return self not in {
-            et.statement_signed, et.statement_sent, et.statement_received,
+            et.statement_signed,
+            et.statement_sent,
+            et.statement_received,
         }
 
     @property
@@ -719,6 +757,13 @@ class ComplaintEntryType(CdEIntEnum):
             ComplaintEntryType.provisional_measure,
             ComplaintEntryType.definite_measure,
             ComplaintEntryType.agreement_measure,
+        }
+
+    @property
+    def allows_attachment(self) -> bool:
+        return self in {
+            ComplaintEntryType.generic_information,
+            ComplaintEntryType.provisional_statement_given,
         }
 
     def get_icon(self) -> str:
@@ -777,6 +822,7 @@ class ComplaintEntryType(CdEIntEnum):
 @enum.unique
 class CoreLogCodes(CdEIntEnum):
     """Available log messages core.log."""
+
     persona_creation = 1  #:
     persona_change = 2  #:
     persona_archived = 3  #:
@@ -844,6 +890,7 @@ class ComplaintLogCodes(CdEIntEnum):
 @enum.unique
 class CdeLogCodes(CdEIntEnum):
     """Available log messages cde.log."""
+
     semester_bill = 10
     semester_bill_with_addresscheck = 11
     semester_ejection = 12
@@ -860,6 +907,7 @@ class CdeLogCodes(CdEIntEnum):
 @enum.unique
 class FinanceLogCodes(CdEIntEnum):
     """Available log messages cde.finance_log."""
+
     new_member = 1  #:
     gain_membership = 2  #:
     lose_membership = 3  #:
@@ -889,6 +937,7 @@ class FinanceLogCodes(CdEIntEnum):
 @enum.unique
 class EventLogCodes(CdEIntEnum):
     """Available log messages event.log."""
+
     event_created = 1  #:
     event_changed = 2  #:
     event_deleted = 3  #:
@@ -971,6 +1020,7 @@ class EventLogCodes(CdEIntEnum):
 @enum.unique
 class PastEventLogCodes(CdEIntEnum):
     """Available log messages past_event.log."""
+
     event_created = 1  #:
     event_changed = 2  #:
     event_deleted = 3  #:
@@ -988,6 +1038,7 @@ class PastEventLogCodes(CdEIntEnum):
 @enum.unique
 class AssemblyLogCodes(CdEIntEnum):
     """Available log messages core.log."""
+
     assembly_created = 1  #:
     assembly_changed = 2  #:
     assembly_concluded = 3  #:
@@ -1016,6 +1067,7 @@ class AssemblyLogCodes(CdEIntEnum):
 @enum.unique
 class MlLogCodes(CdEIntEnum):
     """Available log messages for ml.log."""
+
     list_created = 1  #:
     list_changed = 2  #:
     list_deleted = 3  #:
@@ -1064,4 +1116,5 @@ class MlLogCodes(CdEIntEnum):
 @enum.unique
 class LockType(CdEIntEnum):
     """Types of Locks."""
+
     mailman = 1  #:

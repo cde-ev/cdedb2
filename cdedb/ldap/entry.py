@@ -65,8 +65,9 @@ class CdEDBBaseLDAPEntry(
     dn: DistinguishedName
     attributes: dict[bytes, LDAPAttributeSet]
 
-    def __init__(self, dn: DistinguishedName, backend: LDAPsqlBackend,
-                 attributes: LDAPObject) -> None:
+    def __init__(
+        self, dn: DistinguishedName, backend: LDAPsqlBackend, attributes: LDAPObject
+    ) -> None:
         """Create a new entry object.
 
         Note that this gets an instance of the LDAPsqlBackend and the attributes of the
@@ -89,8 +90,9 @@ class CdEDBBaseLDAPEntry(
     def __getitem__(self, key: bytes) -> LDAPAttributeSet:
         return self.attributes[key]
 
-    def get(self, key: bytes, default: Optional[LDAPAttributeSet] = None,
-            ) -> LDAPAttributeSet:
+    def get(
+        self, key: bytes, default: Optional[LDAPAttributeSet] = None
+    ) -> LDAPAttributeSet:
         if key in self:
             return self[key]
         return default
@@ -174,11 +176,11 @@ class CdEDBBaseLDAPEntry(
         # and higher up in the stack (e.g. access control).
         if scope == pureldap.LDAP_SCOPE_wholeSubtree:
             entries = await self.subtree(
-                bound_dn, filterObject=filterObject, attributes=attributes,
+                bound_dn, filterObject=filterObject, attributes=attributes
             )
         elif scope == pureldap.LDAP_SCOPE_singleLevel:
             entries = await self.children(
-                bound_dn, filterObject=filterObject, attributes=attributes,
+                bound_dn, filterObject=filterObject, attributes=attributes
             )
         elif scope == pureldap.LDAP_SCOPE_baseObject:
             entries = [self]
@@ -215,15 +217,14 @@ class CdEDBBaseLDAPEntry(
         """List the subtree rooted at this entry, including this entry."""
         result = [self]
         children = await self.children(
-            bound_dn=bound_dn, filterObject=filterObject, attributes=attributes,
+            bound_dn=bound_dn, filterObject=filterObject, attributes=attributes
         )
-        subtrees = await asyncio.gather(
-            *[
-                child.subtree(
-                    bound_dn=bound_dn, filterObject=filterObject, attributes=attributes,
-                )
-                for child in children
-            ])
+        subtrees = await asyncio.gather(*[
+            child.subtree(
+                bound_dn=bound_dn, filterObject=filterObject, attributes=attributes
+            )
+            for child in children
+        ])
         for tree in subtrees:
             result.extend(tree)
         return result
@@ -310,10 +311,10 @@ class CdEPreLeafEntry(CdEDBStaticEntry, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     async def children_lister(
-            self,
-            bound_dn: Optional[BoundDn] = None,
-            *,
-            filterObject: Optional[pureldap.LDAPFilter] = None,
+        self,
+        bound_dn: Optional[BoundDn] = None,
+        *,
+        filterObject: Optional[pureldap.LDAPFilter] = None,
     ) -> list[DistinguishedName]:
         """List all children of this entry.
 
@@ -357,8 +358,10 @@ class CdEPreLeafEntry(CdEDBStaticEntry, metaclass=abc.ABCMeta):
     ) -> LDAPEntries:
         dns = await self.children_lister(bound_dn=bound_dn, filterObject=filterObject)
         children = await self.children_getter(dns, attributes=attributes)
-        ret = [self.ChildGroup(dn, backend=self.backend, attributes=attributes) for
-               dn, attributes in children.items()]
+        ret = [
+            self.ChildGroup(dn, backend=self.backend, attributes=attributes)
+            for dn, attributes in children.items()
+        ]
         return ret
 
     async def lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:
@@ -369,8 +372,7 @@ class CdEPreLeafEntry(CdEDBStaticEntry, metaclass=abc.ABCMeta):
             if not child_attributes:
                 raise LDAPNoSuchObject(dn.getText())
             [attributes] = child_attributes.values()
-            child = self.ChildGroup(dn, backend=self.backend,
-                                    attributes=attributes)
+            child = self.ChildGroup(dn, backend=self.backend, attributes=attributes)
             return await child.lookup(dn)
         else:
             raise LDAPNoSuchObject(dn.getText())
@@ -941,10 +943,14 @@ class AnyGroupsEntry(CdEDBStaticEntry):
         attributes: Optional[AttributeDescriptionList] = None,
     ) -> LDAPEntries:
         data = await asyncio.gather(
-            self.backend.get_any_presider_group(), self.backend.get_any_orga_group(),
-            self.backend.get_any_moderator_group())
-        ret = [AnyGroupEntry(dn, backend=self.backend, attributes=attributes)
-               for dn, attributes in data]
+            self.backend.get_any_presider_group(),
+            self.backend.get_any_orga_group(),
+            self.backend.get_any_moderator_group(),
+        )
+        ret = [
+            AnyGroupEntry(dn, backend=self.backend, attributes=attributes)
+            for dn, attributes in data
+        ]
         return ret
 
     async def lookup(self, dn: DistinguishedName) -> CdEDBBaseLDAPEntry:

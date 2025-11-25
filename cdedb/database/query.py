@@ -23,8 +23,17 @@ from cdedb.models.common import CdEDataclass
 # The following are meant to be used for type hinting the sql backend methods.
 # DatabaseValue is for any singular value that should be written into the database or
 # compared to something already stored.
-DatabaseValue = Union[int, str, enum.IntEnum, float, datetime.date, datetime.datetime,
-                      decimal.Decimal, None, PsycoJson]
+DatabaseValue = Union[
+    int,
+    str,
+    enum.IntEnum,
+    float,
+    datetime.date,
+    datetime.datetime,
+    decimal.Decimal,
+    None,
+    PsycoJson,
+]
 # DatabaseValue_s is either a singular value or a collection of such values, e.g. to be
 # used with an "ANY(%s)" like comparison.
 DatabaseValue_s = Union[DatabaseValue, Collection[DatabaseValue]]
@@ -51,8 +60,9 @@ class SqlQueryBackend:
     def __init__(self, logger: logging.Logger) -> None:
         self.logger = logger
 
-    def execute_db_query(self, cur: psycopg2.extensions.cursor, query: str,
-                         params: Params) -> None:
+    def execute_db_query(
+        self, cur: psycopg2.extensions.cursor, query: str, params: Params
+    ) -> None:
         """Perform a database query. This low-level wrapper should be used
         for all explicit database queries, mostly because it invokes
         :py:meth:`to_db_input`. However in nearly all cases you want to
@@ -68,20 +78,23 @@ class SqlQueryBackend:
             sanitized_params = {k: to_db_input(p) for k, p in params.items()}
         else:
             sanitized_params = tuple(to_db_input(p) for p in params)
-        self.logger.debug(f"Execute PostgreSQL query"
-                          f" {cur.mogrify(query, sanitized_params).decode()}.")
+        self.logger.debug(
+            f"Execute PostgreSQL query {cur.mogrify(query, sanitized_params).decode()}."
+        )
         cur.execute(query, sanitized_params)
 
-    def query_exec(self, container: ConnectionContainer, query: str,
-                   params: Params) -> int:
+    def query_exec(
+        self, container: ConnectionContainer, query: str, params: Params
+    ) -> int:
         """Execute a query in a safe way (inside a transaction)."""
         with container.conn as conn:
             with conn.cursor() as cur:
                 self.execute_db_query(cur, query, params)
                 return cur.rowcount
 
-    def query_one(self, container: ConnectionContainer, query: str,
-                  params: Params) -> Optional[CdEDBObject]:
+    def query_one(
+        self, container: ConnectionContainer, query: str, params: Params
+    ) -> Optional[CdEDBObject]:
         """Execute a query in a safe way (inside a transaction).
 
         :returns: First result of query or None if there is none
@@ -91,8 +104,9 @@ class SqlQueryBackend:
                 self.execute_db_query(cur, query, params)
                 return from_db_output(cur.fetchone())
 
-    def query_all(self, container: ConnectionContainer, query: str,
-                  params: Params) -> tuple[CdEDBObject, ...]:
+    def query_all(
+        self, container: ConnectionContainer, query: str, params: Params
+    ) -> tuple[CdEDBObject, ...]:
         """Execute a query in a safe way (inside a transaction).
 
         :returns: all results of query
@@ -101,14 +115,19 @@ class SqlQueryBackend:
             with conn.cursor() as cur:
                 self.execute_db_query(cur, query, params)
                 return tuple(
-                    cast(CdEDBObject, from_db_output(x))
-                    for x in cur.fetchall())
+                    cast(CdEDBObject, from_db_output(x)) for x in cur.fetchall()
+                )
 
-    def sql_insert(self, container: ConnectionContainer, table: str, data: CdEDBObject,
-                   entity_key: str = "id", drop_on_conflict: bool = False,
-                   update_on_conflict: bool = False,
-                   conflict_target: Optional[str] = None,
-                   ) -> int:
+    def sql_insert(
+        self,
+        container: ConnectionContainer,
+        table: str,
+        data: CdEDBObject,
+        entity_key: str = "id",
+        drop_on_conflict: bool = False,
+        update_on_conflict: bool = False,
+        conflict_target: Optional[str] = None,
+    ) -> int:
         """Generic SQL insertion query.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -124,8 +143,10 @@ class SqlQueryBackend:
         if update_on_conflict and not conflict_target:
             raise ValueError("A conflict target must be provided.")
         keys = tuple(key for key in data)
-        query = (f"INSERT INTO {table} ({', '.join(keys)}) VALUES"
-                 f" ({', '.join(('%s',) * len(keys))})")
+        query = (
+            f"INSERT INTO {table} ({', '.join(keys)}) VALUES"
+            f" ({', '.join(('%s',) * len(keys))})"
+        )
         if drop_on_conflict:
             query += " ON CONFLICT DO NOTHING"
         if update_on_conflict:
@@ -135,8 +156,9 @@ class SqlQueryBackend:
         params = tuple(data[key] for key in keys)
         return unwrap(self.query_one(container, query, params)) or 0
 
-    def sql_insert_many(self, container: ConnectionContainer, table: str,
-                        data: Sequence[CdEDBObject]) -> int:
+    def sql_insert_many(
+        self, container: ConnectionContainer, table: str, data: Sequence[CdEDBObject]
+    ) -> int:
         """Generic SQL query to insert multiple datasets with the same keys.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -153,18 +175,26 @@ class SqlQueryBackend:
                 raise ValueError(n_("Dict keys do not match."))
             params.extend(entry[k] for k in keys)
         # Create len(data) many row placeholders for len(keys) many values.
-        value_list = ", ".join(("({})".format(", ".join(("%s",) * len(keys))),)
-                               * len(data))
+        value_list = ", ".join(
+            ("({})".format(", ".join(("%s",) * len(keys))),) * len(data)
+        )
         query = f"INSERT INTO {table} ({', '.join(keys)}) VALUES {value_list}"
         return self.query_exec(container, query, params)
 
-    def sql_insert_dataclass(self, container: ConnectionContainer, datum: CdEDataclass,
-                             ) -> int:
+    def sql_insert_dataclass(
+        self, container: ConnectionContainer, datum: CdEDataclass
+    ) -> int:
         return self.sql_insert(container, datum.database_table, datum.to_database())
 
-    def sql_select(self, container: ConnectionContainer, table: str,
-                   columns: Sequence[str], entities: EntityKeys, *,
-                   entity_key: str = "id") -> tuple[CdEDBObject, ...]:
+    def sql_select(
+        self,
+        container: ConnectionContainer,
+        table: str,
+        columns: Sequence[str],
+        entities: EntityKeys,
+        *,
+        entity_key: str = "id",
+    ) -> tuple[CdEDBObject, ...]:
         """Generic SQL select query.
 
         This is one of a set of functions which provides formatting and
@@ -175,23 +205,31 @@ class SqlQueryBackend:
         here the formatting and execution are left as an exercise to the
         reader. ;)
         """
-        query = (f"SELECT {', '.join(columns)} FROM {table}"
-                 f" WHERE {entity_key} = ANY(%s)")
+        query = f"SELECT {', '.join(columns)} FROM {table} WHERE {entity_key} = ANY(%s)"
         return self.query_all(container, query, (entities,))
 
-    def sql_select_one(self, container: ConnectionContainer, table: str,
-                       columns: Sequence[str], entity: EntityKey,
-                       entity_key: str = "id") -> Optional[CdEDBObject]:
+    def sql_select_one(
+        self,
+        container: ConnectionContainer,
+        table: str,
+        columns: Sequence[str],
+        entity: EntityKey,
+        entity_key: str = "id",
+    ) -> Optional[CdEDBObject]:
         """Generic SQL select query for one row.
 
         See :py:meth:`sql_select` for thoughts on this.
         """
-        query = (f"SELECT {', '.join(columns)} FROM {table}"
-                 f" WHERE {entity_key} = %s")
+        query = f"SELECT {', '.join(columns)} FROM {table} WHERE {entity_key} = %s"
         return self.query_one(container, query, (entity,))
 
-    def sql_update(self, container: ConnectionContainer, table: str, data: CdEDBObject,
-                   entity_key: str = "id") -> int:
+    def sql_update(
+        self,
+        container: ConnectionContainer,
+        table: str,
+        data: CdEDBObject,
+        entity_key: str = "id",
+    ) -> int:
         """Generic SQL update query.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -202,14 +240,21 @@ class SqlQueryBackend:
         if not keys:
             # no input is an automatic success
             return 1
-        query = (f"UPDATE {table} SET ({', '.join(keys)}) ="
-                 f" ROW({', '.join(('%s',) * len(keys))})"
-                 f" WHERE {entity_key} = %s")
+        query = (
+            f"UPDATE {table} SET ({', '.join(keys)}) ="
+            f" ROW({', '.join(('%s',) * len(keys))})"
+            f" WHERE {entity_key} = %s"
+        )
         params = tuple(data[key] for key in keys) + (data[entity_key],)
         return self.query_exec(container, query, params)
 
-    def sql_update_many(self, container: ConnectionContainer, table: str,
-                        data: Collection[CdEDBObject], entity_key: str = "id") -> int:
+    def sql_update_many(
+        self,
+        container: ConnectionContainer,
+        table: str,
+        data: Collection[CdEDBObject],
+        entity_key: str = "id",
+    ) -> int:
         """Generic SQL update query.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -228,18 +273,24 @@ class SqlQueryBackend:
 
         # query pattern taken from https://stackoverflow.com/a/18799497
         dataline = "(%s" + ", %s" * len(keys) + ")"
-        query = (f"UPDATE {table} AS t"
-                 f" SET {', '.join(f'{key} = d.{key}' for key in keys)}"
-                 f" FROM  (VALUES"
-                 f"    {', '.join((dataline,) * len(data))}"
-                 f" ) AS d({', '.join(all_keys)})"
-                 f" WHERE d.{entity_key} = t.{entity_key}")
+        query = (
+            f"UPDATE {table} AS t"
+            f" SET {', '.join(f'{key} = d.{key}' for key in keys)}"
+            f" FROM  (VALUES"
+            f"    {', '.join((dataline,) * len(data))}"
+            f" ) AS d({', '.join(all_keys)})"
+            f" WHERE d.{entity_key} = t.{entity_key}"
+        )
         params = sum((tuple(entity[key] for key in all_keys) for entity in data), ())
         return self.query_exec(container, query, params)
 
-    def sql_json_inplace_update(self, container: ConnectionContainer, table: str,
-                                data: CdEDBObject, entity_key: str = "id",
-                                ) -> int:
+    def sql_json_inplace_update(
+        self,
+        container: ConnectionContainer,
+        table: str,
+        data: CdEDBObject,
+        entity_key: str = "id",
+    ) -> int:
         """Generic SQL update query for JSON fields storing a dict.
 
         This leaves missing keys unmodified.
@@ -252,15 +303,19 @@ class SqlQueryBackend:
         if not keys:
             # no input is an automatic success
             return 1
-        commands = ", ".join(f"{key} = {key} || %s"
-                             for key in keys)
+        commands = ", ".join(f"{key} = {key} || %s" for key in keys)
         query = f"UPDATE {table} SET {commands} WHERE {entity_key} = %s"
         params = tuple(PsycoJson(data[key]) for key in keys)
         params += (data[entity_key],)
         return self.query_exec(container, query, params)
 
-    def sql_delete(self, container: ConnectionContainer, table: str,
-                   entities: EntityKeys, entity_key: str = "id") -> int:
+    def sql_delete(
+        self,
+        container: ConnectionContainer,
+        table: str,
+        entities: EntityKeys,
+        entity_key: str = "id",
+    ) -> int:
         """Generic SQL deletion query.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -270,8 +325,13 @@ class SqlQueryBackend:
         query = f"DELETE FROM {table} WHERE {entity_key} = ANY(%s)"
         return self.query_exec(container, query, (entities,))
 
-    def sql_delete_one(self, container: ConnectionContainer, table: str,
-                       entity: EntityKey, entity_key: str = "id") -> int:
+    def sql_delete_one(
+        self,
+        container: ConnectionContainer,
+        table: str,
+        entity: EntityKey,
+        entity_key: str = "id",
+    ) -> int:
         """Generic SQL deletion query for a single row.
 
         See :py:meth:`sql_select` for thoughts on this.
@@ -281,8 +341,9 @@ class SqlQueryBackend:
         query = f"DELETE FROM {table} WHERE {entity_key} = %s"
         return self.query_exec(container, query, (entity,))
 
-    def sql_defer_constraints(self, container: ConnectionContainer, *constraints: str,
-                              ) -> DefaultReturnCode:
+    def sql_defer_constraints(
+        self, container: ConnectionContainer, *constraints: str
+    ) -> DefaultReturnCode:
         """Helper for deferring the given constraints for the current transaction."""
         query = f"SET CONSTRAINTS {', '.join(constraints)} DEFERRED"
         return self.query_exec(container, query, ())

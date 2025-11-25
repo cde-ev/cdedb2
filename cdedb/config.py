@@ -171,11 +171,9 @@ _DEFAULTS = {
     ##################
 
     # timeout for protected url parameters to prevent replay
-    "PARAMETER_TIMEOUT": datetime.timedelta(hours=1),
-    # timeout for protected parameters, that are not security related
-    "UNCRITICAL_PARAMETER_TIMEOUT": datetime.timedelta(days=1),
-    # timeoue for parameters, in unsuspected emails (triggered by another user)
-    "EMAIL_PARAMETER_TIMEOUT": datetime.timedelta(days=2),
+    "PARAMETER_TIMEOUT": datetime.timedelta(hours=3),
+    # timeout for protected parameters, that are not security related or are triggered by another user.
+    "EXTENDED_PARAMETER_TIMEOUT": datetime.timedelta(days=5),
     # maximum length of rationale for requesting an account
     "MAX_RATIONALE": 500,
     # for shortnames longer than this, a ValidationWarning will be raised
@@ -260,6 +258,7 @@ _DEFAULTS = {
         "vorstand@cde-ev.de": "Vorstand",
         "probleme-mit-dem-vorstand@lists.cde-ev.de":
             "Ansprechpartner für Probleme mit dem Vorstand",
+        "fallkoordination@lists.cde-ev.de": "Vermittlungs- und Beschwerdestelle für personenbezogene Probleme",
         "feedback@lists.cde-ev.de": "Feedback-Team",
     },
 
@@ -375,7 +374,7 @@ _DEFAULTS = {
 
     # this can be found and overridden in cdedb2/query_defaults.py
 
-}
+}  # fmt: skip
 
 #: defaults for :py:class:`SecretsConfig`
 _SECRECTS_DEFAULTS = {
@@ -422,7 +421,7 @@ _SECRECTS_DEFAULTS = {
         "keycloak": "secret",
         "test": "secret",
     },
-}
+}  # fmt: skip
 
 
 def _import_from_file(path: pathlib.Path) -> MutableMapping[str, Any]:
@@ -449,7 +448,8 @@ class BaseConfig(Mapping[str, Any], abc.ABC):
 
         if not pathlib.Path(configpath).is_file():
             raise RuntimeError(  # pragma: no cover
-                f"Config file {configpath} not found!")
+                f"Config file {configpath} not found!"
+            )
 
         self._process_config_overwrite()
 
@@ -470,7 +470,8 @@ class BaseConfig(Mapping[str, Any], abc.ABC):
             old_configpath = self._configpath
             if not pathlib.Path(configpath).is_file():
                 raise RuntimeError(  # pragma: no cover
-                    f"Config file {configpath} not found!")
+                    f"Config file {configpath} not found!"
+                )
             self._configpath = configpath
             _LOGGER.info(f"Configpath changed: {old_configpath} -> {configpath}")
             self._process_config_overwrite()
@@ -540,6 +541,9 @@ class TestConfig(Config):
         """
         override = _import_from_file(self._configpath)
         self._configchain = collections.ChainMap(override, _DEFAULTS)
+        # This is a bit hacky, but the only opportunity to ensure the used log
+        #  level is the one specified in the config.
+        _ROOT_LOGGER.setLevel(self._configchain["LOG_LEVEL"])
 
 
 class SecretsConfig(BaseConfig):
@@ -557,7 +561,8 @@ class SecretsConfig(BaseConfig):
     def _process_config_overwrite(self) -> None:
         override = _import_from_file(self._configpath)
         override = {
-            key: value for key, value in override.items() if key in _SECRECTS_DEFAULTS}
+            key: value for key, value in override.items() if key in _SECRECTS_DEFAULTS
+        }
 
         # for security reasons, do not use the _SECRETS_DEFAULT in production
         if pathlib.Path("/PRODUCTIONVM").is_file():

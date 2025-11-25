@@ -8,6 +8,7 @@ on boilerplate.
 Additionally this provides some level of guidance on how to interact
 with the production environment.
 """
+
 import contextlib
 import getpass
 import gettext
@@ -60,8 +61,9 @@ class TempConfig:
 
     def __init__(self, configpath: Optional[PathLike] = None, **config: Any):
         if configpath and config:  # pragma: no cover
-            raise ValueError(f"Do not provide both config ({config}) and"
-                             f" configpath ({configpath}).")
+            raise ValueError(
+                f"Do not provide both config ({config}) and configpath ({configpath})."
+            )
         self._configpath = configpath
         self._config = config
         # this will be used to hold the current configpath from the environment
@@ -86,8 +88,10 @@ class TempConfig:
             # real_config options, they overwrite them if necessary
             for k, v in self._config.items():
                 if k in secrets:
-                    msg = ("Override secret config options via kwarg is not possible."
-                           " Please use the SECRET_CONFIGPATH config argument instead.")
+                    msg = (
+                        "Override secret config options via kwarg is not possible."
+                        " Please use the SECRET_CONFIGPATH config argument instead."
+                    )
                     raise ValueError(msg)
                 f.write(f"\n{k} = {v}")
             f.flush()
@@ -96,9 +100,12 @@ class TempConfig:
             assert self._configpath is not None
             set_configpath(self._configpath)
 
-    def __exit__(self, exc_type: Optional[type[Exception]],
-                 exc_val: Optional[Exception],
-                 exc_tb: Optional[TracebackType]) -> Optional[bool]:
+    def __exit__(
+        self,
+        exc_type: Optional[type[Exception]],
+        exc_val: Optional[Exception],
+        exc_tb: Optional[TracebackType],
+    ) -> Optional[bool]:
         # restore the real configpath
         set_configpath(self._real_configpath)
         # last of all, stop marking new configs as frozen
@@ -136,14 +143,19 @@ class Script:
 
     _conn: IrradiatedConnection
 
-    def __init__(self, *, persona_id: Optional[int] = None,
-                 dry_run: Optional[bool] = None, dbuser: str = 'cdb_anonymous',
-                 outfile: Optional[PathLike] = None,
-                 outfile_append: Optional[bool] = None,
-                 cursor: type[
-                     psycopg2.extensions.cursor] = psycopg2.extras.RealDictCursor,
-                 check_system_user: bool = True, configpath: Optional[PathLike] = None,
-                 **config: Any):
+    def __init__(
+        self,
+        *,
+        persona_id: Optional[int] = None,
+        dry_run: Optional[bool] = None,
+        dbuser: str = 'cdb_anonymous',
+        outfile: Optional[PathLike] = None,
+        outfile_append: Optional[bool] = None,
+        cursor: type[psycopg2.extensions.cursor] = psycopg2.extras.RealDictCursor,
+        check_system_user: bool = True,
+        configpath: Optional[PathLike] = None,
+        **config: Any,
+    ):
         """Setup a helper class containing everything you might need for a script.
 
         The parameters `persona_id`, `dry_run` and `configpath` may be left out, in
@@ -179,7 +191,8 @@ class Script:
         if persona_id is None:
             persona_id = int(os.environ.get("SCRIPT_PERSONA_ID", "-1"))
         self.persona_id = int(
-            os.environ.get("EVOLUTION_TRIAL_OVERRIDE_PERSONA_ID", persona_id))
+            os.environ.get("EVOLUTION_TRIAL_OVERRIDE_PERSONA_ID", persona_id)
+        )
         if dry_run is None:
             dry_run = bool(os.environ.get("SCRIPT_DRY_RUN", True))  # noqa: PLW1508
         self.dry_run = bool(os.environ.get("EVOLUTION_TRIAL_OVERRIDE_DRY_RUN", dry_run))
@@ -188,7 +201,8 @@ class Script:
         outfile = os.environ.get("EVOLUTION_TRIAL_OVERRIDE_OUTFILE", outfile)
         self.outfile = pathlib.Path(outfile) if outfile else None
         self.outfile_append = bool(
-            os.environ.get("EVOLUTION_TRIAL_OVERRIDE_OUTFILE_APPEND", outfile_append))
+            os.environ.get("EVOLUTION_TRIAL_OVERRIDE_OUTFILE_APPEND", outfile_append)
+        )
 
         # Setup internals.
         self._redirect: Optional[contextlib.AbstractContextManager[None]] = None
@@ -198,17 +212,14 @@ class Script:
             self.config = Config()
             self._secrets = SecretsConfig()
         self._translations: Optional[Mapping[str, gettext.NullTranslations]]
-        self._backends: dict[tuple[str, bool], AbstractBackend]
-        self._frontends: dict[str, AbstractFrontend]
+        self._backends: dict[tuple[str, bool], AbstractBackend] = {}
+        self._frontends: dict[tuple[str, bool], AbstractFrontend] = {}
         self._translations = None
-        self._backends = {}
-        self._frontends = {}
         self._request_states: dict[int, RequestState] = {}
         self._conn = None  # type: ignore[assignment]
         self._connect(dbuser, cursor)
 
-    def _connect(self, dbuser: str, cursor: type[psycopg2.extensions.cursor],
-                 ) -> None:
+    def _connect(self, dbuser: str, cursor: type[psycopg2.extensions.cursor]) -> None:
         """Create and save a database connection."""
         if self._conn:
             return  # pragma: no cover
@@ -237,14 +248,21 @@ class Script:
         })
         return self._backends[(realm, proxy)]
 
-    def make_frontend(self, realm: str):  # type: ignore[no-untyped-def]
+    def make_frontend(self, realm: str, *, proxy: bool = True):  # type: ignore[no-untyped-def]
         """Create a frontend."""
-        if ret := self._frontends.get(realm):
+        if ret := self._frontends.get((realm, proxy)):
             return ret
         with self._tempconfig:
             frontend_name = self.frontend_map[realm]
             frontend = resolve_name(f"cdedb.frontend.{realm}.{frontend_name}")()
-        self._frontends[realm] = frontend
+        if not proxy:
+            for backend_name in self.backend_map:
+                setattr(
+                    frontend,
+                    f"{backend_name}proxy",
+                    self.make_backend(backend_name, proxy=proxy),
+                )
+        self._frontends[(realm, proxy)] = frontend
         return frontend
 
     def rs(self, persona_id: Optional[int] = None) -> RequestState:
@@ -268,9 +286,12 @@ class Script:
             self._redirect.__enter__()
         return self._atomizer.__enter__()
 
-    def __exit__(self, exc_type: Optional[type[Exception]],
-                 exc_val: Optional[Exception],
-                 exc_tb: Optional[TracebackType]) -> bool:
+    def __exit__(
+        self,
+        exc_type: Optional[type[Exception]],
+        exc_val: Optional[Exception],
+        exc_tb: Optional[TracebackType],
+    ) -> bool:
         """Thin wrapper around `ScriptAtomizer`."""
         if self._atomizer is None:
             raise RuntimeError(n_("Impossible."))
@@ -292,6 +313,7 @@ class ScriptAtomizer(Atomizer):
     :param dry_run: If True, do not commit changes if script ran successfully,
         instead roll back.
     """
+
     start_time: float
 
     def __init__(self, rs: RequestState, *, dry_run: bool = True) -> None:
@@ -302,9 +324,12 @@ class ScriptAtomizer(Atomizer):
         self.start_time = time.monotonic()
         return super().__enter__()
 
-    def __exit__(self, exc_type: Optional[type[Exception]],  # type: ignore[override]
-                 exc_val: Optional[Exception],
-                 exc_tb: Optional[TracebackType]) -> bool:
+    def __exit__(  # type: ignore[override]
+        self,
+        exc_type: Optional[type[Exception]],
+        exc_val: Optional[Exception],
+        exc_tb: Optional[TracebackType],
+    ) -> bool:
         """Calculate time taken and provide success message.
 
         Ensure the transaction is rolled back if self.dry_run is True.
