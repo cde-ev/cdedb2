@@ -678,7 +678,7 @@ class EventOrgaMailinglist(
     ) -> SubscriptionPolicyMap:
         """Determine the SubscriptionPolicy for each given persona with the mailinglist.
 
-        For the `EventOrgaMailinglist` this means subscribable for orgas only.
+        For the `EventOrgaMailinglist` this means subscribable for orgas and caretakers.
 
         See `get_implicit_subscribers`.
         """
@@ -686,7 +686,11 @@ class EventOrgaMailinglist(
         if self.event_id is None:
             return {anid: SubscriptionPolicy.invitation_only for anid in persona_ids}
 
-        return super().get_subscription_policies(rs, bc, persona_ids)
+        event = bc.event.get_event(rs, self.event_id)
+        return {
+            persona_id: SubscriptionPolicy.subscribable
+            for persona_id in event.orgas | event.caretakers
+        }
 
     def get_implicit_subscribers(
         self, rs: RequestState, bc: BackendContainer
