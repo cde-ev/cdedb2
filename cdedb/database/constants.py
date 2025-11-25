@@ -762,6 +762,7 @@ class ComplaintEntryType(CdEIntEnum):
     @property
     def allows_attachment(self) -> bool:
         return self in {
+            ComplaintEntryType.generic_information,
             ComplaintEntryType.provisional_statement_given,
         }
 

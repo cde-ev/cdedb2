@@ -1720,6 +1720,29 @@ class TestComplaintValidation(TestValidationBase):
                 "entry_type": const.ComplaintEntryType.provisional_statement_given,
             },
         )
+        self.do_validator_test(
+            models.ComplaintEntryVersion,
+            [
+                (
+                    {
+                        "description": "Test.",
+                        "timestamp": now(),
+                        "authors": [1],
+                        "etime": None,
+                        "attachment_hash": get_hash(b"abc"),
+                        "attachment_title": "Test",
+                        "attachment_filename": "test.pdf",
+                    },
+                    INVAL,
+                    None,
+                )
+            ],
+            {
+                "creation": True,
+                "passthrough": True,
+                "entry_type": const.ComplaintEntryType.generic_information,
+            },
+        )
         # Test creation of entry version with attachment with invalid entry type.
         self.do_validator_test(
             models.ComplaintEntryVersion,
@@ -1741,7 +1764,7 @@ class TestComplaintValidation(TestValidationBase):
             {
                 "creation": True,
                 "passthrough": True,
-                "entry_type": const.ComplaintEntryType.generic_information,
+                "entry_type": const.ComplaintEntryType.synthesis,
             },
         )
         # Test invalid input for entry version with attachment:
