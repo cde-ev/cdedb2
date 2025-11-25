@@ -240,10 +240,10 @@ class TestComplaintFrontend(FrontendTest):
         # Excursion part 1: Check measure is displayed in overview
         self.traverse("Maßnahmenübersicht")
         self.assertTitle("Maßnahmenübersicht")
-        self.assertPresence("Maßnahme gegen Bertå Beispiel", div='entry6')
-        self.assertPresence("von Charly Clown", div='entry6')
+        self.assertPresence("Maßnahme gegen Bertå Beispiel", div='entry5-6')
+        self.assertPresence("von Charly Clown", div='entry5-6')
         self.assertPresence(
-            "Berta muss bei Anmeldung ein Einzelzimmer beantragen.", div='entry6'
+            "Berta muss bei Anmeldung ein Einzelzimmer beantragen.", div='entry5-6'
         )
         self.traverse("Fall 1")
 
@@ -336,7 +336,7 @@ class TestComplaintFrontend(FrontendTest):
         # Excursion part 3: Check revoked measure revocation leads to display
         self.traverse("Maßnahmenübersicht")
         self.assertTitle("Maßnahmenübersicht")
-        self.assertPresence("Maßnahme gegen Bertå Beispiel", div='entry6')
+        self.assertPresence("Maßnahme gegen Bertå Beispiel", div='entry5-6')
         self.traverse("Fall 1")
 
         # Remove entry
@@ -818,18 +818,21 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence(
             "Maßnahme gemäß Übereinkunft von Charly Clown – aus Fall 1"
             " Berta muss bei Anmeldung ein Einzelzimmer beantragen.",
-            div="entry6",
+            div="entry5-6",
         )
         self.assertPresence(
             "Maßnahme gemäß Übereinkunft (abgelaufen) von Charly Clown – aus Fall 1"
             " Quarantäne für eine Woche!",
-            div="entry7",
+            div="entry6-7",
         )
+        self.assertNonPresence("widerrufen")
+        self.assertDivNotExists("entry8-9")
         self.assertPresence(
-            "Maßnahme gemäß Übereinkunft (widerrufen) von Petra Philanthrop"
-            " – aus Fall 1 Sollte Berta noch einmal die Vögel aus dem Schlaf",
-            div="entry8",
+            "Maßnahme gemäß Übereinkunft (noch nicht aktiv) von Charly Clown"
+            " – aus Fall 1 Für eine Zukunft ohne Schnarcher",
+            div="entry9-10",
         )
+
         self.traverse("Fall 1")
         self.assertTitle("Fall 1")
 
@@ -854,17 +857,19 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence(
             "Maßnahme gemäß Übereinkunft von Charly Clown"
             " Berta muss bei Anmeldung ein Einzelzimmer beantragen.",
-            div="entry6",
+            div="entry5-6",
         )
         self.assertPresence(
             "Maßnahme gemäß Übereinkunft (abgelaufen)"
             " von Charly Clown Quarantäne für eine Woche!",
-            div="entry7",
+            div="entry6-7",
         )
+        self.assertNonPresence("widerrufen")
+        self.assertDivNotExists("entry8-9")
         self.assertPresence(
-            "Maßnahme gemäß Übereinkunft (widerrufen) von Petra Philanthrop"
-            " Sollte Berta noch einmal die Vögel aus dem Schlaf schnarchen",
-            div="entry8",
+            "Maßnahme gemäß Übereinkunft (noch nicht aktiv) von Charly Clown"
+            " Für eine Zukunft ohne Schnarcher",
+            div="entry9-10",
         )
         self.assertNonPresence("aus Fall 1")
 
@@ -872,11 +877,17 @@ class TestComplaintFrontend(FrontendTest):
     def test_measure_overview(self) -> None:
         self.traverse("Maßnahmenübersicht")
         self.assertTitle("Maßnahmenübersicht")
-        self.assertPresence("Maßnahme gegen Bertå Beispiel", div='entry6')
-        self.assertPresence("von Charly Clown", div='entry6')
+        self.assertPresence("Maßnahme gegen Bertå Beispiel", div='entry5-6')
+        self.assertPresence("von Charly Clown", div='entry5-6')
         self.assertPresence(
-            "Berta muss bei Anmeldung ein Einzelzimmer beantragen.", div='entry6'
+            "Berta muss bei Anmeldung ein Einzelzimmer beantragen.", div='entry5-6'
         )
+        # Do not show expired measure
+        self.assertNonPresence("Quarantäne für eine Woche!")
+        # Do not show revoked measure
+        self.assertNonPresence("Sollte Berta noch einmal die Vögel aus dem Schlaf")
+        # Do not show not-yet active measure
+        self.assertNonPresence("Für eine Zukunft ohne Schnarcher")
         if self.user_in("simon"):
             self.traverse("Fall 1")
         else:

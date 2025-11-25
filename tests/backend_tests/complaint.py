@@ -218,6 +218,26 @@ class TestComplaintBackend(BackendTest):
                         )
                     ],
                 ),
+                9: models.ComplaintEntry(
+                    id=9,
+                    case_id=1,
+                    entry_type=const.ComplaintEntryType.agreement_measure,
+                    parent_id=4,
+                    concerned_id=2,
+                    all_versions=[
+                        models.ComplaintEntryVersion(
+                            id=10,
+                            entry_id=9,
+                            length=33,
+                            timestamp=datetime.datetime(
+                                3000, 1, 1, 0, 0, tzinfo=datetime.timezone.utc
+                            ),
+                            ctime=nearly_now(),
+                            submitted_by=1,
+                            authors={3},
+                        )
+                    ],
+                ),
             },
         )
         reality = self.complaint.get_case(self.key, 1)
@@ -1095,7 +1115,7 @@ class TestComplaintBackend(BackendTest):
             set(), self.complaint.list_user_measures(self.key, 7, is_active=None)
         )
         self.assertEqual(
-            {7, 8}, self.complaint.list_user_measures(self.key, 2, is_active=False)
+            {7, 10}, self.complaint.list_user_measures(self.key, 2, is_active=False)
         )
 
         with self.switch_user("simon"):
@@ -1127,7 +1147,7 @@ class TestComplaintBackend(BackendTest):
         measure = case.entries[active_measure_entry_id].active_version
         assert measure is not None
         self.assertEqual(
-            {measure.id, 7, 8},
+            {7, 10},
             self.complaint.list_user_measures(
                 self.key, active_measure_persona_id, is_active=False
             ),
