@@ -1239,6 +1239,7 @@ class ComplaintBackend(AbstractBackend):
                 entries.concerned_id = %(concerned_id)s
                 AND entries.entry_type = ANY(%(entry_types)s)
                 AND versions.dtime IS NULL
+                AND NOT entries.is_revoked
         """
         params: dict[str, DatabaseValue_s] = {
             "concerned_id": concerned_id,
@@ -1248,8 +1249,8 @@ class ComplaintBackend(AbstractBackend):
         if is_active is not None:
             query += """
                 AND (
-                    NOT entries.is_revoked
-                    AND (versions.etime > now() OR versions.etime IS NULL)
+                    (versions.etime > now() OR versions.etime IS NULL)
+                    AND now() > versions.timestamp
                 ) = %(is_active)s
             """
             params["is_active"] = is_active
@@ -1279,6 +1280,7 @@ class ComplaintBackend(AbstractBackend):
             WHERE
                 entries.entry_type = ANY(%(entry_types)s)
                 AND versions.dtime IS NULL
+                AND NOT entries.is_revoked
         """
         params: dict[str, DatabaseValue_s] = {
             "entry_types": entry_types,
@@ -1287,8 +1289,8 @@ class ComplaintBackend(AbstractBackend):
         if is_active is not None:
             query += """
                 AND (
-                    NOT entries.is_revoked
-                    AND (versions.etime > now() OR versions.etime IS NULL)
+                    (versions.etime > now() OR versions.etime IS NULL)
+                    AND now() > versions.timestamp
                 ) = %(is_active)s
             """
             params["is_active"] = is_active

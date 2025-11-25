@@ -30,7 +30,9 @@ class Case(CdEDataclass):
     start_date: datetime.date | None = None
     end_date: datetime.date | None = None
 
-    entries: CdEDataclassMap["ComplaintEntry"]
+    entries: CdEDataclassMap["ComplaintEntry"] = dataclasses.field(
+        metadata=Meta.asdict_include.as_dict
+    )
     involved: dict[const.ComplaintInvolvementType, set[int]] = dataclasses.field(
         metadata=Meta.exclude.as_dict,
     )

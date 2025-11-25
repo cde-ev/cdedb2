@@ -18245,6 +18245,9 @@ msgstr "Hier sind alle Maßnahmen gegen diese Person aufgelistet."
 msgid "expired"
 msgstr "abgelaufen"
 
+msgid "not yet active"
+msgstr "noch nicht aktiv"
+
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:101
 msgid "There are no measures targeting this persona."
 msgstr "Es gibt keine Maßnahmen gegen diese Person."

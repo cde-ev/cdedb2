@@ -54,15 +54,21 @@
     {% for measure in measures.values() %}
         {% set entry = entries[measure.entry_id] %}
         {% set inactive = entry.is_revoked or measure.etime and now() > measure.etime %}
-        <div id="entry{{ measure.id }}" class="list-group-item{% if inactive %} list-group-item-muted{% endif %}">
-            <div class="float-right text-right">
+        {% set not_yet_active = now() < measure.timestamp %}
+        <div id="entry{{ entry.id }}-{{ measure.id }}"
+             class="list-group-item{% if inactive %} list-group-item-muted{% endif %}">
+            <div class="float-right text-right{% if not_yet_active %} text-italic{% endif %}">
                 {{ measure.timestamp|datetime(lang=lang) -}}
                 {% if measure.etime %}
                     – {{ measure.etime|datetime(lang=lang) }}
                 {% endif %}
             </div>
             <strong>
-                {% if inactive %}<s>{% endif %}
+                {% if not_yet_active %}
+                    <span class="text-muted text-italic">
+                {% elif inactive %}
+                    <s>
+                {% endif %}
                 {{ util.make_icon(entry.entry_type.get_icon(), title=gettext(entry.entry_type|string)) }}{{ nbsp -}}
                 {{- gettext(entry.entry_type|string) -}}
                 {% if inactive -%}
@@ -72,6 +78,11 @@
                     {%- else -%}
                         ({% trans %}expired{% endtrans %})
                     {%- endif -%}
+                    </span>
+                {% elif not_yet_active %}
+                    </span>
+                    <span class="text-info">
+                        ({% trans %}not yet active{% endtrans %})
                     </span>
                 {% endif %}
             </strong>
