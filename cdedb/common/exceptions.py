@@ -109,5 +109,9 @@ class AdminPasswordResetError(Exception):
     """Exception signalling that an admin password reset was prevented."""
 
 
+class IncorrectPasswordError(ValueError):
+    """Exception signalling that an incorrect password was entered."""
+
+
 class ValidationWarning(Exception):
     """Exception which should be suppressable by the user."""

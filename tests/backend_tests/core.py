@@ -165,13 +165,12 @@ class TestCoreBackend(BackendTest):
     @as_users("anton", "berta", "janis", maintain_data=True)
     def test_change_password(self) -> None:
         user = self.user
-        ret, _ = self.core.change_password(self.key, self.user['password'], "weakpass")
-        self.assertFalse(ret)
+        with self.assertRaisesRegex(ValueError, "Password too weak."):
+            self.core.change_password(self.key, self.user['password'], "weakpass")
+
         newpass = "er3NQ_5bkrc#"
-        ret, message = self.core.change_password(self.key, self.user['password'],
-                                                 newpass)
+        ret = self.core.change_password(self.key, self.user['password'], newpass)
         self.assertTrue(ret)
-        self.assertEqual(newpass, message)
         self.core.logout(self.key)
         self.login(self.user)
         self.assertIsNone(self.key)
@@ -268,9 +267,8 @@ class TestCoreBackend(BackendTest):
     def test_password_reset(self) -> None:
         new_pass = "rK;7e$ekgReW2t"
         cookie = self.core.make_reset_cookie(self.key, USER_DICT["berta"]["id"], datetime.timedelta(seconds=10))
-        ret, effective = self.core.reset_password(self.key, USER_DICT["berta"]["id"], new_pass, cookie)
+        ret = self.core.reset_password(self.key, USER_DICT["berta"]["id"], new_pass, cookie)
         self.assertTrue(ret)
-        self.assertEqual(new_pass, effective)
         with self.assertRaises(AdminPasswordResetError):
             self.core.make_reset_cookie(self.key, USER_DICT["anton"]["id"], datetime.timedelta(seconds=10))
         with self.assertRaises(ValueError):
