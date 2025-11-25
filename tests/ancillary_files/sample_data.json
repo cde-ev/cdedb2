@@ -9449,6 +9449,7 @@
             "code": 30,
             "submitted_by": 1,
             "assembly_id": 2,
+            "ballot_id": null,
             "persona_id": 18,
             "change_note": null
         },
@@ -9457,6 +9458,7 @@
             "code": 30,
             "submitted_by": 1,
             "assembly_id": 2,
+            "ballot_id": null,
             "persona_id": 1,
             "change_note": null
         },
@@ -9465,6 +9467,7 @@
             "code": 30,
             "submitted_by": 3,
             "assembly_id": 2,
+            "ballot_id": null,
             "persona_id": 3,
             "change_note": null
         },
@@ -9473,6 +9476,7 @@
             "code": 30,
             "submitted_by": 32,
             "assembly_id": 2,
+            "ballot_id": null,
             "persona_id": 32,
             "change_note": null
         },
@@ -9481,6 +9485,7 @@
             "code": 30,
             "submitted_by": 7,
             "assembly_id": 2,
+            "ballot_id": null,
             "persona_id": 7,
             "change_note": null
         },
@@ -9489,6 +9494,7 @@
             "code": 30,
             "submitted_by": 9,
             "assembly_id": 2,
+            "ballot_id": null,
             "persona_id": 9,
             "change_note": null
         },
@@ -9497,6 +9503,7 @@
             "code": 30,
             "submitted_by": 1,
             "assembly_id": 2,
+            "ballot_id": null,
             "persona_id": 17,
             "change_note": null
         },
@@ -9505,6 +9512,7 @@
             "code": 30,
             "submitted_by": 1,
             "assembly_id": 2,
+            "ballot_id": null,
             "persona_id": 22,
             "change_note": null
         }
