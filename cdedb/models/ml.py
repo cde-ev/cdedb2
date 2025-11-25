@@ -689,7 +689,9 @@ class EventOrgaMailinglist(
         event = bc.event.get_event(rs, self.event_id)
         return {
             persona_id: SubscriptionPolicy.subscribable
-            for persona_id in event.orgas | event.caretakers
+            if persona_id in event.orgas | event.caretakers
+            else SubscriptionPolicy.none
+            for persona_id in persona_ids
         }
 
     def get_implicit_subscribers(
