@@ -4631,6 +4631,14 @@
             "parent_id": 7,
             "concerned_id": null,
             "is_revoked": false
+        },
+        {
+            "id": 9,
+            "case_id": 1,
+            "entry_type": 311,
+            "parent_id": 4,
+            "concerned_id": 2,
+            "is_revoked": false
         }
     ],
     "complaint.entry_versions": [
@@ -4777,6 +4785,22 @@
             "dtime": null,
             "dreason": null,
             "deleted_by": null
+        },
+        {
+            "id": 10,
+            "entry_id": 9,
+            "submitted_by": 1,
+            "description": "Für eine Zukunft ohne Schnarcher.",
+            "length": 33,
+            "ctime": "---now---",
+            "timestamp": "2999-12-31T23:00:00+00:00",
+            "etime": null,
+            "attachment_hash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
+            "dtime": null,
+            "dreason": null,
+            "deleted_by": null
         }
     ],
     "complaint.authors": [
@@ -4823,6 +4847,11 @@
         {
             "id": 9,
             "entry_version_id": 9,
+            "persona_id": 3
+        },
+        {
+            "id": 10,
+            "entry_version_id": 10,
             "persona_id": 3
         }
     ],
