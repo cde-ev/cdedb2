@@ -1261,7 +1261,7 @@ class AssemblyBackend(AbstractBackend):
                         rs,
                         const.AssemblyLogCodes.candidate_added,
                         current['assembly_id'],
-                        ballot_id=data['ballot_id'],
+                        ballot_id=data['id'],
                         change_note=data['candidates'][x]['shortname'],
                     )
                 # updated
@@ -1273,7 +1273,7 @@ class AssemblyBackend(AbstractBackend):
                         rs,
                         const.AssemblyLogCodes.candidate_updated,
                         current['assembly_id'],
-                        ballot_id=data['ballot_id'],
+                        ballot_id=data['id'],
                         change_note=current['candidates'][x]['shortname'],
                     )
                 # deleted
@@ -1284,7 +1284,7 @@ class AssemblyBackend(AbstractBackend):
                             rs,
                             const.AssemblyLogCodes.candidate_removed,
                             current['assembly_id'],
-                            ballot_id=data['ballot_id'],
+                            ballot_id=data['id'],
                             change_note=current['candidates'][x]['shortname'],
                         )
         return ret
