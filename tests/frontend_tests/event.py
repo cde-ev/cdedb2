@@ -129,7 +129,7 @@ class TestEventFrontend(FrontendTest):
               maintain_data=True)
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
-        everyone = {"Veranstaltungen", "Übersicht", "Veranstaltungs-Betreuer"}
+        everyone = {"Veranstaltungen", "Übersicht", "Veranstaltungshelfer"}
         admin = {"Alle Veranstaltungen", "Ungereimtheiten", "Log"}
 
         # not event admins (also orgas!)
@@ -273,7 +273,7 @@ class TestEventFrontend(FrontendTest):
                                       current_state=False)
         self.traverse({'href': '/event/event/1/show'})
         self.assertIn('deleteeventform', self.response.forms)
-        self.traverse("Manage Caretakers")
+        self.traverse("Betreuer verwalten")
         self.assertIn('addorgasform', self.response.forms)
         self.traverse("Veranstaltungen", "Alle Veranstaltungen", "Veranstaltung anlegen")
 
@@ -405,7 +405,7 @@ class TestEventFrontend(FrontendTest):
         self.assertTitle("Große Testakademie 2222")
 
         self.assertNotIn('createorgalistform', self.response.forms)
-        self.traverse("Manage Orgas")
+        self.traverse("Orgas verwalten")
         f = self.response.forms[f"removeorgaform{ USER_DICT['garcia']['id'] }"]
         self.submit(f, check_notification=False)
         self.assertValidationError("ack_delete", "Muss markiert sein.", index=0)
@@ -417,7 +417,7 @@ class TestEventFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertPresence("Mailingliste kann nur mit Orgas erstellt werden.",
                             div='notifications')
-        self.traverse("Manage Orgas")
+        self.traverse("Orgas verwalten")
         f = self.response.forms['addorgasform']
         f['orga_ids'] = f"{USER_DICT['garcia']['DB-ID']},{USER_DICT['emilia']['DB-ID']}"
         self.submit(f)
@@ -622,7 +622,7 @@ class TestEventFrontend(FrontendTest):
             div='static-notifications')
         self.traverse("Übersicht")
         if self.user_in('ferdinand', 'annika'):
-            self.traverse("Manage Orgas")
+            self.traverse("Orgas verwalten")
             f = self.response.forms['addorgasform']
             # Try to add an invalid cdedbid.
             f['orga_ids'] = "DB-1-1"
@@ -645,14 +645,14 @@ class TestEventFrontend(FrontendTest):
             self.assertValidationError('orga_ids', msg, index=-1)
             f['orga_ids'] = USER_DICT['berta']['DB-ID']
             self.submit(f)
-            self.assertTitle("Manage Orgas & Caretakers (Universale Akademie)")
+            self.assertTitle("Orgas & Betreuer verwalten (Universale Akademie)")
             self.assertPresence("Beispiel", div='orgas_list')
             text = self.fetch_mail_content()
             self.assertIn("als Orga hinzugefügt", text)
             f = self.response.forms['removeorgaform2']
             f['ack_delete'].checked = True
             self.submit(f)
-            self.assertTitle("Manage Orgas & Caretakers (Universale Akademie)")
+            self.assertTitle("Orgas & Betreuer verwalten (Universale Akademie)")
             self.assertNonPresence("Beispiel")
             text = self.fetch_mail_content()
             self.assertIn("als Orga entfernt", text)
@@ -8169,8 +8169,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @as_users("petra")
     def test_event_helper(self) -> None:
         # Sidebar buttons are basic_validated in test_sidebar(_one_event)
-        self.traverse("Veranstaltungen", "Veranstaltungs-Betreuer")
-        self.assertTitle("Veranstaltungs-Betreuer [1]")
+        self.traverse("Veranstaltungen", "Veranstaltungshelfer")
+        self.assertTitle("Veranstaltungshelfer [1]")
         self.assertNotIn('addeventhelperform', self.response.forms)
         self.assertNotIn('removeeventhelperform42', self.response.forms)
         self.assertPresence("Petra Philanthrop")
