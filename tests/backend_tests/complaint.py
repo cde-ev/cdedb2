@@ -1,6 +1,7 @@
 import datetime
 import functools
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.complaint as models
 from cdedb.common import CdEDBObject, PrivilegeError, get_hash, nearly_now, now
@@ -219,22 +220,22 @@ class TestComplaintBackend(BackendTest):
                     ],
                 ),
                 9: models.ComplaintEntry(
-                    id=9,
-                    case_id=1,
+                    id=vtypes.ID(9),
+                    case_id=vtypes.ID(1),
                     entry_type=const.ComplaintEntryType.agreement_measure,
-                    parent_id=4,
-                    concerned_id=2,
+                    parent_id=vtypes.ID(4),
+                    concerned_id=vtypes.CdedbID(vtypes.ID(2)),
                     all_versions=[
                         models.ComplaintEntryVersion(
-                            id=10,
-                            entry_id=9,
+                            id=vtypes.ID(10),
+                            entry_id=vtypes.ID(9),
                             length=33,
                             timestamp=datetime.datetime(
                                 3000, 1, 1, 0, 0, tzinfo=datetime.timezone.utc
                             ),
                             ctime=nearly_now(),
-                            submitted_by=1,
-                            authors={3},
+                            submitted_by=vtypes.ID(1),
+                            authors={3},  # type: ignore[arg-type]
                         )
                     ],
                 ),
