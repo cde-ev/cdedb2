@@ -69,10 +69,8 @@ class TestEventBackend(BackendTest):
         self.assertEqual(data, new_data)
 
     @event_keeper
-    @as_users("annika", "garcia")
+    @as_users("annika", "garcia", "charly")
     def test_entity_event(self) -> None:
-        # need administrator to create event
-        self.login(USER_DICT["annika"])
         old_events = self.event.list_events(self.key)
         data: CdEDBObject = {
             'title': "New Link Academy",
@@ -102,6 +100,7 @@ class TestEventBackend(BackendTest):
             'notes': None,
             'field_definition_notes': "No fields plz",
             'orgas': {2, 7},
+            'caretakers': {3},
             'parts': {
                 -1: {
                     'tracks': {
@@ -205,11 +204,10 @@ class TestEventBackend(BackendTest):
                 "condition": "any_part and not is_member",
             },
         ]
-        new_id = self.event.create_event(self.key, data)
+        with self.switch_user("annika"):
+            new_id = self.event.create_event(self.key, data)
         for fee in fee_data:
             self.event.create_event_fee(self.key, new_id, fee)
-        # back to normal mode
-        self.login(self.user)
         data['id'] = new_id
         data['is_locked'] = False
         data['is_archived'] = False
@@ -231,7 +229,6 @@ class TestEventBackend(BackendTest):
         data['part_groups'] = {}
         data['track_groups'] = {}
         data['custom_query_filters'] = {}
-        data['caretakers'] = set()
         # correct part and field ids
         tmp = self.event.get_event(self.key, new_id)
         part_map = {}
@@ -545,18 +542,18 @@ class TestEventBackend(BackendTest):
             {},
         )
 
-        self.login(USER_DICT["annika"])
-        self.assertLess(0, self.event.delete_event(
-            self.key, new_id,
-            ("event_parts", "course_tracks", "field_definitions", "courses",
-             "orgas", "lodgement_groups", "lodgements", "registrations", "log",
-             "questionnaire", "stored_queries", "mailinglists", "event_fees")))
+        with self.switch_user("annika"):
+            self.assertLess(0, self.event.delete_event(
+                self.key, new_id,
+                ("event_parts", "course_tracks", "field_definitions", "courses",
+                 "orgas", "lodgement_groups", "lodgements", "registrations", "log",
+                 "questionnaire", "stored_queries", "mailinglists", "event_fees", "caretakers")))
 
-        # Test deletion of event, cascading all blockers.
-        self.assertLess(
-            0,
-            self.event.delete_event(
-                self.key, 1, self.event.delete_event_blockers(self.key, 1)))
+            # Test deletion of event, cascading all blockers.
+            self.assertLess(
+                0,
+                self.event.delete_event(
+                    self.key, 1, self.event.delete_event_blockers(self.key, 1)))
 
         # Test part groups and track groups in get_event.
         expectation_part = {
