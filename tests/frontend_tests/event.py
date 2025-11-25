@@ -399,36 +399,54 @@ class TestEventFrontend(FrontendTest):
             self.assertNotIn("archiveeventform", self.response.forms)
             self.assertNotIn("deleteeventform", self.response.forms)
 
-    @as_users("annika")
-    def test_show_event_admin(self) -> None:
-        self.traverse("Veranstaltungen", "Große Testakademie 2222")
-        self.assertTitle("Große Testakademie 2222")
+    @as_users("charly")
+    def test_manage_orgas(self) -> None:
+        with self.switch_user("annika"):
+            self.traverse("Veranstaltungen", "Große Testakademie 2222", "Betreuer verwalten")
+            f = self.response.forms['addcaretakersform']
+            f['caretaker_ids'] = USER_DICT['charly']['DB-ID']
+            self.submit(f)
 
-        self.assertNotIn('createorgalistform', self.response.forms)
-        self.traverse("Orgas verwalten")
-        f = self.response.forms[f"removeorgaform{ USER_DICT['garcia']['id'] }"]
+        self.traverse("Veranstaltungen", "Große Testakademie", "Orgas verwalten")
+
+        f = self.response.forms[f"removeorgaform{USER_DICT['garcia']['id']}"]
         self.submit(f, check_notification=False)
         self.assertValidationError("ack_delete", "Muss markiert sein.", index=0)
         f['ack_delete'].checked = True
         self.submit(f)
+
         self.traverse("Übersicht")
         f = self.response.forms['createparticipantlistform']
         self.assertInputHasAttr(f['submitform'], 'disabled')
         self.submit(f, check_notification=False)
         self.assertPresence("Mailingliste kann nur mit Orgas erstellt werden.",
                             div='notifications')
+
         self.traverse("Orgas verwalten")
         f = self.response.forms['addorgasform']
         f['orga_ids'] = f"{USER_DICT['garcia']['DB-ID']},{USER_DICT['emilia']['DB-ID']}"
         self.submit(f)
 
-    @as_users("annika", "garcia")
-    def test_create_participant_list(self) -> None:
-        self.traverse({'description': 'Veranstaltungen'},
-                      {'description': 'Große Testakademie 2222'})
-        self.assertTitle("Große Testakademie 2222")
-        f = self.response.forms["createparticipantlistform"]
-        self.submit(f)
+        log_expectation = [
+            {
+                "code": const.EventLogCodes.caretaker_added,
+                "persona_id": USER_DICT['charly']['id'],
+                "submitted_by": USER_DICT['annika']['id'],
+            },
+            {
+                "code": const.EventLogCodes.orga_removed,
+                "persona_id": USER_DICT['garcia']['id'],
+            },
+            {
+                "code": const.EventLogCodes.orga_added,
+                "persona_id": USER_DICT['emilia']['id'],
+            },
+            {
+                "code": const.EventLogCodes.orga_added,
+                "persona_id": USER_DICT['garcia']['id'],
+            },
+        ]
+        self.assertLogEqual(log_expectation, "event", event_id=1, offset=self.EVENT_LOG_OFFSET)
 
     @as_users("annika", "emilia", "garcia", "martin", "vera", "werner", "katarina",
               "farin", "petra", maintain_data=True)

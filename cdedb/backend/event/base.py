@@ -337,7 +337,7 @@ class EventBaseBackend(EventLowLevelBackend):
             )
             return 1
 
-    @access("event_admin")
+    @access("persona")
     def validate_event_persona_ids(
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> None:
