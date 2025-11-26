@@ -543,7 +543,7 @@ class PastEventBackend(AbstractBackend):
                 )
         return ret
 
-    @access("core_admin", "cde_admin", "event_admin")
+    @access("event")
     def is_participant(self, rs: RequestState, pevent_id: int, persona_id: int) -> bool:
         pevent_id = affirm(vtypes.ID, pevent_id)
         persona_id = affirm(vtypes.ID, persona_id)
