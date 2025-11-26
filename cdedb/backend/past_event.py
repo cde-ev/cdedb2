@@ -276,6 +276,18 @@ class PastEventBackend(AbstractBackend):
             pevent = self.get_past_event(rs, pevent_id)
             if cascade:
                 if "participants" in cascade:
+                    assignments = self.sql_select(
+                        rs,
+                        "past_event.course_participants",
+                        ["id"],
+                        blockers["participants"],
+                        entity_key="participant_id",
+                    )
+                    ret *= self.sql_delete(
+                        rs,
+                        "past_event.course_participants",
+                        [e["id"] for e in assignments],
+                    )
                     ret *= self.sql_delete(
                         rs, "past_event.participants", blockers["participants"]
                     )
@@ -416,15 +428,11 @@ class PastEventBackend(AbstractBackend):
         pcourse_id = affirm(vtypes.ID, pcourse_id)
         blockers = {}
 
-        participants = self.sql_select(
-            rs,
-            "past_event.participants",
-            ("id",),
-            (pcourse_id,),
-            entity_key="pcourse_id",
-        )
+        count, participants = self.get_course_assignments(rs, pcourse_id)
+        if count != len(participants):
+            raise RuntimeError("Impossible.")
         if participants:
-            blockers["participants"] = [e["id"] for e in participants]
+            blockers["participants"] = [e.id for e in participants.values()]
         log = self.sql_select(
             rs, "past_event.log", ("id",), (pcourse_id,), entity_key="pcourse_id"
         )
@@ -471,7 +479,7 @@ class PastEventBackend(AbstractBackend):
             if cascade:
                 if "participants" in cascade:
                     ret *= self.sql_delete(
-                        rs, "past_event.participants", blockers["participants"]
+                        rs, "past_event.course_participants", blockers["participants"]
                     )
                 if "log" in cascade:
                     ret *= self.sql_delete(rs, "past_event.log", blockers["log"])
