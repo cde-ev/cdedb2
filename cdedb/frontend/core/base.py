@@ -2233,7 +2233,7 @@ class CoreBaseFrontend(AbstractFrontend):
             code = self.coreproxy.change_password(rs, old_password, new_password)
         except ValueError as e:
             if isinstance(e, IncorrectPasswordError):
-                rs.append_validation_error(("old_password", ValueError("Wrong password.")))
+                rs.append_validation_error(("old_password", ValueError(n_("Wrong password."))))
                 rs.ignore_validation_errors()
             self.logger.error(
                 f"Unsuccessful password change for persona {rs.user.persona_id}. {e}"
