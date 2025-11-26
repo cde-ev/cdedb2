@@ -377,8 +377,9 @@ def past_event(context: argparse.Namespace) -> int:
             'description': '',
         })
         for _ in range(1 if context.quick else 10):
-            pastevent.add_participant(rs, ret, acourse, persona(context),
-                                      False, False)
+            persona_id = persona(context)
+            pastevent.set_participant(rs, ret, persona_id)
+            pastevent.set_course_assignment(rs, acourse, persona_id)
     return ret
 
 
