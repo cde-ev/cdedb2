@@ -37,19 +37,24 @@ ASSEMBLY_BAR_ABBREVIATION = "#"
 
 class AssemblyAttachmentMixin(AssemblyBaseFrontend):
     """Organize congregations and vote on ballots."""
+
     realm = "assembly"
 
     @access("assembly")
     def list_attachments(self, rs: RequestState, assembly_id: int) -> Response:
         """Render form."""
-        if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):  # pragma: no cover
+        if not self.assemblyproxy.may_assemble(
+            rs, assembly_id=assembly_id
+        ):  # pragma: no cover
             rs.notify("error", n_("May not access attachments for this assembly."))
             return self.redirect(rs, "assembly/index")
         attachment_ids = self.assemblyproxy.list_attachments(
-            rs, assembly_id=assembly_id)
+            rs, assembly_id=assembly_id
+        )
         attachments = self.assemblyproxy.get_attachments(rs, attachment_ids)
         attachments_versions = self.assemblyproxy.get_attachments_versions(
-            rs, attachment_ids)
+            rs, attachment_ids
+        )
 
         def sortkey(att: CdEDBObject) -> tuple[str, int]:
             """This is an inline function and not in EntitySorter since its only used
@@ -58,92 +63,136 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             return latest_version["title"], att["id"]
 
         sorted_attachments = {
-            att["id"]: att for att in xsorted(attachments.values(), key=sortkey)}
-        are_attachment_versions_creatable = \
+            att["id"]: att for att in xsorted(attachments.values(), key=sortkey)
+        }
+        are_attachment_versions_creatable = (
             self.assemblyproxy.are_attachment_versions_creatable(rs, attachment_ids)
-        are_attachment_versions_deletable = \
+        )
+        are_attachment_versions_deletable = (
             self.assemblyproxy.are_attachment_versions_deletable(rs, attachment_ids)
+        )
         are_attachments_deletable = {
-            attachment_id: (attachment["num_versions"] <= 1
-                            and are_attachment_versions_deletable[attachment_id])
-            for attachment_id, attachment in attachments.items()}
-        return self.render(rs, "attachment/list_attachments", {
-            "attachments": sorted_attachments,
-            "attachments_versions": attachments_versions,
-            "are_attachment_versions_creatable": are_attachment_versions_creatable,
-            "are_attachment_versions_deletable": are_attachment_versions_deletable,
-            "are_attachments_deletable": are_attachments_deletable,
-        })
+            attachment_id: (
+                attachment["num_versions"] <= 1
+                and are_attachment_versions_deletable[attachment_id]
+            )
+            for attachment_id, attachment in attachments.items()
+        }
+        return self.render(
+            rs,
+            "attachment/list_attachments",
+            {
+                "attachments": sorted_attachments,
+                "attachments_versions": attachments_versions,
+                "are_attachment_versions_creatable": are_attachment_versions_creatable,
+                "are_attachment_versions_deletable": are_attachment_versions_deletable,
+                "are_attachments_deletable": are_attachments_deletable,
+            },
+        )
 
     @access("assembly")
-    def get_attachment(self, rs: RequestState, assembly_id: int,
-                       attachment_id: int) -> Response:
+    def get_attachment(
+        self, rs: RequestState, assembly_id: int, attachment_id: int
+    ) -> Response:
         """A wrapper around get_attachment_version to retrieve the current version."""
         attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
         # Access checking is done inside get_attachment_version
-        return self.redirect(rs, "assembly/get_attachment_version",
-                             params={"version_nr": attachment["latest_version_nr"]})
+        return self.redirect(
+            rs,
+            "assembly/get_attachment_version",
+            params={"version_nr": attachment["latest_version_nr"]},
+        )
 
     @access("assembly")
     @REQUESTdata("version_nr")
-    def get_attachment_version(self, rs: RequestState, assembly_id: int,
-                               attachment_id: int, version_nr: int) -> Response:
+    def get_attachment_version(
+        self, rs: RequestState, assembly_id: int, attachment_id: int, version_nr: int
+    ) -> Response:
         """Retrieve the content of a given attachment version."""
-        if not self.assemblyproxy.may_assemble(rs, assembly_id=assembly_id):  # pragma: no cover
+        if not self.assemblyproxy.may_assemble(
+            rs, assembly_id=assembly_id
+        ):  # pragma: no cover
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         # the check that the attachment belongs to the assembly is already done in
         # `reconnoitre_ambience`, which raises a "400 Bad Request" in this case
         versions = self.assemblyproxy.get_attachment_versions(rs, attachment_id)
         path = self.assemblyproxy.get_attachment_store(rs).get_path(
-            versions[version_nr]['file_hash'])
+            versions[version_nr]['file_hash']
+        )
         if not path.is_file():
             rs.notify("error", n_("File not found."))
             return self.redirect(rs, "assembly/list_attachments")
-        return self.send_file(rs, path=path, mimetype="application/pdf",
-                              filename=versions[version_nr]['filename'])
+        return self.send_file(
+            rs,
+            path=path,
+            mimetype="application/pdf",
+            filename=versions[version_nr]['filename'],
+        )
 
     @access("assembly")
     @assembly_guard
     def add_attachment_form(self, rs: RequestState, assembly_id: int) -> Response:
         """Render form."""
         if not rs.ambience['assembly']['is_active']:
-            rs.notify('error',
-                      n_("Cannot add attachment once the assembly has been locked."))
+            rs.notify(
+                'error', n_("Cannot add attachment once the assembly has been locked.")
+            )
             return self.redirect(rs, 'assembly/list_attachments')
         mandatory_fields = get_mandatory_form_fields(self.add_attachment)
         if rs.values.get('attachment_hash'):
             mandatory_fields.remove('attachment')
-        return self.render(rs, "attachment/add_attachment",
-                           mandatory_fields=mandatory_fields)
+        return self.render(
+            rs, "attachment/add_attachment", mandatory_fields=mandatory_fields
+        )
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdata("title", "authors", "filename", "attachment_hash",
-                 "attachment_filename")
+    @REQUESTdata(
+        "title", "authors", "filename", "attachment_hash", "attachment_filename"
+    )
     @REQUESTfile("attachment")
-    def add_attachment(self, rs: RequestState, assembly_id: int,
-                       attachment: werkzeug.datastructures.FileStorage,
-                       attachment_hash: Optional[vtypes.Identifier],
-                       attachment_filename: Optional[str],
-                       title: str, filename: Optional[vtypes.Identifier],
-                       authors: Optional[str]) -> Response:
+    def add_attachment(
+        self,
+        rs: RequestState,
+        assembly_id: int,
+        attachment: werkzeug.datastructures.FileStorage,
+        attachment_hash: Optional[vtypes.Identifier],
+        attachment_filename: Optional[str],
+        title: str,
+        filename: Optional[vtypes.Identifier],
+        authors: Optional[str],
+    ) -> Response:
         """Create a new attachment."""
         if not rs.ambience['assembly']['is_active']:
             rs.ignore_validation_errors()
-            rs.notify('error',
-                      n_("Cannot add attachment once the assembly has been locked."))
+            rs.notify(
+                'error', n_("Cannot add attachment once the assembly has been locked.")
+            )
             return self.redirect(rs, 'assembly/list_attachments')
-        rs.values['attachment_hash'], rs.values['attachment_filename'] = \
+        rs.values['attachment_hash'], rs.values['attachment_filename'] = (
             self.locate_or_store_attachment(
-                rs, self.assemblyproxy.get_attachment_store(rs), attachment,
-                attachment_hash, attachment_filename)
+                rs,
+                self.assemblyproxy.get_attachment_store(rs),
+                attachment,
+                attachment_hash,
+                attachment_filename,
+            )
+        )
         if not filename:
-            filename = check(rs, vtypes.Identifier, rs.values['attachment_filename'],
-                             'filename')
-        if (rs.values['attachment_hash'] and self.assemblyproxy.get_attachment_usage(
-                rs, rs.values['attachment_hash']) and not rs.ignore_warnings):
-            rs.append_validation_error(("cached_attachment", ValidationWarning(
-                n_("File already in use for other attachment."))))
+            filename = check(
+                rs, vtypes.Identifier, rs.values['attachment_filename'], 'filename'
+            )
+        if (
+            rs.values['attachment_hash']
+            and self.assemblyproxy.get_attachment_usage(
+                rs, rs.values['attachment_hash']
+            )
+            and not rs.ignore_warnings
+        ):
+            rs.append_validation_error((
+                "cached_attachment",
+                ValidationWarning(n_("File already in use for other attachment.")),
+            ))
         if rs.has_validation_errors():
             return self.add_attachment_form(rs, assembly_id=assembly_id)
         data: CdEDBObject = {
@@ -160,12 +209,19 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
     @access("assembly", modi={"POST"})
     @assembly_guard
     @REQUESTdata("attachment_ack_delete")
-    def delete_attachment(self, rs: RequestState, assembly_id: int,
-                          attachment_id: int, attachment_ack_delete: bool) -> Response:
+    def delete_attachment(
+        self,
+        rs: RequestState,
+        assembly_id: int,
+        attachment_id: int,
+        attachment_ack_delete: bool,
+    ) -> Response:
         """Delete an attachment."""
         if not attachment_ack_delete:
-            rs.append_validation_error(
-                ("attachment_ack_delete", ValueError(n_("Must be checked."))))
+            rs.append_validation_error((
+                "attachment_ack_delete",
+                ValueError(n_("Must be checked.")),
+            ))
         if rs.has_validation_errors():
             return self.list_attachments(rs, assembly_id)
 
@@ -176,8 +232,10 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         attachment = self.assemblyproxy.get_attachment(rs, attachment_id)
         # This is possible in theory but should not be done to avoid user errors
         if attachment['num_versions'] > 1:
-            rs.notify("error", n_("Remove all but the last version before deleting the"
-                                  " attachment."))
+            rs.notify(
+                "error",
+                n_("Remove all but the last version before deleting the attachment."),
+            )
             return self.redirect(rs, "assembly/list_attachments")
 
         cascade = {"ballots", "versions"}
@@ -187,20 +245,24 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
 
     @access("assembly")
     @assembly_guard
-    def add_attachment_version_form(self, rs: RequestState, assembly_id: int,
-                                    attachment_id: int) -> Response:
+    def add_attachment_version_form(
+        self, rs: RequestState, assembly_id: int, attachment_id: int
+    ) -> Response:
         """Render form."""
         # the check that the attachment belongs to the assembly is already done in
         # `reconnoitre_ambience`, which raises a "400 Bad Request" in this case
         if not self.assemblyproxy.is_attachment_version_creatable(rs, attachment_id):
-            rs.notify('error',
-                      n_("Cannot add attachment version once the assembly has been"
-                         " locked."))
+            rs.notify(
+                'error',
+                n_("Cannot add attachment version once the assembly has been locked."),
+            )
             return self.redirect(rs, 'assembly/list_attachments')
         latest_version = self.assemblyproxy.get_latest_attachment_version(
-            rs, attachment_id)
+            rs, attachment_id
+        )
         is_deletable = self.assemblyproxy.is_attachment_version_deletable(
-            rs, attachment_id)
+            rs, attachment_id
+        )
 
         # Prefill information, if possible and untouched
         for metadatum in ('title', 'authors', 'filename'):
@@ -211,24 +273,39 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         if rs.values.get('attachment_hash'):
             mandatory_fields.remove('attachment')
         return self.render(
-            rs, "attachment/configure_attachment_version", {
+            rs,
+            "attachment/configure_attachment_version",
+            {
                 'latest_version': latest_version,
                 'is_deletable': is_deletable,
-            }, mandatory_fields)
+            },
+            mandatory_fields,
+        )
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdata("title", "authors", "filename", "ack_creation",
-                 "attachment_hash", "attachment_filename")
+    @REQUESTdata(
+        "title",
+        "authors",
+        "filename",
+        "ack_creation",
+        "attachment_hash",
+        "attachment_filename",
+    )
     @REQUESTfile("attachment")
-    def add_attachment_version(self, rs: RequestState, assembly_id: int,
-                               attachment_id: int,
-                               attachment: werkzeug.datastructures.FileStorage,
-                               attachment_hash: Optional[vtypes.Identifier],
-                               attachment_filename: Optional[str],
-                               title: str, filename: Optional[vtypes.Identifier],
-                               authors: Optional[str],
-                               ack_creation: Optional[bool] = None) -> Response:
+    def add_attachment_version(
+        self,
+        rs: RequestState,
+        assembly_id: int,
+        attachment_id: int,
+        attachment: werkzeug.datastructures.FileStorage,
+        attachment_hash: Optional[vtypes.Identifier],
+        attachment_filename: Optional[str],
+        title: str,
+        filename: Optional[vtypes.Identifier],
+        authors: Optional[str],
+        ack_creation: Optional[bool] = None,
+    ) -> Response:
         """Create a new version of an existing attachment.
 
         If this version can not be deleted afterwards, the creation must be confirmed.
@@ -237,36 +314,60 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         # `reconnoitre_ambience`, which raises a "400 Bad Request" in this case
         if not self.assemblyproxy.is_attachment_version_creatable(rs, attachment_id):
             rs.ignore_validation_errors()
-            rs.notify('error',
-                      n_("Cannot add attachment version once the assembly has been"
-                         " locked."))
+            rs.notify(
+                'error',
+                n_("Cannot add attachment version once the assembly has been locked."),
+            )
             return self.redirect(rs, 'assembly/list_attachments')
-        rs.values['attachment_hash'], rs.values['attachment_filename'] =\
+        rs.values['attachment_hash'], rs.values['attachment_filename'] = (
             self.locate_or_store_attachment(
-                rs, self.assemblyproxy.get_attachment_store(rs), attachment,
-                attachment_hash, attachment_filename)
+                rs,
+                self.assemblyproxy.get_attachment_store(rs),
+                attachment,
+                attachment_hash,
+                attachment_filename,
+            )
+        )
         if not filename:
-            filename = check(rs, vtypes.Identifier, rs.values['attachment_filename'],
-                             'filename')
-        is_deletable = self.assemblyproxy.is_attachment_version_deletable(rs,
-                                                                          attachment_id)
+            filename = check(
+                rs, vtypes.Identifier, rs.values['attachment_filename'], 'filename'
+            )
+        is_deletable = self.assemblyproxy.is_attachment_version_deletable(
+            rs, attachment_id
+        )
         if not is_deletable and not ack_creation:
-            rs.append_validation_error(
-                ("ack_creation", ValueError(n_("Must be checked."))))
+            rs.append_validation_error((
+                "ack_creation",
+                ValueError(n_("Must be checked.")),
+            ))
 
         versions = self.assemblyproxy.get_attachment_versions(rs, attachment_id)
-        if (rs.values['attachment_hash'] and self.assemblyproxy.get_attachment_usage(
-                rs, rs.values['attachment_hash']) and not rs.ignore_warnings):
-            if any(v["file_hash"] == rs.values['attachment_hash']
-                   for v in versions.values()):
-                rs.append_validation_error(("cached_attachment", ValidationWarning(
-                    n_("File already known for earlier version of this attachment."))))
+        if (
+            rs.values['attachment_hash']
+            and self.assemblyproxy.get_attachment_usage(
+                rs, rs.values['attachment_hash']
+            )
+            and not rs.ignore_warnings
+        ):
+            if any(
+                v["file_hash"] == rs.values['attachment_hash']
+                for v in versions.values()
+            ):
+                rs.append_validation_error((
+                    "cached_attachment",
+                    ValidationWarning(
+                        n_("File already known for earlier version of this attachment.")
+                    ),
+                ))
             else:
-                rs.append_validation_error(("cached_attachment", ValidationWarning(
-                    n_("File already in use for other attachment."))))
+                rs.append_validation_error((
+                    "cached_attachment",
+                    ValidationWarning(n_("File already in use for other attachment.")),
+                ))
         if rs.has_validation_errors():
             return self.add_attachment_version_form(
-                rs, assembly_id=assembly_id, attachment_id=attachment_id)
+                rs, assembly_id=assembly_id, attachment_id=attachment_id
+            )
 
         data: CdEDBObject = {
             'attachment_id': attachment_id,
@@ -280,8 +381,9 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         return self.redirect(rs, "assembly/list_attachments")
 
     @access("assembly")
-    def get_cached_attachment(self, rs: RequestState, assembly_id: int,
-                              attachment_hash: vtypes.Identifier) -> Response:
+    def get_cached_attachment(
+        self, rs: RequestState, assembly_id: int, attachment_hash: vtypes.Identifier
+    ) -> Response:
         """Retrieve cached attachment."""
         # Half-hearted access check: Non-presiders have no business using this.
         if not self.is_admin(rs) and not rs.user.presider:
@@ -293,8 +395,9 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
 
     @access("assembly")
     @assembly_guard
-    def change_attachment_version_form(self, rs: RequestState, assembly_id: int,
-                                       attachment_id: int, version_nr: int) -> Response:
+    def change_attachment_version_form(
+        self, rs: RequestState, assembly_id: int, attachment_id: int, version_nr: int
+    ) -> Response:
         """Render form."""
         # the check that the attachment belongs to the assembly is already done in
         # `reconnoitre_ambience`, which raises a "400 Bad Request" in this case
@@ -302,21 +405,32 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             rs.notify("error", n_("Attachment version can not be changed."))
             return self.redirect(rs, "assembly/list_attachments")
         latest_version = self.assemblyproxy.get_latest_attachment_version(
-            rs, attachment_id)
+            rs, attachment_id
+        )
         merge_dicts(rs.values, rs.ambience['attachment_version'])
         return self.render(
-            rs, "attachment/configure_attachment_version", {
+            rs,
+            "attachment/configure_attachment_version",
+            {
                 'latest_version': latest_version,
                 'is_deletable': True,
-            }, get_mandatory_form_fields(self.change_attachment_version))
+            },
+            get_mandatory_form_fields(self.change_attachment_version),
+        )
 
     @access("assembly", modi={"POST"})
     @assembly_guard
     @REQUESTdata("title", "authors", "filename")
-    def change_attachment_version(self, rs: RequestState, assembly_id: int,
-                               attachment_id: int, version_nr: int,
-                               title: str, filename: vtypes.Identifier,
-                               authors: Optional[str]) -> Response:
+    def change_attachment_version(
+        self,
+        rs: RequestState,
+        assembly_id: int,
+        attachment_id: int,
+        version_nr: int,
+        title: str,
+        filename: vtypes.Identifier,
+        authors: Optional[str],
+    ) -> Response:
         """Change the metadata of a new version of an existing attachment."""
         # the check that the attachment belongs to the assembly is already done in
         # `reconnoitre_ambience`, which raises a "400 Bad Request" in this case
@@ -325,8 +439,11 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             return self.redirect(rs, "assembly/attachment/list_attachments")
         if rs.has_validation_errors():
             return self.change_attachment_version_form(
-                rs, assembly_id=assembly_id, attachment_id=attachment_id,
-                version_nr=version_nr)
+                rs,
+                assembly_id=assembly_id,
+                attachment_id=attachment_id,
+                version_nr=version_nr,
+            )
         data: CdEDBObject = {
             'attachment_id': attachment_id,
             'version_nr': version_nr,
@@ -341,13 +458,20 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
     @access("assembly", modi={"POST"})
     @assembly_guard
     @REQUESTdata("attachment_ack_delete")
-    def delete_attachment_version(self, rs: RequestState, assembly_id: int,
-                                  attachment_id: int, version_nr: int,
-                                  attachment_ack_delete: bool) -> Response:
+    def delete_attachment_version(
+        self,
+        rs: RequestState,
+        assembly_id: int,
+        attachment_id: int,
+        version_nr: int,
+        attachment_ack_delete: bool,
+    ) -> Response:
         """Delete a version of an attachment."""
         if not attachment_ack_delete:
-            rs.append_validation_error(
-                ("attachment_ack_delete", ValueError(n_("Must be checked."))))
+            rs.append_validation_error((
+                "attachment_ack_delete",
+                ValueError(n_("Must be checked.")),
+            ))
         # the check that the attachment belongs to the assembly is already done in
         # `reconnoitre_ambience`
         if rs.has_validation_errors():
@@ -360,8 +484,10 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         # This should not happen. Instead, the last attachment_version_delete button
         # should link directly to delete_attachment
         if rs.ambience["attachment"]['num_versions'] <= 1:
-            rs.notify("error", n_("Cannot remove the last remaining"
-                                  " version of an attachment."))
+            rs.notify(
+                "error",
+                n_("Cannot remove the last remaining version of an attachment."),
+            )
             return self.redirect(rs, "assembly/list_attachments")
 
         versions = self.assemblyproxy.get_attachment_versions(rs, attachment_id)
@@ -373,14 +499,15 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             return self.redirect(rs, "assembly/list_attachments")
 
         code = self.assemblyproxy.remove_attachment_version(
-            rs, attachment_id, version_nr)
+            rs, attachment_id, version_nr
+        )
         rs.notify_return_code(code, error=n_("Unknown version."))
         return self.redirect(rs, "assembly/list_attachments")
 
     @periodic("forget_assembly_attachments", period=96)
-    def forget_attachments(self, rs: RequestState, store: CdEDBObject,
-                           ) -> CdEDBObject:
+    def forget_attachments(self, rs: RequestState, store: CdEDBObject) -> CdEDBObject:
         """Daily delete all assembly attachments no longer referenced."""
         self.assemblyproxy.get_attachment_store(rs).forget(
-            rs, self.assemblyproxy.get_attachment_usage)
+            rs, self.assemblyproxy.get_attachment_usage
+        )
         return store

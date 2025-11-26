@@ -1809,6 +1809,16 @@ def _frozen_datetime(
 
 
 @_add_typed_validator
+def _timedelta(
+    val: Any, argname: str | None = None, **kwargs: Any
+) -> datetime.timedelta:
+    """For simplicity, do not attempt to coerce this."""
+    if not isinstance(val, datetime.timedelta):
+        raise ValidationSummary(TypeError(argname, n_("Must be a datetime.timedelta.")))
+    return val
+
+
+@_add_typed_validator
 def _single_digit_int(
     val: Any, argname: Optional[str] = None, **kwargs: Any
 ) -> SingleDigitInt:
@@ -5086,6 +5096,23 @@ def _complaint_entry_version(
     if not entry_type.is_measure:
         with errs:
             val['etime'] = _ALL_TYPED[NoneType](val.get('etime'), 'etime', **kwargs)
+
+    attachment_keys = ("attachment_hash", "attachment_title", "attachment_filename")
+    if not entry_type.allows_attachment:
+        for key in attachment_keys:
+            with errs:
+                val[key] = _ALL_TYPED[NoneType](val.get(key), key, **kwargs)
+    elif (
+        any(val.get(key) for key in attachment_keys)
+        and not all(val.get(key) for key in attachment_keys)
+    ):  # fmt: skip
+        errs.extend(
+            ValueError(key, n_("Incomplete attachment."))
+            for key in attachment_keys
+            if not val.get(key)
+        )
+        if not val.get("attachment_hash"):
+            errs.append(ValueError("attachment", n_("Incomplete attachment.")))
 
     if val.get('etime') and val['etime'] <= val['timestamp']:
         errs.append(ValueError('etime', n_("Must be after timestamp.")))

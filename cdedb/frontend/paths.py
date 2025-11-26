@@ -105,11 +105,11 @@ rules = [
                 post("/change", endpoint="do_username_change"),
             ),
             sub(
-                "/password",
-                get_("/reset", endpoint="reset_password_form"),
-                get_("/reset/mail", endpoint="send_password_reset_link"),
-                get_("/reset/confirm", endpoint="do_password_reset_form"),
-                post("/reset", endpoint="do_password_reset"),
+                "/password/reset",
+                get_("/", endpoint="reset_password_form"),
+                post("/", endpoint="send_password_reset_link"),
+                get_("/confirm", endpoint="do_password_reset_form"),
+                post("/confirm", endpoint="do_password_reset"),
             ),
             get_("/search/user", endpoint="user_search"),
             sub(
@@ -195,6 +195,10 @@ rules = [
                     get_("/history", endpoint="case_history"),
                     get_("/change", endpoint="change_case_form"),
                     post("/change", endpoint="change_case"),
+                    get_(
+                        "/attachment/<filename:attachment_hash>",
+                        endpoint="get_cached_complaint_attachment",
+                    ),
                     post("/involved/add", endpoint="add_involved"),
                     sub(
                         "/involved/<int:persona_id>",
@@ -222,6 +226,10 @@ rules = [
                         post("/revoke", endpoint="revoke_entry"),
                         get_("/remove", endpoint="remove_entry_form"),
                         post("/remove", endpoint="remove_entry"),
+                        sub(
+                            "/version/<int:version_idx>",
+                            get_("/attachment", endpoint="get_complaint_attachment"),
+                        ),
                     ),
                     sub(
                         "/entry/<int:parent_id>",

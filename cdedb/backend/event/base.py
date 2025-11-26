@@ -31,7 +31,6 @@ from cdedb.backend.common import (
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
-    encrypt_password,
     internal,
     singularize,
 )
@@ -51,6 +50,7 @@ from cdedb.common import (
     now,
     unwrap,
 )
+from cdedb.common.crypt import encrypt_password
 from cdedb.common.exceptions import EventIsBalancedError, PrivilegeError
 from cdedb.common.fields import (
     PERSONA_EVENT_FIELDS,

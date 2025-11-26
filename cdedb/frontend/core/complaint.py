@@ -30,10 +30,12 @@ from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import (
     REQUESTdata,
     REQUESTdatadict,
+    REQUESTfile,
     TransactionObserver,
     access,
     check_validation as check,
     extract_and_check_dataclass_validation as extract_and_check_dataclass,
+    periodic,
     request_extractor,
 )
 from cdedb.frontend.core.base import CoreBaseFrontend
@@ -672,16 +674,32 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs.append_validation_error(('authors', ValidationWarning(msg)))
 
     @access("complaint_admin", modi={"POST"})
-    @REQUESTdata("entry_type")
+    @REQUESTfile("attachment")
+    @REQUESTdata("entry_type", "attachment_hash", "attachment_filename")
     def add_entry(
         self,
         rs: RequestState,
         case_id: int,
         entry_type: const.ComplaintEntryType,
+        attachment: werkzeug.datastructures.FileStorage | None,
+        attachment_hash: vtypes.Identifier | None,
+        attachment_filename: str | None,
         parent_id: int | None = None,
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
+
+        if attachment or attachment_hash:
+            rs.values["attachment_hash"], rs.values["attachment_filename"] = (
+                self.locate_or_store_attachment(
+                    rs,
+                    self.complaintproxy.get_attachment_store(rs),
+                    attachment,
+                    attachment_hash,
+                    attachment_filename,
+                )
+            )
+
         entry_data = (
             extract_and_check_dataclass(
                 rs,
@@ -698,6 +716,10 @@ class CoreComplaintMixin(CoreBaseFrontend):
             models.ComplaintEntryVersion,
             creation=True,
             entry_type=entry_type,
+            additional_data={
+                "attachment_hash": rs.values["attachment_hash"],
+                "attachment_filename": rs.values["attachment_filename"],
+            },
         )
         if version_data:
             self._append_author_validation_warning(rs, version_data.get('authors', {}))
@@ -788,23 +810,43 @@ class CoreComplaintMixin(CoreBaseFrontend):
         )
 
     @access("complaint_admin", modi={"POST"})
-    @REQUESTdata("dreason")
+    @REQUESTfile("attachment")
+    @REQUESTdata("dreason", "attachment_hash", "attachment_filename")
     def replace_entry(
         self,
         rs: RequestState,
         case_id: int,
         entry_id: int,
         dreason: str,
+        attachment: werkzeug.datastructures.FileStorage | None,
+        attachment_hash: vtypes.Identifier | None,
+        attachment_filename: str | None,
     ) -> Response:
         # the check that the entry belongs to the case is already done in
         # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
+
+        if attachment or attachment_hash:
+            rs.values["attachment_hash"], rs.values["attachment_filename"] = (
+                self.locate_or_store_attachment(
+                    rs,
+                    self.complaintproxy.get_attachment_store(rs),
+                    attachment,
+                    attachment_hash,
+                    attachment_filename,
+                )
+            )
+
         data = extract_and_check_dataclass(
             rs,
             models.ComplaintEntryVersion,
             creation=False,
             entry_type=rs.ambience['entry'].entry_type,
+            additional_data={
+                "attachment_hash": rs.values["attachment_hash"],
+                "attachment_filename": rs.values["attachment_filename"],
+            },
         )
         if rs.has_validation_errors() or not data:
             return self.replace_entry_form(rs, case_id, entry_id, internal=True)
@@ -985,6 +1027,62 @@ class CoreComplaintMixin(CoreBaseFrontend):
         ret = self.complaintproxy.delete_entry(rs, entry_id, dreason)
         rs.notify_return_code(ret)
         return self.redirect(rs, "core/show_case")
+
+    @access("complaint_admin")
+    def get_complaint_attachment(
+        self, rs: RequestState, case_id: int, entry_id: int, version_idx: int
+    ) -> Response:
+        # the check that the entry belongs to the case is already done in
+        # `reconnoitre_ambience`, which raises a "404 Not Found" in this case
+        if not rs.ambience["case"].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
+        if not rs.ambience["entry_version"].attachment_hash:
+            rs.notify("error", n_("Entry version has no attachment."))
+            return self.redirect(rs, "core/show_case")
+        if (
+            rs.ambience["entry"].entry_type.is_hidden
+            and not self.complaintproxy.is_unlocked(rs, case_id)
+        ):  # fmt: skip
+            rs.notify(
+                "error",
+                n_("Need to unlock case to access %(entry_link)s attachment."),
+                {"entry_link": entry_link(rs, entry_id)},
+            )
+            return self.redirect(rs, "core/show_case")
+        content = self.complaintproxy.retrieve_attachment(rs, entry_id, version_idx)
+        if content is None:
+            raise werkzeug.exceptions.NotFound(n_("File does not exist."))
+        return self.send_file(
+            rs,
+            mimetype="application/pdf",
+            data=content,
+            filename=rs.ambience["entry_version"].attachment_filename,
+        )
+
+    @access("complaint_admin")
+    def get_cached_complaint_attachment(
+        self, rs: RequestState, case_id: int, attachment_hash: str
+    ) -> Response:
+        if not rs.ambience["case"].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
+        if not self.complaintproxy.is_unlocked(rs, case_id):
+            rs.notify(
+                "error",
+                n_("Need to unlock case to access attachment."),
+            )
+            return self.redirect(rs, "core/show_case")
+        content = self.complaintproxy.get_attachment_store(rs).get(attachment_hash)
+        if content is None:
+            raise werkzeug.exceptions.NotFound(n_("File does not exist."))
+        return self.send_file(rs, mimetype="application/pdf", data=content)
+
+    @periodic("forget_complaint_attachments", period=16)
+    def forget_attachments(self, rs: RequestState, store: CdEDBObject) -> CdEDBObject:
+        """Periodically delete all attachments no longer referenced."""
+        self.complaintproxy.get_attachment_store(rs).forget(
+            rs, self.complaintproxy.get_attachment_usage
+        )
+        return store
 
     @access("complaint_admin", "complaint.enforcer")
     def measures(self, rs: RequestState) -> Response:
