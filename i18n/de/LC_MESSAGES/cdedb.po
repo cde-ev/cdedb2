@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-11-25 22:13+0100\n"
+"POT-Creation-Date: 2025-11-29 18:24+0100\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -3681,7 +3681,7 @@ msgstr "Ungültiger Benutzer."
 
 #: cdedb/backend/cde/lastschrift.py:273 cdedb/backend/cde/lastschrift.py:303
 #: cdedb/backend/core/genesis.py:134 cdedb/backend/core/genesis.py:164
-#: cdedb/backend/event/__init__.py:305 cdedb/backend/event/__init__.py:427
+#: cdedb/backend/event/__init__.py:312 cdedb/backend/event/__init__.py:438
 #: cdedb/backend/event/base.py:752 cdedb/backend/event/base.py:793
 #: cdedb/backend/event/course.py:363 cdedb/backend/event/course.py:455
 #: cdedb/backend/event/lodgement.py:170 cdedb/backend/event/lodgement.py:201
@@ -3878,7 +3878,7 @@ msgstr "Beteiligte Fallbegleitung."
 msgid "Not a companion."
 msgstr "Keine Fallbegleitung."
 
-#: cdedb/backend/complaint.py:1272
+#: cdedb/backend/complaint.py:1273
 msgid "Can only list measures."
 msgstr "Kann nur Maßnahmen abrufen."
 
@@ -4225,15 +4225,15 @@ msgstr "Emailadresse bereits vergeben."
 msgid "Invalid genesis state."
 msgstr "Ungültiger Zustand für Accountanfrage."
 
-#: cdedb/backend/event/__init__.py:486 cdedb/backend/event/registration.py:2166
+#: cdedb/backend/event/__init__.py:497 cdedb/backend/event/registration.py:2166
 msgid "Event mismatch."
 msgstr "Falsche Veranstaltung."
 
-#: cdedb/backend/event/__init__.py:492
+#: cdedb/backend/event/__init__.py:503
 msgid "Version mismatch – aborting."
 msgstr "Versionen stimmen nicht überein."
 
-#: cdedb/backend/event/__init__.py:542
+#: cdedb/backend/event/__init__.py:553
 msgid "Referential integrity of lodgement groups violated."
 msgstr "Referentielle Integrität der Unterkunftsgruppen wurde verletzt."
 
@@ -7232,7 +7232,7 @@ msgid "comment"
 msgstr "Anmerkung"
 
 #: cdedb/database/constants.py:804
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:71
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:77
 msgid "revoked"
 msgstr "widerrufen"
 
@@ -8285,6 +8285,10 @@ msgstr "Passwort ungültig gemacht."
 #: cdedb/frontend/core/base.py:2224 cdedb/frontend/core/base.py:2377
 msgid "Passwords don’t match."
 msgstr "Passwörter stimmen nicht überein."
+
+#: cdedb/frontend/core/base.py:2239
+msgid "Wrong password."
+msgstr "Passwort falsch."
 
 #: cdedb/frontend/core/base.py:2247
 msgid "Password changed."
@@ -11303,7 +11307,7 @@ msgstr "Version %(version_nr)s wurde gelöscht."
 #: cdedb/frontend/templates/web/core/complaint/generic.tmpl:44
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:36
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:394
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:80
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:91
 msgid "by"
 msgstr "von"
 
@@ -14055,7 +14059,7 @@ msgstr "Verifizierungs-E-Mail abschicken"
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:22
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:243
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:414
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:89
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:100
 #: cdedb/frontend/templates/web/core/complaint/view_complaint_log.tmpl:22
 #, python-format
 msgid "Case %s"
@@ -14477,7 +14481,7 @@ msgid "Measure against %(concerned)s"
 msgstr "Maßnahme gegen %(concerned)s"
 
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:43
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:87
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:98
 #, python-format
 msgid "from %(case)s"
 msgstr "aus %(case)s"
@@ -14614,14 +14618,15 @@ msgstr "Globale Daten"
 msgid "This lists all measures targeting this persona."
 msgstr "Hier sind alle Maßnahmen gegen diese Person aufgelistet."
 
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:73
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:79
 msgid "expired"
 msgstr "abgelaufen"
 
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:85
 msgid "not yet active"
 msgstr "noch nicht aktiv"
 
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:101
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:112
 msgid "There are no measures targeting this persona."
 msgstr "Es gibt keine Maßnahmen gegen diese Person."
 
