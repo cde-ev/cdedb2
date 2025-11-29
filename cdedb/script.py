@@ -212,11 +212,9 @@ class Script:
             self.config = Config()
             self._secrets = SecretsConfig()
         self._translations: Optional[Mapping[str, gettext.NullTranslations]]
-        self._backends: dict[tuple[str, bool], AbstractBackend]
-        self._frontends: dict[str, AbstractFrontend]
+        self._backends: dict[tuple[str, bool], AbstractBackend] = {}
+        self._frontends: dict[tuple[str, bool], AbstractFrontend] = {}
         self._translations = None
-        self._backends = {}
-        self._frontends = {}
         self._request_states: dict[int, RequestState] = {}
         self._conn = None  # type: ignore[assignment]
         self._connect(dbuser, cursor)
@@ -250,14 +248,21 @@ class Script:
         })
         return self._backends[(realm, proxy)]
 
-    def make_frontend(self, realm: str):  # type: ignore[no-untyped-def]
+    def make_frontend(self, realm: str, *, proxy: bool = True):  # type: ignore[no-untyped-def]
         """Create a frontend."""
-        if ret := self._frontends.get(realm):
+        if ret := self._frontends.get((realm, proxy)):
             return ret
         with self._tempconfig:
             frontend_name = self.frontend_map[realm]
             frontend = resolve_name(f"cdedb.frontend.{realm}.{frontend_name}")()
-        self._frontends[realm] = frontend
+        if not proxy:
+            for backend_name in self.backend_map:
+                setattr(
+                    frontend,
+                    f"{backend_name}proxy",
+                    self.make_backend(backend_name, proxy=proxy),
+                )
+        self._frontends[(realm, proxy)] = frontend
         return frontend
 
     def rs(self, persona_id: Optional[int] = None) -> RequestState:

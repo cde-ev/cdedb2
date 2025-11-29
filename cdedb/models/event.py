@@ -259,10 +259,14 @@ class Event(EventDataclass):
     orgas: set[vtypes.ID] = dataclasses.field(
         default_factory=set, metadata=Meta.io_exclude.as_dict
     )
+    caretakers: set[vtypes.ID] = dataclasses.field(
+        default_factory=set, metadata=Meta.io_exclude.as_dict
+    )
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
         data['orgas'] = set(data['orgas'])
+        data['caretakers'] = set(data['caretakers'])
         data['parts'] = EventPart.many_from_database(data['parts'])
         data['tracks'] = CourseTrack.many_from_database(data['tracks'])
         data['fields'] = EventField.many_from_database(data['fields'])
@@ -323,7 +327,12 @@ class Event(EventDataclass):
                     SELECT persona_id
                     FROM event.orgas
                     WHERE event_id = events.id
-                ) AS orgas
+                ) AS orgas,
+                array(
+                    SELECT persona_id
+                    FROM event.caretakers
+                    WHERE event_id = events.id
+                ) AS caretakers
             FROM {cls.database_table}
             WHERE {entity_key or cls.entity_key} = ANY(%s)
             """

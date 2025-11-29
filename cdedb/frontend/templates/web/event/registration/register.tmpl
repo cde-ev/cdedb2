@@ -23,8 +23,7 @@
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher",
                             readonly=not (ambience['event'].is_visible_for(user, is_registered=False, privileged=False)
-                                          or ambience['event']['id'] in user.orga
-                                          or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
+                                          or orga_view or 'event_mgmt' in user.admin_views)) }}
     {% if preview %}
         {{ util.breadcrumb_link(cdedblink("event/configure_registration"), gettext("Configure Registration")) }}
         {{ util.breadcrumb_link(cdedblink("event/register", {"preview": True}),
@@ -79,7 +78,7 @@
 
         {% if ambience['event']['registration_text'] %}
         {% set button = None %}
-        {% if ambience['event'].id in user.orga or "event_orga" in user.admin_views %}
+        {% if orga_view %}
             {% set button = generic_event.edit_free_text_button("registration_text") %}
         {% endif %}
         {% call util.bootstrap_panel(gettext("Note of the Orga Team"), button=button,

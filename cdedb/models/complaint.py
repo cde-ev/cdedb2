@@ -8,8 +8,6 @@ from collections.abc import Collection
 from itertools import chain
 from typing import Self, Union
 
-from cryptography.fernet import Fernet
-
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, User, now
@@ -32,7 +30,9 @@ class Case(CdEDataclass):
     start_date: datetime.date | None = None
     end_date: datetime.date | None = None
 
-    entries: CdEDataclassMap["ComplaintEntry"]
+    entries: CdEDataclassMap["ComplaintEntry"] = dataclasses.field(
+        metadata=Meta.asdict_include.as_dict
+    )
     involved: dict[const.ComplaintInvolvementType, set[int]] = dataclasses.field(
         metadata=Meta.exclude.as_dict,
     )
@@ -346,6 +346,16 @@ class ComplaintEntryVersion(CdEDataclass):
     timestamp: datetime.datetime
     etime: datetime.datetime | None = None
 
+    # filehas and filename are retrieved from the request manually to feed to the
+    #  attachment store.
+    attachment_title: str | None = None
+    attachment_hash: str | None = dataclasses.field(
+        default=None, metadata=Meta.request_exclude.as_dict
+    )
+    attachment_filename: str | None = dataclasses.field(
+        default=None, metadata=Meta.request_exclude.as_dict
+    )
+
     ctime: datetime.datetime = dataclasses.field(metadata=Meta.input_exclude.as_dict)
     submitted_by: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
@@ -366,20 +376,14 @@ class ComplaintEntryVersion(CdEDataclass):
         metadata=Meta.database_exclude.as_dict,
     )
 
-    @staticmethod
-    def encrypt(description: str, key: bytes) -> bytes:
-        return Fernet(key).encrypt(description.encode("utf-8"))
-
-    @staticmethod
-    def decrypt(description: bytes, key: bytes) -> str:
-        return Fernet(key).decrypt(description).decode("utf-8")
-
     def get_sortkey(self) -> Sortkey:
         return (self.entry_id, self.ctime)
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:
         data["authors"] = set(data["authors"])
+        if data["attachment_hash"]:
+            data["attachment_hash"] = f"REDACTED:{data['attachment_hash'][:12]}"
         return super().from_database(data)
 
     @classmethod
@@ -388,7 +392,7 @@ class ComplaintEntryVersion(CdEDataclass):
     ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
         query = f"""
             SELECT
-                {','.join(cls.database_fields())},
+                {', '.join(cls.database_fields())},
                 array(
                     SELECT persona_id
                     FROM {ComplaintAuthors.database_table} AS authors

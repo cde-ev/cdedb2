@@ -153,17 +153,6 @@ PRIVILEGE_CHANGE_FIELDS = (
     "reviewer",
 )
 
-#: Fields of a concluded event
-PAST_EVENT_FIELDS = (
-    "id",
-    "title",
-    "shortname",
-    "institution",
-    "description",
-    "tempus",
-    "participant_info",
-)
-
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = (
     "id",

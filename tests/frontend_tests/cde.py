@@ -2321,6 +2321,24 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         f = self.response.forms['transfersform']
         self.submit(f)
+        for i, mail in enumerate(self._fetch_mail()):
+            content = mail.get_body().get_content()  # type: ignore[union-attr]
+            with self.subTest(i=i):
+                if content.startswith("Hallo Daniel"):
+                    self.assertNotIn("Damit deine Anmeldung als vollständig zählt", content, content)
+                elif content.startswith("Hallo Werner"):
+                    if "Große Testakademie" in content:
+                        self.assertIn("Damit deine Anmeldung als vollständig zählt", content, content)
+                    else:
+                        self.assertIn("Dein Guthaben beträgt jetzt", content, content)
+                elif content.startswith("Hallo Emilia"):
+                    pass
+                elif content.startswith("Liebe Orgas"):
+                    pass
+                elif content.startswith("Liebe Buchhaltung"):
+                    pass
+                else:
+                    self.fail(content)
         self.get('/event/event/1/registration/2/fee/summary')
         self.assertNonPresence("Externenbeitrag", div='amount-owed')
         self.assertPresence("461,49 €", div='amount-owed')
@@ -2610,6 +2628,7 @@ class TestCdEFrontend(FrontendTest):
 
         # Institution CdE
         self.traverse({'description': '^CdE$'})
+        self.assertPresence("CdE", div='breadcrumb')
         self.assertPresence("PfingstAkademie 2014", div='events-2014')
         self.assertNonPresence("Geburtstagsfete")
         self.assertNonPresence("2019")
@@ -2658,6 +2677,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Vergangene Veranstaltungen")
         self.traverse({'description': 'PfingstAkademie 2014'})
         self.assertTitle("PfingstAkademie 2014")
+        self.assertPresence("CdE", div='breadcrumb')
         self.assertPresence("Club der Ehemaligen", div='institution',
                             exact=True)
         self.assertPresence("Great event!", div='description', exact=True)
@@ -2665,6 +2685,7 @@ class TestCdEFrontend(FrontendTest):
                             div='list-courses')
         self.traverse({'description': 'Swish -- und alles ist gut'})
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
+        self.assertPresence("CdE", div='breadcrumb')
         self.assertPresence("Ringelpiez mit anfassen.", div='description',
                             exact=True)
         self.traverse({'description': 'PfingstAkademie 2014'})

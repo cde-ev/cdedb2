@@ -71,7 +71,7 @@
                                     {# In the anonymous case we must have a timeout. #}
                                     {{ util.input_hidden("wants", encode_parameter(
                                         "core/change_locale", "wants", original_request.url, user.persona_id,
-                                        timeout=(None if user.persona_id else UNCRITICAL_PARAMETER_TIMEOUT))) }}
+                                        timeout=(None if user.persona_id else EXTENDED_PARAMETER_TIMEOUT))) }}
                                 {% endif %}
                                 {% with TITLES = {'de': ("Deutsch", "Auf Deutsch umschalten"),
                                                   'en': ("English", "Switch to English"),
@@ -146,7 +146,7 @@
                             {% elif not login_form and original_request %}
                                 {% set encoded_parameter = encode_parameter(
                                            "core/index", "wants", original_request.url, user.persona_id,
-                                           timeout=UNCRITICAL_PARAMETER_TIMEOUT) %}
+                                           timeout=EXTENDED_PARAMETER_TIMEOUT) %}
                                 {{ util.href(cdedblink('core/index', {'wants': encoded_parameter}), gettext("Login"),
                                              aclass='btn navbar-button btn-default', icon='power-off') }}
                             {% endif %}
@@ -197,7 +197,7 @@
                 <div class="col-md-9">
                     {% if self.breadcrumb() %}
                         <h6 id="bc-title" class="sr-only">{% trans %}You are here:{% endtrans %}</h6>
-                        <nav>
+                        <nav id="breadcrumb">
                             <ol class="breadcrumb breadcrumb-hanging" aria-labelledby="bc-title">
                                 {% block breadcrumb %}{% endblock %}
                             </ol>

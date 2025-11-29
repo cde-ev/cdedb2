@@ -11,6 +11,7 @@ from typing import Any, Optional, Protocol
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models_event
+import cdedb.models.past_event as models
 from cdedb.backend.common import (
     AbstractBackend,
     Silencer,
@@ -34,12 +35,13 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
-from cdedb.common.fields import PAST_COURSE_FIELDS, PAST_EVENT_FIELDS
+from cdedb.common.fields import PAST_COURSE_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import PastEventLogFilter
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
+from cdedb.models.common import CdEDataclassMap
 
 
 class PastEventBackend(AbstractBackend):
@@ -156,17 +158,10 @@ class PastEventBackend(AbstractBackend):
 
     @access("cde")
     def past_event_stats(self, rs: RequestState) -> CdEDBObjectMap:
-        """Additional information about concluded events.
-
-        This is mostly an extended version of the listing function which
-        provides aggregate data without the need to shuttle the complete
-        table to the frontend.
-
-        :returns: Mapping of event ids to stats.
-        """
+        """Returns the number of courses and participants for each past event."""
         query = """
             SELECT
-                events.id AS pevent_id, tempus, events.institution AS institution,
+                events.id AS pevent_id,
                 COALESCE(course_count, 0) AS courses,
                 COALESCE(participant_count, 0) AS participants
             FROM (
@@ -194,41 +189,37 @@ class PastEventBackend(AbstractBackend):
                 ) AS participant_counts ON participant_counts.pevent_id = events.id
             )
         """
-        data = self.query_all(rs, query, tuple())
-        ret = {}
-        for e in data:
-            e['institution'] = const.PastInstitutions(e['institution'])
-            ret[e['pevent_id']] = e
-        return ret
+        return {e['pevent_id']: e for e in self.query_all(rs, query, [])}
 
     @access("cde", "event")
     def get_past_events(
         self, rs: RequestState, pevent_ids: Collection[int]
-    ) -> CdEDBObjectMap:
+    ) -> CdEDataclassMap[models.PastEvent]:
         """Retrieve data for some concluded events."""
         pevent_ids = affirm_set(vtypes.ID, pevent_ids)
-        data = self.sql_select(rs, "past_event.events", PAST_EVENT_FIELDS, pevent_ids)
-        ret = {}
-        for e in data:
-            e['institution'] = const.PastInstitutions(e['institution'])
-            ret[e['id']] = e
-        return ret
+        return models.PastEvent.many_from_database(
+            self.query_all(rs, *models.PastEvent.get_select_query(pevent_ids))
+        )
 
     class _GetPastEventProtocol(Protocol):
-        def __call__(self, rs: RequestState, pevent_id: int) -> CdEDBObject: ...
+        def __call__(self, rs: RequestState, pevent_id: int) -> models.PastEvent: ...
 
     get_past_event: _GetPastEventProtocol = singularize(
         get_past_events, "pevent_ids", "pevent_id"
     )
 
     @access("cde_admin", "event_admin")
-    def set_past_event(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
+    def set_past_event(
+        self, rs: RequestState, pevent_id: int, data: CdEDBObject
+    ) -> DefaultReturnCode:
         """Update some keys of a concluded event."""
-        data = affirm(vtypes.PastEvent, data)
+        pevent_id = affirm(vtypes.ID, pevent_id)
+        data = affirm(models.PastEvent, data)
+        data["id"] = pevent_id
         with Atomizer(rs):
-            ret = self.sql_update(rs, "past_event.events", data)
+            ret = self.sql_update(rs, models.PastEvent.database_table, data)
             self.past_event_log(
-                rs, code=const.PastEventLogCodes.event_changed, pevent_id=data['id']
+                rs, code=const.PastEventLogCodes.event_changed, pevent_id=pevent_id
             )
         return ret
 
@@ -237,9 +228,9 @@ class PastEventBackend(AbstractBackend):
         self, rs: RequestState, data: CdEDBObject
     ) -> DefaultReturnCode:
         """Make a new concluded event."""
-        data = affirm(vtypes.PastEvent, data, creation=True)
+        data = affirm(models.PastEvent, data, creation=True)
         with Atomizer(rs):
-            ret = self.sql_insert(rs, "past_event.events", data)
+            ret = self.sql_insert(rs, models.PastEvent.database_table, data)
             self.past_event_log(
                 rs, code=const.PastEventLogCodes.event_created, pevent_id=ret
             )
@@ -349,7 +340,7 @@ class PastEventBackend(AbstractBackend):
                     code=const.PastEventLogCodes.event_deleted,
                     pevent_id=None,
                     persona_id=None,
-                    change_note=pevent['title'],
+                    change_note=pevent.title,
                 )
             else:
                 raise ValueError(
@@ -751,17 +742,9 @@ class PastEventBackend(AbstractBackend):
         :returns: ID of the newly created past event.
         """
         part = event.parts[part_id]
-        pevent = {k: v for k, v in event.as_dict().items() if k in PAST_EVENT_FIELDS}
-        pevent['tempus'] = part.part_begin
-        # The event field 'participant_info' usually contains information
-        # no longer relevant, so we do not keep it here
-        pevent['participant_info'] = None
-        if len(event.parts) > 1:
-            # Add part designation in case of events with multiple parts
-            pevent['title'] += f" ({part.title})"
-            pevent['shortname'] += f" ({part.shortname})"
-        del pevent['id']
-        new_id = self.create_past_event(rs, pevent)
+        pevent = models.PastEvent.from_event(event, part_id)
+        new_id = self.create_past_event(rs, pevent.to_database())
+
         course_ids = self.event.list_courses(rs, event.id)
         courses = self.event.get_courses(rs, list(course_ids.keys()))
         course_map = {}
@@ -773,6 +756,7 @@ class PastEventBackend(AbstractBackend):
             pcourse['pevent_id'] = new_id
             pcourse_id = self.create_past_course(rs, pcourse)
             course_map[course_id] = pcourse_id
+
         reg_ids = self.event.list_registrations(rs, event.id)
         regs = self.event.get_registrations(rs, list(reg_ids.keys()))
         # Remember if there were registrations for this part.

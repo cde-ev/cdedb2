@@ -83,6 +83,7 @@ import cdedb.models.core as models_core
 import cdedb.models.droid as models_droid
 import cdedb.models.event as models_event
 import cdedb.models.ml as models_ml
+import cdedb.models.past_event as models_past_event
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
@@ -121,7 +122,12 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.attachment import AttachmentStore
-from cdedb.common.exceptions import PrivilegeError, ValidationWarning
+from cdedb.common.exceptions import (
+    ParameterInvalidError,
+    ParameterTimeoutError,
+    PrivilegeError,
+    ValidationWarning,
+)
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
@@ -165,7 +171,8 @@ class Attachment(typing.TypedDict, total=False):
 
 
 Headers = typing.TypedDict(
-    "Headers", {
+    "Headers",
+    {
         "From": str,
         "Prefix": str,
         "Reply-To": str | None,
@@ -202,6 +209,7 @@ class BaseApp(metaclass=abc.ABCMeta):
     """Additional base class under :py:class:`AbstractFrontend` which will be
     inherited by :py:class:`cdedb.frontend.application.Application`.
     """
+
     realm: ClassVar[str]
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -214,20 +222,26 @@ class BaseApp(metaclass=abc.ABCMeta):
             logger_name = "cdedb.frontend"
         self.logger = logging.getLogger(logger_name)  # logger are thread-safe!
         self.logger.debug(
-            f"Instantiated {self} with configpath {self.conf._configpath}.")
+            f"Instantiated {self} with configpath {self.conf._configpath}."
+        )
         # local variable to prevent closure over secrets
         url_parameter_salt = secrets["URL_PARAMETER_SALT"]
         self.decode_parameter = (
             lambda target, name, param, persona_id: decode_parameter(
-                url_parameter_salt, target, name, param,
-                persona_id))
+                url_parameter_salt, target, name, param, persona_id
+            )
+        )
 
         def local_encode(
-                target: str, name: str, param: str, persona_id: Optional[int],
-                timeout: Optional[_tdelta] = self.conf["PARAMETER_TIMEOUT"],
+            target: str,
+            name: str,
+            param: str,
+            persona_id: Optional[int],
+            timeout: Optional[_tdelta] = self.conf["PARAMETER_TIMEOUT"],
         ) -> str:
-            return encode_parameter(url_parameter_salt, target, name,
-                                    param, persona_id, timeout)
+            return encode_parameter(
+                url_parameter_salt, target, name, param, persona_id, timeout
+            )
 
         self.encode_parameter = local_encode
 
@@ -242,12 +256,17 @@ class BaseApp(metaclass=abc.ABCMeta):
 
     @staticmethod
     def cgitb_html() -> Response:
-        return Response(cgitb.html(sys.exc_info(), context=7),
-                        mimetype="text/html", status=500)
+        return Response(
+            cgitb.html(sys.exc_info(), context=7), mimetype="text/html", status=500
+        )
 
-    def encode_notification(self, rs: RequestState, ntype: NotificationType,
-                            nmessage: str, nparams: Optional[CdEDBObject] = None,
-                            ) -> str:
+    def encode_notification(
+        self,
+        rs: RequestState,
+        ntype: NotificationType,
+        nmessage: str,
+        nparams: Optional[CdEDBObject] = None,
+    ) -> str:
         """Wrapper around :py:meth:`encode_parameter` for notifications.
 
         The message format is A--B--C--D, with
@@ -261,15 +280,22 @@ class BaseApp(metaclass=abc.ABCMeta):
         nparams = nparams or {}
         message = f"{ntype}--{len(nmessage)}--{nmessage}--{json_serialize(nparams)}"
         return self.encode_parameter(
-            '_/notification', 'displaynote', message,
+            '_/notification',
+            'displaynote',
+            message,
             persona_id=rs.user.persona_id,
-            timeout=self.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
+            timeout=self.conf["EXTENDED_PARAMETER_TIMEOUT"],
+        )
 
-    def decode_notification(self, rs: RequestState, note: str,
-                            ) -> Union[Notification, tuple[None, None, None]]:
+    def decode_notification(
+        self,
+        rs: RequestState,
+        note: str,
+    ) -> Union[Notification, tuple[None, None, None]]:
         """Inverse wrapper to :py:meth:`encode_notification`."""
         _, message = self.decode_parameter(
-            '_/notification', 'displaynote', note, rs.user.persona_id)
+            '_/notification', 'displaynote', note, rs.user.persona_id
+        )
         if not message:
             return None, None, None
         parts = message.split("--")
@@ -277,12 +303,16 @@ class BaseApp(metaclass=abc.ABCMeta):
         length = int(parts[1])
         remainder = "--".join(parts[2:])
         nmessage = remainder[:length]
-        nparams = json.loads(remainder[length + 2:])
+        nparams = json.loads(remainder[length + 2 :])
         return ntype, nmessage, nparams
 
-    def redirect(self, rs: RequestState, target: str,
-                 params: Optional[CdEDBObject] = None, anchor: Optional[str] = None,
-                 ) -> werkzeug.Response:
+    def redirect(
+        self,
+        rs: RequestState,
+        target: str,
+        params: Optional[CdEDBObject] = None,
+        anchor: Optional[str] = None,
+    ) -> werkzeug.Response:
         """Create a response which diverts the user. Special care has to be
         taken not to lose any notifications.
         """
@@ -294,15 +324,21 @@ class BaseApp(metaclass=abc.ABCMeta):
             url += "#" + anchor
         ret = basic_redirect(rs, url)
         if rs.notifications:
-            notifications = [self.encode_notification(rs, ntype, nmessage, nparams)
-                             for ntype, nmessage, nparams in rs.notifications]
+            notifications = [
+                self.encode_notification(rs, ntype, nmessage, nparams)
+                for ntype, nmessage, nparams in rs.notifications
+            ]
             ret.set_cookie("displaynote", json_serialize(notifications))
         return ret
 
-    def encode_anti_csrf_token(self, target: str,
-                               token_name: str = ANTI_CSRF_TOKEN_NAME,
-                               token_payload: str = ANTI_CSRF_TOKEN_PAYLOAD,
-                               *, persona_id: int) -> str:
+    def encode_anti_csrf_token(
+        self,
+        target: str,
+        token_name: str = ANTI_CSRF_TOKEN_NAME,
+        token_payload: str = ANTI_CSRF_TOKEN_PAYLOAD,
+        *,
+        persona_id: int,
+    ) -> str:
         return self.encode_parameter(target, token_name, token_payload, persona_id)
 
 
@@ -323,8 +359,7 @@ class PeriodicJob(Protocol):
     def __call__(self, rs: RequestState, state: CdEDBObject) -> CdEDBObject: ...
 
 
-def periodic(name: str, period: int = 1,
-             ) -> Callable[[PeriodicMethod], PeriodicJob]:
+def periodic(name: str, period: int = 1) -> Callable[[PeriodicMethod], PeriodicJob]:
     """This decorator marks a function of a frontend for periodic execution.
 
     This just adds a flag and all of the actual work is done by the
@@ -334,6 +369,7 @@ def periodic(name: str, period: int = 1,
     :param period: the interval in which to execute this job (e.g. period ==
       2 means every second invocation of the CronFrontend)
     """
+
     def decorator(fun: PeriodicMethod) -> PeriodicJob:
         fun = cast(PeriodicJob, fun)
         fun.cron = {
@@ -364,12 +400,14 @@ class CdEDBUndefined(jinja2.StrictUndefined):
 
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     """Common base class for all frontends."""
+
     #: to be overridden by children
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.template_dir = pathlib.Path(self.conf["REPOSITORY_PATH"], "cdedb",
-                                         "frontend", "templates")
+        self.template_dir = pathlib.Path(
+            self.conf["REPOSITORY_PATH"], "cdedb", "frontend", "templates"
+        )
         undefined: type[jinja2.Undefined]
         if self.conf['CDEDB_DEV'] or self.conf['CDEDB_TEST']:
             undefined = CdEDBUndefined
@@ -379,22 +417,26 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(str(self.template_dir)),
             extensions=['jinja2.ext.i18n', 'jinja2.ext.do', 'jinja2.ext.loopcontrols'],
-            finalize=sanitize_None, autoescape=True, auto_reload=self.conf["CDEDB_DEV"],
-            undefined=undefined)
+            finalize=sanitize_None,
+            autoescape=True,
+            auto_reload=self.conf["CDEDB_DEV"],
+            undefined=undefined,
+        )
         self.jinja_env.policies['ext.i18n.trimmed'] = True
         self.jinja_env.policies['json.dumps_kwargs']['cls'] = CustomJSONEncoder
         self.jinja_env.filters.update(JINJA_FILTERS)
         self.jinja_env.globals.update({
             'now': now,
-            'nbsp': "\u00A0",
+            'nbsp': "\u00a0",
             'query_mod': query_mod,
             'get_hash': get_hash,
             'enums': ENUMS_DICT,
             'raise': raise_jinja,
             'encode_parameter': self.encode_parameter,
             'encode_anti_csrf': self.encode_anti_csrf_token,
-            'staticurl': functools.partial(staticurl,
-                                           version=self.conf["GIT_COMMIT"][:8]),
+            'staticurl': functools.partial(
+                staticurl, version=self.conf["GIT_COMMIT"][:8]
+            ),
             'docurl': docurl,
             "drow_name": drow_name,
             "drow_create": drow_create,
@@ -403,8 +445,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'CDEDB_OFFLINE_DEPLOYMENT': self.conf["CDEDB_OFFLINE_DEPLOYMENT"],
             'CDEDB_TEST': self.conf["CDEDB_TEST"],
             'CDEDB_DEV': self.conf["CDEDB_DEV"],
-            'UNCRITICAL_PARAMETER_TIMEOUT': self.conf[
-                "UNCRITICAL_PARAMETER_TIMEOUT"],
+            'EXTENDED_PARAMETER_TIMEOUT': self.conf["EXTENDED_PARAMETER_TIMEOUT"],
             'ANTI_CSRF_TOKEN_NAME': ANTI_CSRF_TOKEN_NAME,
             'ANTI_CSRF_TOKEN_PAYLOAD': ANTI_CSRF_TOKEN_PAYLOAD,
             'IGNORE_WARNINGS_NAME': IGNORE_WARNINGS_NAME,
@@ -415,10 +456,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'ALL_MOD_ADMIN_VIEWS': ALL_MOD_ADMIN_VIEWS,
             'ALL_MGMT_ADMIN_VIEWS': ALL_MGMT_ADMIN_VIEWS,
             'EntitySorter': EntitySorter,
-            'roles_allow_genesis_management':
-                lambda roles: roles & ({'core_admin'} | set(
-                    f"{realm}_admin"
-                    for realm in REALM_SPECIFIC_GENESIS_FIELDS)),
+            'roles_allow_genesis_management': lambda roles: (
+                roles
+                & (
+                    {'core_admin'}
+                    | set(f"{realm}_admin" for realm in REALM_SPECIFIC_GENESIS_FIELDS)
+                )
+            ),
             'unwrap': unwrap,
             'MANAGEMENT_ADDRESS': self.conf['MANAGEMENT_ADDRESS'],
             'MAX_QUERY_ORDERS': query_mod.MAX_QUERY_ORDERS,
@@ -450,8 +494,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         # local variables to prevent closure over secrets
         mailman_password = secrets["MAILMAN_PASSWORD"]
         mailman_basic_auth_password = secrets["MAILMAN_BASIC_AUTH_PASSWORD"]
-        self.get_mailman = lambda: CdEMailmanClient(self.conf, mailman_password,
-                                                    mailman_basic_auth_password)
+        self.get_mailman = lambda: CdEMailmanClient(
+            self.conf, mailman_password, mailman_basic_auth_password
+        )
 
     @classmethod
     @abc.abstractmethod
@@ -461,8 +506,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         return f"{cls.realm}_admin" in rs.user.roles
 
-    def fill_template(self, rs: RequestState, modus: str, templatename: str,
-                      params: CdEDBObject) -> str:
+    def fill_template(
+        self, rs: RequestState, modus: str, templatename: str, params: CdEDBObject
+    ) -> str:
         """Central function for generating output from a template. This
         makes several values always accessible to all templates.
 
@@ -477,8 +523,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :param templatename: file name of template without extension
         """
 
-        def _cdedblink(endpoint: str, params: Optional[CdEDBMultiDict] = None,
-                       magic_placeholders: Optional[Collection[str]] = None) -> str:
+        def _cdedblink(
+            endpoint: str,
+            params: Optional[CdEDBMultiDict] = None,
+            magic_placeholders: Optional[Collection[str]] = None,
+        ) -> str:
             """We don't want to pass the whole request state to the
             template, hence this wrapper.
 
@@ -486,9 +535,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                                        placeholders in url
             """
             params = params or werkzeug.datastructures.MultiDict()
-            return cdedburl(rs, endpoint, params,
-                            force_external=(modus != "web"),
-                            magic_placeholders=magic_placeholders)
+            return cdedburl(
+                rs,
+                endpoint,
+                params,
+                force_external=(modus != "web"),
+                magic_placeholders=magic_placeholders,
+            )
 
         def _doclink(topic: str, anchor: str = "") -> str:
             """Create link to documentation in non-web templates.
@@ -510,10 +563,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 raise RuntimeError(n_("Must not be used in web templates."))
             return staticlink(rs, label="", path=path, version=version, html=False)
 
-        def _show_user_link(user: User, persona_id: int,
-                            quote_me: Optional[bool] = None,
-                            event_id: Optional[int] = None, ml_id: Optional[int] = None,
-                            ) -> str:
+        def _show_user_link(
+            user: User,
+            persona_id: int,
+            quote_me: Optional[bool] = None,
+            event_id: Optional[int] = None,
+            ml_id: Optional[int] = None,
+        ) -> str:
             """Convenience method to create link to user data page.
 
             This is lengthy otherwise because of the parameter encoding
@@ -523,8 +579,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params = {
                 'persona_id': persona_id,
                 'confirm_id': self.encode_parameter(
-                    "core/show_user", "confirm_id", str(persona_id),
-                    persona_id=user.persona_id, timeout=None)}
+                    "core/show_user",
+                    "confirm_id",
+                    str(persona_id),
+                    persona_id=user.persona_id,
+                    timeout=None,
+                ),
+            }
             if quote_me:
                 params['quote_me'] = True
             if event_id:
@@ -541,14 +602,17 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             all_errors = rs.retrieve_validation_errors()
             return all(
                 isinstance(kind, ValidationWarning)
-                for param, kind in all_errors if param == parameter_name)
+                for param, kind in all_errors
+                if param == parameter_name
+            )
 
         def _has_warnings() -> bool:
             """Determine if there are any warnings among the errors."""
             return bool(validate.get_warnings(rs.retrieve_validation_errors()))
 
-        def _make_backend_checker(rs: RequestState, backend: AbstractBackend,
-                                  method_name: str) -> Callable[..., Any]:
+        def _make_backend_checker(
+            rs: RequestState, backend: AbstractBackend, method_name: str
+        ) -> Callable[..., Any]:
             """Provide a checker from the backend(proxy) for the templates.
 
             This wraps a call to the given backend method, to not require
@@ -575,7 +639,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'has_warnings': _has_warnings,
             'is_admin': self.is_admin(rs),
             'is_relevant_admin': _make_backend_checker(
-                rs, self.mlproxy, method_name="is_relevant_admin"),
+                rs, self.mlproxy, method_name="is_relevant_admin"
+            ),
             'is_warning': _is_warning,
             'lang': rs.lang,
             'n_': n_,
@@ -591,7 +656,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if set(data) & set(params):
             raise ValueError(
                 n_("Default values cannot be overridden: %(keys)s"),
-                {'keys': set(data) & set(params)})
+                {'keys': set(data) & set(params)},
+            )
         merge_dicts(data, params)
 
         if modus == "web":
@@ -603,8 +669,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         elif modus == "other":
             jinja_env = self.jinja_env
         else:
-            raise NotImplementedError(n_("Requested modus does not exists: %(modus)s"),
-                                      {'modus': modus})
+            raise NotImplementedError(
+                n_("Requested modus does not exists: %(modus)s"), {'modus': modus}
+            )
         tmpl = pathlib.Path(modus, self.realm, f"{templatename}.tmpl")
         # sadly, jinja does not catch nicely if the template exists, so we do this here
         if not (self.template_dir / tmpl).is_file():
@@ -613,7 +680,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return t.render(**data)
 
     def locate_or_store_attachment(
-        self, rs: RequestState, store: AttachmentStore,
+        self,
+        rs: RequestState,
+        store: AttachmentStore,
         attachment: Optional[werkzeug.datastructures.FileStorage],
         attachment_hash: Optional[vtypes.Identifier],
         attachment_filename: Optional[str] = None,
@@ -638,12 +707,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             # replace the cached attachment with an invalid attachment. In this case,
             # a validation error will prevent the cached attachment to be used outright.
             attachment_stored = store.is_available(attachment_hash)
+            msg = n_(
+                "It seems like you took too long and your previous upload was deleted."
+            )
             if not attachment_stored:
                 attachment_hash = None
-                e = ("cached_attachment", ValueError(n_(
-                    "It seems like you took too long and "
-                    "your previous upload was deleted.")))
-                rs.append_validation_error(e)
+                rs.append_validation_error(("cached_attachment", ValueError(msg)))
         if attachment_hash is None:
             rs.append_validation_error(
                 ("attachment", ValueError(n_("Must not be empty."))),
@@ -651,11 +720,16 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return attachment_hash, attachment_filename
 
     @staticmethod
-    def send_csv_file(rs: RequestState, mimetype: str = 'text/csv',
-                      filename: Optional[str] = None, inline: bool = True, *,
-                      path: Optional[Union[str, pathlib.Path]] = None,
-                      afile: Optional[IO[bytes]] = None,
-                      data: Optional[AnyStr] = None) -> Response:
+    def send_csv_file(
+        rs: RequestState,
+        mimetype: str = 'text/csv',
+        filename: Optional[str] = None,
+        inline: bool = True,
+        *,
+        path: Optional[Union[str, pathlib.Path]] = None,
+        afile: Optional[IO[bytes]] = None,
+        data: Optional[AnyStr] = None,
+    ) -> Response:
         """Wrapper around :py:meth:`send_file` for CSV files.
 
         This makes Excel happy by adding a BOM at the beginning of the
@@ -665,14 +739,28 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if path is not None:
             path = pathlib.Path(path)
         return AbstractFrontend.send_file(
-            rs, mimetype=mimetype, filename=filename, inline=inline, path=path,
-            afile=afile, data=data, encoding='utf-8-sig')
+            rs,
+            mimetype=mimetype,
+            filename=filename,
+            inline=inline,
+            path=path,
+            afile=afile,
+            data=data,
+            encoding='utf-8-sig',
+        )
 
     @staticmethod
-    def send_file(rs: RequestState, mimetype: Optional[str] = None,
-                  filename: Optional[str] = None, inline: bool = True, *,
-                  path: Optional[PathLike] = None, afile: Optional[IO[bytes]] = None,
-                  data: Optional[AnyStr] = None, encoding: str = 'utf-8') -> Response:
+    def send_file(
+        rs: RequestState,
+        mimetype: Optional[str] = None,
+        filename: Optional[str] = None,
+        inline: bool = True,
+        *,
+        path: Optional[PathLike] = None,
+        afile: Optional[IO[bytes]] = None,
+        data: Optional[AnyStr] = None,
+        encoding: str = 'utf-8',
+    ) -> Response:
         """Wrapper around :py:meth:`werkzeug.wsgi.wrap_file` to offer a file for
         download.
 
@@ -710,27 +798,37 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         else:
             raise RuntimeError(n_("Impossible."))
 
-        response = cast(Response, werkzeug.utils.send_file(
-            payload,
-            environ=rs.request.environ,
-            mimetype=mimetype,
-            as_attachment=not inline,
-            download_name=filename,
-            response_class=Response,
-        ))
+        response = cast(
+            Response,
+            werkzeug.utils.send_file(
+                payload,
+                environ=rs.request.environ,
+                mimetype=mimetype,
+                as_attachment=not inline,
+                download_name=filename,
+                response_class=Response,
+            ),
+        )
         response.headers.add('X-Generation-Time', str(now() - rs.begin))
         return response
 
     @staticmethod
     def send_json(rs: RequestState, data: Any, sort_keys: bool = False) -> Response:
         """Slim helper to create json responses."""
-        response = Response(json_serialize(data, sort_keys=sort_keys),
-                            mimetype='application/json')
+        response = Response(
+            json_serialize(data, sort_keys=sort_keys), mimetype='application/json'
+        )
         response.headers.add('X-Generation-Time', str(now() - rs.begin))
         return response
 
-    def send_query_download(self, rs: RequestState, result: Collection[CdEDBObject],
-                            query: Query, kind: str, filename: str) -> Response:
+    def send_query_download(
+        self,
+        rs: RequestState,
+        result: Collection[CdEDBObject],
+        query: Query,
+        kind: str,
+        filename: str,
+    ) -> Response:
         """Helper to send download of query result.
 
         :param kind: Can be either `'csv'` or `'json'`.
@@ -738,41 +836,55 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             the kind specified.
         """
         fields: list[str] = sum(
-            (csvfield.split(',') for csvfield in query.fields_of_interest), [])
+            (csvfield.split(',') for csvfield in query.fields_of_interest), []
+        )
         filename += f".{kind}"
 
         # Apply special handling to enums and country codes for downloads.
         for k, v in query.spec.items():
             if k.endswith("gender"):
-                query.spec[k].choices = dict(enum_entries_filter(
-                    const.Genders, lambda x: x.name, raw=True))
+                query.spec[k].choices = dict(
+                    enum_entries_filter(const.Genders, lambda x: x.name, raw=True)
+                )
             if k.endswith(".status"):
-                query.spec[k].choices = dict(enum_entries_filter(
-                        const.RegistrationPartStati, lambda x: x.name, raw=True))
+                query.spec[k].choices = dict(
+                    enum_entries_filter(
+                        const.RegistrationPartStati, lambda x: x.name, raw=True
+                    )
+                )
             if k.endswith(("country", "country2")):
-                query.spec[k].choices = dict(get_localized_country_codes(
-                    rs, rs.default_lang))
+                query.spec[k].choices = dict(
+                    get_localized_country_codes(rs, rs.default_lang)
+                )
             if "xfield" in k:
                 query.spec[k].choices = {}
         substitutions = {k: v.choices for k, v in query.spec.items() if v.choices}
 
         if kind == "csv":
-            csv_data = csv_output(result, fields, substitutions=substitutions,
-                                  tzinfo=self.conf['DEFAULT_TIMEZONE'])
+            csv_data = csv_output(
+                result,
+                fields,
+                substitutions=substitutions,
+                tzinfo=self.conf['DEFAULT_TIMEZONE'],
+            )
             return self.send_csv_file(
-                rs, data=csv_data, inline=False, filename=filename)
+                rs, data=csv_data, inline=False, filename=filename
+            )
         elif kind == "json":
             json_data = query_result_to_json(
-                result, fields, substitutions=substitutions)
-            return self.send_file(
-                rs, data=json_data, inline=False, filename=filename)
+                result, fields, substitutions=substitutions
+            )
+            return self.send_file(rs, data=json_data, inline=False, filename=filename)
         else:
-            raise ValueError(
-                n_("Unknown download kind {kind}."), {"kind": kind})
+            raise ValueError(n_("Unknown download kind {kind}."), {"kind": kind})
 
-    def render(self, rs: RequestState, templatename: str,
-               params: Optional[CdEDBObject] = None,
-               mandatory_fields: Optional[Collection[str]] = None) -> werkzeug.Response:
+    def render(
+        self,
+        rs: RequestState,
+        templatename: str,
+        params: Optional[CdEDBObject] = None,
+        mandatory_fields: Optional[Collection[str]] = None,
+    ) -> werkzeug.Response:
         """Wrapper around :py:meth:`fill_template` specialised to generating
         HTML responses.
 
@@ -802,22 +914,26 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if not rs.notifications:
             rs.notify_validation()
         if self.coreproxy.is_locked_down(rs):
+            admin_msg = n_(
+                "The CdEDB is curently locked for maintenance. You can still access it"
+                " as admin. Only use the CdEDB if you know why it was locked!"
+            )
+            msg = n_(
+                "The CdE database is currently under maintenance and is unavailable."
+            )
             if {'core_admin', 'meta_admin'} & rs.user.roles:
-                rs.notify(
-                    'warning',
-                    n_("The CdEDB is curently locked for maintenance. You can still"
-                       " access it as admin. Only use the CdEDB if you know why it was"
-                       " locked!"))
+                rs.notify('warning', admin_msg)
             else:
-                rs.notify("info", n_("The CdE database is currently under"
-                                     " maintenance and is unavailable."))
+                rs.notify("info", msg)
 
         defect_addresses = {}
         if rs.user.persona_id:
             defect_addresses = self.coreproxy.get_defect_address_reports(
-                rs, [rs.user.persona_id])
+                rs, [rs.user.persona_id]
+            )
         params['defect_username'], params['mls_with_defect_explicits'] = (
-            self.transform_defect_addresses(rs, defect_addresses))
+            self.transform_defect_addresses(rs, defect_addresses)
+        )
 
         params.setdefault('mandatory_fields', mandatory_fields or [])
         # A nonce to mark safe <script> tags in context of the CSP header
@@ -832,15 +948,20 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         # other domains. This is part of XSS mitigation
         csp_header_template = (
             "default-src 'self'; script-src 'unsafe-inline' 'self' https: 'nonce-{}';"
-            " style-src 'self' 'unsafe-inline'; img-src *")
-        response.headers.add('Content-Security-Policy',
-                             csp_header_template.format(csp_nonce))
+            " style-src 'self' 'unsafe-inline'; img-src *"
+        )
+        response.headers.add(
+            'Content-Security-Policy', csp_header_template.format(csp_nonce)
+        )
         return response
 
     def transform_defect_addresses(
-            self, rs: RequestState, defect_addresses: dict[str, EmailAddressReport],
-    ) -> tuple[Optional[str],
-               Optional[dict[vtypes.Email, list[models_ml.Mailinglist]]]]:
+        self,
+        rs: RequestState,
+        defect_addresses: dict[str, EmailAddressReport],
+    ) -> tuple[
+        Optional[str], Optional[dict[vtypes.Email, list[models_ml.Mailinglist]]]
+    ]:
         """Uninlined code to get the data in the required shape."""
         defect_username = None
         mls_with_defect_explicits = None
@@ -849,21 +970,29 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             if rs.user.username in defect_addresses:
                 defect_username = rs.user.username
             mls_with_defect_explicit_ids = {
-                e.address: e.ml_ids for e in defect_addresses.values()
-                if e.subscriber_id == rs.user.persona_id}
+                e.address: e.ml_ids
+                for e in defect_addresses.values()
+                if e.subscriber_id == rs.user.persona_id
+            }
             mls = self.mlproxy.get_mailinglists(
-                rs, set().union(*mls_with_defect_explicit_ids.values()))
+                rs, set().union(*mls_with_defect_explicit_ids.values())
+            )
             mls_with_defect_explicits = {
                 address: [mls[ml_id] for ml_id in ml_ids]
-                for address, ml_ids in mls_with_defect_explicit_ids.items()}
+                for address, ml_ids in mls_with_defect_explicit_ids.items()
+            }
         return defect_username, mls_with_defect_explicits
 
-    def do_mail(self, rs: RequestState, templatename: str,
-                headers: Headers, params: Optional[CdEDBObject] = None,
-                attachments: Optional[Collection[Attachment]] = None,
-                suppress_subject_logging: bool = False,
-                suppress_recipient_logging: bool = False,
-                ) -> Optional[str]:
+    def do_mail(
+        self,
+        rs: RequestState,
+        templatename: str,
+        headers: Headers,
+        params: Optional[CdEDBObject] = None,
+        attachments: Optional[Collection[Attachment]] = None,
+        suppress_subject_logging: bool = False,
+        suppress_recipient_logging: bool = False,
+    ) -> Optional[str]:
         """Wrapper around :py:meth:`fill_template` specialised to sending
         emails. This does generate the email and send it too.
 
@@ -884,32 +1013,38 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         params['headers'] = headers
         text = self.fill_template(rs, "mail", templatename, params)
         defect_addresses = self.coreproxy.list_email_states(
-            rs, const.EmailStatus.defect_states())
+            rs, const.EmailStatus.defect_states()
+        )
         msg = self._create_mail(text, headers, attachments, defect_addresses)
         ret = self._send_mail(
-            msg, suppress_subject_logging=suppress_subject_logging,
+            msg,
+            suppress_subject_logging=suppress_subject_logging,
             suppress_recipient_logging=suppress_recipient_logging,
         )
         if ret:
             # This is mostly intended for the test suite.
-            rs.notify("info", n_("Stored email to hard drive at %(path)s"),
-                      {'path': ret})
+            rs.notify(
+                "info", n_("Stored email to hard drive at %(path)s"), {'path': ret}
+            )
         return ret
 
-    def _create_mail(self, text: str,
-                     headers: Headers, attachments: Optional[Collection[Attachment]],
-                     defect_addresses: dict[str, const.EmailStatus],
-                     ) -> Union[email.message.Message,
-                                email.mime.multipart.MIMEMultipart]:
+    def _create_mail(
+        self,
+        text: str,
+        headers: Headers,
+        attachments: Optional[Collection[Attachment]],
+        defect_addresses: dict[str, const.EmailStatus],
+    ) -> Union[email.message.Message, email.mime.multipart.MIMEMultipart]:
         """Helper for actual email instantiation from a raw message."""
-        defaults = {"From": self.conf["DEFAULT_SENDER"],
-                    "Prefix": self.conf["DEFAULT_PREFIX"],
-                    "Reply-To": self.conf["DEFAULT_REPLY_TO"],
-                    "Return-Path": self.conf["DEFAULT_RETURN_PATH"],
-                    "Cc": tuple(),
-                    "Bcc": tuple(),
-                    "domain": self.conf["MAIL_DOMAIN"],
-                    }
+        defaults = {
+            "From": self.conf["DEFAULT_SENDER"],
+            "Prefix": self.conf["DEFAULT_PREFIX"],
+            "Reply-To": self.conf["DEFAULT_REPLY_TO"],
+            "Return-Path": self.conf["DEFAULT_RETURN_PATH"],
+            "Cc": tuple(),
+            "Bcc": tuple(),
+            "domain": self.conf["MAIL_DOMAIN"],
+        }
         merge_dicts(headers, defaults)  # type: ignore[arg-type]
         if headers["From"] == headers["Reply-To"]:
             headers["Reply-To"] = None
@@ -942,7 +1077,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             if effective != nonempty:
                 diff = nonempty - effective
                 self.logger.warning(
-                    f"Dropped the following recipients from email: {diff}")
+                    f"Dropped the following recipients from email: {diff}"
+                )
             if effective:
                 msg[header] = ", ".join(effective)
         for header in ("From", "Reply-To", "Return-Path"):
@@ -952,10 +1088,45 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             msg["Subject"] = headers["Prefix"] + " " + headers['Subject']
         else:
             msg["Subject"] = headers["Subject"]
-        msg["Message-ID"] = email.utils.make_msgid(
-            domain=self.conf["MAIL_DOMAIN"])
+        msg["Message-ID"] = email.utils.make_msgid(domain=self.conf["MAIL_DOMAIN"])
         msg["Date"] = email.utils.format_datetime(now())
         return msg
+
+    def _validate_password_reset_cookie(
+        self, rs: RequestState, persona_id: int, cookie: str
+    ) -> bool:
+        """
+        Helper to validate a reset cookie. Produces an appropriate notification on failure.
+        """
+        try:
+            return self.coreproxy.check_reset_cookie(rs, persona_id, cookie)
+        except ParameterTimeoutError:
+            rs.notify("warning", n_("Link expired."))
+            return False
+        except ParameterInvalidError:
+            rs.notify("warning", n_("Link invalid or already used."))
+            return False
+
+    def _password_reset_link(
+        self,
+        rs: RequestState,
+        persona_id: int,
+        timeout: datetime.timedelta | None = None,
+    ) -> str:
+        """Helper to create a password reset link.
+
+        The default is the (somewhat less secure) longer timeout for unprompted mails
+        since this is used more frequently.
+        """
+        if not timeout:
+            timeout = self.conf["EXTENDED_PARAMETER_TIMEOUT"]
+        confirm = self.coreproxy.make_reset_cookie(rs, persona_id, timeout)
+        return cdedburl(
+            rs,
+            "core/do_password_reset",
+            {"persona_id": persona_id, "confirm": confirm},
+            force_external=True,
+        )
 
     def send_welcome_mail(self, rs: RequestState, persona: CdEDBObject) -> None:
         """Send a welcome mail to new personas.
@@ -966,11 +1137,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         Therefore, we send this mail again if a persona was granted the cde realm.
         """
-        success, cookie = self.coreproxy.make_reset_cookie(
-            rs, persona['username'], timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
-        reset_link = self.encode_parameter(
-            "core/do_password_reset_form", "email", persona['username'],
-            persona_id=None, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+        reset_link = self._password_reset_link(
+            rs,
+            persona["id"],
+        )
         transaction_subject = make_membership_fee_reference(persona)
         if persona['is_member']:
             subject = "Aufnahme in den CdE"
@@ -979,24 +1149,33 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         else:
             subject = "CdEDB-Account erstellt"
         meta_info = self.coreproxy.get_meta_info(rs)
-        self.do_mail(rs, "welcome",
-                     {'To': (persona['username'],),
-                      'Subject': subject,
-                      },
-                     {'data': persona,
-                      'fee': self.conf["MEMBERSHIP_FEE"],
-                      'email': reset_link if success else "",
-                      'cookie': cookie if success else "",
-                      'meta_info': meta_info,
-                      'transaction_subject': transaction_subject,
-                      })
+        self.do_mail(
+            rs,
+            "welcome",
+            {
+                'To': (persona['username'],),
+                'Subject': subject,
+            },
+            {
+                'data': persona,
+                'fee': self.conf["MEMBERSHIP_FEE"],
+                'reset_link': reset_link,
+                'meta_info': meta_info,
+                'transaction_subject': transaction_subject,
+            },
+        )
 
-    def generic_user_search(self, rs: RequestState, download: Optional[str],
-                            is_search: bool, scope: query_mod.QueryScope,
-                            submit_general_query: Callable[[RequestState, Query],
-                                                           tuple[CdEDBObject, ...]], *,
-                            choices: Optional[Mapping[str, Mapping[Any, str]]] = None,
-                            query: Optional[Query] = None) -> werkzeug.Response:
+    def generic_user_search(
+        self,
+        rs: RequestState,
+        download: Optional[str],
+        is_search: bool,
+        scope: query_mod.QueryScope,
+        submit_general_query: Callable[[RequestState, Query], tuple[CdEDBObject, ...]],
+        *,
+        choices: Optional[Mapping[str, Mapping[Any, str]]] = None,
+        query: Optional[Query] = None,
+    ) -> werkzeug.Response:
         """Perform user search.
 
         :param download: signals whether the output should be a file. It can either
@@ -1021,8 +1200,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         elif is_search:
             # mangle the input, so we can prefill the form
             query_input = scope.mangle_query_input(rs)
-            query = check_validation(rs, vtypes.QueryInput, query_input, "query",
-                                     spec=spec, allow_empty=False)
+            query = check_validation(
+                rs,
+                vtypes.QueryInput,
+                query_input,
+                "query",
+                spec=spec,
+                allow_empty=False,
+            )
         default_queries = DEFAULT_QUERIES[scope]
         choices_lists = {}
         if choices is None:
@@ -1032,8 +1217,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             if query and k in query.spec:
                 query.spec[k].choices = v
         params = {
-            'spec': spec, 'choices_lists': choices_lists,
-            'default_queries': default_queries, 'query': query, 'scope': scope,
+            'spec': spec,
+            'choices_lists': choices_lists,
+            'default_queries': default_queries,
+            'query': query,
+            'scope': scope,
             'ADMIN_KEYS': ADMIN_KEYS,
         }
         # Tricky logic: In case of no validation errors we perform a query
@@ -1042,10 +1230,15 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             params['result'] = result
             if download:
                 return self.send_query_download(
-                    rs, result, query, kind=download,
-                    filename=scope.get_target() + "_result")
-            params["aggregates"] = unwrap(submit_general_query(
-                rs, query, aggregate=True))  # type: ignore[call-arg]
+                    rs,
+                    result,
+                    query,
+                    kind=download,
+                    filename=scope.get_target() + "_result",
+                )
+            params["aggregates"] = unwrap(
+                submit_general_query(rs, query, aggregate=True)  # type: ignore[call-arg]
+            )
         else:
             if not is_search and scope.includes_archived:
                 rs.values['qop_is_archived'] = query_mod.QueryOperators.equal.value
@@ -1081,14 +1274,17 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         }
         ret = factories[maintype](data, _subtype=subtype)
         if attachment.get('filename'):
-            ret.add_header('Content-Disposition', 'attachment',
-                           filename=attachment['filename'])
+            ret.add_header(
+                'Content-Disposition', 'attachment', filename=attachment['filename']
+            )
         return ret
 
-    def _send_mail(self, msg: email.message.Message,
-                   suppress_subject_logging: bool = False,
-                   suppress_recipient_logging: bool = False,
-                   ) -> Optional[str]:
+    def _send_mail(
+        self,
+        msg: email.message.Message,
+        suppress_subject_logging: bool = False,
+        suppress_recipient_logging: bool = False,
+    ) -> Optional[str]:
         """Helper for getting an email onto the wire.
 
         :returns: Name of the file the email was saved in -- however this
@@ -1105,34 +1301,50 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             s.quit()
         else:
             with tempfile.NamedTemporaryFile(
-                    mode='w', prefix="cdedb-mail-", suffix=".txt", delete=False,
-                    encoding='UTF-8') as f:
+                mode='w',
+                prefix="cdedb-mail-",
+                suffix=".txt",
+                delete=False,
+                encoding='UTF-8',
+            ) as f:
                 f.write(str(msg))
                 self.logger.debug(f"Stored mail to {f.name}.")
                 ret = f.name
         log_subject = msg['Subject'] if not suppress_subject_logging else "REDACTED"
         log_recipient = msg['To'] if not suppress_recipient_logging else "REDACTED"
         self.logger.info(
-            f"Sent email with subject '{log_subject}' to '{log_recipient}'.")
+            f"Sent email with subject '{log_subject}' to '{log_recipient}'."
+        )
         return ret
 
-    def redirect_show_user(self, rs: RequestState, persona_id: int,
-                           quote_me: Optional[bool] = None) -> werkzeug.Response:
+    def redirect_show_user(
+        self, rs: RequestState, persona_id: int, quote_me: Optional[bool] = None
+    ) -> werkzeug.Response:
         """Convenience function to redirect to a user detail page.
 
         The point is, that encoding the ``confirm_id`` parameter is
         somewhat lengthy and only necessary because of our paranoia.
         """
         cid = self.encode_parameter(
-            "core/show_user", "confirm_id", str(persona_id),
-            persona_id=rs.user.persona_id, timeout=None)
+            "core/show_user",
+            "confirm_id",
+            str(persona_id),
+            persona_id=rs.user.persona_id,
+            timeout=None,
+        )
         params = {'confirm_id': cid, 'persona_id': persona_id}
         if quote_me is not None:
             params['quote_me'] = True
         return self.redirect(rs, 'core/show_user', params=params)
 
-    def safe_compile(self, rs: RequestState, target_file: str, cwd: pathlib.Path,
-                     runs: int, errormsg: Optional[str]) -> pathlib.Path:
+    def safe_compile(
+        self,
+        rs: RequestState,
+        target_file: str,
+        cwd: pathlib.Path,
+        runs: int,
+        errormsg: Optional[str],
+    ) -> pathlib.Path:
         """Helper to compile latex documents in a safe way.
 
         This catches exepctions during compilation and displays a more helpful
@@ -1155,8 +1367,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self.logger.info(f"Invoking {args}")
         try:
             for _ in range(runs):
-                subprocess.run(args, cwd=cwd, check=True,
-                               capture_output=True, text=True)
+                subprocess.run(
+                    args, cwd=cwd, check=True, capture_output=True, text=True
+                )
         except subprocess.CalledProcessError as e:
             if pdf_path.exists():
                 self.logger.debug(f"Deleting corrupted file {pdf_path}")
@@ -1171,12 +1384,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 shutil.copy2(cwd / target_file, backup_path)
             errormsg = errormsg or n_(
                 "LaTeX compilation failed. Try downloading the "
-                "source files and compiling them manually.")
+                "source files and compiling them manually."
+            )
             rs.notify("error", errormsg)
         return pdf_path
 
-    def latex_compile(self, rs: RequestState, data: str, runs: int = 2,
-                      errormsg: Optional[str] = None) -> Optional[bytes]:
+    def latex_compile(
+        self, rs: RequestState, data: str, runs: int = 2, errormsg: Optional[str] = None
+    ) -> Optional[bytes]:
         """Run LaTeX on the provided document.
 
         This takes care of the necessary temporary files.
@@ -1191,8 +1406,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 tmp_file.write(data.encode('utf8'))
                 tmp_file.flush()
                 path = self.safe_compile(
-                    rs, tmp_file.name, pathlib.Path(tmp_dir), runs=runs,
-                    errormsg=errormsg)
+                    rs,
+                    tmp_file.name,
+                    pathlib.Path(tmp_dir),
+                    runs=runs,
+                    errormsg=errormsg,
+                )
                 if path.exists():
                     # noinspection PyTypeChecker
                     with open(path, 'rb') as pdf:
@@ -1200,9 +1419,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                 else:
                     return None
 
-    def serve_latex_document(self, rs: RequestState, data: str, filename: str,
-                             runs: int = 2, errormsg: Optional[str] = None,
-                             ) -> Optional[Response]:
+    def serve_latex_document(
+        self,
+        rs: RequestState,
+        data: str,
+        filename: str,
+        runs: int = 2,
+        errormsg: Optional[str] = None,
+    ) -> Optional[Response]:
         """Generate a response from a LaTeX document.
 
         This takes care of the necessary temporary files.
@@ -1216,21 +1440,25 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         """
         if not runs:
             return self.send_file(
-                rs, data=data, inline=False,
-                filename=f"{filename}.tex")
+                rs, data=data, inline=False, filename=f"{filename}.tex"
+            )
         else:
             pdf = self.latex_compile(rs, data, runs=runs, errormsg=errormsg)
             if not pdf:
                 return None
             return self.send_file(
-                rs, mimetype="application/pdf", data=pdf,
-                filename=f"{filename}.pdf")
+                rs, mimetype="application/pdf", data=pdf, filename=f"{filename}.pdf"
+            )
 
-    def serve_complex_latex_document(self, rs: RequestState,
-                                     tmp_dir: Union[str, pathlib.Path],
-                                     work_dir_name: str, tex_file_name: str,
-                                     runs: int = 2, errormsg: Optional[str] = None,
-                                     ) -> Optional[Response]:
+    def serve_complex_latex_document(
+        self,
+        rs: RequestState,
+        tmp_dir: Union[str, pathlib.Path],
+        work_dir_name: str,
+        tex_file_name: str,
+        runs: int = 2,
+        errormsg: Optional[str] = None,
+    ) -> Optional[Response]:
         """Generate a response from a LaTeX document.
 
         In contrast to :py:meth:`serve_latex_document` this expects that the
@@ -1262,15 +1490,17 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if not runs:
             target = pathlib.Path(tmp_dir, work_dir_name)
             archive = shutil.make_archive(
-                str(target), "gztar", base_dir=work_dir_name, root_dir=tmp_dir,
-                logger=self.logger)
+                str(target),
+                "gztar",
+                base_dir=work_dir_name,
+                root_dir=tmp_dir,
+                logger=self.logger,
+            )
             if tex_file_name.endswith('.tex'):
                 tex_file = f"{tex_file_name[:-4]}.tar.gz"
             else:
                 tex_file = f"{tex_file_name}.tar.gz"
-            return self.send_file(
-                rs, path=archive, inline=False,
-                filename=tex_file)
+            return self.send_file(rs, path=archive, inline=False, filename=tex_file)
         else:
             work_dir = pathlib.Path(tmp_dir, work_dir_name)
             if tex_file_name.endswith('.tex'):
@@ -1278,18 +1508,21 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             else:
                 pdf_file = f"{tex_file_name}.pdf"
             path = self.safe_compile(
-                rs, tex_file_name, cwd=work_dir, runs=runs,
-                errormsg=errormsg)
+                rs, tex_file_name, cwd=work_dir, runs=runs, errormsg=errormsg
+            )
             if path.exists():
                 return self.send_file(
-                    rs, mimetype="application/pdf",
+                    rs,
+                    mimetype="application/pdf",
                     path=(work_dir / pdf_file),
-                    filename=pdf_file)
+                    filename=pdf_file,
+                )
             else:
                 return None
 
-    def check_anti_csrf(self, rs: RequestState, action: str,
-                        token_name: str, token_payload: str) -> Optional[str]:
+    def check_anti_csrf(
+        self, rs: RequestState, action: str, token_name: str, token_payload: str
+    ) -> Optional[str]:
         """
         A helper function to check the anti CSRF token
 
@@ -1312,7 +1545,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             return n_("Anti CSRF token is required for this form.")
         # noinspection PyProtectedMember
         timeout, val = self.decode_parameter(
-            f"{self.realm}/{action}", token_name, val, rs.user.persona_id)
+            f"{self.realm}/{action}", token_name, val, rs.user.persona_id
+        )
         if not val:
             if timeout:
                 return n_("Anti CSRF token expired. Please try again.")
@@ -1322,12 +1556,17 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             return n_("Anti CSRF token is invalid.")
         return None
 
-    def generic_view_log(self, rs: RequestState, data: CdEDBObject,
-                         filter_class: type[GenericLogFilter],
-                         log_retriever: Callable[..., CdEDBLog],
-                         *, download: bool, template: str,
-                         template_kwargs: Optional[CdEDBObject] = None,
-                         ) -> werkzeug.Response:
+    def generic_view_log(
+        self,
+        rs: RequestState,
+        data: CdEDBObject,
+        filter_class: type[GenericLogFilter],
+        log_retriever: Callable[..., CdEDBLog],
+        *,
+        download: bool,
+        template: str,
+        template_kwargs: Optional[CdEDBObject] = None,
+    ) -> werkzeug.Response:
         """Generic helper to retrieve log data and render the result.
 
         This takes care of validating the filter input and retrieving log entries via
@@ -1340,7 +1579,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             #  matter much in practice because, with regular usage there should not
             #  be a way to input invalid filter values.
             self.logger.debug(
-                f"Log filter validation failed: {rs.retrieve_validation_errors()}")
+                f"Log filter validation failed: {rs.retrieve_validation_errors()}"
+            )
             log_filter = filter_class()
 
         # Retrieve entry count and log entries.
@@ -1353,10 +1593,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         if download:
             # Postprocess persona information: Add names and cdedb id.
             persona_fields = log_filter.get_persona_columns()
-            cdedbids = {persona_id: cdedbid_filter(persona_id)
-                        for persona_id in persona_ids}
-            substitutions = {persona_field: cdedbids
-                              for persona_field in persona_fields}
+            cdedbids = {
+                persona_id: cdedbid_filter(persona_id) for persona_id in persona_ids
+            }
+            substitutions = {
+                persona_field: cdedbids for persona_field in persona_fields
+            }
 
             given_names = {f"{key}_given_names" for key in persona_fields}
             family_names = {f"{key}_family_name" for key in persona_fields}
@@ -1375,27 +1617,42 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     else:
                         entry[f"{k}_given_names"] = entry[f"{k}_family_name"] = None
 
-            csv_data = csv_output(log, columns, replace_newlines=True,
-                                  substitutions=substitutions,
-                                  tzinfo=self.conf['DEFAULT_TIMEZONE'])
+            csv_data = csv_output(
+                log,
+                columns,
+                replace_newlines=True,
+                substitutions=substitutions,
+                tzinfo=self.conf['DEFAULT_TIMEZONE'],
+            )
             return self.send_csv_file(
-                rs, "text/csv", f"{filter_class.log_table}.csv", data=csv_data)
+                rs, "text/csv", f"{filter_class.log_table}.csv", data=csv_data
+            )
         else:
             # Create pagination.
-            loglinks = calculate_loglinks(rs, total, log_filter._offset,
-                                          log_filter._length)
-            return self.render(rs, template, {
-                'log': log, 'total': total, 'length': log_filter.length,
-                'personas': personas, 'loglinks': loglinks,
-                **(template_kwargs or {}),
-            })
+            loglinks = calculate_loglinks(
+                rs, total, log_filter._offset, log_filter._length
+            )
+            return self.render(
+                rs,
+                template,
+                {
+                    'log': log,
+                    'total': total,
+                    'length': log_filter.length,
+                    'personas': personas,
+                    'loglinks': loglinks,
+                    **(template_kwargs or {}),
+                },
+            )
 
     def examine_money_transfer(
-            self, rs: RequestState,
-            datum: CdEDBObject, *,
-            events_by_shortname: dict[str, models_event.Event],
-            amounts_paid: dict[int, decimal.Decimal],
-            category: Optional[str] = None,
+        self,
+        rs: RequestState,
+        datum: CdEDBObject,
+        *,
+        events_by_shortname: dict[str, models_event.Event],
+        amounts_paid: dict[int, decimal.Decimal],
+        category: Optional[str] = None,
     ) -> CdEDBObject:
         """Check one line specifying a money transfer.
 
@@ -1408,29 +1665,34 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         if category is None:
             category, p = inspect_validation(
-                vtypes.Identifier, raw['category'], argname="category")
+                vtypes.Identifier, raw['category'], argname="category"
+            )
             problems.extend(p)
         persona = None
         registration = None
         event = None
 
-        date, p = inspect_validation(
-            datetime.date, raw['date'], argname="date")
+        date, p = inspect_validation(datetime.date, raw['date'], argname="date")
         problems.extend(p)
 
         amount, p = parse_util.check_amount(raw['amount_german'])
         problems.extend(p)
 
         persona_id, p = inspect_validation(
-            vtypes.CdedbID, (datum['raw']['cdedbid'] or "").strip(), argname="persona_id")
+            vtypes.CdedbID,
+            (datum['raw']['cdedbid'] or "").strip(),
+            argname="persona_id",
+        )
         problems.extend(p)
 
         family_name, p = inspect_validation(
-            str, datum['raw']['family_name'], argname="family_name")
+            str, datum['raw']['family_name'], argname="family_name"
+        )
         problems.extend(p)
 
         given_names, p = inspect_validation(
-            str, datum['raw']['given_names'], argname="given_names")
+            str, datum['raw']['given_names'], argname="given_names"
+        )
         problems.extend(p)
 
         if category is None:
@@ -1457,13 +1719,16 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             except KeyError:
                 problems.append((
                     'persona_id',
-                    ValueError(n_("No Member with ID %(p_id)s found."),
-                               {'p_id': persona_id}),
+                    ValueError(
+                        n_("No Member with ID %(p_id)s found."), {'p_id': persona_id}
+                    ),
                 ))
             else:
                 if persona['is_archived']:
-                    problems.append(
-                        ('persona_id', ValueError(n_("Persona is archived."))))
+                    problems.append((
+                        'persona_id',
+                        ValueError(n_("Persona is archived.")),
+                    ))
                 if type_ == TransactionType.MembershipFee:
                     if not persona['is_cde_realm']:
                         problems.append((
@@ -1478,7 +1743,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                         ))
                     assert event is not None
                     registration_ids = self.eventproxy.list_registrations(
-                        rs, event.id, persona_id,
+                        rs, event.id, persona_id
                     )
                     if not registration_ids:
                         problems.append((
@@ -1487,7 +1752,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                         ))
                     elif amount:
                         registration = self.eventproxy.get_registration(
-                            rs, unwrap(registration_ids.keys()),
+                            rs, unwrap(registration_ids.keys())
                         )
                         if registration['id'] in amounts_paid:
                             amount_paid = amounts_paid[registration['id']]
@@ -1496,12 +1761,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                         total = amount_paid + amount
                         fee = registration['amount_owed']
 
-                        if (registration['ctime'] and date
-                                and date < registration['ctime'].date()):
+                        if (
+                            registration['ctime']
+                            and date
+                            and date < registration['ctime'].date()
+                        ):
                             infos.append((
                                 'date',
-                                ValueError(n_(
-                                    "Payment date before registration.")),
+                                ValueError(n_("Payment date before registration.")),
                             ))
 
                         params = {
@@ -1528,12 +1795,14 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
                 if family_name != persona['family_name']:
                     problems.append((
-                        'family_name', ValueError(n_("Family name doesn’t match.")),
+                        'family_name',
+                        ValueError(n_("Family name doesn’t match.")),
                     ))
 
                 if given_names != persona['given_names']:
                     problems.append((
-                        'given_names', ValueError(n_("Given names don’t match.")),
+                        'given_names',
+                        ValueError(n_("Given names don’t match.")),
                     ))
 
         datum.update({
@@ -1566,8 +1835,9 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def create_user_form(self, rs: RequestState) -> werkzeug.Response:
         """Render form."""
-        return self.render(rs, "create_user", {},
-                           get_mandatory_form_fields(PERSONA_COMMON_FIELDS))
+        return self.render(
+            rs, "create_user", {}, get_mandatory_form_fields(PERSONA_COMMON_FIELDS)
+        )
 
     # @access("realm_admin", modi={"POST"})
     # @REQUESTdatadict(...)
@@ -1579,9 +1849,8 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         if data:
             exists = self.coreproxy.verify_existence(rs, data['username'])
             if exists:
-                rs.extend_validation_errors(
-                    (("username",
-                      ValueError(n_("User with this E-Mail exists already."))),))
+                msg = n_("User with this E-Mail exists already.")
+                rs.extend_validation_errors((("username", ValueError(msg)),))
         if rs.has_validation_errors() or not data:
             return self.create_user_form(rs)
         new_id = self.coreproxy.create_persona(rs, data)
@@ -1600,8 +1869,10 @@ class CdEMailmanClient(mailmanclient.Client):
     This custom wrapper provides additional functionality needed in multiple frontends.
     Whenever access to the mailman server is needed, this class should be used.
     """
-    def __init__(self, conf: Config, mailman_password: str,
-                 mailman_basic_auth_password: str):
+
+    def __init__(
+        self, conf: Config, mailman_password: str, mailman_basic_auth_password: str
+    ):
         """Automatically initializes a client with our custom parameters.
 
         :param conf: Usually, the config used where this class is instantiated.
@@ -1617,8 +1888,9 @@ class CdEMailmanClient(mailmanclient.Client):
         self.logger = logging.getLogger("cdedb.frontend.mailmanclient")
         self.logger.debug(f"Instantiated {self} with configpath {conf._configpath}.")
 
-    def get_list_safe(self, address: str) -> Optional[
-            mailmanclient.restobjects.mailinglist.MailingList]:
+    def get_list_safe(
+        self, address: str
+    ) -> Optional[mailmanclient.restobjects.mailinglist.MailingList]:
         """Return list with standard error handling.
 
         In contrast to the original function, this does not raise if no list has been
@@ -1633,8 +1905,9 @@ class CdEMailmanClient(mailmanclient.Client):
             self.logger.exception("Mailman connection failed!")
         return None
 
-    def get_held_messages(self, dblist: models_ml.Mailinglist) -> Optional[
-            list[mailmanclient.restobjects.held_message.HeldMessage]]:
+    def get_held_messages(
+        self, dblist: models_ml.Mailinglist
+    ) -> Optional[list[mailmanclient.restobjects.held_message.HeldMessage]]:
         """Returns all held messages for mailman lists.
 
         If the list is not managed by mailman or inactive, this returns None instead.
@@ -1711,15 +1984,28 @@ class Worker(threading.Thread):
         """
         # noinspection PyProtectedMember
         rrs = RequestState(
-            sessionkey=rs.sessionkey, apitoken=rs.apitoken, user=rs.user,
-            request=rs.request, notifications=[], mapadapter=rs.urls,
-            requestargs=rs.requestargs, errors=[], values=copy.deepcopy(rs.values),
-            begin=rs.begin, lang=rs.lang, translations=rs.translations)
+            sessionkey=rs.sessionkey,
+            apitoken=rs.apitoken,
+            user=rs.user,
+            request=rs.request,
+            notifications=[],
+            mapadapter=rs.urls,
+            requestargs=rs.requestargs,
+            errors=[],
+            values=copy.deepcopy(rs.values),
+            begin=rs.begin,
+            lang=rs.lang,
+            translations=rs.translations,
+        )
         # noinspection PyProtectedMember
         secrets = SecretsConfig()
         connpool = connection_pool_factory(
-            conf["CDB_DATABASE_NAME"], DATABASE_ROLES, secrets,
-            conf["DB_HOST"], conf["DB_PORT"])
+            conf["CDB_DATABASE_NAME"],
+            DATABASE_ROLES,
+            secrets,
+            conf["DB_HOST"],
+            conf["DB_PORT"],
+        )
         rrs._conn = connpool[roles_to_db_role(rs.user.roles)]
         logger = logging.getLogger("cdedb.frontend.worker")
 
@@ -1741,7 +2027,8 @@ class Worker(threading.Thread):
             for i, task_info in enumerate(task_infos):
                 logger.debug(
                     f"Task `{task_info.name}`{task_info.doc} started by user"
-                    f" {p_id} ({username}).")
+                    f" {p_id} ({username})."
+                )
                 count = 0
                 while True:
                     try:
@@ -1749,18 +2036,21 @@ class Worker(threading.Thread):
                         if not task_info.task(rrs):
                             logger.debug(
                                 f"Finished task `{task_info.name}` successfully"
-                                f" after {count} iterations.")
+                                f" after {count} iterations."
+                            )
                             break
                     except Exception as e:
                         logger.exception(
                             f"The following error occurred during the {count}th"
-                            f" iteration of `{task_info.name}: {e}")
+                            f" iteration of `{task_info.name}: {e}"
+                        )
                         logger.debug(f"Task {task_info.name} aborted.")
-                        remaining_tasks = task_infos[i+1:]
+                        remaining_tasks = task_infos[i + 1 :]
                         if remaining_tasks:
                             logger.error(
                                 f"{len(remaining_tasks)} remaining tasks aborted:"
-                                f" {', '.join(n for _, n, _ in remaining_tasks)}")
+                                f" {', '.join(n for _, n, _ in remaining_tasks)}"
+                            )
                         raise
             if len(task_infos) > 1:
                 logger.debug(f"{len(task_infos)} tasks completed successfully.")
@@ -1768,8 +2058,14 @@ class Worker(threading.Thread):
         super().__init__(target=runner, daemon=False)
 
     @classmethod
-    def create(cls, rs: RequestState, name: str, tasks: "WorkerTasks",
-               conf: Config, timeout: Optional[float] = 0.1) -> "Worker":
+    def create(
+        cls,
+        rs: RequestState,
+        name: str,
+        tasks: "WorkerTasks",
+        conf: Config,
+        timeout: Optional[float] = 0.1,
+    ) -> "Worker":
         """Create a new Worker, remember and start it.
 
         The state of the `cls.active_workers` dict is not shared between the threads of
@@ -1810,7 +2106,7 @@ class AmbienceDict(typing.TypedDict):
     lastschrift: NotRequired[CdEDBObject]
     transaction: NotRequired[CdEDBObject]
     event: NotRequired[models_event.Event]
-    pevent: NotRequired[CdEDBObject]
+    pevent: NotRequired[models_past_event.PastEvent]
     course: NotRequired[models_event.Course]
     pcourse: NotRequired[CdEDBObject]
     registration: NotRequired[CdEDBObject]
@@ -1828,10 +2124,10 @@ class AmbienceDict(typing.TypedDict):
     mailinglist: NotRequired[models_ml.Mailinglist]
     case: NotRequired[models_complaint.Case]
     entry: NotRequired[models_complaint.ComplaintEntry]
+    entry_version: NotRequired[models_complaint.ComplaintEntryVersion]
 
 
-def reconnoitre_ambience(obj: AbstractFrontend,
-                         rs: RequestState) -> AmbienceDict:
+def reconnoitre_ambience(obj: AbstractFrontend, rs: RequestState) -> AmbienceDict:
     """Provide automatic lookup of objects in a standard way.
 
     This creates an ambience dict providing objects for all ids passed
@@ -1839,123 +2135,237 @@ def reconnoitre_ambience(obj: AbstractFrontend,
     convention the object name should be the parameter named minus the
     '_id' suffix.
     """
-    Scout = collections.namedtuple('Scout', ('getter', 'param_name',
-                                             'object_name', 'dependencies'))
+    Scout = collections.namedtuple(
+        'Scout', ('getter', 'param_name', 'object_name', 'dependencies')
+    )
 
     def do_assert(x: bool) -> None:
         if not x:
             raise werkzeug.exceptions.BadRequest()
 
     scouts = (
-        Scout(lambda anid: obj.coreproxy.get_persona(rs, anid), 'persona_id',
-              'persona', ()),
-        Scout(lambda anid: obj.coreproxy.get_privilege_change(rs, anid),
-              'privilege_change_id', 'privilege_change', ()),
-        Scout(lambda anid: obj.coreproxy.genesis_get_case(rs, anid),
-              'genesis_case_id', 'genesis_case', ()),
-        Scout(lambda anid: obj.cdeproxy.get_lastschrift(rs, anid),
-              'lastschrift_id', 'lastschrift', ()),
-        Scout(lambda anid: obj.cdeproxy.get_lastschrift_transaction(rs, anid),
-              'transaction_id', 'transaction',
-              ((lambda a: do_assert(a['transaction']['lastschrift_id']
-                                    == a['lastschrift']['id'])),)),
-        Scout(lambda anid: obj.eventproxy.get_event(rs, anid),
-              'event_id', 'event', ()),
-        Scout(lambda anid: obj.pasteventproxy.get_past_event(rs, anid),
-              'pevent_id', 'pevent', ()),
-        Scout(lambda anid: obj.eventproxy.get_course(rs, anid),
-              'course_id', 'course',
-              ((lambda a: do_assert(a['course'].event_id == a['event'].id)),)),
-        Scout(lambda anid: obj.pasteventproxy.get_past_course(rs, anid),
-              'pcourse_id', 'pcourse',
-              ((lambda a: do_assert(a['pcourse']['pevent_id']
-                                    == a['pevent']['id'])),)),
-        Scout(None, 'part_id', None,
-              ((lambda a: do_assert(rs.requestargs['part_id'] in a['event'].parts)),)),
-        Scout(lambda anid: obj.eventproxy.get_registration(rs, anid),
-              'registration_id', 'registration',
-              ((lambda a: do_assert(a['registration']['event_id'] == a['event'].id)),)),
-        Scout(lambda anid: obj.eventproxy.get_lodgement_groups(rs, ambience['event'].id)[anid],  # type: ignore[has-type]
-              'group_id', 'group',
-              ((lambda a: do_assert(a['group'].event_id == a['event'].id)),)),
-        Scout(lambda anid: obj.eventproxy.new_get_lodgement(rs, anid),
-              'lodgement_id', 'lodgement',
-              ((lambda a: do_assert(a['lodgement'].event_id == a['event'].id)),)),
-        Scout(None, 'field_id', None,
-              ((lambda a: do_assert(rs.requestargs['field_id']
-                                    in a['event'].fields)),)),
+        Scout(
+            lambda anid: obj.coreproxy.get_persona(rs, anid),
+            'persona_id',
+            'persona',
+            (),
+        ),
+        Scout(
+            lambda anid: obj.coreproxy.get_privilege_change(rs, anid),
+            'privilege_change_id',
+            'privilege_change',
+            (),
+        ),
+        Scout(
+            lambda anid: obj.coreproxy.genesis_get_case(rs, anid),
+            'genesis_case_id',
+            'genesis_case',
+            (),
+        ),
+        Scout(
+            lambda anid: obj.cdeproxy.get_lastschrift(rs, anid),
+            'lastschrift_id',
+            'lastschrift',
+            (),
+        ),
+        Scout(
+            lambda anid: obj.cdeproxy.get_lastschrift_transaction(rs, anid),
+            'transaction_id',
+            'transaction',
+            (
+                lambda a: do_assert(
+                    a['transaction']['lastschrift_id'] == a['lastschrift']['id']
+                ),
+            ),
+        ),
+        Scout(lambda anid: obj.eventproxy.get_event(rs, anid), 'event_id', 'event', ()),
+        Scout(
+            lambda anid: obj.pasteventproxy.get_past_event(rs, anid),
+            'pevent_id',
+            'pevent',
+            (),
+        ),
+        Scout(
+            lambda anid: obj.eventproxy.get_course(rs, anid),
+            'course_id',
+            'course',
+            (lambda a: do_assert(a['course'].event_id == a['event'].id),),
+        ),
+        Scout(
+            lambda anid: obj.pasteventproxy.get_past_course(rs, anid),
+            'pcourse_id',
+            'pcourse',
+            (lambda a: do_assert(a['pcourse']['pevent_id'] == a['pevent'].id),),
+        ),
+        Scout(
+            None,
+            'part_id',
+            None,
+            (lambda a: do_assert(rs.requestargs['part_id'] in a['event'].parts),),
+        ),
+        Scout(
+            lambda anid: obj.eventproxy.get_registration(rs, anid),
+            'registration_id',
+            'registration',
+            (lambda a: do_assert(a['registration']['event_id'] == a['event'].id),),
+        ),
+        Scout(
+            lambda anid: (
+                obj.eventproxy.get_lodgement_groups(rs, ambience['event'].id)[anid]
+            ),
+            'group_id',
+            'group',
+            (lambda a: do_assert(a['group'].event_id == a['event'].id),),
+        ),
+        Scout(
+            lambda anid: obj.eventproxy.new_get_lodgement(rs, anid),
+            'lodgement_id',
+            'lodgement',
+            (lambda a: do_assert(a['lodgement'].event_id == a['event'].id),),
+        ),
+        Scout(
+            None,
+            'field_id',
+            None,
+            (lambda a: do_assert(rs.requestargs['field_id'] in a['event'].fields),),
+        ),
         # Dirty hack, that relies on the event being retrieved into ambience first.
-        Scout(lambda anid: ambience['event'].part_groups[anid],  # type: ignore[has-type]
-              'part_group_id', 'part_group',
-              ((lambda a: do_assert(a['part_group'].event_id == a['event'].id)),)),
+        Scout(
+            lambda anid: ambience['event'].part_groups[anid],
+            'part_group_id',
+            'part_group',
+            (lambda a: do_assert(a['part_group'].event_id == a['event'].id),),
+        ),
         # Dirty hack, that relies on the event being retrieved into ambience first.
-        Scout(lambda anid: ambience['event'].track_groups[anid],  # type: ignore[has-type]
-              'track_group_id', 'track_group',
-              ((lambda a: do_assert(a['track_group'].event_id == a['event'].id)),)),
+        Scout(
+            lambda anid: ambience['event'].track_groups[anid],
+            'track_group_id',
+            'track_group',
+            (lambda a: do_assert(a['track_group'].event_id == a['event'].id),),
+        ),
         # Dirty hack, that relies on the event being retrieved into ambience first.
-        Scout(lambda anid: ambience['event'].fees[anid],  # type: ignore[has-type]
-              'fee_id', 'fee',
-              ((lambda a: do_assert(a['fee'].event_id == a['event'].id)),)),
-        Scout(lambda anid: obj.eventproxy.get_orga_token(rs, anid),
-              'orga_token_id', 'orga_token',
-              ((lambda a: do_assert(a['orga_token'].event_id == a['event'].id)),)),
+        Scout(
+            lambda anid: ambience['event'].fees[anid],
+            'fee_id',
+            'fee',
+            (lambda a: do_assert(a['fee'].event_id == a['event'].id),),
+        ),
+        Scout(
+            lambda anid: obj.eventproxy.get_orga_token(rs, anid),
+            'orga_token_id',
+            'orga_token',
+            (lambda a: do_assert(a['orga_token'].event_id == a['event'].id),),
+        ),
         # Dirty hack, that relies on the event being retrieved into ambience first.
-        Scout(lambda anid: ambience['event'].custom_query_filters[anid],  # type: ignore[has-type]
-              'custom_filter_id', 'custom_filter',
-              ((lambda a: do_assert(a['custom_filter'].event_id == a['event'].id)),)),
-        Scout(lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
-              'attachment_id', 'attachment',
-              ((lambda a: do_assert(a['attachment']['assembly_id']
-                                    == rs.requestargs['assembly_id'])),)),
-        Scout(lambda version: obj.assemblyproxy.get_attachment_version(
-                    rs, rs.requestargs['attachment_id'], version),
-              'version_nr', 'attachment_version', ()),
-        Scout(lambda anid: obj.assemblyproxy.get_assembly(rs, anid),
-              'assembly_id', 'assembly', ()),
-        Scout(lambda anid: obj.assemblyproxy.get_ballot(rs, anid),
-              'ballot_id', 'ballot',
-              ((lambda a: do_assert(a['ballot']['assembly_id']
-                                    == a['assembly']['id'])),)),
-        Scout(None, 'candidate_id', None,
-              ((lambda a: do_assert(rs.requestargs['candidate_id']
-                                    in a['ballot']['candidates'])),)),
-        Scout(lambda anid: obj.mlproxy.get_mailinglist(rs, anid),
-              'mailinglist_id', 'mailinglist', ()),
-        Scout(lambda anid: obj.complaintproxy.get_case(rs, anid),
-              'case_id', 'case', ()),
-        Scout(lambda anid: ambience['case'].entries[anid],  # type: ignore[has-type]
-              'entry_id', 'entry', ()),
-        Scout(lambda anid: ambience['case'].entries[anid],  # type: ignore[has-type]
-              'parent_id', 'entry', ()),
+        Scout(
+            lambda anid: ambience['event'].custom_query_filters[anid],
+            'custom_filter_id',
+            'custom_filter',
+            (lambda a: do_assert(a['custom_filter'].event_id == a['event'].id),),
+        ),
+        Scout(
+            lambda anid: obj.assemblyproxy.get_attachment(rs, anid),
+            'attachment_id',
+            'attachment',
+            (
+                lambda a: do_assert(
+                    a['attachment']['assembly_id'] == rs.requestargs['assembly_id']
+                ),
+            ),
+        ),
+        Scout(
+            lambda version: obj.assemblyproxy.get_attachment_version(
+                rs, rs.requestargs['attachment_id'], version
+            ),
+            'version_nr',
+            'attachment_version',
+            (),
+        ),
+        Scout(
+            lambda anid: obj.assemblyproxy.get_assembly(rs, anid),
+            'assembly_id',
+            'assembly',
+            (),
+        ),
+        Scout(
+            lambda anid: obj.assemblyproxy.get_ballot(rs, anid),
+            'ballot_id',
+            'ballot',
+            ((lambda a: do_assert(a['ballot']['assembly_id'] == a['assembly']['id'])),),
+        ),
+        Scout(
+            None,
+            'candidate_id',
+            None,
+            (
+                lambda a: do_assert(
+                    rs.requestargs['candidate_id'] in a['ballot']['candidates']
+                ),
+            ),
+        ),
+        Scout(
+            lambda anid: obj.mlproxy.get_mailinglist(rs, anid),
+            'mailinglist_id',
+            'mailinglist',
+            (),
+        ),
+        Scout(
+            lambda anid: obj.complaintproxy.get_case(rs, anid), 'case_id', 'case', ()
+        ),
+        Scout(
+            lambda anid: ambience['case'].entries[anid],
+            'entry_id',
+            'entry',
+            (),
+        ),
+        Scout(
+            lambda anid: ambience['case'].entries[anid],
+            'parent_id',
+            'entry',
+            (),
+        ),
+        Scout(
+            lambda idx: ambience['entry'].all_versions[idx - 1],
+            'version_idx',
+            'entry_version',
+            (),
+        ),
     )
     scouts_dict = {s.param_name: s for s in scouts}
-    ambience = {}
+    ambience: AmbienceDict = {}
     for param, value in rs.requestargs.items():
         s = scouts_dict.get(param)
         if s and s.getter:
             try:
-                ambience[s.object_name] = s.getter(value)
+                ambience[s.object_name] = s.getter(value)  # type: ignore[literal-required]
             except KeyError:
                 raise werkzeug.exceptions.NotFound(
                     rs.gettext("Object {param}={value} not found").format(
-                        param=param, value=value)) from None
+                        param=param, value=value
+                    )
+                ) from None
             except PrivilegeError as e:
                 if not obj.conf['CDEDB_DEV']:
                     msg = "Not privileged to view object {param}={value}: {exc}"
                     raise werkzeug.exceptions.Forbidden(
-                        rs.gettext(msg).format(param=param, value=value, exc=str(e)))
+                        rs.gettext(msg).format(param=param, value=value, exc=str(e))
+                    )
                 else:
                     raise
     for param, value in rs.requestargs.items():
         if param in scouts_dict:
             for consistency_checker in scouts_dict[param].dependencies:
                 consistency_checker(ambience)
-    return cast("AmbienceDict", ambience)
+    return ambience
 
 
 F = TypeVar('F', bound=Callable[..., Any])
-AntiCSRFMarker = NamedTuple(
-    "AntiCSRFMarker", (("check", bool), ("name", str), ("payload", str)))
+
+
+class AntiCSRFMarker(NamedTuple):
+    check: bool
+    name: str
+    payload: str
 
 
 class FrontendEndpoint(Protocol):
@@ -1963,14 +2373,18 @@ class FrontendEndpoint(Protocol):
     anti_csrf: AntiCSRFMarker
     modi: AbstractSet[str]
 
-    def __call__(self, rs: RequestState, *args: Any, **kwargs: Any,
-                 ) -> werkzeug.Response: ...
+    def __call__(
+        self, rs: RequestState, *args: Any, **kwargs: Any
+    ) -> werkzeug.Response: ...
 
 
-def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
-           check_anti_csrf: Optional[bool] = None,
-           anti_csrf_token_name: Optional[str] = None,
-           anti_csrf_token_payload: Optional[str] = None) -> Callable[[F], F]:
+def access(
+    *roles: Role,
+    modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
+    check_anti_csrf: Optional[bool] = None,
+    anti_csrf_token_name: Optional[str] = None,
+    anti_csrf_token_payload: Optional[str] = None,
+) -> Callable[[F], F]:
     """The @access decorator marks a function of a frontend for publication and
     adds initialization code around each call.
 
@@ -1988,14 +2402,14 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
 
     def decorator(fun: F) -> F:
         @functools.wraps(fun)
-        def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
-                    **kwargs: Any) -> werkzeug.Response:
+        def new_fun(
+            obj: AbstractFrontend, rs: RequestState, *args: Any, **kwargs: Any
+        ) -> werkzeug.Response:
             if rs.user.all_roles & access_list:
                 rs.ambience = reconnoitre_ambience(obj, rs)
                 return fun(obj, rs, *args, **kwargs)
             else:
-                expects_persona = any('droid' not in role
-                                      for role in access_list)
+                expects_persona = any('droid' not in role for role in access_list)
                 if rs.user.all_roles == {"anonymous"} and expects_persona:
                     # Validation errors do not matter on session expiration,
                     # since we redirect to get anyway.
@@ -2003,15 +2417,17 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
                     rs.ignore_validation_errors()
                     params = {
                         'wants': obj.encode_parameter(
-                            "core/index", "wants", rs.request.url,
+                            "core/index",
+                            "wants",
+                            rs.request.url,
                             persona_id=rs.user.persona_id,
-                            timeout=obj.conf["UNCRITICAL_PARAMETER_TIMEOUT"]),
+                            timeout=obj.conf["EXTENDED_PARAMETER_TIMEOUT"],
+                        ),
                     }
                     ret = basic_redirect(rs, cdedburl(rs, "core/index", params))
-                    # noinspection PyProtectedMember
                     notifications = json_serialize([
-                        obj.encode_notification(
-                            rs, "error", n_("You must login."))])
+                        obj.encode_notification(rs, "error", n_("You must login."))
+                    ])
                     ret.set_cookie("displaynote", notifications)
                     return ret
                 msg = n_("Access denied to {realm}/{endpoint}.")
@@ -2026,7 +2442,8 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
         new_fun.access_list = access_list  # type: ignore[attr-defined]
         new_fun.modi = modi  # type: ignore[attr-defined]
         new_fun.anti_csrf = AntiCSRFMarker(  # type: ignore[attr-defined]
-            check_anti_csrf if check_anti_csrf is not None
+            check_anti_csrf
+            if check_anti_csrf is not None
             else not modi <= {'GET', 'HEAD'} and "anonymous" not in roles,
             anti_csrf_token_name or ANTI_CSRF_TOKEN_NAME,
             anti_csrf_token_payload or ANTI_CSRF_TOKEN_PAYLOAD,
@@ -2037,10 +2454,13 @@ def access(*roles: Role, modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
     return decorator
 
 
-def cdedburl(rs: RequestState, endpoint: str,
-             params: Optional[Union[CdEDBObject, CdEDBMultiDict]] = None,
-             force_external: bool = False,
-             magic_placeholders: Optional[Collection[str]] = None) -> str:
+def cdedburl(
+    rs: RequestState,
+    endpoint: str,
+    params: Optional[Union[CdEDBObject, CdEDBMultiDict]] = None,
+    force_external: bool = False,
+    magic_placeholders: Optional[Collection[str]] = None,
+) -> str:
     """Construct an HTTP URL.
 
     :param endpoint: as defined in :py:data:`cdedb.frontend.paths.CDEDB_PATHS`
@@ -2062,22 +2482,23 @@ def cdedburl(rs: RequestState, endpoint: str,
         for run in range(1, 10):
             for i, name in enumerate(magic_placeholders):
                 # Generate a hopefully unique integer to replace
-                newparams[name] = (
-                        i * 10 ** (9 * run + 1)
-                        + 123456789 * sum(10 ** (9 * j) for j in range(run)))
-            attempt = cdedburl(rs, endpoint, newparams,
-                               force_external=force_external)
-            if any(attempt.count(str(newparams[name])) != 1
-                   for name in magic_placeholders):
+                newparams[name] = i * 10 ** (9 * run + 1) + 123456789 * sum(
+                    10 ** (9 * j) for j in range(run)
+                )
+            attempt = cdedburl(rs, endpoint, newparams, force_external=force_external)
+            if any(
+                attempt.count(str(newparams[name])) != 1 for name in magic_placeholders
+            ):
                 continue
             else:
                 for i, name in enumerate(magic_placeholders):
                     attempt = attempt.replace(
-                        str(newparams[name]),
-                        f"_CDEDB_MAGIC_URL_PLACEHOLDER_{i}_")
-                if any(attempt.count(
-                        f"_CDEDB_MAGIC_URL_PLACEHOLDER_{i}_") != 1
-                       for i in range(len(magic_placeholders))):
+                        str(newparams[name]), f"_CDEDB_MAGIC_URL_PLACEHOLDER_{i}_"
+                    )
+                if any(
+                    attempt.count(f"_CDEDB_MAGIC_URL_PLACEHOLDER_{i}_") != 1
+                    for i in range(len(magic_placeholders))
+                ):
                     continue
                 return attempt
         raise RuntimeError(n_("Magic URL parameter replacement failed."))
@@ -2112,17 +2533,28 @@ def staticurl(path: str, version: str = "") -> str:
 
 
 @overload
-def staticlink(rs: RequestState, label: str, path: str, version: str = "",
-               html: Literal[True] = True) -> markupsafe.Markup: ...
+def staticlink(
+    rs: RequestState,
+    label: str,
+    path: str,
+    version: str = "",
+    html: Literal[True] = True,
+) -> markupsafe.Markup: ...
 
 
 @overload
-def staticlink(rs: RequestState, label: str, path: str, version: str = "",
-               html: Literal[False] = False) -> str: ...
+def staticlink(
+    rs: RequestState,
+    label: str,
+    path: str,
+    version: str = "",
+    html: Literal[False] = False,
+) -> str: ...
 
 
-def staticlink(rs: RequestState, label: str, path: str, version: str = "",
-               html: bool = True) -> Union[markupsafe.Markup, str]:
+def staticlink(
+    rs: RequestState, label: str, path: str, version: str = "", html: bool = True
+) -> Union[markupsafe.Markup, str]:
     """Create a link to a static resource.
 
     This can either create a basic html link or a fully qualified, static https link.
@@ -2145,17 +2577,28 @@ def docurl(topic: str, anchor: str = "") -> str:
 
 
 @overload
-def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
-            html: Literal[True] = True) -> markupsafe.Markup: ...
+def doclink(
+    rs: RequestState,
+    label: str,
+    topic: str,
+    anchor: str = "",
+    html: Literal[True] = True,
+) -> markupsafe.Markup: ...
 
 
 @overload
-def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
-            html: Literal[False] = False) -> str: ...
+def doclink(
+    rs: RequestState,
+    label: str,
+    topic: str,
+    anchor: str = "",
+    html: Literal[False] = False,
+) -> str: ...
 
 
-def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
-            html: bool = True) -> Union[markupsafe.Markup, str]:
+def doclink(
+    rs: RequestState, label: str, topic: str, anchor: str = "", html: bool = True
+) -> Union[markupsafe.Markup, str]:
     """Create a link to our documentation.
 
     This can either create a basic html link or a fully qualified, static https link.
@@ -2170,9 +2613,10 @@ def doclink(rs: RequestState, label: str, topic: str, anchor: str = "",
 
 # noinspection PyPep8Naming
 def REQUESTdata(
-        *spec: str, _hints: Optional[vtypes.TypeMapping] = None,
-        _postpone_validation: bool = False,
-        _omit_missing: bool = False,
+    *spec: str,
+    _hints: Optional[vtypes.TypeMapping] = None,
+    _postpone_validation: bool = False,
+    _omit_missing: bool = False,
 ) -> Callable[[F], F]:
     """Decorator to extract parameters from requests and validate them.
 
@@ -2201,8 +2645,9 @@ def REQUESTdata(
         hints = _hints or typing.get_type_hints(fun)
 
         @functools.wraps(fun)
-        def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
-                    **kwargs: Any) -> Any:
+        def new_fun(
+            obj: AbstractFrontend, rs: RequestState, *args: Any, **kwargs: Any
+        ) -> Any:
             for item in spec:
                 if item.startswith('#'):
                     name = item[1:]
@@ -2212,7 +2657,6 @@ def REQUESTdata(
                     encoded = False
 
                 if name not in kwargs:
-
                     type_ = cast(type[Any], hints[name])
                     if optional := is_optional_type(type_):
                         type_ = typing.get_args(type_)[0]
@@ -2229,7 +2673,10 @@ def REQUESTdata(
                         # noinspection PyProtectedMember
                         timeout, val = obj.decode_parameter(
                             f"{obj.realm}/{fun.__name__}",
-                            name, val, persona_id=rs.user.persona_id)
+                            name,
+                            val,
+                            persona_id=rs.user.persona_id,
+                        )
                         if timeout is True:
                             rs.notify("warning", n_("Link expired."))
                         if timeout is False:
@@ -2255,8 +2702,7 @@ def REQUESTdata(
                             )
                         else:
                             kwargs[name] = tuple(
-                                check_validation(rs, type_, val, name)
-                                for val in vals
+                                check_validation(rs, type_, val, name) for val in vals
                             )
                     else:
                         rs.values[name] = val
@@ -2264,16 +2710,17 @@ def REQUESTdata(
                             kwargs[name] = val
                         elif optional:
                             kwargs[name] = check_validation_optional(
-                                rs, type_, val, name)
+                                rs, type_, val, name
+                            )
                         else:
-                            kwargs[name] = check_validation(
-                                rs, type_, val, name)
+                            kwargs[name] = check_validation(rs, type_, val, name)
             return fun(obj, rs, *args, **kwargs)
 
         if not hasattr(new_fun, "mandatory_form_fields"):
             new_fun.mandatory_form_fields = set()  # type: ignore[attr-defined]
         new_fun.mandatory_form_fields |= get_mandatory_form_fields(  # type: ignore[attr-defined]
-            {name: hints[name.removeprefix('#')] for name in spec})
+            {name: hints[name.removeprefix('#')] for name in spec}
+        )
 
         return cast(F, new_fun)
 
@@ -2281,8 +2728,9 @@ def REQUESTdata(
 
 
 # noinspection PyPep8Naming
-def REQUESTdatadict(*proto_spec: Union[str, tuple[str, str]],
-                    ) -> Callable[[F], F]:
+def REQUESTdatadict(
+    *proto_spec: Union[str, tuple[str, str]],
+) -> Callable[[F], F]:
     """Similar to :py:meth:`REQUESTdata`, but doesn't hand down the
     parameters as keyword-arguments, instead packs them all into a dict and
     passes this as ``data`` parameter. This does not do validation since
@@ -2302,8 +2750,9 @@ def REQUESTdatadict(*proto_spec: Union[str, tuple[str, str]],
 
     def wrap(fun: F) -> F:
         @functools.wraps(fun)
-        def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
-                    **kwargs: Any) -> Any:
+        def new_fun(
+            obj: AbstractFrontend, rs: RequestState, *args: Any, **kwargs: Any
+        ) -> Any:
             data: dict[str, Union[str, tuple[str, ...]]] = {}
             for name, argtype in spec:
                 if argtype == "str":
@@ -2313,8 +2762,9 @@ def REQUESTdatadict(*proto_spec: Union[str, tuple[str, str]],
                     data[name] = tuple(rs.request.values.getlist(name))
                     rs.values.setlist(name, data[name])
                 else:
-                    raise ValueError(n_("Invalid argtype {t} found.").format(
-                        t=repr(argtype)))
+                    raise ValueError(
+                        n_("Invalid argtype {t} found.").format(t=repr(argtype))
+                    )
             return fun(obj, rs, *args, data=data, **kwargs)
 
         return cast(F, new_fun)
@@ -2326,10 +2776,11 @@ RequestConstraint = tuple[Callable[[CdEDBObject], bool], Error]
 
 
 def request_extractor(
-        rs: RequestState, spec: vtypes.TypeMapping,
-        constraints: Optional[Collection[RequestConstraint]] = None,
-        postpone_validation: bool = False,
-        omit_missing: bool = False,
+    rs: RequestState,
+    spec: vtypes.TypeMapping,
+    constraints: Optional[Collection[RequestConstraint]] = None,
+    postpone_validation: bool = False,
+    omit_missing: bool = False,
 ) -> CdEDBObject:
     """Utility to apply REQUESTdata later than usual.
 
@@ -2353,8 +2804,13 @@ def request_extractor(
     :param postpone_validation: handed through to the decorator
     :returns: dict containing the requested values
     """
-    @REQUESTdata(*spec, _hints=spec, _postpone_validation=postpone_validation,
-                 _omit_missing=omit_missing)
+
+    @REQUESTdata(
+        *spec,
+        _hints=spec,
+        _postpone_validation=postpone_validation,
+        _omit_missing=omit_missing,
+    )
     def fun(_: None, rs: RequestState, **kwargs: Any) -> CdEDBObject:
         if not rs.has_validation_errors():
             for checker, error in constraints or []:
@@ -2366,7 +2822,8 @@ def request_extractor(
 
 
 def request_dict_extractor(
-        rs: RequestState, args: Collection[Union[str, tuple[str, str]]],
+    rs: RequestState,
+    args: Collection[Union[str, tuple[str, str]]],
 ) -> CdEDBObject:
     """Utility to apply REQUESTdatadict later than usual.
 
@@ -2394,8 +2851,9 @@ def REQUESTfile(*spec: str) -> Callable[[F], F]:
 
     def wrap(fun: F) -> F:
         @functools.wraps(fun)
-        def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
-                    **kwargs: Any) -> Any:
+        def new_fun(
+            obj: AbstractFrontend, rs: RequestState, *args: Any, **kwargs: Any
+        ) -> Any:
             for name in spec:
                 if name not in kwargs:
                     kwargs[name] = rs.request.files.get(name, None)
@@ -2406,16 +2864,19 @@ def REQUESTfile(*spec: str) -> Callable[[F], F]:
         if not hasattr(new_fun, "mandatory_form_fields"):
             new_fun.mandatory_form_fields = set()  # type: ignore[attr-defined]
         new_fun.mandatory_form_fields |= get_mandatory_form_fields(  # type: ignore[attr-defined]
-            {name: hints[name] for name in spec})
+            {name: hints[name] for name in spec}
+        )
 
         return cast(F, new_fun)
 
     return wrap
 
 
-def mailinglist_guard(argname: str = "mailinglist_id",
-                      allow_moderators: bool = True,
-                      requires_privilege: bool = False) -> Callable[[F], F]:
+def mailinglist_guard(
+    argname: str = "mailinglist_id",
+    allow_moderators: bool = True,
+    requires_privilege: bool = False,
+) -> Callable[[F], F]:
     """This decorator checks the access with respect to a specific
     mailinglist. The list is specified by id which has either to be a
     keyword parameter or the first positional parameter after the
@@ -2429,26 +2890,30 @@ def mailinglist_guard(argname: str = "mailinglist_id",
 
     def wrap(fun: F) -> F:
         @functools.wraps(fun)
-        def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
-                    **kwargs: Any) -> Any:
+        def new_fun(
+            obj: AbstractFrontend, rs: RequestState, *args: Any, **kwargs: Any
+        ) -> Any:
             if argname in kwargs:
                 arg = kwargs[argname]
             else:
                 arg = args[0]
             if allow_moderators:
                 if not obj.mlproxy.may_manage(rs, **{argname: arg}):
-                    raise werkzeug.exceptions.Forbidden(n_(
-                        "This page can only be accessed by the mailinglist’s "
-                        "moderators."))
+                    msg = n_(
+                        "This page can only be accessed by the mailinglist’s moderators."
+                    )
+                    raise werkzeug.exceptions.Forbidden(msg)
                 if requires_privilege and not obj.mlproxy.may_manage(
-                        rs, mailinglist_id=arg, allow_restricted=False):
-                    raise werkzeug.exceptions.Forbidden(n_(
-                        "You only have restricted moderator access and may not"
-                        " change subscriptions."))
+                    rs, mailinglist_id=arg, allow_restricted=False
+                ):
+                    msg = n_(
+                        "You only have restricted moderator access and may not change subscriptions."
+                    )
+                    raise werkzeug.exceptions.Forbidden(msg)
             elif not obj.mlproxy.is_relevant_admin(rs, **{argname: arg}):
-                raise werkzeug.exceptions.Forbidden(n_(
-                    "This page can only be accessed by appropriate "
-                    "admins."))
+                raise werkzeug.exceptions.Forbidden(
+                    n_("This page can only be accessed by appropriate admins.")
+                )
             return fun(obj, rs, *args, **kwargs)
 
         return cast(F, new_fun)
@@ -2457,20 +2922,21 @@ def mailinglist_guard(argname: str = "mailinglist_id",
 
 
 def assembly_guard(fun: F) -> F:
-    """This decorator checks that the user has privileged access to an assembly.
-    """
+    """This decorator checks that the user has privileged access to an assembly."""
 
     @functools.wraps(fun)
-    def new_fun(obj: AbstractFrontend, rs: RequestState, *args: Any,
-                **kwargs: Any) -> Any:
+    def new_fun(
+        obj: AbstractFrontend, rs: RequestState, *args: Any, **kwargs: Any
+    ) -> Any:
         if "assembly_id" in kwargs:
             assembly_id = kwargs["assembly_id"]
         else:
             assembly_id = args[0]
         if not obj.assemblyproxy.is_presider(rs, assembly_id=assembly_id):
-            raise werkzeug.exceptions.Forbidden(n_(
-                "This page may only be accessed by the assembly's"
-                " presiders or assembly admins."))
+            msg = n_(
+                "This page may only be accessed by the assembly's presiders or assembly admins."
+            )
+            raise werkzeug.exceptions.Forbidden(msg)
         return fun(obj, rs, *args, **kwargs)
 
     return cast(F, new_fun)
@@ -2478,21 +2944,30 @@ def assembly_guard(fun: F) -> F:
 
 @overload
 def check_validation(
-    rs: RequestState, type_: type[CdEDataclass], value: Any,
-    name: Optional[str] = None, **kwargs: Any
+    rs: RequestState,
+    type_: type[CdEDataclass],
+    value: Any,
+    name: Optional[str] = None,
+    **kwargs: Any,
 ) -> Optional[CdEDBObject]: ...
 
 
 @overload
 def check_validation(
-    rs: RequestState, type_: type[T], value: Any, name: Optional[str] = None,
-    **kwargs: Any
+    rs: RequestState,
+    type_: type[T],
+    value: Any,
+    name: Optional[str] = None,
+    **kwargs: Any,
 ) -> Optional[T]: ...
 
 
 def check_validation(
-    rs: RequestState, type_: type[T | CdEDataclass], value: Any,
-    name: Optional[str] = None, **kwargs: Any
+    rs: RequestState,
+    type_: type[T | CdEDataclass],
+    value: Any,
+    name: Optional[str] = None,
+    **kwargs: Any,
 ) -> Optional[T | CdEDBObject]:
     """Wrapper to call checks in :py:mod:`cdedb.validation`.
 
@@ -2506,31 +2981,42 @@ def check_validation(
     """
     if name is not None:
         ret, errs = validate.validate_check(
-            type_, value, ignore_warnings=rs.ignore_warnings, argname=name, **kwargs)
+            type_, value, ignore_warnings=rs.ignore_warnings, argname=name, **kwargs
+        )
     else:
         ret, errs = validate.validate_check(
-            type_, value, ignore_warnings=rs.ignore_warnings, **kwargs)
+            type_, value, ignore_warnings=rs.ignore_warnings, **kwargs
+        )
     rs.extend_validation_errors(errs)
     return cast(None | T | CdEDBObject, ret)
 
 
 @overload
 def check_validation_optional(
-    rs: RequestState, type_: type[CdEDataclass], value: Any,
-    name: Optional[str] = None, **kwargs: Any
+    rs: RequestState,
+    type_: type[CdEDataclass],
+    value: Any,
+    name: Optional[str] = None,
+    **kwargs: Any,
 ) -> Optional[CdEDBObject]: ...
 
 
 @overload
 def check_validation_optional(
-    rs: RequestState, type_: type[T], value: Any, name: Optional[str] = None,
-    **kwargs: Any
+    rs: RequestState,
+    type_: type[T],
+    value: Any,
+    name: Optional[str] = None,
+    **kwargs: Any,
 ) -> Optional[T]: ...
 
 
 def check_validation_optional(
-    rs: RequestState, type_: type[T | CdEDataclass], value: Any,
-    name: Optional[str] = None, **kwargs: Any
+    rs: RequestState,
+    type_: type[T | CdEDataclass],
+    value: Any,
+    name: Optional[str] = None,
+    **kwargs: Any,
 ) -> Optional[T | CdEDBObject]:
     """Wrapper to call checks in :py:mod:`cdedb.validation`.
 
@@ -2546,10 +3032,12 @@ def check_validation_optional(
     """
     if name is not None:
         ret, errs = validate.validate_check_optional(
-            type_, value, ignore_warnings=rs.ignore_warnings, argname=name, **kwargs)
+            type_, value, ignore_warnings=rs.ignore_warnings, argname=name, **kwargs
+        )
     else:
         ret, errs = validate.validate_check_optional(
-            type_, value, ignore_warnings=rs.ignore_warnings, **kwargs)
+            type_, value, ignore_warnings=rs.ignore_warnings, **kwargs
+        )
     rs.extend_validation_errors(errs)
     return cast(None | T | CdEDBObject, ret)
 
@@ -2564,7 +3052,7 @@ def extract_and_check_dataclass_validation(
     *,
     additional_data: CdEDBObject | None = None,
     creation: bool,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> Optional[CdEDBObject]:
     data = request_dict_extractor(rs, type_.requestdict_fields(creation=creation))
     if additional_data:
@@ -2574,7 +3062,11 @@ def extract_and_check_dataclass_validation(
 
 
 def inspect_validation(
-    type_: type[T], value: Any, *, ignore_warnings: bool = False, **kwargs: Any,
+    type_: type[T],
+    value: Any,
+    *,
+    ignore_warnings: bool = False,
+    **kwargs: Any,
 ) -> tuple[Optional[T], list[Error]]:
     """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
 
@@ -2583,11 +3075,16 @@ def inspect_validation(
     This should only be used if the error handling differs from the default handling.
     """
     return validate.validate_check(
-        type_, value, ignore_warnings=ignore_warnings, **kwargs)
+        type_, value, ignore_warnings=ignore_warnings, **kwargs
+    )
 
 
 def inspect_validation_optional(
-    type_: type[T], value: Any, *, ignore_warnings: bool = False, **kwargs: Any,
+    type_: type[T],
+    value: Any,
+    *,
+    ignore_warnings: bool = False,
+    **kwargs: Any,
 ) -> tuple[Optional[T], list[Error]]:
     """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
 
@@ -2595,7 +3092,8 @@ def inspect_validation_optional(
     optional/falsy values.
     """
     return validate.validate_check_optional(
-        type_, value, ignore_warnings=ignore_warnings, **kwargs)
+        type_, value, ignore_warnings=ignore_warnings, **kwargs
+    )
 
 
 def basic_redirect(rs: RequestState, url: str) -> werkzeug.Response:
@@ -2608,8 +3106,7 @@ def basic_redirect(rs: RequestState, url: str) -> werkzeug.Response:
     return response
 
 
-def construct_redirect(request: werkzeug.Request,
-                       url: str) -> werkzeug.Response:
+def construct_redirect(request: werkzeug.Request, url: str) -> werkzeug.Response:
     """Construct an HTTP redirect. This should use the 303 status
     code. Unfortunately this code is not available for HTTP 1.0, so we fall
     back to an automatic refresh.
@@ -2628,8 +3125,9 @@ def construct_redirect(request: werkzeug.Request,
         You can also access the target via <a href="{url}">this link</a>.
     </body>
 </html>"""
-        return Response(template.format(url=urllib.parse.quote(url)),
-                        mimetype="text/html")
+        return Response(
+            template.format(url=urllib.parse.quote(url)), mimetype="text/html"
+        )
     else:
         ret = werkzeug.utils.redirect(url, 303)
         ret.delete_cookie("displaynote")
@@ -2658,8 +3156,7 @@ def make_postal_address(rs: RequestState, persona: CdEDBObject) -> Optional[list
     if p['address']:
         ret.append(p['address'])
     if p['postal_code'] or p['location']:
-        ret.append("{} {}".format(p['postal_code'] or '',
-                                  p['location'] or ''))
+        ret.append(f"{p['postal_code'] or ''} {p['location'] or ''}".strip())
     country = rs.translations["de"].gettext(format_country_code(p['country']))
     ret.append(country)
     # Each persona has always a name and a country. However, during realm upgrades, it
@@ -2728,6 +3225,7 @@ def process_dynamic_input(
     prefix: str = "",
 ) -> CdEDBOptionalMap: ...
 
+
 @overload
 def process_dynamic_input(
     rs: RequestState,
@@ -2751,7 +3249,9 @@ def process_dynamic_input(
     *,
     additional: CdEDBObject | None = None,
     additional_validation: CdEDBObject | None = None,
-    creation_spec: vtypes.TypeMapping | Mapping[str, Literal["str", "[str]"]] | None = None,
+    creation_spec: (
+        vtypes.TypeMapping | Mapping[str, Literal["str", "[str]"]] | None
+    ) = None,
     prefix: str = "",
 ) -> CdEDBOptionalMap:
     """Retrieve data from rs provided by 'dynamic_row_meta' macros.
@@ -2815,30 +3315,51 @@ def process_dynamic_input(
             entry = ret[anid]
             assert entry is not None
             if type_ not in {
-                vtypes.BallotCandidate, models_event.PartGroup, models_event.EventField,
-                models_event.CourseTrack, models_event.LodgementGroup,
+                vtypes.BallotCandidate,
+                models_event.PartGroup,
+                models_event.EventField,
+                models_event.CourseTrack,
+                models_event.LodgementGroup,
             }:
                 entry["id"] = anid
             entry.update(additional)
             # apply the promised validation
             ret[anid] = check_validation(
-                rs, type_, entry, field_prefix=field_prefix, field_postfix=f"_{anid}",
-                **additional_validation, id_=anid)
+                rs,
+                type_,
+                entry,
+                field_prefix=field_prefix,
+                field_postfix=f"_{anid}",
+                **additional_validation,
+                id_=anid,
+            )
 
     # extract the new entries which shall be created
     marker = 1
-    while marker < 2 ** 10:
+    while marker < 2**10:
         will_create = unwrap(
-            request_extractor(rs, {drow_create(-marker, prefix): bool}))
+            request_extractor(rs, {drow_create(-marker, prefix): bool})
+        )
         if will_create:
-            params = {drow_name(key, -marker, prefix): value
-                      for key, value in creation_spec.items()}
+            params = {
+                drow_name(key, -marker, prefix): value
+                for key, value in creation_spec.items()
+            }
             data = request_extractor(rs, params, postpone_validation=True)
-            entry = {key: data[drow_name(key, -marker, prefix)] for key in creation_spec}
+            entry = {
+                key: data[drow_name(key, -marker, prefix)] for key in creation_spec
+            }
             entry.update(additional)
             ret[-marker] = check_validation(
-                rs, type_, entry, field_prefix=field_prefix, field_postfix=f"_{-marker}",
-                creation=True, **additional_validation, id_=-marker)
+                rs,
+                type_,
+                entry,
+                field_prefix=field_prefix,
+                field_postfix=f"_{-marker}",
+                creation=True,
+                **additional_validation,
+                id_=-marker,
+            )
         else:
             break
         marker += 1
@@ -2855,10 +3376,14 @@ class CustomCSVDialect(csv.Dialect):
     escapechar = None
 
 
-def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
-               writeheader: bool = True, replace_newlines: bool = False,
-               substitutions: Optional[Mapping[str, Mapping[Any, Any]]] = None,
-               tzinfo: Optional[datetime.tzinfo] = None) -> str:
+def csv_output(
+    data: Collection[CdEDBObject],
+    fields: Sequence[str],
+    writeheader: bool = True,
+    replace_newlines: bool = False,
+    substitutions: Optional[Mapping[str, Mapping[Any, Any]]] = None,
+    tzinfo: Optional[datetime.tzinfo] = None,
+) -> str:
     """Generate a csv representation of the passed data.
 
     :param writeheader: If False, no CSV-Header is written.
@@ -2871,8 +3396,7 @@ def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
     """
     substitutions = substitutions or {}
     outfile = io.StringIO()
-    writer = csv.DictWriter(
-        outfile, fields, dialect=CustomCSVDialect())
+    writer = csv.DictWriter(outfile, fields, dialect=CustomCSVDialect())
     if writeheader:
         writer.writeheader()
     for original in data:
@@ -2890,9 +3414,11 @@ def csv_output(data: Collection[CdEDBObject], fields: Sequence[str],
     return outfile.getvalue()
 
 
-def query_result_to_json(data: Collection[CdEDBObject], fields: Iterable[str],
-                         substitutions: Optional[Mapping[
-                             str, Mapping[Any, Any]]] = None) -> str:
+def query_result_to_json(
+    data: Collection[CdEDBObject],
+    fields: Iterable[str],
+    substitutions: Optional[Mapping[str, Mapping[Any, Any]]] = None,
+) -> str:
     """Generate a json representation of the passed data.
 
     :param substitutions: Allow replacements of values with better
@@ -2912,9 +3438,9 @@ def query_result_to_json(data: Collection[CdEDBObject], fields: Iterable[str],
     return json_serialize(json_data)
 
 
-def calculate_loglinks(rs: RequestState, total: int,
-                       offset: Optional[int], length: int,
-                       ) -> dict[str, Union[CdEDBMultiDict, list[CdEDBMultiDict]]]:
+def calculate_loglinks(
+    rs: RequestState, total: int, offset: Optional[int], length: int
+) -> dict[str, Union[CdEDBMultiDict, list[CdEDBMultiDict]]]:
     """Calculate the target parameters for the links in the log pagination bar.
 
     :param total: The total count of log entries
@@ -2932,6 +3458,7 @@ def calculate_loglinks(rs: RequestState, total: int,
     # Create values sets for the necessary links.
     def new_md() -> CdEDBMultiDict:
         return werkzeug.datastructures.MultiDict(rs.values)
+
     loglinks = {
         "first": new_md(),
         "previous": new_md(),
@@ -2973,8 +3500,15 @@ class TransactionObserver:
     management if no other recipients are given.
     """
 
-    def __init__(self, rs: RequestState, frontend: AbstractFrontend, name: str, *,
-                 description: str = "", recipients: Collection[str] = ()):
+    def __init__(
+        self,
+        rs: RequestState,
+        frontend: AbstractFrontend,
+        name: str,
+        *,
+        description: str = "",
+        recipients: Collection[str] = (),
+    ):
         self.rs = rs
         self.frontend = frontend
         self.name = name
@@ -2993,12 +3527,16 @@ class TransactionObserver:
     def __enter__(self) -> "TransactionObserver":
         return self
 
-    def __exit__(self, atype: Optional[type[Exception]],
-                 value: Optional[Exception],
-                 tb: Optional[TracebackType]) -> Literal[False]:
+    def __exit__(
+        self,
+        atype: Optional[type[Exception]],
+        value: Optional[Exception],
+        tb: Optional[TracebackType],
+    ) -> Literal[False]:
         if value:
             self.frontend.do_mail(
-                self.rs, "transaction_error",
+                self.rs,
+                "transaction_error",
                 {
                     'To': self.recipients,
                     'Subject': "Transaktionsfehler",
@@ -3011,7 +3549,8 @@ class TransactionObserver:
                     'atype': atype,
                     'value': value,
                     'tb': tb,
-                })
+                },
+            )
         return False
 
 
@@ -3019,7 +3558,7 @@ def setup_translations(conf: Config) -> Mapping[str, gettext.NullTranslations]:
     """Helper to setup a mapping of languages to gettext translation objects."""
     return {
         lang: gettext.translation(
-            'cdedb', languages=[lang],
-            localedir=conf["REPOSITORY_PATH"] / 'i18n-output')
+            'cdedb', languages=[lang], localedir=conf["REPOSITORY_PATH"] / 'i18n-output'
+        )
         for lang in conf["I18N_LANGUAGES"]
     }

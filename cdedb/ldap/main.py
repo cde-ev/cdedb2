@@ -47,7 +47,8 @@ async def main() -> None:
         # and https://issues.apache.org/jira/browse/DIRAPI-381.
         context.maximum_version = ssl.TLSVersion.TLSv1_2
     context.load_cert_chain(
-        certfile=conf["LDAP_PEM_PATH"], keyfile=conf["LDAP_KEY_PATH"])
+        certfile=conf["LDAP_PEM_PATH"], keyfile=conf["LDAP_KEY_PATH"]
+    )
 
     # Systemd socket activation
     if "LISTEN_FDS" in os.environ:
