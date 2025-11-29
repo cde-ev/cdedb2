@@ -8,17 +8,7 @@ FORMAT_TARGETS= \
     cdedb/frontend/assembly/ \
     cdedb/frontend/cde/ \
     cdedb/frontend/core/complaint.py \
-    cdedb/frontend/event/__init__.py \
-    cdedb/frontend/event/base.py \
-    cdedb/frontend/event/course.py \
-    cdedb/frontend/event/download.py \
-    cdedb/frontend/event/droid.py \
-    cdedb/frontend/event/event.py \
-    cdedb/frontend/event/lodgement.py \
-    cdedb/frontend/event/lodgement_wishes.py \
-    cdedb/frontend/event/partial_import.py \
-    cdedb/frontend/event/query.py \
-    cdedb/frontend/event/query_stats.py \
+    cdedb/frontend/event/ \
     cdedb/frontend/ml/ \
     cdedb/frontend/*.py \
     cdedb/ldap/ \

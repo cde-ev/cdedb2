@@ -50,20 +50,25 @@ class EventFieldMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_read)
     def field_summary_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form."""
-        formatter = lambda k, v: (v if k != 'entries' or not v else
-                                  '\n'.join(f'{value or ""};{description}'
-                                            for value, description in v.items()))
+        formatter = lambda k, v: (
+            v
+            if k != 'entries' or not v
+            else '\n'.join(
+                f'{value or ""};{description}' for value, description in v.items()
+            )
+        )
         current = {
             f"{key}_{field_id}": formatter(key, value)
             for field_id, field in rs.ambience['event'].fields.items()
-            for key, value in field.as_dict().items() if key != 'id'
+            for key, value in field.as_dict().items()
+            if key != 'id'
         }
         merge_dicts(rs.values, current)
         event_fees_per_field = self.eventproxy.get_event_fees_per_entity(
-            rs, event_id).fields
+            rs, event_id
+        ).fields
         locked = {
-            field_id
-            for field_id, fee_ids in event_fees_per_field.items() if fee_ids
+            field_id for field_id, fee_ids in event_fees_per_field.items() if fee_ids
         }
         referenced = set()
         full_questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
@@ -83,35 +88,46 @@ class EventFieldMixin(EventBaseFrontend):
         for track in rs.ambience['event'].tracks.values():
             if track.course_room_field:
                 referenced.add(track.course_room_field.id)
-        return self.render(rs, "fields/field_summary", {
-            'referenced': referenced, 'locked': locked})
+        return self.render(
+            rs, "fields/field_summary", {'referenced': referenced, 'locked': locked}
+        )
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("nav_tab_active")
     def field_summary(
-            self, rs: RequestState, event_id: int, nav_tab_active: str | None = None,
+        self, rs: RequestState, event_id: int, nav_tab_active: str | None = None
     ) -> Response:
         """Manipulate the fields of an event."""
         spec = dict(models.EventField.requestdict_fields(creation=False))
         creation_spec = dict(models.EventField.requestdict_fields(creation=True))
         existing_fields = rs.ambience['event'].fields.keys()
         fields = process_dynamic_input(
-            rs, models.EventField, existing_fields, spec, creation_spec=creation_spec,
-            additional_validation={"event": rs.ambience['event']})
+            rs,
+            models.EventField,
+            existing_fields,
+            spec,
+            creation_spec=creation_spec,
+            additional_validation={"event": rs.ambience['event']},
+        )
 
         def field_name(field_id: int, field: Optional[CdEDBObject]) -> str:
             """Helper to get the name of a (new or existing) field."""
-            return (field['field_name'] if field and 'field_name' in field
-                    else rs.ambience['event'].fields[field_id].field_name)
+            return (
+                field['field_name']
+                if field and 'field_name' in field
+                else rs.ambience['event'].fields[field_id].field_name
+            )
 
         count = Counter(
-            field_name(f_id, field) for f_id, field in fields.items() if field)
+            field_name(f_id, field) for f_id, field in fields.items() if field
+        )
         for field_id, field in fields.items():
             if field and count.get(field_name(field_id, field), 0) > 1:
-                rs.append_validation_error(
-                    (drow_name("field_name", field_id),
-                     ValueError(n_("Field name not unique."))))
+                rs.append_validation_error((
+                    drow_name("field_name", field_id),
+                    ValueError(n_("Field name not unique.")),
+                ))
 
         if rs.has_validation_errors():
             return self.field_summary_form(rs, event_id)
@@ -120,13 +136,16 @@ class EventFieldMixin(EventBaseFrontend):
                 # remove unchanged
                 del fields[field_id]
         self.eventproxy.event_keeper_commit(
-            rs, event_id, "Snapshot vor Datenfeld-Änderungen.")
+            rs, event_id, "Snapshot vor Datenfeld-Änderungen."
+        )
         code = self.eventproxy.set_event(rs, event_id, {'fields': fields})
         self.eventproxy.event_keeper_commit(
-            rs, event_id, "Ändere Datenfelder.", after_change=True)
+            rs, event_id, "Ändere Datenfelder.", after_change=True
+        )
         rs.notify_return_code(code)
         return self.redirect(
-            rs, "event/field_summary_form", anchor=(nav_tab_active or "").lstrip("#"))
+            rs, "event/field_summary_form", anchor=(nav_tab_active or "").lstrip("#")
+        )
 
     FIELD_REDIRECT = {
         const.FieldAssociations.registration: "event/registration_query",
@@ -135,8 +154,12 @@ class EventFieldMixin(EventBaseFrontend):
     }
 
     def field_multiset_aux(
-            self, rs: RequestState, event_id: int, field_id: Optional[int],
-            ids: Collection[int], kind: const.FieldAssociations,
+        self,
+        rs: RequestState,
+        event_id: int,
+        field_id: Optional[int],
+        ids: Collection[int],
+        kind: const.FieldAssociations,
     ) -> tuple[CdEDBObjectMap, list[int], dict[int, str], Optional[models.EventField]]:
         """Process field set inputs.
 
@@ -159,13 +182,18 @@ class EventFieldMixin(EventBaseFrontend):
                 ids = self.eventproxy.list_registrations(rs, event_id)
             entities = self.eventproxy.get_registrations(rs, ids)
             personas = self.coreproxy.get_personas(
-                rs, tuple(e['persona_id'] for e in entities.values()))
+                rs, tuple(e['persona_id'] for e in entities.values())
+            )
             labels = {
                 reg_id: make_persona_name(personas[entity['persona_id']])
-                for reg_id, entity in entities.items()}
+                for reg_id, entity in entities.items()
+            }
             ordered_ids = xsorted(
-                entities.keys(), key=lambda anid: EntitySorter.persona(
-                    personas[entities[anid]['persona_id']]))
+                entities.keys(),
+                key=lambda anid: EntitySorter.persona(
+                    personas[entities[anid]['persona_id']]
+                ),
+            )
         elif kind == const.FieldAssociations.course:
             if not ids:
                 ids = self.eventproxy.list_courses(rs, event_id)
@@ -178,7 +206,9 @@ class EventFieldMixin(EventBaseFrontend):
             if not ids:
                 ids = self.eventproxy.list_lodgements(rs, event_id)
             lodgements = self.eventproxy.new_get_lodgements(rs, ids)
-            entities = {lodgement.id: lodgement.as_dict() for lodgement in lodgements.values()}
+            entities = {
+                lodgement.id: lodgement.as_dict() for lodgement in lodgements.values()
+            }
             labels = {
                 lodg_id: safe_filter(f"{lodg.title}, <em>{lodg.group.title}</em>")
                 for lodg_id, lodg in lodgements.items()
@@ -203,8 +233,12 @@ class EventFieldMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.entities_write)
     @REQUESTdata("field_id", "ids", "kind")
     def field_multiset_select(
-            self, rs: RequestState, event_id: int, field_id: Optional[vtypes.ID],
-            ids: Optional[vtypes.IntCSVList], kind: const.FieldAssociations,
+        self,
+        rs: RequestState,
+        event_id: int,
+        field_id: Optional[vtypes.ID],
+        ids: Optional[vtypes.IntCSVList],
+        kind: const.FieldAssociations,
     ) -> Response:
         """Select a field for manipulation across multiple entities."""
         if rs.has_validation_errors():
@@ -216,27 +250,47 @@ class EventFieldMixin(EventBaseFrontend):
 
         if field_id:
             return self.redirect(
-                rs, "event/field_multiset_form", {
+                rs,
+                "event/field_multiset_form",
+                {
                     'ids': (','.join(str(i) for i in ids) if ids else None),
-                    'field_id': field_id, 'kind': kind.value})
-        _, ordered_ids, labels, _ = self.field_multiset_aux(rs, event_id, field_id, ids,
-                                                       kind)
-        fields = [(field.id, field.title)
-                  for field in xsorted(rs.ambience['event'].fields.values())
-                  if field.association == kind]
+                    'field_id': field_id,
+                    'kind': kind.value,
+                },
+            )
+        _, ordered_ids, labels, _ = self.field_multiset_aux(
+            rs, event_id, field_id, ids, kind
+        )
+        fields = [
+            (field.id, field.title)
+            for field in xsorted(rs.ambience['event'].fields.values())
+            if field.association == kind
+        ]
         return self.render(
-            rs, "fields/field_multiset_select", {
+            rs,
+            "fields/field_multiset_select",
+            {
                 'ids': (','.join(str(i) for i in ids) if ids else None),
-                'ordered': ordered_ids, 'labels': labels, 'fields': fields,
-                'kind': kind.value, 'cancellink': self.FIELD_REDIRECT[kind]})
+                'ordered': ordered_ids,
+                'labels': labels,
+                'fields': fields,
+                'kind': kind.value,
+                'cancellink': self.FIELD_REDIRECT[kind],
+            },
+        )
 
     @access("event")
     @event_guard(EventPrivileges.entities_write)
     @REQUESTdata("field_id", "ids", "kind", "change_note")
     def field_multiset_form(
-            self, rs: RequestState, event_id: int, field_id: vtypes.ID,
-            ids: Optional[vtypes.IntCSVList], kind: const.FieldAssociations,
-            change_note: Optional[str] = None, internal: bool = False,
+        self,
+        rs: RequestState,
+        event_id: int,
+        field_id: vtypes.ID,
+        ids: Optional[vtypes.IntCSVList],
+        kind: const.FieldAssociations,
+        change_note: Optional[str] = None,
+        internal: bool = False,
     ) -> Response:
         """Render form.
 
@@ -250,7 +304,8 @@ class EventFieldMixin(EventBaseFrontend):
             ids = cast(vtypes.IntCSVList, [])
 
         entities, ordered_ids, labels, field = self.field_multiset_aux(
-            rs, event_id, field_id, ids, kind)
+            rs, event_id, field_id, ids, kind
+        )
         assert field is not None  # to make mypy happy
 
         merge_dicts(
@@ -258,10 +313,15 @@ class EventFieldMixin(EventBaseFrontend):
             *event_associated_fields_to_request_multi(rs.ambience['event'], entities),
         )
         return self.render(
-            rs, "fields/field_multiset", {
+            rs,
+            "fields/field_multiset",
+            {
                 'ids': (','.join(str(i) for i in ids) if ids else None),
-                'entities': entities, 'labels': labels, 'ordered': ordered_ids,
-                'kind': kind.value, 'change_note': change_note,
+                'entities': entities,
+                'labels': labels,
+                'ordered': ordered_ids,
+                'kind': kind.value,
+                'change_note': change_note,
                 'cancellink': self.FIELD_REDIRECT[kind],
                 'field': rs.ambience['event'].fields[field_id] if field_id else None,
             },
@@ -272,40 +332,60 @@ class EventFieldMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("field_id", "ids", "kind", "change_note")
     def field_multiset(
-            self, rs: RequestState, event_id: int, field_id: vtypes.ID,
-            ids: Optional[vtypes.IntCSVList], kind: const.FieldAssociations,
-            change_note: Optional[str] = None,
+        self,
+        rs: RequestState,
+        event_id: int,
+        field_id: vtypes.ID,
+        ids: Optional[vtypes.IntCSVList],
+        kind: const.FieldAssociations,
+        change_note: Optional[str] = None,
     ) -> Response:
         """Modify a specific field on the given entities."""
         if rs.has_validation_errors():
             return self.field_multiset_form(
-                rs, event_id, field_id=field_id, ids=ids, kind=kind,
-                change_note=change_note, internal=True)
+                rs,
+                event_id,
+                field_id=field_id,
+                ids=ids,
+                kind=kind,
+                change_note=change_note,
+                internal=True,
+            )
         if ids is None:
             ids = cast(vtypes.IntCSVList, [])
 
         entities, _, _, field = self.field_multiset_aux(
-            rs, event_id, field_id, ids, kind)
+            rs, event_id, field_id, ids, kind
+        )
         assert field is not None  # to make mypy happy
 
         msg = ""
         if kind == const.FieldAssociations.registration:
             msg = build_msg(f"{field.field_name} gesetzt", change_note)
         elif change_note:
-            rs.append_validation_error(
-                (None, ValueError(n_("change_note only supported for registrations."))))
+            rs.append_validation_error((
+                None,
+                ValueError(n_("change_note only supported for registrations.")),
+            ))
 
         data = event_associated_fields_multi_extractor(
             rs, rs.ambience["event"], kind, entities, field_id
         )
         if rs.has_validation_errors():
             return self.field_multiset_form(
-                rs, event_id, field_id=field_id, ids=ids, kind=kind,
-                change_note=change_note, internal=True)
+                rs,
+                event_id,
+                field_id=field_id,
+                ids=ids,
+                kind=kind,
+                change_note=change_note,
+                internal=True,
+            )
 
         code = 1
         pre_msg = build_msg(
-            f"Snapshot vor Setzen von Feld {field.field_name}", change_note)
+            f"Snapshot vor Setzen von Feld {field.field_name}", change_note
+        )
         post_msg = build_msg(f"Setze Feld {field.field_name}", change_note)
         self.eventproxy.event_keeper_commit(rs, event_id, pre_msg)
         for anid, entity in entities.items():
@@ -329,8 +409,13 @@ class EventFieldMixin(EventBaseFrontend):
             query = Query(
                 QueryScope.registration,
                 QueryScope.registration.get_spec(event=rs.ambience['event']),
-                ("persona.given_names", "persona.family_name", "persona.username",
-                 "reg.id", f"reg_fields.xfield_{field.field_name}"),
+                (
+                    "persona.given_names",
+                    "persona.family_name",
+                    "persona.username",
+                    "reg.id",
+                    f"reg_fields.xfield_{field.field_name}",
+                ),
                 (("reg.id", QueryOperators.oneof, entities),),
                 (("persona.family_name", True), ("persona.given_names", True)),
             )
@@ -338,8 +423,13 @@ class EventFieldMixin(EventBaseFrontend):
             query = Query(
                 QueryScope.lodgement,
                 QueryScope.lodgement.get_spec(event=rs.ambience['event']),
-                ("course.nr", "course.shortname", "course.title", "course.id",
-                 f"course_fields.xfield_{field.field_name}"),
+                (
+                    "course.nr",
+                    "course.shortname",
+                    "course.title",
+                    "course.id",
+                    f"course_fields.xfield_{field.field_name}",
+                ),
                 (("course.id", QueryOperators.oneof, entities),),
                 (("course.nr", True), ("course.shortname", True)),
             )
@@ -347,8 +437,12 @@ class EventFieldMixin(EventBaseFrontend):
             query = Query(
                 QueryScope.lodgement,
                 QueryScope.lodgement.get_spec(event=rs.ambience['event']),
-                ("lodgement.title", "lodgement_group.title", "lodgement.id",
-                 f"lodgement_fields.xfield_{field.field_name}"),
+                (
+                    "lodgement.title",
+                    "lodgement_group.title",
+                    "lodgement.id",
+                    f"lodgement_fields.xfield_{field.field_name}",
+                ),
                 (("lodgement.id", QueryOperators.oneof, entities),),
                 (("lodgement.title", True), ("lodgement.id", True)),
             )
