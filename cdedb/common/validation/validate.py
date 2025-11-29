@@ -2458,7 +2458,8 @@ EVENT_EXPOSED_FIELDS = {
 EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
     **EVENT_EXPOSED_OPTIONAL_FIELDS,
     **EVENT_FREETEXT_FIELDS,
-    'orgas': Iterable,
+    'orgas': set[ID],
+    'caretakers': set[ID],
     'parts': Mapping,
     'fields': Mapping,
 }
@@ -2535,14 +2536,6 @@ def _event(
                 configuration_fields, argname, creation=creation, **kwargs
             )
             val.update(configuration_fields)
-
-    if 'orgas' in val:
-        orgas = set()
-        for anid in val['orgas']:
-            with errs:
-                v = _id(anid, 'orgas', **kwargs)
-                orgas.add(v)
-        val['orgas'] = orgas
 
     if 'parts' in val:
         with errs:
