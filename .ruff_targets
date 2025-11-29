@@ -11,6 +11,9 @@ FORMAT_TARGETS= \
     cdedb/frontend/event/__init__.py \
     cdedb/frontend/event/base.py \
     cdedb/frontend/event/course.py \
+    cdedb/frontend/event/download.py \
+    cdedb/frontend/event/droid.py \
+    cdedb/frontend/event/event.py \
     cdedb/frontend/ml/ \
     cdedb/frontend/*.py \
     cdedb/ldap/ \
