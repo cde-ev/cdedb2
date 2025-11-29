@@ -14,6 +14,8 @@ FORMAT_TARGETS= \
     cdedb/frontend/event/download.py \
     cdedb/frontend/event/droid.py \
     cdedb/frontend/event/event.py \
+    cdedb/frontend/event/lodgement.py \
+    cdedb/frontend/event/lodgement_wishes.py \
     cdedb/frontend/ml/ \
     cdedb/frontend/*.py \
     cdedb/ldap/ \
