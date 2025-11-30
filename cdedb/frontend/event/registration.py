@@ -2075,9 +2075,10 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
         checkout_time: Optional[datetime.datetime] = unwrap(
             request_extractor(
-                rs, {f'checkout_time_{period_id}': Optional[datetime.datetime]}
+                rs,
+                {f'checkout_time_{period_id}': Optional[datetime.datetime]},  # type:ignore[dict-item]
             )
-        )  # type:ignore[dict-item]
+        )
         if rs.has_validation_errors():
             return self.show_registration(rs, event_id, registration_id)
 

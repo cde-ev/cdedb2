@@ -287,8 +287,9 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         del_flags = request_extractor(rs, {f"delete_{i}": bool for i in range(num)})
         deletes = {i for i in range(num) if del_flags[f'delete_{i}']}
         spec: vtypes.TypeMapping = dict(
-            QUESTIONNAIRE_ROW_MANDATORY_FIELDS, field_id=Optional[vtypes.ID]
-        )  # type: ignore[arg-type]
+            QUESTIONNAIRE_ROW_MANDATORY_FIELDS,
+            field_id=Optional[vtypes.ID],  # type: ignore[arg-type]
+        )
         marker = 1
         while marker < 2**10:
             if not unwrap(request_extractor(rs, {f"create_-{marker}": bool})):
