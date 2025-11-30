@@ -1426,11 +1426,18 @@ class PresentNeverCheckedinCV(RegistrationPartConstraintViolation):
         part = context.part
 
         ref_time = now().date()
-        if not (
-            registration['parts'][part.id]['status'].is_present()
-            and ref_time > part.part_begin
-        ):
+
+        if ref_time <= part.part_begin:
             return None
+        if not registration["parts"][part.id]["status"].is_present():
+            return None
+
+        severity = ViolationSeverity.WARNING
+        if ref_time > part.part_end:
+            severity = ViolationSeverity.ERROR
+        if not any(reg["checkin_periods"] for reg in aux.registrations.values()):
+            severity = ViolationSeverity.DEBUG
+
         valid_checkin_time = False
         for period in registration['checkin_periods']:
             if period.checkin_time.date() <= part.part_end and (
@@ -1439,14 +1446,11 @@ class PresentNeverCheckedinCV(RegistrationPartConstraintViolation):
             ):
                 valid_checkin_time = True
                 break
+
         if not valid_checkin_time:
             return cls(
                 event=aux.event,
-                severity=(
-                    ViolationSeverity.ERROR
-                    if ref_time > part.part_end
-                    else ViolationSeverity.WARNING
-                ),
+                severity=severity,
                 registration=registration,
                 part=part,
             )
