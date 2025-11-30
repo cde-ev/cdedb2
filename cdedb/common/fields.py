@@ -194,6 +194,9 @@ REGISTRATION_FIELDS = (
     "amount_paid",
     "amount_owed",
     "is_member",
+    "amount_owed_by_kind",
+    "amount_owed_by_category",
+    "amount_owed_by_budget",
 )
 
 #: Fields of a registration which are specific for each part of the event
