@@ -1161,21 +1161,24 @@ class ZeroAmountOwedCV(RegistrationConstraintViolation):
 
         if not aux.event.fees:
             return None
-        if registration['amount_owed'] == 0:
-            if any(
-                reg_part['status'].is_involved()
-                for reg_part in registration['parts'].values()
-            ):
-                return cls(
-                    event=aux.event,
-                    severity=(
-                        ViolationSeverity.DEBUG
-                        if registration['persona_id'] in aux.event.orgas
-                        else ViolationSeverity.INFO
-                    ),
-                    registration=registration,
-                )
-        return None
+        if registration['amount_owed'] != 0:
+            return None
+        if not any(
+            reg_part["status"].is_involved()
+            for reg_part in registration["parts"].values()
+        ):
+            return None
+
+        severity = ViolationSeverity.INFO
+        by_category = registration["amount_owed_by_category"]
+        if by_category.get(const.EventFeeCategory.reimbursement, 0) < 0:
+            severity = ViolationSeverity.DEBUG
+        if registration["persona_id"] in aux.event.orgas:
+            severity = ViolationSeverity.DEBUG
+        if registration["age"] == AgeClasses.u10:
+            severity = ViolationSeverity.DEBUG
+
+        return cls(event=aux.event, severity=severity, registration=registration)
 
     def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         if entity_page:
