@@ -1366,7 +1366,7 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
             has_successor = False
             for part in is_present_parts.values():
                 # look if period starts within some part where you should be present
-                if part.part_begin <= period.checkin_time.date() < part.part_end:
+                if part.part_begin <= period.checkin_time.date() <= part.part_end:
                     valid_checkin_time = True
                     valid_checkout_time = True
                     has_successor = True  # dummy, to trigger check below
