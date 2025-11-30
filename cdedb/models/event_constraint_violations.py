@@ -28,6 +28,7 @@ import enum
 import functools
 import inspect
 import itertools
+import logging
 import re
 from collections.abc import Collection, Iterable
 from functools import cached_property
@@ -52,6 +53,9 @@ from cdedb.uncommon.intenum import CdEEnum
 
 if TYPE_CHECKING:
     from cdedb.frontend.event.lodgement import LodgementInhabitants
+
+
+_LOGGER = logging.getLogger(__name__)
 
 
 td = datetime.timedelta
