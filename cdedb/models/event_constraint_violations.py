@@ -1355,6 +1355,10 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
                     shall_be_present_at_all=False,
                 )
 
+        severity = ViolationSeverity.INFO
+        if aux.event.is_archived:
+            severity = ViolationSeverity.DEBUG
+
         ref_time = now().date()
         day = datetime.timedelta(days=1)
         for period in registration['checkin_periods']:
@@ -1385,7 +1389,7 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
             if not (valid_checkin_time and valid_checkout_time):
                 return cls(
                     event=aux.event,
-                    severity=ViolationSeverity.INFO,
+                    severity=severity,
                     registration=registration,
                     shall_be_present_at_all=True,
                 )
