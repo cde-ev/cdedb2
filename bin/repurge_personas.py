@@ -10,7 +10,7 @@ from cdedb.script import Script
 
 script = Script(persona_id=-1, dbuser="cdb_admin")
 rs = script.rs()
-core = script.make_backend("core", proxy=False)
+core = script.make_core_backend(proxy=False)
 
 # work
 

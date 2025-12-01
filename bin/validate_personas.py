@@ -11,7 +11,7 @@ from cdedb.script import Script
 
 script = Script(dbuser="cdb_persona")
 rs = script.rs()
-core: CoreBackend = script.make_backend("core")
+core = script.make_core_backend(proxy=True)
 
 # Execution
 
