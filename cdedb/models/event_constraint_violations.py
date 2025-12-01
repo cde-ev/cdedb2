@@ -1446,7 +1446,7 @@ class PresentNeverCheckedinCV(RegistrationPartConstraintViolation):
         for period in registration['checkin_periods']:
             if period.checkin_time.date() <= part.part_end and (
                 not period.checkout_time
-                or period.checkout_time.date() > part.part_begin
+                or period.checkout_time.date() >= part.part_begin
             ):
                 valid_checkin_time = True
                 break
