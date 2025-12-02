@@ -563,13 +563,9 @@ class EventBaseFrontend(AbstractUserFrontend):
             )
             if registration['list_consent']:
                 # Ordered list of wished personas
+                wish_reg = lambda wish: data['registrations'][wish.wished]
                 wish_data['wished_personas'] = xsorted(
-                    (
-                        data['personas'][
-                            data['registrations'][wish.wished]['persona_id']
-                        ]
-                        for wish in wishes
-                    ),
+                    (data['personas'][wish_reg(wish)['persona_id']] for wish in wishes),
                     key=EntitySorter.persona,
                 )
                 wish_data['problems'] = problems
@@ -660,14 +656,8 @@ class EventBaseFrontend(AbstractUserFrontend):
                 raise RuntimeError("impossible.")
             ret = (
                 instance[key] == entity_id
-                and (
-                    const.RegistrationPartStati(part['status']).is_present()
-                    or not only_present
-                )
-                and (
-                    const.RegistrationPartStati(part['status']).is_involved()
-                    or not only_involved
-                )
+                and (part['status'].is_present() or not only_present)
+                and (part['status'].is_involved() or not only_involved)
             )
             if (
                 ret

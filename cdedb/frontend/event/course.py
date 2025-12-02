@@ -704,7 +704,7 @@ class EventCourseMixin(EventBaseFrontend):
         course_ids = set(course_ids)
 
         # Collection of number of choices in two categories: participant and involved.
-        choice_counts_data = {
+        choice_counts = {
             k: {
                 course_id: {
                     track_id: [0] * track.num_choices
@@ -723,19 +723,15 @@ class EventCourseMixin(EventBaseFrontend):
         for reg in registrations.values():
             for track_id, track in event.tracks.items():
                 status = reg['parts'][track.part_id]['status']
-                for rank, course_id in enumerate(
-                    reg['tracks'][track_id]['choices'],
-                ):
+                for rank, course_id in enumerate(reg['tracks'][track_id]['choices']):
                     if rank >= track.num_choices:
                         break
                     if course_id not in course_ids:
                         continue
                     if status == const.RegistrationPartStati.participant:
-                        choice_counts_data['participant'][course_id][track_id][
-                            rank
-                        ] += 1
+                        choice_counts['participant'][course_id][track_id][rank] += 1
                     if status.is_involved():
-                        choice_counts_data['involved'][course_id][track_id][rank] += 1
+                        choice_counts['involved'][course_id][track_id][rank] += 1
 
                 if (course_id := reg['tracks'][track_id]['course_id']) is not None:
                     if course_id not in course_ids:
@@ -773,8 +769,8 @@ class EventCourseMixin(EventBaseFrontend):
 
         return (
             models.ChoiceStats(
-                participant=models.ChoiceCounts(choice_counts_data['participant']),
-                involved=models.ChoiceCounts(choice_counts_data['involved']),
+                participant=models.ChoiceCounts(choice_counts['participant']),
+                involved=models.ChoiceCounts(choice_counts['involved']),
             ),
             models.AttendeeStats(
                 involved=models.Attendees(attendees_data['involved']),
