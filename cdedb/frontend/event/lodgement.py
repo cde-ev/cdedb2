@@ -216,23 +216,14 @@ class EventLodgementMixin(EventBaseFrontend):
         params: dict[str, Any] = {}
 
         involved_inhabitants = self.eventproxy.get_grouped_inhabitants(
-            rs,
-            event_id,
-            lodgement_ids=(lodgement_id,),
-            involved=True,
+            rs, event_id, lodgement_ids=(lodgement_id,), involved=True
         )[lodgement_id]
         uninvolved_inhabitants = self.eventproxy.get_grouped_inhabitants(
-            rs,
-            event_id,
-            lodgement_ids=(lodgement_id,),
-            involved=False,
+            rs, event_id, lodgement_ids=(lodgement_id,), involved=False
         )[lodgement_id]
 
         violation_data = self.get_constraint_violations(
-            rs,
-            rs.ambience['event'],
-            lodgement_id=lodgement_id,
-            registration_id=None,
+            rs, rs.ambience['event'], lodgement_id=lodgement_id, registration_id=None
         )
 
         lodgements = violation_data['all_lodgements']
@@ -586,10 +577,10 @@ class EventLodgementMixin(EventBaseFrontend):
             merge_dicts(
                 rs.values,
                 {
-                    f'is_camping_mat_{part_id}_{registration_id}': registrations[
-                        registration_id
-                    ]['parts'][part_id]['is_camping_mat']
-                    for registration_id in inhabitants[(lodgement_id, part_id)]
+                    f'is_camping_mat_{part_id}_{reg_id}': (
+                        registrations[reg_id]['parts'][part_id]['is_camping_mat']
+                    )
+                    for reg_id in inhabitants[(lodgement_id, part_id)]
                 },
             )
 

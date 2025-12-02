@@ -203,17 +203,17 @@ def detect_lodgement_wishes(
                     common_active_parts = _parts_with_status(
                         registration, ACTIVE_STATI
                     ) & _parts_with_status(other_registration, ACTIVE_STATI)
+                    msg = n_(
+                        "Suppressing wish edge from %(from_name)s to %(to_name)s since"
+                        " they will not be present together (even when considering the"
+                        " waitlist)."
+                    )
                     if not common_active_parts or (
                         restrict_part_id and restrict_part_id not in common_active_parts
                     ):
                         problems.append((
                             'info',
-                            n_(
-                                "Suppressing wish edge from %(from_name)s to "
-                                "%(to_name)s since they will not be present "
-                                "together (even when considering the "
-                                "waitlist)."
-                            ),
+                            msg,
                             {
                                 'from_name': make_persona_name(
                                     personas[registration['persona_id']]
