@@ -15,6 +15,7 @@ from collections.abc import Collection
 from typing import Optional, cast
 
 import segno.helpers
+import werkzeug.datastructures
 import werkzeug.exceptions
 from werkzeug import Response
 
@@ -324,14 +325,12 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
 
-        birthday: datetime.date = persona['birthday']
         begin = rs.ambience['event'].begin
-        age_class = determine_age_class(persona['birthday'], begin)
+        bd: datetime.date = persona['birthday']
         persona_age = (
-            begin.year
-            - birthday.year
-            - ((begin.month, begin.day) < (birthday.month, birthday.day))
+            begin.year - bd.year - ((begin.month, begin.day) < (bd.month, bd.day))
         )
+        age_class = determine_age_class(bd, begin)
 
         rs.ignore_validation_errors()
         if not preview:
@@ -666,9 +665,8 @@ class EventRegistrationMixin(EventBaseFrontend):
                 for i in range(group.num_choices):
                     key = f"group{group_id}.course_choice_{i}"
                     if key in synced_data:
-                        raw_tracks[f"track{track_id}.course_choice_{i}"] = synced_data[
-                            key
-                        ]
+                        k = f"track{track_id}.course_choice_{i}"
+                        raw_tracks[k] = synced_data[key]
                 key = f"group{group_id}.course_instructor"
                 if key in synced_data:
                     raw_tracks[f"track{track_id}.course_instructor"] = synced_data[key]
@@ -2073,11 +2071,9 @@ class EventRegistrationMixin(EventBaseFrontend):
         checkin_time: datetime.datetime = unwrap(
             request_extractor(rs, {f'checkin_time_{period_id}': datetime.datetime})
         )
-        checkout_time: Optional[datetime.datetime] = unwrap(
-            request_extractor(
-                rs,
-                {f'checkout_time_{period_id}': Optional[datetime.datetime]},  # type:ignore[dict-item]
-            )
+        key = f'checkout_time_{period_id}'
+        checkout_time: datetime.datetime | None = unwrap(
+            request_extractor(rs, {key: datetime.datetime | None})
         )
         if rs.has_validation_errors():
             return self.show_registration(rs, event_id, registration_id)
@@ -2437,8 +2433,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 )
             elif field_id:
                 self.eventproxy.add_checkouts_multi(
-                    rs,
-                    {r_id: reg['fields'][field_name] for r_id, reg in regs.items()},
+                    rs, {r_id: reg['fields'][field_name] for r_id, reg in regs.items()}
                 )
             else:
                 raise RuntimeError(n_("Impossible"))
