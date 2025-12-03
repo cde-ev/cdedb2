@@ -1136,16 +1136,14 @@ class TestMlFrontend(FrontendTest):
                 self._create_mailinglist(mdata)
                 # Add the user as orga. (Garcia is orga already.)
                 if user["id"] in {USER_DICT["emilia"]["id"], USER_DICT["inga"]["id"]}:
-                    self.traverse({'href': '/event/'},
-                                  {'href': '/event/event/1/show'})
-                    f = self.response.forms['addorgaform']
-                    f['orga_id'] = user['DB-ID']
+                    self.get('/event/event/1/orga/manage')
+                    f = self.response.forms['addorgasform']
+                    f['orga_ids'] = user['DB-ID']
                     self.submit(f, check_notification=False)
-                    self.assertPresence(user['family_name'], div='manage-orgas')
+                    self.assertPresence(user['family_name'], div='orgas_list')
                 self.logout()
                 self.login(user)
-                self.traverse({'href': '/'})
-                self.traverse({'href': '/ml/mailinglist/1001/show'})
+                self.get('/ml/mailinglist/1001/show')
                 self.traverse({'description': 'Erweiterte Verwaltung'})
                 self.assertTitle(mdata['title'] + " – Erweiterte Verwaltung")
                 f = self.response.forms['addmodsubscriberform']

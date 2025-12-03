@@ -17,11 +17,13 @@
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events")) }}
-{{ util.breadcrumb_link(cdedblink("cde/show_past_event", {"pevent_id": ambience['pevent']['id']}),
-        ambience['pevent']['title'], icon="calendar-alt") }}
-{{ util.breadcrumb_link(cdedblink("cde/show_past_course", {'pcourse_id' : ambience['pcourse']['id']}),
-        ambience['pcourse']['title'], icon="book", active=True) }}
+    {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events")) }}
+    {{ util.breadcrumb_link(cdedblink("cde/list_past_events", {"institution": ambience['pevent']['institution']}),
+                            gettext(ambience['pevent']['institution'].shortname)) }}
+    {{ util.breadcrumb_link(cdedblink("cde/show_past_event", {"pevent_id": ambience['pevent']['id']}),
+            ambience['pevent']['title'], icon="calendar-alt") }}
+    {{ util.breadcrumb_link(cdedblink("cde/show_past_course", {'pcourse_id' : ambience['pcourse']['id']}),
+            ambience['pcourse']['title'], icon="book", active=True) }}
 {% endblock %}
 {% block content %}
     {% if "past_event" in user.admin_views %}

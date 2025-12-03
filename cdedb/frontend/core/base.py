@@ -22,6 +22,7 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.core as models
+import cdedb.models.past_event as models_past_event
 from cdedb.common import (
     CdEDBObject,
     CdEDBObjectMap,
@@ -38,8 +39,10 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.exceptions import (
+    AdminPasswordResetError,
     ArchiveError,
     CryptographyError,
+    IncorrectPasswordError,
     PrivilegeError,
     ValidationWarning,
 )
@@ -97,7 +100,6 @@ from cdedb.models.ml import MailinglistGroup
 from cdedb.models.past_event import (
     past_course_by_past_event_selectize_options,
     past_course_entries,
-    past_event_entries,
 )
 from cdedb.uncommon.submanshim import SubscriptionPolicy
 
@@ -134,7 +136,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 rs.values['wants'] = self.encode_parameter(
                     "core/login", "wants", wants,
                     persona_id=rs.user.persona_id,
-                    timeout=self.conf["UNCRITICAL_PARAMETER_TIMEOUT"])
+                    timeout=self.conf["EXTENDED_PARAMETER_TIMEOUT"])
             return self.render(rs, "login", {'meta_info': meta_info},
                                get_mandatory_form_fields(self.login))
 
@@ -605,16 +607,15 @@ class CoreBaseFrontend(AbstractFrontend):
         if event_id:
             is_admin = "event_admin" in rs.user.roles
             is_viewing_admin = is_admin and "event_orga" in rs.user.admin_views
-            is_orga = event_id in self.eventproxy.orga_info(
-                rs, rs.user.persona_id)
-            if is_orga or is_admin:
+            is_orgalike = event_id in rs.user.orga | rs.user.caretaker
+            if is_orgalike or is_admin:
                 is_participant = self.eventproxy.list_registrations(
                     rs, event_id, persona_id)
-                if (is_orga or is_viewing_admin) and is_participant:
+                if (is_orgalike or is_viewing_admin) and is_participant:
                     access_levels.add("event")
                     access_levels.add("orga")
                 # Admins who are also orgas can not disable this admin view
-                if is_admin and not is_orga and is_participant:
+                if is_admin and not is_orgalike and is_participant:
                     access_mode.add("orga")
         # Mailinglist moderators see all users related to their mailinglist.
         # This excludes users with relation "unsubscribed", since their email address
@@ -1043,7 +1044,11 @@ class CoreBaseFrontend(AbstractFrontend):
         elif kind == "event_user":
             # No check by event, as this behaves identical for each event.
             # TODO How to migrate this to EventPrivileges?
-            if not (rs.user.orga or {"event_admin", "auditor"} & rs.user.roles):
+            # Maybe add generic realm_roles any_orga, any_caretaker?
+            if not (
+                rs.user.orga or rs.user.caretaker
+                or {"event_admin", "auditor"} & rs.user.roles
+            ):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_event_realm", QueryOperators.equal, True))
@@ -1898,13 +1903,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 # The code is negative, the user's password needs to be changed.
                 # We didn't actually issue the success message above.
                 rs.notify("success", success)
-                successful, cookie = self.coreproxy.make_reset_cookie(
-                    rs, email, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
-                if successful:
-                    params["email"] = self.encode_parameter(
-                        "core/do_password_reset_form", "email", email, persona_id=None,
-                        timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
-                    params["cookie"] = cookie
+                params["reset_link"] = self._password_reset_link(rs, privilege_change["persona_id"])
             if case_status == const.PrivilegeChangeStati.approved:
                 headers: Headers = {
                     "To": {email},
@@ -1980,7 +1979,7 @@ class CoreBaseFrontend(AbstractFrontend):
         mandatory_fields = get_mandatory_form_fields(
             CDE_TRANSITION_FIELDS, self.promote_user)
         return self.render(rs, "promote_user", {
-            "pevent_entries": past_event_entries(pevents),
+            "pevent_entries": models_past_event.PastEvent.get_entries(pevents),
             "pcourse_entries": past_course_entries(pcourses),
             "pcourse_entries_by_event": past_course_by_past_event_selectize_options(all_pcourses),
         }, mandatory_fields)
@@ -2225,34 +2224,37 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.notify("error", n_("Passwords don’t match."))
             return self.change_password_form(rs)
 
-        new_password, errs = self.coreproxy.check_password_strength(
-            rs, new_password, persona_id=rs.user.persona_id,
-            argname="new_password")
-
-        if errs:
+        if errs := self.coreproxy.check_password_strength(
+            rs, new_password, persona_id=rs.user.persona_id
+        ):
+            rs.notify("error", n_("Password too weak."))
             rs.extend_validation_errors(errs)
-            if any(name == "new_password"
-                   for name, _ in rs.retrieve_validation_errors()):
-                rs.notify("error", n_("Password too weak."))
             rs.ignore_validation_errors()
             return self.change_password_form(rs)
-        assert new_password is not None
 
-        code, message = self.coreproxy.change_password(
-            rs, old_password, new_password)
-        rs.notify_return_code(code, success=n_("Password changed."),
-                                error=message)
+        try:
+            code = self.coreproxy.change_password(rs, old_password, new_password)
+        except ValueError as e:
+            if isinstance(e, IncorrectPasswordError):
+                rs.append_validation_error(("old_password", ValueError(n_("Wrong password."))))
+                rs.ignore_validation_errors()
+            self.logger.error(
+                f"Unsuccessful password change for persona {rs.user.persona_id}. {e}"
+            )
+            rs.notify("error", *e.args)
+            return self.change_password_form(rs)
+
+        rs.notify_return_code(code, success=n_("Password changed."))
         if not code:
-            rs.append_validation_error(
-                ("old_password", ValueError(n_("Wrong password."))))
-            rs.ignore_validation_errors()
             self.logger.info(
-                f"Unsuccessful password change for persona {rs.user.persona_id}.")
+                f"Unsuccessful password change for persona {rs.user.persona_id}."
+            )
             return self.change_password_form(rs)
         else:
             count = self.coreproxy.logout(rs, other_sessions=True, this_session=False)
             rs.notify(
-                "success", n_("%(count)s session(s) terminated."), {'count': count})
+                "success", n_("%(count)s session(s) terminated."), {'count': count}
+            )
             return self.redirect_show_user(rs, rs.user.persona_id)
 
     @access("anonymous")
@@ -2264,7 +2266,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.render(rs, "reset_password", {},
                            get_mandatory_form_fields(self.send_password_reset_link))
 
-    @access("anonymous")
+    @access("anonymous", modi={"POST"})
     @REQUESTdata("email")
     def send_password_reset_link(self, rs: RequestState, email: vtypes.Email,
                                  ) -> Response:
@@ -2274,88 +2276,73 @@ class CoreBaseFrontend(AbstractFrontend):
         """
         if rs.has_validation_errors():
             return self.reset_password_form(rs)
-        exists = self.coreproxy.verify_existence(rs, email)
-        if not exists:
-            rs.append_validation_error(
-                ("email", ValueError(n_("Nonexistent user."))))
+
+        persona_id = self.coreproxy.resolve_username(rs, email)
+        if not persona_id:
+            # This leaks information on valid usernames but we live with this fact in
+            #  favor of a better user experience.
+            rs.append_validation_error(("email", ValueError(n_("Nonexistent user."))))
             rs.ignore_validation_errors()
+            # TODO: Add fail2ban for this?
+            self.logger.info(
+                f"Password reset requested for unknown username {email} for IP {rs.request.remote_addr}."
+            )
             return self.reset_password_form(rs)
-        admin_exception = False
+
         try:
-            success, message = self.coreproxy.make_reset_cookie(
-                rs, email, self.conf["PARAMETER_TIMEOUT"])
-        except PrivilegeError:
-            admin_exception = True
-        else:
-            if not success:
-                rs.notify("error", message)
-            else:
-                self.do_mail(
-                    rs, "reset_password",
-                    {'To': (email,), 'Subject': "Passwort zurücksetzen"},
-                    {'email': self.encode_parameter(
-                        "core/do_password_reset_form", "email", email,
-                        persona_id=None,
-                        timeout=self.conf["PARAMETER_TIMEOUT"]),
-                        'cookie': message})
-                # log message to be picked up by fail2ban
-                self.logger.info(f"Sent password reset mail to {email}"
-                                 f" for IP {rs.request.remote_addr}.")
-                rs.notify("success", n_("Email sent."))
-        if admin_exception:
+            reset_link = self._password_reset_link(rs, persona_id, self.conf["PARAMETER_TIMEOUT"])
+        except AdminPasswordResetError:
             self.do_mail(
                 rs, "admin_no_reset_password",
                 {'To': (email,), 'Subject': "Passwort zurücksetzen"},
             )
-            self.logger.info(f"Sent password reset denial mail to admin {email}"
-                             f" for IP {rs.request.remote_addr}.")
+            self.logger.info(
+                f"Sent password reset denial mail to admin {email} for IP {rs.request.remote_addr}."
+            )
+            # Display success notification anyway to prevent leaking admin accounts.
+            rs.notify("success", n_("Email sent."))
+        else:
+            self.do_mail(
+                rs, "reset_password",
+                {'To': (email,), 'Subject': "Passwort zurücksetzen"},
+                {"reset_link": reset_link},
+            )
+            # log message to be picked up by fail2ban
+            self.logger.info(
+                f"Sent password reset mail to {email} for IP {rs.request.remote_addr}."
+            )
             rs.notify("success", n_("Email sent."))
         return self.redirect(rs, "core/index")
 
     @access(*REALM_ADMINS, modi={"POST"})
-    def admin_send_password_reset_link(self, rs: RequestState, persona_id: int,
-                                       internal: bool = False) -> Response:
+    def admin_send_password_reset_link(self, rs: RequestState, persona_id: int) -> Response:
         """Generate a password reset email for an arbitrary persona.
 
         This is the only way to reset the password of an administrator (for
         security reasons).
-
-        If the `internal` parameter is True, this was called internally to
-        send a reset link. In that case we do not have the appropriate
-        ambience dict, so we retrieve the username.
         """
         if rs.has_validation_errors():
             return self.redirect_show_user(rs, persona_id)
-        if (not self.coreproxy.is_relative_admin(rs, persona_id)
-                and "meta_admin" not in rs.user.roles):
-            raise PrivilegeError(n_("Not a relative admin."))
-        if internal:
-            persona = self.coreproxy.get_persona(rs, persona_id)
-            email = persona['username']
-        else:
-            email = rs.ambience['persona']['username']
-        success, message = self.coreproxy.make_reset_cookie(
-            rs, email, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
-        if not success:
-            rs.notify("error", message)
-        else:
-            self.do_mail(
-                rs, "admin_reset_password",
-                {'To': (email,), 'Subject': "Passwort zurücksetzen"},
-                {'email': self.encode_parameter(
-                    "core/do_password_reset_form", "email", email,
-                    persona_id=None,
-                    timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"]),
-                    'cookie': message})
-            self.logger.info(f"Sent password reset mail to {email}"
-                             f" for admin {rs.user.persona_id}.")
-            rs.notify("success", n_("Email sent."))
+
+        try:
+            reset_link = self._password_reset_link(rs, persona_id)
+        except AdminPasswordResetError as e:
+            raise PrivilegeError(n_("Not a relative admin.")) from e
+
+        email = rs.ambience["persona"]["username"]
+        self.do_mail(
+            rs,
+            "admin_reset_password",
+            {'To': [email], 'Subject': "Passwort zurücksetzen"},
+            {"reset_link": reset_link},
+        )
+        self.logger.info(f"Sent password reset mail to {email} for user {persona_id} by admin {rs.user.persona_id}.")
+        rs.notify("success", n_("Email sent."))
         return self.redirect_show_user(rs, persona_id)
 
     @access("anonymous")
-    @REQUESTdata("#email", "cookie")
-    def do_password_reset_form(self, rs: RequestState, email: vtypes.Email,
-                               cookie: str, internal: bool = False) -> Response:
+    @REQUESTdata("persona_id", "confirm")
+    def do_password_reset_form(self, rs: RequestState, persona_id: int, confirm: str, internal: bool = False) -> Response:
         """Second form.
 
         Pretty similar to first form, but now we know, that the account
@@ -2366,52 +2353,49 @@ class CoreBaseFrontend(AbstractFrontend):
         validation from changing the target again.
         """
         if rs.has_validation_errors() and not internal:
-            # Clean errors prior to displaying a new form for the first step
-            rs.retrieve_validation_errors().clear()
-            rs.notify("info", n_("Please try again."))
             return self.reset_password_form(rs)
-        rs.values['email'] = self.encode_parameter(
-            "core/do_password_reset", "email", email, persona_id=None)
+        if not self._validate_password_reset_cookie(rs, persona_id, confirm):
+            return self.reset_password_form(rs)
         return self.render(rs, "do_password_reset", {},
                            get_mandatory_form_fields(self.do_password_reset))
 
     @access("anonymous", modi={"POST"})
-    @REQUESTdata("#email", "new_password", "new_password2", "cookie")
-    def do_password_reset(self, rs: RequestState, email: vtypes.Email,
-                          new_password: str, new_password2: str, cookie: str,
+    @REQUESTdata("persona_id", "confirm", "new_password", "new_password2")
+    def do_password_reset(self, rs: RequestState, persona_id: int, confirm: str,
+                          new_password: str, new_password2: str
                           ) -> Response:
         """Now we can reset to a new password."""
         if rs.has_validation_errors():
+            return self.do_password_reset_form(rs)  # type: ignore[call-arg]
+        if not self._validate_password_reset_cookie(rs, persona_id, confirm):
             return self.reset_password_form(rs)
-        if not self.coreproxy.verify_existence(rs, email, include_genesis=False):
-            rs.notify("error", n_("Unknown email address."))
-            return self.reset_password_form(rs)
+        if self.coreproxy.is_locked_down(rs):
+            rs.notify("error", n_("Lockdown active. Try again later."))
+            return self.index(rs)
+
         if new_password != new_password2:
-            rs.extend_validation_errors(
-                (("new_password", ValueError(n_("Passwords don’t match."))),
-                 ("new_password2", ValueError(n_("Passwords don’t match.")))))
+            msg = n_("Passwords don’t match.")
+            rs.append_validation_error(("new_password", ValueError(msg)))
+            rs.append_validation_error(("new_password2", ValueError(msg)))
             rs.ignore_validation_errors()
-            rs.notify("error", n_("Passwords don’t match."))
-            return self.do_password_reset_form(rs, email=email, cookie=cookie,
-                                               internal=True)
-        new_password, errs = self.coreproxy.check_password_strength(
-            rs, new_password, email=email, argname="new_password")
+            rs.notify("error", msg)
+            return self.do_password_reset_form(rs, internal=True)  # type: ignore[call-arg]
 
-        if errs:
+        if errs := self.coreproxy.check_password_strength(
+            rs, new_password, persona_id=persona_id
+        ):
+            rs.notify("error", n_("Password too weak."))
             rs.extend_validation_errors(errs)
-            if any(name == "new_password"
-                   for name, _ in rs.retrieve_validation_errors()):
-                rs.notify("error", n_("Password too weak."))
-            return self.do_password_reset_form(rs, email=email, cookie=cookie,
-                                               internal=True)
-        assert new_password is not None
+            return self.do_password_reset_form(rs, internal=True)  # type: ignore[call-arg]
 
-        code, message = self.coreproxy.reset_password(rs, email, new_password,
-                                                      cookie=cookie)
-        rs.notify_return_code(code, success=n_("Password reset."),
-                                error=message)
+        try:
+            code = self.coreproxy.reset_password(rs, persona_id, new_password, cookie=confirm)
+        except ValueError as e:
+            rs.notify("error", *e.args)
+            return self.do_password_reset_form(rs, internal=True)  # type: ignore[call-arg]
+        rs.notify_return_code(code, success=n_("Password reset."))
         if not code:
-            return self.redirect(rs, "core/reset_password_form")
+            return self.do_password_reset_form(rs, internal=True)  # type: ignore[call-arg]
         else:
             return self.redirect(rs, "core/index")
 

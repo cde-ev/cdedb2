@@ -11,6 +11,7 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.core as models
+import cdedb.models.past_event as models_past_event
 from cdedb.common import (
     CdEDBObject,
     GenesisDecision,
@@ -32,7 +33,6 @@ from cdedb.frontend.core.base import CoreBaseFrontend
 from cdedb.models.past_event import (
     past_course_by_past_event_selectize_options,
     past_course_entries,
-    past_event_entries,
 )
 
 
@@ -357,7 +357,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         pevents = self.pasteventproxy.get_past_events(rs, pevent_ids)
         params = {
             "pevents": pevents,
-            "pevent_entries": past_event_entries(pevents),
+            "pevent_entries": models_past_event.PastEvent.get_entries(pevents),
             "pcourses": pcourses,
             "pcourse_entries": past_course_entries(pcourses),
             "pcourse_entries_by_event": past_course_by_past_event_selectize_options(all_pcourses),
@@ -485,15 +485,11 @@ class CoreGenesisMixin(CoreBaseFrontend):
             rs.notify("success", n_("Case approved."))
         elif decision.is_update():
             persona = self.coreproxy.get_persona(rs, persona_id)
-            _, cookie = self.coreproxy.make_reset_cookie(
-                rs, persona['username'], timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
-            email = self.encode_parameter(
-                "core/do_password_reset_form", "email", persona['username'],
-                persona_id=None, timeout=self.conf["EMAIL_PARAMETER_TIMEOUT"])
+            reset_link = self._password_reset_link(rs, persona_id)
             self.do_mail(
                 rs, "genesis/genesis_updated",
                 {'To': (persona['username'],), 'Subject': "CdEDB-Account reaktiviert"},
-                {'persona': persona, 'email': email, 'cookie': cookie})
+                {'persona': persona, "reset_link": reset_link})
             rs.notify("success", n_("User updated."))
         else:
             self.do_mail(

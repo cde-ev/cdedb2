@@ -115,6 +115,7 @@
         }
     },
     "event": {
+        "caretakers": [],
         "description": "Everybody come!",
         "fees": {
             "Externenzusatzbeitrag": {

@@ -79,6 +79,7 @@ class EventBackend(
         * track_groups: A group of course tracks.
         * track_group_tracks: A link between a course track and a track group.
         * orgas: An orga of the event.
+        * caretakers: A caretaker of the event.
         * lodgement_groups: A lodgement group associated with the event.
                             This can have it's own blockers.
         * lodgements: A lodgement associated with the event. This can have
@@ -206,6 +207,12 @@ class EventBackend(
         )
         if orgas:
             blockers["orgas"] = [e["id"] for e in orgas]
+
+        caretakers = self.sql_select(
+            rs, "event.caretakers", ("id",), (event_id,), entity_key="event_id"
+        )
+        if caretakers:
+            blockers["caretakers"] = [e["id"] for e in caretakers]
 
         lodgement_groups = self.sql_select(
             rs,
@@ -377,13 +384,17 @@ class EventBackend(
                     ret *= self.sql_update(rs, models.Event.database_table, deletor)
                     with Silencer(rs):
                         for anid in blockers["field_definitions"]:
-                            ret *= self._delete_event_field(rs, anid)
+                            ret *= self._delete_event_field(rs, anid, event_id=event_id)
                 if "custom_query_filters" in cascade:
                     with Silencer(rs):
                         for anid in blockers["custom_query_filters"]:
                             ret *= self.delete_custom_query_filter(rs, anid)
                 if "orgas" in cascade:
                     ret *= self.sql_delete(rs, "event.orgas", blockers["orgas"])
+                if "caretakers" in cascade:
+                    ret *= self.sql_delete(
+                        rs, "event.caretakers", blockers["caretakers"]
+                    )
                 if "orga_tokens" in cascade:
                     orga_token_cascade = ("atime", "log")
                     # orga_token_cascade &= cascade

@@ -117,7 +117,7 @@
                         {{ util.form_input_textarea(name=drow_name('entries', field_id), label=gettext("Options"),
                                                     aclass='drow-input',
                                                     attributes=util.drow_basename('entries')|s if newrow else '') }}
-                        {% if association == enums['FieldAssociations'].registration %}
+                        {% if association is none or association == enums['FieldAssociations'].registration %}
                             {{ util.form_input_checkbox(label=gettext("Display at Checkin"), name=drow_name('checkin', field_id),
                                                         attributes=util.drow_basename('checkin')|s if newrow else '') }}
                         {% endif %}

@@ -27,7 +27,6 @@ from cdedb.backend.common import (
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     internal,
-    singularize,
 )
 from cdedb.common import (
     CdEDBObject,
@@ -45,9 +44,7 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    EVENT_FIELD_SPEC,
     EVENT_PART_FIELDS,
-    FIELD_DEFINITION_FIELDS,
     REGISTRATION_FIELDS,
 )
 from cdedb.common.n_ import n_
@@ -56,8 +53,8 @@ from cdedb.common.privileges import (
     is_privileged_event as is_privileged,
 )
 from cdedb.common.sorting import mixed_existence_sorter
-from cdedb.database.query import DatabaseValue_s
-from cdedb.fee_condition_parser.evaluation import ReferencedNames, get_referenced_names
+from cdedb.database.query import DatabaseValue_s, ParamDict
+from cdedb.fee_condition_parser.evaluation import get_referenced_names
 
 
 @dataclasses.dataclass
@@ -117,41 +114,34 @@ class EventLowLevelBackend(AbstractBackend):
         return self.sql_insert(rs, "event.log", data)
 
     @internal
-    def _get_events_fields(
+    def _get_event_fields(
         self,
         rs: RequestState,
-        event_ids: Collection[int],
-        field_ids: Optional[Collection[int]] = None,
-    ) -> dict[int, CdEDBObjectMap]:
+        event_id: int,
+        field_ids: Collection[int] | None = None,
+    ) -> models.CdEDataclassMap[models.EventField]:
         """Helper function to retrieve the custom field definitions for some events.
 
         This is used by multiple backend functions.
 
         :param field_ids: If given, only include fields with these ids.
-        :return: A dict mapping each event id to the dict of its fields
+        :return: A dict of (all or some) of one events fields.
+            Note that these dataclass instances **do not** have their event field set
+            and are thus not save to use in all circumstances.
         """
-        data = self.query_all(rs, *models.EventField.get_select_query(event_ids))
-        ret: dict[int, CdEDBObjectMap] = {event_id: {} for event_id in event_ids}
-        for field in data:
-            field['association'] = const.FieldAssociations(field['association'])
-            field['kind'] = const.FieldDatatypes(field['kind'])
-            # Optionally limit to the specified fields.
-            if field_ids is not None and field['id'] not in field_ids:
-                continue
-            ret[field['event_id']][field['id']] = field
-        return ret
+        data = self.query_all(rs, *models.EventField.get_select_query([event_id]))
+        if field_ids is not None:
+            data = tuple(e for e in data if e["id"] in field_ids)
+        return models.EventField.many_from_database(data)
 
-    class _GetEventFieldsProtocol(Protocol):
-        def __call__(
-            self,
-            rs: RequestState,
-            event_id: int,
-            field_ids: Optional[Collection[int]] = None,
-        ) -> CdEDBObjectMap: ...
-
-    _get_event_fields: _GetEventFieldsProtocol = internal(
-        singularize(_get_events_fields, "event_ids", "event_id")
-    )
+    @internal
+    def _get_event_field(
+        self, rs: RequestState, field_id: int, *, event_id: int
+    ) -> models.EventField:
+        fields = self._get_event_fields(rs, event_id, [field_id])
+        if field_id not in fields:
+            raise KeyError(n_("Unknown field for this event."))
+        return fields[field_id]
 
     @internal
     def _delete_course_track_blockers(
@@ -307,18 +297,6 @@ class EventLowLevelBackend(AbstractBackend):
         updated = {x for x in data if x > 0 and data[x] is not None}
         deleted = {x for x in data if x > 0 and data[x] is None}
 
-        # Do some additional validation for any given course room field.
-        course_room_fields: set[int] = set(
-            filter(None, (t.get('camping_mat_field_id') for t in data.values() if t))
-        )
-        course_room_field_data = self._get_event_fields(
-            rs, event_id, course_room_fields
-        )
-        if len(course_room_fields) != len(course_room_field_data):
-            raise ValueError(n_("Unknown field."))
-        for field in course_room_field_data.values():
-            self._validate_special_event_field(rs, event_id, "course_room", field)
-
         # new
         for x in mixed_existence_sorter(new):
             new_track = copy.copy(data[x])
@@ -368,30 +346,25 @@ class EventLowLevelBackend(AbstractBackend):
         return ret
 
     @internal
-    def _delete_field_values(self, rs: RequestState, field_data: CdEDBObject) -> None:
+    def _delete_field_values(self, rs: RequestState, field: models.EventField) -> None:
         """Helper function for deleting the data stored in a custom data field.
 
         This is used by `_delete_event_field`, when successfully deleting a field
         definition.
 
-        :param field_data: The data of the field definition to be deleted
+        :param field: The field whose values are to be deleted
         """
-        if field_data['association'] == const.FieldAssociations.registration:
-            table = 'event.registrations'
-        elif field_data['association'] == const.FieldAssociations.course:
-            table = 'event.courses'
-        elif field_data['association'] == const.FieldAssociations.lodgement:
-            table = 'event.lodgements'
-        else:
-            raise RuntimeError(n_("This should not happen."))
 
-        query = f"UPDATE {table} SET fields = fields - %s WHERE event_id = %s"
-        self.query_exec(rs, query, (field_data['field_name'], field_data['event_id']))
+        query = f"""
+            UPDATE {field.association.database_table}
+            SET fields = fields - %(field_name)s
+            WHERE event_id = %(event_id)s
+        """
+        params: ParamDict = {"field_name": field.field_name, "event_id": field.event_id}
+        self.query_exec(rs, query, params)
 
     @internal
-    def _cast_field_values(
-        self, rs: RequestState, field_data: CdEDBObject, new_kind: const.FieldDatatypes
-    ) -> None:
+    def _cast_field_values(self, rs: RequestState, field: models.EventField) -> None:
         """Helper to cast existing field data to a new type.
 
         This is used by `_set_event_fields`, if the datatype of an existing field is
@@ -401,17 +374,8 @@ class EventLowLevelBackend(AbstractBackend):
 
         :note: This has to be called inside an atomized context.
 
-        :param field_data: The data of the field definition to be updated
-        :param new_kind: The new kind/datatype of the field.
+        :param field: The field whose values are to be updated
         """
-        if field_data['association'] == const.FieldAssociations.registration:
-            table = 'event.registrations'
-        elif field_data['association'] == const.FieldAssociations.course:
-            table = 'event.courses'
-        elif field_data['association'] == const.FieldAssociations.lodgement:
-            table = 'event.lodgements'
-        else:
-            raise RuntimeError(n_("This should not happen."))
 
         casters: dict[const.FieldDatatypes, Callable[[Any], Any]] = {
             const.FieldDatatypes.int: int,
@@ -434,71 +398,52 @@ class EventLowLevelBackend(AbstractBackend):
         self.affirm_atomized_context(rs)
         data = self.sql_select(
             rs,
-            table,
+            field.association.database_table,
             ("id", "fields"),
-            (field_data['event_id'],),
+            [field.event_id],
             entity_key='event_id',
         )
         for entry in data:
             fdata = entry['fields']
-            value = fdata.get(field_data['field_name'], None)
+            value = fdata.get(field.field_name, None)
             if value is None:
                 continue
             try:
-                new_value = casters[new_kind](value)
+                new_value = casters[field.kind](value)
             except (ValueError, TypeError, phonenumbers.NumberParseException):
                 new_value = None
-            fdata[field_data['field_name']] = new_value
+            fdata[field.field_name] = new_value
             new = {
                 'id': entry['id'],
                 'fields': PsycoJson(fdata),
             }
-            self.sql_update(rs, table, new)
+            self.sql_update(rs, field.association.database_table, new)
 
-    def _get_event_fee_references(
-        self, rs: RequestState, event_id: int
-    ) -> dict[int, ReferencedNames]:
-        """Retrieve a map of event fee id to collection of names referenced by it."""
-        return {
-            fd['id']: get_referenced_names(
-                fcp_parsing.parse(fd['condition']) if fd['condition'] else None,
-            )
-            for fd in self.sql_select(
-                rs,
-                "event.event_fees",
-                ("id", "condition"),
-                (event_id,),
-                entity_key="event_id",
-            )
-        }
+    class _NewGetEventProtocol(Protocol):
+        def __call__(self, rs: RequestState, event_id: int) -> models.Event: ...
+
+    get_event: _NewGetEventProtocol
 
     @access("event")
     def get_event_fees_per_entity(
         self, rs: RequestState, event_id: int
     ) -> EventFeesPerEntity:
         """Retrieve maps of entites to all event fees, referencing that entity."""
-        field_names_to_id = {
-            e['field_name']: e['id']
-            for e in self.sql_select(
-                rs,
-                "event.field_definitions",
-                ("id", "field_name"),
-                (event_id,),
-                entity_key="event_id",
-            )
+        event = self.get_event(rs, event_id)
+        field_names_to_id: dict[str, int] = {
+            e.field_name: e.id for e in event.fields.values()
         }
-        part_names_to_id = {
-            e['shortname']: e['id']
-            for e in self.sql_select(
-                rs,
-                "event.event_parts",
-                ("id", "shortname"),
-                (event_id,),
-                entity_key="event_id",
-            )
+        part_names_to_id: dict[str, int] = {
+            e.shortname: e.id for e in event.parts.values()
         }
 
-        event_fee_references = self._get_event_fee_references(rs, event_id)
+        event_fee_references = {
+            e.id: get_referenced_names(
+                fcp_parsing.parse(e.condition) if e.condition else None
+            )
+            for e in event.fees.values()
+        }
+
         fields: dict[int, set[int]] = {
             field_id: set() for field_id in field_names_to_id.values()
         }
@@ -668,27 +613,6 @@ class EventLowLevelBackend(AbstractBackend):
             raise ValueError(n_("Registrations exist, cannot delete event parts."))
         if deleted_parts >= existing_parts | new_parts:
             raise ValueError(n_("At least one event part required."))
-
-        # Do some additional validation for any given waitlist and camping mat fields.
-        waitlist_fields: set[int] = set(
-            filter(None, (p.get('waitlist_field_id') for p in parts.values() if p))
-        )
-        waitlist_field_data = self._get_event_fields(rs, event_id, waitlist_fields)
-        if len(waitlist_fields) != len(waitlist_field_data):
-            raise ValueError(n_("Unknown field."))
-        for field in waitlist_field_data.values():
-            self._validate_special_event_field(rs, event_id, "waitlist", field)
-
-        camping_mat_fields: set[int] = set(
-            filter(None, (p.get('camping_mat_field_id') for p in parts.values() if p))
-        )
-        camping_mat_field_data = self._get_event_fields(
-            rs, event_id, camping_mat_fields
-        )
-        if len(camping_mat_fields) != len(camping_mat_field_data):
-            raise ValueError(n_("Unknown field."))
-        for field in camping_mat_field_data.values():
-            self._validate_special_event_field(rs, event_id, "camping_mat", field)
 
         self.sql_defer_constraints(rs, "event.event_parts_event_id_shortname_key")
 
@@ -1095,7 +1019,7 @@ class EventLowLevelBackend(AbstractBackend):
         return True
 
     def _delete_event_field_blockers(
-        self, rs: RequestState, field_id: int
+        self, rs: RequestState, field_id: int, *, event_id: int
     ) -> DeletionBlockers:
         """Determine what keeps an event part from being deleted.
 
@@ -1115,15 +1039,14 @@ class EventLowLevelBackend(AbstractBackend):
             are the ids of the blockers.
         """
         field_id = affirm(vtypes.ID, field_id)
+        event_id = affirm(vtypes.ID, event_id)
         blockers = {}
 
-        current = self.sql_select_one(
-            rs, "event.field_definitions", FIELD_DEFINITION_FIELDS, field_id
-        )
-        assert current is not None
+        # This also ensures the field belongs to this event.
+        current = self._get_event_field(rs, field_id, event_id=event_id)
 
         event_fees_per_field = self.get_event_fees_per_entity(
-            rs, current['event_id']
+            rs, current.event_id
         ).fields
         if fee_ids := event_fees_per_field[field_id]:
             blockers["event_fees"] = list(fee_ids)
@@ -1173,7 +1096,12 @@ class EventLowLevelBackend(AbstractBackend):
         return blockers
 
     def _delete_event_field(
-        self, rs: RequestState, field_id: int, cascade: Optional[Collection[str]] = None
+        self,
+        rs: RequestState,
+        field_id: int,
+        cascade: Optional[Collection[str]] = None,
+        *,
+        event_id: int,
     ) -> DefaultReturnCode:
         """Helper to remove an event field.
 
@@ -1186,7 +1114,8 @@ class EventLowLevelBackend(AbstractBackend):
 
         """
         field_id = affirm(vtypes.ID, field_id)
-        blockers = self._delete_event_field_blockers(rs, field_id)
+        event_id = affirm(vtypes.ID, event_id)
+        blockers = self._delete_event_field_blockers(rs, field_id, event_id=event_id)
         if not cascade:
             cascade = set()
         cascade = affirm_set(str, cascade)
@@ -1200,10 +1129,7 @@ class EventLowLevelBackend(AbstractBackend):
                 },
             )
 
-        current = self.sql_select_one(
-            rs, "event.field_definitions", FIELD_DEFINITION_FIELDS, field_id
-        )
-        assert current is not None
+        current = self._get_event_field(rs, field_id, event_id=event_id)
 
         ret = 1
         # implicit atomized context.
@@ -1244,16 +1170,18 @@ class EventLowLevelBackend(AbstractBackend):
             if "event_fees" in cascade:
                 for fee_id in blockers["event_fees"]:
                     ret *= self.delete_event_fee(rs, fee_id)
-            blockers = self._delete_event_field_blockers(rs, field_id)
+            blockers = self._delete_event_field_blockers(
+                rs, field_id, event_id=event_id
+            )
 
         if not blockers:
-            ret *= self.sql_delete_one(rs, "event.field_definitions", field_id)
+            ret *= self.sql_delete_one(rs, models.EventField.database_table, field_id)
             self._delete_field_values(rs, current)
             self.event_log(
                 rs,
                 const.EventLogCodes.field_removed,
-                current["event_id"],
-                change_note=current["field_name"],
+                current.event_id,
+                change_note=current.field_name,
             )
         else:
             raise ValueError(
@@ -1291,16 +1219,13 @@ class EventLowLevelBackend(AbstractBackend):
         # Do deletion first to avoid error due to duplicate field names.
         for x in mixed_existence_sorter(deleted_fields):
             # Only allow deletion of unused fields.
-            self._delete_event_field(rs, x, cascade=None)
+            self._delete_event_field(rs, x, cascade=None, event_id=event_id)
 
         for x in mixed_existence_sorter(new_fields):
             new_field = copy.deepcopy(fields[x])
             assert new_field is not None
             new_field['event_id'] = event_id
-            # TODO: Special-case this in EventField.to_database()
-            if new_field['entries']:
-                new_field['entries'] = list(new_field['entries'].items())
-            ret *= self.sql_insert(rs, "event.field_definitions", new_field)
+            ret *= self.sql_insert(rs, models.EventField.database_table, new_field)
             self.event_log(
                 rs,
                 const.EventLogCodes.field_added,
@@ -1309,29 +1234,19 @@ class EventLowLevelBackend(AbstractBackend):
             )
 
         if updated_fields:
-            current_field_data = {
-                e['id']: e
-                for e in self.query_all(
-                    rs,
-                    *models.EventField.get_select_query(
-                        updated_fields, entity_key="id"
-                    ),
-                )
-            }
             for x in mixed_existence_sorter(updated_fields):
                 updated_field = copy.deepcopy(fields[x])
                 assert updated_field is not None
                 updated_field['id'] = x
                 updated_field['event_id'] = event_id
-                if entries := updated_field.get('entries'):
-                    updated_field['entries'] = list(map(list, entries.items()))
                 current = current_field_data[x]
-                if any(updated_field[k] != current[k] for k in updated_field):
+                current_data = current.to_database()
+                if any(updated_field[k] != current_data[k] for k in updated_field):
                     if event_fees_per_field[x]:
                         # Fields used in event fees may not have their kind
                         #  or association changed.
                         if not all(
-                            updated_field[k] == current[k]
+                            updated_field[k] == current_data[k]
                             for k in ('kind', 'association')
                             if k in updated_field
                         ):
@@ -1341,38 +1256,20 @@ class EventLowLevelBackend(AbstractBackend):
                                     " referenced by an event fee."
                                 )
                             )
-                    kind = current_field_data[x]['kind']
-                    if updated_field.get('kind', kind) != kind:
-                        self._cast_field_values(rs, current, updated_field['kind'])
-                    ret *= self.sql_update(rs, "event.field_definitions", updated_field)
+                    if updated_field.get('kind', current.kind) != current.kind:
+                        current.kind = updated_field['kind']
+                        self._cast_field_values(rs, current)
+                    ret *= self.sql_update(
+                        rs, models.EventField.database_table, updated_field
+                    )
                     self.event_log(
                         rs,
                         const.EventLogCodes.field_updated,
                         event_id,
-                        change_note=current_field_data[x]['field_name'],
+                        change_note=current.field_name,
                     )
 
         return ret
-
-    @internal
-    def _validate_special_event_field(
-        self, rs: RequestState, event_id: int, field_name: str, field_data: CdEDBObject
-    ) -> None:
-        """Uninlined and deduplicated validation for special event fields.
-
-        This will raise an error if the field is unfit.
-
-        Valid values for `field_name` are "lodge_field", "camping_mat_field",
-        "course_room_field", "waitlist".
-        """
-        self.affirm_atomized_context(rs)
-        legal_field_kinds, legal_field_associations = EVENT_FIELD_SPEC[field_name]
-        if (
-            field_data["event_id"] != event_id
-            or field_data["kind"] not in legal_field_kinds
-            or field_data["association"] not in legal_field_associations
-        ):
-            raise ValueError(n_("Unfit field for %(field)s."), {'field': field_name})
 
     @access("event")
     def has_registrations(self, rs: RequestState, event_id: int) -> bool:

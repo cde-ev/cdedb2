@@ -43,7 +43,7 @@
     {% else %}
         {% for track in ambience["event"].tracks.values() %}
             {% set course_id = registration["tracks"][track.id]["course_instructor"] %}
-            {% if course_id %}
+            {% if course_id and track.id in courses[course_id].segments %}
                 {% set course = courses[course_id] %}
                 {% set course_attendees = attendees[(course_id, track.id)] %}
                 {{ util.context_heading(course.label, track.title, "book", gettext("Course Track"), level=4, anchor="track" + track.id|string) }}
@@ -62,7 +62,7 @@
                 {% call util.h(n_("Attendees"), 5, anchor="attendees" + track.id|string) -%}
                     {{- nbsp }}[{{ course_attendees.num_learners }} + {{ course_attendees.num_instructors }}]
                     {{- nbsp }}{{ util.href(util.mailto(";".join(usernames)), gettext("Mail to All"), icon="envelope", aclass="btn btn-sm btn-default", readonly=not usernames) }}
-                    {{- nbsp }}{{ util.href(util.mailto("", bcc=";".join(usernames)), gettext("BCC to All"), icon="envelope", aclass="btn btn-sm btn-default", readonly=not username) }}
+                    {{- nbsp }}{{ util.href(util.mailto("", bcc=";".join(usernames)), gettext("BCC to All"), icon="envelope", aclass="btn btn-sm btn-default", readonly=not usernames) }}
                 {% endcall %}
 
                 <ul class id="attendee-list{{ track.id }}">
