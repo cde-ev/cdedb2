@@ -97,10 +97,6 @@ from cdedb.frontend.common import (
     request_dict_extractor,
 )
 from cdedb.models.ml import MailinglistGroup
-from cdedb.models.past_event import (
-    past_course_by_past_event_selectize_options,
-    past_course_entries,
-)
 from cdedb.uncommon.submanshim import SubscriptionPolicy
 
 # Name of each realm
@@ -710,9 +706,12 @@ class CoreBaseFrontend(AbstractFrontend):
                     del data[key]
 
         # Add past event participation info
-        past_events = None
+        past_events = past_courses = past_event_info = None
         if "cde" in access_levels and {"event", "cde"} & roles:
-            past_events = self.pasteventproxy.participation_info(rs, persona_id)
+            past_event_info = self.pasteventproxy.participation_info(rs, persona_id)
+            past_events = self.pasteventproxy.get_past_events(rs, past_event_info.keys())
+            past_course_ids = {c_id for pevent in past_event_info.values() for c_id in pevent["courses"]}
+            past_courses = self.pasteventproxy.get_past_courses(rs, past_course_ids)
 
         # Retrieve number of active sessions if the user is viewing his own profile
         active_session_count = None
@@ -743,6 +742,7 @@ class CoreBaseFrontend(AbstractFrontend):
             'quoteable': quoteable, 'access_mode': access_mode,
             'active_session_count': active_session_count, 'ADMIN_KEYS': ADMIN_KEYS,
             'email_report': email_report,
+            'past_courses': past_courses, 'past_event_info': past_event_info,
         }, mandatory_fields)
 
     @access("member")
@@ -1980,8 +1980,8 @@ class CoreBaseFrontend(AbstractFrontend):
             CDE_TRANSITION_FIELDS, self.promote_user)
         return self.render(rs, "promote_user", {
             "pevent_entries": models_past_event.PastEvent.get_entries(pevents),
-            "pcourse_entries": past_course_entries(pcourses),
-            "pcourse_entries_by_event": past_course_by_past_event_selectize_options(all_pcourses),
+            "pcourse_entries": models_past_event.PastCourse.get_entries(pcourses),
+            "pcourse_entries_by_event": models_past_event.PastCourse.get_combined_entries(all_pcourses),
         }, mandatory_fields)
 
     @access("core_admin", modi={"POST"})

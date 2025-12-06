@@ -62,10 +62,6 @@ from cdedb.frontend.common import (
     make_membership_fee_reference,
     request_extractor,
 )
-from cdedb.models.past_event import (
-    past_course_by_past_event_selectize_options,
-    past_course_entries,
-)
 
 MEMBERSEARCH_DEFAULTS = {
     'qop_fulltext': QueryOperators.containsall,
@@ -241,7 +237,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'pevent_entries': models_past_event.PastEvent.get_entries(pevents),
             'near_radius': self.conf["NEARBY_SEARCH_RADII"],
             "pcourse_entries": [],
-            "pcourse_entries_by_event": past_course_by_past_event_selectize_options(
+            "pcourse_entries_by_event": models_past_event.PastCourse.get_combined_entries(
                 all_pcourses
             ),
         }
@@ -337,7 +333,9 @@ class CdEBaseFrontend(AbstractUserFrontend):
                 pcourses = self.pasteventproxy.get_past_courses(rs, pcourse_ids)
                 choices.update({
                     "pcourses": pcourses,
-                    "pcourse_entries": past_course_entries(pcourses),
+                    "pcourse_entries": models_past_event.PastCourse.get_entries(
+                        pcourses
+                    ),
                 })
 
         if rs.has_validation_errors():

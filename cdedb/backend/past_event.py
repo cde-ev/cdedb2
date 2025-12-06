@@ -35,7 +35,6 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
-from cdedb.common.fields import PAST_COURSE_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import PastEventLogFilter
@@ -62,49 +61,32 @@ class PastEventBackend(AbstractBackend):
         return super().is_admin(rs)
 
     @access("cde", "event")
-    def participation_infos(
-        self, rs: RequestState, persona_ids: Collection[int]
-    ) -> dict[int, CdEDBObjectMap]:
-        """List concluded events visited by specific personas.
-
-        :returns: First keys are the ids, second are the pevent_ids.
-        """
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+    def participation_info(self, rs: RequestState, persona_id: int) -> CdEDBObjectMap:
+        """List concluded events and courses visited by the given persona."""
+        persona_id = affirm(vtypes.ID, persona_id)
         query = """
-            SELECT p.persona_id, e.id, e.title, e.tempus, p.is_orga
+            SELECT e.id, p.is_orga
             FROM past_event.participants AS p
                 INNER JOIN past_event.events AS e ON (p.pevent_id = e.id)
-            WHERE p.persona_id = ANY(%s)
+            WHERE p.persona_id = %s
         """
-        pevents = self.query_all(rs, query, (persona_ids,))
+        pevents = self.query_all(rs, query, [persona_id])
         query = """
-            SELECT p.persona_id, c.id, c.pevent_id, c.title, c.nr, p.is_instructor
+            SELECT c.id, c.pevent_id, p.is_instructor
             FROM past_event.participants AS p
                 LEFT OUTER JOIN past_event.courses AS c ON (p.pcourse_id = c.id)
-            WHERE p.persona_id = ANY(%s)
+            WHERE p.persona_id = %s
         """
-        pcourse = self.query_all(rs, query, (persona_ids,))
+        pcourses = self.query_all(rs, query, [persona_id])
         ret = {}
-        course_fields = ('id', 'title', 'is_instructor', 'nr')
         for pevent in pevents:
             pevent['courses'] = {
-                c['id']: {k: c[k] for k in course_fields}
-                for c in pcourse
-                if (
-                    c['persona_id'] == pevent['persona_id']
-                    and c['pevent_id'] == pevent['id']
-                )
+                c['id']: {'id': c['id'], 'is_instructor': c['is_instructor']}
+                for c in pcourses
+                if c['pevent_id'] == pevent['id']
             }
-        for anid in persona_ids:
-            ret[anid] = {x['id']: x for x in pevents if x['persona_id'] == anid}
+            ret[pevent['id']] = pevent
         return ret
-
-    class _ParticipationInfoProtocol(Protocol):
-        def __call__(self, rs: RequestState, persona_id: int) -> CdEDBObjectMap: ...
-
-    participation_info: _ParticipationInfoProtocol = singularize(
-        participation_infos, "persona_ids", "persona_id"
-    )
 
     def past_event_log(
         self,
@@ -377,19 +359,28 @@ class PastEventBackend(AbstractBackend):
     @access("cde", "event")
     def get_past_courses(
         self, rs: RequestState, pcourse_ids: Collection[int]
-    ) -> CdEDBObjectMap:
+    ) -> CdEDataclassMap[models.PastCourse]:
         """Retrieve data for some concluded courses.
 
         They do not need to be associated to the same event.
         """
         pcourse_ids = affirm_set(vtypes.ID, pcourse_ids)
-        data = self.sql_select(
-            rs, "past_event.courses", PAST_COURSE_FIELDS, pcourse_ids
+        pevent_ids = {
+            e["pevent_id"]
+            for e in self.sql_select(
+                rs, models.PastCourse.database_table, ["pevent_id"], pcourse_ids
+            )
+        }
+        pevents = self.get_past_events(rs, pevent_ids)
+        ret = models.PastCourse.many_from_database(
+            self.query_all(rs, *models.PastCourse.get_select_query(pcourse_ids))
         )
-        return {e['id']: e for e in data}
+        for pcourse in ret.values():
+            pcourse.pevent = pevents[pcourse.pevent_id]
+        return ret
 
     class _GetPastCourseProtocol(Protocol):
-        def __call__(self, rs: RequestState, pcourse_id: int) -> CdEDBObject: ...
+        def __call__(self, rs: RequestState, pcourse_id: int) -> models.PastCourse: ...
 
     get_past_course: _GetPastCourseProtocol = singularize(
         get_past_courses, "pcourse_ids", "pcourse_id"
@@ -398,21 +389,15 @@ class PastEventBackend(AbstractBackend):
     @access("cde_admin", "event_admin")
     def set_past_course(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
         """Update some keys of a concluded course."""
-        data = affirm(vtypes.PastCourse, data)
+        data = affirm(models.PastCourse, data)
         with Atomizer(rs):
-            current = self.sql_select_one(
-                rs, "past_event.courses", ("title", "pevent_id"), data['id']
-            )
-            # TODO do more checking here?
-            if current is None:
-                raise ValueError(n_("Referenced past course does not exist."))
-            ret = self.sql_update(rs, "past_event.courses", data)
-            current.update(data)
+            ret = self.sql_update(rs, models.PastCourse.database_table, data)
+            current = self.get_past_course(rs, data['id'])
             self.past_event_log(
                 rs,
                 code=const.PastEventLogCodes.course_changed,
-                pevent_id=current['pevent_id'],
-                change_note=current['title'],
+                pevent_id=current.pevent_id,
+                change_note=current.title,
             )
         return ret
 
@@ -421,9 +406,9 @@ class PastEventBackend(AbstractBackend):
         self, rs: RequestState, data: CdEDBObject
     ) -> DefaultReturnCode:
         """Make a new concluded course."""
-        data = affirm(vtypes.PastCourse, data, creation=True)
+        data = affirm(models.PastCourse, data, creation=True)
         with Atomizer(rs):
-            ret = self.sql_insert(rs, "past_event.courses", data)
+            ret = self.sql_insert(rs, models.PastCourse.database_table, data)
             self.past_event_log(
                 rs,
                 code=const.PastEventLogCodes.course_created,
@@ -515,8 +500,8 @@ class PastEventBackend(AbstractBackend):
                 self.past_event_log(
                     rs,
                     code=const.PastEventLogCodes.course_deleted,
-                    pevent_id=pcourse['pevent_id'],
-                    change_note=pcourse['title'],
+                    pevent_id=pcourse.pevent_id,
+                    change_note=pcourse.title,
                 )
         return ret
 
@@ -747,15 +732,11 @@ class PastEventBackend(AbstractBackend):
 
         course_ids = self.event.list_courses(rs, event.id)
         courses = self.event.get_courses(rs, list(course_ids.keys()))
-        course_map = {}
-        for course_id, course in courses.items():
-            pcourse = {
-                k: v for k, v in course.as_dict().items() if k in PAST_COURSE_FIELDS
-            }
-            del pcourse['id']
-            pcourse['pevent_id'] = new_id
-            pcourse_id = self.create_past_course(rs, pcourse)
-            course_map[course_id] = pcourse_id
+        course_map: dict[int, int] = {}
+        for course in courses.values():
+            pcourse = models.PastCourse.from_course(course, pevent_id=new_id)
+            pcourse_id = self.create_past_course(rs, pcourse.to_database())
+            course_map[course.id] = pcourse_id
 
         reg_ids = self.event.list_registrations(rs, event.id)
         regs = self.event.get_registrations(rs, list(reg_ids.keys()))

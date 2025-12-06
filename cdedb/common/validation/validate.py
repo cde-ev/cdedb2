@@ -3042,29 +3042,9 @@ PAST_COURSE_COMMON_FIELDS: Mapping[str, Any] = {
 }
 
 
-@_add_typed_validator
-def _past_course(
-    val: Any, argname: str = "past_course", *, creation: bool = False, **kwargs: Any
-) -> PastCourse:
-    """
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    """
-
-    # TODO create decorator for converting val to mapping?
-    val = _mapping(val, argname, **kwargs)
-
-    if creation:
-        mandatory_fields = dict(PAST_COURSE_COMMON_FIELDS, pevent_id=ID)
-        optional_fields: TypeMapping = {}
-    else:
-        # no pevent_id, since the associated event should be fixed
-        mandatory_fields = {'id': ID}
-        optional_fields = {**PAST_COURSE_COMMON_FIELDS}
-
-    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
-
-    return PastCourse(val)
+@_create_dataclass_validator(models_past_event.PastCourse)
+def _past_course(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
+    return val
 
 
 @_create_dataclass_validator(
