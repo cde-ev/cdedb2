@@ -2935,9 +2935,7 @@ def _event_field_dataclass(
         kind = val.get("kind", event.fields[id_].kind)
     assert kind is not None
 
-    if not val.get("entries", True):
-        val["entries"] = None
-    elif entries := val.get("entries"):
+    if entries := val.get("entries"):
         if isinstance(entries, str):
             try:
                 entries = list(
@@ -2968,6 +2966,8 @@ def _event_field_dataclass(
                 errs.append(ValueError("entries", n_("Duplicate value(s).")))
 
             val["entries"] = new_entries
+    else:
+        val["entries"] = None
 
     if errs:
         raise errs

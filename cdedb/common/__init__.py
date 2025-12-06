@@ -1445,11 +1445,12 @@ def parse_datetime(
 
 
 def normalize_phone(phone: phonenumbers.PhoneNumber) -> str:
-    # handle the phone number as normalized string internally
+    """Normalize phone number to string for storage."""
     return phonenumbers.format_number(phone, phonenumbers.PhoneNumberFormat.E164)
 
 
 def parse_phone(val: str) -> str:
+    """Parse a phone number, return as normalized string."""
     phone: phonenumbers.PhoneNumber = phonenumbers.parse(val, region="DE")
     return normalize_phone(phone)
 
@@ -1457,6 +1458,7 @@ def parse_phone(val: str) -> str:
 def cast_field_value(
     value: str | None, kind: const.FieldDatatypes, *, argname: str = ""
 ) -> Any:
+    """Deserialize a stored field value from string to field datatype via validation."""
     from cdedb.common.validation.types import ByFieldDatatype  # noqa: PLC0415
     from cdedb.common.validation.validate import validate_check  # noqa: PLC0415
 
@@ -1469,6 +1471,11 @@ def cast_field_value(
 def normalize_field_value(
     value: Any | None, kind: const.FieldDatatypes, coalesce: str | None
 ) -> str | None:
+    """Convert a field value from field datatype to normalized string.
+
+    :param coalesce: The default string to return for an empty value.
+        We typically prefer None, but sometimes that won't work.
+    """
     normalizers: dict[const.FieldDatatypes, Callable[[Any], str]] = {
         const.FieldDatatypes.date: datetime.date.isoformat,
         const.FieldDatatypes.datetime: datetime.datetime.isoformat,
@@ -1484,25 +1491,20 @@ def normalize_field_value(
 def cast_fields(
     data: CdEDBObject, fields: "CdEDataclassMap[models_event.EventField]"
 ) -> CdEDBObject:
-    """Helper to deserialize json fields.
-
-    We serialize some classes as strings and need to undo this upon
-    retrieval from the database.
-    """
+    """Deserialize a collection of field values. For details see `cast_field_value`."""
     spec: dict[str, const.FieldDatatypes]
     spec = {f.field_name: f.kind for f in fields.values()}
 
     return {
-        key: cast_field_value(
-            val, spec.get(key, const.FieldDatatypes.str), argname=f"{key}.{i}"
-        )
-        for i, (key, val) in enumerate(data.items())
+        key: cast_field_value(val, spec.get(key, const.FieldDatatypes.str), argname=key)
+        for key, val in data.items()
     }
 
 
 def cast_field_entries(
     entries: Sequence[tuple[str, str]] | None, kind: const.FieldDatatypes
 ) -> dict[Any, str] | None:
+    """Deserialize a list of field entries into field datatypes."""
     if not entries:
         return None
     ret = {
@@ -1521,6 +1523,12 @@ def normalize_field_entries(
     kind: const.FieldDatatypes,
     coalesce: str | None = None,
 ) -> dict[str | None, str] | None:
+    """
+    Normalize a collection of entries for one field.
+
+    :param coalesce: The default string to return for an empty value.
+        We typically prefer None, but sometimes that won't work.
+    """
     if not entries:
         return None
     return {
