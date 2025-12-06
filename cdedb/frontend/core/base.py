@@ -603,16 +603,15 @@ class CoreBaseFrontend(AbstractFrontend):
         if event_id:
             is_admin = "event_admin" in rs.user.roles
             is_viewing_admin = is_admin and "event_orga" in rs.user.admin_views
-            is_orga = event_id in self.eventproxy.orga_info(
-                rs, rs.user.persona_id)
-            if is_orga or is_admin:
+            is_orgalike = event_id in rs.user.orga | rs.user.caretaker
+            if is_orgalike or is_admin:
                 is_participant = self.eventproxy.list_registrations(
                     rs, event_id, persona_id)
-                if (is_orga or is_viewing_admin) and is_participant:
+                if (is_orgalike or is_viewing_admin) and is_participant:
                     access_levels.add("event")
                     access_levels.add("orga")
                 # Admins who are also orgas can not disable this admin view
-                if is_admin and not is_orga and is_participant:
+                if is_admin and not is_orgalike and is_participant:
                     access_mode.add("orga")
         # Mailinglist moderators see all users related to their mailinglist.
         # This excludes users with relation "unsubscribed", since their email address
@@ -1045,7 +1044,11 @@ class CoreBaseFrontend(AbstractFrontend):
         elif kind == "event_user":
             # No check by event, as this behaves identical for each event.
             # TODO How to migrate this to EventPrivileges?
-            if not (rs.user.orga or {"event_admin", "auditor"} & rs.user.roles):
+            # Maybe add generic realm_roles any_orga, any_caretaker?
+            if not (
+                rs.user.orga or rs.user.caretaker
+                or {"event_admin", "auditor"} & rs.user.roles
+            ):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append(
                 ("is_event_realm", QueryOperators.equal, True))

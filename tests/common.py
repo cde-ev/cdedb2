@@ -254,9 +254,13 @@ def _make_backend_shim(
         if hasattr(backend, "list_enforcers"):
             if rs.user.persona_id in backend.list_enforcers(rs):
                 rs.user.realm_roles["complaint"] = {"enforcer"}
-        if "event" in rs.user.roles and hasattr(backend, "orga_info"):
-            rs.user.orga = backend.orga_info(
-                rs, rs.user.persona_id)
+        if "event" in rs.user.roles:
+            if hasattr(backend, "orga_info"):
+                rs.user.orga = backend.orga_info(
+                    rs, rs.user.persona_id)
+            if hasattr(backend, "caretaker_info"):
+                rs.user.caretaker = backend.caretaker_info(
+                    rs, rs.user.persona_id)
         if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
             rs.user.moderator = backend.moderator_info(
                 rs, rs.user.persona_id)

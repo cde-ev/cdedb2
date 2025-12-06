@@ -131,6 +131,19 @@
 {%- endmacro %}
 
 
+{% macro conditional_bootstrap_panel(
+        title="", aclass="panel-default", icon=none, anid=none, button=none,
+        footer_text=none, footer_class="", footer_icon=none, level=3
+) %}
+    {# caller() can only be called once #}
+    {% set content = caller() %}
+    {% if content|trim %}
+        {% call bootstrap_panel(title, aclass, icon, anid, button, footer_text, footer_class, footer_icon, level) %}
+            {{ content }}
+        {% endcall %}
+    {% endif %}
+{% endmacro %}
+
 {# ######################################## #
  # Special purpose links and element macros #
  # ######################################## #}

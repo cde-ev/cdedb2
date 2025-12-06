@@ -417,8 +417,14 @@ rules = [
                 ),
                 sub(
                     "/orga",
-                    post("/add", endpoint="add_orga"),
+                    get_("/manage", endpoint="manage_orgas"),
+                    post("/add", endpoint="add_orgas"),
                     post("/remove", endpoint="remove_orga"),
+                ),
+                sub(
+                    "/caretaker",
+                    post("/add", endpoint="add_caretakers"),
+                    post("/remove", endpoint="remove_caretaker"),
                 ),
                 sub(
                     "/query",
