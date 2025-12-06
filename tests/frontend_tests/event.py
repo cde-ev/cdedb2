@@ -129,7 +129,7 @@ class TestEventFrontend(FrontendTest):
               maintain_data=True)
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
-        everyone = {"Veranstaltungen", "Übersicht", "Veranstaltungs-Betreuer"}
+        everyone = {"Veranstaltungen", "Übersicht", "Veranstaltungshelfer"}
         admin = {"Alle Veranstaltungen", "Ungereimtheiten", "Log"}
 
         # not event admins (also orgas!)
@@ -266,21 +266,19 @@ class TestEventFrontend(FrontendTest):
         self.assertNoLink('/event/event/log')
         self.assertNoLink('/event/event/list', content="Alle Veranstaltungen")
         self.traverse({'href': '/event/event/1/show'})
+        self.assertNoLink('/event/event/1/orga/manage')
         self.assertNotIn('deleteeventform', self.response.forms)
-        self.assertNotIn('addorgaform', self.response.forms)
         self.traverse({'href': '/event/event/1/registration/status'})
         self._click_admin_view_button(re.compile(r"Veranstaltungs-Administration"),
                                       current_state=False)
         self.traverse({'href': '/event/event/1/show'})
         self.assertIn('deleteeventform', self.response.forms)
-        self.assertIn('addorgaform', self.response.forms)
-        self.traverse({'href': '/event/'},
-                      {'href': '/event/list'},
-                      {'href': '/event/event/create'})
+        self.traverse("Betreuer verwalten")
+        self.assertIn('addorgasform', self.response.forms)
+        self.traverse("Veranstaltungen", "Alle Veranstaltungen", "Veranstaltung anlegen")
 
         # Test Orga Controls Admin View
-        self.traverse({'href': '/event/'},
-                      {'href': '/event/event/1/show'})
+        self.traverse("Veranstaltungen", "Große Testakademie 2222")
         self.assertNoLink('/event/event/1/registration/list')
         self.assertNoLink('/event/event/1/registration/query')
         self.assertNoLink('/event/event/1/change')
@@ -401,34 +399,54 @@ class TestEventFrontend(FrontendTest):
             self.assertNotIn("archiveeventform", self.response.forms)
             self.assertNotIn("deleteeventform", self.response.forms)
 
-    @as_users("annika")
-    def test_show_event_admin(self) -> None:
-        self.traverse({'description': 'Veranstaltungen'},
-                      {'description': 'Große Testakademie 2222'})
-        self.assertTitle("Große Testakademie 2222")
+    @as_users("charly")
+    def test_manage_orgas(self) -> None:
+        with self.switch_user("annika"):
+            self.traverse("Veranstaltungen", "Große Testakademie 2222", "Betreuer verwalten")
+            f = self.response.forms['addcaretakersform']
+            f['caretaker_ids'] = USER_DICT['charly']['DB-ID']
+            self.submit(f)
 
-        self.assertNotIn('createorgalistform', self.response.forms)
-        f = self.response.forms[f"removeorgaform{ USER_DICT['garcia']['id'] }"]
+        self.traverse("Veranstaltungen", "Große Testakademie", "Orgas verwalten")
+
+        f = self.response.forms[f"removeorgaform{USER_DICT['garcia']['id']}"]
         self.submit(f, check_notification=False)
         self.assertValidationError("ack_delete", "Muss markiert sein.", index=0)
         f['ack_delete'].checked = True
         self.submit(f)
+
+        self.traverse("Übersicht")
         f = self.response.forms['createparticipantlistform']
         self.assertInputHasAttr(f['submitform'], 'disabled')
         self.submit(f, check_notification=False)
         self.assertPresence("Mailingliste kann nur mit Orgas erstellt werden.",
                             div='notifications')
-        f = self.response.forms['addorgaform']
-        f['orga_id'] = USER_DICT['garcia']['DB-ID']
+
+        self.traverse("Orgas verwalten")
+        f = self.response.forms['addorgasform']
+        f['orga_ids'] = f"{USER_DICT['garcia']['DB-ID']},{USER_DICT['emilia']['DB-ID']}"
         self.submit(f)
 
-    @as_users("annika", "garcia")
-    def test_create_participant_list(self) -> None:
-        self.traverse({'description': 'Veranstaltungen'},
-                      {'description': 'Große Testakademie 2222'})
-        self.assertTitle("Große Testakademie 2222")
-        f = self.response.forms["createparticipantlistform"]
-        self.submit(f)
+        log_expectation = [
+            {
+                "code": const.EventLogCodes.caretaker_added,
+                "persona_id": USER_DICT['charly']['id'],
+                "submitted_by": USER_DICT['annika']['id'],
+            },
+            {
+                "code": const.EventLogCodes.orga_removed,
+                "persona_id": USER_DICT['garcia']['id'],
+            },
+            {
+                "code": const.EventLogCodes.orga_added,
+                "persona_id": USER_DICT['emilia']['id'],
+            },
+            {
+                "code": const.EventLogCodes.orga_added,
+                "persona_id": USER_DICT['garcia']['id'],
+            },
+        ]
+        self.assertLogEqual(log_expectation, "event", event_id=1, offset=self.EVENT_LOG_OFFSET)
 
     @as_users("annika", "emilia", "garcia", "martin", "vera", "werner", "katarina",
               "farin", "petra", maintain_data=True)
@@ -622,39 +640,40 @@ class TestEventFrontend(FrontendTest):
             div='static-notifications')
         self.traverse("Übersicht")
         if self.user_in('ferdinand', 'annika'):
-            f = self.response.forms['addorgaform']
+            self.traverse("Orgas verwalten")
+            f = self.response.forms['addorgasform']
             # Try to add an invalid cdedbid.
-            f['orga_id'] = "DB-1-1"
+            f['orga_ids'] = "DB-1-1"
             self.submit(f, check_notification=False)
-            self.assertValidationError('orga_id', "Checksumme stimmt nicht.", index=-1)
+            self.assertValidationError('orga_ids', "Checksumme stimmt nicht.", index=-1)
             # Try to add a non event user.
-            f['orga_id'] = USER_DICT['janis']['DB-ID']
+            f['orga_ids'] = USER_DICT['janis']['DB-ID']
             self.submit(f, check_notification=False)
             self.assertValidationError(
-                'orga_id', "Einige dieser Accounts sind keine Veranstaltungsnutzer.",
+                'orga_ids', "Einige dieser Accounts sind keine Veranstaltungsnutzer.",
                 index=-1)
             # Try to add an archived user.
-            f['orga_id'] = USER_DICT['hades']['DB-ID']
+            f['orga_ids'] = USER_DICT['hades']['DB-ID']
             self.submit(f, check_notification=False)
             msg = "Einige dieser Accounts existieren nicht oder sind archiviert."
-            self.assertValidationError('orga_id', msg, index=-1)
+            self.assertValidationError('orga_ids', msg, index=-1)
             # Try to add a non-existent user.
-            f['orga_id'] = "DB-1000-6"
+            f['orga_ids'] = "DB-1000-6"
             self.submit(f, check_notification=False)
-            self.assertValidationError('orga_id', msg, index=-1)
-            f['orga_id'] = USER_DICT['berta']['DB-ID']
+            self.assertValidationError('orga_ids', msg, index=-1)
+            f['orga_ids'] = USER_DICT['berta']['DB-ID']
             self.submit(f)
-            self.assertTitle("Universale Akademie")
-            self.assertPresence("Beispiel", div='manage-orgas')
+            self.assertTitle("Orgas & Betreuer verwalten (Universale Akademie)")
+            self.assertPresence("Beispiel", div='orgas_list')
             text = self.fetch_mail_content()
-            self.assertIn("als Orga hinzugefügt.", text)
+            self.assertIn("als Orga hinzugefügt", text)
             f = self.response.forms['removeorgaform2']
             f['ack_delete'].checked = True
             self.submit(f)
-            self.assertTitle("Universale Akademie")
+            self.assertTitle("Orgas & Betreuer verwalten (Universale Akademie)")
             self.assertNonPresence("Beispiel")
             text = self.fetch_mail_content()
-            self.assertIn("als Orga entfernt.", text)
+            self.assertIn("als Orga entfernt", text)
 
     @event_keeper
     @as_users("garcia")
@@ -1348,7 +1367,7 @@ etc;anything else""", f['entries_2'].value)
         f['nonmember_surcharge'] = "8"
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            'orga_ids', "Einige dieser Nutzer sind keine Veranstaltungsnutzer.")
+            'orga_ids', "Einige dieser Accounts sind keine Veranstaltungsnutzer.")
         self.assertValidationError('part_end', "Muss später als Beginn sein.")
         f = self.response.forms['createeventform']
         f['part_end'] = "2345-6-7"
@@ -2467,25 +2486,35 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             [x[0] for x in f['waitlist_field_id'].options], ['', '8', '1001'])
         f['waitlist_field_id'].force_value(1002)
         self.submit(f, check_notification=False)
-        self.assertValidationError('waitlist_field_id', "Unpassendes Datenfeld.")
+        self.assertValidationError('waitlist_field_id', "Wartelistenfeld muss vom Typ 'Zahl' sein.")
         f['waitlist_field_id'].force_value(1003)
         self.submit(f, check_notification=False)
-        self.assertValidationError('waitlist_field_id', "Unpassendes Datenfeld.")
+        self.assertValidationError('waitlist_field_id', "Wartelistenfeld muss ein Anmeldungsfeld sein.")
 
         # Set the correct waitlist field.
         f['waitlist_field_id'] = '1001'
         self.submit(f)
 
         # Check log
-        self.traverse("Log")
-        self.assertPresence("Feld hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
-        self.assertPresence("Feld hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
-        self.assertPresence("Feld hinzugefügt",
-                            div=str(self.EVENT_LOG_OFFSET + 3) + "-1003")
-        self.assertPresence("Veranstaltungsteil geändert",
-                            div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
+        log_expectation = [
+            {
+                "code": const.EventLogCodes.field_added,
+                "change_note": "waitlist_position",
+            },
+            {
+                "code": const.EventLogCodes.field_added,
+                "change_note": "wrong1",
+            },
+            {
+                "code": const.EventLogCodes.field_added,
+                "change_note": "wrong2",
+            },
+            {
+                "code": const.EventLogCodes.part_changed,
+                "change_note": "Warmup",
+            },
+        ]
+        self.assertLogEqual(log_expectation, "event", event_id=1, offset=self.EVENT_LOG_OFFSET)
 
         # Check that the linked stat query applies the correct ordering.
         self.traverse('Statistik', {'linkid': 'part_waitlist_1'})
@@ -8158,8 +8187,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @as_users("petra")
     def test_event_helper(self) -> None:
         # Sidebar buttons are basic_validated in test_sidebar(_one_event)
-        self.traverse("Veranstaltungen", "Veranstaltungs-Betreuer")
-        self.assertTitle("Veranstaltungs-Betreuer [1]")
+        self.traverse("Veranstaltungen", "Veranstaltungshelfer")
+        self.assertTitle("Veranstaltungshelfer [1]")
         self.assertNotIn('addeventhelperform', self.response.forms)
         self.assertNotIn('removeeventhelperform42', self.response.forms)
         self.assertPresence("Petra Philanthrop")

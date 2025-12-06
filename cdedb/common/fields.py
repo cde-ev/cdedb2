@@ -155,17 +155,6 @@ PRIVILEGE_CHANGE_FIELDS = (
     "reviewer",
 )
 
-#: Fields of a concluded event
-PAST_EVENT_FIELDS = (
-    "id",
-    "title",
-    "shortname",
-    "institution",
-    "description",
-    "tempus",
-    "participant_info",
-)
-
 #: Fields of an event part organized via CdEDB
 EVENT_PART_FIELDS = (
     "id",
@@ -373,11 +362,11 @@ LASTSCHRIFT_TRANSACTION_FIELDS = (
 EVENT_FIELD_SPEC: dict[
     str, tuple[set[const.FieldDatatypes], set[const.FieldAssociations]]
 ] = {
-    'lodge_field': (
+    'lodge': (
         {const.FieldDatatypes.str},
         {const.FieldAssociations.registration},
     ),
-    'reimbursement_field': (
+    'reimbursement': (
         {const.FieldDatatypes.iban},
         {const.FieldAssociations.registration},
     ),

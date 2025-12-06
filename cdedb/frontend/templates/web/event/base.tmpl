@@ -87,11 +87,11 @@
 
 {% macro one_event_links(event) %}
     <div class="list-group tear-down">
-        {% if event.is_visible_for(user, is_registered, privileged=False) or event['id'] in user.orga or user.admin_views.intersection(('event_mgmt', 'event_orga')) %}
+        {% if event.is_visible_for(user, is_registered, privileged=False) or orga_view or 'event_mgmt' in user.admin_views %}
         {{ util.href(cdedblink("event/show_event", {"event_id": event['id']}), gettext("Overview"),
                      aclass="list-group-item", icon="caret-right", active=(sidenav_active == 'event_show')) }}
         {% endif %}
-        {% if event['tracks'] and (event['is_course_list_visible'] or event['id'] in user.orga or 'event_orga' in user.admin_views) %}
+        {% if event['tracks'] and (event['is_course_list_visible'] or orga_view) %}
             {{ util.href(cdedblink("event/course_list", {"event_id": event['id']}), gettext("Courselist"),
                          aclass="list-group-item", icon="book", active=(sidenav_active == 'event_course_list')) }}
         {% endif %}
@@ -110,17 +110,17 @@
             {{ util.href(cdedblink("event/register_form", {"event_id": event['id']}), gettext("Register"),
                     readonly=is_locked, aclass="list-group-item", icon="sign-in-alt",
                     active=(sidenav_active == 'event_register')) }}
-        {% elif event['id'] in user.orga or 'event_orga' in user.admin_views %}
+        {% elif orga_view %}
             {{ util.href(cdedblink("event/register_form", {"event_id": event.id, "preview": True}), gettext("Registration Preview"),
                     aclass="list-group-item", icon="sign-in-alt", active=(sidenav_active == 'event_register_preview')) }}
         {% endif %}
-        {% if (is_participant or event['id'] in user.orga or 'event_orga' in user.admin_views) and event['participant_info'] %}
+        {% if (is_participant or orga_view) and event['participant_info'] %}
             {{ util.href(cdedblink("event/participant_info", {"event_id": event['id']}),
                          gettext("Participant info"), aclass='list-group-item', icon='info',
                          active=(sidenav_active == 'participant_info')) }}
         {% endif %}
         {% if ((event['is_participant_list_visible'] and (is_participant or 'event_orga' in user.admin_views and is_privileged(enums['EventPrivileges'].participant_list)))
-               or (event['id'] in user.orga or 'event_orga' in user.admin_views) and is_privileged(enums['EventPrivileges'].registrations_read)) %}
+               or orga_view and is_privileged(enums['EventPrivileges'].registrations_read)) %}
             {{ util.href(cdedblink("event/participant_list", {"event_id": event['id']}), gettext("Participant list"),
                          aclass="list-group-item", icon="users", active=(sidenav_active == 'event_participant_list')) }}
         {% endif %}
@@ -291,7 +291,7 @@
 
 {% block adminviews %}
     {% if ambience['event'] %}
-        {% if user.persona_id in ambience['event']['orgas'] %}
+        {% if ambience['event'].id in (user.orga.union(user.caretaker)) %}
             {{ util.admin_views_toggle((
                     (gettext("Event Administration"), ["event_mgmt", "event_list"], ["event_mgmt"]),
                 )) }}

@@ -9,7 +9,6 @@ This also includes all functionality directly avalable on the `show_event` page.
 
 import copy
 import datetime
-from collections import OrderedDict
 from collections.abc import Collection
 from typing import Optional, cast
 
@@ -123,11 +122,24 @@ class EventEventMixin(EventBaseFrontend):
         params: CdEDBObject = {}
         is_registered = False
         if "event" in rs.user.roles:
-            params['orgas'] = OrderedDict(
-                (e['id'], e) for e in xsorted(
+            params['orgas'] = {
+                e['id']: e
+                for e in xsorted(
                     self.coreproxy.get_personas(
-                        rs, rs.ambience['event'].orgas).values(),
-                    key=EntitySorter.persona))
+                        rs, rs.ambience['event'].orgas
+                    ).values(),
+                    key=EntitySorter.persona
+                )
+            }
+            params['caretakers'] = {
+                e['id']: e
+                for e in xsorted(
+                    self.coreproxy.get_personas(
+                        rs, rs.ambience['event'].caretakers
+                    ).values(),
+                    key=EntitySorter.persona
+                )
+            }
             is_registered = bool(self.eventproxy.list_registrations(
                 rs, event_id, rs.user.persona_id))
         if "ml" in rs.user.roles:
@@ -304,7 +316,7 @@ class EventEventMixin(EventBaseFrontend):
             # Shortcircuit if we have got no workable cdedbid
             return self.list_event_helpers(rs)
         try:
-            self.eventproxy.validate_persona_ids(rs, {persona_id})
+            self.eventproxy.validate_event_persona_ids(rs, {persona_id})
         except ValueError as e:
             rs.append_validation_error(('persona_id', e))
         if rs.has_validation_errors():
@@ -327,54 +339,179 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(code, error=n_("Action had no effect."))
         return self.redirect(rs, "event/list_event_helpers")
 
-    @access("event_admin", modi={"POST"})
-    @REQUESTdata("orga_id")
-    def add_orga(self, rs: RequestState, event_id: int, orga_id: vtypes.CdedbID,
-                 ) -> Response:
-        """Make an additional persona become orga."""
-        if rs.has_validation_errors():
-            # Shortcircuit if we have got no workable cdedbid
-            return self.show_event(rs, event_id)
-        try:
-            self.eventproxy.validate_persona_ids(rs, {orga_id})
-        except ValueError as e:
-            rs.append_validation_error(('orga_id', e))
-        if rs.has_validation_errors():
-            return self.show_event(rs, event_id)
-        code = self.eventproxy.add_event_orgas(rs, event_id, {orga_id})
-        rs.notify_return_code(code, error=n_("Action had no effect."))
-        if code:
-            orga = self.coreproxy.get_persona(rs, orga_id)
-            subject = f"Orga hinzugefügt ({rs.ambience['event'].shortname})"
-            self.do_mail(rs, "orga_added",
-                         {'To': (self.conf["EVENT_ADMIN_ADDRESS"],),
-                          'Subject': subject},
-                         {'orga': orga, 'event': rs.ambience['event']})
-        return self.redirect(rs, "event/show_event")
+    @access("event")
+    @event_guard(EventPrivileges.orgas_change, EventPrivileges.caretakers_change)
+    def manage_orgas(self, rs: RequestState, event_id: int) -> Response:
+        orgas = {
+            e['id']: e
+            for e in xsorted(
+                self.coreproxy.get_personas(rs, rs.ambience['event'].orgas).values(),
+                key=EntitySorter.persona
+            )
+        }
+        caretakers = {
+            e['id']: e
+            for e in xsorted(
+                self.coreproxy.get_personas(rs, rs.ambience['event'].caretakers).values(),
+                key=EntitySorter.persona
+            )
+        }
+        return self.render(
+            rs, 'event/manage_orgas', {"orgas": orgas, "caretakers": caretakers}
+        )
 
-    @access("event_admin", modi={"POST"})
+    @access("event", modi={"POST"})
+    @event_guard(EventPrivileges.orgas_change)
+    @REQUESTdata("orga_ids")
+    def add_orgas(
+            self, rs: RequestState, event_id: int, orga_ids: vtypes.CdedbIDList
+    ) -> Response:
+        return self._add_orgas_or_caretakers(
+            rs, event_id, orga_ids, as_caretaker=False
+        )
+
+    @access("event", modi={"POST"})
+    @event_guard(EventPrivileges.caretakers_change)
+    @REQUESTdata("caretaker_ids")
+    def add_caretakers(
+            self, rs: RequestState, event_id: int, caretaker_ids: vtypes.CdedbIDList
+    ) -> Response:
+        return self._add_orgas_or_caretakers(
+            rs, event_id, caretaker_ids, as_caretaker=True
+        )
+
+    def _add_orgas_or_caretakers(
+        self,
+        rs: RequestState,
+        event_id: int,
+        persona_ids: vtypes.CdedbIDList,
+        as_caretaker: bool = False,
+    ) -> Response:
+
+        # Check privileges
+        if as_caretaker:
+            if not self.is_privileged(rs, EventPrivileges.caretakers_change):
+                raise werkzeug.exceptions.Forbidden()
+        elif not self.is_privileged(rs, EventPrivileges.orgas_change):
+            raise werkzeug.exceptions.Forbidden()
+
+        if rs.has_validation_errors():
+            # Shortcircuit if we have got no workable ids.
+            return self.manage_orgas(rs, event_id)
+        try:
+            self.eventproxy.validate_event_persona_ids(rs, persona_ids)
+        except ValueError as e:
+            rs.append_validation_error(
+                ("caretaker_ids" if as_caretaker else "orga_ids", e)
+            )
+        if rs.has_validation_errors():
+            return self.manage_orgas(rs, event_id)
+
+        if as_caretaker:
+            persona_ids = set(persona_ids) - rs.ambience['event'].caretakers  # type: ignore[assignment, operator]
+            code = self.eventproxy.add_event_caretakers(rs, event_id, persona_ids)
+        else:
+            persona_ids = set(persona_ids) - rs.ambience['event'].orgas  # type: ignore[assignment, operator]
+            code = self.eventproxy.add_event_orgas(rs, event_id, persona_ids)
+
+        if not persona_ids:
+            rs.notify("info", n_("Action had no effect."))
+        else:
+            rs.notify_return_code(code)
+
+        if code and persona_ids:
+            personas = xsorted(
+                self.coreproxy.get_personas(rs, persona_ids).values(),
+                key=EntitySorter.persona
+            )
+            if as_caretaker:
+                subject = f"{len(persona_ids)} Betreuer hinzugefügt ({rs.ambience['event'].shortname})"
+            else:
+                subject = f"{len(persona_ids)} Orgas hinzugefügt ({rs.ambience['event'].shortname})"
+            to = [self.conf["EVENT_ADMIN_ADDRESS"]]
+            if rs.ambience['event'].orga_address:
+                to.append(rs.ambience['event'].orga_address)
+            self.do_mail(
+                rs,
+                "orgas_added",
+                {'To': to, 'Subject': subject},
+                {
+                    'personas': personas,
+                    'event': rs.ambience['event'],
+                    'as_caretaker': as_caretaker
+                },
+            )
+        return self.redirect(rs, "event/manage_orgas")
+
+    @access("event", modi={"POST"})
+    @event_guard(EventPrivileges.orgas_change)
     @REQUESTdata("orga_id", "ack_delete")
     def remove_orga(self, rs: RequestState, event_id: int, orga_id: vtypes.ID,
                     ack_delete: bool) -> Response:
         """Remove a persona as orga of an event.
 
-        This is only available for admins. This can drop your own orga role.
+        This is only available for admins and caretakers.
+        This can drop your own orga role.
         """
+
         if not ack_delete:
             rs.append_validation_error(
                 ("ack_delete", ValueError(n_("Must be checked."))))
         if rs.has_validation_errors():
-            return self.show_event(rs, event_id)
+            return self.manage_orgas(rs, event_id)
         code = self.eventproxy.remove_event_orga(rs, event_id, orga_id)
-        rs.notify_return_code(code, error=n_("Action had no effect."))
+        rs.notify_return_code(code, info=n_("Action had no effect."))
         if code:
             orga = self.coreproxy.get_persona(rs, orga_id)
             subject = f"Orga entfernt ({rs.ambience['event'].shortname})"
-            self.do_mail(rs, "orga_removed",
-                         {'To': (self.conf["EVENT_ADMIN_ADDRESS"],),
-                          'Subject': subject},
-                         {'orga': orga, 'event': rs.ambience['event']})
-        return self.redirect(rs, "event/show_event")
+            self.do_mail(
+                rs,
+                "orga_removed",
+                {'To': (self.conf["EVENT_ADMIN_ADDRESS"],), 'Subject': subject},
+                {
+                    'orga': orga,
+                    'event': rs.ambience['event'],
+                    'as_caretaker': False,
+                },
+            )
+        return self.redirect(rs, "event/manage_orgas")
+
+    @access("event", modi={"POST"})
+    @event_guard(EventPrivileges.caretakers_change)
+    @REQUESTdata("caretaker_id", "ack_delete")
+    def remove_caretaker(
+        self,
+        rs: RequestState,
+        event_id: int,
+        caretaker_id: vtypes.ID,
+        ack_delete: bool
+    ) -> Response:
+        """Remove a persona as caretaker of an event.
+
+        This is only available for admins. This can drop your own caretaker role.
+        """
+        if not ack_delete:
+            rs.append_validation_error(
+                ("ack_delete", ValueError(n_("Must be checked.")))
+            )
+        if rs.has_validation_errors():
+            return self.manage_orgas(rs, event_id)
+        code = self.eventproxy.remove_event_caretaker(rs, event_id, caretaker_id)
+        rs.notify_return_code(code, info=n_("Action had no effect."))
+        if code:
+            orga = self.coreproxy.get_persona(rs, caretaker_id)
+            subject = f"Betreuer entfernt ({rs.ambience['event'].shortname})"
+            self.do_mail(
+                rs,
+                "orga_removed",
+                {'To': (self.conf["EVENT_ADMIN_ADDRESS"],), 'Subject': subject},
+                {
+                    'orga': orga,
+                    'event': rs.ambience['event'],
+                    'as_caretaker': True,
+                },
+            )
+        return self.redirect(rs, "event/manage_orgas")
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
@@ -532,20 +669,10 @@ class EventEventMixin(EventBaseFrontend):
         if self.eventproxy.has_registrations(rs, event_id):
             raise ValueError(n_("Registrations exist, no part creation possible."))
 
-        data = check(rs, vtypes.EventPart, data, creation=True)
+        data = check(rs, vtypes.EventPart, data, creation=True, event=rs.ambience["event"])
         if rs.has_validation_errors():
             return self.add_part_form(rs, event_id)
         assert data is not None
-
-        # check non-static dependencies
-        fields = self._valid_event_part_fields(rs.ambience['event'].fields)
-        for key in ('waitlist_field_id', 'camping_mat_field_id'):
-            field_ids = [field[0] for field in fields[key]]
-            if data[key] and data[key] not in field_ids:
-                rs.append_validation_error((key, ValueError(
-                    n_("Linked to non-fitting field."))))
-        if rs.has_validation_errors():
-            return self.add_part_form(rs, event_id)
 
         recipients = []
         if rs.ambience['event'].orga_address:
@@ -619,21 +746,11 @@ class EventEventMixin(EventBaseFrontend):
     def change_part(self, rs: RequestState, event_id: int, part_id: int,
                     data: CdEDBObject) -> Response:
         """Change one part, including the associated tracks and fee modifiers."""
-        data = check(rs, vtypes.EventPart, data)
+        data = check(rs, vtypes.EventPart, data, event=rs.ambience["event"])
         if rs.has_validation_errors():
             return self.change_part_form(rs, event_id, part_id)
         assert data is not None
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
-
-        #
-        # Check part specific stuff which can not be checked statically
-        #
-        fields = self._valid_event_part_fields(rs.ambience['event'].fields)
-        for key in ('waitlist_field_id', 'camping_mat_field_id'):
-            field_ids = [field[0] for field in fields[key]]
-            if data[key] and data[key] not in field_ids:
-                rs.append_validation_error((key, ValueError(
-                    n_("Linked to non-fitting field."))))
 
         #
         # process the dynamic track input
@@ -666,11 +783,6 @@ class EventEventMixin(EventBaseFrontend):
         sync_groups = set()
 
         for track_id, track in xsorted(track_data.items()):
-            for key in ('course_room_field_id',):
-                field_ids = [field[0] for field in fields[key]]
-                if track and track[key] and track[key] not in field_ids:
-                    rs.append_validation_error((key, ValueError(
-                        n_("Linked to non-fitting field."))))
             # Only existing tracks are relevant, new ones are not part of a group.
             if track and track_id in track_existing:
                 for tg_id, tg in track_existing[track_id].track_groups.items():
@@ -1142,12 +1254,13 @@ class EventEventMixin(EventBaseFrontend):
         )
 
     @access("event_admin", modi={"POST"})
-    @REQUESTdata("part_begin", "part_end", "orga_ids", "create_track",
-                 "fee", "nonmember_surcharge",
+    @REQUESTdata("part_begin", "part_end", "orga_ids", "caretaker_ids",
+                 "create_track", "fee", "nonmember_surcharge",
                  "create_orga_list", "create_participant_list")
     @REQUESTdatadict(*models.Event.requestdict_fields(creation=True), "description")
     def create_event(self, rs: RequestState, part_begin: datetime.date,
                      part_end: datetime.date, orga_ids: vtypes.CdedbIDList,
+                     caretaker_ids: vtypes.CdedbIDList,
                      fee: vtypes.NonNegativeDecimal,
                      nonmember_surcharge: vtypes.NonNegativeDecimal,
                      create_track: bool, create_orga_list: bool,
@@ -1157,6 +1270,7 @@ class EventEventMixin(EventBaseFrontend):
         # multi part events will have to edit this later on
         data.update({
             'orgas': orga_ids,
+            'caretakers': caretaker_ids,
             'notify_on_registration': const.NotifyOnRegistration.never,
             'parts': {
                 -1: {
@@ -1206,19 +1320,16 @@ class EventEventMixin(EventBaseFrontend):
             )
         data = check(rs, vtypes.Event, data, creation=True)
         if orga_ids:
-            if not self.coreproxy.verify_ids(rs, orga_ids, is_archived=False):
-                rs.append_validation_error(
-                    ('orga_ids', ValueError(
-                        n_("Some of these users do not exist or are archived."),
-                    )),
-                )
-            if not self.coreproxy.verify_personas(rs, orga_ids, {"event"}):
-                rs.append_validation_error(
-                    ('orga_ids', ValueError(
-                        n_("Some of these users are not event users."),
-                    )),
-                )
-        elif create_orga_list or create_participant_list:
+            try:
+                self.eventproxy.validate_event_persona_ids(rs, orga_ids)
+            except ValueError as e:
+                rs.append_validation_error(("orga_ids", e))
+        if caretaker_ids:
+            try:
+                self.eventproxy.validate_event_persona_ids(rs, caretaker_ids)
+            except ValueError as e:
+                rs.append_validation_error(("caretaker_ids", e))
+        if not orga_ids and (create_orga_list or create_participant_list):
             # mailinglists require moderators
             rs.append_validation_error(
                 ("orga_ids", ValueError(

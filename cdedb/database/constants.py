@@ -10,6 +10,7 @@ their symbolic names provided by this module should be used.
 import builtins
 import collections
 import enum
+from functools import cached_property
 from typing import Optional
 
 from cdedb.uncommon.intenum import CdEIntEnum
@@ -119,6 +120,16 @@ class FieldAssociations(CdEIntEnum):
     registration = 1  #:
     course = 2  #:
     lodgement = 3  #:
+
+    @cached_property
+    def database_table(self) -> str:
+        import cdedb.models.event as models_event  # noqa: PLC0415
+
+        return {
+            FieldAssociations.registration: models_event.Registration.database_table,
+            FieldAssociations.course: models_event.Course.database_table,
+            FieldAssociations.lodgement: models_event.Lodgement.database_table,
+        }[self]
 
     def get_icon(self) -> str:
         icons = {
@@ -748,6 +759,13 @@ class ComplaintEntryType(CdEIntEnum):
             ComplaintEntryType.agreement_measure,
         }
 
+    @property
+    def allows_attachment(self) -> bool:
+        return self in {
+            ComplaintEntryType.generic_information,
+            ComplaintEntryType.provisional_statement_given,
+        }
+
     def get_icon(self) -> str:
         et = ComplaintEntryType
         return {
@@ -928,6 +946,8 @@ class EventLogCodes(CdEIntEnum):
     helper_removed = 8  #:
     orga_added = 10  #:
     orga_removed = 11  #:
+    caretaker_added = 12  #:
+    caretaker_removed = 13  #:
     part_created = 15  #:
     part_changed = 16  #:
     part_deleted = 17  #:

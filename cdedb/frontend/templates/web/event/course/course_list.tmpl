@@ -11,6 +11,7 @@
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event'].title, icon="chalkboard-teacher",
                         readonly=not (ambience['event'].is_visible_for(user, is_registered, privileged=False)
                                       or ambience['event'].id in user.orga
+                                      or ambience['event'].id in user.caretaker
                                       or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
 {{ util.breadcrumb_link(cdedblink("event/course_list"), gettext("Courselist"), active=True) }}
 {% endblock %}
@@ -42,7 +43,7 @@
             {% trans %}The instructors for each course are only visible to logged in event users.{% endtrans %}
         {% endcall %}
     {% endif %}
-    {% if num_hidden_courses and (ambience['event'].id in user.orga or 'event_orga' in user.admin_views) %}
+    {% if num_hidden_courses and orga_view %}
         {% call util.notification('info', id='hidden-courses') %}
             {% trans num=num_hidden_courses %}
                 {{ num }} courses are currently hidden.
@@ -100,7 +101,7 @@
         {% for course_id, course in courses.items() %}
             <div class="hide-hover-container" id="course-{{ course.id }}">
                 {{ util.h(course.label, anchor="course-" + course.id|string, translate=False) }}
-                {% if ambience['event'].id in user.orga or 'event_orga' in user.admin_views %}
+                {% if orga_view %}
                     <div class="pull-right heading-supplement">
                         {{ util.href(cdedblink('event/show_course', {'course_id' : course_id}), gettext("Details"),
                                      readonly=not is_privileged_for('show_course'), icon='list',
@@ -111,7 +112,7 @@
                     </div>
                 {% endif %}
                 <p class="heading-supplement">
-                    {% if ambience['event'].id in user.orga or 'event_orga' in user.admin_views %}
+                    {% if orga_view %}
                         <span class="label label-primary">{{ course.shortname }}</span>
                     {% endif %}
                     {% if "event" in user.roles and course.instructors %}

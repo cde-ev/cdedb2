@@ -2331,6 +2331,24 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         f = self.response.forms['transfersform']
         self.submit(f)
+        for i, mail in enumerate(self._fetch_mail()):
+            content = mail.get_body().get_content()  # type: ignore[union-attr]
+            with self.subTest(i=i):
+                if content.startswith("Hallo Daniel"):
+                    self.assertNotIn("Damit deine Anmeldung als vollständig zählt", content, content)
+                elif content.startswith("Hallo Werner"):
+                    if "Große Testakademie" in content:
+                        self.assertIn("Damit deine Anmeldung als vollständig zählt", content, content)
+                    else:
+                        self.assertIn("Dein Guthaben beträgt jetzt", content, content)
+                elif content.startswith("Hallo Emilia"):
+                    pass
+                elif content.startswith("Liebe Orgas"):
+                    pass
+                elif content.startswith("Liebe Buchhaltung"):
+                    pass
+                else:
+                    self.fail(content)
         self.get('/event/event/1/registration/2/fee/summary')
         self.assertNonPresence("Externenbeitrag", div='amount-owed')
         self.assertPresence("461,49 €", div='amount-owed')

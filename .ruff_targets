@@ -5,11 +5,15 @@ FORMAT_TARGETS= \
     cdedb/common/ \
     cdedb/database/ \
     cdedb/fee_condition_parser/ \
+    cdedb/frontend/assembly/ \
+    cdedb/frontend/cde/ \
+    cdedb/frontend/core/complaint.py \
+    cdedb/frontend/ml/ \
+    cdedb/frontend/*.py \
     cdedb/ldap/ \
     cdedb/models/ \
     cdedb/uncommon/ \
     cdedb/*.py \
-    cdedb/frontend/core/complaint.py \
     tests/backend_tests/complaint.py \
     tests/frontend_tests/complaint.py
 LINT_TARGETS=cdedb tests

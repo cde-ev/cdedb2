@@ -2,9 +2,10 @@
 
 import datetime
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.past_event as models
 from cdedb.common import nearly_now
-from cdedb.common.sorting import xsorted
 from tests.common import BackendTest, as_users, event_keeper
 
 
@@ -38,25 +39,23 @@ class TestPastEventBackend(BackendTest):
     @as_users("vera")
     def test_entity_past_event(self) -> None:
         old_events = self.pastevent.list_past_events(self.key)
-        data = {
-            'title': "New Link Academy",
-            'shortname': "link",
-            'institution': 1,
-            'description': """Some more text
+        data = models.PastEvent(
+            id=vtypes.ID(-1),
+            title="New Link Academy",
+            shortname="link",
+            institution=const.PastInstitutions(1),
+            description="""Some more text
 
             on more lines.""",
-            'tempus': datetime.date(2000, 1, 1),
-            'participant_info': None,
-        }
-        new_id = self.pastevent.create_past_event(self.key, data)
-        data['id'] = new_id
-        self.assertEqual(data,
-                         self.pastevent.get_past_event(self.key, new_id))
-        data['title'] = "Alternate Universe Academy"
-        self.pastevent.set_past_event(self.key, {
-            'id': new_id, 'title': data['title']})
-        self.assertEqual(data,
-                         self.pastevent.get_past_event(self.key, new_id))
+            tempus=datetime.date(2000, 1, 1),
+            participant_info=None,
+        )
+        new_id = self.pastevent.create_past_event(self.key, data.to_database())
+        data.id = vtypes.ID(new_id)
+        self.assertEqual(data, self.pastevent.get_past_event(self.key, new_id))
+        data.title = "Alternate Universe Academy"
+        self.pastevent.set_past_event(self.key, new_id, {'title': data.title})
+        self.assertEqual(data, self.pastevent.get_past_event(self.key, new_id))
         self.assertNotIn(new_id, old_events)
         new_events = self.pastevent.list_past_events(self.key)
         self.assertIn(new_id, new_events)
@@ -84,8 +83,10 @@ class TestPastEventBackend(BackendTest):
     def test_delete_past_event_cascade(self) -> None:
         # create a log entry for this past event
         pevent = self.pastevent.get_past_event(self.key, 1)
-        pevent['description'] = "changed"
-        self.assertTrue(self.pastevent.set_past_event(self.key, pevent))
+        pevent.description = "changed"
+        data = pevent.to_database()
+        data.pop("id")
+        self.assertTrue(self.pastevent.set_past_event(self.key, pevent.id, data))
         # add the past event to a genesis case
         update = {"id": 3, "pevent_id": 1}
         self.assertTrue(self.core.genesis_modify_case(self.key, update))
@@ -240,8 +241,7 @@ class TestPastEventBackend(BackendTest):
             'tempus': datetime.date(2000, 1, 1),
         }
         new_id = self.pastevent.create_past_event(self.key, data)
-        self.pastevent.set_past_event(self.key, {
-            'id': new_id, 'title': "Alternate Universe Academy"})
+        self.pastevent.set_past_event(self.key, new_id, {'title': "Alternate Universe Academy"})
         data = {
             'pevent_id': 1,
             'nr': '0',
@@ -346,51 +346,51 @@ class TestPastEventBackend(BackendTest):
         new_ids = self.pastevent.archive_event(self.key, event_id)
         assert new_ids is not None
         self.assertEqual(3, len(new_ids))
-        pevent_data = xsorted(
-            (self.pastevent.get_past_event(self.key, new_id)
-             for new_id in new_ids),
-            key=lambda d: d['tempus'])
-        expectation = {
-            'description': 'Everybody come!',
-            'id': 1002,
-            'institution': 1,
-            'title': 'Große Testakademie 2222 (Warmup)',
-            'shortname': "TestAka (Wu)",
-            'tempus': datetime.date(2003, 2, 2),
-            'participant_info': None}
-        self.assertEqual(expectation, pevent_data[0])
-        expectation = {
-            'description': 'Everybody come!',
-            'id': 1003,
-            'institution': 1,
-            'title': 'Große Testakademie 2222 (Erste Hälfte)',
-            'shortname': "TestAka (1.H.)",
-            'tempus': datetime.date(2003, 11, 1),
-            'participant_info': None}
-        self.assertEqual(expectation, pevent_data[1])
-        expectation = {
-            'description': 'Everybody come!',
-            'id': 1004,
-            'institution': 1,
-            'title': 'Große Testakademie 2222 (Zweite Hälfte)',
-            'shortname': "TestAka (2.H.)",
-            'tempus': datetime.date(2003, 11, 11),
-            'participant_info': None}
+        pevent_data = list(self.pastevent.get_past_events(self.key, new_ids).values())
+        expectation = models.PastEvent(
+            id=vtypes.ID(1002),
+            description='Everybody come!',
+            institution=const.PastInstitutions(1),
+            title='Große Testakademie 2222 (Warmup)',
+            shortname="TestAka (Wu)",
+            tempus=datetime.date(2003, 2, 2),
+            participant_info=None
+        )
         self.assertEqual(expectation, pevent_data[2])
+        expectation = models.PastEvent(
+            id=vtypes.ID(1003),
+            description='Everybody come!',
+            institution=const.PastInstitutions(1),
+            title='Große Testakademie 2222 (Erste Hälfte)',
+            shortname="TestAka (1.H.)",
+            tempus=datetime.date(2003, 11, 1),
+            participant_info=None
+        )
+        self.assertEqual(expectation, pevent_data[1])
+        expectation = models.PastEvent(
+            id=vtypes.ID(1004),
+            description='Everybody come!',
+            institution=const.PastInstitutions(1),
+            title='Große Testakademie 2222 (Zweite Hälfte)',
+            shortname="TestAka (2.H.)",
+            tempus=datetime.date(2003, 11, 11),
+            participant_info=None
+        )
+        self.assertEqual(expectation, pevent_data[0])
         self.assertEqual(
             set(),
             set(self.pastevent.list_past_courses(
-                self.key, pevent_data[0]['id']).values()))
+                self.key, pevent_data[2].id).values()))
         expectation = {'Lustigsein für Fortgeschrittene'}
         self.assertEqual(
             expectation,
             set(self.pastevent.list_past_courses(
-                self.key, pevent_data[1]['id']).values()))
+                self.key, pevent_data[1].id).values()))
         expectation = {'Planetenretten für Anfänger'}
         self.assertEqual(
             expectation,
             set(self.pastevent.list_past_courses(
-                self.key, pevent_data[2]['id']).values()))
+                self.key, pevent_data[0].id).values()))
         expectation = {
             (7, 1008): {'pcourse_id': 1008,
                         'is_instructor': False,

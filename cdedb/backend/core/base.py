@@ -17,7 +17,7 @@ import datetime
 import decimal
 from collections.abc import Collection
 from secrets import token_hex
-from typing import Any, Optional, Protocol, Union, overload
+from typing import Any, Literal, Optional, Protocol, Union, overload
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -30,11 +30,9 @@ from cdedb.backend.common import (
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
-    encrypt_password,
     inspect_validation as inspect,
     internal,
     singularize,
-    verify_password,
 )
 from cdedb.common import (
     CdEDBLog,
@@ -53,7 +51,16 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.attachment import AttachmentStore
-from cdedb.common.exceptions import ArchiveError, PrivilegeError, QuotaException
+from cdedb.common.crypt import encrypt_password, verify_password
+from cdedb.common.exceptions import (
+    AdminPasswordResetError,
+    ArchiveError,
+    IncorrectPasswordError,
+    ParameterInvalidError,
+    ParameterTimeoutError,
+    PrivilegeError,
+    QuotaException,
+)
 from cdedb.common.fields import (
     PERSONA_ALL_FIELDS,
     PERSONA_CDE_FIELDS,
@@ -3205,66 +3212,84 @@ class CoreBaseBackend(AbstractBackend):
             num += unwrap(self.query_one(rs, query, params)) or 0
         return bool(num)
 
+    @access("anonymous")
+    def resolve_username(self, rs: RequestState, username: str) -> int | None:
+        """Retrieve the persona id associated with the given username.
+
+        This is used for the password reset, but not login since the latter is
+        more involved and needs more data than just the persona id.
+        """
+        username = affirm(vtypes.Email, username)
+        query = "SELECT id FROM core.personas WHERE username = %(username)s"
+        return unwrap(self.query_one(rs, query, {"username": username}))
+
     RESET_COOKIE_PAYLOAD = "X"
 
     def _generate_reset_cookie(
-        self,
-        rs: RequestState,
-        persona_id: int,
-        salt: str,
-        timeout: datetime.timedelta = datetime.timedelta(seconds=60),
+        self, rs: RequestState, persona_id: int, salt: str, timeout: datetime.timedelta
     ) -> str:
         """Create a cookie which authorizes a specific reset action.
 
         The cookie depends on the inputs as well as a server side secret.
         """
-        password_hash = unwrap(
-            self.sql_select_one(rs, "core.personas", ("password_hash",), persona_id)
+        data = self.sql_select_one(
+            rs, "core.personas", ["username", "password_hash"], persona_id
         )
-        if password_hash is None:
-            # A personas password hash cannot be empty.
+        if data is None:
             raise ValueError(n_("Persona does not exist."))
 
         if not self.is_admin(rs) and "meta_admin" not in rs.user.roles:
             roles = self.get_roles_single(rs, persona_id)
             if any("admin" in role for role in roles):
-                raise PrivilegeError(n_("Preventing reset of admin."))
+                raise AdminPasswordResetError(n_("Preventing reset of admin."))
 
         # This defines a specific account/password combination as purpose
+        # The persona_id parameter is usually autofilled by the frontend as
+        #  `rs.user.persona_id`, but here we use this mechanism differently
+        #  _and_ we need to allow bot anonymous usage and usage for other users.
         cookie = encode_parameter(
             salt,
-            str(persona_id),
-            password_hash,
+            "reset_password",
+            get_hash(f"{data['username']}-{data['password_hash']}".encode()),
             self.RESET_COOKIE_PAYLOAD,
-            persona_id=None,
+            persona_id=persona_id,
             timeout=timeout,
         )
         return cookie
 
     def _verify_reset_cookie(
         self, rs: RequestState, persona_id: int, salt: str, cookie: str
-    ) -> Optional[str]:
+    ) -> Literal[True]:
         """Check a provided cookie for correctness.
 
-        :returns: None on success, an error message otherwise.
+        Returns True on success and raises an appropriate error otherwise.
         """
-        password_hash = unwrap(
-            self.sql_select_one(rs, "core.personas", ("password_hash",), persona_id)
+        data = self.sql_select_one(
+            rs, "core.personas", ["username", "password_hash"], persona_id
         )
-        if password_hash is None:
-            # A personas password hash cannot be empty.
+
+        if data is None:
             raise ValueError(n_("Persona does not exist."))
-        timeout, msg = decode_parameter(
-            salt, str(persona_id), password_hash, cookie, persona_id=None
+
+        # The persona_id parameter is usually autofilled by the frontend as
+        #  `rs.user.persona_id`, but here we use this mechanism differently
+        #  _and_ we need to allow anonymous usage.
+        timeout, payload = decode_parameter(
+            salt,
+            "reset_password",
+            get_hash(f"{data['username']}-{data['password_hash']}".encode()),
+            cookie,
+            persona_id=persona_id,
         )
-        if msg is None:
+        if timeout is not None:
             if timeout:
-                return n_("Link expired.")
+                raise ParameterTimeoutError
             else:
-                return n_("Link invalid or already used.")
-        if msg != self.RESET_COOKIE_PAYLOAD:
-            return n_("Link invalid or already used.")
-        return None
+                raise ParameterInvalidError
+        if payload != self.RESET_COOKIE_PAYLOAD:
+            raise ParameterInvalidError
+
+        return True
 
     def modify_password(
         self,
@@ -3273,41 +3298,41 @@ class CoreBaseBackend(AbstractBackend):
         old_password: Optional[str] = None,
         reset_cookie: Optional[str] = None,
         persona_id: Optional[int] = None,
-    ) -> tuple[bool, str]:
+    ) -> DefaultReturnCode:
         """Helper for manipulating password entries.
+
+        Authorization must be provided wither via the old password or
+        via a reset cookie plus a persona_id.
 
         The persona_id parameter is only for the password reset case. We
         intentionally only allow to change the own password.
 
-        An authorization must be provided, either by ``old_password`` or
-        ``reset_cookie``.
-
         This escalates database connection privileges in the case of a
         password reset (which is by its nature anonymous).
-
-        :param persona_id: Must be provided only in case of reset.
-        :returns: The ``bool`` indicates success and the ``str`` is
-          either the new password or an error message.
         """
+        # 1. Validate inputs.
         if persona_id and not reset_cookie:
-            return False, n_("Selecting persona allowed for reset only.")
+            raise ValueError(n_("Selecting persona allowed for reset only."))
         persona_id = persona_id or rs.user.persona_id
         if not persona_id:
-            return False, n_("Could not determine persona to reset.")
-        if not old_password and not reset_cookie:
-            return False, n_("No authorization provided.")
-        if old_password:
+            raise ValueError(n_("Could not determine persona to reset."))
+        if old_password and reset_cookie:
+            raise ValueError(n_("May not provide both old password and reset_cookie."))
+        elif old_password:
             if not self.verify_persona_password(rs, old_password, persona_id):
-                return False, n_("Password verification failed.")
-        if reset_cookie:
-            msg = self.verify_reset_cookie(rs, persona_id, reset_cookie)
-            if msg is not None:
-                return False, msg
-        if not new_password:
-            return False, n_("No new password provided.")
-        _, errs = inspect(vtypes.PasswordStrength, new_password)
-        if errs:
-            return False, n_("Password too weak.")
+                raise IncorrectPasswordError(n_("Password verification failed."))
+        elif reset_cookie:
+            try:
+                self.verify_reset_cookie(rs, persona_id, reset_cookie)
+            except (ParameterTimeoutError, ParameterInvalidError, ValueError) as e:
+                raise ValueError(n_("Link invalid or already used.")) from e
+        else:
+            raise ValueError(n_("No authorization provided."))
+
+        if self.check_password_strength(rs, new_password, persona_id=persona_id):
+            raise ValueError(n_("Password too weak."))
+
+        # 2. perform modification.
         # escalate db privilege role in case of resetting passwords
         orig_conn = None
         try:
@@ -3335,12 +3360,12 @@ class CoreBaseBackend(AbstractBackend):
             # deescalate
             if orig_conn:
                 rs.conn = orig_conn
-        return bool(ret), new_password
+        return ret
 
     @access("persona")
     def change_password(
         self, rs: RequestState, old_password: str, new_password: str
-    ) -> tuple[bool, str]:
+    ) -> DefaultReturnCode:
         """
         :returns: see :py:meth:`modify_password`
         """
@@ -3357,33 +3382,15 @@ class CoreBaseBackend(AbstractBackend):
         rs: RequestState,
         password: str,
         *,
-        email: Optional[str] = None,
-        persona_id: Optional[int] = None,
-        argname: Optional[str] = None,
-    ) -> tuple[Optional[vtypes.PasswordStrength], list[Error]]:
+        persona_id: int,
+    ) -> list[Error]:
         """Check the password strength using some additional userdate.
 
         This escalates database connection privileges in the case of an
         anonymous request, that is for a password reset.
         """
         password = affirm(str, password)
-        email = affirm_optional(str, email)
-        persona_id = affirm_optional(vtypes.ID, persona_id)
-        argname = affirm_optional(str, argname)
-
-        if email is None and persona_id is None:
-            raise ValueError(n_("No input provided."))
-        elif email and persona_id:
-            raise ValueError(n_("More than one input provided."))
-        elif email:
-            persona_id = unwrap(
-                self.sql_select_one(
-                    rs, "core.personas", ("id",), email, entity_key="username"
-                )
-            )
-            if persona_id is None:
-                raise ValueError(n_("Unknown email address."))
-        assert persona_id is not None
+        persona_id = affirm(vtypes.ID, persona_id)
 
         columns_of_interest = [
             *ADMIN_KEYS, "username", "given_names", "family_name", "nickname", "title",
@@ -3424,78 +3431,68 @@ class CoreBaseBackend(AbstractBackend):
         if persona['birthday']:
             inputs.extend(persona['birthday'].isoformat().split('-'))
 
-        password, errs = inspect(
+        _, errs = inspect(
             vtypes.PasswordStrength,
             password,
-            argname=argname,
+            argname="new_password",
             admin=admin,
             inputs=inputs,
         )
 
-        return password, errs
+        return errs
 
     @access("anonymous")
     def make_reset_cookie(
         self,
         rs: RequestState,
-        email: str,
-        timeout: datetime.timedelta = datetime.timedelta(seconds=60),
-    ) -> tuple[bool, str]:
+        persona_id: int,
+        timeout: datetime.timedelta,
+    ) -> str:
         """Perform preparation for a recovery.
 
         This generates a reset cookie which can be used in a second step
         to actually reset the password. To reset the password for a
         privileged account you need to have privileges yourself.
-
-        :returns: The ``bool`` indicates success and the ``str`` is
-          either the reset cookie or an error message.
         """
-        timeout = timeout or self.conf["PARAMETER_TIMEOUT"]
-        email = affirm(vtypes.Email, email)
-        data = self.sql_select_one(
-            rs, "core.personas", ("id", "is_active"), email, entity_key="username"
-        )
-        if not data:
-            return False, n_("Nonexistent user.")
-        if not data['is_active']:
-            return False, n_("Inactive user.")
+        persona_id = affirm(vtypes.ID, persona_id)
+        timeout = affirm(datetime.timedelta, timeout)
         with Atomizer(rs):
-            ret = self.generate_reset_cookie(rs, data['id'], timeout=timeout)
-            self.core_log(rs, const.CoreLogCodes.password_reset_cookie, data['id'])
-        return True, ret
+            ret = self.generate_reset_cookie(rs, persona_id, timeout=timeout)
+            self.core_log(rs, const.CoreLogCodes.password_reset_cookie, persona_id)
+        return ret
+
+    @access("anonymous")
+    def check_reset_cookie(
+        self, rs: RequestState, persona_id: int, cookie: str
+    ) -> Literal[True]:
+        """Public interface for verifying a reset cookie."""
+        persona_id = affirm(vtypes.ID, persona_id)
+        cookie = affirm(str, cookie)
+        return self.verify_reset_cookie(rs, persona_id, cookie)
 
     @access("anonymous")
     def reset_password(
-        self, rs: RequestState, email: str, new_password: str, cookie: str
-    ) -> tuple[bool, str]:
+        self, rs: RequestState, persona_id: int, new_password: str, cookie: str
+    ) -> DefaultReturnCode:
         """Perform a recovery.
 
         Authorization is guaranteed by the cookie.
 
         :returns: see :py:meth:`modify_password`
         """
-        email = affirm(vtypes.Email, email)
+        persona_id = affirm(vtypes.ID, persona_id)
         new_password = affirm(str, new_password)
         cookie = affirm(str, cookie)
-        data = self.sql_select_one(
-            rs, "core.personas", ("id",), email, entity_key="username"
-        )
-        if not data:
-            return False, n_("Nonexistent user.")
         if self.is_locked_down(rs):
-            return False, n_("Lockdown active.")
-        persona_id = unwrap(data)
-        success, msg = self.modify_password(
+            raise ValueError(n_("Lockdown active."))
+        ret = self.modify_password(
             rs, new_password, reset_cookie=cookie, persona_id=persona_id
         )
-        if success:
-            # Since they should usually be called inside an atomized context, logs
-            # demand an Atomizer by default. However, due to privilege escalation inside
-            # modify_password, this does not work and relax that claim.
-            self.core_log(
-                rs, const.CoreLogCodes.password_reset, persona_id, atomized=False
-            )
-        return success, msg
+        # Since they should usually be called inside an atomized context, logs
+        # demand an Atomizer by default. However, due to privilege escalation inside
+        # modify_password, this does not work and relax that claim.
+        self.core_log(rs, const.CoreLogCodes.password_reset, persona_id, atomized=False)
+        return ret
 
     @access("core_admin", *models.GenesisCase.all_admins)
     def find_doppelgangers(

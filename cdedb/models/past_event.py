@@ -1,19 +1,66 @@
-"""Contains only some helpers for now, that might become dataclass methods later."""
-
+import dataclasses
+import datetime
 from collections import defaultdict
+from typing import Self
 
+import cdedb.common.validation.types as vtypes
+import cdedb.database.constants as const
+import cdedb.models.event
 from cdedb.common import CdEDBObjectMap
-from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.sorting import EntitySorter, Sortkey, xsorted
+from cdedb.models.common import CdEDataclass, CdEDataclassMap, MetaFlag as Meta
 
 
-def past_event_entries(pevents: CdEDBObjectMap) -> list[tuple[int, str]]:
-    sortkey = EntitySorter.past_event_select_entries
+@dataclasses.dataclass
+class PastEvent(CdEDataclass):
+    database_table = "past_event.events"
 
-    pevent_entries = [
-        (pevent['id'], pevent['title'])
-        for pevent in xsorted(pevents.values(), key=sortkey)
-    ]
-    return pevent_entries
+    id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
+    title: str
+    shortname: str
+    institution: const.PastInstitutions
+    tempus: datetime.date
+    description: str | None
+    participant_info: str | None
+
+    @classmethod
+    def from_event(cls, event: cdedb.models.event.Event, part_id: int) -> Self:
+        if part_id not in event.parts:
+            raise ValueError
+        part = event.parts[part_id]
+        title = event.title
+        shortname = event.shortname
+        if len(event.parts) > 1:
+            title = f"{event.title} ({part.title})"
+            shortname = f"{event.shortname} ({part.shortname})"
+        return cls(
+            id=vtypes.ID(-1),
+            title=title,
+            shortname=shortname,
+            institution=event.institution,
+            tempus=part.part_begin,
+            description=event.description,
+            # The event field 'participant_info' usually contains information
+            # no longer relevant, so we do not keep it here
+            participant_info=None,
+        )
+
+    def get_sortkey(self) -> Sortkey:
+        return (-self.tempus.toordinal(), self.title)
+
+    def get_entries_sortkey(self) -> Sortkey:
+        return (-self.tempus.year, self.title, self.id)
+
+    @classmethod
+    def get_entries(cls, pevents: CdEDataclassMap[Self]) -> list[tuple[int, str]]:
+        """Used for better UX in _very_ long select inputs.
+
+        Groups the events by year descending, and then orders them by title.
+        """
+        return [
+            (pevent.id, pevent.title)
+            for pevent in xsorted(pevents.values(), key=cls.get_entries_sortkey)
+        ]
 
 
 def past_course_entries(pcourses: CdEDBObjectMap) -> list[tuple[int, str]]:
