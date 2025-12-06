@@ -717,14 +717,6 @@ def _negative_int(
 
 
 @_add_typed_validator
-def _non_zero_int(val: Any, argname: Optional[str] = None, **kwargs: Any) -> NonZeroInt:
-    val = _int(val, argname, **kwargs)
-    if val == 0:
-        raise ValidationSummary(ValueError(argname, n_("Must not be zero.")))
-    return NonZeroInt(val)
-
-
-@_add_typed_validator
 def _id(val: Any, argname: Optional[str] = None, **kwargs: Any) -> ID:
     """A numeric ID as in a database key.
 
@@ -815,15 +807,6 @@ def _non_negative_decimal(
     if val < 0:
         raise ValidationSummary(ValueError(argname, n_("Transfer saldo is negative.")))
     return NonNegativeDecimal(val)
-
-
-@_add_typed_validator
-def _non_negative_large_decimal(
-    val: Any, argname: Optional[str] = None, **kwargs: Any
-) -> NonNegativeLargeDecimal:
-    return NonNegativeLargeDecimal(
-        _non_negative_decimal(val, argname, large=True, **kwargs)
-    )
 
 
 @_add_typed_validator
@@ -967,22 +950,6 @@ def _bool(val: Any, argname: Optional[str] = None, **kwargs: Any) -> bool:
             raise ValidationSummary(
                 ValueError(argname, n_("Invalid input for boolean."))
             ) from e
-
-
-@_add_typed_validator
-def _empty_dict(val: Any, argname: Optional[str] = None, **kwargs: Any) -> EmptyDict:
-    # TODO why do we not convert here but do so for _empty_list?
-    if val != {}:
-        raise ValidationSummary(ValueError(argname, n_("Must be an empty dict.")))
-    return EmptyDict(val)
-
-
-@_add_typed_validator
-def _empty_list(val: Any, argname: Optional[str] = None, **kwargs: Any) -> EmptyList:
-    val = list(_iterable(val, argname, **kwargs))
-    if val:
-        raise ValidationSummary(ValueError(argname, n_("Must be an empty list.")))
-    return EmptyList(val)
 
 
 @_add_typed_validator  # TODO use Union of Literal
