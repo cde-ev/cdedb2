@@ -4,12 +4,11 @@ import datetime
 
 import dateutil.easter
 
-from cdedb.backend.core import CoreBackend
 from cdedb.script import Script
 
 s = Script(dbuser='cdb')
 
-core: CoreBackend = s.make_backend("core", proxy=False)
+core = s.make_core_backend(proxy=False)
 
 
 def calculate_payment_date(issued_at: datetime.datetime) -> datetime.date:

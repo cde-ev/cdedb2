@@ -7,7 +7,6 @@ import cProfile
 import pathlib
 
 import cdedb.fee_condition_parser.parsing as fcp_parse
-from cdedb.backend.event import EventBackend
 from cdedb.common.sorting import xsorted
 from cdedb.script import Script
 
@@ -15,7 +14,7 @@ from cdedb.script import Script
 
 script = Script(persona_id=-1, dbuser="cdb_admin")
 rs = script.rs()
-event: EventBackend = script.make_backend("event", proxy=False)
+event = script.make_event_backend(proxy=False)
 
 
 # work

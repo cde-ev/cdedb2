@@ -3,7 +3,6 @@
 """
 from pprint import pprint
 
-from cdedb.backend.core import CoreBackend
 from cdedb.common.query.log_filter import ALL_LOG_FILTERS, GenericLogFilter
 from cdedb.script import Script
 
@@ -11,7 +10,7 @@ from cdedb.script import Script
 
 script = Script(dbuser="cdb_admin")
 rs = script.rs()
-core: CoreBackend = script.make_backend("core", proxy=False)
+core = script.make_core_backend(proxy=False)
 
 # work
 

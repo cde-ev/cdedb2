@@ -8,7 +8,7 @@ from cdedb.script import Script
 
 script = Script(persona_id=-1, dbuser="cdb_admin")
 rs = script.rs()
-event = script.make_backend("event")
+event = script.make_event_backend(proxy=True)
 
 # work
 

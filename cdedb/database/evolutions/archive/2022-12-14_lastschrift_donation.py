@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 
-from cdedb.backend.cde import CdEBackend
-from cdedb.backend.core import CoreBackend
 from cdedb.script import Script
 
 s = Script(dbuser='cdb')
 
-core: CoreBackend = s.make_backend("core", proxy=False)
-cde: CdEBackend = s.make_backend("cde", proxy=False)
+core = s.make_core_backend(proxy=False)
+cde = s.make_cde_backend(proxy=False)
 
 if s.persona_id < 0:
     raise RuntimeError("Need persona id to create changelog entries.")
