@@ -20,11 +20,8 @@ from cdedb.common.validation.types import (
     ID,
     JSON,
     Email,
-    EmptyDict,
-    EmptyList,
     NonNegativeDecimal,
     NonNegativeInt,
-    NonNegativeLargeDecimal,
     PartialImportID,
     PasswordStrength,
     Persona,
@@ -243,11 +240,6 @@ class TestValidation(TestValidationBase):
             (decimal.Decimal(12.3), decimal.Decimal(12.3), None),
             (decimal.Decimal(-12.3), None, ValueError),
         ))
-        self.do_validator_test(NonNegativeLargeDecimal, (
-            (decimal.Decimal(1e9) - 1, decimal.Decimal(1e9) - 1, None),
-            (decimal.Decimal(-1e9) + 1, None, ValueError),
-            (decimal.Decimal(1e9), None, ValueError),  # exceeds maximum value
-        ))
 
     def test_str_type(self) -> None:
         self.do_validator_test(StringType, (
@@ -323,22 +315,6 @@ class TestValidation(TestValidationBase):
             ("False", False, None),
             (54, True, None),
             (None, None, TypeError),
-        ))
-
-    def test_empty(self) -> None:
-        self.do_validator_test(EmptyDict, (
-            (dict(), dict(), None),
-            ({"a": 1}, None, ValueError),
-            ([], None, ValueError),
-            (set(), None, ValueError),
-            (tuple(), None, ValueError),
-        ))
-        self.do_validator_test(EmptyList, (
-            ([], [], None),
-            ([1], None, ValueError),
-            (dict(), [], None),
-            (set(), [], None),
-            (tuple(), [], None),
         ))
 
     def test_realm(self) -> None:

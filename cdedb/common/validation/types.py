@@ -28,7 +28,6 @@ MutableTypeMapping = _MutableMapping[_Any, type[_Any] | _UnionType]
 NonNegativeInt = _NewType("NonNegativeInt", int)
 PositiveInt = _NewType("PositiveInt", int)
 NegativeInt = _NewType("NegativeInt", int)
-NonZeroInt = _NewType("NonZeroInt", int)
 ID = _NewType("ID", int)
 CdedbID = _NewType("CdedbID", ID)  # subtype of ID as it also uses that validator
 PartialImportID = _NewType("PartialImportID", int)
@@ -37,11 +36,7 @@ SingleDigitInt = _NewType("SingleDigitInt", int)
 NonNegativeFloat = _NewType("NonNegativeFloat", float)
 
 NonNegativeDecimal = _NewType("NonNegativeDecimal", _decimal.Decimal)
-NonNegativeLargeDecimal = _NewType("NonNegativeLargeDecimal", NonNegativeDecimal)
 PositiveDecimal = _NewType("PositiveDecimal", _decimal.Decimal)
-
-EmptyDict = _NewType("EmptyDict", dict[_Any, _Any])
-EmptyList = _NewType("EmptyList", list[_Any])
 
 Realm = _NewType("Realm", str)
 StringType = _NewType("StringType", str)
