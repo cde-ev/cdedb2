@@ -98,15 +98,13 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
         case_model = models.GenesisCase.get_model_by_realm(realm)
         mandatory_case_fields = case_model.mandatory_form_fields(creation=True)
-        data = (
-            extract_and_check_dataclass(
-                rs,
-                case_model,
-                additional_data={'attachment_hash': attachment_hash},
-                creation=True,
-            )
-            or {}
+        data = extract_and_check_dataclass(
+            rs,
+            case_model,
+            additional_data={'attachment_hash': attachment_hash},
+            creation=True,
         )
+        data = data or {}
         rs.values['attachment_hash'], rs.values['attachment_filename'] = (
             attachment_hash,
             attachment_filename,
@@ -547,8 +545,10 @@ class CoreGenesisMixin(CoreBaseFrontend):
             rs.notify("error", n_("Email address already taken."))
             return self.redirect(rs, "core/genesis_show_case")
         if decision.is_update() and not self.coreproxy.verify_persona(
-            rs, persona_id, (case.realm,)
-        ):  # type: ignore[arg-type]
+            rs,
+            persona_id,  # type: ignore[arg-type]
+            (case.realm,),
+        ):
             msg = n_(
                 "Invalid persona for update. Add additional realm first: %(realm)s."
             )
