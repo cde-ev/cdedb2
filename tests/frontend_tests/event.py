@@ -577,8 +577,13 @@ class TestEventFrontend(FrontendTest):
         execsql("UPDATE event.courses SET is_visible = True WHERE id = 2")
         self.submit(f)
         self.assertPresence("β. Lustigsein für Fortgeschrittene")
+        f = self.response.forms['coursefilterform']
+        self.assertNotIn("active_only", f.fields)
         if self.user_in('annika'):
+            self.event.set_event(self.key, 1, {"is_course_state_visible": True})
+            self.traverse("Kursliste")
             f = self.response.forms['coursefilterform']
+            f['track_ids'] = [2]
             f['active_only'].checked = True
             self.submit(f)
             self.assertNonPresence("β. Lustigsein für Fortgeschrittene")
@@ -768,44 +773,35 @@ class TestEventFrontend(FrontendTest):
                             div='notifications')
 
     def test_course_state_visibility(self) -> None:
-        self.login(USER_DICT['charly'])
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/course/list'})
-        self.assertNonPresence("fällt aus")
-        self.traverse({'href': '/event/event/1/register'})
-        f = self.response.forms['registerform']
-        # Course ε. Backup-Kurs is cancelled in track 3 (but not visible by now)
-        self.assertIn('5', [value for (value, checked, text)
-                            in f['track3.course_choice_0'].options])
+        with self.switch_user("charly"):
+            self.get("/event/event/1/course/list")
+            self.assertNonPresence("fällt aus")
+            self.get('/event/event/1/register')
+            f = self.response.forms['registerform']
+            # Course ε. Backup-Kurs is cancelled in track 3 (but still choosable).
+            self.assertIn(
+                '5', [value for (value, _, _) in f['track3.course_choice_0'].options]
+            )
 
-        self.logout()
-        self.login(USER_DICT['garcia'])
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/course/list'})
-        self.assertPresence("fällt aus")
-        self.assertPresence("Info! Ausfallende Kurse werden nur für Orgas "
-                            "hier markiert.", div='static-notifications')
-        self.traverse({'href': '/event/event/1/change'})
-        f = self.response.forms['changeeventform']
-        f['is_course_state_visible'].checked = True
-        self.submit(f)
-        self.traverse({'href': '/event/event/1/course/list'})
-        self.assertNonPresence("Ausfallende Kurse werden nur für Orgas",
-                               div='static-notifications')
+        with self.switch_user("garcia"):
+            self.get("/event/event/1/course/list")
+            self.assertNonPresence("fällt aus")
+            self.get('/event/event/1/change')
+            f = self.response.forms['changeeventform']
+            f['is_course_state_visible'].checked = True
+            self.submit(f)
+            self.get('/event/event/1/course/list')
+            self.assertPresence("fällt aus")
 
-        self.logout()
-        self.login(USER_DICT['charly'])
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/course/list'})
-        self.assertPresence("fällt aus")
-        self.traverse({'href': '/event/event/1/register'})
-        f = self.response.forms['registerform']
-        # Course ε. Backup-Kurs is cancelled in track 3 (but not visible by now)
-        self.assertNotIn('5', [value for (value, checked, text)
-                               in f['track3.course_choice_0'].options])
+        with self.switch_user("charly"):
+            self.get('/event/event/1/course/list')
+            self.assertPresence("fällt aus")
+            self.get('/event/event/1/register')
+            f = self.response.forms['registerform']
+            # Course ε. Backup-Kurs is cancelled in track 3 and no longer choosable.
+            self.assertNotIn(
+                '5', [value for (value, _, _) in f['track3.course_choice_0'].options]
+            )
 
     @event_keeper
     @as_users("garcia")
