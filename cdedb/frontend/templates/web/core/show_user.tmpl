@@ -611,25 +611,25 @@
             </dl>
         {% endif %}
 
-        {% if persona_past_events %}
+        {% if past_event_participations %}
             <div id="past-events">
             <h4 class="heading-underline">{% trans %}Past Events{% endtrans %}</h4>
             <table class="table table-hover past-event-table">
             <tbody>
-                {% for pevent in past_events.values() %}{# already sorted #}
+                {% for event_participation in past_event_participations.values() %}{# already sorted #}
                     <tr>
                         <td>
-                            {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": pevent.id}), pevent.title,
+                            {{ util.href(cdedblink("cde/show_past_event", {"pevent_id": event_participation.pevent_id}), event_participation.pevent.title,
                                                    readonly='member' not in user.roles and 'cde_admin' not in user.roles) -}}
                         </td>
                         <td>
-                            {% if persona_past_events[pevent.id].orga_status %}
-                                ({{ gettext(persona_past_events[pevent.id].orga_status|string) }}) <br />
+                            {% if event_participation.orga_status %}
+                                ({{ gettext(event_participation.orga_status|string) }}) <br />
                             {% endif %}
-                            {% for pcourse_assignment in persona_past_courses[pevent.id] %}{# already sorted #}
-                                {%- with pcourse = past_courses[pcourse_assignment.pcourse_id] -%}
+                            {% for pcourse_assignment in event_participation.course_assignments %}{# already sorted #}
+                                {%- with pcourse = pcourse_assignment.pcourse -%}
                                     {{ pcourse.nr }}.
-                                    {{ util.href(cdedblink("cde/show_past_course", {"pevent_id": pevent.id, "pcourse_id": pcourse.id}),
+                                    {{ util.href(cdedblink("cde/show_past_course", {"pevent_id": event_participation.pevent_id, "pcourse_id": pcourse.id}),
                                                  pcourse.title, readonly='member' not in user.roles and 'cde_admin' not in user.roles) }}
                                     {%- if pcourse_assignment.instructor_status %}
                                         ({{ gettext(pcourse_assignment.instructor_status|string) }})

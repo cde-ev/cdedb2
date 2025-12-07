@@ -774,14 +774,9 @@ class CoreBaseFrontend(AbstractFrontend):
                     del data[key]
 
         # Add past event participation info
-        past_events = past_courses = None
-        persona_past_events = persona_past_courses = None
+        past_event_participations = None
         if "cde" in access_levels and {"event", "cde"} & roles:
-            persona_past_events = self.pasteventproxy.list_persona_events(rs, persona_id)
-            past_events = self.pasteventproxy.get_past_events(rs, persona_past_events.keys())
-            persona_past_courses = self.pasteventproxy.list_persona_courses(rs, persona_id)
-            past_course_ids = {p.pcourse_id for p in itertools.chain.from_iterable(persona_past_courses.values())}
-            past_courses = self.pasteventproxy.get_past_courses(rs, past_course_ids)
+            past_event_participations = self.pasteventproxy.list_persona_events(rs, persona_id)
 
         # Retrieve number of active sessions if the user is viewing his own profile
         active_session_count = None
@@ -807,13 +802,12 @@ class CoreBaseFrontend(AbstractFrontend):
         mandatory_fields = get_mandatory_form_fields(
             self.archive_persona, self.invalidate_password)
         return self.render(rs, "show_user", {
-            'data': data, 'past_events': past_events, 'meta_info': meta_info,
+            'data': data, 'meta_info': meta_info,
             'is_relative_admin_view': is_relative_admin_view, 'reference': reference,
             'quoteable': quoteable, 'access_mode': access_mode,
             'active_session_count': active_session_count, 'ADMIN_KEYS': ADMIN_KEYS,
             'email_report': email_report,
-            'past_courses': past_courses, 'persona_past_events': persona_past_events,
-            'persona_past_courses': persona_past_courses,
+            'past_event_participations': past_event_participations,
         }, mandatory_fields)
 
     # fmt: on

@@ -116,18 +116,25 @@ class PastEventParticipant(CdEDataclass):
 
     persona_id: vtypes.ID
     persona: dict[str, Any] = dataclasses.field(
-        init=False, compare=False, repr=False, metadata=Meta.exclude.as_dict
+        compare=False, repr=False, metadata=Meta.exclude.as_dict
     )
+
     pevent_id: vtypes.ID
+    pevent: PastEvent = dataclasses.field(compare=False, repr=False)
+
     orga_status: const.PastOrgaKind
     music_status: const.PastMusicKind
+
+    course_assignments: list["PastCourseAssignment"] = dataclasses.field(
+        init=False, compare=False, repr=False, default_factory=list
+    )
 
     def get_sortkey(self) -> Sortkey:
         return (
             self.persona["family_name"],
             self.persona["given_names"],
             self.persona_id,
-            self.pevent_id,
+            *self.pevent.get_sortkey(),
         )
 
 
@@ -138,7 +145,9 @@ class PastCourseAssignment(CdEDataclass):
     persona_id: vtypes.ID
     participant_id: vtypes.ID
     pcourse_id: vtypes.ID
+    pcourse: PastCourse = dataclasses.field(compare=False, repr=False)
+
     instructor_status: const.PastInstructorKind
 
     def get_sortkey(self) -> Sortkey:
-        return self.persona_id, self.pcourse_id
+        return self.pcourse.get_sortkey()

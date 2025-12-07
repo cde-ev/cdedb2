@@ -681,7 +681,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
                         msg = n_("May not grant trial membership to member.")
                         problems.append(("doppelganger", ValueError(msg)))
         if datum['doppelganger_id'] and pcourse_id:
-            participants = self.pasteventproxy.get_course_assignments(rs, pcourse_id)
+            _, participants = self.pasteventproxy.get_course_assignments(rs, pcourse_id)
             if datum['doppelganger_id'] in participants:
                 warnings.append((
                     "pcourse_id",

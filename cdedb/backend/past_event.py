@@ -41,7 +41,7 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import PastEventLogFilter
-from cdedb.common.sorting import xsorted
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import ParamDict
 from cdedb.models.common import CdEDataclassMap
@@ -624,8 +624,9 @@ class PastEventBackend(AbstractBackend):
         ret = 1
         with Atomizer(rs):
             # remove manually from courses to ensure correct logging
-            if pcourses := self.list_course_assignments(rs, pevent_id).get(persona_id):
-                for assignment in pcourses:
+            _, participants = self.list_event_participants(rs, pevent_id)
+            if participant := participants.get(persona_id):
+                for assignment in participant.course_assignments:
                     ret *= self.remove_course_assignment(
                         rs, assignment.pcourse_id, persona_id
                     )
@@ -740,6 +741,8 @@ class PastEventBackend(AbstractBackend):
         """
         pevent_id = affirm(vtypes.ID, pevent_id)
         honour_admins = affirm(bool, honour_admins)
+
+        # collect past event data
         data = self.sql_select(
             rs,
             models.PastEventParticipant.database_table,
@@ -747,13 +750,32 @@ class PastEventBackend(AbstractBackend):
             [pevent_id],
             entity_key="pevent_id",
         )
+        total_participants_num = len(data)
         personas = self.core.get_personas(rs, {e['persona_id'] for e in data})
-        ret = models.PastEventParticipant.many_from_database(data, sort=False)
-        for participant in ret.values():
-            participant.persona = personas[participant.persona_id]
-        ret = {
-            participant.persona_id: participant for participant in xsorted(ret.values())
-        }
+        pevent = self.get_past_event(rs, pevent_id)
+        for datum in data:
+            datum["persona"] = personas[datum["persona_id"]]
+            datum["pevent"] = pevent
+        ret = models.PastEventParticipant.many_from_database(data)
+        ret = {participant.persona_id: participant for participant in ret.values()}
+
+        # collect past course data
+        query = f"""
+            SELECT course_assignments.id, persona_id, instructor_status, pcourse_id, participant_id
+            FROM {models.PastEventParticipant.database_table} AS event_participants
+                JOIN {models.PastCourseAssignment.database_table} AS course_assignments
+                ON participant_id = event_participants.id
+            WHERE pevent_id = %(pevent_id)s
+        """
+        data = self.query_all(rs, query, {"pevent_id": pevent_id})
+        pcourses = self.get_past_courses(rs, {e["pcourse_id"] for e in data})
+        for datum in data:
+            datum["pcourse"] = pcourses[datum["pcourse_id"]]
+        course_assignments = models.PastCourseAssignment.many_from_database(data)
+        for assignment in course_assignments.values():
+            ret[assignment.persona_id].course_assignments.append(assignment)
+
+        # filter the data
         ret = self.filter_participants(
             rs,
             participants=ret,
@@ -762,7 +784,7 @@ class PastEventBackend(AbstractBackend):
             pevent_id=pevent_id,
         )
 
-        return len(data), ret
+        return total_participants_num, ret
 
     @access("event")
     def get_course_assignments(
@@ -789,9 +811,15 @@ class PastEventBackend(AbstractBackend):
         params: ParamDict = {"pcourse_id": pcourse_id}
         data = self.query_all(rs, query, params)
         personas = self.core.get_personas(rs, {e['persona_id'] for e in data})
-        ret = models.PastCourseAssignment.many_from_database(data, sort=False)
+        pcourse = self.get_past_course(rs, pcourse_id)
+        for datum in data:
+            datum["pcourse"] = pcourse
+        ret = models.PastCourseAssignment.many_from_database(data)
         ret = {
-            assignment.persona_id: assignment for assignment in xsorted(ret.values())
+            assignment.persona_id: assignment
+            for assignment in xsorted(
+                ret.values(), key=lambda x: EntitySorter.persona(personas[x.persona_id])
+            )
         }
         ret = self.filter_participants(
             rs,
@@ -802,39 +830,6 @@ class PastEventBackend(AbstractBackend):
         )
 
         return len(data), ret
-
-    @access("event")
-    def list_course_assignments(
-        self, rs: RequestState, pevent_id: int
-    ) -> CdEDataclassMap[list[models.PastCourseAssignment]]:
-        """Get the courses assigned to each participant of a given past event.
-
-        :returns: Mapping of persona_id to list of course assignments.
-        """
-        pevent_id = affirm(vtypes.ID, pevent_id)
-        _, participants = self.list_event_participants(rs, pevent_id)
-        # no precise privilege check needed, no sensitive data
-        if not (
-            self.is_admin(rs)
-            or rs.persona_id in participants
-            or 'searchable' in rs.user.roles
-        ):
-            raise PrivilegeError
-        query = f"""
-            SELECT course_assignments.id, persona_id, instructor_status, pcourse_id, participant_id
-            FROM {models.PastEventParticipant.database_table} AS event_participants
-                JOIN {models.PastCourseAssignment.database_table} AS course_assignments
-                ON participant_id = event_participants.id
-            WHERE pevent_id = %(pevent_id)s
-        """
-        data = self.query_all(rs, query, {"pevent_id": pevent_id})
-        pcourses = self.get_past_courses(rs, {e["pcourse_id"] for e in data})
-        ret = collections.defaultdict(list)
-        for e in data:
-            ret[e["persona_id"]].append(models.PastCourseAssignment.from_database(e))
-        for pevent_id, assignments in ret.items():
-            ret[pevent_id] = xsorted(assignments, key=lambda x: pcourses[x.pcourse_id])
-        return ret
 
     @access("event")
     def list_persona_events(
@@ -855,6 +850,8 @@ class PastEventBackend(AbstractBackend):
             )
         ):
             raise PrivilegeError
+
+        # collect past event data
         data = self.sql_select(
             rs,
             models.PastEventParticipant.database_table,
@@ -862,49 +859,28 @@ class PastEventBackend(AbstractBackend):
             [persona_id],
             entity_key="persona_id",
         )
-        ret = models.PastEventParticipant.many_from_database(data, sort=False)
-        for participant in ret.values():
-            participant.persona = persona
+        pevents = self.get_past_events(rs, {datum["pevent_id"] for datum in data})
+        for datum in data:
+            datum["persona"] = persona
+            datum["pevent"] = pevents[datum["pevent_id"]]
+        ret = models.PastEventParticipant.many_from_database(data)
         ret = {p.pevent_id: p for p in ret.values()}
-        return ret
 
-    @access("event")
-    def list_persona_courses(
-        self,
-        rs: RequestState,
-        persona_id: int,
-    ) -> CdEDataclassMap[list[models.PastCourseAssignment]]:
-        """List all courses of the given persona at any past event.
-
-        :returns: Mapping of pevent_id to list of course assignments.
-        """
-        persona_id = affirm(vtypes.ID, persona_id)
-        persona = self.core.get_persona(rs, persona_id)
-        if not (
-            self.is_admin(rs)
-            or persona_id == rs.user.persona_id
-            or (
-                "searchable" in rs.user.roles
-                and persona["is_member"]
-                and persona["is_searchable"]
-            )
-        ):
-            raise PrivilegeError
+        # collect past course data
         query = f"""
-            SELECT course_assignments.id, pevent_id, persona_id, participant_id, pcourse_id, instructor_status
+            SELECT course_assignments.id, persona_id, participant_id, pcourse_id, instructor_status
             FROM {models.PastEventParticipant.database_table} AS event_participants
                 JOIN {models.PastCourseAssignment.database_table} AS course_assignments
                 ON participant_id = event_participants.id
             WHERE persona_id = %(persona_id)s
         """
         data = self.query_all(rs, query, {"persona_id": persona_id})
-        pcourses = self.get_past_courses(rs, {e["pcourse_id"] for e in data})
-        ret = collections.defaultdict(list)
-        for e in data:
-            pevent_id = e.pop("pevent_id")
-            ret[pevent_id].append(models.PastCourseAssignment.from_database(e))
-        for pevent_id, assignments in ret.items():
-            ret[pevent_id] = xsorted(assignments, key=lambda x: pcourses[x.pcourse_id])
+        pcourses = self.get_past_courses(rs, {datum["pcourse_id"] for datum in data})
+        for datum in data:
+            datum["pcourse"] = pcourses[datum["pcourse_id"]]
+        course_assignments = models.PastCourseAssignment.many_from_database(data)
+        for assignment in course_assignments.values():
+            ret[assignment.pcourse.pevent_id].course_assignments.append(assignment)
         return ret
 
     @access("cde_admin", "event_admin")

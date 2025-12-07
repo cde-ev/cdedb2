@@ -140,14 +140,14 @@
             {% for participant in participants.values() %} {# This dict is already sorted. #}
                 <li class="hide-hover-container clearfix-after">
                     {{ generic.print_persona(participant.persona) }}
-                    {% if course_assignment[participant.persona_id] %}
+                    {% if participant.course_assignments %}
                         (
-                        {%- for assignment in course_assignment[participant.persona_id] -%}{# already sorted #}
-                            {{ courses[assignment.pcourse_id]['nr'] }}.
+                        {%- for assignment in participant.course_assignments -%}{# already sorted #}
+                            {{ assignment.pcourse.nr }}.
                             {% if assignment.instructor_status -%}
                                 <strong title="{{ gettext(assignment.instructor_status|string) }}">
                             {%- endif -%}
-                            {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : assignment.pcourse_id}), courses[assignment.pcourse_id]['title']) }}
+                            {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : assignment.pcourse_id}), assignment.pcourse.title) }}
                             {%- if assignment.instructor_status -%}
                                 <span class="sr-only"> ({{ gettext(assignment.instructor_status|string) }})</span></strong>
                             {%- endif -%}

@@ -108,7 +108,6 @@ class CdEPastEventMixin(CdEBaseFrontend):
             rs, pevent_id, honour_admins="past_event" in rs.user.admin_views
         )
         orgas = [p for p in participants.values() if p.orga_status]
-        course_assignment = self.pasteventproxy.list_course_assignments(rs, pevent_id)
         return self.render(
             rs,
             "past_event/show_past_event",
@@ -117,7 +116,6 @@ class CdEPastEventMixin(CdEBaseFrontend):
                 'orgas': orgas,
                 'total_participant_number': total_num,
                 'participants': participants,
-                'course_assignment': course_assignment,
             },
         )
 
@@ -129,13 +127,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         total_num, participants = self.pasteventproxy.get_course_assignments(
             rs, pcourse_id, honour_admins="past_event" in rs.user.admin_views
         )
-        personas = {
-            persona['id']: persona
-            for persona in xsorted(
-                self.coreproxy.get_personas(rs, participants.keys()).values(),
-                key=EntitySorter.persona,
-            )
-        }
+        personas = self.coreproxy.get_personas(rs, participants.keys())
         return self.render(
             rs,
             "past_event/show_past_course",
