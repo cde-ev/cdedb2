@@ -672,7 +672,7 @@ class PastEventBackend(AbstractBackend):
             participant_id = self.get_participant_id(rs, pevent_id, persona_id)
             # nothing left to do
             if participant_id is None:
-                return 1
+                return 0
 
             query = """
                 DELETE FROM past_event.course_participants
@@ -852,6 +852,7 @@ class PastEventBackend(AbstractBackend):
         persona = self.core.get_persona(rs, persona_id)
         if not (
             self.is_admin(rs)
+            or "core_admin" in rs.user.roles
             or persona_id == rs.user.persona_id
             or (
                 "searchable" in rs.user.roles

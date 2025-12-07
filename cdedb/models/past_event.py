@@ -126,7 +126,7 @@ class PastEventParticipant(CdEDataclass):
     music_status: const.PastMusicKind
 
     course_assignments: list["PastCourseAssignment"] = dataclasses.field(
-        init=False, compare=False, repr=False, default_factory=list
+        init=False, default_factory=list
     )
 
     @property

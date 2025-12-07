@@ -49,7 +49,7 @@
         <dd id="orgas">
             {% for orga in orgas %} {# This is already sorted. #}
                 {{ generic.print_persona(orga.persona) }}
-                {% if not loop.last %},{% endif %}
+                {%- if not loop.last %},{% endif %}
             {% endfor %}
         </dd>
         {% endif %}
@@ -143,7 +143,7 @@
                     {% if participant.course_assignments %}
                         (
                         {%- for assignment in participant.course_assignments -%}{# already sorted #}
-                            {{ assignment.pcourse.nr }}.
+                            {{- assignment.pcourse.nr }}.
                             {% if assignment.instructor_status -%}
                                 <strong title="{{ gettext(assignment.instructor_status|string) }}">
                             {%- endif -%}
