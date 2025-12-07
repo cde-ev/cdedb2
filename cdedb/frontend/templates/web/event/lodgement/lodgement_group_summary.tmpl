@@ -37,7 +37,7 @@
 
             <tbody>
                 {% call(id, row_class, is_new_row) util.dynamic_row_meta(groups.keys()) %}
-                    <tr class="{{ row_class }}" role="group" aria-label="Lodgement Group {{ id }}">
+                    <tr class="{{ row_class }}" role="group" aria-label="Lodgement Group {{ id }}" data-drow-id="{{ id }}">
                         <td class={{ util.has_errors(drow_name("title", id)) }}>
                             {{ util.input_text(drow_name("title", id), aclass='drow-input form-control',
                                     attributes=util.drow_basename("title"), arialabel=gettext("Name")) }}

@@ -6300,6 +6300,32 @@
             "entries": null
         },
         {
+            "id": 10,
+            "event_id": 1,
+            "field_name": "arrival_date",
+            "kind": 5,
+            "association": 1,
+            "title": "Anreisetag",
+            "description": null,
+            "sort_group": null,
+            "sortkey": 0,
+            "checkin": false,
+            "entries": [
+                [
+                    null,
+                    "gar nicht"
+                ],
+                [
+                    "2025-12-31",
+                    "Sylvester"
+                ],
+                [
+                    "2026-01-01",
+                    "Neujahr"
+                ]
+            ]
+        },
+        {
             "id": 101,
             "event_id": 2,
             "field_name": "solidarity",

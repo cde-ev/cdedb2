@@ -51,7 +51,7 @@ class EventFieldMixin(EventBaseFrontend):
     def field_summary_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form."""
         formatter = lambda k, v: (v if k != 'entries' or not v else
-                                  '\n'.join(f'{value};{description}'
+                                  '\n'.join(f'{value or ""};{description}'
                                             for value, description in v.items()))
         current = {
             f"{key}_{field_id}": formatter(key, value)
@@ -93,14 +93,12 @@ class EventFieldMixin(EventBaseFrontend):
             self, rs: RequestState, event_id: int, nav_tab_active: str | None = None,
     ) -> Response:
         """Manipulate the fields of an event."""
-        mandatory, optional = models.EventField.validation_fields(creation=False)
-        spec = dict(mandatory) | dict(optional)
-        creation_mandatory, creation_optional = models.EventField.validation_fields(
-            creation=True)
-        creation_spec = dict(creation_mandatory) | dict(creation_optional)
+        spec = dict(models.EventField.requestdict_fields(creation=False))
+        creation_spec = dict(models.EventField.requestdict_fields(creation=True))
         existing_fields = rs.ambience['event'].fields.keys()
         fields = process_dynamic_input(
-            rs, vtypes.EventField, existing_fields, spec, creation_spec=creation_spec)
+            rs, models.EventField, existing_fields, spec, creation_spec=creation_spec,
+            additional_validation={"event": rs.ambience['event']})
 
         def field_name(field_id: int, field: Optional[CdEDBObject]) -> str:
             """Helper to get the name of a (new or existing) field."""

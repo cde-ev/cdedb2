@@ -43,7 +43,6 @@ from cdedb.common.parse.util import Accounts
 from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.common.validation.validate import FIELD_DATATYPE_VALIDATORS
 from cdedb.filter import date_filter, money_filter
 from cdedb.frontend.common import (
     CustomCSVDialect,
@@ -59,7 +58,11 @@ from cdedb.frontend.common import (
     periodic,
     request_extractor,
 )
-from cdedb.frontend.event.base import EventBaseFrontend, event_guard
+from cdedb.frontend.event.base import (
+    EventBaseFrontend,
+    event_associated_fields_extractor,
+    event_guard,
+)
 
 
 class EventRegistrationMixin(EventBaseFrontend):
@@ -658,36 +661,35 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         # Custom data field data:
         if orga_input:
-            field_params: vtypes.TypeMapping = {
-                f"fields.{field.field_name}": Optional[  # type: ignore[misc]
-                    FIELD_DATATYPE_VALIDATORS[field.kind]]
-                for field in event.fields.values()
-                if field.association == const.FieldAssociations.registration
-            }
-            field_params = filter_params(field_params)
-            raw_fields = request_extractor(rs, field_params)
-            registration['fields'] = {
-                field.field_name: raw_fields[raw_key]
-                for field in event.fields.values()
-                if (raw_key := f"fields.{field.field_name}") in raw_fields
-            }
+            registration["fields"] = event_associated_fields_extractor(
+                rs, rs.ambience["event"], const.FieldAssociations.registration,
+                filter_params=filter_params,
+            )
         else:
-            field_params = self._questionnaire_params(
-                rs, const.QuestionnaireUsages.registration)
+            questionnaire_fields = self.extract_questionnaire_fields(
+                rs, const.QuestionnaireUsages.registration
+            )
 
-            # Take special care to disallow empty fields with entries.
-            tmp_fields = request_extractor(rs, field_params, postpone_validation=True)
-            fields_by_name = {
-                f"fields.{f.field_name}": f for f in event.fields.values()}
-            for key, val in tmp_fields.items():
-                if not val and fields_by_name[key].entries:
+            # Take special care to disallow empty fields (except checkboxes and strings).
+            for field in event.fields.values():
+                if field.field_name not in questionnaire_fields:
+                    # Skip fields not present in the questionnaire.
+                    continue
+                if field.kind == const.FieldDatatypes.bool and not field.entries:
+                    # Skip checkboxes
+                    continue
+                if field.kind == const.FieldDatatypes.str and not field.entries:
+                    # Skip text inputs with no choices.
+                    continue
+                # questionnaire_fields contains validated values.
+                #  That means that empty inputs are already mapped to False, etc.
+                #  Peek at the values instead to differentiate empty from falsy.
+                if not rs.values[field.request_name]:
                     rs.append_validation_error(
-                        (key, ValueError(n_("Must not be empty."))))
+                        (field.request_name, ValueError(n_("Must not be empty.")))
+                    )
 
-            registration['fields'] = {
-                key.removeprefix("fields."): val
-                for key, val in request_extractor(rs, field_params).items()
-            }
+            registration["fields"] = questionnaire_fields
 
         return registration
 

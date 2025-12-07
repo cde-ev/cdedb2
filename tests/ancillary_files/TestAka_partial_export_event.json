@@ -201,6 +201,20 @@
                 "sortkey": 0,
                 "title": "Anreise um"
             },
+            "arrival_date": {
+                "association": 1,
+                "checkin": false,
+                "description": null,
+                "entries": {
+                    "": "gar nicht",
+                    "2025-12-31": "Sylvester",
+                    "2026-01-01": "Neujahr"
+                },
+                "kind": 5,
+                "sort_group": null,
+                "sortkey": 0,
+                "title": "Anreisetag"
+            },
             "brings_balls": {
                 "association": 1,
                 "checkin": true,

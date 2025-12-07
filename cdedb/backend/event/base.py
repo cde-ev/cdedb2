@@ -44,9 +44,12 @@ from cdedb.common import (
     DefaultReturnCode,
     DeletionBlockers,
     RequestState,
+    cast_field_entries,
+    cast_field_value,
     cast_fields,
     json_serialize,
     make_persona_name,
+    normalize_field_entries,
     now,
     unwrap,
 )
@@ -67,10 +70,6 @@ from cdedb.common.privileges import (
 )
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
-from cdedb.common.validation.validate import (
-    FIELD_DATATYPE_VALIDATORS,
-    validate_check_optional,
-)
 from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter
 from cdedb.models.core import EventPersona
@@ -1383,11 +1382,9 @@ class EventBaseBackend(EventLowLevelBackend):
             row['kind'] = const.QuestionnaireUsages(row['kind'])
             if field := event.fields.get(row['field_id']):
                 # Deserialize the stored string into the datatype of the field if able.
-                row['default_value'] = validate_check_optional(
-                    FIELD_DATATYPE_VALIDATORS[field.kind],
-                    row['default_value'],
-                    ignore_warnings=True,
-                )[0]
+                row['default_value'] = cast_field_value(
+                    row['default_value'], field.kind
+                )
                 # Special case for datetimes: Convert them to the default timezone so
                 #  they can be submitted again even without the timezone.
                 #  This is required for use with 'datetime-local' inputs.
@@ -1651,6 +1648,12 @@ class EventBaseBackend(EventLowLevelBackend):
                         personas.add(e['persona_id'])
                     if e.get('submitted_by'):  # for log entries
                         personas.add(e['submitted_by'])
+            for e in ret[models.EventField.database_table].values():
+                if entries := e["entries"]:
+                    kind = const.FieldDatatypes(e["kind"])
+                    entries = cast_field_entries(entries, kind)
+                    entries = normalize_field_entries(entries, kind, coalesce="") or {}
+                    e["entries"] = list(map(list, entries.items()))
             ret['core.personas'] = list_to_dict(
                 self.sql_select(rs, "core.personas", PERSONA_EVENT_FIELDS, personas)
             )
@@ -1938,6 +1941,9 @@ class EventBaseBackend(EventLowLevelBackend):
             del field['field_name']
             del field['event_id']
             del field['id']
+            field["entries"] = normalize_field_entries(
+                field["entries"], field["kind"], coalesce=""
+            )
         # personas
         for reg_id, registration in ret['registrations'].items():
             persona = personas[registration['persona_id']]

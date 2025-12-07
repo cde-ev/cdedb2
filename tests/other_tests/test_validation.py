@@ -11,7 +11,8 @@ from typing import Any, Optional, TypeVar, Union, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import now
+import cdedb.models.event as models_event
+from cdedb.common import EPSILON, now
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.validation import validate
@@ -36,7 +37,6 @@ from cdedb.common.validation.types import (
 from cdedb.config import Config
 from cdedb.models.common import CdEDataclass
 from cdedb.models.core import GenesisCaseEvent
-from cdedb.models.event import PartGroup
 
 T = TypeVar('T')
 
@@ -44,6 +44,9 @@ INVAL = object()
 
 
 class TestValidationBase(unittest.TestCase):
+
+    maxDiff = None
+
     def do_validator_test(
         self,
         type_: type[T],
@@ -203,6 +206,17 @@ class TestValidation(TestValidationBase):
             (123, 123, None),
             (-123, -123, None),
         ))
+        self.do_validator_test(int, [
+            (0, 0, None),
+            ("1", 1, None),
+            (2., 2, None),
+            ("2.", None, ValueError),
+            (3 + EPSILON / 2, 3, None),
+            (str(3 + EPSILON / 2), None, ValueError),
+            (decimal.Decimal("4.0"), 4, None),
+            (str(decimal.Decimal("4.0")), None, ValueError),
+            (None, None, TypeError),
+        ])
 
     def test_float(self) -> None:
         self.do_validator_test(float, (
@@ -315,7 +329,34 @@ class TestValidation(TestValidationBase):
             ("False", False, None),
             (54, True, None),
             (None, None, TypeError),
+            ("None", True, None),
         ))
+        self.do_validator_test(cast(type[Any], bool | None), [
+            (True, True, None),
+            (False, False, None),
+            ("a string", True, None),
+            ("", False, None),
+            ("True", True, None),
+            ("False", False, None),
+            (54, True, None),
+            (None, None, None),
+            ("None", True, None),
+        ])
+        self.do_validator_test(
+            vtypes.ByFieldDatatype,
+            [
+                (True, True, None),
+                (False, False, None),
+                ("a string", True, None),
+                ("", None, None),
+                ("True", True, None),
+                ("False", False, None),
+                (54, True, None),
+                (None, None, None),
+                ("None", True, None),
+            ],
+            extraparams={"kind": const.FieldDatatypes.bool, "argname": "foo"},
+        )
 
     def test_realm(self) -> None:
         self.do_validator_test(Realm, (
@@ -779,7 +820,7 @@ class TestValidation(TestValidationBase):
 
         with self.assertRaises(validate.ValidationSummary):
             validate._optional_object_mapping_helper(
-                {-1: None}, PartGroup, "event_part", creation_only=False)
+                {-1: None}, models_event.PartGroup, "event_part", creation_only=False)
         with self.assertRaises(validate.ValidationSummary):
             validate._optional_object_mapping_helper(
                 {-1: None}, int, "int", creation_only=False)
@@ -796,3 +837,136 @@ class TestValidation(TestValidationBase):
                 'id': -1,
                 'iban': "DE75512108001245126199",
             }, "", creation=True, event=None)
+
+    def test_event_field(self) -> None:
+
+        self.do_validator_test(
+            models_event.EventField,
+            [
+                (
+                    {
+                        "field_name": "foo",
+                        "kind": const.FieldDatatypes.int.value,
+                        "association": const.FieldAssociations.registration.value,
+                        "entries": [],
+                    },
+                    {
+                        "field_name": "foo",
+                        "title": "foo",
+                        "kind": const.FieldDatatypes.int,
+                        "association": const.FieldAssociations.registration,
+                        "entries": None,
+                    },
+                    None,
+                ),
+                (
+                    {
+                        "field_name": "bar",
+                        "title": "bar",
+                        "kind": const.FieldDatatypes.int,
+                        "association": const.FieldAssociations.registration,
+                        "entries": None,
+                    },
+                    INVAL,
+                    None,
+                ),
+                (
+                    {
+                        "field_name": "baz",
+                        "title": "baz",
+                        "kind": const.FieldDatatypes.int,
+                        "association": const.FieldAssociations.registration,
+                        "entries": [
+                            (0, "Null"),
+                            ("1", "Eins"),
+                            (2., "Zwei"),
+                            (3 + EPSILON / 2, "Drei"),
+                            (decimal.Decimal("4.0"), "Vier"),
+                            (None, "Nix"),
+                        ],
+                    },
+                    {
+                        "field_name": "baz",
+                        "title": "baz",
+                        "kind": const.FieldDatatypes.int,
+                        "association": const.FieldAssociations.registration,
+                        "entries": {
+                            "0": "Null",
+                            "1": "Eins",
+                            "2": "Zwei",
+                            "3": "Drei",
+                            "4": "Vier",
+                            None: "Nix",
+                        }
+                    },
+                    None,
+                ),
+                (
+                    {
+                        "field_name": "baz",
+                        "title": "baz",
+                        "kind": const.FieldDatatypes.int,
+                        "association": const.FieldAssociations.registration,
+                        "entries": """
+                            0;Null
+                            1;Eins
+
+                            ;Nix
+                        """
+                    },
+                    {
+                        "field_name": "baz",
+                        "title": "baz",
+                        "kind": const.FieldDatatypes.int,
+                        "association": const.FieldAssociations.registration,
+                        "entries": {
+                            "0": "Null",
+                            "1": "Eins",
+                            None: "Nix",
+                        }
+                    },
+                    None,
+                ),
+                (
+                    {
+                        "field_name": "foo",
+                        "title": "foo",
+                        "kind": const.FieldDatatypes.date,
+                        "association": const.FieldAssociations.registration,
+                        "entries": {
+                            None: "Nix",
+                            now().date().isoformat(): "Heute",
+                        }},
+                    INVAL,
+                    None,
+                ),
+                (
+                    {
+                        "field_name": "foo",
+                        "title": "foo",
+                        "kind": const.FieldDatatypes.date,
+                        "association": const.FieldAssociations.registration,
+                        "entries": {
+                            None: "Nix",
+                            "": "Heute",
+                        }},
+                    None,
+                    ValueError("Duplicate value(s). (entries)"),
+                ),
+                (
+                    {
+                        "field_name": "foo",
+                        "title": "foo",
+                        "kind": const.FieldDatatypes.date,
+                        "association": const.FieldAssociations.registration,
+                        "entries": {
+                            "None": "Invalid",
+                        }},
+                    None,
+                    TypeError("Must be a datetime.date. (entries)"),
+                ),
+            ],
+            extraparams={
+                "event": None, "id_": None, "creation": True,
+            },
+        )

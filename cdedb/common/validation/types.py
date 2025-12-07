@@ -75,8 +75,7 @@ PDFFile = _NewType("PDFFile", bytes)
 # While not technically correct, this should always be true.
 JSON = _NewType("JSON", _CdEDBObject)
 
-# TODO this probably requires custom logic...
-ByFieldDatatype = _NewType("ByFieldDatatype", str)
+ByFieldDatatype = _NewType("ByFieldDatatype", object)
 
 # COMPLEX/DICTIONARY TYPES
 # TODO some could be subtypes (e.g. serializedeventupload -> serializedevent)
@@ -93,7 +92,6 @@ SepaMeta = _NewType("SepaMeta", _CdEDBObject)
 Institution = _NewType("Institution", _CdEDBObject)
 Event = _NewType("Event", _CdEDBObject)
 EventPart = _NewType("EventPart", _CdEDBObject)
-EventField = _NewType("EventField", _CdEDBObject)
 EventFeeCondition = _NewType("EventFeeCondition", str)
 Registration = _NewType("Registration", _CdEDBObject)
 RegistrationPart = _NewType("RegistrationPart", _CdEDBObject)

@@ -33,6 +33,7 @@ import functools
 import logging
 import sys
 from collections.abc import Collection
+from types import UnionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -51,7 +52,15 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
-from cdedb.common import CdEDBObject, User, cast_fields, n_, now
+from cdedb.common import (
+    CdEDBObject,
+    User,
+    cast_field_entries,
+    cast_fields,
+    n_,
+    normalize_field_entries,
+    now,
+)
 from cdedb.common.parse.util import Accounts
 from cdedb.common.privileges import EventPrivileges, is_privileged_event_user
 from cdedb.common.query import (
@@ -63,7 +72,12 @@ from cdedb.common.query import (
 )
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.filter import datetime_filter
-from cdedb.models.common import CdEDataclass, CdEDataclassMap, MetaFlag as Meta
+from cdedb.models.common import (
+    AbstractMetaData,
+    CdEDataclass,
+    CdEDataclassMap,
+    MetaFlag as Meta,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -93,6 +107,59 @@ class EventDataclass(CdEDataclass, abc.ABC):
             entity_key or cls.entity_key,
             tuple(cls.database_fields()),
         )
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class EventFieldSpec(AbstractMetaData):
+    """Stores the accepted associations and kinds for a special purpose event field."""
+
+    legal_associations: set[const.FieldAssociations]
+    legal_kinds: set[const.FieldDatatypes]
+
+    @classmethod
+    def get_specs(cls, entity: type[EventDataclass]) -> dict[str, Self]:
+        return {
+            field.name: spec
+            for field in entity.dataclass_fields()
+            if (spec := field.metadata.get(cls.get_metadata_name()))
+        }
+
+    @classmethod
+    def _get_spec(cls, entity: type[EventDataclass], field_name: str) -> Self:
+        field_name = f"{field_name}_field_id"
+        if field_name not in (specs := cls.get_specs(entity)):
+            raise KeyError(
+                f"Entity {entity.__qualname__!r} has no field {field_name!r}."
+            )
+        if spec := specs.get(field_name):
+            return spec
+        raise TypeError(
+            f"Field '{entity.__qualname__}.{field_name}' has no metadata {cls.get_metadata_name()!r}."
+        )
+
+    def _accepts_association(self, association: const.FieldAssociations) -> bool:
+        return association in self.legal_associations
+
+    @classmethod
+    def field_accepts_association(
+        cls, entity: type[EventDataclass], fn: str, association: const.FieldAssociations
+    ) -> bool:
+        return cls._get_spec(entity, fn)._accepts_association(association)
+
+    def _accepts_kind(self, kind: const.FieldDatatypes) -> bool:
+        return kind in self.legal_kinds
+
+    @classmethod
+    def field_accepts_kind(
+        cls, entity: type[EventDataclass], fn: str, kind: const.FieldDatatypes
+    ) -> bool:
+        return cls._get_spec(entity, fn)._accepts_kind(kind)
+
+    def accepts(self, event_field: "EventField") -> bool:
+        return (
+            self._accepts_association(event_field.association)
+            and self._accepts_kind(event_field.kind)
+        )  # fmt: skip
 
 
 #
@@ -152,8 +219,18 @@ class Event(EventDataclass):
     use_additional_questionnaire: bool
     notify_on_registration: const.NotifyOnRegistration
 
-    lodge_field_id: Optional[vtypes.ID]
-    reimbursement_iban_field_id: Optional[vtypes.ID]
+    lodge_field_id: Optional[vtypes.ID] = dataclasses.field(
+        metadata=EventFieldSpec(
+            legal_associations={const.FieldAssociations.registration},
+            legal_kinds={const.FieldDatatypes.str},
+        ).as_dict
+    )
+    reimbursement_iban_field_id: Optional[vtypes.ID] = dataclasses.field(
+        metadata=EventFieldSpec(
+            legal_associations={const.FieldAssociations.registration},
+            legal_kinds={const.FieldDatatypes.iban},
+        ).as_dict
+    )
 
     parts: CdEDataclassMap["EventPart"] = dataclasses.field(
         metadata=Meta.asdict_include.as_dict
@@ -353,8 +430,18 @@ class EventPart(EventDataclass):
     part_begin: datetime.date
     part_end: datetime.date
 
-    waitlist_field_id: Optional[vtypes.ID]
-    camping_mat_field_id: Optional[vtypes.ID]
+    waitlist_field_id: Optional[vtypes.ID] = dataclasses.field(
+        metadata=EventFieldSpec(
+            legal_associations={const.FieldAssociations.registration},
+            legal_kinds={const.FieldDatatypes.int},
+        ).as_dict
+    )
+    camping_mat_field_id: Optional[vtypes.ID] = dataclasses.field(
+        metadata=EventFieldSpec(
+            legal_associations={const.FieldAssociations.registration},
+            legal_kinds={const.FieldDatatypes.bool},
+        ).as_dict
+    )
 
     tracks: CdEDataclassMap["CourseTrack"] = dataclasses.field(
         default_factory=dict, metadata=Meta.asdict_include.as_dict
@@ -461,7 +548,12 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
         metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict
     )
 
-    course_room_field_id: Optional[vtypes.ID]
+    course_room_field_id: Optional[vtypes.ID] = dataclasses.field(
+        metadata=EventFieldSpec(
+            legal_associations={const.FieldAssociations.course},
+            legal_kinds={const.FieldDatatypes.str},
+        ).as_dict
+    )
 
     track_groups: CdEDataclassMap["TrackGroup"] = dataclasses.field(
         default_factory=dict, compare=False, repr=False
@@ -590,14 +682,14 @@ class EventField(EventDataclass):
 
     # Userfacing metadata. Purely for UI.
     title: str  # Userfacing label.
-    sort_group: Optional[str] = None  # Used to group multiple fields together.
+    sort_group: str | None = None  # Used to group multiple fields together.
     sortkey: int = 0  # Sortkey of the field (within it's group).
-    description: Optional[str] = None  # Shown as hovertext of the label.
+    description: str | None = None  # Shown as hovertext of the label.
 
     # Usage configuration, i.e. where is this field used.
     checkin: bool = False
 
-    entries: Optional[dict[str, str]] = None
+    entries: dict[Any, str] | None = None
 
     @property
     def request_name(self) -> str:
@@ -605,14 +697,47 @@ class EventField(EventDataclass):
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
-        data['entries'] = dict(data['entries'] or []) or None
+        data['entries'] = cast_field_entries(data['entries'], data['kind'])
         return super().from_database(data)
 
     def to_database(self) -> CdEDBObject:
         ret = super().to_database()
-        if ret["entries"]:
-            ret["entries"] = list(map(list, ret["entries"].items()))
+        ret['entries'] = normalize_field_entries(ret['entries'], self.kind)
         return ret
+
+    def as_dict(self) -> dict[str, Any]:
+        ret = super().as_dict()
+        ret['entries'] = normalize_field_entries(ret['entries'], self.kind)
+        return ret
+
+    @classmethod
+    def validation_fields(
+        cls, *, creation: bool
+    ) -> tuple[vtypes.MutableTypeMapping, vtypes.MutableTypeMapping]:
+        mandatory, optional = super().validation_fields(creation=creation)
+        if "entries" in optional:
+            # Need to postpone validation of entries until kind is known.
+            # Also need to account for this accepting string and sequence input.
+            optional["entries"] = Any
+        return mandatory, optional
+
+    @classmethod
+    def _get_validator(cls, kind: const.FieldDatatypes) -> type[Any] | UnionType:
+        return {
+            const.FieldDatatypes.str: str,
+            const.FieldDatatypes.bool: bool,
+            const.FieldDatatypes.int: int,
+            const.FieldDatatypes.float: float,
+            const.FieldDatatypes.date: datetime.date,
+            const.FieldDatatypes.datetime: datetime.datetime,
+            const.FieldDatatypes.non_negative_int: vtypes.NonNegativeInt,
+            const.FieldDatatypes.non_negative_float: vtypes.NonNegativeFloat,
+            const.FieldDatatypes.phone: vtypes.Phone,
+            const.FieldDatatypes.iban: vtypes.IBAN,
+        }[kind] | None
+
+    def get_validator(self) -> type[Any] | UnionType:
+        return self._get_validator(self.kind)
 
     def get_sortkey(self) -> Sortkey:
         return (

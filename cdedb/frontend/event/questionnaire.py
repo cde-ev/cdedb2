@@ -225,11 +225,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         if self.is_locked(rs.ambience['event']):
             rs.notify("error", n_("Event locked."))
             return self.redirect(rs, "event/registration_status")
-        params = self._questionnaire_params(rs, const.QuestionnaireUsages.additional)
-        data = {
-            key.removeprefix("fields."): val
-            for key, val in request_extractor(rs, params).items()
-        }
+        data = self.extract_questionnaire_fields(rs, const.QuestionnaireUsages.additional)
         if rs.has_validation_errors():
             return self.additional_questionnaire_form(rs, event_id, internal=True)
 

@@ -2083,103 +2083,128 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @event_keeper
     @as_users("annika")
     def test_registration_questionnaire(self) -> None:
-        self.traverse("Veranstaltungen", "Alle Veranstaltungen", "CdE-Party 2050")
-        # Create new boolean registration fields.
-        self.traverse("Datenfelder konfigurieren")
-        f = self.response.forms['fieldsummaryform']
-        f['create_-1'].checked = True
-        f['field_name_-1'] = "is_child"
-        f['kind_-1'] = const.FieldDatatypes.bool
-        f['association_-1'] = const.FieldAssociations.registration
-        self.submit(f)
-        f = self.response.forms['fieldsummaryform']
-        f['create_-1'].checked = True
-        f['field_name_-1'] = "plus_one"
-        f['kind_-1'] = const.FieldDatatypes.bool
-        f['association_-1'] = const.FieldAssociations.registration
-        self.submit(f)
-        f = self.response.forms['fieldsummaryform']
-        f['create_-1'].checked = True
-        f['field_name_-1'] = "partner"
-        f['kind_-1'] = const.FieldDatatypes.str
-        f['association_-1'] = const.FieldAssociations.registration
-        self.submit(f)
-        f = self.response.forms['fieldsummaryform']
-        f['create_-1'].checked = True
-        f['field_name_-1'] = "anzahl_kissen"
-        f['kind_-1'] = const.FieldDatatypes.int
-        f['association_-1'] = const.FieldAssociations.registration
-        self.submit(f)
-        f = self.response.forms['fieldsummaryform']
-        f['create_-1'].checked = True
-        f['field_name_-1'] = "eats_meats"
-        f['kind_-1'] = const.FieldDatatypes.str
-        f['association_-1'] = const.FieldAssociations.registration
-        f['entries_-1'] = """meat;Eat meat everyday!
-        half-vegetarian;Sometimes
-        vegetarian;Meat is Murder!
-        vegan;Milk is Murder too!"""
-        self.submit(f)
-        f = self.response.forms['fieldsummaryform']
-        f['create_-1'].checked = True
-        f['field_name_-1'] = "favorite_day"
-        f['kind_-1'] = const.FieldDatatypes.date
-        f['association_-1'] = const.FieldAssociations.registration
-        self.submit(f)
+        event_id = 2
+        # Create new boolean registration fields
+        event_update = {
+            "registration_start": now(),
+            "registration_soft_limit": None,
+            "registration_hard_limit": None,
+            "fields": {
+                -1: {
+                    "field_name": "is_child",
+                    "kind": const.FieldDatatypes.bool,
+                    "association": const.FieldAssociations.registration,
+                },
+                -2: {
+                    "field_name": "plus_one",
+                    "kind": const.FieldDatatypes.bool,
+                    "association": const.FieldAssociations.registration,
+                },
+                -3: {
+                    "field_name": "partner",
+                    "kind": const.FieldDatatypes.str,
+                    "association": const.FieldAssociations.registration,
+                },
+                -4: {
+                    "field_name": "anzahl_kissen",
+                    "kind": const.FieldDatatypes.int,
+                    "association": const.FieldAssociations.registration,
+                },
+                -5: {
+                    "field_name": "eats_meats",
+                    "kind": const.FieldDatatypes.str,
+                    "association": const.FieldAssociations.registration,
+                    "entries": """meat;Eat meat everyday!
+                        half-vegetarian;Sometimes
+                        vegetarian;Meat is Murder!
+                        vegan;Milk is Murder too!"""
+                },
+                -6: {
+                    "field_name": "favorite_day",
+                    "kind": const.FieldDatatypes.date,
+                    "association": const.FieldAssociations.registration,
+                },
+            }
+        }
+        self.event.set_event(self.key, event_id, event_update)
+        self.event.create_event_fee(
+            self.key,
+            event_id,
+            {
+                "title": "Is Child",
+                "amount": "-10",
+                "condition": "part.Party AND field.is_child",
+                "kind": const.EventFeeType.common,
+            },
+        )
+        self.event.create_event_fee(
+            self.key,
+            event_id,
+            {
+                "title": "Plus One",
+                "amount": "+14.99",
+                "condition": "part.Party AND field.plus_one",
+                "kind": const.EventFeeType.common,
+            },
+        )
+        self.event.set_questionnaire(
+            self.key,
+            event_id,
+            {
+                const.QuestionnaireUsages.registration: [
+                    {
+                        "title": "Ich bin unter 13 Jahre alt.",
+                        "field_id": 1001,
+                        "default_value": None,
+                        "input_size": None,
+                        "info": None,
+                        "readonly": False,
+                    },
+                    {
+                        "title": "Ich bringe noch jemanden mit.",
+                        "field_id": 1002,
+                        "default_value": None,
+                        "input_size": None,
+                        "info": None,
+                        "readonly": False,
+                    },
+                    {
+                        "title": "Name des Partners.",
+                        "field_id": 1003,
+                        "default_value": None,
+                        "input_size": None,
+                        "info": None,
+                        "readonly": False,
+                    },
+                    {
+                        "title": "Anzahl an Kissen",
+                        "field_id": 1004,
+                        "default_value": None,
+                        "input_size": None,
+                        "info": None,
+                        "readonly": False,
+                    },
+                    {
+                        "title": "Essgewohnheiten.",
+                        "field_id": 1005,
+                        "default_value": None,
+                        "input_size": None,
+                        "info": None,
+                        "readonly": False,
+                    },
+                    {
+                        "title": "Dein Lieblingstag",
+                        "field_id": 1006,
+                        "default_value": None,
+                        "input_size": None,
+                        "info": None,
+                        "readonly": False,
+                    },
+                ]
+            }
+        )
 
-        self.traverse("Teilnahmebeiträge", "Beitrag hinzufügen")
-        f = self.response.forms['configureeventfeeform']
-        f['title'] = "Is Child"
-        f['amount'] = "-10"
-        f['condition'] = "part.Party AND field.is_child"
-        self.submit(f)
-        self.traverse("Beitrag hinzufügen")
-        f = self.response.forms['configureeventfeeform']
-        f['title'] = "Plus One"
-        f['amount'] = "+14.99"
-        f['condition'] = "part.Party AND field.plus_one"
-        self.submit(f)
-
-        self.traverse("Anmeldung konfigurieren")
-        f = self.response.forms['configurequestionnaireform']
-        f['create_-1'].checked = True
-        f['title_-1'] = "Ich bin unter 13 Jahre alt."
-        f['field_id_-1'] = 1001
-        self.submit(f)
-        f = self.response.forms['configurequestionnaireform']
-        f['create_-1'].checked = True
-        f['title_-1'] = "Ich bringe noch jemanden mit."
-        f['field_id_-1'] = 1002
-        self.submit(f)
-        f = self.response.forms['configurequestionnaireform']
-        f['create_-1'].checked = True
-        f['title_-1'] = "Name des Partners"
-        f['field_id_-1'] = 1003
-        self.submit(f)
-        f = self.response.forms['configurequestionnaireform']
-        f['create_-1'].checked = True
-        f['title_-1'] = "Anzahl an Kissen"
-        f['field_id_-1'] = 1004
-        self.submit(f)
-        f = self.response.forms['configurequestionnaireform']
-        f['create_-1'].checked = True
-        f['title_-1'] = "Essgewohnheiten"
-        f['field_id_-1'] = 1005
-        self.submit(f)
-        f = self.response.forms['configurequestionnaireform']
-        f['create_-1'].checked = True
-        f['title_-1'] = "Dein Lieblingstag"
-        f['field_id_-1'] = 1006
-        self.submit(f)
-
-        self.traverse("Konfiguration")
-        f = self.response.forms['changeeventform']
-        f['registration_start'] = now().isoformat()
-        f['registration_soft_limit'] = ""
-        f['registration_hard_limit'] = ""
-        self.submit(f)
-
-        self.traverse("Anmelden")
+        self.get(f"/event/event/{event_id}/register")
         self.assertTitle("Anmeldung für CdE-Party 2050")
         f = self.response.forms['registerform']
         self.assertPresence("Ich bin unter 13 Jahre alt.",
@@ -2197,9 +2222,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f, check_notification=False)
         f = self.response.forms['registerform']
         self.assertValidationError(
-            'fields.anzahl_kissen', "Ungültige Eingabe für eine Ganzzahl.")
+            'fields.anzahl_kissen', "Darf nicht leer sein.")
         f['fields.anzahl_kissen'] = 3
-        self.assertValidationError('fields.favorite_day', "Kein Datum gefunden.")
+        self.assertValidationError('fields.favorite_day', "Darf nicht leer sein.")
         f['fields.favorite_day'] = now().date().isoformat()
         self.submit(f)
         self.assertTitle("Deine Anmeldung (CdE-Party 2050)")
@@ -3308,6 +3333,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['enable_fields.transportation'].checked = True
         f['fields.transportation'] = "pedes"
         f['fields.may_reserve'] = True
+        f['enable_fields.anzahl_GROSSBUCHSTABEN'] = False
+        f['fields.anzahl_GROSSBUCHSTABEN'] = 1024
         self.submit(f)
 
         log_expectation = [
@@ -3339,25 +3366,22 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertTrue(f['enable_fields.may_reserve'].checked)
         self.assertEqual("pedes", f['fields.transportation'].value)
         self.assertTrue(f['fields.may_reserve'].checked)
-        self.traverse('Anmeldungen', 'Alle Anmeldungen',
-                      {'href': '/event/event/1/registration/2/show'},
-                      {'href': '/event/event/1/registration/2/change'})
+        self.get('/event/event/1/registration/2/change')
         f = self.response.forms['changeregistrationform']
         self.assertEqual(
             str(const.RegistrationPartStati.guest), f['part2.status'].value)
         self.assertEqual(
             str(const.RegistrationPartStati.cancelled), f['part3.status'].value)
         self.assertEqual("pedes", f['fields.transportation'].value)
-        self.traverse({'href': '/event/event/1/registration/query'},
-                      {'description': 'Alle Anmeldungen'},
-                      {'href': '/event/event/1/registration/3/show'},
-                      {'href': '/event/event/1/registration/3/change'})
+        self.assertEqual("", f["fields.anzahl_GROSSBUCHSTABEN"].value)
+        self.get('/event/event/1/registration/3/change')
         f = self.response.forms['changeregistrationform']
         self.assertEqual(
             str(const.RegistrationPartStati.participant), f['part2.status'].value)
         self.assertEqual(
             str(const.RegistrationPartStati.cancelled), f['part3.status'].value)
         self.assertEqual("pedes", f['fields.transportation'].value)
+        self.assertEqual("", f["fields.anzahl_GROSSBUCHSTABEN"].value)
 
         # Now, check with change_note
         self.get("/event/event/1/registration/multiedit?reg_ids=2,3")
@@ -7517,26 +7541,32 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @event_keeper
     @as_users("anton")
     def test_registration_strict_bool(self) -> None:
-        self.traverse("Veranstaltungen", "CdE-Party", "Konfiguration")
-        f = self.response.forms['changeeventform']
-        f['registration_start'] = now()
-        self.submit(f)
-        self.traverse("Datenfelder konfigurieren")
-        f = self.response.forms['fieldsummaryform']
-        f['create_-1'] = True
-        f['kind_-1'] = const.FieldDatatypes.bool
-        f['association_-1'] = const.FieldAssociations.registration
-        f['title_-1'] = f['field_name_-1'] = "test"
-        f['entries_-1'] = ""
-        self.submit(f)
-        f = self.response.forms['fieldsummaryform']
-        f['create_-1'] = True
-        f['kind_-1'] = const.FieldDatatypes.bool
-        f['association_-1'] = const.FieldAssociations.registration
-        f['title_-1'] = f['field_name_-1'] = "test2"
-        f['entries_-1'] = "1;Ja\n0;Nein"
-        self.submit(f)
-        self.traverse("Anmeldung konfigurieren")
+        event_update = {
+            "registration_start": now(),
+            "fields": {
+                -1: {
+                    "kind": const.FieldDatatypes.bool,
+                    "association": const.FieldAssociations.registration,
+                    "field_name": "test1",
+                },
+                -2: {
+                    "kind": const.FieldDatatypes.bool,
+                    "association": const.FieldAssociations.registration,
+                    "field_name": "test2",
+                    "entries": {
+                        True: "Ja",
+                        False: "Nein",
+                    },
+                },
+                -3: {
+                    "kind": const.FieldDatatypes.int,
+                    "association": const.FieldAssociations.registration,
+                    "field_name": "test3",
+                },
+            }
+        }
+        self.event.set_event(self.key, 2, event_update)
+        self.traverse("Veranstaltungen", "CdE-Party", "Anmeldung konfigurieren")
         f = self.response.forms['configurequestionnaireform']
         f['create_-1'] = True
         f['field_id_-1'] = 1001
@@ -7545,13 +7575,20 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['create_-1'] = True
         f['field_id_-1'] = 1002
         self.submit(f)
+        f = self.response.forms['configurequestionnaireform']
+        f['create_-1'] = True
+        f['field_id_-1'] = 1003
+        self.submit(f)
         self.traverse("Anmelden")
         f = self.response.forms['registerform']
-        f['fields.test'] = ""
-        f['fields.test2'] = ""
+        f["fields.test1"] = ""
+        f["fields.test2"] = ""
+        f["fields.test3"] = ""
         self.submit(f, check_notification=False)
         self.assertValidationError('fields.test2', "Darf nicht leer sein.")
-        f['fields.test2'] = False
+        self.assertValidationError('fields.test3', "Darf nicht leer sein.")
+        f["fields.test2"] = False
+        f["fields.test3"] = 0
         self.submit(f)
 
     @event_keeper

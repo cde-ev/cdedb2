@@ -23,7 +23,6 @@
             callback : function () {},
             delButtonTitle: "delete row",
         }, options || {});
-        var unique_counter = 0;
 
 
         /**
@@ -40,9 +39,8 @@
                                                  'aria-label': settings.delButtonTitle,
                                                  'aria-pressed': 'false',
                                                  'class': 'btn btn-danger btn-sm',
-                                                 'id': 'dynamicrow-delete-button-' + unique_counter})
+                                                 'id': 'dynamicrow-delete-button-' + $row.data("drow-id"),})
                     .append($('<span></span>', {'class': 'far fa-trash-alt'}));
-            unique_counter += 1;
 
             if (newrow) {
                 $deleteButton.click(function() {
@@ -118,6 +116,10 @@
             addDeleteButton($row, true);
             $row.css('display', ''); /* instead of show() to preserve display attribute and be faster */
             $prototype.before($row);
+            // Only adjusting the data does not affect the DOM and therefore further prototype rows.
+            // Only adjusting the atts does not affect the jQuery object for further usage.
+            $prototype.data('drow-id', $prototype.data("drow-id") - 1);
+            $prototype.attr('data-drow-id', $prototype.data("drow-id") - 1);
             $row.find('.drow-input').first().focus();
             settings.callback.call($row);
             obj.refreshInputNames();

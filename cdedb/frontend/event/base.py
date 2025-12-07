@@ -43,11 +43,7 @@ from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import EntitySorter, KeyFunction, Sortkey, xsorted
-from cdedb.common.validation.validate import (
-    FIELD_DATATYPE_VALIDATORS,
-    PERSONA_FULL_CREATION,
-    filter_none,
-)
+from cdedb.common.validation.validate import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import enum_entries_filter, keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend,
@@ -99,18 +95,22 @@ def event_associated_fields_extractor(
         rs: RequestState,
         event: models.Event,
         association: const.FieldAssociations,
-        field_id: int | None = None,
+        field_ids: set[int] | None = None,
+        *,
+        filter_params: Callable[[vtypes.TypeMapping], vtypes.TypeMapping] | None = None,
         suffix: str = "",
 ) -> CdEDBObject:
     """Given an event, extract inputs for all event fields of the given association."""
     fields = [
         field for field in event.fields.values()
-        if field.association == association and (field_id is None or field.id == field_id)
+        if field.association == association and (field_ids is None or field.id in field_ids)
     ]
     field_params: vtypes.TypeMapping = {
-        f"{field.request_name}{suffix}": FIELD_DATATYPE_VALIDATORS[field.kind] | None
+        f"{field.request_name}{suffix}": field.get_validator()
         for field in fields
     }
+    if filter_params:
+        field_params = filter_params(field_params)
     raw_fields = request_extractor(rs, field_params)
     return {
         field.field_name: raw_fields.get(f"{field.request_name}{suffix}")
@@ -128,7 +128,7 @@ def event_associated_fields_multi_extractor(
     return {
         entity_id:
             event_associated_fields_extractor(
-                rs, event, association, field_id, suffix=str(entity_id)
+                rs, event, association, {field_id} if field_id else None, suffix=str(entity_id)
             )
         for entity_id in entity_ids
     }
@@ -512,25 +512,16 @@ class EventBaseFrontend(AbstractUserFrontend):
                 return self.redirect(rs, "event/show_event")
         return self.render(rs, "base/participant_info")
 
-    def _questionnaire_params(self, rs: RequestState, kind: const.QuestionnaireUsages,
-                              ) -> vtypes.TypeMapping:
-        """Helper to construct a TypeMapping to extract questionnaire data."""
-        questionnaire = unwrap(self.eventproxy.get_questionnaire(
-            rs, rs.ambience['event'].id, kinds=(kind,)))
-
-        def get_validator(row: CdEDBObject) -> tuple[str, type[Any]]:
-            field = rs.ambience['event'].fields[row['field_id']]
-            type_ = FIELD_DATATYPE_VALIDATORS[field.kind]
-            if kind == const.QuestionnaireUsages.additional:
-                type_ = Optional[type_]  # type: ignore[assignment]
-            elif kind == const.QuestionnaireUsages.registration:
-                if field.kind == const.FieldDatatypes.str:
-                    type_ = Optional[type_]  # type: ignore[assignment]
-            return (f"fields.{field.field_name}", type_)
-
-        return dict(
-            get_validator(entry) for entry in questionnaire
-            if entry['field_id'] and not entry['readonly']
+    def extract_questionnaire_fields(
+            self, rs: RequestState, kind: const.QuestionnaireUsages
+    ) -> CdEDBObject:
+        """Extract questionnaire inputs."""
+        questionnaire = unwrap(
+            self.eventproxy.get_questionnaire(rs, rs.ambience["event"].id, kinds=[kind])
+        )
+        field_ids = {entry["field_id"] for entry in questionnaire if entry["field_id"] and not entry["readonly"]}
+        return event_associated_fields_extractor(
+            rs, rs.ambience["event"], const.FieldAssociations.registration, field_ids
         )
 
     @staticmethod

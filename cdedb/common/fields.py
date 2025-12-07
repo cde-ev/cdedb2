@@ -2,8 +2,6 @@
 
 """SQL field names of all entities."""
 
-import cdedb.database.constants as const
-
 # A set of roles a user may have.
 Role = str
 
@@ -348,29 +346,3 @@ LASTSCHRIFT_TRANSACTION_FIELDS = (
     "processed_at",
     "tally",
 )
-
-#: Datatype and Association of special purpose event fields
-EVENT_FIELD_SPEC: dict[
-    str, tuple[set[const.FieldDatatypes], set[const.FieldAssociations]]
-] = {
-    'lodge': (
-        {const.FieldDatatypes.str},
-        {const.FieldAssociations.registration},
-    ),
-    'reimbursement': (
-        {const.FieldDatatypes.iban},
-        {const.FieldAssociations.registration},
-    ),
-    'camping_mat': (
-        {const.FieldDatatypes.bool},
-        {const.FieldAssociations.registration},
-    ),
-    'course_room': (
-        {const.FieldDatatypes.str},
-        {const.FieldAssociations.course},
-    ),
-    'waitlist': (
-        {const.FieldDatatypes.int},
-        {const.FieldAssociations.registration},
-    ),
-}

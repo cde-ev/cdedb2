@@ -28,7 +28,6 @@ from cdedb.common import (
     now,
     unwrap,
 )
-from cdedb.common.fields import EVENT_FIELD_SPEC
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
 from cdedb.common.privileges import EventPrivileges
@@ -172,17 +171,9 @@ class EventEventMixin(EventBaseFrontend):
         """Render form."""
         merge_dicts(rs.values, rs.ambience['event'].as_dict())
 
-        sorted_fields = xsorted(rs.ambience['event'].fields.values())
-        lodge_fields = [
-            (field.id, field.field_name) for field in sorted_fields
-            if field.association == const.FieldAssociations.registration
-            and field.kind == const.FieldDatatypes.str
-        ]
-        reimbursement_fields = [
-            (field.id, field.field_name) for field in sorted_fields
-            if field.association == const.FieldAssociations.registration
-            and field.kind == const.FieldDatatypes.iban
-        ]
+        fields = self._valid_event_part_fields(
+            models.Event, fields=rs.ambience['event'].fields
+        )
         accounts = [
             (str(account), f"{iban_filter(account.value)} ({account.get_bank()})")
             for account in Accounts.get_event_accounts()
@@ -191,8 +182,7 @@ class EventEventMixin(EventBaseFrontend):
             rs, "event/change_event",
             {
                 'accounts': accounts,
-                'lodge_fields': lodge_fields,
-                'reimbursement_fields': reimbursement_fields,
+                'fields': fields,
             },
             models.Event.mandatory_form_fields(creation=False),
         )
@@ -624,18 +614,16 @@ class EventEventMixin(EventBaseFrontend):
 
     @staticmethod
     def _valid_event_part_fields(
-            fields: models.CdEDataclassMap[models.EventField],
-    ) -> dict[str, list[tuple[vtypes.ID, vtypes.RestrictiveIdentifier]]]:
-        sorted_fields = xsorted(fields.values())
-        fields = {}
-        for field in ('waitlist', 'camping_mat', 'course_room'):
-            legal_datatypes, legal_assocs = EVENT_FIELD_SPEC[field]
-            fields[f"{field}_field_id"] = [
-                (field.id, field.field_name) for field in sorted_fields
-                if field.association in legal_assocs
-                   and field.kind in legal_datatypes
-            ]
-        return fields
+        *entities: type[models.EventDataclass],
+        fields: models.CdEDataclassMap[models.EventField],
+    ) -> dict[str, list[models.EventField]]:
+        ret = {}
+        for entity in entities:
+            for field_name, field_spec in models.EventFieldSpec.get_specs(entity).items():
+                ret[field_name] = [
+                    field for field in fields.values() if field_spec.accepts(field)
+                ]
+        return ret
 
     @access("event")
     @event_guard(EventPrivileges.basic_write)
@@ -647,7 +635,9 @@ class EventEventMixin(EventBaseFrontend):
         if self.eventproxy.has_registrations(rs, event_id):
             rs.notify("error", n_("Registrations exist, no part creation possible."))
             return self.redirect(rs, "event/show_event")
-        fields = self._valid_event_part_fields(rs.ambience['event'].fields)
+        fields = self._valid_event_part_fields(
+            models.EventPart, models.CourseTrack, fields=rs.ambience['event'].fields
+        )
         mandatory_fields = models.EventPart.mandatory_form_fields(creation=True)
         return self.render(
             rs, "event/add_part",
@@ -723,7 +713,9 @@ class EventEventMixin(EventBaseFrontend):
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
         referenced_tracks = self._deletion_blocked_tracks(rs, event_id)
 
-        fields = self._valid_event_part_fields(rs.ambience['event'].fields)
+        fields = self._valid_event_part_fields(
+            models.EventPart, models.CourseTrack, fields=rs.ambience['event'].fields
+        )
         mandatory_fields = (models.EventPart.mandatory_form_fields(creation=False)
                             | models.CourseTrack.mandatory_form_fields(creation=False))
         return self.render(

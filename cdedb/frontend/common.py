@@ -3317,7 +3317,7 @@ def process_dynamic_input(
             if type_ not in {
                 vtypes.BallotCandidate,
                 models_event.PartGroup,
-                vtypes.EventField,
+                models_event.EventField,
                 models_event.CourseTrack,
                 models_event.LodgementGroup,
             }:
