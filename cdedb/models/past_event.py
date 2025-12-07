@@ -129,6 +129,16 @@ class PastEventParticipant(CdEDataclass):
         init=False, compare=False, repr=False, default_factory=list
     )
 
+    @property
+    def status(self) -> list[const.PastOrgaKind | const.PastMusicKind]:
+        """List of all stati which are not 'none'."""
+        ret = []
+        if self.orga_status:
+            ret.append(self.orga_status)
+        if self.music_status:
+            ret.append(self.music_status)
+        return ret
+
     def get_sortkey(self) -> Sortkey:
         return (
             self.persona["family_name"],

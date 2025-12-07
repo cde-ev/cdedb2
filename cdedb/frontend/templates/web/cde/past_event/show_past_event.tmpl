@@ -155,11 +155,8 @@
                         {% endfor -%}
                         )
                     {% endif %}
-                    {% if participant.orga_status %}
-                        ({{ gettext(participant.orga_status|string) }})
-                    {% endif %}
-                    {% if participant.music_status %}
-                        ({{ gettext(participant.music_status|string) }})
+                    {% if participant.status %}
+                        ({%- for status in participant.status %}{{ gettext(status|string) }}{% if not loop.last %}, {% endif %}{% endfor %})
                     {% endif %}
 
                     {% if "past_event" in user.admin_views %}

@@ -623,8 +623,8 @@
                                                    readonly='member' not in user.roles and 'cde_admin' not in user.roles) -}}
                         </td>
                         <td>
-                            {% if event_participation.orga_status %}
-                                ({{ gettext(event_participation.orga_status|string) }}) <br />
+                            {% if event_participation.status %}
+                                {%- for status in event_participation.status %}{{ gettext(status|string) }}{% if not loop.last %}, {% endif %}{% endfor %} <br />
                             {% endif %}
                             {% for pcourse_assignment in event_participation.course_assignments %}{# already sorted #}
                                 {%- with pcourse = pcourse_assignment.pcourse -%}
