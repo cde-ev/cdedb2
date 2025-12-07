@@ -15,8 +15,8 @@ from cdedb.script import Script
 MAX_EVENT_ID = 66
 
 s = Script(dbuser="cdb_member")
-event_backend: EventBackend = s.make_backend("event")
-core_backend: CoreBackend = s.make_backend("core")
+event_backend = s.make_event_backend(proxy=True)
+core_backend = s.make_core_backend(proxy=True)
 
 rs = s.rs()
 

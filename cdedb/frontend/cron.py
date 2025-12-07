@@ -33,6 +33,7 @@ from cdedb.frontend.paths import CDEDB_PATHS
 
 class CronFrontend(BaseApp):
     """This takes care of actually doing the periodic work."""
+
     realm = "cron"
 
     def __init__(self) -> None:
@@ -41,14 +42,17 @@ class CronFrontend(BaseApp):
         self.urlmap = CDEDB_PATHS
         secrets = SecretsConfig()
         self.connpool = connection_pool_factory(
-            self.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
-            secrets, self.conf["DB_HOST"], self.conf["DB_PORT"])
+            self.conf["CDB_DATABASE_NAME"],
+            DATABASE_ROLES,
+            secrets,
+            self.conf["DB_HOST"],
+            self.conf["DB_PORT"],
+        )
         self.translations = setup_translations(self.conf)
         if pathlib.Path("/PRODUCTIONVM").is_file():  # pragma: no cover
             # Sanity checks for the live instance
             if self.conf["CDEDB_DEV"] or self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
-                raise RuntimeError(
-                    n_("Refusing to start in debug/offline mode."))
+                raise RuntimeError(n_("Refusing to start in debug/offline mode."))
 
         self.core = CoreFrontend()
         self.cde = CdEFrontend()
@@ -60,13 +64,21 @@ class CronFrontend(BaseApp):
         roles = ALL_ROLES
         user = User(roles=roles, persona_id=None)
         lang = "en"
-        urls = self.urlmap.bind("db.cde-ev.de", script_name="/db/",
-                                url_scheme="https")
+        urls = self.urlmap.bind("db.cde-ev.de", script_name="/db/", url_scheme="https")
         # This is not a real request, so we can go without some of these.
         rs = RequestState(
-            sessionkey=None, apitoken=None, user=user, request=None,  # type: ignore[arg-type]
-            notifications=[], mapadapter=urls, requestargs={}, errors=[],
-            values=None, begin=None, lang=lang, translations=self.translations,
+            sessionkey=None,
+            apitoken=None,
+            user=user,
+            request=None,  # type: ignore[arg-type]
+            notifications=[],
+            mapadapter=urls,
+            requestargs={},
+            errors=[],
+            values=None,
+            begin=None,
+            lang=lang,
+            translations=self.translations,
         )
         rs._conn = self.connpool['cdb_admin']
         return rs
@@ -82,22 +94,27 @@ class CronFrontend(BaseApp):
                 'tstamp': 0,
                 'period': -1,
             }
-        if (not self.conf["CDEDB_DEV"]
-                and base_state['tstamp'] + 10*60 > now().timestamp()):  # pragma: no cover
-            print(f"Last execution at {datetime.fromtimestamp(base_state['tstamp'])}"
-                  f" skipping this round.")
+        if (
+            not self.conf["CDEDB_DEV"]
+            and base_state['tstamp'] + 10 * 60 > now().timestamp()
+        ):  # pragma: no cover
+            print(
+                f"Last execution at {datetime.fromtimestamp(base_state['tstamp'])}"
+                f" skipping this round."
+            )
             return False
         base_state['tstamp'] = now().timestamp()
         base_state['period'] += 1
 
         try:
-            for frontend in (self.core, self.cde, self.event, self.assembly,
-                             self.ml):
+            for frontend in (self.core, self.cde, self.event, self.assembly, self.ml):
                 for hook in self.find_periodics(frontend):
                     if jobs and hook.cron['name'] not in jobs:
                         continue
-                    if (base_state['period'] % hook.cron['period'] == 0
-                            or self.conf["CDEDB_DEV"]):
+                    if (
+                        base_state['period'] % hook.cron['period'] == 0
+                        or self.conf["CDEDB_DEV"]
+                    ):
                         rs.begin = now()
                         state = self.core.get_cron_store(rs, hook.cron['name'])
                         self.logger.info(f"Starting execution of {hook.cron['name']}:")
@@ -107,7 +124,8 @@ class CronFrontend(BaseApp):
                         except Exception:
                             self.logger.error(
                                 f">>>\n>>>\n>>>\n>>> Exception while executing"
-                                f" {hook.cron['name']} <<<\n<<<\n<<<\n<<<")
+                                f" {hook.cron['name']} <<<\n<<<\n<<<\n<<<"
+                            )
                             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
                             self.logger.error("SECOND TRY CGITB")
                             self.cgitb_log()
@@ -119,7 +137,8 @@ class CronFrontend(BaseApp):
                             time_taken = now() - rs.begin
                             self.logger.info(
                                 f"Finished execution of {hook.cron['name']}."
-                                f" Time taken: {time_taken}.")
+                                f" Time taken: {time_taken}."
+                            )
         finally:
             self.core.set_cron_store(rs, "_base", base_state)
         return True

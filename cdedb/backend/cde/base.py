@@ -160,12 +160,17 @@ class CdEBaseBackend(AbstractBackend):
             with Atomizer(rs):
                 result = models_finance.MoneyTransfersResult()
                 persona_ids = {t['persona_id'] for t in transfers}
-                personas = self.core.get_total_personas(rs, persona_ids)
+                event_personas = self.core.get_event_users(rs, persona_ids)
+                cde_personas = self.core.get_cde_users(
+                    rs, {p["id"] for p in event_personas.values() if p["is_cde_realm"]}
+                )
                 for index, transfer in enumerate(transfers):
-                    persona = personas[transfer['persona_id']]
                     amount, date = transfer['amount'], transfer['date']
                     if transfer['registration_id'] is None:
-                        new_balance = persona['balance'] + amount
+                        if transfer["persona_id"] not in cde_personas:
+                            raise ValueError(n_("Persona is not in CdE realm."))
+                        cde_persona = cde_personas[transfer["persona_id"]]
+                        new_balance = cde_persona['balance'] + amount
                         change_note = changelog_note_template.format(
                             amount=money_filter(amount),
                             new_balance=money_filter(new_balance),
@@ -175,7 +180,7 @@ class CdEBaseBackend(AbstractBackend):
                         # Increase balance.
                         self.core.change_persona_balance(
                             rs,
-                            persona['id'],
+                            cde_persona['id'],
                             new_balance,
                             const.FinanceLogCodes.increase_balance,
                             change_note=change_note,
@@ -185,35 +190,37 @@ class CdEBaseBackend(AbstractBackend):
                         # Grant membership if necessary.
                         if (
                             new_balance >= self.conf["MEMBERSHIP_FEE"]
-                            and not persona['is_member']
+                            and not cde_persona['is_member']
                         ):
                             code = self.core.change_membership_easy_mode(
-                                rs, persona['id'], is_member=True
+                                rs, cde_persona['id'], is_member=True
                             )
                             result.new_members += bool(code)
-                            persona['is_member'] = bool(code)
+                            cde_persona['is_member'] = bool(code)
+                            event_personas[cde_persona["id"]]["is_member"] = bool(code)
 
                         # Add to tally.
                         result.membership_fees.append(
                             models_finance.MoneyTransfer(
-                                persona=persona, amount=amount, date=date
+                                persona=cde_persona, amount=amount, date=date
                             )
                         )
 
                         # Remember the changed balance in case of multiple transfers.
-                        persona['balance'] = new_balance
+                        cde_persona['balance'] = new_balance
                     else:
+                        event_persona = event_personas[transfer['persona_id']]
                         registration = self.event.book_registration_payment(
                             rs,
                             registration_id=transfer['registration_id'],
                             amount=amount,
                             date=date,
                             by_orga=False,
-                            is_member=persona['is_member'],
+                            is_member=event_persona['is_member'],
                         )
                         event_id = registration['event_id']
                         ret = models_finance.MoneyTransfer(
-                            persona=persona,
+                            persona=event_persona,
                             amount=amount,
                             date=date,
                             registration=registration,

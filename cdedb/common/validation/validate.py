@@ -52,6 +52,7 @@ f.e. ``check_validation`` registers all errors in the RequestState object.
 """
 
 import base64
+import contextlib
 import copy
 import csv
 import datetime
@@ -70,13 +71,14 @@ import string
 import typing
 import unicodedata
 import urllib.parse
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from types import TracebackType, UnionType
 from typing import (
     Any,
     Callable,
     Optional,
     Protocol,
+    Self,
     TypeVar,
     Union,
     cast,
@@ -116,12 +118,13 @@ from cdedb.common import (
     compute_checkdigit,
     get_mandatory_type,
     is_optional_type,
+    normalize_field_entries,
+    normalize_phone,
     now,
     parse_date,
     parse_datetime,
 )
 from cdedb.common.exceptions import ValidationWarning
-from cdedb.common.fields import EVENT_FIELD_SPEC
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query import (
@@ -186,8 +189,37 @@ class ValidationSummary(ValueError, Sequence[Exception]):
     def append(self, error: Exception) -> None:
         self.args += (error,)
 
-    def __enter__(self) -> None:
-        pass
+    @contextlib.contextmanager
+    def callback(
+        self, callback: Callable[[Iterable[Exception]], Iterable[Exception]]
+    ) -> Iterator[Self]:
+        """
+        Context manager that allows modifying the collected errors before appending them.
+        """
+        with self.__class__() as tmp:
+            yield tmp
+        self.extend(callback(tmp))
+
+    @contextlib.contextmanager
+    def as_argname(self, argname: str, replace: bool = False) -> Iterator[Self]:
+        """
+        Context manager that collects all validation errors raised inside under the given argname.
+
+        :param replace: If True, do not append the originally raised errors.
+            If False, the originally raised errors are also collected.
+        """
+
+        def callback(errors: Iterable[Exception]) -> list[Exception]:
+            ret = [exc.__class__(argname, *exc.args[1:]) for exc in errors]
+            if not replace:
+                ret.extend(exc for exc in errors if exc.args[0] != argname)
+            return ret
+
+        with self.callback(callback):
+            yield self
+
+    def __enter__(self) -> Self:
+        return self
 
     def __exit__(
         self,
@@ -280,7 +312,9 @@ def validate_assert(
         return _ALL_TYPED[type_](value, ignore_warnings=ignore_warnings, **kwargs)  # type: ignore[return-value]
     except ValidationSummary as errs:
         old_format = [(e.args[0], e.__class__(*e.args[1:])) for e in errs]
-        _LOGGER.debug(f"{old_format} for '{str(type_)}' with input {value}, {kwargs}.")
+        _LOGGER.debug(
+            f"{old_format} for '{str(type_)}' with input {value!r}, {kwargs}."
+        )
         e = errs[0]
         e.args = (f"{e.args[1]} ({e.args[0]})",) + e.args[2:]
         raise e from errs
@@ -358,7 +392,9 @@ def validate_check(
             )
             for e in errs
         ]
-        _LOGGER.debug(f"{old_format} for '{str(type_)}' with input {value}, {kwargs}.")
+        _LOGGER.debug(
+            f"{old_format} for '{str(type_)}' with input {value!r}, {kwargs}."
+        )
         return None, old_format
 
 
@@ -673,7 +709,7 @@ def _int(val: Any, argname: Optional[str] = None, **kwargs: Any) -> int:
             raise ValidationSummary(
                 ValueError(argname, n_("Invalid input for integer."))
             ) from e
-    elif isinstance(val, float):
+    elif isinstance(val, (float, decimal.Decimal)):
         if not math.isclose(val, int(val), abs_tol=EPSILON):
             raise ValidationSummary(ValueError(argname, n_("Precision loss.")))
         val = int(val)
@@ -714,14 +750,6 @@ def _negative_int(
     if val >= 0:
         raise ValidationSummary(ValueError(argname, n_("Must be negative.")))
     return NegativeInt(val)
-
-
-@_add_typed_validator
-def _non_zero_int(val: Any, argname: Optional[str] = None, **kwargs: Any) -> NonZeroInt:
-    val = _int(val, argname, **kwargs)
-    if val == 0:
-        raise ValidationSummary(ValueError(argname, n_("Must not be zero.")))
-    return NonZeroInt(val)
 
 
 @_add_typed_validator
@@ -815,15 +843,6 @@ def _non_negative_decimal(
     if val < 0:
         raise ValidationSummary(ValueError(argname, n_("Transfer saldo is negative.")))
     return NonNegativeDecimal(val)
-
-
-@_add_typed_validator
-def _non_negative_large_decimal(
-    val: Any, argname: Optional[str] = None, **kwargs: Any
-) -> NonNegativeLargeDecimal:
-    return NonNegativeLargeDecimal(
-        _non_negative_decimal(val, argname, large=True, **kwargs)
-    )
 
 
 @_add_typed_validator
@@ -967,22 +986,6 @@ def _bool(val: Any, argname: Optional[str] = None, **kwargs: Any) -> bool:
             raise ValidationSummary(
                 ValueError(argname, n_("Invalid input for boolean."))
             ) from e
-
-
-@_add_typed_validator
-def _empty_dict(val: Any, argname: Optional[str] = None, **kwargs: Any) -> EmptyDict:
-    # TODO why do we not convert here but do so for _empty_list?
-    if val != {}:
-        raise ValidationSummary(ValueError(argname, n_("Must be an empty dict.")))
-    return EmptyDict(val)
-
-
-@_add_typed_validator
-def _empty_list(val: Any, argname: Optional[str] = None, **kwargs: Any) -> EmptyList:
-    val = list(_iterable(val, argname, **kwargs))
-    if val:
-        raise ValidationSummary(ValueError(argname, n_("Must be an empty list.")))
-    return EmptyList(val)
 
 
 @_add_typed_validator  # TODO use Union of Literal
@@ -1219,17 +1222,23 @@ def make_dict_validator(type_: type[T]) -> DictValidator[T]:
     key_type, value_type = typing.get_args(type_)
 
     def dict_validator(
-        val: Any, argname: str | None = None, **kwargs: Any
+        val: Any, argname: str | None = None, *, enumerate_: bool = False, **kwargs: Any
     ) -> dict[K, V]:
         val = _mapping(val, argname, **kwargs)
 
         errs = ValidationSummary()
         new_val = {}
-        for key_val, val_val in val.items():
-            with errs:
-                key_val = _ALL_TYPED[key_type](key_val, f"{argname}.key", **kwargs)
-                val_val = _ALL_TYPED[value_type](val_val, f"{argname}.value", **kwargs)
-                new_val[key_val] = val_val
+        for i, (key_val, val_val) in enumerate(val.items()):
+            key_argname = f"{argname or ''}.key"
+            val_argname = f"{argname or ''}.value"
+            if enumerate_:
+                key_argname += str(i)
+                val_argname += str(i)
+            with errs.as_argname(key_argname):
+                key_val = _ALL_TYPED[key_type](key_val, key_argname, **kwargs)
+            with errs.as_argname(val_argname):
+                val_val = _ALL_TYPED[value_type](val_val, val_argname, **kwargs)
+            new_val[key_val] = val_val
 
         if errs:
             raise errs
@@ -1796,16 +1805,19 @@ def _datetime(
     return val
 
 
-@_add_typed_validator
-def _frozen_datetime(
-    val: Any, argname: Optional[str] = None, **kwargs: Any
-) -> freezegun.api.FakeDatetime:  # type: ignore[name-defined]
-    """Our tests pass objects of this mock time.
+# freezegun patches datetime objects so this allows the validator retrieval to still work.
+_add_typed_validator(_date, freezegun.api.FakeDate)  # type: ignore[attr-defined]
+_add_typed_validator(_datetime, freezegun.api.FakeDatetime)  # type: ignore[attr-defined]
 
-    Since freezegun does magic type stuff, this is required
-    when calling `affirm(datetime.datetime, ...)` on a FakeDatetime.
-    """
-    return _datetime(val, argname, **kwargs)
+
+@_add_typed_validator
+def _timedelta(
+    val: Any, argname: str | None = None, **kwargs: Any
+) -> datetime.timedelta:
+    """For simplicity, do not attempt to coerce this."""
+    if not isinstance(val, datetime.timedelta):
+        raise ValidationSummary(TypeError(argname, n_("Must be a datetime.timedelta.")))
+    return val
 
 
 @_add_typed_validator
@@ -1850,7 +1862,7 @@ def _phone(
         raise ValidationSummary(ValidationWarning(argname, msg))
 
     # handle the phone number as normalized string internally
-    phone_str = phonenumbers.format_number(phone, phonenumbers.PhoneNumberFormat.E164)
+    phone_str = normalize_phone(phone)
 
     return Phone(phone_str)
 
@@ -2448,7 +2460,8 @@ EVENT_EXPOSED_FIELDS = {
 EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
     **EVENT_EXPOSED_OPTIONAL_FIELDS,
     **EVENT_FREETEXT_FIELDS,
-    'orgas': Iterable,
+    'orgas': set[ID],
+    'caretakers': set[ID],
     'parts': Mapping,
     'fields': Mapping,
 }
@@ -2526,14 +2539,6 @@ def _event(
             )
             val.update(configuration_fields)
 
-    if 'orgas' in val:
-        orgas = set()
-        for anid in val['orgas']:
-            with errs:
-                v = _id(anid, 'orgas', **kwargs)
-                orgas.add(v)
-        val['orgas'] = orgas
-
     if 'parts' in val:
         with errs:
             val['parts'] = _optional_object_mapping_helper(
@@ -2543,7 +2548,11 @@ def _event(
     if 'fields' in val:
         with errs:
             val['fields'] = _optional_object_mapping_helper(
-                val['fields'], EventField, 'fields', creation_only=creation, **kwargs
+                val['fields'],
+                models_event.EventField,
+                'fields',
+                creation_only=creation,
+                **kwargs,
             )
 
     if 'lodgement_groups' in val:
@@ -2635,15 +2644,18 @@ def _event_part(
             errs.append(KeyError("waitlist_field_id", n_("Unknown waitlist field.")))
         else:
             waitlist_field = event.fields[waitlist_field_id]
-            legal_kinds, legal_associations = EVENT_FIELD_SPEC["waitlist"]
-            if waitlist_field.association not in legal_associations:
+            if not models_event.EventFieldSpec.field_accepts_association(
+                models_event.EventPart, "waitlist", waitlist_field.association
+            ):
                 errs.append(
                     ValueError(
                         "waitlist_field_id",
                         n_("Waitlist field must be a registration field."),
                     )
                 )
-            if waitlist_field.kind not in legal_kinds:
+            if not models_event.EventFieldSpec.field_accepts_kind(
+                models_event.EventPart, "waitlist", waitlist_field.kind
+            ):
                 errs.append(
                     ValueError(
                         "waitlist_field_id",
@@ -2658,15 +2670,18 @@ def _event_part(
             )
         else:
             camping_mat_field = event.fields[camping_mat_field_id]
-            legal_kinds, legal_associations = EVENT_FIELD_SPEC["camping_mat"]
-            if camping_mat_field.association not in legal_associations:
+            if not models_event.EventFieldSpec.field_accepts_association(
+                models_event.EventPart, "camping_mat", camping_mat_field.association
+            ):
                 errs.append(
                     ValueError(
                         "camping_mat_field_id",
                         n_("Camping mat field must be a registration field."),
                     )
                 )
-            if camping_mat_field.kind not in legal_kinds:
+            if not models_event.EventFieldSpec.field_accepts_kind(
+                models_event.EventPart, "camping_mat", camping_mat_field.kind
+            ):
                 errs.append(
                     ValueError(
                         "camping_mat_field_id",
@@ -2760,15 +2775,18 @@ def _event_track(
             )
         else:
             course_room_field = event.fields[course_room_field_id]
-            legal_kinds, legal_associations = EVENT_FIELD_SPEC["course_room"]
-            if course_room_field.association not in legal_associations:
+            if not models_event.EventFieldSpec.field_accepts_association(
+                models_event.CourseTrack, "course_room", course_room_field.association
+            ):
                 errs.append(
                     ValueError(
                         "course_room_field_id",
                         n_("Course room field must be a course field."),
                     )
                 )
-            if course_room_field.kind not in legal_kinds:
+            if not models_event.EventFieldSpec.field_accepts_kind(
+                models_event.CourseTrack, "course_room", course_room_field.kind
+            ):
                 errs.append(
                     ValueError(
                         "course_room_field_id",
@@ -2848,23 +2866,13 @@ def _event_track_group(
     return val
 
 
-@_add_typed_validator
-def _event_field(
-    val: Any,
-    argname: str = "event_field",
+def _prepare_event_field(
+    val: CdEDBObject,
     *,
-    field_name: Optional[str] = None,
+    field_name: str | None = None,
     creation: bool = False,
     **kwargs: Any,
-) -> EventField:
-    """
-    :param field_name: If given, set the field name of the field to this.
-        This is handy for creating new fields during the questionnaire import,
-        where the field name serves as the key and thus is not part of the dict itself.
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    """
-    val = _mapping(val, argname, **kwargs)
+) -> CdEDBObject:
     val = dict(val)
 
     if field_name is not None:
@@ -2873,68 +2881,65 @@ def _event_field(
         if not val.get("title"):
             val["title"] = val.get("field_name")
 
-    mandatory_fields, optional_fields = models_event.EventField.validation_fields(
-        creation=creation
-    )
+    return val
 
-    if 'entries' in optional_fields:
-        optional_fields['entries'] = Any
 
-    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
-
+@_create_dataclass_validator(models_event.EventField, _prepare=_prepare_event_field)
+def _event_field_dataclass(
+    val: CdEDBObject,
+    argname: str,
+    *,
+    event: models_event.Event,
+    creation: bool = False,
+    id_: int,
+    **kwargs: Any,
+) -> CdEDBObject:
     errs = ValidationSummary()
-    if not val.get("entries", True):
-        val["entries"] = None
-    if "entries" in val and val["entries"] is not None:
-        if isinstance(val["entries"], str):
+
+    if creation:
+        kind = val.get("kind")
+    else:
+        kind = val.get("kind", event.fields[id_].kind)
+    assert kind is not None
+
+    if entries := val.get("entries"):
+        if isinstance(entries, str):
             try:
-                val["entries"] = dict(
-                    [y.strip() for y in x.split(';', 1)]
-                    for x in val["entries"].split('\n')
+                entries = list(
+                    (split[0].strip(), split[1].strip())
+                    for line in entries.splitlines()
+                    if line.strip() and (split := line.split(";", 1))
                 )
+            except (ValueError, IndexError) as e:
+                raise ValidationSummary(
+                    ValueError("entries", n_("Value not well-formed."))
+                ) from e
+        raw_length = len(entries)
+        if isinstance(entries, Sequence):
+            try:
+                entries = dict(entries)
             except ValueError as e:
                 raise ValidationSummary(
-                    ValueError('entries', n_("Value not well-formed."))
+                    ValueError("entries", n_("Could not convert sequence to dict."))
                 ) from e
-        elif isinstance(val['entries'], list):
-            with errs:
-                try:
-                    val['entries'] = dict(val['entries'])
-                except ValueError as e:
-                    raise ValidationSummary(
-                        ValueError('entries', n_("Could not convert to mapping."))
-                    ) from e
-        try:
-            oldentries = _mapping(val['entries'], 'entries', **kwargs)
-        except ValidationSummary as e:
-            errs.extend(e)
-        else:
-            entries = {}
-            for idx, entry in enumerate(oldentries.items()):
-                value, description = entry
-                # Validate value according to type and use the opportunity
-                # to normalize the value by transforming it back to string
-                try:
-                    value = _by_field_datatype(
-                        value,
-                        "entries",
-                        kind=val.get("kind", FieldDatatypes.str),
-                        **kwargs,
-                    )
-                    description = _str(description, "entries", **kwargs)
-                except ValidationSummary as e:
-                    errs.extend(e)
-                else:
-                    if value in entries:
-                        errs.append(ValueError("entries", n_("Duplicate value.")))
-                    else:
-                        entries[value] = description
-            val["entries"] = list(map(list, entries.items()))
+
+        with errs.as_argname("entries"):
+            new_entries = _ALL_TYPED[dict[ByFieldDatatype, str]](
+                entries, "entries", kind=kind, enumerate_=True, **kwargs
+            )
+            new_entries = normalize_field_entries(new_entries, kind)
+
+            if new_entries is None or len(new_entries) != raw_length:
+                errs.append(ValueError("entries", n_("Duplicate value(s).")))
+
+            val["entries"] = new_entries
+    else:
+        val["entries"] = None
 
     if errs:
         raise errs
 
-    return EventField(val)
+    return val
 
 
 @_create_dataclass_validator(models_event.EventFee)
@@ -3219,14 +3224,11 @@ def _event_associated_fields(
 
     :param fields: definition of the event specific fields which are available
     """
-    # TODO document association parameter?
 
     val = _mapping(val, argname, **kwargs)
 
-    # TODO why is deepcopy used here
-    raw = copy.deepcopy(val)
     optional_fields: TypeMapping = {
-        str(field.field_name): Optional[FIELD_DATATYPE_VALIDATORS[field.kind]]  # type: ignore[misc]
+        str(field.field_name): field.get_validator()
         for field in event.fields.values()
         if field.association == association
     }
@@ -3239,7 +3241,7 @@ def _event_associated_fields(
         field_id = lookup[field_name]
         entries = event.fields[field_id].entries
         if entries is not None and value is not None:
-            if not any(str(raw[field_name]) == x for x, _ in entries.items()):
+            if value not in entries:
                 errs.append(ValueError(field_name, n_("Entry not in definition list.")))
     if errs:
         raise errs
@@ -3294,34 +3296,22 @@ def _lodgement(
     return val
 
 
-FIELD_DATATYPE_VALIDATORS = {
-    const.FieldDatatypes.str: str,
-    const.FieldDatatypes.bool: bool,
-    const.FieldDatatypes.int: int,
-    const.FieldDatatypes.float: float,
-    const.FieldDatatypes.date: datetime.date,
-    const.FieldDatatypes.datetime: datetime.datetime,
-    const.FieldDatatypes.non_negative_int: NonNegativeInt,
-    const.FieldDatatypes.non_negative_float: NonNegativeFloat,
-    const.FieldDatatypes.phone: Phone,
-    const.FieldDatatypes.iban: IBAN,
-}
-
-
 @_add_typed_validator
 def _by_field_datatype(
-    val: Any, argname: str, *, kind: FieldDatatypes, **kwargs: Any
+    val: Any,
+    argname: str,
+    *,
+    kind: FieldDatatypes,
+    **kwargs: Any,
 ) -> ByFieldDatatype:
+    if val is None or val == "":  # noqa: PLC1901
+        return ByFieldDatatype(None)
+
     kind = FieldDatatypes(kind)
     # using Any seems fine, otherwise this would need a big Union
-    val: Any = _ALL_TYPED[FIELD_DATATYPE_VALIDATORS[kind] | None](
+    val: Any = _ALL_TYPED[models_event.EventField._get_validator(kind)](
         val, argname, **kwargs
     )
-
-    if kind in {FieldDatatypes.date, FieldDatatypes.datetime}:
-        val = val.isoformat()
-    else:
-        val = str(val)
 
     return ByFieldDatatype(val)
 
@@ -4002,7 +3992,7 @@ def _serialized_event_questionnaire(
     field_definitions = copy.deepcopy(field_definitions)
     fields_by_name = {f['field_name']: f for f in field_definitions.values()}
     if 'fields' in val:
-        newfields = {}
+        newfields: CdEDBObjectMap = {}
         for i, (field_name, field) in enumerate(val['fields'].items()):
             field_argname = f"fields[{i + 1}]"
             try:
@@ -4024,12 +4014,17 @@ def _serialized_event_questionnaire(
                         )
                     continue
                 try:
-                    field = _ALL_TYPED[EventField](
-                        field,
-                        field_argname,
-                        creation=True,
-                        field_name=field_name,
-                        **kwargs,
+                    field = cast(
+                        CdEDBObject,
+                        _ALL_TYPED[models_event.EventField](
+                            field,
+                            field_argname,
+                            creation=True,
+                            event=None,
+                            id_=-(i + 1),
+                            field_name=field_name,
+                            **kwargs,
+                        ),
                     )
                 except ValidationSummary as e:
                     errs.extend(e)
@@ -4136,15 +4131,18 @@ def _serialized_event_configuration(
             errs.append(KeyError("lodge_field_id", n_("Unknown lodge field.")))
         else:
             field = current.fields[lodge_field]
-            legal_kinds, legal_associations = EVENT_FIELD_SPEC['lodge']
-            if field.association not in legal_associations:
+            if not models_event.EventFieldSpec.field_accepts_association(
+                models_event.Event, "lodge", field.association
+            ):
                 errs.append(
                     ValueError(
                         "lodge_field_id",
                         n_("Lodge field must be a registration field."),
                     )
                 )
-            if field.kind not in legal_kinds:
+            if not models_event.EventFieldSpec.field_accepts_kind(
+                models_event.Event, "lodge", field.kind
+            ):
                 errs.append(
                     ValueError(
                         "lodge_field_id", n_("Lodge field must have type 'Text'.")
@@ -4160,15 +4158,18 @@ def _serialized_event_configuration(
             )
         else:
             field = current.fields[reimbursement_field]
-            legal_kinds, legal_associations = EVENT_FIELD_SPEC['reimbursement']
-            if field.association not in legal_associations:
+            if not models_event.EventFieldSpec.field_accepts_association(
+                models_event.Event, "reimbursement_iban", field.association
+            ):
                 errs.append(
                     ValueError(
                         "reimbursement_iban_field_id",
                         n_("Reimbursement IBAN field must be a registration field."),
                     )
                 )
-            if field.kind not in legal_kinds:
+            if not models_event.EventFieldSpec.field_accepts_kind(
+                models_event.Event, "reimbursement_iban", field.kind
+            ):
                 errs.append(
                     ValueError(
                         "reimbursement_iban_field_id",
@@ -5086,6 +5087,23 @@ def _complaint_entry_version(
     if not entry_type.is_measure:
         with errs:
             val['etime'] = _ALL_TYPED[NoneType](val.get('etime'), 'etime', **kwargs)
+
+    attachment_keys = ("attachment_hash", "attachment_title", "attachment_filename")
+    if not entry_type.allows_attachment:
+        for key in attachment_keys:
+            with errs:
+                val[key] = _ALL_TYPED[NoneType](val.get(key), key, **kwargs)
+    elif (
+        any(val.get(key) for key in attachment_keys)
+        and not all(val.get(key) for key in attachment_keys)
+    ):  # fmt: skip
+        errs.extend(
+            ValueError(key, n_("Incomplete attachment."))
+            for key in attachment_keys
+            if not val.get(key)
+        )
+        if not val.get("attachment_hash"):
+            errs.append(ValueError("attachment", n_("Incomplete attachment.")))
 
     if val.get('etime') and val['etime'] <= val['timestamp']:
         errs.append(ValueError('etime', n_("Must be after timestamp.")))

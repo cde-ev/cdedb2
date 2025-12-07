@@ -2,22 +2,39 @@
 
 import argparse
 import collections
+import dataclasses
 import datetime
 import decimal
 import pathlib
 import pprint
-from typing import Dict
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.ml
-from cdedb.backend.event import EventBackend
 from cdedb.common import now
 from cdedb.script import Script
 from cdedb.uncommon.submanshim import SubscriptionAction
 
 
-def output_counters(context: argparse.Namespace, prefix: str = "",
+@dataclasses.dataclass
+class Context:
+    personas: int
+    events: int
+    assemblies: int
+    pastevents: int
+    mailinglists: int
+
+    factor: int
+    verbose: bool
+    quick: bool
+
+    script: Script
+    counters: dict[str, int]
+    clock: datetime.datetime | None
+    start: datetime.datetime
+
+
+def output_counters(context: Context, prefix: str = "",
                     final: bool = False) -> None:
     if context.clock is not None:
         now_ = now()
@@ -27,14 +44,14 @@ def output_counters(context: argparse.Namespace, prefix: str = "",
     pprint.pprint(dict(context.counters))
 
 
-def make_counter(context: argparse.Namespace, name: str, prefix: str = '',
+def make_counter(context: Context, name: str, prefix: str = '',
                  suffix: str = '') -> str:
     num = context.counters[name]
     context.counters[name] += 1
     return f'{prefix}{name}{num:010}{suffix}'
 
 
-def persona(context: argparse.Namespace) -> int:
+def persona(context: Context) -> int:
     rs = context.script.rs()
     data = {
         'is_cde_realm': True,
@@ -87,7 +104,7 @@ def persona(context: argparse.Namespace) -> int:
         'show_address2': True,
         'show_legal_given_names': False,
     }
-    core = context.script.make_backend('core', proxy=False)
+    core = context.script.make_core_backend(proxy=False)
     ret = core.create_persona(rs, data)
     query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
     hashed_secret = ("$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0"
@@ -102,7 +119,7 @@ def persona(context: argparse.Namespace) -> int:
     return ret
 
 
-def event(context: argparse.Namespace) -> int:
+def event(context: Context) -> int:
     rs = context.script.rs()
     data = {
         'title': make_counter(context, 'Veranstaltung'),
@@ -229,7 +246,7 @@ def event(context: argparse.Namespace) -> int:
             "condition": "any_part and not is_member",
         }
     ]
-    event: EventBackend = context.script.make_backend('event', proxy=False)
+    event = context.script.make_event_backend(proxy=False)
     ret = event.create_event(rs, data)
     for fee in fee_data:
         event.create_event_fee(rs, ret, fee)
@@ -316,9 +333,9 @@ def event(context: argparse.Namespace) -> int:
     return ret
 
 
-def assembly(context: argparse.Namespace) -> int:
+def assembly(context: Context) -> int:
     rs = context.script.rs()
-    assembly = context.script.make_backend('assembly', proxy=False)
+    assembly = context.script.make_assembly_backend(proxy=False)
     ret = assembly.create_assembly(rs, {
         'presiders': [persona(context)
                       for _ in range(1 if context.quick else 3)],
@@ -358,9 +375,9 @@ def assembly(context: argparse.Namespace) -> int:
     return ret
 
 
-def past_event(context: argparse.Namespace) -> int:
+def past_event(context: Context) -> int:
     rs = context.script.rs()
-    pastevent = context.script.make_backend('past_event', proxy=False)
+    pastevent = context.script.make_past_event_backend(proxy=False)
     ret = pastevent.create_past_event(rs, {
         'title': make_counter(context, 'VergangeneVeranstaltung'),
         'shortname': make_counter(context, 'Vergangen'),
@@ -383,9 +400,9 @@ def past_event(context: argparse.Namespace) -> int:
     return ret
 
 
-def mailinglist(context: argparse.Namespace) -> int:
+def mailinglist(context: Context) -> int:
     rs = context.script.rs()
-    ml = context.script.make_backend('ml', proxy=False)
+    ml = context.script.make_ml_backend(proxy=False)
     data = cdedb.models.ml.MemberOptInMailinglist(
             id=vtypes.ID(-1),
             local_part=vtypes.EmailLocalPart(make_counter(context, 'EmailLocalPart')),
@@ -413,7 +430,7 @@ def mailinglist(context: argparse.Namespace) -> int:
     return ret
 
 
-def create_everything(context: argparse.Namespace) -> None:
+def create_everything(context: Context) -> None:
     if context.verbose:
         context.clock = now()
         print(f"Started at {context.clock}")
@@ -466,7 +483,7 @@ def perform(args: argparse.Namespace) -> None:
     args.start = now()
 
     with script:
-        create_everything(args)
+        create_everything(Context(**vars(args)))
 
 
 def main() -> None:

@@ -36,7 +36,7 @@
    aclass is used to pass classes to the row, such as drow-row, drow-prototype, drow-new
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
 {% macro print_field(field_id, association, deletable, changeable, aclass="", newrow=False) %}
-    <div class="col-md-12 {{ aclass }}" role="group">
+    <div class="col-md-12 {{ aclass }}" role="group" data-drow-id="{{ field_id }}">
         <div class="panel panel-default panel-condensed">
             <div class="panel-heading {{ util.has_errors(drow_name('title', field_id)) }}">
                 {{ util.input_text(name=drow_name('title', field_id),
@@ -117,7 +117,7 @@
                         {{ util.form_input_textarea(name=drow_name('entries', field_id), label=gettext("Options"),
                                                     aclass='drow-input',
                                                     attributes=util.drow_basename('entries')|s if newrow else '') }}
-                        {% if association == enums['FieldAssociations'].registration %}
+                        {% if association is none or association == enums['FieldAssociations'].registration %}
                             {{ util.form_input_checkbox(label=gettext("Display at Checkin"), name=drow_name('checkin', field_id),
                                                         attributes=util.drow_basename('checkin')|s if newrow else '') }}
                         {% endif %}

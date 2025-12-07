@@ -49,17 +49,30 @@ def requestdict_field_spec(field: dataclasses.Field[Any]) -> Literal["str", "[st
         return "str"
 
 
-class AbstractFlag(Flag):
-    """Boilerplate of flags representing metadata of CdEDataclass fields."""
+class AbstractMetaData:
+    """Boilerplate for metadata for CdEDataclass fields."""
+
+    @classmethod
+    def get_metadata_name(cls) -> str:
+        return f"cdedb.{cls.__name__}"
 
     @property
     def as_dict(self) -> dict[str, Self]:
         """Hide boilerplate of turning the flag into a dict expected by `dataclasses.field`."""
-        return {f"cdedb.{self.__class__}": self}
+        return {self.get_metadata_name(): self}
+
+
+class AbstractFlag(AbstractMetaData, Flag):
+    """Boilerplate for metadata flags for CdEDataclass fields."""
+
+    @property
+    def as_dict(self) -> dict[str, Self]:
+        """Hide boilerplate of turning the flag into a dict expected by `dataclasses.field`."""
+        return {self.get_metadata_name(): self}
 
     def in_field(self, field: dataclasses.Field[T]) -> bool:
         """Hide boilerplate of extracting the flag information from `dataclasses.Field.metadata`."""
-        return self in field.metadata.get(f"cdedb.{self.__class__}", {})
+        return self in field.metadata.get(self.get_metadata_name(), self.__class__(0))
 
 
 class MetaFlag(AbstractFlag):

@@ -47,6 +47,8 @@ def to_db_input(obj: Any) -> Union[Any, list[Any]]:
         obj, (str, bytes, collections.abc.Mapping)
     ):
         return [to_db_input(x) for x in obj]
+    elif isinstance(obj, collections.abc.Mapping):
+        return [to_db_input(item) for item in obj.items()]
     elif isinstance(obj, enum.Enum):
         return obj.value
     else:

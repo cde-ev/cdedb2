@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
-from cdedb.backend.core import CoreBackend
 from cdedb.common import CdEDBObject
 from cdedb.script import Script
 
 s = Script(dbuser="cdb")
 rs = s.rs()
 
-core: CoreBackend = s.make_backend("core", proxy=False)
+core = s.make_core_backend(proxy=False)
 
 change_note = "Whitespace aus Namen entfernt"
 
