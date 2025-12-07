@@ -43,17 +43,25 @@ class EventImportMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_write)
     def questionnaire_import_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form for uploading questionnaire data."""
-        return self.render(rs, "import/questionnaire_import", {},
-                           get_mandatory_form_fields(self.questionnaire_import))
+        return self.render(
+            rs,
+            "import/questionnaire_import",
+            {},
+            get_mandatory_form_fields(self.questionnaire_import),
+        )
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTfile("json_file")
     @REQUESTdata("extend_questionnaire", "skip_existing_fields", "token")
     def questionnaire_import(
-        self, rs: RequestState, event_id: int,
+        self,
+        rs: RequestState,
+        event_id: int,
         json_file: Optional[werkzeug.datastructures.FileStorage],
-        extend_questionnaire: bool, skip_existing_fields: bool, token: Optional[str],
+        extend_questionnaire: bool,
+        skip_existing_fields: bool,
+        token: Optional[str],
     ) -> Response:
         """Import questionnaire rows and custom datafields.
 
@@ -65,21 +73,23 @@ class EventImportMixin(EventBaseFrontend):
         """
         kwargs: CdEDBObject = {
             'field_definitions': {
-                f.id: f.as_dict() for f in rs.ambience['event'].fields.values()},
-            'fees_by_field':
-                self.eventproxy.get_event_fees_per_entity(rs, event_id).fields,
+                f.id: f.as_dict() for f in rs.ambience['event'].fields.values()
+            },
+            'fees_by_field': self.eventproxy.get_event_fees_per_entity(
+                rs, event_id
+            ).fields,
             'questionnaire': self.eventproxy.get_questionnaire(rs, event_id),
             'extend_questionnaire': extend_questionnaire,
             'skip_existing_fields': skip_existing_fields,
         }
-        data = check(rs, vtypes.SerializedEventQuestionnaireUpload, json_file,
-                     **kwargs)
+        data = check(rs, vtypes.SerializedEventQuestionnaireUpload, json_file, **kwargs)
         if rs.has_validation_errors():
             return self.questionnaire_import_form(rs, event_id)
         assert data is not None
 
         code = self.eventproxy.questionnaire_import(
-            rs, event_id, fields=data['fields'], questionnaire=data['questionnaire'])
+            rs, event_id, fields=data['fields'], questionnaire=data['questionnaire']
+        )
 
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_event")
@@ -88,17 +98,25 @@ class EventImportMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.entities_write)
     def partial_import_form(self, rs: RequestState, event_id: int) -> Response:
         """First step of partial import process: Render form to upload file"""
-        return self.render(rs, "import/partial_import", {},
-                           get_mandatory_form_fields(self.partial_import))
+        return self.render(
+            rs,
+            "import/partial_import",
+            {},
+            get_mandatory_form_fields(self.partial_import),
+        )
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.entities_write)
     @REQUESTfile("json_file")
     @REQUESTdata("partial_import_data", "token")
-    def partial_import(self, rs: RequestState, event_id: int,
-                       json_file: Optional[werkzeug.datastructures.FileStorage],
-                       partial_import_data: Optional[str], token: Optional[str],
-                       ) -> Response:
+    def partial_import(
+        self,
+        rs: RequestState,
+        event_id: int,
+        json_file: Optional[werkzeug.datastructures.FileStorage],
+        partial_import_data: Optional[str],
+        token: Optional[str],
+    ) -> Response:
         """Further steps of partial import process
 
         This takes the changes and generates a transaction token. If the new
@@ -114,12 +132,16 @@ class EventImportMixin(EventBaseFrontend):
 
         if partial_import_data:
             data = check(
-                rs, vtypes.SerializedPartialEvent, json.loads(partial_import_data),
+                rs,
+                vtypes.SerializedPartialEvent,
+                json.loads(partial_import_data),
                 event=rs.ambience['event'],
             )
         else:
             data = check(
-                rs, vtypes.SerializedPartialEventUpload, json_file,
+                rs,
+                vtypes.SerializedPartialEventUpload,
+                json_file,
                 event=rs.ambience['event'],
             )
         if rs.has_validation_errors():
@@ -131,12 +153,13 @@ class EventImportMixin(EventBaseFrontend):
 
         # First gather infos for comparison
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
-        registrations = self.eventproxy.get_registrations(
-            rs, registration_ids)
+        registrations = self.eventproxy.get_registrations(rs, registration_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = {
             lodgement_id: lodgement.as_dict()
-            for lodgement_id, lodgement in self.eventproxy.new_get_lodgements(rs, lodgement_ids).items()
+            for lodgement_id, lodgement in self.eventproxy.new_get_lodgements(
+                rs, lodgement_ids
+            ).items()
         }
         lodgement_groups = self.eventproxy.get_lodgement_groups(rs, event_id)
         course_ids = self.eventproxy.list_courses(rs, event_id)
@@ -144,25 +167,23 @@ class EventImportMixin(EventBaseFrontend):
         courses = {
             course_id: course.as_dict()
             for course_id, course in self.eventproxy.get_courses(rs, course_ids).items()
-            }
+        }
         persona_ids = (
-            ({e['persona_id'] for e in registrations.values()}
-             | {e.get('persona_id')
-                for e in data.get('registrations', {}).values() if e})
-            - {None})
+            {e['persona_id'] for e in registrations.values()}
+            | {e.get('persona_id') for e in data.get('registrations', {}).values() if e}
+        ) - {None}
         personas = self.coreproxy.get_personas(rs, persona_ids)
 
         # Second invoke partial import
         try:
             new_token, delta = self.eventproxy.partial_import_event(
-                rs, event_id, data, dryrun=(not bool(token)), token=token,
+                rs, event_id, data, dryrun=(not bool(token)), token=token
             )
         except PartialImportError:
-            rs.notify("warning",
-                      n_("The data changed, please review the difference."))
+            rs.notify("warning", n_("The data changed, please review the difference."))
             token = None
             new_token, delta = self.eventproxy.partial_import_event(
-                rs, event_id, data, dryrun=True,
+                rs, event_id, data, dryrun=True
             )
 
         # Third check if we were successful
@@ -175,24 +196,27 @@ class EventImportMixin(EventBaseFrontend):
         rs.values['partial_import_data'] = json_serialize(data)
         for course in courses.values():
             course['segments'] = {
-                id: segment["is_active"]
-                for id, segment in course['segments'].items()
+                id: segment["is_active"] for id, segment in course['segments'].items()
             }
 
         # Fifth prepare summary
-        def flatten_recursive_delta(data: Mapping[Any, Any],
-                                    old: Mapping[Any, Any],
-                                    prefix: str = "") -> CdEDBObject:
+        def flatten_recursive_delta(
+            data: Mapping[Any, Any], old: Mapping[Any, Any], prefix: str = ""
+        ) -> CdEDBObject:
             ret = {}
             for key, val in data.items():
                 if isinstance(val, collections.abc.Mapping):
                     tmp = flatten_recursive_delta(
-                        val, old.get(key, {}), f"{prefix}{key}.")
+                        val, old.get(key, {}), f"{prefix}{key}."
+                    )
                     ret.update(tmp)
-                elif (isinstance(val, list)
-                      and all(isinstance(e, ReducedCheckinPeriod) for e in val)):
-                    ret[f"{prefix}{key}"] = ([e.pretty() for e in val],
-                                             [o.pretty() for o in old[key]])
+                elif isinstance(val, list) and all(
+                    isinstance(e, ReducedCheckinPeriod) for e in val
+                ):
+                    ret[f"{prefix}{key}"] = (
+                        [e.pretty() for e in val],
+                        [o.pretty() for o in old[key]],
+                    )
                 else:
                     ret[f"{prefix}{key}"] = (old.get(key, None), val)
             return ret
@@ -203,102 +227,162 @@ class EventImportMixin(EventBaseFrontend):
                 for anid, val in delta.get('registrations', {}).items()
                 if anid > 0 and val
             },
-            'new_registration_ids': tuple(xsorted(
-                anid for anid in delta.get('registrations', {})
-                if anid < 0)),
-            'deleted_registration_ids': tuple(xsorted(
-                anid for anid, val in delta.get('registrations', {}).items()
-                if val is None)),
-            'real_deleted_registration_ids': tuple(xsorted(
-                anid for anid, val in delta.get('registrations', {}).items()
-                if val is None and registrations.get(anid))),
+            'new_registration_ids': tuple(
+                xsorted(anid for anid in delta.get('registrations', {}) if anid < 0)
+            ),
+            'deleted_registration_ids': tuple(
+                xsorted(
+                    anid
+                    for anid, val in delta.get('registrations', {}).items()
+                    if val is None
+                )
+            ),
+            'real_deleted_registration_ids': tuple(
+                xsorted(
+                    anid
+                    for anid, val in delta.get('registrations', {}).items()
+                    if val is None and registrations.get(anid)
+                )
+            ),
             'changed_courses': {
                 anid: flatten_recursive_delta(val, courses[anid])
                 for anid, val in delta.get('courses', {}).items()
                 if anid > 0 and val
             },
-            'new_course_ids': tuple(xsorted(
-                anid for anid in delta.get('courses', {}) if anid < 0)),
-            'deleted_course_ids': tuple(xsorted(
-                anid for anid, val in delta.get('courses', {}).items()
-                if val is None)),
-            'real_deleted_course_ids': tuple(xsorted(
-                anid for anid, val in delta.get('courses', {}).items()
-                if val is None and courses.get(anid))),
+            'new_course_ids': tuple(
+                xsorted(anid for anid in delta.get('courses', {}) if anid < 0)
+            ),
+            'deleted_course_ids': tuple(
+                xsorted(
+                    anid
+                    for anid, val in delta.get('courses', {}).items()
+                    if val is None
+                )
+            ),
+            'real_deleted_course_ids': tuple(
+                xsorted(
+                    anid
+                    for anid, val in delta.get('courses', {}).items()
+                    if val is None and courses.get(anid)
+                )
+            ),
             'changed_lodgements': {
                 anid: flatten_recursive_delta(val, lodgements[anid])
                 for anid, val in delta.get('lodgements', {}).items()
                 if anid > 0 and val
             },
-            'new_lodgement_ids': tuple(xsorted(
-                anid for anid in delta.get('lodgements', {}) if anid < 0)),
-            'deleted_lodgement_ids': tuple(xsorted(
-                anid for anid, val in delta.get('lodgements', {}).items()
-                if val is None)),
-            'real_deleted_lodgement_ids': tuple(xsorted(
-                anid for anid, val in delta.get('lodgements', {}).items()
-                if val is None and lodgements.get(anid))),
-
+            'new_lodgement_ids': tuple(
+                xsorted(anid for anid in delta.get('lodgements', {}) if anid < 0)
+            ),
+            'deleted_lodgement_ids': tuple(
+                xsorted(
+                    anid
+                    for anid, val in delta.get('lodgements', {}).items()
+                    if val is None
+                )
+            ),
+            'real_deleted_lodgement_ids': tuple(
+                xsorted(
+                    anid
+                    for anid, val in delta.get('lodgements', {}).items()
+                    if val is None and lodgements.get(anid)
+                )
+            ),
             'changed_lodgement_groups': {
                 anid: flatten_recursive_delta(val, lodgement_groups[anid].as_dict())
                 for anid, val in delta.get('lodgement_groups', {}).items()
-                if anid > 0 and val},
-            'new_lodgement_group_ids': tuple(xsorted(
-                anid for anid in delta.get('lodgement_groups', {})
-                if anid < 0)),
-            'real_deleted_lodgement_group_ids': tuple(xsorted(
-                anid for anid, val in delta.get('lodgement_groups', {}).items()
-                if val is None and lodgement_groups.get(anid))),
+                if anid > 0 and val
+            },
+            'new_lodgement_group_ids': tuple(
+                xsorted(anid for anid in delta.get('lodgement_groups', {}) if anid < 0)
+            ),
+            'real_deleted_lodgement_group_ids': tuple(
+                xsorted(
+                    anid
+                    for anid, val in delta.get('lodgement_groups', {}).items()
+                    if val is None and lodgement_groups.get(anid)
+                )
+            ),
         }
 
         changed_registration_fields: set[str] = set()
         for reg in summary['changed_registrations'].values():
             changed_registration_fields |= reg.keys()
-        summary['changed_registration_fields'] = tuple(xsorted(
-            changed_registration_fields))
+        summary['changed_registration_fields'] = tuple(
+            xsorted(changed_registration_fields)
+        )
         changed_course_fields: set[str] = set()
         for course in summary['changed_courses'].values():
             changed_course_fields |= course.keys()
-        summary['changed_course_fields'] = tuple(xsorted(
-            changed_course_fields))
+        summary['changed_course_fields'] = tuple(xsorted(changed_course_fields))
         changed_lodgement_fields: set[str] = set()
         for lodgement in summary['changed_lodgements'].values():
             changed_lodgement_fields |= lodgement.keys()
-        summary['changed_lodgement_fields'] = tuple(xsorted(
-            changed_lodgement_fields))
+        summary['changed_lodgement_fields'] = tuple(xsorted(changed_lodgement_fields))
 
-        (reg_titles, reg_choices, course_titles, course_choices,
-         lodgement_titles) = self._make_partial_import_diff_aux(
-            rs, rs.ambience['event'], courses, lodgements)
+        (reg_titles, reg_choices, course_titles, course_choices, lodgement_titles) = (
+            self._make_partial_import_diff_aux(
+                rs, rs.ambience['event'], courses, lodgements
+            )
+        )
 
         # Sixth look for double deletions/creations
-        if (len(summary['deleted_registration_ids'])
-                > len(summary['real_deleted_registration_ids'])):
-            rs.notify('warning', n_("There were double registration deletions."
-                                    " Did you already import this file?"))
+        if len(summary['deleted_registration_ids']) > len(
+            summary['real_deleted_registration_ids']
+        ):
+            rs.notify(
+                'warning',
+                n_(
+                    "There were double registration deletions."
+                    " Did you already import this file?"
+                ),
+            )
         if len(summary['deleted_course_ids']) > len(summary['real_deleted_course_ids']):
-            rs.notify('warning', n_("There were double course deletions."
-                                    " Did you already import this file?"))
-        if (len(summary['deleted_lodgement_ids'])
-                > len(summary['real_deleted_lodgement_ids'])):
-            rs.notify('warning', n_("There were double lodgement deletions."
-                                    " Did you already import this file?"))
+            rs.notify(
+                'warning',
+                n_(
+                    "There were double course deletions."
+                    " Did you already import this file?"
+                ),
+            )
+        if len(summary['deleted_lodgement_ids']) > len(
+            summary['real_deleted_lodgement_ids']
+        ):
+            rs.notify(
+                'warning',
+                n_(
+                    "There were double lodgement deletions."
+                    " Did you already import this file?"
+                ),
+            )
         all_current_data = self.eventproxy.partial_export_event(rs, data['id'])
         for course_id, course in delta.get('courses', {}).items():
             if course_id < 0:
-                if any(current == course
-                       for current in all_current_data['courses'].values()):
-                    rs.notify('warning',
-                              n_("There were hints at double course creations."
-                                 " Did you already import this file?"))
+                if any(
+                    current == course
+                    for current in all_current_data['courses'].values()
+                ):
+                    rs.notify(
+                        'warning',
+                        n_(
+                            "There were hints at double course creations."
+                            " Did you already import this file?"
+                        ),
+                    )
                     break
         for lodgement_id, lodgement in delta.get('lodgements', {}).items():
             if lodgement_id < 0:
-                if any(current == lodgement
-                       for current in all_current_data['lodgements'].values()):
-                    rs.notify('warning',
-                              n_("There were hints at double lodgement creations."
-                                 " Did you already import this file?"))
+                if any(
+                    current == lodgement
+                    for current in all_current_data['lodgements'].values()
+                ):
+                    rs.notify(
+                        'warning',
+                        n_(
+                            "There were hints at double lodgement creations."
+                            " Did you already import this file?"
+                        ),
+                    )
                     break
 
         # Seventh render diff
@@ -321,10 +405,12 @@ class EventImportMixin(EventBaseFrontend):
     # TODO: be more specific about the return types.
     @staticmethod
     def _make_partial_import_diff_aux(
-            rs: RequestState, event: models.Event, courses: CdEDBObjectMap,
-            lodgements: CdEDBObjectMap,
+        rs: RequestState,
+        event: models.Event,
+        courses: CdEDBObjectMap,
+        lodgements: CdEDBObjectMap,
     ) -> tuple[CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject]:
-        """ Helper method, similar to make_registration_query_aux(), to
+        """Helper method, similar to make_registration_query_aux(), to
         generate human readable field names and values for the diff presentation
         of partial_import().
 
@@ -341,11 +427,12 @@ class EventImportMixin(EventBaseFrontend):
         # TODO distinguish old and new course/lodgement titles
         # Heads up! There's a protected space (u+00A0) in the string below
         course_entries = {
-            c["id"]: "{}. {}".format(c["nr"], c["shortname"])
-            for c in courses.values()}
+            c["id"]: "{}. {}".format(c["nr"], c["shortname"]) for c in courses.values()
+        }
         lodgement_entries = {lgd["id"]: lgd["title"] for lgd in lodgements.values()}
-        reg_part_stati_entries =\
-            dict(enum_entries_filter(const.RegistrationPartStati, rs.gettext))
+        reg_part_stati_entries = dict(
+            enum_entries_filter(const.RegistrationPartStati, rs.gettext)
+        )
         segment_stati_entries = {
             None: rs.gettext('not offered'),
             False: rs.gettext('cancelled'),
@@ -358,17 +445,17 @@ class EventImportMixin(EventBaseFrontend):
                 prefix = f"{track.shortname}: "
             else:
                 prefix = ""
-            reg_titles[f"tracks.{track_id}.course_id"] = (
-                    prefix + rs.gettext("Course"))
+            reg_titles[f"tracks.{track_id}.course_id"] = prefix + rs.gettext("Course")
             reg_choices[f"tracks.{track_id}.course_id"] = course_entries
-            reg_titles[f"tracks.{track_id}.course_instructor"] = (
-                    prefix + rs.gettext("Instructed Course"))
+            reg_titles[f"tracks.{track_id}.course_instructor"] = prefix + rs.gettext(
+                "Instructed Course"
+            )
             reg_choices[f"tracks.{track_id}.course_instructor"] = course_entries
-            reg_titles[f"tracks.{track_id}.choices"] = (
-                    prefix + rs.gettext("Course Choices"))
+            reg_titles[f"tracks.{track_id}.choices"] = prefix + rs.gettext(
+                "Course Choices"
+            )
             reg_choices[f"tracks.{track_id}.choices"] = course_entries
-            course_titles[f"segments.{track_id}"] = (
-                    prefix + rs.gettext("Status"))
+            course_titles[f"segments.{track_id}"] = prefix + rs.gettext("Status")
             course_choices[f"segments.{track_id}"] = segment_stati_entries
 
         for field in event.fields.values():
@@ -388,22 +475,29 @@ class EventImportMixin(EventBaseFrontend):
                 prefix = f"{part.shortname}: "
             else:
                 prefix = ""
-            reg_titles[f"parts.{part_id}.status"] = (
-                    prefix + rs.gettext("Status"))
+            reg_titles[f"parts.{part_id}.status"] = prefix + rs.gettext("Status")
             reg_choices[f"parts.{part_id}.status"] = reg_part_stati_entries
-            reg_titles[f"parts.{part_id}.lodgement_id"] = (
-                    prefix + rs.gettext("Lodgement"))
+            reg_titles[f"parts.{part_id}.lodgement_id"] = prefix + rs.gettext(
+                "Lodgement"
+            )
             reg_choices[f"parts.{part_id}.lodgement_id"] = lodgement_entries
-            reg_titles[f"parts.{part_id}.is_camping_mat"] = (
-                    prefix + rs.gettext("Camping Mat"))
+            reg_titles[f"parts.{part_id}.is_camping_mat"] = prefix + rs.gettext(
+                "Camping Mat"
+            )
 
         for fee in event.fees.values():
             if fee.is_personalized():
                 reg_titles[f"personalized_fees.{fee.id}"] = safe_filter(
                     rs.gettext(
                         "Amount for %(personalized_fee_title)s",
-                    ) % {'personalized_fee_title': f"<i>{fee.title}</i>"},
+                    )
+                    % {'personalized_fee_title': f"<i>{fee.title}</i>"},
                 )
 
-        return (reg_titles, reg_choices, course_titles, course_choices,
-                lodgement_titles)
+        return (
+            reg_titles,
+            reg_choices,
+            course_titles,
+            course_choices,
+            lodgement_titles,
+        )

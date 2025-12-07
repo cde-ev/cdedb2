@@ -8,6 +8,7 @@ FORMAT_TARGETS= \
     cdedb/frontend/assembly/ \
     cdedb/frontend/cde/ \
     cdedb/frontend/core/complaint.py \
+    cdedb/frontend/event/ \
     cdedb/frontend/ml/ \
     cdedb/frontend/*.py \
     cdedb/ldap/ \
