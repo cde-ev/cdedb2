@@ -16,6 +16,7 @@ from typing import Optional, cast
 
 import werkzeug.datastructures
 import werkzeug.exceptions
+import werkzeug.routing
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
@@ -163,7 +164,20 @@ class EventEventMixin(EventBaseFrontend):
                 endpoint = default_endpoint
             if original_event_id != event_id:
                 # If going to a (different) event, drop subentity params.
+
+                # If we have a registration id try to find a registration for the
+                #  same persona for the new event.
+                new_reg_id = None
+                if reg_id := params.get("registration_id"):
+                    reg = self.eventproxy.get_registration(rs, reg_id)
+                    persona_id = reg["persona_id"]
+                    new_reg_id = self.eventproxy.get_registration_id(
+                        rs, persona_id=persona_id, event_id=event_id
+                    )
+
                 params = {"event_id": event_id}
+                if new_reg_id:
+                    params["registration_id"] = new_reg_id
         try:
             return self.redirect(rs, endpoint or default_endpoint, params)
         except werkzeug.routing.exceptions.BuildError:
