@@ -1053,10 +1053,10 @@ class PastEventLogCodes(CdEIntEnum):
     course_created = 10  #:
     course_changed = 11  #:
     course_deleted = 12  #:
-    participant_added = 20  #:
+    participant_set = 20  #:
     participant_removed = 21  #:
-    course_participant_added = 25  #:
-    course_participant_removed = 26  #:
+    course_assignment_set = 25  #:
+    course_assignment_removed = 26  #:
     # The following log codes used to exist. To avoid conflicts, do not reuse:
     # institution_created = 30  #:
     # institution_changed = 31  #:

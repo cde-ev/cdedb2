@@ -534,12 +534,18 @@ class PastEventBackend(AbstractBackend):
                 update_on_conflict=True,
                 conflict_target="pevent_id, persona_id",
             )
+            relevant_status = []
+            if orga_status:
+                relevant_status.append(rs.log_gettext(str(orga_status)))
+            if music_status:
+                relevant_status.append(rs.log_gettext(str(music_status)))
             if ret:
                 self.past_event_log(
                     rs,
-                    code=const.PastEventLogCodes.participant_added,
+                    code=const.PastEventLogCodes.participant_set,
                     pevent_id=pevent_id,
                     persona_id=persona_id,
+                    change_note=", ".join(relevant_status),
                 )
         return ret
 
@@ -598,13 +604,17 @@ class PastEventBackend(AbstractBackend):
                 update_on_conflict=True,
                 conflict_target="pcourse_id, participant_id",
             )
+            relevant_status = []
+            if instructor_status:
+                relevant_status.append(rs.log_gettext(str(instructor_status)))
             if ret:
                 self.past_event_log(
                     rs,
-                    code=const.PastEventLogCodes.course_participant_added,
+                    code=const.PastEventLogCodes.course_assignment_set,
                     pevent_id=pevent_id,
                     pcourse_id=pcourse_id,
                     persona_id=persona_id,
+                    change_note=",".join(relevant_status),
                 )
         return ret
 
@@ -675,7 +685,7 @@ class PastEventBackend(AbstractBackend):
             ret = self.query_exec(rs, query, params)
             self.past_event_log(
                 rs,
-                code=const.PastEventLogCodes.course_participant_removed,
+                code=const.PastEventLogCodes.course_assignment_removed,
                 pevent_id=pevent_id,
                 pcourse_id=pcourse_id,
                 persona_id=persona_id,

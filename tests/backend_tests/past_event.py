@@ -318,7 +318,7 @@ class TestPastEventBackend(BackendTest):
              'submitted_by': self.user['id']},
             {'id': 1006,
              'change_note': None,
-             'code': const.PastEventLogCodes.participant_added,
+             'code': const.PastEventLogCodes.participant_set,
              'ctime': nearly_now(),
              'pevent_id': 1,
              'pcourse_id': None,

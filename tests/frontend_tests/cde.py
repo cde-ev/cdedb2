@@ -3080,8 +3080,8 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['addparticipantform']
         f['persona_ids'] = "DB-7-8,DB-1-9"
         self.submit(f)
-        logs.append((1004, const.PastEventLogCodes.participant_added))
-        logs.append((1005, const.PastEventLogCodes.participant_added))
+        logs.append((1004, const.PastEventLogCodes.participant_set))
+        logs.append((1005, const.PastEventLogCodes.participant_set))
 
         # delete participant (from course)
         f = self.response.forms['removeparticipantform7']
@@ -3103,7 +3103,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['addparticipantform']
         f['persona_ids'] = "DB-7-8"
         self.submit(f)
-        logs.append((1008, const.PastEventLogCodes.participant_added))
+        logs.append((1008, const.PastEventLogCodes.participant_set))
 
         # delete participant (from past event)
         f = self.response.forms['removeparticipantform7']
