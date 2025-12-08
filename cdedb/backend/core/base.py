@@ -1367,6 +1367,7 @@ class CoreBaseBackend(AbstractBackend):
         }
         with Atomizer(rs):
             case = self.get_privilege_change(rs, privilege_change_id)
+            note = case["notes"] or "Admin-Privilegien geändert."
             if case['status'] != const.PrivilegeChangeStati.pending:
                 raise ValueError(
                     n_("Invalid privilege change state: %(status)s."),
@@ -1390,7 +1391,7 @@ class CoreBaseBackend(AbstractBackend):
                     rs,
                     const.CoreLogCodes.privilege_change_approved,
                     persona_id=case['persona_id'],
-                    change_note="Änderung der Admin-Privilegien bestätigt.",
+                    change_note=note,
                 )
 
                 old = self.get_persona(rs, case["persona_id"])
@@ -1402,7 +1403,6 @@ class CoreBaseBackend(AbstractBackend):
                         persona_change[key] = case[key]
 
                 persona_change = affirm(vtypes.Persona, persona_change)
-                note = case["notes"] or "Admin-Privilegien geändert."
                 ret *= self.set_persona(
                     rs,
                     persona_change,
@@ -1432,7 +1432,7 @@ class CoreBaseBackend(AbstractBackend):
                     rs,
                     const.CoreLogCodes.privilege_change_rejected,
                     persona_id=case['persona_id'],
-                    change_note="Änderung der Admin-Privilegien verworfen.",
+                    change_note=note,
                 )
             else:
                 raise ValueError(n_("Invalid new privilege change status."))
