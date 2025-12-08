@@ -1394,18 +1394,18 @@ class CoreBaseBackend(AbstractBackend):
                 )
 
                 old = self.get_persona(rs, case["persona_id"])
-                data = {
+                persona_change = {
                     "id": case["persona_id"],
                 }
                 for key in ADMIN_KEYS:
                     if case[key] is not None:
-                        data[key] = case[key]
+                        persona_change[key] = case[key]
 
-                data = affirm(vtypes.Persona, data)
+                persona_change = affirm(vtypes.Persona, persona_change)
                 note = case["notes"] or "Admin-Privilegien geändert."
                 ret *= self.set_persona(
                     rs,
-                    data,
+                    persona_change,
                     may_wait=False,
                     change_note=note,
                     allow_specials=("admins",),
@@ -1413,17 +1413,17 @@ class CoreBaseBackend(AbstractBackend):
 
                 # Force password reset if non-admin has gained admin privileges.
                 if not any(old[key] for key in ADMIN_KEYS) and any(
-                    data.get(key) for key in ADMIN_KEYS
+                    persona_change.get(key) for key in ADMIN_KEYS
                 ):
                     ret *= self.invalidate_password(rs, case["persona_id"])
                     ret *= -1
 
                 # Mark case as successful
-                data = {
+                case_update = {
                     "id": privilege_change_id,
                     "status": const.PrivilegeChangeStati.successful,
                 }
-                ret *= self.sql_update(rs, "core.privilege_changes", data)
+                ret *= self.sql_update(rs, "core.privilege_changes", case_update)
 
             elif case_status == const.PrivilegeChangeStati.rejected:
                 ret = self.sql_update(rs, "core.privilege_changes", data)
