@@ -2111,10 +2111,9 @@ class CoreBaseFrontend(AbstractFrontend):
         """Show detailed infromation about pending privilege change."""
         privilege_change = rs.ambience['privilege_change']
         if privilege_change["status"] != const.PrivilegeChangeStati.pending:
-            rs.notify("error", n_("Privilege change not pending."))
-            return self.redirect(rs, "core/list_privilege_changes")
+            rs.notify("info", n_("Privilege change not pending."))
 
-        if (
+        elif (
             privilege_change["is_meta_admin"] is not None
             and privilege_change["persona_id"] == rs.user.persona_id
         ):
@@ -2126,7 +2125,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     " meta admin."
                 ),
             )
-        if privilege_change["submitted_by"] == rs.user.persona_id:
+        elif privilege_change["submitted_by"] == rs.user.persona_id:
             rs.notify(
                 "info",
                 n_(
@@ -2137,6 +2136,9 @@ class CoreBaseFrontend(AbstractFrontend):
 
         persona = self.coreproxy.get_persona(rs, privilege_change["persona_id"])
         submitter = self.coreproxy.get_persona(rs, privilege_change["submitted_by"])
+        reviewer = None
+        if privilege_change["reviewer"]:
+            reviewer = self.coreproxy.get_persona(rs, privilege_change["reviewer"])
 
         return self.render(
             rs,
@@ -2144,6 +2146,7 @@ class CoreBaseFrontend(AbstractFrontend):
             {
                 "persona": persona,
                 "submitter": submitter,
+                "reviewer": reviewer,
                 "admin_keys": ADMIN_KEYS,
             },
         )
