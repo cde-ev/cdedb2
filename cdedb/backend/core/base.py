@@ -1361,7 +1361,7 @@ class CoreBaseBackend(AbstractBackend):
 
         data = {
             "id": privilege_change_id,
-            "ftime": now(),
+            "ftime": "now()",
             "reviewer": rs.user.persona_id,
             "status": case_status,
         }
