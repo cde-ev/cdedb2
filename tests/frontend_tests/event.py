@@ -509,8 +509,8 @@ class TestEventFrontend(FrontendTest):
             ins = (
                     everyone | not_registered | privileged
                     | registered_or_privileged
-            ) - registrations_stats | {"Teilnahmebeiträge", "Log"}
-            out = (registered | orga | registrations_stats) - {"Teilnahmebeiträge", "Log"}
+            ) - registrations_stats | {"Teilnahmebeiträge", "Log", "Unterkünfte"}
+            out = (registered | orga | registrations_stats) - {"Teilnahmebeiträge", "Log", "Unterkünfte"}
         else:
             self.fail("Please adjust users for this tests.")
 
