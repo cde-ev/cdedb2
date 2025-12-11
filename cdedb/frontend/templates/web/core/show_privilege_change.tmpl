@@ -67,14 +67,6 @@
             {{ util.input_submit(label=gettext("Reject Privilege Change"), aclass="btn btn-danger", icon="ban") }}
         </form>
 
-    {% elif ambience["privilege_change"].status == enums["PrivilegeChangeStati"].approved %}
-        <p>
-            {% trans reviewer=util.persona_anchor(reviewer), ftime=ambience["privilege_change"]["ftime"]|datetime(lang=lang) %}
-                This change was approved by %(submitter)s on %(ftime)s, but was not applied successfully.
-                This should never happen.
-            {% endtrans %}
-        </p>
-
     {% elif ambience["privilege_change"].status == enums["PrivilegeChangeStati"].successful %}
         <p>
             {% trans reviewer=util.persona_anchor(reviewer), ftime=ambience["privilege_change"]["ftime"]|datetime(lang=lang) %}
@@ -82,18 +74,20 @@
             {% endtrans %}
         </p>
 
-    {% elif reviewer == submitter %}
-        <p>
-            {% trans reviewer=util.persona_anchor(reviewer), ftime=ambience["privilege_change"]["ftime"]|datetime(lang=lang) %}
-                This change was cancelled by %(reviewer)s on %(ftime)s.
-            {% endtrans %}
-        </p>
-    {% else %}
-        <p>
-            {% trans reviewer=util.persona_anchor(reviewer), ftime=ambience["privilege_change"]["ftime"]|datetime(lang=lang) %}
-                This change was denied by %(reviewer)s on %(ftime)s.
-            {% endtrans %}
-        </p>
+    {% elif ambience["privilege_change"].status == enums["PrivilegeChangeStati"].rejected %}
+        {% if reviewer == submitter %}
+            <p>
+                {% trans reviewer=util.persona_anchor(reviewer), ftime=ambience["privilege_change"]["ftime"]|datetime(lang=lang) %}
+                    This change was cancelled by %(reviewer)s on %(ftime)s.
+                {% endtrans %}
+            </p>
+        {% else %}
+            <p>
+                {% trans reviewer=util.persona_anchor(reviewer), ftime=ambience["privilege_change"]["ftime"]|datetime(lang=lang) %}
+                    This change was denied by %(reviewer)s on %(ftime)s.
+                {% endtrans %}
+            </p>
 
+        {% endif %}
     {% endif %}
 {% endblock %}
