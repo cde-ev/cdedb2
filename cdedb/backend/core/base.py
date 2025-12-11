@@ -1333,7 +1333,7 @@ class CoreBaseBackend(AbstractBackend):
                 rs,
                 const.CoreLogCodes.privilege_change_pending,
                 data['persona_id'],
-                change_note="Änderung der Admin-Privilegien angestoßen.",
+                change_note=data["notes"],
             )
             ret = self.sql_insert(rs, "core.privilege_changes", data)
 
