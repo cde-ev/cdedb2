@@ -98,12 +98,8 @@ class EventCourseMixin(EventBaseFrontend):
         if rs.has_validation_errors() or not track_ids:
             track_ids = rs.ambience['event'].tracks.keys()
 
-        # TODO Handle the admin view in a smart way
-        show_course_state = (
-            rs.ambience['event'].is_course_state_visible
-            or event_id in rs.user.orga | rs.user.caretaker
-            or 'event_orga' in rs.user.admin_views
-        )
+        show_course_state = rs.ambience['event'].is_course_state_visible
+
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = {}
         courses_exist = bool(course_ids)
