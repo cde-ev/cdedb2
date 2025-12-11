@@ -3536,6 +3536,7 @@ def _serialized_partial_event(
         'timestamp': datetime.datetime,
     }
     optional_fields: TypeMapping = {
+        'event': Mapping,  # ignored, but allowed to be present.
         'courses': Mapping,
         'lodgement_groups': Mapping,
         'lodgements': Mapping,

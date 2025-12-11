@@ -5944,7 +5944,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         first = json.loads(self.response.text)
 
         upload = copy.deepcopy(first)
-        del upload['event']
         self.get('/event/event/1/import/partial')
         self.assertTitle("Partieller Import zur Veranstaltung Große Testakademie 2222")
         f = self.response.forms["importform"]
