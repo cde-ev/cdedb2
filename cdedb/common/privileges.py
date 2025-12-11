@@ -109,6 +109,7 @@ def is_privileged_event_user(
     finance_admin_privileges = (
         EP.basic_read
         | EP.registrations_read_internal
+        | EP.lodgements_read
         | EP.log_read
         | EP.registrations_stats
         | EP.payment_write
