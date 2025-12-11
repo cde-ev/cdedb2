@@ -2325,5 +2325,5 @@ class IncorrectlyTypedExternalFeeCV(EventFeeConstraintViolation):
         return ViolationFormat(
             html_classes=[self.severity.html_class()],
             titles=[title],
-            icons=["exclamation-triangle"],
+            icons=[("exclamation-triangle", title)],
         )

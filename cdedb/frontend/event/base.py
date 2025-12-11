@@ -257,6 +257,8 @@ class EventBaseFrontend(AbstractUserFrontend):
         params['is_privileged_for'] = is_privileged_for
         params['orga_view'] = orga_view
 
+        params['ViolationFormat'] = models_cv.ViolationFormat
+
         return super().render(
             rs, templatename, params=params, mandatory_fields=mandatory_fields
         )

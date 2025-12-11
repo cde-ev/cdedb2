@@ -483,7 +483,7 @@
         </thead>
         <tbody>
         {% for fee in ambience['event'].fees.values()|sort %}
-            {% set format = violations.get(fee=fee).event_fee_summary_format -%}
+            {% set format = violations.get(fee=fee).event_fee_summary_format if violations else ViolationFormat() -%}
             {% set aclass, atitle = format.html_class, format.get_title(gettext) %}
             <tr id="eventfee_{{ fee.id }}" data-fee_id="{{ fee.id }}" class="eventfee">
                 <td class="nowrap">
