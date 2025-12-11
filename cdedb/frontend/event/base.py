@@ -747,14 +747,14 @@ class EventBaseFrontend(AbstractUserFrontend):
 
         # Retrieve courses.
         all_courses = self.eventproxy.get_courses(
-            rs, self.eventproxy.list_courses(rs, event.id)
+            rs, self.eventproxy.list_courses(rs, event.id), _event=event
         )
         if course_id is None:
             courses = all_courses
         elif course_id < 0:
             courses = {}
         else:
-            courses = self.eventproxy.get_courses(rs, (course_id,))
+            courses = self.eventproxy.get_courses(rs, [course_id], _event=event)
 
         choice_stats: models.ChoiceStats
         attendee_stats: models.AttendeeStats
@@ -764,14 +764,16 @@ class EventBaseFrontend(AbstractUserFrontend):
 
         # Retrieve lodgements.
         all_lodgements = self.eventproxy.new_get_lodgements(
-            rs, self.eventproxy.list_lodgements(rs, event.id)
+            rs, self.eventproxy.list_lodgements(rs, event.id), _event=event
         )
         if lodgement_id is None:
             lodgements = all_lodgements
         elif lodgement_id < 0:
             lodgements = {}
         else:
-            lodgements = self.eventproxy.new_get_lodgements(rs, [lodgement_id])
+            lodgements = self.eventproxy.new_get_lodgements(
+                rs, [lodgement_id], _event=event
+            )
 
         inhabitants = self.eventproxy.get_grouped_inhabitants(
             rs, event.id, involved=True, _registrations=all_registrations
