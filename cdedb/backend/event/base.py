@@ -1738,15 +1738,6 @@ class EventBaseBackend(EventLowLevelBackend):
                     *models.PersonalizedFee.get_select_query(registrations.keys()),
                 ),
             )
-            registration_fees = list_to_dict(
-                self.sql_select(
-                    rs,
-                    models.Registration.database_table,
-                    ["id", "amount_owed_by_kind"],
-                    [event_id],
-                    entity_key="event_id",
-                )
-            )
             checkin_periods = self.sql_select(
                 rs,
                 models.CheckinPeriod.database_table,
@@ -1846,10 +1837,17 @@ class EventBaseBackend(EventLowLevelBackend):
             registration['personalized_fees'] = {}
             for fee_id, fee_amount in personalized_fee_lookup[registration_id].items():
                 registration['personalized_fees'][fee_id] = fee_amount
-            by_kind = registration_fees[registration_id]["amount_owed_by_kind"]
-            registration['amount_owed_by_kind'] = {
-                const.EventFeeType(int(key)).name: decimal.Decimal(amount)
-                for key, amount in by_kind.items()
+            registration["amount_owed_by_kind"] = {
+                kind.name: amount
+                for kind, amount in registration["amount_owed_by_kind"].items()
+            }
+            registration["amount_owed_by_category"] = {
+                category.name: amount
+                for category, amount in registration["amount_owed_by_category"].items()
+            }
+            registration["amount_owed_by_budget"] = {
+                budget.name: amount
+                for budget, amount in registration["amount_owed_by_budget"].items()
             }
             periods = xsorted(checkin_period_lookup[registration_id])
             for period in periods:
