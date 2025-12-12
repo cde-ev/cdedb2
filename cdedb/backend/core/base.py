@@ -17,7 +17,7 @@ import datetime
 import decimal
 from collections.abc import Collection
 from secrets import token_hex
-from typing import Any, Optional, Protocol, Union, overload
+from typing import Any, Literal, Optional, Protocol, Union, overload
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -30,11 +30,9 @@ from cdedb.backend.common import (
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
-    encrypt_password,
     inspect_validation as inspect,
     internal,
     singularize,
-    verify_password,
 )
 from cdedb.common import (
     CdEDBLog,
@@ -53,7 +51,16 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.attachment import AttachmentStore
-from cdedb.common.exceptions import ArchiveError, PrivilegeError, QuotaException
+from cdedb.common.crypt import encrypt_password, verify_password
+from cdedb.common.exceptions import (
+    AdminPasswordResetError,
+    ArchiveError,
+    IncorrectPasswordError,
+    ParameterInvalidError,
+    ParameterTimeoutError,
+    PrivilegeError,
+    QuotaException,
+)
 from cdedb.common.fields import (
     PERSONA_ALL_FIELDS,
     PERSONA_CDE_FIELDS,
@@ -402,18 +409,18 @@ class CoreBaseBackend(AbstractBackend):
         log_filter = affirm(ChangelogLogFilter, log_filter)
         return self.generic_retrieve_log(rs, log_filter)
 
-    @staticmethod
     @internal
     def _get_changelog_inconsistencies(
-        persona: CdEDBObject, generation: CdEDBObject
+        self, rs: RequestState, generation: CdEDBObject
     ) -> list[str]:
         """Helper to get actual inconsistencies between changelog and core.personas.
 
-        This is outlined to avoid duplicated calls to changelog_get_history and
-        get_total_persona in changelog_submit_change.
+        This is outlined to avoid duplicated calls to changelog_get_history
+        in changelog_submit_change.
 
         :returns: A list of inconsistent field names.
         """
+        persona = self.get_total_persona(rs, generation["id"])
         if generation['code'] != const.PersonaChangeStati.committed:
             raise RuntimeError(n_("Given changelog generation must be committed."))
         return [key for key in persona if persona[key] != generation[key]]
@@ -442,8 +449,7 @@ class CoreBaseBackend(AbstractBackend):
             )
             if not committed_state:
                 return None
-            persona = self.get_total_persona(rs, persona_id)
-        return self._get_changelog_inconsistencies(persona, committed_state)
+        return self._get_changelog_inconsistencies(rs, committed_state)
 
     def changelog_submit_change(
         self,
@@ -519,13 +525,11 @@ class CoreBaseBackend(AbstractBackend):
                     rs, data['id'], generations=(committed_generation,)
                 )
             )
-            # state of the persona in core.personas
-            persona = self.get_total_persona(rs, data['id'])
 
             # Die when committed_state and core.personas are inconsistent.
             if not committed_state:
                 raise RuntimeError(n_("No committed state found."))
-            if self._get_changelog_inconsistencies(persona, committed_state):
+            if self._get_changelog_inconsistencies(rs, committed_state):
                 raise RuntimeError(n_("Persona and Changelog are inconsistent."))
 
             # handle pending changes
@@ -535,10 +539,10 @@ class CoreBaseBackend(AbstractBackend):
                 if not may_wait:
                     diff = {
                         key: current_state[key]
-                        for key in persona
-                        if persona[key] != current_state[key]
+                        for key in (set(PERSONA_ALL_FIELDS) - {"id"})
+                        if committed_state[key] != current_state[key]
                     }
-                    current_state.update(persona)
+                    current_state.update(committed_state)
                     query = """
                         UPDATE core.changelog
                         SET code = %(new_code)s
@@ -719,11 +723,17 @@ class CoreBaseBackend(AbstractBackend):
             }
             return self.query_exec(rs, query, params)
         with Atomizer(rs):
+            # Get current committed generation. changelog_submit_change takes care
+            #  that this is in sync with core.personas.
+            committed_generation = self.changelog_get_generation(
+                rs, persona_id, committed_only=True
+            )
             # look up changelog entry and mark as committed
             history = self.changelog_get_history(
-                rs, persona_id, generations=(generation,)
+                rs, persona_id, generations=(generation, committed_generation)
             )
             data = history[generation]
+            committed_state = history[committed_generation]
             if data['code'] != const.PersonaChangeStati.pending:
                 return 0
             query = "UPDATE core.changelog SET {setters} WHERE {conditions}"
@@ -743,9 +753,10 @@ class CoreBaseBackend(AbstractBackend):
             self.query_exec(rs, query, params)
 
             # determine changed fields
-            old_state = unwrap(self.get_total_personas(rs, (persona_id,)))
             relevant_keys = tuple(
-                key for key in old_state if data[key] != old_state[key]
+                key
+                for key in (set(PERSONA_ALL_FIELDS) - {"id"})
+                if data[key] != committed_state[key]
             )
             relevant_keys += ('id',)
 
@@ -1205,11 +1216,10 @@ class CoreBaseBackend(AbstractBackend):
             is_member = trial_member = honorary_member = None
             if data.get('is_cde_realm'):
                 # Fix balance
-                tmp = self.get_total_persona(rs, data['id'])
-                if tmp['balance'] is None:
-                    data['balance'] = decimal.Decimal('0.0')
-                else:
-                    data['balance'] = tmp['balance']
+                tmp = self.get_persona(rs, data['id'])
+                if tmp['is_cde_realm']:
+                    raise RuntimeError("Already CdE realm")
+                data['balance'] = decimal.Decimal("0")
                 # We can not apply the desired state directly, since this would violate
                 #  our database integrity (but we also want to get the logs right), so
                 #  we stash the changes here and apply them later on.
@@ -1323,7 +1333,7 @@ class CoreBaseBackend(AbstractBackend):
                 rs,
                 const.CoreLogCodes.privilege_change_pending,
                 data['persona_id'],
-                change_note="Änderung der Admin-Privilegien angestoßen.",
+                change_note=data["notes"],
             )
             ret = self.sql_insert(rs, "core.privilege_changes", data)
 
@@ -1351,12 +1361,13 @@ class CoreBaseBackend(AbstractBackend):
 
         data = {
             "id": privilege_change_id,
-            "ftime": now(),
+            "ftime": "now()",
             "reviewer": rs.user.persona_id,
             "status": case_status,
         }
         with Atomizer(rs):
             case = self.get_privilege_change(rs, privilege_change_id)
+            note = case["notes"] or "Admin-Privilegien geändert."
             if case['status'] != const.PrivilegeChangeStati.pending:
                 raise ValueError(
                     n_("Invalid privilege change state: %(status)s."),
@@ -1380,22 +1391,21 @@ class CoreBaseBackend(AbstractBackend):
                     rs,
                     const.CoreLogCodes.privilege_change_approved,
                     persona_id=case['persona_id'],
-                    change_note="Änderung der Admin-Privilegien bestätigt.",
+                    change_note=note,
                 )
 
                 old = self.get_persona(rs, case["persona_id"])
-                data = {
+                persona_change = {
                     "id": case["persona_id"],
                 }
                 for key in ADMIN_KEYS:
                     if case[key] is not None:
-                        data[key] = case[key]
+                        persona_change[key] = case[key]
 
-                data = affirm(vtypes.Persona, data)
-                note = case["notes"] or "Admin-Privilegien geändert."
+                persona_change = affirm(vtypes.Persona, persona_change)
                 ret *= self.set_persona(
                     rs,
-                    data,
+                    persona_change,
                     may_wait=False,
                     change_note=note,
                     allow_specials=("admins",),
@@ -1403,17 +1413,17 @@ class CoreBaseBackend(AbstractBackend):
 
                 # Force password reset if non-admin has gained admin privileges.
                 if not any(old[key] for key in ADMIN_KEYS) and any(
-                    data.get(key) for key in ADMIN_KEYS
+                    persona_change.get(key) for key in ADMIN_KEYS
                 ):
                     ret *= self.invalidate_password(rs, case["persona_id"])
                     ret *= -1
 
                 # Mark case as successful
-                data = {
+                case_update = {
                     "id": privilege_change_id,
                     "status": const.PrivilegeChangeStati.successful,
                 }
-                ret *= self.sql_update(rs, "core.privilege_changes", data)
+                ret *= self.sql_update(rs, "core.privilege_changes", case_update)
 
             elif case_status == const.PrivilegeChangeStati.rejected:
                 ret = self.sql_update(rs, "core.privilege_changes", data)
@@ -1422,7 +1432,7 @@ class CoreBaseBackend(AbstractBackend):
                     rs,
                     const.CoreLogCodes.privilege_change_rejected,
                     persona_id=case['persona_id'],
-                    change_note="Änderung der Admin-Privilegien verworfen.",
+                    change_note=note,
                 )
             else:
                 raise ValueError(n_("Invalid new privilege change status."))
@@ -1589,7 +1599,8 @@ class CoreBaseBackend(AbstractBackend):
         trial_member = affirm_optional(bool, trial_member)
         honorary_member = affirm_optional(bool, honorary_member)
         with Atomizer(rs):
-            current = self.get_total_persona(rs, persona_id)
+            # Already checks that the user has cde realm.
+            current = self.get_cde_user(rs, persona_id)
 
             # Determine target state.
             if is_member is None:
@@ -1600,8 +1611,6 @@ class CoreBaseBackend(AbstractBackend):
                 honorary_member = current['honorary_member']
 
             # Do some sanity checks
-            if not current['is_cde_realm']:
-                raise RuntimeError(n_("Not a CdE account."))
             if trial_member and not is_member:
                 raise ValueError(n_("Trial membership requires membership."))
             if honorary_member and not is_member:
@@ -1943,7 +1952,7 @@ class CoreBaseBackend(AbstractBackend):
         persona_id = affirm(vtypes.ID, persona_id)
         note = affirm(str, note)
         with Atomizer(rs):
-            persona = unwrap(self.get_total_personas(rs, (persona_id,)))
+            persona = self.get_total_persona(rs, persona_id)
             #
             # 1. Do some sanity checks.
             #
@@ -2308,7 +2317,7 @@ class CoreBaseBackend(AbstractBackend):
         """
         persona_id = affirm(vtypes.ID, persona_id)
         with Atomizer(rs):
-            persona = unwrap(self.get_total_personas(rs, (persona_id,)))
+            persona = self.get_total_persona(rs, persona_id)
             if not persona['is_archived']:
                 raise RuntimeError(n_("Persona is not archived."))
             if self.sql_select(
@@ -3109,66 +3118,84 @@ class CoreBaseBackend(AbstractBackend):
             num += unwrap(self.query_one(rs, query, params)) or 0
         return bool(num)
 
+    @access("anonymous")
+    def resolve_username(self, rs: RequestState, username: str) -> int | None:
+        """Retrieve the persona id associated with the given username.
+
+        This is used for the password reset, but not login since the latter is
+        more involved and needs more data than just the persona id.
+        """
+        username = affirm(vtypes.Email, username)
+        query = "SELECT id FROM core.personas WHERE username = %(username)s"
+        return unwrap(self.query_one(rs, query, {"username": username}))
+
     RESET_COOKIE_PAYLOAD = "X"
 
     def _generate_reset_cookie(
-        self,
-        rs: RequestState,
-        persona_id: int,
-        salt: str,
-        timeout: datetime.timedelta = datetime.timedelta(seconds=60),
+        self, rs: RequestState, persona_id: int, salt: str, timeout: datetime.timedelta
     ) -> str:
         """Create a cookie which authorizes a specific reset action.
 
         The cookie depends on the inputs as well as a server side secret.
         """
-        password_hash = unwrap(
-            self.sql_select_one(rs, "core.personas", ("password_hash",), persona_id)
+        data = self.sql_select_one(
+            rs, "core.personas", ["username", "password_hash"], persona_id
         )
-        if password_hash is None:
-            # A personas password hash cannot be empty.
+        if data is None:
             raise ValueError(n_("Persona does not exist."))
 
         if not self.is_admin(rs) and "meta_admin" not in rs.user.roles:
             roles = self.get_roles_single(rs, persona_id)
             if any("admin" in role for role in roles):
-                raise PrivilegeError(n_("Preventing reset of admin."))
+                raise AdminPasswordResetError(n_("Preventing reset of admin."))
 
         # This defines a specific account/password combination as purpose
+        # The persona_id parameter is usually autofilled by the frontend as
+        #  `rs.user.persona_id`, but here we use this mechanism differently
+        #  _and_ we need to allow bot anonymous usage and usage for other users.
         cookie = encode_parameter(
             salt,
-            str(persona_id),
-            password_hash,
+            "reset_password",
+            get_hash(f"{data['username']}-{data['password_hash']}".encode()),
             self.RESET_COOKIE_PAYLOAD,
-            persona_id=None,
+            persona_id=persona_id,
             timeout=timeout,
         )
         return cookie
 
     def _verify_reset_cookie(
         self, rs: RequestState, persona_id: int, salt: str, cookie: str
-    ) -> Optional[str]:
+    ) -> Literal[True]:
         """Check a provided cookie for correctness.
 
-        :returns: None on success, an error message otherwise.
+        Returns True on success and raises an appropriate error otherwise.
         """
-        password_hash = unwrap(
-            self.sql_select_one(rs, "core.personas", ("password_hash",), persona_id)
+        data = self.sql_select_one(
+            rs, "core.personas", ["username", "password_hash"], persona_id
         )
-        if password_hash is None:
-            # A personas password hash cannot be empty.
+
+        if data is None:
             raise ValueError(n_("Persona does not exist."))
-        timeout, msg = decode_parameter(
-            salt, str(persona_id), password_hash, cookie, persona_id=None
+
+        # The persona_id parameter is usually autofilled by the frontend as
+        #  `rs.user.persona_id`, but here we use this mechanism differently
+        #  _and_ we need to allow anonymous usage.
+        timeout, payload = decode_parameter(
+            salt,
+            "reset_password",
+            get_hash(f"{data['username']}-{data['password_hash']}".encode()),
+            cookie,
+            persona_id=persona_id,
         )
-        if msg is None:
+        if timeout is not None:
             if timeout:
-                return n_("Link expired.")
+                raise ParameterTimeoutError
             else:
-                return n_("Link invalid or already used.")
-        if msg != self.RESET_COOKIE_PAYLOAD:
-            return n_("Link invalid or already used.")
-        return None
+                raise ParameterInvalidError
+        if payload != self.RESET_COOKIE_PAYLOAD:
+            raise ParameterInvalidError
+
+        return True
 
     def modify_password(
         self,
@@ -3177,41 +3204,41 @@ class CoreBaseBackend(AbstractBackend):
         old_password: Optional[str] = None,
         reset_cookie: Optional[str] = None,
         persona_id: Optional[int] = None,
-    ) -> tuple[bool, str]:
+    ) -> DefaultReturnCode:
         """Helper for manipulating password entries.
+
+        Authorization must be provided wither via the old password or
+        via a reset cookie plus a persona_id.
 
         The persona_id parameter is only for the password reset case. We
         intentionally only allow to change the own password.
 
-        An authorization must be provided, either by ``old_password`` or
-        ``reset_cookie``.
-
         This escalates database connection privileges in the case of a
         password reset (which is by its nature anonymous).
-
-        :param persona_id: Must be provided only in case of reset.
-        :returns: The ``bool`` indicates success and the ``str`` is
-          either the new password or an error message.
         """
+        # 1. Validate inputs.
         if persona_id and not reset_cookie:
-            return False, n_("Selecting persona allowed for reset only.")
+            raise ValueError(n_("Selecting persona allowed for reset only."))
         persona_id = persona_id or rs.user.persona_id
         if not persona_id:
-            return False, n_("Could not determine persona to reset.")
-        if not old_password and not reset_cookie:
-            return False, n_("No authorization provided.")
-        if old_password:
+            raise ValueError(n_("Could not determine persona to reset."))
+        if old_password and reset_cookie:
+            raise ValueError(n_("May not provide both old password and reset_cookie."))
+        elif old_password:
             if not self.verify_persona_password(rs, old_password, persona_id):
-                return False, n_("Password verification failed.")
-        if reset_cookie:
-            msg = self.verify_reset_cookie(rs, persona_id, reset_cookie)
-            if msg is not None:
-                return False, msg
-        if not new_password:
-            return False, n_("No new password provided.")
-        _, errs = inspect(vtypes.PasswordStrength, new_password)
-        if errs:
-            return False, n_("Password too weak.")
+                raise IncorrectPasswordError(n_("Password verification failed."))
+        elif reset_cookie:
+            try:
+                self.verify_reset_cookie(rs, persona_id, reset_cookie)
+            except (ParameterTimeoutError, ParameterInvalidError, ValueError) as e:
+                raise ValueError(n_("Link invalid or already used.")) from e
+        else:
+            raise ValueError(n_("No authorization provided."))
+
+        if self.check_password_strength(rs, new_password, persona_id=persona_id):
+            raise ValueError(n_("Password too weak."))
+
+        # 2. perform modification.
         # escalate db privilege role in case of resetting passwords
         orig_conn = None
         try:
@@ -3239,12 +3266,12 @@ class CoreBaseBackend(AbstractBackend):
             # deescalate
             if orig_conn:
                 rs.conn = orig_conn
-        return bool(ret), new_password
+        return ret
 
     @access("persona")
     def change_password(
         self, rs: RequestState, old_password: str, new_password: str
-    ) -> tuple[bool, str]:
+    ) -> DefaultReturnCode:
         """
         :returns: see :py:meth:`modify_password`
         """
@@ -3261,33 +3288,15 @@ class CoreBaseBackend(AbstractBackend):
         rs: RequestState,
         password: str,
         *,
-        email: Optional[str] = None,
-        persona_id: Optional[int] = None,
-        argname: Optional[str] = None,
-    ) -> tuple[Optional[vtypes.PasswordStrength], list[Error]]:
+        persona_id: int,
+    ) -> list[Error]:
         """Check the password strength using some additional userdate.
 
         This escalates database connection privileges in the case of an
         anonymous request, that is for a password reset.
         """
         password = affirm(str, password)
-        email = affirm_optional(str, email)
-        persona_id = affirm_optional(vtypes.ID, persona_id)
-        argname = affirm_optional(str, argname)
-
-        if email is None and persona_id is None:
-            raise ValueError(n_("No input provided."))
-        elif email and persona_id:
-            raise ValueError(n_("More than one input provided."))
-        elif email:
-            persona_id = unwrap(
-                self.sql_select_one(
-                    rs, "core.personas", ("id",), email, entity_key="username"
-                )
-            )
-            if persona_id is None:
-                raise ValueError(n_("Unknown email address."))
-        assert persona_id is not None
+        persona_id = affirm(vtypes.ID, persona_id)
 
         columns_of_interest = [
             *ADMIN_KEYS, "username", "given_names", "family_name", "nickname", "title",
@@ -3328,78 +3337,68 @@ class CoreBaseBackend(AbstractBackend):
         if persona['birthday']:
             inputs.extend(persona['birthday'].isoformat().split('-'))
 
-        password, errs = inspect(
+        _, errs = inspect(
             vtypes.PasswordStrength,
             password,
-            argname=argname,
+            argname="new_password",
             admin=admin,
             inputs=inputs,
         )
 
-        return password, errs
+        return errs
 
     @access("anonymous")
     def make_reset_cookie(
         self,
         rs: RequestState,
-        email: str,
-        timeout: datetime.timedelta = datetime.timedelta(seconds=60),
-    ) -> tuple[bool, str]:
+        persona_id: int,
+        timeout: datetime.timedelta,
+    ) -> str:
         """Perform preparation for a recovery.
 
         This generates a reset cookie which can be used in a second step
         to actually reset the password. To reset the password for a
         privileged account you need to have privileges yourself.
-
-        :returns: The ``bool`` indicates success and the ``str`` is
-          either the reset cookie or an error message.
         """
-        timeout = timeout or self.conf["PARAMETER_TIMEOUT"]
-        email = affirm(vtypes.Email, email)
-        data = self.sql_select_one(
-            rs, "core.personas", ("id", "is_active"), email, entity_key="username"
-        )
-        if not data:
-            return False, n_("Nonexistent user.")
-        if not data['is_active']:
-            return False, n_("Inactive user.")
+        persona_id = affirm(vtypes.ID, persona_id)
+        timeout = affirm(datetime.timedelta, timeout)
         with Atomizer(rs):
-            ret = self.generate_reset_cookie(rs, data['id'], timeout=timeout)
-            self.core_log(rs, const.CoreLogCodes.password_reset_cookie, data['id'])
-        return True, ret
+            ret = self.generate_reset_cookie(rs, persona_id, timeout=timeout)
+            self.core_log(rs, const.CoreLogCodes.password_reset_cookie, persona_id)
+        return ret
+
+    @access("anonymous")
+    def check_reset_cookie(
+        self, rs: RequestState, persona_id: int, cookie: str
+    ) -> Literal[True]:
+        """Public interface for verifying a reset cookie."""
+        persona_id = affirm(vtypes.ID, persona_id)
+        cookie = affirm(str, cookie)
+        return self.verify_reset_cookie(rs, persona_id, cookie)
 
     @access("anonymous")
     def reset_password(
-        self, rs: RequestState, email: str, new_password: str, cookie: str
-    ) -> tuple[bool, str]:
+        self, rs: RequestState, persona_id: int, new_password: str, cookie: str
+    ) -> DefaultReturnCode:
         """Perform a recovery.
 
         Authorization is guaranteed by the cookie.
 
         :returns: see :py:meth:`modify_password`
         """
-        email = affirm(vtypes.Email, email)
+        persona_id = affirm(vtypes.ID, persona_id)
         new_password = affirm(str, new_password)
         cookie = affirm(str, cookie)
-        data = self.sql_select_one(
-            rs, "core.personas", ("id",), email, entity_key="username"
-        )
-        if not data:
-            return False, n_("Nonexistent user.")
         if self.is_locked_down(rs):
-            return False, n_("Lockdown active.")
-        persona_id = unwrap(data)
-        success, msg = self.modify_password(
+            raise ValueError(n_("Lockdown active."))
+        ret = self.modify_password(
             rs, new_password, reset_cookie=cookie, persona_id=persona_id
         )
-        if success:
-            # Since they should usually be called inside an atomized context, logs
-            # demand an Atomizer by default. However, due to privilege escalation inside
-            # modify_password, this does not work and relax that claim.
-            self.core_log(
-                rs, const.CoreLogCodes.password_reset, persona_id, atomized=False
-            )
-        return success, msg
+        # Since they should usually be called inside an atomized context, logs
+        # demand an Atomizer by default. However, due to privilege escalation inside
+        # modify_password, this does not work and relax that claim.
+        self.core_log(rs, const.CoreLogCodes.password_reset, persona_id, atomized=False)
+        return ret
 
     @access("core_admin", *models.GenesisCase.all_admins)
     def find_doppelgangers(

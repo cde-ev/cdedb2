@@ -157,14 +157,14 @@
                         <td class="text-right">
                             {% for level in result['counts'] %}
                                 {% if candidate_shortname in level['preferred'] and first_candidate %}
-                                    {{ level['pro_votes'] }}
+                                    {{ level['support'].values()|first }}
                                 {% endif %}
                             {% endfor %}
                         </td>
                         <td class="text-right">
                             {% for level in result['counts'] %}
                                 {% if candidate_shortname in level['preferred'] and first_candidate %}
-                                    {{ level['contra_votes'] }}
+                                    {{ level['opposition'].values()|first }}
                                 {% endif %}
                             {% endfor %}
                         </td>

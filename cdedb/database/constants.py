@@ -759,6 +759,13 @@ class ComplaintEntryType(CdEIntEnum):
             ComplaintEntryType.agreement_measure,
         }
 
+    @property
+    def allows_attachment(self) -> bool:
+        return self in {
+            ComplaintEntryType.generic_information,
+            ComplaintEntryType.provisional_statement_given,
+        }
+
     def get_icon(self) -> str:
         et = ComplaintEntryType
         return {
@@ -939,6 +946,8 @@ class EventLogCodes(CdEIntEnum):
     helper_removed = 8  #:
     orga_added = 10  #:
     orga_removed = 11  #:
+    caretaker_added = 12  #:
+    caretaker_removed = 13  #:
     part_created = 15  #:
     part_changed = 16  #:
     part_deleted = 17  #:

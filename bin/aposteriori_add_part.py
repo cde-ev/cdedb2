@@ -16,7 +16,7 @@ new_part = {
 # Setup
 
 script = Script(dbuser="cdb_admin")
-event = script.make_backend("event")
+event = script.make_event_backend(proxy=True)
 
 update_event = {
     'parts': {
@@ -27,4 +27,4 @@ update_event = {
 # Execution
 
 with script:
-    event.set_event(script.rs(), sys.argv[1], update_event)
+    event.set_event(script.rs(), int(sys.argv[1]), update_event)

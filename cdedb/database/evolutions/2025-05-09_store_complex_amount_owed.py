@@ -1,12 +1,11 @@
 #! /usr/bin/env python3
 
-from cdedb.backend.event import EventBackend
 from cdedb.script import Script
 
 s = Script(dbuser='cdb')
 rs = s.rs()
 
-event_backend: EventBackend = s.make_backend("event", proxy=False)
+event_backend = s.make_event_backend(proxy=False)
 
 
 with s:

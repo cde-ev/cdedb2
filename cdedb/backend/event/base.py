@@ -31,7 +31,6 @@ from cdedb.backend.common import (
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     affirm_validation_optional as affirm_optional,
-    encrypt_password,
     internal,
     singularize,
 )
@@ -45,12 +44,16 @@ from cdedb.common import (
     DefaultReturnCode,
     DeletionBlockers,
     RequestState,
+    cast_field_entries,
+    cast_field_value,
     cast_fields,
     json_serialize,
     make_persona_name,
+    normalize_field_entries,
     now,
     unwrap,
 )
+from cdedb.common.crypt import encrypt_password
 from cdedb.common.exceptions import EventIsBalancedError, PrivilegeError
 from cdedb.common.fields import (
     PERSONA_EVENT_FIELDS,
@@ -67,10 +70,6 @@ from cdedb.common.privileges import (
 )
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
-from cdedb.common.validation.validate import (
-    FIELD_DATATYPE_VALIDATORS,
-    validate_check_optional,
-)
 from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter
 from cdedb.models.core import EventPersona
@@ -128,6 +127,33 @@ class EventBaseBackend(EventLowLevelBackend):
         for anid in persona_ids:
             ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
         return ret
+
+    @access("persona")
+    def caretaker_infos(
+        self,
+        rs: RequestState,
+        persona_ids: Collection[int],
+    ) -> dict[int, set[int]]:
+        """List events cared for by specific personas."""
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        data = self.sql_select(
+            rs,
+            "event.caretakers",
+            ("persona_id", "event_id"),
+            persona_ids,
+            entity_key="persona_id",
+        )
+        ret = {}
+        for anid in persona_ids:
+            ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
+        return ret
+
+    class _CaretakerInfoProtocol(Protocol):
+        def __call__(self, rs: RequestState, persona_id: int) -> set[int]: ...
+
+    caretaker_info: _CaretakerInfoProtocol = singularize(
+        caretaker_infos, "persona_ids", "persona_id"
+    )
 
     @access("persona")
     def get_event_helpers(self, rs: RequestState) -> set[vtypes.ID]:
@@ -310,11 +336,13 @@ class EventBaseBackend(EventLowLevelBackend):
             )
             return 1
 
-    @access("event_admin")
-    def validate_persona_ids(
+    @access("persona")
+    def validate_event_persona_ids(
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> None:
         """Validate whether persona_ids are valid for receiving event privileges."""
+        if not persona_ids:
+            raise ValueError(n_("Must not be empty."))
         if not self.core.verify_ids(rs, persona_ids, is_archived=False):
             raise ValueError(n_("Some of these personas do not exist or are archived."))
         if not self.core.verify_personas(rs, persona_ids, {"event"}):
@@ -329,7 +357,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         ret = 1
         with Atomizer(rs):
-            self.validate_persona_ids(rs, persona_ids)
+            self.validate_event_persona_ids(rs, persona_ids)
             for anid in xsorted(persona_ids):
                 # on conflict do nothing
                 r = self.sql_insert(
@@ -382,14 +410,17 @@ class EventBaseBackend(EventLowLevelBackend):
         This is basically un-inlined code from `set_event`, but may also be
         called separately.
 
-        Note that this is only available to admins in contrast to `set_event`.
+        Note that this requires different privileges than `set_event`.
         """
         event_id = affirm(vtypes.ID, event_id)
         persona_ids = affirm_set(vtypes.ID, persona_ids)
 
+        if not is_privileged(rs, EventPrivileges.orgas_change, event_id=event_id):
+            raise PrivilegeError(n_("Not privileged."))
+
         ret = 1
         with Atomizer(rs):
-            self.validate_persona_ids(rs, persona_ids)
+            self.validate_event_persona_ids(rs, persona_ids)
 
             for anid in xsorted(persona_ids):
                 new_orga = {
@@ -402,7 +433,7 @@ class EventBaseBackend(EventLowLevelBackend):
                     self.event_log(
                         rs, const.EventLogCodes.orga_added, event_id, persona_id=anid
                     )
-                ret *= r
+                    ret *= r
 
         # Update session orga status
         if rs.user.persona_id in persona_ids:
@@ -416,14 +447,21 @@ class EventBaseBackend(EventLowLevelBackend):
     ) -> DefaultReturnCode:
         """Remove a single orga of an event.
 
-        Note that this is only available to admins in contrast to `set_event`.
+        Note that this requires different privileges than `set_event`.
         """
         event_id = affirm(vtypes.ID, event_id)
         persona_id = affirm(vtypes.ID, persona_id)
 
-        query = "DELETE FROM event.orgas WHERE persona_id = %s AND event_id = %s"
+        if not is_privileged(rs, EventPrivileges.orgas_change, event_id=event_id):
+            raise PrivilegeError(n_("Not privileged."))
+
+        query = """
+            DELETE FROM event.orgas
+            WHERE persona_id = %(persona_id)s AND event_id = %(event_id)s
+        """
+        params = {"persona_id": persona_id, "event_id": event_id}
         with Atomizer(rs):
-            ret = self.query_exec(rs, query, (persona_id, event_id))
+            ret = self.query_exec(rs, query, params)
             if ret:
                 self.event_log(
                     rs,
@@ -435,6 +473,74 @@ class EventBaseBackend(EventLowLevelBackend):
         # Update session orga status
         if rs.user.persona_id == persona_id:
             rs.user.orga.remove(event_id)
+
+        return ret
+
+    @access("event_admin")
+    def add_event_caretakers(
+        self, rs: RequestState, event_id: int, persona_ids: Collection[int]
+    ) -> DefaultReturnCode:
+        """Add caretakers for an event.
+
+        These have similar permissions to orgas, but are external caretakers.
+        """
+        event_id = affirm(vtypes.ID, event_id)
+        persona_ids = affirm_set(vtypes.ID, persona_ids)
+
+        ret = 1
+        with Atomizer(rs):
+            self.validate_event_persona_ids(rs, persona_ids)
+
+            for anid in xsorted(persona_ids):
+                new_caretaker = {
+                    'persona_id': anid,
+                    'event_id': event_id,
+                }
+                # on conflict do nothing
+                r = self.sql_insert(
+                    rs, "event.caretakers", new_caretaker, drop_on_conflict=True
+                )
+                if r:
+                    self.event_log(
+                        rs,
+                        const.EventLogCodes.caretaker_added,
+                        event_id,
+                        persona_id=anid,
+                    )
+                    ret *= r
+
+        # Update session caretaker status
+        if rs.user.persona_id in persona_ids:
+            rs.user.caretaker.add(event_id)
+
+        return ret
+
+    @access("event_admin")
+    def remove_event_caretaker(
+        self, rs: RequestState, event_id: int, persona_id: int
+    ) -> DefaultReturnCode:
+        """Remove a single caretaker of an event."""
+        event_id = affirm(vtypes.ID, event_id)
+        persona_id = affirm(vtypes.ID, persona_id)
+
+        query = """
+            DELETE FROM event.caretakers
+            WHERE persona_id = %(persona_id)s AND event_id = %(event_id)s
+        """
+        params = {"persona_id": persona_id, "event_id": event_id}
+        with Atomizer(rs):
+            ret = self.query_exec(rs, query, params)
+            if ret:
+                self.event_log(
+                    rs,
+                    const.EventLogCodes.caretaker_removed,
+                    event_id,
+                    persona_id=persona_id,
+                )
+
+        # Update session caretaker status
+        if rs.user.persona_id == persona_id:
+            rs.user.caretaker.remove(event_id)
 
         return ret
 
@@ -790,8 +896,10 @@ class EventBaseBackend(EventLowLevelBackend):
             }
             new_id = self.sql_insert(rs, "event.events", edata)
             self.event_log(rs, const.EventLogCodes.event_created, new_id)
-            if 'orgas' in data:
+            if data.get('orgas'):
                 self.add_event_orgas(rs, new_id, data['orgas'])
+            if data.get('caretakers'):
+                self.add_event_caretakers(rs, new_id, data['caretakers'])
             if 'fields' in data:
                 self._set_event_fields(rs, new_id, data['fields'])
             if 'parts' in data:
@@ -1274,11 +1382,9 @@ class EventBaseBackend(EventLowLevelBackend):
             row['kind'] = const.QuestionnaireUsages(row['kind'])
             if field := event.fields.get(row['field_id']):
                 # Deserialize the stored string into the datatype of the field if able.
-                row['default_value'] = validate_check_optional(
-                    FIELD_DATATYPE_VALIDATORS[field.kind],
-                    row['default_value'],
-                    ignore_warnings=True,
-                )[0]
+                row['default_value'] = cast_field_value(
+                    row['default_value'], field.kind
+                )
                 # Special case for datetimes: Convert them to the default timezone so
                 #  they can be submitted again even without the timezone.
                 #  This is required for use with 'datetime-local' inputs.
@@ -1542,6 +1648,12 @@ class EventBaseBackend(EventLowLevelBackend):
                         personas.add(e['persona_id'])
                     if e.get('submitted_by'):  # for log entries
                         personas.add(e['submitted_by'])
+            for e in ret[models.EventField.database_table].values():
+                if entries := e["entries"]:
+                    kind = const.FieldDatatypes(e["kind"])
+                    entries = cast_field_entries(entries, kind)
+                    entries = normalize_field_entries(entries, kind, coalesce="") or {}
+                    e["entries"] = list(map(list, entries.items()))
             ret['core.personas'] = list_to_dict(
                 self.sql_select(rs, "core.personas", PERSONA_EVENT_FIELDS, personas)
             )
@@ -1829,6 +1941,9 @@ class EventBaseBackend(EventLowLevelBackend):
             del field['field_name']
             del field['event_id']
             del field['id']
+            field["entries"] = normalize_field_entries(
+                field["entries"], field["kind"], coalesce=""
+            )
         # personas
         for reg_id, registration in ret['registrations'].items():
             persona = personas[registration['persona_id']]

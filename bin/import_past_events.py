@@ -5,7 +5,6 @@ import pathlib
 import sys
 
 import cdedb.database.constants as const
-from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import CdEDBObject
 from cdedb.frontend.common import CustomCSVDialect
 from cdedb.script import Script
@@ -15,7 +14,7 @@ infile_courses = pathlib.Path(sys.argv[2])
 
 s = Script(dbuser='cdb_admin')
 
-past_event: PastEventBackend = s.make_backend('past_event')
+past_event = s.make_past_event_backend(proxy=True)
 
 institution_map = {e.shortname: e for e in const.PastInstitutions}
 institution_map['AT'] = institution_map['DSA']

@@ -18,7 +18,11 @@ from cdedb.common import (
     nearly_now,
     now,
 )
-from cdedb.common.exceptions import ArchiveError, PrivilegeError
+from cdedb.common.exceptions import (
+    AdminPasswordResetError,
+    ArchiveError,
+    PrivilegeError,
+)
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.validation.validate import PERSONA_CDE_CREATION
@@ -161,13 +165,12 @@ class TestCoreBackend(BackendTest):
     @as_users("anton", "berta", "janis", maintain_data=True)
     def test_change_password(self) -> None:
         user = self.user
-        ret, _ = self.core.change_password(self.key, self.user['password'], "weakpass")
-        self.assertFalse(ret)
+        with self.assertRaisesRegex(ValueError, "Password too weak."):
+            self.core.change_password(self.key, self.user['password'], "weakpass")
+
         newpass = "er3NQ_5bkrc#"
-        ret, message = self.core.change_password(self.key, self.user['password'],
-                                                 newpass)
+        ret = self.core.change_password(self.key, self.user['password'], newpass)
         self.assertTrue(ret)
-        self.assertEqual(newpass, message)
         self.core.logout(self.key)
         self.login(self.user)
         self.assertIsNone(self.key)
@@ -263,16 +266,13 @@ class TestCoreBackend(BackendTest):
 
     def test_password_reset(self) -> None:
         new_pass = "rK;7e$ekgReW2t"
-        ret, cookie = self.core.make_reset_cookie(self.key, "berta@example.cde")
+        cookie = self.core.make_reset_cookie(self.key, USER_DICT["berta"]["id"], datetime.timedelta(seconds=10))
+        ret = self.core.reset_password(self.key, USER_DICT["berta"]["id"], new_pass, cookie)
         self.assertTrue(ret)
-        ret, effective = self.core.reset_password(
-            self.key, "berta@example.cde", new_pass, cookie)
-        self.assertTrue(ret)
-        self.assertEqual(new_pass, effective)
-        with self.assertRaises(PrivilegeError):
-            self.core.make_reset_cookie(self.key, "anton@example.cde")
-        ret, _ = self.core.make_reset_cookie(self.key, "nonexistent@example.cde")
-        self.assertFalse(ret)
+        with self.assertRaises(AdminPasswordResetError):
+            self.core.make_reset_cookie(self.key, USER_DICT["anton"]["id"], datetime.timedelta(seconds=10))
+        with self.assertRaises(ValueError):
+            self.core.make_reset_cookie(self.key, 1_000_000, datetime.timedelta(seconds=10))
 
     @as_users("vera")
     def test_create_persona(self) -> None:
@@ -524,7 +524,7 @@ class TestCoreBackend(BackendTest):
         with self.assertRaises(RuntimeError) as cm:
             self.core.change_membership_easy_mode(
                 self.key, persona_id=5, is_member=False, trial_member=False)
-        self.assertEqual(str(cm.exception), "Not a CdE account.")
+        self.assertEqual(str(cm.exception), "User misses a mandatory realm.")
 
         # Test membership changing is forbidden if user has an active lastschrift
         with self.assertRaises(RuntimeError) as cm:
@@ -1221,37 +1221,29 @@ class TestCoreBackend(BackendTest):
         self.assertTrue(persona["is_finance_admin"])
 
         self.login(admin1)
-        core_log_expectation = (3, (
+        core_log_expectation = [
             # Finalizing the privilege process.
             {
-                'id': 1001,
-                'change_note': "Änderung der Admin-Privilegien angestoßen.",
-                'code': const.CoreLogCodes.privilege_change_pending.value,
-                'ctime': nearly_now(),
+                'change_note': data["notes"],
+                'code': const.CoreLogCodes.privilege_change_pending,
                 'persona_id': new_admin["id"],
                 'submitted_by': admin1["id"],
             },
             # Starting the privilege change process.
             {
-                'id': 1002,
-                'change_note': "Änderung der Admin-Privilegien bestätigt.",
-                'code': const.CoreLogCodes.privilege_change_approved.value,
-                'ctime': nearly_now(),
+                'change_note': data["notes"],
+                'code': const.CoreLogCodes.privilege_change_approved,
                 'persona_id': new_admin["id"],
                 'submitted_by': admin2["id"],
             },
             # Password invalidation.
             {
-                'id': 1003,
-                'change_note': None,
                 'code': const.CoreLogCodes.password_invalidated,
-                'ctime': nearly_now(),
                 'persona_id': new_admin['id'],
                 'submitted_by': admin2['id'],
             },
-        ))
-        result = self.core.retrieve_log(self.key, CoreLogFilter())
-        self.assertEqual(core_log_expectation, result)
+        ]
+        self.assertLogEqual(core_log_expectation, "core")
 
         total_entries = self.core.retrieve_changelog_meta(
             self.key, ChangelogLogFilter())[0]
@@ -1260,7 +1252,7 @@ class TestCoreBackend(BackendTest):
             {
                 'id': 1001,
                 'change_note': data["notes"],
-                'code': const.PersonaChangeStati.committed.value,
+                'code': const.PersonaChangeStati.committed,
                 'ctime': nearly_now(),
                 'generation': 2,
                 'persona_id': new_admin["id"],

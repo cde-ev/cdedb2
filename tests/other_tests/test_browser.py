@@ -168,8 +168,6 @@ class TestBrowser(BrowserTest):
         page.locator('input[name="field_name_-1"]').click()
         page.locator('input[name="field_name_-1"]').fill("favorit")
 
-        page.locator("#dynamicrow-delete-button-0").click()
-
         # test tab navigation...
         page.get_by_role("tab", name="Kursfelder").click()
         page.wait_for_url("http://localhost:5000/event/event/1/field/summary#tab_course")
@@ -183,7 +181,8 @@ class TestBrowser(BrowserTest):
         page.locator('input[name="field_name_-2"]').click()
         page.locator('input[name="field_name_-2"]').fill("held")
 
-        page.locator("#dynamicrow-delete-button-9").click()
+        page.locator("#dynamicrow-delete-button--1").click()
+        page.locator("#dynamicrow-delete-button-8").click()
 
         page.get_by_role("tab", name="Kursfelder").click()
         page.wait_for_url("http://localhost:5000/event/event/1/field/summary#tab_course")

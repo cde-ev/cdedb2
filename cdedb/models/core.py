@@ -12,15 +12,14 @@ from enum import auto
 from secrets import token_urlsafe
 from typing import TYPE_CHECKING, Any, ClassVar, Optional
 
-from cryptography.fernet import Fernet
-
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, now
+from cdedb.common.crypt import generate_encrytion_key, get_decrypt, get_encrypt
 from cdedb.common.exceptions import CryptographyError
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
-from cdedb.common.sorting import EntitySorter, Sortkey
+from cdedb.common.sorting import Sortkey
 from cdedb.models.common import AbstractFlag, CdEDataclass, MetaFlag as Meta
 
 if TYPE_CHECKING:
@@ -153,8 +152,8 @@ class AnonymousMessageData(CdEDataclass):
 
     @staticmethod
     def _encrypt(data: str) -> tuple[str, str]:
-        key = Fernet.generate_key()
-        encrypted_data = Fernet(key).encrypt(data.encode("utf-8"))
+        key = generate_encrytion_key()
+        encrypted_data = get_encrypt(key)(data.encode("utf-8"))
         return (
             base64.b64encode(encrypted_data).decode("ascii"),
             key.decode("ascii"),
@@ -163,7 +162,7 @@ class AnonymousMessageData(CdEDataclass):
     @staticmethod
     def _decrypt(data64: str, key: str) -> str:
         data = base64.b64decode(data64.encode("ascii"))
-        return Fernet(key.encode("ascii")).decrypt(data).decode("utf-8")
+        return get_decrypt(key.encode("ascii"))(data).decode("utf-8")
 
     @classmethod
     def encrypt(
@@ -257,7 +256,7 @@ class Persona(PersonaName):
         for field in dataclasses.fields(self):
             if PersonaFlag.mandatory_true_flag.in_field(field):
                 if not getattr(self, field.name):
-                    raise RuntimeError
+                    raise RuntimeError("User misses a mandatory realm.")
 
     @classmethod
     @functools.cache
@@ -285,7 +284,7 @@ class Persona(PersonaName):
 
     # TODO implement this properly
     def get_sortkey(self) -> Sortkey:
-        return EntitySorter.persona(self.as_dict())
+        return (self.family_name, self.given_names)
 
 
 @dataclasses.dataclass(kw_only=True)

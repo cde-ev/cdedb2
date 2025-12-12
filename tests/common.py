@@ -254,9 +254,13 @@ def _make_backend_shim(
         if hasattr(backend, "list_enforcers"):
             if rs.user.persona_id in backend.list_enforcers(rs):
                 rs.user.realm_roles["complaint"] = {"enforcer"}
-        if "event" in rs.user.roles and hasattr(backend, "orga_info"):
-            rs.user.orga = backend.orga_info(
-                rs, rs.user.persona_id)
+        if "event" in rs.user.roles:
+            if hasattr(backend, "orga_info"):
+                rs.user.orga = backend.orga_info(
+                    rs, rs.user.persona_id)
+            if hasattr(backend, "caretaker_info"):
+                rs.user.caretaker = backend.caretaker_info(
+                    rs, rs.user.persona_id)
         if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
             rs.user.moderator = backend.moderator_info(
                 rs, rs.user.persona_id)
@@ -1142,7 +1146,7 @@ class FrontendTest(BackendTest):
                 response.request.path, response.request.method,
                 response.headers.get('X-Generation-Time'),
                 response.request.query_string)
-        logger.info(msg)
+        logger.debug(msg)
 
     def get(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
         """Navigate directly to a given URL using GET."""
@@ -1690,14 +1694,18 @@ class FrontendTest(BackendTest):
             other_selector = f"div#{div} div.alert"
             msg = msg or f"Couldn't find any such notification: {selector!r}."
             if other_notifications := self._get_nodes(other_selector, check_exists=False):
-                msg += " I found these notifications instead:\n"
+                msg += "\nI found these notifications instead:\n"
                 msg += "\n".join(
-                    f"{' '.join(sorted(node.classes))}:"
+                    f"\t{' '.join(sorted(node.classes))}:"
                     f" {self._normalize_whitespace(node.text_content())}"
                     for node in other_notifications
                 )
+                if errors := self.get_content("debug-data-errors", check_exists=False):
+                    msg += " I found these errors in the debug data: " + errors
             else:
                 msg += " (There were no notifications)."
+            if errors := self.get_content("debug-data-errors", check_exists=False):
+                msg += "\nI found these errors in the debug data:\n\t" + errors
             self.fail(msg)
         if ntext is not None:
             # joining them this way is useful for meaningful failure message
@@ -1793,7 +1801,7 @@ class FrontendTest(BackendTest):
         if not error_containers:
             msg = f"Input with name {f!r} is not contained in an .has-{kind} box."
             if errors := self.get_content("debug-data-errors", check_exists=False):
-                msg += " I found these errors in the debug data: " + errors
+                msg += "\nI found these errors in the debug data:\n\t" + errors
             self.fail(msg)
 
         normalized = [re.sub(r'[\n\s]+', ' ', content) for content in error_containers]
@@ -2286,6 +2294,7 @@ class CronTest(CdEDBTest):
     event: ClassVar[EventBackend]
     pastevent: ClassVar[PastEventBackend]
     assembly: ClassVar[AssemblyBackend]
+    complaint: ClassVar[ComplaintBackend]
     ml: ClassVar[MlBackend]
 
     @classmethod
@@ -2297,6 +2306,7 @@ class CronTest(CdEDBTest):
         cls.event = make_cron_backend_proxy(cls.cron, cls.cron.core.eventproxy)
         cls.assembly = make_cron_backend_proxy(cls.cron, cls.cron.core.assemblyproxy)
         cls.ml = make_cron_backend_proxy(cls.cron, cls.cron.core.mlproxy)
+        cls.complaint = make_cron_backend_proxy(cls.cron, cls.cron.core.complaintproxy)
         cls._remaining_periodics = {
             job.cron['name']
             for frontend in (cls.cron.core, cls.cron.cde, cls.cron.event,

@@ -11,6 +11,7 @@
 {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event'].title, icon="chalkboard-teacher",
                         readonly=not (ambience['event'].is_visible_for(user, is_registered, privileged=False)
                                       or ambience['event'].id in user.orga
+                                      or ambience['event'].id in user.caretaker
                                       or user.admin_views.intersection(('event_orga', 'event_mgmt')))) }}
 {{ util.breadcrumb_link(cdedblink("event/course_list"), gettext("Courselist"), active=True) }}
 {% endblock %}
@@ -23,26 +24,13 @@
         {% call util.notification('info', id='course-not-visible') %}
             {% trans %}The Courselist is currently only visible to Orgas and Admins.{% endtrans %}
         {% endcall %}
-    {% elif not ambience['event'].is_course_state_visible and show_course_state %}
-        {% call util.notification('info', id='cancelled-not-visible') %}
-            {% if ambience['event'].tracks|length > 1 %}
-                {% trans %}
-                    Cancelled courses are only marked for orgas. Other users can currently only see in which course
-                    tracks the course was originally offered.
-                {% endtrans %}
-            {% else %}
-                {% trans %}
-                    Cancelled courses are only marked for orgas. Other users cannot see courses' state currently.
-                {% endtrans %}
-            {% endif %}
-        {% endcall %}
     {% endif %}
     {% if courses and "event" not in user.roles %}
         {% call util.notification('info', id='instructors-not-visible') %}
             {% trans %}The instructors for each course are only visible to logged in event users.{% endtrans %}
         {% endcall %}
     {% endif %}
-    {% if num_hidden_courses and (ambience['event'].id in user.orga or 'event_orga' in user.admin_views) %}
+    {% if num_hidden_courses and orga_view %}
         {% call util.notification('info', id='hidden-courses') %}
             {% trans num=num_hidden_courses %}
                 {{ num }} courses are currently hidden.
@@ -100,7 +88,7 @@
         {% for course_id, course in courses.items() %}
             <div class="hide-hover-container" id="course-{{ course.id }}">
                 {{ util.h(course.label, anchor="course-" + course.id|string, translate=False) }}
-                {% if ambience['event'].id in user.orga or 'event_orga' in user.admin_views %}
+                {% if orga_view %}
                     <div class="pull-right heading-supplement">
                         {{ util.href(cdedblink('event/show_course', {'course_id' : course_id}), gettext("Details"),
                                      readonly=not is_privileged_for('show_course'), icon='list',
@@ -111,7 +99,7 @@
                     </div>
                 {% endif %}
                 <p class="heading-supplement">
-                    {% if ambience['event'].id in user.orga or 'event_orga' in user.admin_views %}
+                    {% if orga_view %}
                         <span class="label label-primary">{{ course.shortname }}</span>
                     {% endif %}
                     {% if "event" in user.roles and course.instructors %}
@@ -136,8 +124,7 @@
                                 <i>{{ track['title'] }}</i>
                             {%- endif %}
                         {%- endfor %}</span>.
-                    {% elif (ambience['event'].tracks.keys()|list)[0] not in course.active_segments
-                             and show_course_state %}
+                    {% elif not course.active_segments and show_course_state %}
                         – <span class="text-info">{% trans %}cancelled{% endtrans %}</span>
                     {% endif %}
                 </p>

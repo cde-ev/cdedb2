@@ -16,8 +16,9 @@ import psycopg2.extensions
 from passlib.utils import consteq
 
 import cdedb.common.validation.types as vtypes
-from cdedb.backend.common import inspect_validation as inspect, verify_password
+from cdedb.backend.common import inspect_validation as inspect
 from cdedb.common import User, n_, now
+from cdedb.common.crypt import verify_password
 from cdedb.common.exceptions import APITokenError
 from cdedb.common.fields import PERSONA_STATUS_FIELDS
 from cdedb.common.roles import extract_roles

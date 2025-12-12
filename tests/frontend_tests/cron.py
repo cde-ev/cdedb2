@@ -11,6 +11,7 @@ from typing import Any, Union, cast
 import freezegun
 
 import cdedb.database.constants as const
+import cdedb.models.complaint as models_complaint
 from cdedb.common import CdEDBObject, RequestState, now
 from cdedb.common.sorting import xsorted
 from tests.common import CronTest, event_keeper, execsql, prepsql, storage
@@ -537,6 +538,22 @@ class TestCron(CronTest):
     def test_forget_fotos(self) -> None:
         # We just want to test that no exception is raised.
         self.execute('forget_profile_fotos')
+
+    @storage
+    def test_forget_complaint_attachments(self) -> None:
+        store = self.complaint.get_attachment_store(RS)
+        new_attachment_hash = store.store(
+            (self.testfile_dir / "rechen.pdf").read_bytes()
+        )
+        old_attachment_hash = self.get_sample_datum(
+            models_complaint.ComplaintEntryVersion.database_table, (2)
+        )["attachment_hash"]
+        self.assertIsNotNone(old_attachment_hash)
+        self.assertTrue(store.is_available(new_attachment_hash))
+        self.assertTrue(store.is_available(old_attachment_hash))
+        self.execute('forget_complaint_attachments')
+        self.assertFalse(store.is_available(new_attachment_hash))
+        self.assertTrue(store.is_available(old_attachment_hash))
 
     @storage
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
