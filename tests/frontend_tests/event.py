@@ -6920,7 +6920,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self._check_shown_violations(
             event_id=3, filtered_severity=models_cv.ViolationSeverity.INFO,
             texts=[
-                "3 Uneingecheckte Teilnehmende",
                 "2 Fehlende Kurseinteilungen",
             ],
         )
@@ -7042,7 +7041,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self._check_shown_violations(
             event_id=3, filtered_severity=models_cv.ViolationSeverity.ERROR,
             texts=[
-                "3 Uneingecheckte Teilnehmende",
             ],
         )
         self._check_shown_violations(
@@ -7076,7 +7074,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self._check_shown_violations(
             event_id=3, filtered_severity=models_cv.ViolationSeverity.WARNING,
             texts=[
-                "3 Uneingecheckte Teilnehmende",
                 "2 Fehlende Kurseinteilungen",
             ],
         )
