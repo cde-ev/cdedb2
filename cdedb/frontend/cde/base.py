@@ -57,7 +57,6 @@ from cdedb.frontend.common import (
     TransactionObserver,
     access,
     check_validation as check,
-    check_validation_optional as check_optional,
     inspect_validation as inspect,
     make_membership_fee_reference,
     request_extractor,
@@ -270,7 +269,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             near_pc = rs.values['near_pc'] = rs.request.values.get('near_pc')
             near_radius = rs.values['near_radius'] = request_extractor(
                 rs,
-                {'near_radius': Optional[int]},  # type: ignore[dict-item]
+                {'near_radius': Optional[int]},
             )['near_radius']
             if pl and pu:
                 defaults['qval_postal_code,postal_code2'] = f"{pl:0<5} {pu:0<5}"
@@ -802,9 +801,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         The internal parameter finalized is used to explicitly signal at
         what point account creation will happen.
         """
-        accounts_file = check_optional(
-            rs, vtypes.CSVFile, accounts_file, "accounts_file"
-        )
+        accounts_file = check(rs, vtypes.CSVFile | None, accounts_file, "accounts_file")
         if rs.has_validation_errors():
             return self.batch_admission_form(rs)
 
@@ -837,12 +834,12 @@ class CdEBaseFrontend(AbstractUserFrontend):
             params: vtypes.TypeMapping = {
                 # as on the first submit no values for the resolution are transmitted,
                 # we have to cast None -> LineResolutions.none after extraction
-                f"resolution{lineno}": Optional[LineResolutions],  # type: ignore[dict-item]
-                f"doppelganger_id{lineno}": Optional[vtypes.ID],  # type: ignore[dict-item]
-                f"hash{lineno}": Optional[str],  # type: ignore[dict-item]
-                f"is_orga{lineno}": Optional[bool],  # type: ignore[dict-item]
-                f"is_instructor{lineno}": Optional[bool],  # type: ignore[dict-item]
-                f"update_username{lineno}": Optional[bool],  # type: ignore[dict-item]
+                f"resolution{lineno}": Optional[LineResolutions],
+                f"doppelganger_id{lineno}": Optional[vtypes.ID],
+                f"hash{lineno}": Optional[str],
+                f"is_orga{lineno}": Optional[bool],
+                f"is_instructor{lineno}": Optional[bool],
+                f"update_username{lineno}": Optional[bool],
             }
             tmp = request_extractor(rs, params)
             if tmp[f"resolution{lineno}"] is None:

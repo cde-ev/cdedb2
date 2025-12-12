@@ -15,7 +15,6 @@ from cdedb.backend.common import (
     access,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional,
     internal,
     singularize,
 )
@@ -417,7 +416,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         """
         case_id = affirm(vtypes.ID, case_id)
         decision = affirm(GenesisDecision, decision)
-        persona_id = affirm_optional(vtypes.ID, persona_id)
+        persona_id = affirm(vtypes.ID | None, persona_id)
 
         with Atomizer(rs):
             # Privilege check is done in genesis_get_case, since it requires the case.

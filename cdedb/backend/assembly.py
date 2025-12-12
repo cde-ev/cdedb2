@@ -46,7 +46,6 @@ from cdedb.backend.common import (
     access,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional,
     internal,
     singularize,
 )
@@ -200,8 +199,8 @@ class AssemblyBackend(AbstractBackend):
 
         If persona_id is not given, the current user is used.
         """
-        ballot_id = affirm_optional(vtypes.ID, ballot_id)
-        attachment_id = affirm_optional(vtypes.ID, attachment_id)
+        ballot_id = affirm(vtypes.ID | None, ballot_id)
+        attachment_id = affirm(vtypes.ID | None, attachment_id)
         if assembly_id is None:
             assembly_id = self.get_assembly_id(
                 rs, ballot_id=ballot_id, attachment_id=attachment_id
@@ -266,9 +265,9 @@ class AssemblyBackend(AbstractBackend):
         Exactly one of assembly_id, ballot_id and attachment_id has to be
         provided.
         """
-        assembly_id = affirm_optional(vtypes.ID, assembly_id)
-        ballot_id = affirm_optional(vtypes.ID, ballot_id)
-        attachment_id = affirm_optional(vtypes.ID, attachment_id)
+        assembly_id = affirm(vtypes.ID | None, assembly_id)
+        ballot_id = affirm(vtypes.ID | None, ballot_id)
+        attachment_id = affirm(vtypes.ID | None, attachment_id)
 
         return self.may_access(
             rs,
@@ -520,8 +519,8 @@ class AssemblyBackend(AbstractBackend):
         This does not check for authorization since it is used during
         the authorization check.
         """
-        assembly_id = affirm_optional(vtypes.ID, assembly_id)
-        ballot_id = affirm_optional(vtypes.ID, ballot_id)
+        assembly_id = affirm(vtypes.ID | None, assembly_id)
+        ballot_id = affirm(vtypes.ID | None, ballot_id)
         return self.check_attendance(rs, assembly_id=assembly_id, ballot_id=ballot_id)
 
     @access("assembly", "ml_admin")
@@ -639,7 +638,7 @@ class AssemblyBackend(AbstractBackend):
         :returns: Mapping of event ids to dict with title, activity status and
           signup end. The latter is used to sort the assemblies in index.
         """
-        is_active = affirm_optional(bool, is_active)
+        is_active = affirm(bool | None, is_active)
         query = "SELECT id, title, signup_end, is_active FROM assembly.assemblies"
         constraints = []
         params = []
@@ -1337,7 +1336,7 @@ class AssemblyBackend(AbstractBackend):
         only allowed after it has ended.
         """
         ballot_id = affirm(vtypes.ID, ballot_id)
-        comment = affirm_optional(str, comment)
+        comment = affirm(str | None, comment)
 
         if not self.is_presider(rs, ballot_id=ballot_id):
             raise PrivilegeError(n_("Must have privileged access to comment ballot."))
@@ -1627,7 +1626,7 @@ class AssemblyBackend(AbstractBackend):
           stored secret should be used.
         """
         ballot_id = affirm(vtypes.ID, ballot_id)
-        secret = affirm_optional(vtypes.PrintableASCII, secret)
+        secret = affirm(vtypes.PrintableASCII | None, secret)
 
         with Atomizer(rs):
             ballot = unwrap(self.get_ballots(rs, (ballot_id,)))
@@ -1726,7 +1725,7 @@ class AssemblyBackend(AbstractBackend):
           assembly has concluded.
         """
         ballot_id = affirm(vtypes.ID, ballot_id)
-        secret = affirm_optional(vtypes.PrintableASCII, secret)
+        secret = affirm(vtypes.PrintableASCII | None, secret)
 
         if not self.check_attendance(rs, ballot_id=ballot_id):
             raise PrivilegeError(n_("Must attend the ballot."))
@@ -2624,8 +2623,8 @@ class AssemblyBackend(AbstractBackend):
             raise ValueError(n_("No input specified."))
         if assembly_id is not None and ballot_id is not None:  # pragma: no cover
             raise ValueError(n_("Too many inputs specified."))
-        assembly_id = affirm_optional(vtypes.ID, assembly_id)
-        ballot_id = affirm_optional(vtypes.ID, ballot_id)
+        assembly_id = affirm(vtypes.ID | None, assembly_id)
+        ballot_id = affirm(vtypes.ID | None, ballot_id)
         if not self.may_access(rs, assembly_id=assembly_id, ballot_id=ballot_id):
             raise PrivilegeError()
 

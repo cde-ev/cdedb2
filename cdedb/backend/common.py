@@ -665,31 +665,6 @@ def affirm_validation(
 
 
 @overload
-def affirm_validation_optional(
-    assertion: type[CdEDataclass], value: Any, **kwargs: Any
-) -> Optional[CdEDBObject]: ...
-
-
-@overload
-def affirm_validation_optional(
-    assertion: type[T], value: Any, **kwargs: Any
-) -> Optional[T]: ...
-
-
-def affirm_validation_optional(
-    assertion: type[T | CdEDataclass], value: Any, **kwargs: Any
-) -> Optional[T | CdEDBObject]:
-    """Wrapper to call asserts in :py:mod:`cdedb.validation`.
-
-    This is similar to :func:`~cdedb.backend.common.affirm_validation`
-    but also allows optional/falsy values.
-    """
-    return validate.validate_assert_optional(
-        Optional[assertion], value, ignore_warnings=True, **kwargs
-    )  # type: ignore[call-overload]
-
-
-@overload
 def affirm_array_validation(
     assertion: type[CdEDataclass], values: Iterable[Any], **kwargs: Any
 ) -> tuple[CdEDBObject, ...]: ...

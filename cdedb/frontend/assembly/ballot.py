@@ -1011,7 +1011,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
                     vote = as_vote_string([rejected])
         else:
             # preferential voting
-            vote = unwrap(request_extractor(rs, {"vote": Optional[str]}))  # type: ignore[dict-item]
+            vote = unwrap(request_extractor(rs, {"vote": Optional[str]}))
             # Empty preferential vote counts as abstaining
             if not vote:
                 if ballot['use_bar']:

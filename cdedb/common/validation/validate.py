@@ -325,25 +325,6 @@ def validate_assert(
 
 
 @overload
-def validate_assert_optional(
-    type_: type[CdEDataclass], value: Any, ignore_warnings: bool, **kwargs: Any
-) -> Optional[CdEDBObject]: ...
-
-
-@overload
-def validate_assert_optional(
-    type_: type[T], value: Any, ignore_warnings: bool, **kwargs: Any
-) -> Optional[T]: ...
-
-
-def validate_assert_optional(
-    type_: type[T | CdEDataclass], value: Any, ignore_warnings: bool, **kwargs: Any
-) -> Optional[T | CdEDBObject]:
-    """Wrapper to avoid a lot of type-ignore statements due to a mypy bug."""
-    return validate_assert(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[call-overload]
-
-
-@overload
 def validate_check(
     type_: type[CdEDataclass],
     value: Any,
@@ -400,25 +381,6 @@ def validate_check(
             f"{old_format} for '{str(type_)}' with input {value!r}, {kwargs}."
         )
         return None, old_format
-
-
-@overload
-def validate_check_optional(
-    type_: type[CdEDataclass], value: Any, ignore_warnings: bool, **kwargs: Any
-) -> tuple[Optional[CdEDBObject], list[Error]]: ...
-
-
-@overload
-def validate_check_optional(
-    type_: type[T], value: Any, ignore_warnings: bool, **kwargs: Any
-) -> tuple[Optional[T], list[Error]]: ...
-
-
-def validate_check_optional(
-    type_: type[T | CdEDataclass], value: Any, ignore_warnings: bool, **kwargs: Any
-) -> tuple[Optional[T | CdEDBObject], list[Error]]:
-    """Wrapper to avoid a lot of type-ignore statements due to a mypy bug."""
-    return validate_check(Optional[type_], value, ignore_warnings, **kwargs)  # type: ignore[call-overload]
 
 
 def get_errors(errors: list[Error]) -> list[Error]:
@@ -1414,10 +1376,10 @@ PERSONA_TYPE_FIELDS: TypeMapping = {
 
 PERSONA_BASE_CREATION: TypeMapping = {
     'username': Email,
-    'notes': Optional[str],  # type: ignore[dict-item]
+    'notes': Optional[str],
     'nickname': NoneType,
     'given_names': str,
-    'legal_given_names': Optional[str],  # type: ignore[dict-item]
+    'legal_given_names': Optional[str],
     'show_legal_given_names': bool,
     'family_name': str,
     'title': NoneType,
@@ -2136,7 +2098,7 @@ def _period(val: Any, argname: str = "period", **kwargs: Any) -> Period:
         'archival': ('state', 'done', 'count'),
     }
     type_map: TypeMapping = {
-        'state': Optional[ID],  # type: ignore[dict-item]
+        'state': Optional[ID],
         'done': datetime.datetime,
         'count': NonNegativeInt,
         'trialmembers': NonNegativeInt,
@@ -2162,7 +2124,7 @@ def _expuls(val: Any, argname: str = "expuls", **kwargs: Any) -> ExPuls:
 
     # TODO make these public?
     optional_fields: TypeMapping = {
-        'addresscheck_state': Optional[ID],  # type: ignore[dict-item]
+        'addresscheck_state': Optional[ID],
         'addresscheck_done': datetime.datetime,
         'addresscheck_count': NonNegativeInt,
     }
@@ -2214,7 +2176,7 @@ def _money_transfer_entry(
     val = _mapping(val, argname, **kwargs)
     mandatory_fields: TypeMapping = {
         'persona_id': int,
-        'registration_id': int if event_only else Optional[int],  # type: ignore[dict-item]
+        'registration_id': int if event_only else Optional[int],
         'amount': decimal.Decimal,
         'date': datetime.date,
     }
@@ -2356,7 +2318,7 @@ SEPA_SENDER_FIELDS: TypeMapping = {
     'country': str,
     'iban': IBAN,
     'glaeubigerid': str,
-    'original_glaeubigerid': Optional[str],  # type: ignore[dict-item]
+    'original_glaeubigerid': Optional[str],
 }
 
 SEPA_META_LIMITS: Mapping[str, int] = {
@@ -2585,8 +2547,8 @@ EVENT_PART_CREATION_MANDATORY_FIELDS: TypeMapping = {
 }
 
 EVENT_PART_CREATION_OPTIONAL_FIELDS: TypeMapping = {
-    'waitlist_field_id': Optional[ID],  # type: ignore[dict-item]
-    'camping_mat_field_id': Optional[ID],  # type: ignore[dict-item]
+    'waitlist_field_id': Optional[ID],
+    'camping_mat_field_id': Optional[ID],
     'tracks': Mapping,
 }
 
@@ -3164,7 +3126,7 @@ def _registration_part(
 
     optional_fields: TypeMapping = {
         'status': const.RegistrationPartStati,
-        'lodgement_id': Optional[ID],  # type: ignore[dict-item]
+        'lodgement_id': Optional[ID],
         'is_camping_mat': bool,
     }
     return RegistrationPart(
@@ -3186,8 +3148,8 @@ def _registration_track(
     val = _mapping(val, argname, **kwargs)
 
     optional_fields: TypeMapping = {
-        'course_id': Optional[ID],  # type: ignore[dict-item]
-        'course_instructor': Optional[ID],  # type: ignore[dict-item]
+        'course_id': Optional[ID],
+        'course_instructor': Optional[ID],
         'choices': Iterable,
     }
 
@@ -3322,11 +3284,11 @@ def _by_field_datatype(
 
 
 QUESTIONNAIRE_ROW_MANDATORY_FIELDS: TypeMapping = {
-    'title': Optional[str],  # type: ignore[dict-item]
-    'info': Optional[str],  # type: ignore[dict-item]
-    'input_size': Optional[int],  # type: ignore[dict-item]
-    'readonly': Optional[bool],  # type: ignore[dict-item]
-    'default_value': Optional[str],  # type: ignore[dict-item]
+    'title': Optional[str],
+    'info': Optional[str],
+    'input_size': Optional[int],
+    'readonly': Optional[bool],
+    'default_value': Optional[str],
 }
 
 
@@ -3343,8 +3305,8 @@ def _questionnaire_row(
     value = _mapping(val, argname, **kwargs)
 
     optional_fields: TypeMapping = {
-        'field_id': Optional[ID],  # type: ignore[dict-item]
-        'field_name': Optional[RestrictiveIdentifier],  # type: ignore[dict-item]
+        'field_id': Optional[ID],
+        'field_name': Optional[RestrictiveIdentifier],
         'kind': const.QuestionnaireUsages,
         'pos': int,
     }
@@ -3558,10 +3520,10 @@ def _serialized_partial_event(
         raise ValidationSummary(ValueError(argname, n_("Schema version mismatch.")))
 
     domain_validators: TypeMapping = {
-        'courses': Optional[PartialCourse],  # type: ignore[dict-item]
-        'lodgement_groups': Optional[PartialLodgementGroup],  # type: ignore[dict-item]
-        'lodgements': Optional[PartialLodgement],  # type: ignore[dict-item]
-        'registrations': Optional[PartialRegistration],  # type: ignore[dict-item]
+        'courses': Optional[PartialCourse],
+        'lodgement_groups': Optional[PartialLodgementGroup],
+        'lodgements': Optional[PartialLodgement],
+        'registrations': Optional[PartialRegistration],
     }
 
     errs = ValidationSummary()
@@ -3647,7 +3609,7 @@ def _partial_course(
         for key, entry in val['segments'].items():
             try:
                 new_key = _int(key, 'segments', **kwargs)
-                new_entry: Optional[bool] = _ALL_TYPED[Optional[bool]](  # type: ignore[index]
+                new_entry: Optional[bool] = _ALL_TYPED[Optional[bool]](
                     entry, 'segments', **kwargs
                 )
             except ValidationSummary as e:
@@ -3886,7 +3848,7 @@ def _partial_registration_part(
 
     optional_fields: TypeMapping = {
         'status': const.RegistrationPartStati,
-        'lodgement_id': Optional[PartialImportID],  # type: ignore[dict-item]
+        'lodgement_id': Optional[PartialImportID],
         'is_camping_mat': bool,
     }
 
@@ -3908,8 +3870,8 @@ def _partial_registration_track(
     val = _mapping(val, argname, **kwargs)
 
     optional_fields: TypeMapping = {
-        'course_id': Optional[PartialImportID],  # type: ignore[dict-item]
-        'course_instructor': Optional[PartialImportID],  # type: ignore[dict-item]
+        'course_id': Optional[PartialImportID],
+        'course_instructor': Optional[PartialImportID],
         'choices': Iterable,
     }
 
@@ -3954,7 +3916,7 @@ def _partial_registration_checkin_period(
 
     mandatory_fields: TypeMapping = {
         'checkin_time': datetime.datetime,
-        'checkout_time': Optional[datetime.datetime],  # type: ignore[dict-item]
+        'checkout_time': Optional[datetime.datetime],
     }
 
     val = _examine_dictionary_fields(val, mandatory_fields, {}, **kwargs)
@@ -4964,7 +4926,7 @@ def _query(val: Any, argname: Optional[str] = None, **kwargs: Any) -> Query:
     for idx, entry in enumerate(val.order):
         try:
             # TODO use generic tuple here once implemented
-            entry = _ALL_TYPED[Iterable](entry, 'order', **kwargs)  # type: ignore[assignment]
+            entry = _ALL_TYPED[Iterable](entry, 'order', **kwargs)
         except ValidationSummary as e:
             errs.extend(e)
             continue

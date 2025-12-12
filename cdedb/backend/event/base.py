@@ -30,7 +30,6 @@ from cdedb.backend.common import (
     access,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional,
     internal,
     singularize,
 )
@@ -311,7 +310,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         Return 1 on successful change, -1 on successful deletion, 0 otherwise."""
         event_id = affirm(vtypes.ID, event_id)
-        minor_form = affirm_optional(vtypes.PDFFile, minor_form, file_storage=False)
+        minor_form = affirm(vtypes.PDFFile | None, minor_form, file_storage=False)
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Must be orga or admin to change the minor form."))
         path = self.get_minor_form_path(rs, event_id)
@@ -1173,8 +1172,8 @@ class EventBaseBackend(EventLowLevelBackend):
         """Uninlined code from the event fee methods."""
         self.affirm_atomized_context(rs)
 
-        event_id = affirm_optional(vtypes.ID, event_id)
-        fee_id = affirm_optional(vtypes.ID, fee_id)
+        event_id = affirm(vtypes.ID | None, event_id)
+        fee_id = affirm(vtypes.ID | None, fee_id)
 
         if event_id is None:
             assert fee_id is not None

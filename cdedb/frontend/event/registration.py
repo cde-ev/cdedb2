@@ -54,7 +54,6 @@ from cdedb.frontend.common import (
     access,
     cdedbid_filter,
     check_validation as check,
-    check_validation_optional as check_optional,
     make_event_fee_reference,
     periodic,
     request_extractor,
@@ -110,8 +109,8 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs.notify("error", n_("Event is balanced. May not book payments."))
             return self.redirect(rs, "event/show_event")
 
-        transfers_file = check_optional(
-            rs, vtypes.CSVFile, transfers_file, "transfers_file"
+        transfers_file = check(
+            rs, vtypes.CSVFile | None, transfers_file, "transfers_file"
         )
         if rs.has_validation_errors():
             return self.batch_fees_form(rs, event_id)
@@ -568,16 +567,16 @@ class EventRegistrationMixin(EventBaseFrontend):
         standard_params: vtypes.MutableTypeMapping = {
             "reg.list_consent": bool,
             "reg.mixed_lodging": bool,
-            "reg.notes": Optional[str],  # type: ignore[dict-item]
+            "reg.notes": Optional[str],
         }
         if orga_input:
             standard_params.update({
-                "reg.orga_notes": Optional[str],  # type: ignore[dict-item]
+                "reg.orga_notes": Optional[str],
                 "reg.parental_agreement": bool,
             })
             if self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
                 standard_params.update({
-                    "reg.real_persona_id": Optional[vtypes.ID],  # type: ignore[dict-item]
+                    "reg.real_persona_id": Optional[vtypes.ID],
                 })
         standard_params = filter_params(standard_params)
         registration = {
@@ -591,7 +590,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             for part_id in event.parts:
                 part_params.update({
                     f"part{part_id}.status": const.RegistrationPartStati,
-                    f"part{part_id}.lodgement_id": Optional[vtypes.ID],  # type: ignore[dict-item]
+                    f"part{part_id}.lodgement_id": Optional[vtypes.ID],
                     f"part{part_id}.is_camping_mat": bool,
                 })
             part_params = filter_params(part_params)
@@ -631,16 +630,15 @@ class EventRegistrationMixin(EventBaseFrontend):
         track_params: vtypes.MutableTypeMapping = {}
         if orga_input:
             track_params.update({
-                f"track{track_id}.course_id": Optional[vtypes.ID]  # type: ignore[misc]
-                for track_id in tracks
+                f"track{track_id}.course_id": Optional[vtypes.ID] for track_id in tracks
             })
         track_params.update({
-            f"track{track_id}.course_choice_{i}": Optional[vtypes.ID]  # type: ignore[misc]
+            f"track{track_id}.course_choice_{i}": Optional[vtypes.ID]
             for track_id in simple_tracks
             for i in range(tracks[track_id].num_choices)
         })
         track_params.update({
-            f"track{track_id}.course_instructor": Optional[vtypes.ID]  # type: ignore[misc]
+            f"track{track_id}.course_instructor": Optional[vtypes.ID]
             for track_id in simple_tracks
         })
         track_params = filter_params(track_params)
@@ -648,12 +646,12 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         # Now for synced tracks.
         synced_params: vtypes.MutableTypeMapping = {
-            f"group{group.id}.course_choice_{i}": Optional[vtypes.ID]  # type: ignore[misc]
+            f"group{group.id}.course_choice_{i}": Optional[vtypes.ID]
             for group in sync_track_groups.values()
             for i in range(group.num_choices)
         }
         synced_params.update({
-            f"group{group_id}.course_instructor": Optional[vtypes.ID]  # type: ignore[misc]
+            f"group{group_id}.course_instructor": Optional[vtypes.ID]
             for group_id in sync_track_groups
         })
         synced_params = filter_params(synced_params)
@@ -1356,7 +1354,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             else:
                 fee_id = request_extractor(
                     rs,
-                    {'fee_id': Optional[int]},  # type: ignore[dict-item]
+                    {'fee_id': Optional[int]},
                 )['fee_id']
             if fee_id:
                 # Defer validation to after the redirect.
@@ -1435,8 +1433,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             return self.redirect(rs, "event/fee_summary")
 
         params: vtypes.TypeMapping = {
-            f'amount{reg_id}': Optional[decimal.Decimal]  # type: ignore[misc]
-            for reg_id in registrations
+            f'amount{reg_id}': Optional[decimal.Decimal] for reg_id in registrations
         }
         data = request_extractor(rs, params)
 

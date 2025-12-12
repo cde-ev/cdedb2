@@ -32,7 +32,6 @@ from cdedb.backend.common import (
     affirm_dict_validation as affirm_dict,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional,
     internal,
     singularize,
 )
@@ -325,7 +324,7 @@ class EventRegistrationBackend(EventBaseBackend):
         for example during validation before creating a new registration.
         """
         event_id = affirm(vtypes.ID, event_id)
-        registration_id = affirm_optional(vtypes.ID, registration_id)
+        registration_id = affirm(vtypes.ID | None, registration_id)
         part_ids = affirm_set(vtypes.ID, part_ids or ())
         if registration_id:
             involved_tracks = self._get_involved_tracks(rs, registration_id)
@@ -427,7 +426,7 @@ class EventRegistrationBackend(EventBaseBackend):
         """
         event_id = affirm(vtypes.ID, event_id)
         active_only = affirm(bool, active_only)
-        involved_parts = affirm_optional(set[vtypes.ID], involved_parts)
+        involved_parts = affirm(set[vtypes.ID] | None, involved_parts)
 
         query = f"""
             SELECT tg.id, ARRAY_REMOVE(ARRAY_AGG(DISTINCT cs.course_id), NULL) AS courses
@@ -549,7 +548,7 @@ class EventRegistrationBackend(EventBaseBackend):
         :returns: Mapping of registration ids to persona_ids.
         """
         event_id = affirm(vtypes.ID, event_id)
-        persona_ids = affirm_optional(set[vtypes.ID], persona_ids)
+        persona_ids = affirm(set[vtypes.ID] | None, persona_ids)
 
         if persona_ids != {rs.user.persona_id} and not is_privileged(
             rs, EventPrivileges.registrations_read_internal, event_id=event_id
@@ -829,10 +828,10 @@ class EventRegistrationBackend(EventBaseBackend):
         :param reg_ids: List of registration states (in any part) to filter for
         """
         event_id = affirm(vtypes.ID, event_id)
-        track_id = affirm_optional(vtypes.ID, track_id)
-        course_id = affirm_optional(vtypes.ID, course_id)
-        position = affirm_optional(InfiniteEnum[CourseFilterPositions], position)
-        reg_ids = affirm_optional(set[vtypes.ID], reg_ids)
+        track_id = affirm(vtypes.ID | None, track_id)
+        course_id = affirm(vtypes.ID | None, course_id)
+        position = affirm(InfiniteEnum[CourseFilterPositions] | None, position)
+        reg_ids = affirm(set[vtypes.ID] | None, reg_ids)
         reg_states = affirm_set(const.RegistrationPartStati, reg_states)
         if not is_privileged(rs, EventPrivileges.registrations_read, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
@@ -1108,7 +1107,7 @@ class EventRegistrationBackend(EventBaseBackend):
     ) -> DefaultReturnCode:
         """Public entry point for setting a registration. Perform sanity checks after."""
         data = affirm(vtypes.Registration, data)
-        change_note = affirm_optional(str, change_note)
+        change_note = affirm(str | None, change_note)
 
         with Atomizer(rs):
             # Retrieve some basic data about the registration.
@@ -1135,7 +1134,7 @@ class EventRegistrationBackend(EventBaseBackend):
         Perform sanity checks only once after everything has been updated.
         """
         data = affirm_array(vtypes.Registration, data)
-        change_note = affirm_optional(str, change_note)
+        change_note = affirm(str | None, change_note)
 
         if not data:
             return 1
@@ -1850,11 +1849,11 @@ class EventRegistrationBackend(EventBaseBackend):
         :param is_orga: Optional override for orga status in fee calculation.
         """
         event_id = affirm(vtypes.ID, event_id)
-        persona_id = affirm_optional(vtypes.ID, persona_id)
+        persona_id = affirm(vtypes.ID | None, persona_id)
         part_ids = affirm_set(vtypes.ID, part_ids)
-        is_member = affirm_optional(bool, is_member)
-        is_orga = affirm_optional(bool, is_orga)
-        age = affirm_optional(int, age) or 0
+        is_member = affirm(bool | None, is_member)
+        is_orga = affirm(bool | None, is_orga)
+        age = affirm(int | None, age) or 0
 
         field_values = affirm(Mapping, field_values)  # type: ignore[type-abstract]
 
@@ -1987,7 +1986,7 @@ class EventRegistrationBackend(EventBaseBackend):
         """
         registration_id = affirm(vtypes.ID, registration_id)
         fee_id = affirm(vtypes.ID, fee_id)
-        amount = affirm_optional(decimal.Decimal, amount)
+        amount = affirm(decimal.Decimal | None, amount)
 
         with Atomizer(rs):
             persona_id, event_id = self._get_registration_info(rs, registration_id)
@@ -2401,7 +2400,7 @@ class EventRegistrationBackend(EventBaseBackend):
         """Add an additional backdated period, where a participant was present."""
         registration_id = affirm(vtypes.ID, registration_id)
         checkin_time = affirm(datetime.datetime, checkin_time)
-        checkout_time = affirm_optional(datetime.datetime, checkout_time)
+        checkout_time = affirm(datetime.datetime | None, checkout_time)
 
         if checkout_time and checkin_time >= checkout_time:
             raise ValueError(n_("Checkout must be after checkin."))
@@ -2479,7 +2478,7 @@ class EventRegistrationBackend(EventBaseBackend):
         registration_id = affirm(vtypes.ID, registration_id)
         period_id = affirm(vtypes.ID, period_id)
         checkin_time = affirm(datetime.datetime, checkin_time)
-        checkout_time = affirm_optional(datetime.datetime, checkout_time)
+        checkout_time = affirm(datetime.datetime | None, checkout_time)
 
         ref_time = now()
         if checkin_time > ref_time:

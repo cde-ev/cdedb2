@@ -12,6 +12,8 @@ from collections.abc import Collection, Iterator, Mapping
 from functools import cached_property
 from typing import Any, Optional, Protocol
 
+from typing_extensions import TypeForm
+
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
@@ -20,7 +22,6 @@ from cdedb.backend.common import (
     access,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional,
     singularize,
 )
 from cdedb.backend.event.base import EventBaseBackend
@@ -472,8 +473,8 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
     ) -> dict[int, dict[int, LodgementInhabitants]]:
         """Group number of inhabitants by lodgement, part and camping mat status."""
         event_id = affirm(vtypes.ID, event_id)
-        involved = affirm_optional(bool, involved)
-        _registrations = affirm_optional(Mapping, _registrations)  # type: ignore[type-abstract]
+        involved = affirm(bool | None, involved)
+        _registrations = affirm(TypeForm(Mapping | None), _registrations)  # type: ignore[type-arg]
 
         if not is_privileged(
             rs,

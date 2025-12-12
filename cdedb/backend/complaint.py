@@ -12,7 +12,6 @@ from cdedb.backend.common import (
     access,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional,
     singularize,
 )
 from cdedb.common import (
@@ -505,7 +504,7 @@ class ComplaintBackend(AbstractBackend):
             passthrough=True,
             entry_type=entry.entry_type,
         )
-        dreason = affirm_optional(str, dreason)
+        dreason = affirm(str | None, dreason)
 
         with Atomizer(rs):
             self._delete_entry(rs, entry_id=entry_id, dreason=dreason)
@@ -517,7 +516,7 @@ class ComplaintBackend(AbstractBackend):
     ) -> DefaultReturnCode:
         """Delete an existing entry version."""
         entry_id = affirm(vtypes.ID, entry_id)
-        dreason = affirm_optional(str, dreason)
+        dreason = affirm(str | None, dreason)
         with Atomizer(rs):
             case_id = self._get_case_id(rs, entry_id)
             entry = self.get_case(rs, case_id).entries[entry_id]
@@ -1035,8 +1034,8 @@ class ComplaintBackend(AbstractBackend):
         :returns: Mapping of entry *version* ids to descriptions.
         """
         case_id = affirm(int, case_id)
-        entry_id = affirm_optional(int, entry_id)
-        deleted = affirm_optional(bool, deleted)
+        entry_id = affirm(int | None, entry_id)
+        deleted = affirm(bool | None, deleted)
         return self._get_descriptions(
             rs, case_id=case_id, entry_id=entry_id, visible=True, deleted=deleted
         )
@@ -1224,7 +1223,7 @@ class ComplaintBackend(AbstractBackend):
         self, rs: RequestState, concerned_id: int, is_active: bool | None = True
     ) -> set[vtypes.ID]:
         concerned_id = affirm(vtypes.ID, concerned_id)
-        is_active = affirm_optional(bool, is_active)
+        is_active = affirm(bool | None, is_active)
         if not (
             {"complaint_admin", "complaint.enforcer"} & rs.user.all_roles
             or concerned_id == rs.user.persona_id
@@ -1264,7 +1263,7 @@ class ComplaintBackend(AbstractBackend):
         entry_types: set[const.ComplaintEntryType] | None = None,
         is_active: bool | None = True,
     ) -> dict[int, int]:
-        is_active = affirm_optional(bool, is_active)
+        is_active = affirm(bool | None, is_active)
         if entry_types is None:
             entry_types = const.ComplaintEntryType.measure_types()
         else:

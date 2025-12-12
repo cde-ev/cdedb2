@@ -29,7 +29,6 @@ from cdedb.backend.common import (
     affirm_array_validation as affirm_array,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional,
     inspect_validation as inspect,
     internal,
     singularize,
@@ -373,7 +372,7 @@ class CoreBaseBackend(AbstractBackend):
         to access this freely."""
         log_table = affirm(str, log_table)
         log_id = affirm(int, log_id)
-        change_note = affirm_optional(str, change_note)
+        change_note = affirm(str | None, change_note)
 
         if log_table not in {log_filter.log_table for log_filter in ALL_LOG_FILTERS}:
             raise ValueError("Unknown log")
@@ -997,10 +996,10 @@ class CoreBaseBackend(AbstractBackend):
 
         :returns: Next valid id in table core.personas
         """
-        persona_id = affirm_optional(int, persona_id)
-        is_member = affirm_optional(bool, is_member)
-        is_archived = affirm_optional(bool, is_archived)
-        paper_expuls = affirm_optional(bool, paper_expuls)
+        persona_id = affirm(int | None, persona_id)
+        is_member = affirm(bool | None, is_member)
+        is_archived = affirm(bool | None, is_archived)
+        paper_expuls = affirm(bool | None, paper_expuls)
         query = "SELECT MIN(id) FROM core.personas"
         constraints = []
         params: ParamDict = {}
@@ -1192,9 +1191,9 @@ class CoreBaseBackend(AbstractBackend):
           without.
         """
         data = affirm(vtypes.Persona, data)
-        generation = affirm_optional(int, generation)
+        generation = affirm(int | None, generation)
         may_wait = affirm(bool, may_wait)
-        change_note = affirm_optional(str, change_note)
+        change_note = affirm(str | None, change_note)
         return self.set_persona(
             rs,
             data,
@@ -1454,7 +1453,7 @@ class CoreBaseBackend(AbstractBackend):
         :returns: dict mapping case ids to dicts containing information about
             the change
         """
-        persona_id = affirm_optional(vtypes.ID, persona_id)
+        persona_id = affirm(vtypes.ID | None, persona_id)
         stati = stati or set()
         stati = affirm_set(const.PrivilegeChangeStati, stati)
 
@@ -1540,8 +1539,8 @@ class CoreBaseBackend(AbstractBackend):
         persona_id = affirm(vtypes.ID, persona_id)
         balance = affirm(vtypes.NonNegativeDecimal, balance)
         log_code = affirm(const.FinanceLogCodes, log_code)
-        change_note = affirm_optional(str, change_note)
-        transaction_date = affirm_optional(datetime.date, transaction_date)
+        change_note = affirm(str | None, change_note)
+        transaction_date = affirm(datetime.date | None, transaction_date)
         update: CdEDBObject = {
             'id': persona_id,
         }
@@ -1595,9 +1594,9 @@ class CoreBaseBackend(AbstractBackend):
         :param honorary_member: Desired target state of honorary membership or None.
         """
         persona_id = affirm(vtypes.ID, persona_id)
-        is_member = affirm_optional(bool, is_member)
-        trial_member = affirm_optional(bool, trial_member)
-        honorary_member = affirm_optional(bool, honorary_member)
+        is_member = affirm(bool | None, is_member)
+        trial_member = affirm(bool | None, trial_member)
+        honorary_member = affirm(bool | None, honorary_member)
         with Atomizer(rs):
             # Already checks that the user has cde realm.
             current = self.get_cde_user(rs, persona_id)
@@ -2409,7 +2408,7 @@ class CoreBaseBackend(AbstractBackend):
         """
         persona_id = affirm(vtypes.ID, persona_id)
         new_username = affirm(vtypes.Email, new_username)
-        password = affirm_optional(str, password)
+        password = affirm(str | None, password)
         with Atomizer(rs):
             if self.verify_existence(rs, new_username):
                 # abort if there is already an account with this address
@@ -2486,7 +2485,7 @@ class CoreBaseBackend(AbstractBackend):
             to query for other participants of the same event by their ids.
         """
         persona_ids = affirm_set(vtypes.ID, persona_ids)
-        event_id = affirm_optional(vtypes.ID, event_id) or 0
+        event_id = affirm(vtypes.ID | None, event_id) or 0
         persona_data = self.query_all(
             rs, *models.EventPersona.get_select_query(persona_ids)
         )
@@ -2755,7 +2754,7 @@ class CoreBaseBackend(AbstractBackend):
         :returns: The id of the newly created persona.
         """
         data = affirm(vtypes.Persona, data, creation=True)
-        submitted_by = affirm_optional(vtypes.ID, submitted_by)
+        submitted_by = affirm(vtypes.ID | None, submitted_by)
         # zap any admin attempts
         data.update({'is_archived': False, 'is_purged': False})
         data.update({k: False for k in ADMIN_KEYS})
@@ -2998,7 +2997,7 @@ class CoreBaseBackend(AbstractBackend):
         :param is_archived: If given, check the given archival status.
         """
         persona_ids = affirm_set(vtypes.ID, persona_ids)
-        is_archived = affirm_optional(bool, is_archived)
+        is_archived = affirm(bool | None, is_archived)
         if persona_ids == {rs.user.persona_id}:
             return True
         query = "SELECT COUNT(*) AS num FROM core.personas"
@@ -3776,7 +3775,7 @@ class CoreBaseBackend(AbstractBackend):
     ) -> DefaultReturnCode:
         address = affirm(vtypes.Email, address)
         status = affirm(const.EmailStatus, status)
-        notes = affirm_optional(str, notes)
+        notes = affirm(str | None, notes)
 
         with Atomizer(rs):
             code = self.sql_insert(

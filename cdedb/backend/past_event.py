@@ -18,7 +18,6 @@ from cdedb.backend.common import (
     access,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional,
     singularize,
 )
 from cdedb.backend.event import EventBackend
@@ -342,7 +341,7 @@ class PastEventBackend(AbstractBackend):
 
         :returns: Mapping of course ids to titles.
         """
-        pevent_id = affirm_optional(vtypes.ID, pevent_id)
+        pevent_id = affirm(vtypes.ID | None, pevent_id)
         if pevent_id:
             data = self.sql_select(
                 rs,
@@ -526,7 +525,7 @@ class PastEventBackend(AbstractBackend):
         data = {
             'persona_id': affirm(vtypes.ID, persona_id),
             'pevent_id': affirm(vtypes.ID, pevent_id),
-            'pcourse_id': affirm_optional(vtypes.ID, pcourse_id),
+            'pcourse_id': affirm(vtypes.ID | None, pcourse_id),
             'is_instructor': affirm(bool, is_instructor),
             'is_orga': affirm(bool, is_orga),
         }
@@ -573,7 +572,7 @@ class PastEventBackend(AbstractBackend):
         are able to delete an exact instance.
         """
         pevent_id = affirm(vtypes.ID, pevent_id)
-        pcourse_id = affirm_optional(vtypes.ID, pcourse_id)
+        pcourse_id = affirm(vtypes.ID | None, pcourse_id)
         persona_id = affirm(vtypes.ID, persona_id)
         query = """
             DELETE FROM past_event.participants
@@ -647,7 +646,7 @@ class PastEventBackend(AbstractBackend):
 
         :returns: The id of the past event or None if there were errors.
         """
-        shortname = affirm_optional(str, shortname)
+        shortname = affirm(str, shortname)
         if not shortname:
             return None, [], [("pevent_id", ValueError(n_("No input supplied.")))]
         query = """
@@ -691,7 +690,7 @@ class PastEventBackend(AbstractBackend):
         :param pevent_id: Restrict to courses of this past event.
         :returns: The id of the past course or None if there were errors.
         """
-        phrase = affirm_optional(str, phrase)
+        phrase = affirm(str | None, phrase)
         if not phrase:
             return None, [], [("pcourse_id", ValueError(n_("No input supplied.")))]
         pevent_id = affirm(vtypes.ID, pevent_id)

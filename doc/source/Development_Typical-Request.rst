@@ -61,7 +61,7 @@ receiving inputs via the :py:func:`cdedb.frontend.common.REQUESTdata`
 decorator you will see those arguments validated too). In this case the
 parameter ``pevent_id`` is checked with the validation function
 :py:func:`cdedb.common.validation._id` from ``cdedb/validation.py`` (which by some
-magic is actually accessed as :py:func:`cdedb.backend.common.affirm_optional(vtypes.ID, )`). It
+magic is actually accessed as :py:func:`cdedb.backend.common.affirm(vtypes.ID | None, pevent_id)`). It
 proceeds to extract the list of courses of a concluded event from the table
 ``past_event.courses`` with help of the method
 :py:meth:`cdedb.database.query.SqlQueryBackend.sql_select`, which

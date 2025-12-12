@@ -2980,57 +2980,6 @@ def check_validation(
     return cast(None | T | CdEDBObject, ret)
 
 
-@overload
-def check_validation_optional(
-    rs: RequestState,
-    type_: type[CdEDataclass],
-    value: Any,
-    name: Optional[str] = None,
-    **kwargs: Any,
-) -> Optional[CdEDBObject]: ...
-
-
-@overload
-def check_validation_optional(
-    rs: RequestState,
-    type_: type[T],
-    value: Any,
-    name: Optional[str] = None,
-    **kwargs: Any,
-) -> Optional[T]: ...
-
-
-def check_validation_optional(
-    rs: RequestState,
-    type_: type[T | CdEDataclass],
-    value: Any,
-    name: Optional[str] = None,
-    **kwargs: Any,
-) -> Optional[T | CdEDBObject]:
-    """Wrapper to call checks in :py:mod:`cdedb.validation`.
-
-    This is similar to :func:`~cdedb.frontend.common.check_validation`
-    but also allows optional/falsy values.
-
-    This also ignores warnings appropriately due to rs.ignore_warnings.
-
-    :param type_: type to check for
-    :param name: name of the parameter to check (bonus points if you find
-      out how to nicely get rid of this -- python has huge introspection
-      capabilities, but I didn't see how this should be done).
-    """
-    if name is not None:
-        ret, errs = validate.validate_check_optional(
-            type_, value, ignore_warnings=rs.ignore_warnings, argname=name, **kwargs
-        )
-    else:
-        ret, errs = validate.validate_check_optional(
-            type_, value, ignore_warnings=rs.ignore_warnings, **kwargs
-        )
-    rs.extend_validation_errors(errs)
-    return cast(None | T | CdEDBObject, ret)
-
-
 DC = TypeVar('DC', bound=CdEDataclass)
 
 
@@ -3064,23 +3013,6 @@ def inspect_validation(
     This should only be used if the error handling differs from the default handling.
     """
     return validate.validate_check(
-        type_, value, ignore_warnings=ignore_warnings, **kwargs
-    )
-
-
-def inspect_validation_optional(
-    type_: type[T],
-    value: Any,
-    *,
-    ignore_warnings: bool = False,
-    **kwargs: Any,
-) -> tuple[Optional[T], list[Error]]:
-    """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
-
-    This is similar to :func:`~cdedb.frontend.common.inspect_validation` but also allows
-    optional/falsy values.
-    """
-    return validate.validate_check_optional(
         type_, value, ignore_warnings=ignore_warnings, **kwargs
     )
 

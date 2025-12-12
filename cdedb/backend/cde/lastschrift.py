@@ -18,7 +18,6 @@ from cdedb.backend.common import (
     access,
     affirm_set_validation as affirm_set,
     affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional,
     singularize,
 )
 from cdedb.common import (
@@ -60,9 +59,9 @@ class CdELastschriftBackend(CdEBaseBackend):
             transactions are affected and if yes, which one.
         """
         persona_id = affirm(vtypes.ID, persona_id)
-        is_member = affirm_optional(bool, is_member)
-        trial_member = affirm_optional(bool, trial_member)
-        honorary_member = affirm_optional(bool, honorary_member)
+        is_member = affirm(bool | None, is_member)
+        trial_member = affirm(bool | None, trial_member)
+        honorary_member = affirm(bool | None, honorary_member)
         code = 1
         revoked_permit = None
         collateral_transaction = None
@@ -115,7 +114,7 @@ class CdELastschriftBackend(CdEBaseBackend):
             not persona_ids or any(p_id != rs.user.persona_id for p_id in persona_ids)
         ):
             raise PrivilegeError(n_("Not privileged."))
-        active = affirm_optional(bool, active)
+        active = affirm(bool | None, active)
         query = "SELECT id, persona_id FROM cde.lastschrift"
         params = {}
         constraints = []
