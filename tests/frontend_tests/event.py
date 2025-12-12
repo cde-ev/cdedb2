@@ -8385,12 +8385,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
     @as_users("annika")
     def test_event_quicksearch(self) -> None:
-        self.traverse("Veranstaltungen", "Veranstaltungs-Betreuer")
-        self.assertTitle("Veranstaltungs-Betreuer [1]")
+        self.traverse("Veranstaltungen", "Veranstaltungshelfer")
+        self.assertTitle("Veranstaltungshelfer [1]")
         f = self.response.forms["quickeventform"]
         f["event_id"] = ""
         self.submit(f)
-        self.assertTitle("Veranstaltungs-Betreuer [1]")
+        self.assertTitle("Veranstaltungshelfer [1]")
         self.assertNotification("Unbekannte Veranstaltung.", "error")
         f = self.response.forms["quickeventform"]
         f["event_id"] = 1
@@ -8418,7 +8418,15 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
         f = self.response.forms["quickeventform"]
+        g = self.response.forms["quickregistrationform"]
         f["event_id"] = 2
         self.submit(f)
         self.assertTitle("CdE-Party 2050")
         self.assertNotification("Weiterleitung auf spezifische Unterseite nicht möglich.", "info")
+        g["phrase"] = "Garcia"
+        self.submit(g)
+        self.assertTitle("Anmeldung von Garcia Generalis (Große Testakademie 2222)")
+        f = self.response.forms["quickeventform"]
+        f["event_id"] = 3
+        self.submit(f)
+        self.assertTitle("Anmeldung von Garcia Generalis (CyberTestAkademie)")
