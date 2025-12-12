@@ -1333,7 +1333,7 @@ class CoreBaseBackend(AbstractBackend):
                 rs,
                 const.CoreLogCodes.privilege_change_pending,
                 data['persona_id'],
-                change_note="Änderung der Admin-Privilegien angestoßen.",
+                change_note=data["notes"],
             )
             ret = self.sql_insert(rs, "core.privilege_changes", data)
 
@@ -1361,12 +1361,13 @@ class CoreBaseBackend(AbstractBackend):
 
         data = {
             "id": privilege_change_id,
-            "ftime": now(),
+            "ftime": "now()",
             "reviewer": rs.user.persona_id,
             "status": case_status,
         }
         with Atomizer(rs):
             case = self.get_privilege_change(rs, privilege_change_id)
+            note = case["notes"] or "Admin-Privilegien geändert."
             if case['status'] != const.PrivilegeChangeStati.pending:
                 raise ValueError(
                     n_("Invalid privilege change state: %(status)s."),
@@ -1390,22 +1391,21 @@ class CoreBaseBackend(AbstractBackend):
                     rs,
                     const.CoreLogCodes.privilege_change_approved,
                     persona_id=case['persona_id'],
-                    change_note="Änderung der Admin-Privilegien bestätigt.",
+                    change_note=note,
                 )
 
                 old = self.get_persona(rs, case["persona_id"])
-                data = {
+                persona_change = {
                     "id": case["persona_id"],
                 }
                 for key in ADMIN_KEYS:
                     if case[key] is not None:
-                        data[key] = case[key]
+                        persona_change[key] = case[key]
 
-                data = affirm(vtypes.Persona, data)
-                note = case["notes"] or "Admin-Privilegien geändert."
+                persona_change = affirm(vtypes.Persona, persona_change)
                 ret *= self.set_persona(
                     rs,
-                    data,
+                    persona_change,
                     may_wait=False,
                     change_note=note,
                     allow_specials=("admins",),
@@ -1413,17 +1413,17 @@ class CoreBaseBackend(AbstractBackend):
 
                 # Force password reset if non-admin has gained admin privileges.
                 if not any(old[key] for key in ADMIN_KEYS) and any(
-                    data.get(key) for key in ADMIN_KEYS
+                    persona_change.get(key) for key in ADMIN_KEYS
                 ):
                     ret *= self.invalidate_password(rs, case["persona_id"])
                     ret *= -1
 
                 # Mark case as successful
-                data = {
+                case_update = {
                     "id": privilege_change_id,
                     "status": const.PrivilegeChangeStati.successful,
                 }
-                ret *= self.sql_update(rs, "core.privilege_changes", data)
+                ret *= self.sql_update(rs, "core.privilege_changes", case_update)
 
             elif case_status == const.PrivilegeChangeStati.rejected:
                 ret = self.sql_update(rs, "core.privilege_changes", data)
@@ -1432,7 +1432,7 @@ class CoreBaseBackend(AbstractBackend):
                     rs,
                     const.CoreLogCodes.privilege_change_rejected,
                     persona_id=case['persona_id'],
-                    change_note="Änderung der Admin-Privilegien verworfen.",
+                    change_note=note,
                 )
             else:
                 raise ValueError(n_("Invalid new privilege change status."))
