@@ -72,7 +72,7 @@ import typing
 import unicodedata
 import urllib.parse
 from collections.abc import Iterable, Iterator, Mapping, Sequence
-from types import TracebackType, UnionType
+from types import TracebackType
 from typing import (
     Any,
     Callable,
@@ -93,6 +93,7 @@ import PIL.Image
 import werkzeug.datastructures
 import zxcvbn
 from schulze_condorcet.util import as_vote_tuple, validate_votes
+from typing_extensions import TypeForm
 
 import cdedb.database.constants as const
 import cdedb.fee_condition_parser.evaluation as fcp_evaluation
@@ -233,13 +234,11 @@ class ValidationSummary(ValueError, Sequence[Exception]):
         return False
 
 
-class ValidatorStorage(dict[type[Any] | UnionType, Callable[..., Any]]):
-    def __setitem__(
-        self, type_: type[T] | UnionType, validator: Callable[..., T]
-    ) -> None:
+class ValidatorStorage(dict[TypeForm[T], Callable[..., T]]):
+    def __setitem__(self, type_: TypeForm[T], validator: Callable[..., T]) -> None:
         super().__setitem__(type_, validator)
 
-    def __getitem__(self, type_: type[T] | UnionType) -> Callable[..., T]:
+    def __getitem__(self, type_: TypeForm[T]) -> Callable[..., T]:
         origin = typing.get_origin(type_)
         if is_optional_type(type_):
             return cast(
@@ -276,11 +275,13 @@ class ValidatorStorage(dict[type[Any] | UnionType, Callable[..., Any]]):
             raise NameError(
                 f"Failed to resolve forward Reference {type_} from model namespaces {model_namespaces}"
             )
+        elif isinstance(type_, str):
+            return self[eval(type_)]  # type: ignore[unreachable]
 
         return super().__getitem__(type_)
 
 
-_ALL_TYPED = ValidatorStorage()
+_ALL_TYPED: ValidatorStorage[Any] = ValidatorStorage()
 
 
 @overload
@@ -291,12 +292,15 @@ def validate_assert(
 
 @overload
 def validate_assert(
-    type_: type[T], value: Any, ignore_warnings: bool, **kwargs: Any
+    type_: TypeForm[T], value: Any, ignore_warnings: bool, **kwargs: Any
 ) -> T: ...
 
 
 def validate_assert(
-    type_: type[T | CdEDataclass], value: Any, ignore_warnings: bool, **kwargs: Any
+    type_: TypeForm[T] | type[CdEDataclass],
+    value: Any,
+    ignore_warnings: bool,
+    **kwargs: Any,
 ) -> T | CdEDBObject:
     """Check if value is of type type_ – otherwise, raise an error.
 
@@ -309,7 +313,7 @@ def validate_assert(
     if "ignore_warnings" in kwargs:
         raise RuntimeError("Not allowed to set 'ignore_warnings' toggle.")
     try:
-        return _ALL_TYPED[type_](value, ignore_warnings=ignore_warnings, **kwargs)  # type: ignore[return-value]
+        return _ALL_TYPED[type_](value, ignore_warnings=ignore_warnings, **kwargs)
     except ValidationSummary as errs:
         old_format = [(e.args[0], e.__class__(*e.args[1:])) for e in errs]
         _LOGGER.debug(
@@ -352,7 +356,7 @@ def validate_check(
 
 @overload
 def validate_check(
-    type_: type[T],
+    type_: TypeForm[T],
     value: Any,
     ignore_warnings: bool,
     field_prefix: str = "",
@@ -362,13 +366,13 @@ def validate_check(
 
 
 def validate_check(
-    type_: type[T | CdEDataclass],
+    type_: TypeForm[T] | type[CdEDataclass],
     value: Any,
     ignore_warnings: bool,
     field_prefix: str = "",
     field_postfix: str = "",
     **kwargs: Any,
-) -> tuple[Optional[T | CdEDBObject], list[Error]]:
+) -> tuple[T | CdEDBObject | None, list[Error]]:
     """Checks if value is of type type_.
 
     This is mostly used in the frontend to check if the given input is valid. To display
@@ -383,7 +387,7 @@ def validate_check(
         raise RuntimeError("Not allowed to set 'ignore_warnings' as kwarg.")
     try:
         val = _ALL_TYPED[type_](value, ignore_warnings=ignore_warnings, **kwargs)
-        return val, []  # type: ignore[return-value]
+        return val, []
     except ValidationSummary as errs:
         old_format = [
             (
@@ -2471,7 +2475,7 @@ EVENT_CREATION_OPTIONAL_FIELDS: TypeMapping = {'lodgement_groups': Mapping}
 
 def _optional_object_mapping_helper(
     val_dict: Mapping[Any, Any],
-    atype: type[T],
+    atype: TypeForm[T],
     argname: str,
     creation_only: bool,
     **kwargs: Any,
@@ -2499,7 +2503,8 @@ def _optional_object_mapping_helper(
                 raise ValidationSummary(
                     ValueError(argname, n_("Only creation allowed."))
                 )
-            ret[anid] = _ALL_TYPED[atype if creation else atype | None](
+            type_ = cast(TypeForm[T], atype if creation else atype | None)
+            ret[anid] = _ALL_TYPED[type_](
                 val, argname, creation=creation, id_=anid, **kwargs
             )
 
@@ -4782,10 +4787,9 @@ def _query_input(
             for v in values:
                 # Validate every single value
                 # TODO do not allow None
+                type_ = cast(TypeForm[Any], QUERY_INPUT_VALIDATORS[validator] | None)
                 try:
-                    vv: Any = _ALL_TYPED[QUERY_INPUT_VALIDATORS[validator] | None](
-                        v, field, passthrough=True, **kwargs
-                    )
+                    vv: Any = _ALL_TYPED[type_](v, field, passthrough=True, **kwargs)
                 except ValidationSummary as e:
                     errs.extend(e)
                     continue
@@ -4828,10 +4832,9 @@ def _query_input(
                 errs.extend(e)
                 continue
         else:
+            type_ = cast(TypeForm[Any], QUERY_INPUT_VALIDATORS[validator] | None)
             try:
-                value = _ALL_TYPED[QUERY_INPUT_VALIDATORS[validator] | None](
-                    value, field, passthrough=True, **kwargs
-                )
+                value = _ALL_TYPED[type_](value, field, passthrough=True, **kwargs)
             except ValidationSummary as e:
                 errs.extend(e)
                 continue
@@ -4939,18 +4942,19 @@ def _query(val: Any, argname: Optional[str] = None, **kwargs: Any) -> Query:
             errs.append(ValueError(f"constraints/{field}", n_("Invalid operator.")))
             continue
 
+        type_ = cast(TypeForm[Any], QUERY_INPUT_VALIDATORS[val.spec[field].type] | None)
         if operator in NO_VALUE_OPERATORS:
             value = None
 
         elif operator in MULTI_VALUE_OPERATORS:
             for v in value:
                 with errs:
-                    _ALL_TYPED[QUERY_INPUT_VALIDATORS[val.spec[field].type] | None](
+                    _ALL_TYPED[type_](
                         v, f"constraints/{field}", passthrough=True, **kwargs
                     )
         else:
             try:
-                _ALL_TYPED[QUERY_INPUT_VALIDATORS[val.spec[field].type] | None](
+                _ALL_TYPED[type_](
                     value, f"constraints/{field}", passthrough=True, **kwargs
                 )
             except ValidationSummary as e:

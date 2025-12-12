@@ -73,6 +73,7 @@ import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
 import werkzeug.wsgi
+from typing_extensions import TypeForm
 
 import cdedb.common.parse.util as parse_util
 import cdedb.common.query as query_mod
@@ -114,7 +115,6 @@ from cdedb.common import (
     encode_parameter,
     get_hash,
     get_mandatory_form_fields,
-    is_optional_type,
     json_serialize,
     make_proxy,
     merge_dicts,
@@ -2658,8 +2658,6 @@ def REQUESTdata(
 
                 if name not in kwargs:
                     type_ = cast(type[Any], hints[name])
-                    if optional := is_optional_type(type_):
-                        type_ = typing.get_args(type_)[0]
 
                     # Optionally skip items that are not given.
                     if _omit_missing and name not in rs.request.values:
@@ -2695,11 +2693,6 @@ def REQUESTdata(
                             rs.values[name] = None
                         if _postpone_validation:
                             kwargs[name] = tuple(vals)
-                        elif optional:
-                            kwargs[name] = tuple(
-                                check_validation_optional(rs, type_, val, name)
-                                for val in vals
-                            )
                         else:
                             kwargs[name] = tuple(
                                 check_validation(rs, type_, val, name) for val in vals
@@ -2708,10 +2701,6 @@ def REQUESTdata(
                         rs.values[name] = val
                         if _postpone_validation:
                             kwargs[name] = val
-                        elif optional:
-                            kwargs[name] = check_validation_optional(
-                                rs, type_, val, name
-                            )
                         else:
                             kwargs[name] = check_validation(rs, type_, val, name)
             return fun(obj, rs, *args, **kwargs)
@@ -2719,7 +2708,7 @@ def REQUESTdata(
         if not hasattr(new_fun, "mandatory_form_fields"):
             new_fun.mandatory_form_fields = set()  # type: ignore[attr-defined]
         new_fun.mandatory_form_fields |= get_mandatory_form_fields(  # type: ignore[attr-defined]
-            {name: hints[name.removeprefix('#')] for name in spec}
+            {name: hints[name.removeprefix('#')] for name in spec}  # type: ignore[maybe-unrecognized-str-typeform]
         )
 
         return cast(F, new_fun)
@@ -2955,7 +2944,7 @@ def check_validation(
 @overload
 def check_validation(
     rs: RequestState,
-    type_: type[T],
+    type_: TypeForm[T],
     value: Any,
     name: Optional[str] = None,
     **kwargs: Any,
@@ -2964,7 +2953,7 @@ def check_validation(
 
 def check_validation(
     rs: RequestState,
-    type_: type[T | CdEDataclass],
+    type_: TypeForm[T] | type[CdEDataclass],
     value: Any,
     name: Optional[str] = None,
     **kwargs: Any,
@@ -3062,7 +3051,7 @@ def extract_and_check_dataclass_validation(
 
 
 def inspect_validation(
-    type_: type[T],
+    type_: TypeForm[T],
     value: Any,
     *,
     ignore_warnings: bool = False,

@@ -29,6 +29,7 @@ from typing import (
 import psycopg2.errors
 import psycopg2.extensions
 import psycopg2.extras
+from typing_extensions import TypeForm
 
 from cdedb.common import (
     CdEDBLog,
@@ -647,11 +648,11 @@ def affirm_validation(
 
 
 @overload
-def affirm_validation(assertion: type[T], value: Any, **kwargs: Any) -> T: ...
+def affirm_validation(assertion: TypeForm[T], value: Any, **kwargs: Any) -> T: ...
 
 
 def affirm_validation(
-    assertion: type[T | CdEDataclass], value: Any, **kwargs: Any
+    assertion: TypeForm[T] | type[CdEDataclass], value: Any, **kwargs: Any
 ) -> T | CdEDBObject:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
 
