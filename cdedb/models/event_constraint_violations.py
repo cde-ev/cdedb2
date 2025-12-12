@@ -2279,7 +2279,7 @@ class IncorrectIBANCV(ConstraintViolation):
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
-class IncorrectlyTypedExternalFeeCV(EventFeeConstraintViolation):
+class InvalidExternalFeeCV(EventFeeConstraintViolation):
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
         assert context.fee is not None
