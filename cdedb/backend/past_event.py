@@ -646,7 +646,7 @@ class PastEventBackend(AbstractBackend):
 
         :returns: The id of the past event or None if there were errors.
         """
-        shortname = affirm(str, shortname)
+        shortname = affirm(str | None, shortname)
         if not shortname:
             return None, [], [("pevent_id", ValueError(n_("No input supplied.")))]
         query = """
