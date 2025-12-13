@@ -986,6 +986,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             voted = unwrap(request_extractor(rs, {"vote": Collection[str]}))
             if rs.has_validation_errors():
                 return self.show_ballot(rs, assembly_id, ballot_id)
+            voted = tuple(voted)
             if voted == (ASSEMBLY_BAR_SHORTNAME,):
                 if not ballot['use_bar']:
                     raise ValueError(n_("Option not available."))
