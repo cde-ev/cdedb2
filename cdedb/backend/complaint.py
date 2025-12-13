@@ -663,7 +663,7 @@ class ComplaintBackend(AbstractBackend):
             if persona_ids & case.active_companions.keys():
                 raise ValueError(n_("Already active companions."))
 
-            newly_involved = persona_ids
+            newly_involved = set(persona_ids)
             newly_involved -= case.involved.get(involved_type, set())
             if not newly_involved:
                 ret = -1
