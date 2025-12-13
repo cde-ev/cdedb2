@@ -12,7 +12,7 @@ import functools
 import logging
 import sys
 import uuid
-from collections.abc import Iterable, Mapping
+from collections.abc import Mapping
 from types import TracebackType
 from typing import (
     Any,
@@ -662,47 +662,6 @@ def affirm_validation(
     must **ignore** them always to reduce redundancy between frontend and backend.
     """
     return validate.validate_assert(assertion, value, ignore_warnings=True, **kwargs)
-
-
-@overload
-def affirm_array_validation(
-    assertion: type[CdEDataclass], values: Iterable[Any], **kwargs: Any
-) -> tuple[CdEDBObject, ...]: ...
-
-
-@overload
-def affirm_array_validation(
-    assertion: type[T], values: Iterable[Any], **kwargs: Any
-) -> tuple[T, ...]: ...
-
-
-def affirm_array_validation(
-    assertion: type[T | CdEDataclass], values: Iterable[Any], **kwargs: Any
-) -> tuple[T, ...] | tuple[CdEDBObject, ...]:
-    """Wrapper to call asserts in :py:mod:`cdedb.validation` for an array."""
-    return cast(
-        tuple[T, ...] | tuple[CdEDBObject, ...],
-        tuple(affirm_validation(assertion, value, **kwargs) for value in values),
-    )
-
-
-def affirm_set_validation(
-    assertion: type[T], values: Iterable[T], **kwargs: Any
-) -> set[T]:
-    """Wrapper to call asserts in :py:mod:`cdedb.validation` for a set."""
-    return set(affirm_validation(assertion, value, **kwargs) for value in values)
-
-
-def affirm_dict_validation(
-    key_type: type[T], value_type: type[T2], data: Mapping[T, T2], **kwargs: Any
-) -> dict[T, T2]:
-    """Wrapper to call asserts in :py:mod:`cdedb.validation` for a dict."""
-    return {
-        affirm_validation(key_type, k, **kwargs): affirm_validation(
-            value_type, v, **kwargs
-        )
-        for k, v in data.items()
-    }
 
 
 @overload

@@ -22,7 +22,6 @@ import cdedb.models.ml as models_ml
 from cdedb.backend.common import (
     AbstractBackend,
     access,
-    affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     internal,
 )
@@ -204,7 +203,7 @@ class EventLowLevelBackend(AbstractBackend):
         blockers = self._delete_course_track_blockers(rs, track_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set(str, cascade)
+        cascade = affirm(set[str], cascade)
         cascade &= blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(
@@ -506,7 +505,7 @@ class EventLowLevelBackend(AbstractBackend):
         blockers = self._delete_event_part_blockers(rs, part_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set(str, cascade) & blockers.keys()
+        cascade = affirm(set[str], cascade) & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(
                 n_("Deletion of %(type)s blocked by %(block)s."),
@@ -753,7 +752,7 @@ class EventLowLevelBackend(AbstractBackend):
         """
         part_group_id = affirm(vtypes.ID, part_group_id)
         blockers = self._delete_part_group_blockers(rs, part_group_id)
-        cascade = affirm_set(str, cascade or set()) & blockers.keys()
+        cascade = affirm(set[str], cascade or set()) & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(
                 n_("Deletion of %(type)s blocked by %(block)s."),  # pragma: no cover
@@ -853,7 +852,7 @@ class EventLowLevelBackend(AbstractBackend):
         """
         track_group_id = affirm(vtypes.ID, track_group_id)
         blockers = self._delete_track_group_blockers(rs, track_group_id)
-        cascade = affirm_set(str, cascade or set()) & blockers.keys()
+        cascade = affirm(set[str], cascade or set()) & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(
                 n_("Deletion of %(type)s blocked by %(block)s."),  # pragma: no cover
@@ -973,7 +972,7 @@ class EventLowLevelBackend(AbstractBackend):
         Performs more involved checks which can not be done in the validation due to
         missing data, like registrations.
         """
-        track_ids = affirm_set(vtypes.ID, track_ids)
+        track_ids = affirm(set[vtypes.ID], track_ids)
 
         # Check that course choices and course instructors are compatible.
         query = """
@@ -1095,7 +1094,7 @@ class EventLowLevelBackend(AbstractBackend):
         blockers = self._delete_event_field_blockers(rs, field_id, event_id=event_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set(str, cascade)
+        cascade = affirm(set[str], cascade)
         cascade &= blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(

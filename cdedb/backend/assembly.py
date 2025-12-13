@@ -44,7 +44,6 @@ from cdedb.backend.common import (
     AbstractBackend,
     Silencer,
     access,
-    affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     internal,
     singularize,
@@ -148,7 +147,7 @@ class AssemblyBackend(AbstractBackend):
         self, rs: RequestState, assembly_ids: Collection[int]
     ) -> dict[int, bool]:
         """Helper to check, whether the assemblies may be modified."""
-        assembly_ids = affirm_set(vtypes.ID, assembly_ids)
+        assembly_ids = affirm(set[vtypes.ID], assembly_ids)
         q = "SELECT id, is_active FROM assembly.assemblies WHERE id = ANY(%s)"
         params = (assembly_ids,)
         data = self.query_all(rs, q, params)
@@ -166,7 +165,7 @@ class AssemblyBackend(AbstractBackend):
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> dict[int, set[int]]:
         """List assemblies managed by specific personas."""
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
         data = self.sql_select(
             rs,
             "assembly.presiders",
@@ -174,7 +173,7 @@ class AssemblyBackend(AbstractBackend):
             persona_ids,
             entity_key="persona_id",
         )
-        ret = {}
+        ret: dict[int, set[int]] = {}
         for anid in persona_ids:
             ret[anid] = {e['assembly_id'] for e in data if e['persona_id'] == anid}
         return ret
@@ -411,8 +410,8 @@ class AssemblyBackend(AbstractBackend):
         attachment_ids: Optional[Collection[int]] = None,
     ) -> set[int]:
         """Helper to retrieve a corresponding assembly id."""
-        ballot_ids = affirm_set(vtypes.ID, ballot_ids or set())
-        attachment_ids = affirm_set(vtypes.ID, attachment_ids or set())
+        ballot_ids = affirm(set[vtypes.ID], ballot_ids or set())
+        attachment_ids = affirm(set[vtypes.ID], attachment_ids or set())
         ret: set[int] = set()
         if attachment_ids:
             attachment_data = self.sql_select(
@@ -664,7 +663,7 @@ class AssemblyBackend(AbstractBackend):
         those who have privileged access to the assembly (similar to orgas for
         events).
         """
-        assembly_ids = affirm_set(vtypes.ID, assembly_ids)
+        assembly_ids = affirm(set[vtypes.ID], assembly_ids)
         if not all(self.may_access(rs, assembly_id=anid) for anid in assembly_ids):
             raise PrivilegeError(n_("Not privileged."))
         data = self.sql_select(rs, 'assembly.assemblies', ASSEMBLY_FIELDS, assembly_ids)
@@ -725,7 +724,7 @@ class AssemblyBackend(AbstractBackend):
     ) -> DefaultReturnCode:
         """Add a collection of presiders for an assembly."""
         assembly_id = affirm(vtypes.ID, assembly_id)
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
 
         ret = 1
         with Atomizer(rs):
@@ -928,7 +927,7 @@ class AssemblyBackend(AbstractBackend):
             raise DeletionImpossibleError(
                 n_("Cannot delete assembly with locked ballots.")
             )  # TODO: coverage
-        cascade = affirm_set(str, cascade or set()) & blockers.keys()
+        cascade = affirm(set[str], cascade or set()) & blockers.keys()
 
         if remaining_blockers := blockers.keys() - cascade:
             raise DeletionBlockedError(
@@ -1019,7 +1018,7 @@ class AssemblyBackend(AbstractBackend):
         self, rs: RequestState, ballot_ids: Collection[int]
     ) -> dict[int, bool]:
         """Helper to check whether the given ballots may be modified."""
-        ballot_ids = affirm_set(vtypes.ID, ballot_ids)
+        ballot_ids = affirm(set[vtypes.ID], ballot_ids)
         q = """
             SELECT id, vote_begin < %(now)s AS is_locked
             FROM assembly.ballots WHERE id = ANY(%(ballot_ids)s)
@@ -1042,7 +1041,7 @@ class AssemblyBackend(AbstractBackend):
 
         :returns: True if any of the ballots may not be edited.
         """
-        ballot_ids = affirm_set(vtypes.ID, ballot_ids)
+        ballot_ids = affirm(set[vtypes.ID], ballot_ids)
         return any(lock for lock in self.are_ballots_locked(rs, ballot_ids).values())
 
     @access("assembly")
@@ -1056,7 +1055,7 @@ class AssemblyBackend(AbstractBackend):
 
         :returns: True if any of the given ballots is open for voting.
         """
-        ballot_ids = affirm_set(vtypes.ID, ballot_ids)
+        ballot_ids = affirm(set[vtypes.ID], ballot_ids)
         # This conditional looks complicated since extended may be None and
         # (True/False = None) = None.
         # Therefore, this returns None iff the ballot has not been checked for extension
@@ -1121,7 +1120,7 @@ class AssemblyBackend(AbstractBackend):
         :param include_is_voting: If False, do not include is_voting key to prevent
             infinite recursions.
         """
-        ballot_ids = affirm_set(vtypes.ID, ballot_ids)
+        ballot_ids = affirm(set[vtypes.ID], ballot_ids)
         timestamp = now()
 
         with Atomizer(rs):
@@ -1444,7 +1443,7 @@ class AssemblyBackend(AbstractBackend):
             raise DeletionImpossibleError(
                 n_("Cannot delete ballot that has votes.")
             )  # TODO: coverage
-        cascade = affirm_set(str, cascade or set()) & blockers.keys()
+        cascade = affirm(set[str], cascade or set()) & blockers.keys()
 
         if remaining_blockers := blockers.keys() - cascade:
             raise DeletionBlockedError(
@@ -1924,7 +1923,7 @@ class AssemblyBackend(AbstractBackend):
             raise ValueError(n_("Assembly is not active."))  # TODO: coverage
         if "ballot" in blockers:
             raise ValueError(n_("Assembly has open ballots."))  # TODO: coverage
-        cascade = affirm_set(str, cascade or set()) & blockers.keys()
+        cascade = affirm(set[str], cascade or set()) & blockers.keys()
         if blockers.keys() - cascade:  # TODO: coverage
             raise ValueError(
                 n_("Conclusion of assembly blocked by %(block)s."),
@@ -1974,7 +1973,7 @@ class AssemblyBackend(AbstractBackend):
         self, rs: RequestState, attachment_ids: Collection[int]
     ) -> bool:
         """Helper to check whether the user may access the given attachments."""
-        attachment_ids = affirm_set(vtypes.ID, attachment_ids)
+        attachment_ids = affirm(set[vtypes.ID], attachment_ids)
         if not attachment_ids:
             return True
         assembly_ids = self.get_assembly_ids(rs, attachment_ids=attachment_ids)
@@ -2087,7 +2086,7 @@ class AssemblyBackend(AbstractBackend):
                     "Cannot delete attachment once any linked ballot has been locked."
                 )
             )
-        cascade = affirm_set(str, cascade or set()) & blockers.keys()
+        cascade = affirm(set[str], cascade or set()) & blockers.keys()
 
         if remaining_blockers := blockers.keys() - cascade:
             raise DeletionBlockedError(
@@ -2240,11 +2239,12 @@ class AssemblyBackend(AbstractBackend):
         to remove compared to the attachment links this ballot previously had.
         """
         ballot_id = affirm(vtypes.ID, ballot_id)
-        attachment_ids = affirm_set(vtypes.ID, attachment_ids)
+        attachment_ids = affirm(set[vtypes.ID], attachment_ids)
         with Atomizer(rs):
             ret = 1
             current_attachments = self.list_attachments(rs, ballot_id=ballot_id)
-            new_attachments = attachment_ids - current_attachments
+            new_attachments = attachment_ids
+            new_attachments -= current_attachments
             for attachment_id in xsorted(new_attachments):
                 ret *= self.add_attachment_ballot_link(
                     rs, attachment_id=attachment_id, ballot_id=ballot_id
@@ -2261,7 +2261,7 @@ class AssemblyBackend(AbstractBackend):
         self, rs: RequestState, attachment_ids: Collection[int]
     ) -> dict[int, bool]:
         """An attachment_version may be created at any time during an assembly."""
-        attachment_ids = affirm_set(vtypes.ID, attachment_ids)
+        attachment_ids = affirm(set[vtypes.ID], attachment_ids)
         with Atomizer(rs):
             attachments = self.get_attachments(rs, attachment_ids)
             assembly_ids = self.get_assembly_ids(rs, attachment_ids=attachment_ids)
@@ -2285,7 +2285,7 @@ class AssemblyBackend(AbstractBackend):
     ) -> dict[int, bool]:
         """An attachment_version must not be deleted if its attachment has at least one
         attachment_ballot_link which voting phase had started."""
-        attachment_ids = affirm_set(vtypes.ID, attachment_ids)
+        attachment_ids = affirm(set[vtypes.ID], attachment_ids)
         with Atomizer(rs):
             attachments = self.get_attachments(rs, attachment_ids)
             assembly_ids = self.get_assembly_ids(rs, attachment_ids=attachment_ids)
@@ -2350,7 +2350,7 @@ class AssemblyBackend(AbstractBackend):
         self, rs: RequestState, attachment_ids: Collection[int]
     ) -> dict[int, CdEDBObjectMap]:
         """Retrieve all version information for given attachments."""
-        attachment_ids = affirm_set(vtypes.ID, attachment_ids)
+        attachment_ids = affirm(set[vtypes.ID], attachment_ids)
         ret: dict[int, CdEDBObjectMap] = {anid: {} for anid in attachment_ids}
         if not self.may_access_attachments(rs, attachment_ids):
             raise PrivilegeError()
@@ -2400,7 +2400,7 @@ class AssemblyBackend(AbstractBackend):
         This is independent from the context in which the attachment is viewed, in
         contrast to `get_definitive_attachments_version`.
         """
-        attachment_ids = affirm_set(vtypes.ID, attachment_ids)
+        attachment_ids = affirm(set[vtypes.ID], attachment_ids)
         if not self.may_access_attachments(rs, attachment_ids):
             raise PrivilegeError()
         return self._get_latest_attachments_versions(rs, attachment_ids)
@@ -2652,7 +2652,7 @@ class AssemblyBackend(AbstractBackend):
         self, rs: RequestState, attachment_ids: Collection[int]
     ) -> CdEDBObjectMap:
         """Internal helper to retrieve attachment data without access check."""
-        attachment_ids = affirm_set(vtypes.ID, attachment_ids)
+        attachment_ids = affirm(set[vtypes.ID], attachment_ids)
         fields = ASSEMBLY_ATTACHMENT_FIELDS + (
             'num_versions',
             'latest_version_nr',
@@ -2694,7 +2694,7 @@ class AssemblyBackend(AbstractBackend):
         self, rs: RequestState, attachment_ids: Collection[int]
     ) -> CdEDBObjectMap:
         """Retrieve data on attachments"""
-        attachment_ids = affirm_set(vtypes.ID, attachment_ids)
+        attachment_ids = affirm(set[vtypes.ID], attachment_ids)
         if not self.may_access_attachments(rs, attachment_ids):
             raise PrivilegeError()  # pragma: no cover
         return self._get_attachment_infos(rs, attachment_ids)

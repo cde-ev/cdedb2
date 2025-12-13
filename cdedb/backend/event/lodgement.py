@@ -20,7 +20,6 @@ import cdedb.models.event as models
 from cdedb.backend.common import (
     Silencer,
     access,
-    affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     singularize,
 )
@@ -164,7 +163,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         blockers = self.delete_lodgement_group_blockers(rs, group_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set(str, cascade)
+        cascade = affirm(set[str], cascade)
         cascade &= blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(
@@ -241,7 +240,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
     def new_get_lodgements(
         self, rs: RequestState, lodgement_ids: Collection[int]
     ) -> models.CdEDataclassMap[models.Lodgement]:
-        lodgement_ids = affirm_set(vtypes.ID, lodgement_ids)
+        lodgement_ids = affirm(set[vtypes.ID], lodgement_ids)
         with Atomizer(rs):
             lodgement_data = self.query_all(
                 rs, *models.Lodgement.get_select_query(lodgement_ids)
@@ -420,7 +419,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         blockers = self.delete_lodgement_blockers(rs, lodgement_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set(str, cascade)
+        cascade = affirm(set[str], cascade)
         cascade &= blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(
@@ -487,7 +486,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         if lodgement_ids is None:
             condition = "rp.lodgement_id IS NOT NULL"
         else:
-            lodgement_ids = affirm_set(vtypes.ID, lodgement_ids)
+            lodgement_ids = affirm(set[vtypes.ID], lodgement_ids)
             condition = "rp.lodgement_id = ANY(%s)"
             params.append(lodgement_ids)
         if involved is not None:
