@@ -259,7 +259,9 @@ class ValidatorStorage(dict[TypeForm[T], Callable[..., T]]):
                 if type_a is type_b:
                     return cast(Callable[..., T], make_pair_validator(type_a))
         elif origin is dict:
-            return cast(Callable[..., T], make_dict_validator(cast(type[Any], type_)))
+            return cast(
+                Callable[..., T], make_dict_validator(cast(type[dict[Any, Any]], type_))
+            )
         elif isinstance(type_, typing.ForwardRef):
             model_namespaces = [  # type: ignore[unreachable]
                 models_core,
@@ -428,7 +430,7 @@ def _allow_None(fun: Callable[..., T]) -> Callable[..., Optional[T]]:
     return new_fun
 
 
-def _add_typed_validator(fun: F, return_type: Optional[type[Any]] = None) -> F:
+def _add_typed_validator(fun: F, return_type: TypeForm[Any] | None = None) -> F:
     """Mark a typed function for processing into validators."""
     # TODO get rid of dynamic return types for enum
     if not return_type:
