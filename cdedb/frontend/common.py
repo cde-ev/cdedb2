@@ -2657,13 +2657,13 @@ def REQUESTdata(
                     encoded = False
 
                 if name not in kwargs:
-                    type_ = cast(type[Any], hints[name])
+                    type_ = hints[name]
 
                     # Optionally skip items that are not given.
                     if _omit_missing and name not in rs.request.values:
                         continue
 
-                    val: Optional[str] = rs.request.values.get(name, "")
+                    val: str | None = rs.request.values.get(name, "")
 
                     # TODO allow encoded collections?
                     if encoded and val:
@@ -2680,29 +2680,20 @@ def REQUESTdata(
                         if timeout is False:
                             rs.notify("warning", n_("Link invalid."))
 
-                    origin = typing.get_origin(type_)
-                    if origin is collections.abc.Collection:
-                        type_ = unwrap(type_.__args__)
-                        vals = tuple(rs.request.values.getlist(name))
-                        if vals:
-                            rs.values.setlist(name, vals)
-                        else:
-                            # TODO should also work normally
-                            # We have to be careful, since empty lists are
-                            # problematic for the werkzeug MultiDict
-                            rs.values[name] = None
+                    if typing.get_origin(type_) is collections.abc.Collection:
+                        vals = rs.request.values.getlist(name)
+                        rs.values.setlist(name, vals)
                         if _postpone_validation:
-                            kwargs[name] = tuple(vals)
+                            kwargs[name] = vals
                         else:
-                            kwargs[name] = tuple(
-                                check_validation(rs, type_, val, name) for val in vals
-                            )
+                            kwargs[name] = check_validation(rs, type_, vals, name)
                     else:
                         rs.values[name] = val
                         if _postpone_validation:
                             kwargs[name] = val
                         else:
                             kwargs[name] = check_validation(rs, type_, val, name)
+
             return fun(obj, rs, *args, **kwargs)
 
         if not hasattr(new_fun, "mandatory_form_fields"):

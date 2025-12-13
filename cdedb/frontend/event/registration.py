@@ -1838,7 +1838,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: int,
-        part_ids: Optional[Collection[int]] = None,
+        part_ids: Collection[int] = (),
         checkout: Optional[bool] = False,
     ) -> Response:
         """Render form."""
@@ -1910,7 +1910,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         event_id: int,
         registration_id: vtypes.ID,
         from_checkin_page: Optional[bool] = False,
-        part_ids: Optional[Collection[int]] = None,
+        part_ids: Collection[int] = (),
     ) -> Response:
         """Check a participant in."""
         if rs.has_validation_errors():
@@ -1944,7 +1944,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         event_id: int,
         registration_id: vtypes.ID,
         from_checkin_page: Optional[bool] = False,
-        part_ids: Optional[Collection[int]] = None,
+        part_ids: Collection[int] = (),
     ) -> Response:
         """Check a participant out."""
         if rs.has_validation_errors():

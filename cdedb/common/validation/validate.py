@@ -52,6 +52,7 @@ f.e. ``check_validation`` registers all errors in the RequestState object.
 """
 
 import base64
+import collections.abc
 import contextlib
 import copy
 import csv
@@ -245,7 +246,7 @@ class ValidatorStorage(dict[TypeForm[T], Callable[..., T]]):
                 Callable[..., T],
                 _allow_None(self[get_mandatory_type(type_)]),
             )
-        elif origin is list:
+        elif origin is list or origin is collections.abc.Collection:
             [inner_type] = typing.get_args(type_)
             return cast(Callable[..., T], make_list_validator(inner_type))
         elif origin is set:
