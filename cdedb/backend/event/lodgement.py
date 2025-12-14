@@ -8,11 +8,9 @@ functionality for managing lodgements and lodgement groups belonging to an event
 import abc
 import collections
 import dataclasses
-from collections.abc import Collection, Iterator, Mapping
+from collections.abc import Collection, Iterator
 from functools import cached_property
 from typing import Any, Optional, Protocol
-
-from typing_extensions import TypeForm
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -473,7 +471,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         """Group number of inhabitants by lodgement, part and camping mat status."""
         event_id = affirm(vtypes.ID, event_id)
         involved = affirm(bool | None, involved)
-        _registrations = affirm(TypeForm(Mapping | None), _registrations)  # type: ignore[type-arg]
+        _registrations = affirm(CdEDBObjectMap | None, _registrations)
 
         if not is_privileged(
             rs,
