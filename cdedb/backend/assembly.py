@@ -319,6 +319,8 @@ class AssemblyBackend(AbstractBackend):
         rs: RequestState,
         code: const.AssemblyLogCodes,
         assembly_id: Optional[int],
+        *,
+        ballot_id: Optional[int] = None,
         persona_id: Optional[int] = None,
         change_note: Optional[str] = None,
     ) -> DefaultReturnCode:
@@ -340,12 +342,14 @@ class AssemblyBackend(AbstractBackend):
         # do not use sql_insert since it throws an error for selecting the id
         query = """
             INSERT INTO assembly.log
-                (code, assembly_id, submitted_by, persona_id, change_note)
-                VALUES (%(code)s, %(assembly_id)s, %(submitted_by)s, %(persona_id)s, %(change_note)s)
+                (code, assembly_id, ballot_id, submitted_by, persona_id, change_note)
+                VALUES (%(code)s, %(assembly_id)s, %(ballot_id)s, %(submitted_by)s,
+                        %(persona_id)s, %(change_note)s)
         """
         params = {
             "code": code,
             "assembly_id": assembly_id,
+            "ballot_id": ballot_id,
             "submitted_by": rs.user.persona_id,
             "persona_id": persona_id,
             "change_note": change_note,
@@ -765,7 +769,7 @@ class AssemblyBackend(AbstractBackend):
                         rs,
                         const.AssemblyLogCodes.assembly_presider_added,
                         assembly_id,
-                        anid,
+                        persona_id=anid,
                     )
                 ret *= r
 
@@ -795,7 +799,7 @@ class AssemblyBackend(AbstractBackend):
                     rs,
                     const.AssemblyLogCodes.assembly_presider_removed,
                     assembly_id,
-                    persona_id,
+                    persona_id=persona_id,
                 )
 
         # Update session presider status
@@ -998,21 +1002,28 @@ class AssemblyBackend(AbstractBackend):
         return ret
 
     @access("assembly")
-    def list_ballots(self, rs: RequestState, assembly_id: int) -> dict[int, str]:
+    def list_ballots(self, rs: RequestState, assembly_id: int | None) -> dict[int, str]:
         """List all ballots of an assembly.
 
         :returns: Mapping of ballot ids to titles.
         """
-        assembly_id = affirm(vtypes.ID, assembly_id)
-        if not self.may_access(rs, assembly_id=assembly_id):
-            raise PrivilegeError(n_("Not privileged."))
-        data = self.sql_select(
-            rs,
-            "assembly.ballots",
-            ("id", "title"),
-            (assembly_id,),
-            entity_key="assembly_id",
-        )
+        assembly_id = affirm_optional(vtypes.ID, assembly_id)
+        if assembly_id:
+            if not self.may_access(rs, assembly_id=assembly_id):
+                raise PrivilegeError(n_("Not privileged."))
+            data = self.sql_select(
+                rs,
+                "assembly.ballots",
+                ("id", "title"),
+                (assembly_id,),
+                entity_key="assembly_id",
+            )
+        else:
+            # The latter two need this for AssemblyFrontend.view_log
+            if not {'member', 'auditor', 'assembly_admin'} & rs.user.roles:
+                raise PrivilegeError
+            query = "SELECT id, title FROM assembly.ballots"
+            data = self.query_all(rs, query, tuple())
         return {e['id']: e['title'] for e in data}
 
     @access("assembly")
@@ -1213,6 +1224,7 @@ class AssemblyBackend(AbstractBackend):
                     rs,
                     const.AssemblyLogCodes.ballot_changed,
                     current['assembly_id'],
+                    ballot_id=current['id'],
                     change_note=current['title'],
                 )
             if 'candidates' in data:
@@ -1249,6 +1261,7 @@ class AssemblyBackend(AbstractBackend):
                         rs,
                         const.AssemblyLogCodes.candidate_added,
                         current['assembly_id'],
+                        ballot_id=data['id'],
                         change_note=data['candidates'][x]['shortname'],
                     )
                 # updated
@@ -1260,6 +1273,7 @@ class AssemblyBackend(AbstractBackend):
                         rs,
                         const.AssemblyLogCodes.candidate_updated,
                         current['assembly_id'],
+                        ballot_id=data['id'],
                         change_note=current['candidates'][x]['shortname'],
                     )
                 # deleted
@@ -1270,6 +1284,7 @@ class AssemblyBackend(AbstractBackend):
                             rs,
                             const.AssemblyLogCodes.candidate_removed,
                             current['assembly_id'],
+                            ballot_id=data['id'],
                             change_note=current['candidates'][x]['shortname'],
                         )
         return ret
@@ -1300,6 +1315,7 @@ class AssemblyBackend(AbstractBackend):
                 rs,
                 const.AssemblyLogCodes.ballot_created,
                 data['assembly_id'],
+                ballot_id=new_id,
                 change_note=data['title'],
             )
             if 'candidates' in data:
@@ -1354,6 +1370,7 @@ class AssemblyBackend(AbstractBackend):
                 rs,
                 const.AssemblyLogCodes.ballot_changed,
                 current['assembly_id'],
+                ballot_id=ballot_id,
                 change_note=current['title'],
             )
         return ret
@@ -1481,6 +1498,8 @@ class AssemblyBackend(AbstractBackend):
                     rs,
                     const.AssemblyLogCodes.ballot_deleted,
                     current['assembly_id'],
+                    # No ballot_id on deletion
+                    ballot_id=None,
                     change_note=current['title'],
                 )
             else:  # pragma: no cover
@@ -1523,6 +1542,7 @@ class AssemblyBackend(AbstractBackend):
                     rs,
                     const.AssemblyLogCodes.ballot_extended,
                     ballot['assembly_id'],
+                    ballot_id=ballot_id,
                     change_note=ballot['title'],
                 )
         return update['extended']
@@ -1828,6 +1848,7 @@ class AssemblyBackend(AbstractBackend):
                 rs,
                 const.AssemblyLogCodes.ballot_tallied,
                 ballot['assembly_id'],
+                ballot_id=ballot_id,
                 change_note=ballot['title'],
             )
 
@@ -2184,7 +2205,7 @@ class AssemblyBackend(AbstractBackend):
                     rs,
                     const.AssemblyLogCodes.attachment_ballot_link_created,
                     assembly_id,
-                    persona_id=None,
+                    ballot_id=ballot_id,
                     change_note=f"{version['title']} ({ballot['title']})",
                 )
                 return ret
@@ -2226,7 +2247,7 @@ class AssemblyBackend(AbstractBackend):
                     rs,
                     const.AssemblyLogCodes.attachment_ballot_link_deleted,
                     assembly_id,
-                    persona_id=None,
+                    ballot_id=ballot_id,
                     change_note=f"{version['title']} ({ballot['title']})",
                 )
             return ret

@@ -505,19 +505,23 @@ class TestAssemblyBackend(BackendTest):
             {
                 "code": const.AssemblyLogCodes.ballot_changed,
                 "assembly_id": assembly_id,
+                "ballot_id": ballot_id,
                 "change_note": self.get_sample_datum(
                     "assembly.ballots", ballot_id)['title'],
             }, {
                 "code": const.AssemblyLogCodes.candidate_added,
                 "assembly_id": assembly_id,
+                "ballot_id": ballot_id,
                 "change_note": data['candidates'][-1]['shortname'],
             }, {
                 "code": const.AssemblyLogCodes.candidate_updated,
                 "assembly_id": assembly_id,
+                "ballot_id": ballot_id,
                 "change_note": expectation['candidates'][6]['shortname'],
             }, {
                 "code": const.AssemblyLogCodes.candidate_removed,
                 "assembly_id": assembly_id,
+                "ballot_id": ballot_id,
                 "change_note": expectation['candidates'][7]['shortname'],
             },
         ))
@@ -560,11 +564,13 @@ class TestAssemblyBackend(BackendTest):
             {
                 "code": const.AssemblyLogCodes.ballot_created,
                 "assembly_id": assembly_id,
+                "ballot_id": new_id,
                 "change_note": data['title'],
             },
             *({
                 "code": const.AssemblyLogCodes.candidate_added,
                 "assembly_id": assembly_id,
+                "ballot_id": new_id,
                 "change_note": data['candidates'][cid]['shortname'],
             } for cid in (-1, -2)),
         ))
@@ -624,6 +630,7 @@ class TestAssemblyBackend(BackendTest):
             log.append({
                 "code": const.AssemblyLogCodes.attachment_ballot_link_created,
                 "assembly_id": assembly_id,
+                "ballot_id": bid,
                 "change_note": f"{attachment_data[0]['title']} ({bdata['title']})",
             })
 
@@ -651,6 +658,7 @@ class TestAssemblyBackend(BackendTest):
             log.extend({
                 "code": const.AssemblyLogCodes.attachment_ballot_link_created,
                 "assembly_id": assembly_id,
+                "ballot_id": bid,
                 "change_note": f"{attachment_data[n]['title']} ({bdata['title']})",
             } for n in (1, 2))
 
@@ -679,11 +687,13 @@ class TestAssemblyBackend(BackendTest):
                 {
                     "code": const.AssemblyLogCodes.attachment_ballot_link_created,
                     "assembly_id": assembly_id,
+                    "ballot_id": bid,
                     "change_note": f"{attachment_data[3]['title']} ({bdata['title']})",
                 },
                 *({
                     "code": const.AssemblyLogCodes.attachment_ballot_link_deleted,
                     "assembly_id": assembly_id,
+                    "ballot_id": bid,
                     "change_note": f"{attachment_data[n]['title']} ({bdata['title']})",
                 } for n in (0, 2)),
             ))
@@ -701,6 +711,10 @@ class TestAssemblyBackend(BackendTest):
                 {attachment_id1, attachment_id3},
                 self.assembly.list_attachments(self.key, ballot_id=bid))
 
+        # Check log now, because ballot deletion removes ballot id from log.
+        self.assertLogEqual(
+            log, realm="assembly", offset=log_offset, assembly_id=assembly_id)
+
         cascade = {"attachments", "candidates", "voters"}
         for bid in ballots:
             self.assertEqual(
@@ -713,8 +727,12 @@ class TestAssemblyBackend(BackendTest):
         log.append({
             "code": const.AssemblyLogCodes.ballot_deleted,
             "assembly_id": assembly_id,
+            "ballot_id": old_ballot_id,
             "change_note": old_ballot_data['title'],
         })
+        for log_entry in log:
+            if log_entry.get("ballot_id") == old_ballot_id:
+                log_entry["ballot_id"] = None
         for aid in (attachment_id1, attachment_id3):
             self.assertEqual(
                 [new_id],
@@ -1018,8 +1036,11 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(self.assembly.get_ballot(self.key, 1)['comment'], None)
 
         # Test log
-        entry = {'change_note': 'Antwort auf die letzte aller Fragen',
-                 'code': const.AssemblyLogCodes.ballot_changed}
+        entry = {
+            'change_note': 'Antwort auf die letzte aller Fragen',
+            'code': const.AssemblyLogCodes.ballot_changed,
+            'ballot_id': 1,
+        }
         expectation = (entry, entry.copy())
         self.assertLogEqual(expectation, realm="assembly", assembly_id=1)
 
@@ -1079,6 +1100,7 @@ class TestAssemblyBackend(BackendTest):
         log.append({
             "code": const.AssemblyLogCodes.attachment_ballot_link_created,
             "assembly_id": assembly_id,
+            "ballot_id": ballot_id,
             "change_note": f"{data['title']} ({ballot_data['title']})",
         })
         self.assertEqual(expectation, self.assembly.get_attachment(self.key, new_id))
@@ -1097,6 +1119,7 @@ class TestAssemblyBackend(BackendTest):
         log.append({
             "code": const.AssemblyLogCodes.attachment_ballot_link_deleted,
             "assembly_id": assembly_id,
+            "ballot_id": ballot_id,
             "change_note": f"{data['title']} ({ballot_data['title']})",
         })
         # Removing a nonexistant link should not raise an error, but return 0.
@@ -1305,6 +1328,7 @@ class TestAssemblyBackend(BackendTest):
         log.append({
             "code": const.AssemblyLogCodes.attachment_ballot_link_created,
             "assembly_id": assembly_id,
+            "ballot_id": ballot_id,
             "change_note": f"{data['title']} ({ballot_data['title']})",
         })
         del data['assembly_id']
@@ -1508,6 +1532,7 @@ class TestAssemblyBackend(BackendTest):
                 log.append({
                     "code": const.AssemblyLogCodes.ballot_created,
                     "assembly_id": assembly_id,
+                    "ballot_id": ballot_id,
                     "change_note": ballot_data['title'],
                 })
                 self.assertTrue(
@@ -1516,6 +1541,7 @@ class TestAssemblyBackend(BackendTest):
                 log.append({
                     "code": const.AssemblyLogCodes.attachment_ballot_link_created,
                     "assembly_id": assembly_id,
+                    "ballot_id": ballot_id,
                     "change_note":
                         f"{attachment_data['title']} ({ballot_data['title']})",
                 })
