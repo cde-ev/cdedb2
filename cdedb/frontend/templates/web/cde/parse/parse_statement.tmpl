@@ -72,7 +72,12 @@
                             {% with reg_id = params.get('registration_ids', {}).get((persona['id'], event.id)) %}
                                 {% if reg_id %}
                                     <li>
-                                        {{ util.href(cdedblink("event/show_registration", {'event_id': event.id, 'registration_id': reg_id}), gettext("Matched Registration")) }}
+                                        {% if event_is_privileged(event_id=event.id) %}
+                                            {% set target = "show_registration" %}
+                                        {% else %}
+                                            {% set target = "show_registration_fee" %}
+                                        {% endif %}
+                                        {{ util.href(cdedblink("event/" ~ target, {'event_id': event.id, 'registration_id': reg_id}), gettext("Matched Registration"), anid="registration-link" ~ t_id) }}
                                     </li>
                                 {% endif %}
                             {% endwith %}

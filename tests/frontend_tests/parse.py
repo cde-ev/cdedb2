@@ -155,7 +155,7 @@ class TestParseFrontend(FrontendTest):
                 self.assertEqual(v, adict[k])
 
     @storage
-    @as_users("farin")
+    @as_users("farin", "anton")
     def test_parse_statement(self) -> None:
         self.get("/cde/parse")
         self.assertTitle("Kontoauszug parsen")
@@ -236,6 +236,14 @@ class TestParseFrontend(FrontendTest):
         self.assertPresence("14 fehlerfreie Transaktionen", div="has_none_summary")
 
         save = self.response
+
+        self.assertPresence("Zugeordnete Anmeldung", div="transaction-container12")
+        self.traverse({"description": "Zugeordnete Anmeldung", "linkid": "registration-link12"})
+        if self.user_in("farin"):
+            self.assertTitle("Teilnahmebeitragsdetails für Emilia Eventis (Große Testakademie 2222)")
+        else:
+            self.assertTitle("Anmeldung von Emilia Eventis (Große Testakademie 2222)")
+
         f = save.forms["parsedownloadform"]
 
         # check Testakademie csv.
