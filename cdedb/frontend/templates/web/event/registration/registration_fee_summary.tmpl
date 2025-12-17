@@ -16,7 +16,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-    {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations"), readonly=not is_privileged_for("show_registration")) }}
+    {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations"), readonly=not is_privileged_for("registration_query")) }}
     {{ util.breadcrumb_link(cdedblink("event/show_registration"), persona|persona_name, icon="user", readonly=not is_privileged_for("show_registration")) }}
     {{ util.breadcrumb_link(cdedblink("event/show_registration_fee"), gettext("Fee Details"), active=True) }}
 {% endblock %}
