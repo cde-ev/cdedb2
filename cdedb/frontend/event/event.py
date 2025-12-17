@@ -992,12 +992,14 @@ class EventEventMixin(EventBaseFrontend):
     def fee_summary(self, rs: RequestState, event_id: int) -> Response:
         """Show a summary of all event fees."""
         fee_stats = self.eventproxy.get_fee_stats(rs, event_id)
+        violations = self.get_constraint_violations(rs, rs.ambience['event'])
 
         return self.render(
             rs,
             "event/fee/fee_summary",
             {
                 'fee_stats': fee_stats,
+                'violations': violations['violations'],
                 'get_query': lambda ids, fee_id, kind: self._get_payment_query(
                     rs.ambience['event'],
                     ids,

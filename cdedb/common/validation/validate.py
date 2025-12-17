@@ -3504,6 +3504,7 @@ def _serialized_partial_event(
         'timestamp': datetime.datetime,
     }
     optional_fields: TypeMapping = {
+        'event': Mapping,  # ignored, but allowed to be present.
         'courses': Mapping,
         'lodgement_groups': Mapping,
         'lodgements': Mapping,
@@ -3718,6 +3719,8 @@ PARTIAL_REGISTRATION_IGNORED_FIELDS = {
     # Ignored because they are calculated, derived or external values:
     'amount_owed',
     'amount_owed_by_kind',
+    'amount_owed_by_category',
+    'amount_owed_by_budget',
     'persona',
     'ctime',
     'mtime',

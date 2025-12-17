@@ -767,7 +767,7 @@ table {
 }
 tr.ls-selected td, tr:target td, .list-group-item:target
 {
-    background: #d9edf7;
+    background: #f5f5f5;
 }
 .ls-item {
     border-width: 2px;
@@ -1255,6 +1255,11 @@ tr.eventfee .money-negative {
 tr.eventfee .money-positive {
     /*color: #31708f;*/
     /*background-color: #d9edf7;*/
+}
+tr.eventfee .eventfee-personalized {
+    color: #31708f;
+    background-color: #d9edf7;
+    border-color: #bce8f1;
 }
 
 /* ************** *

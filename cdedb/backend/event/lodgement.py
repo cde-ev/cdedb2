@@ -236,7 +236,11 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
 
     @access("event")
     def new_get_lodgements(
-        self, rs: RequestState, lodgement_ids: Collection[int]
+        self,
+        rs: RequestState,
+        lodgement_ids: Collection[int],
+        *,
+        _event: models.Event | None = None,
     ) -> models.CdEDataclassMap[models.Lodgement]:
         lodgement_ids = affirm(set[vtypes.ID], lodgement_ids)
         with Atomizer(rs):
@@ -254,7 +258,10 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
             ):
                 raise PrivilegeError(n_("Not privileged."))
             groups = self.get_lodgement_groups(rs, event_id)
-            event = self.get_event(rs, event_id)
+            if _event:
+                event = _event
+            else:
+                event = self.get_event(rs, event_id)
         return models.Lodgement.many_from_database([
             {
                 **lodge,

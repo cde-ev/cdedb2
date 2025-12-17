@@ -9,6 +9,7 @@ import abc
 import collections
 import copy
 import dataclasses
+import decimal
 from collections.abc import Collection
 from pathlib import Path
 from typing import Optional, Protocol
@@ -1295,6 +1296,19 @@ class EventLowLevelBackend(AbstractBackend):
             query += " AND event.registrations.id = ANY(%(reg_ids)s)"
             params["reg_ids"] = registration_ids
         rdata = self.query_all(rs, query, params)
+        for reg in rdata:
+            reg["amount_owed_by_kind"] = {
+                const.EventFeeType(int(k)): decimal.Decimal(v)
+                for k, v in reg["amount_owed_by_kind"].items()
+            }
+            reg["amount_owed_by_category"] = {
+                const.EventFeeCategory(int(k)): decimal.Decimal(v)
+                for k, v in reg["amount_owed_by_category"].items()
+            }
+            reg["amount_owed_by_budget"] = {
+                const.EventFeeBudget(int(k)): decimal.Decimal(v)
+                for k, v in reg["amount_owed_by_budget"].items()
+            }
         return {reg['id']: reg for reg in rdata}
 
     @classmethod

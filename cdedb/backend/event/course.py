@@ -54,7 +54,11 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
 
     @access("anonymous")
     def get_courses(
-        self, rs: RequestState, course_ids: Collection[int]
+        self,
+        rs: RequestState,
+        course_ids: Collection[int],
+        *,
+        _event: models.Event | None = None,
     ) -> models.CdEDataclassMap[models.Course]:
         """Retrieve data for some courses organized via DB.
 
@@ -73,7 +77,10 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
             if len(events) > 1:
                 raise ValueError(n_("Only courses from one event allowed."))
             event_id = unwrap(events)
-            event = self.get_event(rs, event_id)
+            if _event:
+                event = _event
+            else:
+                event = self.get_event(rs, event_id)
 
             segment_data = self.query_all(
                 rs, *models.CourseSegment.get_select_query(course_ids)

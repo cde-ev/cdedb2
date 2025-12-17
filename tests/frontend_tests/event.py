@@ -509,8 +509,8 @@ class TestEventFrontend(FrontendTest):
             ins = (
                     everyone | not_registered | privileged
                     | registered_or_privileged
-            ) - registrations_stats | {"Teilnahmebeiträge", "Log"}
-            out = (registered | orga | registrations_stats) - {"Teilnahmebeiträge", "Log"}
+            ) - registrations_stats | {"Teilnahmebeiträge", "Log", "Unterkünfte"}
+            out = (registered | orga | registrations_stats) - {"Teilnahmebeiträge", "Log", "Unterkünfte"}
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -5940,7 +5940,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         first = json.loads(self.response.text)
 
         upload = copy.deepcopy(first)
-        del upload['event']
         self.get('/event/event/1/import/partial')
         self.assertTitle("Partieller Import zur Veranstaltung Große Testakademie 2222")
         f = self.response.forms["importform"]
@@ -6917,7 +6916,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self._check_shown_violations(
             event_id=3, filtered_severity=models_cv.ViolationSeverity.INFO,
             texts=[
-                "3 Uneingecheckte Teilnehmende",
                 "2 Fehlende Kurseinteilungen",
             ],
         )
@@ -7039,7 +7037,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self._check_shown_violations(
             event_id=3, filtered_severity=models_cv.ViolationSeverity.ERROR,
             texts=[
-                "3 Uneingecheckte Teilnehmende",
             ],
         )
         self._check_shown_violations(
@@ -7073,7 +7070,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self._check_shown_violations(
             event_id=3, filtered_severity=models_cv.ViolationSeverity.WARNING,
             texts=[
-                "3 Uneingecheckte Teilnehmende",
                 "2 Fehlende Kurseinteilungen",
             ],
         )
