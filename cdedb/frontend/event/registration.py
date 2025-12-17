@@ -1213,7 +1213,7 @@ class EventRegistrationMixin(EventBaseFrontend):
     @access("event")
     @event_guard(
         EventPrivileges.registrations_read,
-        EventPrivileges.registrations_stats | EventPrivileges.payment_write,
+        EventPrivileges.registrations_read_internal | EventPrivileges.payment_write,
     )
     def show_registration_fee(
         self, rs: RequestState, event_id: int, registration_id: int

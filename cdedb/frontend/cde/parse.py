@@ -91,8 +91,8 @@ class CdEParseMixin(CdEBaseFrontend):
                 EventFrontend.is_privileged,
                 self,  # type: ignore[arg-type]
                 rs,
-                EventPrivileges.registrations_read,
             ),
+            'EventPrivileges': EventPrivileges,
         }
         return self.render(
             rs,
