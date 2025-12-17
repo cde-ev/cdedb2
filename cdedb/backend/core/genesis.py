@@ -13,9 +13,7 @@ import cdedb.database.constants as const
 import cdedb.models.core as models
 from cdedb.backend.common import (
     access,
-    affirm_set_validation as affirm_set,
     affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional,
     internal,
     singularize,
 )
@@ -128,7 +126,7 @@ class CoreGenesisBackend(CoreBaseBackend):
             )
         if not cascade:
             cascade = set()
-        cascade = affirm_set(str, cascade) & blockers.keys()
+        cascade = affirm(set[str], cascade) & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(
                 n_("Deletion of %(type)s blocked by %(block)s."),
@@ -257,9 +255,9 @@ class CoreGenesisBackend(CoreBaseBackend):
         Restrict to certain stati and certain target realms.
         """
         realms = realms or []
-        realms = affirm_set(str, realms)
+        realms = affirm(set[str], realms)
         stati = stati or set()
-        stati = affirm_set(const.GenesisStati, stati)
+        stati = affirm(set[const.GenesisStati], stati)
         if not realms and "core_admin" not in rs.user.roles:
             raise PrivilegeError(n_("Not privileged."))
         elif not all(
@@ -289,7 +287,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         self, rs: RequestState, genesis_case_ids: Collection[int]
     ) -> CdEDataclassMap[models.GenesisCase]:
         """Retrieve datasets for persona creation cases."""
-        genesis_case_ids = affirm_set(vtypes.ID, genesis_case_ids)
+        genesis_case_ids = affirm(set[vtypes.ID], genesis_case_ids)
         cases = models.GenesisCase.many_from_database(
             self.query_all(
                 rs, *models.GenesisCase.get_select_query(genesis_case_ids, "id")
@@ -417,7 +415,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         """
         case_id = affirm(vtypes.ID, case_id)
         decision = affirm(GenesisDecision, decision)
-        persona_id = affirm_optional(vtypes.ID, persona_id)
+        persona_id = affirm(vtypes.ID | None, persona_id)
 
         with Atomizer(rs):
             # Privilege check is done in genesis_get_case, since it requires the case.

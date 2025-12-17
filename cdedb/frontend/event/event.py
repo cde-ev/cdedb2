@@ -9,11 +9,13 @@ This also includes all functionality directly avalable on the `show_event` page.
 
 import copy
 import datetime
+import json
 from collections.abc import Collection
 from typing import Optional, cast
 
 import werkzeug.datastructures
 import werkzeug.exceptions
+import werkzeug.routing
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
@@ -49,7 +51,6 @@ from cdedb.frontend.common import (
     access,
     cdedburl,
     check_validation as check,
-    check_validation_optional as check_optional,
     drow_name,
     inspect_validation as inspect,
     periodic,
@@ -182,12 +183,43 @@ class EventEventMixin(EventBaseFrontend):
         return self.render(rs, "event/show_event", params)
 
     @access("event")
-    @REQUESTdata("event_id")
-    def redirect_event(self, rs: RequestState, event_id: int) -> Response:
-        if rs.has_validation_errors():
+    @REQUESTdata("event_id", "endpoint", "args")
+    def redirect_event(
+        self, rs: RequestState, event_id: int, endpoint: str, args: str
+    ) -> Response:
+        original_params = json.loads(args.replace("'", '"')) if args else {}
+        original_event_id = original_params.get("event_id")
+        params = original_params
+        if rs.has_validation_errors() or not event_id:
             rs.notify("error", rs.gettext("Unknown event."))
-            return self.list_events(rs)
-        return self.redirect(rs, "event/show_event", {"event_id": event_id})
+            default_endpoint = "event/list_events"
+        else:
+            default_endpoint = "event/show_event"
+            if not original_event_id:
+                # If coming from no event, override original endpoint.
+                endpoint = default_endpoint
+            if original_event_id != event_id:
+                # If going to a (different) event, drop subentity params.
+
+                # If we have a registration id try to find a registration for the
+                #  same persona for the new event.
+                new_reg_id = None
+                if reg_id := params.get("registration_id"):
+                    reg = self.eventproxy.get_registration(rs, reg_id)
+                    persona_id = reg["persona_id"]
+                    new_reg_id = self.eventproxy.get_registration_id(
+                        rs, persona_id=persona_id, event_id=event_id
+                    )
+
+                params = {"event_id": event_id}
+                if new_reg_id:
+                    params["registration_id"] = new_reg_id
+        try:
+            return self.redirect(rs, endpoint or default_endpoint, params)
+        except werkzeug.routing.exceptions.BuildError:
+            if not rs.notifications:
+                rs.notify("info", n_("Could not redirect to entity page."))
+            return self.redirect(rs, default_endpoint, params)
 
     @access("event")
     @event_guard(EventPrivileges.basic_read)
@@ -320,7 +352,7 @@ class EventEventMixin(EventBaseFrontend):
         This somewhat clashes with our usual naming convention, it is
         about the 'minor form' and not about changing minors.
         """
-        minor_form = check_optional(rs, vtypes.PDFFile, minor_form, "minor_form")
+        minor_form = check(rs, vtypes.PDFFile | None, minor_form, "minor_form")
         if not minor_form and not delete:
             rs.append_validation_error((
                 "minor_form",

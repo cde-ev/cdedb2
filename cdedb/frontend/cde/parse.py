@@ -39,7 +39,6 @@ from cdedb.frontend.common import (
     TransactionObserver,
     access,
     check_validation as check,
-    check_validation_optional as check_optional,
     csv_output,
     inspect_validation as inspect,
     request_extractor,
@@ -324,8 +323,8 @@ class CdEParseMixin(CdEBaseFrontend):
         corruption and to explicitly signal at what point the data will
         be committed (for the second purpose it works like a boolean).
         """
-        transfers_file = check_optional(
-            rs, vtypes.CSVFile, transfers_file, "transfers_file"
+        transfers_file = check(
+            rs, vtypes.CSVFile | None, transfers_file, "transfers_file"
         )
         if rs.has_validation_errors():
             return self.money_transfers_form(rs)

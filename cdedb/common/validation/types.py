@@ -3,10 +3,10 @@
 import datetime as _datetime
 import decimal as _decimal
 from collections.abc import Mapping as _Mapping, MutableMapping as _MutableMapping
-from types import UnionType as _UnionType
 from typing import TYPE_CHECKING, Any as _Any, NewType as _NewType
 
 from subman import SubscriptionState as _SubscriptionState
+from typing_extensions import TypeForm as _TypeForm
 
 from cdedb.common.query import Query as _Query
 
@@ -20,8 +20,8 @@ else:
 
 del TYPE_CHECKING
 
-TypeMapping = _Mapping[str, type[_Any] | _UnionType]
-MutableTypeMapping = _MutableMapping[_Any, type[_Any] | _UnionType]
+TypeMapping = _Mapping[str, _TypeForm[_Any]]
+MutableTypeMapping = _MutableMapping[_Any, _TypeForm[_Any]]
 
 # SIMPLE/PRIMITIVE/ATOMIC TYPES
 

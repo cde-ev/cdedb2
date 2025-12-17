@@ -127,6 +127,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
     def view_log(self, rs: RequestState, data: CdEDBObject, download: bool) -> Response:
         """View activities."""
         all_assemblies = self.assemblyproxy.list_assemblies(rs)
+        all_ballots = self.assemblyproxy.list_ballots(rs, assembly_id=None)
         may_view = lambda id_: self.assemblyproxy.may_assemble(rs, assembly_id=id_)
 
         return self.generic_view_log(
@@ -139,6 +140,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             template_kwargs={
                 'may_view': may_view,
                 'all_assemblies': all_assemblies,
+                'all_ballots': all_ballots,
             },
         )
 
@@ -151,6 +153,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
     ) -> Response:
         """View activities."""
         rs.values['assembly_id'] = data['assembly_id'] = assembly_id
+        ballots = self.assemblyproxy.list_ballots(rs, assembly_id)
         return self.generic_view_log(
             rs,
             data,
@@ -158,6 +161,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             self.assemblyproxy.retrieve_log,
             download=download,
             template="base/view_assembly_log",
+            template_kwargs={'ballots': ballots},
         )
 
     @access("assembly")

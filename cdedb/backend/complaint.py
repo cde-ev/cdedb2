@@ -10,9 +10,7 @@ from cdedb.backend.common import (
     AbstractBackend,
     Silencer,
     access,
-    affirm_set_validation as affirm_set,
     affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional,
     singularize,
 )
 from cdedb.common import (
@@ -249,7 +247,7 @@ class ComplaintBackend(AbstractBackend):
         self, rs: RequestState, case_ids: Collection[int]
     ) -> models.CdEDataclassMap[models.Case]:
         """Retrieve metadata and a list of complaint entries for some complaint cases."""
-        case_ids = affirm_set(vtypes.ID, case_ids)
+        case_ids = affirm(set[vtypes.ID], case_ids)
         with Atomizer(rs):
             case_data = self.query_all(rs, *models.Case.get_select_query(case_ids))
             if not case_data:
@@ -505,7 +503,7 @@ class ComplaintBackend(AbstractBackend):
             passthrough=True,
             entry_type=entry.entry_type,
         )
-        dreason = affirm_optional(str, dreason)
+        dreason = affirm(str | None, dreason)
 
         with Atomizer(rs):
             self._delete_entry(rs, entry_id=entry_id, dreason=dreason)
@@ -517,7 +515,7 @@ class ComplaintBackend(AbstractBackend):
     ) -> DefaultReturnCode:
         """Delete an existing entry version."""
         entry_id = affirm(vtypes.ID, entry_id)
-        dreason = affirm_optional(str, dreason)
+        dreason = affirm(str | None, dreason)
         with Atomizer(rs):
             case_id = self._get_case_id(rs, entry_id)
             entry = self.get_case(rs, case_id).entries[entry_id]
@@ -614,7 +612,7 @@ class ComplaintBackend(AbstractBackend):
         """
         case_id = affirm(vtypes.ID, case_id)
         involved_type = affirm(const.ComplaintInvolvementType, involved_type)
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
 
         if not persona_ids:
             return 0
@@ -665,7 +663,8 @@ class ComplaintBackend(AbstractBackend):
             if persona_ids & case.active_companions.keys():
                 raise ValueError(n_("Already active companions."))
 
-            newly_involved = persona_ids - case.involved.get(involved_type, set())
+            newly_involved = set(persona_ids)
+            newly_involved -= case.involved.get(involved_type, set())
             if not newly_involved:
                 ret = -1
             else:
@@ -730,7 +729,7 @@ class ComplaintBackend(AbstractBackend):
             The number of removed personas otherwise.
         """
         case_id = affirm(vtypes.ID, case_id)
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
 
         if not persona_ids:
             return 0
@@ -821,7 +820,7 @@ class ComplaintBackend(AbstractBackend):
         """Add companions to a person involved in a case."""
         case_id = affirm(vtypes.ID, case_id)
         persona_id = affirm(vtypes.ID, persona_id)
-        companion_ids = affirm_set(vtypes.ID, companion_ids)
+        companion_ids = affirm(set[vtypes.ID], companion_ids)
 
         if not companion_ids:
             return 0
@@ -885,7 +884,7 @@ class ComplaintBackend(AbstractBackend):
         """Remove companions from a person involved in a case."""
         case_id = affirm(vtypes.ID, case_id)
         persona_id = affirm(vtypes.ID, persona_id)
-        companion_ids = affirm_set(vtypes.ID, companion_ids)
+        companion_ids = affirm(set[vtypes.ID], companion_ids)
         if not companion_ids:
             return 0
         with Atomizer(rs):
@@ -1035,8 +1034,8 @@ class ComplaintBackend(AbstractBackend):
         :returns: Mapping of entry *version* ids to descriptions.
         """
         case_id = affirm(int, case_id)
-        entry_id = affirm_optional(int, entry_id)
-        deleted = affirm_optional(bool, deleted)
+        entry_id = affirm(int | None, entry_id)
+        deleted = affirm(bool | None, deleted)
         return self._get_descriptions(
             rs, case_id=case_id, entry_id=entry_id, visible=True, deleted=deleted
         )
@@ -1224,7 +1223,7 @@ class ComplaintBackend(AbstractBackend):
         self, rs: RequestState, concerned_id: int, is_active: bool | None = True
     ) -> set[vtypes.ID]:
         concerned_id = affirm(vtypes.ID, concerned_id)
-        is_active = affirm_optional(bool, is_active)
+        is_active = affirm(bool | None, is_active)
         if not (
             {"complaint_admin", "complaint.enforcer"} & rs.user.all_roles
             or concerned_id == rs.user.persona_id
@@ -1264,11 +1263,11 @@ class ComplaintBackend(AbstractBackend):
         entry_types: set[const.ComplaintEntryType] | None = None,
         is_active: bool | None = True,
     ) -> dict[int, int]:
-        is_active = affirm_optional(bool, is_active)
+        is_active = affirm(bool | None, is_active)
         if entry_types is None:
             entry_types = const.ComplaintEntryType.measure_types()
         else:
-            entry_types = affirm_set(const.ComplaintEntryType, entry_types)
+            entry_types = affirm(set[const.ComplaintEntryType], entry_types)
             if not entry_types <= const.ComplaintEntryType.measure_types():
                 raise ValueError(n_("Can only list measures."))
 
@@ -1310,7 +1309,7 @@ class ComplaintBackend(AbstractBackend):
         :returns: the associated entry versions, their descriptions, and
             some keys on the respective entries.
         """
-        measure_ids = affirm_set(vtypes.ID, measure_ids)
+        measure_ids = affirm(set[vtypes.ID], measure_ids)
         version_data = self.query_all(
             rs,
             *models.ComplaintEntryVersion.get_select_query(

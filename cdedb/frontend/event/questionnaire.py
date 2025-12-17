@@ -34,7 +34,7 @@ from cdedb.frontend.common import (
     RequestConstraint,
     REQUESTdata,
     access,
-    check_validation_optional as check_optional,
+    check_validation as check,
     request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend, event_guard
@@ -288,7 +288,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         deletes = {i for i in range(num) if del_flags[f'delete_{i}']}
         spec: vtypes.TypeMapping = dict(
             QUESTIONNAIRE_ROW_MANDATORY_FIELDS,
-            field_id=Optional[vtypes.ID],  # type: ignore[arg-type]
+            field_id=Optional[vtypes.ID],
         )
         marker = 1
         while marker < 2**10:
@@ -365,9 +365,9 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             if data[dv_key] is None or field_id is None:
                 data[dv_key] = None
                 continue
-            data[dv_key] = check_optional(
+            data[dv_key] = check(
                 rs,
-                vtypes.ByFieldDatatype,
+                vtypes.ByFieldDatatype | None,
                 data[dv_key],
                 dv_key,
                 kind=reg_fields[field_id].kind,

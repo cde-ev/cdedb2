@@ -15,7 +15,6 @@ import cdedb.models.event as models
 from cdedb.backend.common import (
     PYTHON_TO_SQL_MAP,
     access,
-    affirm_set_validation as affirm_set,
     affirm_validation as affirm,
 )
 from cdedb.backend.event.base import EventBaseBackend
@@ -797,8 +796,8 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
         omitted, so if the field is added again, it will appear in the query again.
         """
         event_id = affirm(vtypes.ID, event_id)
-        scopes = affirm_set(QueryScope, scopes or set())
-        query_ids = affirm_set(vtypes.ID, query_ids or set())
+        scopes = affirm(set[QueryScope], scopes or set())
+        query_ids = affirm(set[vtypes.ID], query_ids or set())
         if not is_privileged(rs, EventPrivileges.basic_read, event_id=event_id):
             raise PrivilegeError(n_("Must be orga to retrieve stored queries."))
         try:

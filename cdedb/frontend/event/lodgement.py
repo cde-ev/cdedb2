@@ -745,7 +745,7 @@ class EventLodgementMixin(EventBaseFrontend):
     ) -> Response:
         """Swap inhabitants of two lodgements of the same part."""
         params: vtypes.TypeMapping = {
-            f"swap_with_{part_id}": Optional[vtypes.ID]  # type: ignore[misc]
+            f"swap_with_{part_id}": Optional[vtypes.ID]
             for part_id in rs.ambience['event'].parts
         }
         data = request_extractor(rs, params)

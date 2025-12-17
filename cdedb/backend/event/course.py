@@ -15,7 +15,6 @@ import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.backend.common import (
     access,
-    affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     singularize,
 )
@@ -66,7 +65,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
         They must be associated to the same event. This contains additional
         information on the parts in which the course takes place.
         """
-        course_ids = affirm_set(vtypes.ID, course_ids)
+        course_ids = affirm(set[vtypes.ID], course_ids)
         with Atomizer(rs):
             course_data = {
                 e["id"]: e
@@ -364,7 +363,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
         self.assert_lock(rs, event_id=current['event_id'])
 
         blockers = self.delete_course_blockers(rs, course_id)
-        cascade = affirm_set(str, cascade or set()) & blockers.keys()
+        cascade = affirm(set[str], cascade or set()) & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(
                 n_("Deletion of %(type)s blocked by %(block)s."),

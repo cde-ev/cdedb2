@@ -33,7 +33,6 @@ import functools
 import logging
 import sys
 from collections.abc import Collection
-from types import UnionType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -47,6 +46,8 @@ from typing import (
     get_origin,
     overload,
 )
+
+from typing_extensions import TypeForm
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -722,8 +723,8 @@ class EventField(EventDataclass):
         return mandatory, optional
 
     @classmethod
-    def _get_validator(cls, kind: const.FieldDatatypes) -> type[Any] | UnionType:
-        return {
+    def _get_validator(cls, kind: const.FieldDatatypes) -> TypeForm[Any]:
+        type_ = {
             const.FieldDatatypes.str: str,
             const.FieldDatatypes.bool: bool,
             const.FieldDatatypes.int: int,
@@ -735,8 +736,9 @@ class EventField(EventDataclass):
             const.FieldDatatypes.phone: vtypes.Phone,
             const.FieldDatatypes.iban: vtypes.IBAN,
         }[kind] | None
+        return cast(TypeForm[Any], type_)
 
-    def get_validator(self) -> type[Any] | UnionType:
+    def get_validator(self) -> TypeForm[Any]:
         return self._get_validator(self.kind)
 
     def get_sortkey(self) -> Sortkey:

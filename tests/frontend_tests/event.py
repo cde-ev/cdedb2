@@ -577,8 +577,13 @@ class TestEventFrontend(FrontendTest):
         execsql("UPDATE event.courses SET is_visible = True WHERE id = 2")
         self.submit(f)
         self.assertPresence("β. Lustigsein für Fortgeschrittene")
+        f = self.response.forms['coursefilterform']
+        self.assertNotIn("active_only", f.fields)
         if self.user_in('annika'):
+            self.event.set_event(self.key, 1, {"is_course_state_visible": True})
+            self.traverse("Kursliste")
             f = self.response.forms['coursefilterform']
+            f['track_ids'] = [2]
             f['active_only'].checked = True
             self.submit(f)
             self.assertNonPresence("β. Lustigsein für Fortgeschrittene")
@@ -768,44 +773,35 @@ class TestEventFrontend(FrontendTest):
                             div='notifications')
 
     def test_course_state_visibility(self) -> None:
-        self.login(USER_DICT['charly'])
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/course/list'})
-        self.assertNonPresence("fällt aus")
-        self.traverse({'href': '/event/event/1/register'})
-        f = self.response.forms['registerform']
-        # Course ε. Backup-Kurs is cancelled in track 3 (but not visible by now)
-        self.assertIn('5', [value for (value, checked, text)
-                            in f['track3.course_choice_0'].options])
+        with self.switch_user("charly"):
+            self.get("/event/event/1/course/list")
+            self.assertNonPresence("fällt aus")
+            self.get('/event/event/1/register')
+            f = self.response.forms['registerform']
+            # Course ε. Backup-Kurs is cancelled in track 3 (but still choosable).
+            self.assertIn(
+                '5', [value for (value, _, _) in f['track3.course_choice_0'].options]
+            )
 
-        self.logout()
-        self.login(USER_DICT['garcia'])
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/course/list'})
-        self.assertPresence("fällt aus")
-        self.assertPresence("Info! Ausfallende Kurse werden nur für Orgas "
-                            "hier markiert.", div='static-notifications')
-        self.traverse({'href': '/event/event/1/change'})
-        f = self.response.forms['changeeventform']
-        f['is_course_state_visible'].checked = True
-        self.submit(f)
-        self.traverse({'href': '/event/event/1/course/list'})
-        self.assertNonPresence("Ausfallende Kurse werden nur für Orgas",
-                               div='static-notifications')
+        with self.switch_user("garcia"):
+            self.get("/event/event/1/course/list")
+            self.assertNonPresence("fällt aus")
+            self.get('/event/event/1/change')
+            f = self.response.forms['changeeventform']
+            f['is_course_state_visible'].checked = True
+            self.submit(f)
+            self.get('/event/event/1/course/list')
+            self.assertPresence("fällt aus")
 
-        self.logout()
-        self.login(USER_DICT['charly'])
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/course/list'})
-        self.assertPresence("fällt aus")
-        self.traverse({'href': '/event/event/1/register'})
-        f = self.response.forms['registerform']
-        # Course ε. Backup-Kurs is cancelled in track 3 (but not visible by now)
-        self.assertNotIn('5', [value for (value, checked, text)
-                               in f['track3.course_choice_0'].options])
+        with self.switch_user("charly"):
+            self.get('/event/event/1/course/list')
+            self.assertPresence("fällt aus")
+            self.get('/event/event/1/register')
+            f = self.response.forms['registerform']
+            # Course ε. Backup-Kurs is cancelled in track 3 and no longer choosable.
+            self.assertNotIn(
+                '5', [value for (value, _, _) in f['track3.course_choice_0'].options]
+            )
 
     @event_keeper
     @as_users("garcia")
@@ -8382,3 +8378,51 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Emilia (Emmy) Eventis (KL) emilia@example.cde", div="attendee-list3")
         self.assertPresence("Akira Abukara akira@example.cde", div="attendee-list3")
         self.assertPresence("Inga Iota inga@example.cde", div="attendee-list3")
+
+    @as_users("annika")
+    def test_event_quicksearch(self) -> None:
+        self.traverse("Veranstaltungen", "Veranstaltungshelfer")
+        self.assertTitle("Veranstaltungshelfer [1]")
+        f = self.response.forms["quickeventform"]
+        f["event_id"] = ""
+        self.submit(f)
+        self.assertTitle("Veranstaltungshelfer [1]")
+        self.assertNotification("Unbekannte Veranstaltung.", "error")
+        f = self.response.forms["quickeventform"]
+        f["event_id"] = 1
+        self.submit(f)
+        self.assertTitle("Große Testakademie 2222")
+        f = self.response.forms["quickeventform"]
+        f["event_id"] = ""
+        self.submit(f)
+        self.assertTitle("Große Testakademie 2222")
+        self.assertNotification("Unbekannte Veranstaltung.", "error")
+        f = self.response.forms["quickeventform"]
+        f["event_id"] = 2
+        self.submit(f)
+        self.assertTitle("CdE-Party 2050")
+        self.traverse("Teilnahmebeiträge")
+        self.assertTitle("Teilnahmebeiträge (CdE-Party 2050)")
+        f = self.response.forms["quickeventform"]
+        f["event_id"] = 1
+        self.submit(f)
+        self.assertTitle("Teilnahmebeiträge (Große Testakademie 2222)")
+        self.traverse("Kurse", "Heldentum")
+        self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
+        f = self.response.forms["quickeventform"]
+        f["event_id"] = 1
+        self.submit(f)
+        self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
+        f = self.response.forms["quickeventform"]
+        g = self.response.forms["quickregistrationform"]
+        f["event_id"] = 2
+        self.submit(f)
+        self.assertTitle("CdE-Party 2050")
+        self.assertNotification("Weiterleitung auf spezifische Unterseite nicht möglich.", "info")
+        g["phrase"] = "Garcia"
+        self.submit(g)
+        self.assertTitle("Anmeldung von Garcia Generalis (Große Testakademie 2222)")
+        f = self.response.forms["quickeventform"]
+        f["event_id"] = 3
+        self.submit(f)
+        self.assertTitle("Anmeldung von Garcia Generalis (CyberTestAkademie)")
