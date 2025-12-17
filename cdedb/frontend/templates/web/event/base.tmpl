@@ -51,25 +51,58 @@
     </div>
 {% endmacro %}
 
+{# Render an event quick search form.
 
-{% macro event_quicksearch(mobile=false) %}
-    <div class="list-group tear-down {% if mobile %}hidden-md hidden-lg{% else %}hidden-xs hidden-sm{% endif %}">
-        <form action="{{ cdedblink('event/redirect_event') }}" method="GET"
-                id="quickeventform{% if mobile %}-mobile{% endif %}">
+* mobile: If True, show this form only if the screen width is sm or xs.
+          If False, show this form only if the screen size is lg or md.
+          If None, show the form always, but hide it via js.
+
+* hidden: If True, hide the form initially but show it when the lg or md version of the sidebar heading is clicked.
+
+It is assumed that this is called:
+- single event page: once with (mobile=false, hidden=true) and once with (mobile=None, hidden=false).
+- other event realm page: Once with (mobile=false, hidden=false) and once with (mobile=true, hidden=false).
+
+This will result in:
+- single event page:
+  - small screens:
+    - the form will be shown at the bottom of the sidenav (which is actually a top nav), regardless of js or not.
+  - wide screens:
+    - Without js, the form will be shown at the bottom of the sidenav.
+    - With js, the form will not be shown at all, but the event title in the sidenav heading becomes clickable and
+        is replaced with the form on click.
+- other event realm page:
+  - small screens:
+    - the form will be shown at the bottom of the sidenav.
+  - wide screens:
+    - the form will be shown after the first block of the sidenav.
+
+#}
+{% macro event_quicksearch(mobile=false, hidden=false) %}
+    <div class="list-group tear-down
+            {% if mobile %}hidden-md hidden-lg{% elif mobile is sameas false %}hidden-xs hidden-sm{% endif %}
+            {% if hidden %}softhide{% endif %}
+    ">
+        {% set form_id = "quickeventform" + ("-mobile" if mobile is not sameas false else "") %}
+        <form action="{{ cdedblink('event/redirect_event') }}" method="GET" id="{{ form_id }}">
             <div class="sr-only">{% trans %}Quickly navigate to an event by name{% endtrans %}</div>
             <div class="input-group">
-                {{ util.input_select(name="event_id", entries=all_events|entries('id', 'title'),
-                                     nulloption=gettext("Event Quick-Access")) }}
+                {{ util.input_select(name="event_id", entries=all_events|entries('id', 'title')|reverse,
+                                     nulloption=gettext("Event Quick-Access"), force_noselect=True) }}
                 <span class="input-group-btn">
                     {{ util.input_submit("", icon='chevron-right', title=gettext("Go!")) }}
                 </span>
             </div>
+            {{ util.input_hidden("endpoint", original_endpoint) }}
+            {{ util.input_hidden("args", value=requestargs) }}
         </form>
         <script nonce="{{ csp_nonce }}">
-            form = $("#quickeventform{% if mobile %}-mobile{% endif %}");
+            form = $("#{{ form_id }}");
+            // Adjust input group styling.
             igroup = form.find(".input-group");
             igroup.children(".input-group-btn").remove();
             igroup.replaceWith(igroup.contents());
+            // Add selectize.
             form
                 .find("select")
                 .cdedbSearchEvent(
@@ -80,12 +113,49 @@
                         $(this).closest("form").submit();
                     }
                 });
+            {% if hidden %}
+                // Adjust sidebar heading styling.
+                {% set heading_selector = ".heading-sidebar .hidden-xs.hidden-sm" %}
+                $("{{ heading_selector }}")
+                    .addClass("selectize-control")
+                    .addClass("single")
+                    .wrapInner("<span class='selectize-input'></span>");
+                // Replace softhide class with js hide.
+                form.parent().removeClass("softhide").hide();
+                // Show the form and hide the heading when the heading is clicked.
+                $("{{ heading_selector }}")
+                    .on("click", function() {
+                        $("#{{ form_id }}")
+                            .parent()
+                            .show()
+                            .find("input")
+                            .focus();
+                        $(this).hide();
+                    });
+                // Hide the form and show the heading when the form is blurred.
+                form
+                    .find("input")
+                    .on("blur", function () {
+                        $("{{ heading_selector }}").show();
+                        $(this).closest("form").parent().hide();
+                    });
+            {% endif %}
+            {% if mobile is not sameas false %}
+                // Hide the mobile form if the hidden form is available.
+                form.parent().addClass("hidden-lg").addClass("hidden-md");
+            {% endif %}
         </script>
     </div>
 {% endmacro %}
 
 
 {% macro one_event_links(event) %}
+
+    {% if 'event_list' in user.admin_views %}
+        {# Only becomes visible by clicking the heading and only on big screens. #}
+        {{ event_quicksearch(hidden=true) }}
+    {% endif %}
+
     <div class="list-group tear-down">
         {% if event.is_visible_for(user, is_registered, privileged=False) or orga_view or 'event_mgmt' in user.admin_views %}
         {{ util.href(cdedblink("event/show_event", {"event_id": event['id']}), gettext("Overview"),
@@ -200,6 +270,12 @@
         {% if is_privileged_for('quick_show_registration') %}
             {{ registration_quicksearch(mobile=True) }}
         {% endif %}
+
+        {% if 'event_list' in user.admin_views %}
+            {# Visible on all screens, but hidden on big screens via js, since the other form is available instead. #}
+            {{ event_quicksearch(mobile=None) }}
+        {% endif %}
+
     {% endif %}
 {% endmacro %}
 
@@ -211,12 +287,12 @@
             {% endif %}
             {{ util.cdedb_script('cdedb_searchregistration.js') }}
         {% endif %}
-    {% elif "event_list" in user.admin_views %}
+    {% endif %}
+    {% if "event_list" in user.admin_views %}
         {% if not jshint %}
             {% set jshint='weak' %}
         {% endif %}
         {{ util.cdedb_script('cdedb_search_event.js') }}
-        {{ util.cdedb_script('selectize/selectize.min.js') }}
     {% endif %}
 {% endblock %}
 
@@ -248,8 +324,20 @@
             {{ util.href(cdedblink("event/index"), gettext("Event-Overview"), icon="arrow-alt-circle-up") }}
         </p>
 
-        <h3 class="heading-sidebar">{{ util.make_icon('chalkboard-teacher', arialabel=gettext("Event")) }}
-            {{ ambience['event']['title'] }}</h3>
+        {% set heading = util.make_icon('chalkboard-teacher', arialabel=gettext("Event")) ~ " " ~ ambience['event']['title'] %}
+        <h3 class="heading-sidebar">
+            {% if "event_list" in user.admin_views %}
+                {# This looks strange but is useful to add a "click" event only to the heading for big screens. #}
+                <span class="hidden-xs hidden-sm">
+                    {{ heading }}
+                </span>
+                <span class="hidden-lg hidden-md">
+                    {{ heading }}
+                </span>
+            {% else %}
+                {{ heading }}
+            {% endif %}
+        </h3>
         {{ one_event_links(ambience['event']) }}
     {% else %}
         <h3 class="heading-sidebar">{% trans %}Events{% endtrans %}</h3>

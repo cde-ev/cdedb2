@@ -276,6 +276,7 @@ class Application(BaseApp):
                 begin=begin,
                 lang=lang,
                 translations=self.translations,
+                endpoint=endpoint,
             )
             rs.values.update(args)
             component, action = endpoint.split('/')
