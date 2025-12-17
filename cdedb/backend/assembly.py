@@ -1005,7 +1005,7 @@ class AssemblyBackend(AbstractBackend):
 
         :returns: Mapping of ballot ids to titles.
         """
-        assembly_id = affirm_optional(vtypes.ID, assembly_id)
+        assembly_id = affirm(vtypes.ID | None, assembly_id)
         if assembly_id:
             if not self.may_access(rs, assembly_id=assembly_id):
                 raise PrivilegeError(n_("Not privileged."))
