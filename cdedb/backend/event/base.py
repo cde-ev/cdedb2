@@ -28,9 +28,7 @@ import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.backend.common import (
     access,
-    affirm_set_validation as affirm_set,
     affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional,
     internal,
     singularize,
 )
@@ -115,7 +113,7 @@ class EventBaseBackend(EventLowLevelBackend):
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> dict[int, set[int]]:
         """List events organized by specific personas."""
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
         data = self.sql_select(
             rs,
             "event.orgas",
@@ -123,7 +121,7 @@ class EventBaseBackend(EventLowLevelBackend):
             persona_ids,
             entity_key="persona_id",
         )
-        ret = {}
+        ret: dict[int, set[int]] = {}
         for anid in persona_ids:
             ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
         return ret
@@ -135,7 +133,7 @@ class EventBaseBackend(EventLowLevelBackend):
         persona_ids: Collection[int],
     ) -> dict[int, set[int]]:
         """List events cared for by specific personas."""
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
         data = self.sql_select(
             rs,
             "event.caretakers",
@@ -143,7 +141,7 @@ class EventBaseBackend(EventLowLevelBackend):
             persona_ids,
             entity_key="persona_id",
         )
-        ret = {}
+        ret: dict[int, set[int]] = {}
         for anid in persona_ids:
             ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
         return ret
@@ -228,7 +226,7 @@ class EventBaseBackend(EventLowLevelBackend):
         rs: RequestState,
         event_ids: Collection[int],
     ) -> models.CdEDataclassMap[models.Event]:
-        event_ids = affirm_set(vtypes.ID, event_ids)
+        event_ids = affirm(set[vtypes.ID], event_ids)
         with Atomizer(rs):
             event_data = {
                 e['id']: e
@@ -311,7 +309,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         Return 1 on successful change, -1 on successful deletion, 0 otherwise."""
         event_id = affirm(vtypes.ID, event_id)
-        minor_form = affirm_optional(vtypes.PDFFile, minor_form, file_storage=False)
+        minor_form = affirm(vtypes.PDFFile | None, minor_form, file_storage=False)
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Must be orga or admin to change the minor form."))
         path = self.get_minor_form_path(rs, event_id)
@@ -353,7 +351,7 @@ class EventBaseBackend(EventLowLevelBackend):
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> DefaultReturnCode:
         """Add event helpers."""
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
 
         ret = 1
         with Atomizer(rs):
@@ -413,7 +411,7 @@ class EventBaseBackend(EventLowLevelBackend):
         Note that this requires different privileges than `set_event`.
         """
         event_id = affirm(vtypes.ID, event_id)
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
 
         if not is_privileged(rs, EventPrivileges.orgas_change, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
@@ -485,7 +483,7 @@ class EventBaseBackend(EventLowLevelBackend):
         These have similar permissions to orgas, but are external caretakers.
         """
         event_id = affirm(vtypes.ID, event_id)
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
 
         ret = 1
         with Atomizer(rs):
@@ -567,7 +565,7 @@ class EventBaseBackend(EventLowLevelBackend):
         self, rs: RequestState, orga_token_ids: Collection[int]
     ) -> dict[int, OrgaToken]:
         """Retrieve information about orga tokens."""
-        orga_token_ids = affirm_set(vtypes.ID, orga_token_ids)
+        orga_token_ids = affirm(set[vtypes.ID], orga_token_ids)
         if not orga_token_ids:
             return {}
 
@@ -744,7 +742,7 @@ class EventBaseBackend(EventLowLevelBackend):
         """
         orga_token_id = affirm(vtypes.ID, orga_token_id)
         blockers = self.delete_orga_token_blockers(rs, orga_token_id)
-        cascade = affirm_set(str, cascade or ()) & blockers.keys()
+        cascade = affirm(set[str], cascade or ()) & blockers.keys()
 
         if blockers.keys() - cascade:
             raise ValueError(
@@ -1173,8 +1171,8 @@ class EventBaseBackend(EventLowLevelBackend):
         """Uninlined code from the event fee methods."""
         self.affirm_atomized_context(rs)
 
-        event_id = affirm_optional(vtypes.ID, event_id)
-        fee_id = affirm_optional(vtypes.ID, fee_id)
+        event_id = affirm(vtypes.ID | None, event_id)
+        fee_id = affirm(vtypes.ID | None, fee_id)
 
         if event_id is None:
             assert fee_id is not None
@@ -1367,8 +1365,7 @@ class EventBaseBackend(EventLowLevelBackend):
         """
         event_id = affirm(vtypes.ID, event_id)
         event = self.get_event(rs, event_id)
-        kinds = kinds or []
-        affirm_set(const.QuestionnaireUsages, kinds)
+        kinds = affirm(set[const.QuestionnaireUsages], kinds or [])
         columns = ', '.join(k for k in QUESTIONNAIRE_ROW_FIELDS if k != 'event_id')
         query = f"SELECT {columns} FROM {models.QuestionnaireRow.database_table}"
         constraints = ["event_id = %(event_id)s"]

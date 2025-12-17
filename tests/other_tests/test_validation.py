@@ -117,16 +117,16 @@ class TestValidation(TestValidationBase):
             0, len(validate.validate_check(int, "garbage", ignore_warnings)[1]))
         self.assertEqual((12, []), validate.validate_check(int, "12", ignore_warnings))
         self.assertEqual(
-            (12, []), validate.validate_check_optional(int, 12, ignore_warnings))
+            (12, []), validate.validate_check(int | None, 12, ignore_warnings))
         self.assertEqual(
-            (None, []), validate.validate_check_optional(int, None, ignore_warnings))
+            (None, []), validate.validate_check(int | None, None, ignore_warnings))
         self.assertEqual(
-            (12, []), validate.validate_check_optional(int, "12", ignore_warnings))
+            (12, []), validate.validate_check(int | None, "12", ignore_warnings))
         self.assertEqual(
-            None, validate.validate_check_optional(int, "garbage", ignore_warnings)[0])
+            None, validate.validate_check(int | None, "garbage", ignore_warnings)[0])
         self.assertLess(
-            0, len(validate.validate_check_optional(
-                int, "garbage", ignore_warnings)[1]),
+            0, len(validate.validate_check(
+                int | None, "garbage", ignore_warnings)[1])
         )
 
         self.assertEqual(12, validate.validate_assert(int, 12, ignore_warnings))
@@ -136,13 +136,13 @@ class TestValidation(TestValidationBase):
             validate.validate_assert(int, "garbage", ignore_warnings)
         self.assertEqual(12, validate.validate_assert(int, "12", ignore_warnings))
         self.assertEqual(
-            12, validate.validate_assert_optional(int, 12, ignore_warnings))
+            12, validate.validate_assert(int | None, 12, ignore_warnings))
         self.assertEqual(
-            None, validate.validate_assert_optional(int, None, ignore_warnings))
+            None, validate.validate_assert(int | None, None, ignore_warnings))
         self.assertEqual(
-            12, validate.validate_assert_optional(int, "12", ignore_warnings))
+            12, validate.validate_assert(int | None, "12", ignore_warnings))
         with self.assertRaises(ValueError):
-            validate.validate_assert_optional(int, "garbage", ignore_warnings)
+            validate.validate_assert(int | None, "garbage", ignore_warnings)
 
         for type_form in cast(list[type[Any]], [int | None, Optional[int]]):
             self.do_validator_test(type_form, (

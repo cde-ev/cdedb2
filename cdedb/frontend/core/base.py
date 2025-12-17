@@ -91,7 +91,6 @@ from cdedb.frontend.common import (
     access,
     basic_redirect,
     check_validation as check,
-    check_validation_optional as check_optional,
     inspect_validation as inspect,
     make_membership_fee_reference,
     periodic,
@@ -2521,7 +2520,7 @@ class CoreBaseFrontend(AbstractFrontend):
         """Set profile picture."""
         if rs.user.persona_id != persona_id and not self.is_admin(rs):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        foto = check_optional(rs, vtypes.ProfilePicture, foto, "foto")
+        foto = check(rs, vtypes.ProfilePicture | None, foto, "foto")
         if not foto and not delete:
             rs.append_validation_error(("foto", ValueError("Must not be empty.")))
         if rs.has_validation_errors():

@@ -51,7 +51,6 @@ from cdedb.frontend.common import (
     access,
     cdedburl,
     check_validation as check,
-    check_validation_optional as check_optional,
     drow_name,
     inspect_validation as inspect,
     periodic,
@@ -353,7 +352,7 @@ class EventEventMixin(EventBaseFrontend):
         This somewhat clashes with our usual naming convention, it is
         about the 'minor form' and not about changing minors.
         """
-        minor_form = check_optional(rs, vtypes.PDFFile, minor_form, "minor_form")
+        minor_form = check(rs, vtypes.PDFFile | None, minor_form, "minor_form")
         if not minor_form and not delete:
             rs.append_validation_error((
                 "minor_form",

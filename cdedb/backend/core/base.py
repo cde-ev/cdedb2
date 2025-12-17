@@ -26,10 +26,7 @@ import cdedb.models.core as models
 from cdedb.backend.common import (
     AbstractBackend,
     access,
-    affirm_array_validation as affirm_array,
-    affirm_set_validation as affirm_set,
     affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional,
     inspect_validation as inspect,
     internal,
     singularize,
@@ -373,7 +370,7 @@ class CoreBaseBackend(AbstractBackend):
         to access this freely."""
         log_table = affirm(str, log_table)
         log_id = affirm(int, log_id)
-        change_note = affirm_optional(str, change_note)
+        change_note = affirm(str | None, change_note)
 
         if log_table not in {log_filter.log_table for log_filter in ALL_LOG_FILTERS}:
             raise ValueError("Unknown log")
@@ -855,7 +852,7 @@ class CoreBaseBackend(AbstractBackend):
             rs, persona_id, allow_meta_admin=True
         ):
             raise PrivilegeError(n_("Not privileged."))
-        generations = affirm_set(int, generations or set())
+        generations = affirm(set[int], generations or set())
         fields = list(PERSONA_ALL_FIELDS)
         fields.remove('id')
         fields.append("persona_id AS id")
@@ -997,10 +994,10 @@ class CoreBaseBackend(AbstractBackend):
 
         :returns: Next valid id in table core.personas
         """
-        persona_id = affirm_optional(int, persona_id)
-        is_member = affirm_optional(bool, is_member)
-        is_archived = affirm_optional(bool, is_archived)
-        paper_expuls = affirm_optional(bool, paper_expuls)
+        persona_id = affirm(int | None, persona_id)
+        is_member = affirm(bool | None, is_member)
+        is_archived = affirm(bool | None, is_archived)
+        paper_expuls = affirm(bool | None, paper_expuls)
         query = "SELECT MIN(id) FROM core.personas"
         constraints = []
         params: ParamDict = {}
@@ -1192,9 +1189,9 @@ class CoreBaseBackend(AbstractBackend):
           without.
         """
         data = affirm(vtypes.Persona, data)
-        generation = affirm_optional(int, generation)
+        generation = affirm(int | None, generation)
         may_wait = affirm(bool, may_wait)
-        change_note = affirm_optional(str, change_note)
+        change_note = affirm(str | None, change_note)
         return self.set_persona(
             rs,
             data,
@@ -1454,9 +1451,9 @@ class CoreBaseBackend(AbstractBackend):
         :returns: dict mapping case ids to dicts containing information about
             the change
         """
-        persona_id = affirm_optional(vtypes.ID, persona_id)
+        persona_id = affirm(vtypes.ID | None, persona_id)
         stati = stati or set()
-        stati = affirm_set(const.PrivilegeChangeStati, stati)
+        stati = affirm(set[const.PrivilegeChangeStati], stati)
 
         query = "SELECT id, persona_id, status FROM core.privilege_changes"
         constraints = []
@@ -1478,7 +1475,7 @@ class CoreBaseBackend(AbstractBackend):
         self, rs: RequestState, privilege_change_ids: Collection[int]
     ) -> CdEDBObjectMap:
         """Retrieve datasets for priviledge changes."""
-        privilege_change_ids = affirm_set(vtypes.ID, privilege_change_ids)
+        privilege_change_ids = affirm(set[vtypes.ID], privilege_change_ids)
         data = self.sql_select(
             rs, "core.privilege_changes", PRIVILEGE_CHANGE_FIELDS, privilege_change_ids
         )
@@ -1540,8 +1537,8 @@ class CoreBaseBackend(AbstractBackend):
         persona_id = affirm(vtypes.ID, persona_id)
         balance = affirm(vtypes.NonNegativeDecimal, balance)
         log_code = affirm(const.FinanceLogCodes, log_code)
-        change_note = affirm_optional(str, change_note)
-        transaction_date = affirm_optional(datetime.date, transaction_date)
+        change_note = affirm(str | None, change_note)
+        transaction_date = affirm(datetime.date | None, transaction_date)
         update: CdEDBObject = {
             'id': persona_id,
         }
@@ -1595,9 +1592,9 @@ class CoreBaseBackend(AbstractBackend):
         :param honorary_member: Desired target state of honorary membership or None.
         """
         persona_id = affirm(vtypes.ID, persona_id)
-        is_member = affirm_optional(bool, is_member)
-        trial_member = affirm_optional(bool, trial_member)
-        honorary_member = affirm_optional(bool, honorary_member)
+        is_member = affirm(bool | None, is_member)
+        trial_member = affirm(bool | None, trial_member)
+        honorary_member = affirm(bool | None, honorary_member)
         with Atomizer(rs):
             # Already checks that the user has cde realm.
             current = self.get_cde_user(rs, persona_id)
@@ -2409,7 +2406,7 @@ class CoreBaseBackend(AbstractBackend):
         """
         persona_id = affirm(vtypes.ID, persona_id)
         new_username = affirm(vtypes.Email, new_username)
-        password = affirm_optional(str, password)
+        password = affirm(str | None, password)
         with Atomizer(rs):
             if self.verify_existence(rs, new_username):
                 # abort if there is already an account with this address
@@ -2456,7 +2453,7 @@ class CoreBaseBackend(AbstractBackend):
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> CdEDBObjectMap:
         """Acquire data sets for specified ids."""
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
         # TODO split this function in get_core_users and get_persona_status?
         return self.retrieve_personas(rs, persona_ids, columns=PERSONA_CORE_FIELDS)
 
@@ -2485,8 +2482,8 @@ class CoreBaseBackend(AbstractBackend):
         :param event_id: allows all users which are registered to this event
             to query for other participants of the same event by their ids.
         """
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
-        event_id = affirm_optional(vtypes.ID, event_id) or 0
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
+        event_id = affirm(vtypes.ID | None, event_id) or 0
         persona_data = self.query_all(
             rs, *models.EventPersona.get_select_query(persona_ids)
         )
@@ -2584,7 +2581,8 @@ class CoreBaseBackend(AbstractBackend):
             raise ValueError(n_("May not provide more than one input."))
         access_hash: Optional[str] = None
         if ids is not None:
-            ids = affirm_set(vtypes.ID, ids or set()) - {rs.user.persona_id}
+            ids = affirm(set[vtypes.ID], ids or set())
+            ids -= {rs.user.persona_id}
             num = len(ids)
             access_hash = get_hash(str(xsorted(ids)).encode())
         else:
@@ -2662,7 +2660,7 @@ class CoreBaseBackend(AbstractBackend):
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> CdEDBObjectMap:
         """Get an cde view on some data sets."""
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
         with Atomizer(rs):
             if self.check_quota(rs, ids=persona_ids):
                 raise QuotaException(n_("Too many queries."))
@@ -2690,7 +2688,7 @@ class CoreBaseBackend(AbstractBackend):
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> CdEDBObjectMap:
         """Get an ml view on some data sets."""
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
         persona_data = self.query_all(
             rs, *models.MlPersona.get_select_query(persona_ids)
         )
@@ -2706,7 +2704,7 @@ class CoreBaseBackend(AbstractBackend):
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> CdEDBObjectMap:
         """Get an assembly view on some data sets."""
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
         persona_data = self.query_all(
             rs, *models.AssemblyPersona.get_select_query(persona_ids)
         )
@@ -2726,7 +2724,7 @@ class CoreBaseBackend(AbstractBackend):
         This includes all attributes regardless of which realm they
         pertain to.
         """
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
         if (
             persona_ids != {rs.user.persona_id}
             and not self.is_admin(rs)
@@ -2755,7 +2753,7 @@ class CoreBaseBackend(AbstractBackend):
         :returns: The id of the newly created persona.
         """
         data = affirm(vtypes.Persona, data, creation=True)
-        submitted_by = affirm_optional(vtypes.ID, submitted_by)
+        submitted_by = affirm(vtypes.ID | None, submitted_by)
         # zap any admin attempts
         data.update({'is_archived': False, 'is_purged': False})
         data.update({k: False for k in ADMIN_KEYS})
@@ -2997,8 +2995,8 @@ class CoreBaseBackend(AbstractBackend):
 
         :param is_archived: If given, check the given archival status.
         """
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
-        is_archived = affirm_optional(bool, is_archived)
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
+        is_archived = affirm(bool | None, is_archived)
         if persona_ids == {rs.user.persona_id}:
             return True
         query = "SELECT COUNT(*) AS num FROM core.personas"
@@ -3066,11 +3064,11 @@ class CoreBaseBackend(AbstractBackend):
         :param allowed_roles: If given, check that all personas roles are a subset of
             these.
         """
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
         required_roles = required_roles or tuple()
-        required_roles = affirm_set(str, required_roles)
+        required_roles = affirm(set[str], required_roles)
         allowed_roles = allowed_roles or ALL_ROLES
-        allowed_roles = affirm_set(str, allowed_roles)
+        allowed_roles = affirm(set[str], allowed_roles)
         # add always allowed roles for personas
         allowed_roles |= {"persona", "anonymous"}
         roles = self.get_roles_multi(rs, persona_ids, introspection_only)
@@ -3677,7 +3675,7 @@ class CoreBaseBackend(AbstractBackend):
         :param states: Restrict to addresses with one of these states.
 
         """
-        states = affirm_array(const.EmailStatus, states or [])
+        states = affirm(list[const.EmailStatus], states or [])
         query = "SELECT address, status FROM core.email_states"
         params = {}
         if states:
@@ -3708,10 +3706,10 @@ class CoreBaseBackend(AbstractBackend):
 
         :param persona_ids: Retrieve only defect addresses of those users.
         """
-        persona_ids = affirm_set(vtypes.ID, persona_ids or set())
+        persona_ids = affirm(set[vtypes.ID], persona_ids or set())
         if stati is None:
             stati = tuple(const.EmailStatus)
-        stati = affirm_array(const.EmailStatus, stati or [])
+        stati = affirm(list[const.EmailStatus], stati or [])
 
         if not {"ml_admin", "core_admin"} & rs.user.roles and persona_ids != {
             rs.user.persona_id
@@ -3776,7 +3774,7 @@ class CoreBaseBackend(AbstractBackend):
     ) -> DefaultReturnCode:
         address = affirm(vtypes.Email, address)
         status = affirm(const.EmailStatus, status)
-        notes = affirm_optional(str, notes)
+        notes = affirm(str | None, notes)
 
         with Atomizer(rs):
             code = self.sql_insert(

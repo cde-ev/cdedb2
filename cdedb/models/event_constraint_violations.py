@@ -465,7 +465,7 @@ class ConstraintViolation(abc.ABC):
 
     def __lt__(self, other: 'ConstraintViolation') -> bool:
         if not isinstance(other, ConstraintViolation):
-            return NotImplemented  # type: ignore[unreachable]
+            return NotImplemented
         return self.get_sortkey() < other.get_sortkey()
 
     def get_sortkey(self) -> Sortkey:

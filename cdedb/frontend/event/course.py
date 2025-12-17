@@ -81,7 +81,7 @@ class EventCourseMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: int,
-        track_ids: Optional[Collection[int]] = None,
+        track_ids: Collection[int] = (),
         active_only: bool = False,
     ) -> Response:
         """List courses from an event."""
