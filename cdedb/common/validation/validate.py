@@ -3460,7 +3460,7 @@ def _json(val: Any, argname: str = "json", **kwargs: Any) -> JSON:
             raise ValidationSummary(
                 ValueError(argname, n_("Invalid UTF-8 sequence."))
             ) from e
-    val = _str(val, argname, **kwargs)
+    val = _str(val, argname, **kwargs, limit_size=False)
     try:
         data = json.loads(val)
     except json.decoder.JSONDecodeError as e:
