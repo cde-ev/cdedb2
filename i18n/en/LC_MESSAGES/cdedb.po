@@ -498,6 +498,9 @@ msgstr "VereinsAustausch Neugieriger"
 msgid "PastInstitutions.eisenberg"
 msgstr "Förderverein Feriendorf Eisenberg"
 
+msgid "PastInstitutions.other"
+msgstr "Other"
+
 #: cdedb/.i18n_additional.py:123
 msgid "ComplaintKind.physical_sexual_transgression"
 msgstr "Physical Sexual Transgression"

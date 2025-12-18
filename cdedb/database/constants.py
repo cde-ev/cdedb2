@@ -559,6 +559,7 @@ class PastInstitutions(CdEIntEnum):
     basf = 80  #:
     van = 200  #:
     eisenberg = 400  #:
+    other = 1000  #:
 
     @classmethod
     def main_insitution(cls) -> "PastInstitutions":
@@ -575,8 +576,9 @@ class PastInstitutions(CdEIntEnum):
             self.basf: "BASF",
             self.van: "VAN",
             self.eisenberg: "FV Eisenberg",
+            self.other: "Sonst.",
         }
-        return shortnames[self]
+        return shortnames.get(self, str(self))
 
 
 @enum.unique
