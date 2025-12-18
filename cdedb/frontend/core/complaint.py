@@ -284,6 +284,28 @@ class CoreComplaintMixin(CoreBaseFrontend):
         return self.render(rs, "complaint/case_history", case_data)
 
     @access("complaint_admin")
+    def export_case(self, rs: RequestState, case_id: int) -> Response:
+        case_data = self._get_case_data(
+            rs,
+            rs.ambience["case"],
+            get_hidden_descriptions=True,
+            show_log_entries=True,
+            include_deleted=False,
+        )
+        if isinstance(case_data, Response):
+            return case_data
+
+        export = self.fill_template(
+            rs,
+            "other",
+            "complaint/case_export",
+            case_data | {"case": rs.ambience["case"]},
+        )
+        return self.send_file(
+            rs, "text/plain", f"case_{case_id}.txt", data=export, inline=False
+        )
+
+    @access("complaint_admin")
     def create_case_form(self, rs: RequestState) -> Response:
         """Render form."""
         mandatory_fields = models.Case.mandatory_form_fields(creation=True)

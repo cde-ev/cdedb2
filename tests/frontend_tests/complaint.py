@@ -1,13 +1,21 @@
 #!/usr/bin/env python3
+import datetime
+
 import webtest
 
 import cdedb.database.constants as const
+import cdedb.models.complaint as models
+from cdedb.common.query.log_filter import ComplaintLogFilter
+from cdedb.config import TestConfig
 from tests.common import (
     USER_DICT,
     FrontendTest,
     as_users,
+    prepsql,
     storage,
 )
+
+_CONFIG = TestConfig()
 
 
 class TestComplaintFrontend(FrontendTest):
@@ -930,3 +938,28 @@ class TestComplaintFrontend(FrontendTest):
         self.assertNotification(
             "Benutzer existiert nicht oder ist kein Maßnahmenmanager", 'error'
         )
+
+    _fake_ctime = datetime.datetime(
+        2025, 12, 12, 8, 4, 2, tzinfo=_CONFIG["DEFAULT_TIMEZONE"]
+    )
+
+    @prepsql(f"""
+        UPDATE {models.ComplaintEntryVersion.database_table}
+        SET ctime = '{_fake_ctime.isoformat()}'
+    """)
+    @prepsql(f"""
+        UPDATE {ComplaintLogFilter.log_table}
+        SET ctime = '{_fake_ctime.isoformat()}'
+    """)
+    @storage
+    @as_users("simon")
+    def test_export_case(self) -> None:
+        self.get("/core/complaint/case/1/export")
+        self.assertTitle("Fall 1")
+        self.assertNotification("Fall muss zuerst entsperrt werden.")
+        f = self.response.forms["unlockcaseform"]
+        f["reason"] = "Test the export."
+        self.submit(f)
+        self.get("/core/complaint/case/1/export")
+        expectation = (self.testfile_dir / "case_1.txt").read_text()
+        self.assertEqual(expectation, self.response.text)
