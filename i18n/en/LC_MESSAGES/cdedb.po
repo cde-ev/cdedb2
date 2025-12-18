@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-12-18 00:35+0100\n"
+"POT-Creation-Date: 2025-12-18 01:49+0100\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -3241,7 +3241,7 @@ msgstr ""
 #: cdedb/frontend/core/base.py:1179 cdedb/frontend/core/base.py:1192
 #: cdedb/frontend/core/base.py:2503 cdedb/frontend/core/base.py:2522
 #: cdedb/frontend/core/base.py:3037 cdedb/frontend/core/base.py:3064
-#: cdedb/frontend/core/complaint.py:1146 cdedb/frontend/core/genesis.py:369
+#: cdedb/frontend/core/complaint.py:1148 cdedb/frontend/core/genesis.py:369
 #: cdedb/frontend/core/genesis.py:424 cdedb/frontend/core/genesis.py:482
 #: cdedb/frontend/core/genesis.py:505 cdedb/frontend/core/genesis.py:535
 #: cdedb/frontend/event/query.py:741 cdedb/frontend/ml/base.py:252
@@ -3790,7 +3790,7 @@ msgstr ""
 
 #: cdedb/backend/complaint.py:137 cdedb/backend/complaint.py:159
 #: cdedb/backend/event/registration.py:1379 cdedb/frontend/assembly/base.py:601
-#: cdedb/frontend/core/complaint.py:1192
+#: cdedb/frontend/core/complaint.py:1194
 #: cdedb/frontend/event/registration.py:1600
 msgid "This user does not exist or is archived."
 msgstr ""
@@ -3823,8 +3823,8 @@ msgstr ""
 msgid "Revocation entry without parent."
 msgstr ""
 
-#: cdedb/backend/complaint.py:580 cdedb/frontend/core/complaint.py:921
-#: cdedb/frontend/core/complaint.py:971
+#: cdedb/backend/complaint.py:580 cdedb/frontend/core/complaint.py:923
+#: cdedb/frontend/core/complaint.py:973
 msgid "Cannot chain revoke."
 msgstr ""
 
@@ -3875,8 +3875,8 @@ msgid "Persona and Changelog are inconsistent."
 msgstr ""
 
 #: cdedb/backend/core/base.py:590 cdedb/backend/core/base.py:1634
-#: cdedb/frontend/core/base.py:2474 cdedb/frontend/core/complaint.py:1198
-#: cdedb/frontend/core/complaint.py:1212
+#: cdedb/frontend/core/base.py:2474 cdedb/frontend/core/complaint.py:1200
+#: cdedb/frontend/core/complaint.py:1214
 #: cdedb/frontend/event/registration.py:1482 cdedb/frontend/ml/base.py:631
 msgid "Nothing changed."
 msgstr ""
@@ -4230,8 +4230,8 @@ msgstr ""
 #: cdedb/common/validation/validate.py:4881
 #: cdedb/common/validation/validate.py:5055 cdedb/frontend/cde/base.py:293
 #: cdedb/frontend/cde/base.py:297 cdedb/frontend/common.py:720
-#: cdedb/frontend/core/base.py:1446 cdedb/frontend/core/complaint.py:404
-#: cdedb/frontend/core/complaint.py:534 cdedb/frontend/core/genesis.py:146
+#: cdedb/frontend/core/base.py:1446 cdedb/frontend/core/complaint.py:406
+#: cdedb/frontend/core/complaint.py:536 cdedb/frontend/core/genesis.py:146
 #: cdedb/frontend/event/event.py:359 cdedb/frontend/event/registration.py:789
 #: cdedb/frontend/event/registration.py:2023
 msgid "Must not be empty."
@@ -4584,7 +4584,7 @@ msgid "Different mailinglists specified."
 msgstr ""
 
 #: cdedb/backend/ml.py:482 cdedb/frontend/cde/past_event.py:476
-#: cdedb/frontend/core/complaint.py:399 cdedb/frontend/core/complaint.py:529
+#: cdedb/frontend/core/complaint.py:401 cdedb/frontend/core/complaint.py:531
 msgid "Some of these users do not exist."
 msgstr ""
 
@@ -7274,7 +7274,7 @@ msgid "File already known for earlier version of this attachment."
 msgstr ""
 
 #: cdedb/frontend/assembly/attachment.py:393 cdedb/frontend/core/base.py:2495
-#: cdedb/frontend/core/complaint.py:1088 cdedb/frontend/core/complaint.py:1110
+#: cdedb/frontend/core/complaint.py:1090 cdedb/frontend/core/complaint.py:1112
 #: cdedb/frontend/core/genesis.py:317
 msgid "File does not exist."
 msgstr ""
@@ -8214,140 +8214,140 @@ msgstr ""
 msgid "Need to unlock case first."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:345
+#: cdedb/frontend/core/complaint.py:347
 msgid "May not create case with own involvement."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:351
+#: cdedb/frontend/core/complaint.py:353
 msgid "May not be involved in multiple ways."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:393
+#: cdedb/frontend/core/complaint.py:395
 msgid "May not add own involvement."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:415
+#: cdedb/frontend/core/complaint.py:417
 #, python-format
 msgid "%(companion)s was a companion and is now marked as withdrawn."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:430
+#: cdedb/frontend/core/complaint.py:432
 msgid "Some companions would become adverse."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:433
+#: cdedb/frontend/core/complaint.py:435
 msgid "Some of these users were already involved."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:444
+#: cdedb/frontend/core/complaint.py:446
 msgid "This user was not involved."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:454 cdedb/frontend/core/complaint.py:471
+#: cdedb/frontend/core/complaint.py:456 cdedb/frontend/core/complaint.py:473
 msgid "This user is not involved."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:460 cdedb/frontend/core/complaint.py:478
+#: cdedb/frontend/core/complaint.py:462 cdedb/frontend/core/complaint.py:480
 msgid "This user was already marked as uninformed."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:517
+#: cdedb/frontend/core/complaint.py:519
 msgid "Companion may not be involved."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:524
+#: cdedb/frontend/core/complaint.py:526
 msgid "Companion to the opposing party."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:540
+#: cdedb/frontend/core/complaint.py:542
 msgid "Some of these users were already companions."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:557
+#: cdedb/frontend/core/complaint.py:559
 msgid "This user was no companion."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:567 cdedb/frontend/core/complaint.py:588
+#: cdedb/frontend/core/complaint.py:569 cdedb/frontend/core/complaint.py:590
 msgid "This user is no companion."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:573
+#: cdedb/frontend/core/complaint.py:575
 msgid "This companion was already marked as withdrawn."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:590
+#: cdedb/frontend/core/complaint.py:592
 msgid "Active companion may not be involved."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:596
+#: cdedb/frontend/core/complaint.py:598
 msgid "This companion was already marked as active."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:630
+#: cdedb/frontend/core/complaint.py:632
 msgid "Case unlocked."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:643
+#: cdedb/frontend/core/complaint.py:645
 msgid "Case locked."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:679 cdedb/frontend/core/complaint.py:770
+#: cdedb/frontend/core/complaint.py:681 cdedb/frontend/core/complaint.py:772
 msgid "Can not add child for deleted parent."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:707
+#: cdedb/frontend/core/complaint.py:709
 msgid "Should not include involved people."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:792
+#: cdedb/frontend/core/complaint.py:794
 #, python-format
 msgid "Can not replace deleted %(entry_link)s."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:803
+#: cdedb/frontend/core/complaint.py:805
 #, python-format
 msgid "Need to unlock case before replacing %(entry_link)s."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:890
+#: cdedb/frontend/core/complaint.py:892
 #, python-format
 msgid "Cannot replace deleted %(entry_link)s."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:914 cdedb/frontend/core/complaint.py:964
-#: cdedb/frontend/core/complaint.py:994 cdedb/frontend/core/complaint.py:1052
+#: cdedb/frontend/core/complaint.py:916 cdedb/frontend/core/complaint.py:966
+#: cdedb/frontend/core/complaint.py:996 cdedb/frontend/core/complaint.py:1054
 msgid "Entry already removed."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:926 cdedb/frontend/core/complaint.py:976
+#: cdedb/frontend/core/complaint.py:928 cdedb/frontend/core/complaint.py:978
 #, python-format
 msgid "%(entry_link)s already revoked."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:999 cdedb/frontend/core/complaint.py:1057
+#: cdedb/frontend/core/complaint.py:1001 cdedb/frontend/core/complaint.py:1059
 #, python-format
 msgid "%(entry_link)s has active children."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:1012
+#: cdedb/frontend/core/complaint.py:1014
 #, python-format
 msgid "Need to unlock case before removing %(entry_link)s."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:1074
+#: cdedb/frontend/core/complaint.py:1076
 msgid "Entry version has no attachment."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:1082
+#: cdedb/frontend/core/complaint.py:1084
 #, python-format
 msgid "Need to unlock case to access %(entry_link)s attachment."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:1105
+#: cdedb/frontend/core/complaint.py:1107
 msgid "Need to unlock case to access attachment."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:1208
+#: cdedb/frontend/core/complaint.py:1210
 msgid "This user does not exist or is no enforcer."
 msgstr ""
 
@@ -9356,7 +9356,7 @@ msgid "Concerning"
 msgstr ""
 
 #: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:52
-#: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:85
+#: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:89
 #: cdedb/frontend/templates/web/assembly/util.tmpl:67
 #: cdedb/frontend/templates/web/assembly/util.tmpl:90
 #: cdedb/frontend/templates/web/assembly/util.tmpl:109
@@ -9373,34 +9373,37 @@ msgstr ""
 msgid "Created by"
 msgstr ""
 
-#: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:58
+#: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:59
 msgid "Last Changed at"
 msgstr ""
 
-#: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:59
+#: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:60
 msgid "Last Changed by"
 msgstr ""
 
-#: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:61
+#: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:63
 msgid "Children"
 msgstr ""
 
-#: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:67
-#: cdedb/frontend/templates/web/assembly/attachment/configure_attachment_version.tmpl:26
-#: cdedb/frontend/templates/web/assembly/util.tmpl:3
-#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:123
-#: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:184
-#: cdedb/frontend/templates/web/util.tmpl:532
-msgid "Attachment"
+#: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:69
+msgid "Attachment Title"
 msgstr ""
 
 #: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:70
+msgid "Attachment Filename"
+msgstr ""
+
+#: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:71
+msgid "Attachment Hash"
+msgstr ""
+
+#: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:74
 #: cdedb/frontend/templates/web/core/complaint/generic.tmpl:52
 #, python-format
 msgid "%(length)s characters"
 msgstr ""
 
-#: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:70
+#: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:74
 #: cdedb/frontend/templates/web/assembly/ballot/configure_ballot.tmpl:52
 #: cdedb/frontend/templates/web/assembly/base/configure_assembly.tmpl:49
 #: cdedb/frontend/templates/web/cde/past_event/change_past_course.tmpl:38
@@ -9422,7 +9425,7 @@ msgstr ""
 msgid "Description"
 msgstr ""
 
-#: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:76
+#: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:80
 #: cdedb/frontend/templates/web/assembly/base.tmpl:30
 #: cdedb/frontend/templates/web/assembly/base.tmpl:61
 #: cdedb/frontend/templates/web/assembly/base/index.tmpl:65
@@ -9443,17 +9446,16 @@ msgstr ""
 msgid "Log"
 msgstr ""
 
-#: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:79
+#: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:83
 #, python-format
 msgid "for %(involved)s"
 msgstr ""
 
-#: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:86
-#, fuzzy
+#: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:90
 msgid "at"
-msgstr "Date"
+msgstr ""
 
-#: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:88
+#: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:92
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:28
 #: cdedb/frontend/templates/web/core/show_history.tmpl:346
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:27
@@ -9636,6 +9638,14 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/attachment/configure_attachment_version.tmpl:15
 #: cdedb/frontend/templates/web/assembly/util.tmpl:28
 msgid "Add Version"
+msgstr ""
+
+#: cdedb/frontend/templates/web/assembly/attachment/configure_attachment_version.tmpl:26
+#: cdedb/frontend/templates/web/assembly/util.tmpl:3
+#: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:123
+#: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:184
+#: cdedb/frontend/templates/web/util.tmpl:532
+msgid "Attachment"
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/attachment/configure_attachment_version.tmpl:42

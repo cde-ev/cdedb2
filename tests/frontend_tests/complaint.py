@@ -38,7 +38,7 @@ class TestComplaintFrontend(FrontendTest):
         self.assertNotIn('uninforminvolvedform2', self.response.forms)
         f = self.response.forms['informinvolvedform2']
         self.submit(f)
-        self.assertPresence("Beispiel (ist informiert)", div='involved_target')
+        self.assertPresence("Beispiel (informiert)", div='involved_target')
         self.assertNotIn('informinvolvedform2', self.response.forms)
         f = self.response.forms['uninforminvolvedform2']
         self.submit(f)
@@ -47,7 +47,7 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence("Fallbegleitung: Charly Clown", div='involved_target')
 
         self.assertPresence("Betroffene", div='involved_affected')
-        self.assertPresence("Daniel Dino (ist informiert)", div='involved_affected')
+        self.assertPresence("Daniel Dino (informiert)", div='involved_affected')
         self.assertPresence("Fallbegleitung: Garcia Generalis", div='involved_affected')
         self.assertNonPresence(
             "Beschwerdeführer", div='involved_appellant', check_div=False
@@ -58,7 +58,7 @@ class TestComplaintFrontend(FrontendTest):
         self.submit(f)
 
         self.assertPresence("Beschwerdeführer", div='involved_appellant')
-        self.assertPresence("Daniel Dino (ist informiert)", div='involved_appellant')
+        self.assertPresence("Daniel Dino (informiert)", div='involved_appellant')
         self.assertPresence(
             "Fallbegleitung: Garcia Generalis", div='involved_appellant'
         )
@@ -82,7 +82,7 @@ class TestComplaintFrontend(FrontendTest):
         f['involvement_type'] = str(const.ComplaintInvolvementType.appellant)
         self.submit(f)
         self.assertPresence(
-            "Anton Administrator (ist informiert)", div="involved_appellant"
+            "Anton Administrator (informiert)", div="involved_appellant"
         )
         self.assertNonPresence("Fallbegleitung", div='involved_appellant')
         self.assertNotIn('informinvolvedform1', self.response.forms)
