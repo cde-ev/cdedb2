@@ -114,7 +114,7 @@ class EventImportMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         json_file: Optional[werkzeug.datastructures.FileStorage],
-        partial_import_data: Optional[str],
+        partial_import_data: Optional[Any],
         token: Optional[str],
     ) -> Response:
         """Further steps of partial import process
