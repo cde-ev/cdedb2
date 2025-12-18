@@ -302,7 +302,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             case_data | {"case": rs.ambience["case"]},
         )
         return self.send_file(
-            rs, "text/plain", f"case_{case_id}.txt", data=export, inline=False
+            rs, "text/plain", f"case_{case_id}.txt", data=export, inline=True
         )
 
     @access("complaint_admin")
