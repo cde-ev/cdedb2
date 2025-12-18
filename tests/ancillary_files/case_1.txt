@@ -4,10 +4,7 @@ Art: Sonstige Belästigung
 ist schwerwiegend: Nein
 Startdatum: 28.05.2025
 Enddatum: –
-ist bestätigt: Ja
 ist abgeschlossen: Nein
-Notizen:
-
 
 ---
 
@@ -17,9 +14,7 @@ Notizen:
         - Fallbegleitungen:
             - Garcia Generalis
 - Zielpersonen:
-    - Bertå Beispiel
-        - Fallbegleitungen:
-            - Charly Clown
+    - REDACTED
 
 ---
 
@@ -28,8 +23,7 @@ Notizen:
 ## Eintrag (1): Information
 - von:
     - Charly Clown
-- Erstellt: 12.12.2025, 08:04:02
-- Erstellt von: Anton Administrator
+- Zeitstempel: 28.05.2025, 16:00:00
 - Beschreibung (146 Zeichen):
 
 Mehrere Mitbewohnys von Berta haben sich über penetrantes Schnarrchen beschwert, wodurch auf der Akademie nicht ausreichend Schlaf bekommen haben.
@@ -38,112 +32,100 @@ Mehrere Mitbewohnys von Berta haben sich über penetrantes Schnarrchen beschwert
 - Betrifft: Bertå Beispiel
 - von:
     - Charly Clown
-- Erstellt: 12.12.2025, 08:04:02
-- Erstellt von: Anton Administrator
+- Zeitstempel: 28.05.2025, 16:00:00
 - Kindeinträge:
-    - Aussage unterzeichnet (3)
-- Anhang: REDACTED:d28c1a205a1d
+    - Aussage unterzeichnet (3) 28.05.2025, 17:00:00
+- Anhang: Titel: Aussage von Charly
+- Anhang: Dateiname: aussage_charly.pdf
+- Anhang: Hash: d28c1a205a1d
 - Beschreibung (258 Zeichen):
 
 Ich war mit Berta in einem Haus und konnte durch das Schnarchen so wenig schlafen, dass ich in meinem Philosophiekurs nicht aufmerksam war und von den KLs angemeckert wurde. Ich möchte bitte in Zukunft nicht mehr im gleichen Haus eingeteilt werden wie Berta.
 
 ## Eintrag (3): Aussage unterzeichnet
-- Elterneintrag: Aussage (2)
+- Elterneintrag: Aussage (2) 28.05.2025, 16:00:00
 - von:
     - Charly Clown
-- Erstellt: 12.12.2025, 08:04:02
-- Erstellt von: Anton Administrator
+- Zeitstempel: 28.05.2025, 17:00:00
 
 ## Eintrag (4): Übereinkunft
 - von:
     - Charly Clown
-- Erstellt: 12.12.2025, 08:04:02
-- Erstellt von: Anton Administrator
-- Zuletzt bearbeitet um: 12.12.2025, 08:04:02
-- Zuletzt bearbeitet von: Anton Administrator
+- Zeitstempel: 28.05.2025, 18:00:00
 - Kindeinträge:
-    - Maßnahme gemäß Übereinkunft (5)
-    - Maßnahme gemäß Übereinkunft (6)
-    - Maßnahme gemäß Übereinkunft (7)
-    - Maßnahme gemäß Übereinkunft (9)
+    - Maßnahme gemäß Übereinkunft (5) 28.05.2025, 18:00:00
+    - Maßnahme gemäß Übereinkunft (6) 01.06.2025, 01:06:25
+    - Maßnahme gemäß Übereinkunft (7) 09.06.2025, 14:00:00
+    - Maßnahme gemäß Übereinkunft (9) 01.01.3000, 01:00:00
 - Beschreibung (77 Zeichen):
 
 Berta hat sich bereit erklärt zukünftig immer ein Einzelzimmer zu beantragen.
 
 ## Eintrag (5): Maßnahme gemäß Übereinkunft
-- Elterneintrag: Übereinkunft (4)
+- Elterneintrag: Übereinkunft (4) 28.05.2025, 18:00:00
 - Betrifft: Bertå Beispiel
 - von:
     - Charly Clown
-- Erstellt: 12.12.2025, 08:04:02
-- Erstellt von: Anton Administrator
+- Zeitstempel: 28.05.2025, 18:00:00
 - Beschreibung (53 Zeichen):
 
 Berta muss bei Anmeldung ein Einzelzimmer beantragen.
 
 ## Eintrag (6): Maßnahme gemäß Übereinkunft
-- Elterneintrag: Übereinkunft (4)
+- Elterneintrag: Übereinkunft (4) 28.05.2025, 18:00:00
 - Betrifft: Bertå Beispiel
 - von:
     - Charly Clown
-- Erstellt: 12.12.2025, 08:04:02
-- Erstellt von: Anton Administrator
+- Zeitstempel: 01.06.2025, 01:06:25
 - Beschreibung (26 Zeichen):
 
 Quarantäne für eine Woche!
 
 ## Eintrag (7): Maßnahme gemäß Übereinkunft (widerrufen)
-- Elterneintrag: Übereinkunft (4)
+- Elterneintrag: Übereinkunft (4) 28.05.2025, 18:00:00
 - Betrifft: Bertå Beispiel
 - von:
     - Petra Philanthrop
-- Erstellt: 12.12.2025, 08:04:02
-- Erstellt von: Anton Administrator
+- Zeitstempel: 09.06.2025, 14:00:00
 - Kindeinträge:
-    - Widerruf (8)
+    - Widerruf (8) 10.06.2025, 14:00:00
 - Beschreibung (91 Zeichen):
 
 Sollte Berta noch einmal die Vögel aus dem Schlaf schnarchen, bekommt sie Feriendorfverbot!
 
 ## Eintrag (8): Widerruf
-- Elterneintrag: Maßnahme (7)
+- Elterneintrag: Maßnahme (7) 09.06.2025, 14:00:00
 - von:
     - Charly Clown
-- Erstellt: 12.12.2025, 08:04:02
-- Erstellt von: Anton Administrator
+- Zeitstempel: 10.06.2025, 14:00:00
 - Beschreibung (68 Zeichen):
 
 Da war Petra etwas übereifrig, so schlimm ist es nun wirklich nicht.
 
 ## Log: Beteiligten hinzugefügt
 - Daniel Dino
-- von: Anton Administrator
 - um: 12.12.2025, 08:04:02
 - Erläuterung: Betroffene
 
 ## Log: Beteiligten hinzugefügt
 - Bertå Beispiel
-- von: Anton Administrator
 - um: 12.12.2025, 08:04:02
 - Erläuterung: Zielpersonen
 
 ## Log: Fallbegleitung hinzugefügt
 - Garcia Generalis für Daniel Dino
-- von: Anton Administrator
 - um: 12.12.2025, 08:04:02
 
 ## Log: Fallbegleitung hinzugefügt
 - Charly Clown für Bertå Beispiel
-- von: Anton Administrator
 - um: 12.12.2025, 08:04:02
 
 ## Eintrag (9): Maßnahme gemäß Übereinkunft
-- Elterneintrag: Übereinkunft (4)
+- Elterneintrag: Übereinkunft (4) 28.05.2025, 18:00:00
 - Betrifft: Bertå Beispiel
 - von:
     - Charly Clown
-- Erstellt: 12.12.2025, 08:04:02
-- Erstellt von: Anton Administrator
+- Zeitstempel: 01.01.3000, 01:00:00
 - Beschreibung (33 Zeichen):
 
 Für eine Zukunft ohne Schnarcher.

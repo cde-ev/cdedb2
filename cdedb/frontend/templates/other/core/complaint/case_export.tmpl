@@ -4,22 +4,26 @@
 {% trans %}is grave{% endtrans %}: {{ gettext("Yes") if case.is_grave else gettext("No") }}
 {% trans %}Start Date{% endtrans %}: {{ case.start_date|date(lang=lang) or "–" }}
 {% trans %}End Date{% endtrans %}: {{ case.end_date|date(lang=lang) or "–" }}
-{% trans %}is confirmed{% endtrans %}: {{ gettext("Yes") if case.is_confirmed else gettext("No") }}
+{#- Not relevant: {% trans %}is confirmed{% endtrans %}: {{ gettext("Yes") if case.is_confirmed else gettext("No") }} #}
 {% trans %}is closed{% endtrans %}: {{ gettext("Yes") if not case.is_active else gettext("No") }}
+{%- if case.notes %}
 {% trans %}Notes{% endtrans %}:
+
 {{ case.notes }}
+{% endif %}
 
 ---
 
 # {% trans %}Relevant Individuals{% endtrans %}
-{%- for type, involved_ids in case.involved.items() %}
+{%- for type, involved_ids in case.involved.items() if type != enums['ComplaintInvolvementType'].withheld %}
 - {{ gettext(type|string) }}:
-    {%- for involved_id in involved_ids %}
+    {#- Be cautionary and hide people not marked as informed. #}
+    {%- for involved_id in involved_ids if involved_id in case.informed_involved %}
     - {{ personas[involved_id]|persona_name }}
         {%- if age_classes.get(involved_id, enums['AgeClasses'].full) != enums['AgeClasses'].full -%}
             {# #} ({{ gettext(age_classes[involved_id]|string) -}})
         {%- endif %}
-        {%- if involved_id in ambience['case'].informed_involved -%}
+        {%- if involved_id in case.informed_involved -%}
             {# #} ({% trans %}is informed{% endtrans %})
         {%- endif %}
         {%- if case.companions_by_involved[involved_id] %}
@@ -31,6 +35,8 @@
                 {%- endif %}
             {%- endfor %}
         {%- endif %}
+    {%- else %}
+    - REDACTED
     {%- endfor %}
 {%- endfor %}
 
@@ -44,7 +50,8 @@
 {# #} ({% trans %}revoked{% endtrans %})
 {%- endif %}
 {%- if entry.parent %}
-- {% trans %}Parent{% endtrans %}: {{ gettext(entry.parent.entry_type.left_shortname) }} ({{ entry.parent.id }})
+- {% trans %}Parent{% endtrans %}: {{ gettext(entry.parent.entry_type.left_shortname) }} ({{ entry.parent.id }}) {# #}
+    {{- entry.parent.active_version.timestamp|datetime(lang=lang) }}
 {%- endif %}
 {%- if entry.concerned_id %}
 - {% trans %}Concerning{% endtrans %}: {{ personas[entry.concerned_id]|persona_name }}
@@ -53,20 +60,24 @@
     {%- for author_id in entry.active_version.authors %}
     - {{ personas[author_id]|persona_name }}
     {%- endfor %}
-- {% trans %}Created at{% endtrans %}: {{ entry.all_versions[0].ctime|datetime(lang=lang) }}
-- {% trans %}Created by{% endtrans %}: {{ personas[entry.all_versions[0].submitted_by]|persona_name }}
-{%- if entry.all_versions|length > 1 %}
-- {% trans %}Last Changed at{% endtrans %}: {{ entry.active_version.ctime|datetime(lang=lang) }}
-- {% trans %}Last Changed by{% endtrans %}: {{ personas[entry.active_version.submitted_by]|persona_name }}
-{%- endif %}
+- {% trans %}Timestamp{% endtrans %}: {{ entry.active_version.timestamp|datetime(lang=lang) }}
+{#- Not relevant: #}
+{#- - {% trans %}Created at{% endtrans %}: {{ entry.all_versions[0].ctime|datetime(lang=lang) }} #}
+{#- - {% trans %}Created by{% endtrans %}: {{ personas[entry.all_versions[0].submitted_by]|persona_name }} #}
+{#- {%- if entry.all_versions|length > 1 %} #}
+{#- - {% trans %}Last Changed at{% endtrans %}: {{ entry.active_version.ctime|datetime(lang=lang) }} #}
+{#- - {% trans %}Last Changed by{% endtrans %}: {{ personas[entry.active_version.submitted_by]|persona_name }} #}
+{#- {%- endif %} #}
 {%- if entry.active_children %}
 - {% trans %}Children{% endtrans %}:
     {%- for child in entry.active_children %}
-    - {{ gettext(child.entry_type|string) }} ({{ child.id }})
+    - {{ gettext(child.entry_type|string) }} ({{ child.id }}) {{ child.active_version.timestamp|datetime(lang=lang) }}
     {%- endfor %}
 {%- endif %}
 {%- if entry.active_version.attachment_hash %}
-- {% trans %}Attachment{% endtrans %}: {{ entry.active_version.attachment_hash }}
+- {% trans %}Attachment Title{% endtrans %}: {{ entry.active_version.attachment_title }}
+- {% trans %}Attachment Filename{% endtrans %}: {{ entry.active_version.attachment_filename }}
+- {% trans %}Attachment Hash{% endtrans %}: {{ entry.active_version.attachment_hash.removeprefix("REDACTED:") }}
 {%- endif %}
 {%- if entry.active_version.length %}
 - {% trans %}Description{% endtrans %} ({% trans length=entry.active_version.length %}{{ length }} characters{% endtrans %}):
@@ -84,7 +95,8 @@
 {%- elif entry['persona_id'] %}
 - {{ personas[entry['persona_id']]|persona_name }}
 {%- endif %}
-- {% trans %}by{% endtrans %}: {{ personas[entry['submitted_by']]|persona_name }}
+{#- Not relevant: #}
+{#- - {% trans %}by{% endtrans %}: {{ personas[entry['submitted_by']]|persona_name }} #}
 - {% trans %}at{% endtrans %}: {{ entry['ctime']|datetime(lang=lang) }}
 {%- if entry['change_note'] %}
 - {% trans %}Annotation{% endtrans %}: {{ entry['change_note'] }}
