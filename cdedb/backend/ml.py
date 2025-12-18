@@ -20,6 +20,7 @@ from cdedb.backend.common import (
     internal,
     singularize,
 )
+from cdedb.backend.complaint import ComplaintBackend
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
     CdEDBLog,
@@ -61,10 +62,14 @@ class MlBackend(AbstractBackend):
 
     def __init__(self) -> None:
         super().__init__()
+        self.complaint = make_proxy(ComplaintBackend(), internal=True)
         self.event = make_proxy(EventBackend(), internal=True)
         self.assembly = make_proxy(AssemblyBackend(), internal=True)
         self.backends = BackendContainer(
-            core=self.core, event=self.event, assembly=self.assembly
+            core=self.core,
+            complaint=self.complaint,
+            event=self.event,
+            assembly=self.assembly,
         )
         self.subman = subman.SubscriptionManager(
             unwritten_states=(const.SubscriptionState.none,)
