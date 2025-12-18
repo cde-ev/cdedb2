@@ -481,6 +481,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             trim_blocks=True,
             lstrip_blocks=True,
         )
+        self.jinja_env_other = self.jinja_env.overlay(autoescape=False)
         # Always provide all backends -- they are cheap
         self.assemblyproxy = make_proxy(AssemblyBackend())
         self.cdeproxy = make_proxy(CdEBackend())
@@ -669,7 +670,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         elif modus == "tex":
             jinja_env = self.jinja_env_tex
         elif modus == "other":
-            jinja_env = self.jinja_env
+            jinja_env = self.jinja_env_other
         else:
             raise NotImplementedError(
                 n_("Requested modus does not exists: %(modus)s"), {'modus': modus}
