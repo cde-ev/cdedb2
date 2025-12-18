@@ -301,9 +301,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
             "complaint/case_export",
             case_data | {"case": rs.ambience["case"]},
         )
-        return self.send_file(
-            rs, "text/plain", f"case_{case_id}.txt", data=export, inline=True
-        )
+
+        return self.render(rs, "complaint/export_case", {"export": export})
 
     @access("complaint_admin")
     def create_case_form(self, rs: RequestState) -> Response:
