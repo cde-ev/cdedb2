@@ -186,25 +186,33 @@ class CoreComplaintMixin(CoreBaseFrontend):
             },
         )
 
-    @access("complaint_admin")
-    @REQUESTdata("show_log_entries")
-    def show_case(
-        self, rs: RequestState, case_id: int, show_log_entries: bool = False
-    ) -> Response:
-        """Render form."""
-        rs.ignore_validation_errors()
-        if not rs.ambience['case'].is_visible_for(rs.user):
+    def _get_case_data(
+        self,
+        rs: RequestState,
+        case: models.Case,
+        *,
+        get_hidden_descriptions: bool,
+        show_log_entries: bool,
+        include_deleted: bool,
+    ) -> CdEDBObject | Response:
+        if not case.is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
+        if get_hidden_descriptions and not self.complaintproxy.is_unlocked(rs, case.id):
+            rs.notify('error', n_("Need to unlock case first."))
+            return self.redirect(rs, "core/show_case")
+
         # Collect all entries to be displayed.
         log_entries: tuple[dict[str, Any], ...] = tuple()
         if show_log_entries:
-            log_filter = ComplaintLogFilter(case_id=case_id)
+            log_filter = ComplaintLogFilter(case_id=case.id)
             _, log_entries = self.complaintproxy.retrieve_log(rs, log_filter)
             log_entries = log_entries or tuple()
-        all_entries = rs.ambience['case'].list_entries(log_entries)
+        all_entries = rs.ambience['case'].list_entries(
+            log_entries, include_deleted=include_deleted
+        )
 
         # Collect all persona data which may be displayed.
-        persona_ids = rs.ambience['case'].get_persona_ids(log_entries)
+        persona_ids = case.get_persona_ids(log_entries)
         personas = self.coreproxy.get_personas(rs, persona_ids)
         age_classes = {}
         for persona_id, persona in personas.items():
@@ -215,25 +223,46 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 )
 
         # Collect descriptions separately as a privacy precaution
-        is_locked = True
-        descriptions = self.complaintproxy.get_visible_descriptions(rs, case_id)
-        if self.complaintproxy.is_unlocked(rs, case_id):
-            is_locked = False
+        descriptions = self.complaintproxy.get_visible_descriptions(rs, case.id)
+        if get_hidden_descriptions:
             descriptions.update(
-                self.complaintproxy.get_hidden_descriptions(rs, case_id)
+                self.complaintproxy.get_hidden_descriptions(rs, case.id)
             )
+
+        return {
+            'all_entries': all_entries,
+            'descriptions': descriptions,
+            'personas': personas,
+            'age_classes': age_classes,
+        }
+
+    @access("complaint_admin")
+    @REQUESTdata("show_log_entries")
+    def show_case(
+        self, rs: RequestState, case_id: int, show_log_entries: bool = False
+    ) -> Response:
+        """Render form."""
+        rs.ignore_validation_errors()
+        is_unlocked = self.complaintproxy.is_unlocked(rs, case_id)
+
+        case_data = self._get_case_data(
+            rs,
+            rs.ambience["case"],
+            get_hidden_descriptions=bool(is_unlocked),
+            show_log_entries=show_log_entries,
+            include_deleted=False,
+        )
+        if isinstance(case_data, Response):
+            return case_data
 
         related_cases = self.complaintproxy.get_related_cases(rs, case_id)
 
         return self.render(
             rs,
             "complaint/show_case",
-            {
-                'personas': personas,
-                'descriptions': descriptions,
-                'age_classes': age_classes,
-                'all_entries': all_entries,
-                'is_locked': is_locked,
+            case_data
+            | {
+                'is_locked': not is_unlocked,
                 'show_log_entries': show_log_entries,
                 'related_cases': related_cases,
             },
@@ -242,32 +271,17 @@ class CoreComplaintMixin(CoreBaseFrontend):
     @access("complaint_admin")
     def case_history(self, rs: RequestState, case_id: int) -> Response:
         """Show all entry versions for a case."""
-        if not rs.ambience['case'].is_visible_for(rs.user):
-            raise werkzeug.exceptions.Forbidden()
-        if not self.complaintproxy.is_unlocked(rs, case_id):
-            rs.notify('error', n_("Need to unlock case first."))
-            return self.redirect(rs, "core/show_case")
-
-        log_filter = ComplaintLogFilter(case_id=case_id)
-        _, log_entries = self.complaintproxy.retrieve_log(rs, log_filter)
-        log_entries = log_entries or tuple()
-        all_entries = rs.ambience['case'].list_entries(
-            log_entries, include_deleted=True
-        )
-        descriptions = self.complaintproxy.get_hidden_descriptions(rs, case_id)
-        # Collect all persona data which may be displayed.
-        persona_ids = rs.ambience['case'].get_persona_ids(log_entries)
-        personas = self.coreproxy.get_personas(rs, persona_ids)
-
-        return self.render(
+        case_data = self._get_case_data(
             rs,
-            "complaint/case_history",
-            {
-                'descriptions': descriptions,
-                'all_entries': all_entries,
-                'personas': personas,
-            },
+            rs.ambience["case"],
+            get_hidden_descriptions=True,
+            show_log_entries=True,
+            include_deleted=True,
         )
+        if isinstance(case_data, Response):
+            return case_data
+
+        return self.render(rs, "complaint/case_history", case_data)
 
     @access("complaint_admin")
     def create_case_form(self, rs: RequestState) -> Response:

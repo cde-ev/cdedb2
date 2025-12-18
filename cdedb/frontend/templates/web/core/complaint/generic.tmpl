@@ -50,8 +50,8 @@
     <span class="text-muted">
     {% if entry.active_version.length %}
         {% trans length=entry.active_version.length %}
-            {{ length }} characters.
-        {% endtrans %}
+            {{ length }} characters
+        {% endtrans %}.
     {% endif %}
     {% if entry.all_versions|length > 1 %}
         {{ util.href(
