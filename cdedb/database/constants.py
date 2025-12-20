@@ -435,6 +435,7 @@ class MailinglistTypes(CdEIntEnum):
     public_member_implicit = 70
 
     complaint_admin_implicit = 80
+    complaint_enforcer_implicit = 85
 
     def optgroup_label(self) -> str:
         from cdedb.models.ml import ML_TYPE_MAP  # noqa: PLC0415
