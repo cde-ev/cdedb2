@@ -118,6 +118,7 @@ def event_associated_fields_extractor(
     return {
         field.field_name: raw_fields.get(f"{field.request_name}{suffix}")
         for field in fields
+        if f"{field.request_name}{suffix}" in field_params
     }
 
 

@@ -3369,7 +3369,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertEqual(
             str(const.RegistrationPartStati.cancelled), f['part3.status'].value)
         self.assertEqual("pedes", f['fields.transportation'].value)
-        self.assertEqual("", f["fields.anzahl_GROSSBUCHSTABEN"].value)
+        self.assertEqual("3", f["fields.anzahl_GROSSBUCHSTABEN"].value)
         self.get('/event/event/1/registration/3/change')
         f = self.response.forms['changeregistrationform']
         self.assertEqual(
@@ -3377,7 +3377,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertEqual(
             str(const.RegistrationPartStati.cancelled), f['part3.status'].value)
         self.assertEqual("pedes", f['fields.transportation'].value)
-        self.assertEqual("", f["fields.anzahl_GROSSBUCHSTABEN"].value)
+        self.assertEqual("3", f["fields.anzahl_GROSSBUCHSTABEN"].value)
 
         # Now, check with change_note
         self.get("/event/event/1/registration/multiedit?reg_ids=2,3")
