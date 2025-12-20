@@ -102,7 +102,15 @@ def event_associated_fields_extractor(
     filter_params: Callable[[vtypes.TypeMapping], vtypes.TypeMapping] | None = None,
     suffix: str = "",
 ) -> CdEDBObject:
-    """Given an event, extract inputs for all event fields of the given association."""
+    """
+    Given an event, extract inputs for all event fields of the given association.
+
+    :param field_ids: Used to limit the extracted fields based on their id.
+    :param filter_params: Used to limit the extracted fields via a callable that
+        takes the fields params and returns a narrowed down set of params.
+        This is utilized by the "multiedit" to limit the extracted fields based
+        on additional user input.
+    """
     fields = [
         field
         for field in event.fields.values()
