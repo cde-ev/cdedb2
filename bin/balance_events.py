@@ -8,6 +8,7 @@ Run as:
 Turn off dry run with:
   `sudo -u www-cde SCRIPT_PERSONA=X SCRIPT_DRYRUN="" bin/balance_event.py`.`
 """
+
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.script import Script

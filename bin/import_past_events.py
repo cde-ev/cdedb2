@@ -40,10 +40,17 @@ with infile_courses.open("r") as f:
         course_data[event_id].append({
             'nr': course_line['GLKurse::KursNr'],
             'title': " – ".join(
-                filter(None, map(str.strip, (
-                    course_line['GLKurse::Kursobertitel'],
-                    course_line['GLKurse::Kursuntertitel'],
-                )))),
+                filter(
+                    None,
+                    map(
+                        str.strip,
+                        (
+                            course_line['GLKurse::Kursobertitel'],
+                            course_line['GLKurse::Kursuntertitel'],
+                        ),
+                    ),
+                )
+            ),
             'description': course_line['GLKurse::KursBeschreibung'],
         })
 

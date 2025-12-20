@@ -17,15 +17,18 @@ balance_total = decimal.Decimal("862,04")
 error_time = datetime.datetime.fromisoformat("2023-04-12 10:28:35+02:00")
 persona_balances = {}
 
+
 def get_clean_history(persona_id: int, generation: int) -> CdEDBObject:
     generation_data = unwrap(
-        core.changelog_get_history(s.rs(), persona_id, [generation]))
+        core.changelog_get_history(s.rs(), persona_id, [generation])
+    )
 
     if generation_data['code'] != const.PersonaChangeStati.committed:
         raise ValueError(
             f"Unexpectedly encountered non-committed generation"
             f" ({generation}, {generation_data['generation_data']['code']}"
-            f" for user {persona_id}.")
+            f" for user {persona_id}."
+        )
 
     # Persona id is under the key 'id'.
     generation_data['persona_id'] = generation_data['id']
@@ -43,6 +46,7 @@ def get_clean_history(persona_id: int, generation: int) -> CdEDBObject:
     generation_data['generation'] += 1
 
     return generation_data
+
 
 with s:
     # 1.a Find those users where nothing has changed since the error. (337 users)
@@ -70,8 +74,10 @@ with s:
         persona_balances[persona_id] = generation_data['balance']
         generation_data['balance'] = decimal.Decimal("0.00")
 
-        print(f"Inserting changelog generation {generation_data['generation']}"
-              f" for user {persona_id}.")
+        print(
+            f"Inserting changelog generation {generation_data['generation']}"
+            f" for user {persona_id}."
+        )
         core.sql_insert(s.rs(), "core.changelog", generation_data)
 
     if core.query_all(s.rs(), q_1a, ()):
@@ -97,11 +103,14 @@ with s:
     )
     data = core.query_all(s.rs(), q_1c, p_1c)
 
-    print(f"Fixing changelog and persona for {len(data)} missing transactions,"
-          f" by appending skipped transactions and updating persona.")
+    print(
+        f"Fixing changelog and persona for {len(data)} missing transactions,"
+        f" by appending skipped transactions and updating persona."
+    )
 
-    note_template = ("Guthabenänderung um {amount} auf {new_balance} "
-                     "(Überwiesen am {date})")
+    note_template = (
+        "Guthabenänderung um {amount} auf {new_balance} (Überwiesen am {date})"
+    )
 
     for d in data:
         if d['max_gen_ctime'] > d['fl_ctime']:
@@ -113,10 +122,13 @@ with s:
         generation_data['submitted_by'] = d['submitted_by']
         generation_data['ctime'] = d['fl_ctime']
         generation_data['change_note'] = note_template.format(
-            amount=d['delta'], new_balance=d['delta'], date=d['transaction_date'])
+            amount=d['delta'], new_balance=d['delta'], date=d['transaction_date']
+        )
 
-        print(f"Inserting transfer changelog entry"
-              f" (gen {generation_data['generation']}) for user {persona_id}.")
+        print(
+            f"Inserting transfer changelog entry"
+            f" (gen {generation_data['generation']}) for user {persona_id}."
+        )
         core.sql_insert(s.rs(), "core.changelog", generation_data)
 
         print(f"Updating persona table accordingly for user {persona_id}.")
@@ -175,13 +187,17 @@ with s:
         WHERE persona_id = ANY(%s) AND ctime < %s
         GROUP BY persona_id
     """
-    p_2c = (affected_changed, error_time,)
+    p_2c = (
+        affected_changed,
+        error_time,
+    )
     data = core.query_all(s.rs(), q_2c, p_2c)
 
     print(f"Inserting {len(data)} new changelog entries.")
 
-    note_template_escaped = ("Guthabenänderung um {amount} auf {new_balance}"
-                             " \(Überwiesen am {date}\)")
+    note_template_escaped = (
+        "Guthabenänderung um {amount} auf {new_balance} \(Überwiesen am {date}\)"
+    )
 
     # 2.d Insert fake changelog entry associated with the update
     for d in data:
@@ -190,23 +206,28 @@ with s:
         persona_balances[persona_id] = generation_data['balance']
         generation_data['balance'] = decimal.Decimal("0.00")
 
-        print(f"Inserting changelog generation into freed up position"
-              f" ({generation_data['generation']}) for user {persona_id}.")
+        print(
+            f"Inserting changelog generation into freed up position"
+            f" ({generation_data['generation']}) for user {persona_id}."
+        )
         core.sql_insert(s.rs(), "core.changelog", generation_data)
 
-
-        next_generation = unwrap(core.changelog_get_history(
-            s.rs(), persona_id, [d['before_gen'] + 2]))
+        next_generation = unwrap(
+            core.changelog_get_history(s.rs(), persona_id, [d['before_gen'] + 2])
+        )
         balance = next_generation['balance']
         expected_note = note_template_escaped.format(
-            amount=money_filter(balance), new_balance=money_filter(balance),
-            date=r"\d\d\.\d\d\.\d\d\d\d"
+            amount=money_filter(balance),
+            new_balance=money_filter(balance),
+            date=r"\d\d\.\d\d\.\d\d\d\d",
         )
         if balance != 0 and not re.fullmatch(
-                expected_note, next_generation['change_note']):
+            expected_note, next_generation['change_note']
+        ):
             raise ValueError(
                 f"Unexpected balance in first shifted generation"
-                f" (prev. {generation_data['generation']}) for user {persona_id}.")
+                f" (prev. {generation_data['generation']}) for user {persona_id}."
+            )
 
     print("Summary of removed balances:")
     pprint(persona_balances)

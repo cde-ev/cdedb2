@@ -28,7 +28,8 @@ with script:
     query = (
         "SELECT p.id, p.username, p.given_names, p.family_name, MAX(s.atime) AS atime"
         " FROM core.personas AS p LEFT OUTER JOIN core.sessions AS s"
-        " ON s.persona_id = p.id WHERE username = ANY(%s) GROUP BY (p.id)")
+        " ON s.persona_id = p.id WHERE username = ANY(%s) GROUP BY (p.id)"
+    )
     params: tuple[Any] = (email_addresses,)
     data = core.query_all(rs, query, params)
     lookup = {entry['username']: entry for entry in data}
@@ -41,13 +42,17 @@ with script:
         if address.lower() in preexisting:
             preex = preexisting[address]
             if preex['status'] == target_state:
-                print(f'Not touching existing entry for `{address}`'
-                      f' (old notes: ```{preex["notes"]}```;'
-                      f' new notes: ```{notes}```).')
+                print(
+                    f'Not touching existing entry for `{address}`'
+                    f' (old notes: ```{preex["notes"]}```;'
+                    f' new notes: ```{notes}```).'
+                )
             else:
-                print(f'Not transitioning existing entry for `{address}`'
-                      f' (old notes: ```{preex["notes"]}```;'
-                      f' new notes: ```{notes}```).')
+                print(
+                    f'Not transitioning existing entry for `{address}`'
+                    f' (old notes: ```{preex["notes"]}```;'
+                    f' new notes: ```{notes}```).'
+                )
             continue
         do_mark = True
         notes = notes or default_notes
