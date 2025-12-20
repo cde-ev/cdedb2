@@ -34,8 +34,7 @@ class Context:
     start: datetime.datetime
 
 
-def output_counters(context: Context, prefix: str = "",
-                    final: bool = False) -> None:
+def output_counters(context: Context, prefix: str = "", final: bool = False) -> None:
     if context.clock is not None:
         now_ = now()
         delta = now_ - context.clock
@@ -44,8 +43,9 @@ def output_counters(context: Context, prefix: str = "",
     pprint.pprint(dict(context.counters))
 
 
-def make_counter(context: Context, name: str, prefix: str = '',
-                 suffix: str = '') -> str:
+def make_counter(
+    context: Context, name: str, prefix: str = '', suffix: str = ''
+) -> str:
     num = context.counters[name]
     context.counters[name] += 1
     return f'{prefix}{name}{num:010}{suffix}'
@@ -107,9 +107,11 @@ def persona(context: Context) -> int:
     core = context.script.make_core_backend(proxy=False)
     ret = core.create_persona(rs, data)
     query = "UPDATE core.personas SET password_hash = %s WHERE id = %s"
-    hashed_secret = ("$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0"
-                     "nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2"
-                     "cVcK3TwSxsRPb91TLHF/si/")
+    hashed_secret = (
+        "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0"
+        "nXmbw0jlWvqi/S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2"
+        "cVcK3TwSxsRPb91TLHF/si/"
+    )
     with rs.conn as conn:
         with conn.cursor() as cur:
             core.execute_db_query(cur, query, (hashed_secret, ret))
@@ -130,26 +132,27 @@ def event(context: Context) -> int:
         'is_course_list_visible': True,
         'is_course_state_visible': True,
         'use_additional_questionnaire': True,
-        'registration_start': datetime.datetime(2000, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc),
+        'registration_start': datetime.datetime(
+            2000, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc
+        ),
         'is_participant_list_visible': True,
         'is_course_assignment_visible': True,
         'is_cancelled': False,
-        'registration_text': make_counter(
-            context, 'Veranstaltungsanmeldungstext'),
-        'orga_address': make_counter(context, 'OrgaEmail',
-                                     suffix='@aka.cde-ev.de'),
-        'participant_info': make_counter(
-            context, 'Teilnehmerinformation'),
+        'registration_text': make_counter(context, 'Veranstaltungsanmeldungstext'),
+        'orga_address': make_counter(context, 'OrgaEmail', suffix='@aka.cde-ev.de'),
+        'participant_info': make_counter(context, 'Teilnehmerinformation'),
         'orgas': [persona(context) for _ in range(1 if context.quick else 10)],
         'parts': {
             -1: {
                 'tracks': {
-                    -1: {'title': make_counter(context, 'Veranstaltungsschiene'),
-                         'shortname': make_counter(context, 'Schiene'),
-                         'num_choices': 3,
-                         'min_choices': 3,
-                         'sortkey': 1,
-                         'course_room_field_id': None}
+                    -1: {
+                        'title': make_counter(context, 'Veranstaltungsschiene'),
+                        'shortname': make_counter(context, 'Schiene'),
+                        'num_choices': 3,
+                        'min_choices': 3,
+                        'sortkey': 1,
+                        'course_room_field_id': None,
+                    }
                 },
                 'title': make_counter(context, 'Veranstaltungsteil'),
                 'shortname': 'first',
@@ -160,12 +163,14 @@ def event(context: Context) -> int:
             },
             -2: {
                 'tracks': {
-                    -1: {'title': make_counter(context, 'Veranstaltungsschiene'),
-                         'shortname': make_counter(context, 'Schiene'),
-                         'num_choices': 3,
-                         'min_choices': 1,
-                         'sortkey': 1,
-                         'course_room_field_id': None}
+                    -1: {
+                        'title': make_counter(context, 'Veranstaltungsschiene'),
+                        'shortname': make_counter(context, 'Schiene'),
+                        'num_choices': 3,
+                        'min_choices': 1,
+                        'sortkey': 1,
+                        'course_room_field_id': None,
+                    }
                 },
                 'title': make_counter(context, 'Veranstaltungsteil'),
                 'shortname': 'second',
@@ -244,7 +249,7 @@ def event(context: Context) -> int:
             "notes": None,
             "amount": decimal.Decimal("6.66"),
             "condition": "any_part and not is_member",
-        }
+        },
     ]
     event = context.script.make_event_backend(proxy=False)
     ret = event.create_event(rs, data)
@@ -254,34 +259,42 @@ def event(context: Context) -> int:
     alodgement = None
     for lg in lodgement_groups:
         for _ in range(1 if context.quick else 5):
-            alodgement = event.create_lodgement(rs, ret, {
-                'regular_capacity': 42,
-                'title': make_counter(context, 'Unterkunft'),
-                'camping_mat_capacity': 11,
-                'notes': '',
-                'group_id': lg,
-            })
+            alodgement = event.create_lodgement(
+                rs,
+                ret,
+                {
+                    'regular_capacity': 42,
+                    'title': make_counter(context, 'Unterkunft'),
+                    'camping_mat_capacity': 11,
+                    'notes': '',
+                    'group_id': lg,
+                },
+            )
     tracks = event.get_event(rs, ret).tracks
     courses = {
-        t: [event.create_course(rs, ret,
-                                    {'title': make_counter(
-                                         context, 'Veranstaltungskurs'),
-                                     'description': '',
-                                     'nr': make_counter(context, 'Kursnummer'),
-                                     'shortname': make_counter(context,
-                                                               'Kurs'),
-                                     'instructors': '',
-                                     'max_size': 12,
-                                     'min_size': None,
-                                     'notes': '',
-                                     'segments': {
-                                         t: {
-                                             "is_active": True,
-                                         },
-                                     },
-                                     'is_visible': True,
-                                     })
-            for _ in range(1 if context.quick else 10)]
+        t: [
+            event.create_course(
+                rs,
+                ret,
+                {
+                    'title': make_counter(context, 'Veranstaltungskurs'),
+                    'description': '',
+                    'nr': make_counter(context, 'Kursnummer'),
+                    'shortname': make_counter(context, 'Kurs'),
+                    'instructors': '',
+                    'max_size': 12,
+                    'min_size': None,
+                    'notes': '',
+                    'segments': {
+                        t: {
+                            "is_active": True,
+                        },
+                    },
+                    'is_visible': True,
+                },
+            )
+            for _ in range(1 if context.quick else 10)
+        ]
         for t in tracks
     }
     fields = event.get_event(rs, ret).fields
@@ -310,66 +323,87 @@ def event(context: Context) -> int:
     event.set_questionnaire(rs, ret, questionnaire)
     parts = event.get_event(rs, ret).parts
     for _ in range(1 if context.quick else 100):
-        event.create_registration(rs, {
-            'event_id': ret,
-            'persona_id': persona(context),
-            'list_consent': True,
-            'mixed_lodging': True,
-            'notes': '',
-            'parts': {
-                part: {
-                    'lodgement_id': alodgement,
-                    'status': const.RegistrationPartStati.participant
-                } for part in parts
+        event.create_registration(
+            rs,
+            {
+                'event_id': ret,
+                'persona_id': persona(context),
+                'list_consent': True,
+                'mixed_lodging': True,
+                'notes': '',
+                'parts': {
+                    part: {
+                        'lodgement_id': alodgement,
+                        'status': const.RegistrationPartStati.participant,
+                    }
+                    for part in parts
+                },
+                'tracks': {
+                    track: {
+                        'choices': courses[track][:5],
+                        'course_id': None,
+                        'course_instructor': None,
+                    }
+                    for track in tracks
+                },
             },
-            'tracks': {
-                track: {
-                    'choices': courses[track][:5],
-                    'course_id': None,
-                    'course_instructor': None,
-                } for track in tracks
-            },
-        })
+        )
     return ret
 
 
 def assembly(context: Context) -> int:
     rs = context.script.rs()
     assembly = context.script.make_assembly_backend(proxy=False)
-    ret = assembly.create_assembly(rs, {
-        'presiders': [persona(context)
-                      for _ in range(1 if context.quick else 3)],
-        'description': '',
-        'notes': None,
-        'signup_end': datetime.datetime(2100, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc),
-        'title': make_counter(context, 'Mitgliederversammlung'),
-        'shortname': make_counter(context, 'Versammlung'),
-    })
-    for _ in range(1 if context.quick else 10):
-        assembly.create_ballot(rs, {
-            'assembly_id': ret,
-            'use_bar': True,
-            'candidates': {
-                -1: {'title': make_counter(context, 'Abstimmungsoption'),
-                     'shortname': make_counter(context, 'OptionKurz')},
-                -2: {'title': make_counter(context, 'Abstimmungsoption'),
-                     'shortname': make_counter(context, 'OptionKurz')},
-                -3: {'title': make_counter(context, 'Abstimmungsoption'),
-                     'shortname': make_counter(context, 'OptionKurz')},
-            },
-            'description': make_counter(context, 'Abstimmungstext'),
+    ret = assembly.create_assembly(
+        rs,
+        {
+            'presiders': [persona(context) for _ in range(1 if context.quick else 3)],
+            'description': '',
             'notes': None,
-            'abs_quorum': 10,
-            'rel_quorum': 0,
-            'title': make_counter(context, 'Abstimmung'),
-            'vote_begin': datetime.datetime(2222, 2, 5, 13, 22, 22, 222222,
-                                            tzinfo=datetime.timezone.utc),
-            'vote_end': datetime.datetime(2222, 2, 6, 13, 22, 22, 222222,
-                                          tzinfo=datetime.timezone.utc),
-            'vote_extension_end': datetime.datetime(2222, 2, 7, 13, 22, 22, 222222,
-                                                    tzinfo=datetime.timezone.utc),
-            'votes': None,
-        })
+            'signup_end': datetime.datetime(
+                2100, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc
+            ),
+            'title': make_counter(context, 'Mitgliederversammlung'),
+            'shortname': make_counter(context, 'Versammlung'),
+        },
+    )
+    for _ in range(1 if context.quick else 10):
+        assembly.create_ballot(
+            rs,
+            {
+                'assembly_id': ret,
+                'use_bar': True,
+                'candidates': {
+                    -1: {
+                        'title': make_counter(context, 'Abstimmungsoption'),
+                        'shortname': make_counter(context, 'OptionKurz'),
+                    },
+                    -2: {
+                        'title': make_counter(context, 'Abstimmungsoption'),
+                        'shortname': make_counter(context, 'OptionKurz'),
+                    },
+                    -3: {
+                        'title': make_counter(context, 'Abstimmungsoption'),
+                        'shortname': make_counter(context, 'OptionKurz'),
+                    },
+                },
+                'description': make_counter(context, 'Abstimmungstext'),
+                'notes': None,
+                'abs_quorum': 10,
+                'rel_quorum': 0,
+                'title': make_counter(context, 'Abstimmung'),
+                'vote_begin': datetime.datetime(
+                    2222, 2, 5, 13, 22, 22, 222222, tzinfo=datetime.timezone.utc
+                ),
+                'vote_end': datetime.datetime(
+                    2222, 2, 6, 13, 22, 22, 222222, tzinfo=datetime.timezone.utc
+                ),
+                'vote_extension_end': datetime.datetime(
+                    2222, 2, 7, 13, 22, 22, 222222, tzinfo=datetime.timezone.utc
+                ),
+                'votes': None,
+            },
+        )
     for _ in range(1 if context.quick else 100):
         secret = assembly.signup(context.script.rs(persona(context)), ret)
     return ret
@@ -378,24 +412,29 @@ def assembly(context: Context) -> int:
 def past_event(context: Context) -> int:
     rs = context.script.rs()
     pastevent = context.script.make_past_event_backend(proxy=False)
-    ret = pastevent.create_past_event(rs, {
-        'title': make_counter(context, 'VergangeneVeranstaltung'),
-        'shortname': make_counter(context, 'Vergangen'),
-        'institution': const.PastInstitutions.cde,
-        'description': '',
-        'tempus': datetime.date(2000, 1, 1),
-        'participant_info': None,
-    })
-    for _ in range(1 if context.quick else 10):
-        acourse = pastevent.create_past_course(rs, {
-            'pevent_id': ret,
-            'nr': make_counter(context, 'VergangenerKursNr'),
-            'title': make_counter(context, 'VergangenerKursTitel'),
+    ret = pastevent.create_past_event(
+        rs,
+        {
+            'title': make_counter(context, 'VergangeneVeranstaltung'),
+            'shortname': make_counter(context, 'Vergangen'),
+            'institution': const.PastInstitutions.cde,
             'description': '',
-        })
+            'tempus': datetime.date(2000, 1, 1),
+            'participant_info': None,
+        },
+    )
+    for _ in range(1 if context.quick else 10):
+        acourse = pastevent.create_past_course(
+            rs,
+            {
+                'pevent_id': ret,
+                'nr': make_counter(context, 'VergangenerKursNr'),
+                'title': make_counter(context, 'VergangenerKursTitel'),
+                'description': '',
+            },
+        )
         for _ in range(1 if context.quick else 10):
-            pastevent.add_participant(rs, ret, acourse, persona(context),
-                                      False, False)
+            pastevent.add_participant(rs, ret, acourse, persona(context), False, False)
     return ret
 
 
@@ -403,29 +442,34 @@ def mailinglist(context: Context) -> int:
     rs = context.script.rs()
     ml = context.script.make_ml_backend(proxy=False)
     data = cdedb.models.ml.MemberOptInMailinglist(
-            id=vtypes.ID(-1),
-            local_part=vtypes.EmailLocalPart(make_counter(context, 'EmailLocalPart')),
-            domain=const.MailinglistDomain.lists,
-            description='',
-            attachment_policy=const.AttachmentPolicy.forbid,
-            convert_html=False,
-            roster_visibility=const.MailinglistRosterVisibility.none,
-            is_active=True,
-            maxsize=None,
-            additional_footer=None,
-            mod_policy=const.ModerationPolicy.unmoderated,
-            moderators={persona(context)  # type: ignore[misc]
-                        for _ in range(1 if context.quick else 3)},
-            whitelist=set(),
-            subject_prefix=make_counter(context, 'BetreffPrefix'),
-            title=make_counter(context, 'Mailingliste'),
-            notes='',
+        id=vtypes.ID(-1),
+        local_part=vtypes.EmailLocalPart(make_counter(context, 'EmailLocalPart')),
+        domain=const.MailinglistDomain.lists,
+        description='',
+        attachment_policy=const.AttachmentPolicy.forbid,
+        convert_html=False,
+        roster_visibility=const.MailinglistRosterVisibility.none,
+        is_active=True,
+        maxsize=None,
+        additional_footer=None,
+        mod_policy=const.ModerationPolicy.unmoderated,
+        moderators={
+            persona(context)  # type: ignore[misc]
+            for _ in range(1 if context.quick else 3)
+        },
+        whitelist=set(),
+        subject_prefix=make_counter(context, 'BetreffPrefix'),
+        title=make_counter(context, 'Mailingliste'),
+        notes='',
     )
     ret = ml.create_mailinglist(rs, data)
     for _ in range(1 if context.quick else 10):
         ml.do_subscription_action(
-            rs, SubscriptionAction.add_subscriber, mailinglist_id=ret,
-            persona_id=persona(context))
+            rs,
+            SubscriptionAction.add_subscriber,
+            mailinglist_id=ret,
+            persona_id=persona(context),
+        )
     return ret
 
 
@@ -473,8 +517,7 @@ def create_everything(context: Context) -> None:
 
 
 def perform(args: argparse.Namespace) -> None:
-    script = Script(persona_id=1, dbuser="cdb", check_system_user=False,
-                    dry_run=False)
+    script = Script(persona_id=1, dbuser="cdb", check_system_user=False, dry_run=False)
 
     args.script = script
     args.counters = collections.defaultdict(lambda: 0)
@@ -492,25 +535,17 @@ def main() -> None:
         raise RuntimeError("Refusing to touch orga instance!")
 
     parser = argparse.ArgumentParser(
-        description=("Insert additional sample data."
-                     " Especially for load testing."))
+        description=("Insert additional sample data. Especially for load testing.")
+    )
 
-    parser.add_argument(
-        "--personas", "-p", default=1, type=int)
-    parser.add_argument(
-        "--events", "-e", default=1, type=int)
-    parser.add_argument(
-        "--assemblies", "-a", default=1, type=int)
-    parser.add_argument(
-        "--pastevents", "-P", default=1, type=int)
-    parser.add_argument(
-        "--mailinglists", "-m", default=1, type=int)
-    parser.add_argument(
-        "--factor", "-f", default=1, type=int)
-    parser.add_argument(
-        "--verbose", "-v", action='store_true')
-    parser.add_argument(
-        "--quick", "-q", action='store_true')
+    parser.add_argument("--personas", "-p", default=1, type=int)
+    parser.add_argument("--events", "-e", default=1, type=int)
+    parser.add_argument("--assemblies", "-a", default=1, type=int)
+    parser.add_argument("--pastevents", "-P", default=1, type=int)
+    parser.add_argument("--mailinglists", "-m", default=1, type=int)
+    parser.add_argument("--factor", "-f", default=1, type=int)
+    parser.add_argument("--verbose", "-v", action='store_true')
+    parser.add_argument("--quick", "-q", action='store_true')
 
     args = parser.parse_args()
 
