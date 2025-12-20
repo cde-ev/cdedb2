@@ -3387,11 +3387,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['change_note'] = "Muss doch nicht laufen."
         self.submit(f)
 
-        # we did not tick the edit checkbox
-        self.get('/event/event/1/registration/3/change')
-        f = self.response.forms['changeregistrationform']
-        self.assertEqual("pedes", f['fields.transportation'].value)
-
         log_expectation.extend([
             {
                 'persona_id': 5,
@@ -3408,6 +3403,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Check log
         self.assertLogEqual(
             log_expectation, realm="event", event_id=1, offset=self.EVENT_LOG_OFFSET)
+
+        # Now check that not selecting the enable does not reset or change the field.
+        self.get("/event/event/1/registration/multiedit?reg_ids=2,3")
+        self.assertTitle("Anmeldungen bearbeiten (Große Testakademie 2222)")
+        f = self.response.forms['changeregistrationsform']
+        f['enable_fields.transportation'] = False
+        f['fields.transportation'] = "pedes"
+        self.submit(f)
+        self.get('/event/event/1/registration/3/change')
+        f = self.response.forms['changeregistrationform']
+        self.assertEqual("etc", f['fields.transportation'].value)
 
     @event_keeper
     @as_users("garcia")
