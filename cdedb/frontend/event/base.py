@@ -137,6 +137,7 @@ def event_associated_fields_multi_extractor(
     entity_ids: Collection[int],
     field_id: int | None = None,
 ) -> CdEDBObjectMap:
+    """Extract fields multiple times, denoted by suffixed in form of the given ids."""
     return {
         entity_id: event_associated_fields_extractor(
             rs,
@@ -169,6 +170,12 @@ def event_associated_fields_to_request_multi(
     event: models.Event,
     entities: CdEDBObjectMap | models.CdEDataclassMap[models.Course | models.Lodgement],
 ) -> list[CdEDBObject]:
+    """
+    Given a list of entities, prepare all of their fields to be put into a single form.
+
+    This is relized by suffixing the id.
+    This is the inverse of `event_associated_fields_multi_extractor`.
+    """
     return [
         {
             f"{k}{entity_id}": v
