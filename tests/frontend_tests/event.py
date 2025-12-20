@@ -3387,6 +3387,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['change_note'] = "Muss doch nicht laufen."
         self.submit(f)
 
+        # we did not tick the edit checkbox
+        self.get('/event/event/1/registration/3/change')
+        f = self.response.forms['changeregistrationform']
+        self.assertEqual("pedes", f['fields.transportation'].value)
+
         log_expectation.extend([
             {
                 'persona_id': 5,
