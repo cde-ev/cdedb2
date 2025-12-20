@@ -102,7 +102,15 @@ def event_associated_fields_extractor(
     filter_params: Callable[[vtypes.TypeMapping], vtypes.TypeMapping] | None = None,
     suffix: str = "",
 ) -> CdEDBObject:
-    """Given an event, extract inputs for all event fields of the given association."""
+    """
+    Given an event, extract inputs for all event fields of the given association.
+
+    :param field_ids: Used to limit the extracted fields based on their id.
+    :param filter_params: Used to limit the extracted fields via a callable that
+        takes the fields params and returns a narrowed down set of params.
+        This is utilized by the "multiedit" to limit the extracted fields based
+        on additional user input.
+    """
     fields = [
         field
         for field in event.fields.values()
@@ -118,6 +126,7 @@ def event_associated_fields_extractor(
     return {
         field.field_name: raw_fields.get(f"{field.request_name}{suffix}")
         for field in fields
+        if f"{field.request_name}{suffix}" in field_params
     }
 
 
@@ -128,6 +137,7 @@ def event_associated_fields_multi_extractor(
     entity_ids: Collection[int],
     field_id: int | None = None,
 ) -> CdEDBObjectMap:
+    """Extract fields multiple times, denoted by suffixed in form of the given ids."""
     return {
         entity_id: event_associated_fields_extractor(
             rs,
@@ -160,6 +170,12 @@ def event_associated_fields_to_request_multi(
     event: models.Event,
     entities: CdEDBObjectMap | models.CdEDataclassMap[models.Course | models.Lodgement],
 ) -> list[CdEDBObject]:
+    """
+    Given a list of entities, prepare all of their fields to be put into a single form.
+
+    This is relized by suffixing the id.
+    This is the inverse of `event_associated_fields_multi_extractor`.
+    """
     return [
         {
             f"{k}{entity_id}": v

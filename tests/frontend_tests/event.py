@@ -3369,7 +3369,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertEqual(
             str(const.RegistrationPartStati.cancelled), f['part3.status'].value)
         self.assertEqual("pedes", f['fields.transportation'].value)
-        self.assertEqual("", f["fields.anzahl_GROSSBUCHSTABEN"].value)
+        self.assertEqual("3", f["fields.anzahl_GROSSBUCHSTABEN"].value)
         self.get('/event/event/1/registration/3/change')
         f = self.response.forms['changeregistrationform']
         self.assertEqual(
@@ -3377,7 +3377,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertEqual(
             str(const.RegistrationPartStati.cancelled), f['part3.status'].value)
         self.assertEqual("pedes", f['fields.transportation'].value)
-        self.assertEqual("", f["fields.anzahl_GROSSBUCHSTABEN"].value)
+        self.assertEqual("3", f["fields.anzahl_GROSSBUCHSTABEN"].value)
 
         # Now, check with change_note
         self.get("/event/event/1/registration/multiedit?reg_ids=2,3")
@@ -3403,6 +3403,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Check log
         self.assertLogEqual(
             log_expectation, realm="event", event_id=1, offset=self.EVENT_LOG_OFFSET)
+
+        # Now check that not selecting the enable does not reset or change the field.
+        self.get("/event/event/1/registration/multiedit?reg_ids=2,3")
+        self.assertTitle("Anmeldungen bearbeiten (Große Testakademie 2222)")
+        f = self.response.forms['changeregistrationsform']
+        f['enable_fields.transportation'] = False
+        f['fields.transportation'] = "pedes"
+        self.submit(f)
+        self.get('/event/event/1/registration/3/change')
+        f = self.response.forms['changeregistrationform']
+        self.assertEqual("etc", f['fields.transportation'].value)
 
     @event_keeper
     @as_users("garcia")
