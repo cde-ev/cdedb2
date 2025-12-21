@@ -193,13 +193,13 @@ class TestPastEventBackend(BackendTest):
         self.assertEqual((6, expectation), self.pastevent.list_event_participants(self.key, pevent_id=1))
 
         # add to different course
-        self.pastevent.set_course_assignment(self.key, pcourse_id=2, persona_id=5)
+        self.pastevent.set_course_assignments(self.key, pcourse_id=2, persona_id=5)
         expectation[5].course_assignments.append(models.PastCourseAssignment(id=1001, persona_id=5, participant_id=1002, pcourse_id=2, pcourse=pcourses[2], instructor_status=const.PastInstructorKind.none))
         self.assertEqual((6, expectation), self.pastevent.list_event_participants(self.key, pevent_id=1))
 
         # course assignment without participation not possible
         with self.assertRaises(ValueError) as cm:
-            self.pastevent.set_course_assignment(self.key, pcourse_id=1, persona_id=1)
+            self.pastevent.set_course_assignments(self.key, pcourse_id=1, persona_id=1)
         self.assertIn(
             "This user does not participate at this event.", cm.exception.args[0])
         # mailinglist user can not be added to past event

@@ -436,7 +436,7 @@ def past_event(context: Context) -> int:
         for _ in range(1 if context.quick else 10):
             persona_id = persona(context)
             pastevent.set_participant(rs, ret, persona_id)
-            pastevent.set_course_assignment(rs, acourse, persona_id)
+            pastevent.set_course_assignments(rs, acourse, persona_id)
 
 
 def mailinglist(context: Context) -> int:

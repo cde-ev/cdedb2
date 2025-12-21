@@ -363,7 +363,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             return self.show_past_event(rs, pevent_id)
 
         code = 1
-        for persona_id in persona_ids:
+        for persona_id in sorted(persona_ids):
             code *= self.pasteventproxy.set_participant(
                 rs, pevent_id, persona_id, orga_status, music_status
             )
@@ -372,7 +372,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata("pcourse_id", "persona_ids", "instructor_status")
-    def set_course_assignment(
+    def set_course_assignments(
         self,
         rs: RequestState,
         pevent_id: int,
@@ -399,10 +399,10 @@ class CdEPastEventMixin(CdEBaseFrontend):
             return self.show_past_course(rs, pevent_id, pcourse_id)
 
         code = 1
-        for persona_id in persona_ids:
+        for persona_id in sorted(persona_ids):
             if not self.pasteventproxy.is_participant(rs, pevent_id, persona_id):
                 code *= self.pasteventproxy.set_participant(rs, pevent_id, persona_id)
-            code *= self.pasteventproxy.set_course_assignment(
+            code *= self.pasteventproxy.set_course_assignments(
                 rs, pcourse_id, persona_id, instructor_status
             )
         rs.notify_return_code(code)

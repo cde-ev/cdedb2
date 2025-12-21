@@ -565,7 +565,7 @@ class CdEBaseBackend(AbstractBackend):
             instructor_status = const.PastInstructorKind.none
             if datum["is_instructor"]:
                 instructor_status = const.PastInstructorKind.kl
-            self.pastevent.set_course_assignment(
+            self.pastevent.set_course_assignments(
                 rs, datum['pcourse_id'], persona_id, instructor_status=instructor_status
             )
         return persona_id

@@ -49,7 +49,7 @@
         <dd id="orgas">
             {% for orga in orgas %} {# This is already sorted. #}
                 {{ generic.print_persona(orga.persona) }}
-                {%- if not loop.last %},{% endif %}
+                {%- if not loop.last %}, {% endif %}
             {% endfor %}
         </dd>
         {% endif %}

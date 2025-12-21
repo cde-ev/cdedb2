@@ -566,7 +566,7 @@ class PastEventBackend(AbstractBackend):
         return unwrap(self.query_one(rs, query, params))
 
     @access("core_admin", "cde_admin", "event_admin")
-    def set_course_assignment(
+    def set_course_assignments(
         self,
         rs: RequestState,
         pcourse_id: int,
@@ -694,7 +694,7 @@ class PastEventBackend(AbstractBackend):
     def filter_participants(
         self,
         rs: RequestState,
-        participants: T,
+        participants: dict[int, T],
         personas: CdEDBObjectMap,
         honour_admins: bool,
         pevent_id: int | None = None,
@@ -1008,14 +1008,14 @@ class PastEventBackend(AbstractBackend):
                 continue
             participants_to_courses[reg['persona_id']] = collections.defaultdict(bool)
             for track_id in part.tracks:
-                rtrack = reg['tracks'][track_id]
-                if course_id := rtrack['course_id']:
+                if course_id := reg['tracks'][track_id]['course_id']:
+                    if course_id == reg['tracks'][track_id]['course_instructor']:
+                        participants_to_courses[reg['persona_id']][course_id] = True
                     # Take care to not overwrite the instructor state when the course
                     #  is present in multiple tracks of this part.
-                    tmp = participants_to_courses[reg['persona_id']][course_id]
-                    participants_to_courses[reg['persona_id']][course_id] = tmp
-                    if course_id == rtrack['course_instructor']:
-                        participants_to_courses[reg['persona_id']][course_id] = True
+                    participants_to_courses[reg['persona_id']].setdefault(
+                        course_id, False
+                    )
 
         # now add the participants to the past event
         for persona_id, courses in participants_to_courses.items():
@@ -1026,13 +1026,14 @@ class PastEventBackend(AbstractBackend):
             for course_id, is_instructor in courses.items():
                 if not course.active_segments & set(part.tracks):
                     self.logger.warning(
-                        f"Persona {persona_id} participated in cancelled course {course_id} in part {part.id}."
+                        f"During archival of event {event.id}, persona {persona_id}"
+                        f" participated in cancelled course {course_id} in part {part.id}."
                     )
                     continue
                 instructor_status = const.PastInstructorKind.none
                 if is_instructor:
                     instructor_status = const.PastInstructorKind.kl
-                self.set_course_assignment(
+                self.set_course_assignments(
                     rs, course_map[course_id], persona_id, instructor_status
                 )
 

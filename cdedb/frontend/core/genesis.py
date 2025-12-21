@@ -580,7 +580,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                     rs, case.pevent_id, persona_id
                 )
             if case.pcourse_id:
-                code *= self.pasteventproxy.set_course_assignment(
+                code *= self.pasteventproxy.set_course_assignments(
                     rs, case.pcourse_id, persona_id
                 )
             if not code:  # pragma: no cover

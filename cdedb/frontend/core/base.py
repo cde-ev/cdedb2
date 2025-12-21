@@ -2376,7 +2376,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 instructor_status = const.PastInstructorKind.none
                 if is_instructor:
                     instructor_status = const.PastInstructorKind.kl
-                self.pasteventproxy.set_course_assignment(
+                self.pasteventproxy.set_course_assignments(
                     rs, pcourse_id, persona_id, instructor_status=instructor_status
                 )
             persona = self.coreproxy.get_total_persona(rs, persona_id)

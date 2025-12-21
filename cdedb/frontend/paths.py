@@ -307,10 +307,8 @@ rules = [
                     post("/participant/remove", endpoint="remove_participant"),
                     sub(
                         "/course/<int:pcourse_id>",
-                        post("/participant/set", endpoint="set_course_assignment"),
-                        post(
-                            "/participant/remove", endpoint="remove_course_assignment"
-                        ),
+                        post("/assignment/set", endpoint="set_course_assignments"),
+                        post("/assignment/remove", endpoint="remove_course_assignment"),
                         get_("/show", endpoint="show_past_course"),
                         get_("/change", endpoint="change_past_course_form"),
                         post("/change", endpoint="change_past_course"),
