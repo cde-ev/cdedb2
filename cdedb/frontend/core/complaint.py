@@ -194,12 +194,12 @@ class CoreComplaintMixin(CoreBaseFrontend):
         get_hidden_descriptions: bool,
         show_log_entries: bool,
         include_deleted: bool,
-    ) -> CdEDBObject | Response:
+    ) -> CdEDBObject | None:
         if not case.is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
         if get_hidden_descriptions and not self.complaintproxy.is_unlocked(rs, case.id):
             rs.notify('error', n_("Need to unlock case first."))
-            return self.redirect(rs, "core/show_case")
+            return None
 
         # Collect all entries to be displayed.
         log_entries: tuple[dict[str, Any], ...] = tuple()
@@ -252,8 +252,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
             show_log_entries=show_log_entries,
             include_deleted=False,
         )
-        if isinstance(case_data, Response):
-            return case_data
+        if case_data is None:  # pragma: no cover
+            return self.redirect(rs, "core/show_case")
 
         related_cases = self.complaintproxy.get_related_cases(rs, case_id)
 
@@ -278,8 +278,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
             show_log_entries=True,
             include_deleted=True,
         )
-        if isinstance(case_data, Response):
-            return case_data
+        if case_data is None:
+            return self.redirect(rs, "core/show_case")
 
         return self.render(rs, "complaint/case_history", case_data)
 
@@ -292,8 +292,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
             show_log_entries=True,
             include_deleted=False,
         )
-        if isinstance(case_data, Response):
-            return case_data
+        if case_data is None:
+            return self.redirect(rs, "core/show_case")
 
         export = self.fill_template(
             rs,
