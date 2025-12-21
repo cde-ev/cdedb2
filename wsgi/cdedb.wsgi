@@ -13,6 +13,6 @@ repopath = currentpath.parent
 
 sys.path.append(str(repopath))
 
-from cdedb.frontend.application import Application
+from cdedb.frontend.application import get_proxy_fixed_application
 
-application = Application()
+application = get_proxy_fixed_application()
