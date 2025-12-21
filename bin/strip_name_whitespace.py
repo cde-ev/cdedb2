@@ -14,7 +14,10 @@ updated = 0
 persona_id = None
 with s:
     while persona_id := core.next_persona(
-            rs, persona_id, is_member=None, is_archived=False,
+        rs,
+        persona_id,
+        is_member=None,
+        is_archived=False,
     ):
         persona = core.get_persona(rs, persona_id)
 
@@ -28,7 +31,10 @@ with s:
         if update:
             update['id'] = persona_id
             core.set_persona(
-                rs, update, may_wait=False, change_note=change_note,
+                rs,
+                update,
+                may_wait=False,
+                change_note=change_note,
                 automated_change=True,
             )
             updated += 1

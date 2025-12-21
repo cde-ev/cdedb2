@@ -8,7 +8,7 @@ functionality for managing lodgements and lodgement groups belonging to an event
 import abc
 import collections
 import dataclasses
-from collections.abc import Collection, Iterator, Mapping
+from collections.abc import Collection, Iterator
 from functools import cached_property
 from typing import Any, Optional, Protocol
 
@@ -18,9 +18,7 @@ import cdedb.models.event as models
 from cdedb.backend.common import (
     Silencer,
     access,
-    affirm_set_validation as affirm_set,
     affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional,
     singularize,
 )
 from cdedb.backend.event.base import EventBaseBackend
@@ -163,7 +161,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         blockers = self.delete_lodgement_group_blockers(rs, group_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set(str, cascade)
+        cascade = affirm(set[str], cascade)
         cascade &= blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(
@@ -238,9 +236,13 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
 
     @access("event")
     def new_get_lodgements(
-        self, rs: RequestState, lodgement_ids: Collection[int]
+        self,
+        rs: RequestState,
+        lodgement_ids: Collection[int],
+        *,
+        _event: models.Event | None = None,
     ) -> models.CdEDataclassMap[models.Lodgement]:
-        lodgement_ids = affirm_set(vtypes.ID, lodgement_ids)
+        lodgement_ids = affirm(set[vtypes.ID], lodgement_ids)
         with Atomizer(rs):
             lodgement_data = self.query_all(
                 rs, *models.Lodgement.get_select_query(lodgement_ids)
@@ -256,7 +258,10 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
             ):
                 raise PrivilegeError(n_("Not privileged."))
             groups = self.get_lodgement_groups(rs, event_id)
-            event = self.get_event(rs, event_id)
+            if _event:
+                event = _event
+            else:
+                event = self.get_event(rs, event_id)
         return models.Lodgement.many_from_database([
             {
                 **lodge,
@@ -419,7 +424,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         blockers = self.delete_lodgement_blockers(rs, lodgement_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set(str, cascade)
+        cascade = affirm(set[str], cascade)
         cascade &= blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(
@@ -472,8 +477,8 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
     ) -> dict[int, dict[int, LodgementInhabitants]]:
         """Group number of inhabitants by lodgement, part and camping mat status."""
         event_id = affirm(vtypes.ID, event_id)
-        involved = affirm_optional(bool, involved)
-        _registrations = affirm_optional(Mapping, _registrations)  # type: ignore[type-abstract]
+        involved = affirm(bool | None, involved)
+        _registrations = affirm(CdEDBObjectMap | None, _registrations)
 
         if not is_privileged(
             rs,
@@ -486,7 +491,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         if lodgement_ids is None:
             condition = "rp.lodgement_id IS NOT NULL"
         else:
-            lodgement_ids = affirm_set(vtypes.ID, lodgement_ids)
+            lodgement_ids = affirm(set[vtypes.ID], lodgement_ids)
             condition = "rp.lodgement_id = ANY(%s)"
             params.append(lodgement_ids)
         if involved is not None:

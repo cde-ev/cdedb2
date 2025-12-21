@@ -17,6 +17,7 @@ ml = script.make_ml_backend(proxy=False)
 # Execution
 
 with script:
+
     def run(n: int) -> None:
         for _ in range(n):
             ml_ids = ml.list_mailinglists(user_rs)

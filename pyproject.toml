@@ -35,6 +35,7 @@ dependencies = [
     "subman==0.1.1",
     "systemd-python==235",
     "tabulate==0.8.9",
+    "typing-extensions==4.15.0",
     "webtest==3.0.6",
     "werkzeug==2.2.2",
     "zxcvbn==4.4.28",
@@ -42,7 +43,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "mypy==1.18.2",
+    "mypy==1.19.0",
     "lxml-stubs",
     "ruff==0.12.8",
     "types-bleach",
@@ -155,6 +156,9 @@ warn_redundant_casts = true
 warn_no_return = true
 warn_unreachable = true
 warn_unused_ignores = true
+enable_incomplete_feature = [
+    "TypeForm",
+]
 #This has way too many false positives, due to CdEDBObject = Dict[str, Any]
 #warn_return_any = true
 

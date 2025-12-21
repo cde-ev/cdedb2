@@ -102,7 +102,15 @@ def event_associated_fields_extractor(
     filter_params: Callable[[vtypes.TypeMapping], vtypes.TypeMapping] | None = None,
     suffix: str = "",
 ) -> CdEDBObject:
-    """Given an event, extract inputs for all event fields of the given association."""
+    """
+    Given an event, extract inputs for all event fields of the given association.
+
+    :param field_ids: Used to limit the extracted fields based on their id.
+    :param filter_params: Used to limit the extracted fields via a callable that
+        takes the fields params and returns a narrowed down set of params.
+        This is utilized by the "multiedit" to limit the extracted fields based
+        on additional user input.
+    """
     fields = [
         field
         for field in event.fields.values()
@@ -118,6 +126,7 @@ def event_associated_fields_extractor(
     return {
         field.field_name: raw_fields.get(f"{field.request_name}{suffix}")
         for field in fields
+        if f"{field.request_name}{suffix}" in field_params
     }
 
 
@@ -128,6 +137,7 @@ def event_associated_fields_multi_extractor(
     entity_ids: Collection[int],
     field_id: int | None = None,
 ) -> CdEDBObjectMap:
+    """Extract fields multiple times, denoted by suffixed in form of the given ids."""
     return {
         entity_id: event_associated_fields_extractor(
             rs,
@@ -160,6 +170,12 @@ def event_associated_fields_to_request_multi(
     event: models.Event,
     entities: CdEDBObjectMap | models.CdEDataclassMap[models.Course | models.Lodgement],
 ) -> list[CdEDBObject]:
+    """
+    Given a list of entities, prepare all of their fields to be put into a single form.
+
+    This is relized by suffixing the id.
+    This is the inverse of `event_associated_fields_multi_extractor`.
+    """
     return [
         {
             f"{k}{entity_id}": v
@@ -240,22 +256,23 @@ class EventBaseFrontend(AbstractUserFrontend):
                         for rt in registration['tracks'].values()
                     )
 
-        else:
-            all_events = self.eventproxy.get_events(rs, self.eventproxy.list_events(rs))
-            event_options = [
-                {
-                    'title': event.title,
-                    'shortname': event.shortname,
-                    'id': event.id,
-                }
-                for event in xsorted(all_events.values(), reverse=True)
-            ]
-            params['all_events'] = all_events
-            params['event_options'] = event_options
+        all_events = self.eventproxy.get_events(rs, self.eventproxy.list_events(rs))
+        event_options = [
+            {
+                'title': event.title,
+                'shortname': event.shortname,
+                'id': event.id,
+            }
+            for event in xsorted(all_events.values(), reverse=True)
+        ]
+        params['all_events'] = all_events
+        params['event_options'] = event_options
 
         params['is_privileged'] = is_privileged
         params['is_privileged_for'] = is_privileged_for
         params['orga_view'] = orga_view
+
+        params['ViolationFormat'] = models_cv.ViolationFormat
 
         return super().render(
             rs, templatename, params=params, mandatory_fields=mandatory_fields
@@ -745,14 +762,14 @@ class EventBaseFrontend(AbstractUserFrontend):
 
         # Retrieve courses.
         all_courses = self.eventproxy.get_courses(
-            rs, self.eventproxy.list_courses(rs, event.id)
+            rs, self.eventproxy.list_courses(rs, event.id), _event=event
         )
         if course_id is None:
             courses = all_courses
         elif course_id < 0:
             courses = {}
         else:
-            courses = self.eventproxy.get_courses(rs, (course_id,))
+            courses = self.eventproxy.get_courses(rs, [course_id], _event=event)
 
         choice_stats: models.ChoiceStats
         attendee_stats: models.AttendeeStats
@@ -762,14 +779,16 @@ class EventBaseFrontend(AbstractUserFrontend):
 
         # Retrieve lodgements.
         all_lodgements = self.eventproxy.new_get_lodgements(
-            rs, self.eventproxy.list_lodgements(rs, event.id)
+            rs, self.eventproxy.list_lodgements(rs, event.id), _event=event
         )
         if lodgement_id is None:
             lodgements = all_lodgements
         elif lodgement_id < 0:
             lodgements = {}
         else:
-            lodgements = self.eventproxy.new_get_lodgements(rs, [lodgement_id])
+            lodgements = self.eventproxy.new_get_lodgements(
+                rs, [lodgement_id], _event=event
+            )
 
         inhabitants = self.eventproxy.get_grouped_inhabitants(
             rs, event.id, involved=True, _registrations=all_registrations

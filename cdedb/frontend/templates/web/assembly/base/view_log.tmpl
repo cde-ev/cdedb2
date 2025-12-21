@@ -14,15 +14,22 @@
     {{ util.breadcrumb_link(cdedblink("assembly/view_log"), gettext("Log"), active=True) }}
 {% endblock %}
 {% block content %}
-    {% call logging.table(log, additional=['Assembly']) %}
+    {% call logging.table(log, additional=['Assembly', 'Ballot']) %}
         {% for entry in log %}
-            {% set link = None %}
+            {% set assembly_link = None %}
             {% if entry['assembly_id'] %}
-                {% set link = util.href(cdedblink('assembly/show_assembly', {'assembly_id': entry['assembly_id']}),
-                                        all_assemblies[entry['assembly_id']]['title'],
-                                        readonly=not may_view(entry['assembly_id'])) %}
+                {% set assembly_link = util.href(
+                    cdedblink('assembly/show_assembly', {'assembly_id': entry['assembly_id']}),
+                    all_assemblies[entry['assembly_id']]['title'], readonly=not may_view(entry['assembly_id'])
+                ) %}
             {% endif %}
-            {{ logging.row(entry, enums['AssemblyLogCodes'], loop.index, [link]) }}
+            {% if entry['ballot_id'] %}
+                {% set ballot_link = util.href(
+                    cdedblink("assembly/show_ballot", {"assembly_id": entry['assembly_id'], "ballot_id": entry['ballot_id']}),
+                    all_ballots[entry['ballot_id']], readonly=not may_view(entry['assembly_id'])
+                ) %}
+            {% endif %}
+            {{ logging.row(entry, enums['AssemblyLogCodes'], loop.index, [assembly_link, ballot_link]) }}
         {% endfor %}
     {% endcall %}
 

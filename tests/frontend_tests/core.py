@@ -1477,6 +1477,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertNotification("Änderung wurde übernommen.", 'success')
         if new_password:
             saved = self.response
+            mail = self.fetch_mail_content()
+            self.assertIn("Passwort", mail)
             link = self.fetch_link(num=2)
             self.get(link)
             f = self.response.forms["passwordresetform"]

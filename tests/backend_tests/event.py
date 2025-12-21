@@ -1175,6 +1175,17 @@ class TestEventBackend(BackendTest):
         expectation: CdEDBObject = {
             'amount_paid': decimal.Decimal("0.00"),
             'amount_owed': decimal.Decimal("466.49"),
+            'amount_owed_by_kind': {
+                const.EventFeeType.common: decimal.Decimal("461.49"),
+                const.EventFeeType.external: decimal.Decimal("5.00"),
+            },
+            'amount_owed_by_category': {
+                const.EventFeeCategory.participation_fee: decimal.Decimal("466.49"),
+            },
+            'amount_owed_by_budget': {
+                const.EventFeeBudget.expenses: decimal.Decimal("461.49"),
+                const.EventFeeBudget.cde: decimal.Decimal("5.00"),
+            },
             'checkin_periods': [],
             'ctime': nearly_now(),
             'event_id': 1,
@@ -1308,6 +1319,19 @@ class TestEventBackend(BackendTest):
             new_reg['id'] = new_id
             # amount_owed include non-member additional fee
             new_reg['amount_owed'] = decimal.Decimal("589.48")
+            new_reg['amount_owed_by_kind'] = {
+                const.EventFeeType.common: decimal.Decimal("584.49"),
+                const.EventFeeType.solidary_reduction: decimal.Decimal("-0.01"),
+                const.EventFeeType.external: decimal.Decimal("5.00"),
+            }
+            new_reg['amount_owed_by_category'] = {
+                const.EventFeeCategory.participation_fee: decimal.Decimal("589.48"),
+            }
+            new_reg['amount_owed_by_budget'] = {
+                const.EventFeeBudget.expenses: decimal.Decimal("584.49"),
+                const.EventFeeBudget.solidarity: decimal.Decimal("-0.01"),
+                const.EventFeeBudget.cde: decimal.Decimal("5.00"),
+            }
             new_reg['amount_paid'] = decimal.Decimal("0.00")
             new_reg['payment'] = None
             new_reg['personalized_fees'] = {}
@@ -1343,6 +1367,17 @@ class TestEventBackend(BackendTest):
         expectation: CdEDBObjectMap = {
             1: {
                 'amount_owed': decimal.Decimal("553.99"),
+                'amount_owed_by_kind': {
+                    const.EventFeeType.common: decimal.Decimal("573.99"),
+                    const.EventFeeType.instructor_refund: decimal.Decimal("-20.00"),
+                },
+                'amount_owed_by_category': {
+                    const.EventFeeCategory.participation_fee: decimal.Decimal("573.99"),
+                    const.EventFeeCategory.reimbursement: decimal.Decimal("-20.00"),
+                },
+                'amount_owed_by_budget': {
+                    const.EventFeeBudget.expenses: decimal.Decimal("553.99"),
+                },
                 'amount_paid': decimal.Decimal("200.00"),
                 'checkin_periods': [],
                 'ctime': nearly_now(),
@@ -1418,6 +1453,17 @@ class TestEventBackend(BackendTest):
             },
             2: {
                 'amount_owed': decimal.Decimal("466.49"),
+                'amount_owed_by_kind': {
+                    const.EventFeeType.common: decimal.Decimal("461.49"),
+                    const.EventFeeType.external: decimal.Decimal("5.00"),
+                },
+                'amount_owed_by_category': {
+                    const.EventFeeCategory.participation_fee: decimal.Decimal("466.49"),
+                },
+                'amount_owed_by_budget': {
+                    const.EventFeeBudget.expenses: decimal.Decimal("461.49"),
+                    const.EventFeeBudget.cde: decimal.Decimal("5.00"),
+                },
                 'amount_paid': decimal.Decimal("0.00"),
                 'checkin_periods': [],
                 'ctime': nearly_now(),
@@ -1490,6 +1536,15 @@ class TestEventBackend(BackendTest):
             },
             4: {
                 'amount_owed': decimal.Decimal("431.99"),
+                'amount_owed_by_kind': {
+                    const.EventFeeType.common: decimal.Decimal("431.99"),
+                },
+                'amount_owed_by_category': {
+                    const.EventFeeCategory.participation_fee: decimal.Decimal("431.99"),
+                },
+                'amount_owed_by_budget': {
+                    const.EventFeeBudget.expenses: decimal.Decimal("431.99"),
+                },
                 'amount_paid': decimal.Decimal("548.48"),
                 'checkin_periods': [],
                 'ctime': nearly_now(),
@@ -1597,6 +1652,9 @@ class TestEventBackend(BackendTest):
         expectation[4]['mixed_lodging'] = data['mixed_lodging']
         expectation[4]['mtime'] = nearly_now()
         expectation[4]['amount_owed'] = decimal.Decimal("5.50")
+        expectation[4]['amount_owed_by_kind'][const.EventFeeType.common] = decimal.Decimal("5.50")
+        expectation[4]['amount_owed_by_category'][const.EventFeeCategory.participation_fee] = decimal.Decimal("5.50")
+        expectation[4]['amount_owed_by_budget'][const.EventFeeBudget.expenses] = decimal.Decimal("5.50")
         for key, value in expectation[4]['parts'].items():
             if key in data['parts']:
                 value.update(data['parts'][key])
@@ -1663,6 +1721,17 @@ class TestEventBackend(BackendTest):
         self.assertLess(0, new_id)
         new_reg['id'] = new_id
         new_reg['amount_owed'] = decimal.Decimal("584.48")
+        new_reg['amount_owed_by_kind'] = {
+            const.EventFeeType.common: decimal.Decimal("584.49"),
+            const.EventFeeType.solidary_reduction: decimal.Decimal("-0.01"),
+        }
+        new_reg['amount_owed_by_category'] = {
+            const.EventFeeCategory.participation_fee: decimal.Decimal("584.48"),
+        }
+        new_reg['amount_owed_by_budget'] = {
+            const.EventFeeBudget.expenses: decimal.Decimal("584.49"),
+            const.EventFeeBudget.solidarity: decimal.Decimal("-0.01"),
+        }
         new_reg['amount_paid'] = decimal.Decimal("0.00")
         new_reg['payment'] = None
         new_reg['personalized_fees'] = {}
@@ -2652,6 +2721,9 @@ class TestEventBackend(BackendTest):
             log_entry['ctime'] = nearly_now()
         for token in expectation[OrgaToken.database_table].values():
             token['ctime'] = nearly_now()
+        for reg in expectation['event.registrations'].values():
+            for k in ("amount_owed_by_kind", "amount_owed_by_category", "amount_owed_by_budget"):
+                reg[k] = {str(key): val for key, val in reg[k].items()}
         self.assertEqual(expectation, self.event.export_event(self.key, 1))
 
     @storage
@@ -2671,6 +2743,10 @@ class TestEventBackend(BackendTest):
                 reg['personalized_fees'][fee_id] = decimal.Decimal(amount)
             for fee_kind, amount in reg['amount_owed_by_kind'].items():
                 reg['amount_owed_by_kind'][fee_kind] = decimal.Decimal(amount)
+            for fee_category, amount in reg['amount_owed_by_category'].items():
+                reg['amount_owed_by_category'][fee_category] = decimal.Decimal(amount)
+            for fee_budget, amount in reg['amount_owed_by_budget'].items():
+                reg['amount_owed_by_budget'][fee_budget] = decimal.Decimal(amount)
         for token in expectation['event']['orga_tokens'].values():
             token['ctime'] = nearly_now()
         for reg in expectation['registrations'].values():
@@ -2807,6 +2883,14 @@ class TestEventBackend(BackendTest):
             "external": decimal.Decimal("5.00"),
             "solidary_reduction": decimal.Decimal("-0.01"),
         }
+        expectation['registrations'][2]['amount_owed_by_category'] = {
+            "participation_fee": decimal.Decimal("589.48"),
+        }
+        expectation['registrations'][2]['amount_owed_by_budget'] = {
+            "expenses": decimal.Decimal("584.49"),
+            "cde": decimal.Decimal("5.00"),
+            "solidarity": decimal.Decimal("-0.01"),
+        }
         expectation['registrations'][2]['mtime'] = nearly_now()
         expectation['registrations'][3]['mtime'] = nearly_now()
         expectation['registrations'][3]['amount_owed'] = decimal.Decimal("489.48")
@@ -2818,6 +2902,14 @@ class TestEventBackend(BackendTest):
             "instructor_refund": decimal.Decimal("-45.00"),
             "solidary_reduction": decimal.Decimal("-0.01"),
         }
+        expectation['registrations'][3]['amount_owed_by_category'] = {
+            "participation_fee": decimal.Decimal("534.48"),
+            "reimbursement": decimal.Decimal("-45.00"),
+        }
+        expectation['registrations'][3]['amount_owed_by_budget'] = {
+            "expenses": decimal.Decimal("489.49"),
+            "solidarity": decimal.Decimal("-0.01"),
+        }
         # add default values
         expectation['registrations'][1002]['amount_paid'] = decimal.Decimal('0.00')
         expectation['registrations'][1002]['payment'] = None
@@ -2828,6 +2920,12 @@ class TestEventBackend(BackendTest):
         expectation['registrations'][1002]['personalized_fees'] = {}
         expectation['registrations'][1002]['amount_owed_by_kind'] = {
             "common": decimal.Decimal("573.99"),
+        }
+        expectation['registrations'][1002]['amount_owed_by_category'] = {
+            "participation_fee": decimal.Decimal("573.99"),
+        }
+        expectation['registrations'][1002]['amount_owed_by_budget'] = {
+            "expenses": decimal.Decimal("573.99"),
         }
         expectation['EVENT_SCHEMA_VERSION'] = EVENT_SCHEMA_VERSION
         self.assertEqual(expectation, updated)

@@ -28,6 +28,8 @@ import enum
 import functools
 import inspect
 import itertools
+import logging
+import re
 from collections.abc import Collection, Iterable
 from functools import cached_property
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Self, cast
@@ -51,6 +53,9 @@ from cdedb.uncommon.intenum import CdEEnum
 
 if TYPE_CHECKING:
     from cdedb.frontend.event.lodgement import LodgementInhabitants
+
+
+_LOGGER = logging.getLogger(__name__)
 
 
 td = datetime.timedelta
@@ -81,6 +86,15 @@ class ViolationSeverity(CdEEnum):
             ViolationSeverity.WARNING: 'panel-warning',
             ViolationSeverity.INFO: 'panel-info',
             ViolationSeverity.DEBUG: 'panel-default',
+        }[self]
+
+    def alert_class(self) -> str:
+        return {
+            ViolationSeverity.CRITICAL: 'alert-danger',
+            ViolationSeverity.ERROR: 'alert-danger',
+            ViolationSeverity.WARNING: 'alert-warning',
+            ViolationSeverity.INFO: 'alert-info',
+            ViolationSeverity.DEBUG: '',
         }[self]
 
     @classmethod
@@ -184,6 +198,7 @@ class ViolationList(list['ConstraintViolation']):
         course: models.Course | None = cast(models.Course, _MISSING),
         lodgement: models.Lodgement | None = cast(models.Lodgement, _MISSING),
         registration_id: int | None = cast(int, _MISSING),
+        fee: models.EventFee | None = cast(models.EventFee, _MISSING),
         track: models.CourseTrack | None = cast(models.CourseTrack, _MISSING),
         track_not: Collection[int] = cast(Collection[int], _MISSING),
         track_group: models.TrackGroup | None = cast(models.TrackGroup, _MISSING),
@@ -216,6 +231,7 @@ class ViolationList(list['ConstraintViolation']):
                 or v.registration is None and registration_id is None
                 or v.registration is not None and v.registration['id'] == registration_id
             )
+            and (fee is _MISSING or v.fee == fee)
             and (track is _MISSING or v.track == track)
             and (
                 track_not is _MISSING
@@ -276,6 +292,17 @@ class ViolationList(list['ConstraintViolation']):
             start=ViolationFormat(),
         )
 
+    @cached_property
+    def event_fee_summary_format(self) -> ViolationFormat:
+        return sum(
+            (
+                format_
+                for v in self
+                if (format_ := getattr(v, 'event_fee_summary_format', None))
+            ),
+            start=ViolationFormat(),
+        )
+
     def __lt__(self, other: 'list[ConstraintViolation] | ViolationList') -> bool:
         if not isinstance(other, ViolationList):
             return NotImplemented
@@ -332,6 +359,8 @@ class ViolationContext:
     course: models.Course | None = None
     lodgement: models.Lodgement | None = None
 
+    fee: models.EventFee | None = None
+
     part: models.EventPart | None = None
     track: models.CourseTrack | None = None
     part_group: models.PartGroup | None = None
@@ -382,6 +411,8 @@ class ConstraintViolation(abc.ABC):
     course: models.Course | None = None
     lodgement: models.Lodgement | None = None
 
+    fee: models.EventFee | None = None
+
     # Secondary entities.
     part: models.EventPart | None = None
     track: models.CourseTrack | None = None
@@ -421,9 +452,9 @@ class ConstraintViolation(abc.ABC):
         """
         raise NotImplementedError
 
-    def get_link_params(self) -> dict[str, tuple[str, CdEDBObject]]:
+    def get_link_params(self) -> dict[str, tuple[str, CdEDBObject, str]]:
         """
-        Return link targets and necessary parameters for linking to primary entities.
+        Return link targets, necessary parameters and an anchor for linking to primary entities.
 
         Link target will be something like "event/show_course", parameters will contain
         the entity id, e.g. `{'course_id': self.course['id']}`.
@@ -435,6 +466,7 @@ class ConstraintViolation(abc.ABC):
             'event': (
                 "event/show_event",
                 {'event_id': self.event.id},
+                "",
             ),
         }
         if self.registration:
@@ -444,6 +476,7 @@ class ConstraintViolation(abc.ABC):
                     'event_id': self.event.id,
                     'registration_id': self.registration['id'],
                 },
+                "",
             )
         if self.course:
             ret['course'] = (
@@ -452,6 +485,7 @@ class ConstraintViolation(abc.ABC):
                     'event_id': self.event.id,
                     'course_id': self.course.id,
                 },
+                "",
             )
         if self.lodgement:
             ret['lodgement'] = (
@@ -460,12 +494,19 @@ class ConstraintViolation(abc.ABC):
                     'event_id': self.event.id,
                     'lodgement_id': self.lodgement.id,
                 },
+                "",
+            )
+        if self.fee:
+            ret['fee'] = (
+                "event/fee_summary",
+                {},
+                f"#eventfee_{self.fee.id}",
             )
         return ret
 
     def __lt__(self, other: 'ConstraintViolation') -> bool:
         if not isinstance(other, ConstraintViolation):
-            return NotImplemented  # type: ignore[unreachable]
+            return NotImplemented
         return self.get_sortkey() < other.get_sortkey()
 
     def get_sortkey(self) -> Sortkey:
@@ -693,6 +734,19 @@ class LodgementPartConstraintViolation(LodgementConstraintViolation, abc.ABC):
         cls, aux: ViolationAux, context: ViolationContext
     ) -> list[ViolationContext]:
         return [context.add(part=part) for part in aux.event.parts.values()]
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class EventFeeConstraintViolation(ConstraintViolation, abc.ABC):
+    fee: models.EventFee
+
+    kind = ViolationKind.financial
+
+    @classmethod
+    def get_contexts(
+        cls, aux: ViolationAux, context: ViolationContext
+    ) -> list[ViolationContext]:
+        return [context.add(fee=fee) for fee in aux.event.fees.values()]
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
@@ -972,17 +1026,19 @@ class IncorrectCourseAssignedCV(RegistrationTrackConstraintViolation):
         }
         return [msg], params
 
-    def get_link_params(self) -> dict[str, tuple[str, CdEDBObject]]:
+    def get_link_params(self) -> dict[str, tuple[str, CdEDBObject, str]]:
         ret = super().get_link_params()
         if self.assigned_course:
             ret['assigned_course'] = (
                 "event/show_course",
                 {'course_id': self.assigned_course.id},
+                "",
             )
         if self.instructed_course:
             ret['instructed_course'] = (
                 "event/show_course",
                 {'course_id': self.instructed_course.id},
+                "",
             )
         return ret
 
@@ -1105,21 +1161,24 @@ class ZeroAmountOwedCV(RegistrationConstraintViolation):
 
         if not aux.event.fees:
             return None
-        if registration['amount_owed'] == 0:
-            if any(
-                reg_part['status'].is_involved()
-                for reg_part in registration['parts'].values()
-            ):
-                return cls(
-                    event=aux.event,
-                    severity=(
-                        ViolationSeverity.DEBUG
-                        if registration['persona_id'] in aux.event.orgas
-                        else ViolationSeverity.INFO
-                    ),
-                    registration=registration,
-                )
-        return None
+        if registration['amount_owed'] != 0:
+            return None
+        if not any(
+            reg_part["status"].is_involved()
+            for reg_part in registration["parts"].values()
+        ):
+            return None
+
+        severity = ViolationSeverity.INFO
+        by_category = registration["amount_owed_by_category"]
+        if by_category.get(const.EventFeeCategory.reimbursement, 0) < 0:
+            severity = ViolationSeverity.DEBUG
+        if registration["persona_id"] in aux.event.orgas:
+            severity = ViolationSeverity.DEBUG
+        if registration["age"] == AgeClasses.u10:
+            severity = ViolationSeverity.DEBUG
+
+        return cls(event=aux.event, severity=severity, registration=registration)
 
     def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
         if entity_page:
@@ -1296,6 +1355,10 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
                     shall_be_present_at_all=False,
                 )
 
+        severity = ViolationSeverity.INFO
+        if aux.event.is_archived:
+            severity = ViolationSeverity.DEBUG
+
         ref_time = now().date()
         day = datetime.timedelta(days=1)
         for period in registration['checkin_periods']:
@@ -1303,7 +1366,7 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
             has_successor = False
             for part in is_present_parts.values():
                 # look if period starts within some part where you should be present
-                if part.part_begin <= period.checkin_time.date() < part.part_end:
+                if part.part_begin <= period.checkin_time.date() <= part.part_end:
                     valid_checkin_time = True
                     valid_checkout_time = True
                     has_successor = True  # dummy, to trigger check below
@@ -1326,7 +1389,7 @@ class AbsentCheckedinCV(RegistrationConstraintViolation):
             if not (valid_checkin_time and valid_checkout_time):
                 return cls(
                     event=aux.event,
-                    severity=ViolationSeverity.INFO,
+                    severity=severity,
                     registration=registration,
                     shall_be_present_at_all=True,
                 )
@@ -1367,27 +1430,31 @@ class PresentNeverCheckedinCV(RegistrationPartConstraintViolation):
         part = context.part
 
         ref_time = now().date()
-        if not (
-            registration['parts'][part.id]['status'].is_present()
-            and ref_time > part.part_begin
-        ):
+
+        if ref_time <= part.part_begin:
             return None
+        if not registration["parts"][part.id]["status"].is_present():
+            return None
+
+        severity = ViolationSeverity.WARNING
+        if ref_time > part.part_end:
+            severity = ViolationSeverity.ERROR
+        if not any(reg["checkin_periods"] for reg in aux.registrations.values()):
+            severity = ViolationSeverity.DEBUG
+
         valid_checkin_time = False
         for period in registration['checkin_periods']:
             if period.checkin_time.date() <= part.part_end and (
                 not period.checkout_time
-                or period.checkout_time.date() > part.part_begin
+                or period.checkout_time.date() >= part.part_begin
             ):
                 valid_checkin_time = True
                 break
+
         if not valid_checkin_time:
             return cls(
                 event=aux.event,
-                severity=(
-                    ViolationSeverity.ERROR
-                    if ref_time > part.part_end
-                    else ViolationSeverity.WARNING
-                ),
+                severity=severity,
                 registration=registration,
                 part=part,
             )
@@ -2209,3 +2276,54 @@ class IncorrectIBANCV(ConstraintViolation):
         msg = n_("Event fees should be collected at the Skatbank account.")
 
         return [msg], {}
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class InvalidExternalFeeCV(EventFeeConstraintViolation):
+    @classmethod
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        assert context.fee is not None
+
+        if not context.fee.is_conditional():
+            return None
+
+        assert context.fee.condition is not None
+
+        is_external = context.fee.kind == const.EventFeeType.external
+        is_member = bool(re.search(r"\bis_member\b", context.fee.condition))
+
+        if is_external == is_member:
+            return None
+
+        return cls(
+            event=aux.event,
+            severity=(
+                ViolationSeverity.WARNING
+                if context.fee.amount
+                else ViolationSeverity.DEBUG
+            ),
+            fee=context.fee,
+        )
+
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
+        if self.fee.kind == const.EventFeeType.external:
+            msg = n_("External fee %(fee)s does not check 'is_member'.")
+        else:
+            msg = n_("Non-external fee %(fee)s depends on 'is_member'.")
+
+        params = {
+            "fee": self.fee.title,
+        }
+        return [msg], params
+
+    @cached_property
+    def event_fee_summary_format(self) -> ViolationFormat | None:
+        if self.fee.kind == const.EventFeeType.external:
+            title = n_("External fee does not check 'is_member'.")
+        else:
+            title = n_("Non-external fee depends on 'is_member'.")
+        return ViolationFormat(
+            html_classes=[self.severity.html_class()],
+            titles=[title],
+            icons=[("exclamation-triangle", title)],
+        )

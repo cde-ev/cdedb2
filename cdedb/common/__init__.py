@@ -42,6 +42,7 @@ import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.routing
 from schulze_condorcet.types import Candidate
+from typing_extensions import TypeForm
 
 import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
@@ -202,6 +203,7 @@ class RequestState(ConnectionContainer):
         begin: Optional[datetime.datetime],
         lang: str,
         translations: Mapping[str, gettext.NullTranslations],
+        endpoint: str | None = None,
     ) -> None:
         """
         :param mapadapter: URL generator (specific for this request)
@@ -241,6 +243,7 @@ class RequestState(ConnectionContainer):
         # is executed and then to True with the corresponding methods
         # of this class
         self.validation_appraised: Optional[bool] = None
+        self.endpoint = endpoint
 
     @property
     def gettext(self) -> Callable[[str], str]:
@@ -840,7 +843,7 @@ def is_optional_type(type_: Any) -> bool:
     return is_optional
 
 
-def get_mandatory_type(type_: type[T] | UnionType) -> type[T]:
+def get_mandatory_type(type_: TypeForm[T]) -> type[T]:
     """Transform a given type into a non-None one.
 
     Basically the inverse operation of T | None.
@@ -856,7 +859,7 @@ def get_mandatory_type(type_: type[T] | UnionType) -> type[T]:
     return cast(type[T], type_)
 
 
-def is_list_type(type_: type[Any] | UnionType) -> bool:
+def is_list_type(type_: TypeForm[Any]) -> bool:
     """Whether this is a custom list type.
 
     Our validation accepts empty lists by default,

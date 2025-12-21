@@ -1587,6 +1587,7 @@ CREATE TABLE assembly.log (
         code                    integer NOT NULL,
         submitted_by            integer REFERENCES core.personas(id),
         assembly_id             integer REFERENCES assembly.assemblies(id),
+        ballot_id               integer REFERENCES assembly.ballots(id) ON DELETE SET NULL,
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
         change_note             varchar

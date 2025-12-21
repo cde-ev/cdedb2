@@ -25,7 +25,6 @@ import cdedb.models.finance as models_finance
 from cdedb.backend.common import (
     AbstractBackend,
     access,
-    affirm_array_validation as affirm_array,
     affirm_validation as affirm,
 )
 from cdedb.backend.event import EventBackend
@@ -145,7 +144,7 @@ class CdEBaseBackend(AbstractBackend):
     def book_money_transfers(
         self, rs: RequestState, transfers: list[CdEDBObject]
     ) -> models_finance.MoneyTransfersResult:
-        transfers = affirm_array(vtypes.MoneyTransferEntry, transfers)
+        transfers = affirm(list[vtypes.MoneyTransferEntry], transfers)
         # This ensures that membership fees are handled before event fees for each day.
         transfers = xsorted(
             transfers, key=lambda t: (t['date'], t['registration_id'] is not None)
@@ -594,7 +593,7 @@ class CdEBaseBackend(AbstractBackend):
                 Otherwise:
                     The second argument is an int, the index where the error occurred.
         """
-        data = affirm_array(vtypes.BatchAdmissionEntry, data)
+        data = affirm(list[vtypes.BatchAdmissionEntry], data)
         trial_membership = affirm(bool, trial_membership)
         consent = affirm(bool, consent)
         # noinspection PyBroadException

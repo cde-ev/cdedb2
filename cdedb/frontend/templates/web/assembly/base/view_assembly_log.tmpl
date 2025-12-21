@@ -21,9 +21,14 @@
 {% endblock %}
 
 {% block content %}
-    {% call logging.table(log) %}
+    {% call logging.table(log, ['Ballot']) %}
         {% for entry in log %}
-            {{ logging.row(entry, enums['AssemblyLogCodes'], loop.index) }}
+            {% set ballot_link = None %}
+            {% if entry['ballot_id'] %}
+                {% set ballot_link = util.href(cdedblink("assembly/show_ballot", {"assembly_id": entry['assembly_id'], "ballot_id": entry['ballot_id']}),
+                                               ballots[entry['ballot_id']]) %}
+            {% endif %}
+            {{ logging.row(entry, enums['AssemblyLogCodes'], loop.index, [ballot_link]) }}
         {% endfor %}
     {% endcall %}
 
