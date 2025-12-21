@@ -962,4 +962,9 @@ class TestComplaintFrontend(FrontendTest):
         self.submit(f)
         self.get("/core/complaint/case/1/export")
         expectation = (self.testfile_dir / "case_1.txt").read_text()
-        self.assertEqual(expectation, self.response.text)
+
+        # Have to avoid whitespace normalization for comparison.
+        self.assertEqual(
+            expectation,
+            self._get_raw_content("#case1-export", check_exists=True, index=0),
+        )
