@@ -1,3 +1,3 @@
 #!/usr/bin/env sh
 
-sudo pip install type-extensions==4.15.0
+sudo pip install --break-system-packages typing-extensions==4.15.0
