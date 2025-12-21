@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2025-12-18 19:37+0100\n"
+"POT-Creation-Date: 2025-12-21 16:36+0100\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -3248,7 +3248,7 @@ msgstr ""
 #: cdedb/frontend/core/base.py:1161 cdedb/frontend/core/base.py:1175
 #: cdedb/frontend/core/base.py:1179 cdedb/frontend/core/base.py:1192
 #: cdedb/frontend/core/base.py:2503 cdedb/frontend/core/base.py:2522
-#: cdedb/frontend/core/base.py:3037 cdedb/frontend/core/base.py:3064
+#: cdedb/frontend/core/base.py:3038 cdedb/frontend/core/base.py:3065
 #: cdedb/frontend/core/complaint.py:1112 cdedb/frontend/core/genesis.py:369
 #: cdedb/frontend/core/genesis.py:424 cdedb/frontend/core/genesis.py:482
 #: cdedb/frontend/core/genesis.py:505 cdedb/frontend/core/genesis.py:535
@@ -3560,7 +3560,7 @@ msgstr ""
 #: cdedb/frontend/assembly/ballot.py:640 cdedb/frontend/cde/base.py:889
 #: cdedb/frontend/cde/lastschrift.py:648
 #: cdedb/frontend/cde/parse_statement.py:725 cdedb/frontend/common.py:801
-#: cdedb/frontend/event/base.py:683 cdedb/frontend/event/query_stats.py:506
+#: cdedb/frontend/event/base.py:699 cdedb/frontend/event/query_stats.py:506
 #: cdedb/frontend/event/query_stats.py:700
 #: cdedb/frontend/event/query_stats.py:746
 #: cdedb/frontend/event/query_stats.py:777
@@ -3907,10 +3907,10 @@ msgstr ""
 
 #: cdedb/backend/core/base.py:777 cdedb/frontend/core/base.py:919
 #: cdedb/frontend/core/base.py:1537 cdedb/frontend/core/base.py:1578
-#: cdedb/frontend/core/base.py:2721 cdedb/frontend/core/base.py:2918
-#: cdedb/frontend/core/base.py:2937 cdedb/frontend/core/base.py:2969
-#: cdedb/frontend/core/base.py:3079 cdedb/frontend/core/base.py:3119
-#: cdedb/frontend/core/base.py:3135
+#: cdedb/frontend/core/base.py:2722 cdedb/frontend/core/base.py:2919
+#: cdedb/frontend/core/base.py:2938 cdedb/frontend/core/base.py:2970
+#: cdedb/frontend/core/base.py:3080 cdedb/frontend/core/base.py:3120
+#: cdedb/frontend/core/base.py:3136
 msgid "Not a relative admin."
 msgstr ""
 
@@ -4072,7 +4072,7 @@ msgid "Cannot archive silently."
 msgstr ""
 
 #: cdedb/backend/core/base.py:2286 cdedb/frontend/common.py:1854
-#: cdedb/frontend/core/base.py:3139
+#: cdedb/frontend/core/base.py:3140
 msgid "User with this E-Mail exists already."
 msgstr ""
 
@@ -4088,7 +4088,7 @@ msgstr ""
 msgid "Cannot purge silently."
 msgstr ""
 
-#: cdedb/backend/core/base.py:2413 cdedb/frontend/core/base.py:2834
+#: cdedb/backend/core/base.py:2413 cdedb/frontend/core/base.py:2835
 msgid "Name collision."
 msgstr ""
 
@@ -4151,7 +4151,7 @@ msgid "No authorization provided."
 msgstr ""
 
 #: cdedb/backend/core/base.py:3237 cdedb/common/validation/validate.py:1290
-#: cdedb/frontend/core/base.py:2607 cdedb/frontend/core/base.py:2791
+#: cdedb/frontend/core/base.py:2607 cdedb/frontend/core/base.py:2792
 msgid "Password too weak."
 msgstr ""
 
@@ -4448,8 +4448,8 @@ msgstr ""
 msgid "Only registrations from exactly one event allowed."
 msgstr ""
 
-#: cdedb/backend/event/registration.py:1035 cdedb/frontend/event/base.py:386
-#: cdedb/frontend/event/base.py:592
+#: cdedb/backend/event/registration.py:1035 cdedb/frontend/event/base.py:402
+#: cdedb/frontend/event/base.py:608
 msgid "No participant of event."
 msgstr ""
 
@@ -4763,7 +4763,7 @@ msgid "Invalid notification type %(t)s found."
 msgstr ""
 
 #: cdedb/common/__init__.py:296 cdedb/frontend/core/base.py:2186
-#: cdedb/frontend/core/base.py:3068
+#: cdedb/frontend/core/base.py:3069
 msgid "Change committed."
 msgstr ""
 
@@ -4933,7 +4933,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:117
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:105
 #: cdedb/frontend/templates/web/core/login.tmpl:26
-#: cdedb/frontend/templates/web/core/reset_password.tmpl:24
+#: cdedb/frontend/templates/web/core/reset_password.tmpl:31
 #: cdedb/frontend/templates/web/core/show_history.tmpl:274
 #: cdedb/frontend/templates/web/core/show_user.tmpl:465
 #: cdedb/frontend/templates/web/core/show_user.tmpl:466
@@ -7249,8 +7249,8 @@ msgstr ""
 #: cdedb/frontend/assembly/ballot.py:947 cdedb/frontend/assembly/base.py:258
 #: cdedb/frontend/assembly/base.py:515 cdedb/frontend/assembly/base.py:671
 #: cdedb/frontend/cde/past_event.py:369 cdedb/frontend/cde/past_event.py:443
-#: cdedb/frontend/cde/past_event.py:515 cdedb/frontend/core/base.py:3083
-#: cdedb/frontend/core/base.py:3157 cdedb/frontend/event/course.py:333
+#: cdedb/frontend/cde/past_event.py:515 cdedb/frontend/core/base.py:3084
+#: cdedb/frontend/core/base.py:3158 cdedb/frontend/event/course.py:333
 #: cdedb/frontend/event/event.py:364 cdedb/frontend/event/event.py:536
 #: cdedb/frontend/event/event.py:570 cdedb/frontend/event/event.py:704
 #: cdedb/frontend/event/event.py:1317 cdedb/frontend/event/event.py:1684
@@ -7881,8 +7881,8 @@ msgstr ""
 #: cdedb/frontend/core/base.py:1539 cdedb/frontend/core/base.py:1980
 #: cdedb/frontend/core/base.py:2270 cdedb/frontend/core/base.py:2388
 #: cdedb/frontend/core/base.py:2448 cdedb/frontend/core/base.py:2477
-#: cdedb/frontend/core/base.py:2505 cdedb/frontend/core/base.py:2920
-#: cdedb/frontend/core/base.py:2974
+#: cdedb/frontend/core/base.py:2505 cdedb/frontend/core/base.py:2921
+#: cdedb/frontend/core/base.py:2975
 msgid "Persona is archived."
 msgstr ""
 
@@ -8149,7 +8149,7 @@ msgid "Password invalidated."
 msgstr ""
 
 #: cdedb/frontend/core/base.py:2597 cdedb/frontend/core/base.py:2598
-#: cdedb/frontend/core/base.py:2601 cdedb/frontend/core/base.py:2781
+#: cdedb/frontend/core/base.py:2601 cdedb/frontend/core/base.py:2782
 msgid "Passwords don’t match."
 msgstr ""
 
@@ -8161,32 +8161,35 @@ msgstr ""
 msgid "Password changed."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2691 cdedb/frontend/core/base.py:2703
-#: cdedb/frontend/core/base.py:2733
+#: cdedb/frontend/core/base.py:2677
+msgid "Email sent. Please also check your spam folder."
+msgstr ""
+
+#: cdedb/frontend/core/base.py:2734
 msgid "Email sent."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2777
+#: cdedb/frontend/core/base.py:2778
 msgid "Lockdown active. Try again later."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2802
+#: cdedb/frontend/core/base.py:2803
 msgid "Password reset."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2827
+#: cdedb/frontend/core/base.py:2828
 msgid "Must be different from current email address."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:2887 cdedb/frontend/core/base.py:2943
+#: cdedb/frontend/core/base.py:2888 cdedb/frontend/core/base.py:2944
 msgid "Email address changed."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:3041
+#: cdedb/frontend/core/base.py:3042
 msgid "Persona has no pending change."
 msgstr ""
 
-#: cdedb/frontend/core/base.py:3068
+#: cdedb/frontend/core/base.py:3069
 msgid "Change dropped."
 msgstr ""
 
@@ -8424,30 +8427,30 @@ msgstr ""
 msgid "This page can only be accessed by orgas."
 msgstr ""
 
-#: cdedb/frontend/event/base.py:288
+#: cdedb/frontend/event/base.py:304
 msgid "No event context given"
 msgstr ""
 
-#: cdedb/frontend/event/base.py:397
+#: cdedb/frontend/event/base.py:413
 msgid "Participant list not published yet."
 msgstr ""
 
-#: cdedb/frontend/event/base.py:451 cdedb/frontend/event/lodgement.py:117
+#: cdedb/frontend/event/base.py:467 cdedb/frontend/event/lodgement.py:117
 msgid "Invalid part id."
 msgstr ""
 
-#: cdedb/frontend/event/base.py:493
+#: cdedb/frontend/event/base.py:509
 msgid "Only one part id allowed."
 msgstr ""
 
-#: cdedb/frontend/event/base.py:574
+#: cdedb/frontend/event/base.py:590
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:201
 msgid ""
 "You can not access the Participant List as you have not agreed to have your "
 "own data sent to other participants before the event."
 msgstr ""
 
-#: cdedb/frontend/event/base.py:644
+#: cdedb/frontend/event/base.py:660
 msgid "Invalid key. Expected 'course_id' or 'lodgement_id"
 msgstr ""
 
@@ -14934,15 +14937,21 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/reset_password.tmpl:10
 msgid ""
-"If You have forgotten Your Password, You can request an E-Mail to reset it. "
-"To do this, just enter the email address You would use to login."
+"If you have forgotten your password, you can request an email to reset it. "
+"To do this, just enter the email address you would use to login."
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/reset_password.tmpl:16
-msgid "Attention: This does not work for Admin-Accounts!"
+msgid ""
+"This email usually arrives in less than a minute. If you do not see any "
+"email in your inbox, please also check your spam folder."
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/reset_password.tmpl:25
+#: cdedb/frontend/templates/web/core/reset_password.tmpl:23
+msgid "Attention: This does not work for admins!"
+msgstr ""
+
+#: cdedb/frontend/templates/web/core/reset_password.tmpl:32
 msgid "Request Reset Link"
 msgstr ""
 
