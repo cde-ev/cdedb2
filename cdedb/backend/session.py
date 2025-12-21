@@ -109,23 +109,17 @@ class SessionBackend:
         if data:
             deactivate = False
             if data["is_active"]:
-                if data["ip"] == ip:
-                    timestamp = now()
-                    if data["atime"] + self.conf["SESSION_TIMEOUT"] >= timestamp:
-                        if data["ctime"] + self.conf["SESSION_LIFESPAN"] >= timestamp:
-                            # here we finally verified the session key
-                            persona_id = data["persona_id"]
-                        else:
-                            deactivate = True
-                            self.logger.info(f"TTL exceeded for {sessionkey}")
+                timestamp = now()
+                if data["atime"] + self.conf["SESSION_TIMEOUT"] >= timestamp:
+                    if data["ctime"] + self.conf["SESSION_LIFESPAN"] >= timestamp:
+                        # here we finally verified the session key
+                        persona_id = data["persona_id"]
                     else:
                         deactivate = True
-                        self.logger.info(f"Session timed out: {sessionkey}")
+                        self.logger.info(f"TTL exceeded for {sessionkey}")
                 else:
                     deactivate = True
-                    self.logger.info(
-                        f"IP mismatch ({ip} vs {data['ip']}) for {sessionkey}"
-                    )
+                    self.logger.info(f"Session timed out: {sessionkey}")
             else:
                 self.logger.info(f"Got inactive session key {sessionkey}.")
             if deactivate:
