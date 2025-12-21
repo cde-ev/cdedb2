@@ -3460,7 +3460,7 @@ def _json(val: Any, argname: str = "json", **kwargs: Any) -> JSON:
             raise ValidationSummary(
                 ValueError(argname, n_("Invalid UTF-8 sequence."))
             ) from e
-    val = _str(val, argname, **kwargs)
+    val = _str(val, argname, **kwargs, limit_size=False)
     try:
         data = json.loads(val)
     except json.decoder.JSONDecodeError as e:
@@ -3501,7 +3501,6 @@ def _serialized_partial_event(
         'EVENT_SCHEMA_VERSION': tuple[int, int],
         'kind': str,
         'id': ID,
-        'timestamp': datetime.datetime,
     }
     optional_fields: TypeMapping = {
         'event': Mapping,  # ignored, but allowed to be present.
@@ -3510,6 +3509,7 @@ def _serialized_partial_event(
         'lodgements': Mapping,
         'registrations': Mapping,
         'summary': str,
+        'timestamp': datetime.datetime,
     }
 
     val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)

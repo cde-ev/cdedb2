@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Explicitly lock all questionnaire fields for all currently archived events."""
+
 import cdedb.database.constants as const
 from cdedb.backend.common import Silencer
 from cdedb.script import Script

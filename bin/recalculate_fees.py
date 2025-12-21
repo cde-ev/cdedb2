@@ -3,6 +3,7 @@
 
 Should not be archived after use.
 """
+
 from cdedb.common.sorting import xsorted
 from cdedb.script import Script
 

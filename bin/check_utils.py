@@ -6,27 +6,32 @@ from typing import List, Optional, Tuple, Type, Union
 from unittest.runner import _WritelnDecorator
 
 ExceptionInfo = Union[
-    Tuple[Type[BaseException], BaseException, TracebackType],
-    Tuple[None, None, None]
+    Tuple[Type[BaseException], BaseException, TracebackType], Tuple[None, None, None]
 ]
 
 
 class MyTextTestRunner(unittest.TextTestRunner):
     """Subclass the TextTestRunner to provide a short command to re-run failed tests."""
+
     def run(
-        self, test: Union[unittest.TestSuite, unittest.TestCase],
+        self,
+        test: Union[unittest.TestSuite, unittest.TestCase],
     ) -> unittest.TextTestResult:
         result = super().run(test)
         failed = map(
             lambda error: error[0].id().split()[0],  # split to strip subtest paramters
-            (result.errors + result.failures
-             + [(unex_succ, "") for unex_succ in result.unexpectedSuccesses])
+            (
+                result.errors
+                + result.failures
+                + [(unex_succ, "") for unex_succ in result.unexpectedSuccesses]
+            ),
         )
         if not result.wasSuccessful():
             print(
                 f"To rerun failed tests execute the following:\n"
                 f"/cdedb2/bin/check.py {'-v' if self.verbosity > 1 else ''}"
-                f" {' '.join(sorted(set(failed)))}", file=self.stream
+                f" {' '.join(sorted(set(failed)))}",
+                file=self.stream,
             )
         return result
 
@@ -37,9 +42,12 @@ class MyTextTestResult(unittest.TextTestResult):
     We keep track of the errors, failures and skips occurring in SubTests,
     and print a summary at the end of the TestCase itself.
     """
+
     showAll: bool
 
-    def __init__(self, stream: _WritelnDecorator, descriptions: bool, verbosity: int) -> None:
+    def __init__(
+        self, stream: _WritelnDecorator, descriptions: bool, verbosity: int
+    ) -> None:
         super().__init__(stream, descriptions, verbosity)
         self._subTestErrors: List[ExceptionInfo] = []
         self._subTestFailures: List[ExceptionInfo] = []
@@ -51,8 +59,12 @@ class MyTextTestResult(unittest.TextTestResult):
         self._subTestFailures = []
         self._subTestSkips = []
 
-    def addSubTest(self, test: unittest.TestCase, subtest: unittest.TestCase,
-                   err: Optional[ExceptionInfo]) -> None:
+    def addSubTest(
+        self,
+        test: unittest.TestCase,
+        subtest: unittest.TestCase,
+        err: Optional[ExceptionInfo],
+    ) -> None:
         super().addSubTest(test, subtest, err)
         if err is not None and err[0] is not None:
             if issubclass(err[0], subtest.failureException):
@@ -81,8 +93,9 @@ class MyTextTestResult(unittest.TextTestResult):
             output.append(s)
         if self._subTestSkips:
             if self.showAll:
-                s = "skipped {}".format(", ".join(
-                    "{0!r}".format(r) for r in self._subTestSkips))
+                s = "skipped {}".format(
+                    ", ".join("{0!r}".format(r) for r in self._subTestSkips)
+                )
             else:
                 s = "s" * len(self._subTestSkips)
             output.append(s)

@@ -3,6 +3,7 @@
 
 Should not be archived after use.
 """
+
 from cdedb.backend.common import Silencer
 from cdedb.script import Script
 

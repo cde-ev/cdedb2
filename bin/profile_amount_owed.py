@@ -3,6 +3,7 @@
 
 Should not be archived after use.
 """
+
 import cProfile
 import pathlib
 
@@ -22,5 +23,8 @@ event = script.make_event_backend(proxy=False)
 with script:
     for event_id, event_name in xsorted(event.list_events(rs).items()):
         print(f"Recalculating Fees for {event_name} with id {event_id}.")
-        cProfile.run("event._update_registrations_amount_owed(rs, event_id)", str(pathlib.Path(__file__).parent / "../profiles/update_amounts_owed.prof"))
+        cProfile.run(
+            "event._update_registrations_amount_owed(rs, event_id)",
+            str(pathlib.Path(__file__).parent / "../profiles/update_amounts_owed.prof"),
+        )
         print(fcp_parse.parse.cache_info())

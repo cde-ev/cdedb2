@@ -435,6 +435,7 @@ class MailinglistTypes(CdEIntEnum):
     public_member_implicit = 70
 
     complaint_admin_implicit = 80
+    complaint_enforcer_implicit = 85
 
     def optgroup_label(self) -> str:
         from cdedb.models.ml import ML_TYPE_MAP  # noqa: PLC0415
@@ -559,6 +560,7 @@ class PastInstitutions(CdEIntEnum):
     basf = 80  #:
     van = 200  #:
     eisenberg = 400  #:
+    other = 1000  #:
 
     @classmethod
     def main_insitution(cls) -> "PastInstitutions":
@@ -575,8 +577,9 @@ class PastInstitutions(CdEIntEnum):
             self.basf: "BASF",
             self.van: "VAN",
             self.eisenberg: "FV Eisenberg",
+            self.other: "Sonst.",
         }
-        return shortnames[self]
+        return shortnames.get(self, str(self))
 
 
 @enum.unique
