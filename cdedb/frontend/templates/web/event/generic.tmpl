@@ -514,6 +514,11 @@
                         {% endif %}
                     {% else %}
                         {{ fee.title }}
+                        {%- if fee.notes %}{{ nbsp -}}
+                            <span class="float-right">
+                                {{- util.make_icon("tag") -}}
+                            </span>
+                        {%- endif %}
                     {% endif %}
                 </td>
                 {% if fee.amount is not none %}
