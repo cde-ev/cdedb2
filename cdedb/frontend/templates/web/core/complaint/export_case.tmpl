@@ -13,7 +13,7 @@
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("core/complaint_index"), gettext("Cases")) }}
     {{ util.breadcrumb_link(cdedblink("core/show_case"), gettext("Case %s")|format(ambience['case']['id']), icon="gavel") }}
-    {{ util.breadcrumb_link(cdedblink("core/export_case"), gettext("Export Case %s")|format(ambience['case']['id']), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("core/export_case"), gettext("Export"), active=True) }}
 {% endblock %}
 
 {% block content %}
