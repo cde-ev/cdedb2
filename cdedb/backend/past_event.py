@@ -543,7 +543,7 @@ class PastEventBackend(AbstractBackend):
                     code=const.PastEventLogCodes.participant_set,
                     pevent_id=pevent_id,
                     persona_id=persona_id,
-                    change_note=", ".join(relevant_status),
+                    change_note=", ".join(relevant_status) or None,
                 )
         return ret
 
@@ -612,7 +612,7 @@ class PastEventBackend(AbstractBackend):
                     pevent_id=pevent_id,
                     pcourse_id=pcourse_id,
                     persona_id=persona_id,
-                    change_note=",".join(relevant_status),
+                    change_note=",".join(relevant_status) or None,
                 )
         return ret
 

@@ -12,18 +12,6 @@ from tests.common import BackendTest, as_users, event_keeper
 class TestPastEventBackend(BackendTest):
     used_backends = ("core", "event", "pastevent")
 
-    @as_users("vera", "berta", maintain_data=True)
-    def test_participation_infos(self) -> None:
-        participation_info = self.pastevent.participation_info(self.key, 1)
-        self.assertEqual(dict(), participation_info)
-        participation_info = self.pastevent.participation_info(self.key, 2)
-        expectation = {
-            1: {'courses': {1: {'id': 1, 'is_instructor': True}},
-                'id': 1,
-                'is_orga': False}
-        }
-        self.assertEqual(expectation, participation_info)
-
     @as_users("vera")
     def test_entity_past_event(self) -> None:
         old_events = self.pastevent.list_past_events(self.key)
@@ -272,8 +260,8 @@ class TestPastEventBackend(BackendTest):
 
         # now, delete the course, add more log codes
         self.pastevent.delete_past_course(self.key, new_id, cascade=("log",))
-        self.pastevent.add_participant(self.key, 1, None, 5, False, False)
-        self.pastevent.remove_participant(self.key, 1, None, 5)
+        self.pastevent.set_participant(self.key, new_id, 5)
+        self.pastevent.remove_participant(self.key, new_id, 5)
 
         # check the data, note that the log codes regarding the course are deleted
         expectation = (
@@ -305,7 +293,7 @@ class TestPastEventBackend(BackendTest):
              'change_note': None,
              'code': const.PastEventLogCodes.participant_set,
              'ctime': nearly_now(),
-             'pevent_id': 1,
+             'pevent_id': new_id,
              'pcourse_id': None,
              'persona_id': 5,
              'submitted_by': self.user['id']},
@@ -313,7 +301,7 @@ class TestPastEventBackend(BackendTest):
              'change_note': None,
              'code': const.PastEventLogCodes.participant_removed,
              'ctime': nearly_now(),
-             'pevent_id': 1,
+             'pevent_id': new_id,
              'pcourse_id': None,
              'persona_id': 5,
              'submitted_by': self.user['id']})
@@ -356,6 +344,8 @@ class TestPastEventBackend(BackendTest):
         assert new_ids is not None
         self.assertEqual(3, len(new_ids))
         pevent_data = list(self.pastevent.get_past_events(self.key, new_ids).values())
+
+        # Warmup
         expectation = models.PastEvent(
             id=vtypes.ID(1002),
             description='Everybody come!',
@@ -366,6 +356,12 @@ class TestPastEventBackend(BackendTest):
             participant_info=None
         )
         self.assertEqual(expectation, pevent_data[2])
+        self.assertEqual(
+            set(),
+            set(self.pastevent.list_past_courses(
+                self.key, pevent_data[2].id).values()))
+
+        # Erste Hälfte
         expectation = models.PastEvent(
             id=vtypes.ID(1003),
             description='Everybody come!',
@@ -376,6 +372,24 @@ class TestPastEventBackend(BackendTest):
             participant_info=None
         )
         self.assertEqual(expectation, pevent_data[1])
+        expectation = {
+            "Planetenretten für Anfänger",
+            "Lustigsein für Fortgeschrittene",
+            "Kurzer Kurs",
+            "Langer Kurs",
+            "Backup-Kurs",
+            "Extra-Kurs",
+        }
+        self.assertEqual(
+            expectation,
+            set(self.pastevent.list_past_courses(
+                self.key, pevent_data[1].id).values()))
+        _, participants = self.pastevent.list_event_participants(self.key, pevent_data[1].id)
+        self.assertEqual(const.PastOrgaKind.orga, participants[7].orga_status)
+        self.assertEqual(const.PastOrgaKind.none, participants[100].orga_status)
+        self.assertEqual("Lustigsein für Fortgeschrittene", participants[7].course_assignments[0].pcourse.title)
+
+        # Zweite Hälfte
         expectation = models.PastEvent(
             id=vtypes.ID(1004),
             description='Everybody come!',
@@ -386,28 +400,16 @@ class TestPastEventBackend(BackendTest):
             participant_info=None
         )
         self.assertEqual(expectation, pevent_data[0])
-        self.assertEqual(
-            set(),
-            set(self.pastevent.list_past_courses(
-                self.key, pevent_data[2].id).values()))
-        expectation = {'Lustigsein für Fortgeschrittene'}
-        self.assertEqual(
-            expectation,
-            set(self.pastevent.list_past_courses(
-                self.key, pevent_data[1].id).values()))
-        expectation = {'Planetenretten für Anfänger'}
+        expectation = {
+            "Planetenretten für Anfänger",
+            "Lustigsein für Fortgeschrittene",
+            "Langer Kurs",
+            "Extra-Kurs",
+        }
         self.assertEqual(
             expectation,
             set(self.pastevent.list_past_courses(
                 self.key, pevent_data[0].id).values()))
-        expectation = {
-            (7, 1008): {'pcourse_id': 1008,
-                        'is_instructor': False,
-                        'is_orga': True,
-                        'persona_id': 7},
-            (100, 1008): {'is_instructor': False,
-                          'is_orga': False,
-                          'pcourse_id': 1008,
-                          'persona_id': 100}}
-        self.assertEqual(expectation,
-                         self.pastevent.list_participants(self.key, pcourse_id=1008))
+        _, participants = self.pastevent.list_event_participants(self.key, pevent_data[0].id)
+        self.assertEqual(const.PastInstructorKind.kl, participants[5].course_assignments[0].instructor_status)
+        self.assertEqual(const.PastInstructorKind.none, participants[100].course_assignments[0].instructor_status)
