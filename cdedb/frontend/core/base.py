@@ -2674,6 +2674,7 @@ class CoreBaseFrontend(AbstractFrontend):
             )
             return self.reset_password_form(rs)
 
+        success_msg = n_("Email sent. Please also check your spam folder.")
         try:
             reset_link = self._password_reset_link(
                 rs, persona_id, self.conf["PARAMETER_TIMEOUT"]
@@ -2688,7 +2689,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 f"Sent password reset denial mail to admin {email} for IP {rs.request.remote_addr}."
             )
             # Display success notification anyway to prevent leaking admin accounts.
-            rs.notify("success", n_("Email sent."))
+            rs.notify("success", success_msg)
         else:
             self.do_mail(
                 rs,
@@ -2700,7 +2701,7 @@ class CoreBaseFrontend(AbstractFrontend):
             self.logger.info(
                 f"Sent password reset mail to {email} for IP {rs.request.remote_addr}."
             )
-            rs.notify("success", n_("Email sent."))
+            rs.notify("success", success_msg)
         return self.redirect(rs, "core/index")
 
     @access(*REALM_ADMINS, modi={"POST"})
