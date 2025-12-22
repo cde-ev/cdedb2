@@ -424,7 +424,7 @@ class PastEventBackend(AbstractBackend):
             are the ids of the blockers.
         """
         pcourse_id = affirm(vtypes.ID, pcourse_id)
-        blockers = {}
+        blockers: DeletionBlockers = {}
 
         count, participants = self.get_course_assignments(rs, pcourse_id)
         if count != len(participants):
@@ -694,12 +694,12 @@ class PastEventBackend(AbstractBackend):
     def filter_participants(
         self,
         rs: RequestState,
-        participants: dict[int, T],
+        participants: CdEDataclassMap[T],
         personas: CdEDBObjectMap,
         honour_admins: bool,
         pevent_id: int | None = None,
         pcourse_id: int | None = None,
-    ) -> T:
+    ) -> CdEDataclassMap[T]:
         """Filter participants based on the privileges of the requesting user.
 
         Participants are removed from the result if they are not searchable and the
@@ -708,6 +708,8 @@ class PastEventBackend(AbstractBackend):
         participants = copy.deepcopy(participants)
         if pevent_id is None and pcourse_id is None:
             raise ValueError("Either provide pevent_id or pcourse_id.")
+        if rs.user.persona_id is None:
+            raise RuntimeError
 
         # admins may view all participants
         if self.is_admin(rs) and honour_admins:
@@ -786,7 +788,7 @@ class PastEventBackend(AbstractBackend):
         # filter the data
         ret = self.filter_participants(
             rs,
-            participants=ret,
+            participants=ret,  # type: ignore[arg-type]
             personas=personas,
             honour_admins=honour_admins,
             pevent_id=pevent_id,
@@ -831,7 +833,7 @@ class PastEventBackend(AbstractBackend):
         }
         ret = self.filter_participants(
             rs,
-            participants=ret,
+            participants=ret,  # type: ignore[arg-type]
             personas=personas,
             honour_admins=honour_admins,
             pcourse_id=pcourse_id,
@@ -890,7 +892,7 @@ class PastEventBackend(AbstractBackend):
         course_assignments = models.PastCourseAssignment.many_from_database(data)
         for assignment in course_assignments.values():
             ret[assignment.pcourse.pevent_id].course_assignments.append(assignment)
-        return ret
+        return ret  # type: ignore[return-value]
 
     @access("cde_admin", "event_admin")
     def find_past_event(

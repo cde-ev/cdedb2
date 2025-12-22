@@ -137,29 +137,29 @@ class TestPastEventBackend(BackendTest):
         pevent = self.pastevent.get_past_event(self.key, 1)
         pcourses = self.pastevent.get_past_courses(self.key, [1, 2])
         expectation = {
-            2: models.PastEventParticipant(id=1, persona_id=2, pevent_id=1, orga_status=const.PastOrgaKind.none, music_status=const.PastMusicKind.none,
-                                           persona=personas[2], pevent=pevent),
-            3: models.PastEventParticipant(id=2, persona_id=3, pevent_id=1, orga_status=const.PastOrgaKind.none, music_status=const.PastMusicKind.ensemble,
-                                           persona=personas[3], pevent=pevent),
-            4: models.PastEventParticipant(id=3, persona_id=4, pevent_id=1, orga_status=const.PastOrgaKind.none, music_status=const.PastMusicKind.none,
-                                           persona=personas[4], pevent=pevent),
-            5: models.PastEventParticipant(id=4, persona_id=5, pevent_id=1, orga_status=const.PastOrgaKind.none, music_status=const.PastMusicKind.kuemu,
-                                           persona=personas[5], pevent=pevent),
-            6: models.PastEventParticipant(id=5, persona_id=6, pevent_id=1, orga_status=const.PastOrgaKind.orga, music_status=const.PastMusicKind.none,
-                                           persona=personas[6], pevent=pevent),
-            100: models.PastEventParticipant(id=6, persona_id=100, pevent_id=1, orga_status=const.PastOrgaKind.none, music_status=const.PastMusicKind.none,
-                                             persona=personas[100], pevent=pevent),
+            vtypes.ID(2): models.PastEventParticipant(id=vtypes.ID(1), persona_id=vtypes.ID(2), pevent_id=vtypes.ID(1), orga_status=const.PastOrgaKind.none, music_status=const.PastMusicKind.none,
+                                           persona=personas[vtypes.ID(2)], pevent=pevent),
+            vtypes.ID(3): models.PastEventParticipant(id=vtypes.ID(2), persona_id=vtypes.ID(3), pevent_id=vtypes.ID(1), orga_status=const.PastOrgaKind.none, music_status=const.PastMusicKind.ensemble,
+                                           persona=personas[vtypes.ID(3)], pevent=pevent),
+            vtypes.ID(4): models.PastEventParticipant(id=vtypes.ID(3), persona_id=vtypes.ID(4), pevent_id=vtypes.ID(1), orga_status=const.PastOrgaKind.none, music_status=const.PastMusicKind.none,
+                                           persona=personas[vtypes.ID(4)], pevent=pevent),
+            vtypes.ID(5): models.PastEventParticipant(id=vtypes.ID(4), persona_id=vtypes.ID(5), pevent_id=vtypes.ID(1), orga_status=const.PastOrgaKind.none, music_status=const.PastMusicKind.kuemu,
+                                           persona=personas[vtypes.ID(5)], pevent=pevent),
+            vtypes.ID(6): models.PastEventParticipant(id=vtypes.ID(5), persona_id=vtypes.ID(6), pevent_id=vtypes.ID(1), orga_status=const.PastOrgaKind.orga, music_status=const.PastMusicKind.none,
+                                           persona=personas[vtypes.ID(6)], pevent=pevent),
+            vtypes.ID(100): models.PastEventParticipant(id=vtypes.ID(6), persona_id=vtypes.ID(100), pevent_id=vtypes.ID(1), orga_status=const.PastOrgaKind.none, music_status=const.PastMusicKind.none,
+                                             persona=personas[vtypes.ID(100)], pevent=pevent),
         }
-        expectation[2].course_assignments = [models.PastCourseAssignment(id=1, persona_id=2, participant_id=1, pcourse_id=1, instructor_status=const.PastInstructorKind.kl, pcourse=pcourses[1])]
-        expectation[4].course_assignments = [models.PastCourseAssignment(id=2, persona_id=4, participant_id=3, pcourse_id=2, instructor_status=const.PastInstructorKind.none, pcourse=pcourses[2])]
-        expectation[5].course_assignments = [models.PastCourseAssignment(id=3, persona_id=5, participant_id=4, pcourse_id=2, instructor_status=const.PastInstructorKind.none, pcourse=pcourses[2])]
-        expectation[6].course_assignments = [models.PastCourseAssignment(id=4, persona_id=6, participant_id=5, pcourse_id=2, instructor_status=const.PastInstructorKind.none, pcourse=pcourses[2])]
-        expectation[100].course_assignments = [models.PastCourseAssignment(id=5, persona_id=100, participant_id=6, pcourse_id=2, instructor_status=const.PastInstructorKind.none, pcourse=pcourses[2])]
+        expectation[vtypes.ID(2)].course_assignments = [models.PastCourseAssignment(id=vtypes.ID(1), persona_id=vtypes.ID(2), participant_id=vtypes.ID(1), pcourse_id=vtypes.ID(1), instructor_status=const.PastInstructorKind.kl, pcourse=pcourses[1])]
+        expectation[vtypes.ID(4)].course_assignments = [models.PastCourseAssignment(id=vtypes.ID(2), persona_id=vtypes.ID(4), participant_id=vtypes.ID(3), pcourse_id=vtypes.ID(2), instructor_status=const.PastInstructorKind.none, pcourse=pcourses[2])]
+        expectation[vtypes.ID(5)].course_assignments = [models.PastCourseAssignment(id=vtypes.ID(3), persona_id=vtypes.ID(5), participant_id=vtypes.ID(4), pcourse_id=vtypes.ID(2), instructor_status=const.PastInstructorKind.none, pcourse=pcourses[2])]
+        expectation[vtypes.ID(6)].course_assignments = [models.PastCourseAssignment(id=vtypes.ID(4), persona_id=vtypes.ID(6), participant_id=vtypes.ID(5), pcourse_id=vtypes.ID(2), instructor_status=const.PastInstructorKind.none, pcourse=pcourses[2])]
+        expectation[vtypes.ID(100)].course_assignments = [models.PastCourseAssignment(id=vtypes.ID(5), persona_id=vtypes.ID(100), participant_id=vtypes.ID(6), pcourse_id=vtypes.ID(2), instructor_status=const.PastInstructorKind.none, pcourse=pcourses[2])]
         self.assertEqual((6, expectation), self.pastevent.list_event_participants(self.key, pevent_id=1))
 
         # unset music status, keeps the courses
         self.pastevent.set_participant(self.key, pevent_id=1, persona_id=5)
-        expectation[5].music_status = const.PastMusicKind.none
+        expectation[vtypes.ID(5)].music_status = const.PastMusicKind.none
         self.assertEqual((6, expectation), self.pastevent.list_event_participants(self.key, pevent_id=1))
 
         # removing someone who is no participant does nothing
@@ -169,20 +169,20 @@ class TestPastEventBackend(BackendTest):
 
         # remove participant also removes course assignment
         self.assertEqual(1, self.pastevent.remove_participant(self.key, pevent_id=1, persona_id=5))
-        tmp = expectation.pop(5)
+        tmp = expectation.pop(vtypes.ID(5))
         self.assertEqual((5, expectation), self.pastevent.list_event_participants(self.key, pevent_id=1))
 
         # add again as participant
         self.pastevent.set_participant(self.key, pevent_id=1, persona_id=5, orga_status=const.PastOrgaKind.al)
-        expectation[5] = tmp
-        expectation[5].id = 1002
-        expectation[5].orga_status = const.PastOrgaKind.al
-        expectation[5].course_assignments = []
+        expectation[vtypes.ID(5)] = tmp
+        expectation[vtypes.ID(5)].id = vtypes.ID(1002)
+        expectation[vtypes.ID(5)].orga_status = const.PastOrgaKind.al
+        expectation[vtypes.ID(5)].course_assignments = []
         self.assertEqual((6, expectation), self.pastevent.list_event_participants(self.key, pevent_id=1))
 
         # add to different course
         self.pastevent.set_course_assignments(self.key, pcourse_id=2, persona_id=5)
-        expectation[5].course_assignments.append(models.PastCourseAssignment(id=1001, persona_id=5, participant_id=1002, pcourse_id=2, pcourse=pcourses[2], instructor_status=const.PastInstructorKind.none))
+        expectation[vtypes.ID(5)].course_assignments.append(models.PastCourseAssignment(id=vtypes.ID(1001), persona_id=vtypes.ID(5), participant_id=vtypes.ID(1002), pcourse_id=vtypes.ID(2), pcourse=pcourses[vtypes.ID(2)], instructor_status=const.PastInstructorKind.none))
         self.assertEqual((6, expectation), self.pastevent.list_event_participants(self.key, pevent_id=1))
 
         # course assignment without participation not possible

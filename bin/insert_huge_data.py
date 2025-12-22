@@ -437,6 +437,7 @@ def past_event(context: Context) -> int:
             persona_id = persona(context)
             pastevent.set_participant(rs, ret, persona_id)
             pastevent.set_course_assignments(rs, acourse, persona_id)
+    return ret
 
 
 def mailinglist(context: Context) -> int:

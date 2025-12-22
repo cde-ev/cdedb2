@@ -2158,7 +2158,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Emilia Eventis")
         self.assertPresence("0,00 €", div='balance')
-        self.assertPresence("Geburtstagsfete (Orga)", div="past-events")
+        self.assertPresence("Geburtstagsfete Orga", div="past-events")
         self.assertCheckbox(True, "paper_expuls_checkbox")
         self.assertNonPresence("CdE-Mitglied", div="cde-membership")
         self.assertNonPresence("Probemitglied", div="cde-membership")

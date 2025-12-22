@@ -132,7 +132,7 @@ class PastEventParticipant(CdEDataclass):
     @property
     def status(self) -> list[const.PastOrgaKind | const.PastMusicKind]:
         """List of all stati which are not 'none'."""
-        ret = []
+        ret: list[const.PastOrgaKind | const.PastMusicKind] = []
         if self.orga_status:
             ret.append(self.orga_status)
         if self.music_status:
