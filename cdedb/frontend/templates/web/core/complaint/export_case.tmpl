@@ -9,6 +9,14 @@
     {% endtrans %}
 {% endblock %}
 
+{% block static_notifications %}
+    {% call util.notification('warning') %}
+        {% trans %}
+            Usually, some information from this export needs to be redacted before the export is made available.
+        {% endtrans %}
+    {% endcall %}
+{% endblock %}
+
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("core/complaint_index"), gettext("Cases")) }}
