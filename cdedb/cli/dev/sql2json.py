@@ -51,6 +51,7 @@ implicit_columns = {
     "cde.finance_log": {"id"},
     "cde.log": {"id"},
     "past_event.participants": {"id"},
+    "past_event.course_participants": {"id"},
     "past_event.log": {"id"},
     "event.course_segments": {"id"},
     "event.custom_query_filters": {"id"},

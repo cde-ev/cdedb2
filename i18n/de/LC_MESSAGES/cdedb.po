@@ -8183,6 +8183,9 @@ msgstr "Übergang in CdE-Bereich ohne Datenübernahme."
 msgid "Missing data for realm upgrade."
 msgstr "Fehlende Datengrundlage für Bereichswechsel."
 
+msgid "Participation already recorded with different status (f.e. orga), which will be overwritten."
+msgstr "Teilnahme bereits mit anderem Status (bspw. Orga) erfasst, der überschrieben wird."
+
 #: cdedb/frontend/cde/base.py:687 cdedb/frontend/cde/base.py:688
 msgid "Participation already recorded."
 msgstr "Teilnahme bereits erfasst."
@@ -13834,6 +13837,9 @@ msgstr "Der Teilnehmer wird aus diesem Kurs entfernt."
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:52
 msgid "Remove"
 msgstr "Entfernen"
+
+msgid "(and maybe others)"
+msgstr "(und vielleicht weitere)"
 
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:100
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:108

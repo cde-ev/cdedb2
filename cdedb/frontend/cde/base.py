@@ -679,13 +679,20 @@ class CdEBaseFrontend(AbstractUserFrontend):
                     if datum['resolution'].do_trial():
                         msg = n_("May not grant trial membership to member.")
                         problems.append(("doppelganger", ValueError(msg)))
-        if datum['doppelganger_id'] and pcourse_id:
-            _, participants = self.pasteventproxy.get_course_assignments(rs, pcourse_id)
-            if datum['doppelganger_id'] in participants:
-                warnings.append((
-                    "pcourse_id",
-                    KeyError(n_("Participation already recorded.")),
-                ))
+        if datum['doppelganger_id'] and pevent_id:
+            _, participants = self.pasteventproxy.list_event_participants(rs, pevent_id)
+            if participant := participants.get(datum['doppelganger_id']):
+                if participant.status:
+                    msg = n_(
+                        "Participation already recorded with different status"
+                        " (f.e. orga), which will be overwritten."
+                    )
+                    warnings.append(("pevent_id", KeyError(msg)))
+                if pcourse_id and any(
+                    c.pcourse_id == pcourse_id for c in participant.course_assignments
+                ):
+                    msg = n_("Participation already recorded.")
+                    warnings.append(("pcourse_id", KeyError(msg)))
 
         # ensure each ValidationWarning is considered as warning, even if it appears
         # during a call to check. Remove all ValidationWarnings from problems

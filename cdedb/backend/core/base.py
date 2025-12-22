@@ -2361,6 +2361,16 @@ class CoreBaseBackend(AbstractBackend):
             #
             # 2. Remove past event data.
             #
+            query = """
+                SELECT id FROM past_event.participants
+                WHERE persona_id = %(persona_id)s
+            """
+            participant_ids = {
+                e["id"] for e in self.query_all(rs, query, {"persona_id": persona_id})
+            }
+            self.sql_delete(
+                rs, "past_event.course_participants", participant_ids, "participant_id"
+            )
             self.sql_delete(rs, "past_event.participants", (persona_id,), "persona_id")
             #
             # 3. Clear changelog

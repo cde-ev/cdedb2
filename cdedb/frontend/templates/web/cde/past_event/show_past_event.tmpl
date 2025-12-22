@@ -51,6 +51,9 @@
                 {{ generic.print_persona(orga.persona) }}
                 {%- if not loop.last %}, {% endif %}
             {% endfor %}
+            {% if participants|length != total_participant_number %}
+                {% trans %}(and maybe others){% endtrans %}
+            {% endif %}
         </dd>
         {% endif %}
     </dl>
