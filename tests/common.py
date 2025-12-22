@@ -1447,8 +1447,7 @@ class FrontendTest(BackendTest):
     def _normalize_whitespace(self, s: str) -> str:
         return re.sub(r'\s+', ' ', s).strip()
 
-    def _get_content(self, selector: str, *, check_exists: bool = True, index: int = 0) -> str:
-        """Like `get_content` but accepts any css selector."""
+    def _get_raw_content(self, selector: str, *, check_exists: bool, index: int) -> str:
         nodes = self._get_nodes(selector, check_exists=check_exists)
         if not nodes and not check_exists:
             return ""
@@ -1456,7 +1455,11 @@ class FrontendTest(BackendTest):
             node = nodes[index]
         except IndexError:
             self.fail(f"Invalid index {index} for element {selector!r}. Found {len(nodes)} elements.")
-        return self._normalize_whitespace(node.text_content())
+        return node.text_content()
+
+    def _get_content(self, selector: str, *, check_exists: bool, index: int) -> str:
+        """Like `get_content` but accepts any css selector."""
+        return self._normalize_whitespace(self._get_raw_content(selector, check_exists=check_exists, index=index))
 
     def get_content(self, div: str = "content", *, check_exists: bool = True, index: int = 0) -> str:
         """Retrieve the normalized text content of the (nth) element with the given id."""
