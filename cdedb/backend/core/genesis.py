@@ -65,6 +65,11 @@ class CoreGenesisBackend(CoreBaseBackend):
             if self.verify_existence(rs, data['username']):
                 return None
             ret = self.sql_insert(rs, "core.genesis_cases", data)
+            self.logger.info(
+                f"Genesis request ({data['realm']}) for"
+                f" {data['given_names']} {data['family_name']} <{data['username']}>"
+                f" from IP {rs.request.remote_addr if rs.request else None}"
+            )
             self.core_log(
                 rs,
                 const.CoreLogCodes.genesis_request,
