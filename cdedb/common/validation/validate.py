@@ -58,7 +58,6 @@ import copy
 import csv
 import datetime
 import decimal
-import distutils.util
 import enum
 import functools
 import io
@@ -944,15 +943,17 @@ def _bool(val: Any, argname: Optional[str] = None, **kwargs: Any) -> bool:
     if val is None:
         raise ValidationSummary(TypeError(argname, n_("Must be a boolean.")))
 
+    if isinstance(val, str):
+        if val.lower() in {"y", "yes", "true", "on", "1", "j", "ja", "wahr"}:
+            return True
+        if val.lower() in {"n", "no", "false", "off", "0", "f", "nein", "falsch"}:
+            return False
     try:
-        return bool(distutils.util.strtobool(val))
-    except (AttributeError, ValueError):
-        try:
-            return bool(val)
-        except (ValueError, TypeError) as e:
-            raise ValidationSummary(
-                ValueError(argname, n_("Invalid input for boolean."))
-            ) from e
+        return bool(val)
+    except (ValueError, TypeError) as e:
+        raise ValidationSummary(
+            ValueError(argname, n_("Invalid input for boolean."))
+        ) from e
 
 
 @_add_typed_validator  # TODO use Union of Literal
