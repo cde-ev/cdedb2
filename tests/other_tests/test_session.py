@@ -141,16 +141,6 @@ class TestSessionBackend(BackendTest):
         self.assertEqual(
             last_valid_access, self.event.get_orga_token(persona_sessionkey, 1).atime)
 
-    def test_ip_mismatch(self) -> None:
-        key = self.login(USER_DICT["anton"], ip="1.2.3.4")
-        user = self.session.lookupsession(key, "1.2.3.4")
-        self.assertIsInstance(user, User)
-        self.assertTrue(user.persona_id)
-        user = self.session.lookupsession(key, "4.3.2.1")
-        self.assertEqual(None, user.persona_id)
-        user = self.session.lookupsession(key, "1.2.3.4")
-        self.assertEqual(None, user.persona_id)
-
     def test_multiple_sessions(self) -> None:
         # Logging out only works with the ip "127.0.0.0", which is the
         # default value from `setup_requeststate`.

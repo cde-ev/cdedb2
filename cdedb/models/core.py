@@ -256,7 +256,7 @@ class Persona(PersonaName):
         for field in dataclasses.fields(self):
             if PersonaFlag.mandatory_true_flag.in_field(field):
                 if not getattr(self, field.name):
-                    raise RuntimeError
+                    raise RuntimeError("User misses a mandatory realm.")
 
     @classmethod
     @functools.cache

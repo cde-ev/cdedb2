@@ -2,9 +2,7 @@
 import cProfile
 import sys
 
-from cdedb.backend.event import EventBackend
 from cdedb.frontend.common import reconnoitre_ambience, setup_translations
-from cdedb.frontend.event import EventFrontend
 from cdedb.script import Script
 
 event_id = int(sys.argv[1])
@@ -14,8 +12,8 @@ persona_id = int(sys.argv[2])
 script = Script(dbuser="cdb_member", persona_id=persona_id)
 user_rs = script.rs()
 
-event_frontend: EventFrontend = script.make_frontend(realm="event", proxy=False)
-event_backend: EventBackend = script.make_backend(realm="event", proxy=False)
+event_frontend = script.make_event_frontend(proxy=False)
+event_backend = script.make_event_backend(proxy=False)
 
 
 class Mock:

@@ -16,7 +16,6 @@ import cdedb.models.ml as models_ml
 from cdedb.backend.common import (
     Silencer,
     access,
-    affirm_set_validation as affirm_set,
     affirm_validation as affirm,
 )
 from cdedb.backend.event.base import EventBaseBackend
@@ -305,7 +304,7 @@ class EventBackend(
         blockers = self.delete_event_blockers(rs, event_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set(str, cascade)
+        cascade = affirm(set[str], cascade)
         cascade &= blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(

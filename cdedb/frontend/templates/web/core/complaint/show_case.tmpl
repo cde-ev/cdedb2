@@ -131,7 +131,7 @@
                             {% endif %}
                             {% if involved_id in ambience['case'].informed_involved %}
                                 <small class="text-muted">
-                                    {{ gettext("(is informed)") }}
+                                    ({% trans %}is informed{% endtrans %})
                                 </small>
                             {% endif %}
                             <div class="list-button-float hide-hover">

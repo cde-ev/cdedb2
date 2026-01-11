@@ -44,6 +44,7 @@ class LodgementWish:
     :ivar negated: If True, the edge is an anti-wish, i.e. the wishing person
         wished to be *not* assigned to the same lodgement as the wished person.
     """
+
     wishing: int
     wished: int
     present_together: bool
@@ -51,15 +52,15 @@ class LodgementWish:
     negated: bool = False
 
 
-def detect_lodgement_wishes(registrations: CdEDBObjectMap,
-                            personas: CdEDBObjectMap,
-                            event: models.Event,
-                            restrict_part_id: Optional[int],
-                            restrict_registration_id: Optional[int] = None,
-                            check_edges: bool = True,
-                            ) \
-        -> tuple[list[LodgementWish], list[Notification]]:
-    """ Detect lodgement wish graph edges from all registrations' raw rooming
+def detect_lodgement_wishes(
+    registrations: CdEDBObjectMap,
+    personas: CdEDBObjectMap,
+    event: models.Event,
+    restrict_part_id: Optional[int],
+    restrict_registration_id: Optional[int] = None,
+    check_edges: bool = True,
+) -> tuple[list[LodgementWish], list[Notification]]:
+    """Detect lodgement wish graph edges from all registrations' raw rooming
     preferences text.
 
     This function searches the rooming preferences field of all registrations
@@ -97,8 +98,7 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
     """
     # Create a list of regex patterns, referencing the other personas, to search
     lookup_map: list[tuple[Pattern[str], int]] = [
-        (make_identifying_regex(personas[registration['persona_id']]),
-         registration_id)
+        (make_identifying_regex(personas[registration['persona_id']]), registration_id)
         for registration_id, registration in registrations.items()
     ]
     if event.lodge_field:
@@ -113,7 +113,8 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
     if restrict_registration_id:
         if restrict_registration_id in registrations:
             registrations_to_check = [
-                (restrict_registration_id, registrations[restrict_registration_id])]
+                (restrict_registration_id, registrations[restrict_registration_id])
+            ]
         else:
             return [], []
 
@@ -138,31 +139,38 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
                 ambiguous_match_ids = [
                     reg_id
                     for other_span, reg_id in match_positions
-                    if (match.start() < other_span[1]
-                        and other_span[0] < match.end())
+                    if (match.start() < other_span[1] and other_span[0] < match.end())
                 ]
                 if ambiguous_match_ids:
                     problems.append((
                         'warning',
-                        n_("Wish \"%(wish_text)s\" of %(from_name)s is "
-                           "ambiguous: It may refer to %(other_name)s as well "
-                           "as %(more_names)s."),
-                        {'wish_text': match.group(),
-                         'from_name': make_persona_name(
-                             personas[registration['persona_id']]),
-                         'other_name': make_persona_name(
-                             personas[other_registration['persona_id']]),
-                         'more_names': ", ".join(
-                             make_persona_name(personas[registrations[reg_id]
-                                                            ['persona_id']])
-                             for reg_id in ambiguous_match_ids)}))
+                        n_(
+                            "Wish \"%(wish_text)s\" of %(from_name)s is "
+                            "ambiguous: It may refer to %(other_name)s as well "
+                            "as %(more_names)s."
+                        ),
+                        {
+                            'wish_text': match.group(),
+                            'from_name': make_persona_name(
+                                personas[registration['persona_id']]
+                            ),
+                            'other_name': make_persona_name(
+                                personas[other_registration['persona_id']]
+                            ),
+                            'more_names': ", ".join(
+                                make_persona_name(
+                                    personas[registrations[reg_id]['persona_id']]
+                                )
+                                for reg_id in ambiguous_match_ids
+                            ),
+                        },
+                    ))
                 match_positions.append((match.span(), other_registration_id))
 
                 # TODO detect negated edges
                 # Check if wish graph edge is already present in the reverse
                 # direction
-                reverse_edge = wishes.get((other_registration_id,
-                                           registration_id))
+                reverse_edge = wishes.get((other_registration_id, registration_id))
                 if reverse_edge:
                     reverse_edge.bidirectional = True
                     continue
@@ -170,48 +178,65 @@ def detect_lodgement_wishes(registrations: CdEDBObjectMap,
                     # if not, create the new wish object
                     # but first check, if the wish is allowed (considering
                     # genders) and
-                    if not _combination_allowed(registration, other_registration,
-                                                personas):
+                    if not _combination_allowed(
+                        registration, other_registration, personas
+                    ):
                         problems.append((
                             'info',
-                            n_("Suppressing unpermitted wish edge from "
-                               "%(from_name)s to %(to_name)s."),
-                            {'from_name': make_persona_name(
-                                personas[registration['persona_id']]),
-                             'to_name': make_persona_name(
-                                personas[other_registration['persona_id']])}))
+                            n_(
+                                "Suppressing unpermitted wish edge from "
+                                "%(from_name)s to %(to_name)s."
+                            ),
+                            {
+                                'from_name': make_persona_name(
+                                    personas[registration['persona_id']]
+                                ),
+                                'to_name': make_persona_name(
+                                    personas[other_registration['persona_id']]
+                                ),
+                            },
+                        ))
                         continue
 
                     # Skip whishes of people that don't (potentially) meet at
                     # the event
-                    common_active_parts = (
-                        _parts_with_status(registration, ACTIVE_STATI)
-                        & _parts_with_status(other_registration, ACTIVE_STATI))
+                    common_active_parts = _parts_with_status(
+                        registration, ACTIVE_STATI
+                    ) & _parts_with_status(other_registration, ACTIVE_STATI)
+                    msg = n_(
+                        "Suppressing wish edge from %(from_name)s to %(to_name)s since"
+                        " they will not be present together (even when considering the"
+                        " waitlist)."
+                    )
                     if not common_active_parts or (
-                            restrict_part_id
-                            and restrict_part_id not in common_active_parts):
+                        restrict_part_id and restrict_part_id not in common_active_parts
+                    ):
                         problems.append((
                             'info',
-                            n_("Suppressing wish edge from %(from_name)s to "
-                               "%(to_name)s since they will not be present "
-                               "together (even when considering the "
-                               "waitlist)."),
-                            {'from_name': make_persona_name(
-                                personas[registration['persona_id']]),
-                             'to_name': make_persona_name(
-                                personas[other_registration['persona_id']])}))
+                            msg,
+                            {
+                                'from_name': make_persona_name(
+                                    personas[registration['persona_id']]
+                                ),
+                                'to_name': make_persona_name(
+                                    personas[other_registration['persona_id']]
+                                ),
+                            },
+                        ))
                         continue
 
-                common_presence_parts = (
-                    _parts_with_status(registration, PRESENT_STATI)
-                    & _parts_with_status(other_registration, PRESENT_STATI))
-                wishes[(registration_id, other_registration_id)] = \
-                    LodgementWish(
-                        registration_id,
-                        other_registration_id,
-                        (bool(common_presence_parts) if restrict_part_id is None
-                         else restrict_part_id in common_presence_parts),
-                    )
+                common_presence_parts = _parts_with_status(
+                    registration, PRESENT_STATI
+                ) & _parts_with_status(other_registration, PRESENT_STATI)
+                wishes[(registration_id, other_registration_id)] = LodgementWish(
+                    registration_id,
+                    other_registration_id,
+                    (
+                        bool(common_presence_parts)
+                        if restrict_part_id is None
+                        else restrict_part_id in common_presence_parts
+                    ),
+                )
 
     return list(wishes.values()), problems
 
@@ -246,14 +271,14 @@ def make_identifying_regex(persona: CdEDBObject) -> Pattern[str]:
     return re.compile('|'.join(rf"\b{p.strip()}\b" for p in patterns), flags=re.I)
 
 
-PRESENT_STATI = {status for status in RegistrationPartStati
-                 if status.is_present()}
+PRESENT_STATI = {status for status in RegistrationPartStati if status.is_present()}
 ACTIVE_STATI = PRESENT_STATI | {RegistrationPartStati.waitlist}
 
 
-def _parts_with_status(registration: CdEDBObject,
-                       stati: set[RegistrationPartStati]) -> set[int]:
-    """ Return a set of event part ids in which the given registration/
+def _parts_with_status(
+    registration: CdEDBObject, stati: set[RegistrationPartStati]
+) -> set[int]:
+    """Return a set of event part ids in which the given registration/
     participant has one of the given stati"""
     return {
         part_id
@@ -268,14 +293,15 @@ def _sort_parts(part_ids: set[int], event: models.Event) -> list[int]:
     return [part.id for part in sorted_parts if part.id in part_ids]
 
 
-def _combination_allowed(registration1: CdEDBObject, registration2: CdEDBObject,
-                         personas: CdEDBObjectMap) -> bool:
-    """ Check if two participants are allowed to be assigned to the same
+def _combination_allowed(
+    registration1: CdEDBObject, registration2: CdEDBObject, personas: CdEDBObjectMap
+) -> bool:
+    """Check if two participants are allowed to be assigned to the same
     lodgement based on their gender and gender preferences."""
-    return (_gender_equality(personas[registration1['persona_id']]['gender'],
-                             personas[registration2['persona_id']]['gender'])
-            or (registration1['mixed_lodging']
-                and registration2['mixed_lodging']))
+    return _gender_equality(
+        personas[registration1['persona_id']]['gender'],
+        personas[registration2['persona_id']]['gender'],
+    ) or (registration1['mixed_lodging'] and registration2['mixed_lodging'])
 
 
 def _gender_equality(first: Genders, second: Genders) -> bool:
@@ -283,24 +309,29 @@ def _gender_equality(first: Genders, second: Genders) -> bool:
     Partial equality relation for Genders: For simplicity, we consider
     `not_specified` and `other` to be equivalent to any Gender.
     """
-    return (first == second
-            or first in {Genders.not_specified, Genders.other}
-            or second in {Genders.not_specified, Genders.other})
+    return (
+        first == second
+        or first in {Genders.not_specified, Genders.other}
+        or second in {Genders.not_specified, Genders.other}
+    )
 
 
 def create_lodgement_wishes_graph(
-        rs: RequestState,
-        registrations: CdEDBObjectMap, wishes: list[LodgementWish],
-        lodgements: models.CdEDataclassMap[models.Lodgement],
-        lodgement_groups: models.CdEDataclassMap[models.LodgementGroup],
-        event: models.Event,
-        personas: CdEDBObjectMap,
-        camping_mat_field_names: Mapping[int, Optional[str]],
-        filter_part_id: Optional[int], show_all: bool,
-        cluster_part_id: Optional[int],
-        cluster_by_lodgement: bool,
-        cluster_by_lodgement_group: bool,
-        show_full_assigned_edges: bool) -> graphviz.Digraph:
+    rs: RequestState,
+    registrations: CdEDBObjectMap,
+    wishes: list[LodgementWish],
+    lodgements: models.CdEDataclassMap[models.Lodgement],
+    lodgement_groups: models.CdEDataclassMap[models.LodgementGroup],
+    event: models.Event,
+    personas: CdEDBObjectMap,
+    camping_mat_field_names: Mapping[int, Optional[str]],
+    filter_part_id: Optional[int],
+    show_all: bool,
+    cluster_part_id: Optional[int],
+    cluster_by_lodgement: bool,
+    cluster_by_lodgement_group: bool,
+    show_full_assigned_edges: bool,
+) -> graphviz.Digraph:
     """
     Plot the Lodgement Wishes Graph of the given event.
 
@@ -341,22 +372,39 @@ def create_lodgement_wishes_graph(
         `.pipe()` on the graph object which will run the graphviz program as a
         subprocess and return the resulting graphic file.
     """
-    if ((cluster_by_lodgement_group or cluster_by_lodgement
-            or not show_full_assigned_edges) and not cluster_part_id):
-        raise RuntimeError("Clusters can only be displayed and full assigned edges can"
-                           " only be hidden if restricted to one part.")
+    if (
+        cluster_by_lodgement_group
+        or cluster_by_lodgement
+        or not show_full_assigned_edges
+    ) and not cluster_part_id:
+        raise RuntimeError(
+            "Clusters can only be displayed and full assigned edges can"
+            " only be hidden if restricted to one part."
+        )
 
     graph = graphviz.Digraph(
-        engine=('fdp' if cluster_by_lodgement_group or cluster_by_lodgement
-                else 'neato'),
-        graph_attr={'overlap': "false", 'splines': 'line', 'maxiter': "8000",
-                    'sep': "+6", 'tooltip': " ", 'scale': "5",
-                    'fontsize': "10pt",
-                    'fontname': 'Helvetica Neue,Helvetica,Arial,sans-serif'},
+        engine=(
+            'fdp' if cluster_by_lodgement_group or cluster_by_lodgement else 'neato'
+        ),
+        graph_attr={
+            'overlap': "false",
+            'splines': 'line',
+            'maxiter': "8000",
+            'sep': "+6",
+            'tooltip': " ",
+            'scale': "5",
+            'fontsize': "10pt",
+            'fontname': 'Helvetica Neue,Helvetica,Arial,sans-serif',
+        },
         edge_attr={'arrowsize': "0.6"},
-        node_attr={'style': "filled", 'fontsize': "7pt",
-                   'fontname': 'Helvetica Neue,Helvetica,Arial,sans-serif',
-                   'margin': "0.02,0.02", 'height': "0.25"})
+        node_attr={
+            'style': "filled",
+            'fontsize': "7pt",
+            'fontname': 'Helvetica Neue,Helvetica,Arial,sans-serif',
+            'margin': "0.02,0.02",
+            'height': "0.25",
+        },
+    )
     # Only the 'fdp' layout algorithm supports subgraphs, but 'neato' gives
     # slightly better layout results. Thus, we select the layout algorithm
     # dynamically based on the `cluster_by_lodgement_in_part` parameter.
@@ -373,15 +421,20 @@ def create_lodgement_wishes_graph(
         for lodgement_id, lodgement in lodgements.items():
             lodgement_clusters[lodgement_id] = graphviz.Digraph(
                 name=f'cluster_lodgement_{lodgement_id}',
-                graph_attr={'label': _make_lodgement_label(lodgement),
-                            'URL': cdedburl(rs, 'event/show_lodgement',
-                                            {'lodgement_id': lodgement_id})})
+                graph_attr={
+                    'label': _make_lodgement_label(lodgement),
+                    'URL': cdedburl(
+                        rs, 'event/show_lodgement', {'lodgement_id': lodgement_id}
+                    ),
+                },
+            )
     lodgement_group_clusters: dict[int, graphviz.Digraph] = {}
     if cluster_by_lodgement_group:
         for lodgement_group_id, lodgement_group in lodgement_groups.items():
             lodgement_group_clusters[lodgement_group_id] = graphviz.Digraph(
                 name=f'cluster_lodgement_group_{lodgement_group_id}',
-                graph_attr={'label': lodgement_group.title})
+                graph_attr={'label': lodgement_group.title},
+            )
 
     # Add registrations as nodes to graph (or correct lodgement cluster)
     for registration_id, registration in registrations.items():
@@ -391,16 +444,22 @@ def create_lodgement_wishes_graph(
         all_active_parts = _parts_with_status(registration, ACTIVE_STATI)
         present_parts = _parts_with_status(registration, PRESENT_STATI)
         # Only consider (potential) participants of selected part
-        if (not all_active_parts
-                or filter_part_id and filter_part_id not in all_active_parts):
+        if (
+            not all_active_parts
+            or filter_part_id
+            and filter_part_id not in all_active_parts
+        ):
             # This check is actually redundant as long as show_all==False,
             # since analyze_wishes() also considers the
             # part_id in edge.waitlist_together.
             continue
         # Select correct subgraph
         subgraph = graph
-        if lodgement_id := registration['parts'].get(cluster_part_id, {}).get(
-                'lodgement_id'):
+        if (
+            lodgement_id := registration['parts']
+            .get(cluster_part_id, {})
+            .get('lodgement_id')
+        ):
             if cluster_by_lodgement:
                 subgraph = lodgement_clusters[lodgement_id]
             elif cluster_by_lodgement_group:
@@ -408,24 +467,30 @@ def create_lodgement_wishes_graph(
                     subgraph = lodgement_group_clusters[lodgement_group_id]
         # Create node
         is_present = (
-            filter_part_id in present_parts if filter_part_id
-            else bool(present_parts))
+            filter_part_id in present_parts if filter_part_id else bool(present_parts)
+        )
         if event.lodge_field:
             wish_field_name = event.lodge_field.field_name
         else:
             return graph
         subgraph.node(
             str(registration['id']),
-            _make_node_label(rs, registration, personas, event,
-                             camping_mat_field_names),
+            _make_node_label(
+                rs, registration, personas, event, camping_mat_field_names
+            ),
             tooltip=_make_node_tooltip(rs, registration, personas, event),
             fillcolor=_make_node_color(registration, personas, event),
-            color=("black" if registration['fields'].get(wish_field_name)
-                   else _make_node_color(registration, personas, event)),
+            color=(
+                "black"
+                if registration['fields'].get(wish_field_name)
+                else _make_node_color(registration, personas, event)
+            ),
             style='filled' if is_present else 'dashed',
             penwidth="1" if is_present else "4",
-            URL=cdedburl(rs, 'event/show_registration',
-                         {'registration_id': registration_id}))
+            URL=cdedburl(
+                rs, 'event/show_registration', {'registration_id': registration_id}
+            ),
+        )
 
     # Add lodgement and lodgement group clusters as subgraphs
     if cluster_by_lodgement and cluster_by_lodgement_group:
@@ -445,26 +510,35 @@ def create_lodgement_wishes_graph(
     # Add wishes as edges
     for wish in wishes:
         # hide the edge if both participants are already assigned to a lodgement
-        if (not show_full_assigned_edges
-                and registrations[wish.wishing]["parts"][filter_part_id]["lodgement_id"]
-                and registrations[wish.wished]["parts"][filter_part_id][
-                        "lodgement_id"]):
+        if (
+            not show_full_assigned_edges
+            and registrations[wish.wishing]["parts"][filter_part_id]["lodgement_id"]
+            and registrations[wish.wished]["parts"][filter_part_id]["lodgement_id"]
+        ):
             continue
-        graph.edge(str(wish.wishing), str(wish.wished),
-                   style='solid' if wish.present_together else 'dashed',
-                   dir='both' if wish.bidirectional else 'forward',
-                   weight=("1" if not wish.present_together or wish.negated
-                           else ("9" if wish.bidirectional else "3")),
-                   penwidth="1.5" if wish.bidirectional else "0.5",
-                   tooltip=_make_edge_tooltip(wish, registrations, personas),
-                   color="black" if wish.present_together else "grey")
+        graph.edge(
+            str(wish.wishing),
+            str(wish.wished),
+            style='solid' if wish.present_together else 'dashed',
+            dir='both' if wish.bidirectional else 'forward',
+            weight=(
+                "1"
+                if not wish.present_together or wish.negated
+                else ("9" if wish.bidirectional else "3")
+            ),
+            penwidth="1.5" if wish.bidirectional else "0.5",
+            tooltip=_make_edge_tooltip(wish, registrations, personas),
+            color="black" if wish.present_together else "grey",
+        )
 
     return graph
 
 
 def _make_lodgement_label(lodgement: models.Lodgement) -> str:
-    return (f"{lodgement.title} ({lodgement.regular_capacity}"
-            f" + {lodgement.camping_mat_capacity})")
+    return (
+        f"{lodgement.title} ({lodgement.regular_capacity}"
+        f" + {lodgement.camping_mat_capacity})"
+    )
 
 
 def _camping_mat_icon(may_camp: bool, is_camping: bool) -> str:
@@ -480,19 +554,27 @@ def _camping_mat_icon(may_camp: bool, is_camping: bool) -> str:
     return ""
 
 
-def _make_node_label(rs: RequestState, registration: CdEDBObject,
-                     personas: CdEDBObjectMap, event: models.Event,
-                     camping_mat_field_names: Mapping[int, Optional[str]]) -> str:
+def _make_node_label(
+    rs: RequestState,
+    registration: CdEDBObject,
+    personas: CdEDBObjectMap,
+    event: models.Event,
+    camping_mat_field_names: Mapping[int, Optional[str]],
+) -> str:
     presence_parts = _parts_with_status(registration, PRESENT_STATI)
-    icons = {p: _camping_mat_icon(
-        registration['fields'].get(camping_mat_field_names[p]),
-        registration['parts'][p]['is_camping_mat'])
-        for p in presence_parts}
+    icons = {
+        p: _camping_mat_icon(
+            registration['fields'].get(camping_mat_field_names[p]),
+            registration['parts'][p]['is_camping_mat'],
+        )
+        for p in presence_parts
+    }
     parts = ""
     if len(event.parts) > 1:
         parts = ', '.join(
             f"{event.parts[p].shortname}{icons[p]}"
-            for p in _sort_parts(presence_parts, event))
+            for p in _sort_parts(presence_parts, event)
+        )
     elif p := _parts_with_status(registration, {RegistrationPartStati.guest}):
         parts = f"{rs.gettext(str(RegistrationPartStati.guest))}{icons[p.pop()]}"
     persona = personas[registration['persona_id']]
@@ -500,31 +582,43 @@ def _make_node_label(rs: RequestState, registration: CdEDBObject,
     return f"{make_persona_name(persona)}{linebreak}{parts}"
 
 
-def _make_node_tooltip(rs: RequestState, registration: CdEDBObject,
-                       personas: CdEDBObjectMap, event: models.Event) -> str:
+def _make_node_tooltip(
+    rs: RequestState,
+    registration: CdEDBObject,
+    personas: CdEDBObjectMap,
+    event: models.Event,
+) -> str:
     parts_string = ""
     if len(event.parts) > 1:
         parts = ["\n"]
         participant_parts = _parts_with_status(
-            registration, {RegistrationPartStati.participant})
-        parts.append(', '.join(event.parts[p].title
-                               for p in _sort_parts(participant_parts, event)))
-        guest_parts = _parts_with_status(
-            registration, {RegistrationPartStati.guest})
+            registration, {RegistrationPartStati.participant}
+        )
+        parts.append(
+            ', '.join(
+                event.parts[p].title for p in _sort_parts(participant_parts, event)
+            )
+        )
+        guest_parts = _parts_with_status(registration, {RegistrationPartStati.guest})
         if guest_parts:
             if participant_parts:
                 parts.append("  |  ")
             parts.append(rs.gettext(str(RegistrationPartStati.guest)) + ": ")
-            parts.append(', '.join(event.parts[p].title
-                                   for p in _sort_parts(guest_parts, event)))
+            parts.append(
+                ', '.join(event.parts[p].title for p in _sort_parts(guest_parts, event))
+            )
         waitlist_parts = _parts_with_status(
-            registration, {RegistrationPartStati.waitlist})
+            registration, {RegistrationPartStati.waitlist}
+        )
         if waitlist_parts:
             if participant_parts or guest_parts:
                 parts.append("  |  ")
             parts.append(rs.gettext(str(RegistrationPartStati.waitlist)) + ": ")
-            parts.append(', '.join(event.parts[p].title
-                                   for p in _sort_parts(waitlist_parts, event)))
+            parts.append(
+                ', '.join(
+                    event.parts[p].title for p in _sort_parts(waitlist_parts, event)
+                )
+            )
         parts_string = "".join(parts)
     elif _parts_with_status(registration, {RegistrationPartStati.guest}):
         parts_string = "\n" + rs.gettext(str(RegistrationPartStati.guest))
@@ -544,19 +638,19 @@ def _make_node_tooltip(rs: RequestState, registration: CdEDBObject,
     )
 
 
-def _make_edge_tooltip(edge: LodgementWish, registrations: CdEDBObjectMap,
-                       personas: CdEDBObjectMap) -> str:
+def _make_edge_tooltip(
+    edge: LodgementWish, registrations: CdEDBObjectMap, personas: CdEDBObjectMap
+) -> str:
     return "{name1} {sign} {name2}".format(
-        name1=make_persona_name(
-            personas[registrations[edge.wishing]['persona_id']]),
-        name2=make_persona_name(
-            personas[registrations[edge.wished]['persona_id']]),
+        name1=make_persona_name(personas[registrations[edge.wishing]['persona_id']]),
+        name2=make_persona_name(personas[registrations[edge.wished]['persona_id']]),
         sign="↔" if edge.bidirectional else "→",
     )
 
 
-def _make_node_color(registration: CdEDBObject, personas: CdEDBObjectMap,
-                     event: models.Event) -> str:
+def _make_node_color(
+    registration: CdEDBObject, personas: CdEDBObjectMap, event: models.Event
+) -> str:
     # This color code is documented for the user in the
     # `web/event/ldogement_wishes_graph_form.tmpl` template.
     age = _get_age(personas[registration['persona_id']], event)

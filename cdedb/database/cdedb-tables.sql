@@ -839,8 +839,7 @@ CREATE TABLE past_event.events (
         participant_info        varchar
 );
 CREATE INDEX past_events_institution_idx ON past_event.events(institution);
-GRANT SELECT (id, title, shortname, tempus) ON past_event.events TO cdb_persona;
-GRANT SELECT ON past_event.events to cdb_member;
+GRANT SELECT ON past_event.events TO cdb_persona;
 GRANT UPDATE, DELETE, INSERT ON past_event.events TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.events_id_seq TO cdb_admin;
 
@@ -852,8 +851,8 @@ CREATE TABLE past_event.courses (
         description             varchar
 );
 CREATE INDEX courses_pevent_id_idx ON past_event.courses(pevent_id);
-GRANT SELECT, INSERT, UPDATE ON past_event.courses TO cdb_persona;
-GRANT DELETE ON past_event.courses TO cdb_admin;
+GRANT SELECT ON past_event.courses TO cdb_persona;
+GRANT UPDATE, DELETE, INSERT ON past_event.courses TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.courses_id_seq TO cdb_persona;
 
 -- create previously impossible reference
@@ -1577,6 +1576,7 @@ CREATE TABLE assembly.log (
         code                    integer NOT NULL,
         submitted_by            integer REFERENCES core.personas(id),
         assembly_id             integer REFERENCES assembly.assemblies(id),
+        ballot_id               integer REFERENCES assembly.ballots(id) ON DELETE SET NULL,
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
         change_note             varchar

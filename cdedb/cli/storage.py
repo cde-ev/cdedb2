@@ -117,6 +117,7 @@ def populate_storage(conf: Config) -> None:
         "ballot_result.json",  # assembly: example result for a ballot
         "rechen.pdf",  # assembly: sample attachment
         "kassen.pdf",  # assembly: sample attachment
+        "case_1.txt",  # complaint: sample case export
     )
 
     testfile_dir = repo_path / "tests" / "ancillary_files"

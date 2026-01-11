@@ -16,12 +16,11 @@ from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.common import (
     AbstractBackend,
     access,
-    affirm_array_validation as affirm_array,
-    affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     internal,
     singularize,
 )
+from cdedb.backend.complaint import ComplaintBackend
 from cdedb.backend.event import EventBackend
 from cdedb.common import (
     CdEDBLog,
@@ -63,10 +62,14 @@ class MlBackend(AbstractBackend):
 
     def __init__(self) -> None:
         super().__init__()
+        self.complaint = make_proxy(ComplaintBackend(), internal=True)
         self.event = make_proxy(EventBackend(), internal=True)
         self.assembly = make_proxy(AssemblyBackend(), internal=True)
         self.backends = BackendContainer(
-            core=self.core, event=self.event, assembly=self.assembly
+            core=self.core,
+            complaint=self.complaint,
+            event=self.event,
+            assembly=self.assembly,
         )
         self.subman = subman.SubscriptionManager(
             unwritten_states=(const.SubscriptionState.none,)
@@ -82,7 +85,7 @@ class MlBackend(AbstractBackend):
         rs: RequestState,
         mailinglist_ids: Collection[int],
     ) -> dict[int, MLType]:
-        mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids)
+        mailinglist_ids = affirm(set[vtypes.ID], mailinglist_ids)
         data = self.sql_select(
             rs, Mailinglist.database_table, ["id", "ml_type"], mailinglist_ids
         )
@@ -239,7 +242,7 @@ class MlBackend(AbstractBackend):
             allowed_pols
         """
         affirm(get_ml_type(ml.ml_type), ml)
-        affirm_set(SubscriptionPolicy, allowed_pols)
+        allowed_pols = affirm(set[SubscriptionPolicy], allowed_pols)
 
         # persona_ids are validated inside get_personas
         persona_ids = tuple(e['personas.id'] for e in data)
@@ -263,7 +266,7 @@ class MlBackend(AbstractBackend):
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> dict[int, set[int]]:
         """List mailing lists moderated by specific personas."""
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
         data = self.sql_select(
             rs,
             "ml.moderators",
@@ -271,7 +274,7 @@ class MlBackend(AbstractBackend):
             persona_ids,
             entity_key="persona_id",
         )
-        ret = {}
+        ret: dict[int, set[int]] = {}
         for anid in persona_ids:
             ret[anid] = {x['mailinglist_id'] for x in data if x['persona_id'] == anid}
         return ret
@@ -444,7 +447,7 @@ class MlBackend(AbstractBackend):
         * moderators,
         * whitelist.
         """
-        mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids)
+        mailinglist_ids = affirm(set[vtypes.ID], mailinglist_ids)
         with Atomizer(rs):
             ml_types = self.get_ml_types(rs, mailinglist_ids)
 
@@ -472,7 +475,7 @@ class MlBackend(AbstractBackend):
 
         :param on_creation: On creation, privileges are checked by the caller"""
         mailinglist_id = affirm(vtypes.ID, mailinglist_id)
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
 
         if not self.may_manage(rs, mailinglist_id) and not on_creation:
             raise PrivilegeError(n_("Not privileged."))
@@ -915,7 +918,7 @@ class MlBackend(AbstractBackend):
         blockers = self.delete_mailinglist_blockers(rs, mailinglist_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set(str, cascade)
+        cascade = affirm(set[str], cascade)
         cascade &= blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(
@@ -1041,7 +1044,7 @@ class MlBackend(AbstractBackend):
 
         :returns: Number of affected rows.
         """
-        data = affirm_array(vtypes.SubscriptionIdentifier, data)
+        data = affirm(list[vtypes.SubscriptionIdentifier], data)
 
         with Atomizer(rs):
             if not all(
@@ -1234,10 +1237,10 @@ class MlBackend(AbstractBackend):
             given mailinglists.
             If states were given, limit this to personas with those states.
         """
-        mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids)
+        mailinglist_ids = affirm(set[vtypes.ID], mailinglist_ids)
         states = states or set()
         # We are more restrictive here than in the signature
-        states = affirm_array(vtypes.DatabaseSubscriptionState, states)
+        states = affirm(list[vtypes.DatabaseSubscriptionState], states)
 
         if not all(self.may_manage(rs, ml_id) for ml_id in mailinglist_ids):
             raise PrivilegeError(n_("Not privileged."))
@@ -1374,7 +1377,7 @@ class MlBackend(AbstractBackend):
         persona_id = affirm(vtypes.ID, persona_id)
         states = states or set()
         # We are more restrictive here than in the signature
-        states = affirm_set(vtypes.DatabaseSubscriptionState, states)
+        states = affirm(set[vtypes.DatabaseSubscriptionState], states)
         if not (
             self.is_admin(rs)
             or self.core.is_relative_admin(rs, persona_id)
@@ -1463,7 +1466,7 @@ class MlBackend(AbstractBackend):
                 # Default to all subscribers.
                 persona_ids = set(subscribers)
             else:
-                persona_ids = affirm_set(vtypes.ID, persona_ids)
+                persona_ids = affirm(set[vtypes.ID], persona_ids)
                 # Limit to actual subscribers.
                 persona_ids = {p_id for p_id in persona_ids if p_id in subscribers}
 
@@ -1630,7 +1633,7 @@ class MlBackend(AbstractBackend):
             if not self.is_admin(rs):
                 raise PrivilegeError("Must be admin.")
             mailinglist_ids = self.list_mailinglists(rs)
-        mailinglist_ids = affirm_set(vtypes.ID, mailinglist_ids)
+        mailinglist_ids = affirm(set[vtypes.ID], mailinglist_ids)
 
         # States we may not touch.
         protected_states = (
@@ -1653,8 +1656,8 @@ class MlBackend(AbstractBackend):
             # Only run write_subscription_states if the mailinglist is active and has
             # periodic cleanup enabled.
             mailinglist_ids = {
-                ml_id
-                for ml_id, ml in ml_data.items()
+                ml.id
+                for ml in ml_data.values()
                 if ml.periodic_cleanup(rs) and ml.is_active
             }
 

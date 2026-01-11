@@ -15,6 +15,7 @@ extend these statistics to cover multiple tracks and or parts.
 
 Additionally there are a number of small helper functions used in the enum methods.
 """
+
 import abc
 import datetime
 import enum
@@ -39,8 +40,12 @@ RPS = const.RegistrationPartStati
 
 StatQueryAux = tuple[list[str], Optional[list[QueryConstraint]], list[QueryOrder]]
 
-__all__ = ['EventRegistrationPartStatistic', 'EventCourseStatistic',
-           'EventRegistrationTrackStatistic', 'EventRegistrationInXChoiceGrouper']
+__all__ = [
+    'EventRegistrationPartStatistic',
+    'EventCourseStatistic',
+    'EventRegistrationTrackStatistic',
+    'EventRegistrationInXChoiceGrouper',
+]
 
 
 # Helper functions that are frequently used when testing stats.
@@ -49,8 +54,9 @@ def _is_participant(reg_part: CdEDBObject) -> bool:
 
 
 # Helper functions to build query constraints frequently used by stats.
-def _status_constraint(part: models.EventPart, status: const.RegistrationPartStati,
-                       negate: bool = False) -> QueryConstraint:
+def _status_constraint(
+    part: models.EventPart, status: const.RegistrationPartStati, negate: bool = False
+) -> QueryConstraint:
     return (
         f"part{part.id}.status",
         QueryOperators.unequal if negate else QueryOperators.equal,
@@ -63,22 +69,34 @@ def _participant_constraint(part: models.EventPart) -> QueryConstraint:
 
 
 def _involved_constraint(part: models.EventPart) -> QueryConstraint:
-    return (f"part{part.id}.status", QueryOperators.oneof,
-            tuple(status.value for status in RPS if status.is_involved()))
+    return (
+        f"part{part.id}.status",
+        QueryOperators.oneof,
+        tuple(status.value for status in RPS if status.is_involved()),
+    )
 
 
 def _has_to_pay_constraint(part: models.EventPart) -> QueryConstraint:
-    return (f"part{part.id}.status", QueryOperators.oneof,
-            tuple(status.value for status in RPS if status.has_to_pay()))
+    return (
+        f"part{part.id}.status",
+        QueryOperators.oneof,
+        tuple(status.value for status in RPS if status.has_to_pay()),
+    )
 
 
 def _present_constraint(part: models.EventPart) -> QueryConstraint:
-    return (f"part{part.id}.status", QueryOperators.oneof,
-            tuple(status.value for status in RPS if status.is_present()))
+    return (
+        f"part{part.id}.status",
+        QueryOperators.oneof,
+        tuple(status.value for status in RPS if status.is_present()),
+    )
 
 
-def _age_constraint(part: models.EventPart, max_age: int, min_age: Optional[int] = None,
-                    ) -> QueryConstraint:
+def _age_constraint(
+    part: models.EventPart,
+    max_age: int,
+    min_age: Optional[int] = None,
+) -> QueryConstraint:
     min_date = deduct_years(part.part_begin, max_age)
     if min_age is None:
         return ('persona.birthday', QueryOperators.greater, min_date)
@@ -158,7 +176,8 @@ def merge_queries(base_query: Query, *queries: Query) -> Optional[Query]:
         merged_constraints.append(new_constraint)
     query_orders = {tuple(q.order) for q in queries}
     return Query(
-        scope=base_query.scope, spec=base_query.spec,
+        scope=base_query.scope,
+        spec=base_query.spec,
         fields_of_interest=set(base_query.fields_of_interest) | set(all_fields),
         constraints=merged_constraints,
         order=unwrap(query_orders) if len(query_orders) == 1 else base_query.order,
@@ -174,6 +193,7 @@ def get_id_constraint(id_field: str, entity_ids: Collection[int]) -> QueryConstr
 
 class StatisticMixin:
     """Helper class for basic query construction shared across"""
+
     id_field: str
     name: str
 
@@ -190,8 +210,9 @@ class StatisticMixin:
     def _get_base_query(event: models.Event) -> Query:
         """Create a query object to base all queries for these stats on."""
 
-    def get_query(self, event: models.Event, context_id: int,
-                  entity_ids: Collection[int] = ()) -> Query:
+    def get_query(
+        self, event: models.Event, context_id: int, entity_ids: Collection[int] = ()
+    ) -> Query:
         """Construct the actual query from the base and stat specifix query aux."""
         query = self._get_base_query(event)
         fields, constraints, order = self._get_query_aux(event, context_id)
@@ -204,12 +225,14 @@ class StatisticMixin:
         return query
 
     @abc.abstractmethod
-    def get_query_part_group(self, event: models.Event, part_group_id: int,
-                             registration_ids: Collection[int]) -> Query:
+    def get_query_part_group(
+        self, event: models.Event, part_group_id: int, registration_ids: Collection[int]
+    ) -> Query:
         """Construct a merged query for all things in a part group."""
 
-    def get_query_by_ids(self, event: models.Event, entity_ids: Collection[int],
-                         ) -> Query:
+    def get_query_by_ids(
+        self, event: models.Event, entity_ids: Collection[int]
+    ) -> Query:
         """This queries information by exhaustion by listing all relevant ids."""
         query = self._get_base_query(event)
         query.constraints.append(get_id_constraint(self.id_field, entity_ids))
@@ -228,8 +251,12 @@ class StatisticMixin:
         return xsorted(event.part_groups[part_group_id].parts.keys())
 
     @staticmethod
-    def get_track_ids(event: models.Event, *, part_id: Optional[int] = None,
-                      part_group_id: Optional[int] = None) -> Sequence[int]:
+    def get_track_ids(
+        event: models.Event,
+        *,
+        part_id: Optional[int] = None,
+        part_group_id: Optional[int] = None,
+    ) -> Sequence[int]:
         """Determine the relevant track ids for the given part (group) id."""
         if part_id:
             return xsorted(event.parts[part_id].tracks.keys())
@@ -239,9 +266,13 @@ class StatisticMixin:
         return ()
 
     @abc.abstractmethod
-    def get_link_id(self, *, track_id: Optional[int] = None,
-                    part_id: Optional[int] = None, part_group_id: Optional[int] = None,
-                    ) -> str:
+    def get_link_id(
+        self,
+        *,
+        track_id: Optional[int] = None,
+        part_id: Optional[int] = None,
+        part_group_id: Optional[int] = None,
+    ) -> str:
         """Build an id for the link to the related query."""
 
 
@@ -251,11 +282,14 @@ class StatisticPartMixin(StatisticMixin):
     Helper class for methods to delegate tests and query construction for part stats.
     """
 
-    def get_query_part_group(self, event: models.Event, part_group_id: int,
-                             registration_ids: Collection[int]) -> Query:
+    def get_query_part_group(
+        self, event: models.Event, part_group_id: int, registration_ids: Collection[int]
+    ) -> Query:
         """Construct queries for every part in a given part group, then merge them."""
-        queries = [self.get_query(event, part_id) for part_id
-                   in self.get_part_ids(event, part_group_id=part_group_id)]
+        queries = [
+            self.get_query(event, part_id)
+            for part_id in self.get_part_ids(event, part_group_id=part_group_id)
+        ]
         if self.is_mergeable():
             if ret := merge_queries(self._get_base_query(event), *queries):
                 return ret
@@ -264,9 +298,13 @@ class StatisticPartMixin(StatisticMixin):
             ret.fields_of_interest.extend(q.fields_of_interest)
         return ret
 
-    def get_link_id(self, *, track_id: Optional[int] = None,
-                    part_id: Optional[int] = None, part_group_id: Optional[int] = None,
-                    ) -> str:
+    def get_link_id(
+        self,
+        *,
+        track_id: Optional[int] = None,
+        part_id: Optional[int] = None,
+        part_group_id: Optional[int] = None,
+    ) -> str:
         """Build an id for the link to the related query."""
         if part_id:
             return f"part_{self.name}_{part_id}"
@@ -281,29 +319,39 @@ class StatisticTrackMixin(StatisticMixin):
     Helper class for methods to delegate tests and query construction for track stats.
     """
 
-    def get_query_part(self, event: models.Event, part_id: int,
-                       registration_ids: Collection[int]) -> Query:
+    def get_query_part(
+        self, event: models.Event, part_id: int, registration_ids: Collection[int]
+    ) -> Query:
         """Construct queries for every track in a given part, then merge them."""
         if self.is_mergeable():
-            queries = [self.get_query(event, track_id) for track_id
-                       in self.get_track_ids(event, part_id=part_id)]
+            queries = [
+                self.get_query(event, track_id)
+                for track_id in self.get_track_ids(event, part_id=part_id)
+            ]
             if ret := merge_queries(self._get_base_query(event), *queries):
                 return ret
         return self.get_query_by_ids(event, registration_ids)
 
-    def get_query_part_group(self, event: models.Event, part_group_id: int,
-                             registration_ids: Collection[int]) -> Query:
+    def get_query_part_group(
+        self, event: models.Event, part_group_id: int, registration_ids: Collection[int]
+    ) -> Query:
         """Construct queries for every track in a given part group, then merge them."""
         if self.is_mergeable():
-            queries = [self.get_query(event, track_id) for track_id
-                       in self.get_track_ids(event, part_group_id=part_group_id)]
+            queries = [
+                self.get_query(event, track_id)
+                for track_id in self.get_track_ids(event, part_group_id=part_group_id)
+            ]
             if ret := merge_queries(self._get_base_query(event), *queries):
                 return ret
         return self.get_query_by_ids(event, registration_ids)
 
-    def get_link_id(self, *, track_id: Optional[int] = None,
-                    part_id: Optional[int] = None, part_group_id: Optional[int] = None,
-                    ) -> str:
+    def get_link_id(
+        self,
+        *,
+        track_id: Optional[int] = None,
+        part_id: Optional[int] = None,
+        part_group_id: Optional[int] = None,
+    ) -> str:
         """Build an id for the link to the related query."""
         if track_id:
             return f"track_{self.name}_{track_id}"
@@ -331,6 +379,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
     In addition to their string value, all members have an additional `.indent`
     attribute, which specifies the level of indentation of that statistic.
     """
+
     indent: int
 
     def __new__(cls, value: str, indent: int = 0) -> "EventRegistrationPartStatistic":
@@ -386,8 +435,10 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
         if self == self.pending:
             return part['status'] == RPS.applied
         elif self == self.paid:
-            return (part['status'] == RPS.applied
-                    and reg['amount_owed'] <= reg['amount_paid'])
+            return (
+                part['status'] == RPS.applied
+                and reg['amount_owed'] <= reg['amount_paid']
+            )
         elif self == self.participant:
             return _is_participant(part)
         elif self == self.minors:
@@ -401,8 +452,11 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
         elif self == self.u10:
             return _is_participant(part) and part['age_class'] == AgeClasses.u10
         elif self == self.checked_in:
-            return (_is_participant(part) and reg['checkin_periods']
-                    and reg['checkin_periods'][-1].checkout_time is None)
+            return (
+                _is_participant(part)
+                and reg['checkin_periods']
+                and reg['checkin_periods'][-1].checkout_time is None
+            )
         elif self == self.has_been_checked_in:
             return _is_participant(part) and reg['checkin_periods']
         elif self == self.never_checked_in:
@@ -416,15 +470,21 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
         elif self == self.involved:
             return part['status'].is_involved()
         elif self == self.not_paid:
-            return (part['status'].has_to_pay()
-                    and reg['amount_owed'] > reg['amount_paid'])
+            return (
+                part['status'].has_to_pay() and reg['amount_owed'] > reg['amount_paid']
+            )
         elif self == self.orgas_not_paid:
-            return (part['status'].has_to_pay()
-                    and reg['amount_owed'] > reg['amount_paid']
-                    and reg['persona_id'] in event.orgas)
+            return (
+                part['status'].has_to_pay()
+                and reg['amount_owed'] > reg['amount_paid']
+                and reg['persona_id'] in event.orgas
+            )
         elif self == self.no_parental_agreement:
-            return (part['status'].is_involved() and part['age_class'].is_minor()
-                    and not reg['parental_agreement'])
+            return (
+                part['status'].is_involved()
+                and part['age_class'].is_minor()
+                and not reg['parental_agreement']
+            )
         elif self == self.present:
             return part['status'].is_present()
         elif self == self.no_lodgement:
@@ -459,7 +519,9 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
         elif self == self.paid:
             return (
                 [
-                    'reg.payment', 'reg.amount_paid', 'reg.remaining_owed',
+                    'reg.payment',
+                    'reg.amount_paid',
+                    'reg.remaining_owed',
                     'ctime.creation_time',
                 ],
                 [
@@ -473,9 +535,7 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
         elif self == self.minors:
             return (
                 ['persona.birthday'],
-                [
-                    _participant_constraint(part),
-                    _age_constraint(part, 18, 10)],
+                [_participant_constraint(part), _age_constraint(part, 18, 10)],
                 [],
             )
         elif self == self.u18:
@@ -559,9 +619,12 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
             )
         elif self == self.waitlist:
             return (
-                ['reg.payment', 'ctime.creation_time'] + [
+                ['reg.payment', 'ctime.creation_time']
+                + [
                     f'reg_fields.xfield_{part.waitlist_field.field_name}',
-                ] if part.waitlist_field else [],
+                ]
+                if part.waitlist_field
+                else [],
                 [_status_constraint(part, RPS.waitlist)],
                 _waitlist_order(event, part),
             )
@@ -641,8 +704,11 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
         return Query(
             QueryScope.registration,
             event.basic_registration_query_spec,
-            fields_of_interest=['persona.given_names', 'persona.family_name',
-                                'persona.username'],
+            fields_of_interest=[
+                'persona.given_names',
+                'persona.family_name',
+                'persona.username',
+            ],
             constraints=[],
             order=[('persona.family_name', True), ('persona.given_names', True)],
         )
@@ -671,11 +737,11 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
         if self == self.offered:
             return track_id in course.segments
         elif self == self.cancelled:
-            return (track_id in course.segments
-                    and track_id not in course.active_segments)
+            return (
+                track_id in course.segments and track_id not in course.active_segments
+            )
         elif self == self.taking_place:
-            return (track_id in course.segments
-                    and track_id in course.active_segments)
+            return track_id in course.segments and track_id in course.active_segments
         else:
             raise RuntimeError(n_("Impossible."))
 
@@ -753,11 +819,13 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
         if self == self.all_instructors:
             return track['course_instructor']
         elif self == self.instructors:
-            return (track['course_id']
-                    and track['course_id'] == track['course_instructor'])
+            return (
+                track['course_id'] and track['course_id'] == track['course_instructor']
+            )
         elif self == self.attendees:
-            return (track['course_id']
-                    and track['course_id'] != track['course_instructor'])
+            return (
+                track['course_id'] and track['course_id'] != track['course_instructor']
+            )
         elif self == self.no_course:
             return not track['course_id'] and reg['persona_id'] not in event.orgas
         else:
@@ -771,8 +839,11 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
                 [f"track{track_id}.course_id", f"track{track_id}.course_instructor"],
                 [
                     _participant_constraint(part),
-                    (f"track{track_id}.course_instructor",
-                     QueryOperators.nonempty, None),
+                    (
+                        f"track{track_id}.course_instructor",
+                        QueryOperators.nonempty,
+                        None,
+                    ),
                 ],
                 [(f"course_instructor{track_id}.nr_shortname", True)],
             )
@@ -781,8 +852,11 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
                 [f"track{track_id}.course_instructor"],
                 [
                     _participant_constraint(part),
-                    (f"track{track_id}.is_course_instructor",
-                     QueryOperators.equal, True),
+                    (
+                        f"track{track_id}.is_course_instructor",
+                        QueryOperators.equal,
+                        True,
+                    ),
                 ],
                 [(f"course_instructor{track_id}.nr_shortname", True)],
             )
@@ -792,8 +866,11 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
                 [
                     _participant_constraint(part),
                     (f"track{track_id}.course_id", QueryOperators.nonempty, None),
-                    (f"track{track_id}.is_course_instructor",
-                     QueryOperators.equalornull, False),
+                    (
+                        f"track{track_id}.is_course_instructor",
+                        QueryOperators.equalornull,
+                        False,
+                    ),
                 ],
                 [(f"course{track_id}.nr_shortname", True)],
             )
@@ -815,8 +892,11 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
         return Query(
             QueryScope.registration,
             event.basic_registration_query_spec,
-            fields_of_interest=['persona.given_names', 'persona.family_name',
-                                'persona.username'],
+            fields_of_interest=[
+                'persona.given_names',
+                'persona.family_name',
+                'persona.username',
+            ],
             constraints=[],
             order=[('persona.family_name', True), ('persona.given_names', True)],
         )
@@ -840,11 +920,14 @@ class EventRegistrationInXChoiceGrouper:
         self._sorted_part_groups = xsorted(event.part_groups.values())
         self._max_choices = max(track.num_choices for track in self._sorted_tracks)
         self._track_ids_per_part = {
-            int(part.id): set(part.tracks) for part in self._sorted_parts}
+            int(part.id): set(part.tracks) for part in self._sorted_parts
+        }
         self._track_ids_per_part_group = {
-            int(part_group.id): set(itertools.chain.from_iterable(
-                self._track_ids_per_part[part_id]
-                for part_id in part_group.parts))
+            int(part_group.id): set(
+                itertools.chain.from_iterable(
+                    self._track_ids_per_part[part_id] for part_id in part_group.parts
+                )
+            )
             for part_group in self._sorted_part_groups
         }
 
@@ -873,9 +956,12 @@ class EventRegistrationInXChoiceGrouper:
         event_part = event.parts[course_track.part_id]
         part = reg['parts'][event_part.id]
         track = reg['tracks'][track_id]
-        return (_is_participant(part) and track['course_id']
-                and len(track['choices']) > x
-                and track['choices'][x] == track['course_id'])
+        return (
+            _is_participant(part)
+            and track['course_id']
+            and len(track['choices']) > x
+            and track['choices'][x] == track['course_id']
+        )
 
     def _get_ids(self, x: int, track_ids: Collection[int]) -> Optional[set[int]]:
         """Uninlined helper to determine the number of fitting entries across tracks.
@@ -896,7 +982,7 @@ class EventRegistrationInXChoiceGrouper:
         return result
 
     def __iter__(
-            self,
+        self,
     ) -> Iterator[tuple[int, dict[str, dict[int, Optional[set[int]]]]]]:
         """Iterate over all x choices, for each one return sorted counts by type."""
         # ret: dict[int, dict[str, dict[int, Optional[set[int]]]]] = {
@@ -912,8 +998,7 @@ class EventRegistrationInXChoiceGrouper:
                 },
                 'part_groups': {
                     part_group_id: self._get_ids(x, track_ids)
-                    for part_group_id, track_ids
-                    in self._track_ids_per_part_group.items()
+                    for part_group_id, track_ids in self._track_ids_per_part_group.items()
                 },
             }
             for x in range(self._max_choices)
@@ -921,13 +1006,18 @@ class EventRegistrationInXChoiceGrouper:
         yield from ret.items()
 
     @staticmethod
-    def _get_base_query(event: models.Event, reg_ids: Optional[Collection[int]],
-                        ) -> Query:
+    def _get_base_query(
+        event: models.Event,
+        reg_ids: Optional[Collection[int]],
+    ) -> Query:
         return Query(
             QueryScope.registration,
             event.basic_registration_query_spec,
-            fields_of_interest=['persona.given_names', 'persona.family_name',
-                                'persona.username'],
+            fields_of_interest=[
+                'persona.given_names',
+                'persona.family_name',
+                'persona.username',
+            ],
             constraints=[get_id_constraint('reg.id', reg_ids or ())],
             order=[('persona.family_name', True), ('persona.given_names', True)],
         )
@@ -942,21 +1032,31 @@ class EventRegistrationInXChoiceGrouper:
         track_ids = self._track_ids_per_part[part_id]
         query = self._get_base_query(event, self._get_ids(x, track_ids))
         query.fields_of_interest.extend(
-            f"track{track_id}.course_id" for track_id in track_ids)
+            f"track{track_id}.course_id" for track_id in track_ids
+        )
         return query
 
-    def get_query_part_group(self, event: models.Event, part_group_id: int, x: int,
-                             ) -> Query:
+    def get_query_part_group(
+        self,
+        event: models.Event,
+        part_group_id: int,
+        x: int,
+    ) -> Query:
         track_ids = self._track_ids_per_part_group[part_group_id]
         query = self._get_base_query(event, self._get_ids(x, track_ids))
         query.fields_of_interest.extend(
-            f"track{track_id}.course_id" for track_id in track_ids)
+            f"track{track_id}.course_id" for track_id in track_ids
+        )
         return query
 
     @staticmethod
-    def get_link_id(x: int, *, track_id: Optional[int] = None,
-                    part_id: Optional[int] = None, part_group_id: Optional[int] = None,
-                    ) -> str:
+    def get_link_id(
+        x: int,
+        *,
+        track_id: Optional[int] = None,
+        part_id: Optional[int] = None,
+        part_group_id: Optional[int] = None,
+    ) -> str:
         if track_id:
             return f"track_in_{x}_choice_{track_id}"
         elif part_id:

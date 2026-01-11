@@ -43,6 +43,7 @@ RUFF ?= $(UV) run ruff
 ISORT ?= $(RUFF) check --select I
 COVERAGE ?= $(PYTHONBIN) -m coverage
 MYPY ?= $(UV) run --all-groups mypy
+DMYPY ?= $(UV) run --all-groups dmypy
 
 include .ruff_targets
 
@@ -155,6 +156,10 @@ format-diff: venv
 .PHONY: mypy
 mypy: venv
 	$(MYPY) bin/*.py $(MAKE_LINT_TARGETS)
+
+.PHONY: dmypy
+dmypy: venv
+	$(DMYPY) run bin/*.py $(MAKE_LINT_TARGETS)
 
 BANNERLINE := "================================================================================"
 

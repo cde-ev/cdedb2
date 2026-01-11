@@ -18,7 +18,7 @@ new_track = {
 # Setup
 
 script = Script(persona_id=admin_id, dbuser="cdb_admin")
-event = script.make_backend("event")
+event = script.make_event_backend(proxy=True)
 
 update_event = {
     'parts': {

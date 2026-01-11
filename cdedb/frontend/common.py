@@ -73,6 +73,7 @@ import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
 import werkzeug.wsgi
+from typing_extensions import TypeForm
 
 import cdedb.common.parse.util as parse_util
 import cdedb.common.query as query_mod
@@ -114,7 +115,6 @@ from cdedb.common import (
     encode_parameter,
     get_hash,
     get_mandatory_form_fields,
-    is_optional_type,
     json_serialize,
     make_proxy,
     merge_dicts,
@@ -481,6 +481,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             trim_blocks=True,
             lstrip_blocks=True,
         )
+        self.jinja_env_other = self.jinja_env.overlay(autoescape=False)
         # Always provide all backends -- they are cheap
         self.assemblyproxy = make_proxy(AssemblyBackend())
         self.cdeproxy = make_proxy(CdEBackend())
@@ -650,6 +651,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'show_user_link': _show_user_link,
             'user': rs.user,
             'values': rs.values,
+            'original_endpoint': rs.endpoint,
+            'requestargs': rs.requestargs,
         }
 
         # check that default values are not overridden
@@ -667,7 +670,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         elif modus == "tex":
             jinja_env = self.jinja_env_tex
         elif modus == "other":
-            jinja_env = self.jinja_env
+            jinja_env = self.jinja_env_other
         else:
             raise NotImplementedError(
                 n_("Requested modus does not exists: %(modus)s"), {'modus': modus}
@@ -2108,7 +2111,7 @@ class AmbienceDict(typing.TypedDict):
     event: NotRequired[models_event.Event]
     pevent: NotRequired[models_past_event.PastEvent]
     course: NotRequired[models_event.Course]
-    pcourse: NotRequired[CdEDBObject]
+    pcourse: NotRequired[models_past_event.PastCourse]
     registration: NotRequired[CdEDBObject]
     group: NotRequired[CdEDBObject]
     lodgement: NotRequired[models_event.Lodgement]
@@ -2195,7 +2198,7 @@ def reconnoitre_ambience(obj: AbstractFrontend, rs: RequestState) -> AmbienceDic
             lambda anid: obj.pasteventproxy.get_past_course(rs, anid),
             'pcourse_id',
             'pcourse',
-            (lambda a: do_assert(a['pcourse']['pevent_id'] == a['pevent'].id),),
+            (lambda a: do_assert(a['pcourse'].pevent_id == a['pevent'].id),),
         ),
         Scout(
             None,
@@ -2657,15 +2660,13 @@ def REQUESTdata(
                     encoded = False
 
                 if name not in kwargs:
-                    type_ = cast(type[Any], hints[name])
-                    if optional := is_optional_type(type_):
-                        type_ = typing.get_args(type_)[0]
+                    type_ = hints[name]
 
                     # Optionally skip items that are not given.
                     if _omit_missing and name not in rs.request.values:
                         continue
 
-                    val: Optional[str] = rs.request.values.get(name, "")
+                    val: str | None = rs.request.values.get(name, "")
 
                     # TODO allow encoded collections?
                     if encoded and val:
@@ -2682,44 +2683,26 @@ def REQUESTdata(
                         if timeout is False:
                             rs.notify("warning", n_("Link invalid."))
 
-                    origin = typing.get_origin(type_)
-                    if origin is collections.abc.Collection:
-                        type_ = unwrap(type_.__args__)
-                        vals = tuple(rs.request.values.getlist(name))
-                        if vals:
-                            rs.values.setlist(name, vals)
-                        else:
-                            # TODO should also work normally
-                            # We have to be careful, since empty lists are
-                            # problematic for the werkzeug MultiDict
-                            rs.values[name] = None
+                    if typing.get_origin(type_) is collections.abc.Collection:
+                        vals = rs.request.values.getlist(name)
+                        rs.values.setlist(name, vals)
                         if _postpone_validation:
-                            kwargs[name] = tuple(vals)
-                        elif optional:
-                            kwargs[name] = tuple(
-                                check_validation_optional(rs, type_, val, name)
-                                for val in vals
-                            )
+                            kwargs[name] = vals
                         else:
-                            kwargs[name] = tuple(
-                                check_validation(rs, type_, val, name) for val in vals
-                            )
+                            kwargs[name] = check_validation(rs, type_, vals, name)
                     else:
                         rs.values[name] = val
                         if _postpone_validation:
                             kwargs[name] = val
-                        elif optional:
-                            kwargs[name] = check_validation_optional(
-                                rs, type_, val, name
-                            )
                         else:
                             kwargs[name] = check_validation(rs, type_, val, name)
+
             return fun(obj, rs, *args, **kwargs)
 
         if not hasattr(new_fun, "mandatory_form_fields"):
             new_fun.mandatory_form_fields = set()  # type: ignore[attr-defined]
         new_fun.mandatory_form_fields |= get_mandatory_form_fields(  # type: ignore[attr-defined]
-            {name: hints[name.removeprefix('#')] for name in spec}
+            {name: hints[name.removeprefix('#')] for name in spec}  # type: ignore[maybe-unrecognized-str-typeform]
         )
 
         return cast(F, new_fun)
@@ -2955,7 +2938,7 @@ def check_validation(
 @overload
 def check_validation(
     rs: RequestState,
-    type_: type[T],
+    type_: TypeForm[T],
     value: Any,
     name: Optional[str] = None,
     **kwargs: Any,
@@ -2964,7 +2947,7 @@ def check_validation(
 
 def check_validation(
     rs: RequestState,
-    type_: type[T | CdEDataclass],
+    type_: TypeForm[T] | type[CdEDataclass],
     value: Any,
     name: Optional[str] = None,
     **kwargs: Any,
@@ -2991,57 +2974,6 @@ def check_validation(
     return cast(None | T | CdEDBObject, ret)
 
 
-@overload
-def check_validation_optional(
-    rs: RequestState,
-    type_: type[CdEDataclass],
-    value: Any,
-    name: Optional[str] = None,
-    **kwargs: Any,
-) -> Optional[CdEDBObject]: ...
-
-
-@overload
-def check_validation_optional(
-    rs: RequestState,
-    type_: type[T],
-    value: Any,
-    name: Optional[str] = None,
-    **kwargs: Any,
-) -> Optional[T]: ...
-
-
-def check_validation_optional(
-    rs: RequestState,
-    type_: type[T | CdEDataclass],
-    value: Any,
-    name: Optional[str] = None,
-    **kwargs: Any,
-) -> Optional[T | CdEDBObject]:
-    """Wrapper to call checks in :py:mod:`cdedb.validation`.
-
-    This is similar to :func:`~cdedb.frontend.common.check_validation`
-    but also allows optional/falsy values.
-
-    This also ignores warnings appropriately due to rs.ignore_warnings.
-
-    :param type_: type to check for
-    :param name: name of the parameter to check (bonus points if you find
-      out how to nicely get rid of this -- python has huge introspection
-      capabilities, but I didn't see how this should be done).
-    """
-    if name is not None:
-        ret, errs = validate.validate_check_optional(
-            type_, value, ignore_warnings=rs.ignore_warnings, argname=name, **kwargs
-        )
-    else:
-        ret, errs = validate.validate_check_optional(
-            type_, value, ignore_warnings=rs.ignore_warnings, **kwargs
-        )
-    rs.extend_validation_errors(errs)
-    return cast(None | T | CdEDBObject, ret)
-
-
 DC = TypeVar('DC', bound=CdEDataclass)
 
 
@@ -3062,7 +2994,7 @@ def extract_and_check_dataclass_validation(
 
 
 def inspect_validation(
-    type_: type[T],
+    type_: TypeForm[T],
     value: Any,
     *,
     ignore_warnings: bool = False,
@@ -3075,23 +3007,6 @@ def inspect_validation(
     This should only be used if the error handling differs from the default handling.
     """
     return validate.validate_check(
-        type_, value, ignore_warnings=ignore_warnings, **kwargs
-    )
-
-
-def inspect_validation_optional(
-    type_: type[T],
-    value: Any,
-    *,
-    ignore_warnings: bool = False,
-    **kwargs: Any,
-) -> tuple[Optional[T], list[Error]]:
-    """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
-
-    This is similar to :func:`~cdedb.frontend.common.inspect_validation` but also allows
-    optional/falsy values.
-    """
-    return validate.validate_check_optional(
         type_, value, ignore_warnings=ignore_warnings, **kwargs
     )
 
@@ -3317,7 +3232,7 @@ def process_dynamic_input(
             if type_ not in {
                 vtypes.BallotCandidate,
                 models_event.PartGroup,
-                vtypes.EventField,
+                models_event.EventField,
                 models_event.CourseTrack,
                 models_event.LodgementGroup,
             }:

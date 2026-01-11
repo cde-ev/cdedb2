@@ -27,6 +27,7 @@ from cdedb.uncommon.intenum import CdEIntEnum
 
 if TYPE_CHECKING:
     from cdedb.backend.assembly import AssemblyBackend
+    from cdedb.backend.complaint import ComplaintBackend
     from cdedb.backend.core import CoreBackend
     from cdedb.backend.event import EventBackend
     from cdedb.common import RequestState, User
@@ -45,10 +46,12 @@ class BackendContainer:
         self,
         *,
         core: Optional["CoreBackend"] = None,
+        complaint: Optional["ComplaintBackend"] = None,
         event: Optional["EventBackend"] = None,
         assembly: Optional["AssemblyBackend"] = None,
     ):
         self.core = cast("CoreBackend", core)
+        self.complaint = cast("ComplaintBackend", complaint)
         self.event = cast("EventBackend", event)
         self.assembly = cast("AssemblyBackend", assembly)
 
@@ -902,6 +905,17 @@ class ComplaintAdminImplicitMailinglist(ImplicitsSubscribableMeta, TeamMailingli
         return set(bc.core.list_admins(rs, realm="complaint"))
 
 
+@dataclass
+class ComplaintEnforcerImplicitMailinglist(ComplaintAdminImplicitMailinglist):
+    def get_implicit_subscribers(
+        self, rs: RequestState, bc: BackendContainer
+    ) -> set[int]:
+        """Return a set of all complaint enforcers and complaint admins."""
+        return super().get_implicit_subscribers(rs, bc) | set(
+            bc.complaint.list_enforcers(rs)
+        )
+
+
 MLType = type[Mailinglist]
 
 
@@ -933,6 +947,7 @@ ML_TYPE_MAP: Mapping[MailinglistTypes, type[Mailinglist]] = {
     MailinglistTypes.public_member_implicit: PublicMemberImplicitMailinglist,
     MailinglistTypes.cdelokal: CdeLokalMailinglist,
     MailinglistTypes.complaint_admin_implicit: ComplaintAdminImplicitMailinglist,
+    MailinglistTypes.complaint_enforcer_implicit: ComplaintEnforcerImplicitMailinglist,
 }
 
 ML_TYPE_MAP_INV = {v: k for k, v in ML_TYPE_MAP.items()}
