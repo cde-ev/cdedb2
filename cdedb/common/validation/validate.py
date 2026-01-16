@@ -2240,7 +2240,6 @@ def _iban(val: Any, argname: str = "iban", **kwargs: Any) -> IBAN:
 
 
 SEPA_TRANSACTIONS_FIELDS: TypeMapping = {
-    'issued_at': datetime.datetime,
     'lastschrift_id': ID,
     'period_id': ID,
     'mandate_reference': str,

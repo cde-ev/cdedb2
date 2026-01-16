@@ -16,8 +16,12 @@
         $(function() {
             $('.skip-form').cdedbProtectAction(
                 "{{ gettext("This Direct Debit will be skipped for this semster. This cannot be undone.") }}");
-            $('#finalizationform').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}",
-                    function(){return $('#finalization-cancel')[0] == document.activeElement;});
+            $('#finalizationform').cdedbProtectAction(
+                "{{ gettext("This action cannot be undone.") }}",
+                function() {
+                    // This skips the protections if the form is submitted via one of these submit buttons.
+                    return $('#finalization-cancel')[0] == document.activeElement || $('#finalization-download')[0] == document.activeElement;
+                });
             $('#generatetransactionsform').cdedbProtectAction("{{ gettext("Direct Debits will be created.") }}")
             $('.generatetransactionform').cdedbProtectAction("{{ gettext("Direct Debit will be created.") }}")
         });
@@ -113,7 +117,7 @@
 
     <h2>{% trans %}Open Direct Debits{% endtrans %}</h2>
     <div id="open-dd">
-    {% if transactions|length > 0 %}
+    {% if transactions|length > 0 %}
         <p>
             {% trans %}
                 The following Direct Debits are pending. As soon as they are executed, enter whether they were
@@ -192,10 +196,13 @@
             </script>
 
             {% trans %}All selected:{% endtrans %}
+            {{ util.input_submit(label=gettext("SEPA-PAIN"), name='download', aclass="btn btn-default", icon="download",
+                                 anid="finalization-download",
+                                 formaction=cdedblink("cde/lastschrift_download_sepapain"), formmethod="GET") }}
             {{ util.input_submit(label=gettext("Success"), name='success', aclass="btn btn-success") }}
             {{ util.input_submit(label=gettext("Failed"), name='failure', aclass="btn btn-danger", icon="exclamation-circle") }}
             {{ util.input_submit(label=gettext("Cancelled"), name='cancelled', aclass="btn btn-warning", icon="times-circle",
-                    anid="finalization-cancel") }}
+                                 anid="finalization-cancel") }}
         </form>
     {% else %}
         <p>
