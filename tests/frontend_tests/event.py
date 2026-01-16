@@ -2931,21 +2931,29 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Zu viel Geld. 999,99 € > 584,48 €", div="line2_infos")
         f = self.response.forms['batchfeesform']
         self.submit(f)
-        for i in range(5):
+        for i in range(6):
             text = self.fetch_mail_content(i)
             if i == 1:
                 self.assertIn("455,99", text)
             if i == 3:
                 self.assertRegex(
                     text,
-                    r"Für Eure Veranstaltung\s* Große Testakademie 2222\s*"
-                    r"in der CdE-Datenbank wurden 3 neue Überweisungen eingetragen.",
+                    r"Für Eure Veranstaltung\s+Große Testakademie 2222\s+"
+                    r"wurden 3 neue Überweisungen in der Datenbank eingetragen.",
                 )
             elif i == 4:
-                self.assertIn(
-                    "Für Eure Veranstaltung in der CdE-Datenbank wurden"
-                    " 1 Erstattungen durchgeführt\nund in der Datenbank eingetragen.",
+                self.assertRegex(
                     text,
+                    r"Für die Veranstaltung\s+Große Testakademie 2222\s+"
+                    r"haben wir dir am 30.12.2019 eine Erstattung in Höhe von\s+"
+                    r"116,49\s€\s+überwiesen",
+                )
+            elif i == 5:
+                self.assertRegex(
+                    text,
+                    r"Für Eure Veranstaltung\s+Große Testakademie 2222\s+"
+                    r"wurden 1 Erstattungen durchgeführt\s+"
+                    r"und in der Datenbank eingetragen.",
                 )
             else:
                 self.assertIn(
@@ -3062,7 +3070,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         for i in range(1):
             text = self.fetch_mail_content(i)
             self.assertIn("Überweisung für die Veranstaltung", text)
-            self.assertIn('"Große Testakademie 2222"', text)
+            self.assertIn("Große Testakademie 2222", text)
 
         with self.switch_user("garcia"):
             self.traverse("Veranstaltungen", "Große Testakademie 2222",
@@ -3085,7 +3093,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         for i in range(1):
             text = self.fetch_mail_content(i)
             self.assertIn("Überweisung für die Veranstaltung", text)
-            self.assertIn('"Große Testakademie 2222"', text)
+            self.assertIn("Große Testakademie 2222", text)
         self.logout()
 
         # Now, test the results. To do so, switch to Garcia (Orga of this event)

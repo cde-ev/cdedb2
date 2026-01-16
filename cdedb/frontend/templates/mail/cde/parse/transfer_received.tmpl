@@ -1,4 +1,4 @@
-Hallo {{ persona['given_names'] }},
+Hallo {{ persona|persona_name(with_family_name=False) }},
 
 Wir haben deine Mitgliedsbeitrags-Überweisung in Höhe von
 {{ transfer.amount|money }} vom {{ transfer.date|date(lang="de") }} verarbeitet.

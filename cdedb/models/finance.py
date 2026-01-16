@@ -131,7 +131,7 @@ class MoneyTransfersResult:
 
             if by_orga:
                 to = [event.orga_address, _CONF['EVENT_FINANCE_ADMIN_ADDRESS']]
-                reply_to = event.orga_address or _CONF['EVENT_FINANCE_ADMIN_ADDRESS']
+                reply_to = _CONF['EVENT_FINANCE_ADMIN_ADDRESS']
             else:
                 to = [event.orga_address]
                 reply_to = _CONF['FINANCE_ADMIN_ADDRESS']
@@ -141,6 +141,10 @@ class MoneyTransfersResult:
                 n_("Booked %(num)s reimbursements for %(event)s."),
                 {'num': len(reimbursements), 'event': event.title},
             )
+            headers = {
+                'Reply-To': reply_to,
+                'Subject': f"Erstattung für {event.title} ausgeführt",
+            }
             if send_individual_notifications:
                 for transfer in reimbursements:
                     headers['To'] = [transfer.persona['username']]

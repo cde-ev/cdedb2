@@ -1,4 +1,4 @@
-Hallo {{ transfer.persona['given_names'] }},
+Hallo {{ transfer.persona|persona_name(with_family_name=False) }},
 
 Deine Überweisung für die Veranstaltung
     {{ event['title'] }}
