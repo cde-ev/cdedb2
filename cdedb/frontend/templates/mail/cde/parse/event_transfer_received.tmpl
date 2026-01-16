@@ -1,8 +1,8 @@
 Hallo {{ transfer.persona['given_names'] }},
 
 Deine Überweisung für die Veranstaltung
-    "{{ event['title'] }}"
-über {{ transfer.amount|money }} ist bei uns angekommen.
+    {{ event['title'] }}
+über {{ transfer.amount|money }} vom {{ transfer.date|date(lang="de") }} ist bei uns angekommen.
 
 {% if transfer.registration['amount_paid'] < transfer.registration['amount_owed'] %}
 Damit deine Anmeldung als vollständig zählt musst du noch {{ (transfer.registration['amount_owed'] - transfer.registration['amount_paid'])|money }} bezahlen.

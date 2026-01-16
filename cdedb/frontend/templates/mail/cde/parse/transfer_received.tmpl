@@ -1,7 +1,11 @@
 Hallo {{ persona['given_names'] }},
 
-Vielen Dank für Deine Überweisung auf das Konto des CdE. Wir haben
-diese verarbeitet. Dein Guthaben beträgt jetzt {{ persona['balance']|money }}.
+Wir haben deine Mitgliedsbeitrags-Überweisung in Höhe von
+{{ transfer.amount|money }} vom {{ transfer.date|date(lang="de") }} verarbeitet.
+Dein Guthaben beträgt jetzt {{ persona['balance']|money }}.
+
+Vielen Dank für dein Interesse am CdE!
+
 {% if persona['balance'] < fee %}
 
 {% if persona['is_member'] %}

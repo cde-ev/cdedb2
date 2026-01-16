@@ -66,6 +66,7 @@ class MoneyTransfersResult:
                     {
                         'persona': transfer.persona,
                         'address': make_postal_address(rs, transfer.persona),
+                        'transfer': transfer,
                         'fee': _CONF['MEMBERSHIP_FEE'],
                     },
                 )
@@ -140,6 +141,19 @@ class MoneyTransfersResult:
                 n_("Booked %(num)s reimbursements for %(event)s."),
                 {'num': len(reimbursements), 'event': event.title},
             )
+            if send_individual_notifications:
+                for transfer in reimbursements:
+                    headers['To'] = [transfer.persona['username']]
+                    do_mail(
+                        rs,
+                        'parse/event_reimbursement_booked',
+                        headers,
+                        {
+                            'transfer': transfer,
+                            'event': event,
+                            'finance_admin_address': _CONF['FINANCE_ADMIN_ADDRESS'],
+                        },
+                    )
             if any(to):
                 headers = {
                     'To': to,
@@ -151,5 +165,5 @@ class MoneyTransfersResult:
                     rs,
                     "parse/event_reimbursements_booked",
                     headers,
-                    {'num': len(reimbursements)},
+                    {'num': len(reimbursements), 'event': event},
                 )
