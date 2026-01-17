@@ -129,20 +129,19 @@ Dies ist eine Mailingliste des CdE e.V.
 E-Mails an diese Mailingliste werden unter https://ssl.cde-ev.de/mailman3/hyperkitty/list/{db_list.address}/ archiviert.
 Zur Abo-Verwaltung benutze die Datenbank ({cdedburl(rs, 'ml/index', force_external=True)}).""",
             'list:admin:action:post': f"""
-As list moderator, your authorization is requested for the
-following mailing list posting:
+Als Moderator wird deine Zustimmung für die folgende E-Mail benötigt:
 
     List:    $listname
     From:    $sender_email
     Subject: $subject
 
-The message is being held because:
+Die Nachricht wurde aus folgendem Grund zurückgehalten:
 
 $reasons
 
-At your convenience, visit the CdEDB [1] to approve or deny the request. Note
-that the paragraph below about email moderation is wrong. Sending mails will
-do nothing.
+Besuche die CdEDB [1] um die Nachricht zu moderieren.
+Beachte, dass der untenstehende Absatz zur Nachrichtenmoderation falsch ist,
+Antworten auf diese Email sind wirkungslos.
 
 [1] {cdedburl(rs, 'ml/message_moderation', {'mailinglist_id': db_list.id}, force_external=True)}
 """.strip(),
