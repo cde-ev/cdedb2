@@ -1860,31 +1860,31 @@ msgstr "ID"
 
 #: cdedb/.i18n_additional.py:464 cdedb/i18n_additional.py:67
 msgid "Finanzvorstand_Name"
-msgstr "Finanzvorstand Name"
+msgstr "Vereinsarchiv Name"
 
 #: cdedb/.i18n_additional.py:465 cdedb/i18n_additional.py:68
 msgid "Finanzvorstand_Vorname"
-msgstr "Finanzvorstand Vorname"
+msgstr "Vereinsarchiv Vorname"
 
 #: cdedb/.i18n_additional.py:466 cdedb/i18n_additional.py:69
 msgid "Finanzvorstand_Ort"
-msgstr "Finanzvorstand Ort"
+msgstr "Vereinsarchiv Ort"
 
 #: cdedb/.i18n_additional.py:467 cdedb/i18n_additional.py:70
 msgid "Finanzvorstand_Adresse_Einzeiler"
-msgstr "Finanzvorstand Adresse Einzeiler"
+msgstr "Vereinsarchiv Adresse Einzeiler"
 
 #: cdedb/.i18n_additional.py:468 cdedb/i18n_additional.py:71
 msgid "Finanzvorstand_Adresse_Zeile2"
-msgstr "Finanzvorstand Adresse Zeile 2"
+msgstr "Vereinsarchiv Adresse Zeile 2"
 
 #: cdedb/.i18n_additional.py:469 cdedb/i18n_additional.py:72
 msgid "Finanzvorstand_Adresse_Zeile3"
-msgstr "Finanzvorstand Adresse Zeile 3"
+msgstr "Vereinsarchiv Adresse Zeile 3"
 
 #: cdedb/.i18n_additional.py:470 cdedb/i18n_additional.py:73
 msgid "Finanzvorstand_Adresse_Zeile4"
-msgstr "Finanzvorstand Adresse Zeile 4"
+msgstr "Vereinsarchiv Adresse Zeile 4"
 
 #: cdedb/.i18n_additional.py:471 cdedb/i18n_additional.py:74
 msgid "Vorstand"

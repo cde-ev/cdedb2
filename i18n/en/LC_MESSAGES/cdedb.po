@@ -1860,31 +1860,31 @@ msgstr "ID"
 
 #: cdedb/.i18n_additional.py:463 cdedb/i18n_additional.py:67
 msgid "Finanzvorstand_Name"
-msgstr "CFO Name"
+msgstr "Club's Archives Name"
 
 #: cdedb/.i18n_additional.py:464 cdedb/i18n_additional.py:68
 msgid "Finanzvorstand_Vorname"
-msgstr "CFO First Name"
+msgstr "Club's Archives First Name"
 
 #: cdedb/.i18n_additional.py:465 cdedb/i18n_additional.py:69
 msgid "Finanzvorstand_Ort"
-msgstr "CFO City"
+msgstr "Club's Archives City"
 
 #: cdedb/.i18n_additional.py:466 cdedb/i18n_additional.py:70
 msgid "Finanzvorstand_Adresse_Einzeiler"
-msgstr "CFO Address Single Line"
+msgstr "Club's Archives Address Single Line"
 
 #: cdedb/.i18n_additional.py:467 cdedb/i18n_additional.py:71
 msgid "Finanzvorstand_Adresse_Zeile2"
-msgstr "CFO Address Line Two"
+msgstr "Club's Archives Address Line Two"
 
 #: cdedb/.i18n_additional.py:468 cdedb/i18n_additional.py:72
 msgid "Finanzvorstand_Adresse_Zeile3"
-msgstr "CFO Address Line Three"
+msgstr "Club's Archives Address Line Three"
 
 #: cdedb/.i18n_additional.py:469 cdedb/i18n_additional.py:73
 msgid "Finanzvorstand_Adresse_Zeile4"
-msgstr "CFO Address Line Four"
+msgstr "Club's Archives Address Line Four"
 
 #: cdedb/.i18n_additional.py:470 cdedb/i18n_additional.py:74
 msgid "Vorstand"
