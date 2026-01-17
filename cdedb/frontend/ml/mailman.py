@@ -163,6 +163,20 @@ Falls der Grund der Unzustellbarkeit behoben ist, kannst du den Nutzer manuell
 von der Mailingliste entfernen, 15 Minuten warten, und ihn danach wieder
 auf die Liste abonnieren. Dadurch wird das Abonnement wieder aktiviert.
 """.strip(),
+            'list:admin:notice:increment': f"""
+Der Bounce-Score von $member auf der Mailingliste
+    $listname
+wurde erhöht, da eine Mail nicht zugestellt werden konnte.
+
+Bei Wiederholung wird dies dazu führen, dass dem Nutzer keine Malis dieser Liste
+mehr gesendet werden.
+
+Als Moderator kannst du versuchen, den Abonnenten auf einem anderen Weg zu
+kontaktieren und über den Grund der Unzustellbarkeit zu informieren.
+Die Zustellbenachrichtigung, falls vorhanden, ist angehängt.
+Bei Fragen dazu wende dich an das Adminteam:
+    <{self.conf["TROUBLESHOOTING_ADDRESS"]}>
+""".strip(),
         }
         if db_list.additional_footer:
             desired_templates['list:member:regular:footer'] = (
