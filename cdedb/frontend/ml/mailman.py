@@ -131,9 +131,9 @@ Zur Abo-Verwaltung benutze die Datenbank ({cdedburl(rs, 'ml/index', force_extern
             'list:admin:action:post': f"""
 Als Moderator wird deine Zustimmung für die folgende E-Mail benötigt:
 
-    List:    $listname
-    From:    $sender_email
-    Subject: $subject
+    Liste:    $listname
+    Absender: $sender_email
+    Betreff:  $subject
 
 Die Nachricht wurde aus folgendem Grund zurückgehalten:
 
