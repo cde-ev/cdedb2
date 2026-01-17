@@ -146,24 +146,22 @@ do nothing.
 
 [1] {cdedburl(rs, 'ml/message_moderation', {'mailinglist_id': db_list.id}, force_external=True)}
 """.strip(),
-            'list:admin:notice:disable': """
-$member's subscription has been disabled on $listname due to an excessive
-bounce score.
+            'list:admin:notice:disable': f"""
+Das Abonnement von $member auf der Mailingliste
+    $listname
+wurde deaktiviert, da zu viele Mails nicht zugestellt werden konnten.
 
-This means that the mailinglist software will no longer deliver mail to this
-subscriber. Sadly this aspect of mailman is not yet accessible via the CdEDB
-and independent of the subscriber status in the CdEDB.
+Dies bedeutet, dass keine weiteren Mails dieser Liste an den Abonnenten versendet werden.
 
-Usually you (the moderator) are unable to do anything about the cause and this
-message only serves the purpose of keeping you in the loop w.r.t. the status
-of your mailing list. Mailman will probe the subscriber address and
-automatically reenable delivery if possible. However this may take a while, so
-as a workaround once the bounce reason is fixed you -- can in the CdEDB --
-unsubscribe the individual, wait 15 minutes, and resubscribe the individual
-(this incantation should push the right buttons inside mailman to get things
-going again).
+Als Moderator kannst du versuchen, den Abonnenten auf einem anderen Weg zu
+kontaktieren und über den Grund der Unzustellbarkeit zu informieren.
+Die Zustellbenachrichtigung, falls vorhanden, ist angehängt.
+Bei Fragen dazu wende dich an das Adminteam:
+    <{self.conf["TROUBLESHOOTING_ADDRESS"]}>
 
-The triggering DSN if available is attached.
+Falls der Grund der Unzustellbarkeit behoben ist, kannst du den Nutzer manuell
+von der Mailingliste entfernen, 15 Minuten warten, und ihn danach wieder
+auf die Liste abonnieren. Dadurch wird das Abonnement wieder aktiviert.
 """.strip(),
         }
         if db_list.additional_footer:
