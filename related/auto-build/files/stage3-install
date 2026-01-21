@@ -207,6 +207,12 @@ cp /media/cdrom0/cdedb-app.service /etc/systemd/system/
 cp /media/cdrom0/cdedb-app.socket /etc/systemd/system/
 systemctl enable --now cdedb-app.socket
 
+# Add a service to auto restart the service upon some file changes.
+# dPROD not present
+cp /media/cdrom0/cdedb-app-restart.service /etc/systemd/system/
+cp /media/cdrom0/cdedb-app-restart.path /etc/systemd/system/
+systemctl enable --now cdedb-app-restart.path
+
 echo ""
 echo "Set up the fail2ban..."
 echo "--------------------------------------------"
