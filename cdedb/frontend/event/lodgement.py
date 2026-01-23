@@ -570,9 +570,9 @@ class EventLodgementMixin(EventBaseFrontend):
         for part_id in rs.ambience['event'].parts:
             # Sort not-involved attendees to the bottom of the list
             inhabitants[(lodgement_id, part_id)].sort(
-                key=lambda anid: not registrations[anid]['parts'][part_id][
-                    'status'
-                ].is_involved()
+                key=lambda anid: (
+                    not registrations[anid]['parts'][part_id]['status'].is_involved()
+                )
             )
             merge_dicts(
                 rs.values,

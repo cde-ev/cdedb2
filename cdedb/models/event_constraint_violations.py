@@ -817,7 +817,7 @@ class MutuallyExclusiveParticipationCV(RegistrationPartGroupConstraintViolation)
                 msg = n_(
                     "%(registration)s is present at mutually exclusive parts (%(part_list)s).",
                 )
-            part_filter = lambda part: (reg_parts[part.id]['status'].is_present())
+            part_filter = lambda part: reg_parts[part.id]['status'].is_present()
         params = {
             "registration": make_persona_name(self.persona, include_nickname=True),
             "part_list": ", ".join(

@@ -2,7 +2,6 @@
 
 """Global utility functions."""
 
-import collections
 import collections.abc
 import dataclasses
 import datetime
@@ -39,7 +38,6 @@ import phonenumbers
 import psycopg2.extras
 import werkzeug
 import werkzeug.datastructures
-import werkzeug.exceptions
 import werkzeug.routing
 from schulze_condorcet.types import Candidate
 from typing_extensions import TypeForm

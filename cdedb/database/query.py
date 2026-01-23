@@ -13,7 +13,6 @@ from collections.abc import Collection, Mapping, Sequence
 from typing import Optional, Union, cast
 
 import psycopg2.extensions
-import psycopg2.extras
 
 from cdedb.common import CdEDBObject, DefaultReturnCode, PsycoJson, unwrap
 from cdedb.database.connection import ConnectionContainer, n_

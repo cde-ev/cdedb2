@@ -74,7 +74,8 @@ _repopath = _currentdir.parent
 
 try:
     _git_commit = (
-        subprocess.check_output(("git", "rev-parse", "HEAD"), cwd=_repopath)
+        subprocess
+        .check_output(("git", "rev-parse", "HEAD"), cwd=_repopath)
         .decode()
         .strip()
     )

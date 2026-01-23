@@ -11,7 +11,6 @@ from wsgiref.types import WSGIApplication
 
 import jinja2
 import psycopg2.extensions
-import werkzeug
 import werkzeug.exceptions
 import werkzeug.routing
 import werkzeug.wrappers
@@ -172,8 +171,8 @@ class Application(BaseApp):
                 'ambience': {},
                 'cdedblink': _cdedblink,
                 'errors': {},
-                'request_time': lambda: (now() - request_begin),
-                'generation_time': lambda: (now() - begin),
+                'request_time': lambda: now() - request_begin,
+                'generation_time': lambda: now() - begin,
                 'gettext': gettext,
                 'ngettext': self.translations[lang].ngettext,
                 'lang': lang,

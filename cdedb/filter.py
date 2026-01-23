@@ -721,7 +721,7 @@ def enum_entries_filter(
     if raw:
         pre = lambda x: x
     else:
-        pre = lambda x: (x.display_str() if hasattr(x, "display_str") else str(x))
+        pre = lambda x: x.display_str() if hasattr(x, "display_str") else str(x)
     if intval:
         sortkey = lambda x: x
     else:
