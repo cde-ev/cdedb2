@@ -57,6 +57,7 @@ class EventPrivileges(Flag):
     delete = auto()
     orgas_change = auto()
     caretakers_change = auto()
+    unlock_registration = auto()
 
     # Shorthands for import / export
     all_read = basic_read | registrations_read | log_read
@@ -96,7 +97,7 @@ def is_privileged_event_user(
     orga_privileges = ~(
         EP.conclude | EP.balance | EP.delete | EP.orgas_change | EP.caretakers_change
     )
-    caretaker_privileges = orga_privileges | EP.orgas_change
+    caretaker_privileges = orga_privileges | EP.orgas_change | EP.unlock_registration
     event_helper_privileges = (
         EP.basic_read
         | EP.courses_read

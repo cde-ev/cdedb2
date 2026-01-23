@@ -1018,6 +1018,8 @@ class EventLogCodes(CdEIntEnum):
     checkin_period_deleted = 530  #:
     event_balanced = 600  #:
     event_unbalanced = 610  #:
+    registration_unlocked = 700  #:
+    registration_locked = 710  #:
 
 
 @enum.unique

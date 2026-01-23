@@ -939,6 +939,7 @@ CREATE TABLE event.events (
         is_cancelled                 boolean NOT NULL DEFAULT False,
         -- whether the event is financially concluded.
         is_balanced                  boolean NOT NULL DEFAULT False,
+        registration_unlocked        boolean NOT NULL DEFAULT False,
         -- `const.NotifyOnRegistration`:
         notify_on_registration       integer NOT NULL DEFAULT 0,
         -- reference to special purpose custom data fields

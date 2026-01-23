@@ -210,6 +210,9 @@ class Event(EventDataclass):
     is_locked: bool = dataclasses.field(metadata=Meta.request_exclude.as_dict)
     is_archived: bool = dataclasses.field(metadata=Meta.request_exclude.as_dict)
     is_balanced: bool = dataclasses.field(metadata=Meta.request_exclude.as_dict)
+    registration_unlocked: bool = dataclasses.field(
+        metadata=Meta.request_exclude.as_dict
+    )
 
     is_cancelled: bool
     is_visible: bool
@@ -358,6 +361,7 @@ class Event(EventDataclass):
                 self.registration_hard_limit is None
                 or self.registration_hard_limit >= reference_time
             )
+            and self.registration_unlocked
         )
 
     def is_visible_for(

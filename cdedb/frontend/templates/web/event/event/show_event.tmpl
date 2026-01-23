@@ -324,6 +324,42 @@
                     </div>
                 </div>
             {% endif %}
+            {% if is_privileged_for("event/unlock_registration", admin_view_to_consider="event_mgmt") %}
+                <div class="row" id="unlock-registration">
+                    <div class="col-sm-4">
+                        <div class="p">
+                            {% if not ambience['event'].registration_unlocked %}
+                                <form action="{{ cdedblink('event/unlock_registration') }}" method="POST" id="unlockregistrationform"
+                                      style="display: inline;">
+                                    {{ util.anti_csrf_token('event/unlock_registration') }}
+                                    {{ util.input_submit(label=gettext("Unlock Registration"), readonly=is_locked,
+                                                         aclass="btn btn-primary btn-wrap", icon="unlock") }}
+                                </form>
+                            {% else %}
+                                <form action="{{ cdedblink('event/lock_registration') }}" method="POST" id="lockregistrationform"
+                                      style="display: inline;">
+                                    {{ util.anti_csrf_token('event/lock_registration') }}
+                                    {{ util.input_submit(label=gettext("Lock Registration"), readonly=is_locked,
+                                                         aclass="btn btn-danger btn-wrap", icon="lock") }}
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-sm-8">
+                        <p class="text-muted">
+                            {% if not ambience['event'].registration_unlocked %}
+                                {% trans %}
+                                    Allows registration to begin at the configured time. Is reversible.
+                                {% endtrans %}
+                            {% else %}
+                                {% trans %}
+                                    Blocks registration regardless of the configured time. Is reversible.
+                                {% endtrans %}
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            {% endif %}
             {% if "event_mgmt" in user.admin_views %}
                 {% if "cde_admin" in user.roles and not ambience['event']['is_archived'] %}
                 <div class="row" id="archive-event">

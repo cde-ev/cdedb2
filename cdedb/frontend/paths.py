@@ -584,6 +584,8 @@ rules = [
                     get_("/list", endpoint="participant_list"),
                     get_("/multiedit", endpoint="change_registrations_form"),
                     post("/multiedit", endpoint="change_registrations"),
+                    post("/unlock", endpoint="unlock_registration"),
+                    post("/lock", endpoint="lock_registration"),
                     sub(
                         "/checkin",
                         get_("/", endpoint="checkin_form"),
