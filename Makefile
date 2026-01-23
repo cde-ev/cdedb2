@@ -146,7 +146,7 @@ format: venv
 
 .PHONY: autoformat
 autoformat: format
-	$(RUFF) check --output-format full $(MAKE_LINT_TARGETS)
+	$(RUFF) check $(MAKE_LINT_TARGETS)
 
 .PHONY: format-diff
 format-diff: venv
