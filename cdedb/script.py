@@ -109,7 +109,7 @@ class TempConfig:
                         " Please use the SECRET_CONFIGPATH config argument instead."
                     )
                     raise ValueError(msg)
-                f.write(f"\n{k} = {v}")
+                f.write(f"\n{k} = {v!r}")
             f.flush()
             set_configpath(f.name)
         elif self._configpath:

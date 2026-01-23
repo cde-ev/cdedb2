@@ -98,6 +98,8 @@ class TestScript(unittest.TestCase):
                          str({"EVENT_ARCHIVAL_BALANCE_CUTOFF": 42}))
         self.assertTrue(configured_script.config._is_frozen)
 
+        self.get_script(some_key="string value")
+
         # check overwriting per config file
         # here, we need to set the relevant flags from the real_config manually
         with tempfile.NamedTemporaryFile("w", suffix=".py", encoding="utf-8") as f:
