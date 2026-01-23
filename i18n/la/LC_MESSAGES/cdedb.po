@@ -3810,7 +3810,7 @@ msgstr ""
 #: cdedb/backend/common.py:464 cdedb/backend/core/base.py:2914
 #: cdedb/backend/event/base.py:1636 cdedb/common/__init__.py:318
 #: cdedb/frontend/assembly/ballot.py:640 cdedb/frontend/cde/base.py:889
-#: cdedb/frontend/cde/lastschrift.py:679
+#: cdedb/frontend/cde/lastschrift.py:648 cdedb/frontend/cde/lastschrift.py:679
 #: cdedb/frontend/cde/parse_statement.py:725 cdedb/frontend/common.py:802
 #: cdedb/frontend/event/base.py:699 cdedb/frontend/event/query_stats.py:506
 #: cdedb/frontend/event/query_stats.py:700
@@ -3955,7 +3955,8 @@ msgstr ""
 msgid "Lastschrift already revoked."
 msgstr ""
 
-#: cdedb/backend/cde/lastschrift.py:426 cdedb/frontend/cde/lastschrift.py:458
+#: cdedb/backend/cde/lastschrift.py:426 cdedb/frontend/cde/lastschrift.py:447
+#: cdedb/frontend/cde/lastschrift.py:458 cdedb/frontend/cde/lastschrift.py:526
 #: cdedb/frontend/cde/lastschrift.py:557
 msgid "Existing pending transaction."
 msgstr ""
@@ -4522,9 +4523,13 @@ msgstr ""
 #: cdedb/common/validation/validate.py:1021
 #: cdedb/common/validation/validate.py:1141
 #: cdedb/common/validation/validate.py:2782
+#: cdedb/common/validation/validate.py:2783
 #: cdedb/common/validation/validate.py:4174
+#: cdedb/common/validation/validate.py:4175
 #: cdedb/common/validation/validate.py:4880
-#: cdedb/common/validation/validate.py:5054 cdedb/frontend/cde/base.py:293
+#: cdedb/common/validation/validate.py:4881
+#: cdedb/common/validation/validate.py:5054
+#: cdedb/common/validation/validate.py:5055 cdedb/frontend/cde/base.py:293
 #: cdedb/frontend/cde/base.py:297 cdedb/frontend/common.py:721
 #: cdedb/frontend/core/base.py:1446 cdedb/frontend/core/complaint.py:405
 #: cdedb/frontend/core/complaint.py:535 cdedb/frontend/core/genesis.py:146
@@ -4598,8 +4603,11 @@ msgstr "signum arcanum muta"
 #: cdedb/frontend/event/registration.py:1244
 #: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:25
 #: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:29
+#: cdedb/frontend/templates/web/event/generic.tmpl:614
 #: cdedb/frontend/templates/web/event/generic.tmpl:619
+#: cdedb/frontend/templates/web/event/generic.tmpl:637
 #: cdedb/frontend/templates/web/event/generic.tmpl:642
+#: cdedb/frontend/templates/web/event/generic.tmpl:649
 #: cdedb/frontend/templates/web/event/generic.tmpl:654
 msgid "Event is balanced. May not change fee configuration."
 msgstr ""
@@ -4802,7 +4810,9 @@ msgid "Event is balanced. May not create registration which owes a fee."
 msgstr ""
 
 #: cdedb/backend/event/registration.py:1995
+#: cdedb/frontend/templates/web/event/generic.tmpl:541
 #: cdedb/frontend/templates/web/event/generic.tmpl:546
+#: cdedb/frontend/templates/web/event/generic.tmpl:563
 #: cdedb/frontend/templates/web/event/generic.tmpl:568
 #: cdedb/frontend/templates/web/event/registration/registration_fee_summary.tmpl:61
 msgid "Event is balanced. May not set personalized fee amount."
@@ -4842,7 +4852,9 @@ msgstr ""
 #: cdedb/backend/event/registration.py:2407
 #: cdedb/backend/event/registration.py:2488
 #: cdedb/common/validation/validate.py:3915
+#: cdedb/common/validation/validate.py:3916
 #: cdedb/common/validation/validate.py:3928
+#: cdedb/common/validation/validate.py:3929
 #: cdedb/frontend/event/registration.py:2007
 #: cdedb/frontend/event/registration.py:2101
 msgid "Checkout must be after checkin."
@@ -6113,6 +6125,7 @@ msgstr ""
 #: cdedb/common/query/__init__.py:1204 cdedb/common/query/__init__.py:1211
 #: cdedb/frontend/templates/web/event/event/add_part.tmpl:29
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:38
+#: cdedb/frontend/templates/web/event/generic.tmpl:683
 #: cdedb/frontend/templates/web/event/generic.tmpl:688
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:106
 msgid "Fee"
@@ -7086,6 +7099,7 @@ msgstr "epistula electronica ad verificandum mitte"
 
 #: cdedb/common/validation/validate.py:2081
 #: cdedb/common/validation/validate.py:4971
+#: cdedb/common/validation/validate.py:4972
 msgid "Must contain exactly two elements."
 msgstr ""
 
@@ -7122,340 +7136,422 @@ msgid "Invalid checksum."
 msgstr "Annuntiationes"
 
 #: cdedb/common/validation/validate.py:2292
+#: cdedb/common/validation/validate.py:2293
 #: cdedb/common/validation/validate.py:2351
+#: cdedb/common/validation/validate.py:2352
 #: cdedb/common/validation/validate.py:2361
+#: cdedb/common/validation/validate.py:2362
 #: cdedb/common/validation/validate.py:2367
+#: cdedb/common/validation/validate.py:2368
 msgid "Too long."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:2295
+#: cdedb/common/validation/validate.py:2296
 #, fuzzy
 msgid "Invalid constant."
 msgstr "Annuntiationes"
 
 #: cdedb/common/validation/validate.py:2354
+#: cdedb/common/validation/validate.py:2355
 msgid "Unsupported constant."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:2356
+#: cdedb/common/validation/validate.py:2357
 msgid "Exactly two lines required."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:2466
+#: cdedb/common/validation/validate.py:2467
 #, fuzzy
 msgid "Only creation allowed."
 msgstr "epistula electronica ad verificandum mitte"
 
 #: cdedb/common/validation/validate.py:2596
+#: cdedb/common/validation/validate.py:2597
 msgid "Must be later than begin."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:2611
+#: cdedb/common/validation/validate.py:2612
 #, fuzzy
 msgid "Unknown waitlist field."
 msgstr "inscriptio electronica nova"
 
 #: cdedb/common/validation/validate.py:2620
+#: cdedb/common/validation/validate.py:2621
 #, fuzzy
 msgid "Waitlist field must be a registration field."
 msgstr "Annuntiationes"
 
 #: cdedb/common/validation/validate.py:2629
+#: cdedb/common/validation/validate.py:2630
 #, fuzzy
 msgid "Waitlist field must have type 'Integer'."
 msgstr "Annuntiationes"
 
 #: cdedb/common/validation/validate.py:2636
+#: cdedb/common/validation/validate.py:2637
 #, fuzzy
 msgid "Unknown camping mat field."
 msgstr "inscriptio electronica nova"
 
 #: cdedb/common/validation/validate.py:2646
+#: cdedb/common/validation/validate.py:2647
 #, fuzzy
 msgid "Camping mat field must be a registration field."
 msgstr "Annuntiationes"
 
 #: cdedb/common/validation/validate.py:2655
+#: cdedb/common/validation/validate.py:2656
 #, fuzzy
 msgid "Camping mat field must have type 'Yes/No'."
 msgstr "Annuntiationes"
 
 #: cdedb/common/validation/validate.py:2676
+#: cdedb/common/validation/validate.py:2677
 #, fuzzy
 msgid "Unknown part."
 msgstr "inscriptio electronica nova"
 
 #: cdedb/common/validation/validate.py:2688
+#: cdedb/common/validation/validate.py:2689
 #: cdedb/common/validation/validate.py:2693
+#: cdedb/common/validation/validate.py:2694
 msgid "A part group with this name already exists."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:2734
+#: cdedb/common/validation/validate.py:2735
 msgid "Must be less or equal than total Course Choices."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:2741
+#: cdedb/common/validation/validate.py:2742
 #, fuzzy
 msgid "Unknown course room field."
 msgstr "inscriptio electronica nova"
 
 #: cdedb/common/validation/validate.py:2751
+#: cdedb/common/validation/validate.py:2752
 #, fuzzy
 msgid "Course room field must be a course field."
 msgstr "Annuntiationes"
 
 #: cdedb/common/validation/validate.py:2760
+#: cdedb/common/validation/validate.py:2761
 #, fuzzy
 msgid "Course room field mut have type 'Text'."
 msgstr "Annuntiationes"
 
 #: cdedb/common/validation/validate.py:2784
+#: cdedb/common/validation/validate.py:2785
 #, fuzzy
 msgid "Unknown track."
 msgstr "inscriptio electronica nova"
 
 #: cdedb/common/validation/validate.py:2793
+#: cdedb/common/validation/validate.py:2794
 msgid "Cannot have more than one course choice sync track group per track."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:2806
+#: cdedb/common/validation/validate.py:2807
 msgid ""
 "Tracks of a course choice sync track group must have the same number of "
 "choices."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:2823
+#: cdedb/common/validation/validate.py:2824
 #: cdedb/common/validation/validate.py:2828
+#: cdedb/common/validation/validate.py:2829
 msgid "A track group with this name already exists."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:2882
+#: cdedb/common/validation/validate.py:2883
 msgid "Value not well-formed."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:2890
+#: cdedb/common/validation/validate.py:2891
 msgid "Could not convert sequence to dict."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:2900
+#: cdedb/common/validation/validate.py:2901
 msgid "Duplicate value(s)."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:2930
+#: cdedb/common/validation/validate.py:2931
 #, fuzzy
 msgid "Cannot set amount for personalized fee."
 msgstr "(posterius ad %(date)s annuntiari potest)"
 
 #: cdedb/common/validation/validate.py:2935
+#: cdedb/common/validation/validate.py:2936
 msgid "Cannot set condition for personalized fee."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:2941
+#: cdedb/common/validation/validate.py:2942
 msgid "Cannot unset amount for conditional fee."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:2946
+#: cdedb/common/validation/validate.py:2947
 msgid "Cannot unset condition for conditional fee."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:2952
+#: cdedb/common/validation/validate.py:2953
 msgid "Cannot have amount without condition or vice versa."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:2960
+#: cdedb/common/validation/validate.py:2961
 #: cdedb/common/validation/validate.py:4403
+#: cdedb/common/validation/validate.py:4404
 msgid "Duplicate title."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:3033 cdedb/frontend/event/course.py:296
+#: cdedb/common/validation/validate.py:3033
+#: cdedb/common/validation/validate.py:3034 cdedb/frontend/event/course.py:296
 #: cdedb/frontend/event/course.py:414
 msgid "Event without tracks forbids courses."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:3212
+#: cdedb/common/validation/validate.py:3213
 msgid "Entry not in definition list."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:3252
+#: cdedb/common/validation/validate.py:3253
 #, fuzzy
 msgid "Invalid placeholder for new lodgement group."
 msgstr "signum arcanum muta"
 
 #: cdedb/common/validation/validate.py:3257
+#: cdedb/common/validation/validate.py:3258
 #, fuzzy
 msgid "Unknown lodgement group for this event."
 msgstr "inscriptio electronica nova"
 
 #: cdedb/common/validation/validate.py:3326
+#: cdedb/common/validation/validate.py:3327
 msgid "Incorrect kind for this part of the questionnaire"
 msgstr ""
 
 #: cdedb/common/validation/validate.py:3333
+#: cdedb/common/validation/validate.py:3334
 #, fuzzy
 msgid "No kind specified."
 msgstr "non dictum"
 
 #: cdedb/common/validation/validate.py:3348
+#: cdedb/common/validation/validate.py:3349
 msgid "Cannot specify both field id and field name."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:3355
+#: cdedb/common/validation/validate.py:3356
 #, python-format
 msgid "No field with name '%(name)s' exists."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:3370
+#: cdedb/common/validation/validate.py:3371
 #: cdedb/common/validation/validate.py:4895
+#: cdedb/common/validation/validate.py:4896
 #: cdedb/common/validation/validate.py:4951
+#: cdedb/common/validation/validate.py:4952
 #: cdedb/frontend/event/questionnaire.py:320
 #, fuzzy
 msgid "Invalid field."
 msgstr "Annuntiationes"
 
 #: cdedb/common/validation/validate.py:3383
+#: cdedb/common/validation/validate.py:3384
 #: cdedb/frontend/event/questionnaire.py:325
 msgid "Registration questionnaire rows may not be readonly."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:3436
+#: cdedb/common/validation/validate.py:3437
 #, python-format
 msgid "Must not duplicate field ('%(field_name)s')."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:3460
+#: cdedb/common/validation/validate.py:3461
 #, fuzzy
 msgid "Invalid UTF-8 sequence."
 msgstr "Series vites."
 
 #: cdedb/common/validation/validate.py:3466
+#: cdedb/common/validation/validate.py:3467
 #, python-format
 msgid "Invalid JSON syntax (line %(line)s, col %(col)s)."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:3496
+#: cdedb/common/validation/validate.py:3497
 msgid "Only partial exports are supported."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:3521
+#: cdedb/common/validation/validate.py:3522
 msgid "Schema version mismatch."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:3825
+#: cdedb/common/validation/validate.py:3826
 msgid "Checkout time may only be empty for latest checkin period."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:3830
+#: cdedb/common/validation/validate.py:3831
 #, fuzzy
 msgid "Inconsistent sequence of checkin periods."
 msgstr "vestigium novum crea"
 
 #: cdedb/common/validation/validate.py:3978
+#: cdedb/common/validation/validate.py:3979
 #, python-format
 msgid "A field with this name already exists ('%(field_name)s')."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4072
+#: cdedb/common/validation/validate.py:4073
 msgid "Must be a registered event IBAN."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4087
+#: cdedb/common/validation/validate.py:4088
 msgid "Must be before hard and soft limit."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4101
+#: cdedb/common/validation/validate.py:4102
 #, fuzzy
 msgid "Unknown lodge field."
 msgstr "inscriptio electronica nova"
 
 #: cdedb/common/validation/validate.py:4110
+#: cdedb/common/validation/validate.py:4111
 #, fuzzy
 msgid "Lodge field must be a registration field."
 msgstr "Annuntiationes"
 
 #: cdedb/common/validation/validate.py:4118
+#: cdedb/common/validation/validate.py:4119
 #, fuzzy
 msgid "Lodge field must have type 'Text'."
 msgstr "Annuntiationes"
 
 #: cdedb/common/validation/validate.py:4126
+#: cdedb/common/validation/validate.py:4127
 #, fuzzy
 msgid "Unknown reimbursement IBAN field."
 msgstr "inscriptio electronica nova"
 
 #: cdedb/common/validation/validate.py:4137
+#: cdedb/common/validation/validate.py:4138
 msgid "Reimbursement IBAN field must be a registration field."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4146
+#: cdedb/common/validation/validate.py:4147
 msgid "Reimbursement IBAN field must have type 'IBAN'."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4182
+#: cdedb/common/validation/validate.py:4183
 msgid "Invalid domain for this mailinglist type."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4189
+#: cdedb/common/validation/validate.py:4190
 msgid "Cannot have event part group without event."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4362
+#: cdedb/common/validation/validate.py:4363
 msgid "Mustn’t be in the past."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4367
+#: cdedb/common/validation/validate.py:4368
 msgid "Mustn’t be before start of voting period."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4375
+#: cdedb/common/validation/validate.py:4376
 msgid "Mustn’t be before end of voting period."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4405
+#: cdedb/common/validation/validate.py:4406
 msgid "Duplicate shortname."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4409
+#: cdedb/common/validation/validate.py:4410
 msgid "Must not specify both absolute and relative quorum."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4418
+#: cdedb/common/validation/validate.py:4419
 msgid "Relative quorum must be between 0 and 100."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4423
+#: cdedb/common/validation/validate.py:4424
 msgid "Must be specified if quorum is given."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4426
+#: cdedb/common/validation/validate.py:4427
 msgid "Must specify a quorum if vote extension end is given."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4494
+#: cdedb/common/validation/validate.py:4495
 msgid "Mustn’t be the bar shortname."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4565
+#: cdedb/common/validation/validate.py:4566
 msgid "Must specify ballot in order to validate vote."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4583
+#: cdedb/common/validation/validate.py:4584
 msgid "Too many levels."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4586
+#: cdedb/common/validation/validate.py:4587
 msgid "Too many votes."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4588
+#: cdedb/common/validation/validate.py:4589
 msgid "Misplaced bar."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4606
+#: cdedb/common/validation/validate.py:4607
 #, python-format
 msgid "Invalid  regular expression (position %(pos)s)."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4618
+#: cdedb/common/validation/validate.py:4619
 #, python-format
 msgid ""
 "Must not contain any forbidden characters (which are %(forbidden_chars)s "
@@ -7463,78 +7559,96 @@ msgid ""
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4643
+#: cdedb/common/validation/validate.py:4644
 msgid "Combine a minimum of two fields."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4650
+#: cdedb/common/validation/validate.py:4651
 #, fuzzy, python-format
 msgid "Unknown field(s): %(fields)s."
 msgstr "inscriptio electronica nova"
 
 #: cdedb/common/validation/validate.py:4656
+#: cdedb/common/validation/validate.py:4657
 #: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:103
 msgid "Incompatible field types."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4733
+#: cdedb/common/validation/validate.py:4734
 msgid "Invalid operator for this field."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4783
+#: cdedb/common/validation/validate.py:4784
 msgid "Two endpoints required."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4813
+#: cdedb/common/validation/validate.py:4814
 msgid "Selection may not be empty."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4859
+#: cdedb/common/validation/validate.py:4860
 msgid "Not a Query."
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4887
+#: cdedb/common/validation/validate.py:4888
 #, python-format
 msgid "Invalid constraint number %(index)s"
 msgstr ""
 
 #: cdedb/common/validation/validate.py:4907
+#: cdedb/common/validation/validate.py:4908
 #, fuzzy
 msgid "Invalid operator."
 msgstr "signum arcanum muta"
 
 #: cdedb/common/validation/validate.py:4940
+#: cdedb/common/validation/validate.py:4941
 #, python-format
 msgid "Invalid ordering condition number %(index)s"
 msgstr ""
 
 #: cdedb/common/validation/validate.py:5025
+#: cdedb/common/validation/validate.py:5026
 #, fuzzy
 msgid "Unknown parent entry."
 msgstr "inscriptio electronica nova"
 
 #: cdedb/common/validation/validate.py:5027
+#: cdedb/common/validation/validate.py:5028
 #, fuzzy
 msgid "Invalid parent type."
 msgstr "signum arcanum muta"
 
 #: cdedb/common/validation/validate.py:5070
+#: cdedb/common/validation/validate.py:5071
 #: cdedb/common/validation/validate.py:5075
+#: cdedb/common/validation/validate.py:5076
 #, fuzzy
 msgid "Incomplete attachment."
 msgstr "administrator coetuum"
 
 #: cdedb/common/validation/validate.py:5078
+#: cdedb/common/validation/validate.py:5079
 #, fuzzy
 msgid "Must be after timestamp."
 msgstr "administrator coetuum"
 
 #: cdedb/common/validation/validate.py:5100
+#: cdedb/common/validation/validate.py:5101
 #: cdedb/common/validation/validate.py:5174
+#: cdedb/common/validation/validate.py:5175
 #, python-format
 msgid "Invalid input for the enumeration %(enum)s"
 msgstr ""
 
 #: cdedb/common/validation/validate.py:5151
+#: cdedb/common/validation/validate.py:5152
 msgid "SubscriptionState.none is not written into the database."
 msgstr ""
 
@@ -8053,33 +8167,33 @@ msgstr "Annuntiationes"
 msgid "Differing payment dates."
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:528
+#: cdedb/frontend/cde/lastschrift.py:497 cdedb/frontend/cde/lastschrift.py:528
 msgid "Creation of SEPA-PAIN-file failed."
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:596
+#: cdedb/frontend/cde/lastschrift.py:565 cdedb/frontend/cde/lastschrift.py:596
 #, python-format
 msgid "%(num)s Direct Debits issued. Notification mails sent."
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:616
+#: cdedb/frontend/cde/lastschrift.py:585 cdedb/frontend/cde/lastschrift.py:616
 msgid "Unable to skip transaction."
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:618
+#: cdedb/frontend/cde/lastschrift.py:587 cdedb/frontend/cde/lastschrift.py:618
 msgid "Skipped."
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:665
+#: cdedb/frontend/cde/lastschrift.py:634 cdedb/frontend/cde/lastschrift.py:665
 msgid "Wrong number of actions."
 msgstr ""
 
-#: cdedb/frontend/cde/lastschrift.py:670
+#: cdedb/frontend/cde/lastschrift.py:639 cdedb/frontend/cde/lastschrift.py:670
 #, fuzzy
 msgid "No transactions selected."
 msgstr "Annuntiationes"
 
-#: cdedb/frontend/cde/lastschrift.py:800
+#: cdedb/frontend/cde/lastschrift.py:769 cdedb/frontend/cde/lastschrift.py:800
 msgid ""
 "Form could not be created. Please refrain from using special characters if "
 "possible."
@@ -9385,6 +9499,7 @@ msgstr "Annuntiationes"
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:107
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:148
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:188
+#: cdedb/frontend/templates/web/event/generic.tmpl:580
 #: cdedb/frontend/templates/web/event/generic.tmpl:585
 msgid "Paid"
 msgstr ""
@@ -10879,6 +10994,7 @@ msgstr "tabellae epistularum electronicarum moderatae"
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:96
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:168
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:34
+#: cdedb/frontend/templates/web/event/generic.tmpl:728
 #: cdedb/frontend/templates/web/event/generic.tmpl:733
 #: cdedb/frontend/templates/web/event/lodgement/change_lodgement.tmpl:20
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:163
@@ -12520,6 +12636,7 @@ msgid "Edit Direct Debit Authorization"
 msgstr "tractare mandatum pecuniae expensae lationis"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:31
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:148
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:152
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:35
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:36
@@ -12561,6 +12678,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_create.tmpl:9
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_create.tmpl:18
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_create.tmpl:22
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:27
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:31
 msgid "New Direct Debit Authorization"
 msgstr ""
@@ -12586,6 +12704,7 @@ msgid ""
 "This Direct Debit will be skipped for this semster. This cannot be undone."
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:19
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:20
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:110
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:111
@@ -12595,19 +12714,23 @@ msgstr ""
 msgid "This action cannot be undone."
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:21
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:25
 msgid "Direct Debits will be created."
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:22
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:26
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:112
 msgid "Direct Debit will be created."
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:31
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:35
 msgid "Open Direct Debit Authorizations"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:34
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:38
 msgid ""
 "During the Semester – as early as possible, but not before the Payment "
@@ -12615,6 +12738,7 @@ msgid ""
 "executed."
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:40
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:44
 msgid ""
 "To do this, generate a SEPA-PAIN-file and import it into the online banking "
@@ -12623,47 +12747,59 @@ msgid ""
 "the members informing them about the transaction."
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:47
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:51
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:143
 #, python-format
 msgid "Transactions which are initialised today will be booked at %(date)s."
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:61
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:65
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:227
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:234
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:252
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:259
 #: cdedb/frontend/templates/web/generic.tmpl:530
 msgid "Profile"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:68
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:72
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:97
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:101
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:152
 msgid "Create SEPA-PAIN-file"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:76
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:80
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:159
 msgid "Perform Direct Debit"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:84
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:88
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:166
 msgid "Skip Direct Debit"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:89
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:93
 msgid "No Direct Debits to perform this Semester."
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:102
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:106
 msgid "Perform all Direct Debits"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:114
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:118
 msgid "Open Direct Debits"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:118
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:122
 msgid ""
 "The following Direct Debits are pending. As soon as they are executed, enter "
@@ -12671,22 +12807,27 @@ msgid ""
 "to execute. In the latter case, the authorization will be considered revoked."
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:127
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:131
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:153
 msgid "Select All"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:129
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:133
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:155
+#: cdedb/frontend/templates/web/event/generic.tmpl:748
 #: cdedb/frontend/templates/web/event/generic.tmpl:753
 msgid "All"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:131
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:135
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:157
 msgid "Select None"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:133
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:137
 #: cdedb/frontend/templates/web/core/show_history.tmpl:224
 #: cdedb/frontend/templates/web/core/show_user.tmpl:316
@@ -12696,28 +12837,33 @@ msgstr ""
 msgid "None"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:135
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:139
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:161
 #, fuzzy
 msgid "Invert Selection"
 msgstr "epistula electronica ad verificandum mitte"
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:137
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:141
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:163
 msgid "Invert"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:149
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:153
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:175
 #, fuzzy
 msgid "Created"
 msgstr "documentatio"
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:150
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:154
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:176
 msgid "Payment date"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:151
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:155
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:180
 #: cdedb/frontend/templates/web/cde/parse/money_transfers.tmpl:40
@@ -12733,57 +12879,68 @@ msgstr ""
 msgid "Amount"
 msgstr "vestigium novum crea"
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:166
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:170
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:235
 msgid "This transaction needs to be cancelled!"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:194
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:198
 msgid "All selected:"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:199
-msgid "SEPA-PAIN"
-msgstr ""
-
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:195
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:202
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:209
 msgid "Success"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:196
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:203
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:219
 msgid "Failed"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:197
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:204
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:229
 #, fuzzy
 msgid "Cancelled"
 msgstr "Desine"
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:199
+msgid "SEPA-PAIN"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:202
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:209
 msgid "There are currently no Direct Debits pending."
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:207
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:214
 msgid "All active Authorizations"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:209
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:216
 #, python-format
 msgid "The total amount of donations is %(money)s."
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:212
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:219
 #, python-format
 msgid "Including the annual membership fees, this sums up to %(money)s."
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:235
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:242
 msgid "All inactive Authorizations"
 msgstr ""
 
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:237
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:244
 msgid "Only authorizations of users without an active authorization are shown."
 msgstr ""
@@ -13069,6 +13226,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/parse/money_transfers.tmpl:100
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:81
 #: cdedb/frontend/templates/web/event/generic.tmpl:477
+#: cdedb/frontend/templates/web/event/generic.tmpl:718
 #: cdedb/frontend/templates/web/event/generic.tmpl:723
 msgid "Total"
 msgstr ""
@@ -17079,7 +17237,10 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:61
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:54
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:56
+#: cdedb/frontend/templates/web/event/generic.tmpl:740
 #: cdedb/frontend/templates/web/event/generic.tmpl:745
+#: cdedb/frontend/templates/web/event/generic.tmpl:770
+#: cdedb/frontend/templates/web/event/generic.tmpl:773
 #: cdedb/frontend/templates/web/event/generic.tmpl:775
 #: cdedb/frontend/templates/web/event/generic.tmpl:778
 #: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:39
@@ -18353,6 +18514,7 @@ msgid "Add Conditional Fee (%(event_title)s)"
 msgstr "(posterius ad %(date)s annuntiari potest)"
 
 #: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:31
+#: cdedb/frontend/templates/web/event/generic.tmpl:639
 #: cdedb/frontend/templates/web/event/generic.tmpl:644
 #, fuzzy, python-format
 msgid "Change fee %(fee_title)s"
@@ -18411,6 +18573,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:27
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:105
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:146
+#: cdedb/frontend/templates/web/event/generic.tmpl:576
 #: cdedb/frontend/templates/web/event/generic.tmpl:581
 msgid "Owed"
 msgstr ""
@@ -18523,6 +18686,7 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:98
+#: cdedb/frontend/templates/web/event/generic.tmpl:601
 #: cdedb/frontend/templates/web/event/generic.tmpl:606
 #, fuzzy
 msgid "Personalized Fee"
@@ -19342,68 +19506,83 @@ msgstr ""
 msgid "Inactive"
 msgstr "vestigium novum crea"
 
+#: cdedb/frontend/templates/web/event/generic.tmpl:616
 #: cdedb/frontend/templates/web/event/generic.tmpl:621
 #, fuzzy
 msgid "Set personalized amount for multiple registrations."
 msgstr "(posterius ad %(date)s annuntiari potest)"
 
+#: cdedb/frontend/templates/web/event/generic.tmpl:629
 #: cdedb/frontend/templates/web/event/generic.tmpl:634
 msgid "Go to event fee summary"
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/generic.tmpl:651
 #: cdedb/frontend/templates/web/event/generic.tmpl:656
 #, fuzzy, python-format
 msgid "Delete fee %(fee_title)s"
 msgstr "(posterius ad %(date)s annuntiari potest)"
 
+#: cdedb/frontend/templates/web/event/generic.tmpl:667
 #: cdedb/frontend/templates/web/event/generic.tmpl:672
 msgid "Activate JavaScript for automatic fee preview."
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/generic.tmpl:675
 #: cdedb/frontend/templates/web/event/generic.tmpl:680
 msgid "Fee Preview"
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/generic.tmpl:743
 #: cdedb/frontend/templates/web/event/generic.tmpl:748
 msgid "Minimum Inconsistency Severity"
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/generic.tmpl:746
 #: cdedb/frontend/templates/web/event/generic.tmpl:751
 #, fuzzy
 msgid "Type of Inconsistency"
 msgstr "vestigium novum crea"
 
+#: cdedb/frontend/templates/web/event/generic.tmpl:752
 #: cdedb/frontend/templates/web/event/generic.tmpl:757
 msgid "Only show these events:"
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/generic.tmpl:753
 #: cdedb/frontend/templates/web/event/generic.tmpl:758
 #: cdedb/frontend/templates/web/generic.tmpl:348
 msgid "<id>,<id>,…"
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/generic.tmpl:754
 #: cdedb/frontend/templates/web/event/generic.tmpl:759
 msgid "any"
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/generic.tmpl:754
 #: cdedb/frontend/templates/web/event/generic.tmpl:759
 msgid "no"
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/generic.tmpl:754
 #: cdedb/frontend/templates/web/event/generic.tmpl:759
 msgid "yes"
 msgstr ""
 
+#: cdedb/frontend/templates/web/event/generic.tmpl:759
 #: cdedb/frontend/templates/web/event/generic.tmpl:764
 #, fuzzy
 msgid "Is Archived"
 msgstr "vestigium novum crea"
 
+#: cdedb/frontend/templates/web/event/generic.tmpl:763
 #: cdedb/frontend/templates/web/event/generic.tmpl:768
 #, fuzzy
 msgid "Is Balanced"
 msgstr "mensura pecuniae"
 
+#: cdedb/frontend/templates/web/event/generic.tmpl:767
 #: cdedb/frontend/templates/web/event/generic.tmpl:772
 msgid "Is Concluded"
 msgstr ""

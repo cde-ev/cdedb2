@@ -438,7 +438,7 @@ class Application(BaseApp):
         if request.cookies.get('locale') in self.conf["I18N_LANGUAGES"]:
             return request.cookies['locale']
 
-        return request.accept_languages.best_match(  # type: ignore[return-value]
+        return request.accept_languages.best_match(
             self.conf["I18N_LANGUAGES"], default="de"
         )
 
