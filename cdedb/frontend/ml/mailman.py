@@ -99,6 +99,7 @@ class MlMailmanMixin(MlBaseFrontend):
             #    " da die DMARC-Sicherheitsrichtlinien des initialen Mailproviders"
             #    " mit Maillinglisten inkompatibel sind."),
             'administrivia': True,
+            'preferred_language': 'de',
             'member_roster_visibility': 'moderators',
             'advertised': True,
             'display_name': db_list.title,
