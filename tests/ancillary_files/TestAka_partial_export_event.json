@@ -444,6 +444,7 @@
         "registration_soft_limit": "2200-10-30T00:00:00+00:00",
         "registration_start": "2000-10-30T00:00:00+00:00",
         "registration_text": null,
+        "registration_unlocked": true,
         "reimbursement_iban_field": null,
         "shortname": "TestAka",
         "title": "Gro\u00dfe Testakademie 2222",
