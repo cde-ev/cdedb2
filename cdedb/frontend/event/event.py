@@ -1805,7 +1805,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.unlock_registration)
     def unlock_registration(self, rs: RequestState, event_id: int) -> Response:
         if rs.ambience['event'].registration_unlocked:
-            rs.notify("warning", n_("Event already unlocked."))
+            rs.notify("warning", n_("Registration already unlocked."))
         else:
             code = self.eventproxy.unlock_registration(rs, event_id)
             rs.notify_return_code(code)
@@ -1815,7 +1815,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.unlock_registration)
     def lock_registration(self, rs: RequestState, event_id: int) -> Response:
         if not rs.ambience['event'].registration_unlocked:
-            rs.notify("warning", n_("Event already locked."))
+            rs.notify("warning", n_("Registration already locked."))
         else:
             code = self.eventproxy.lock_registration(rs, event_id)
             rs.notify_return_code(code)
