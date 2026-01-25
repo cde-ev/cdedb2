@@ -129,7 +129,7 @@ Dies ist eine Mailingliste des CdE e.V.
 E-Mails an diese Mailingliste werden unter https://ssl.cde-ev.de/mailman3/hyperkitty/list/{db_list.address}/ archiviert.
 Zur Abo-Verwaltung benutze die Datenbank ({cdedburl(rs, 'ml/index', force_external=True)}).""",
             'list:admin:action:post': f"""
-Als Moderator wird deine Zustimmung für die folgende E-Mail benötigt:
+Als Moderator einer Mailingliste wird deine Zustimmung für die folgende E-Mail benötigt:
 
     Liste:    $listname
     Absender: $sender_email
@@ -150,22 +150,29 @@ Das Abonnement von $member auf der Mailingliste
     $listname
 wurde deaktiviert, da zu viele Mails nicht zugestellt werden konnten.
 
-Dies bedeutet, dass keine weiteren Mails dieser Liste an den Abonnenten versendet werden.
+Dies bedeutet, dass keine weiteren Mails dieser Liste an den Abonnenten versendet
+werden. Diese Einschränkung ist momentan *nicht* in der CdEDB sichtbar.
 
 Als Moderator kannst du versuchen, den Abonnenten auf einem anderen Weg zu
 kontaktieren und über den Grund der Unzustellbarkeit zu informieren.
 Die Zustellbenachrichtigung, falls vorhanden, ist angehängt.
 Bei Fragen dazu wende dich an das Adminteam:
     <{self.conf["TROUBLESHOOTING_ADDRESS"]}>
+Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Empfänger mit
+ähnlichen Email-Anbietern, kontaktiere bitte auch das Adminteam.
 
-Falls der Grund der Unzustellbarkeit behoben ist, kannst du den Nutzer manuell
-von der Mailingliste entfernen, 15 Minuten warten, und ihn danach wieder
-auf die Liste abonnieren. Dadurch wird das Abonnement wieder aktiviert.
+Als Workaround kannst du den Nutzer manuell von der Mailingliste entfernen,
+15 Minuten warten, und ihn danach wieder auf die Liste abonnieren.
+Dadurch wird das Abonnement vorerst wieder aktiviert.
 """.strip(),
             'list:admin:notice:increment': f"""
-Der Bounce-Score von $member auf der Mailingliste
+Eine Email auf der Mailingliste
     $listname
-wurde erhöht, da eine Mail nicht zugestellt werden konnte.
+konnte an $member nicht zugestellt werden.
+Gegebenenfalls ist es sinnvoll, sie außerhalb der Mailingliste an den
+Nutzer weiterzuleiten.
+Diese Fehlermeldung wird höchstens einmal pro Tag, Nutzer und Liste versendet,
+auch wenn mehrere Emails unzustellbar waren.
 
 Bei Wiederholung wird dies dazu führen, dass dem Nutzer keine Malis dieser Liste
 mehr gesendet werden.
@@ -175,6 +182,8 @@ kontaktieren und über den Grund der Unzustellbarkeit zu informieren.
 Die Zustellbenachrichtigung, falls vorhanden, ist angehängt.
 Bei Fragen dazu wende dich an das Adminteam:
     <{self.conf["TROUBLESHOOTING_ADDRESS"]}>
+Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Empfänger mit
+ähnlichen Email-Anbietern, kontaktiere bitte auch das Adminteam.
 """.strip(),
         }
         if db_list.additional_footer:
