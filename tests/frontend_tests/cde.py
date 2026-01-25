@@ -1201,7 +1201,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle(USER_DICT['berta']['default_name_format'])
         self.traverse({'description': 'Einzugsermächtigung'})
         self.assertTitle("Einzugsermächtigung Bertå Beispiel")
-        self.assertPresence("Dagobert Anatidae", div='active-permit')
+        self.assertPresence("Dagobert Anatidae & Co. KG", div='active-permit')
         self.assertPresence("Das Mitglied ist der Kontoinhaber.",
                             div='inactive-permits')
         if self.user_in("farin"):
@@ -1515,7 +1515,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Einzugsermächtigung'},
                       {'description': 'Bearbeiten'})
         f = self.response.forms['changelastschriftform']
-        self.assertEqual('Dagobert Anatidae', f['account_owner'].value)
+        self.assertEqual('Dagobert Anatidae & Co. KG', f['account_owner'].value)
         self.assertEqual('reicher Onkel', f['notes'].value)
         f['account_owner'] = "Dagobert Beetlejuice"
         f['notes'] = "reicher Onkel (neu verheiratet)"
