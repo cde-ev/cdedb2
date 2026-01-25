@@ -5355,6 +5355,7 @@
             "is_archived": false,
             "is_cancelled": false,
             "is_balanced": false,
+            "registration_unlocked": true,
             "notify_on_registration": -1,
             "reimbursement_iban_field_id": null,
             "lodge_field_id": 3
@@ -5386,6 +5387,7 @@
             "is_archived": false,
             "is_cancelled": false,
             "is_balanced": false,
+            "registration_unlocked": true,
             "notify_on_registration": -1,
             "reimbursement_iban_field_id": null,
             "lodge_field_id": null
@@ -5417,6 +5419,7 @@
             "is_archived": false,
             "is_cancelled": false,
             "is_balanced": false,
+            "registration_unlocked": true,
             "notify_on_registration": -1,
             "reimbursement_iban_field_id": null,
             "lodge_field_id": null
@@ -5448,6 +5451,7 @@
             "is_archived": false,
             "is_cancelled": false,
             "is_balanced": false,
+            "registration_unlocked": true,
             "notify_on_registration": -1,
             "reimbursement_iban_field_id": null,
             "lodge_field_id": null
