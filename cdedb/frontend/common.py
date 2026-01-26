@@ -5,7 +5,6 @@ overall topic.
 """
 
 import abc
-import cgitb
 import collections
 import collections.abc
 import copy
@@ -65,6 +64,7 @@ from typing import (
     overload,
 )
 
+import cgitb
 import jinja2
 import mailmanclient.restobjects.held_message
 import mailmanclient.restobjects.mailinglist

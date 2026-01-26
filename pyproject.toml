@@ -74,7 +74,7 @@ ldap = [
 packages = ["cdedb"]
 
 [tool.ruff]
-target-version = "py312"
+target-version = "py313"
 line-length = 88
 preview = true
 output-format = "concise"

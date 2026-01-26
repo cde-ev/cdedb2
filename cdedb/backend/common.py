@@ -7,7 +7,6 @@ template for all services.
 """
 
 import abc
-import cgitb
 import functools
 import logging
 import sys
@@ -24,6 +23,7 @@ from typing import (
     overload,
 )
 
+import cgitb
 import psycopg2.errors
 import psycopg2.extensions
 from typing_extensions import TypeForm

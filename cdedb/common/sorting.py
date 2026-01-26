@@ -197,7 +197,7 @@ class EntitySorter:
 
 def mixed_existence_sorter(
     iterable: Collection[int] | KeysView[int],
-) -> Generator[int, None, None]:
+) -> Generator[int]:
     """Iterate over a set of indices in the relevant way.
 
     That is first over the non-negative indices in ascending order and

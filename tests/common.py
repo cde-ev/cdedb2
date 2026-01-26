@@ -438,7 +438,7 @@ class CdEDBTest(BasicTest):
 
     @classmethod
     @contextlib.contextmanager
-    def database_cursor(cls) -> Generator[RealDictCursor, None, None]:
+    def database_cursor(cls) -> Generator[RealDictCursor]:
         with Script(
             persona_id=-1,
             dbuser="cdb",
@@ -531,7 +531,7 @@ class BackendTest(CdEDBTest):
         self.user = USER_DICT["anonymous"]
 
     @contextlib.contextmanager
-    def switch_user(self, new_user: UserIdentifier) -> Generator[None, None, None]:
+    def switch_user(self, new_user: UserIdentifier) -> Generator[None]:
         """This method can be used as a context manager to temporarily switch users."""
         old_user = self.user
         new_user = get_user(new_user)
@@ -1318,7 +1318,7 @@ class FrontendTest(BackendTest):
         self.user = USER_DICT["anonymous"]
 
     @contextlib.contextmanager
-    def switch_user(self, new_user: UserIdentifier) -> Generator[None, None, None]:
+    def switch_user(self, new_user: UserIdentifier) -> Generator[None]:
         """context manager to temporarily switch users - frontend variant
 
         This restores the original response after the original user logged in again"""
