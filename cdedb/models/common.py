@@ -32,7 +32,7 @@ from cdedb.common.sorting import Sortkey, collate, xsorted
 from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
 
 if TYPE_CHECKING:
-    from typing_extensions import Self
+    from typing import Self
 
     from cdedb.database.query import DatabaseValue_s
 

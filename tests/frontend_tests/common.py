@@ -90,7 +90,7 @@ class TestFrontendCommon(FrontendTest):
 
     def test_date_filters(self) -> None:
         dt_naive = datetime.datetime(2010, 5, 22, 4, 55)
-        dt_aware = datetime.datetime(2010, 5, 22, 4, 55, tzinfo=datetime.timezone.utc)
+        dt_aware = datetime.datetime(2010, 5, 22, 4, 55, tzinfo=datetime.UTC)
         dt_other = datetime.datetime(
             2010, 5, 22, 4, 55, tzinfo=zoneinfo.ZoneInfo('America/New_York'),
         )

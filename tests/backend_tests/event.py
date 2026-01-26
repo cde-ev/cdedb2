@@ -77,9 +77,9 @@ class TestEventBackend(BackendTest):
             'website_url': "https://www.example.com/test",
             'shortname': 'link',
             'registration_start': datetime.datetime(2000, 11, 22, 0, 0, 0,
-                                                    tzinfo=datetime.timezone.utc),
+                                                    tzinfo=datetime.UTC),
             'registration_soft_limit': datetime.datetime(2022, 1, 2, 0, 0, 0,
-                                                         tzinfo=datetime.timezone.utc),
+                                                         tzinfo=datetime.UTC),
             'registration_hard_limit': None,
             'iban': None,
             'use_additional_questionnaire': False,
@@ -903,7 +903,7 @@ class TestEventBackend(BackendTest):
             'id': reg_id,
             'fields': {
                 'arrival': datetime.datetime(2222, 11, 9, 8, 55, 44,
-                                             tzinfo=datetime.timezone.utc),
+                                             tzinfo=datetime.UTC),
             },
         }
         self.event.set_registration(self.key, update_registration)
@@ -911,9 +911,9 @@ class TestEventBackend(BackendTest):
         expectation = {
             'anzahl_GROSSBUCHSTABEN': 4,
             'arrival': datetime.datetime(2222, 11, 9, 8, 55, 44,
-                                         tzinfo=datetime.timezone.utc),
+                                         tzinfo=datetime.UTC),
             'arrival_at': datetime.datetime(2022, 2, 2, 9, 0,
-                                            tzinfo=datetime.timezone.utc),
+                                            tzinfo=datetime.UTC),
             'lodge': 'Die üblichen Verdächtigen, insb. Berta Beispiel und '
                      'garcia@example.cde :)',
             'is_child': False,
@@ -1384,7 +1384,7 @@ class TestEventBackend(BackendTest):
                 'fields': {
                     'anzahl_GROSSBUCHSTABEN': 4,
                     'arrival_at': datetime.datetime(2022, 2, 2, 9,
-                                                    tzinfo=datetime.timezone.utc),
+                                                    tzinfo=datetime.UTC),
                     'lodge': 'Die üblichen Verdächtigen, insb. Berta Beispiel '
                              'und garcia@example.cde :)',
                     'is_child': False,
@@ -3222,23 +3222,23 @@ class TestEventBackend(BackendTest):
                     'checkin_periods': [
                         models.ReducedCheckinPeriod(
                             datetime.datetime(2022, 2, 22, 17, 0,
-                                              tzinfo=datetime.timezone.utc),
+                                              tzinfo=datetime.UTC),
                             datetime.datetime(2022, 2, 23, 9, 0,
-                                              tzinfo=datetime.timezone.utc)),
+                                              tzinfo=datetime.UTC)),
                         models.ReducedCheckinPeriod(
                             datetime.datetime(2022, 2, 23, 9, 0, 1,
-                                              tzinfo=datetime.timezone.utc),
+                                              tzinfo=datetime.UTC),
                             datetime.datetime(2022, 2, 23, 9, 0, 2,
-                                              tzinfo=datetime.timezone.utc)),
+                                              tzinfo=datetime.UTC)),
                     ],
                 },
                 1001: {
                     'checkin_periods': [
                         models.ReducedCheckinPeriod(
                             datetime.datetime(2022, 2, 22, 17, 0,
-                                              tzinfo=datetime.timezone.utc),
+                                              tzinfo=datetime.UTC),
                             datetime.datetime(2022, 2, 23, 9, 0,
-                                              tzinfo=datetime.timezone.utc)),
+                                              tzinfo=datetime.UTC)),
                     ],
                     'parts': {
                         2: {'lodgement_id': -1},
@@ -3676,9 +3676,9 @@ class TestEventBackend(BackendTest):
             on more lines.""",
             'shortname': 'link',
             'registration_start': datetime.datetime(2000, 11, 22, 0, 0, 0,
-                                                    tzinfo=datetime.timezone.utc),
+                                                    tzinfo=datetime.UTC),
             'registration_soft_limit': datetime.datetime(2022, 1, 2, 0, 0, 0,
-                                                         tzinfo=datetime.timezone.utc),
+                                                         tzinfo=datetime.UTC),
             'registration_hard_limit': None,
             'iban': None,
             'registration_text': None,
@@ -4889,7 +4889,7 @@ class TestEventBackend(BackendTest):
                 title="Garcias technische Spielerei",
                 notes="Mal probieren, was diese API so alles kann.",
                 etime=datetime.datetime(
-                    2222, 12, 31, 23, 59, 59, tzinfo=datetime.timezone.utc,
+                    2222, 12, 31, 23, 59, 59, tzinfo=datetime.UTC,
                 ),
             ),
         }

@@ -533,7 +533,7 @@ def now() -> datetime.datetime:
     This is a separate function so we do not forget to make it time zone
     aware.
     """
-    return datetime.datetime.now(datetime.timezone.utc)
+    return datetime.datetime.now(datetime.UTC)
 
 
 _NEARLY_DELTA_DEFAULT = datetime.timedelta(minutes=10)
@@ -575,7 +575,7 @@ class NearlyNow(datetime.datetime):
 
 def nearly_now(delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT) -> NearlyNow:
     """Create a NearlyNow."""
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.datetime.now(datetime.UTC)
     return NearlyNow(
         year=now.year,
         month=now.month,
@@ -583,7 +583,7 @@ def nearly_now(delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT) -> NearlyNow:
         hour=now.hour,
         minute=now.minute,
         second=now.second,
-        tzinfo=datetime.timezone.utc,
+        tzinfo=datetime.UTC,
         delta=delta,
     )
 
@@ -1448,7 +1448,7 @@ def parse_datetime(
     if ret.tzinfo is None:
         timezone: zoneinfo.ZoneInfo = _CONFIG["DEFAULT_TIMEZONE"]
         ret = ret.replace(tzinfo=timezone)
-    return ret.astimezone(datetime.timezone.utc)
+    return ret.astimezone(datetime.UTC)
 
 
 def normalize_phone(phone: phonenumbers.PhoneNumber) -> str:

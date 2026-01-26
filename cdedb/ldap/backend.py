@@ -111,7 +111,7 @@ def _to_bytes(
 
 def now() -> datetime.datetime:
     """Mimic common.now"""
-    return datetime.datetime.now(datetime.timezone.utc)
+    return datetime.datetime.now(datetime.UTC)
 
 
 class LdapLeaf(TypedDict):
