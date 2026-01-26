@@ -292,10 +292,11 @@
 {%- endmacro %}
 
 {% macro output_info(info, link=none, aclass="help-block no-color") %}
-    {%- if info %}
+    {%- if info or caller %}
         <p class="{{ aclass }}">
             {{ make_icon('info-circle') }} {{ info }}
             {{ link }}
+            {% if caller %}{{ caller() }}{% endif %}
         </p>
     {%- endif %}
 {%- endmacro %}
@@ -496,11 +497,15 @@
         aclass="", attributes='', addon='', markdown=False, errorname=none, wide=False, outerclass='',
         enforce_required=True) %}
     {%- set anid = anid or "input-text-{}".format(name) %}
+    {%- set caller_ = caller %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, addon=addon,
                                 markdown=markdown, errorname=errorname, wide=wide, aclass=outerclass) %}
         {{- input_text(name, readonly, actualreadonly, defaultvalue, anid, maxlength=maxlength, type=type,
                 placeholder=placeholder, aclass="form-control " + aclass, attributes=attributes,
                 enforce_required=enforce_required) }}
+        {%- if caller_ %}
+            {{- caller_() }}
+        {%- endif -%}
     {%- endcall %}
 {%- endmacro %}
 
