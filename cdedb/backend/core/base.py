@@ -107,15 +107,11 @@ class CoreBaseBackend(AbstractBackend):
         )
         # local variable to prevent closure over secrets
         reset_salt = secrets["RESET_SALT"]
-        self.generate_reset_cookie = (
-            lambda rs, persona_id, timeout: self._generate_reset_cookie(
-                rs, persona_id, reset_salt, timeout=timeout
-            )
+        self.generate_reset_cookie = lambda rs, persona_id, timeout: (
+            self._generate_reset_cookie(rs, persona_id, reset_salt, timeout=timeout)
         )
-        self.verify_reset_cookie = (
-            lambda rs, persona_id, cookie: self._verify_reset_cookie(
-                rs, persona_id, reset_salt, cookie
-            )
+        self.verify_reset_cookie = lambda rs, persona_id, cookie: (
+            self._verify_reset_cookie(rs, persona_id, reset_salt, cookie)
         )
         self._foto_store = AttachmentStore(
             self.conf['STORAGE_DIR'] / 'foto', vtypes.ProfilePicture

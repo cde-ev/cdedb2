@@ -835,9 +835,9 @@ class EventCourseMixin(EventBaseFrontend):
         for (_cid, track_id), attendee_group in attendees.items():
             part_id = rs.ambience['event'].tracks[track_id].part.id
             attendee_group.sort(
-                key=lambda anid: not registrations[anid]['parts'][part_id][
-                    'status'
-                ].is_involved()
+                key=lambda anid: (
+                    not registrations[anid]['parts'][part_id]['status'].is_involved()
+                )
             )
 
         # Generate options for the multi select boxes

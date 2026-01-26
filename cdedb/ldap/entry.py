@@ -7,7 +7,6 @@ from collections.abc import ItemsView, Iterator, KeysView, ValuesView
 from typing import Any, Callable, Optional, Union
 
 import ldaptor.entryhelpers
-import ldaptor.ldiftree
 from ldaptor.attributeset import LDAPAttributeSet
 from ldaptor.protocols import pureldap
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName

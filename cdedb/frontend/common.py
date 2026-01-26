@@ -13,10 +13,7 @@ import csv
 import datetime
 import decimal
 import email
-import email.charset
 import email.encoders
-import email.header
-import email.mime
 import email.mime.application
 import email.mime.audio
 import email.mime.base
@@ -72,7 +69,6 @@ import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
-import werkzeug.wsgi
 from typing_extensions import TypeForm
 
 import cdedb.common.parse.util as parse_util
@@ -226,10 +222,8 @@ class BaseApp(metaclass=abc.ABCMeta):
         )
         # local variable to prevent closure over secrets
         url_parameter_salt = secrets["URL_PARAMETER_SALT"]
-        self.decode_parameter = (
-            lambda target, name, param, persona_id: decode_parameter(
-                url_parameter_salt, target, name, param, persona_id
-            )
+        self.decode_parameter = lambda target, name, param, persona_id: (
+            decode_parameter(url_parameter_salt, target, name, param, persona_id)
         )
 
         def local_encode(
@@ -634,8 +628,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'doclink': _doclink,
             'staticlink': _staticlink,
             'errors': rs.get_validation_errors_dict(),
-            'request_time': lambda: (now() - rs.begin),
-            'generation_time': lambda: (now() - begin),
+            'request_time': lambda: now() - rs.begin,
+            'generation_time': lambda: now() - begin,
             'gettext': rs.mail_gettext if modus == "mail" else rs.gettext,
             'has_warnings': _has_warnings,
             'is_admin': self.is_admin(rs),
@@ -2213,9 +2207,9 @@ def reconnoitre_ambience(obj: AbstractFrontend, rs: RequestState) -> AmbienceDic
             (lambda a: do_assert(a['registration']['event_id'] == a['event'].id),),
         ),
         Scout(
-            lambda anid: (
-                obj.eventproxy.get_lodgement_groups(rs, ambience['event'].id)[anid]
-            ),
+            lambda anid: obj.eventproxy.get_lodgement_groups(rs, ambience['event'].id)[
+                anid
+            ],
             'group_id',
             'group',
             (lambda a: do_assert(a['group'].event_id == a['event'].id),),

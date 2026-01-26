@@ -28,7 +28,6 @@ from typing import (
 
 import psycopg2.errors
 import psycopg2.extensions
-import psycopg2.extras
 from typing_extensions import TypeForm
 
 from cdedb.common import (

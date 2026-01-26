@@ -38,6 +38,54 @@ For all dev setups the same, set the following options:
 
 - working directory: ``$ProjectFileDir$``
 
+- You can specify a preferred output format for the ruff output via environment variable like this: ``RUFF_OUTPUT_FORMAT=<foo>``
+  Available formats are listed below. Currently only "concise" and "pylint" result in clickable links leading to the location
+  of the error.
+
+- concise (our default)::
+
+    cdedb/frontend/event/query.py:69:60: RUF100 [*] Unused blanket `noqa` directive
+    Found 1 error.
+    [*] 1 fixable with the `--fix` option.
+
+- pylint::
+
+    cdedb/frontend/event/query.py:69: [RUF100] Unused blanket `noqa` directive
+
+- grouped::
+
+    cdedb/frontend/event/query.py:
+      69:60 RUF100 [*] Unused blanket `noqa` directive
+
+    Found 1 error.
+    [*] 1 fixable with the `--fix` option.
+
+- full::
+
+    RUF100 [*] Unused blanket `noqa` directive
+      --> cdedb/frontend/event/query.py:69:60
+       |
+    67 |         event_parts = rs.ambience['event'].parts
+    68 |         tracks = rs.ambience['event'].tracks
+    69 |         stat_part_groups: dict[int, models.PartGroup] = {  # noqa
+       |                                                            ^^^^^^
+    70 |             part_group_id: part_group
+    71 |             for part_group_id, part_group in rs.ambience['event'].part_groups.items()
+       |
+    help: Remove unused `noqa` directive
+    66 |         """Present an overview of the basic stats."""
+    67 |         event_parts = rs.ambience['event'].parts
+    68 |         tracks = rs.ambience['event'].tracks
+       -         stat_part_groups: dict[int, models.PartGroup] = {  # noqa
+    69 +         stat_part_groups: dict[int, models.PartGroup] = {
+    70 |             part_group_id: part_group
+    71 |             for part_group_id, part_group in rs.ambience['event'].part_groups.items()
+    72 |             if part_group.constraint_type == const.EventPartGroupType.Statistic
+
+    Found 1 error.
+    [*] 1 fixable with the `--fix` option.
+
+
 .. note:
 
     If you are using a vm and mounting the working directory via ``sshfs``, consider

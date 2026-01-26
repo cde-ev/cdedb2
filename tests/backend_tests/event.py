@@ -9,7 +9,6 @@ import unittest
 from typing import Any, Optional, cast
 
 import freezegun
-import freezegun.api
 import psycopg2
 import psycopg2.errorcodes
 import psycopg2.errors
