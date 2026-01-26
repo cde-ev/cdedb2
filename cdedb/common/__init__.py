@@ -18,12 +18,18 @@ import pathlib
 import re
 import string
 import zoneinfo
-from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
+from collections.abc import (
+    Callable,
+    Collection,
+    Iterable,
+    Mapping,
+    MutableMapping,
+    Sequence,
+)
 from types import UnionType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Generic,
     Optional,
     TypeVar,
@@ -104,7 +110,7 @@ AdminView = str
 
 CdEDBLog = tuple[int, tuple[CdEDBObject, ...]]
 
-PathLike = Union[pathlib.Path, str]
+PathLike = pathlib.Path | str
 Path = pathlib.Path
 
 T = TypeVar("T")
@@ -289,7 +295,7 @@ class RequestState(ConnectionContainer):
 
     def notify_return_code(
         self,
-        code: Union[DefaultReturnCode, bool],
+        code: DefaultReturnCode | bool,
         *,
         success: str = n_("Change committed."),
         info: str = n_("Change pending."),
@@ -502,7 +508,7 @@ def merge_dicts(targetdict: MutableMapping[T, S], *dicts: Mapping[T, S]) -> None
                     targetdict[key] = value
 
 
-BytesLike = Union[bytes, bytearray, memoryview]
+BytesLike = bytes | bytearray | memoryview
 
 
 def get_hash(*args: BytesLike) -> str:
@@ -725,13 +731,13 @@ class CustomJSONEncoder(json.JSONEncoder):
 
     @overload
     def default(
-        self, obj: Union[datetime.date, datetime.datetime, decimal.Decimal]
+        self, obj: datetime.date | datetime.datetime | decimal.Decimal
     ) -> str: ...
 
     @overload
     def default(self, obj: set[T]) -> tuple[T, ...]: ...
 
-    def default(self, obj: Any) -> Union[str, tuple[Any, ...], dict[str, Any]]:
+    def default(self, obj: Any) -> str | tuple[Any, ...] | dict[str, Any]:
         import cdedb.models.common as models  # noqa: PLC0415  # pylint: disable=import-outside-toplevel
 
         if isinstance(obj, (datetime.datetime, datetime.date)):
@@ -791,7 +797,7 @@ def unwrap(data: Mapping[Any, T]) -> T: ...
 def unwrap(data: Collection[T]) -> T: ...
 
 
-def unwrap(data: Union[None, Mapping[Any, T], Collection[T]]) -> Optional[T]:
+def unwrap(data: None | Mapping[Any, T] | Collection[T]) -> Optional[T]:
     """Remove one nesting layer (of lists, etc.).
 
     This is here to replace code like ``foo = bar[0]`` where bar is a
@@ -1346,7 +1352,7 @@ def encode_parameter(
 
 def decode_parameter(
     salt: str, target: str, name: str, param: str, persona_id: Optional[int]
-) -> Union[tuple[bool, None], tuple[None, str]]:
+) -> tuple[bool, None] | tuple[None, str]:
     """Inverse of :py:func:`encode_parameter`. See there for
     documentation.
 

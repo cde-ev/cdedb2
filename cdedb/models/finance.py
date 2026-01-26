@@ -2,7 +2,8 @@ import collections
 import dataclasses
 import datetime
 import decimal
-from typing import Callable, Optional
+from collections.abc import Callable
+from typing import Optional
 
 import cdedb.models.event as models_event
 from cdedb.common import CdEDBObject, RequestState, n_

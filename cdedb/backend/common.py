@@ -12,16 +12,14 @@ import functools
 import logging
 import sys
 import uuid
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from types import TracebackType
 from typing import (
     Any,
-    Callable,
     ClassVar,
     Literal,
     Optional,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -55,7 +53,7 @@ LF = TypeVar('LF', bound=GenericLogFilter)
 T = TypeVar('T')
 T2 = TypeVar('T2')
 S = TypeVar('S')
-DC = TypeVar('DC', bound=Union[CdEDataclass, GenericLogFilter])
+DC = TypeVar('DC', bound=CdEDataclass | GenericLogFilter)
 
 
 @overload
@@ -76,7 +74,7 @@ def singularize(
 
 
 def singularize(
-    function: Callable[..., Union[T, Mapping[Any, T]]],
+    function: Callable[..., T | Mapping[Any, T]],
     array_param_name: str = "ids",
     singular_param_name: str = "anid",
     passthrough: bool = False,

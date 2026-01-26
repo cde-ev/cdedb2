@@ -8,7 +8,7 @@ querying registrations, courses and lodgements.
 import collections
 import itertools
 import pprint
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -116,7 +116,7 @@ class EventQueryMixin(EventBaseFrontend):
         per_part_max_indent = max(stat.indent for stat in per_part_statistics)
 
         per_track_statistics: dict[
-            Union[EventRegistrationTrackStatistic, EventCourseStatistic],
+            EventRegistrationTrackStatistic | EventCourseStatistic,
             dict[str, dict[int, set[int]]],
         ]
         per_track_statistics = collections.OrderedDict()

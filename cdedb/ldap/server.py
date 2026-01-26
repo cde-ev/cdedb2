@@ -4,8 +4,8 @@ import asyncio
 import logging
 import sys
 from asyncio import StreamReader, StreamWriter
-from collections.abc import Coroutine
-from typing import Any, Callable, Optional, Protocol
+from collections.abc import Callable, Coroutine
+from typing import Any, Optional, Protocol
 
 from ldaptor.protocols import pureber, pureldap
 from ldaptor.protocols.ldap import ldaperrors

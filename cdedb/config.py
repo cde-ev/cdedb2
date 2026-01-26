@@ -20,9 +20,9 @@ import pathlib
 import subprocess
 import zoneinfo
 from collections.abc import Iterator, Mapping, MutableMapping
-from typing import Any, Union
+from typing import Any
 
-PathLike = Union[pathlib.Path, str]
+PathLike = pathlib.Path | str
 
 
 # The default path were a configuration file is expected. It is easier to hardcode this

@@ -7,8 +7,8 @@ event.
 """
 
 import itertools
-from collections.abc import Collection
-from typing import Callable, Optional
+from collections.abc import Callable, Collection
+from typing import Optional
 
 import werkzeug.exceptions
 from werkzeug import Response

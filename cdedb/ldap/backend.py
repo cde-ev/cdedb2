@@ -6,14 +6,12 @@ import logging
 import pkgutil
 import re
 from collections import defaultdict
-from collections.abc import AsyncIterator, Collection, Mapping
+from collections.abc import AsyncIterator, Callable, Collection, Mapping
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Optional,
     TypedDict,
-    Union,
     cast,
     overload,
 )
@@ -78,7 +76,7 @@ def _to_bytes(data: dict[Any, Any]) -> dict[bytes, Any]: ...
 
 
 @overload
-def _to_bytes(data: Union[None, str, int, bytes]) -> bytes: ...
+def _to_bytes(data: None | str | int | bytes) -> bytes: ...
 
 
 @overload
@@ -86,7 +84,7 @@ def _to_bytes(data: list[Any]) -> list[Any]: ...
 
 
 def _to_bytes(
-    data: Union[None, str, int, bytes, DN, dict[Any, Any], list[Any]],
+    data: None | str | int | bytes | DN | dict[Any, Any] | list[Any],
 ) -> TO_BYTES_RETURN:
     """This takes a python data structure and convert all of its entries into bytes.
 

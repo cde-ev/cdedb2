@@ -7,7 +7,7 @@ import decimal
 import unittest
 import zoneinfo
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Optional, TypeVar, Union, cast
+from typing import Any, Optional, TypeVar, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -50,7 +50,7 @@ class TestValidationBase(unittest.TestCase):
     def do_validator_test(
         self,
         type_: type[T],
-        spec: Iterable[tuple[Any, T, Union[type[Exception], Exception, None]]],
+        spec: Iterable[tuple[Any, T, type[Exception] | Exception | None]],
         extraparams: Optional[Mapping[str, Any]] = None, ignore_warnings: bool = True,
     ) -> None:
         """Perform extensive tests on a validator.

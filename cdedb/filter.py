@@ -9,6 +9,7 @@ import re
 import threading
 from collections import Counter
 from collections.abc import (
+    Callable,
     Collection,
     Container,
     ItemsView,
@@ -18,7 +19,6 @@ from collections.abc import (
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Literal,
     Optional,
     TypeVar,
@@ -52,7 +52,7 @@ T = TypeVar("T")
 
 # Ignore the capitalization error in function name sanitize_None.
 # noinspection PyPep8Naming
-def sanitize_None(data: Optional[T]) -> Union[str, T]:
+def sanitize_None(data: Optional[T]) -> str | T:
     """Helper to let jinja convert all ``None`` into empty strings for display
     purposes; thus we needn't be careful in this regard. (This is
     coherent with our policy that NULL and the empty string on SQL level
@@ -86,7 +86,7 @@ def safe_filter(val: Optional[str]) -> Optional[markupsafe.Markup]:
 
 
 def date_filter(
-    val: Union[datetime.date, str, None],
+    val: datetime.date | str | None,
     formatstr: str = "%Y-%m-%d",
     lang: Optional[str] = None,
     verbosity: str = "medium",
@@ -135,7 +135,7 @@ def date_filter(
 
 
 def datetime_filter(
-    val: Union[datetime.datetime, str, None],
+    val: datetime.datetime | str | None,
     formatstr: str = "%Y-%m-%d %H:%M (%Z)",
     lang: Optional[str] = None,
     passthrough: bool = False,
@@ -448,12 +448,12 @@ def linebreaks_filter(val: None, replacement: str) -> None: ...
 
 @overload
 def linebreaks_filter(
-    val: Union[str, markupsafe.Markup], replacement: str
+    val: str | markupsafe.Markup, replacement: str
 ) -> markupsafe.Markup: ...
 
 
 def linebreaks_filter(
-    val: Union[None, str, markupsafe.Markup], replacement: str = "<br>"
+    val: None | str | markupsafe.Markup, replacement: str = "<br>"
 ) -> Optional[markupsafe.Markup]:
     """Custom jinja filter to convert line breaks to <br>.
 

@@ -19,7 +19,6 @@ import os
 import pathlib
 import re
 import shutil
-import socket
 import subprocess
 import sys
 import tempfile
@@ -29,6 +28,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from collections.abc import (
+    Callable,
     Generator,
     Iterable,
     Mapping,
@@ -38,12 +38,10 @@ from collections.abc import (
 from re import Pattern
 from typing import (
     Any,
-    Callable,
     ClassVar,
     NamedTuple,
     Optional,
     TypeVar,
-    Union,
     cast,
     no_type_check,
 )
@@ -121,8 +119,8 @@ from cdedb.uncommon.intenum import CdEIntEnum
 
 # TODO: use TypedDict to specify UserObject.
 UserObject = Mapping[str, Any]
-UserIdentifier = Union[UserObject, str, int]
-LinkIdentifier = Union[MutableMapping[str, Any], str]
+UserIdentifier = UserObject | str | int
+LinkIdentifier = MutableMapping[str, Any] | str
 
 # This is to be used in place of `self.key` for anonymous requests. It makes mypy happy.
 ANONYMOUS = cast(RequestState, None)
@@ -662,7 +660,7 @@ class BrowserTest(CdEDBTest):
                     break
             except urllib.error.URLError:
                 time.sleep(.1)
-            except socket.timeout:
+            except TimeoutError:
                 time.sleep(.1)
         else:
             raise RuntimeError('Test server failed to start.')  # pragma: no cover
@@ -991,7 +989,7 @@ def as_users(*users: UserIdentifier, maintain_data: bool = False,
     """Decorate a test to run it as the specified user(s)."""
     def wrapper(fun: Callable[..., None]) -> Callable[..., None]:
         @functools.wraps(fun)
-        def new_fun(self: Union[BackendTest, FrontendTest], *args: Any, **kwargs: Any,
+        def new_fun(self: BackendTest | FrontendTest, *args: Any, **kwargs: Any,
                     ) -> None:
             for i, user in enumerate(users):
                 with self.subTest(user=user):
@@ -1809,7 +1807,7 @@ class FrontendTest(BackendTest):
         if not any(message in content for content in normalized):
             self.fail(f"Expected error message not found near input with name {f!r}:\n{normalized}")
 
-    def assertNoLink(self, href_pattern: Optional[Union[str, Pattern[str]]] = None,
+    def assertNoLink(self, href_pattern: Optional[str | Pattern[str]] = None,
                      tag: str = 'a', href_attr: str = 'href',
                      content: Optional[str] = None, verbose: bool = False) -> None:
         """Assert that no tag that matches specific criteria is found. Possible
@@ -2145,7 +2143,7 @@ class FrontendTest(BackendTest):
         self.assertPresence('zeruda@example.cde')
         _check_deleted_data()
 
-    def _click_admin_view_button(self, label: Union[str, Pattern[str]],
+    def _click_admin_view_button(self, label: str | Pattern[str],
                                  current_state: Optional[bool] = None) -> None:
         """
         Helper function for checking the disableable admin views

@@ -32,11 +32,10 @@ import decimal
 import functools
 import logging
 import sys
-from collections.abc import Collection
+from collections.abc import Callable, Collection
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
     ForwardRef,
     Optional,

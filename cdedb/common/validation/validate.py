@@ -71,16 +71,14 @@ import string
 import typing
 import unicodedata
 import urllib.parse
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from types import TracebackType
 from typing import (
     Any,
-    Callable,
     Optional,
     Protocol,
     Self,
     TypeVar,
-    Union,
     cast,
     get_type_hints,
     overload,
@@ -164,7 +162,7 @@ T_co = TypeVar('T_co', covariant=True)
 K = TypeVar('K')
 V = TypeVar('V')
 F = TypeVar('F', bound=Callable[..., Any])
-DC = TypeVar('DC', bound=Union[CdEDataclass, GenericLogFilter])
+DC = TypeVar('DC', bound=CdEDataclass | GenericLogFilter)
 
 
 class ValidationSummary(ValueError, Sequence[Exception]):
@@ -179,9 +177,7 @@ class ValidationSummary(ValueError, Sequence[Exception]):
     @overload
     def __getitem__(self, index: slice) -> Sequence[Exception]: ...
 
-    def __getitem__(
-        self, index: Union[int, slice]
-    ) -> Union[Exception, Sequence[Exception]]:
+    def __getitem__(self, index: int | slice) -> Exception | Sequence[Exception]:
         return self.args[index]
 
     def extend(self, errors: Iterable[Exception]) -> None:
