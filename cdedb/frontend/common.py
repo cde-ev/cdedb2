@@ -475,6 +475,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             trim_blocks=True,
             lstrip_blocks=True,
         )
+        # XML is currently not different from web.
+        self.jinja_env_xml = self.jinja_env.overlay()
         self.jinja_env_other = self.jinja_env.overlay(autoescape=False)
         # Always provide all backends -- they are cheap
         self.assemblyproxy = make_proxy(AssemblyBackend())
@@ -514,6 +516,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
           * web,
           * mail,
           * tex,
+          * xml,
           * other.
         :param templatename: file name of template without extension
         """
@@ -663,6 +666,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             jinja_env = self.jinja_env_mail
         elif modus == "tex":
             jinja_env = self.jinja_env_tex
+        elif modus == "xml":
+            jinja_env = self.jinja_env_xml
         elif modus == "other":
             jinja_env = self.jinja_env_other
         else:
