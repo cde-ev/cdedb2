@@ -4,12 +4,9 @@ import sys
 import tempfile
 import typing
 import unittest
-from pkgutil import resolve_name
 from typing import Any, Callable, ClassVar
 
 from cdedb.backend.core import CoreBackend
-from cdedb.backend.event import EventBackend
-from cdedb.backend.session import SessionBackend
 from cdedb.cli.util import redirect_to_file
 from cdedb.common import unwrap
 from cdedb.common.exceptions import APITokenError
@@ -101,6 +98,8 @@ class TestScript(unittest.TestCase):
                          str({"EVENT_ARCHIVAL_BALANCE_CUTOFF": 42}))
         self.assertTrue(configured_script.config._is_frozen)
 
+        self.get_script(some_key="string value")
+
         # check overwriting per config file
         # here, we need to set the relevant flags from the real_config manually
         with tempfile.NamedTemporaryFile("w", suffix=".py", encoding="utf-8") as f:
@@ -123,10 +122,10 @@ class TestScript(unittest.TestCase):
         real_configpath = get_configpath()
         real_config = TestConfig()
 
-        core = self.script.make_backend("core", proxy=False)
+        core = self.script.make_core_backend(proxy=False)
         self.assertTrue(isinstance(core, CoreBackend))
-        coreproxy = self.script.make_backend("core", proxy=True)
-        self.assertEqual(coreproxy.get_backend_class(), CoreBackend)
+        coreproxy = self.script.make_core_backend(proxy=True)
+        self.assertEqual(coreproxy.get_backend_class(), CoreBackend)  # type: ignore[attr-defined]
 
         # check setting config options per kwarg
         # this takes the options from the real_configpath into account automatically
@@ -150,10 +149,9 @@ class TestScript(unittest.TestCase):
                 configured_script.make_backend("core", proxy=False).conf["LOCKDOWN"])
             self.assertEqual(real_configpath, get_configpath())
 
-        for realm, backend_name in Script.backend_map.items():
-            backend_class = resolve_name(f"cdedb.backend.{realm}.{backend_name}")
+        for realm, backend_class in Script.backend_map.items():
             backendproxy = self.script.make_backend(realm, proxy=True)
-            self.assertIs(backend_class, backendproxy.get_backend_class())
+            self.assertIs(backend_class, backendproxy.get_backend_class())  # type: ignore[attr-defined]
             self.assertIs(backendproxy, self.script.make_backend(realm, proxy=True))
             backend = self.script.make_backend(realm, proxy=False)
             self.assertIsInstance(backend, backend_class)
@@ -187,8 +185,7 @@ class TestScript(unittest.TestCase):
                 configured_script.make_frontend("core").conf["LOCKDOWN"])
             self.assertEqual(real_configpath, get_configpath())
 
-        for realm, frontend_name in Script.frontend_map.items():
-            frontend_class = resolve_name(f"cdedb.frontend.{realm}.{frontend_name}")
+        for realm, frontend_class in Script.frontend_map.items():
             frontend = self.script.make_frontend(realm)
             self.assertIsInstance(frontend, frontend_class)
             self.assertIs(frontend, self.script.make_frontend(realm))
@@ -244,8 +241,8 @@ class TestScript(unittest.TestCase):
 
     def test_offline_orgatoken(self) -> None:
         offline_script = self.get_script(CDEDB_OFFLINE_DEPLOYMENT=True)
-        event: EventBackend = offline_script.make_backend('event')
-        session: SessionBackend = offline_script.make_backend('session', proxy=False)
+        event = offline_script.make_event_backend(proxy=True)
+        session = offline_script.make_session_backend(proxy=False)
 
         token = event.get_orga_token(offline_script.rs(), 1)
         with self.assertRaisesRegex(

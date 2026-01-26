@@ -7,15 +7,15 @@ import json
 import os
 import pathlib
 import types
-from typing import Optional
+from wsgiref.types import WSGIApplication
 
 import jinja2
 import psycopg2.extensions
-import werkzeug
 import werkzeug.exceptions
 import werkzeug.routing
 import werkzeug.wrappers
 import werkzeug.wsgi
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.complaint import ComplaintBackend
@@ -122,7 +122,7 @@ class Application(BaseApp):
         request: werkzeug.wrappers.Request,
         user: User,
         begin: datetime.datetime,
-        message: Optional[str] = None,
+        message: str | None = None,
     ) -> Response:
         """Helper to format an error page.
 
@@ -163,7 +163,7 @@ class Application(BaseApp):
 
             urls = self.urlmap.bind_to_environ(request.environ)
 
-            def _cdedblink(endpoint: str, params: Optional[CdEDBObject] = None) -> str:
+            def _cdedblink(endpoint: str, params: CdEDBObject | None = None) -> str:
                 return urls.build(endpoint, params or {})
 
             request_begin = now()
@@ -171,8 +171,8 @@ class Application(BaseApp):
                 'ambience': {},
                 'cdedblink': _cdedblink,
                 'errors': {},
-                'request_time': lambda: (now() - request_begin),
-                'generation_time': lambda: (now() - begin),
+                'request_time': lambda: now() - request_begin,
+                'generation_time': lambda: now() - begin,
                 'gettext': gettext,
                 'ngettext': self.translations[lang].ngettext,
                 'lang': lang,
@@ -276,6 +276,7 @@ class Application(BaseApp):
                 begin=begin,
                 lang=lang,
                 translations=self.translations,
+                endpoint=endpoint,
             )
             rs.values.update(args)
             component, action = endpoint.split('/')
@@ -436,6 +437,11 @@ class Application(BaseApp):
         if request.cookies.get('locale') in self.conf["I18N_LANGUAGES"]:
             return request.cookies['locale']
 
-        return request.accept_languages.best_match(  # type: ignore[return-value]
+        return request.accept_languages.best_match(
             self.conf["I18N_LANGUAGES"], default="de"
         )
+
+
+def get_proxy_fixed_application() -> WSGIApplication:
+    app: WSGIApplication = Application()  # type: ignore[assignment]
+    return ProxyFix(app, x_for=1, x_host=1, x_proto=1)

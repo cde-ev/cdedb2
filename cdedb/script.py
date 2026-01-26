@@ -17,14 +17,21 @@ import pathlib
 import tempfile
 import time
 from collections.abc import Mapping
-from pkgutil import resolve_name
 from types import TracebackType
-from typing import IO, Any, Optional
+from typing import IO, Any, Optional, TypeVar, cast
 
 import psycopg2
 import psycopg2.extensions
 import psycopg2.extras
 
+from cdedb.backend.assembly import AssemblyBackend
+from cdedb.backend.cde import CdEBackend
+from cdedb.backend.complaint import ComplaintBackend
+from cdedb.backend.core import CoreBackend
+from cdedb.backend.event import EventBackend
+from cdedb.backend.ml import MlBackend
+from cdedb.backend.past_event import PastEventBackend
+from cdedb.backend.session import SessionBackend
 from cdedb.cli.util import fake_rs, redirect_to_file
 from cdedb.common import AbstractBackend, PathLike, RequestState, make_proxy
 from cdedb.common.n_ import n_
@@ -37,13 +44,22 @@ from cdedb.config import (
     stop_freezing_new_configs,
 )
 from cdedb.database.connection import Atomizer, IrradiatedConnection
+from cdedb.frontend.assembly import AssemblyFrontend
+from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.common import AbstractFrontend, setup_translations
+from cdedb.frontend.core import CoreFrontend
+from cdedb.frontend.event import EventFrontend
+from cdedb.frontend.ml import MlFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
 __all__ = ['DryRunError', 'Script', 'ScriptAtomizer']
+
+
+B = TypeVar("B", bound=AbstractBackend)
+F = TypeVar("F", bound=AbstractFrontend)
 
 
 class TempConfig:
@@ -93,7 +109,7 @@ class TempConfig:
                         " Please use the SECRET_CONFIGPATH config argument instead."
                     )
                     raise ValueError(msg)
-                f.write(f"\n{k} = {v}")
+                f.write(f"\n{k} = {v!r}")
             f.flush()
             set_configpath(f.name)
         elif self._configpath:
@@ -124,21 +140,22 @@ class TempConfig:
 
 
 class Script:
-    backend_map = {
-        "core": "CoreBackend",
-        "cde": "CdEBackend",
-        "past_event": "PastEventBackend",
-        "ml": "MlBackend",
-        "assembly": "AssemblyBackend",
-        "event": "EventBackend",
-        "session": "SessionBackend",
+    backend_map: Mapping[str, type[AbstractBackend]] = {
+        "core": CoreBackend,
+        "complaint": ComplaintBackend,
+        "cde": CdEBackend,
+        "past_event": PastEventBackend,
+        "ml": MlBackend,
+        "assembly": AssemblyBackend,
+        "event": EventBackend,
+        "session": SessionBackend,  # type: ignore[dict-item]
     }
-    frontend_map = {
-        "core": "CoreFrontend",
-        "cde": "CdEFrontend",
-        "ml": "MlFrontend",
-        "assembly": "AssemblyFrontend",
-        "event": "EventFrontend",
+    frontend_map: Mapping[str, type[AbstractFrontend]] = {
+        "core": CoreFrontend,
+        "cde": CdEFrontend,
+        "ml": MlFrontend,
+        "assembly": AssemblyFrontend,
+        "event": EventFrontend,
     }
 
     _conn: IrradiatedConnection
@@ -212,8 +229,8 @@ class Script:
             self.config = Config()
             self._secrets = SecretsConfig()
         self._translations: Optional[Mapping[str, gettext.NullTranslations]]
-        self._backends: dict[tuple[str, bool], AbstractBackend] = {}
-        self._frontends: dict[tuple[str, bool], AbstractFrontend] = {}
+        self._backends: dict[tuple[Any, bool], AbstractBackend] = {}
+        self._frontends: dict[tuple[Any, bool], AbstractFrontend] = {}
         self._translations = None
         self._request_states: dict[int, RequestState] = {}
         self._conn = None  # type: ignore[assignment]
@@ -235,35 +252,78 @@ class Script:
         )
         self._conn.set_client_encoding("UTF8")
 
-    def make_backend(self, realm: str, *, proxy: bool = True):  # type: ignore[no-untyped-def]
-        """Create backend, either as a proxy or not."""
-        if ret := self._backends.get((realm, proxy)):
-            return ret
-        with self._tempconfig:
-            backend_name = self.backend_map[realm]
-            backend = resolve_name(f"cdedb.backend.{realm}.{backend_name}")()
-        self._backends.update({
-            (realm, True): make_proxy(backend),
-            (realm, False): backend,
-        })
-        return self._backends[(realm, proxy)]
+    def make_backend(self, realm: str, *, proxy: bool = True) -> AbstractBackend:
+        return self._make_backend(self.backend_map[realm], proxy=proxy)
 
-    def make_frontend(self, realm: str, *, proxy: bool = True):  # type: ignore[no-untyped-def]
-        """Create a frontend."""
-        if ret := self._frontends.get((realm, proxy)):
-            return ret
+    def _make_backend(self, backend_class: type[B], *, proxy: bool = True) -> B:
+        """Create backend, either as a proxy or not."""
+        if ret := self._backends.get((backend_class, proxy)):
+            return cast(B, ret)
         with self._tempconfig:
-            frontend_name = self.frontend_map[realm]
-            frontend = resolve_name(f"cdedb.frontend.{realm}.{frontend_name}")()
+            backend = backend_class()
+        self._backends[(backend_class, False)] = backend
+        self._backends[(backend_class, True)] = make_proxy(backend)
+        if proxy:
+            return cast(B, self._backends[(backend_class, True)])
+        return backend
+
+    def make_frontend(self, realm: str, *, proxy: bool = True) -> AbstractFrontend:
+        return self._make_frontend(self.frontend_map[realm], proxy=proxy)
+
+    def _make_frontend(self, frontend_class: type[F], *, proxy: bool = True) -> F:
+        """Create a frontend."""
+        if ret := self._frontends.get((frontend_class, proxy)):
+            return cast(F, ret)
+        with self._tempconfig:
+            frontend = frontend_class()
         if not proxy:
-            for backend_name in self.backend_map:
+            for backend_name, backend_class in self.backend_map.items():
                 setattr(
                     frontend,
                     f"{backend_name}proxy",
-                    self.make_backend(backend_name, proxy=proxy),
+                    self._make_backend(backend_class, proxy=proxy),
                 )
-        self._frontends[(realm, proxy)] = frontend
+        self._frontends[(frontend_class, proxy)] = frontend
         return frontend
+
+    def make_core_backend(self, *, proxy: bool = True) -> CoreBackend:
+        return self._make_backend(CoreBackend, proxy=proxy)
+
+    def make_complaint_backend(self, *, proxy: bool = True) -> ComplaintBackend:
+        return self._make_backend(ComplaintBackend, proxy=proxy)
+
+    def make_cde_backend(self, *, proxy: bool = True) -> CdEBackend:
+        return self._make_backend(CdEBackend, proxy=proxy)
+
+    def make_event_backend(self, *, proxy: bool = True) -> EventBackend:
+        return self._make_backend(EventBackend, proxy=proxy)
+
+    def make_past_event_backend(self, *, proxy: bool = True) -> PastEventBackend:
+        return self._make_backend(PastEventBackend, proxy=proxy)
+
+    def make_ml_backend(self, *, proxy: bool = True) -> MlBackend:
+        return self._make_backend(MlBackend, proxy=proxy)
+
+    def make_assembly_backend(self, *, proxy: bool = True) -> AssemblyBackend:
+        return self._make_backend(AssemblyBackend, proxy=proxy)
+
+    def make_session_backend(self, *, proxy: bool = True) -> SessionBackend:
+        return self._make_backend(SessionBackend, proxy=proxy)  # type: ignore[type-var]
+
+    def make_core_frontend(self, *, proxy: bool = True) -> CoreFrontend:
+        return self._make_frontend(CoreFrontend, proxy=proxy)
+
+    def make_cde_frontend(self, *, proxy: bool = True) -> CdEFrontend:
+        return self._make_frontend(CdEFrontend, proxy=proxy)
+
+    def make_event_frontend(self, *, proxy: bool = True) -> EventFrontend:
+        return self._make_frontend(EventFrontend, proxy=proxy)
+
+    def make_ml_frontend(self, *, proxy: bool = True) -> MlFrontend:
+        return self._make_frontend(MlFrontend, proxy=proxy)
+
+    def make_assembly_frontend(self, *, proxy: bool = True) -> AssemblyFrontend:
+        return self._make_frontend(AssemblyFrontend, proxy=proxy)
 
     def rs(self, persona_id: Optional[int] = None) -> RequestState:
         """Create a RequestState."""

@@ -201,6 +201,20 @@
                 "sortkey": 0,
                 "title": "Anreise um"
             },
+            "arrival_date": {
+                "association": 1,
+                "checkin": false,
+                "description": null,
+                "entries": {
+                    "": "gar nicht",
+                    "2025-12-31": "Sylvester",
+                    "2026-01-01": "Neujahr"
+                },
+                "kind": 5,
+                "sort_group": null,
+                "sortkey": 0,
+                "title": "Anreisetag"
+            },
             "brings_balls": {
                 "association": 1,
                 "checkin": true,
@@ -495,6 +509,13 @@
     "registrations": {
         "1": {
             "amount_owed": "553.99",
+            "amount_owed_by_budget": {
+                "expenses": "553.99"
+            },
+            "amount_owed_by_category": {
+                "participation_fee": "573.99",
+                "reimbursement": "-20.00"
+            },
             "amount_owed_by_kind": {
                 "common": "573.99",
                 "instructor_refund": "-20.00"
@@ -591,6 +612,13 @@
         },
         "2": {
             "amount_owed": "466.49",
+            "amount_owed_by_budget": {
+                "cde": "5.00",
+                "expenses": "461.49"
+            },
+            "amount_owed_by_category": {
+                "participation_fee": "466.49"
+            },
             "amount_owed_by_kind": {
                 "common": "461.49",
                 "external": "5.00"
@@ -686,6 +714,14 @@
         },
         "3": {
             "amount_owed": "504.48",
+            "amount_owed_by_budget": {
+                "expenses": "504.49",
+                "solidarity": "-0.01"
+            },
+            "amount_owed_by_category": {
+                "participation_fee": "534.48",
+                "reimbursement": "-30.00"
+            },
             "amount_owed_by_kind": {
                 "common": "534.49",
                 "instructor_refund": "-30.00",
@@ -782,6 +818,12 @@
         },
         "4": {
             "amount_owed": "431.99",
+            "amount_owed_by_budget": {
+                "expenses": "431.99"
+            },
+            "amount_owed_by_category": {
+                "participation_fee": "431.99"
+            },
             "amount_owed_by_kind": {
                 "common": "431.99"
             },
@@ -876,6 +918,13 @@
         },
         "5": {
             "amount_owed": "584.48",
+            "amount_owed_by_budget": {
+                "expenses": "584.49",
+                "solidarity": "-0.01"
+            },
+            "amount_owed_by_category": {
+                "participation_fee": "584.48"
+            },
             "amount_owed_by_kind": {
                 "common": "584.49",
                 "solidary_reduction": "-0.01"
@@ -969,6 +1018,12 @@
         },
         "6": {
             "amount_owed": "10.50",
+            "amount_owed_by_budget": {
+                "expenses": "10.50"
+            },
+            "amount_owed_by_category": {
+                "participation_fee": "10.50"
+            },
             "amount_owed_by_kind": {
                 "common": "10.50"
             },

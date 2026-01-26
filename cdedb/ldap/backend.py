@@ -23,7 +23,7 @@ from ldaptor.protocols import pureldap
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName as DN
 from ldaptor.protocols.pureber import int2ber
 from passlib.hash import sha512_crypt
-from psycopg import AsyncCursor, sql
+from psycopg import AsyncConnection, AsyncCursor, sql
 from psycopg.rows import DictRow
 from psycopg_pool import AsyncConnectionPool
 from twisted.python.util import InsensitiveDict
@@ -129,7 +129,7 @@ class LDAPsqlBackend:
         # concept of 'sessions' in this backend, we can not create one database
         # connection per session. So, to avoid creating a new connection for each
         # transaction, we utilize the psycopg connection pool for this.
-        self.pool = pool
+        self.pool = cast("AsyncConnectionPool[AsyncConnection[DictRow]]", pool)
         # load the ldap schemas (and overlays) which are supported
         self.schema = self.load_schemas(
             "core.schema",

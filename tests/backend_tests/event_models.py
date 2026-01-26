@@ -250,6 +250,23 @@ class TestEventModels(BackendTest):
                     checkin=False,
                     entries=None,
                 ),
+                10: models.EventField(
+                    id=10,  # type: ignore[arg-type]
+                    event_id=1,  # type: ignore[arg-type]
+                    field_name="arrival_date",  # type: ignore[arg-type]
+                    kind=const.FieldDatatypes.date,
+                    association=const.FieldAssociations.registration,
+                    title="Anreisetag",
+                    sort_group=None,
+                    sortkey=0,
+                    description=None,
+                    checkin=False,
+                    entries={
+                        None: "gar nicht",
+                        datetime.date.fromisoformat("2025-12-31"): "Sylvester",
+                        datetime.date.fromisoformat("2026-01-01"): "Neujahr",
+                    },
+                ),
             },
             custom_query_filters={
                 1: models.CustomQueryFilter(

@@ -3,10 +3,10 @@
 import datetime as _datetime
 import decimal as _decimal
 from collections.abc import Mapping as _Mapping, MutableMapping as _MutableMapping
-from types import UnionType as _UnionType
 from typing import TYPE_CHECKING, Any as _Any, NewType as _NewType
 
 from subman import SubscriptionState as _SubscriptionState
+from typing_extensions import TypeForm as _TypeForm
 
 from cdedb.common.query import Query as _Query
 
@@ -20,15 +20,14 @@ else:
 
 del TYPE_CHECKING
 
-TypeMapping = _Mapping[str, type[_Any] | _UnionType]
-MutableTypeMapping = _MutableMapping[_Any, type[_Any] | _UnionType]
+TypeMapping = _Mapping[str, _TypeForm[_Any]]
+MutableTypeMapping = _MutableMapping[_Any, _TypeForm[_Any]]
 
 # SIMPLE/PRIMITIVE/ATOMIC TYPES
 
 NonNegativeInt = _NewType("NonNegativeInt", int)
 PositiveInt = _NewType("PositiveInt", int)
 NegativeInt = _NewType("NegativeInt", int)
-NonZeroInt = _NewType("NonZeroInt", int)
 ID = _NewType("ID", int)
 CdedbID = _NewType("CdedbID", ID)  # subtype of ID as it also uses that validator
 PartialImportID = _NewType("PartialImportID", int)
@@ -37,11 +36,7 @@ SingleDigitInt = _NewType("SingleDigitInt", int)
 NonNegativeFloat = _NewType("NonNegativeFloat", float)
 
 NonNegativeDecimal = _NewType("NonNegativeDecimal", _decimal.Decimal)
-NonNegativeLargeDecimal = _NewType("NonNegativeLargeDecimal", NonNegativeDecimal)
 PositiveDecimal = _NewType("PositiveDecimal", _decimal.Decimal)
-
-EmptyDict = _NewType("EmptyDict", dict[_Any, _Any])
-EmptyList = _NewType("EmptyList", list[_Any])
 
 Realm = _NewType("Realm", str)
 StringType = _NewType("StringType", str)
@@ -80,8 +75,7 @@ PDFFile = _NewType("PDFFile", bytes)
 # While not technically correct, this should always be true.
 JSON = _NewType("JSON", _CdEDBObject)
 
-# TODO this probably requires custom logic...
-ByFieldDatatype = _NewType("ByFieldDatatype", str)
+ByFieldDatatype = _NewType("ByFieldDatatype", object)
 
 # COMPLEX/DICTIONARY TYPES
 # TODO some could be subtypes (e.g. serializedeventupload -> serializedevent)
@@ -98,9 +92,7 @@ SepaMeta = _NewType("SepaMeta", _CdEDBObject)
 Institution = _NewType("Institution", _CdEDBObject)
 Event = _NewType("Event", _CdEDBObject)
 EventPart = _NewType("EventPart", _CdEDBObject)
-EventField = _NewType("EventField", _CdEDBObject)
 EventFeeCondition = _NewType("EventFeeCondition", str)
-PastCourse = _NewType("PastCourse", _CdEDBObject)
 Registration = _NewType("Registration", _CdEDBObject)
 RegistrationPart = _NewType("RegistrationPart", _CdEDBObject)
 RegistrationTrack = _NewType("RegistrationTrack", _CdEDBObject)

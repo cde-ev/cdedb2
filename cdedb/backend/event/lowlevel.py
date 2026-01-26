@@ -9,11 +9,10 @@ import abc
 import collections
 import copy
 import dataclasses
+import decimal
 from collections.abc import Collection
 from pathlib import Path
-from typing import Any, Callable, Optional, Protocol
-
-import phonenumbers
+from typing import Optional, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -24,7 +23,6 @@ import cdedb.models.ml as models_ml
 from cdedb.backend.common import (
     AbstractBackend,
     access,
-    affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     internal,
 )
@@ -36,10 +34,8 @@ from cdedb.common import (
     DeletionBlockers,
     PsycoJson,
     RequestState,
+    cast_field_value,
     now,
-    parse_date,
-    parse_datetime,
-    parse_phone,
     unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
@@ -208,7 +204,7 @@ class EventLowLevelBackend(AbstractBackend):
         blockers = self._delete_course_track_blockers(rs, track_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set(str, cascade)
+        cascade = affirm(set[str], cascade)
         cascade &= blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(
@@ -376,25 +372,6 @@ class EventLowLevelBackend(AbstractBackend):
 
         :param field: The field whose values are to be updated
         """
-
-        casters: dict[const.FieldDatatypes, Callable[[Any], Any]] = {
-            const.FieldDatatypes.int: int,
-            const.FieldDatatypes.str: str,
-            const.FieldDatatypes.float: float,
-            const.FieldDatatypes.date: parse_date,
-            const.FieldDatatypes.datetime: parse_datetime,
-            const.FieldDatatypes.bool: bool,
-            const.FieldDatatypes.non_negative_int: (
-                lambda x: affirm(vtypes.NonNegativeInt, x)
-            ),
-            const.FieldDatatypes.non_negative_float: (
-                lambda x: affirm(vtypes.NonNegativeFloat, x)
-            ),
-            # normalized string: normalize on write
-            const.FieldDatatypes.phone: parse_phone,
-            const.FieldDatatypes.iban: lambda x: affirm(vtypes.IBAN, x),
-        }
-
         self.affirm_atomized_context(rs)
         data = self.sql_select(
             rs,
@@ -408,11 +385,11 @@ class EventLowLevelBackend(AbstractBackend):
             value = fdata.get(field.field_name, None)
             if value is None:
                 continue
-            try:
-                new_value = casters[field.kind](value)
-            except (ValueError, TypeError, phonenumbers.NumberParseException):
-                new_value = None
-            fdata[field.field_name] = new_value
+            fdata[field.field_name] = cast_field_value(
+                value,
+                field.kind,
+                argname=f"{field.association.name}.{field.field_name}",
+            )
             new = {
                 'id': entry['id'],
                 'fields': PsycoJson(fdata),
@@ -529,7 +506,7 @@ class EventLowLevelBackend(AbstractBackend):
         blockers = self._delete_event_part_blockers(rs, part_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set(str, cascade) & blockers.keys()
+        cascade = affirm(set[str], cascade) & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(
                 n_("Deletion of %(type)s blocked by %(block)s."),
@@ -776,7 +753,7 @@ class EventLowLevelBackend(AbstractBackend):
         """
         part_group_id = affirm(vtypes.ID, part_group_id)
         blockers = self._delete_part_group_blockers(rs, part_group_id)
-        cascade = affirm_set(str, cascade or set()) & blockers.keys()
+        cascade = affirm(set[str], cascade or set()) & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(
                 n_("Deletion of %(type)s blocked by %(block)s."),  # pragma: no cover
@@ -876,7 +853,7 @@ class EventLowLevelBackend(AbstractBackend):
         """
         track_group_id = affirm(vtypes.ID, track_group_id)
         blockers = self._delete_track_group_blockers(rs, track_group_id)
-        cascade = affirm_set(str, cascade or set()) & blockers.keys()
+        cascade = affirm(set[str], cascade or set()) & blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(
                 n_("Deletion of %(type)s blocked by %(block)s."),  # pragma: no cover
@@ -996,7 +973,7 @@ class EventLowLevelBackend(AbstractBackend):
         Performs more involved checks which can not be done in the validation due to
         missing data, like registrations.
         """
-        track_ids = affirm_set(vtypes.ID, track_ids)
+        track_ids = affirm(set[vtypes.ID], track_ids)
 
         # Check that course choices and course instructors are compatible.
         query = """
@@ -1118,7 +1095,7 @@ class EventLowLevelBackend(AbstractBackend):
         blockers = self._delete_event_field_blockers(rs, field_id, event_id=event_id)
         if not cascade:
             cascade = set()
-        cascade = affirm_set(str, cascade)
+        cascade = affirm(set[str], cascade)
         cascade &= blockers.keys()
         if blockers.keys() - cascade:
             raise ValueError(
@@ -1319,6 +1296,19 @@ class EventLowLevelBackend(AbstractBackend):
             query += " AND event.registrations.id = ANY(%(reg_ids)s)"
             params["reg_ids"] = registration_ids
         rdata = self.query_all(rs, query, params)
+        for reg in rdata:
+            reg["amount_owed_by_kind"] = {
+                const.EventFeeType(int(k)): decimal.Decimal(v)
+                for k, v in reg["amount_owed_by_kind"].items()
+            }
+            reg["amount_owed_by_category"] = {
+                const.EventFeeCategory(int(k)): decimal.Decimal(v)
+                for k, v in reg["amount_owed_by_category"].items()
+            }
+            reg["amount_owed_by_budget"] = {
+                const.EventFeeBudget(int(k)): decimal.Decimal(v)
+                for k, v in reg["amount_owed_by_budget"].items()
+            }
         return {reg['id']: reg for reg in rdata}
 
     @classmethod

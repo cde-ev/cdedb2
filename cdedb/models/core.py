@@ -37,6 +37,8 @@ class MetaInfo(CdEDataclass):
         metadata=Meta.exclude.as_dict,
     )
 
+    # in the UI, this is named "Vereinsarchiv" instead of Finanzvorstand,
+    # but we were too lazy to migrate those internal keys
     Finanzvorstand_Name: str | None = None
     Finanzvorstand_Vorname: str | None = None
     Finanzvorstand_Ort: str | None = None
@@ -322,7 +324,7 @@ class Persona(PersonaName):
         for field in dataclasses.fields(self):
             if PersonaFlag.mandatory_true_flag.in_field(field):
                 if not getattr(self, field.name):
-                    raise RuntimeError
+                    raise RuntimeError("User misses a mandatory realm.")
 
     @classmethod
     @functools.cache

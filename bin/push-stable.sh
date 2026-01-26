@@ -16,8 +16,9 @@ else
         TAG=release/$(date +'%Y-%m-%d')
         git tag -f $TAG
         git push --delete origin $TAG
-        git push origin stable --tags
-        git push mirror stable
+        git push origin stable tag $TAG
+        git push --delete mirror $TAG
+        git push mirror stable tag $TAG
     }
 fi
 

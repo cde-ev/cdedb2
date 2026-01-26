@@ -1211,7 +1211,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle(USER_DICT['berta']['default_name_format'])
         self.traverse({'description': 'Einzugsermächtigung'})
         self.assertTitle("Einzugsermächtigung Bertå Beispiel")
-        self.assertPresence("Dagobert Anatidae", div='active-permit')
+        self.assertPresence("Dagobert Anatidae & Co. KG", div='active-permit')
         self.assertPresence("Das Mitglied ist der Kontoinhaber.",
                             div='inactive-permits')
         if self.user_in("farin"):
@@ -1525,7 +1525,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Einzugsermächtigung'},
                       {'description': 'Bearbeiten'})
         f = self.response.forms['changelastschriftform']
-        self.assertEqual('Dagobert Anatidae', f['account_owner'].value)
+        self.assertEqual('Dagobert Anatidae & Co. KG', f['account_owner'].value)
         self.assertEqual('reicher Onkel', f['notes'].value)
         f['account_owner'] = "Dagobert Beetlejuice"
         f['notes'] = "reicher Onkel (neu verheiratet)"
@@ -2301,18 +2301,17 @@ class TestCdEFrontend(FrontendTest):
         self.assertLogEqual(log_expectation, "event", offset=11)
 
     @as_users("anton")
-    @prepsql(f"""
-        UPDATE core.personas
-        SET
-            is_cde_realm = TRUE, is_member = TRUE, balance = {decimal.Decimal('0.00')},
-            bub_search = FALSE, decided_search = FALSE, is_searchable = FALSE,
-            donation = 0, honorary_member = FALSE, paper_expuls = FALSE,
-            trial_member = FALSE, is_assembly_realm = TRUE
-        WHERE id = {USER_DICT['emilia']['id']};
-    """)
     def test_money_transfers_waived_fee(self) -> None:
-        # TODO Make_change_persona_realms actually usable, and do that instead.
-        # An upgrade from event to cde realm should not require any additional keys.
+        self.get("/core/persona/5/promote?target_realm=cde&submitform=True")
+        f = self.response.forms["promotionform"]
+        f["trial_member"].checked = True
+        f["change_note"] = "a really good reason"
+        # emilias mobile phone number is not well formed
+        self.submit(f, check_notification=False)
+        f = self.response.forms["promotionform"]
+        f[IGNORE_WARNINGS_NAME].checked = True
+        self.submit(f)
+
         self.get("/event/event/1/registration/add")
         f = self.response.forms["addregistrationform"]
         f["persona.persona_id"] = "DB-4-3"

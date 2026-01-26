@@ -12,11 +12,12 @@ executing_admin_id = -1
 script = Script(persona_id=executing_admin_id, dbuser="cdb_admin")
 user_rs = script.rs()
 
-ml = script.make_backend("ml", proxy=False)
+ml = script.make_ml_backend(proxy=False)
 
 # Execution
 
 with script:
+
     def run(n: int) -> None:
         for _ in range(n):
             ml_ids = ml.list_mailinglists(user_rs)

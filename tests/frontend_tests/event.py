@@ -509,8 +509,8 @@ class TestEventFrontend(FrontendTest):
             ins = (
                     everyone | not_registered | privileged
                     | registered_or_privileged
-            ) - registrations_stats | {"Teilnahmebeiträge", "Log"}
-            out = (registered | orga | registrations_stats) - {"Teilnahmebeiträge", "Log"}
+            ) - registrations_stats | {"Teilnahmebeiträge", "Log", "Unterkünfte"}
+            out = (registered | orga | registrations_stats) - {"Teilnahmebeiträge", "Log", "Unterkünfte"}
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -577,8 +577,13 @@ class TestEventFrontend(FrontendTest):
         execsql("UPDATE event.courses SET is_visible = True WHERE id = 2")
         self.submit(f)
         self.assertPresence("β. Lustigsein für Fortgeschrittene")
+        f = self.response.forms['coursefilterform']
+        self.assertNotIn("active_only", f.fields)
         if self.user_in('annika'):
+            self.event.set_event(self.key, 1, {"is_course_state_visible": True})
+            self.traverse("Kursliste")
             f = self.response.forms['coursefilterform']
+            f['track_ids'] = [2]
             f['active_only'].checked = True
             self.submit(f)
             self.assertNonPresence("β. Lustigsein für Fortgeschrittene")
@@ -768,44 +773,35 @@ class TestEventFrontend(FrontendTest):
                             div='notifications')
 
     def test_course_state_visibility(self) -> None:
-        self.login(USER_DICT['charly'])
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/course/list'})
-        self.assertNonPresence("fällt aus")
-        self.traverse({'href': '/event/event/1/register'})
-        f = self.response.forms['registerform']
-        # Course ε. Backup-Kurs is cancelled in track 3 (but not visible by now)
-        self.assertIn('5', [value for (value, checked, text)
-                            in f['track3.course_choice_0'].options])
+        with self.switch_user("charly"):
+            self.get("/event/event/1/course/list")
+            self.assertNonPresence("fällt aus")
+            self.get('/event/event/1/register')
+            f = self.response.forms['registerform']
+            # Course ε. Backup-Kurs is cancelled in track 3 (but still choosable).
+            self.assertIn(
+                '5', [value for (value, _, _) in f['track3.course_choice_0'].options]
+            )
 
-        self.logout()
-        self.login(USER_DICT['garcia'])
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/course/list'})
-        self.assertPresence("fällt aus")
-        self.assertPresence("Info! Ausfallende Kurse werden nur für Orgas "
-                            "hier markiert.", div='static-notifications')
-        self.traverse({'href': '/event/event/1/change'})
-        f = self.response.forms['changeeventform']
-        f['is_course_state_visible'].checked = True
-        self.submit(f)
-        self.traverse({'href': '/event/event/1/course/list'})
-        self.assertNonPresence("Ausfallende Kurse werden nur für Orgas",
-                               div='static-notifications')
+        with self.switch_user("garcia"):
+            self.get("/event/event/1/course/list")
+            self.assertNonPresence("fällt aus")
+            self.get('/event/event/1/change')
+            f = self.response.forms['changeeventform']
+            f['is_course_state_visible'].checked = True
+            self.submit(f)
+            self.get('/event/event/1/course/list')
+            self.assertPresence("fällt aus")
 
-        self.logout()
-        self.login(USER_DICT['charly'])
-        self.traverse({'href': '/event/$'},
-                      {'href': '/event/event/1/show'},
-                      {'href': '/event/event/1/course/list'})
-        self.assertPresence("fällt aus")
-        self.traverse({'href': '/event/event/1/register'})
-        f = self.response.forms['registerform']
-        # Course ε. Backup-Kurs is cancelled in track 3 (but not visible by now)
-        self.assertNotIn('5', [value for (value, checked, text)
-                               in f['track3.course_choice_0'].options])
+        with self.switch_user("charly"):
+            self.get('/event/event/1/course/list')
+            self.assertPresence("fällt aus")
+            self.get('/event/event/1/register')
+            f = self.response.forms['registerform']
+            # Course ε. Backup-Kurs is cancelled in track 3 and no longer choosable.
+            self.assertNotIn(
+                '5', [value for (value, _, _) in f['track3.course_choice_0'].options]
+            )
 
     @event_keeper
     @as_users("garcia")
@@ -2083,103 +2079,128 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @event_keeper
     @as_users("annika")
     def test_registration_questionnaire(self) -> None:
-        self.traverse("Veranstaltungen", "Alle Veranstaltungen", "CdE-Party 2050")
-        # Create new boolean registration fields.
-        self.traverse("Datenfelder konfigurieren")
-        f = self.response.forms['fieldsummaryform']
-        f['create_-1'].checked = True
-        f['field_name_-1'] = "is_child"
-        f['kind_-1'] = const.FieldDatatypes.bool
-        f['association_-1'] = const.FieldAssociations.registration
-        self.submit(f)
-        f = self.response.forms['fieldsummaryform']
-        f['create_-1'].checked = True
-        f['field_name_-1'] = "plus_one"
-        f['kind_-1'] = const.FieldDatatypes.bool
-        f['association_-1'] = const.FieldAssociations.registration
-        self.submit(f)
-        f = self.response.forms['fieldsummaryform']
-        f['create_-1'].checked = True
-        f['field_name_-1'] = "partner"
-        f['kind_-1'] = const.FieldDatatypes.str
-        f['association_-1'] = const.FieldAssociations.registration
-        self.submit(f)
-        f = self.response.forms['fieldsummaryform']
-        f['create_-1'].checked = True
-        f['field_name_-1'] = "anzahl_kissen"
-        f['kind_-1'] = const.FieldDatatypes.int
-        f['association_-1'] = const.FieldAssociations.registration
-        self.submit(f)
-        f = self.response.forms['fieldsummaryform']
-        f['create_-1'].checked = True
-        f['field_name_-1'] = "eats_meats"
-        f['kind_-1'] = const.FieldDatatypes.str
-        f['association_-1'] = const.FieldAssociations.registration
-        f['entries_-1'] = """meat;Eat meat everyday!
-        half-vegetarian;Sometimes
-        vegetarian;Meat is Murder!
-        vegan;Milk is Murder too!"""
-        self.submit(f)
-        f = self.response.forms['fieldsummaryform']
-        f['create_-1'].checked = True
-        f['field_name_-1'] = "favorite_day"
-        f['kind_-1'] = const.FieldDatatypes.date
-        f['association_-1'] = const.FieldAssociations.registration
-        self.submit(f)
+        event_id = 2
+        # Create new boolean registration fields
+        event_update = {
+            "registration_start": now(),
+            "registration_soft_limit": None,
+            "registration_hard_limit": None,
+            "fields": {
+                -1: {
+                    "field_name": "is_child",
+                    "kind": const.FieldDatatypes.bool,
+                    "association": const.FieldAssociations.registration,
+                },
+                -2: {
+                    "field_name": "plus_one",
+                    "kind": const.FieldDatatypes.bool,
+                    "association": const.FieldAssociations.registration,
+                },
+                -3: {
+                    "field_name": "partner",
+                    "kind": const.FieldDatatypes.str,
+                    "association": const.FieldAssociations.registration,
+                },
+                -4: {
+                    "field_name": "anzahl_kissen",
+                    "kind": const.FieldDatatypes.int,
+                    "association": const.FieldAssociations.registration,
+                },
+                -5: {
+                    "field_name": "eats_meats",
+                    "kind": const.FieldDatatypes.str,
+                    "association": const.FieldAssociations.registration,
+                    "entries": """meat;Eat meat everyday!
+                        half-vegetarian;Sometimes
+                        vegetarian;Meat is Murder!
+                        vegan;Milk is Murder too!"""
+                },
+                -6: {
+                    "field_name": "favorite_day",
+                    "kind": const.FieldDatatypes.date,
+                    "association": const.FieldAssociations.registration,
+                },
+            }
+        }
+        self.event.set_event(self.key, event_id, event_update)
+        self.event.create_event_fee(
+            self.key,
+            event_id,
+            {
+                "title": "Is Child",
+                "amount": "-10",
+                "condition": "part.Party AND field.is_child",
+                "kind": const.EventFeeType.common,
+            },
+        )
+        self.event.create_event_fee(
+            self.key,
+            event_id,
+            {
+                "title": "Plus One",
+                "amount": "+14.99",
+                "condition": "part.Party AND field.plus_one",
+                "kind": const.EventFeeType.common,
+            },
+        )
+        self.event.set_questionnaire(
+            self.key,
+            event_id,
+            {
+                const.QuestionnaireUsages.registration: [
+                    {
+                        "title": "Ich bin unter 13 Jahre alt.",
+                        "field_id": 1001,
+                        "default_value": None,
+                        "input_size": None,
+                        "info": None,
+                        "readonly": False,
+                    },
+                    {
+                        "title": "Ich bringe noch jemanden mit.",
+                        "field_id": 1002,
+                        "default_value": None,
+                        "input_size": None,
+                        "info": None,
+                        "readonly": False,
+                    },
+                    {
+                        "title": "Name des Partners.",
+                        "field_id": 1003,
+                        "default_value": None,
+                        "input_size": None,
+                        "info": None,
+                        "readonly": False,
+                    },
+                    {
+                        "title": "Anzahl an Kissen",
+                        "field_id": 1004,
+                        "default_value": None,
+                        "input_size": None,
+                        "info": None,
+                        "readonly": False,
+                    },
+                    {
+                        "title": "Essgewohnheiten.",
+                        "field_id": 1005,
+                        "default_value": None,
+                        "input_size": None,
+                        "info": None,
+                        "readonly": False,
+                    },
+                    {
+                        "title": "Dein Lieblingstag",
+                        "field_id": 1006,
+                        "default_value": None,
+                        "input_size": None,
+                        "info": None,
+                        "readonly": False,
+                    },
+                ]
+            }
+        )
 
-        self.traverse("Teilnahmebeiträge", "Beitrag hinzufügen")
-        f = self.response.forms['configureeventfeeform']
-        f['title'] = "Is Child"
-        f['amount'] = "-10"
-        f['condition'] = "part.Party AND field.is_child"
-        self.submit(f)
-        self.traverse("Beitrag hinzufügen")
-        f = self.response.forms['configureeventfeeform']
-        f['title'] = "Plus One"
-        f['amount'] = "+14.99"
-        f['condition'] = "part.Party AND field.plus_one"
-        self.submit(f)
-
-        self.traverse("Anmeldung konfigurieren")
-        f = self.response.forms['configurequestionnaireform']
-        f['create_-1'].checked = True
-        f['title_-1'] = "Ich bin unter 13 Jahre alt."
-        f['field_id_-1'] = 1001
-        self.submit(f)
-        f = self.response.forms['configurequestionnaireform']
-        f['create_-1'].checked = True
-        f['title_-1'] = "Ich bringe noch jemanden mit."
-        f['field_id_-1'] = 1002
-        self.submit(f)
-        f = self.response.forms['configurequestionnaireform']
-        f['create_-1'].checked = True
-        f['title_-1'] = "Name des Partners"
-        f['field_id_-1'] = 1003
-        self.submit(f)
-        f = self.response.forms['configurequestionnaireform']
-        f['create_-1'].checked = True
-        f['title_-1'] = "Anzahl an Kissen"
-        f['field_id_-1'] = 1004
-        self.submit(f)
-        f = self.response.forms['configurequestionnaireform']
-        f['create_-1'].checked = True
-        f['title_-1'] = "Essgewohnheiten"
-        f['field_id_-1'] = 1005
-        self.submit(f)
-        f = self.response.forms['configurequestionnaireform']
-        f['create_-1'].checked = True
-        f['title_-1'] = "Dein Lieblingstag"
-        f['field_id_-1'] = 1006
-        self.submit(f)
-
-        self.traverse("Konfiguration")
-        f = self.response.forms['changeeventform']
-        f['registration_start'] = now().isoformat()
-        f['registration_soft_limit'] = ""
-        f['registration_hard_limit'] = ""
-        self.submit(f)
-
-        self.traverse("Anmelden")
+        self.get(f"/event/event/{event_id}/register")
         self.assertTitle("Anmeldung für CdE-Party 2050")
         f = self.response.forms['registerform']
         self.assertPresence("Ich bin unter 13 Jahre alt.",
@@ -2197,9 +2218,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f, check_notification=False)
         f = self.response.forms['registerform']
         self.assertValidationError(
-            'fields.anzahl_kissen', "Ungültige Eingabe für eine Ganzzahl.")
+            'fields.anzahl_kissen', "Darf nicht leer sein.")
         f['fields.anzahl_kissen'] = 3
-        self.assertValidationError('fields.favorite_day', "Kein Datum gefunden.")
+        self.assertValidationError('fields.favorite_day', "Darf nicht leer sein.")
         f['fields.favorite_day'] = now().date().isoformat()
         self.submit(f)
         self.assertTitle("Deine Anmeldung (CdE-Party 2050)")
@@ -2910,21 +2931,29 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Zu viel Geld. 999,99 € > 584,48 €", div="line2_infos")
         f = self.response.forms['batchfeesform']
         self.submit(f)
-        for i in range(5):
+        for i in range(6):
             text = self.fetch_mail_content(i)
             if i == 1:
                 self.assertIn("455,99", text)
             if i == 3:
                 self.assertRegex(
                     text,
-                    r"Für Eure Veranstaltung\s* Große Testakademie 2222\s*"
-                    r"in der CdE-Datenbank wurden 3 neue Überweisungen eingetragen.",
+                    r"Für Eure Veranstaltung\s+Große Testakademie 2222\s+"
+                    r"wurden 3 neue Überweisungen in der Datenbank eingetragen.",
                 )
             elif i == 4:
-                self.assertIn(
-                    "Für Eure Veranstaltung in der CdE-Datenbank wurden"
-                    " 1 Erstattungen durchgeführt\nund in der Datenbank eingetragen.",
+                self.assertRegex(
                     text,
+                    r"Für die Veranstaltung\s+Große Testakademie 2222\s+"
+                    r"haben wir dir am 30.12.2019 eine Erstattung in Höhe von\s+"
+                    r"116,49\s€\s+überwiesen",
+                )
+            elif i == 5:
+                self.assertRegex(
+                    text,
+                    r"Für Eure Veranstaltung\s+Große Testakademie 2222\s+"
+                    r"wurden 1 Erstattungen durchgeführt\s+"
+                    r"und in der Datenbank eingetragen.",
                 )
             else:
                 self.assertIn(
@@ -3041,7 +3070,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         for i in range(1):
             text = self.fetch_mail_content(i)
             self.assertIn("Überweisung für die Veranstaltung", text)
-            self.assertIn('"Große Testakademie 2222"', text)
+            self.assertIn("Große Testakademie 2222", text)
 
         with self.switch_user("garcia"):
             self.traverse("Veranstaltungen", "Große Testakademie 2222",
@@ -3064,7 +3093,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         for i in range(1):
             text = self.fetch_mail_content(i)
             self.assertIn("Überweisung für die Veranstaltung", text)
-            self.assertIn('"Große Testakademie 2222"', text)
+            self.assertIn("Große Testakademie 2222", text)
         self.logout()
 
         # Now, test the results. To do so, switch to Garcia (Orga of this event)
@@ -3308,6 +3337,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['enable_fields.transportation'].checked = True
         f['fields.transportation'] = "pedes"
         f['fields.may_reserve'] = True
+        f['enable_fields.anzahl_GROSSBUCHSTABEN'] = False
+        f['fields.anzahl_GROSSBUCHSTABEN'] = 1024
         self.submit(f)
 
         log_expectation = [
@@ -3339,25 +3370,22 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertTrue(f['enable_fields.may_reserve'].checked)
         self.assertEqual("pedes", f['fields.transportation'].value)
         self.assertTrue(f['fields.may_reserve'].checked)
-        self.traverse('Anmeldungen', 'Alle Anmeldungen',
-                      {'href': '/event/event/1/registration/2/show'},
-                      {'href': '/event/event/1/registration/2/change'})
+        self.get('/event/event/1/registration/2/change')
         f = self.response.forms['changeregistrationform']
         self.assertEqual(
             str(const.RegistrationPartStati.guest), f['part2.status'].value)
         self.assertEqual(
             str(const.RegistrationPartStati.cancelled), f['part3.status'].value)
         self.assertEqual("pedes", f['fields.transportation'].value)
-        self.traverse({'href': '/event/event/1/registration/query'},
-                      {'description': 'Alle Anmeldungen'},
-                      {'href': '/event/event/1/registration/3/show'},
-                      {'href': '/event/event/1/registration/3/change'})
+        self.assertEqual("3", f["fields.anzahl_GROSSBUCHSTABEN"].value)
+        self.get('/event/event/1/registration/3/change')
         f = self.response.forms['changeregistrationform']
         self.assertEqual(
             str(const.RegistrationPartStati.participant), f['part2.status'].value)
         self.assertEqual(
             str(const.RegistrationPartStati.cancelled), f['part3.status'].value)
         self.assertEqual("pedes", f['fields.transportation'].value)
+        self.assertEqual("3", f["fields.anzahl_GROSSBUCHSTABEN"].value)
 
         # Now, check with change_note
         self.get("/event/event/1/registration/multiedit?reg_ids=2,3")
@@ -3383,6 +3411,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Check log
         self.assertLogEqual(
             log_expectation, realm="event", event_id=1, offset=self.EVENT_LOG_OFFSET)
+
+        # Now check that not selecting the enable does not reset or change the field.
+        self.get("/event/event/1/registration/multiedit?reg_ids=2,3")
+        self.assertTitle("Anmeldungen bearbeiten (Große Testakademie 2222)")
+        f = self.response.forms['changeregistrationsform']
+        f['enable_fields.transportation'] = False
+        f['fields.transportation'] = "pedes"
+        self.submit(f)
+        self.get('/event/event/1/registration/3/change')
+        f = self.response.forms['changeregistrationform']
+        self.assertEqual("etc", f['fields.transportation'].value)
 
     @event_keeper
     @as_users("garcia")
@@ -5920,7 +5959,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         first = json.loads(self.response.text)
 
         upload = copy.deepcopy(first)
-        del upload['event']
         self.get('/event/event/1/import/partial')
         self.assertTitle("Partieller Import zur Veranstaltung Große Testakademie 2222")
         f = self.response.forms["importform"]
@@ -6897,7 +6935,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self._check_shown_violations(
             event_id=3, filtered_severity=models_cv.ViolationSeverity.INFO,
             texts=[
-                "3 Uneingecheckte Teilnehmende",
                 "2 Fehlende Kurseinteilungen",
             ],
         )
@@ -7019,7 +7056,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self._check_shown_violations(
             event_id=3, filtered_severity=models_cv.ViolationSeverity.ERROR,
             texts=[
-                "3 Uneingecheckte Teilnehmende",
             ],
         )
         self._check_shown_violations(
@@ -7053,7 +7089,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self._check_shown_violations(
             event_id=3, filtered_severity=models_cv.ViolationSeverity.WARNING,
             texts=[
-                "3 Uneingecheckte Teilnehmende",
                 "2 Fehlende Kurseinteilungen",
             ],
         )
@@ -7517,26 +7552,32 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @event_keeper
     @as_users("anton")
     def test_registration_strict_bool(self) -> None:
-        self.traverse("Veranstaltungen", "CdE-Party", "Konfiguration")
-        f = self.response.forms['changeeventform']
-        f['registration_start'] = now()
-        self.submit(f)
-        self.traverse("Datenfelder konfigurieren")
-        f = self.response.forms['fieldsummaryform']
-        f['create_-1'] = True
-        f['kind_-1'] = const.FieldDatatypes.bool
-        f['association_-1'] = const.FieldAssociations.registration
-        f['title_-1'] = f['field_name_-1'] = "test"
-        f['entries_-1'] = ""
-        self.submit(f)
-        f = self.response.forms['fieldsummaryform']
-        f['create_-1'] = True
-        f['kind_-1'] = const.FieldDatatypes.bool
-        f['association_-1'] = const.FieldAssociations.registration
-        f['title_-1'] = f['field_name_-1'] = "test2"
-        f['entries_-1'] = "1;Ja\n0;Nein"
-        self.submit(f)
-        self.traverse("Anmeldung konfigurieren")
+        event_update = {
+            "registration_start": now(),
+            "fields": {
+                -1: {
+                    "kind": const.FieldDatatypes.bool,
+                    "association": const.FieldAssociations.registration,
+                    "field_name": "test1",
+                },
+                -2: {
+                    "kind": const.FieldDatatypes.bool,
+                    "association": const.FieldAssociations.registration,
+                    "field_name": "test2",
+                    "entries": {
+                        True: "Ja",
+                        False: "Nein",
+                    },
+                },
+                -3: {
+                    "kind": const.FieldDatatypes.int,
+                    "association": const.FieldAssociations.registration,
+                    "field_name": "test3",
+                },
+            }
+        }
+        self.event.set_event(self.key, 2, event_update)
+        self.traverse("Veranstaltungen", "CdE-Party", "Anmeldung konfigurieren")
         f = self.response.forms['configurequestionnaireform']
         f['create_-1'] = True
         f['field_id_-1'] = 1001
@@ -7545,13 +7586,20 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['create_-1'] = True
         f['field_id_-1'] = 1002
         self.submit(f)
+        f = self.response.forms['configurequestionnaireform']
+        f['create_-1'] = True
+        f['field_id_-1'] = 1003
+        self.submit(f)
         self.traverse("Anmelden")
         f = self.response.forms['registerform']
-        f['fields.test'] = ""
-        f['fields.test2'] = ""
+        f["fields.test1"] = ""
+        f["fields.test2"] = ""
+        f["fields.test3"] = ""
         self.submit(f, check_notification=False)
         self.assertValidationError('fields.test2', "Darf nicht leer sein.")
-        f['fields.test2'] = False
+        self.assertValidationError('fields.test3', "Darf nicht leer sein.")
+        f["fields.test2"] = False
+        f["fields.test3"] = 0
         self.submit(f)
 
     @event_keeper
@@ -8349,3 +8397,51 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Emilia (Emmy) Eventis (KL) emilia@example.cde", div="attendee-list3")
         self.assertPresence("Akira Abukara akira@example.cde", div="attendee-list3")
         self.assertPresence("Inga Iota inga@example.cde", div="attendee-list3")
+
+    @as_users("annika")
+    def test_event_quicksearch(self) -> None:
+        self.traverse("Veranstaltungen", "Veranstaltungshelfer")
+        self.assertTitle("Veranstaltungshelfer [1]")
+        f = self.response.forms["quickeventform"]
+        f["event_id"] = ""
+        self.submit(f)
+        self.assertTitle("Veranstaltungshelfer [1]")
+        self.assertNotification("Unbekannte Veranstaltung.", "error")
+        f = self.response.forms["quickeventform"]
+        f["event_id"] = 1
+        self.submit(f)
+        self.assertTitle("Große Testakademie 2222")
+        f = self.response.forms["quickeventform"]
+        f["event_id"] = ""
+        self.submit(f)
+        self.assertTitle("Große Testakademie 2222")
+        self.assertNotification("Unbekannte Veranstaltung.", "error")
+        f = self.response.forms["quickeventform"]
+        f["event_id"] = 2
+        self.submit(f)
+        self.assertTitle("CdE-Party 2050")
+        self.traverse("Teilnahmebeiträge")
+        self.assertTitle("Teilnahmebeiträge (CdE-Party 2050)")
+        f = self.response.forms["quickeventform"]
+        f["event_id"] = 1
+        self.submit(f)
+        self.assertTitle("Teilnahmebeiträge (Große Testakademie 2222)")
+        self.traverse("Kurse", "Heldentum")
+        self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
+        f = self.response.forms["quickeventform"]
+        f["event_id"] = 1
+        self.submit(f)
+        self.assertTitle("Kurs Heldentum (Große Testakademie 2222)")
+        f = self.response.forms["quickeventform"]
+        g = self.response.forms["quickregistrationform"]
+        f["event_id"] = 2
+        self.submit(f)
+        self.assertTitle("CdE-Party 2050")
+        self.assertNotification("Weiterleitung auf spezifische Unterseite nicht möglich.", "info")
+        g["phrase"] = "Garcia"
+        self.submit(g)
+        self.assertTitle("Anmeldung von Garcia Generalis (Große Testakademie 2222)")
+        f = self.response.forms["quickeventform"]
+        f["event_id"] = 3
+        self.submit(f)
+        self.assertTitle("Anmeldung von Garcia Generalis (CyberTestAkademie)")

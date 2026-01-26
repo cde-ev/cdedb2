@@ -1036,6 +1036,32 @@
             "sort_group": null,
             "sortkey": 0,
             "title": "Anreise um"
+        },
+        "10": {
+            "association": 1,
+            "checkin": false,
+            "description": null,
+            "entries": [
+                [
+                    "",
+                    "gar nicht"
+                ],
+                [
+                    "2025-12-31",
+                    "Sylvester"
+                ],
+                [
+                    "2026-01-01",
+                    "Neujahr"
+                ]
+            ],
+            "event_id": 1,
+            "field_name": "arrival_date",
+            "id": 10,
+            "kind": 5,
+            "sort_group": null,
+            "sortkey": 0,
+            "title": "Anreisetag"
         }
     },
     "event.lodgement_groups": {
@@ -1604,6 +1630,17 @@
     "event.registrations": {
         "1": {
             "amount_owed": "553.99",
+            "amount_owed_by_budget": {
+                "1": "553.99"
+            },
+            "amount_owed_by_category": {
+                "1": "573.99",
+                "3": "-20.00"
+            },
+            "amount_owed_by_kind": {
+                "1": "573.99",
+                "5": "-20.00"
+            },
             "amount_paid": "200.00",
             "event_id": 1,
             "fields": {
@@ -1625,6 +1662,17 @@
         },
         "2": {
             "amount_owed": "466.49",
+            "amount_owed_by_budget": {
+                "1": "461.49",
+                "10": "5.00"
+            },
+            "amount_owed_by_category": {
+                "1": "466.49"
+            },
+            "amount_owed_by_kind": {
+                "1": "461.49",
+                "3": "5.00"
+            },
             "amount_paid": "0.00",
             "event_id": 1,
             "fields": {
@@ -1647,6 +1695,19 @@
         },
         "3": {
             "amount_owed": "504.48",
+            "amount_owed_by_budget": {
+                "1": "504.49",
+                "2": "-0.01"
+            },
+            "amount_owed_by_category": {
+                "1": "534.48",
+                "3": "-30.00"
+            },
+            "amount_owed_by_kind": {
+                "1": "534.49",
+                "10": "-0.01",
+                "5": "-30.00"
+            },
             "amount_paid": "0.00",
             "event_id": 1,
             "fields": {
@@ -1667,6 +1728,15 @@
         },
         "4": {
             "amount_owed": "431.99",
+            "amount_owed_by_budget": {
+                "1": "431.99"
+            },
+            "amount_owed_by_category": {
+                "1": "431.99"
+            },
+            "amount_owed_by_kind": {
+                "1": "431.99"
+            },
             "amount_paid": "548.48",
             "event_id": 1,
             "fields": {
@@ -1689,6 +1759,17 @@
         },
         "5": {
             "amount_owed": "584.48",
+            "amount_owed_by_budget": {
+                "1": "584.49",
+                "2": "-0.01"
+            },
+            "amount_owed_by_category": {
+                "1": "584.48"
+            },
+            "amount_owed_by_kind": {
+                "1": "584.49",
+                "10": "-0.01"
+            },
             "amount_paid": "0.00",
             "event_id": 1,
             "fields": {
@@ -1709,6 +1790,15 @@
         },
         "6": {
             "amount_owed": "10.50",
+            "amount_owed_by_budget": {
+                "1": "10.50"
+            },
+            "amount_owed_by_category": {
+                "1": "10.50"
+            },
+            "amount_owed_by_kind": {
+                "1": "10.50"
+            },
             "amount_paid": "10.50",
             "event_id": 1,
             "fields": {

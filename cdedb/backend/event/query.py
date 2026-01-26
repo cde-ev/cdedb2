@@ -15,7 +15,6 @@ import cdedb.models.event as models
 from cdedb.backend.common import (
     PYTHON_TO_SQL_MAP,
     access,
-    affirm_set_validation as affirm_set,
     affirm_validation as affirm,
 )
 from cdedb.backend.event.base import EventBaseBackend
@@ -736,8 +735,8 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
                 """
 
             # Step 4.3: Template for lodgement inhabitant counts.
-            lodgement_inhabitants_view = (
-                lambda part_id: f"""
+            lodgement_inhabitants_view = lambda part_id: (
+                f"""
                     SELECT
                         base.id AS base_id, tmp_group_id,
                         regular_inhabitants, camping_mat_inhabitants, total_inhabitants,
@@ -758,8 +757,8 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
             )
 
             # Step 4.4: Template for lodgement group inhabitant counts.
-            group_inhabitants_view = (
-                lambda part_id: f"""
+            group_inhabitants_view = lambda part_id: (
+                f"""
                     SELECT
                         tmp_group_id,
                         COALESCE(SUM(regular_inhabitants)::bigint, 0)
@@ -797,8 +796,8 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
         omitted, so if the field is added again, it will appear in the query again.
         """
         event_id = affirm(vtypes.ID, event_id)
-        scopes = affirm_set(QueryScope, scopes or set())
-        query_ids = affirm_set(vtypes.ID, query_ids or set())
+        scopes = affirm(set[QueryScope], scopes or set())
+        query_ids = affirm(set[vtypes.ID], query_ids or set())
         if not is_privileged(rs, EventPrivileges.basic_read, event_id=event_id):
             raise PrivilegeError(n_("Must be orga to retrieve stored queries."))
         try:

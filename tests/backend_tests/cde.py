@@ -192,7 +192,7 @@ class TestCdEBackend(BackendTest):
         expectation = {
             2: {
                 'account_address': 'Im Geldspeicher 1',
-                'account_owner': 'Dagobert Anatidae',
+                'account_owner': 'Dagobert Anatidae & Co. KG',
                 'granted_at': datetime.datetime(2002, 2, 22, 20, 22, 22, 222222,
                                                 tzinfo=datetime.timezone.utc),
                 'iban': 'DE12500105170648489890',

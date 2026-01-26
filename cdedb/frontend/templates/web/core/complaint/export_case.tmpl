@@ -1,0 +1,31 @@
+{% set sidenav_active='complaint_index' %}
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% import "web/core/complaint/generic.tmpl" as generic_complaint with context %}
+
+{% block title %}
+    {% trans id=ambience['case'].id|string %}
+        Export Case {{ id }}
+    {% endtrans %}
+{% endblock %}
+
+{% block static_notifications %}
+    {% call util.notification('warning') %}
+        {% trans %}
+            Usually, some information from this export needs to be redacted before the export is made available.
+        {% endtrans %}
+    {% endcall %}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("core/complaint_index"), gettext("Cases")) }}
+    {{ util.breadcrumb_link(cdedblink("core/show_case"), gettext("Case %s")|format(ambience['case']['id']), icon="gavel") }}
+    {{ util.breadcrumb_link(cdedblink("core/export_case"), gettext("Export"), active=True) }}
+{% endblock %}
+
+{% block content %}
+    <pre id="case{{ ambience["case"].id }}-export">
+        {{- export -}}
+    </pre>
+{% endblock%}

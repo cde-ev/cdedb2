@@ -2,7 +2,6 @@
 
 """Global utility functions."""
 
-import collections
 import collections.abc
 import dataclasses
 import datetime
@@ -39,9 +38,9 @@ import phonenumbers
 import psycopg2.extras
 import werkzeug
 import werkzeug.datastructures
-import werkzeug.exceptions
 import werkzeug.routing
 from schulze_condorcet.types import Candidate
+from typing_extensions import TypeForm
 
 import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
@@ -202,6 +201,7 @@ class RequestState(ConnectionContainer):
         begin: Optional[datetime.datetime],
         lang: str,
         translations: Mapping[str, gettext.NullTranslations],
+        endpoint: str | None = None,
     ) -> None:
         """
         :param mapadapter: URL generator (specific for this request)
@@ -241,6 +241,7 @@ class RequestState(ConnectionContainer):
         # is executed and then to True with the corresponding methods
         # of this class
         self.validation_appraised: Optional[bool] = None
+        self.endpoint = endpoint
 
     @property
     def gettext(self) -> Callable[[str], str]:
@@ -840,7 +841,7 @@ def is_optional_type(type_: Any) -> bool:
     return is_optional
 
 
-def get_mandatory_type(type_: type[T] | UnionType) -> type[T]:
+def get_mandatory_type(type_: TypeForm[T]) -> type[T]:
     """Transform a given type into a non-None one.
 
     Basically the inverse operation of T | None.
@@ -856,7 +857,7 @@ def get_mandatory_type(type_: type[T] | UnionType) -> type[T]:
     return cast(type[T], type_)
 
 
-def is_list_type(type_: type[Any] | UnionType) -> bool:
+def is_list_type(type_: TypeForm[Any]) -> bool:
     """Whether this is a custom list type.
 
     Our validation accepts empty lists by default,
@@ -1444,37 +1445,97 @@ def parse_datetime(
     return ret.astimezone(datetime.timezone.utc)
 
 
-def parse_phone(val: str) -> str:
-    # This kind of duplicates the phone validator, because our needs at error handling
-    # are very different.
-    phone: phonenumbers.PhoneNumber = phonenumbers.parse(val, region="DE")
-    # handle the phone number as normalized string internally
+def normalize_phone(phone: phonenumbers.PhoneNumber) -> str:
+    """Normalize phone number to string for storage."""
     return phonenumbers.format_number(phone, phonenumbers.PhoneNumberFormat.E164)
+
+
+def parse_phone(val: str) -> str:
+    """Parse a phone number, return as normalized string."""
+    phone: phonenumbers.PhoneNumber = phonenumbers.parse(val, region="DE")
+    return normalize_phone(phone)
+
+
+def cast_field_value(
+    value: str | None, kind: const.FieldDatatypes, *, argname: str = ""
+) -> Any:
+    """Deserialize a stored field value from string to field datatype via validation."""
+    from cdedb.common.validation.types import ByFieldDatatype  # noqa: PLC0415
+    from cdedb.common.validation.validate import validate_check  # noqa: PLC0415
+
+    val, _errs = validate_check(
+        ByFieldDatatype, value, argname=argname, ignore_warnings=True, kind=kind
+    )
+    return val
+
+
+def normalize_field_value(
+    value: Any | None, kind: const.FieldDatatypes, coalesce: str | None
+) -> str | None:
+    """Convert a field value from field datatype to normalized string.
+
+    :param coalesce: The default string to return for an empty value.
+        We typically prefer None, but sometimes that won't work.
+    """
+    normalizers: dict[const.FieldDatatypes, Callable[[Any], str]] = {
+        const.FieldDatatypes.date: datetime.date.isoformat,
+        const.FieldDatatypes.datetime: datetime.datetime.isoformat,
+        const.FieldDatatypes.phone: parse_phone,
+    }
+    if value is None or value == "":  # noqa: PLC1901
+        return coalesce
+    if normalizer := normalizers.get(kind):
+        return normalizer(value)
+    return str(value)
 
 
 def cast_fields(
     data: CdEDBObject, fields: "CdEDataclassMap[models_event.EventField]"
 ) -> CdEDBObject:
-    """Helper to deserialize json fields.
-
-    We serialize some classes as strings and need to undo this upon
-    retrieval from the database.
-    """
+    """Deserialize a collection of field values. For details see `cast_field_value`."""
     spec: dict[str, const.FieldDatatypes]
     spec = {f.field_name: f.kind for f in fields.values()}
-    casters: dict[const.FieldDatatypes, Callable[[Any], Any]] = {
-        const.FieldDatatypes.date: parse_date,
-        const.FieldDatatypes.datetime: parse_datetime,
+
+    return {
+        key: cast_field_value(val, spec.get(key, const.FieldDatatypes.str), argname=key)
+        for key, val in data.items()
     }
 
-    def _do_cast(key: str, val: Any) -> Any:
-        if val is None:
-            return None
-        if key in spec and (caster := casters.get(spec[key])):
-            return caster(val)
-        return val
 
-    return {key: _do_cast(key, val) for key, val in data.items()}
+def cast_field_entries(
+    entries: Sequence[tuple[str, str]] | None, kind: const.FieldDatatypes
+) -> dict[Any, str] | None:
+    """Deserialize a list of field entries into field datatypes."""
+    if not entries:
+        return None
+    ret = {
+        cast_field_value(value, kind, argname=f"entries.{i}"): description
+        for i, (value, description) in enumerate(entries)
+    }
+    if len(ret) != len(entries):
+        _LOGGER.warning(
+            "Casting of field entries produced duplicated: %s vs %s", ret, entries
+        )
+    return ret
+
+
+def normalize_field_entries(
+    entries: dict[Any, str] | None,
+    kind: const.FieldDatatypes,
+    coalesce: str | None = None,
+) -> dict[str | None, str] | None:
+    """
+    Normalize a collection of entries for one field.
+
+    :param coalesce: The default string to return for an empty value.
+        We typically prefer None, but sometimes that won't work.
+    """
+    if not entries:
+        return None
+    return {
+        normalize_field_value(value, kind, coalesce): description
+        for value, description in entries.items()
+    }
 
 
 #: Set of possible values for ``ntype`` in

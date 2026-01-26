@@ -1273,7 +1273,8 @@ class TestComplaintBackend(BackendTest):
             self.complaint.get_attachment_store(self.key).get(attachment_hash),
         )
         encrypted = (
-            self.complaint.get_attachment_store(self.key)
+            self.complaint
+            .get_attachment_store(self.key)
             .get_path(attachment_hash)
             .read_bytes()
         )
@@ -1281,7 +1282,8 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(valid_pdf, decrypt(encrypted))
         self.complaint.get_attachment_store(self.key).store(valid_pdf)
         new_encrypted = (
-            self.complaint.get_attachment_store(self.key)
+            self.complaint
+            .get_attachment_store(self.key)
             .get_path(attachment_hash)
             .read_bytes()
         )

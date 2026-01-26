@@ -16,9 +16,7 @@ import cdedb.database.constants as const
 from cdedb.backend.cde import CdEBaseBackend
 from cdedb.backend.common import (
     access,
-    affirm_set_validation as affirm_set,
     affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional,
     singularize,
 )
 from cdedb.common import (
@@ -60,9 +58,9 @@ class CdELastschriftBackend(CdEBaseBackend):
             transactions are affected and if yes, which one.
         """
         persona_id = affirm(vtypes.ID, persona_id)
-        is_member = affirm_optional(bool, is_member)
-        trial_member = affirm_optional(bool, trial_member)
-        honorary_member = affirm_optional(bool, honorary_member)
+        is_member = affirm(bool | None, is_member)
+        trial_member = affirm(bool | None, trial_member)
+        honorary_member = affirm(bool | None, honorary_member)
         code = 1
         revoked_permit = None
         collateral_transaction = None
@@ -110,12 +108,12 @@ class CdELastschriftBackend(CdEBaseBackend):
 
         :returns: Mapping of lastschrift_ids to their respecive persona_ids.
         """
-        persona_ids = affirm_set(vtypes.ID, persona_ids or set())
+        persona_ids = affirm(set[vtypes.ID], persona_ids or set())
         if not ({"cde_admin", "core_admin"} & rs.user.roles) and (
             not persona_ids or any(p_id != rs.user.persona_id for p_id in persona_ids)
         ):
             raise PrivilegeError(n_("Not privileged."))
-        active = affirm_optional(bool, active)
+        active = affirm(bool | None, active)
         query = "SELECT id, persona_id FROM cde.lastschrift"
         params = {}
         constraints = []
@@ -134,7 +132,7 @@ class CdELastschriftBackend(CdEBaseBackend):
         self, rs: RequestState, lastschrift_ids: Collection[int]
     ) -> CdEDBObjectMap:
         """Retrieve direct debit permits."""
-        lastschrift_ids = affirm_set(vtypes.ID, lastschrift_ids)
+        lastschrift_ids = affirm(set[vtypes.ID], lastschrift_ids)
         data = self.sql_select(
             rs, "cde.lastschrift", LASTSCHRIFT_FIELDS, lastschrift_ids
         )
@@ -261,7 +259,7 @@ class CdELastschriftBackend(CdEBaseBackend):
         months.
         """
         lastschrift_id = affirm(vtypes.ID, lastschrift_id)
-        cascade = affirm_set(str, cascade or [])
+        cascade = affirm(set[str], cascade or [])
 
         ret = 1
         with Atomizer(rs):
@@ -322,7 +320,7 @@ class CdELastschriftBackend(CdEBaseBackend):
           the specified periods.
         :returns: Mapping of transaction ids to direct debit permit ids.
         """
-        lastschrift_ids = affirm_set(vtypes.ID, lastschrift_ids or set())
+        lastschrift_ids = affirm(set[vtypes.ID], lastschrift_ids or set())
         if "cde_admin" not in rs.user.roles:
             if lastschrift_ids is None:
                 # Don't allow None for non-admins.
@@ -330,8 +328,8 @@ class CdELastschriftBackend(CdEBaseBackend):
             else:
                 # Otherwise pass this to get_lastschrift, which does access check.
                 self.get_lastschrifts(rs, lastschrift_ids)
-        stati = affirm_set(const.LastschriftTransactionStati, stati or set())
-        periods = affirm_set(vtypes.ID, periods or set())
+        stati = affirm(set[const.LastschriftTransactionStati], stati or set())
+        periods = affirm(set[vtypes.ID], periods or set())
         query = "SELECT id, lastschrift_id FROM cde.lastschrift_transactions"
         params: CdEDBObject = {}
         constraints = []
@@ -354,7 +352,7 @@ class CdELastschriftBackend(CdEBaseBackend):
         self, rs: RequestState, ids: Collection[int]
     ) -> CdEDBObjectMap:
         """Retrieve direct debit transactions."""
-        ids = affirm_set(vtypes.ID, ids)
+        ids = affirm(set[vtypes.ID], ids)
         data = self.sql_select(
             rs, "cde.lastschrift_transactions", LASTSCHRIFT_TRANSACTION_FIELDS, ids
         )
@@ -410,7 +408,7 @@ class CdELastschriftBackend(CdEBaseBackend):
         :returns: The lastschrift ids mapped to the id of the new transaction.
         """
         stati = const.LastschriftTransactionStati
-        lastschrift_ids = affirm_set(vtypes.ID, lastschrift_ids)
+        lastschrift_ids = affirm(set[vtypes.ID], lastschrift_ids)
         payment_date = affirm(datetime.date, payment_date)
         ret = {}
         with Atomizer(rs):
@@ -559,7 +557,7 @@ class CdELastschriftBackend(CdEBaseBackend):
         status: const.LastschriftTransactionStati,
     ) -> DefaultReturnCode:
         """Atomized multiplex variant of finalize_lastschrift_transaction."""
-        transaction_ids = affirm_set(vtypes.ID, transaction_ids)
+        transaction_ids = affirm(set[vtypes.ID], transaction_ids)
         status = affirm(const.LastschriftTransactionStati, status)
         code = 1
         with Atomizer(rs):

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-from cdedb.backend.core import CoreBackend
+
 from cdedb.script import Script
 
 s = Script(dbuser='cdb')
 
-core: CoreBackend = s.make_backend("core", proxy=False)
+core = s.make_core_backend(proxy=False)
 
 with s:
     # add new columns with default null

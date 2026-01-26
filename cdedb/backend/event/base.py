@@ -28,9 +28,7 @@ import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.backend.common import (
     access,
-    affirm_set_validation as affirm_set,
     affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional,
     internal,
     singularize,
 )
@@ -44,9 +42,12 @@ from cdedb.common import (
     DefaultReturnCode,
     DeletionBlockers,
     RequestState,
+    cast_field_entries,
+    cast_field_value,
     cast_fields,
     json_serialize,
     make_persona_name,
+    normalize_field_entries,
     now,
     unwrap,
 )
@@ -67,10 +68,6 @@ from cdedb.common.privileges import (
 )
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
-from cdedb.common.validation.validate import (
-    FIELD_DATATYPE_VALIDATORS,
-    validate_check_optional,
-)
 from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter
 from cdedb.models.core import EventPersona
@@ -116,7 +113,7 @@ class EventBaseBackend(EventLowLevelBackend):
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> dict[int, set[int]]:
         """List events organized by specific personas."""
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
         data = self.sql_select(
             rs,
             "event.orgas",
@@ -124,7 +121,7 @@ class EventBaseBackend(EventLowLevelBackend):
             persona_ids,
             entity_key="persona_id",
         )
-        ret = {}
+        ret: dict[int, set[int]] = {}
         for anid in persona_ids:
             ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
         return ret
@@ -136,7 +133,7 @@ class EventBaseBackend(EventLowLevelBackend):
         persona_ids: Collection[int],
     ) -> dict[int, set[int]]:
         """List events cared for by specific personas."""
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
         data = self.sql_select(
             rs,
             "event.caretakers",
@@ -144,7 +141,7 @@ class EventBaseBackend(EventLowLevelBackend):
             persona_ids,
             entity_key="persona_id",
         )
-        ret = {}
+        ret: dict[int, set[int]] = {}
         for anid in persona_ids:
             ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
         return ret
@@ -229,7 +226,7 @@ class EventBaseBackend(EventLowLevelBackend):
         rs: RequestState,
         event_ids: Collection[int],
     ) -> models.CdEDataclassMap[models.Event]:
-        event_ids = affirm_set(vtypes.ID, event_ids)
+        event_ids = affirm(set[vtypes.ID], event_ids)
         with Atomizer(rs):
             event_data = {
                 e['id']: e
@@ -312,7 +309,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         Return 1 on successful change, -1 on successful deletion, 0 otherwise."""
         event_id = affirm(vtypes.ID, event_id)
-        minor_form = affirm_optional(vtypes.PDFFile, minor_form, file_storage=False)
+        minor_form = affirm(vtypes.PDFFile | None, minor_form, file_storage=False)
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Must be orga or admin to change the minor form."))
         path = self.get_minor_form_path(rs, event_id)
@@ -354,7 +351,7 @@ class EventBaseBackend(EventLowLevelBackend):
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> DefaultReturnCode:
         """Add event helpers."""
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
 
         ret = 1
         with Atomizer(rs):
@@ -414,7 +411,7 @@ class EventBaseBackend(EventLowLevelBackend):
         Note that this requires different privileges than `set_event`.
         """
         event_id = affirm(vtypes.ID, event_id)
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
 
         if not is_privileged(rs, EventPrivileges.orgas_change, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
@@ -486,7 +483,7 @@ class EventBaseBackend(EventLowLevelBackend):
         These have similar permissions to orgas, but are external caretakers.
         """
         event_id = affirm(vtypes.ID, event_id)
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
 
         ret = 1
         with Atomizer(rs):
@@ -568,7 +565,7 @@ class EventBaseBackend(EventLowLevelBackend):
         self, rs: RequestState, orga_token_ids: Collection[int]
     ) -> dict[int, OrgaToken]:
         """Retrieve information about orga tokens."""
-        orga_token_ids = affirm_set(vtypes.ID, orga_token_ids)
+        orga_token_ids = affirm(set[vtypes.ID], orga_token_ids)
         if not orga_token_ids:
             return {}
 
@@ -745,7 +742,7 @@ class EventBaseBackend(EventLowLevelBackend):
         """
         orga_token_id = affirm(vtypes.ID, orga_token_id)
         blockers = self.delete_orga_token_blockers(rs, orga_token_id)
-        cascade = affirm_set(str, cascade or ()) & blockers.keys()
+        cascade = affirm(set[str], cascade or ()) & blockers.keys()
 
         if blockers.keys() - cascade:
             raise ValueError(
@@ -1174,8 +1171,8 @@ class EventBaseBackend(EventLowLevelBackend):
         """Uninlined code from the event fee methods."""
         self.affirm_atomized_context(rs)
 
-        event_id = affirm_optional(vtypes.ID, event_id)
-        fee_id = affirm_optional(vtypes.ID, fee_id)
+        event_id = affirm(vtypes.ID | None, event_id)
+        fee_id = affirm(vtypes.ID | None, fee_id)
 
         if event_id is None:
             assert fee_id is not None
@@ -1368,8 +1365,7 @@ class EventBaseBackend(EventLowLevelBackend):
         """
         event_id = affirm(vtypes.ID, event_id)
         event = self.get_event(rs, event_id)
-        kinds = kinds or []
-        affirm_set(const.QuestionnaireUsages, kinds)
+        kinds = affirm(set[const.QuestionnaireUsages], kinds or [])
         columns = ', '.join(k for k in QUESTIONNAIRE_ROW_FIELDS if k != 'event_id')
         query = f"SELECT {columns} FROM {models.QuestionnaireRow.database_table}"
         constraints = ["event_id = %(event_id)s"]
@@ -1383,11 +1379,9 @@ class EventBaseBackend(EventLowLevelBackend):
             row['kind'] = const.QuestionnaireUsages(row['kind'])
             if field := event.fields.get(row['field_id']):
                 # Deserialize the stored string into the datatype of the field if able.
-                row['default_value'] = validate_check_optional(
-                    FIELD_DATATYPE_VALIDATORS[field.kind],
-                    row['default_value'],
-                    ignore_warnings=True,
-                )[0]
+                row['default_value'] = cast_field_value(
+                    row['default_value'], field.kind
+                )
                 # Special case for datetimes: Convert them to the default timezone so
                 #  they can be submitted again even without the timezone.
                 #  This is required for use with 'datetime-local' inputs.
@@ -1651,6 +1645,12 @@ class EventBaseBackend(EventLowLevelBackend):
                         personas.add(e['persona_id'])
                     if e.get('submitted_by'):  # for log entries
                         personas.add(e['submitted_by'])
+            for e in ret[models.EventField.database_table].values():
+                if entries := e["entries"]:
+                    kind = const.FieldDatatypes(e["kind"])
+                    entries = cast_field_entries(entries, kind)
+                    entries = normalize_field_entries(entries, kind, coalesce="") or {}
+                    e["entries"] = list(map(list, entries.items()))
             ret['core.personas'] = list_to_dict(
                 self.sql_select(rs, "core.personas", PERSONA_EVENT_FIELDS, personas)
             )
@@ -1734,15 +1734,6 @@ class EventBaseBackend(EventLowLevelBackend):
                     rs,
                     *models.PersonalizedFee.get_select_query(registrations.keys()),
                 ),
-            )
-            registration_fees = list_to_dict(
-                self.sql_select(
-                    rs,
-                    models.Registration.database_table,
-                    ["id", "amount_owed_by_kind"],
-                    [event_id],
-                    entity_key="event_id",
-                )
             )
             checkin_periods = self.sql_select(
                 rs,
@@ -1843,10 +1834,17 @@ class EventBaseBackend(EventLowLevelBackend):
             registration['personalized_fees'] = {}
             for fee_id, fee_amount in personalized_fee_lookup[registration_id].items():
                 registration['personalized_fees'][fee_id] = fee_amount
-            by_kind = registration_fees[registration_id]["amount_owed_by_kind"]
-            registration['amount_owed_by_kind'] = {
-                const.EventFeeType(int(key)).name: decimal.Decimal(amount)
-                for key, amount in by_kind.items()
+            registration["amount_owed_by_kind"] = {
+                kind.name: amount
+                for kind, amount in registration["amount_owed_by_kind"].items()
+            }
+            registration["amount_owed_by_category"] = {
+                category.name: amount
+                for category, amount in registration["amount_owed_by_category"].items()
+            }
+            registration["amount_owed_by_budget"] = {
+                budget.name: amount
+                for budget, amount in registration["amount_owed_by_budget"].items()
             }
             periods = xsorted(checkin_period_lookup[registration_id])
             for period in periods:
@@ -1938,6 +1936,9 @@ class EventBaseBackend(EventLowLevelBackend):
             del field['field_name']
             del field['event_id']
             del field['id']
+            field["entries"] = normalize_field_entries(
+                field["entries"], field["kind"], coalesce=""
+            )
         # personas
         for reg_id, registration in ret['registrations'].items():
             persona = personas[registration['persona_id']]

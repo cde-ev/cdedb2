@@ -2,8 +2,6 @@
 
 """SQL field names of all entities."""
 
-import cdedb.database.constants as const
-
 # A set of roles a user may have.
 Role = str
 
@@ -180,15 +178,6 @@ FIELD_DEFINITION_FIELDS = (
     "entries",
 )
 
-#: Fields of a concluded course
-PAST_COURSE_FIELDS = (
-    "id",
-    "pevent_id",
-    "nr",
-    "title",
-    "description",
-)
-
 #: Fields of a registration to an event organized via the CdEDB
 REGISTRATION_FIELDS = (
     "id",
@@ -205,6 +194,9 @@ REGISTRATION_FIELDS = (
     "amount_paid",
     "amount_owed",
     "is_member",
+    "amount_owed_by_kind",
+    "amount_owed_by_category",
+    "amount_owed_by_budget",
 )
 
 #: Fields of a registration which are specific for each part of the event
@@ -357,29 +349,3 @@ LASTSCHRIFT_TRANSACTION_FIELDS = (
     "processed_at",
     "tally",
 )
-
-#: Datatype and Association of special purpose event fields
-EVENT_FIELD_SPEC: dict[
-    str, tuple[set[const.FieldDatatypes], set[const.FieldAssociations]]
-] = {
-    'lodge': (
-        {const.FieldDatatypes.str},
-        {const.FieldAssociations.registration},
-    ),
-    'reimbursement': (
-        {const.FieldDatatypes.iban},
-        {const.FieldAssociations.registration},
-    ),
-    'camping_mat': (
-        {const.FieldDatatypes.bool},
-        {const.FieldAssociations.registration},
-    ),
-    'course_room': (
-        {const.FieldDatatypes.str},
-        {const.FieldAssociations.course},
-    ),
-    'waitlist': (
-        {const.FieldDatatypes.int},
-        {const.FieldAssociations.registration},
-    ),
-}

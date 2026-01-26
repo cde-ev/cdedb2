@@ -94,10 +94,10 @@
     {% endif %}
     {% if courses %}
         <ul id="list-courses">
-            {% for anid, acourse in courses|keydictsort(EntitySorter.past_course) %}
+            {% for course in courses.values() %}
                 <li>
-                    {{ acourse['nr'] }}.
-                    {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : anid}), acourse['title']) }}
+                    {{ course['nr'] }}.
+                    {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : course.id}), course.title) }}
                 </li>
             {% endfor %}
         </ul>
@@ -155,19 +155,17 @@
                     {% endif %}
                     {% if participant['pcourses'] %}
                         (
-                        {%- for pcourse_id, pcourse in participant['pcourses']|keydictsort(EntitySorter.past_course) %}
-                            {%- if pcourse_id -%}
-                                {{ pcourse['nr'] }}.
-                                {% if pcourse_id in participant['instructor'] -%}
-                                    <strong title="{% trans %}Instructor{% endtrans %}">
-                                {%- endif -%}
-                                {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : pcourse_id}),
-                                    pcourse['title']) }}
-                                {%- if pcourse_id in participant['instructor'] -%}
-                                    <span class="sr-only"> ({% trans %}Instructor{% endtrans %})</span></strong>
-                                {%- endif -%}
-                                {%- if not loop.last %}, {% endif -%}
-                            {% endif -%}
+                        {%- for pcourse in participant['pcourses'] -%}
+                            {{ pcourse['nr'] }}.
+                            {% if pcourse.id in participant['instructor'] -%}
+                                <strong title="{% trans %}Instructor{% endtrans %}">
+                            {%- endif -%}
+                            {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : pcourse.id}),
+                                pcourse['title']) }}
+                            {%- if pcourse.id in participant['instructor'] -%}
+                                <span class="sr-only"> ({% trans %}Instructor{% endtrans %})</span></strong>
+                            {%- endif -%}
+                            {%- if not loop.last %}, {% endif -%}
                         {% endfor -%}
                         )
                     {% endif %}

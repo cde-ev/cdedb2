@@ -165,9 +165,9 @@ def datetime_filter(
         datetime_formatter.setTimeZone(icu.TimeZone.createTimeZone(zone))
         # isinstance check is always true since freezegun overiddes __instancecheck__
         # if isinstance(val, freezegun.api.FakeDatetime):
-        if type(val) is freezegun.api.FakeDatetime:  # type: ignore[attr-defined]
+        if type(val) is freezegun.api.FakeDatetime:
             # icu cannot deal with FakeDatetime objects, convert them
-            val = datetime.datetime.fromtimestamp(val.timestamp())
+            val = freezegun.api.real_datetime.fromtimestamp(val.timestamp())
         return datetime_formatter.format(val)
     else:
         return val.strftime(formatstr)
@@ -724,7 +724,7 @@ def enum_entries_filter(
     if raw:
         pre = lambda x: x
     else:
-        pre = lambda x: (x.display_str() if hasattr(x, "display_str") else str(x))
+        pre = lambda x: x.display_str() if hasattr(x, "display_str") else str(x)
     if intval:
         sortkey = lambda x: x
     else:

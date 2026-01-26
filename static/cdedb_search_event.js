@@ -9,6 +9,7 @@
             'valueField' : 'id',
             'labelField' : 'title',
             searchField: ['title','shortname'],
+            plugins: ["auto_position"],
             create: false,
             createOnBlur: true,
             closeAfterSelect: !multi,

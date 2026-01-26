@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-from cdedb.backend.event import EventBackend
+
 from cdedb.common import unwrap
 from cdedb.script import Script
 
 s = Script(dbuser='cdb')
 
-event: EventBackend = s.make_backend('event', proxy=False)
+event = s.make_event_backend(proxy=False)
 
 with s:
     no_ctime = archived = no_is_member = success = 0
