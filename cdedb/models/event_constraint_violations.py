@@ -2279,6 +2279,28 @@ class IncorrectIBANCV(ConstraintViolation):
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)
+class RegistrationLockedCV(ConstraintViolation):
+    kind = ViolationKind.other
+
+    @classmethod
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        if aux.event.registration_unlocked:
+            return None
+        ref_time = now()
+        if not aux.event.registration_start:
+            severity = ViolationSeverity.INFO
+        elif aux.event.registration_start - ref_time < datetime.timedelta(days=3):
+            severity = ViolationSeverity.ERROR
+        else:
+            severity = ViolationSeverity.WARNING
+
+        return cls(event=aux.event, severity=severity)
+
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
+        return [n_("Registration is locked.")], {}
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
 class InvalidExternalFeeCV(EventFeeConstraintViolation):
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
