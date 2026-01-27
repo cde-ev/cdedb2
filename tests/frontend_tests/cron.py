@@ -567,6 +567,7 @@ class TestCron(CronTest):
                 pass
 
         # Commented items will be available in mailman 3.3
+        # list of available options in mailman: https://docs.mailman3.org/projects/mailman/en/latest/src/mailman/rest/docs/listconf.html
         base_settings = {
             'send_welcome_message': False,
             'send_goodbye_message': False,
@@ -584,6 +585,7 @@ class TestCron(CronTest):
             'dmarc_mitigate_unconditionally': False,
             # 'dmarc_wrapped_message_text': 'Nachricht wegen DMARC eingepackt.',
             'administrivia': True,
+            'preferred_language': 'de',
             'member_roster_visibility': 'moderators',
             'advertised': True,
             'max_num_recipients': 0,
@@ -720,7 +722,7 @@ class TestCron(CronTest):
         }
         for key, value in expectation.items():
             self.assertEqual(mm_lists['witz'].settings[key], value)
-        self.assertEqual(mm_lists['werbung'].set_template.call_count, 3)
+        self.assertEqual(mm_lists['werbung'].set_template.call_count, 4)
         # Subscriber update
         self.assertEqual(
             mm_lists['witz'].subscribe.call_args_list,

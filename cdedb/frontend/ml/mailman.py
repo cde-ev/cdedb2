@@ -82,6 +82,7 @@ class MlMailmanMixin(MlBaseFrontend):
 
         # First, specify the generally desired settings, templates and header matches.
         # Settings not specified here can be persistently set otherwise.
+        # list of available options in mailman: https://docs.mailman3.org/projects/mailman/en/latest/src/mailman/rest/docs/listconf.html
         desired_settings = {
             'send_welcome_message': False,
             'send_goodbye_message': False,
