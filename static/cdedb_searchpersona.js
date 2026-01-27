@@ -67,6 +67,15 @@
             });
         }
 
+    function refocus(selectize, value) {
+        if (value) {
+            selectize.clear();
+            selectize.clearOptions();
+            selectize.open();
+            selectize.setTextboxValue(value);
+            selectize.onSearchChange(value);
+        }
+    }
     /**
      * Custom wrapper for selectize.js to search for personas via XHR requests.
      *
@@ -153,10 +162,14 @@
                 }
             }
         });
+        let input = $(this);
+        let selectize = input[0].selectize;
+        selectize.on("focus", function () {
+            refocus(selectize, input.val())
+        });
         if (toggle) {  // toggling potentially changes search results
-            let selectize = $(this)[0].selectize;
             toggle['toggle'].on('change', function () {
-                selectize.clearOptions();
+                refocus(selectize, input.val());
             });
         }
         return this;
