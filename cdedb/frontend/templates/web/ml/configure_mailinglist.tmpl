@@ -179,7 +179,7 @@
             {% if not ambience['mailinglist'] %}
                 <h3 class="heading-underline">{% trans %}Moderators{% endtrans %}</h3>
                 {{ util.form_input_text(
-                    name="moderators", label=gettext("Moderators"), placeholder="DB-XXXX-X,DB-XXXX-X,…",
+                    type="search", name="moderators", label=gettext("Moderators"), placeholder="DB-XXXX-X,DB-XXXX-X,…",
                     anid="input-moderators") }}
 
                 <script nonce="{{ csp_nonce }}">

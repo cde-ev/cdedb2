@@ -118,7 +118,7 @@
                         {{ util.input_checkbox(name="persona_confirm{}".format(t_id)) }}
                     </div>
                     <div class="col-md-11">
-                        {{ util.form_input_text(name="cdedbid{}".format(t_id), small=True, horizontal=False,
+                        {{ util.form_input_text(type="search", name="cdedbid{}".format(t_id), small=True, horizontal=False,
                                     label=gettext("Member"), anid="input-cdedbid-{}".format(t_id)) }}
                             <script nonce="{{ csp_nonce }}">
                                 $('#input-cdedbid-{{ t_id }}').cdedbSearchPerson(

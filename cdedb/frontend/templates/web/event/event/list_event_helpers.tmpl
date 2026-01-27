@@ -29,7 +29,7 @@
             {{ util.anti_csrf_token('event/add_event_helper') }}
             <div class="input-group has-success">
                 <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-                {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X", anid="input-add-event-helper",
+                {{ util.input_text(type="search", name="persona_id", placeholder="DB-XXXX-X", anid="input-add-event-helper",
                                    arialabel=gettext("ID of the new event helper")) }}
                 <script nonce="{{ csp_nonce }}">
                     $('#input-add-event-helper').cdedbSearchPerson(
