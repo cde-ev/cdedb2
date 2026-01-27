@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#! /usr/local/bin/uv run
 """Calling this script is the canonical way to run the test suite."""
 
 import argparse
