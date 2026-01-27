@@ -41,7 +41,9 @@ def make_page(*args: Any, headless: bool = True,
                         try:
                             func(self, *fargs, **fkwargs)
                         except Exception:  # pragma: no cover
-                            f = tempfile.NamedTemporaryFile("rb", delete=False)
+                            f = tempfile.NamedTemporaryFile(
+                                "rb", prefix="playwright-screenshot-on-fail-", suffix=".png", delete=False
+                            )
                             page.screenshot(full_page=True, path=f.name)
                             print(f"Saved screenshot at point of failure to {f.name}")
                             raise
