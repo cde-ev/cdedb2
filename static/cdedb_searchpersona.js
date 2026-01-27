@@ -89,8 +89,8 @@
 
 
         exclude ??= [];
-        $(this).selectize({
-            'placeholder' : placeholder || '',
+        this.selectize({
+            'placeholder' : placeholder ?? $(this).attr("placeholder"),
             'valueField' : 'cdedb_id',
             'labelField' : 'name',
             searchField: ['name','email','id'],
