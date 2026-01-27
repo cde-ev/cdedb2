@@ -104,7 +104,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         course_ids = self.pasteventproxy.list_past_courses(rs, pevent_id)
         courses = self.pasteventproxy.get_past_courses(rs, course_ids)
         total_num, participants = self.pasteventproxy.list_event_participants(
-            rs, pevent_id, honour_admins="past_event" in rs.user.admin_views
+            rs, pevent_id, honor_admins="past_event" in rs.user.admin_views
         )
         orgas = [p for p in participants.values() if p.orga_status]
         return self.render(
@@ -124,7 +124,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
     ) -> Response:
         """Display concluded course."""
         total_num, participants = self.pasteventproxy.get_course_assignments(
-            rs, pcourse_id, honour_admins="past_event" in rs.user.admin_views
+            rs, pcourse_id, honor_admins="past_event" in rs.user.admin_views
         )
         personas = self.coreproxy.get_personas(rs, participants.keys())
         return self.render(

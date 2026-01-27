@@ -696,7 +696,7 @@ class PastEventBackend(AbstractBackend):
         rs: RequestState,
         participants: CdEDataclassMap[T],
         personas: CdEDBObjectMap,
-        honour_admins: bool,
+        honor_admins: bool,
         pevent_id: int | None = None,
         pcourse_id: int | None = None,
     ) -> CdEDataclassMap[T]:
@@ -712,7 +712,7 @@ class PastEventBackend(AbstractBackend):
             raise RuntimeError
 
         # admins may view all participants
-        if self.is_admin(rs) and honour_admins:
+        if self.is_admin(rs) and honor_admins:
             return participants
 
         # next, check if the requesting user participated at the past event
@@ -738,19 +738,19 @@ class PastEventBackend(AbstractBackend):
         self,
         rs: RequestState,
         pevent_id: int,
-        honour_admins: bool = True,
+        honor_admins: bool = True,
     ) -> tuple[int, CdEDataclassMap[models.PastEventParticipant]]:
         """List all participants of a concluded event.
 
         Participants are removed from the result if they are not searchable and the
         viewing user is neither admin nor participant of the past event themselves.
 
-        :param honour_admins: if False, ignore admin privileges in privilege check.
+        :param honor_admins: if False, ignore admin privileges in privilege check.
         :returns: The total number of participants, and a dict of the participants
             which are accessible by this user.
         """
         pevent_id = affirm(vtypes.ID, pevent_id)
-        honour_admins = affirm(bool, honour_admins)
+        honor_admins = affirm(bool, honor_admins)
 
         # collect past event data
         data = self.sql_select(
@@ -790,7 +790,7 @@ class PastEventBackend(AbstractBackend):
             rs,
             participants=ret,  # type: ignore[arg-type]
             personas=personas,
-            honour_admins=honour_admins,
+            honor_admins=honor_admins,
             pevent_id=pevent_id,
         )
 
@@ -798,19 +798,19 @@ class PastEventBackend(AbstractBackend):
 
     @access("event")
     def get_course_assignments(
-        self, rs: RequestState, pcourse_id: int, honour_admins: bool = True
+        self, rs: RequestState, pcourse_id: int, honor_admins: bool = True
     ) -> tuple[int, CdEDataclassMap[models.PastCourseAssignment]]:
         """List all participants of the given concluded course.
 
         Participants are removed from the result if they are not searchable and the
         viewing user is neither admin nor participant of the past event themselves.
 
-        :param honour_admins: if False, ignore admin privileges in privilege check.
+        :param honor_admins: if False, ignore admin privileges in privilege check.
         :returns: The total number of participants, and a dict mapping persona_ids to
             their course assignment, if they are accessible by this user.
         """
         pcourse_id = affirm(vtypes.ID, pcourse_id)
-        honour_admins = affirm(bool, honour_admins)
+        honor_admins = affirm(bool, honor_admins)
         query = f"""
             SELECT course_assignments.id, persona_id, instructor_status, pcourse_id, participant_id
             FROM {models.PastEventParticipant.database_table} AS event_participants
@@ -835,7 +835,7 @@ class PastEventBackend(AbstractBackend):
             rs,
             participants=ret,  # type: ignore[arg-type]
             personas=personas,
-            honour_admins=honour_admins,
+            honor_admins=honor_admins,
             pcourse_id=pcourse_id,
         )
 
