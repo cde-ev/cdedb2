@@ -32,8 +32,7 @@
     </p>
     {% if current_events %}
         <ul class="spaced" id="current-events">
-            {% for event in current_events.values()|sort if event.is_visible_for(
-                    user, events_registration.get(event.id) is not none, privileged=False) %}
+            {% for event in current_events %}
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": event.id}), event['title']) }}
                     <br />
@@ -123,7 +122,7 @@
     {% if orga_events %}
         {{ util.h(n_("Organized Events")) }}
         <ul class="spaced" id="organized-events">
-            {% for entry in orga_events.values()|sort(reverse=True) %}
+            {% for entry in orga_events %}
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": entry.id}), entry['title']) }}
                     <br />
@@ -149,8 +148,7 @@
     {% if other_events %}
         {{ util.h(n_("Other Events")) }}
         <ul class="spaced" id="other-events">
-            {% for event in other_events.values()|sort if event.is_visible_for(
-                    user, events_registration.get(event.id) is not none, privileged=False) %}
+            {% for event in other_events %}
                 <li>
                     {{ util.href(cdedblink("event/show_event", {"event_id": event.id}), event['title']) }}
                     <br />
