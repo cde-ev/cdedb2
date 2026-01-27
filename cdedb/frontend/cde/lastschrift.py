@@ -367,8 +367,11 @@ class CdELastschriftMixin(CdEBaseFrontend):
         return payment_date
 
     def create_sepapain(
-        self, rs: RequestState, transactions: list[CdEDBObject]
-    ) -> Optional[str]:
+        self,
+        rs: RequestState,
+        transactions: list[CdEDBObject],
+        payment_date: datetime.date,
+    ) -> str | None:
         """Create an XML document for submission to a bank.
 
         The relevant document is the EBICS (Electronic Banking Internet
@@ -411,23 +414,26 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 'glaeubigerid': self.conf["SEPA_GLAEUBIGERID"],
                 'original_glaeubigerid': self.conf["SEPA_ORIGINAL_GLAEUBIGERID"],
             },
-            'payment_date': self._calculate_payment_date(),
+            'payment_date': payment_date,
         }
         meta = check(rs, vtypes.SepaMeta, meta)
         if rs.has_validation_errors():
             return None
         sepapain_file = self.fill_template(
             rs,
-            "other",
+            "xml",
             "pain.008.003.02",
             {'transactions': sorted_transactions, 'meta': meta},
         )
         return sepapain_file
 
     @access("finance_admin")
-    @REQUESTdata("lastschrift_id")
+    @REQUESTdata("lastschrift_id", "transaction_ids")
     def lastschrift_download_sepapain(
-        self, rs: RequestState, lastschrift_id: Optional[vtypes.ID]
+        self,
+        rs: RequestState,
+        lastschrift_id: vtypes.ID | None,
+        transaction_ids: Collection[vtypes.ID],
     ) -> Response:
         """Provide the sepapain file without actually issueing the transactions.
 
@@ -438,14 +444,40 @@ class CdELastschriftMixin(CdEBaseFrontend):
         if rs.has_validation_errors():
             return self.lastschrift_index(rs)
         period = self.cdeproxy.current_period(rs)
-        if lastschrift_id is None:
+        payment_date = self._calculate_payment_date()
+        if lastschrift_id and transaction_ids:
+            raise ValueError(
+                "Must specify either lastschrift_id or transaction_ids, not both."
+            )
+        elif not lastschrift_id and not transaction_ids:
             all_ids = self.cdeproxy.list_lastschrift(rs)
             lastschrift_ids = tuple(self.determine_open_permits(rs, all_ids.keys()))
-        else:
+        elif lastschrift_id:
             lastschrift_ids = (lastschrift_id,)
             if not self.determine_open_permits(rs, lastschrift_ids):
                 rs.notify("error", n_("Existing pending transaction."))
                 return self.lastschrift_index(rs)
+        elif transaction_ids:
+            transactions = self.cdeproxy.get_lastschrift_transactions(
+                rs, transaction_ids
+            ).values()
+            periods = {transaction["period_id"] for transaction in transactions}
+            stati = {transaction["status"] for transaction in transactions}
+            payment_dates = {
+                transaction["payment_date"] for transaction in transactions
+            }
+            if periods != {period} or stati != {
+                const.LastschriftTransactionStati.issued
+            }:
+                rs.notify("error", n_("Invalid transactions selected."))
+                return self.lastschrift_index(rs)
+            if len(payment_dates) > 1:
+                rs.notify("error", n_("Differing payment dates."))
+                return self.lastschrift_index(rs)
+            payment_date = unwrap(payment_dates)
+            lastschrift_ids = tuple(
+                transaction["lastschrift_id"] for transaction in transactions
+            )
 
         lastschrifts = self.cdeproxy.get_lastschrifts(rs, lastschrift_ids)
         personas = self.coreproxy.get_personas(
@@ -457,7 +489,6 @@ class CdELastschriftMixin(CdEBaseFrontend):
         for lastschrift in lastschrifts.values():
             persona = personas[lastschrift['persona_id']]
             transaction = {
-                'issued_at': now(),
                 'lastschrift_id': lastschrift['id'],
                 'period_id': period,
                 'mandate_reference': lastschrift_reference(
@@ -492,7 +523,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             )[:140]
 
             new_transactions.append(transaction)
-        sepapain_file = self.create_sepapain(rs, new_transactions)
+        sepapain_file = self.create_sepapain(rs, new_transactions, payment_date)
         if not sepapain_file:
             rs.notify("error", n_("Creation of SEPA-PAIN-file failed."))
             return self.lastschrift_index(rs)

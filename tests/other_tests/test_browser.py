@@ -5,7 +5,8 @@ import functools
 import re
 import tempfile
 import unittest
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from playwright.sync_api import Page, expect, sync_playwright
 

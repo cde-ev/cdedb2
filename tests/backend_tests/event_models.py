@@ -27,11 +27,11 @@ class TestEventModels(BackendTest):
             orga_address=vtypes.Email("aka@example.cde"),
             website_url='https://www.cde-ev.de/',
             registration_start=NearlyNow.from_datetime(datetime.datetime(
-                2000, 10, 30, 0, 0, 0, tzinfo=datetime.timezone.utc)),
+                2000, 10, 30, 0, 0, 0, tzinfo=datetime.UTC)),
             registration_soft_limit=NearlyNow.from_datetime(datetime.datetime(
-                2200, 10, 30, 0, 0, 0, tzinfo=datetime.timezone.utc)),
+                2200, 10, 30, 0, 0, 0, tzinfo=datetime.UTC)),
             registration_hard_limit=NearlyNow.from_datetime(datetime.datetime(
-                2221, 10, 30, 0, 0, 0, tzinfo=datetime.timezone.utc)),
+                2221, 10, 30, 0, 0, 0, tzinfo=datetime.UTC)),
             orgas={7},  # type: ignore[arg-type]
             registration_text=None,
             mail_text="Wir verwenden ein neues Kristallkugel-basiertes"

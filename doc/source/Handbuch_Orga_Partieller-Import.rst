@@ -37,8 +37,7 @@ Die Import-Datei
 ----------------
 
 Bei der Import-Datei handelt es sich um eine JSON-Datei, die im gleichen
-Format ist wie der partielle Export minus einige unveränderliche Felder. Im
-Wesentlichen enthält der Export die folgenden Elemente::
+Format ist wie der partielle Export. Im Wesentlichen enthält der Export die folgenden Elemente::
 
   {
       "EVENT_SCHEMA_VERSION": [<numeric id>, <numeric id>],
@@ -64,9 +63,9 @@ Export entnommen werden. Ebenso wird für das restliche Schema auf den Export
 verwiesen.
 
 Der Schlüssel ``event``, sowie der Schlüssel ``persona`` der in jeder
-Anmeldung vorhanden ist, dürfen beim Import nicht vorkommen. Sie stellen
-Informationen zur Verfügung, die durch den partiellen Import nicht verändert
-werden können.
+Anmeldung vorhanden ist, stellen Informationen zur Verfügung, die durch den
+partiellen Import nicht verändert werden können. Sie dürfen beim Import vorhanden
+sein, werden aber ignoriert.
 
 Prinzipiell sind alle Elemente außer ``EVENT_SCHEMA_VERSION``, ``id``
 ``kind`` und ``timestamp`` optional, können also weggelassen werden. Es ist

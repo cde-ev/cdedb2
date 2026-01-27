@@ -6,7 +6,8 @@ import decimal
 import functools
 import json
 import re
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import cdedb.common.validation.types as vtypes
 import cdedb.models.event as models_event

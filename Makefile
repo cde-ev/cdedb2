@@ -37,12 +37,13 @@ help:
 # Executables #
 ###############
 
-PYTHONBIN ?= python3
 UV ?= uv
+PYTHONBIN ?= $(UV) run --all-groups python3
 RUFF ?= $(UV) run ruff
 ISORT ?= $(RUFF) check --select I
 COVERAGE ?= $(PYTHONBIN) -m coverage
 MYPY ?= $(UV) run --all-groups mypy
+DMYPY ?= $(UV) run --all-groups dmypy
 
 include .ruff_targets
 
@@ -81,8 +82,8 @@ doc:
 	$(MAKE) -C doc html
 
 .PHONY: reload
-reload: i18n-compile
-	python3 -m cdedb db remove-transactions
+reload: i18n-compile venv
+	$(PYTHONBIN) -m cdedb db remove-transactions
 ifeq ($(wildcard /CONTAINER),/CONTAINER)
 	sudo apachectl restart
 	kill $$(pidof -x gunicorn) || true
@@ -109,7 +110,7 @@ endif
 i18n-refresh: i18n-extract i18n-update
 
 .PHONY: i18n-extract
-i18n-extract: i18n-output-dirs
+i18n-extract: i18n-output-dirs venv
 	$(PYTHON) cdedb/i18n_additional.py > cdedb/.i18n_additional.py
 	pybabel extract --msgid-bugs-address="cdedb@lists.cde-ev.de" \
 		--mapping=./babel.cfg --keywords="rs.gettext rs.ngettext n_" \
@@ -145,7 +146,7 @@ format: venv
 
 .PHONY: autoformat
 autoformat: format
-	$(RUFF) check --output-format full $(MAKE_LINT_TARGETS)
+	$(RUFF) check $(MAKE_LINT_TARGETS)
 
 .PHONY: format-diff
 format-diff: venv
@@ -155,6 +156,10 @@ format-diff: venv
 .PHONY: mypy
 mypy: venv
 	$(MYPY) bin/*.py $(MAKE_LINT_TARGETS)
+
+.PHONY: dmypy
+dmypy: venv
+	$(DMYPY) run bin/*.py $(MAKE_LINT_TARGETS)
 
 BANNERLINE := "================================================================================"
 
@@ -202,11 +207,11 @@ lint: ruff isort
 ################
 
 .PHONY: check
-check:
+check: venv
 	$(PYTHONBIN) bin/check.py --verbose
 
 .PHONY: xss-check
-xss-check:
+xss-check: venv
 	$(PYTHONBIN) bin/check.py --verbose --parts xss
 
 .PHONY: dump-html
@@ -214,7 +219,7 @@ dump-html:
 	$(MAKE) -B /tmp/cdedb-dump/
 
 /tmp/cdedb-dump/: export CDEDB_TEST_DUMP_DIR=/tmp/cdedb-dump/
-/tmp/cdedb-dump/:
+/tmp/cdedb-dump/: venv
 	$(PYTHONBIN) -m bin.check --verbose tests.frontend_tests.*
 
 .PHONY: validate-html
@@ -240,7 +245,7 @@ VALIDATORCHECKSUM := "f56d95448fba4015ec75cfc9546e3063e8d66390 /opt/validator/vn
 
 
 .coverage: $(wildcard cdedb/*.py) $(wildcard cdedb/database/*.py) $(wildcard cdedb/frontend/*.py) \
-		$(wildcard cdedb/backend/*.py) $(wildcard tests/*.py)
+		$(wildcard cdedb/backend/*.py) $(wildcard tests/*.py) venv
 	$(COVERAGE) run -m bin.check
 
 .PHONY: coverage
@@ -255,10 +260,10 @@ coverage: .coverage
 ##########################
 
 .PHONY: sample-data-dump
-sample-data-dump:
-	python3 -m cdedb dev compile-sample-data-json \
+sample-data-dump: venv
+	$(PYTHONBIN) -m cdedb dev compile-sample-data-json \
 		--outfile /cdedb2/tests/ancillary_files/sample_data.json
 
 .PHONY: sample-data
-sample-data:
-	sudo python3 -m cdedb dev apply-sample-data --owner www-cde --group www-data
+sample-data: venv
+	sudo $(PYTHONBIN) -m cdedb dev apply-sample-data --owner www-cde --group www-data

@@ -7,7 +7,7 @@ import decimal
 import unittest
 import zoneinfo
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Optional, TypeVar, Union, cast
+from typing import Any, Optional, TypeVar, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -50,7 +50,7 @@ class TestValidationBase(unittest.TestCase):
     def do_validator_test(
         self,
         type_: type[T],
-        spec: Iterable[tuple[Any, T, Union[type[Exception], Exception, None]]],
+        spec: Iterable[tuple[Any, T, type[Exception] | Exception | None]],
         extraparams: Optional[Mapping[str, Any]] = None, ignore_warnings: bool = True,
     ) -> None:
         """Perform extensive tests on a validator.
@@ -445,7 +445,7 @@ class TestValidation(TestValidationBase):
 
     def test_datetime(self) -> None:
         now = datetime.datetime.now()
-        now_aware = datetime.datetime.now(datetime.timezone.utc)
+        now_aware = datetime.datetime.now(datetime.UTC)
         now_other = datetime.datetime.now(zoneinfo.ZoneInfo('America/New_York'))
         self.do_validator_test(datetime.datetime, (
             (now, None, TypeError("Must be timezone aware. (None)")),
@@ -454,20 +454,20 @@ class TestValidation(TestValidationBase):
             (now.date(), None, TypeError),
             ("2014-04-20",
              datetime.datetime(2014, 4, 19, 22, 0, 0,
-                               tzinfo=datetime.timezone.utc), None),
+                               tzinfo=datetime.UTC), None),
             ("2014-04-02 21:53",
              datetime.datetime(2014, 4, 2, 19, 53, 0,
-                               tzinfo=datetime.timezone.utc), None),
+                               tzinfo=datetime.UTC), None),
             ("01.02.2014 21:53",
              datetime.datetime(2014, 2, 1, 20, 53, 0,
-                               tzinfo=datetime.timezone.utc), None),
+                               tzinfo=datetime.UTC), None),
             ("21:53", None, ValueError),
             ("2014-04-02T20:48:25.808240+00:00",
              datetime.datetime(2014, 4, 2, 20, 48, 25, 808240,
-                               tzinfo=datetime.timezone.utc), None),
+                               tzinfo=datetime.UTC), None),
             ("2014-04-02T20:48:25.808240+03:00",
              datetime.datetime(2014, 4, 2, 17, 48, 25, 808240,
-                               tzinfo=datetime.timezone.utc), None),
+                               tzinfo=datetime.UTC), None),
             # see above
             # ("more garbage", None, TypeError),
         ))
@@ -478,22 +478,22 @@ class TestValidation(TestValidationBase):
             (now.date(), None, TypeError),
             ("2014-04-20",
              datetime.datetime(2014, 4, 19, 22, 0, 0,
-                               tzinfo=datetime.timezone.utc), None),
+                               tzinfo=datetime.UTC), None),
             ("2014-04-20 21:53",
              datetime.datetime(2014, 4, 20, 19, 53, 0,
-                               tzinfo=datetime.timezone.utc), None),
+                               tzinfo=datetime.UTC), None),
             ("01.02.2014 21:53",
              datetime.datetime(2014, 2, 1, 20, 53, 0,
-                               tzinfo=datetime.timezone.utc), None),
+                               tzinfo=datetime.UTC), None),
             ("21:53",
              datetime.datetime(2000, 5, 23, 19, 53, 0,
-                               tzinfo=datetime.timezone.utc), None),
+                               tzinfo=datetime.UTC), None),
             ("2014-04-20T20:48:25.808240+00:00",
              datetime.datetime(2014, 4, 20, 20, 48, 25, 808240,
-                               tzinfo=datetime.timezone.utc), None),
+                               tzinfo=datetime.UTC), None),
             ("2014-04-20T20:48:25.808240+03:00",
              datetime.datetime(2014, 4, 20, 17, 48, 25, 808240,
-                               tzinfo=datetime.timezone.utc), None),
+                               tzinfo=datetime.UTC), None),
             # see above
             # ("more garbage", None, TypeError),
         ), extraparams={'default_date': datetime.date(2000, 5, 23)})

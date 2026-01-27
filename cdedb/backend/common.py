@@ -7,28 +7,25 @@ template for all services.
 """
 
 import abc
-import cgitb
 import functools
 import logging
 import sys
 import uuid
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from types import TracebackType
 from typing import (
     Any,
-    Callable,
     ClassVar,
     Literal,
     Optional,
     TypeVar,
-    Union,
     cast,
     overload,
 )
 
+import cgitb
 import psycopg2.errors
 import psycopg2.extensions
-import psycopg2.extras
 from typing_extensions import TypeForm
 
 from cdedb.common import (
@@ -56,7 +53,7 @@ LF = TypeVar('LF', bound=GenericLogFilter)
 T = TypeVar('T')
 T2 = TypeVar('T2')
 S = TypeVar('S')
-DC = TypeVar('DC', bound=Union[CdEDataclass, GenericLogFilter])
+DC = TypeVar('DC', bound=CdEDataclass | GenericLogFilter)
 
 
 @overload
@@ -77,7 +74,7 @@ def singularize(
 
 
 def singularize(
-    function: Callable[..., Union[T, Mapping[Any, T]]],
+    function: Callable[..., T | Mapping[Any, T]],
     array_param_name: str = "ids",
     singular_param_name: str = "anid",
     passthrough: bool = False,

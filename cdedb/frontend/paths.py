@@ -193,6 +193,7 @@ rules = [
                     "/case/<int:case_id>",
                     get_("/show", endpoint="show_case"),
                     get_("/history", endpoint="case_history"),
+                    get_("/export", endpoint="export_case"),
                     get_("/change", endpoint="change_case_form"),
                     post("/change", endpoint="change_case"),
                     get_(

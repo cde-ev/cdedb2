@@ -3,8 +3,8 @@
 """Global utility functions."""
 
 import collections.abc
-from collections.abc import Collection, Generator, Iterable, KeysView
-from typing import Any, Callable, Protocol, TypeVar, Union
+from collections.abc import Callable, Collection, Generator, Iterable, KeysView
+from typing import Any, Protocol, TypeVar
 
 import icu
 
@@ -196,8 +196,8 @@ class EntitySorter:
 
 
 def mixed_existence_sorter(
-    iterable: Union[Collection[int], KeysView[int]],
-) -> Generator[int, None, None]:
+    iterable: Collection[int] | KeysView[int],
+) -> Generator[int]:
     """Iterate over a set of indices in the relevant way.
 
     That is first over the non-negative indices in ascending order and

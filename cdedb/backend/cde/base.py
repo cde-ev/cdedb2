@@ -15,7 +15,7 @@ import copy
 import dataclasses
 import decimal
 from collections import OrderedDict
-from typing import Optional, Union
+from typing import Optional
 
 import psycopg2.extensions
 
@@ -577,7 +577,7 @@ class CdEBaseBackend(AbstractBackend):
         data: list[CdEDBObject],
         trial_membership: bool,
         consent: bool,
-    ) -> tuple[bool, Union[BatchAdmissionStats, int, None]]:
+    ) -> tuple[bool, BatchAdmissionStats | int | None]:
         """Atomized call to recruit new members.
 
         The frontend wants to do this in its entirety or not at all, so this

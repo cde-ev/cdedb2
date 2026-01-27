@@ -3,7 +3,7 @@
 
 import ssl
 from collections.abc import Mapping
-from typing import Optional, Union
+from typing import Optional
 
 import ldap3
 from ldap3 import ALL_ATTRIBUTES
@@ -59,7 +59,7 @@ class TestLDAP(BasicTest):
         self, search_filter: str, raw_expectation: Mapping[str, list[str] | list[NearlyNow]], *,
         user: str = test_dua_dn, password: str = test_dua_pw,
         search_base: str = root_dn,
-        attributes: Union[list[str], str] = ALL_ATTRIBUTES,
+        attributes: list[str] | str = ALL_ATTRIBUTES,
         excluded_attributes: Optional[list[str]] = None,
     ) -> None:
         with ldap3.Connection(
@@ -86,7 +86,7 @@ class TestLDAP(BasicTest):
         except_users: Optional[set[str]] = None,
         only_duas: Optional[set[str]] = None,
         search_base: str = root_dn,
-        attributes: Union[list[str], str] = ALL_ATTRIBUTES,
+        attributes: list[str] | str = ALL_ATTRIBUTES,
     ) -> None:
         """Test that this search yields no results for all users and some result
         for all duas.

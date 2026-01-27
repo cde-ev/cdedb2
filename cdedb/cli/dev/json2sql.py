@@ -2,9 +2,9 @@
 
 import csv
 import pathlib
-from collections.abc import Sized
+from collections.abc import Callable, Sized
 from itertools import chain
-from typing import Any, Callable, Optional, TypedDict
+from typing import Any, Optional, TypedDict
 
 from psycopg2.extensions import cursor
 

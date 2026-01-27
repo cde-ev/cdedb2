@@ -253,7 +253,8 @@ class CdEBaseFrontend(AbstractUserFrontend):
                 # remove leading zeroes - in database,
                 #  numbers are stored starting with '+'
                 phone = (
-                    "".join(char for char in phone if char in '0123456789')
+                    ""
+                    .join(char for char in phone if char in '0123456789')
                     .removeprefix("0")
                     .removeprefix("0")
                 )

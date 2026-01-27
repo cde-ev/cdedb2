@@ -9,6 +9,7 @@ import re
 import threading
 from collections import Counter
 from collections.abc import (
+    Callable,
     Collection,
     Container,
     ItemsView,
@@ -18,7 +19,6 @@ from collections.abc import (
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Literal,
     Optional,
     TypeVar,
@@ -52,7 +52,7 @@ T = TypeVar("T")
 
 # Ignore the capitalization error in function name sanitize_None.
 # noinspection PyPep8Naming
-def sanitize_None(data: Optional[T]) -> Union[str, T]:
+def sanitize_None(data: Optional[T]) -> str | T:
     """Helper to let jinja convert all ``None`` into empty strings for display
     purposes; thus we needn't be careful in this regard. (This is
     coherent with our policy that NULL and the empty string on SQL level
@@ -86,7 +86,7 @@ def safe_filter(val: Optional[str]) -> Optional[markupsafe.Markup]:
 
 
 def date_filter(
-    val: Union[datetime.date, str, None],
+    val: datetime.date | str | None,
     formatstr: str = "%Y-%m-%d",
     lang: Optional[str] = None,
     verbosity: str = "medium",
@@ -135,7 +135,7 @@ def date_filter(
 
 
 def datetime_filter(
-    val: Union[datetime.datetime, str, None],
+    val: datetime.datetime | str | None,
     formatstr: str = "%Y-%m-%d %H:%M (%Z)",
     lang: Optional[str] = None,
     passthrough: bool = False,
@@ -165,9 +165,9 @@ def datetime_filter(
         datetime_formatter.setTimeZone(icu.TimeZone.createTimeZone(zone))
         # isinstance check is always true since freezegun overiddes __instancecheck__
         # if isinstance(val, freezegun.api.FakeDatetime):
-        if type(val) is freezegun.api.FakeDatetime:  # type: ignore[attr-defined]
+        if type(val) is freezegun.api.FakeDatetime:
             # icu cannot deal with FakeDatetime objects, convert them
-            val = datetime.datetime.fromtimestamp(val.timestamp())
+            val = freezegun.api.real_datetime.fromtimestamp(val.timestamp())
         return datetime_formatter.format(val)
     else:
         return val.strftime(formatstr)
@@ -448,12 +448,12 @@ def linebreaks_filter(val: None, replacement: str) -> None: ...
 
 @overload
 def linebreaks_filter(
-    val: Union[str, markupsafe.Markup], replacement: str
+    val: str | markupsafe.Markup, replacement: str
 ) -> markupsafe.Markup: ...
 
 
 def linebreaks_filter(
-    val: Union[None, str, markupsafe.Markup], replacement: str = "<br>"
+    val: None | str | markupsafe.Markup, replacement: str = "<br>"
 ) -> Optional[markupsafe.Markup]:
     """Custom jinja filter to convert line breaks to <br>.
 
@@ -721,7 +721,7 @@ def enum_entries_filter(
     if raw:
         pre = lambda x: x
     else:
-        pre = lambda x: (x.display_str() if hasattr(x, "display_str") else str(x))
+        pre = lambda x: x.display_str() if hasattr(x, "display_str") else str(x)
     if intval:
         sortkey = lambda x: x
     else:

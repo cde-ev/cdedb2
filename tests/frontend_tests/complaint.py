@@ -1,13 +1,21 @@
 #!/usr/bin/env python3
+import datetime
+
 import webtest
 
 import cdedb.database.constants as const
+import cdedb.models.complaint as models
+from cdedb.common.query.log_filter import ComplaintLogFilter
+from cdedb.config import TestConfig
 from tests.common import (
     USER_DICT,
     FrontendTest,
     as_users,
+    prepsql,
     storage,
 )
+
+_CONFIG = TestConfig()
 
 
 class TestComplaintFrontend(FrontendTest):
@@ -30,7 +38,7 @@ class TestComplaintFrontend(FrontendTest):
         self.assertNotIn('uninforminvolvedform2', self.response.forms)
         f = self.response.forms['informinvolvedform2']
         self.submit(f)
-        self.assertPresence("Beispiel (ist informiert)", div='involved_target')
+        self.assertPresence("Beispiel (informiert)", div='involved_target')
         self.assertNotIn('informinvolvedform2', self.response.forms)
         f = self.response.forms['uninforminvolvedform2']
         self.submit(f)
@@ -39,7 +47,7 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence("Fallbegleitung: Charly Clown", div='involved_target')
 
         self.assertPresence("Betroffene", div='involved_affected')
-        self.assertPresence("Daniel Dino (ist informiert)", div='involved_affected')
+        self.assertPresence("Daniel Dino (informiert)", div='involved_affected')
         self.assertPresence("Fallbegleitung: Garcia Generalis", div='involved_affected')
         self.assertNonPresence(
             "Beschwerdeführer", div='involved_appellant', check_div=False
@@ -50,7 +58,7 @@ class TestComplaintFrontend(FrontendTest):
         self.submit(f)
 
         self.assertPresence("Beschwerdeführer", div='involved_appellant')
-        self.assertPresence("Daniel Dino (ist informiert)", div='involved_appellant')
+        self.assertPresence("Daniel Dino (informiert)", div='involved_appellant')
         self.assertPresence(
             "Fallbegleitung: Garcia Generalis", div='involved_appellant'
         )
@@ -74,7 +82,7 @@ class TestComplaintFrontend(FrontendTest):
         f['involvement_type'] = str(const.ComplaintInvolvementType.appellant)
         self.submit(f)
         self.assertPresence(
-            "Anton Administrator (ist informiert)", div="involved_appellant"
+            "Anton Administrator (informiert)", div="involved_appellant"
         )
         self.assertNonPresence("Fallbegleitung", div='involved_appellant')
         self.assertNotIn('informinvolvedform1', self.response.forms)
@@ -929,4 +937,34 @@ class TestComplaintFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertNotification(
             "Benutzer existiert nicht oder ist kein Maßnahmenmanager", 'error'
+        )
+
+    _fake_ctime = datetime.datetime(
+        2025, 12, 12, 8, 4, 2, tzinfo=_CONFIG["DEFAULT_TIMEZONE"]
+    )
+
+    @prepsql(f"""
+        UPDATE {models.ComplaintEntryVersion.database_table}
+        SET ctime = '{_fake_ctime.isoformat()}'
+    """)
+    @prepsql(f"""
+        UPDATE {ComplaintLogFilter.log_table}
+        SET ctime = '{_fake_ctime.isoformat()}'
+    """)
+    @storage
+    @as_users("simon")
+    def test_export_case(self) -> None:
+        self.get("/core/complaint/case/1/export")
+        self.assertTitle("Fall 1")
+        self.assertNotification("Fall muss zuerst entsperrt werden.")
+        f = self.response.forms["unlockcaseform"]
+        f["reason"] = "Test the export."
+        self.submit(f)
+        self.get("/core/complaint/case/1/export")
+        expectation = (self.testfile_dir / "case_1.txt").read_text()
+
+        # Have to avoid whitespace normalization for comparison.
+        self.assertEqual(
+            expectation,
+            self._get_raw_content("#case1-export", check_exists=True, index=0),
         )

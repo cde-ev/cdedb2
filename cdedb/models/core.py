@@ -23,7 +23,7 @@ from cdedb.common.sorting import Sortkey
 from cdedb.models.common import AbstractFlag, CdEDataclass, MetaFlag as Meta
 
 if TYPE_CHECKING:
-    from typing_extensions import Self
+    from typing import Self
 
 
 @dataclasses.dataclass
@@ -36,6 +36,8 @@ class MetaInfo(CdEDataclass):
         metadata=Meta.exclude.as_dict,
     )
 
+    # in the UI, this is named "Vereinsarchiv" instead of Finanzvorstand,
+    # but we were too lazy to migrate those internal keys
     Finanzvorstand_Name: str | None = None
     Finanzvorstand_Vorname: str | None = None
     Finanzvorstand_Ort: str | None = None

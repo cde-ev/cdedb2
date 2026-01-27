@@ -10,10 +10,9 @@ import decimal
 import enum
 import logging
 from collections.abc import Collection, Mapping, Sequence
-from typing import Optional, Union, cast
+from typing import Optional, cast
 
 import psycopg2.extensions
-import psycopg2.extras
 
 from cdedb.common import CdEDBObject, DefaultReturnCode, PsycoJson, unwrap
 from cdedb.database.connection import ConnectionContainer, n_
@@ -23,27 +22,27 @@ from cdedb.models.common import CdEDataclass
 # The following are meant to be used for type hinting the sql backend methods.
 # DatabaseValue is for any singular value that should be written into the database or
 # compared to something already stored.
-DatabaseValue = Union[
-    int,
-    str,
-    enum.IntEnum,
-    float,
-    datetime.date,
-    datetime.datetime,
-    decimal.Decimal,
-    None,
-    PsycoJson,
-]
+DatabaseValue = (
+    int
+    | str
+    | enum.IntEnum
+    | float
+    | datetime.date
+    | datetime.datetime
+    | decimal.Decimal
+    | None
+    | PsycoJson
+)
 # DatabaseValue_s is either a singular value or a collection of such values, e.g. to be
 # used with an "ANY(%s)" like comparison.
-DatabaseValue_s = Union[DatabaseValue, Collection[DatabaseValue]]
+DatabaseValue_s = DatabaseValue | Collection[DatabaseValue]
 
 ParamDict = dict[str, DatabaseValue_s]
 Params = Sequence[DatabaseValue_s] | Mapping[str, DatabaseValue_s] | ParamDict
 
 # EntityKey is the value of an identifier, most often an id, given to retrieve or
 # delete the corresponding entity from the database.
-EntityKey = Union[int, str]
+EntityKey = int | str
 # EntityKeys is a collection of identifiers, i.e. ids, given for retrieval or deletion
 # of the corresponding entities. Note that we do not use string identifiers for this.
 EntityKeys = Collection[int]

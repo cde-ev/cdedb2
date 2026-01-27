@@ -19,7 +19,6 @@ import os
 import pathlib
 import re
 import shutil
-import socket
 import subprocess
 import sys
 import tempfile
@@ -29,6 +28,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from collections.abc import (
+    Callable,
     Generator,
     Iterable,
     Mapping,
@@ -38,12 +38,10 @@ from collections.abc import (
 from re import Pattern
 from typing import (
     Any,
-    Callable,
     ClassVar,
     NamedTuple,
     Optional,
     TypeVar,
-    Union,
     cast,
     no_type_check,
 )
@@ -121,8 +119,8 @@ from cdedb.uncommon.intenum import CdEIntEnum
 
 # TODO: use TypedDict to specify UserObject.
 UserObject = Mapping[str, Any]
-UserIdentifier = Union[UserObject, str, int]
-LinkIdentifier = Union[MutableMapping[str, Any], str]
+UserIdentifier = UserObject | str | int
+LinkIdentifier = MutableMapping[str, Any] | str
 
 # This is to be used in place of `self.key` for anonymous requests. It makes mypy happy.
 ANONYMOUS = cast(RequestState, None)
@@ -440,7 +438,7 @@ class CdEDBTest(BasicTest):
 
     @classmethod
     @contextlib.contextmanager
-    def database_cursor(cls) -> Generator[RealDictCursor, None, None]:
+    def database_cursor(cls) -> Generator[RealDictCursor]:
         with Script(
             persona_id=-1,
             dbuser="cdb",
@@ -533,7 +531,7 @@ class BackendTest(CdEDBTest):
         self.user = USER_DICT["anonymous"]
 
     @contextlib.contextmanager
-    def switch_user(self, new_user: UserIdentifier) -> Generator[None, None, None]:
+    def switch_user(self, new_user: UserIdentifier) -> Generator[None]:
         """This method can be used as a context manager to temporarily switch users."""
         old_user = self.user
         new_user = get_user(new_user)
@@ -662,7 +660,7 @@ class BrowserTest(CdEDBTest):
                     break
             except urllib.error.URLError:
                 time.sleep(.1)
-            except socket.timeout:
+            except TimeoutError:
                 time.sleep(.1)
         else:
             raise RuntimeError('Test server failed to start.')  # pragma: no cover
@@ -991,7 +989,7 @@ def as_users(*users: UserIdentifier, maintain_data: bool = False,
     """Decorate a test to run it as the specified user(s)."""
     def wrapper(fun: Callable[..., None]) -> Callable[..., None]:
         @functools.wraps(fun)
-        def new_fun(self: Union[BackendTest, FrontendTest], *args: Any, **kwargs: Any,
+        def new_fun(self: BackendTest | FrontendTest, *args: Any, **kwargs: Any,
                     ) -> None:
             for i, user in enumerate(users):
                 with self.subTest(user=user):
@@ -1320,7 +1318,7 @@ class FrontendTest(BackendTest):
         self.user = USER_DICT["anonymous"]
 
     @contextlib.contextmanager
-    def switch_user(self, new_user: UserIdentifier) -> Generator[None, None, None]:
+    def switch_user(self, new_user: UserIdentifier) -> Generator[None]:
         """context manager to temporarily switch users - frontend variant
 
         This restores the original response after the original user logged in again"""
@@ -1447,8 +1445,7 @@ class FrontendTest(BackendTest):
     def _normalize_whitespace(self, s: str) -> str:
         return re.sub(r'\s+', ' ', s).strip()
 
-    def _get_content(self, selector: str, *, check_exists: bool = True, index: int = 0) -> str:
-        """Like `get_content` but accepts any css selector."""
+    def _get_raw_content(self, selector: str, *, check_exists: bool, index: int) -> str:
         nodes = self._get_nodes(selector, check_exists=check_exists)
         if not nodes and not check_exists:
             return ""
@@ -1456,7 +1453,11 @@ class FrontendTest(BackendTest):
             node = nodes[index]
         except IndexError:
             self.fail(f"Invalid index {index} for element {selector!r}. Found {len(nodes)} elements.")
-        return self._normalize_whitespace(node.text_content())
+        return node.text_content()
+
+    def _get_content(self, selector: str, *, check_exists: bool, index: int) -> str:
+        """Like `get_content` but accepts any css selector."""
+        return self._normalize_whitespace(self._get_raw_content(selector, check_exists=check_exists, index=index))
 
     def get_content(self, div: str = "content", *, check_exists: bool = True, index: int = 0) -> str:
         """Retrieve the normalized text content of the (nth) element with the given id."""
@@ -1806,7 +1807,7 @@ class FrontendTest(BackendTest):
         if not any(message in content for content in normalized):
             self.fail(f"Expected error message not found near input with name {f!r}:\n{normalized}")
 
-    def assertNoLink(self, href_pattern: Optional[Union[str, Pattern[str]]] = None,
+    def assertNoLink(self, href_pattern: Optional[str | Pattern[str]] = None,
                      tag: str = 'a', href_attr: str = 'href',
                      content: Optional[str] = None, verbose: bool = False) -> None:
         """Assert that no tag that matches specific criteria is found. Possible
@@ -2142,7 +2143,7 @@ class FrontendTest(BackendTest):
         self.assertPresence('zeruda@example.cde')
         _check_deleted_data()
 
-    def _click_admin_view_button(self, label: Union[str, Pattern[str]],
+    def _click_admin_view_button(self, label: str | Pattern[str],
                                  current_state: Optional[bool] = None) -> None:
         """
         Helper function for checking the disableable admin views

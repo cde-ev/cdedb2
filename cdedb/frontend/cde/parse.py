@@ -8,6 +8,7 @@ Everything here requires the "finance_admin" role.
 import csv
 import datetime
 import decimal
+import functools
 import itertools
 import pathlib
 from collections import defaultdict
@@ -29,6 +30,7 @@ from cdedb.common import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts, TransactionType
+from cdedb.common.privileges import EventPrivileges
 from cdedb.common.sorting import xsorted
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
@@ -43,6 +45,7 @@ from cdedb.frontend.common import (
     inspect_validation as inspect,
     request_extractor,
 )
+from cdedb.frontend.event import EventFrontend
 
 
 class CdEParseMixin(CdEBaseFrontend):
@@ -83,6 +86,12 @@ class CdEParseMixin(CdEBaseFrontend):
             'event_entries': event_entries,
             'event_options': event_options,
             'events': events,
+            'event_is_privileged': functools.partial(
+                EventFrontend.is_privileged,
+                self,  # type: ignore[arg-type]
+                rs,
+            ),
+            'EventPrivileges': EventPrivileges,
         }
         return self.render(
             rs,
