@@ -1,4 +1,4 @@
-#! /usr/local/bin/uv run
+#! /usr/bin/env -S uv run
 """Calling this script is the canonical way to run the test suite."""
 
 import argparse
