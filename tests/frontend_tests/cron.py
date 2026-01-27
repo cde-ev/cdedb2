@@ -6,7 +6,7 @@ import decimal
 import json
 import numbers
 import unittest.mock
-from typing import Any, Union, cast
+from typing import Any, cast
 
 import freezegun
 
@@ -21,8 +21,7 @@ INSERT INTO {table} ({columns}) VALUES ({values});
 """
 
 # numbers.Number should include Decimal, int and bool but doesn't.
-SQL_DATA = dict[str, Union[None, datetime.datetime, datetime.date, str, numbers.Number,
-                           decimal.Decimal, int, bool, dict[str, Any]]]
+SQL_DATA = dict[str, None | datetime.datetime | datetime.date | str | numbers.Number | decimal.Decimal | int | bool | dict[str, Any]]
 
 RS = cast(RequestState, None)
 

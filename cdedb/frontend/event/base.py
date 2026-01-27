@@ -19,8 +19,8 @@ import abc
 import functools
 import operator
 from collections import OrderedDict
-from collections.abc import Collection
-from typing import Any, Callable, Optional, TypeVar, cast
+from collections.abc import Callable, Collection
+from typing import Any, Optional, TypeVar, cast
 
 import werkzeug.exceptions
 from werkzeug import Response

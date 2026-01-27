@@ -310,9 +310,9 @@ class TestPastEventBackend(BackendTest):
         event_id = 1
         update = {
             'registration_soft_limit': datetime.datetime(2001, 10, 30, 0, 0, 0,
-                                                         tzinfo=datetime.timezone.utc),
+                                                         tzinfo=datetime.UTC),
             'registration_hard_limit': datetime.datetime(2002, 10, 30, 0, 0, 0,
-                                                         tzinfo=datetime.timezone.utc),
+                                                         tzinfo=datetime.UTC),
             'parts': {
                 1: {
                     'part_begin': datetime.date(2003, 2, 2),

@@ -3,8 +3,8 @@
 import abc
 import asyncio
 import logging
-from collections.abc import ItemsView, Iterator, KeysView, ValuesView
-from typing import Any, Callable, Optional, Union
+from collections.abc import Callable, ItemsView, Iterator, KeysView, ValuesView
+from typing import Any, Optional
 
 import ldaptor.entryhelpers
 from ldaptor.attributeset import LDAPAttributeSet
@@ -243,7 +243,7 @@ class CdEDBBaseLDAPEntry(
     # implemented by ldaptor.entryhelpers.MatchMixin
     # def match(self, filter):
 
-    def bind(self, password: Union[str, bytes]) -> "CdEDBBaseLDAPEntry":
+    def bind(self, password: str | bytes) -> "CdEDBBaseLDAPEntry":
         """Bind with this entry and the given password.
 
         In general, this is forbidden for all entries. Exceptions from this rule
@@ -277,7 +277,7 @@ class CdEDBStaticEntry(CdEDBBaseLDAPEntry, metaclass=abc.ABCMeta):
 class CdEDBBindableEntryMixing(CdEDBBaseLDAPEntry, metaclass=abc.ABCMeta):
     """Mixin to allow binding with an entry."""
 
-    def bind(self, password: Union[str, bytes]) -> CdEDBBaseLDAPEntry:
+    def bind(self, password: str | bytes) -> CdEDBBaseLDAPEntry:
         """Overwrite the default method to use the encryption algorithm used in CdEDB
 
         This must be the same as used in CoreBackend.verify_password. Note that the

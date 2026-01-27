@@ -34,7 +34,7 @@ import math
 from collections.abc import Collection, Iterator
 from pathlib import Path
 from secrets import token_urlsafe
-from typing import NamedTuple, Optional, Protocol, Union
+from typing import NamedTuple, Optional, Protocol
 
 from schulze_condorcet import schulze_evaluate
 
@@ -1547,7 +1547,7 @@ class AssemblyBackend(AbstractBackend):
 
     def process_signup(
         self, rs: RequestState, assembly_id: int, persona_id: int
-    ) -> Union[str, None]:
+    ) -> str | None:
         """Helper to perform the actual signup
 
         This has to take care to keep the voter register consistent.
@@ -1591,7 +1591,7 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly")
     def external_signup(
         self, rs: RequestState, assembly_id: int, persona_id: int
-    ) -> Union[str, None]:
+    ) -> str | None:
         """Make a non-member attend an assembly.
 
         Those are not allowed to subscribe themselves, but must be added
@@ -1619,7 +1619,7 @@ class AssemblyBackend(AbstractBackend):
         return self.process_signup(rs, assembly_id, persona_id)
 
     @access("member")
-    def signup(self, rs: RequestState, assembly_id: int) -> Union[str, None]:
+    def signup(self, rs: RequestState, assembly_id: int) -> str | None:
         """Attend the assembly.
 
         This does not accept a persona_id on purpose.
@@ -1729,8 +1729,8 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def get_vote(
-        self, rs: RequestState, ballot_id: int, secret: Union[str, None]
-    ) -> Union[str, None]:
+        self, rs: RequestState, ballot_id: int, secret: str | None
+    ) -> str | None:
         """Look up a vote.
 
         This does not accept a persona_id on purpose.
@@ -2597,7 +2597,7 @@ class AssemblyBackend(AbstractBackend):
                 raise ValueError(
                     n_("Cannot remove the last remaining version of an attachment.")
                 )
-            deletor: dict[str, Union[int, datetime.datetime, None]] = {
+            deletor: dict[str, int | datetime.datetime | None] = {
                 'attachment_id': attachment_id,
                 'version_nr': version_nr,
                 'dtime': now(),

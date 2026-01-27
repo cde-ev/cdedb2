@@ -23,7 +23,7 @@ from cdedb.common.sorting import Sortkey
 from cdedb.models.common import AbstractFlag, CdEDataclass, MetaFlag as Meta
 
 if TYPE_CHECKING:
-    from typing_extensions import Self
+    from typing import Self
 
 
 @dataclasses.dataclass

@@ -17,7 +17,7 @@ import datetime
 import decimal
 from collections.abc import Collection
 from secrets import token_hex
-from typing import Any, Literal, Optional, Protocol, Union, overload
+from typing import Any, Literal, Optional, Protocol, overload
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -1524,7 +1524,7 @@ class CoreBaseBackend(AbstractBackend):
         self,
         rs: RequestState,
         persona_id: int,
-        balance: Union[str, decimal.Decimal],
+        balance: str | decimal.Decimal,
         log_code: const.FinanceLogCodes,
         change_note: Optional[str] = None,
         transaction_date: Optional[datetime.date] = None,

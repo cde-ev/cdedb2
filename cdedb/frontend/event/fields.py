@@ -6,8 +6,8 @@ managing and using custom datafields.
 """
 
 from collections import Counter
-from collections.abc import Collection
-from typing import Any, Callable, Optional, cast
+from collections.abc import Callable, Collection
+from typing import Any, Optional, cast
 
 import werkzeug.exceptions
 from werkzeug import Response
