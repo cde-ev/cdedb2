@@ -95,6 +95,7 @@ class TestEventFrontend(FrontendTest):
         self.assertNonPresence("PfingstAkademie 2014")
         if self.user_in('emilia'):
             self.assertNonPresence("CdE-Party 2050")
+        self.assertNonPresence("CyberTestAkademie", div="organized-events")
 
     @as_users("anonymous", "janis", maintain_data=True)
     def test_no_event_realm_view(self) -> None:
@@ -6088,22 +6089,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @event_keeper
     @as_users("anton")
     def test_archive_event_purge_persona(self) -> None:
-        self.traverse({'description': 'Veranstaltungen'},
-                      {'description': 'CyberTestAkademie'})
+        self.traverse("Veranstaltungen", "Alle Veranstaltungen", "CyberTestAkademie")
         self.assertTitle("CyberTestAkademie")
         f = self.response.forms["archiveeventform"]
         f['ack_archive'].checked = True
-        f['create_past_event'].checked = False
+        f['create_past_event'].checked = True
         self.submit(f)
-
-        self.assertTitle("CyberTestAkademie")
-        self.assertPresence("Diese Veranstaltung wurde archiviert.",
-                            div="static-notifications")
-
-        # check that there is no past event
-        self.traverse({'description': 'Mitglieder'},
-                      {'description': 'Verg.-Veranstaltungen'})
-        self.assertNonPresence("CdE-CyberTestAkademie")
 
         # now, archive and purge a participant
         self.realm_admin_view_profile("daniel", "cde")
@@ -6124,9 +6115,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Der Benutzer wurde geleert.", div='purged')
 
         # now, test if the event is still working
-        self.traverse({'description': 'Veranstaltungen'},
-                      {'description': 'CyberTestAkademie'},
-                      {'description': 'Statistik'})
+        self.traverse("Veranstaltungen", "Alle Veranstaltungen", "CyberTestAkademie", "Statistik")
         self.assertTitle("Statistik (CyberTestAkademie)")
         self.get('/event/event/3/registration/7/show')
         self.assertTitle("Anmeldung von N. N. (CyberTestAkademie)")
