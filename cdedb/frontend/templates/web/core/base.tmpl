@@ -4,6 +4,54 @@
 {% block breadcrumb %}
     {{ util.breadcrumb_link(cdedblink("core/index"), "Index") }}
 {% endblock %}
+
+{% block base_scripts %}
+    {% if "core_user" in user.admin_views or "meta_admin" in user.admin_views %}
+        {{ util.cdedb_script('cdedb_searchpersona.js') }}
+    {% endif %}
+{% endblock %}
+
+{% macro persona_quicksearch(mobile=false) %}
+    <div class="list-group tear-down
+            {% if mobile %}hidden-md hidden-lg{% elif mobile is sameas false %}hidden-xs hidden-sm{% endif %}
+    ">
+        {% set form_id = "quickpersonasearch" + ("-mobile" if mobile is not sameas false else "") %}
+        <form action="{{ cdedblink("core/admin_show_user") }}" method="GET" id="{{ form_id }}">
+            <div class="sr-only">{% trans %}Search for Users by ID or Name{% endtrans %}</div>
+            <div class="input-group">
+                {{ util.input_text(type="search", name="phrase", placeholder=gettext("CdEDB-ID, Name or E-Mail")) }}
+                <span class="input-group-btn">
+                    {{ util.input_submit("", icon='search', title=gettext("Search")) }}
+                </span>
+            </div>
+        </form>
+        <script nonce="{{ csp_nonce }}">
+            form = $("#{{ form_id }}");
+            // Adjust input group styling.
+            igroup = form.find(".input-group");
+            igroup.children(".input-group-btn").remove();
+            igroup.replaceWith(igroup.contents());
+            // Add selectize.
+            form
+                .find(":input")
+                .cdedbSearchPerson(
+                    "{{ cdedblink("core/select_persona") }}",
+                    {"kind": "admin_persona"},
+                    [],  // exclude
+                    true,  // free-form
+                    false,  // multi
+                )
+                .on("change", function() {
+                    if ($(this).val()) {
+                        $(this).closest("form").submit();
+                    }
+                });
+
+        </script>
+
+    </div>
+{% endmacro %}
+
 {% block navigation %}
     {% if "persona" in user.roles %}
         <h3 class="heading-sidebar">{% trans %}Index{% endtrans %}</h3>
@@ -17,7 +65,10 @@
             {{ util.href(cdedblink("core/contact"), gettext("Contact"), aclass="list-group-item",
                     icon="at", active=(sidenav_active=='core_contact')) }}
         </div>
-        {% if user.admin_views.intersection(("core_user", "user_review", "genesis", "meta_admin", "auditor")) %}
+        {% if user.admin_views.intersection(("core_user", "user_review", "genesis", "meta_admin", "auditor", "ml_user")) %}
+            {% if "core_user" in user.admin_views or "meta_admin" in user.admin_views %}
+                {{ persona_quicksearch() }}
+            {% endif %}
             <div class="list-group tear-down">
             {% if "core_user" in user.admin_views %}
                 {{ util.href(cdedblink("core/user_search"), gettext("Manage Users"), aclass="list-group-item",

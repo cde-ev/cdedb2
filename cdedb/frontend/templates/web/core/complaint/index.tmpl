@@ -158,7 +158,7 @@
                 <hr class="panel-primary nosp" style="margin-bottom: 15px;" />
                 <div class="row">
                     <div class="col-sm-6">
-                        {{ util.form_input_text(name="qval_involved.persona_id", anid="input-involved_id",
+                        {{ util.form_input_text(type="search", name="qval_involved.persona_id", anid="input-involved_id",
                                                 label=gettext("Involved"), aclass="input-sm") }}
                         <script nonce="{{ csp_nonce }}">
                             $('#input-involved_id').cdedbSearchPerson(
@@ -177,7 +177,7 @@
                                                   nulloption=nbsp) }}
                     </div>
                     <div class="col-sm-6">
-                        {{ util.form_input_text(name="qval_companion.companion_persona_id", anid="input-companion_id",
+                        {{ util.form_input_text(type="search", name="qval_companion.companion_persona_id", anid="input-companion_id",
                                                 label=gettext("Companion"), aclass="input-sm") }}
                         <script nonce="{{ csp_nonce }}">
                             $('#input-companion_id').cdedbSearchPerson(

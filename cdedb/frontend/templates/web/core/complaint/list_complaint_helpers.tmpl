@@ -26,7 +26,7 @@
             {{ util.anti_csrf_token('core/add_enforcer') }}
             <div class="input-group has-success">
                 <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-                {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X", anid="input-add-enforcer",
+                {{ util.input_text(type="search", name="persona_id", placeholder="DB-XXXX-X", anid="input-add-enforcer",
                                    arialabel=gettext("ID of the new enforcer")) }}
                 <script nonce="{{ csp_nonce }}">
                     $('#input-add-enforcer').cdedbSearchPerson(

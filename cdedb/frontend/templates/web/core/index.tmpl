@@ -1,9 +1,6 @@
 {% set sidenav_active='core_index' %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}
-    {% if 'core_admin' in user.roles %}{{ util.cdedb_script('cdedb_searchpersona.js') }}{% endif %}
-{% endblock %}
 {% block title %}
     {% trans %}
     	CdE-Datenbank
@@ -33,8 +30,7 @@
                 <form action="{{ cdedblink('core/admin_show_user') }}" method="GET" id="adminshowuserform">
                     <div class="sr-only">{% trans %}Search for Users by ID or Name{% endtrans %}</div>
                     <div class="input-group">
-                        <input type="search" name="phrase" class="form-control" id="input-showuser-id"
-                               aria-label="{% trans %}CdEDB-ID, Name or E-Mail{% endtrans %}"/>
+                        {{ util.input_text(type="search", name="phrase", placeholder=gettext("CdEDB-ID, Name or E-Mail")) }}
                         <span class="input-group-btn">
                             {{ util.input_submit("", icon='search', title=gettext("Search")) }}
                         </span>
@@ -45,16 +41,15 @@
                     </div>
                 </form>
                 <script nonce="{{ csp_nonce }}">
-                    var $i = $('#input-showuser-id');
-                    $i.cdedbSearchPerson('{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_persona'}, [],
-                                         true, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}",
-                                         {'toggle': $('#adminshowuser_archived_toggle'), 'kind': 'admin_all_users'}
+                    $("#adminshowuserform :input[type='search']").cdedbSearchPerson(
+                        '{{ cdedblink('core/select_persona') }}',
+                        {'kind' : 'admin_persona'},
+                        [],  // exclude
+                        true,  // free-form
+                        false,  // multi
+                        undefined,  // placeholder
+                        {'toggle': $('#adminshowuser_archived_toggle'), 'kind': 'admin_all_users'}
                     );
-                    $i.change(function(){
-                        if ($(this).val()) {
-                            $('#adminshowuserform').submit();
-                        }
-                    });
                 </script>
             {% endcall %}
             </div>
