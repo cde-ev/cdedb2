@@ -685,7 +685,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
                 if participant.status:
                     msg = n_(
                         "Participation already recorded with different status"
-                        " (f.e. orga), which will be overwritten."
+                        " (e.g. orga), which will be overwritten."
                     )
                     warnings.append(("pevent_id", KeyError(msg)))
                 if pcourse_id and any(

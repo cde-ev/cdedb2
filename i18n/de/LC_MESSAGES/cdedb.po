@@ -8183,7 +8183,7 @@ msgstr "Übergang in CdE-Bereich ohne Datenübernahme."
 msgid "Missing data for realm upgrade."
 msgstr "Fehlende Datengrundlage für Bereichswechsel."
 
-msgid "Participation already recorded with different status (f.e. orga), which will be overwritten."
+msgid "Participation already recorded with different status (e.g. orga), which will be overwritten."
 msgstr "Teilnahme bereits mit anderem Status (bspw. Orga) erfasst, der überschrieben wird."
 
 #: cdedb/frontend/cde/base.py:687 cdedb/frontend/cde/base.py:688
