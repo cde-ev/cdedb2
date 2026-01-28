@@ -153,18 +153,6 @@ PRIVILEGE_CHANGE_FIELDS = (
     "reviewer",
 )
 
-#: Fields of an event part organized via CdEDB
-EVENT_PART_FIELDS = (
-    "id",
-    "event_id",
-    "title",
-    "shortname",
-    "part_begin",
-    "part_end",
-    "waitlist_field_id",
-    "camping_mat_field_id",
-)
-
 #: Fields of an extended attribute associated to an event entity
 FIELD_DEFINITION_FIELDS = (
     "id",

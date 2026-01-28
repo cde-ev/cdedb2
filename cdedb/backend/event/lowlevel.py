@@ -40,7 +40,6 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
-    EVENT_PART_FIELDS,
     REGISTRATION_FIELDS,
 )
 from cdedb.common.n_ import n_
@@ -623,9 +622,7 @@ class EventLowLevelBackend(AbstractBackend):
             # Retrieve current data, so we can check if anything actually changed.
             current_part_data = {
                 e['id']: e
-                for e in self.sql_select(
-                    rs, "event.event_parts", EVENT_PART_FIELDS, updated_parts
-                )
+                for e in self.sql_select(rs, *models.EventPart.get_select_query(updated_parts))
             }
 
             for x in mixed_existence_sorter(updated_parts):
@@ -649,9 +646,7 @@ class EventLowLevelBackend(AbstractBackend):
             # Construct a dict of part shortname changes.
             new_part_data = {
                 e['id']: e
-                for e in self.sql_select(
-                    rs, "event.event_parts", EVENT_PART_FIELDS, updated_parts
-                )
+                for e in self.sql_select(rs, *models.EventPart.get_select_query(updated_parts))
             }
             changed_shortnames = {
                 old_shortname: new_shortname

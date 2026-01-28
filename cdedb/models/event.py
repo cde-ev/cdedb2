@@ -425,7 +425,7 @@ class EventPart(EventDataclass):
     event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     title: str
-    shortname: str
+    shortname: vtypes.Identifier
 
     part_begin: datetime.date
     part_end: datetime.date

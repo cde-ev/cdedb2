@@ -2506,7 +2506,7 @@ def _event(
     if 'parts' in val:
         with errs:
             val['parts'] = _optional_object_mapping_helper(
-                val['parts'], EventPart, 'parts', creation_only=creation, **kwargs
+                val['parts'], models_event.EventPart, 'parts', creation_only=creation, **kwargs
             )
 
     if 'fields' in val:
@@ -2536,60 +2536,22 @@ def _event(
     return Event(val)
 
 
-EVENT_PART_CREATION_MANDATORY_FIELDS: TypeMapping = {
-    'title': str,
-    'shortname': TokenString,
-    'part_begin': datetime.date,
-    'part_end': datetime.date,
-}
-
-EVENT_PART_CREATION_OPTIONAL_FIELDS: TypeMapping = {
-    'waitlist_field_id': Optional[ID],
-    'camping_mat_field_id': Optional[ID],
-    'tracks': Mapping,
-}
-
-EVENT_PART_COMMON_FIELDS: TypeMapping = {
-    **EVENT_PART_CREATION_MANDATORY_FIELDS,
-    **EVENT_PART_CREATION_OPTIONAL_FIELDS,
-}
-
-EVENT_PART_OPTIONAL_FIELDS: TypeMapping = {}
-
-
-@_add_typed_validator
+@_create_dataclass_validator(models_event.EventPart)
 def _event_part(
-    val: Any,
+    val: CdEDBObject,
     argname: str = "event_part",
     *,
     event: models_event.Event | None,
     creation: bool = False,
     **kwargs: Any,
-) -> EventPart:
-    """
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    """
-    val = _mapping(val, argname, **kwargs)
-
-    mandatory_fields: TypeMapping
-    optional_fields: TypeMapping
-
-    if creation:
-        mandatory_fields = {**EVENT_PART_CREATION_MANDATORY_FIELDS}
-        optional_fields = {**EVENT_PART_CREATION_OPTIONAL_FIELDS}
-    else:
-        mandatory_fields = {}
-        optional_fields = {**EVENT_PART_COMMON_FIELDS, **EVENT_PART_OPTIONAL_FIELDS}
-
-    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
-
+) -> CdEDBObject:
     errs = ValidationSummary()
-    if (
-        'part_begin' in val
-        and 'part_end' in val
-        and val['part_begin'] > val['part_end']
-    ):
+    part_begin = val.get("part_begin")
+    part_end = val.get("part_end")
+    if creation is False and event:
+        part_begin = part_begin or event.parts[val["id"]].part_begin
+        part_end = part_end or event.parts[val["id"]].part_end
+    if part_begin and part_end and part_begin > part_end:
         errs.append(ValueError("part_end", n_("Must be later than begin.")))
 
     if 'tracks' in val:
@@ -2656,7 +2618,7 @@ def _event_part(
     if errs:
         raise errs
 
-    return EventPart(val)
+    return val
 
 
 @_create_dataclass_validator(models_event.PartGroup)
