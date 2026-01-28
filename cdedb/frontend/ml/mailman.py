@@ -82,6 +82,7 @@ class MlMailmanMixin(MlBaseFrontend):
 
         # First, specify the generally desired settings, templates and header matches.
         # Settings not specified here can be persistently set otherwise.
+        # list of available options in mailman: https://docs.mailman3.org/projects/mailman/en/latest/src/mailman/rest/docs/listconf.html
         desired_settings = {
             'send_welcome_message': False,
             'send_goodbye_message': False,
@@ -99,6 +100,7 @@ class MlMailmanMixin(MlBaseFrontend):
             #    " da die DMARC-Sicherheitsrichtlinien des initialen Mailproviders"
             #    " mit Maillinglisten inkompatibel sind."),
             'administrivia': True,
+            'preferred_language': 'de',
             'member_roster_visibility': 'moderators',
             'advertised': True,
             'display_name': db_list.title,
@@ -129,41 +131,61 @@ Dies ist eine Mailingliste des CdE e.V.
 E-Mails an diese Mailingliste werden unter https://ssl.cde-ev.de/mailman3/hyperkitty/list/{db_list.address}/ archiviert.
 Zur Abo-Verwaltung benutze die Datenbank ({cdedburl(rs, 'ml/index', force_external=True)}).""",
             'list:admin:action:post': f"""
-As list moderator, your authorization is requested for the
-following mailing list posting:
+Als Moderator einer Mailingliste wird deine Zustimmung für die folgende E-Mail benötigt:
 
-    List:    $listname
-    From:    $sender_email
-    Subject: $subject
+    Liste:    $listname
+    Absender: $sender_email
+    Betreff:  $subject
 
-The message is being held because:
+Die Nachricht wurde aus folgendem Grund zurückgehalten:
 
 $reasons
 
-At your convenience, visit the CdEDB [1] to approve or deny the request. Note
-that the paragraph below about email moderation is wrong. Sending mails will
-do nothing.
+Besuche die CdEDB [1] um die Nachricht zu moderieren.
+Beachte, dass der untenstehende Absatz zur Nachrichtenmoderation falsch ist,
+Antworten auf diese Email sind wirkungslos.
 
 [1] {cdedburl(rs, 'ml/message_moderation', {'mailinglist_id': db_list.id}, force_external=True)}
 """.strip(),
-            'list:admin:notice:disable': """
-$member's subscription has been disabled on $listname due to an excessive
-bounce score.
+            'list:admin:notice:disable': f"""
+Das Abonnement von $member auf der Mailingliste
+    $listname
+wurde deaktiviert, da zu viele Mails nicht zugestellt werden konnten.
 
-This means that the mailinglist software will no longer deliver mail to this
-subscriber. Sadly this aspect of mailman is not yet accessible via the CdEDB
-and independent of the subscriber status in the CdEDB.
+Dies bedeutet, dass keine weiteren Mails dieser Liste an den Abonnenten versendet
+werden. Diese Einschränkung ist momentan *nicht* in der CdEDB sichtbar.
 
-Usually you (the moderator) are unable to do anything about the cause and this
-message only serves the purpose of keeping you in the loop w.r.t. the status
-of your mailing list. Mailman will probe the subscriber address and
-automatically reenable delivery if possible. However this may take a while, so
-as a workaround once the bounce reason is fixed you -- can in the CdEDB --
-unsubscribe the individual, wait 15 minutes, and resubscribe the individual
-(this incantation should push the right buttons inside mailman to get things
-going again).
+Als Moderator kannst du versuchen, den Abonnenten auf einem anderen Weg zu
+kontaktieren und über den Grund der Unzustellbarkeit zu informieren.
+Die Zustellbenachrichtigung, falls vorhanden, ist angehängt.
+Bei Fragen dazu wende dich an das Adminteam:
+    <{self.conf["TROUBLESHOOTING_ADDRESS"]}>
+Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Empfänger mit
+ähnlichen Email-Anbietern, kontaktiere bitte auch das Adminteam.
 
-The triggering DSN if available is attached.
+Als Workaround kannst du den Nutzer manuell von der Mailingliste entfernen,
+15 Minuten warten, und ihn danach wieder auf die Liste abonnieren.
+Dadurch wird das Abonnement vorerst wieder aktiviert.
+""".strip(),
+            'list:admin:notice:increment': f"""
+Eine Email auf der Mailingliste
+    $listname
+konnte an $member nicht zugestellt werden.
+Gegebenenfalls ist es sinnvoll, sie außerhalb der Mailingliste an den
+Nutzer weiterzuleiten.
+Diese Fehlermeldung wird höchstens einmal pro Tag, Nutzer und Liste versendet,
+auch wenn mehrere Emails unzustellbar waren.
+
+Bei Wiederholung wird dies dazu führen, dass dem Nutzer keine Malis dieser Liste
+mehr gesendet werden.
+
+Als Moderator kannst du versuchen, den Abonnenten auf einem anderen Weg zu
+kontaktieren und über den Grund der Unzustellbarkeit zu informieren.
+Die Zustellbenachrichtigung, falls vorhanden, ist angehängt.
+Bei Fragen dazu wende dich an das Adminteam:
+    <{self.conf["TROUBLESHOOTING_ADDRESS"]}>
+Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Empfänger mit
+ähnlichen Email-Anbietern, kontaktiere bitte auch das Adminteam.
 """.strip(),
         }
         if db_list.additional_footer:
