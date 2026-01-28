@@ -34,11 +34,13 @@ BEGIN;
     TRUNCATE past_event.participants;
     ALTER SEQUENCE IF EXISTS past_event.participants_id_seq RESTART WITH 1;
 
+    ALTER TABLE past_event.participants DROP CONSTRAINT participants_persona_id_pevent_id_pcourse_id_key;
     ALTER TABLE past_event.participants DROP COLUMN pcourse_id;
     ALTER TABLE past_event.participants DROP COLUMN is_orga;
     ALTER TABLE past_event.participants DROP COLUMN is_instructor;
     ALTER TABLE past_event.participants ADD COLUMN orga_status INTEGER NOT NULL DEFAULT 0;
     ALTER TABLE past_event.participants ADD COLUMN music_status INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE past_event.participants ADD UNIQUE (persona_id, pevent_id);
 
     -- Step 4: Restore participants table from temporary table.
 
@@ -71,7 +73,12 @@ BEGIN;
     ORDER BY id, pcourse_id;
     -- SELECT * FROM past_event.course_participants;
 
-    -- Step 7 (optional): View sample result for one persona to verify.
+    -- Step 7: Drop the temporary tables.
+
+    DROP TABLE tmp_participant;
+    DROP TABLE tmp_course;
+
+    -- Step 8 (optional): View sample result for one persona to verify.
 
     -- SELECT e.title, p.orga_status
     -- FROM past_event.participants p
