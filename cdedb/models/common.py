@@ -102,6 +102,15 @@ class MetaFlag(AbstractFlag):
     validate_update_mandatory = auto()
     """Make this field mandatory in `cls.validation_fields(creation=False)`.
     By default, all fields here are optional."""
+    validate_creation_skip = auto()
+    """Validate this field as `Any` in `cls.validation_fields(creation=True)`.
+    Can be used for fields that are validated manually."""
+    validate_update_skip = auto()
+    """Validate this field as `Any` in `cls.validation_fields(creation=False)`.
+    Can be used for fields that are validated manually."""
+    validate_skip = validate_creation_skip | validate_update_skip
+    """Validate this field as `Any` in `cls.validation_fields(creation=False)`.
+    Can be used for fields that are validated manually."""
 
     # request
 
@@ -314,13 +323,18 @@ class CdEDataclass:
         mandatory: vtypes.MutableTypeMapping = {}
         optional: vtypes.MutableTypeMapping = {}
         for field in cls.dataclass_fields():
-            field.type = cast(type[Any], field.type)
+            field_type = cast(type[Any], field.type)
+            if (
+                not creation and MetaFlag.validate_update_skip.in_field(field)
+                or (creation and MetaFlag.validate_creation_skip.in_field(field))
+            ):  # fmt: skip
+                field_type = Any
             if state := cls._is_validation_field_mandatory(field, creation=creation):
-                mandatory[field.name] = get_mandatory_type(field.type)
+                mandatory[field.name] = get_mandatory_type(field_type)
             elif state is None:
                 continue
             else:
-                optional[field.name] = field.type
+                optional[field.name] = field_type
         return mandatory, optional
 
     @classmethod
