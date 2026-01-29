@@ -5,6 +5,9 @@ if [ -f /PRODUCTIONVM ]; then
     exit 0
 fi
 
+echo "Installing python package build requirements"
+sudo apt-get install python3-dev g++ pkg-config graphviz libicu-dev libmagic1 libsystemd-dev
+
 echo "Replacing services"
 sudo cp /cdedb2/related/auto-build/files/stage3/cdedb-app.service /etc/systemd/system/
 sudo cp /cdedb2/related/auto-build/files/stage3/cde-ldap.service /etc/systemd/system/
