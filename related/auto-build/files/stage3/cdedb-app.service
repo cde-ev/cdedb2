@@ -10,14 +10,14 @@ Group=www-data
 RuntimeDirectory=gunicorn
 WorkingDirectory=/cdedb2
 Environment="SCRIPT_NAME=/db"
-Environment=UV_PROJECT_ENVIRONMENT=.venv_gunicorn
+Environment=UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv
 # Add --reload for easier development, this is not intended for production use
 # dPROD no --reload
-ExecStart=/cdedb2/.venv_gunicorn/bin/gunicorn \
+ExecStart=/home/www-cde/.venv/bin/gunicorn \
     --forwarded-allow-ips="*" -w 4 --reload \
     --limit-request-line 0 --limit-request-fields 0 \
     wsgi.cdedb-app:application
-ExecStartPre=!/usr/local/bin/uv sync
+ExecStartPre=+/usr/local/bin/uv sync --no-dev --group ldap
 ExecReload=/bin/kill -s HUP $MAINPID
 KillMode=mixed
 TimeoutStopSec=5
