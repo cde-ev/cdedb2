@@ -102,7 +102,7 @@ RUN cp /tmp/autobuild/gitconfig /etc/gitconfig \
     && cp /tmp/autobuild/index.html /var/www/html/ \
     \
     && groupadd --system www-cde \
-    && useradd --system -g www-cde -d /var/lib/cdedb -M www-cde \
+    && useradd --system -g www-cde --create-home www-cde \
     \
     && cp /tmp/autobuild/mailman-htpasswd /etc/cdedb-mailman-htpasswd \
     && chown www-cde:www-data /etc/cdedb-mailman-htpasswd \

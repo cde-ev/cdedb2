@@ -107,9 +107,7 @@ useradd -s /bin/bash -m cdedb
 # dPROD locked password instead of none
 passwd --delete cdedb
 groupadd --system www-cde
-mkdir /home/www-cde
-useradd --system -g www-cde -d /home/www-cde -M www-cde
-chown www-cde:www-cde /home/www-cde
+useradd --system -g www-cde --create-home www-cde
 
 # Install python dependencies.
 
