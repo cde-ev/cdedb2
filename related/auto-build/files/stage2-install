@@ -124,7 +124,9 @@ useradd -s /bin/bash -m cdedb
 # dPROD locked password instead of none
 passwd --delete cdedb
 groupadd --system www-cde
-useradd --system -g www-cde -d /var/lib/cdedb -M www-cde
+mkdir /home/www-cde
+useradd --system -g www-cde -d /home/www-cde -M www-cde
+chown www-cde:www-cde /home/www-cde
 
 # dPROD allow empty passwords
 echo "\nPermitEmptyPasswords yes" >> /etc/ssh/sshd_config
