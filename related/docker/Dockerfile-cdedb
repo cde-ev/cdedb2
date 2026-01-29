@@ -55,7 +55,6 @@ RUN uv run playwright install --with-deps
 # - libmagic1 for python-magic (see https://github.com/ahupp/python-magic/pull/294)
 # - libsystemd-dev for systemd-python
 RUN apt-get update && apt-get install --yes --no-install-recommends \
-    unzip \
     python3-dev \
     g++ \
     pkg-config \
