@@ -17,7 +17,7 @@ ExecStart=/home/www-cde/.venv/bin/gunicorn \
     --forwarded-allow-ips="*" -w 4 --reload \
     --limit-request-line 0 --limit-request-fields 0 \
     wsgi.cdedb-app:application
-ExecStartPre=+/usr/local/bin/uv sync --no-dev --group ldap
+ExecStartPre=+uv sync --no-dev --group ldap
 ExecReload=/bin/kill -s HUP $MAINPID
 KillMode=mixed
 TimeoutStopSec=5
