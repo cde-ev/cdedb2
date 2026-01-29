@@ -267,7 +267,13 @@ class ValidatorStorage(dict[TypeForm[T], Callable[..., T]]):
             ]
             for model_namespace in model_namespaces:
                 try:
-                    return self[type_._evaluate(vars(model_namespace), {}, set())]
+                    return self[
+                        type_._evaluate(
+                            vars(model_namespace),
+                            {},
+                            recursive_guard=set(),
+                        )
+                    ]
                 except NameError:
                     pass
             raise NameError(
