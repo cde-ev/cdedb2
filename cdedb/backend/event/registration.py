@@ -1761,7 +1761,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 reg['persona_id'],
                 event_id=event.id,
             )
-        reg_part_involvement = {
+        reg_part_involvement: dict[str, bool] = {
             event.parts[part_id].shortname: rp['status'].has_to_pay()
             for part_id, rp in reg['parts'].items()
         }

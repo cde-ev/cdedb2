@@ -2508,7 +2508,11 @@ def _event(
     if 'parts' in val:
         with errs:
             val['parts'] = _optional_object_mapping_helper(
-                val['parts'], models_event.EventPart, 'parts', creation_only=creation, **kwargs
+                val['parts'],
+                models_event.EventPart,
+                'parts',
+                creation_only=creation,
+                **kwargs,
             )
 
     if 'fields' in val:
