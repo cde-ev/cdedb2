@@ -57,7 +57,6 @@ echo "--------------------------------------------"
 # this is categorized into
 # - devtools
 # - runtime dependencies (app, postgres, latex)
-# - python libraries (libraries, tools)
 # - playwright dependencies
 apt-get install --yes --no-install-recommends                       \
     openssh-server sudo git file mc emacs-nox vim htop make gettext \
@@ -71,17 +70,10 @@ apt-get install --yes --no-install-recommends                       \
     texlive texlive-plain-generic texlive-latex-extra               \
     texlive-lang-german texlive-luatex                              \
     \
-    python3-psycopg2 python3-dateutil python3-babel                 \
-    python3-icu python3-jinja2 python3-sphinx                       \
-    python3-lxml python3-pil python3-werkzeug       \
-    python3-ldap3 python3-passlib python3-bleach python3-magic      \
-    python3-sphinx-rtd-theme python3-zxcvbn python3-markdown        \
-    python3-requests python3-graphviz python3-phonenumbers          \
-    python3-tabulate python3-mailmanclient python3-pyparsing        \
-    python3-psycopg python3-psycopg-pool python3-systemd            \
+    python3-pip                                                     \
     \
-    python3-pip python3-click python3-freezegun                     \
-    python3-coverage python3-cssselect                              \
+    unzip python3-dev g++ pkg-config                                \
+    graphviz libicu-dev libmagic1 libsystemd-dev                    \
     \
     libasound2 libatk-bridge2.0-0 libatk1.0-0 libatomic1            \
     libatspi2.0-0 libcups2 libdrm2 libenchant-2-2 libgbm1 libgles2  \
@@ -90,25 +82,20 @@ apt-get install --yes --no-install-recommends                       \
     libwoff1 libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0    \
     libxrandr2
 
-# runtime dependencies
-python3 -m pip install --no-cache-dir --break-system-packages \
-    ldaptor==21.2.0 \
-    schulze_condorcet==2.0.1 \
-    subman==0.1.1 \
-    segno==1.5.2 \
-    webtest==3.0.6
-
-# devtools
-# dPROD not present
 python3 -m pip install --upgrade pip --break-system-packages
-python3 -m pip install --no-cache-dir --break-system-packages \
-    --group "/cdedb2/pyproject.toml:dev" \
-    --group "/cdedb2/pyproject.toml:playwright" \
-    uv
-
+python3 -m pip install --break-system-packages uv
 echo 'eval "$(uv generate-shell-completion bash)"' >> ~/.bashrc
 echo 'eval "$(uvx --generate-shell-completion bash)"' >> ~/.bashrc
 
+cd /cdedb2
+# runtime dependencies
+uv sync --no-dev --group ldap
+
+# devtools
+# dPROD not present
+uv sync --all-groups
+
+cd ..
 
 for file in /var/cache/apt/archives/*.deb
 do

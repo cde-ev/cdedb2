@@ -49,9 +49,6 @@ sudo -u cdedb tee -a /cdedb2/.git/config <<EOF
 [pull]
         rebase = merges
 EOF
-# add cdedb to python path
-mkdir -p /usr/local/lib/python3.11/dist-packages
-sudo ln -s /cdedb2/cdedb/ /usr/local/lib/python3.11/dist-packages/cdedb
 
 echo ""
 echo "Create local config files..."
