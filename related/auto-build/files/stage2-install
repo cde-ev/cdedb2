@@ -73,14 +73,7 @@ apt-get install --yes --no-install-recommends                       \
     python3-pip                                                     \
     \
     unzip python3-dev g++ pkg-config                                \
-    graphviz libicu-dev libmagic1 libsystemd-dev                    \
-    \
-    libasound2 libatk-bridge2.0-0 libatk1.0-0 libatomic1            \
-    libatspi2.0-0 libcups2 libdrm2 libenchant-2-2 libgbm1 libgles2  \
-    libgstreamer-gl1.0-0 libharfbuzz-icu0 libhyphen0                \
-    libmanette-0.2-0 libnspr4 libnss3 libopengl0 libwayland-client0 \
-    libwoff1 libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0    \
-    libxrandr2
+    graphviz libicu-dev libmagic1 libsystemd-dev
 
 python3 -m pip install --upgrade pip --break-system-packages
 python3 -m pip install --break-system-packages uv
@@ -105,7 +98,7 @@ done
 echo ""
 echo "We do not initialize playwright as this consumes lots of space."
 echo "To do so later run the following command as user cdedb:"
-echo "/usr/local/bin/playwright install"
+echo "/usr/local/bin/playwright install --with-deps"
 echo "This matters only when executing the test suite and in that case"
 echo "will fail with a helpful error message."
 
