@@ -61,7 +61,7 @@ echo "--------------------------------------------"
 apt-get install --yes --no-install-recommends                       \
     openssh-server sudo git file mc emacs-nox vim htop make gettext \
     \
-    apache2 python3 gunicorn fail2ban tzdata                        \
+    apache2 python3 fail2ban tzdata                                 \
     \
     ldap-utils                                                      \
     \
@@ -79,16 +79,6 @@ python3 -m pip install --upgrade pip --break-system-packages
 python3 -m pip install --break-system-packages uv
 echo 'eval "$(uv generate-shell-completion bash)"' >> ~/.bashrc
 echo 'eval "$(uvx --generate-shell-completion bash)"' >> ~/.bashrc
-
-cd /cdedb2
-# runtime dependencies
-uv sync --no-dev --group ldap
-
-# devtools
-# dPROD not present
-uv sync --all-groups
-
-cd ..
 
 for file in /var/cache/apt/archives/*.deb
 do
@@ -120,6 +110,19 @@ groupadd --system www-cde
 mkdir /home/www-cde
 useradd --system -g www-cde -d /home/www-cde -M www-cde
 chown www-cde:www-cde /home/www-cde
+
+# Install python dependencies.
+
+cd /cdedb2
+
+# runtime dependencies for the gunicorn runner.
+sudo -u www-cde UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv uv sync --no-dev --group ldap
+
+# devtools
+# dPROD not present
+sudo -u cdedb uv sync --all-groups
+
+cd ..
 
 # dPROD allow empty passwords
 echo "\nPermitEmptyPasswords yes" >> /etc/ssh/sshd_config
