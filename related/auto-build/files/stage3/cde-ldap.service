@@ -9,9 +9,10 @@ Documentation=https://db.cde-ev.de/doc/API_LDAP.html
 [Service]
 Type=exec
 Environment=CDEDB_CONFIGPATH=/etc/cdedb/config.py
-# we could set WorkingDirectory= though this should not be required
-# as 'cdedb' is globally available and the server does not write anything
-ExecStart=/usr/bin/python3 -m cdedb.ldap.main
+Environment=UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv
+WorkingDirectory=/cdedb2
+ExecStart=/home/www-cde/.venv/bin/python -m cdedb.ldap.main
+ExecStartPre=+/usr/local/bin/uv sync --no-dev --group ldap
 Restart=on-failure
 
 # TODO move secrets into credentials and use DynamicUser=
