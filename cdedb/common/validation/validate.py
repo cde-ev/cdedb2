@@ -458,35 +458,31 @@ def _create_dataclass_validator(
     def the_decorator(fun: F) -> F:
         for type_ in types:
 
-            def new_validator_template(
+            def new_validator(
                 val: Any,
                 argname: str = type_.__qualname__,
                 *,
-                type_: type[DC],
+                type__: type[DC] = type_,
                 creation: bool = False,
                 **kwargs: Any,
             ) -> CdEDBObject:
                 if isinstance(val, (CdEDataclass, GenericLogFilter)):
                     val = val._to_validation()
                 new_kwargs = {**kwargs_, **kwargs}
+                new_kwargs["type_"] = type__
                 val = _mapping(val, argname, **new_kwargs)
-                if issubclass(type_, GenericLogFilter):
-                    mandatory, optional = type_.validation_fields()
-                elif issubclass(type_, CdEDataclass):
-                    mandatory, optional = type_.validation_fields(creation=creation)
+                if issubclass(type__, GenericLogFilter):
+                    mandatory, optional = type__.validation_fields()
+                elif issubclass(type__, CdEDataclass):
+                    mandatory, optional = type__.validation_fields(creation=creation)
                 else:
                     raise RuntimeError("Impossible.")
                 if _prepare is not None:
-                    val = _prepare(val, creation=creation, type_=type_, **new_kwargs)
+                    val = _prepare(val, creation=creation, **new_kwargs)
                 val = _examine_dictionary_fields(val, mandatory, optional, **new_kwargs)
-                val = fun(val, argname, creation=creation, type_=type_, **new_kwargs)
+                val = fun(val, argname, creation=creation, **new_kwargs)
                 return val
 
-            # note that we use functools.partial to ensure the enclosure variable type_
-            # is set to the correct value
-            new_validator = functools.update_wrapper(
-                functools.partial(new_validator_template, type_=type_), fun
-            )
             _add_typed_validator(new_validator, type_)
 
         return fun
