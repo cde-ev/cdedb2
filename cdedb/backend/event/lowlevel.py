@@ -622,7 +622,10 @@ class EventLowLevelBackend(AbstractBackend):
             # Retrieve current data, so we can check if anything actually changed.
             current_part_data = {
                 e['id']: e
-                for e in self.sql_select(rs, *models.EventPart.get_select_query(updated_parts))
+                for e in self.query_all(
+                    rs,
+                    *models.EventPart.get_select_query(updated_parts, entity_key="id"),
+                )
             }
 
             for x in mixed_existence_sorter(updated_parts):
@@ -646,7 +649,10 @@ class EventLowLevelBackend(AbstractBackend):
             # Construct a dict of part shortname changes.
             new_part_data = {
                 e['id']: e
-                for e in self.sql_select(rs, *models.EventPart.get_select_query(updated_parts))
+                for e in self.query_all(
+                    rs,
+                    *models.EventPart.get_select_query(updated_parts, entity_key="id"),
+                )
             }
             changed_shortnames = {
                 old_shortname: new_shortname
