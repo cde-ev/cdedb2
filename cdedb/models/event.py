@@ -421,6 +421,10 @@ class Event(EventDataclass):
 class EventPart(EventDataclass):
     database_table = "event.event_parts"
 
+    id: vtypes.ID = dataclasses.field(
+        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict
+    )
+
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 

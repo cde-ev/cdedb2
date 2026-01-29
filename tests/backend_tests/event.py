@@ -222,8 +222,6 @@ class TestEventBackend(BackendTest):
         data['lodge_field_id'] = None
         data['orga_address'] = None
         # TODO dynamically adapt ids from the database result
-        data['parts'][-1].update({'id': 1001})
-        data['parts'][-2].update({'id': 1002})
         data['tracks'] = {1001: data['parts'][-1]['tracks'][-1],
                           1002: data['parts'][-2]['tracks'][-1]}
         data['part_groups'] = {}
@@ -237,7 +235,6 @@ class TestEventBackend(BackendTest):
                 if tmp.parts[part].title == data['parts'][oldpart]['title']:
                     part_map[tmp.parts[part].title] = part
                     data['parts'][part] = data['parts'][oldpart]
-                    data['parts'][part]['id'] = part
                     data['parts'][part]['event_id'] = new_id
                     data['parts'][part]['part_group_ids'] = set()
                     self.assertEqual(
@@ -364,14 +361,12 @@ class TestEventBackend(BackendTest):
             if tmp.parts[part].title == "Third coming":
                 part_map[tmp.parts[part].title] = part
                 data['parts'][part] = newpart
-                data['parts'][part]['id'] = part
                 data['parts'][part]['event_id'] = new_id
                 self.assertEqual(
                     set(x['title'] for x in data['parts'][part]['tracks'].values()),
                     set(x.title for x in tmp.parts[part].tracks.values()))
                 data['parts'][part]['tracks'] = tmp.parts[part].as_dict()['tracks']
         del data['parts'][part_map["First coming"]]
-        changed_part['id'] = part_map["Second coming"]
         changed_part['event_id'] = new_id
         changed_part['shortname'] = "second"
         data['parts'][part_map["Second coming"]] = changed_part
@@ -557,7 +552,6 @@ class TestEventBackend(BackendTest):
 
         # Test part groups and track groups in get_event.
         expectation_part = {
-            'id': 6,
             'event_id': 4,
             'title': "1. Hälfte Oberwesel",
             'shortname': "O1",

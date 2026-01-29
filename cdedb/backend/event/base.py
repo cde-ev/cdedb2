@@ -1879,7 +1879,6 @@ class EventBaseBackend(EventLowLevelBackend):
             del fee['amount_min']
             del fee['amount_max']
         for part in ret['event']['parts'].values():
-            del part['id']
             del part['event_id']
             del part['part_group_ids']
             for f in ('waitlist_field_id', 'camping_mat_field_id'):
