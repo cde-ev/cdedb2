@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-01-30 03:40+0100\n"
+"POT-Creation-Date: 2026-01-30 17:34+0100\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -9224,12 +9224,12 @@ msgstr "eventus"
 
 #: cdedb/frontend/event/event.py:1808
 #, fuzzy
-msgid "Registration already unlocked."
+msgid "Registration already approved."
 msgstr "eventus"
 
 #: cdedb/frontend/event/event.py:1818
 #, fuzzy
-msgid "Registration already locked."
+msgid "Registration already unapproved."
 msgstr "eventus"
 
 #: cdedb/frontend/event/event.py:1865
@@ -13396,7 +13396,7 @@ msgstr "eventus praeteriti"
 
 #: cdedb/frontend/templates/web/cde/past_event/create_past_event.tmpl:30
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:85
-#: cdedb/frontend/templates/web/core/index.tmpl:160
+#: cdedb/frontend/templates/web/core/index.tmpl:168
 #: cdedb/frontend/templates/web/event/base.tmpl:215
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:99
 #: cdedb/frontend/templates/web/event/course/configure_course.tmpl:24
@@ -15465,41 +15465,46 @@ msgstr[1] ""
 msgid "Orga-Events"
 msgstr "eventus"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:118
+#: cdedb/frontend/templates/web/core/index.tmpl:117
 #, fuzzy, python-format
 msgid "%(count)s Registrations"
 msgstr "Annuntiationes"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:122
+#: cdedb/frontend/templates/web/core/index.tmpl:125
 msgid "(Registration open)"
 msgstr "(annuntiari potest)"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:126
+#: cdedb/frontend/templates/web/core/index.tmpl:129
 #, python-format
 msgid "(Registration until %(date)s, late registration open.)"
 msgstr "(recte ad %(date)s annuntiari potest, posterius annuntiari potest)"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:131
+#: cdedb/frontend/templates/web/core/index.tmpl:134
 #, python-format
 msgid "(Registration until %(date)s)"
 msgstr "(ad %(date)s annuntiari potest)"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:135
+#: cdedb/frontend/templates/web/core/index.tmpl:138
 #, python-format
 msgid "(Registration until %(date)s, late registration until %(date2)s.)"
 msgstr "(recte ad %(date)s, posterius ad %(date2)s annuntiari potest)"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:140
+#: cdedb/frontend/templates/web/core/index.tmpl:143
 #, python-format
 msgid "(Late registration until %(date)s)"
 msgstr "(posterius ad %(date)s annuntiari potest)"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:145
+#: cdedb/frontend/templates/web/core/index.tmpl:148
 #, python-format
 msgid "(Registration starts %(date)s)"
 msgstr "(ab %(date)s annuntiari potest)"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:153
+#: cdedb/frontend/templates/web/core/index.tmpl:154
+#, fuzzy
+msgid "(Registration not yet approved)"
+msgstr "(annuntiari potest)"
+
+#: cdedb/frontend/templates/web/core/index.tmpl:161
 #: cdedb/frontend/templates/web/event/base.tmpl:206
 #: cdedb/frontend/templates/web/event/downloads.tmpl:184
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:46
@@ -15530,7 +15535,7 @@ msgstr "(ab %(date)s annuntiari potest)"
 msgid "Registrations"
 msgstr "Annuntiationes"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:156
+#: cdedb/frontend/templates/web/core/index.tmpl:164
 #: cdedb/frontend/templates/web/event/base.tmpl:210
 #: cdedb/frontend/templates/web/event/event/index.tmpl:137
 #: cdedb/frontend/templates/web/event/query/stats.tmpl:12
@@ -15538,71 +15543,71 @@ msgstr "Annuntiationes"
 msgid "Statistics"
 msgstr "statistica"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:172
+#: cdedb/frontend/templates/web/core/index.tmpl:180
 #: cdedb/frontend/templates/web/ml/base.tmpl:72
 #: cdedb/frontend/templates/web/ml/moderated_mailinglists.tmpl:6
 #: cdedb/frontend/templates/web/ml/moderated_mailinglists.tmpl:10
 msgid "Moderated Mailinglists"
 msgstr "tabellae epistularum electronicarum moderatae"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:182
+#: cdedb/frontend/templates/web/core/index.tmpl:190
 #: cdedb/frontend/templates/web/ml/generic.tmpl:56
 msgid "Mailman mailinglist unreachable."
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/index.tmpl:189
+#: cdedb/frontend/templates/web/core/index.tmpl:197
 #, python-format
 msgid "%(count)s email awaiting moderation"
 msgid_plural "%(count)s emails awaiting moderation"
 msgstr[0] ""
 msgstr[1] ""
 
-#: cdedb/frontend/templates/web/core/index.tmpl:196
+#: cdedb/frontend/templates/web/core/index.tmpl:204
 #, python-format
 msgid "%(count)s Subscription Request"
 msgid_plural "%(count)s Subscription Requests"
 msgstr[0] ""
 msgstr[1] ""
 
-#: cdedb/frontend/templates/web/core/index.tmpl:209
+#: cdedb/frontend/templates/web/core/index.tmpl:217
 #: cdedb/frontend/templates/web/event/event/index.tmpl:27
 #: cdedb/frontend/templates/web/event/event/list_events.tmpl:59
 msgid "Current Events"
 msgstr "Eventus praesentes"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:222
+#: cdedb/frontend/templates/web/core/index.tmpl:230
 #: cdedb/frontend/templates/web/event/event/index.tmpl:75
 #, fuzzy, python-format
 msgid "already %(registered)s"
 msgstr "(iam annuntiatus:a) (TODO: gender specific string)"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:222
-#: cdedb/frontend/templates/web/core/index.tmpl:234
+#: cdedb/frontend/templates/web/core/index.tmpl:230
+#: cdedb/frontend/templates/web/core/index.tmpl:242
 #: cdedb/frontend/templates/web/event/event/index.tmpl:75
 #: cdedb/frontend/templates/web/event/event/index.tmpl:87
 msgid "registered"
 msgstr "annuntiatus:a (TODO: gender specific string)"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:226
+#: cdedb/frontend/templates/web/core/index.tmpl:234
 #: cdedb/frontend/templates/web/event/event/index.tmpl:79
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:240
 msgid "payment pending"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/index.tmpl:231
+#: cdedb/frontend/templates/web/core/index.tmpl:239
 #: cdedb/frontend/templates/web/event/base.tmpl:172
 #: cdedb/frontend/templates/web/event/event/index.tmpl:84
 #: cdedb/frontend/templates/web/event/questionnaire/additional_questionnaire.tmpl:30
 msgid "Questionnaire"
 msgstr "Interrogatio"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:234
+#: cdedb/frontend/templates/web/core/index.tmpl:242
 #: cdedb/frontend/templates/web/event/event/index.tmpl:87
 #, fuzzy, python-format
 msgid "formerly %(registered)s"
 msgstr "annuntiatus:a (TODO: gender specific string)"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:240
+#: cdedb/frontend/templates/web/core/index.tmpl:248
 #: cdedb/frontend/templates/web/event/base.tmpl:180
 #: cdedb/frontend/templates/web/event/event/index.tmpl:93
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:91
@@ -15611,30 +15616,30 @@ msgstr "annuntiatus:a (TODO: gender specific string)"
 msgid "Register"
 msgstr "Annuntiare"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:243
-#: cdedb/frontend/templates/web/core/index.tmpl:256
+#: cdedb/frontend/templates/web/core/index.tmpl:251
+#: cdedb/frontend/templates/web/core/index.tmpl:264
 #, python-format
 msgid "(Until %(date)s)"
 msgstr "(ad %(date)s)"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:247
+#: cdedb/frontend/templates/web/core/index.tmpl:255
 #, python-format
 msgid "(Late Registrations until %(date)s)"
 msgstr "(posterius ad %(date)s annuntiari potest)"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:251
+#: cdedb/frontend/templates/web/core/index.tmpl:259
 msgid "(Only late Registrations possible)"
 msgstr "(solum posterius annuntiari potest)"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:270
+#: cdedb/frontend/templates/web/core/index.tmpl:278
 msgid "Current Assemblies"
 msgstr "Coetus praesentes"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:279
+#: cdedb/frontend/templates/web/core/index.tmpl:287
 msgid "(Already attending)"
 msgstr "(iam annuntiatus:a) (TODO: gender specific string)"
 
-#: cdedb/frontend/templates/web/core/index.tmpl:283
+#: cdedb/frontend/templates/web/core/index.tmpl:291
 #, python-format
 msgid "(Registration possible until %(date)s)"
 msgstr "(Ad %(date)s annuntiari potest)"
