@@ -108,9 +108,9 @@
             {% call util.bootstrap_panel(title=gettext("Orga-Events"), icon='chalkboard-teacher',
                                          aclass='panel-warning', anid="orga-box") %}
                 <ul class="slim spaced">
-                    {% for event in dashboard['orga'].values()|sort %}
+                    {% for event in dashboard['orga'] %}
                         <li>
-                            {{ util.href(cdedblink('event/show_event', {'event_id': event.id}), event['title'],
+                            {{ util.href(cdedblink('event/show_event', {'event_id': event.id}), event.title,
                                     icon='chalkboard-teacher') }}
                             {% if event['registration_start'] %}
                                 <br />

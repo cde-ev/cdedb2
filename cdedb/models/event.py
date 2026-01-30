@@ -375,6 +375,9 @@ class Event(EventDataclass):
             )
         )
 
+    def is_current_for_orga(self) -> bool:
+        return self.begin > (now().date() - datetime.timedelta(days=365 * 2))
+
     @functools.cached_property
     def lodge_field(self) -> Optional["EventField"]:
         if self.lodge_field_id is None:

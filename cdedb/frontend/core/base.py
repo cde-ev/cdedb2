@@ -171,21 +171,17 @@ class CoreBaseFrontend(AbstractFrontend):
             # events organized
             orga_info = self.eventproxy.orga_info(rs, rs.user.persona_id)
             if orga_info:
-                orga = {}
+                orga = []
                 orga_registrations = {}
-                events = self.eventproxy.get_events(rs, orga_info)
-                present = now()
-                for event_id, event in events.items():
-                    if (
-                        event.begin >= present.date()
-                        or abs(event.begin.year - present.year) < 2
-                    ):
+                orga_events = self.eventproxy.get_events(rs, orga_info)
+                for event in orga_events.values():
+                    if event.is_current_for_orga():
                         regs = self.eventproxy.list_registrations(rs, event.id)
-                        orga_registrations[event_id] = len(regs)
-                        orga[event_id] = event
+                        orga_registrations[event.id] = len(regs)
+                        orga.append(event)
                 dashboard['orga'] = orga
                 dashboard['orga_registrations'] = orga_registrations
-                dashboard['present'] = present
+                dashboard['present'] = now()
             # mailinglists moderated
             moderator_info = self.mlproxy.moderator_info(rs, rs.user.persona_id)
             if moderator_info:
