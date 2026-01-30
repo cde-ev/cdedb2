@@ -72,8 +72,9 @@ apt-get install --yes --no-install-recommends                       \
     \
     python3-pip                                                     \
     \
-    python3-dev g++ pkg-config                                      \
-    graphviz libicu-dev libmagic1 libsystemd-dev
+    g++ pkg-config graphviz libmagic1                               \
+    python3-dev libicu-dev libsystemd-dev libjpeg-dev libxml2-dev   \
+    libxslt1-dev libpq-dev
 
 python3 -m pip install --upgrade pip --break-system-packages
 python3 -m pip install --break-system-packages uv
