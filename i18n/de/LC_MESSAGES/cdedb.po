@@ -16711,7 +16711,7 @@ msgid ""
 "been approved. People will not be able to register at the configured time."
 msgstr ""
 "Es wurde ein Anmeldebeginn eingestellt, aber die Anmeldung ist noch nicht "
-"freigeschaltet worden. Auch nach Anmeldebeginn werden keine Anmeldungen "
+"genehmigt worden. Auch nach Anmeldebeginn werden keine Anmeldungen "
 "möglich sein."
 
 #: cdedb/frontend/templates/web/event/base.tmpl:325
@@ -17879,7 +17879,7 @@ msgid ""
 "Registration has not yet been approved. People will not be able to register "
 "at the time configured here."
 msgstr ""
-"Anmeldung ist noch nicht freigeschaltet. Auch nach dem hier eingestellten "
+"Anmeldung ist noch nicht genehmigt. Auch nach dem hier eingestellten "
 "Zeitpunkt werden keine Anmeldungen möglich sein."
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:103
