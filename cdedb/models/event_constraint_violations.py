@@ -2284,7 +2284,7 @@ class RegistrationLockedCV(ConstraintViolation):
 
     @classmethod
     def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
-        if aux.event.registration_unlocked:
+        if aux.event.is_registration_approved:
             return None
         ref_time = now()
         if not aux.event.registration_start:

@@ -73,7 +73,7 @@
                 {% endif %}
             </dd>
         {% endif %}
-        {% if not ambience['event']['registration_start'] is none %}
+        {% if ambience['event'].registration_start is not none and ambience['event'].is_registration_approved %}
             <dt title="{% trans %}Registration{% endtrans %}">
                 {% trans %}Registration{% endtrans %}
             </dt>
@@ -324,22 +324,22 @@
                     </div>
                 </div>
             {% endif %}
-            {% if is_privileged_for("event/unlock_registration", admin_view_to_consider="event_mgmt") %}
-                <div class="row" id="unlock-registration">
+            {% if is_privileged_for("event/approve_registration", admin_view_to_consider="event_mgmt") %}
+                <div class="row" id="approve-registration">
                     <div class="col-sm-4">
                         <div class="p">
-                            {% if not ambience['event'].registration_unlocked %}
-                                <form action="{{ cdedblink('event/unlock_registration') }}" method="POST" id="unlockregistrationform"
+                            {% if not ambience['event'].is_registration_approved %}
+                                <form action="{{ cdedblink('event/approve_registration') }}" method="POST" id="approveregistrationform"
                                       style="display: inline;">
-                                    {{ util.anti_csrf_token('event/unlock_registration') }}
-                                    {{ util.input_submit(label=gettext("Unlock Registration"), readonly=is_locked,
+                                    {{ util.anti_csrf_token('event/approve_registration') }}
+                                    {{ util.input_submit(label=gettext("Approve Registration"), readonly=is_locked,
                                                          aclass="btn btn-primary btn-wrap", icon="unlock") }}
                                 </form>
                             {% else %}
-                                <form action="{{ cdedblink('event/lock_registration') }}" method="POST" id="lockregistrationform"
+                                <form action="{{ cdedblink('event/unapprove_registration') }}" method="POST" id="unapproveregistrationform"
                                       style="display: inline;">
-                                    {{ util.anti_csrf_token('event/lock_registration') }}
-                                    {{ util.input_submit(label=gettext("Lock Registration"), readonly=is_locked,
+                                    {{ util.anti_csrf_token('event/unapprove_registration') }}
+                                    {{ util.input_submit(label=gettext("Unapprove Registration"), readonly=is_locked,
                                                          aclass="btn btn-danger btn-wrap", icon="lock") }}
                                 </form>
                             {% endif %}
@@ -347,7 +347,7 @@
                     </div>
                     <div class="col-sm-8">
                         <p class="text-muted">
-                            {% if not ambience['event'].registration_unlocked %}
+                            {% if not ambience['event'].is_registration_approved %}
                                 {% trans %}
                                     Allows registration to begin at the configured time. Is reversible.
                                 {% endtrans %}

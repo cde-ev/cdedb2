@@ -1802,22 +1802,22 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.unlock_registration)
-    def unlock_registration(self, rs: RequestState, event_id: int) -> Response:
-        if rs.ambience['event'].registration_unlocked:
+    @event_guard(EventPrivileges.approve_registration)
+    def approve_registration(self, rs: RequestState, event_id: int) -> Response:
+        if rs.ambience['event'].is_registration_approved:
             rs.notify("warning", n_("Registration already unlocked."))
         else:
-            code = self.eventproxy.unlock_registration(rs, event_id)
+            code = self.eventproxy.approve_registration(rs, event_id)
             rs.notify_return_code(code)
         return self.redirect(rs, "event/show_event")
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.unlock_registration)
-    def lock_registration(self, rs: RequestState, event_id: int) -> Response:
-        if not rs.ambience['event'].registration_unlocked:
+    @event_guard(EventPrivileges.approve_registration)
+    def unapprove_registration(self, rs: RequestState, event_id: int) -> Response:
+        if not rs.ambience['event'].is_registration_approved:
             rs.notify("warning", n_("Registration already locked."))
         else:
-            code = self.eventproxy.lock_registration(rs, event_id)
+            code = self.eventproxy.unapprove_registration(rs, event_id)
             rs.notify_return_code(code)
         return self.redirect(rs, "event/show_event")
 

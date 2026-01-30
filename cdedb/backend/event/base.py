@@ -1529,37 +1529,41 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @access("event")
-    def unlock_registration(self, rs: RequestState, event_id: int) -> DefaultReturnCode:
+    def approve_registration(
+        self, rs: RequestState, event_id: int
+    ) -> DefaultReturnCode:
         event_id = affirm(vtypes.ID, event_id)
         if not is_privileged(
-            rs, EventPrivileges.unlock_registration, event_id=event_id
+            rs, EventPrivileges.approve_registration, event_id=event_id
         ):
             raise PrivilegeError
         with Atomizer(rs):
             self.assert_lock(rs, event_id=event_id)
             update = {
                 'id': event_id,
-                'registration_unlocked': True,
+                'is_registration_approved': True,
             }
             ret = self.sql_update(rs, "event.events", update)
-            self.event_log(rs, const.EventLogCodes.registration_unlocked, event_id)
+            self.event_log(rs, const.EventLogCodes.registration_approved, event_id)
         return ret
 
     @access("event")
-    def lock_registration(self, rs: RequestState, event_id: int) -> DefaultReturnCode:
+    def unapprove_registration(
+        self, rs: RequestState, event_id: int
+    ) -> DefaultReturnCode:
         event_id = affirm(vtypes.ID, event_id)
         if not is_privileged(
-            rs, EventPrivileges.unlock_registration, event_id=event_id
+            rs, EventPrivileges.approve_registration, event_id=event_id
         ):
             raise PrivilegeError
         with Atomizer(rs):
             self.assert_lock(rs, event_id=event_id)
             update = {
                 'id': event_id,
-                'registration_unlocked': False,
+                'is_registration_approved': False,
             }
             ret = self.sql_update(rs, "event.events", update)
-            self.event_log(rs, const.EventLogCodes.registration_locked, event_id)
+            self.event_log(rs, const.EventLogCodes.registration_unapproved, event_id)
         return ret
 
     @internal

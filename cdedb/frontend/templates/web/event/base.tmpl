@@ -314,7 +314,7 @@ This will result in:
             {% call util.notification('info') %}
                 {% trans %}This event has been cancelled.{% endtrans %}
             {% endcall %}
-        {% elif ambience['event'].registration_start and not ambience['event'].registration_unlocked %}
+        {% elif ambience['event'].registration_start and not ambience['event'].is_registration_approved %}
             {% if is_privileged_for("event/change_event") %}
                 {% call util.notification('warning') %}
                     {% trans %}
