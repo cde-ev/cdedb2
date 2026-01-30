@@ -112,12 +112,15 @@
                         <li>
                             {{ util.href(cdedblink('event/show_event', {'event_id': event.id}), event['title'],
                                     icon='chalkboard-teacher') }}
-                            {% if event['registration_start'] %}
+                            {% if dashboard['orga_registrations'][event.id] %}
+                                <br />
+                                {% trans count=dashboard['orga_registrations'][event.id] %}
+                                    {{ count }} Registrations
+                                {% endtrans %}
+                            {% endif %}
+                            {% if event.registration_start and event.is_registration_approved %}
                                 <br />
                                 {% if event['registration_start'] <= dashboard['present'] %}
-                                    {% trans count=dashboard['orga_registrations'][event.id] %}
-                                    	{{ count }} Registrations
-                                    {% endtrans %}
                                     {% if not event['registration_hard_limit'] and not event['registration_soft_limit'] %}
                                         {% trans %}
                                             (Registration open)
@@ -146,6 +149,11 @@
                                     	(Registration starts {{ date }})
                                     {% endtrans %}
                                 {% endif %}
+                            {% elif not event.is_registration_approved %}
+                                <br />
+                                {% trans %}
+                                    (Registration not yet approved)
+                                {% endtrans %}
                             {% endif %}
                             <br />
                             <span class="small">
