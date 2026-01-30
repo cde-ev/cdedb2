@@ -60,7 +60,7 @@
                                                     "visible to all CdE-Members and Assembly-Participants.")) }}
             {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("assembly/show_assembly")) }}
         {% else %}
-            {{ util.form_input_text(name="presider_ids", label=gettext("Presiders"), anid="input-presider_ids") }}
+            {{ util.form_input_text(type="search", name="presider_ids", label=gettext("Presiders"), anid="input-presider_ids") }}
             <script nonce="{{ csp_nonce }}">
                 $('#input-presider_ids').cdedbSearchPerson(
                     '{{ cdedblink('core/select_persona') }}', {'kind' : 'assembly_user'},

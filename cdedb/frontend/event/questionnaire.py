@@ -7,8 +7,8 @@ event.
 """
 
 import itertools
-from collections.abc import Collection
-from typing import Callable, Optional
+from collections.abc import Callable, Collection
+from typing import Optional
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -309,7 +309,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             key2 = field_key(idx2)
             msg = n_("Must not duplicate field.")
             return (
-                lambda d: (not d[key1] or d[key1] != d[key2]),
+                lambda d: not d[key1] or d[key1] != d[key2],
                 (key1, ValueError(msg)),
             )
 
@@ -324,7 +324,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             key = readonly_key(idx)
             msg = n_("Registration questionnaire rows may not be readonly.")
             return (
-                lambda d: (not d[key] or kind.allow_readonly()),
+                lambda d: not d[key] or kind.allow_readonly(),
                 (key, ValueError(msg)),
             )
 

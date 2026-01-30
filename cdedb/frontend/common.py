@@ -5,7 +5,6 @@ overall topic.
 """
 
 import abc
-import cgitb
 import collections
 import collections.abc
 import copy
@@ -13,10 +12,7 @@ import csv
 import datetime
 import decimal
 import email
-import email.charset
 import email.encoders
-import email.header
-import email.mime
 import email.mime.application
 import email.mime.audio
 import email.mime.base
@@ -42,7 +38,14 @@ import typing
 import urllib.error
 import urllib.parse
 import weakref
-from collections.abc import Collection, Iterable, Mapping, Sequence, Set as AbstractSet
+from collections.abc import (
+    Callable,
+    Collection,
+    Iterable,
+    Mapping,
+    Sequence,
+    Set as AbstractSet,
+)
 from email.mime.nonmultipart import MIMENonMultipart
 from secrets import token_hex
 from types import TracebackType
@@ -50,7 +53,6 @@ from typing import (
     IO,
     Any,
     AnyStr,
-    Callable,
     ClassVar,
     Literal,
     NamedTuple,
@@ -58,11 +60,11 @@ from typing import (
     Optional,
     Protocol,
     TypeVar,
-    Union,
     cast,
     overload,
 )
 
+import cgitb
 import jinja2
 import mailmanclient.restobjects.held_message
 import mailmanclient.restobjects.mailinglist
@@ -72,7 +74,6 @@ import werkzeug.datastructures
 import werkzeug.exceptions
 import werkzeug.utils
 import werkzeug.wrappers
-import werkzeug.wsgi
 from typing_extensions import TypeForm
 
 import cdedb.common.parse.util as parse_util
@@ -167,7 +168,7 @@ class Attachment(typing.TypedDict, total=False):
     path: PathLike
     filename: str
     mimetype: str
-    file: Union[IO[str], IO[bytes]]
+    file: IO[str] | IO[bytes]
 
 
 Headers = typing.TypedDict(
@@ -226,10 +227,8 @@ class BaseApp(metaclass=abc.ABCMeta):
         )
         # local variable to prevent closure over secrets
         url_parameter_salt = secrets["URL_PARAMETER_SALT"]
-        self.decode_parameter = (
-            lambda target, name, param, persona_id: decode_parameter(
-                url_parameter_salt, target, name, param, persona_id
-            )
+        self.decode_parameter = lambda target, name, param, persona_id: (
+            decode_parameter(url_parameter_salt, target, name, param, persona_id)
         )
 
         def local_encode(
@@ -291,7 +290,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         self,
         rs: RequestState,
         note: str,
-    ) -> Union[Notification, tuple[None, None, None]]:
+    ) -> Notification | tuple[None, None, None]:
         """Inverse wrapper to :py:meth:`encode_notification`."""
         _, message = self.decode_parameter(
             '_/notification', 'displaynote', note, rs.user.persona_id
@@ -481,6 +480,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             trim_blocks=True,
             lstrip_blocks=True,
         )
+        # XML is currently not different from web.
+        self.jinja_env_xml = self.jinja_env.overlay()
         self.jinja_env_other = self.jinja_env.overlay(autoescape=False)
         # Always provide all backends -- they are cheap
         self.assemblyproxy = make_proxy(AssemblyBackend())
@@ -520,6 +521,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
           * web,
           * mail,
           * tex,
+          * xml,
           * other.
         :param templatename: file name of template without extension
         """
@@ -634,8 +636,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'doclink': _doclink,
             'staticlink': _staticlink,
             'errors': rs.get_validation_errors_dict(),
-            'request_time': lambda: (now() - rs.begin),
-            'generation_time': lambda: (now() - begin),
+            'request_time': lambda: now() - rs.begin,
+            'generation_time': lambda: now() - begin,
             'gettext': rs.mail_gettext if modus == "mail" else rs.gettext,
             'has_warnings': _has_warnings,
             'is_admin': self.is_admin(rs),
@@ -669,6 +671,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             jinja_env = self.jinja_env_mail
         elif modus == "tex":
             jinja_env = self.jinja_env_tex
+        elif modus == "xml":
+            jinja_env = self.jinja_env_xml
         elif modus == "other":
             jinja_env = self.jinja_env_other
         else:
@@ -729,7 +733,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         filename: Optional[str] = None,
         inline: bool = True,
         *,
-        path: Optional[Union[str, pathlib.Path]] = None,
+        path: Optional[str | pathlib.Path] = None,
         afile: Optional[IO[bytes]] = None,
         data: Optional[AnyStr] = None,
     ) -> Response:
@@ -1037,7 +1041,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         headers: Headers,
         attachments: Optional[Collection[Attachment]],
         defect_addresses: dict[str, const.EmailStatus],
-    ) -> Union[email.message.Message, email.mime.multipart.MIMEMultipart]:
+    ) -> email.message.Message | email.mime.multipart.MIMEMultipart:
         """Helper for actual email instantiation from a raw message."""
         defaults = {
             "From": self.conf["DEFAULT_SENDER"],
@@ -1456,7 +1460,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def serve_complex_latex_document(
         self,
         rs: RequestState,
-        tmp_dir: Union[str, pathlib.Path],
+        tmp_dir: str | pathlib.Path,
         work_dir_name: str,
         tex_file_name: str,
         runs: int = 2,
@@ -1960,7 +1964,7 @@ class CdEMailmanClient(mailmanclient.Client):
 
 # Type Aliases for the Worker class.
 WorkerTarget = Callable[[RequestState], bool]
-WorkerTasks = Union[WorkerTarget, Sequence[WorkerTarget]]
+WorkerTasks = WorkerTarget | Sequence[WorkerTarget]
 
 
 class WorkerTaskInfo(NamedTuple):
@@ -2213,9 +2217,9 @@ def reconnoitre_ambience(obj: AbstractFrontend, rs: RequestState) -> AmbienceDic
             (lambda a: do_assert(a['registration']['event_id'] == a['event'].id),),
         ),
         Scout(
-            lambda anid: (
-                obj.eventproxy.get_lodgement_groups(rs, ambience['event'].id)[anid]
-            ),
+            lambda anid: obj.eventproxy.get_lodgement_groups(rs, ambience['event'].id)[
+                anid
+            ],
             'group_id',
             'group',
             (lambda a: do_assert(a['group'].event_id == a['event'].id),),
@@ -2460,7 +2464,7 @@ def access(
 def cdedburl(
     rs: RequestState,
     endpoint: str,
-    params: Optional[Union[CdEDBObject, CdEDBMultiDict]] = None,
+    params: Optional[CdEDBObject | CdEDBMultiDict] = None,
     force_external: bool = False,
     magic_placeholders: Optional[Collection[str]] = None,
 ) -> str:
@@ -2557,7 +2561,7 @@ def staticlink(
 
 def staticlink(
     rs: RequestState, label: str, path: str, version: str = "", html: bool = True
-) -> Union[markupsafe.Markup, str]:
+) -> markupsafe.Markup | str:
     """Create a link to a static resource.
 
     This can either create a basic html link or a fully qualified, static https link.
@@ -2601,7 +2605,7 @@ def doclink(
 
 def doclink(
     rs: RequestState, label: str, topic: str, anchor: str = "", html: bool = True
-) -> Union[markupsafe.Markup, str]:
+) -> markupsafe.Markup | str:
     """Create a link to our documentation.
 
     This can either create a basic html link or a fully qualified, static https link.
@@ -2712,7 +2716,7 @@ def REQUESTdata(
 
 # noinspection PyPep8Naming
 def REQUESTdatadict(
-    *proto_spec: Union[str, tuple[str, str]],
+    *proto_spec: str | tuple[str, str],
 ) -> Callable[[F], F]:
     """Similar to :py:meth:`REQUESTdata`, but doesn't hand down the
     parameters as keyword-arguments, instead packs them all into a dict and
@@ -2736,7 +2740,7 @@ def REQUESTdatadict(
         def new_fun(
             obj: AbstractFrontend, rs: RequestState, *args: Any, **kwargs: Any
         ) -> Any:
-            data: dict[str, Union[str, tuple[str, ...]]] = {}
+            data: dict[str, str | tuple[str, ...]] = {}
             for name, argtype in spec:
                 if argtype == "str":
                     data[name] = rs.request.values.get(name, "")
@@ -2806,7 +2810,7 @@ def request_extractor(
 
 def request_dict_extractor(
     rs: RequestState,
-    args: Collection[Union[str, tuple[str, str]]],
+    args: Collection[str | tuple[str, str]],
 ) -> CdEDBObject:
     """Utility to apply REQUESTdatadict later than usual.
 
@@ -3355,7 +3359,7 @@ def query_result_to_json(
 
 def calculate_loglinks(
     rs: RequestState, total: int, offset: Optional[int], length: int
-) -> dict[str, Union[CdEDBMultiDict, list[CdEDBMultiDict]]]:
+) -> dict[str, CdEDBMultiDict | list[CdEDBMultiDict]]:
     """Calculate the target parameters for the links in the log pagination bar.
 
     :param total: The total count of log entries
@@ -3396,7 +3400,7 @@ def calculate_loglinks(
     loglinks["current"]["offset"] = trueoffset
 
     # piece everything together
-    ret: dict[str, Union[CdEDBMultiDict, list[CdEDBMultiDict]]]
+    ret: dict[str, CdEDBMultiDict | list[CdEDBMultiDict]]
     ret = dict(**loglinks, **{"pre-current": pre, "post-current": post})
     return ret
 

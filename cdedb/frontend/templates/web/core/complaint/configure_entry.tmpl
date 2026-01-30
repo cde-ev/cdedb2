@@ -84,7 +84,7 @@
                 {% if not new_entry %}
                     {{ util.form_input_static(label=gettext("Concerns"), value=util.persona_anchor(personas[ambience['entry'].concerned_id], icon='user')) }}
                 {% else %}
-                    {{ util.form_input_text(name="concerned_id", label=gettext("Concerns"), anid="input-concerned_id",
+                    {{ util.form_input_text(type="search", name="concerned_id", label=gettext("Concerns"), anid="input-concerned_id",
                                             placeholder=gettext("DB-XXXX-X")) }}
                     <script nonce="{{ csp_nonce }}">
                         $('#input-concerned_id').cdedbSearchPerson(
@@ -100,7 +100,7 @@
             {% if entry_type.is_measure %}
                 {{ util.form_input_text(name="etime", label=gettext("Expiration"), type="datetime-local") }}
             {% endif %}
-            {{ util.form_input_text(name="authors", label=gettext("Authors"), anid="input-authors",
+            {{ util.form_input_text(type="search", name="authors", label=gettext("Authors"), anid="input-authors",
                                     placeholder=gettext("DB-XXXX-X,DB-XXXX-X,…"),
                                     info=gettext("The companions, arbcom members, coordinators responsible for this entry. In a later update, the may get access to this entry. Do not specify involved people here.")) }}
             <script nonce="{{ csp_nonce }}">

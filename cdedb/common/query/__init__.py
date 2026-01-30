@@ -16,10 +16,8 @@ import datetime
 import enum
 import itertools
 import re
-from collections.abc import Collection, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Callable, Optional, cast
-
-from typing_extensions import TypeAlias
+from collections.abc import Callable, Collection, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Optional, TypeAlias, cast
 
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, RequestState, unwrap

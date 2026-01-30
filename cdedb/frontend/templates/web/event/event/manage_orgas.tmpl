@@ -34,8 +34,8 @@
                     {% call util.output_errors('orga_ids', wrapper=True) %}
                         <div class="input-group has-success">
                             <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-                            {{ util.input_text(name="orga_ids", placeholder="DB-XXXX-X", anid="input-add-orgas",
-                                               arialabel=gettext("IDs of the new orgas")) }}
+                            {{ util.input_text(type="search", name="orga_ids", placeholder="DB-XXXX-X",
+                                               anid="input-add-orgas", arialabel=gettext("IDs of the new orgas")) }}
                             <div class="input-group-btn">
                                 {{ util.input_submit(label=gettext("Add"), aclass="btn btn-success") }}
                             </div>
@@ -92,8 +92,8 @@
                     {{ util.anti_csrf_token("event/add_caretakers") }}
                     <div class="input-group has-success">
                         <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-                        {{ util.input_text(name="caretaker_ids", placeholder="DB-XXXX-X", anid="input-add-caretakers",
-                                           arialabel=gettext("IDs of the new caretakers")) }}
+                        {{ util.input_text(type="search", name="caretaker_ids", placeholder="DB-XXXX-X",
+                                           anid="input-add-caretakers", arialabel=gettext("IDs of the new caretakers")) }}
                         <div class="input-group-btn">
                             {{ util.input_submit(label=gettext("Add"), aclass="btn btn-success") }}
                         </div>

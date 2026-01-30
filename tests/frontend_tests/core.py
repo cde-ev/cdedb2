@@ -3,7 +3,7 @@ import datetime
 import random
 import re
 import urllib.parse
-from typing import Optional, Union
+from typing import Optional
 
 import webtest
 
@@ -1960,7 +1960,7 @@ class TestCoreFrontend(FrontendTest):
 
         # Check for proper logging
         with self.switch_user("paul"):
-            changelog_expectation: tuple[dict[str, Union[int, str, None]], ...] = (
+            changelog_expectation: tuple[dict[str, int | str | None], ...] = (
                 {
                     'code': const.PersonaChangeStati.superseded,
                     'reviewed_by': None,

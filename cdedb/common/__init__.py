@@ -2,7 +2,6 @@
 
 """Global utility functions."""
 
-import collections
 import collections.abc
 import dataclasses
 import datetime
@@ -19,12 +18,18 @@ import pathlib
 import re
 import string
 import zoneinfo
-from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
+from collections.abc import (
+    Callable,
+    Collection,
+    Iterable,
+    Mapping,
+    MutableMapping,
+    Sequence,
+)
 from types import UnionType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Generic,
     Optional,
     TypeVar,
@@ -39,7 +44,6 @@ import phonenumbers
 import psycopg2.extras
 import werkzeug
 import werkzeug.datastructures
-import werkzeug.exceptions
 import werkzeug.routing
 from schulze_condorcet.types import Candidate
 from typing_extensions import TypeForm
@@ -106,7 +110,7 @@ AdminView = str
 
 CdEDBLog = tuple[int, tuple[CdEDBObject, ...]]
 
-PathLike = Union[pathlib.Path, str]
+PathLike = pathlib.Path | str
 Path = pathlib.Path
 
 T = TypeVar("T")
@@ -291,7 +295,7 @@ class RequestState(ConnectionContainer):
 
     def notify_return_code(
         self,
-        code: Union[DefaultReturnCode, bool],
+        code: DefaultReturnCode | bool,
         *,
         success: str = n_("Change committed."),
         info: str = n_("Change pending."),
@@ -504,7 +508,7 @@ def merge_dicts(targetdict: MutableMapping[T, S], *dicts: Mapping[T, S]) -> None
                     targetdict[key] = value
 
 
-BytesLike = Union[bytes, bytearray, memoryview]
+BytesLike = bytes | bytearray | memoryview
 
 
 def get_hash(*args: BytesLike) -> str:
@@ -529,7 +533,7 @@ def now() -> datetime.datetime:
     This is a separate function so we do not forget to make it time zone
     aware.
     """
-    return datetime.datetime.now(datetime.timezone.utc)
+    return datetime.datetime.now(datetime.UTC)
 
 
 _NEARLY_DELTA_DEFAULT = datetime.timedelta(minutes=10)
@@ -571,7 +575,7 @@ class NearlyNow(datetime.datetime):
 
 def nearly_now(delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT) -> NearlyNow:
     """Create a NearlyNow."""
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.datetime.now(datetime.UTC)
     return NearlyNow(
         year=now.year,
         month=now.month,
@@ -579,7 +583,7 @@ def nearly_now(delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT) -> NearlyNow:
         hour=now.hour,
         minute=now.minute,
         second=now.second,
-        tzinfo=datetime.timezone.utc,
+        tzinfo=datetime.UTC,
         delta=delta,
     )
 
@@ -727,13 +731,13 @@ class CustomJSONEncoder(json.JSONEncoder):
 
     @overload
     def default(
-        self, obj: Union[datetime.date, datetime.datetime, decimal.Decimal]
+        self, obj: datetime.date | datetime.datetime | decimal.Decimal
     ) -> str: ...
 
     @overload
     def default(self, obj: set[T]) -> tuple[T, ...]: ...
 
-    def default(self, obj: Any) -> Union[str, tuple[Any, ...], dict[str, Any]]:
+    def default(self, obj: Any) -> str | tuple[Any, ...] | dict[str, Any]:
         import cdedb.models.common as models  # noqa: PLC0415  # pylint: disable=import-outside-toplevel
 
         if isinstance(obj, (datetime.datetime, datetime.date)):
@@ -793,7 +797,7 @@ def unwrap(data: Mapping[Any, T]) -> T: ...
 def unwrap(data: Collection[T]) -> T: ...
 
 
-def unwrap(data: Union[None, Mapping[Any, T], Collection[T]]) -> Optional[T]:
+def unwrap(data: None | Mapping[Any, T] | Collection[T]) -> Optional[T]:
     """Remove one nesting layer (of lists, etc.).
 
     This is here to replace code like ``foo = bar[0]`` where bar is a
@@ -1348,7 +1352,7 @@ def encode_parameter(
 
 def decode_parameter(
     salt: str, target: str, name: str, param: str, persona_id: Optional[int]
-) -> Union[tuple[bool, None], tuple[None, str]]:
+) -> tuple[bool, None] | tuple[None, str]:
     """Inverse of :py:func:`encode_parameter`. See there for
     documentation.
 
@@ -1444,7 +1448,7 @@ def parse_datetime(
     if ret.tzinfo is None:
         timezone: zoneinfo.ZoneInfo = _CONFIG["DEFAULT_TIMEZONE"]
         ret = ret.replace(tzinfo=timezone)
-    return ret.astimezone(datetime.timezone.utc)
+    return ret.astimezone(datetime.UTC)
 
 
 def normalize_phone(phone: phonenumbers.PhoneNumber) -> str:

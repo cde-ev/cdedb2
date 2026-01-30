@@ -30,9 +30,9 @@ import inspect
 import itertools
 import logging
 import re
-from collections.abc import Collection, Iterable
+from collections.abc import Callable, Collection, Iterable
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Self, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Self, cast
 
 import cdedb.common.parse.util as parse_util
 import cdedb.database.constants as const
@@ -817,7 +817,7 @@ class MutuallyExclusiveParticipationCV(RegistrationPartGroupConstraintViolation)
                 msg = n_(
                     "%(registration)s is present at mutually exclusive parts (%(part_list)s).",
                 )
-            part_filter = lambda part: (reg_parts[part.id]['status'].is_present())
+            part_filter = lambda part: reg_parts[part.id]['status'].is_present()
         params = {
             "registration": make_persona_name(self.persona, include_nickname=True),
             "part_list": ", ".join(

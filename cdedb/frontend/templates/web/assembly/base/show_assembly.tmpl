@@ -91,7 +91,7 @@
                 {% call util.output_errors('presider_ids', wrapper=True) %}
                     <div class="input-group has-success">
                         <span class="input-group-addon">{{ util.make_icon('plus', title=gettext("Add Presiders")) }}</span>
-                        {{ util.input_text(name="presider_ids", placeholder="DB-XXXX-X, DB-XXXX-X, …",
+                        {{ util.input_text(type="search", name="presider_ids", placeholder="DB-XXXX-X, DB-XXXX-X, …",
                                            anid='input-add-presiders', arialabel=gettext("IDs of the new Presiders.")) }}
                         <script nonce="{{ csp_nonce }}">
                             $('#input-add-presiders').cdedbSearchPerson(

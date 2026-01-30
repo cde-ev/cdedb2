@@ -4,10 +4,9 @@ import dataclasses
 from collections import OrderedDict
 from collections.abc import Collection, Mapping
 from dataclasses import dataclass, fields
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, Self, cast
 
 from subman.machine import SubscriptionPolicy
-from typing_extensions import Self
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const

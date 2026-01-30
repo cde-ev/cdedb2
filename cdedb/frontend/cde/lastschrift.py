@@ -421,7 +421,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             return None
         sepapain_file = self.fill_template(
             rs,
-            "other",
+            "xml",
             "pain.008.003.02",
             {'transactions': sorted_transactions, 'meta': meta},
         )

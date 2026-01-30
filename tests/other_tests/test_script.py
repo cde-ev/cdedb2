@@ -4,7 +4,8 @@ import sys
 import tempfile
 import typing
 import unittest
-from typing import Any, Callable, ClassVar
+from collections.abc import Callable
+from typing import Any, ClassVar
 
 from cdedb.backend.core import CoreBackend
 from cdedb.cli.util import redirect_to_file
@@ -97,6 +98,8 @@ class TestScript(unittest.TestCase):
         self.assertEqual(str(configured_script._tempconfig),
                          str({"EVENT_ARCHIVAL_BALANCE_CUTOFF": 42}))
         self.assertTrue(configured_script.config._is_frozen)
+
+        self.get_script(some_key="string value")
 
         # check overwriting per config file
         # here, we need to set the relevant flags from the real_config manually

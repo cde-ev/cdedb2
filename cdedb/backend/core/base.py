@@ -17,7 +17,7 @@ import datetime
 import decimal
 from collections.abc import Collection
 from secrets import token_hex
-from typing import Any, Literal, Optional, Protocol, Union, overload
+from typing import Any, Literal, Optional, Protocol, overload
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -107,15 +107,11 @@ class CoreBaseBackend(AbstractBackend):
         )
         # local variable to prevent closure over secrets
         reset_salt = secrets["RESET_SALT"]
-        self.generate_reset_cookie = (
-            lambda rs, persona_id, timeout: self._generate_reset_cookie(
-                rs, persona_id, reset_salt, timeout=timeout
-            )
+        self.generate_reset_cookie = lambda rs, persona_id, timeout: (
+            self._generate_reset_cookie(rs, persona_id, reset_salt, timeout=timeout)
         )
-        self.verify_reset_cookie = (
-            lambda rs, persona_id, cookie: self._verify_reset_cookie(
-                rs, persona_id, reset_salt, cookie
-            )
+        self.verify_reset_cookie = lambda rs, persona_id, cookie: (
+            self._verify_reset_cookie(rs, persona_id, reset_salt, cookie)
         )
         self._foto_store = AttachmentStore(
             self.conf['STORAGE_DIR'] / 'foto', vtypes.ProfilePicture
@@ -1528,7 +1524,7 @@ class CoreBaseBackend(AbstractBackend):
         self,
         rs: RequestState,
         persona_id: int,
-        balance: Union[str, decimal.Decimal],
+        balance: str | decimal.Decimal,
         log_code: const.FinanceLogCodes,
         change_note: Optional[str] = None,
         transaction_date: Optional[datetime.date] = None,

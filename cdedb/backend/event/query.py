@@ -735,8 +735,8 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
                 """
 
             # Step 4.3: Template for lodgement inhabitant counts.
-            lodgement_inhabitants_view = (
-                lambda part_id: f"""
+            lodgement_inhabitants_view = lambda part_id: (
+                f"""
                     SELECT
                         base.id AS base_id, tmp_group_id,
                         regular_inhabitants, camping_mat_inhabitants, total_inhabitants,
@@ -757,8 +757,8 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
             )
 
             # Step 4.4: Template for lodgement group inhabitant counts.
-            group_inhabitants_view = (
-                lambda part_id: f"""
+            group_inhabitants_view = lambda part_id: (
+                f"""
                     SELECT
                         tmp_group_id,
                         COALESCE(SUM(regular_inhabitants)::bigint, 0)

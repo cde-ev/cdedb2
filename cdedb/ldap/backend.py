@@ -6,14 +6,12 @@ import logging
 import pkgutil
 import re
 from collections import defaultdict
-from collections.abc import AsyncIterator, Collection, Mapping
+from collections.abc import AsyncIterator, Callable, Collection, Mapping
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Optional,
     TypedDict,
-    Union,
     cast,
     overload,
 )
@@ -23,7 +21,7 @@ from ldaptor.protocols import pureldap
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName as DN
 from ldaptor.protocols.pureber import int2ber
 from passlib.hash import sha512_crypt
-from psycopg import AsyncCursor, sql
+from psycopg import AsyncConnection, AsyncCursor, sql
 from psycopg.rows import DictRow
 from psycopg_pool import AsyncConnectionPool
 from twisted.python.util import InsensitiveDict
@@ -78,7 +76,7 @@ def _to_bytes(data: dict[Any, Any]) -> dict[bytes, Any]: ...
 
 
 @overload
-def _to_bytes(data: Union[None, str, int, bytes]) -> bytes: ...
+def _to_bytes(data: None | str | int | bytes) -> bytes: ...
 
 
 @overload
@@ -86,7 +84,7 @@ def _to_bytes(data: list[Any]) -> list[Any]: ...
 
 
 def _to_bytes(
-    data: Union[None, str, int, bytes, DN, dict[Any, Any], list[Any]],
+    data: None | str | int | bytes | DN | dict[Any, Any] | list[Any],
 ) -> TO_BYTES_RETURN:
     """This takes a python data structure and convert all of its entries into bytes.
 
@@ -113,7 +111,7 @@ def _to_bytes(
 
 def now() -> datetime.datetime:
     """Mimic common.now"""
-    return datetime.datetime.now(datetime.timezone.utc)
+    return datetime.datetime.now(datetime.UTC)
 
 
 class LdapLeaf(TypedDict):
@@ -129,7 +127,7 @@ class LDAPsqlBackend:
         # concept of 'sessions' in this backend, we can not create one database
         # connection per session. So, to avoid creating a new connection for each
         # transaction, we utilize the psycopg connection pool for this.
-        self.pool = pool
+        self.pool = cast("AsyncConnectionPool[AsyncConnection[DictRow]]", pool)
         # load the ldap schemas (and overlays) which are supported
         self.schema = self.load_schemas(
             "core.schema",

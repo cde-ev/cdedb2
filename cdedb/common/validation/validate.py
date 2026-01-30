@@ -58,7 +58,6 @@ import copy
 import csv
 import datetime
 import decimal
-import distutils.util
 import enum
 import functools
 import io
@@ -72,16 +71,14 @@ import string
 import typing
 import unicodedata
 import urllib.parse
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from types import TracebackType
 from typing import (
     Any,
-    Callable,
     Optional,
     Protocol,
     Self,
     TypeVar,
-    Union,
     cast,
     get_type_hints,
     overload,
@@ -165,7 +162,7 @@ T_co = TypeVar('T_co', covariant=True)
 K = TypeVar('K')
 V = TypeVar('V')
 F = TypeVar('F', bound=Callable[..., Any])
-DC = TypeVar('DC', bound=Union[CdEDataclass, GenericLogFilter])
+DC = TypeVar('DC', bound=CdEDataclass | GenericLogFilter)
 
 
 class ValidationSummary(ValueError, Sequence[Exception]):
@@ -180,9 +177,7 @@ class ValidationSummary(ValueError, Sequence[Exception]):
     @overload
     def __getitem__(self, index: slice) -> Sequence[Exception]: ...
 
-    def __getitem__(
-        self, index: Union[int, slice]
-    ) -> Union[Exception, Sequence[Exception]]:
+    def __getitem__(self, index: int | slice) -> Exception | Sequence[Exception]:
         return self.args[index]
 
     def extend(self, errors: Iterable[Exception]) -> None:
@@ -944,15 +939,17 @@ def _bool(val: Any, argname: Optional[str] = None, **kwargs: Any) -> bool:
     if val is None:
         raise ValidationSummary(TypeError(argname, n_("Must be a boolean.")))
 
+    if isinstance(val, str):
+        if val.lower() in {"y", "yes", "true", "on", "1", "j", "ja", "wahr"}:
+            return True
+        if val.lower() in {"n", "no", "false", "off", "0", "f", "nein", "falsch"}:
+            return False
     try:
-        return bool(distutils.util.strtobool(val))
-    except (AttributeError, ValueError):
-        try:
-            return bool(val)
-        except (ValueError, TypeError) as e:
-            raise ValidationSummary(
-                ValueError(argname, n_("Invalid input for boolean."))
-            ) from e
+        return bool(val)
+    except (ValueError, TypeError) as e:
+        raise ValidationSummary(
+            ValueError(argname, n_("Invalid input for boolean."))
+        ) from e
 
 
 @_add_typed_validator  # TODO use Union of Literal
@@ -1773,8 +1770,8 @@ def _datetime(
 
 
 # freezegun patches datetime objects so this allows the validator retrieval to still work.
-_add_typed_validator(_date, freezegun.api.FakeDate)  # type: ignore[attr-defined]
-_add_typed_validator(_datetime, freezegun.api.FakeDatetime)  # type: ignore[attr-defined]
+_add_typed_validator(_date, freezegun.api.FakeDate)
+_add_typed_validator(_datetime, freezegun.api.FakeDatetime)
 
 
 @_add_typed_validator

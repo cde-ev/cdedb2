@@ -42,10 +42,10 @@
                                 attributes='min="0" step="0.01"'|s) }}
 
         <h4 class="heading-underline">{% trans %}Orgas{% endtrans %}</h4>
-        {{ util.form_input_text(name="orga_ids", label=gettext("Orgas"), placeholder="DB-XXXX-X,DB-XXXX-X,…",
+        {{ util.form_input_text(type="search", name="orga_ids", label=gettext("Orgas"), placeholder="DB-XXXX-X,DB-XXXX-X,…",
             anid="input-orgas") }}
         <h4 class="heading-underline">{% trans %}Caretakers{% endtrans %}</h4>
-        {{ util.form_input_text(name="caretaker_ids", label=gettext("Caretakers"), placeholder="DB-XXXX-X,DB-XXXX-X,…",
+        {{ util.form_input_text(type="search", name="caretaker_ids", label=gettext("Caretakers"), placeholder="DB-XXXX-X,DB-XXXX-X,…",
             anid="input-caretakers") }}
         <script nonce="{{ csp_nonce }}">
             $('#input-orgas,#input-caretakers').cdedbSearchPerson(

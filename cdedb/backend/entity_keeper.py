@@ -19,7 +19,7 @@ import subprocess
 import tempfile
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 import tabulate
 
@@ -56,7 +56,7 @@ class EntityKeeper:
 
     def _run(
         self,
-        args: list[Union[Path, str, bytes]],
+        args: list[Path | str | bytes],
         cwd: Optional[Path] = None,
         *,
         check: Literal["raise", "log", "ignore"] = "raise",
@@ -176,7 +176,7 @@ class EntityKeeper:
             # actual git directory.
             self._run(["git", f"--work-tree={td}", "add", td / filename], cwd=full_dir)
             # Then commit everything as if we were in the repository directory.
-            commit: list[Union[PathLike, bytes]]
+            commit: list[PathLike | bytes]
             commit = ["git", "-C", full_dir, "commit", "-m", commit_msg.encode("utf8")]
             if logs and (formated_logs := self._format_logs(logs)):
                 commit.append("-m")

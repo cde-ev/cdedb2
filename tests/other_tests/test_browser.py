@@ -5,7 +5,8 @@ import functools
 import re
 import tempfile
 import unittest
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from playwright.sync_api import Page, expect, sync_playwright
 
@@ -41,7 +42,9 @@ def make_page(*args: Any, headless: bool = True,
                         try:
                             func(self, *fargs, **fkwargs)
                         except Exception:  # pragma: no cover
-                            f = tempfile.NamedTemporaryFile("rb", delete=False)
+                            f = tempfile.NamedTemporaryFile(
+                                "rb", prefix="playwright-screenshot-on-fail-", suffix=".png", delete=False
+                            )
                             page.screenshot(full_page=True, path=f.name)
                             print(f"Saved screenshot at point of failure to {f.name}")
                             raise
@@ -132,9 +135,10 @@ class TestBrowser(BrowserTest):
 
         page.get_by_role("button", name="Benutzer-Administration").click()
         page.wait_for_url("http://localhost:5000/")
-        page.locator(".selectize-input").click()
-        page.get_by_placeholder("CdEDB-ID, Name oder E-Mail").type("emi")
+        page.locator("#adminshowuserform .selectize-input").click()
+        page.locator("#adminshowuserform .selectize-input input").type("emi")
         page.get_by_text("Emilia EventisDB-5-1 • emilia@example.cde").click()
+        page.press("#adminshowuserform .selectize-input", key="Enter")
         page.wait_for_url("http://localhost:5000/core/persona/5/show?*")
 
         expect(page.locator("#admin-notes")).to_have_text(

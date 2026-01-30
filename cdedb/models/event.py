@@ -32,11 +32,10 @@ import decimal
 import functools
 import logging
 import sys
-from collections.abc import Collection
+from collections.abc import Callable, Collection
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
     ForwardRef,
     Optional,
@@ -930,7 +929,7 @@ class TrackGroup(EventDataclass):
         return self.constraint_type, self.sortkey, self.title
 
 
-class SyncTrackGroup(TrackGroup, CourseChoiceObject):
+class SyncTrackGroup(TrackGroup, CourseChoiceObject):  # type: ignore[misc]
     constraint_type = const.CourseTrackGroupType.course_choice_sync
 
     def is_complex(self) -> bool:

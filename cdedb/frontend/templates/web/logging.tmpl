@@ -77,9 +77,9 @@
         <form action="{{ cdedblink(endpoint) }}" method="GET" id="logshowform" class="form-horizontal">
             {{ util.form_input_checkboxes("codes", label=gettext("Categories"), info=gettext("No selection means everything."),
                     entries=enum|enum_entries(processing=gettext), small=True, wide=True, slice=2) }}
-            {{ util.form_input_text(name="submitted_by", label=gettext("Submitted By"), small=True,
+            {{ util.form_input_text(type="search", name="submitted_by", label=gettext("Submitted By"), small=True,
                         anid="input-submitted_by") }}
-            {{ util.form_input_text(name="persona_id", label=gettext("Affected"), small=True,
+            {{ util.form_input_text(type="search", name="persona_id", label=gettext("Affected"), small=True,
                         anid="input-persona_id") }}
             <script type="text/javascript" nonce="{{ csp_nonce }}">
                 $('#input-submitted_by').cdedbSearchPerson(
@@ -100,7 +100,7 @@
             {% elif filter_name == "case_id" %}
                 {{ util.form_input_text(name="case_id", label=gettext("Case"), type="number", small=True) }}
                 {{ util.form_input_select(name="case_id_include_empty", label=gettext("Include Entries without Case"), entries=enums["IncludeEmpty"]|enum_entries(processing=gettext), small=True) }}
-                {{ util.form_input_text(name="companion_id", label=gettext("Companion"), small=True,
+                {{ util.form_input_text(type="search", name="companion_id", label=gettext("Companion"), small=True,
                         anid="input-companion_id") }}
                 <script type="text/javascript" nonce="{{ csp_nonce }}">
                     $('#input-companion_id').cdedbSearchPerson(
@@ -115,7 +115,7 @@
                 {{ util.form_input_select(name="mailinglist_id", label=gettext("Mailinglist"), nulloption="",
                         entries=all_mailinglists|entries('id', 'title'), small=True, sort=True) }}
             {% elif filter_name == "changelog" %}
-                {{ util.form_input_text(name="reviewed_by", label=gettext("Reviewed By"), small=True,
+                {{ util.form_input_text(type="search", name="reviewed_by", label=gettext("Reviewed By"), small=True,
                         anid="input-reviewed_by") }}
                 <script type="text/javascript" nonce="{{ csp_nonce }}">
                     $('#input-reviewed_by').cdedbSearchPerson(
