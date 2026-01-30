@@ -8850,11 +8850,11 @@ msgid "Event deleted."
 msgstr "Veranstaltung gelöscht."
 
 #: cdedb/frontend/event/event.py:1808
-msgid "Registration already unlocked."
-msgstr "Anmeldung ist bereits freigeschaltet."
+msgid "Registration already approved."
+msgstr "Anmeldung ist bereits genehmigt."
 
 #: cdedb/frontend/event/event.py:1818
-msgid "Registration already locked."
+msgid "Registration already unapproved."
 msgstr "Anmeldung ist bereits gesperrt."
 
 #: cdedb/frontend/event/event.py:1865
