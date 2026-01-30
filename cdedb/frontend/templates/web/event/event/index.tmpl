@@ -38,7 +38,7 @@
                     {{ util.href(cdedblink("event/show_event", {"event_id": event.id}), event['title']) }}
                     <br />
                     {{ event['begin']|date(lang=lang) }}&#8239;–&#8239;{{ event['end']|date(lang=lang) }},
-                    {% if event['registration_start'] is none %}
+                    {% if event.registration_start is none or not event.is_registration_approved %}
                         {% trans %}
                             Registration in future™.
                         {% endtrans %}
