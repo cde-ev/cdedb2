@@ -63,8 +63,6 @@ sudo -u www-cde UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv uv sync --no-dev --gr
 # dPROD not present
 sudo -u cdedb uv sync --all-groups
 
-cd ..
-
 echo ""
 echo "Create local config files..."
 echo "--------------------------------------------"
@@ -74,7 +72,7 @@ echo "--------------------------------------------"
 
 # move the defaultconfig to the right place
 mkdir /etc/cdedb
-cp /media/cdrom0/localconfig.py /etc/cdedb/config.py
+touch /etc/cdedb/config.py
 install -D /media/cdrom0/localconfig.py "$(uv run python3 -m cdedb config default-configpath)"
 chown cdedb:cdedb "$(uv run python3 -m cdedb config default-configpath)"
 # make it world-readable, since it contains no secret data
@@ -125,7 +123,7 @@ echo "Creating storage directory for uploads..."
 echo "--------------------------------------------"
 
 # Create the storage dir itself. Ensure that www-cde owns everything.
-python3 -m cdedb filesystem --owner www-cde --group www-data storage create
+uv run python3 -m cdedb filesystem --owner www-cde --group www-data storage create
 
 echo ""
 echo "Setting up dummy ldap because cyclic dependency..."
@@ -153,8 +151,8 @@ sudo -u postgres psql <<-EOSQL
     CREATE DATABASE nobody WITH OWNER = nobody TEMPLATE = template0 ENCODING = 'UTF8';
     ALTER DATABASE nobody SET datestyle TO 'ISO, YMD';
 EOSQL
-python3 -m cdedb db create-users
-python3 -m cdedb db create
+uv run python3 -m cdedb db create-users
+uv run python3 -m cdedb db create
 
 systemctl stop pgbouncer
 
