@@ -110,19 +110,6 @@ passwd --delete cdedb
 groupadd --system www-cde
 useradd --system -g www-cde --create-home www-cde
 
-# Install python dependencies.
-
-cd /cdedb2
-
-# runtime dependencies for the gunicorn runner.
-sudo -u www-cde UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv uv sync --no-dev --group ldap
-
-# devtools
-# dPROD not present
-sudo -u cdedb uv sync --all-groups
-
-cd ..
-
 # dPROD allow empty passwords
 echo "\nPermitEmptyPasswords yes" >> /etc/ssh/sshd_config
 

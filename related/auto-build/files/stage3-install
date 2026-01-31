@@ -51,6 +51,21 @@ sudo -u cdedb tee -a /cdedb2/.git/config <<EOF
 EOF
 
 echo ""
+echo "Installing python dependencies..."
+echo "--------------------------------------------"
+
+cd /cdedb2
+
+# runtime dependencies for the gunicorn runner.
+sudo -u www-cde UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv uv sync --no-dev --group ldap
+
+# devtools
+# dPROD not present
+sudo -u cdedb uv sync --all-groups
+
+cd ..
+
+echo ""
 echo "Create local config files..."
 echo "--------------------------------------------"
 
