@@ -4,4 +4,4 @@ LOGFILE=/root/install-log-`date '+%s'`
 touch ${LOGFILE}
 chown root:root ${LOGFILE}
 chmod 640 ${LOGFILE}
-/bin/sh /media/cdrom0/cdedb-install 2>&1 | tee ${LOGFILE}
+/bin/bash /media/cdrom0/cdedb-install 2>&1 | tee ${LOGFILE}
