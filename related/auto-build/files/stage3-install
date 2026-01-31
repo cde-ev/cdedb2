@@ -57,7 +57,7 @@ echo "--------------------------------------------"
 cd /cdedb2
 
 # runtime dependencies for the gunicorn runner.
-sudo -u www-cde UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv uv sync --no-dev --group ldap
+sudo -u www-cde UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv uv sync --no-dev --group ldap --no-install-project
 
 # devtools
 # dPROD not present
@@ -76,13 +76,13 @@ echo "--------------------------------------------"
 mkdir /etc/cdedb
 cp /media/cdrom0/localconfig.py /etc/cdedb/config.py
 install -D /media/cdrom0/localconfig.py "$(uv run python3 -m cdedb config default-configpath)"
-chown cdedb:cdedb "$(python3 -m cdedb config default-configpath)"
+chown cdedb:cdedb "$(uv run python3 -m cdedb config default-configpath)"
 # make it world-readable, since it contains no secret data
-chmod 644 "$(python3 -m cdedb config default-configpath)"
+chmod 644 "$(uv run python3 -m cdedb config default-configpath)"
 
 # create default (and public) secrets config
 # dPROD actual secrets
-cat >"$(python3 -m cdedb config get SECRETS_CONFIGPATH)" <<EOF
+cat >"$(uv run python3 -m cdedb config get SECRETS_CONFIGPATH)" <<EOF
 #!/usr/bin/env python3
 #
 # This is the default file for the SecretsConfig. On development and offline instances,
@@ -102,8 +102,8 @@ cat >"$(python3 -m cdedb config get SECRETS_CONFIGPATH)" <<EOF
 # sudo chmod 640 /path/to/your/secrets_config.py
 #
 EOF
-chown cdedb:cdedb "$(python3 -m cdedb config get SECRETS_CONFIGPATH)"
-chmod 644 "$(python3 -m cdedb config get SECRETS_CONFIGPATH)"
+chown cdedb:cdedb "$(uv run python3 -m cdedb config get SECRETS_CONFIGPATH)"
+chmod 644 "$(uv run python3 -m cdedb config get SECRETS_CONFIGPATH)"
 
 # set the mailman htpasswd
 # dPROD different password
