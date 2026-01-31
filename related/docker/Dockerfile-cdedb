@@ -55,7 +55,6 @@ RUN uv run playwright install --with-deps
 # - libmagic1 for python-magic (see https://github.com/ahupp/python-magic/pull/294)
 # - libsystemd-dev for systemd-python
 RUN apt-get update && apt-get install --yes --no-install-recommends \
-    unzip \
     python3-dev \
     g++ \
     pkg-config \
@@ -104,7 +103,7 @@ RUN cp /tmp/autobuild/gitconfig /etc/gitconfig \
     && cp /tmp/autobuild/index.html /var/www/html/ \
     \
     && groupadd --system www-cde \
-    && useradd --system -g www-cde -d /var/lib/cdedb -M www-cde \
+    && useradd --system -g www-cde --create-home www-cde \
     \
     && cp /tmp/autobuild/mailman-htpasswd /etc/cdedb-mailman-htpasswd \
     && chown www-cde:www-data /etc/cdedb-mailman-htpasswd \

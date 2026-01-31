@@ -49,9 +49,19 @@ sudo -u cdedb tee -a /cdedb2/.git/config <<EOF
 [pull]
         rebase = merges
 EOF
-# add cdedb to python path
-mkdir -p /usr/local/lib/python3.11/dist-packages
-sudo ln -s /cdedb2/cdedb/ /usr/local/lib/python3.11/dist-packages/cdedb
+
+echo ""
+echo "Installing python dependencies..."
+echo "--------------------------------------------"
+
+cd /cdedb2
+
+# runtime dependencies for the gunicorn runner.
+sudo -u www-cde UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv uv sync --no-dev --group ldap --no-install-project
+
+# devtools
+# dPROD not present
+sudo -u cdedb uv sync --all-groups
 
 echo ""
 echo "Create local config files..."
@@ -62,15 +72,15 @@ echo "--------------------------------------------"
 
 # move the defaultconfig to the right place
 mkdir /etc/cdedb
-cp /media/cdrom0/localconfig.py /etc/cdedb/config.py
-install -D /media/cdrom0/localconfig.py "$(python3 -m cdedb config default-configpath)"
-chown cdedb:cdedb "$(python3 -m cdedb config default-configpath)"
+touch /etc/cdedb/config.py
+install -D /media/cdrom0/localconfig.py "$(uv run python3 -m cdedb config default-configpath)"
+chown cdedb:cdedb "$(uv run python3 -m cdedb config default-configpath)"
 # make it world-readable, since it contains no secret data
-chmod 644 "$(python3 -m cdedb config default-configpath)"
+chmod 644 "$(uv run python3 -m cdedb config default-configpath)"
 
 # create default (and public) secrets config
 # dPROD actual secrets
-cat >"$(python3 -m cdedb config get SECRETS_CONFIGPATH)" <<EOF
+cat >"$(uv run python3 -m cdedb config get SECRETS_CONFIGPATH)" <<EOF
 #!/usr/bin/env python3
 #
 # This is the default file for the SecretsConfig. On development and offline instances,
@@ -90,8 +100,8 @@ cat >"$(python3 -m cdedb config get SECRETS_CONFIGPATH)" <<EOF
 # sudo chmod 640 /path/to/your/secrets_config.py
 #
 EOF
-chown cdedb:cdedb "$(python3 -m cdedb config get SECRETS_CONFIGPATH)"
-chmod 644 "$(python3 -m cdedb config get SECRETS_CONFIGPATH)"
+chown cdedb:cdedb "$(uv run python3 -m cdedb config get SECRETS_CONFIGPATH)"
+chmod 644 "$(uv run python3 -m cdedb config get SECRETS_CONFIGPATH)"
 
 # set the mailman htpasswd
 # dPROD different password
@@ -113,7 +123,7 @@ echo "Creating storage directory for uploads..."
 echo "--------------------------------------------"
 
 # Create the storage dir itself. Ensure that www-cde owns everything.
-python3 -m cdedb filesystem --owner www-cde --group www-data storage create
+uv run python3 -m cdedb filesystem --owner www-cde --group www-data storage create
 
 echo ""
 echo "Setting up dummy ldap because cyclic dependency..."
@@ -141,8 +151,8 @@ sudo -u postgres psql <<-EOSQL
     CREATE DATABASE nobody WITH OWNER = nobody TEMPLATE = template0 ENCODING = 'UTF8';
     ALTER DATABASE nobody SET datestyle TO 'ISO, YMD';
 EOSQL
-python3 -m cdedb db create-users
-python3 -m cdedb db create
+uv run python3 -m cdedb db create-users
+uv run python3 -m cdedb db create
 
 systemctl stop pgbouncer
 
@@ -249,17 +259,6 @@ if [ -e /media/cdrom0/vdi ]; then
 
 fi
 
-
-echo ""
-echo "Set up the template renderer..."
-echo "--------------------------------------------"
-
-cd /home/cdedb
-# dPROD not present
-sudo -u cdedb git clone ssh://gitea@tracker.cde-ev.de:20009/orgas/cde_render.git \
-    || sudo -u cdedb git clone ssh://gitea@10.9.0.2:63332//orgas/cde_render.git
-sudo -u cdedb cp /media/cdrom0/refresh_template_renderer_data.py .
-chmod +x refresh_template_renderer_data.py
 
 echo ""
 echo "Disable auto-build init..."
