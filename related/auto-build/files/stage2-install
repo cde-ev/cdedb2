@@ -111,7 +111,7 @@ groupadd --system www-cde
 useradd --system -g www-cde --create-home www-cde
 
 # dPROD allow empty passwords
-echo "\nPermitEmptyPasswords yes" >> /etc/ssh/sshd_config
+echo "PermitEmptyPasswords yes" >> /etc/ssh/sshd_config
 
 sudo -u cdedb touch /home/cdedb/.bashrc
 echo "" >> /home/cdedb/.bashrc
