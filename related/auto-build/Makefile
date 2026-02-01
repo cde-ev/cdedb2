@@ -21,9 +21,9 @@ QEMUOPTIONS ?= -m 1G -enable-kvm -net nic,model=virtio -net user,hostfwd=tcp:127
 QEMUCACHING ?= writethrough
 
 # depending whether we are on stable or oldstable...
-# DEBSERVER = https://cdimage.debian.org/cdimage/release
-DEBSERVER = https://meetings-archive.debian.net/cdimage/archive
-DEBVERSION = 12.8.0
+DEBSERVER = https://cdimage.debian.org/cdimage/release
+# DEBSERVER = https://meetings-archive.debian.net/cdimage/archive
+DEBVERSION = 13.3.0
 NETINSTISO = debian-${DEBVERSION}-amd64-netinst.iso
 
 DISTINFO_DATA?= ${AWK} -v alg=$$algo -v file=$${file} \
