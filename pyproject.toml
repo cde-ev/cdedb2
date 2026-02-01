@@ -71,11 +71,12 @@ ldap = [
 ]
 
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["uv_build"]
+build-backend = "uv_build"
 
-[tool.setuptools]
-packages = ["cdedb"]
+[tool.uv.build-backend]
+module-name = "cdedb"
+module-root = ""
 
 [tool.ruff]
 target-version = "py313"
