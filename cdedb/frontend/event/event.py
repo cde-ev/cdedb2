@@ -808,7 +808,6 @@ class EventEventMixin(EventBaseFrontend):
         sorted_track_ids = [e.id for e in xsorted(part.tracks.values())]
 
         current = part.as_dict()
-        del current['id']
         del current['tracks']
 
         # Select the first track by id for every sync track group, disable altering

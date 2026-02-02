@@ -2555,8 +2555,8 @@ def _event_part(
     part_begin = val.get("part_begin")
     part_end = val.get("part_end")
     if creation is False and event:
-        part_begin = part_begin or event.parts[val["id"]].part_begin
-        part_end = part_end or event.parts[val["id"]].part_end
+        part_begin = part_begin or event.parts[kwargs["id_"]].part_begin
+        part_end = part_end or event.parts[kwargs["id_"]].part_end
     if part_begin and part_end and part_begin > part_end:
         errs.append(ValueError("part_end", n_("Must be later than begin.")))
 
