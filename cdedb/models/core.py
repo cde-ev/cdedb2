@@ -293,9 +293,10 @@ class PersonaName(CdEDataclass):
         return self.hasattr(attr) and getattr(self, attr) is False
 
     def to_database(self) -> CdEDBObject:
-        if any(field.value is self.REDACTED for field in dataclasses.fields(self)):
+        ret = super().to_database()
+        if any(val is self.REDACTED for val in ret.values()):
             raise RuntimeError
-        return super().to_database()
+        return ret
 
 
 @dataclasses.dataclass(kw_only=True)
