@@ -4,6 +4,7 @@
 
 import datetime
 import importlib.metadata
+import os
 import pathlib
 import shutil
 import subprocess
@@ -696,8 +697,12 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             )
             result = subprocess.run(
                 cmd := [
-                    'python3',
-                    '-m',
+                    # FIXME: remove special casing once production uses uv.
+                    *(
+                        ['uv']
+                        if "UV_PROJECT_ENVIRONMENT" in os.environ
+                        else ['python3', '-m']
+                    ),
                     'pip',
                     'install',
                     f'schulze_condorcet=={version}',
@@ -708,6 +713,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
                 check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
+                env=os.environ | {"UV_CACHE_DIR": tmp},
             )
             self.logger.info(
                 f"Executing {' '.join(cmd)!r}. Output:\n{result.stdout.decode()}"
