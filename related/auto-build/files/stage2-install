@@ -32,17 +32,17 @@ echo "Getting the system up to date..."
 echo "--------------------------------------------"
 # dPROD only main, no backports (less choice necessary)
 cat > /etc/apt/sources.list <<EOF
-deb http://deb.debian.org/debian bookworm main contrib non-free
-deb-src http://deb.debian.org/debian bookworm main contrib non-free
+deb http://deb.debian.org/debian trixie main contrib non-free
+deb-src http://deb.debian.org/debian trixie main contrib non-free
 
-deb http://deb.debian.org/debian-security/ bookworm-security main contrib non-free
-deb-src http://deb.debian.org/debian-security/ bookworm-security main contrib non-free
+deb http://deb.debian.org/debian-security/ trixie-security main contrib non-free
+deb-src http://deb.debian.org/debian-security/ trixie-security main contrib non-free
 
-deb http://deb.debian.org/debian bookworm-updates main contrib non-free
-deb-src http://deb.debian.org/debian bookworm-updates main contrib non-free
+deb http://deb.debian.org/debian trixie-updates main contrib non-free
+deb-src http://deb.debian.org/debian trixie-updates main contrib non-free
 
-deb http://deb.debian.org/debian bookworm-backports main contrib non-free
-deb-src http://deb.debian.org/debian bookworm-backports main contrib non-free
+deb http://deb.debian.org/debian trixie-backports main contrib non-free
+deb-src http://deb.debian.org/debian trixie-backports main contrib non-free
 EOF
 
 sleep 3
@@ -76,7 +76,6 @@ apt-get install --yes --no-install-recommends                       \
     python3-dev libicu-dev libsystemd-dev libjpeg-dev libxml2-dev   \
     libxslt1-dev libpq-dev
 
-python3 -m pip install --upgrade pip --break-system-packages
 python3 -m pip install --break-system-packages uv
 echo 'eval "$(uv generate-shell-completion bash)"' >> ~/.bashrc
 echo 'eval "$(uvx --generate-shell-completion bash)"' >> ~/.bashrc
