@@ -793,7 +793,7 @@ class EventEventMixin(EventBaseFrontend):
             raise ValueError(n_("Registrations exist, no part creation possible."))
 
         data = check(
-            rs, vtypes.EventPart, data, creation=True, event=rs.ambience["event"]
+            rs, models.EventPart, data, creation=True, event=rs.ambience["event"]
         )
         if rs.has_validation_errors():
             return self.add_part_form(rs, event_id)
@@ -827,7 +827,6 @@ class EventEventMixin(EventBaseFrontend):
         sorted_track_ids = [e.id for e in xsorted(part.tracks.values())]
 
         current = part.as_dict()
-        del current['id']
         del current['tracks']
 
         # Select the first track by id for every sync track group, disable altering
@@ -877,7 +876,7 @@ class EventEventMixin(EventBaseFrontend):
         self, rs: RequestState, event_id: int, part_id: int, data: CdEDBObject
     ) -> Response:
         """Change one part, including the associated tracks and fee modifiers."""
-        data = check(rs, vtypes.EventPart, data, event=rs.ambience["event"])
+        data = check(rs, models.EventPart, data, event=rs.ambience["event"])
         if rs.has_validation_errors():
             return self.change_part_form(rs, event_id, part_id)
         assert data is not None
@@ -925,7 +924,7 @@ class EventEventMixin(EventBaseFrontend):
                         for t_id in tg.tracks:
                             p_id = rs.ambience['event'].tracks[t_id].part_id
                             if p_id not in part_data:
-                                part_data[p_id] = vtypes.EventPart({'tracks': {}})
+                                part_data[p_id] = {'tracks': {}}
                             if t_id not in part_data[p_id]['tracks']:
                                 part_data[p_id]['tracks'][t_id] = {}
                             part_data[p_id]['tracks'][t_id].update({

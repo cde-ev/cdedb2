@@ -60,7 +60,7 @@ class TestEventModels(BackendTest):
                     id=1,  # type: ignore[arg-type]
                     event_id=vtypes.ID(1),
                     title="Warmup",
-                    shortname="Wu",
+                    shortname=vtypes.Identifier("Wu"),
                     part_begin=datetime.date(2222, 2, 2),
                     part_end=datetime.date(2222, 2, 2),
                     waitlist_field_id=None,
@@ -71,7 +71,7 @@ class TestEventModels(BackendTest):
                     id=2,  # type: ignore[arg-type]
                     event_id=vtypes.ID(1),
                     title="Erste Hälfte",
-                    shortname="1.H.",
+                    shortname=vtypes.Identifier("1.H."),
                     part_begin=datetime.date(2222, 11, 1),
                     part_end=datetime.date(2222, 11, 11),
                     waitlist_field_id=None,
@@ -82,7 +82,7 @@ class TestEventModels(BackendTest):
                     id=3,  # type: ignore[arg-type]
                     event_id=vtypes.ID(1),
                     title="Zweite Hälfte",
-                    shortname="2.H.",
+                    shortname=vtypes.Identifier("2.H."),
                     part_begin=datetime.date(2222, 11, 11),
                     part_end=datetime.date(2222, 11, 30),
                     waitlist_field_id=None,
@@ -473,7 +473,7 @@ class TestEventModels(BackendTest):
                     id=6,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="1. Hälfte Oberwesel",
-                    shortname="O1",
+                    shortname=vtypes.Identifier("O1"),
                     part_begin=datetime.date(3000, 1, 1),
                     part_end=datetime.date(3000, 2, 1),
                     waitlist_field_id=None,
@@ -484,7 +484,7 @@ class TestEventModels(BackendTest):
                     id=7,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="1. Hälfte Windischleuba",
-                    shortname="W1",
+                    shortname=vtypes.Identifier("W1"),
                     part_begin=datetime.date(3000, 1, 1),
                     part_end=datetime.date(3000, 2, 1),
                     waitlist_field_id=None,
@@ -495,7 +495,7 @@ class TestEventModels(BackendTest):
                     id=8,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="1. Hälfte Kaub",
-                    shortname="K1",
+                    shortname=vtypes.Identifier("K1"),
                     part_begin=datetime.date(3000, 1, 1),
                     part_end=datetime.date(3000, 2, 1),
                     waitlist_field_id=None,
@@ -506,7 +506,7 @@ class TestEventModels(BackendTest):
                     id=9,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="2. Hälfte Oberwesel",
-                    shortname="O2",
+                    shortname=vtypes.Identifier("O2"),
                     part_begin=datetime.date(3000, 2, 1),
                     part_end=datetime.date(3000, 3, 1),
                     waitlist_field_id=None,
@@ -517,7 +517,7 @@ class TestEventModels(BackendTest):
                     id=10,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="2. Hälfte Windischleuba",
-                    shortname="W2",
+                    shortname=vtypes.Identifier("W2"),
                     part_begin=datetime.date(3000, 2, 1),
                     part_end=datetime.date(3000, 3, 1),
                     waitlist_field_id=None,
@@ -528,7 +528,7 @@ class TestEventModels(BackendTest):
                     id=11,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="2. Hälfte Kaub",
-                    shortname="K2",
+                    shortname=vtypes.Identifier("K2"),
                     part_begin=datetime.date(3000, 2, 1),
                     part_end=datetime.date(3000, 3, 1),
                     waitlist_field_id=None,
@@ -539,7 +539,7 @@ class TestEventModels(BackendTest):
                     id=12,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="Silvesterfeier",
-                    shortname="Feier",
+                    shortname=vtypes.Identifier("Feier"),
                     part_begin=datetime.date(2999, 12, 31),
                     part_end=datetime.date(3000, 1, 1),
                     waitlist_field_id=None,
