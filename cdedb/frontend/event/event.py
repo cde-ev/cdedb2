@@ -74,19 +74,38 @@ class EventEventMixin(EventBaseFrontend):
         other_event_list = self.eventproxy.list_events(
             rs, current=False, archived=False
         )
-        current_events = self.eventproxy.get_events(rs, current_event_list)
-        other_events = self.eventproxy.get_events(
-            rs, set(other_event_list) - set(rs.user.orga)
-        )
-        orga_events = self.eventproxy.get_events(rs, rs.user.orga)
 
         events_registration: dict[int, Optional[bool]] = {}
         events_payment_pending: dict[int, bool] = {}
         if "event" in rs.user.roles:
-            for event_id, event in current_events.items():
+            for event_id in current_event_list:
                 events_registration[event_id], events_payment_pending[event_id] = (
                     self.eventproxy.get_registration_payment_info(rs, event_id)
                 )
+
+        current_events = [
+            event
+            for event in self.eventproxy.get_events(rs, current_event_list).values()
+            if event.is_visible_for(
+                rs.user,
+                is_registered=bool(events_registration.get(event.id)),
+                privileged=False,
+            )
+        ]
+        other_events = [
+            event
+            for event in self.eventproxy.get_events(rs, other_event_list).values()
+            if event.is_visible_for(
+                rs.user,
+                is_registered=bool(events_registration.get(event.id, False)),
+                privileged=False,
+            )
+        ]
+        orga_events = [
+            event
+            for event in self.eventproxy.get_events(rs, rs.user.orga).values()
+            if event.is_current_for_orga()
+        ]
 
         return self.render(
             rs,

@@ -194,7 +194,7 @@ class TestCdEBackend(BackendTest):
                 'account_address': 'Im Geldspeicher 1',
                 'account_owner': 'Dagobert Anatidae & Co. KG',
                 'granted_at': datetime.datetime(2002, 2, 22, 20, 22, 22, 222222,
-                                                tzinfo=datetime.timezone.utc),
+                                                tzinfo=datetime.UTC),
                 'iban': 'DE12500105170648489890',
                 'id': 2,
                 'notes': 'reicher Onkel',
@@ -207,7 +207,7 @@ class TestCdEBackend(BackendTest):
         update = {
             'id': 2,
             'notes': 'ehem. reicher Onkel',
-            'revoked_at': datetime.datetime.now(datetime.timezone.utc),
+            'revoked_at': datetime.datetime.now(datetime.UTC),
         }
         self.assertLess(0, self.cde.set_lastschrift(self.key, update))
         expectation[2].update(update)
@@ -218,7 +218,7 @@ class TestCdEBackend(BackendTest):
         newdata = {
             'account_address': None,
             'account_owner': None,
-            'granted_at': datetime.datetime.now(datetime.timezone.utc),
+            'granted_at': datetime.datetime.now(datetime.UTC),
             'iban': 'DE69370205000008068902',
             'notes': None,
             'persona_id': 3,
@@ -269,7 +269,7 @@ class TestCdEBackend(BackendTest):
         newdata = {
             'account_address': None,
             'account_owner': None,
-            'granted_at': datetime.datetime.now(datetime.timezone.utc),
+            'granted_at': datetime.datetime.now(datetime.UTC),
             'iban': 'DE69370205000008068902',
             'notes': None,
             'persona_id': 3,
@@ -294,12 +294,12 @@ class TestCdEBackend(BackendTest):
                 'amount': decimal.Decimal('32.00'),
                 'id': 1,
                 'issued_at': datetime.datetime(2000, 3, 21, 22, 0,
-                                               tzinfo=datetime.timezone.utc),
+                                               tzinfo=datetime.UTC),
                 'lastschrift_id': 1,
                 'period_id': 41,
                 'payment_date': datetime.date(2000, 4, 4),
                 'processed_at': datetime.datetime(2012, 3, 22, 20, 22, 22, 222222,
-                                                  tzinfo=datetime.timezone.utc),
+                                                  tzinfo=datetime.UTC),
                 'status': 12,
                 'submitted_by': 1,
                 'tally': decimal.Decimal('0.00'),
@@ -420,7 +420,7 @@ class TestCdEBackend(BackendTest):
         newdata = {
             'account_address': None,
             'account_owner': None,
-            'granted_at': datetime.datetime.now(datetime.timezone.utc),
+            'granted_at': datetime.datetime.now(datetime.UTC),
             'iban': 'DE69370205000008068902',
             'notes': None,
             'persona_id': 3,
@@ -532,11 +532,10 @@ class TestCdEBackend(BackendTest):
         # Create two (identical) past events and add any cde user to them, to
         #  create duplicates in the cde user view.
         pevent_id = self.pastevent.create_past_event(self.key, pevent_data)
-        self.pastevent.add_participant(
-            self.key, pevent_id, pcourse_id=None, persona_id=self.user['id'])
+        self.pastevent.set_participant(self.key, pevent_id, persona_id=self.user['id'])
         pevent_id_duplicate = self.pastevent.create_past_event(self.key, pevent_data)
-        self.pastevent.add_participant(
-            self.key, pevent_id_duplicate, pcourse_id=None, persona_id=self.user['id'])
+        self.pastevent.set_participant(
+            self.key, pevent_id_duplicate, persona_id=self.user['id'])
 
         # Check that the aggregate sums correctly.
         result = self.cde.submit_general_query(self.key, query, aggregate=False)
@@ -561,9 +560,9 @@ class TestCdEBackend(BackendTest):
 
         # Check that filtering by past event works.
         self.pastevent.remove_participant(
-            self.key, pevent_id_duplicate, pcourse_id=None, persona_id=self.user['id'])
-        self.pastevent.add_participant(
-            self.key, pevent_id_duplicate, pcourse_id=None, persona_id=other_user['id'])
+            self.key, pevent_id_duplicate, persona_id=self.user['id'])
+        self.pastevent.set_participant(
+            self.key, pevent_id_duplicate, persona_id=other_user['id'])
         query = Query(
             QueryScope.cde_user, QueryScope.cde_user.get_spec(),
             ['personas.id', 'is_member'],

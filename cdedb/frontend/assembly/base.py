@@ -4,6 +4,7 @@
 
 import datetime
 import importlib.metadata
+import os
 import pathlib
 import shutil
 import subprocess
@@ -694,10 +695,14 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
                 self.conf['REPOSITORY_PATH'] / 'static' / 'verify_result.py',
                 pkg / '__main__.py',
             )
-            subprocess.run(
-                [
-                    'python3',
-                    '-m',
+            result = subprocess.run(
+                cmd := [
+                    # FIXME: remove special casing once production uses uv.
+                    *(
+                        ['uv']
+                        if "UV_PROJECT_ENVIRONMENT" in os.environ
+                        else ['python3', '-m']
+                    ),
                     'pip',
                     'install',
                     f'schulze_condorcet=={version}',
@@ -706,7 +711,12 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
                 ],
                 cwd=tmp,
                 check=True,
-                stdout=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                env=os.environ | {"UV_CACHE_DIR": tmp},
+            )
+            self.logger.info(
+                f"Executing {' '.join(cmd)!r}. Output:\n{result.stdout.decode()}"
             )
             shutil.rmtree(pkg / f'schulze_condorcet-{version}.dist-info')
             output = temp / 'verify_result.pyz'

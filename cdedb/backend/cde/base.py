@@ -15,7 +15,7 @@ import copy
 import dataclasses
 import decimal
 from collections import OrderedDict
-from typing import Optional, Union
+from typing import Optional
 
 import psycopg2.extensions
 
@@ -552,13 +552,21 @@ class CdEBaseBackend(AbstractBackend):
         else:
             raise RuntimeError(n_("Impossible."))
         if datum['pevent_id'] and persona_id:
-            self.pastevent.add_participant(
+            orga_status = const.PastOrgaKind.none
+            if datum["is_orga"]:
+                orga_status = const.PastOrgaKind.al
+            self.pastevent.set_participant(
                 rs,
                 datum['pevent_id'],
-                datum['pcourse_id'],
                 persona_id,
-                is_instructor=datum['is_instructor'],
-                is_orga=datum['is_orga'],
+                orga_status=orga_status,
+            )
+        if datum['pcourse_id'] and persona_id:
+            instructor_status = const.PastInstructorKind.none
+            if datum["is_instructor"]:
+                instructor_status = const.PastInstructorKind.kl
+            self.pastevent.set_course_assignments(
+                rs, datum['pcourse_id'], persona_id, instructor_status=instructor_status
             )
         return persona_id
 
@@ -569,7 +577,7 @@ class CdEBaseBackend(AbstractBackend):
         data: list[CdEDBObject],
         trial_membership: bool,
         consent: bool,
-    ) -> tuple[bool, Union[BatchAdmissionStats, int, None]]:
+    ) -> tuple[bool, BatchAdmissionStats | int | None]:
         """Atomized call to recruit new members.
 
         The frontend wants to do this in its entirety or not at all, so this

@@ -40,7 +40,7 @@
         {{ util.anti_csrf_token('core/add_companions') }}
         <div class="input-group has-success">
             <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-            {{ util.input_text(name="companion_ids", anid="input-add-involved",
+            {{ util.input_text(type="search", name="companion_ids", anid="input-add-involved",
                                placeholder="DB-XXXX-X,DB-XXXX-X,…",
                                arialabel=gettext("IDs of the new involved people")) }}
             <script nonce="{{ csp_nonce }}">

@@ -17,7 +17,7 @@ import datetime
 import decimal
 from collections.abc import Collection
 from secrets import token_hex
-from typing import Any, Literal, Optional, Protocol, Union, overload
+from typing import Any, Literal, Optional, Protocol, overload
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -1525,7 +1525,7 @@ class CoreBaseBackend(AbstractBackend):
         self,
         rs: RequestState,
         persona_id: int,
-        balance: Union[str, decimal.Decimal],
+        balance: str | decimal.Decimal,
         log_code: const.FinanceLogCodes,
         change_note: Optional[str] = None,
         transaction_date: Optional[datetime.date] = None,
@@ -2358,6 +2358,16 @@ class CoreBaseBackend(AbstractBackend):
             #
             # 2. Remove past event data.
             #
+            query = """
+                SELECT id FROM past_event.participants
+                WHERE persona_id = %(persona_id)s
+            """
+            participant_ids = {
+                e["id"] for e in self.query_all(rs, query, {"persona_id": persona_id})
+            }
+            self.sql_delete(
+                rs, "past_event.course_participants", participant_ids, "participant_id"
+            )
             self.sql_delete(rs, "past_event.participants", (persona_id,), "persona_id")
             #
             # 3. Clear changelog

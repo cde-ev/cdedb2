@@ -194,7 +194,7 @@ def work(
             if input("Are you sure (type uppercase YES)? ").strip() != "YES":
                 print("Aborting.")
                 sys.exit()
-        cmd = ['sudo', '-E', 'python3', '-m', 'cdedb', 'dev', 'apply-sample-data']
+        cmd = ['sudo', '-E', 'uv', 'run', 'cdedb', 'dev', 'apply-sample-data']
         if not args.test:
             cmd.append('--owner')
             cmd.append('www-cde')
@@ -224,8 +224,8 @@ def work(
     cmd = [
         'sudo',
         '-E',
-        'python3',
-        '-m',
+        'uv',
+        'run',
         'cdedb',
         'filesystem',
         'storage',

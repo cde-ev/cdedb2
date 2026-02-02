@@ -1,7 +1,7 @@
 import dataclasses
 import datetime
 from collections import defaultdict
-from typing import Self
+from typing import Any, Self
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -108,3 +108,56 @@ class PastCourse(CdEDataclass):
             ]
             for pevent_id, pevent_pcourses in pcourses_by_event.items()
         }
+
+
+@dataclasses.dataclass
+class PastEventParticipant(CdEDataclass):
+    database_table = "past_event.participants"
+
+    persona_id: vtypes.ID
+    persona: dict[str, Any] = dataclasses.field(
+        compare=False, repr=False, metadata=Meta.exclude.as_dict
+    )
+
+    pevent_id: vtypes.ID
+    pevent: PastEvent = dataclasses.field(compare=False, repr=False)
+
+    orga_status: const.PastOrgaKind
+    music_status: const.PastMusicKind
+
+    course_assignments: list["PastCourseAssignment"] = dataclasses.field(
+        init=False, default_factory=list
+    )
+
+    @property
+    def status(self) -> list[const.PastOrgaKind | const.PastMusicKind]:
+        """List of all stati which are not 'none'."""
+        ret: list[const.PastOrgaKind | const.PastMusicKind] = []
+        if self.orga_status:
+            ret.append(self.orga_status)
+        if self.music_status:
+            ret.append(self.music_status)
+        return ret
+
+    def get_sortkey(self) -> Sortkey:
+        return (
+            self.persona["family_name"],
+            self.persona["given_names"],
+            self.persona_id,
+            *self.pevent.get_sortkey(),
+        )
+
+
+@dataclasses.dataclass
+class PastCourseAssignment(CdEDataclass):
+    database_table = "past_event.course_participants"
+
+    persona_id: vtypes.ID
+    participant_id: vtypes.ID
+    pcourse_id: vtypes.ID
+    pcourse: PastCourse = dataclasses.field(compare=False, repr=False)
+
+    instructor_status: const.PastInstructorKind
+
+    def get_sortkey(self) -> Sortkey:
+        return self.pcourse.get_sortkey()

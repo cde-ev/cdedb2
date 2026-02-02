@@ -2089,7 +2089,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f = self.response.forms['configureballotform']
         f['title'] = "Längere Wahl"
         f['vote_extension_end'] = datetime.datetime(2222, 2, 23,
-                                                    tzinfo=datetime.timezone.utc)
+                                                    tzinfo=datetime.UTC)
         f['abs_quorum'] = 1
         self.submit(f)
         ballots = self.assembly.get_ballots(self.key, (16, 1001))

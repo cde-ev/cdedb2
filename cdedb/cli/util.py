@@ -8,9 +8,9 @@ import io
 import os
 import pathlib
 import pwd
-from collections.abc import Generator, Iterator
+from collections.abc import Callable, Generator, Iterator
 from shutil import which
-from typing import Any, Callable, Optional, Union
+from typing import Any, Optional
 
 import click
 import psycopg2.extras
@@ -69,7 +69,7 @@ def sanity_check_production(fun: Callable[..., Any]) -> Callable[..., Any]:
 
 
 @contextlib.contextmanager
-def switch_user(user: str, group: Optional[str] = None) -> Generator[None, None, None]:
+def switch_user(user: str, group: Optional[str] = None) -> Generator[None]:
     """Use as context manager to temporary switch the running user's effective uid."""
     original_uid = os.geteuid()
     original_gid = os.getegid()
@@ -194,7 +194,7 @@ def fake_rs(
 
 @contextlib.contextmanager
 def redirect_to_file(
-    outfile: Union[pathlib.Path, io.StringIO, None], append: bool = False
+    outfile: pathlib.Path | io.StringIO | None, append: bool = False
 ) -> Iterator[None]:
     """Context manager to open a file in either append or write mode and redirect both
     stdout and std err into the file.

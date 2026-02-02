@@ -1,7 +1,7 @@
 [project]
 name = "cdedb2"
 version = "2.1.0"
-requires-python = ">=3.11"
+requires-python = ">=3.13,<3.14"
 dependencies = [
     "babel==2.17.0",
     "bleach==6.2.0",
@@ -14,6 +14,7 @@ dependencies = [
     "gunicorn==23.0.0",
     "jinja2==3.1.6",
     "ldap3==2.9.1",
+    "legacy-cgi; python_version >= '3.13'",
     "lxml==5.4.0",
     "mailmanclient==3.3.5",
     "markdown==3.7",
@@ -69,11 +70,16 @@ ldap = [
     "systemd-python==235",
 ]
 
-[tool.setuptools]
-packages = ["cdedb"]
+[build-system]
+requires = ["uv_build"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "cdedb"
+module-root = ""
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py313"
 line-length = 88
 preview = true
 output-format = "concise"
@@ -125,6 +131,10 @@ ignore = [
     "PLR6301",  # Method could be static.
     "PLR2004",  # Magic value comparison.
     "COM812",  # Enforced trailing commas. Disabled due to incompatibility with ruff format.
+    "UP040",
+    "UP045",
+    "UP046",
+    "UP047",
 ]
 [tool.ruff.lint.per-file-ignores]
 "tests/frontend_tests/__init__.py" = ["F401"]
@@ -141,7 +151,7 @@ known-first-party = ["cdedb", "tests"]
 combine-as-imports = true
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.13"
 show_error_codes = true
 #show_error_context = true
 enable_error_code = "ignore-without-code"
@@ -168,6 +178,7 @@ module = [
     # general
     "icu",
     "systemd.*",
+    "cgitb",
     # ldap
     "ldaptor.*",
     # frontend

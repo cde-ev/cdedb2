@@ -8,7 +8,7 @@ import io
 import json
 import time
 from collections.abc import Collection
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import werkzeug.exceptions
 from schulze_condorcet import pairwise_preference, schulze_evaluate_detailed
@@ -664,7 +664,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
             result['rejected'] = rejected
 
             # vote count for classical vote ballots
-            counts: Union[dict[str, int], list[DetailedResultLevel]]
+            counts: dict[str, int] | list[DetailedResultLevel]
             if ballot['votes']:
                 counts = {e['shortname']: 0 for e in ballot['candidates'].values()}
                 if ballot['use_bar']:

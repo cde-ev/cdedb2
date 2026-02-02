@@ -4,7 +4,8 @@ import sys
 import tempfile
 import typing
 import unittest
-from typing import Any, Callable, ClassVar
+from collections.abc import Callable
+from typing import Any, ClassVar
 
 from cdedb.backend.core import CoreBackend
 from cdedb.cli.util import redirect_to_file

@@ -1,6 +1,7 @@
 {% set sidenav_active='cde_past_events' %}
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/cde/past_event/generic.tmpl" as generic with context %}
 
 {% if "past_event" in user.admin_views %}
     {% set jshint='weak' %}
@@ -25,6 +26,7 @@
     {{ util.breadcrumb_link(cdedblink("cde/show_past_course", {'pcourse_id' : ambience['pcourse']['id']}),
             ambience['pcourse']['title'], icon="book", active=True) }}
 {% endblock %}
+
 {% block content %}
     {% if "past_event" in user.admin_views %}
         <div class="p">
@@ -36,39 +38,33 @@
     <div id="description">{{ ambience['pcourse']['description']|md }}</div>
 
     {% call util.h(n_("Participants"), level=2) %}
-        [{{ participants|length + extra_participants }}]
+        [{{ total_participant_number }}]
     {% endcall %}
     {% if "past_event" in user.admin_views %}
         {% call util.bootstrap_panel(title=gettext("Add Participant to this Course"),
                 aclass="panel-success panel-condensed", icon='plus') %}
-                <form action="{{ cdedblink('cde/add_participants') }}" method="POST" id="addparticipantform">
-                    {{ util.anti_csrf_token('cde/add_participants') }}
+                <form action="{{ cdedblink('cde/set_course_assignments') }}" method="POST" id="addparticipantform">
+                    {{ util.anti_csrf_token('cde/set_course_assignments') }}
                     {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
                     <div class="row">
-                        <div class="col-sm-5 {% if 'persona_ids' in errors %}has-error{% endif %}">
+                        <div class="col-sm-8 {% if 'persona_ids' in errors %}has-error{% endif %}">
                             {% call util.output_errors('persona_ids') %}
-                                {{ util.input_text(name="persona_ids", placeholder="DB-XXXX-X,DB-XXXX-X,…",
+                                {{ util.input_text(type="search", name="persona_ids", placeholder="DB-XXXX-X,DB-XXXX-X,…",
                                                    anid='input-add-participant', aclass='form-control input-sm',
                                                    arialabel=gettext("ID of the new Participant")) }}
                                 <script nonce="{{ csp_nonce }}">
                                     $('#input-add-participant').cdedbSearchPerson(
                                         '{{ cdedblink('core/select_persona') }}', {'kind' : 'past_event_user'},
-                                        {{ participants.keys()|list|tojson }}, false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
+                                        [], false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                                     );
                                 </script>
                             {% endcall %}
                         </div>
                         <div class="col-sm-2">
-                            <div class="checkbox input-sm">
-                                {{ util.input_checkbox(name="is_instructor", label=gettext("Instructor")) }}
-                            </div>
+                                {{ util.input_select(name="instructor_status", aclass="form-control select-action input-sm",
+                                                     entries=enums['PastInstructorKind']|enum_entries(processing=gettext)) }}
                         </div>
                         <div class="col-sm-2">
-                            <div class="checkbox input-sm">
-                                {{ util.input_checkbox(name="is_orga", label=gettext("Orga")) }}
-                            </div>
-                        </div>
-                        <div class="col-sm-3">
                             {{ util.input_submit(label=gettext("Add"), aclass="btn btn-primary btn-sm") }}
                         </div>
                     </div>
@@ -77,35 +73,31 @@
     {% endif %}
     {% if participants %}
         <ul id="list-participants" class="flex-width">
-            {% for anid, participant in participants.items() %} {# This dict is already sorted. #}
+            {% for participant in participants.values() %} {# This dict is already sorted. #}
                 <li class="hide-hover-container clearfix-after">
-                    {% if participant['instructor'] %}<strong>{% endif %}
-                    {% if participant['viewable'] %}
-                        {{ util.persona_anchor(personas[anid], include_nickname=true, quote_me=not is_admin) }}
-                    {% else %}
-                        {{ personas[anid]|persona_name(include_nickname=true) }}
+                    {% if participant.instructor_status %}<strong>{% endif %}
+                    {{ generic.print_persona(personas[participant.persona_id]) }}
+                    {% if participant.instructor_status %}</strong>{% endif %}
+                    {% if participant.instructor_status %}
+                        ({{ gettext(participant.instructor_status|string) }})
                     {% endif %}
-                    {% if participant['instructor'] %}</strong>{% endif %}
-                    {% if participant['instructor'] %}({% trans %}Instructor{% endtrans %}){% endif %}
-                    {% if participant['is_orga'] %}({% trans %}Orga{% endtrans %}){% endif %}
                     {% if "past_event" in user.admin_views %}
-                        <form action="{{ cdedblink('cde/remove_participant') }}" method="POST"
-                              id="removeparticipantform{{ anid }}" style="display: inline;"
+                        <form action="{{ cdedblink('cde/remove_course_assignment') }}" method="POST"
+                              id="removeparticipantform{{ participant.persona_id }}" style="display: inline;"
                               class="delete-participant-form hide-hover display-inline">
-                            {{ util.anti_csrf_token('cde/remove_participant') }}
-                            {{ util.input_hidden(name="persona_id", value=anid) }}
+                            {{ util.anti_csrf_token('cde/remove_course_assignment') }}
+                            {{ util.input_hidden(name="persona_id", value=participant.persona_id) }}
                             {{ util.input_hidden(name="pcourse_id", value=values['pcourse_id']) }}
                             {{ util.ack_delete(gettext("The Participant will be removed from this Course.")) }}
                             {{ util.input_submit(title=gettext("Remove"), icon="minus",
-                                    aclass="btn btn-xs btn-danger list-button-float",
-                                    label="") }}
+                                    aclass="btn btn-xs btn-danger list-button-float", label="") }}
                         </form>
                     {% endif %}
                 </li>
             {% endfor %}
-            {% if extra_participants %}
+            {% if participants|length != total_participant_number %}
                 <li id="count-extra-participants">
-                    {% trans count=extra_participants %}
+                    {% trans count=total_participant_number - participants|length %}
                         and_one_more
                     {%- pluralize count -%}
                         and_count_more
@@ -113,10 +105,10 @@
                 </li>
             {% endif %}
         </ul>
-    {% elif extra_participants %}
+    {% elif total_participant_number %}
         <p>
             <i id="count-extra-participants">
-                {% trans count=extra_participants %}
+                {% trans count=total_participant_number %}
                     {{ count }} Participant
                 {%- pluralize count -%}
                     {{ count }} Participants

@@ -30,9 +30,9 @@ import inspect
 import itertools
 import logging
 import re
-from collections.abc import Collection, Iterable
+from collections.abc import Callable, Collection, Iterable
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Self, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Self, cast
 
 import cdedb.common.parse.util as parse_util
 import cdedb.database.constants as const

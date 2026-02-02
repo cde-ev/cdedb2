@@ -51,7 +51,7 @@ class TestComplaintBackend(BackendTest):
                             entry_id=1,  # type: ignore[arg-type]
                             length=146,
                             timestamp=datetime.datetime(
-                                2025, 5, 28, 14, tzinfo=datetime.timezone.utc
+                                2025, 5, 28, 14, tzinfo=datetime.UTC
                             ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
@@ -71,7 +71,7 @@ class TestComplaintBackend(BackendTest):
                             entry_id=2,  # type: ignore[arg-type]
                             length=258,
                             timestamp=datetime.datetime(
-                                2025, 5, 28, 14, tzinfo=datetime.timezone.utc
+                                2025, 5, 28, 14, tzinfo=datetime.UTC
                             ),
                             attachment_hash="REDACTED:d28c1a205a1d",
                             attachment_title="Aussage von Charly",
@@ -94,7 +94,7 @@ class TestComplaintBackend(BackendTest):
                             entry_id=3,  # type: ignore[arg-type]
                             length=None,
                             timestamp=datetime.datetime(
-                                2025, 5, 28, 15, tzinfo=datetime.timezone.utc
+                                2025, 5, 28, 15, tzinfo=datetime.UTC
                             ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
@@ -114,7 +114,7 @@ class TestComplaintBackend(BackendTest):
                             entry_id=4,  # type: ignore[arg-type]
                             length=80,
                             timestamp=datetime.datetime(
-                                2025, 5, 28, 16, tzinfo=datetime.timezone.utc
+                                2025, 5, 28, 16, tzinfo=datetime.UTC
                             ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
@@ -128,7 +128,7 @@ class TestComplaintBackend(BackendTest):
                             entry_id=4,  # type: ignore[arg-type]
                             length=77,
                             timestamp=datetime.datetime(
-                                2025, 5, 28, 16, tzinfo=datetime.timezone.utc
+                                2025, 5, 28, 16, tzinfo=datetime.UTC
                             ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
@@ -148,7 +148,7 @@ class TestComplaintBackend(BackendTest):
                             entry_id=5,  # type: ignore[arg-type]
                             length=53,
                             timestamp=datetime.datetime(
-                                2025, 5, 28, 16, tzinfo=datetime.timezone.utc
+                                2025, 5, 28, 16, tzinfo=datetime.UTC
                             ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
@@ -168,10 +168,10 @@ class TestComplaintBackend(BackendTest):
                             entry_id=6,  # type: ignore[arg-type]
                             length=26,
                             timestamp=datetime.datetime(
-                                2025, 5, 31, 23, 6, 25, tzinfo=datetime.timezone.utc
+                                2025, 5, 31, 23, 6, 25, tzinfo=datetime.UTC
                             ),
                             etime=datetime.datetime(
-                                2025, 6, 8, 6, 6, 25, tzinfo=datetime.timezone.utc
+                                2025, 6, 8, 6, 6, 25, tzinfo=datetime.UTC
                             ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
@@ -192,7 +192,7 @@ class TestComplaintBackend(BackendTest):
                             entry_id=7,  # type: ignore[arg-type]
                             length=91,
                             timestamp=datetime.datetime(
-                                2025, 6, 9, 12, 0, tzinfo=datetime.timezone.utc
+                                2025, 6, 9, 12, 0, tzinfo=datetime.UTC
                             ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
@@ -211,7 +211,7 @@ class TestComplaintBackend(BackendTest):
                             entry_id=8,  # type: ignore[arg-type]
                             length=68,
                             timestamp=datetime.datetime(
-                                2025, 6, 10, 12, 0, tzinfo=datetime.timezone.utc
+                                2025, 6, 10, 12, 0, tzinfo=datetime.UTC
                             ),
                             ctime=nearly_now(),
                             submitted_by=1,  # type: ignore[arg-type]
@@ -231,7 +231,7 @@ class TestComplaintBackend(BackendTest):
                             entry_id=vtypes.ID(9),
                             length=33,
                             timestamp=datetime.datetime(
-                                3000, 1, 1, 0, 0, tzinfo=datetime.timezone.utc
+                                3000, 1, 1, 0, 0, tzinfo=datetime.UTC
                             ),
                             ctime=nearly_now(),
                             submitted_by=vtypes.ID(1),
@@ -1197,9 +1197,7 @@ class TestComplaintBackend(BackendTest):
                 ctime=nearly_now(),
                 submitted_by=1,  # type: ignore[arg-type]
                 authors={3},  # type: ignore[arg-type]
-                timestamp=datetime.datetime(
-                    2025, 5, 28, 16, tzinfo=datetime.timezone.utc
-                ),
+                timestamp=datetime.datetime(2025, 5, 28, 16, tzinfo=datetime.UTC),
             ),
         }
         descriptions_expectation = {
@@ -1612,7 +1610,7 @@ class TestComplaintValidation(TestValidationBase):
                     {
                         "description": None,
                         "timestamp": datetime.datetime(
-                            2025, 5, 30, 20, 25, tzinfo=datetime.timezone.utc
+                            2025, 5, 30, 20, 25, tzinfo=datetime.UTC
                         ),
                         "authors": [1],
                         "etime": None,
@@ -1638,14 +1636,14 @@ class TestComplaintValidation(TestValidationBase):
                 (
                     {
                         "timestamp": datetime.datetime(
-                            2025, 5, 30, 22, 25, tzinfo=datetime.timezone.utc
+                            2025, 5, 30, 22, 25, tzinfo=datetime.UTC
                         ),
                         "authors": ["DB-1-9"],
                     },
                     {
                         "description": None,
                         "timestamp": datetime.datetime(
-                            2025, 5, 30, 22, 25, tzinfo=datetime.timezone.utc
+                            2025, 5, 30, 22, 25, tzinfo=datetime.UTC
                         ),
                         "authors": [1],
                         "etime": None,
@@ -1677,10 +1675,10 @@ class TestComplaintValidation(TestValidationBase):
                         "description": "Test.",
                         "authors": [1],
                         "timestamp": datetime.datetime(
-                            2025, 5, 30, 20, 25, tzinfo=datetime.timezone.utc
+                            2025, 5, 30, 20, 25, tzinfo=datetime.UTC
                         ),
                         "etime": datetime.datetime(
-                            2025, 5, 31, 20, 25, tzinfo=datetime.timezone.utc
+                            2025, 5, 31, 20, 25, tzinfo=datetime.UTC
                         ),
                         "attachment_hash": None,
                         "attachment_title": None,

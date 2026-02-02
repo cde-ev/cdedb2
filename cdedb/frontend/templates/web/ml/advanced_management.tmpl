@@ -58,7 +58,7 @@
                 {{ util.anti_csrf_token('ml/add_subscription_overrides') }}
                 <div class="input-group has-success">
                     <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-                    {{ util.input_text(name="modsubscriber_ids", anid="input-add-forced", placeholder="DB-XXXX-X,DB-XXXX-X,…",
+                    {{ util.input_text(type="search", name="modsubscriber_ids", anid="input-add-forced", placeholder="DB-XXXX-X,DB-XXXX-X,…",
                                        arialabel=gettext("ID of the new forced subscriber")) }}
                     <script nonce="{{ csp_nonce }}">
                         $('#input-add-forced').cdedbSearchPerson(
@@ -117,7 +117,7 @@
                 {{ util.anti_csrf_token('ml/add_unsubscription_overrides') }}
                 <div class="input-group has-success">
                     <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-                    {{ util.input_text(name="modunsubscriber_ids", anid="input-add-blocked", placeholder="DB-XXXX-X,DB-XXXX-X,…",
+                    {{ util.input_text(type="search", name="modunsubscriber_ids", anid="input-add-blocked", placeholder="DB-XXXX-X,DB-XXXX-X,…",
                                        arialabel=gettext("ID of the new blocked subscriber")) }}
                     <script nonce="{{ csp_nonce }}">
                         $('#input-add-blocked').cdedbSearchPerson(

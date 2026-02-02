@@ -32,11 +32,10 @@ import decimal
 import functools
 import logging
 import sys
-from collections.abc import Collection
+from collections.abc import Callable, Collection
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
     ForwardRef,
     Optional,
@@ -375,6 +374,9 @@ class Event(EventDataclass):
                 and is_privileged_event_user(user, EventPrivileges.basic_read, self.id)
             )
         )
+
+    def is_current_for_orga(self) -> bool:
+        return self.begin > (now().date() - datetime.timedelta(days=365 * 2))
 
     @functools.cached_property
     def lodge_field(self) -> Optional["EventField"]:
@@ -926,7 +928,7 @@ class TrackGroup(EventDataclass):
         return self.constraint_type, self.sortkey, self.title
 
 
-class SyncTrackGroup(TrackGroup, CourseChoiceObject):
+class SyncTrackGroup(TrackGroup, CourseChoiceObject):  # type: ignore[misc]
     constraint_type = const.CourseTrackGroupType.course_choice_sync
 
     def is_complex(self) -> bool:
