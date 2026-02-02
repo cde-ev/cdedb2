@@ -694,8 +694,8 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
                 self.conf['REPOSITORY_PATH'] / 'static' / 'verify_result.py',
                 pkg / '__main__.py',
             )
-            subprocess.run(
-                [
+            result = subprocess.run(
+                cmd := [
                     'python3',
                     '-m',
                     'pip',
@@ -706,7 +706,11 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
                 ],
                 cwd=tmp,
                 check=True,
-                stdout=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            self.logger.info(
+                f"Executing {' '.join(cmd)!r}. Output:\n{result.stdout.decode()}"
             )
             shutil.rmtree(pkg / f'schulze_condorcet-{version}.dist-info')
             output = temp / 'verify_result.pyz'
