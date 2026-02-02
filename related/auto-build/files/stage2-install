@@ -89,7 +89,7 @@ done
 echo ""
 echo "We do not initialize playwright as this consumes lots of space."
 echo "To do so later run the following command as user cdedb:"
-echo "/usr/local/bin/playwright install --with-deps"
+echo "uv playwright install --with-deps"
 echo "This matters only when executing the test suite and in that case"
 echo "will fail with a helpful error message."
 
