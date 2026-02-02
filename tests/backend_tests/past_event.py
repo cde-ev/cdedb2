@@ -12,18 +12,6 @@ from tests.common import BackendTest, as_users, event_keeper
 class TestPastEventBackend(BackendTest):
     used_backends = ("core", "event", "pastevent")
 
-    @as_users("vera", "berta", maintain_data=True)
-    def test_participation_infos(self) -> None:
-        participation_info = self.pastevent.participation_info(self.key, 1)
-        self.assertEqual(dict(), participation_info)
-        participation_info = self.pastevent.participation_info(self.key, 2)
-        expectation = {
-            1: {'courses': {1: {'id': 1, 'is_instructor': True}},
-                'id': 1,
-                'is_orga': False}
-        }
-        self.assertEqual(expectation, participation_info)
-
     @as_users("vera")
     def test_entity_past_event(self) -> None:
         old_events = self.pastevent.list_past_events(self.key)
@@ -50,7 +38,12 @@ class TestPastEventBackend(BackendTest):
 
     @as_users("vera")
     def test_delete_past_course_cascade(self) -> None:
-        self.assertIn(1, self.pastevent.list_past_courses(self.key, 1))
+        # create a log entry for this past course
+        pcourse = self.pastevent.get_past_course(self.key, 1)
+        pcourse.description = "changed"
+        data = pcourse.to_database()
+        data.pop("pevent_id")
+        self.assertTrue(self.pastevent.set_past_course(self.key, data))
         # add the past course to a genesis case
         update = {'id': 3, 'pevent_id': 1, 'pcourse_id': 1}
         self.assertTrue(self.core.genesis_modify_case(self.key, update))
@@ -63,8 +56,12 @@ class TestPastEventBackend(BackendTest):
             self.pastevent.delete_past_course(
                 self.key, 1, cascade=("participants",))
         self.assertIn("genesis_cases", e.exception.args[1].get('block'))
+        with self.assertRaises(ValueError) as e:
+            self.pastevent.delete_past_course(
+                self.key, 1, cascade=("genesis_cases", "participants"))
+        self.assertIn("log", e.exception.args[1].get('block'))
         self.pastevent.delete_past_course(
-            self.key, 1, cascade=("participants", "genesis_cases"))
+            self.key, 1, cascade=("participants", "genesis_cases", "log"))
         self.assertNotIn(1, self.pastevent.list_past_courses(self.key, 1))
 
     @as_users("vera")
@@ -130,89 +127,74 @@ class TestPastEventBackend(BackendTest):
         self.assertNotIn(new_id, old_courses)
         new_courses = self.pastevent.list_past_courses(self.key, pevent_id)
         self.assertIn(new_id, new_courses)
-        self.pastevent.delete_past_course(self.key, new_id)
+        self.pastevent.delete_past_course(self.key, new_id, cascade=("log", ))
         newer_courses = self.pastevent.list_past_courses(self.key, pevent_id)
         self.assertNotIn(new_id, newer_courses)
 
     @as_users("vera")
     def test_entity_participant(self) -> None:
+        personas = self.core.get_personas(self.key, [2, 3, 4, 5, 6, 100])
+        pevent = self.pastevent.get_past_event(self.key, 1)
+        pcourses = self.pastevent.get_past_courses(self.key, [1, 2])
         expectation = {
-            (2, 1): {
-                'pcourse_id': 1, 'is_instructor': True,
-                'is_orga': False, 'persona_id': 2,
-            },
-            (3, None): {
-                'pcourse_id': None, 'is_instructor': False,
-                'is_orga': False, 'persona_id': 3,
-            },
-            (4, 2): {
-                'pcourse_id': 2, 'is_instructor': False,
-                'is_orga': False, 'persona_id': 4,
-            },
-            (5, 2): {
-                'pcourse_id': 2, 'is_instructor': False,
-                'is_orga': False, 'persona_id': 5,
-            },
-            (6, 2): {
-                'pcourse_id': 2, 'is_instructor': False,
-                'is_orga': True, 'persona_id': 6,
-            },
-            (100, 2): {
-                'pcourse_id': 2, 'is_instructor': False,
-                'is_orga': False, 'persona_id': 100,
-            },
+            vtypes.ID(2): models.PastEventParticipant(id=vtypes.ID(1), persona_id=vtypes.ID(2), pevent_id=vtypes.ID(1), orga_status=const.PastOrgaKind.none, music_status=const.PastMusicKind.none,
+                                           persona=personas[vtypes.ID(2)], pevent=pevent),
+            vtypes.ID(3): models.PastEventParticipant(id=vtypes.ID(2), persona_id=vtypes.ID(3), pevent_id=vtypes.ID(1), orga_status=const.PastOrgaKind.none, music_status=const.PastMusicKind.ensemble,
+                                           persona=personas[vtypes.ID(3)], pevent=pevent),
+            vtypes.ID(4): models.PastEventParticipant(id=vtypes.ID(3), persona_id=vtypes.ID(4), pevent_id=vtypes.ID(1), orga_status=const.PastOrgaKind.none, music_status=const.PastMusicKind.none,
+                                           persona=personas[vtypes.ID(4)], pevent=pevent),
+            vtypes.ID(5): models.PastEventParticipant(id=vtypes.ID(4), persona_id=vtypes.ID(5), pevent_id=vtypes.ID(1), orga_status=const.PastOrgaKind.none, music_status=const.PastMusicKind.kuemu,
+                                           persona=personas[vtypes.ID(5)], pevent=pevent),
+            vtypes.ID(6): models.PastEventParticipant(id=vtypes.ID(5), persona_id=vtypes.ID(6), pevent_id=vtypes.ID(1), orga_status=const.PastOrgaKind.orga, music_status=const.PastMusicKind.none,
+                                           persona=personas[vtypes.ID(6)], pevent=pevent),
+            vtypes.ID(100): models.PastEventParticipant(id=vtypes.ID(6), persona_id=vtypes.ID(100), pevent_id=vtypes.ID(1), orga_status=const.PastOrgaKind.none, music_status=const.PastMusicKind.none,
+                                             persona=personas[vtypes.ID(100)], pevent=pevent),
         }
+        expectation[vtypes.ID(2)].course_assignments = [models.PastCourseAssignment(id=vtypes.ID(1), persona_id=vtypes.ID(2), participant_id=vtypes.ID(1), pcourse_id=vtypes.ID(1), instructor_status=const.PastInstructorKind.kl, pcourse=pcourses[1])]
+        expectation[vtypes.ID(4)].course_assignments = [models.PastCourseAssignment(id=vtypes.ID(2), persona_id=vtypes.ID(4), participant_id=vtypes.ID(3), pcourse_id=vtypes.ID(2), instructor_status=const.PastInstructorKind.none, pcourse=pcourses[2])]
+        expectation[vtypes.ID(5)].course_assignments = [models.PastCourseAssignment(id=vtypes.ID(3), persona_id=vtypes.ID(5), participant_id=vtypes.ID(4), pcourse_id=vtypes.ID(2), instructor_status=const.PastInstructorKind.none, pcourse=pcourses[2])]
+        expectation[vtypes.ID(6)].course_assignments = [models.PastCourseAssignment(id=vtypes.ID(4), persona_id=vtypes.ID(6), participant_id=vtypes.ID(5), pcourse_id=vtypes.ID(2), instructor_status=const.PastInstructorKind.none, pcourse=pcourses[2])]
+        expectation[vtypes.ID(100)].course_assignments = [models.PastCourseAssignment(id=vtypes.ID(5), persona_id=vtypes.ID(100), participant_id=vtypes.ID(6), pcourse_id=vtypes.ID(2), instructor_status=const.PastInstructorKind.none, pcourse=pcourses[2])]
+        self.assertEqual((6, expectation), self.pastevent.list_event_participants(self.key, pevent_id=1))
 
-        self.assertEqual(expectation,
-                         self.pastevent.list_participants(self.key, pevent_id=1))
-        self.pastevent.add_participant(self.key, 1, None, 5, False, False)
-        expectation[(5, None)] = {
-            'pcourse_id': None, 'is_instructor': False,
-            'is_orga': False, 'persona_id': 5,
-        }
-        self.assertEqual(expectation,
-                         self.pastevent.list_participants(self.key, pevent_id=1))
-        self.assertEqual(0, self.pastevent.remove_participant(self.key, 1, 1, 5))
-        self.assertEqual(expectation,
-                         self.pastevent.list_participants(self.key, pevent_id=1))
-        self.assertEqual(1, self.pastevent.remove_participant(self.key, 1, None, 5))
-        del expectation[(5, None)]
-        self.assertEqual(expectation,
-                         self.pastevent.list_participants(self.key, pevent_id=1))
-        self.pastevent.add_participant(self.key, 1, 1, 5, False, False)
-        expectation[(5, 1)] = {'pcourse_id': 1, 'is_instructor': False,
-                               'is_orga': False, 'persona_id': 5}
-        self.assertEqual(expectation,
-                         self.pastevent.list_participants(self.key, pevent_id=1))
-        self.assertEqual(0, self.pastevent.remove_participant(self.key, 1, None, 5))
-        self.assertEqual(expectation,
-                         self.pastevent.list_participants(self.key, pevent_id=1))
-        self.assertEqual(1, self.pastevent.remove_participant(self.key, 1, 1, 5))
-        del expectation[(5, 1)]
-        self.assertEqual(expectation,
-                         self.pastevent.list_participants(self.key, pevent_id=1))
+        # unset music status, keeps the courses
+        self.pastevent.set_participant(self.key, pevent_id=1, persona_id=5)
+        expectation[vtypes.ID(5)].music_status = const.PastMusicKind.none
+        self.assertEqual((6, expectation), self.pastevent.list_event_participants(self.key, pevent_id=1))
 
-        # past course not associated with specified past event
+        # removing someone who is no participant does nothing
+        self.assertEqual(0, self.pastevent.remove_participant(self.key, pevent_id=1, persona_id=1))
+        self.assertEqual(0, self.pastevent.remove_course_assignment(self.key, pcourse_id=1, persona_id=1))
+        self.assertEqual((6, expectation), self.pastevent.list_event_participants(self.key, pevent_id=1))
+
+        # remove participant also removes course assignment
+        self.assertEqual(1, self.pastevent.remove_participant(self.key, pevent_id=1, persona_id=5))
+        tmp = expectation.pop(vtypes.ID(5))
+        self.assertEqual((5, expectation), self.pastevent.list_event_participants(self.key, pevent_id=1))
+
+        # add again as participant
+        self.pastevent.set_participant(self.key, pevent_id=1, persona_id=5, orga_status=const.PastOrgaKind.al)
+        expectation[vtypes.ID(5)] = tmp
+        expectation[vtypes.ID(5)].id = vtypes.ID(1002)
+        expectation[vtypes.ID(5)].orga_status = const.PastOrgaKind.al
+        expectation[vtypes.ID(5)].course_assignments = []
+        self.assertEqual((6, expectation), self.pastevent.list_event_participants(self.key, pevent_id=1))
+
+        # add to different course
+        self.pastevent.set_course_assignments(self.key, pcourse_id=2, persona_id=5)
+        expectation[vtypes.ID(5)].course_assignments.append(models.PastCourseAssignment(id=vtypes.ID(1001), persona_id=vtypes.ID(5), participant_id=vtypes.ID(1002), pcourse_id=vtypes.ID(2), pcourse=pcourses[vtypes.ID(2)], instructor_status=const.PastInstructorKind.none))
+        self.assertEqual((6, expectation), self.pastevent.list_event_participants(self.key, pevent_id=1))
+
+        # course assignment without participation not possible
         with self.assertRaises(ValueError) as cm:
-            self.pastevent.add_participant(self.key, 2, 1, 5, False, False)
+            self.pastevent.set_course_assignments(self.key, pcourse_id=1, persona_id=1)
         self.assertIn(
-            "Course not associated with past event specified.", cm.exception.args[0])
+            "This user does not participate at this event.", cm.exception.args[0])
         # mailinglist user can not be added to past event
         with self.assertRaises(ValueError) as cm:
-            self.pastevent.add_participant(self.key, 1, 1, 10, False, False)
+            self.pastevent.set_participant(self.key, pevent_id=1, persona_id=10)
         self.assertIn(
             "This past event participant is no event user.", cm.exception.args[0])
-
-    @as_users("vera")
-    def test_participant_consistency(self) -> None:
-        # See issue #1458
-        participants = self.pastevent.list_participants(self.key, pevent_id=1)
-        self.assertIn((3, None), participants)
-        self.pastevent.add_participant(self.key, pevent_id=1, pcourse_id=2,
-                                       persona_id=3)
-        participants = self.pastevent.list_participants(self.key, pevent_id=1)
-        self.assertNotIn((3, None), participants)
-        self.assertIn((3, 2), participants)
 
     @as_users("vera")
     def test_past_log(self) -> None:
@@ -239,17 +221,15 @@ class TestPastEventBackend(BackendTest):
         new_id = self.pastevent.create_past_course(self.key, data)
         self.pastevent.set_past_course(self.key, {
             'id': new_id, 'title': "New improved title"})
-        self.pastevent.delete_past_course(self.key, new_id)
-        self.pastevent.add_participant(self.key, 1, None, 5, False, False)
-        self.pastevent.remove_participant(self.key, 1, None, 5)
 
-        # now check it
+        # now check it (first round)
         expectation = (
             {'id': 1001,
              'change_note': None,
              'code': const.PastEventLogCodes.event_created,
              'ctime': nearly_now(),
              'pevent_id': 1001,
+             'pcourse_id': None,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1002,
@@ -257,20 +237,48 @@ class TestPastEventBackend(BackendTest):
              'code': const.PastEventLogCodes.event_changed,
              'ctime': nearly_now(),
              'pevent_id': 1001,
+             'pcourse_id': None,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1003,
-             'change_note': 'Topos theory for the kindergarden',
+             'change_note': None,
              'code': const.PastEventLogCodes.course_created,
              'ctime': nearly_now(),
              'pevent_id': 1,
+             'pcourse_id': 1001,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1004,
-             'change_note': 'New improved title',
+             'change_note': None,
              'code': const.PastEventLogCodes.course_changed,
              'ctime': nearly_now(),
              'pevent_id': 1,
+             'pcourse_id': 1001,
+             'persona_id': None,
+             'submitted_by': self.user['id']})
+        self.assertLogEqual(expectation, 'past_event')
+
+        # now, delete the course, add more log codes
+        self.pastevent.delete_past_course(self.key, new_id, cascade=("log",))
+        self.pastevent.set_participant(self.key, new_id, 5)
+        self.pastevent.remove_participant(self.key, new_id, 5)
+
+        # check the data, note that the log codes regarding the course are deleted
+        expectation = (
+            {'id': 1001,
+             'change_note': None,
+             'code': const.PastEventLogCodes.event_created,
+             'ctime': nearly_now(),
+             'pevent_id': 1001,
+             'pcourse_id': None,
+             'persona_id': None,
+             'submitted_by': self.user['id']},
+            {'id': 1002,
+             'change_note': None,
+             'code': const.PastEventLogCodes.event_changed,
+             'ctime': nearly_now(),
+             'pevent_id': 1001,
+             'pcourse_id': None,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1005,
@@ -278,20 +286,23 @@ class TestPastEventBackend(BackendTest):
              'code': const.PastEventLogCodes.course_deleted,
              'ctime': nearly_now(),
              'pevent_id': 1,
+             'pcourse_id': None,
              'persona_id': None,
              'submitted_by': self.user['id']},
             {'id': 1006,
              'change_note': None,
-             'code': const.PastEventLogCodes.participant_added,
+             'code': const.PastEventLogCodes.participant_set,
              'ctime': nearly_now(),
-             'pevent_id': 1,
+             'pevent_id': new_id,
+             'pcourse_id': None,
              'persona_id': 5,
              'submitted_by': self.user['id']},
             {'id': 1007,
              'change_note': None,
              'code': const.PastEventLogCodes.participant_removed,
              'ctime': nearly_now(),
-             'pevent_id': 1,
+             'pevent_id': new_id,
+             'pcourse_id': None,
              'persona_id': 5,
              'submitted_by': self.user['id']})
         self.assertLogEqual(expectation, 'past_event')
@@ -333,6 +344,8 @@ class TestPastEventBackend(BackendTest):
         assert new_ids is not None
         self.assertEqual(3, len(new_ids))
         pevent_data = list(self.pastevent.get_past_events(self.key, new_ids).values())
+
+        # Warmup
         expectation = models.PastEvent(
             id=vtypes.ID(1002),
             description='Everybody come!',
@@ -343,6 +356,12 @@ class TestPastEventBackend(BackendTest):
             participant_info=None
         )
         self.assertEqual(expectation, pevent_data[2])
+        self.assertEqual(
+            set(),
+            set(self.pastevent.list_past_courses(
+                self.key, pevent_data[2].id).values()))
+
+        # Erste Hälfte
         expectation = models.PastEvent(
             id=vtypes.ID(1003),
             description='Everybody come!',
@@ -353,6 +372,24 @@ class TestPastEventBackend(BackendTest):
             participant_info=None
         )
         self.assertEqual(expectation, pevent_data[1])
+        expectation = {
+            "Planetenretten für Anfänger",
+            "Lustigsein für Fortgeschrittene",
+            "Kurzer Kurs",
+            "Langer Kurs",
+            "Backup-Kurs",
+            "Extra-Kurs",
+        }
+        self.assertEqual(
+            expectation,
+            set(self.pastevent.list_past_courses(
+                self.key, pevent_data[1].id).values()))
+        _, participants = self.pastevent.list_event_participants(self.key, pevent_data[1].id)
+        self.assertEqual(const.PastOrgaKind.orga, participants[7].orga_status)
+        self.assertEqual(const.PastOrgaKind.none, participants[100].orga_status)
+        self.assertEqual("Lustigsein für Fortgeschrittene", participants[7].course_assignments[0].pcourse.title)
+
+        # Zweite Hälfte
         expectation = models.PastEvent(
             id=vtypes.ID(1004),
             description='Everybody come!',
@@ -363,28 +400,16 @@ class TestPastEventBackend(BackendTest):
             participant_info=None
         )
         self.assertEqual(expectation, pevent_data[0])
-        self.assertEqual(
-            set(),
-            set(self.pastevent.list_past_courses(
-                self.key, pevent_data[2].id).values()))
-        expectation = {'Lustigsein für Fortgeschrittene'}
-        self.assertEqual(
-            expectation,
-            set(self.pastevent.list_past_courses(
-                self.key, pevent_data[1].id).values()))
-        expectation = {'Planetenretten für Anfänger'}
+        expectation = {
+            "Planetenretten für Anfänger",
+            "Lustigsein für Fortgeschrittene",
+            "Langer Kurs",
+            "Extra-Kurs",
+        }
         self.assertEqual(
             expectation,
             set(self.pastevent.list_past_courses(
                 self.key, pevent_data[0].id).values()))
-        expectation = {
-            (7, 1008): {'pcourse_id': 1008,
-                        'is_instructor': False,
-                        'is_orga': True,
-                        'persona_id': 7},
-            (100, 1008): {'is_instructor': False,
-                          'is_orga': False,
-                          'pcourse_id': 1008,
-                          'persona_id': 100}}
-        self.assertEqual(expectation,
-                         self.pastevent.list_participants(self.key, pcourse_id=1008))
+        _, participants = self.pastevent.list_event_participants(self.key, pevent_data[0].id)
+        self.assertEqual(const.PastInstructorKind.kl, participants[5].course_assignments[0].instructor_status)
+        self.assertEqual(const.PastInstructorKind.none, participants[100].course_assignments[0].instructor_status)

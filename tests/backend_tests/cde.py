@@ -532,11 +532,10 @@ class TestCdEBackend(BackendTest):
         # Create two (identical) past events and add any cde user to them, to
         #  create duplicates in the cde user view.
         pevent_id = self.pastevent.create_past_event(self.key, pevent_data)
-        self.pastevent.add_participant(
-            self.key, pevent_id, pcourse_id=None, persona_id=self.user['id'])
+        self.pastevent.set_participant(self.key, pevent_id, persona_id=self.user['id'])
         pevent_id_duplicate = self.pastevent.create_past_event(self.key, pevent_data)
-        self.pastevent.add_participant(
-            self.key, pevent_id_duplicate, pcourse_id=None, persona_id=self.user['id'])
+        self.pastevent.set_participant(
+            self.key, pevent_id_duplicate, persona_id=self.user['id'])
 
         # Check that the aggregate sums correctly.
         result = self.cde.submit_general_query(self.key, query, aggregate=False)
@@ -561,9 +560,9 @@ class TestCdEBackend(BackendTest):
 
         # Check that filtering by past event works.
         self.pastevent.remove_participant(
-            self.key, pevent_id_duplicate, pcourse_id=None, persona_id=self.user['id'])
-        self.pastevent.add_participant(
-            self.key, pevent_id_duplicate, pcourse_id=None, persona_id=other_user['id'])
+            self.key, pevent_id_duplicate, persona_id=self.user['id'])
+        self.pastevent.set_participant(
+            self.key, pevent_id_duplicate, persona_id=other_user['id'])
         query = Query(
             QueryScope.cde_user, QueryScope.cde_user.get_spec(),
             ['personas.id', 'is_member'],

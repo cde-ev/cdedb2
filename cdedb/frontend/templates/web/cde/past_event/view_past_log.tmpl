@@ -16,14 +16,19 @@
     {{ util.breadcrumb_link(cdedblink("cde/view_past_log"), gettext("Past Events Log"), active=True) }}
 {% endblock %}
 {% block content %}
-    {% call logging.table(log, ['Event']) %}
+    {% call logging.table(log, ['Event', 'Course']) %}
         {% for entry in log %}
-            {% set link = None %}
+            {% set pevent_link = None %}
             {% if entry['pevent_id'] %}
-                {% set link = util.href(cdedblink("cde/show_past_event", {"pevent_id": entry['pevent_id']}),
-                                    pevents[entry['pevent_id']]['title']) %}
+                {% set pevent_link = util.href(cdedblink("cde/show_past_event", {"pevent_id": entry['pevent_id']}),
+                                               pevents[entry['pevent_id']]['title']) %}
             {% endif %}
-            {{ logging.row(entry, enums['PastEventLogCodes'], loop.index, [link]) }}
+            {% set pcourse_link = None %}
+            {% if entry['pcourse_id'] %}
+                {% set pcourse_link = util.href(cdedblink("cde/show_past_course", {"pevent_id": entry['pevent_id'], "pcourse_id": entry['pcourse_id']}),
+                                                pcourses[entry['pcourse_id']]['title']) %}
+            {% endif %}
+            {{ logging.row(entry, enums['PastEventLogCodes'], loop.index, [pevent_link, pcourse_link]) }}
         {% endfor %}
     {% endcall %}
 

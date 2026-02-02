@@ -1624,7 +1624,7 @@ class TestCdEFrontend(FrontendTest):
             )
         for ex, out in zip(expectation, output):
             for piece in ex:
-                self.assertTrue(re.search(piece, out))
+                self.assertTrue(re.search(piece, out), msg=f"{piece} not found in {out}")
         for i in range(0, 15):
             if i in {1, 7, 11}:
                 exp = str(LineResolutions.create.value)
@@ -1677,7 +1677,7 @@ class TestCdEFrontend(FrontendTest):
             tuple(),
             tuple(),
             tuple(),
-            (r"pevent_id:\W*Teilnahme bereits erfasst.",
+            (r"pcourse_id:\W*Teilnahme bereits erfasst.",
              r"doppelganger:\W*Probemitgliedschaft für Mitglieder nicht erlaubt."),
             tuple(),
             (r"doppelganger:\W*Accountzusammenführung mit nicht-CdE Account.",),
@@ -1693,7 +1693,7 @@ class TestCdEFrontend(FrontendTest):
             )
         for ex, out in zip(expectation, output):
             for piece in ex:
-                self.assertTrue(re.search(piece, out))
+                self.assertTrue(re.search(piece, out), msg=f"{piece} not found in {out}")
         nonexpectation: tuple[tuple[str, ...], ...] = (
             tuple(),
             tuple(),
@@ -1717,7 +1717,7 @@ class TestCdEFrontend(FrontendTest):
             )
         for nonex, out in zip(nonexpectation, output):
             for piece in nonex:
-                self.assertFalse(re.search(piece, out))
+                self.assertFalse(re.search(piece, out), msg=f"{piece} found in {out}")
 
         inputdata = f['accounts'].value
         inputdata = inputdata.replace('"1a";"Beispiel";"Berta B."',
@@ -1765,7 +1765,7 @@ class TestCdEFrontend(FrontendTest):
             )
         for ex, out in zip(expectation, output):
             for piece in ex:
-                self.assertTrue(re.search(piece, out))
+                self.assertTrue(re.search(piece, out), msg=f"{piece} not found in {out}")
         nonexpectation: tuple[tuple[str, ...], ...] = (
             tuple(),
             tuple(),
@@ -1786,7 +1786,7 @@ class TestCdEFrontend(FrontendTest):
             )
         for nonex, out in zip(nonexpectation, output):
             for piece in nonex:
-                self.assertFalse(re.search(piece, out))
+                self.assertFalse(re.search(piece, out), msg=f"{piece} found in {out}")
         f['resolution4'] = LineResolutions.update.value
         f['doppelganger_id4'] = '2'
         f['resolution6'] = LineResolutions.renew_and_update.value
@@ -1813,7 +1813,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Link Zelda", div='list-participants')
         self.assertPresence("Gerhard Schröder", div='list-participants')
         self.assertPresence("Angela Merkel", div='list-participants')
-        self.assertPresence("Gustav Heinemann (1a. Swish -- und alles ist gut) (Orga)",
+        self.assertPresence("Gustav Heinemann (1a. Swish -- und alles ist gut) (Akademieleitung)",
                             div='list-participants')
         save_response = self.response
 
@@ -2015,7 +2015,9 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
 
         f = self.response.forms['admissionform']
-        self.assertPresence("Teilnahme bereits erfasst", div="problems0")
+        self.assertPresence("Teilnahme bereits mit anderem Status (bspw. Orga) erfasst, der überschrieben wird.", div="problems0")
+        self.assertNonPresence("Teilnahme bereits erfasst", div="problems0")
+        self.assertNonPresence("Teilnahme bereits mit anderem Status (bspw. Orga) erfasst, der überschrieben wird.", div="problems1")
         self.assertPresence("Teilnahme bereits erfasst", div="problems1")
         self.submit(f)
 
@@ -2690,7 +2692,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'PfingstAkademie 2014'})
         self.traverse({'description': 'Goethe zum Anfassen'})
         self.assertTitle("Goethe zum Anfassen (PfingstAkademie 2014)")
-        self.assertPresence("Ferdinand Findus (Orga) ")
+        self.assertPresence("Ferdinand Findus")
 
     @as_users("vera", "berta", "charly", "ferdinand", "inga", maintain_data=True)
     def test_show_past_event_gallery(self) -> None:
@@ -2799,7 +2801,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Ferdinand Findus", div="orgas")
         if self.user_in("inga"):
             # no patricipant, but searchable.
-            self.assertPresence("und 2 weitere", div="orgas")
+            self.assertPresence("(und vielleicht weitere)", div="orgas")
             self.assertNonPresence("Charly")
             self.assertNonPresence("Emilia")
             self.assertNonPresence("Garcia", div="orgas")
@@ -2973,13 +2975,12 @@ class TestCdEFrontend(FrontendTest):
             "Einige dieser Nutzer sind keine Veranstaltungsnutzer.")
         f = self.response.forms['addparticipantform']
         f['persona_ids'] = "DB-7-8, DB-8-6, DB-5-1, DB-3-5"
-        f['is_orga'].checked = True
-        f['is_instructor'].checked = True
+        f['instructor_status'] = const.PastInstructorKind.co_kl
         self.submit(f)
 
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
-        self.assertPresence("Garcia Generalis", div='list-participants')
-        self.assertPresence("Charly", div='list-participants')
+        self.assertPresence("Garcia Generalis (Co-KL)", div='list-participants')
+        self.assertPresence("Charly Clown (Co-KL)", div='list-participants')
 
         f = self.response.forms['removeparticipantform7']
         self.submit(f, check_notification=False)
@@ -2989,29 +2990,28 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         self.assertNonPresence("Garcia")
 
-        f = self.response.forms['removeparticipantform3']
-        f['ack_delete'].checked = True
-        self.submit(f)
-        self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
-        self.assertNonPresence("Charly")
-
         self.traverse({'description': 'Mitglieder'},
                       {'description': 'Verg. Veranstaltungen'},
                       {'description': 'PfingstAkademie 2014'})
-        self.assertNonPresence("Garcia")
-        # See #1458
-        self.assertNonPresence("Charly")
+        # removing someone from a course does not remove them form the event
+        self.assertPresence("Garcia")
+        self.assertNonPresence("Garcia Generalis (Orga, KüMu)")
+        self.assertPresence("Charly Clown (1a. Swish -- und alles ist gut (Co-KL))")
         f = self.response.forms['addparticipantform']
-        f['persona_ids'] = "DB-7-8"
-        f['is_orga'].checked = True
+        # changing orga/music status does not remove course assignments
+        f['persona_ids'] = "DB-3-5, DB-7-8"
+        f['orga_status'] = const.PastOrgaKind.orga
+        f['music_status'] = const.PastMusicKind.kuemu
         self.submit(f)
         self.assertTitle("PfingstAkademie 2014")
-        self.assertPresence("Garcia Generalis (Orga) ")
-        f = self.response.forms['removeparticipantform7']
+        self.assertPresence("Garcia Generalis (Orga, KüMu)")
+        self.assertPresence("Charly Clown (1a. Swish -- und alles ist gut (Co-KL)) (Orga, KüMu)")
+        # but removing someone with a course assignment is possible
+        f = self.response.forms['removeparticipantform3']
         f['ack_delete'].checked = True
         self.submit(f)
         self.assertTitle("PfingstAkademie 2014")
-        self.assertNonPresence("Garcia")
+        self.assertNonPresence("Charly")
 
     @as_users("farin", "inga", maintain_data=True)
     def test_member_stats(self) -> None:
@@ -3079,40 +3079,50 @@ class TestCdEFrontend(FrontendTest):
         # add participant (to course)
         f = self.response.forms['addparticipantform']
         f['persona_ids'] = "DB-7-8,DB-1-9"
+        f['instructor_status'] = const.PastInstructorKind.kl
         self.submit(f)
-        logs.append((1004, const.PastEventLogCodes.participant_added))
-        logs.append((1005, const.PastEventLogCodes.participant_added))
+        logs.append((1004, const.PastEventLogCodes.participant_set))
+        logs.append((1005, const.PastEventLogCodes.course_assignment_set))
+        logs.append((1006, const.PastEventLogCodes.participant_set))
+        logs.append((1007, const.PastEventLogCodes.course_assignment_set))
 
         # delete participant (from course)
         f = self.response.forms['removeparticipantform7']
         f['ack_delete'].checked = True
         self.submit(f)
-        logs.append((1006, const.PastEventLogCodes.participant_removed))
+        logs.append((1008, const.PastEventLogCodes.course_assignment_removed))
 
         # delete course
+        # this deletes an other course, because deletion includes log codes
+        self.traverse('Verg. Veranstaltungen', 'FingerAkademie 2020',
+                      'Torheiten im Zwiebelrouter')
         f = self.response.forms['deletecourseform']
         f['ack_delete'].checked = True
         self.submit(f)
-        logs.append((1007, const.PastEventLogCodes.course_deleted))
+        logs.append((1009, const.PastEventLogCodes.course_deleted))
 
         # add participant (to past event)
+        self.traverse('Verg. Veranstaltungen', 'Piraten Arrrkademie')
         f = self.response.forms['addparticipantform']
-        f['persona_ids'] = "DB-7-8"
+        f['persona_ids'] = "DB-1-9"
+        f['orga_status'] = const.PastOrgaKind.orga
+        f['music_status'] = const.PastMusicKind.ensemble
         self.submit(f)
-        logs.append((1008, const.PastEventLogCodes.participant_added))
+        logs.append((1010, const.PastEventLogCodes.participant_set))
 
-        # delete participant (from past event)
-        f = self.response.forms['removeparticipantform7']
+        # delete participant (from past event, with past course)
+        f = self.response.forms['removeparticipantform1']
         f['ack_delete'].checked = True
         self.submit(f)
-        logs.append((1009, const.PastEventLogCodes.participant_removed))
+        logs.append((1011, const.PastEventLogCodes.course_assignment_removed))
+        logs.append((1012, const.PastEventLogCodes.participant_removed))
 
         # change past event
         self.traverse({'description': 'Bearbeiten'})
         f = self.response.forms['changeeventform']
         f['description'] = "Leider ins Wasser gefallen..."
         self.submit(f)
-        logs.append((1010, const.PastEventLogCodes.event_changed))
+        logs.append((1013, const.PastEventLogCodes.event_changed))
 
         # delete past event
         # this deletes an other event, because deletion includes log codes
@@ -3121,12 +3131,15 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['deletepasteventform']
         f['ack_delete'].checked = True
         self.submit(f)
-        logs.append((1011, const.PastEventLogCodes.event_deleted))
+        logs.append((1014, const.PastEventLogCodes.event_deleted))
 
         # Now check it
         self.traverse({'description': 'Verg.-Veranstaltungen-Log'})
         self.log_pagination("Verg.-Veranstaltungen-Log", tuple(logs))
         self.assertPresence("Piraten Arrrkademie", div="4-1004")
+        self.assertPresence("KL", div="5-1005")
+        self.assertPresence("KL", div="7-1007")
+        self.assertPresence("Orga, Ensembleleitung", div="10-1010")
 
     @as_users("farin")
     def test_cde_log(self) -> None:

@@ -769,12 +769,9 @@ class CoreBaseFrontend(AbstractFrontend):
                     del data[key]
 
         # Add past event participation info
-        past_events = past_courses = past_event_info = None
+        past_event_participations = None
         if "cde" in access_levels and {"event", "cde"} & roles:
-            past_event_info = self.pasteventproxy.participation_info(rs, persona_id)
-            past_events = self.pasteventproxy.get_past_events(rs, past_event_info.keys())
-            past_course_ids = {c_id for pevent in past_event_info.values() for c_id in pevent["courses"]}
-            past_courses = self.pasteventproxy.get_past_courses(rs, past_course_ids)
+            past_event_participations = self.pasteventproxy.list_persona_events(rs, persona_id)
 
         # Retrieve number of active sessions if the user is viewing his own profile
         active_session_count = None
@@ -800,12 +797,12 @@ class CoreBaseFrontend(AbstractFrontend):
         mandatory_fields = get_mandatory_form_fields(
             self.archive_persona, self.invalidate_password)
         return self.render(rs, "show_user", {
-            'data': data, 'past_events': past_events, 'meta_info': meta_info,
+            'data': data, 'meta_info': meta_info,
             'is_relative_admin_view': is_relative_admin_view, 'reference': reference,
             'quoteable': quoteable, 'access_mode': access_mode,
             'active_session_count': active_session_count, 'ADMIN_KEYS': ADMIN_KEYS,
             'email_report': email_report,
-            'past_courses': past_courses, 'past_event_info': past_event_info,
+            'past_event_participations': past_event_participations,
         }, mandatory_fields)
 
     # fmt: on
@@ -2364,14 +2361,19 @@ class CoreBaseFrontend(AbstractFrontend):
         code = self.coreproxy.change_persona_realms(rs, data, change_note)
         rs.notify_return_code(code)
         if code > 0 and target_realm == "cde":
-            if pevent_id is not None:
-                self.pasteventproxy.add_participant(
-                    rs,
-                    pevent_id,
-                    pcourse_id,
-                    persona_id,
-                    is_instructor=is_instructor,
-                    is_orga=is_orga,
+            if pevent_id:
+                orga_status = const.PastOrgaKind.none
+                if is_orga:
+                    orga_status = const.PastOrgaKind.orga
+                self.pasteventproxy.set_participant(
+                    rs, pevent_id, persona_id, orga_status=orga_status
+                )
+            if pcourse_id:
+                instructor_status = const.PastInstructorKind.none
+                if is_instructor:
+                    instructor_status = const.PastInstructorKind.kl
+                self.pasteventproxy.set_course_assignments(
+                    rs, pcourse_id, persona_id, instructor_status=instructor_status
                 )
             persona = self.coreproxy.get_total_persona(rs, persona_id)
             self.send_welcome_mail(rs, persona)
