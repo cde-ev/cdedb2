@@ -6,6 +6,7 @@ import datetime
 import json
 import os
 import pathlib
+import subprocess
 import types
 from wsgiref.types import WSGIApplication
 
@@ -408,6 +409,12 @@ class Application(BaseApp):
             # Suppress stack trace logging for critical errors containing secrets.
             if not isinstance(e, CryptographyError):
                 self.cgitb_log()
+
+            if isinstance(e, subprocess.CalledProcessError):
+                if e.output is not None:
+                    self.logger.error(f"Called Process output: {e.output.decode()}")
+                if e.stderr is not None:
+                    self.logger.error(f"Called Process stderr: {e.stderr.decode()}")
 
             # Raise exceptions when in TEST environment to let the test runner
             # catch them.
