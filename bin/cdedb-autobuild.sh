@@ -8,6 +8,7 @@ fi;
 REPODIR=/home/cdedb/cdedb2/
 AUTOBUILDDIR=/home/cdedb/cdedb2/related/auto-build/
 WWWDIR=/var/www/austausch/html/cdedb2/images/
+DEPLOYMENT_KEY_PATH=/home/cdedb/.ssh/id_rsa
 
 # Options:
 # -display none
@@ -18,7 +19,7 @@ QEMUOPTIONS="-m 1G -net nic,model=virtio -net user"
 cd $REPODIR
 git pull
 PORT=$(git --no-pager log -1 --format='%H')
-export PORT QEMUOPTIONS
+export PORT QEMUOPTIONS DEPLOYMENT_KEY_PATH
 
 # does an up-to-date image exist?
 if [[ -e $WWWDIR/cdedb-$PORT.qcow2 && $COMPLETE = "NO" ]]; then
