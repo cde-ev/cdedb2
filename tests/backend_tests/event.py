@@ -2756,8 +2756,8 @@ class TestEventBackend(BackendTest):
 
         # Now try some invalid things.
         query = Query(
-            None,
-            {},  # type: ignore[arg-type]
+            None,  # type: ignore[arg-type]
+            {},
             fields_of_interest=[],
             constraints=[],
             order=[],

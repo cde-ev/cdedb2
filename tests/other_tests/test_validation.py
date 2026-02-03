@@ -385,10 +385,8 @@ class TestValidation(TestValidationBase):
 
     def test_sequence(self) -> None:
         self.do_validator_test(
-            Sequence,
-            (  # type: ignore[type-abstract]
-                (("a", "b"), ("a", "b"), None),
-            ),
+            Sequence,  # type: ignore[type-abstract]
+            ((("a", "b"), ("a", "b"), None),),
         )
 
     def test_bool(self) -> None:

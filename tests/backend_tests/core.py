@@ -787,8 +787,11 @@ class TestCoreBackend(BackendTest):
             'country': "AQ",
         }
         expectation_persona = models.EventPersona(
-            id=None, **persona_data, is_ml_realm=True, is_event_realm=True
-        )  # type: ignore[arg-type]
+            id=None,  # type: ignore[arg-type]
+            **persona_data,  # type: ignore[arg-type]
+            is_ml_realm=True,
+            is_event_realm=True,
+        )
         case_data = {
             'realm': "event",
             'notes': "Some blah",
@@ -798,7 +801,7 @@ class TestCoreBackend(BackendTest):
         }
         ctime = now()
         expectation = models.GenesisCaseEvent(
-            id=-1,
+            id=-1,  # type: ignore[arg-type]
             **case_data,  # type: ignore[arg-type]
             status=const.GenesisStati.to_review,
             ctime=ctime,
@@ -853,8 +856,13 @@ class TestCoreBackend(BackendTest):
             'reviewer_id': 1,
         }
         self.assertEqual(
-            1, self.core.genesis_modify_case_meta(self.key, case_id=case_id, **update)
-        )  # type: ignore[arg-type]
+            1,
+            self.core.genesis_modify_case_meta(
+                self.key,
+                case_id=case_id,
+                **update,  # type: ignore[arg-type]
+            ),
+        )
         expectation.status = const.GenesisStati.approved
         expectation.reviewer = 1  # type: ignore[assignment]
         value = self.core.genesis_get_case(self.key, case_id)
@@ -875,8 +883,10 @@ class TestCoreBackend(BackendTest):
             "username": 'zelda@example.cde',
         }
         expectation_persona = models.MlPersona(
-            id=None, **persona_data, is_ml_realm=True
-        )  # type: ignore[arg-type]
+            id=None,  # type: ignore[arg-type]
+            **persona_data,  # type: ignore[arg-type]
+            is_ml_realm=True,
+        )
         case_data = {
             'realm': "ml",
             'notes': "Some blah",
@@ -886,7 +896,7 @@ class TestCoreBackend(BackendTest):
         }
         ctime = now()
         expectation = models.GenesisCaseMl(
-            id=-1,
+            id=-1,  # type: ignore[arg-type]
             **case_data,  # type: ignore[arg-type]
             status=const.GenesisStati.to_review,
             ctime=ctime,
@@ -923,8 +933,13 @@ class TestCoreBackend(BackendTest):
             'reviewer_id': 1,
         }
         self.assertEqual(
-            1, self.core.genesis_modify_case_meta(self.key, case_id=case_id, **update)
-        )  # type: ignore[arg-type]
+            1,
+            self.core.genesis_modify_case_meta(
+                self.key,
+                case_id=case_id,
+                **update,  # type: ignore[arg-type]
+            ),
+        )
         expectation.status = const.GenesisStati.approved
         expectation.reviewer = 1  # type: ignore[assignment]
         value = self.core.genesis_get_case(self.key, case_id)
@@ -958,10 +973,10 @@ class TestCoreBackend(BackendTest):
             'country': "AQ",
         }
         expectation_persona = models.CdEPersona(
-            id=None,
-            **persona_data,
+            id=None,  # type: ignore[arg-type]
+            **persona_data,  # type: ignore[arg-type]
             is_ml_realm=True,
-            is_event_realm=True,  # type: ignore[arg-type]
+            is_event_realm=True,
             is_assembly_realm=True,
             is_cde_realm=True,
         )
@@ -974,7 +989,7 @@ class TestCoreBackend(BackendTest):
         }
         ctime = now()
         expectation = models.GenesisCaseCdE(
-            id=-1,
+            id=-1,  # type: ignore[arg-type]
             **case_data,  # type: ignore[arg-type]
             status=const.GenesisStati.to_review,
             ctime=ctime,
