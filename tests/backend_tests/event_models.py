@@ -1,4 +1,3 @@
-
 import datetime
 import decimal
 
@@ -26,20 +25,23 @@ class TestEventModels(BackendTest):
             iban=Accounts.Sozialbank,
             orga_address=vtypes.Email("aka@example.cde"),
             website_url='https://www.cde-ev.de/',
-            registration_start=NearlyNow.from_datetime(datetime.datetime(
-                2000, 10, 30, 0, 0, 0, tzinfo=datetime.UTC)),
-            registration_soft_limit=NearlyNow.from_datetime(datetime.datetime(
-                2200, 10, 30, 0, 0, 0, tzinfo=datetime.UTC)),
-            registration_hard_limit=NearlyNow.from_datetime(datetime.datetime(
-                2221, 10, 30, 0, 0, 0, tzinfo=datetime.UTC)),
+            registration_start=NearlyNow.from_datetime(
+                datetime.datetime(2000, 10, 30, 0, 0, 0, tzinfo=datetime.UTC)
+            ),
+            registration_soft_limit=NearlyNow.from_datetime(
+                datetime.datetime(2200, 10, 30, 0, 0, 0, tzinfo=datetime.UTC)
+            ),
+            registration_hard_limit=NearlyNow.from_datetime(
+                datetime.datetime(2221, 10, 30, 0, 0, 0, tzinfo=datetime.UTC)
+            ),
             orgas={7},  # type: ignore[arg-type]
             registration_text=None,
             mail_text="Wir verwenden ein neues Kristallkugel-basiertes"
-                      " Kurszuteilungssystem; bis wir das ordentlich ans Laufen"
-                      " gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste"
-                      " warten.",
+            " Kurszuteilungssystem; bis wir das ordentlich ans Laufen"
+            " gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste"
+            " warten.",
             participant_info="Die Kristallkugel hat gute Dienste geleistet,"
-                             " nicht wahr?",
+            " nicht wahr?",
             notes="Todoliste ... just kidding ;)",
             field_definition_notes="Die Sortierung der Felder bitte nicht ändern!",
             is_locked=False,
@@ -89,7 +91,6 @@ class TestEventModels(BackendTest):
                     camping_mat_field_id=4,  # type: ignore[arg-type]
                     tracks=(3,),  # type: ignore[arg-type]
                 ),
-
             },
             tracks={
                 1: models.CourseTrack(
@@ -445,7 +446,7 @@ class TestEventModels(BackendTest):
             orga_address=None,
             website_url=None,
             description="Ich habe gehört, du magst DoppelAkademien, also habe ich"
-                        " eine DoppelAkademie in Deine DoppelAkademie gepackt.",
+            " eine DoppelAkademie in Deine DoppelAkademie gepackt.",
             registration_start=nearly_now(),
             registration_soft_limit=None,
             registration_hard_limit=None,
@@ -745,7 +746,7 @@ class TestEventModels(BackendTest):
                     course_id=course_id,
                     track_id=vtypes.ID(3),
                     is_active=True,
-                )
+                ),
             },
             nr='α',
             title='Planetenretten für Anfänger',
@@ -788,7 +789,7 @@ class TestEventModels(BackendTest):
                         course_id=vtypes.ID(2),
                         track_id=vtypes.ID(3),
                         is_active=True,
-                    )
+                    ),
                 },
                 nr='β',
                 title='Lustigsein für Fortgeschrittene',

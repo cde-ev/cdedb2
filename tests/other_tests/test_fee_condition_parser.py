@@ -150,7 +150,9 @@ class ConditionParserTest(unittest.TestCase):
     def test_age_special_cases(self) -> None:
         for case in self.AGE_SPECIAL_CASES:
             with self.subTest(formula=case['formula']):
-                parse_result = self.parser.parse_string(case['formula'], parse_all=True)[0]
+                parse_result = self.parser.parse_string(
+                    case['formula'], parse_all=True
+                )[0]
                 check(parse_result, self.FIELDS.keys(), self.PARTS.keys())
                 evaluation_result = evaluate(
                     parse_result,
@@ -206,7 +208,10 @@ class ConditionParserTest(unittest.TestCase):
             ("part.part{-} and true", "Unknown part shortname(s): 'part{-}'"),
             ("part.not xor not part.{}", "Unknown part shortname(s): '{}'"),
             ("not ((field._))", "Unknown field(s): '_'"),
-            ("part.long_field_name and field.not", "Unknown part shortname(s): 'long_field_name'"),
+            (
+                "part.long_field_name and field.not",
+                "Unknown part shortname(s): 'long_field_name'",
+            ),
         ]
         for formula, expected_exception in CASES3:
             with self.subTest(formula=formula):
@@ -223,7 +228,10 @@ class ErrorTest(unittest.TestCase):
     CASES = [
         ("F", "Expected expression, found 'F'"),
         ("True and T", "Expected expression, found 'T'"),
-        ("true a false", ""),  # current exception: "Expected end of text, found 'a'". Can we do better?
+        (
+            "true a false",
+            "",
+        ),  # current exception: "Expected end of text, found 'a'". Can we do better?
         ("not", "Expected expression, found end of text"),
         ("()", "Expected expression, found ')'"),
         ("field.", "Expected field name, found end of text"),

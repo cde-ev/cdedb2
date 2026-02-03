@@ -18,9 +18,11 @@ from cdedb.frontend.common import setup_translations
 # TODO: coverage seems to not pick this up correctly,
 #  even with concurrency set to multiprocessing and/or thread.
 def database_lock_job(
-        first: threading.Semaphore, second: threading.Semaphore,
-        control: threading.Semaphore,
-        signal: "multiprocessing.Queue[int]") -> bool:  # pragma: no cover
+    first: threading.Semaphore,
+    second: threading.Semaphore,
+    control: threading.Semaphore,
+    signal: "multiprocessing.Queue[int]",
+) -> bool:  # pragma: no cover
     """See test_database_lock below.
 
     This needs to be top-level as we want to pickle it for multiprocessing.
@@ -28,8 +30,12 @@ def database_lock_job(
     config = Config()
     secrets = SecretsConfig()
     connpool = connection_pool_factory(
-        config["CDB_DATABASE_NAME"], DATABASE_ROLES,
-        secrets, config["DB_HOST"], config["DB_PORT"])
+        config["CDB_DATABASE_NAME"],
+        DATABASE_ROLES,
+        secrets,
+        config["DB_HOST"],
+        config["DB_PORT"],
+    )
     translations = setup_translations(config)
 
     def setup_requeststate() -> RequestState:
@@ -75,7 +81,6 @@ class TestBackendCommon(unittest.TestCase):
         self.assertTrue(callable(proxy.login))
         self.assertTrue(callable(proxy.verify_personas))
         with self.assertRaises(PrivilegeError):
-
             proxy.verify_password  # exception in __getitem__
 
     def test_database_lock(self) -> None:
@@ -85,13 +90,16 @@ class TestBackendCommon(unittest.TestCase):
             semaphoreB = manager.Semaphore()
             control = manager.Semaphore()
             backchannel = manager.Queue()
-            parameters = [(semaphoreA, semaphoreB, control, backchannel),
-                          (semaphoreB, semaphoreA, control, backchannel)]
+            parameters = [
+                (semaphoreA, semaphoreB, control, backchannel),
+                (semaphoreB, semaphoreA, control, backchannel),
+            ]
 
             control.acquire()
             with multiprocessing.Pool(2) as pool:
-                result_async = pool.starmap_async(database_lock_job, parameters,
-                                                  chunksize=1)
+                result_async = pool.starmap_async(
+                    database_lock_job, parameters, chunksize=1
+                )
                 readycount = 0
                 while readycount < 2:
                     readycount += backchannel.get()

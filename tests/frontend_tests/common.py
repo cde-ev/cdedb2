@@ -36,63 +36,82 @@ class TestFrontendCommon(FrontendTest):
             persona_id = random.randint(1, 10000)
             encoded = encode_parameter(salt, target, name, param, persona_id)
             _timeout, decoded = decode_parameter(
-                salt, target, name, encoded, persona_id)
+                salt, target, name, encoded, persona_id
+            )
             self.assertEqual(param, decoded)
         salt = "a salt"
         target = "some target"
         name = "fancy name"
         param = "an arbitrary message"
         persona_id = 42
-        encoded = encode_parameter(salt, target, name, param, persona_id,
-                                   timeout=datetime.timedelta(seconds=-1))
+        encoded = encode_parameter(
+            salt,
+            target,
+            name,
+            param,
+            persona_id,
+            timeout=datetime.timedelta(seconds=-1),
+        )
         self.assertEqual(
-            (True, None),
-            decode_parameter(salt, target, name, encoded, persona_id))
+            (True, None), decode_parameter(salt, target, name, encoded, persona_id)
+        )
 
         encoded = encode_parameter(salt, target, name, param, persona_id)
         self.assertEqual(
-            (False, None),
-            decode_parameter("wrong", target, name, encoded, persona_id))
+            (False, None), decode_parameter("wrong", target, name, encoded, persona_id)
+        )
         self.assertEqual(
-            (False, None),
-            decode_parameter(salt, "wrong", name, encoded, persona_id))
+            (False, None), decode_parameter(salt, "wrong", name, encoded, persona_id)
+        )
         self.assertEqual(
-            (False, None),
-            decode_parameter(salt, target, "wrong", encoded, persona_id))
+            (False, None), decode_parameter(salt, target, "wrong", encoded, persona_id)
+        )
         self.assertEqual(
-            (False, None),
-            decode_parameter(salt, target, name, encoded, -1))
+            (False, None), decode_parameter(salt, target, name, encoded, -1)
+        )
         wrong_encoded = "G" + encoded[1:]
         self.assertEqual(
             (False, None),
-            decode_parameter(salt, target, name, wrong_encoded, persona_id))
+            decode_parameter(salt, target, name, wrong_encoded, persona_id),
+        )
 
-        encoded = encode_parameter(salt, target, name, param, persona_id=None,
-                                   timeout=datetime.timedelta(hours=12))
+        encoded = encode_parameter(
+            salt,
+            target,
+            name,
+            param,
+            persona_id=None,
+            timeout=datetime.timedelta(hours=12),
+        )
         self.assertEqual(
-            (None, param),
-            decode_parameter(salt, target, name, encoded, None))
+            (None, param), decode_parameter(salt, target, name, encoded, None)
+        )
         self.assertEqual(
-            (None, param),
-            decode_parameter(salt, target, name, encoded, persona_id))
+            (None, param), decode_parameter(salt, target, name, encoded, persona_id)
+        )
         self.assertEqual(
-            (False, None),
-            decode_parameter("wrong", target, name, encoded, None))
+            (False, None), decode_parameter("wrong", target, name, encoded, None)
+        )
         self.assertEqual(
-            (False, None),
-            decode_parameter(salt, "wrong", name, encoded, None))
+            (False, None), decode_parameter(salt, "wrong", name, encoded, None)
+        )
         self.assertEqual(
-            (False, None),
-            decode_parameter(salt, target, "wrong", encoded, None))
+            (False, None), decode_parameter(salt, target, "wrong", encoded, None)
+        )
         self.assertEqual(
-            (False, None),
-            decode_parameter(salt, target, name, wrong_encoded, None))
+            (False, None), decode_parameter(salt, target, name, wrong_encoded, None)
+        )
 
     def test_date_filters(self) -> None:
         dt_naive = datetime.datetime(2010, 5, 22, 4, 55)
         dt_aware = datetime.datetime(2010, 5, 22, 4, 55, tzinfo=datetime.UTC)
         dt_other = datetime.datetime(
-            2010, 5, 22, 4, 55, tzinfo=zoneinfo.ZoneInfo('America/New_York'),
+            2010,
+            5,
+            22,
+            4,
+            55,
+            tzinfo=zoneinfo.ZoneInfo('America/New_York'),
         )
         self.assertEqual("2010-05-22", date_filter(dt_naive))
         self.assertEqual("2010-05-22", date_filter(dt_aware))
@@ -103,17 +122,18 @@ class TestFrontendCommon(FrontendTest):
         td_filter = lambda delta: timedelta_filter(delta, self.gettext)
         td = datetime.timedelta
         self.assertEqual("21\xa0Tage, 0\xa0Stunden", td_filter(td(days=21)))
-        self.assertEqual("21\xa0Tage, 0\xa0Stunden",
-                         td_filter(td(days=21, minutes=42)))
-        self.assertEqual("21\xa0Tage, 2\xa0Stunden",
-                         td_filter(td(days=21, hours=2)))
+        self.assertEqual("21\xa0Tage, 0\xa0Stunden", td_filter(td(days=21, minutes=42)))
+        self.assertEqual("21\xa0Tage, 2\xa0Stunden", td_filter(td(days=21, hours=2)))
         self.assertEqual("20\xa0Stunden, 0\xa0Minuten", td_filter(td(hours=20)))
-        self.assertEqual("20\xa0Stunden, 0\xa0Minuten",
-                         td_filter(td(hours=20, seconds=42)))
-        self.assertEqual("20\xa0Stunden, 42\xa0Minuten",
-                         td_filter(td(hours=20, minutes=42)))
-        self.assertEqual("10\xa0Minuten, 0\xa0Sekunden",
-                         td_filter(td(minutes=10, microseconds=42)))
+        self.assertEqual(
+            "20\xa0Stunden, 0\xa0Minuten", td_filter(td(hours=20, seconds=42))
+        )
+        self.assertEqual(
+            "20\xa0Stunden, 42\xa0Minuten", td_filter(td(hours=20, minutes=42))
+        )
+        self.assertEqual(
+            "10\xa0Minuten, 0\xa0Sekunden", td_filter(td(minutes=10, microseconds=42))
+        )
 
     def test_cdedbid_filter(self) -> None:
         self.assertEqual("DB-1-9", cdedbid_filter(1))
@@ -134,8 +154,9 @@ class TestFrontendCommon(FrontendTest):
 
     def test_tex_escape_filter(self) -> None:
         self.assertEqual(r"\textbackslash foo", tex_escape_filter(r"\foo"))
-        self.assertEqual(r"line\textbackslash \textbackslash next",
-                         tex_escape_filter(r"line\\next"))
+        self.assertEqual(
+            r"line\textbackslash \textbackslash next", tex_escape_filter(r"line\\next")
+        )
         self.assertEqual(r"a\~{}b", tex_escape_filter(r"a~b"))
         self.assertEqual(r"a\^{}b", tex_escape_filter(r"a^b"))
         self.assertEqual(r"a\{b", tex_escape_filter(r"a{b"))
@@ -152,11 +173,14 @@ class TestFrontendCommon(FrontendTest):
             # Not all Latin enum members are translated yet
             if lang == "la":
                 continue
-            for enum in set(cdedb.enums.ENUMS_DICT.values()).difference(cdedb.enums.NON_TRANSLATED_ENUMS):
+            for enum in set(cdedb.enums.ENUMS_DICT.values()).difference(
+                cdedb.enums.NON_TRANSLATED_ENUMS
+            ):
                 with self.subTest(lang=lang, enum=enum):
                     for member in enum:
                         self.assertNotEqual(
-                            translation.gettext(str(member)), str(member))
+                            translation.gettext(str(member)), str(member)
+                        )
 
     def test_mltype_domain_enum_entries(self) -> None:
         for type_ in ML_TYPE_MAP.values():

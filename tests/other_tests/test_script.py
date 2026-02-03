@@ -35,12 +35,17 @@ class TestScript(unittest.TestCase):
         populated state. Tests which rely on specific contents should
         prepare them theirselves.
         """
-        return Script(persona_id=-1, dbuser="cdb_admin", check_system_user=False,
-                      **config)
+        return Script(
+            persona_id=-1, dbuser="cdb_admin", check_system_user=False, **config
+        )
 
     @staticmethod
-    def check_buffer(buffer: typing.IO[str], assertion: Callable[[str, str], None],
-                     value: str, truncate: bool = True) -> None:
+    def check_buffer(
+        buffer: typing.IO[str],
+        assertion: Callable[[str, str], None],
+        value: str,
+        truncate: bool = True,
+    ) -> None:
         """Check the buffer's content and empty it."""
         buffer.seek(0)  # go to start of buffer
         assertion(value, buffer.read())
@@ -60,8 +65,11 @@ class TestScript(unittest.TestCase):
                     print("This too!", file=sys.stderr)
                 with open(f.name, encoding="utf-8") as fr:
                     self.check_buffer(
-                        fr, self.assertEqual, "Writing this to file.\nThis too!\n",
-                        truncate=False)
+                        fr,
+                        self.assertEqual,
+                        "Writing this to file.\nThis too!\n",
+                        truncate=False,
+                    )
 
         expectation = "Not writing this to file.\nNot writing this to file either."
         self.check_buffer(buffer, self.assertIn, expectation)
@@ -74,8 +82,11 @@ class TestScript(unittest.TestCase):
         self.assertIs(rs_factory(42), rs_factory(42))
 
         with self.assertRaises(ValueError) as cm:
-            Script(dbuser="cdb_admin", check_system_user=False,
-                   CDB_DATABASE_ROLES="{'cdb_admin': 'abc'}")
+            Script(
+                dbuser="cdb_admin",
+                check_system_user=False,
+                CDB_DATABASE_ROLES="{'cdb_admin': 'abc'}",
+            )
         msg = "Override secret config options via kwarg is not possible."
         self.assertIn(msg, cm.exception.args[0])
 
@@ -95,8 +106,10 @@ class TestScript(unittest.TestCase):
         configured_script = self.get_script(EVENT_ARCHIVAL_BALANCE_CUTOFF=42)
         self.assertEqual(42, configured_script.config["EVENT_ARCHIVAL_BALANCE_CUTOFF"])
         self.assertEqual(real_configpath, get_configpath())
-        self.assertEqual(str(configured_script._tempconfig),
-                         str({"EVENT_ARCHIVAL_BALANCE_CUTOFF": 42}))
+        self.assertEqual(
+            str(configured_script._tempconfig),
+            str({"EVENT_ARCHIVAL_BALANCE_CUTOFF": 42}),
+        )
         self.assertTrue(configured_script.config._is_frozen)
 
         self.get_script(some_key="string value")
@@ -111,7 +124,8 @@ class TestScript(unittest.TestCase):
             f.flush()
             configured_script = self.get_script(configpath=f.name)
             self.assertEqual(
-                42, configured_script.config["EVENT_ARCHIVAL_BALANCE_CUTOFF"])
+                42, configured_script.config["EVENT_ARCHIVAL_BALANCE_CUTOFF"]
+            )
             self.assertEqual(real_configpath, get_configpath())
             self.assertTrue(configured_script.config._is_frozen)
 
@@ -132,8 +146,8 @@ class TestScript(unittest.TestCase):
         # this takes the options from the real_configpath into account automatically
         configured_script = self.get_script(LOCKDOWN=42)
         self.assertEqual(
-            42,
-            configured_script.make_backend("core", proxy=False).conf["LOCKDOWN"])
+            42, configured_script.make_backend("core", proxy=False).conf["LOCKDOWN"]
+        )
         self.assertEqual(real_configpath, get_configpath())
 
         # check setting config options per config file
@@ -146,8 +160,8 @@ class TestScript(unittest.TestCase):
             f.flush()
             configured_script = self.get_script(configpath=f.name)
             self.assertEqual(
-                42,
-                configured_script.make_backend("core", proxy=False).conf["LOCKDOWN"])
+                42, configured_script.make_backend("core", proxy=False).conf["LOCKDOWN"]
+            )
             self.assertEqual(real_configpath, get_configpath())
 
         for realm, backend_class in Script.backend_map.items():
@@ -182,8 +196,8 @@ class TestScript(unittest.TestCase):
             f.flush()
             configured_script = self.get_script(configpath=f.name)
             self.assertEqual(
-                42,
-                configured_script.make_frontend("core").conf["LOCKDOWN"])
+                42, configured_script.make_frontend("core").conf["LOCKDOWN"]
+            )
             self.assertEqual(real_configpath, get_configpath())
 
         for realm, frontend_class in Script.frontend_map.items():
@@ -197,22 +211,20 @@ class TestScript(unittest.TestCase):
         with redirect_to_file(buffer):
             with ScriptAtomizer(rs):
                 pass
-            self.check_buffer(buffer, self.assertIn,
-                              "Aborting Dry Run! Time taken: ")
+            self.check_buffer(buffer, self.assertIn, "Aborting Dry Run! Time taken: ")
             with ScriptAtomizer(rs, dry_run=True):
                 pass
-            self.check_buffer(buffer, self.assertIn,
-                              "Aborting Dry Run! Time taken: ")
+            self.check_buffer(buffer, self.assertIn, "Aborting Dry Run! Time taken: ")
             with ScriptAtomizer(rs, dry_run=False):
                 raise DryRunError()
-            self.check_buffer(buffer, self.assertIn,
-                              "Aborting Dry Run! Time taken: ")
+            self.check_buffer(buffer, self.assertIn, "Aborting Dry Run! Time taken: ")
             # Non-DryRunErrors are not suppressed.
             with self.assertRaises(ValueError):
                 with ScriptAtomizer(rs, dry_run=False):
                     raise ValueError()
-            self.check_buffer(buffer, self.assertIn,
-                              "Error encountered, rolling back! Time taken: ")
+            self.check_buffer(
+                buffer, self.assertIn, "Error encountered, rolling back! Time taken: "
+            )
             with ScriptAtomizer(rs, dry_run=False):
                 pass
             self.check_buffer(buffer, self.assertIn, "Success!")
@@ -221,8 +233,7 @@ class TestScript(unittest.TestCase):
                 "INSERT INTO core.cron_store"  # arbitrary, small table
                 " (title, store) VALUES ('Test', '{}')"
             )
-            selection_query = ("SELECT title FROM core.cron_store"
-                               " WHERE title = 'Test'")
+            selection_query = "SELECT title FROM core.cron_store WHERE title = 'Test'"
             # Make a change, roll back, then check it hasn't been committed.
             with ScriptAtomizer(rs, dry_run=True) as conn:
                 with conn.cursor() as cur:
@@ -247,12 +258,14 @@ class TestScript(unittest.TestCase):
 
         token = event.get_orga_token(offline_script.rs(), 1)
         with self.assertRaisesRegex(
-                APITokenError, "This API is not available in offline mode.",
+            APITokenError,
+            "This API is not available in offline mode.",
         ):
             session.lookuptoken(token.get_token_string("abc"), "127.0.0.0")
 
         with self.assertRaisesRegex(
-                ValueError, "May not create new orga token in offline instance.",
+            ValueError,
+            "May not create new orga token in offline instance.",
         ):
             data = token.to_database()
             del data["id"]
