@@ -13,7 +13,7 @@ DEPLOYMENT_KEY_PATH=/home/cdedb/.ssh/id_rsa
 # Options:
 # -display none
 # -vnc :123
-QEMUOPTIONS="-m 1G -net nic,model=virtio -net user"
+QEMUOPTIONS="-display none -m 1G -net nic,model=virtio -net user"
 
 # get the most current state of the repository
 cd $REPODIR
