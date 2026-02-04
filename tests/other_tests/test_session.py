@@ -28,10 +28,14 @@ class SessionEntry(NamedTuple):
     atime: Optional[datetime.datetime]
 
 
-def make_session_entry(persona_id: int, is_active: bool = True, ip: str = "127.0.0.1",
-                       sessionkey: Optional[str] = None,
-                       ctime: Optional[datetime.datetime] = None,
-                       atime: Optional[datetime.datetime] = None) -> SessionEntry:
+def make_session_entry(
+    persona_id: int,
+    is_active: bool = True,
+    ip: str = "127.0.0.1",
+    sessionkey: Optional[str] = None,
+    ctime: Optional[datetime.datetime] = None,
+    atime: Optional[datetime.datetime] = None,
+) -> SessionEntry:
     if sessionkey is None:
         sessionkey = secrets.token_hex()
     return SessionEntry(persona_id, is_active, ip, sessionkey, ctime, atime)
@@ -41,9 +45,12 @@ def insert_sessions_template(data: Sequence[SessionEntry]) -> str:
     values = ', '.join(
         f"({e.persona_id}, {e.is_active}, '{e.ip}', '{e.sessionkey}',"
         f" '{e.ctime if e.ctime else 'now()'}', '{e.atime if e.atime else 'now()'}')"
-        for e in data)
-    return (f"INSERT INTO core.sessions"
-            f" (persona_id, is_active, ip, sessionkey, ctime, atime) VALUES {values}")
+        for e in data
+    )
+    return (
+        f"INSERT INTO core.sessions"
+        f" (persona_id, is_active, ip, sessionkey, ctime, atime) VALUES {values}"
+    )
 
 
 class TestSessionBackend(BackendTest):
@@ -59,9 +66,15 @@ class TestSessionBackend(BackendTest):
         self.assertEqual(USER_DICT["anton"]['id'], user.persona_id)
 
     def test_tokenlookup(self) -> None:
-        persona_sessionkey = cast(RequestState, self.core.login(
-            self.key, USER_DICT['anton']['username'],
-            USER_DICT['anton']['password'], '127.0.0.0'))
+        persona_sessionkey = cast(
+            RequestState,
+            self.core.login(
+                self.key,
+                USER_DICT['anton']['username'],
+                USER_DICT['anton']['password'],
+                '127.0.0.0',
+            ),
+        )
 
         # Invalid apitoken.
         with self.assertRaisesRegex(APITokenError, "Malformed API token."):
@@ -77,7 +90,8 @@ class TestSessionBackend(BackendTest):
         assert isinstance(user.droid, model_droid.ResolveToken)
         self.assertIsNone(user.droid.id)
         self.assertEqual(
-            {"anonymous", "droid", "droid_resolve", "droid_infra"}, user.roles)
+            {"anonymous", "droid", "droid_resolve", "droid_infra"}, user.roles
+        )
 
         # "resolve" droid api token with invalid secret.
         invalid_resolve_token = model_droid.ResolveToken.get_token_string("abc")
@@ -95,7 +109,8 @@ class TestSessionBackend(BackendTest):
         assert isinstance(user.droid, model_droid.QuickPartialExportToken)
         self.assertIsNone(user.droid.id)
         self.assertEqual(
-            {"anonymous", "droid", "droid_quick_partial_export"}, user.roles)
+            {"anonymous", "droid", "droid_quick_partial_export"}, user.roles
+        )
 
         # "quick_partial_export" with invalid secret.
         invalid_qpe_token = model_droid.QuickPartialExportToken.get_token_string("abc")
@@ -106,7 +121,8 @@ class TestSessionBackend(BackendTest):
         # event specific orga droid.
         orga_token_secret = "secret"
         orgatoken = model_droid.OrgaToken._get_token_string(
-            model_droid.OrgaToken._get_droid_name(1), orga_token_secret)
+            model_droid.OrgaToken._get_droid_name(1), orga_token_secret
+        )
 
         self.assertIsNone(self.event.get_orga_token(persona_sessionkey, 1).atime)
 
@@ -123,7 +139,8 @@ class TestSessionBackend(BackendTest):
 
         # orga droid with invalid secret.
         invalid_orgatoken = model_droid.OrgaToken._get_token_string(
-            model_droid.OrgaToken._get_droid_name(1), "abc")
+            model_droid.OrgaToken._get_droid_name(1), "abc"
+        )
         with self.assertRaisesRegex(APITokenError, "Invalid .+ token."):
             self.session.lookuptoken(invalid_orgatoken, "127.0.2.1")
 
@@ -134,12 +151,12 @@ class TestSessionBackend(BackendTest):
 
         # Revoke token and try again.
         execsql("UPDATE event.orga_apitokens SET rtime = now(), secret_hash = NULL")
-        with self.assertRaisesRegex(
-                APITokenError, "This .+ token has been revoked."):
+        with self.assertRaisesRegex(APITokenError, "This .+ token has been revoked."):
             self.session.lookuptoken(orgatoken, "127.0.2.3")
 
         self.assertEqual(
-            last_valid_access, self.event.get_orga_token(persona_sessionkey, 1).atime)
+            last_valid_access, self.event.get_orga_token(persona_sessionkey, 1).atime
+        )
 
     def test_multiple_sessions(self) -> None:
         # Logging out only works with the ip "127.0.0.0", which is the
@@ -154,35 +171,37 @@ class TestSessionBackend(BackendTest):
             self.assertTrue(users[-1].persona_id)
         for i, user in enumerate(users[:-1]):
             self.assertNotEqual({"anonymous"}, user.roles)
-            self.assertNotEqual(user, users[i+1])
-            self.assertEqual(user.__dict__, users[i+1].__dict__)
+            self.assertNotEqual(user, users[i + 1])
+            self.assertEqual(user.__dict__, users[i + 1].__dict__)
 
         # Terminate a single session.
         self.core.logout(cast(RequestState, keys[0]))
         # Check termination.
         self.assertEqual(
-            {"anonymous"},
-            self.session.lookupsession(keys[0], ips[0]).roles)
+            {"anonymous"}, self.session.lookupsession(keys[0], ips[0]).roles
+        )
         # Check that other sessions are untouched.
         for i in (1, 2):
             self.assertEqual(
-                users[i].__dict__,
-                self.session.lookupsession(keys[i], ips[i]).__dict__)
+                users[i].__dict__, self.session.lookupsession(keys[i], ips[i]).__dict__
+            )
 
         # Terminate all sessions.
         self.core.logout(cast(RequestState, keys[2]), other_sessions=True)
         # Check that all sessions have been terminated.
         for i in (0, 1, 2):
             self.assertEqual(
-                {"anonymous"},
-                self.session.lookupsession(keys[i], ips[i]).roles)
+                {"anonymous"}, self.session.lookupsession(keys[i], ips[i]).roles
+            )
 
     def test_max_active_sessions(self) -> None:
         user_data = USER_DICT["anton"]
         ip = "1.2.3.4"
         # Create and check the maximum number of allowed sessions.
-        keys = [self.login(user_data, ip=ip)
-                for _ in range(self.conf["MAX_ACTIVE_SESSIONS"])]
+        keys = [
+            self.login(user_data, ip=ip)
+            for _ in range(self.conf["MAX_ACTIVE_SESSIONS"])
+        ]
         for i, key in enumerate(keys):
             with self.subTest(i=i, key=key):
                 user = self.session.lookupsession(key, ip=ip)
@@ -202,8 +221,11 @@ class TestSessionBackend(BackendTest):
         ip = "1.2.3.4."
 
         # Create some sessions for some different users.
-        keys = {u: self.login(u, ip=ip) for u in USER_DICT
-                if u not in {"hades", "lisa", "olaf", "anonymous"}}
+        keys = {
+            u: self.login(u, ip=ip)
+            for u in USER_DICT
+            if u not in {"hades", "lisa", "olaf", "anonymous"}
+        }
         for u, key in keys.items():
             with self.subTest(user=u, key=key):
                 user = self.session.lookupsession(key, ip)
@@ -233,22 +255,27 @@ class TestSessionBackend(BackendTest):
         entries = [
             make_session_entry(1, ctime=old_time, atime=old_time),
             make_session_entry(1, ctime=old_time + delta, atime=old_time + delta),
-            make_session_entry(1, ctime=old_time + 2*delta, atime=old_time + 2*delta),
+            make_session_entry(
+                1, ctime=old_time + 2 * delta, atime=old_time + 2 * delta
+            ),
             make_session_entry(2, ctime=old_time, atime=old_time),
             make_session_entry(2, ctime=old_time + delta, atime=old_time + delta),
             make_session_entry(3, ctime=old_time, atime=old_time),
-            make_session_entry(3, ctime=old_time + delta, atime=old_time + delta)]
+            make_session_entry(3, ctime=old_time + delta, atime=old_time + delta),
+        ]
         unique_personas = len(set(e.persona_id for e in entries))
         execsql(insert_sessions_template(entries))
 
         user = USER_DICT["anton"]
         key = self.login(user)
         self.login("vera")
-        self.assertEqual(len(entries) - unique_personas,
-                         self.core.deactivate_old_sessions(self.key))
+        self.assertEqual(
+            len(entries) - unique_personas, self.core.deactivate_old_sessions(self.key)
+        )
         self.assertEqual(0, self.core.deactivate_old_sessions(self.key))
-        self.assertEqual(len(entries) - unique_personas,
-                         self.core.clean_session_log(self.key))
+        self.assertEqual(
+            len(entries) - unique_personas, self.core.clean_session_log(self.key)
+        )
         self.assertEqual(0, self.core.clean_session_log(self.key))
 
         u = self.session.lookupsession(key, "127.0.0.0")
@@ -258,8 +285,9 @@ class TestSessionBackend(BackendTest):
 class TestSessionFrontend(FrontendTest):
     def test_2285(self) -> None:
         self.login("anton")
-        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Kurse",
-                      "Kurs hinzufügen")
+        self.traverse(
+            "Veranstaltungen", "Große Testakademie 2222", "Kurse", "Kurs hinzufügen"
+        )
         f = self.response.forms['configurecourseform']
         f['nr'] = "1"
         f['title'] = "Test"
@@ -270,18 +298,24 @@ class TestSessionFrontend(FrontendTest):
         try:
             self.submit(f, check_notification=False)
         except RuntimeError:  # pragma: no cover
-            self.fail("Input validation not checked when submitting csrf-protected"
-                      " form withput sessionkey.")
+            self.fail(
+                "Input validation not checked when submitting csrf-protected"
+                " form withput sessionkey."
+            )
 
 
 class TestMultiSessionFrontend(MultiAppFrontendTest):
     n = 3  # Needs to be at least 3 for the following test to work correctly.
 
-    def _setup_multisessions(self, user: UserIdentifier, session_cookie: str,
-                             ) -> list[Optional[str]]:
+    def _setup_multisessions(
+        self,
+        user: UserIdentifier,
+        session_cookie: str,
+    ) -> list[Optional[str]]:
         user = get_user(user)
-        self.assertGreaterEqual(self.n, 3, "This test will only work correctly"
-                                           " with 3 or more apps.")
+        self.assertGreaterEqual(
+            self.n, 3, "This test will only work correctly with 3 or more apps."
+        )
         # Set up multiple sessions.
         keys = []
         for i in range(self.n):
@@ -320,8 +354,7 @@ class TestMultiSessionFrontend(MultiAppFrontendTest):
         self.switch_app(self.n - 1)
         f = self.response.forms['logoutallform']
         self.submit(f)
-        self.assertPresence(f"{self.n - 1} Sitzung(en) beendet.",
-                            div="notifications")
+        self.assertPresence(f"{self.n - 1} Sitzung(en) beendet.", div="notifications")
         for i in range(self.n):
             self.switch_app(i)
             with self.subTest(app_index=i):
@@ -337,8 +370,9 @@ class TestMultiSessionFrontend(MultiAppFrontendTest):
         # Change password in session 0
         self.switch_app(0)
         new_password = 'krce84#(=kNO3xb'
-        self.traverse({'description': user['given_names']},
-                      {'description': 'Passwort ändern'})
+        self.traverse(
+            {'description': user['given_names']}, {'description': 'Passwort ändern'}
+        )
         f = self.response.forms['passwordchangeform']
         f['old_password'] = user['password']
         f['new_password'] = new_password

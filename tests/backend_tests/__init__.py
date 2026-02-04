@@ -1,4 +1,5 @@
 """Module containing all CdEDB backend tests, one file per backend."""
+
 from tests.backend_tests.assembly import TestAssemblyBackend
 from tests.backend_tests.cde import TestCdEBackend
 from tests.backend_tests.common import TestBackendCommon

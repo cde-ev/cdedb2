@@ -7,6 +7,7 @@ result is the return of the function to be tested, and expectation is a literal 
 computed value, that the tested function should return,
 e.g. `self.assertEqual("123", str(123))`.
 """
+
 import asyncio
 from typing import Any, cast
 
@@ -35,7 +36,8 @@ def create_filter_object(filter_string: str) -> FilterLike:
     )
     parsed_filter = parseFilter(filter_string)
     roundtripped_filter, _ = pureber.berDecodeObject(
-        filterdecoder, parsed_filter.toWire(),
+        filterdecoder,
+        parsed_filter.toWire(),
     )
 
     return roundtripped_filter
@@ -51,25 +53,31 @@ class LDAPBackendTest(BasicTest):
             ("äöü", "äöü".encode()),
             ("äöü", b"\xc3\xa4\xc3\xb6\xc3\xbc"),
             (123, int2ber(123)),
-            (0x7c, b"\x7c"),
+            (0x7C, b"\x7c"),
             (0x12345, b"\x01\x23\x45"),
             (0x12345, int2ber(0x12345)),
-            (0xedcba, b"\x0e\xdc\xba"),
-            (0xedcba, int2ber(0xedcba)),
-            (0xfedcba, b"\00\xfe\xdc\xba"),
-            (0xfedcba, int2ber(0xfedcba)),
-            (2 ** 16, b"\x01\x00\x00"),
-            (2 ** 16, int2ber(2 ** 16)),
+            (0xEDCBA, b"\x0e\xdc\xba"),
+            (0xEDCBA, int2ber(0xEDCBA)),
+            (0xFEDCBA, b"\00\xfe\xdc\xba"),
+            (0xFEDCBA, int2ber(0xFEDCBA)),
+            (2**16, b"\x01\x00\x00"),
+            (2**16, int2ber(2**16)),
             (b"1234", b"1234"),
             (None, b""),
             (DN("cn=xyz"), b"cn=xyz"),
             (DN("cn=äöü"), "cn=äöü".encode()),
             (["a", "b", "c"], [b"a", b"b", b"c"]),
             ({"abc": 123}, {b"abc": int2ber(123)}),
-            ([123, "abc", "äöü", [456, "def", "ßÄÖÜ"], {"ghi": -42, 2222: "jkl"}],
-             [int2ber(123), b"abc", "äöü".encode(),
-              [int2ber(456), b"def", "ßÄÖÜ".encode()],
-              {b"ghi": int2ber(-42), int2ber(2222): b"jkl"}]),
+            (
+                [123, "abc", "äöü", [456, "def", "ßÄÖÜ"], {"ghi": -42, 2222: "jkl"}],
+                [
+                    int2ber(123),
+                    b"abc",
+                    "äöü".encode(),
+                    [int2ber(456), b"def", "ßÄÖÜ".encode()],
+                    {b"ghi": int2ber(-42), int2ber(2222): b"jkl"},
+                ],
+            ),
         )
 
         for in_, out in values:
@@ -91,9 +99,19 @@ class LDAPBackendTest(BasicTest):
 
     def test_classproperties(self) -> None:
         classproperties = {
-            "de_dn", "cde_dn", "duas_dn", "users_dn", "groups_dn", "status_groups_dn",
-            "presider_groups_dn", "orga_groups_dn", "moderator_groups_dn", "root_dn",
-            "subscriber_groups_dn", "anonymous_accessible_dns", "subschema_dn",
+            "de_dn",
+            "cde_dn",
+            "duas_dn",
+            "users_dn",
+            "groups_dn",
+            "status_groups_dn",
+            "presider_groups_dn",
+            "orga_groups_dn",
+            "moderator_groups_dn",
+            "root_dn",
+            "subscriber_groups_dn",
+            "anonymous_accessible_dns",
+            "subschema_dn",
             "any_groups_dn",
         }
         for name, attr in self.ldap_backend_class.__dict__.items():
@@ -178,10 +196,14 @@ class LDAPBackendTest(BasicTest):
 
     def test_presider_group_dn(self) -> None:
         assembly_id = 5
-        expectation = DN(f"cn=presiders-{assembly_id},ou=assembly-presiders,ou=groups,"
-                         f"dc=cde-ev,dc=de")
-        self.assertEqual(f"presiders-{assembly_id}",
-                         self.ldap_backend_class.presider_group_cn(assembly_id))
+        expectation = DN(
+            f"cn=presiders-{assembly_id},ou=assembly-presiders,ou=groups,"
+            f"dc=cde-ev,dc=de"
+        )
+        self.assertEqual(
+            f"presiders-{assembly_id}",
+            self.ldap_backend_class.presider_group_cn(assembly_id),
+        )
         dn = self.ldap_backend_class.presider_group_dn(assembly_id)
         self.assertEqual(expectation, dn)
         self.assertTrue(self.ldap_backend_class.is_presider_group_dn(dn))
@@ -194,9 +216,11 @@ class LDAPBackendTest(BasicTest):
     def test_orga_group_dn(self) -> None:
         event_id = 100
         expectation = DN(
-            f"cn=orgas-{event_id},ou=event-orgas,ou=groups,dc=cde-ev,dc=de")
-        self.assertEqual(f"orgas-{event_id}",
-                         self.ldap_backend_class.orga_group_cn(event_id))
+            f"cn=orgas-{event_id},ou=event-orgas,ou=groups,dc=cde-ev,dc=de"
+        )
+        self.assertEqual(
+            f"orgas-{event_id}", self.ldap_backend_class.orga_group_cn(event_id)
+        )
         dn = self.ldap_backend_class.orga_group_dn(event_id)
         self.assertEqual(dn, expectation)
         self.assertTrue(self.ldap_backend_class.is_orga_group_dn(dn))
@@ -210,9 +234,11 @@ class LDAPBackendTest(BasicTest):
         address = "test@lists.cde-ev.de"
         owner_address = "test-owner@lists.cde-ev.de"
         expectation = DN(
-            f"cn={owner_address},ou=ml-moderators,ou=groups,dc=cde-ev,dc=de")
+            f"cn={owner_address},ou=ml-moderators,ou=groups,dc=cde-ev,dc=de"
+        )
         self.assertEqual(
-            owner_address, self.ldap_backend_class.moderator_group_cn(address))
+            owner_address, self.ldap_backend_class.moderator_group_cn(address)
+        )
         dn = self.ldap_backend_class.moderator_group_dn(address)
         self.assertEqual(expectation, dn)
         self.assertTrue(self.ldap_backend_class.is_moderator_group_dn(dn))
@@ -338,7 +364,8 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         for presider in presider_group_dns:
             self.assertIsInstance(presider, DN)
         _presider_groups = await self.ldap.get_assembly_presider_groups(
-            presider_group_dns)
+            presider_group_dns
+        )
         presiders = await self.ldap.get_presiders(assembly_ids)
         self.assertIn(1, presiders)
         assemblies = await self.ldap.get_assemblies(assembly_ids)
@@ -372,7 +399,8 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         for subscriber in subscriber_group_dns:
             self.assertIsInstance(subscriber, DN)
         _subscriber_groups = await self.ldap.get_ml_moderator_groups(
-            subscriber_group_dns)
+            subscriber_group_dns
+        )
         subscribers = await self.ldap.get_moderators(ml_addresses)
         self.assertIn("42@lists.cde-ev.de", subscribers)
         mls = await self.ldap.get_mailinglists(ml_addresses)
@@ -387,7 +415,9 @@ class AsyncLDAPBackendTest(AsyncBasicTest):
         self.assertIn(self.ldap.user_dn(orga), any_orga_group[b"uniqueMember"])
         moderator = 11
         _, any_moderator_group = await self.ldap.get_any_moderator_group()
-        self.assertIn(self.ldap.user_dn(moderator), any_moderator_group[b"uniqueMember"])
+        self.assertIn(
+            self.ldap.user_dn(moderator), any_moderator_group[b"uniqueMember"]
+        )
 
     async def test_ldap_filter_lowering(self) -> None:
         async def parse_and_lower(
