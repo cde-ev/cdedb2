@@ -5,12 +5,24 @@ reload
 sample-data
 
 # run (some) tests
-c (="bin/check.py -v")
+# check = bin/check.py -v
+check
 
 # access postgres database directly
-cdb (="sudo -u cdb psql -U cdb -d cdb")
+# cdb = sudo -u cdb psql -U cdb -d cdb
+cdb
 
 # access cdedb and ldap logs (recommended: -e or -f)
-app-logs (="sudo journalctl -u cdedb-app")
-ldap-logs (="sudo journalctl -u cde-ldap")
-all-logs (="sudo journalctl -u cdedb-app -u cde-ldap")
+# app-logs = sudo journalctl --no-hostname -u cdedb-app
+# ldap-logs = sudo journalctl --no-hostname -u cde-ldap
+# all-logs = sudo journalctl --no-hostname -u cdedb-app -u cde-ldap
+all-logs
+
+# access test logs (recomend: -e or -f)
+# test-logs = sudo journalctl --no-hostname -t cdedb-test
+# test-logs-ldap = sudo journalctl --no-hostname -u cde-ldap-test
+test-logs
+
+# show (all) configured aliases
+alias
+cat /cdedb2/related/dev-setup/.bash_aliases
