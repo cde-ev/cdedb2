@@ -80,7 +80,6 @@ apt-get install --yes --no-install-recommends                       \
 
 python3 -m pip install --break-system-packages uv
 cat >> ~/.bashrc << EOF
-export EDITOR=nano
 
 eval "$(uv generate-shell-completion bash)"
 eval "$(uvx --generate-shell-completion bash)"
@@ -120,8 +119,6 @@ echo "PermitEmptyPasswords yes" >> /etc/ssh/sshd_config
 
 sudo -u cdedb touch /home/cdedb/.bashrc
 cat >> /home/cdedb/.bashrc << EOF
-
-export EDITOR=nano
 
 eval "$(uv generate-shell-completion bash)"
 eval "$(uvx --generate-shell-completion bash)"
