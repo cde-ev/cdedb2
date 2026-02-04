@@ -1,7 +1,8 @@
 # This is sourced by ~/.bash_aliases but synced via repo.
 # If you want to change these locally, simply place a different alias later in ~/.bash_aliases
 
-alias c="uv run --project=/cdedb2 /cdedb2/bin/check.py -v"
+alias check="uv run --project=/cdedb2 /cdedb2/bin/check.py -v"
+alias c="check"
 alias offline="uv run --project=/cdedb2 /cdedb2/bin/make_offline_vm.py --not-interactive --no-extra-packages --dev --no-offline-flag"
 
 alias cdb="sudo -u cdb psql -U cdb -d cdb"
