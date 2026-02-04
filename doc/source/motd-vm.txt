@@ -1,15 +1,16 @@
 # reset running application (update with current code / settings)
-cd /cdedb2 && make reload
-
-# run (part of the) test suite (all tests matching the given pattern)
-# filename may be included in pattern; when no pattern given run everything
-/cdedb2/bin/check.py test_backend_event*test_json_fields_with_dates
-
-# access postgres database directly
-sudo -u cdb psql -U cdb -d cdb
-
-# access cdedb and ldap logs (most recently first)
-sudo journalctl --unit cdedb-app --unit cde-ldap --since=today
+reload
 
 # reset database (DESTROYS ALL DATA)
-cd /cdedb2 && make sample-data
+sample-data
+
+# run (some) tests
+c (="bin/check.py -v")
+
+# access postgres database directly
+cdb (="sudo -u cdb psql -U cdb -d cdb")
+
+# access cdedb and ldap logs (recommended: -e or -f)
+app-logs (="sudo journalctl -u cdedb-app")
+ldap-logs (="sudo journalctl -u cde-ldap")
+all-logs (="sudo journalctl -u cdedb-app -u cde-ldap")
