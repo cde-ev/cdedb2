@@ -700,7 +700,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
                     # FIXME: remove special casing once production uses uv.
                     *(
                         ['uv']
-                        if "UV_PROJECT_ENVIRONMENT" in os.environ
+                        if "UV_PROJECT_ENVIRONMENT" in os.environ or "UV" in os.environ
                         else ['python3', '-m']
                     ),
                     'pip',
