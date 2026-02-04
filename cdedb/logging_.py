@@ -10,10 +10,14 @@ from systemd.journal import JournalHandler
 from cdedb.config import DEFAULT_LOG_LEVEL, Config
 
 
-def setup_root_logger() -> None:
+def setup_root_logger(*, test: bool = False, replace: bool = False) -> None:
     # loggers are hierachical - configuring handlers and setting a loglevel for logger
     # "cdedb" is sufficient to configure all child loggers, like "cdedb.backend".
     logger = logging.getLogger()
+
+    if replace:
+        for h in logger.handlers:
+            logger.removeHandler(h)
 
     # we can not rely on the config at this point, since this code will be executed
     # while importing the cdedb module. Therefore, we apply the default log level
@@ -27,7 +31,9 @@ def setup_root_logger() -> None:
         logging.raiseExceptions = False
 
     # setup handler
-    handler: logging.Handler = MyJournalHandler(SYSLOG_IDENTIFIER="cdedb")
+    handler: logging.Handler = JournalHandler(
+        SYSLOG_IDENTIFIER="cdedb" if not test else "cdedb-test"
+    )
     if is_container := pathlib.Path("/CONTAINER").is_file():
         # do not log anything in the CI
         if os.environ.get("CI"):
@@ -38,8 +44,7 @@ def setup_root_logger() -> None:
         ("[{asctime}]" if is_container else "") +
         " [{name}]"
         " [{levelname}]"
-        " [{funcName} in {pathname} line {lineno}]"
-        " [{CDB_DATABASE_NAME}]"
+        " [{funcName} in {pathname}:{lineno}]"
         " {message}"
     ).strip()  # fmt: skip
     handler.setFormatter(MyFormatter(formatstr, style="{"))
@@ -56,14 +61,7 @@ class MyFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         # to distinguish between tests
+        if self._config["CDEDB_TEST"]:
+            record.name += "-" + self._config["CDB_DATABASE_NAME"].split("_")[-1]
         setattr(record, "CDB_DATABASE_NAME", self._config["CDB_DATABASE_NAME"])
         return super().format(record)
-
-
-class MyJournalHandler(JournalHandler):
-    _config = Config()
-
-    def emit(self, record: logging.LogRecord) -> None:
-        # to distinguish between tests
-        setattr(record, "CDB_DATABASE_NAME", self._config["CDB_DATABASE_NAME"])
-        return super().emit(record)
