@@ -214,7 +214,8 @@ _DEFAULTS = {
     # default sender address for mails
     "DEFAULT_SENDER": '"CdE-Datenbank" <datenbank@cde-ev.de>',
     # noreply sender for sensitive mails
-    "NOREPLY_ADDRESS": '"CdE-Datenbank" <no-reply@cde-ev.de>',
+    "NOREPLY_SENDER": '"CdE-Datenbank" <no-reply@cde-ev.de>',
+    "NOREPLY_ADDRESS": "no-reply@cde-ev.de",
     # default subject prefix
     "DEFAULT_PREFIX": "[CdE]",
     # domain for emails (determines message id)

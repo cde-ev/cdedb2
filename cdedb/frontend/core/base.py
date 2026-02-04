@@ -1765,8 +1765,8 @@ class CoreBaseFrontend(AbstractFrontend):
                 {
                     'To': (to,),
                     'Subject': subject,
-                    'From': self.conf["NOREPLY_ADDRESS"],
-                    'Reply-To': self.conf["NOREPLY_ADDRESS"],
+                    'From': self.conf["NOREPLY_SENDER"],
+                    'Reply-To': self.conf["NOREPLY_SENDER"],
                 },
                 {
                     'message_text': msg,
@@ -1777,14 +1777,14 @@ class CoreBaseFrontend(AbstractFrontend):
             )
         else:
             name = rs.user.persona_name()
-            sender = self.conf["NOREPLY_ADDRESS"]
+            noreply = self.conf["NOREPLY_ADDRESS"]
             self.do_mail(
                 rs,
                 "contact",
                 {
                     'To': (to,),
                     'Subject': subject,
-                    'From': f"{name} via Kontaktformular <{sender}>",
+                    'From': f"{name} via Kontaktformular <{noreply}>",
                     'Reply-To': rs.user.username,
                 },
                 {
@@ -1798,8 +1798,8 @@ class CoreBaseFrontend(AbstractFrontend):
             {
                 'To': (rs.user.username,),
                 'Subject': "Deine Nachricht ist angekommen.",
-                'From': self.conf["NOREPLY_ADDRESS"],
-                'Reply-To': self.conf["NOREPLY_ADDRESS"],
+                'From': self.conf["NOREPLY_SENDER"],
+                'Reply-To': self.conf["NOREPLY_SENDER"],
             },
             {
                 'message': msg,
@@ -1867,7 +1867,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 {
                     'To': {persona['username'], message.username},
                     'From': message.recipient,
-                    'Reply-To': self.conf["NOREPLY_ADDRESS"],
+                    'Reply-To': self.conf["NOREPLY_SENDER"],
                     'Subject': f"Re: {original_subject}",
                 },
                 {
@@ -1950,8 +1950,8 @@ class CoreBaseFrontend(AbstractFrontend):
                 {
                     'To': (anonymous_message.recipient,),
                     'Subject': "Anonyme Nachricht neu verschlüsselt",
-                    'From': self.conf["NOREPLY_ADDRESS"],
-                    'Reply-To': self.conf["NOREPLY_ADDRESS"],
+                    'From': self.conf["NOREPLY_SENDER"],
+                    'Reply-To': self.conf["NOREPLY_SENDER"],
                 },
                 {
                     'new_secret': new_secret,
