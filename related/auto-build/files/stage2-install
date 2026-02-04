@@ -142,11 +142,11 @@ echo "--------------------------"
 mkdir -p /home/cdedb/.ssh
 chmod 755 /home/cdedb/.ssh
 # dPROD different ssh keys
-cp /media/cdrom0/ssh_user_rsa_key /home/cdedb/.ssh/id_rsa
-cp /media/cdrom0/ssh_user_rsa_key.pub /home/cdedb/.ssh/id_rsa.pub
+cp /media/cdrom0/ssh_user_key /home/cdedb/.ssh/id_deploy
+cp /media/cdrom0/ssh_user_key.pub /home/cdedb/.ssh/id_deploy.pub
 cp /media/cdrom0/ssh_user_known_hosts /home/cdedb/.ssh/known_hosts
-chmod 600 /home/cdedb/.ssh/id_rsa
-chmod 644 /home/cdedb/.ssh/id_rsa.pub
+chmod 600 /home/cdedb/.ssh/id_deploy
+chmod 644 /home/cdedb/.ssh/id_deploy.pub
 chown -R cdedb:cdedb /home/cdedb/.ssh/
 
 echo ""

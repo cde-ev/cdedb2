@@ -135,8 +135,8 @@ ${WORKDIR}/.done_stage2cd:${WORKDIR}/.done_checksum files/stage2-install
 ifndef DEPLOYMENT_KEY_PATH
 	$(error Must provide deployment key (i.e. ssh key for user with access to ForgeJo))
 endif
-	cp "${DEPLOYMENT_KEY_PATH}" ${WORKDIR}/stage2cd/ssh_user_rsa_key
-	cp "${DEPLOYMENT_KEY_PATH}.pub" ${WORKDIR}/stage2cd/ssh_user_rsa_key.pub
+	cp "${DEPLOYMENT_KEY_PATH}" ${WORKDIR}/stage2cd/ssh_user_key
+	cp "${DEPLOYMENT_KEY_PATH}.pub" ${WORKDIR}/stage2cd/ssh_user_key.pub
 	chmod 755 ${WORKDIR}/stage2cd/init
 	chmod u+x bin/*/*
 	PATH=$$PATH:./bin/`uname`; \
