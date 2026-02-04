@@ -22,6 +22,7 @@ doc/source/Handbuch_Email_Templates.rst
 
 # cache data
 .mypy_cache/
+.dmypy.json
 .coverage
 
 # ide data
