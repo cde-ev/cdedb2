@@ -2,6 +2,7 @@ FROM cdedb:latest
 
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     bash-completion \
+    moreutils \
     man \
     less \
     vim \

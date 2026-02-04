@@ -61,6 +61,8 @@ echo "--------------------------------------------"
 apt-get install --yes --no-install-recommends                       \
     openssh-server sudo git file mc emacs-nox vim htop make gettext \
     \
+    moreutils                                                       \
+    \
     apache2 python3 fail2ban tzdata                                 \
     \
     ldap-utils                                                      \
