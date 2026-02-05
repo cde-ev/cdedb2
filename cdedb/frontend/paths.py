@@ -246,6 +246,7 @@ rules = [
         sub(
             "/cde",
             get_("/", endpoint="index"),
+            get_("/qr", endpoint="membership_qr"),
             get_("/stats", endpoint="member_stats"),
             get_("/log", endpoint="view_cde_log"),
             get_("/misc", endpoint="view_misc"),

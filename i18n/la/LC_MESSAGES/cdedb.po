@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-02-03 20:50+0100\n"
+"POT-Creation-Date: 2026-02-05 13:33+0100\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -3861,7 +3861,7 @@ msgstr ""
 #: cdedb/backend/cde/lastschrift.py:541 cdedb/backend/common.py:455
 #: cdedb/backend/common.py:461 cdedb/backend/core/base.py:2920
 #: cdedb/backend/event/base.py:1636 cdedb/common/__init__.py:322
-#: cdedb/frontend/assembly/ballot.py:640 cdedb/frontend/cde/base.py:897
+#: cdedb/frontend/assembly/ballot.py:640 cdedb/frontend/cde/base.py:908
 #: cdedb/frontend/cde/lastschrift.py:679
 #: cdedb/frontend/cde/parse_statement.py:726 cdedb/frontend/common.py:807
 #: cdedb/frontend/event/base.py:699 cdedb/frontend/event/query_stats.py:506
@@ -3952,7 +3952,7 @@ msgstr ""
 msgid "Need extra data."
 msgstr ""
 
-#: cdedb/backend/cde/base.py:537 cdedb/frontend/cde/base.py:681
+#: cdedb/backend/cde/base.py:537 cdedb/frontend/cde/base.py:692
 msgid "May not grant trial membership to member."
 msgstr ""
 
@@ -4531,8 +4531,8 @@ msgstr "epistula electronica ad verificandum mitte"
 msgid "Username change failed."
 msgstr "epistula electronica ad verificandum mitte"
 
-#: cdedb/backend/core/genesis.py:496 cdedb/frontend/cde/base.py:632
-#: cdedb/frontend/cde/base.py:661 cdedb/frontend/core/genesis.py:468
+#: cdedb/backend/core/genesis.py:496 cdedb/frontend/cde/base.py:643
+#: cdedb/frontend/cde/base.py:672 cdedb/frontend/core/genesis.py:468
 #: cdedb/frontend/core/genesis.py:545
 #, fuzzy
 msgid "Email address already taken."
@@ -4576,8 +4576,8 @@ msgstr ""
 #: cdedb/common/validation/validate.py:2747
 #: cdedb/common/validation/validate.py:4139
 #: cdedb/common/validation/validate.py:4845
-#: cdedb/common/validation/validate.py:5019 cdedb/frontend/cde/base.py:294
-#: cdedb/frontend/cde/base.py:298 cdedb/frontend/common.py:726
+#: cdedb/common/validation/validate.py:5019 cdedb/frontend/cde/base.py:305
+#: cdedb/frontend/cde/base.py:309 cdedb/frontend/common.py:726
 #: cdedb/frontend/core/base.py:1433 cdedb/frontend/core/complaint.py:405
 #: cdedb/frontend/core/complaint.py:535 cdedb/frontend/core/genesis.py:146
 #: cdedb/frontend/event/event.py:378 cdedb/frontend/event/registration.py:789
@@ -6959,7 +6959,7 @@ msgstr ""
 msgid "This realm is not supported for genesis."
 msgstr ""
 
-#: cdedb/common/validation/validate.py:993 cdedb/frontend/cde/base.py:266
+#: cdedb/common/validation/validate.py:993 cdedb/frontend/cde/base.py:277
 #, fuzzy
 msgid "Wrong formatting."
 msgstr "notitiae rationis"
@@ -7963,141 +7963,141 @@ msgstr ""
 msgid "Unable to conclude assembly with open ballot."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:192
+#: cdedb/frontend/cde/base.py:203
 msgid "Consent noted."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:192
+#: cdedb/frontend/cde/base.py:203
 msgid "Decision noted."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:284 cdedb/frontend/core/base.py:1726
+#: cdedb/frontend/cde/base.py:295 cdedb/frontend/core/base.py:1726
 #: cdedb/frontend/core/base.py:1736
 #, fuzzy
 msgid "Invalid choice."
 msgstr "Annuntiationes"
 
-#: cdedb/frontend/cde/base.py:287
+#: cdedb/frontend/cde/base.py:298
 msgid "Incompatible with postal code search."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:309
+#: cdedb/frontend/cde/base.py:320
 #, fuzzy
 msgid "Unknown postal code."
 msgstr "inscriptio electronica nova"
 
-#: cdedb/frontend/cde/base.py:346 cdedb/frontend/cde/past_event.py:80
+#: cdedb/frontend/cde/base.py:357 cdedb/frontend/cde/past_event.py:80
 msgid "You have to specify some filters."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:368
+#: cdedb/frontend/cde/base.py:379
 msgid "Too many query results."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:531
+#: cdedb/frontend/cde/base.py:542
 #, fuzzy
 msgid "Entry changed."
 msgstr "Appendix mutata"
 
-#: cdedb/frontend/cde/base.py:603
+#: cdedb/frontend/cde/base.py:614
 msgid "Persona is younger than 10 years."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:606
+#: cdedb/frontend/cde/base.py:617
 #, fuzzy
 msgid "No gender specified."
 msgstr "non dictum"
 
-#: cdedb/frontend/cde/base.py:619
+#: cdedb/frontend/cde/base.py:630
 msgid "No course available."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:638
+#: cdedb/frontend/cde/base.py:649
 msgid "Doppelgangers found."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:642
+#: cdedb/frontend/cde/base.py:653
 msgid "Doppelganger choice doesn’t fit resolution."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:648
+#: cdedb/frontend/cde/base.py:659
 msgid "Doppelganger unavailable."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:666
+#: cdedb/frontend/cde/base.py:677
 msgid "Doppelganger will upgrade to CdE."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:672
+#: cdedb/frontend/cde/base.py:683
 msgid "Unmodified realm upgrade."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:677
+#: cdedb/frontend/cde/base.py:688
 msgid "Missing data for realm upgrade."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:688
+#: cdedb/frontend/cde/base.py:699
 msgid ""
 "Participation already recorded with different status (e.g. orga), which will "
 "be overwritten."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:695
+#: cdedb/frontend/cde/base.py:706
 msgid "Participation already recorded."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:817 cdedb/frontend/cde/parse.py:341
+#: cdedb/frontend/cde/base.py:828 cdedb/frontend/cde/parse.py:341
 #: cdedb/frontend/event/registration.py:118
 #, fuzzy
 msgid "Only one input method allowed."
 msgstr "epistula electronica ad verificandum mitte"
 
-#: cdedb/frontend/cde/base.py:825 cdedb/frontend/cde/parse.py:350
+#: cdedb/frontend/cde/base.py:836 cdedb/frontend/cde/parse.py:350
 #: cdedb/frontend/common.py:1266 cdedb/frontend/event/registration.py:126
 msgid "No input provided."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:878
+#: cdedb/frontend/cde/base.py:889
 #, python-format
 msgid "Lines %(first)s and %(second)s are the same."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:888
+#: cdedb/frontend/cde/base.py:899
 #, python-format
 msgid "Lines %(first)s and %(second)s look the same."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:915 cdedb/frontend/cde/parse.py:393
+#: cdedb/frontend/cde/base.py:926 cdedb/frontend/cde/parse.py:393
 #: cdedb/frontend/event/registration.py:169
 msgid "Lines didn’t match up."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:920
+#: cdedb/frontend/cde/base.py:931
 msgid "Only member admission supported."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:941
+#: cdedb/frontend/cde/base.py:952
 #, python-format
 msgid "%(num)s new members."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:945
+#: cdedb/frontend/cde/base.py:956
 #, python-format
 msgid "Modified %(num)s existing members."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:951 cdedb/frontend/cde/parse.py:454
+#: cdedb/frontend/cde/base.py:962 cdedb/frontend/cde/parse.py:454
 #: cdedb/frontend/event/registration.py:211
 msgid "DB serialization error."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:954 cdedb/frontend/cde/parse.py:458
+#: cdedb/frontend/cde/base.py:965 cdedb/frontend/cde/parse.py:458
 #: cdedb/frontend/event/registration.py:215
 #, python-format
 msgid "Unexpected error on line %(num)s."
 msgstr ""
 
-#: cdedb/frontend/cde/base.py:990
+#: cdedb/frontend/cde/base.py:1001
 msgid "*Nothing here yet.*"
 msgstr ""
 
@@ -12479,12 +12479,20 @@ msgstr ""
 "nunc <u>non consocias</u>. ad consociandum tibi nihil nisi comparsum tuum "
 "supplendum tibi est."
 
-#: cdedb/frontend/templates/web/cde/index.tmpl:129
+#: cdedb/frontend/templates/web/cde/index.tmpl:131
+#, fuzzy
 msgid ""
-"To replenish your Account Balance, transfer money to the following Account:"
+"To replenish your Account Balance, transfer money to the following Account."
 msgstr "ad comparsum tuum supplendum in hoc thesaurum pecuniam mitte:"
 
-#: cdedb/frontend/templates/web/cde/index.tmpl:136
+#: cdedb/frontend/templates/web/cde/index.tmpl:134
+#, python-format
+msgid ""
+"Current membership fee is %(amount)s per year. You can pay for multiple "
+"years in advance."
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/index.tmpl:141
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:79
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:52
 #: cdedb/frontend/templates/web/event/registration/payment.tmpl:30
@@ -12493,7 +12501,7 @@ msgstr "ad comparsum tuum supplendum in hoc thesaurum pecuniam mitte:"
 msgid "Account holder"
 msgstr "possessor thesauri"
 
-#: cdedb/frontend/templates/web/cde/index.tmpl:140
+#: cdedb/frontend/templates/web/cde/index.tmpl:145
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:39
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_create.tmpl:57
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:70
@@ -12504,23 +12512,23 @@ msgstr "possessor thesauri"
 msgid "IBAN"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/index.tmpl:144
+#: cdedb/frontend/templates/web/cde/index.tmpl:149
 #: cdedb/frontend/templates/web/event/registration/payment.tmpl:34
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:158
 msgid "BIC"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/index.tmpl:148
+#: cdedb/frontend/templates/web/cde/index.tmpl:153
 #: cdedb/frontend/templates/web/event/registration/payment.tmpl:36
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:162
 msgid "Bank"
 msgstr "argentaria"
 
-#: cdedb/frontend/templates/web/cde/index.tmpl:152
+#: cdedb/frontend/templates/web/cde/index.tmpl:157
 msgid "Payment reference"
 msgstr "finis solutionis"
 
-#: cdedb/frontend/templates/web/cde/index.tmpl:159
+#: cdedb/frontend/templates/web/cde/index.tmpl:164
 msgid ""
 "Note: After your transfer incurred at the bank account, it may take some "
 "time (up to a few weeks) until the payment is registered here."
@@ -20736,7 +20744,7 @@ msgstr "vestigium novum crea"
 msgid "Payment (%(title)s)"
 msgstr "statistica consociorum"
 
-#: cdedb/frontend/templates/web/event/registration/payment.tmpl:47
+#: cdedb/frontend/templates/web/event/registration/payment.tmpl:48
 msgid "Refresh"
 msgstr ""
 
