@@ -43,7 +43,8 @@
     </div>
     <form action="{{ cdedblink("event/event_payment") }}" class="form-horizontal hidden-print">
         {{ util.form_input_text("reference", gettext("Reference"), small=True) }}
-        {{ util.form_input_text("amount", gettext("Amount"), small=True, addon="€", type="number", attributes='min="0" step="0.01"'|s) }}
+        {{ util.form_input_text("amount", gettext("Amount"), small=True, addon="€", type="number",
+                attributes='min="0" step="0.01"'|s, placeholder="") }}
         {{ util.form_input_submit(label=gettext("Refresh"), small=True) }}
     </form>
 {% endblock %}
