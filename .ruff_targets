@@ -1,8 +1,4 @@
 # lists of files to be considered by our linters
-FORMAT_TARGETS= \
-    bin/*.py \
-    cdedb/ \
-    tests/backend_tests/complaint.py \
-    tests/frontend_tests/complaint.py
 LINT_TARGETS=cdedb tests
+FORMAT_TARGETS=$(LINT_TARGETS)
 ISORT_TARGETS=bin/*.py cdedb tests

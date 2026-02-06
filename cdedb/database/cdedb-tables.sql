@@ -863,16 +863,26 @@ CREATE TABLE past_event.participants (
         id                      serial PRIMARY KEY,
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         pevent_id               integer NOT NULL REFERENCES past_event.events(id),
-        pcourse_id              integer REFERENCES past_event.courses(id),
-        is_instructor           boolean NOT NULL,
-        is_orga                 boolean NOT NULL,
-        UNIQUE (persona_id, pevent_id, pcourse_id)
+        orga_status             integer NOT NULL DEFAULT 0, -- const.PastOrgaKind
+        music_status            integer NOT NULL DEFAULT 0, -- const.PastMusicKind
+        UNIQUE (persona_id, pevent_id)
 );
 CREATE INDEX participants_pevent_id_idx ON past_event.participants(pevent_id);
-CREATE INDEX participants_pcourse_id_idx ON past_event.participants(pcourse_id);
 GRANT SELECT ON past_event.participants TO cdb_persona;
 GRANT INSERT, UPDATE, DELETE ON past_event.participants TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.participants_id_seq TO cdb_admin;
+
+CREATE TABLE past_event.course_participants (
+        id                      serial PRIMARY KEY,
+        participant_id          integer NOT NULL REFERENCES past_event.participants(id),
+        pcourse_id              integer NOT NULL REFERENCES past_event.courses(id),
+        instructor_status       integer NOT NULL DEFAULT 0, -- const.PastInstructorKind
+        UNIQUE (participant_id, pcourse_id)
+);
+CREATE INDEX course_participants_pcourse_id_idx ON past_event.course_participants(pcourse_id);
+GRANT SELECT ON past_event.course_participants TO cdb_persona;
+GRANT INSERT, UPDATE, DELETE ON past_event.course_participants TO cdb_admin;
+GRANT SELECT, UPDATE ON past_event.course_participants_id_seq TO cdb_admin;
 
 CREATE TABLE past_event.log (
         id                      bigserial PRIMARY KEY,
@@ -881,6 +891,7 @@ CREATE TABLE past_event.log (
         code                    integer NOT NULL,
         submitted_by            integer REFERENCES core.personas(id),
         pevent_id               integer REFERENCES past_event.events(id),
+        pcourse_id              integer REFERENCES past_event.courses(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
         change_note             varchar

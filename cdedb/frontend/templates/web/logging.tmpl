@@ -97,6 +97,7 @@
                         entries=all_assemblies|dictsort|dict_entries('id', 'title'), small=True, sort=True) }}
             {% elif filter_name == "pevent_id" %}
                 {{ util.form_input_select(name="pevent_id", label=gettext("Event"), nulloption="", entries=pevent_entries, small=True, selectize=True) }}
+                {{ util.form_input_select(name="pcourse_id", label=gettext("Course"), nulloption="", entries=pcourse_entries, small=True, selectize=True) }}
             {% elif filter_name == "case_id" %}
                 {{ util.form_input_text(name="case_id", label=gettext("Case"), type="number", small=True) }}
                 {{ util.form_input_select(name="case_id_include_empty", label=gettext("Include Entries without Case"), entries=enums["IncludeEmpty"]|enum_entries(processing=gettext), small=True) }}

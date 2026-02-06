@@ -1,4 +1,3 @@
-
 import datetime
 import decimal
 
@@ -26,20 +25,23 @@ class TestEventModels(BackendTest):
             iban=Accounts.Sozialbank,
             orga_address=vtypes.Email("aka@example.cde"),
             website_url='https://www.cde-ev.de/',
-            registration_start=NearlyNow.from_datetime(datetime.datetime(
-                2000, 10, 30, 0, 0, 0, tzinfo=datetime.UTC)),
-            registration_soft_limit=NearlyNow.from_datetime(datetime.datetime(
-                2200, 10, 30, 0, 0, 0, tzinfo=datetime.UTC)),
-            registration_hard_limit=NearlyNow.from_datetime(datetime.datetime(
-                2221, 10, 30, 0, 0, 0, tzinfo=datetime.UTC)),
+            registration_start=NearlyNow.from_datetime(
+                datetime.datetime(2000, 10, 30, 0, 0, 0, tzinfo=datetime.UTC)
+            ),
+            registration_soft_limit=NearlyNow.from_datetime(
+                datetime.datetime(2200, 10, 30, 0, 0, 0, tzinfo=datetime.UTC)
+            ),
+            registration_hard_limit=NearlyNow.from_datetime(
+                datetime.datetime(2221, 10, 30, 0, 0, 0, tzinfo=datetime.UTC)
+            ),
             orgas={7},  # type: ignore[arg-type]
             registration_text=None,
             mail_text="Wir verwenden ein neues Kristallkugel-basiertes"
-                      " Kurszuteilungssystem; bis wir das ordentlich ans Laufen"
-                      " gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste"
-                      " warten.",
+            " Kurszuteilungssystem; bis wir das ordentlich ans Laufen"
+            " gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste"
+            " warten.",
             participant_info="Die Kristallkugel hat gute Dienste geleistet,"
-                             " nicht wahr?",
+            " nicht wahr?",
             notes="Todoliste ... just kidding ;)",
             field_definition_notes="Die Sortierung der Felder bitte nicht ändern!",
             is_locked=False,
@@ -61,7 +63,7 @@ class TestEventModels(BackendTest):
                     id=1,  # type: ignore[arg-type]
                     event_id=vtypes.ID(1),
                     title="Warmup",
-                    shortname="Wu",
+                    shortname=vtypes.Identifier("Wu"),
                     part_begin=datetime.date(2222, 2, 2),
                     part_end=datetime.date(2222, 2, 2),
                     waitlist_field_id=None,
@@ -72,7 +74,7 @@ class TestEventModels(BackendTest):
                     id=2,  # type: ignore[arg-type]
                     event_id=vtypes.ID(1),
                     title="Erste Hälfte",
-                    shortname="1.H.",
+                    shortname=vtypes.Identifier("1.H."),
                     part_begin=datetime.date(2222, 11, 1),
                     part_end=datetime.date(2222, 11, 11),
                     waitlist_field_id=None,
@@ -83,14 +85,13 @@ class TestEventModels(BackendTest):
                     id=3,  # type: ignore[arg-type]
                     event_id=vtypes.ID(1),
                     title="Zweite Hälfte",
-                    shortname="2.H.",
+                    shortname=vtypes.Identifier("2.H."),
                     part_begin=datetime.date(2222, 11, 11),
                     part_end=datetime.date(2222, 11, 30),
                     waitlist_field_id=None,
                     camping_mat_field_id=4,  # type: ignore[arg-type]
                     tracks=(3,),  # type: ignore[arg-type]
                 ),
-
             },
             tracks={
                 1: models.CourseTrack(
@@ -446,7 +447,7 @@ class TestEventModels(BackendTest):
             orga_address=None,
             website_url=None,
             description="Ich habe gehört, du magst DoppelAkademien, also habe ich"
-                        " eine DoppelAkademie in Deine DoppelAkademie gepackt.",
+            " eine DoppelAkademie in Deine DoppelAkademie gepackt.",
             registration_start=nearly_now(),
             registration_soft_limit=None,
             registration_hard_limit=None,
@@ -475,7 +476,7 @@ class TestEventModels(BackendTest):
                     id=6,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="1. Hälfte Oberwesel",
-                    shortname="O1",
+                    shortname=vtypes.Identifier("O1"),
                     part_begin=datetime.date(3000, 1, 1),
                     part_end=datetime.date(3000, 2, 1),
                     waitlist_field_id=None,
@@ -486,7 +487,7 @@ class TestEventModels(BackendTest):
                     id=7,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="1. Hälfte Windischleuba",
-                    shortname="W1",
+                    shortname=vtypes.Identifier("W1"),
                     part_begin=datetime.date(3000, 1, 1),
                     part_end=datetime.date(3000, 2, 1),
                     waitlist_field_id=None,
@@ -497,7 +498,7 @@ class TestEventModels(BackendTest):
                     id=8,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="1. Hälfte Kaub",
-                    shortname="K1",
+                    shortname=vtypes.Identifier("K1"),
                     part_begin=datetime.date(3000, 1, 1),
                     part_end=datetime.date(3000, 2, 1),
                     waitlist_field_id=None,
@@ -508,7 +509,7 @@ class TestEventModels(BackendTest):
                     id=9,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="2. Hälfte Oberwesel",
-                    shortname="O2",
+                    shortname=vtypes.Identifier("O2"),
                     part_begin=datetime.date(3000, 2, 1),
                     part_end=datetime.date(3000, 3, 1),
                     waitlist_field_id=None,
@@ -519,7 +520,7 @@ class TestEventModels(BackendTest):
                     id=10,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="2. Hälfte Windischleuba",
-                    shortname="W2",
+                    shortname=vtypes.Identifier("W2"),
                     part_begin=datetime.date(3000, 2, 1),
                     part_end=datetime.date(3000, 3, 1),
                     waitlist_field_id=None,
@@ -530,7 +531,7 @@ class TestEventModels(BackendTest):
                     id=11,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="2. Hälfte Kaub",
-                    shortname="K2",
+                    shortname=vtypes.Identifier("K2"),
                     part_begin=datetime.date(3000, 2, 1),
                     part_end=datetime.date(3000, 3, 1),
                     waitlist_field_id=None,
@@ -541,7 +542,7 @@ class TestEventModels(BackendTest):
                     id=12,  # type: ignore[arg-type]
                     event_id=event_id,
                     title="Silvesterfeier",
-                    shortname="Feier",
+                    shortname=vtypes.Identifier("Feier"),
                     part_begin=datetime.date(2999, 12, 31),
                     part_end=datetime.date(3000, 1, 1),
                     waitlist_field_id=None,
@@ -747,7 +748,7 @@ class TestEventModels(BackendTest):
                     course_id=course_id,
                     track_id=vtypes.ID(3),
                     is_active=True,
-                )
+                ),
             },
             nr='α',
             title='Planetenretten für Anfänger',
@@ -790,7 +791,7 @@ class TestEventModels(BackendTest):
                         course_id=vtypes.ID(2),
                         track_id=vtypes.ID(3),
                         is_active=True,
-                    )
+                    ),
                 },
                 nr='β',
                 title='Lustigsein für Fortgeschrittene',

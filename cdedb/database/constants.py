@@ -583,6 +583,32 @@ class PastInstitutions(CdEIntEnum):
 
 
 @enum.unique
+class PastOrgaKind(CdEIntEnum):
+    """CdE, DSA, JGW etc have different notions of 'Orgas'."""
+
+    none = 0
+    orga = 1  # of CdE events
+    al = 2  # of DSAs etc,
+    co_al = 4
+
+
+@enum.unique
+class PastMusicKind(CdEIntEnum):
+    """Kinds of 'Kursübergreifende Musik' organizers."""
+
+    none = 0
+    ensemble = 1
+    kuemu = 2
+
+
+@enum.unique
+class PastInstructorKind(CdEIntEnum):
+    none = 0
+    kl = 1
+    co_kl = 2
+
+
+@enum.unique
 class ComplaintKind(CdEIntEnum):
     """Rough kinds a complaint may have"""
 
@@ -1032,8 +1058,10 @@ class PastEventLogCodes(CdEIntEnum):
     course_created = 10  #:
     course_changed = 11  #:
     course_deleted = 12  #:
-    participant_added = 20  #:
+    participant_set = 20  #:
     participant_removed = 21  #:
+    course_assignment_set = 25  #:
+    course_assignment_removed = 26  #:
     # The following log codes used to exist. To avoid conflicts, do not reuse:
     # institution_created = 30  #:
     # institution_changed = 31  #:

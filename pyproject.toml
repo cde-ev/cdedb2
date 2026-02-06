@@ -1,7 +1,7 @@
 [project]
 name = "cdedb2"
 version = "2.1.0"
-requires-python = ">=3.13"
+requires-python = ">=3.13,<3.14"
 dependencies = [
     "babel==2.17.0",
     "bleach==6.2.0",
@@ -70,8 +70,13 @@ ldap = [
     "systemd-python==235",
 ]
 
-[tool.setuptools]
-packages = ["cdedb"]
+[build-system]
+requires = ["uv_build"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "cdedb"
+module-root = ""
 
 [tool.ruff]
 target-version = "py313"

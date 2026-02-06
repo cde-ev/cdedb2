@@ -74,19 +74,38 @@ class EventEventMixin(EventBaseFrontend):
         other_event_list = self.eventproxy.list_events(
             rs, current=False, archived=False
         )
-        current_events = self.eventproxy.get_events(rs, current_event_list)
-        other_events = self.eventproxy.get_events(
-            rs, set(other_event_list) - set(rs.user.orga)
-        )
-        orga_events = self.eventproxy.get_events(rs, rs.user.orga)
 
         events_registration: dict[int, Optional[bool]] = {}
         events_payment_pending: dict[int, bool] = {}
         if "event" in rs.user.roles:
-            for event_id, event in current_events.items():
+            for event_id in current_event_list:
                 events_registration[event_id], events_payment_pending[event_id] = (
                     self.eventproxy.get_registration_payment_info(rs, event_id)
                 )
+
+        current_events = [
+            event
+            for event in self.eventproxy.get_events(rs, current_event_list).values()
+            if event.is_visible_for(
+                rs.user,
+                is_registered=bool(events_registration.get(event.id)),
+                privileged=False,
+            )
+        ]
+        other_events = [
+            event
+            for event in self.eventproxy.get_events(rs, other_event_list).values()
+            if event.is_visible_for(
+                rs.user,
+                is_registered=bool(events_registration.get(event.id, False)),
+                privileged=False,
+            )
+        ]
+        orga_events = [
+            event
+            for event in self.eventproxy.get_events(rs, rs.user.orga).values()
+            if event.is_current_for_orga()
+        ]
 
         return self.render(
             rs,
@@ -774,7 +793,7 @@ class EventEventMixin(EventBaseFrontend):
             raise ValueError(n_("Registrations exist, no part creation possible."))
 
         data = check(
-            rs, vtypes.EventPart, data, creation=True, event=rs.ambience["event"]
+            rs, models.EventPart, data, creation=True, event=rs.ambience["event"]
         )
         if rs.has_validation_errors():
             return self.add_part_form(rs, event_id)
@@ -808,7 +827,6 @@ class EventEventMixin(EventBaseFrontend):
         sorted_track_ids = [e.id for e in xsorted(part.tracks.values())]
 
         current = part.as_dict()
-        del current['id']
         del current['tracks']
 
         # Select the first track by id for every sync track group, disable altering
@@ -858,7 +876,7 @@ class EventEventMixin(EventBaseFrontend):
         self, rs: RequestState, event_id: int, part_id: int, data: CdEDBObject
     ) -> Response:
         """Change one part, including the associated tracks and fee modifiers."""
-        data = check(rs, vtypes.EventPart, data, event=rs.ambience["event"])
+        data = check(rs, models.EventPart, data, event=rs.ambience["event"])
         if rs.has_validation_errors():
             return self.change_part_form(rs, event_id, part_id)
         assert data is not None
@@ -906,7 +924,7 @@ class EventEventMixin(EventBaseFrontend):
                         for t_id in tg.tracks:
                             p_id = rs.ambience['event'].tracks[t_id].part_id
                             if p_id not in part_data:
-                                part_data[p_id] = vtypes.EventPart({'tracks': {}})
+                                part_data[p_id] = {'tracks': {}}
                             if t_id not in part_data[p_id]['tracks']:
                                 part_data[p_id]['tracks'][t_id] = {}
                             part_data[p_id]['tracks'][t_id].update({

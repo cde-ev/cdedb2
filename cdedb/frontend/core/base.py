@@ -171,21 +171,17 @@ class CoreBaseFrontend(AbstractFrontend):
             # events organized
             orga_info = self.eventproxy.orga_info(rs, rs.user.persona_id)
             if orga_info:
-                orga = {}
+                orga = []
                 orga_registrations = {}
-                events = self.eventproxy.get_events(rs, orga_info)
-                present = now()
-                for event_id, event in events.items():
-                    if (
-                        event.begin >= present.date()
-                        or abs(event.begin.year - present.year) < 2
-                    ):
+                orga_events = self.eventproxy.get_events(rs, orga_info)
+                for event in orga_events.values():
+                    if event.is_current_for_orga():
                         regs = self.eventproxy.list_registrations(rs, event.id)
-                        orga_registrations[event_id] = len(regs)
-                        orga[event_id] = event
+                        orga_registrations[event.id] = len(regs)
+                        orga.append(event)
                 dashboard['orga'] = orga
                 dashboard['orga_registrations'] = orga_registrations
-                dashboard['present'] = present
+                dashboard['present'] = now()
             # mailinglists moderated
             moderator_info = self.mlproxy.moderator_info(rs, rs.user.persona_id)
             if moderator_info:
@@ -773,12 +769,9 @@ class CoreBaseFrontend(AbstractFrontend):
                     del data[key]
 
         # Add past event participation info
-        past_events = past_courses = past_event_info = None
+        past_event_participations = None
         if "cde" in access_levels and {"event", "cde"} & roles:
-            past_event_info = self.pasteventproxy.participation_info(rs, persona_id)
-            past_events = self.pasteventproxy.get_past_events(rs, past_event_info.keys())
-            past_course_ids = {c_id for pevent in past_event_info.values() for c_id in pevent["courses"]}
-            past_courses = self.pasteventproxy.get_past_courses(rs, past_course_ids)
+            past_event_participations = self.pasteventproxy.list_persona_events(rs, persona_id)
 
         # Retrieve number of active sessions if the user is viewing his own profile
         active_session_count = None
@@ -804,12 +797,12 @@ class CoreBaseFrontend(AbstractFrontend):
         mandatory_fields = get_mandatory_form_fields(
             self.archive_persona, self.invalidate_password)
         return self.render(rs, "show_user", {
-            'data': data, 'past_events': past_events, 'meta_info': meta_info,
+            'data': data, 'meta_info': meta_info,
             'is_relative_admin_view': is_relative_admin_view, 'reference': reference,
             'quoteable': quoteable, 'access_mode': access_mode,
             'active_session_count': active_session_count, 'ADMIN_KEYS': ADMIN_KEYS,
             'email_report': email_report,
-            'past_courses': past_courses, 'past_event_info': past_event_info,
+            'past_event_participations': past_event_participations,
         }, mandatory_fields)
 
     # fmt: on
@@ -1772,8 +1765,8 @@ class CoreBaseFrontend(AbstractFrontend):
                 {
                     'To': (to,),
                     'Subject': subject,
-                    'From': self.conf["NOREPLY_ADDRESS"],
-                    'Reply-To': self.conf["NOREPLY_ADDRESS"],
+                    'From': self.conf["NOREPLY_SENDER"],
+                    'Reply-To': self.conf["NOREPLY_SENDER"],
                 },
                 {
                     'message_text': msg,
@@ -1784,14 +1777,14 @@ class CoreBaseFrontend(AbstractFrontend):
             )
         else:
             name = rs.user.persona_name()
-            sender = self.conf["NOREPLY_ADDRESS"]
+            noreply = self.conf["NOREPLY_ADDRESS"]
             self.do_mail(
                 rs,
                 "contact",
                 {
                     'To': (to,),
                     'Subject': subject,
-                    'From': f"{name} via Kontaktformular <{sender}>",
+                    'From': f"{name} via Kontaktformular <{noreply}>",
                     'Reply-To': rs.user.username,
                 },
                 {
@@ -1805,8 +1798,8 @@ class CoreBaseFrontend(AbstractFrontend):
             {
                 'To': (rs.user.username,),
                 'Subject': "Deine Nachricht ist angekommen.",
-                'From': self.conf["NOREPLY_ADDRESS"],
-                'Reply-To': self.conf["NOREPLY_ADDRESS"],
+                'From': self.conf["NOREPLY_SENDER"],
+                'Reply-To': self.conf["NOREPLY_SENDER"],
             },
             {
                 'message': msg,
@@ -1874,7 +1867,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 {
                     'To': {persona['username'], message.username},
                     'From': message.recipient,
-                    'Reply-To': self.conf["NOREPLY_ADDRESS"],
+                    'Reply-To': self.conf["NOREPLY_SENDER"],
                     'Subject': f"Re: {original_subject}",
                 },
                 {
@@ -1957,8 +1950,8 @@ class CoreBaseFrontend(AbstractFrontend):
                 {
                     'To': (anonymous_message.recipient,),
                     'Subject': "Anonyme Nachricht neu verschlüsselt",
-                    'From': self.conf["NOREPLY_ADDRESS"],
-                    'Reply-To': self.conf["NOREPLY_ADDRESS"],
+                    'From': self.conf["NOREPLY_SENDER"],
+                    'Reply-To': self.conf["NOREPLY_SENDER"],
                 },
                 {
                     'new_secret': new_secret,
@@ -2368,14 +2361,19 @@ class CoreBaseFrontend(AbstractFrontend):
         code = self.coreproxy.change_persona_realms(rs, data, change_note)
         rs.notify_return_code(code)
         if code > 0 and target_realm == "cde":
-            if pevent_id is not None:
-                self.pasteventproxy.add_participant(
-                    rs,
-                    pevent_id,
-                    pcourse_id,
-                    persona_id,
-                    is_instructor=is_instructor,
-                    is_orga=is_orga,
+            if pevent_id:
+                orga_status = const.PastOrgaKind.none
+                if is_orga:
+                    orga_status = const.PastOrgaKind.orga
+                self.pasteventproxy.set_participant(
+                    rs, pevent_id, persona_id, orga_status=orga_status
+                )
+            if pcourse_id:
+                instructor_status = const.PastInstructorKind.none
+                if is_instructor:
+                    instructor_status = const.PastInstructorKind.kl
+                self.pasteventproxy.set_course_assignments(
+                    rs, pcourse_id, persona_id, instructor_status=instructor_status
                 )
             persona = self.coreproxy.get_total_persona(rs, persona_id)
             self.send_welcome_mail(rs, persona)

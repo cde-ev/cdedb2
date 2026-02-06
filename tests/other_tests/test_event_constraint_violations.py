@@ -25,18 +25,46 @@ week = 7 * day
 
 # mock minimum event data needed for violation checks
 event_id = 42
-summerA = Mock(spec=models.EventPart, id=1, event_id=event_id,
-               part_begin=begin, part_end=begin + week)
-summerB = Mock(spec=models.EventPart, id=2, event_id=event_id,
-               part_begin=begin + week, part_end=begin + 2*week)
-summerC = Mock(spec=models.EventPart, id=3, event_id=event_id,
-               part_begin=begin + 2*week, part_end=begin + 3*week)
-summerAka = Mock(spec=models.Event, id=event_id, is_archived=False,
-                 parts={p.id: p for p in (summerA, summerB, summerC)})
-single_part = Mock(spec=models.EventPart, id=10, event_id=event_id,
-                   part_begin=begin, part_end=begin + week)
-onePartAka = Mock(spec=models.Event, id=event_id, is_archived=False,
-                  parts={single_part.id: single_part})
+summerA = Mock(
+    spec=models.EventPart,
+    id=1,
+    event_id=event_id,
+    part_begin=begin,
+    part_end=begin + week,
+)
+summerB = Mock(
+    spec=models.EventPart,
+    id=2,
+    event_id=event_id,
+    part_begin=begin + week,
+    part_end=begin + 2 * week,
+)
+summerC = Mock(
+    spec=models.EventPart,
+    id=3,
+    event_id=event_id,
+    part_begin=begin + 2 * week,
+    part_end=begin + 3 * week,
+)
+summerAka = Mock(
+    spec=models.Event,
+    id=event_id,
+    is_archived=False,
+    parts={p.id: p for p in (summerA, summerB, summerC)},
+)
+single_part = Mock(
+    spec=models.EventPart,
+    id=10,
+    event_id=event_id,
+    part_begin=begin,
+    part_end=begin + week,
+)
+onePartAka = Mock(
+    spec=models.Event,
+    id=event_id,
+    is_archived=False,
+    parts={single_part.id: single_part},
+)
 
 single_part_registration: CdEDBObject = {
     'id': 1001,
@@ -56,15 +84,19 @@ single_part_registration: CdEDBObject = {
 
 class TestEventConstraintViolations(unittest.TestCase):
     def test_absent_checked_in(self) -> None:
-        def check(event: models.Event, registration: CdEDBObject,
-                  ) -> ConstraintViolation | None:
+        def check(
+            event: models.Event,
+            registration: CdEDBObject,
+        ) -> ConstraintViolation | None:
             return AbsentCheckedinCV.check(
                 Mock(spec=ViolationAux, event=event),
                 ViolationContext(registration=registration),
             )
 
-        def assert_info_violation(event: models.Event, registration: CdEDBObject,
-                                  ) -> None:
+        def assert_info_violation(
+            event: models.Event,
+            registration: CdEDBObject,
+        ) -> None:
             violation = check(event, registration)
             # mypy does not recognize unittest asserts
             assert violation is not None, "Expected a violation"
@@ -112,7 +144,8 @@ class TestEventConstraintViolations(unittest.TestCase):
             'checkin_periods': [
                 models.ReducedCheckinPeriod(
                     datetime.datetime.combine(summerA.part_begin, checkin),
-                    datetime.datetime.combine(summerA.part_end, checkout)),
+                    datetime.datetime.combine(summerA.part_end, checkout),
+                ),
             ],
         }
         # checked in but should not be present at all
@@ -144,7 +177,8 @@ class TestEventConstraintViolations(unittest.TestCase):
         # registered for two consecutive parts
         reg['parts'][summerB.id]['status'] = RPS.participant
         reg['checkin_periods'][0].checkout_time = (  # stay one day to long
-            datetime.datetime.combine(summerB.part_end + day, checkout))
+            datetime.datetime.combine(summerB.part_end + day, checkout)
+        )
         assert_info_violation(summerAka, reg)
 
         # registered for two non-consecutive parts
@@ -165,7 +199,9 @@ class TestEventConstraintViolations(unittest.TestCase):
         self.assertIsNone(check(summerAka, reg))
         reg['checkin_periods'][0].checkout_time += day  # one day longer in first part
         assert_info_violation(summerAka, reg)
-        reg['checkin_periods'][1].checkin_time -= day  # and one day early for third part
+        reg['checkin_periods'][
+            1
+        ].checkin_time -= day  # and one day early for third part
         assert_info_violation(summerAka, reg)
         reg['checkin_periods'][0].checkout_time -= day
         assert_info_violation(summerAka, reg)
@@ -173,17 +209,22 @@ class TestEventConstraintViolations(unittest.TestCase):
         self.assertIsNone(check(summerAka, reg))
 
         # it is no problem to have separate checkin periods per part
-        reg['checkin_periods'].insert(1, models.ReducedCheckinPeriod(
-            datetime.datetime.combine(summerB.part_begin, checkin),
-            datetime.datetime.combine(summerB.part_end, checkout),
-        ))
+        reg['checkin_periods'].insert(
+            1,
+            models.ReducedCheckinPeriod(
+                datetime.datetime.combine(summerB.part_begin, checkin),
+                datetime.datetime.combine(summerB.part_end, checkout),
+            ),
+        )
         self.assertIsNone(check(summerAka, reg))
 
         # missing checkout is a problem
-        reg['checkin_periods'] = [models.ReducedCheckinPeriod(
-            checkin_time=datetime.datetime.combine(summerC.part_begin, checkin),
-            checkout_time=None,
-        )]
+        reg['checkin_periods'] = [
+            models.ReducedCheckinPeriod(
+                checkin_time=datetime.datetime.combine(summerC.part_begin, checkin),
+                checkout_time=None,
+            )
+        ]
         reg['parts'][summerA.id]['status'] = RPS.cancelled
         reg['parts'][summerB.id]['status'] = RPS.cancelled
         reg['parts'][summerC.id]['status'] = RPS.participant
@@ -194,14 +235,15 @@ class TestEventConstraintViolations(unittest.TestCase):
         summerC.part_end = begin + 3 * week
 
     def test_present_never_checked_in(self) -> None:
-        def check(registration: CdEDBObject, other_registrations: CdEDBObject | None = None) -> ConstraintViolation | None:
+        def check(
+            registration: CdEDBObject, other_registrations: CdEDBObject | None = None
+        ) -> ConstraintViolation | None:
             return PresentNeverCheckedinCV.check(
                 Mock(
                     spec=ViolationAux,
                     event=onePartAka,
-                    registrations={
-                        registration["id"]: registration
-                    } | (other_registrations if other_registrations else {}),
+                    registrations={registration["id"]: registration}
+                    | (other_registrations if other_registrations else {}),
                 ),
                 ViolationContext(registration=registration, part=single_part),
             )
@@ -209,10 +251,12 @@ class TestEventConstraintViolations(unittest.TestCase):
         reg = copy.deepcopy(single_part_registration)
         self.assertIsNone(check(reg))
         # error for incorrect checkin
-        reg['checkin_periods'] = [models.ReducedCheckinPeriod(
-            datetime.datetime.combine(single_part.part_begin - week, checkin),
-            datetime.datetime.combine(single_part.part_begin - day, checkin),
-        )]
+        reg['checkin_periods'] = [
+            models.ReducedCheckinPeriod(
+                datetime.datetime.combine(single_part.part_begin - week, checkin),
+                datetime.datetime.combine(single_part.part_begin - day, checkin),
+            )
+        ]
         violation = check(reg)
         assert violation is not None  # mypy does not recognize unittest asserts
         self.assertEqual(violation.severity, ViolationSeverity.ERROR)
@@ -230,10 +274,13 @@ class TestEventConstraintViolations(unittest.TestCase):
         self.assertEqual(violation.severity, ViolationSeverity.ERROR)
 
         # no violation for immediate checkout
-        reg['checkin_periods'] = [models.ReducedCheckinPeriod(
-            datetime.datetime.combine(single_part.part_begin, checkin),
-            datetime.datetime.combine(single_part.part_begin, checkin) + datetime.timedelta(seconds=5),
-        )]
+        reg['checkin_periods'] = [
+            models.ReducedCheckinPeriod(
+                datetime.datetime.combine(single_part.part_begin, checkin),
+                datetime.datetime.combine(single_part.part_begin, checkin)
+                + datetime.timedelta(seconds=5),
+            )
+        ]
         self.assertIsNone(check(reg))
 
         reg['checkin_periods'] = []

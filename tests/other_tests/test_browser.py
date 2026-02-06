@@ -13,8 +13,7 @@ from playwright.sync_api import Page, expect, sync_playwright
 from tests.common import BrowserTest, event_keeper, storage
 
 
-def make_page(*args: Any, headless: bool = True,
-              timeout: float = 5000) -> Callable:  # type: ignore[type-arg]
+def make_page(*args: Any, headless: bool = True, timeout: float = 5000) -> Callable:  # type: ignore[type-arg]
     """Decorator to handle playwright setup.
 
     This injects a `Page` object usable for testing.
@@ -43,12 +42,16 @@ def make_page(*args: Any, headless: bool = True,
                             func(self, *fargs, **fkwargs)
                         except Exception:  # pragma: no cover
                             f = tempfile.NamedTemporaryFile(
-                                "rb", prefix="playwright-screenshot-on-fail-", suffix=".png", delete=False
+                                "rb",
+                                prefix="playwright-screenshot-on-fail-",
+                                suffix=".png",
+                                delete=False,
                             )
                             page.screenshot(full_page=True, path=f.name)
                             print(f"Saved screenshot at point of failure to {f.name}")
                             raise
                     browser.close()
+
         return new_func
 
     if len(args) > 0:
@@ -56,6 +59,7 @@ def make_page(*args: Any, headless: bool = True,
 
     def mp(func: Callable) -> Callable:  # type: ignore[type-arg]
         return make_page(func, headless=headless, timeout=timeout)
+
     return mp
 
 
@@ -142,7 +146,8 @@ class TestBrowser(BrowserTest):
         page.wait_for_url("http://localhost:5000/core/persona/5/show?*")
 
         expect(page.locator("#admin-notes")).to_have_text(
-            "War früher mal berühmt, hat deswegen ihren Nachnamen geändert.")
+            "War früher mal berühmt, hat deswegen ihren Nachnamen geändert."
+        )
 
     @event_keeper
     @make_page
@@ -174,9 +179,13 @@ class TestBrowser(BrowserTest):
 
         # test tab navigation...
         page.get_by_role("tab", name="Kursfelder").click()
-        page.wait_for_url("http://localhost:5000/event/event/1/field/summary#tab_course")
+        page.wait_for_url(
+            "http://localhost:5000/event/event/1/field/summary#tab_course"
+        )
         page.get_by_role("tab", name="Anmeldungsfelder").click()
-        page.wait_for_url("http://localhost:5000/event/event/1/field/summary#tab_registration")
+        page.wait_for_url(
+            "http://localhost:5000/event/event/1/field/summary#tab_registration"
+        )
 
         # ... continue testing dynamiicrow
         page.get_by_role("button", name="Feld hinzufügen").click()
@@ -189,10 +198,14 @@ class TestBrowser(BrowserTest):
         page.locator("#dynamicrow-delete-button-8").click()
 
         page.get_by_role("tab", name="Kursfelder").click()
-        page.wait_for_url("http://localhost:5000/event/event/1/field/summary#tab_course")
+        page.wait_for_url(
+            "http://localhost:5000/event/event/1/field/summary#tab_course"
+        )
 
         page.get_by_role("button", name="Speichern").click()
-        page.wait_for_url("http://localhost:5000/event/event/1/field/summary#tab_course")
+        page.wait_for_url(
+            "http://localhost:5000/event/event/1/field/summary#tab_course"
+        )
 
         expect(page.locator('input[name="title_1001"]')).to_have_value('Lieblingsheld')
         expect(page.locator('input[name="field_name_1001"]')).to_have_value('held')
@@ -230,14 +243,19 @@ class TestBrowser(BrowserTest):
         page.locator(".selectize-input").first.click()
         page.locator("#tab_qf_js").get_by_text("Namenszusatz").click()
         page.locator("li:has-text(\"Namenszusatz passt zu\")").get_by_role(
-            "button", name="").click()
-        page.locator(".col-sm-6 > .input-group > .selectize-control"
-                     " > .selectize-input").first.click()
+            "button", name=""
+        ).click()
+        page.locator(
+            ".col-sm-6 > .input-group > .selectize-control > .selectize-input"
+        ).first.click()
         page.locator("#tab_qf_js").get_by_text("Geschlecht").nth(1).click()
         page.locator("span:has-text(\"Familienname\")").get_by_role(
-            "button", name="").click()
-        page.locator(".row > div:nth-child(2) > .input-group > .selectize-control"
-                     " > .selectize-input").click()
+            "button", name=""
+        ).click()
+        page.locator(
+            ".row > div:nth-child(2) > .input-group > .selectize-control"
+            " > .selectize-input"
+        ).click()
         page.locator("#tab_qf_js").get_by_text("E-Mail").nth(2).click()
         page.get_by_role("button", name="Suche").click()
 
@@ -269,33 +287,44 @@ class TestBrowser(BrowserTest):
         page.get_by_role("link", name=re.compile("^Anmeldungen$")).click()
         page.wait_for_url("http://localhost:5000/event/event/1/registration/query")
 
-        page.locator("#tab_qf_js div:has-text(\"Filter hinzufügen\") div",
-                     ).nth(1).click()
+        page.locator(
+            "#tab_qf_js div:has-text(\"Filter hinzufügen\") div",
+        ).nth(1).click()
         page.wait_for_timeout(100)
         page.locator("#tab_qf_js").get_by_text("Rufname").first.click()
         page.get_by_role("textbox", name="Vergleichswert").click()
         page.get_by_role("textbox", name="Vergleichswert").fill("asdfgh")
-        page.locator("#tab_qf_js div:has-text(\"Filter hinzufügen\") div",
-                     ).nth(1).click()
+        page.locator(
+            "#tab_qf_js div:has-text(\"Filter hinzufügen\") div",
+        ).nth(1).click()
         page.locator("#tab_qf_js").get_by_text("Familienname").first.click()
         page.locator("li:has-text(\"Familienname passt zupasst nicht\")").get_by_role(
-            "textbox", name="Vergleichswert").click()
+            "textbox", name="Vergleichswert"
+        ).click()
         page.locator("li:has-text(\"Familienname passt zupasst nicht\")").get_by_role(
-            "textbox", name="Vergleichswert").fill("e")
+            "textbox", name="Vergleichswert"
+        ).fill("e")
         page.locator("li:has-text(\"Rufname passt zupasst nicht\")").get_by_role(
-            "button", name="").click()
-        page.locator(".col-sm-6 > .input-group > .selectize-control"
-                     " > .selectize-input").first.click()
+            "button", name=""
+        ).click()
+        page.locator(
+            ".col-sm-6 > .input-group > .selectize-control > .selectize-input"
+        ).first.click()
         page.locator("#tab_qf_js").get_by_text("Geschlecht").nth(1).click()
         page.locator("#tab_qf_js").get_by_text("Bezahlter Betrag").nth(1).click()
         page.locator("#tab_qf_js").get_by_text("Bringt Bälle mit").nth(1).click()
         page.locator("span:has-text(\"E-Mail\")").get_by_role(
-            "button", name="").click()
-        page.locator(".row > div:nth-child(2) > .input-group > .selectize-control"
-                     " > .selectize-input").click()
-        page.locator(".row > div:nth-child(2) > .input-group > .selectize-control"
-                     " > .selectize-dropdown > .selectize-dropdown-content"
-                     " > div:nth-child(8)").click()
+            "button", name=""
+        ).click()
+        page.locator(
+            ".row > div:nth-child(2) > .input-group > .selectize-control"
+            " > .selectize-input"
+        ).click()
+        page.locator(
+            ".row > div:nth-child(2) > .input-group > .selectize-control"
+            " > .selectize-dropdown > .selectize-dropdown-content"
+            " > div:nth-child(8)"
+        ).click()
         page.get_by_role("button", name="Suche").click()
         page.wait_for_url("http://localhost:5000/event/event/1/registration/query?*")
 
@@ -303,22 +332,38 @@ class TestBrowser(BrowserTest):
         expect(page.locator('#result-container')).to_contain_text('Emilia')
         expect(page.locator('#result-container')).to_contain_text('0,00 €')
         expect(page.locator('#result-container')).to_contain_text('weiblich')
-        expect(page.locator('#result-container')).not_to_contain_text('emilia@example.cde')
+        expect(page.locator('#result-container')).not_to_contain_text(
+            'emilia@example.cde'
+        )
 
         page.locator("#tab_qf_js div:has-text(\"Filter hinzufügen\")").click()
         page.locator("#tab_qf_js").get_by_text("Wu: Status").click()
-        page.locator("#tab_qf_js").get_by_text("Wu: Status").get_by_text("Nicht Angemeldet").nth(1).click()
-        page.locator("#tab_qf_js").get_by_text("Wu: Status").locator(".selectize-dropdown").get_by_text("Warteliste").click()
+        page.locator("#tab_qf_js").get_by_text("Wu: Status").get_by_text(
+            "Nicht Angemeldet"
+        ).nth(1).click()
+        page.locator("#tab_qf_js").get_by_text("Wu: Status").locator(
+            ".selectize-dropdown"
+        ).get_by_text("Warteliste").click()
         page.get_by_role("button", name="Suche").click()
         page.wait_for_url("http://localhost:5000/event/event/1/registration/query?*")
         expect(page.locator('#query-results')).to_contain_text('Ergebnis [1]')
         expect(page.locator('.filterfield-list')).to_contain_text('Warteliste')
 
-        page.locator("#tab_qf_js").get_by_text("Wu: Status").locator("select:not(.selectized)").select_option(label="ist eines aus")
-        page.locator("#tab_qf_js").get_by_text("Wu: Status").locator(".selectize-input input").focus()
-        page.locator("#tab_qf_js").get_by_text("Wu: Status").locator(".selectize-dropdown").get_by_text("Gast").click()
-        page.locator("#tab_qf_js").get_by_text("Wu: Status").locator(".selectize-dropdown").get_by_text("Teilnehmer").click()
-        page.locator("#tab_qf_js .filterfield-list").get_by_text("Familienname").locator("button").click()
+        page.locator("#tab_qf_js").get_by_text("Wu: Status").locator(
+            "select:not(.selectized)"
+        ).select_option(label="ist eines aus")
+        page.locator("#tab_qf_js").get_by_text("Wu: Status").locator(
+            ".selectize-input input"
+        ).focus()
+        page.locator("#tab_qf_js").get_by_text("Wu: Status").locator(
+            ".selectize-dropdown"
+        ).get_by_text("Gast").click()
+        page.locator("#tab_qf_js").get_by_text("Wu: Status").locator(
+            ".selectize-dropdown"
+        ).get_by_text("Teilnehmer").click()
+        page.locator("#tab_qf_js .filterfield-list").get_by_text(
+            "Familienname"
+        ).locator("button").click()
 
         page.get_by_role("button", name="Suche").click()
         page.wait_for_url("http://localhost:5000/event/event/1/registration/query?*")
@@ -338,9 +383,18 @@ class TestBrowser(BrowserTest):
         """
         ids_by_realm = {
             "event": {"#input-select-gender", "#input-select-country"}
-                     | {f"#input-text-{name}"
-                        for name in ("birthday", "telephone", "mobile", "address",
-                                     "address_supplement", "postal_code", "location")},
+            | {
+                f"#input-text-{name}"
+                for name in (
+                    "birthday",
+                    "telephone",
+                    "mobile",
+                    "address",
+                    "address_supplement",
+                    "postal_code",
+                    "location",
+                )
+            },
             "cde": {"#input-file-attachment"},
         }
         for realm in ("ml", "event", "cde"):
@@ -362,11 +416,14 @@ class TestBrowser(BrowserTest):
                     page.get_by_role("button", name="Anfrage abschicken").click()
                     page.wait_for_url("http://localhost:5000/core/genesis/request")
                     expect(page.locator("#input-text-username")).to_have_value(
-                        f"gregor-{realm}@example.cde")
+                        f"gregor-{realm}@example.cde"
+                    )
                     expect(page.locator("#input-text-given_names")).to_have_value(
-                        "Gregor")
+                        "Gregor"
+                    )
                     expect(page.locator("#input-text-family_name")).to_have_value(
-                        "Genesis")
+                        "Genesis"
+                    )
                     for id_ in ids_by_realm["event"]:
                         expect(page.locator(id_)).to_be_visible()
                         if "gender" in id_:
@@ -388,7 +445,8 @@ class TestBrowser(BrowserTest):
                         for id_ in ids_by_realm["cde"]:
                             expect(page.locator(f"{id_}:invalid")).to_be_visible()
                             page.locator(f"{id_}:invalid").set_input_files(
-                                self.testfile_dir / "picture.pdf")
+                                self.testfile_dir / "picture.pdf"
+                            )
                     else:
                         self.fail("Adjust cases for this test.")
 

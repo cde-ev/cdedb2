@@ -30,8 +30,7 @@ class TestCdEBackend(BackendTest):
     def test_basics(self) -> None:
         data = self.core.get_cde_user(self.key, self.user['id'])
         data['nickname'] = "Zelda"
-        setter = {k: v for k, v in data.items() if k in
-                  {'id', 'nickname', 'telephone'}}
+        setter = {k: v for k, v in data.items() if k in {'id', 'nickname', 'telephone'}}
         generation = self.core.changelog_get_generation(self.key, self.user['id'])
         num = self.core.change_persona(self.key, setter, generation, change_note='note')
         self.assertEqual(1, num)
@@ -42,15 +41,15 @@ class TestCdEBackend(BackendTest):
     def test_quota(self) -> None:
         self.assertEqual(0, self.core.quota(self.key))
         # Do two quotable accesses per loop, a number of times equal to half the limit.
-        for i in range(1, self.conf["QUOTA_VIEWS_PER_DAY"]//2 + 1):
+        for i in range(1, self.conf["QUOTA_VIEWS_PER_DAY"] // 2 + 1):
             if i % 3 == 0:
-                self.assertEqual(i*2, self.core.quota(self.key, ids=(1, 2, 6)))
-                self.assertEqual(i*2, self.core.quota(self.key, ids=(1, 2, 6)))
+                self.assertEqual(i * 2, self.core.quota(self.key, ids=(1, 2, 6)))
+                self.assertEqual(i * 2, self.core.quota(self.key, ids=(1, 2, 6)))
             elif i % 3 == 1:
-                self.assertEqual(i*2, self.core.quota(self.key, ids=(3, 4)))
-                self.assertEqual(i*2, self.core.quota(self.key, ids=(3, 4)))
+                self.assertEqual(i * 2, self.core.quota(self.key, ids=(3, 4)))
+                self.assertEqual(i * 2, self.core.quota(self.key, ids=(3, 4)))
             else:
-                self.assertEqual(i*2, self.core.quota(self.key, num=2))
+                self.assertEqual(i * 2, self.core.quota(self.key, num=2))
         self.core.get_cde_users(self.key, (1, 2, 6))
         with self.assertRaises(QuotaException):
             self.core.get_cde_users(self.key, (3, 4))
@@ -58,9 +57,13 @@ class TestCdEBackend(BackendTest):
         # ID and not counted in general.
         self.core.get_cde_users(self.key, (1, 6))
 
-        query = Query(scope=QueryScope.cde_member,
-                      spec=QueryScope.cde_member.get_spec(),
-                      fields_of_interest=["id"], constraints=[], order=[])
+        query = Query(
+            scope=QueryScope.cde_member,
+            spec=QueryScope.cde_member.get_spec(),
+            fields_of_interest=["id"],
+            constraints=[],
+            order=[],
+        )
         with self.assertRaises(QuotaException):
             self.cde.submit_general_query(self.key, query)
 
@@ -71,7 +74,8 @@ class TestCdEBackend(BackendTest):
         self.assertEqual(-1, self.core.change_persona(self.key, data, generation=1))
         newaddress = "newaddress@example.cde"
         ret, _ = self.core.change_username(
-            self.key, self.user['id'], newaddress, self.user['password'])
+            self.key, self.user['id'], newaddress, self.user['password']
+        )
         self.assertTrue(ret)
         self.logout()
         self.assertTrue(self.user_in("anonymous"))
@@ -93,8 +97,11 @@ class TestCdEBackend(BackendTest):
     def test_nack_change(self) -> None:
         user = self.user
         self.assertEqual(
-            -1, self.core.change_persona(self.key, {'id': user['id'],
-                                                    'family_name': "Link"}, 1))
+            -1,
+            self.core.change_persona(
+                self.key, {'id': user['id'], 'family_name': "Link"}, 1
+            ),
+        )
         self.assertEqual(2, self.core.changelog_get_generation(self.key, user['id']))
         self.core.logout(self.key)
         self.login('vera')
@@ -105,17 +112,18 @@ class TestCdEBackend(BackendTest):
     def test_get_cde_users(self) -> None:
         data = self.core.get_cde_users(self.key, (1, 2))
         expectation = self.get_sample_data(
-            'core.personas', (1, 2), models_core.CdEPersona.database_fields())
+            'core.personas', (1, 2), models_core.CdEPersona.database_fields()
+        )
 
         self.assertEqual(expectation, data)
         if self.user_in(22):
             data = self.core.get_event_users(self.key, (1, 2))
             expectation = self.get_sample_data(
-                'core.personas', (1, 2), models_core.EventPersona.database_fields())
+                'core.personas', (1, 2), models_core.EventPersona.database_fields()
+            )
             self.assertEqual(expectation, data)
         data = self.core.get_personas(self.key, (1, 2))
-        expectation = self.get_sample_data(
-            'core.personas', (1, 2), PERSONA_CORE_FIELDS)
+        expectation = self.get_sample_data('core.personas', (1, 2), PERSONA_CORE_FIELDS)
         self.assertEqual(expectation, data)
 
     @as_users("berta")
@@ -125,14 +133,20 @@ class TestCdEBackend(BackendTest):
             spec=QueryScope.cde_member.get_spec(),
             fields_of_interest=("personas.id", "family_name", "birthday"),
             constraints=[
-                ("given_names,searchable_legal_given_names,nickname",
-                 QueryOperators.regex, '[ae]'),
-                ("country,country2", QueryOperators.empty, None)],
-            order=(("family_name,birth_name", True),))
+                (
+                    "given_names,searchable_legal_given_names,nickname",
+                    QueryOperators.regex,
+                    '[ae]',
+                ),
+                ("country,country2", QueryOperators.empty, None),
+            ],
+            order=(("family_name,birth_name", True),),
+        )
         result = self.cde.submit_general_query(self.key, query)
         expectation = {6, 9, 15, 100}
         self.assertEqual(
-            {e[query.scope.get_primary_key()] for e in result}, expectation)
+            {e[query.scope.get_primary_key()] for e in result}, expectation
+        )
 
     @as_users("vera")
     def test_user_search(self) -> None:
@@ -142,26 +156,34 @@ class TestCdEBackend(BackendTest):
             fields_of_interest=("personas.id", "family_name", "birthday"),
             constraints=[
                 ("given_names", QueryOperators.regex, '[ae]'),
-                ("birthday", QueryOperators.less, datetime.datetime.now())],
-            order=(("family_name", True),))
+                ("birthday", QueryOperators.less, datetime.datetime.now()),
+            ],
+            order=(("family_name", True),),
+        )
         result = self.cde.submit_general_query(self.key, query)
-        self.assertEqual({2, 3, 4, 6, 7, 13, 15, 16, 22, 23, 27, 32, 37, 42, 100},
-                         {e[query.scope.get_primary_key()] for e in result})
+        self.assertEqual(
+            {2, 3, 4, 6, 7, 13, 15, 16, 22, 23, 27, 32, 37, 42, 100},
+            {e[query.scope.get_primary_key()] for e in result},
+        )
 
     @as_users("vera")
     def test_user_search_operators(self) -> None:
         query = Query(
             scope=QueryScope.cde_user,
             spec=QueryScope.cde_user.get_spec(),
-            fields_of_interest=("personas.id", "family_name",
-                                "birthday"),
+            fields_of_interest=("personas.id", "family_name", "birthday"),
             constraints=[
                 ("given_names", QueryOperators.match, 'Berta'),
                 ("address", QueryOperators.oneof, ("Auf der Düne 42", "Im Garten 77")),
                 ("weblink", QueryOperators.containsall, ("/", ":", "http")),
-                ("birthday", QueryOperators.between, (datetime.datetime(1000, 1, 1),
-                                                      datetime.datetime.now()))],
-            order=(("family_name", True),))
+                (
+                    "birthday",
+                    QueryOperators.between,
+                    (datetime.datetime(1000, 1, 1), datetime.datetime.now()),
+                ),
+            ],
+            order=(("family_name", True),),
+        )
         result = self.cde.submit_general_query(self.key, query)
         self.assertEqual({2}, {e[query.scope.get_primary_key()] for e in result})
 
@@ -170,10 +192,10 @@ class TestCdEBackend(BackendTest):
         query = Query(
             scope=QueryScope.cde_user,
             spec=QueryScope.cde_user.get_spec(),
-            fields_of_interest=("personas.id", "family_name",
-                                "address", "location"),
+            fields_of_interest=("personas.id", "family_name", "address", "location"),
             constraints=[("location", QueryOperators.match, 'Musterstadt')],
-            order=(("address", True),))
+            order=(("address", True),),
+        )
         result = self.cde.submit_general_query(self.key, query)
         self.assertEqual([1, 27], [e[query.scope.get_primary_key()] for e in result])
 
@@ -193,8 +215,9 @@ class TestCdEBackend(BackendTest):
             2: {
                 'account_address': 'Im Geldspeicher 1',
                 'account_owner': 'Dagobert Anatidae & Co. KG',
-                'granted_at': datetime.datetime(2002, 2, 22, 20, 22, 22, 222222,
-                                                tzinfo=datetime.UTC),
+                'granted_at': datetime.datetime(
+                    2002, 2, 22, 20, 22, 22, 222222, tzinfo=datetime.UTC
+                ),
                 'iban': 'DE12500105170648489890',
                 'id': 2,
                 'notes': 'reicher Onkel',
@@ -214,7 +237,8 @@ class TestCdEBackend(BackendTest):
         self.assertEqual(expectation, self.cde.get_lastschrifts(self.key, (2,)))
         self.assertEqual({4: 42}, self.cde.list_lastschrift(self.key))
         self.assertEqual(
-            {1: 2, 2: 2, 3: 100}, self.cde.list_lastschrift(self.key, active=False))
+            {1: 2, 2: 2, 3: 100}, self.cde.list_lastschrift(self.key, active=False)
+        )
         newdata = {
             'account_address': None,
             'account_owner': None,
@@ -235,31 +259,37 @@ class TestCdEBackend(BackendTest):
             'revoked_at': None,
             'submitted_by': self.user['id'],
         })
-        self.assertEqual({new_id: newdata},
-                         self.cde.get_lastschrifts(self.key, (new_id,)))
+        self.assertEqual(
+            {new_id: newdata}, self.cde.get_lastschrifts(self.key, (new_id,))
+        )
         self.assertEqual(
             ["revoked_at", "transactions"],
-            list(self.cde.delete_lastschrift_blockers(self.key, 2)))
+            list(self.cde.delete_lastschrift_blockers(self.key, 2)),
+        )
 
         transaction_id = self.cde.issue_lastschrift_transaction(
-            self.key, new_id, payment_date=datetime.date.today())
+            self.key, new_id, payment_date=datetime.date.today()
+        )
         self.assertEqual(
             ["revoked_at", "transactions", "active_transactions"],
-            list(self.cde.delete_lastschrift_blockers(self.key, new_id)))
+            list(self.cde.delete_lastschrift_blockers(self.key, new_id)),
+        )
         with self.assertRaises(ValueError):
             self.cde.delete_lastschrift(
-                self.key, new_id, ["transactions", "active_transactions"])
+                self.key, new_id, ["transactions", "active_transactions"]
+            )
         self.cde.finalize_lastschrift_transaction(
-            self.key, transaction_id, const.LastschriftTransactionStati.success)
+            self.key, transaction_id, const.LastschriftTransactionStati.success
+        )
         self.assertEqual(
             ["revoked_at", "transactions"],
-            list(self.cde.delete_lastschrift_blockers(self.key, new_id)))
+            list(self.cde.delete_lastschrift_blockers(self.key, new_id)),
+        )
 
         self.assertEqual(
-            ["transactions"],
-            list(self.cde.delete_lastschrift_blockers(self.key, 1)))
-        self.assertLess(
-            0, self.cde.delete_lastschrift(self.key, 1, ["transactions"]))
+            ["transactions"], list(self.cde.delete_lastschrift_blockers(self.key, 1))
+        )
+        self.assertLess(0, self.cde.delete_lastschrift(self.key, 1, ["transactions"]))
         # check that the donation survives the lastschrift deletion
         user = self.core.get_cde_user(self.key, persona_id=3)
         self.assertEqual(donation, user["donation"])
@@ -281,34 +311,42 @@ class TestCdEBackend(BackendTest):
     @as_users("farin")
     def test_lastschrift_transaction(self) -> None:
         expectation = {1: 1, 2: 1, 3: 2, 4: 3}
-        self.assertEqual(expectation,
-                         self.cde.list_lastschrift_transactions(self.key))
+        self.assertEqual(expectation, self.cde.list_lastschrift_transactions(self.key))
         expectation = {1: 1, 3: 2}
         self.assertEqual(
-            expectation, self.cde.list_lastschrift_transactions(
-                self.key, lastschrift_ids=(1, 2), periods=(41,),
-                stati=(const.LastschriftTransactionStati.success,
-                       const.LastschriftTransactionStati.cancelled)))
+            expectation,
+            self.cde.list_lastschrift_transactions(
+                self.key,
+                lastschrift_ids=(1, 2),
+                periods=(41,),
+                stati=(
+                    const.LastschriftTransactionStati.success,
+                    const.LastschriftTransactionStati.cancelled,
+                ),
+            ),
+        )
         expectation = {
             1: {
                 'amount': decimal.Decimal('32.00'),
                 'id': 1,
-                'issued_at': datetime.datetime(2000, 3, 21, 22, 0,
-                                               tzinfo=datetime.UTC),
+                'issued_at': datetime.datetime(2000, 3, 21, 22, 0, tzinfo=datetime.UTC),
                 'lastschrift_id': 1,
                 'period_id': 41,
                 'payment_date': datetime.date(2000, 4, 4),
-                'processed_at': datetime.datetime(2012, 3, 22, 20, 22, 22, 222222,
-                                                  tzinfo=datetime.UTC),
+                'processed_at': datetime.datetime(
+                    2012, 3, 22, 20, 22, 22, 222222, tzinfo=datetime.UTC
+                ),
                 'status': 12,
                 'submitted_by': 1,
                 'tally': decimal.Decimal('0.00'),
             },
         }
-        self.assertEqual(expectation,
-                         self.cde.get_lastschrift_transactions(self.key, (1,)))
+        self.assertEqual(
+            expectation, self.cde.get_lastschrift_transactions(self.key, (1,))
+        )
         new_id = self.cde.issue_lastschrift_transaction(
-            self.key, lastschrift_id=2, payment_date=datetime.date.today())
+            self.key, lastschrift_id=2, payment_date=datetime.date.today()
+        )
         self.assertLess(0, new_id)
         newdata = {
             'id': new_id,
@@ -322,8 +360,10 @@ class TestCdEBackend(BackendTest):
             'tally': None,
             'period_id': 43,
         }
-        self.assertEqual({new_id: newdata},
-                         self.cde.get_lastschrift_transactions(self.key, (new_id,)))
+        self.assertEqual(
+            {new_id: newdata},
+            self.cde.get_lastschrift_transactions(self.key, (new_id,)),
+        )
 
     @as_users("farin")
     def test_lastschrift_transaction_finalization(self) -> None:
@@ -334,23 +374,29 @@ class TestCdEBackend(BackendTest):
                 # since this is modified by the successful lastschrift test, we need to
                 # retrieve it in each subtest
                 old_balance = self.core.get_cde_user(
-                    self.key, USER_DICT["berta"]["id"])["balance"]
+                    self.key, USER_DICT["berta"]["id"]
+                )["balance"]
                 # issuing a lastschrift transaction if there is already a pending or
                 #  successful one is forbidden, so we need to delete it via sql first
                 if status == ltstati.cancelled:
                     with self.assertRaises(RuntimeError):
                         self.cde.issue_lastschrift_transaction(
-                            self.key, lastschrift_id=2,
-                            payment_date=datetime.date.today())
-                    execsql(f"DELETE FROM cde.lastschrift_transactions"
-                            f" WHERE id = {new_id}")
+                            self.key,
+                            lastschrift_id=2,
+                            payment_date=datetime.date.today(),
+                        )
+                    execsql(
+                        f"DELETE FROM cde.lastschrift_transactions WHERE id = {new_id}"
+                    )
                 new_id = self.cde.issue_lastschrift_transaction(
-                    self.key, lastschrift_id=2, payment_date=datetime.date.today())
+                    self.key, lastschrift_id=2, payment_date=datetime.date.today()
+                )
                 self.assertLess(0, new_id)
                 newdata = {
                     'id': new_id,
                     'lastschrift_id': 2,
-                    'amount': decimal.Decimal('42.23') + 2*self.conf["MEMBERSHIP_FEE"],
+                    'amount': decimal.Decimal('42.23')
+                    + 2 * self.conf["MEMBERSHIP_FEE"],
                     'issued_at': nearly_now(),
                     'payment_date': datetime.date.today(),
                     'processed_at': None,
@@ -360,20 +406,24 @@ class TestCdEBackend(BackendTest):
                     'period_id': 43,
                 }
                 self.assertEqual(
-                    {new_id: newdata}, self.cde.get_lastschrift_transactions(
-                        self.key, (new_id,)))
+                    {new_id: newdata},
+                    self.cde.get_lastschrift_transactions(self.key, (new_id,)),
+                )
                 self.assertLess(
-                    0, self.cde.finalize_lastschrift_transaction(
-                        self.key, new_id, status))
+                    0,
+                    self.cde.finalize_lastschrift_transaction(self.key, new_id, status),
+                )
                 data = self.cde.get_lastschrift_transactions(self.key, (new_id,))
                 data = data[new_id]
                 new_balance = self.core.get_cde_user(
-                    self.key, USER_DICT["berta"]["id"])["balance"]
+                    self.key, USER_DICT["berta"]["id"]
+                )["balance"]
                 self.assertEqual(status, data['status'])
                 if status == ltstati.success:
                     self.assertEqual(decimal.Decimal('50.23'), data['tally'])
                     self.assertEqual(
-                        new_balance, old_balance + 2*self.conf["MEMBERSHIP_FEE"])
+                        new_balance, old_balance + 2 * self.conf["MEMBERSHIP_FEE"]
+                    )
                 elif status == ltstati.cancelled:
                     self.assertEqual(decimal.Decimal('0'), data['tally'])
                     self.assertEqual(new_balance, old_balance)
@@ -385,7 +435,8 @@ class TestCdEBackend(BackendTest):
     def test_lastschrift_transaction_rollback(self) -> None:
         ltstati = const.LastschriftTransactionStati
         new_id = self.cde.issue_lastschrift_transaction(
-            self.key, lastschrift_id=2, payment_date=datetime.date.today())
+            self.key, lastschrift_id=2, payment_date=datetime.date.today()
+        )
         self.assertLess(0, new_id)
         newdata = {
             'id': new_id,
@@ -400,13 +451,16 @@ class TestCdEBackend(BackendTest):
             'period_id': 43,
         }
         self.assertEqual(
-            {new_id: newdata}, self.cde.get_lastschrift_transactions(
-                self.key, (new_id,)))
+            {new_id: newdata},
+            self.cde.get_lastschrift_transactions(self.key, (new_id,)),
+        )
         self.assertLess(
-            0, self.cde.finalize_lastschrift_transaction(
-                self.key, new_id, ltstati.success))
-        self.assertLess(
-            0, self.cde.rollback_lastschrift_transaction(self.key, new_id))
+            0,
+            self.cde.finalize_lastschrift_transaction(
+                self.key, new_id, ltstati.success
+            ),
+        )
+        self.assertLess(0, self.cde.rollback_lastschrift_transaction(self.key, new_id))
         data = self.cde.get_lastschrift_transactions(self.key, (new_id,))
         data = data[new_id]
         self.assertEqual(ltstati.rollback, data['status'])
@@ -441,67 +495,89 @@ class TestCdEBackend(BackendTest):
             else:
                 self.assertFalse(v)
 
-        self.assertEqual(AllowedSemesterSteps(exmember_balance=True),
-                         self.cde.allowed_semester_steps(self.key))
+        self.assertEqual(
+            AllowedSemesterSteps(exmember_balance=True),
+            self.cde.allowed_semester_steps(self.key),
+        )
 
         # step 1.5 (in the UI, this is the first part of step 2)
         self.cde.finish_semester_exmember_update(self.key)
 
-        self.assertEqual(AllowedSemesterSteps(ejection=True, automated_archival=True),
-                         self.cde.allowed_semester_steps(self.key))
+        self.assertEqual(
+            AllowedSemesterSteps(ejection=True, automated_archival=True),
+            self.cde.allowed_semester_steps(self.key),
+        )
 
         # step 2
         # check that archival and ejection work in arbitrary order
         if self.user_in("anton"):
             self.cde.finish_semester_ejection(self.key)
-            self.assertEqual(AllowedSemesterSteps(automated_archival=True),
-                             self.cde.allowed_semester_steps(self.key))
+            self.assertEqual(
+                AllowedSemesterSteps(automated_archival=True),
+                self.cde.allowed_semester_steps(self.key),
+            )
             self.cde.finish_automated_archival(self.key)
         elif self.user_in("farin"):
             self.cde.finish_automated_archival(self.key)
-            self.assertEqual(AllowedSemesterSteps(ejection=True),
-                             self.cde.allowed_semester_steps(self.key))
+            self.assertEqual(
+                AllowedSemesterSteps(ejection=True),
+                self.cde.allowed_semester_steps(self.key),
+            )
             self.cde.finish_semester_ejection(self.key)
         else:
             self.fail("Invalid user configuration for this test.")
 
-        self.assertEqual(AllowedSemesterSteps(balance=True),
-                         self.cde.allowed_semester_steps(self.key))
+        self.assertEqual(
+            AllowedSemesterSteps(balance=True),
+            self.cde.allowed_semester_steps(self.key),
+        )
 
         # step 3
         self.cde.finish_semester_balance_update(self.key)
 
-        self.assertEqual(AllowedSemesterSteps(advance=True),
-                         self.cde.allowed_semester_steps(self.key))
+        self.assertEqual(
+            AllowedSemesterSteps(advance=True),
+            self.cde.allowed_semester_steps(self.key),
+        )
 
         # step 4 (in the UI, this is the first part of step 1)
         self.cde.advance_semester(self.key)
-        self.assertEqual(AllowedSemesterSteps(billing=True, archival_notification=True),
-                         self.cde.allowed_semester_steps(self.key))
+        self.assertEqual(
+            AllowedSemesterSteps(billing=True, archival_notification=True),
+            self.cde.allowed_semester_steps(self.key),
+        )
 
         # step 1
         # check that sending archival and billing notification work in arbitrary order
         if self.user_in("anton"):
             self.cde.finish_semester_bill(self.key)
-            self.assertEqual(AllowedSemesterSteps(archival_notification=True),
-                             self.cde.allowed_semester_steps(self.key))
+            self.assertEqual(
+                AllowedSemesterSteps(archival_notification=True),
+                self.cde.allowed_semester_steps(self.key),
+            )
             self.cde.finish_archival_notification(self.key)
         elif self.user_in("farin"):
             self.cde.finish_archival_notification(self.key)
-            self.assertEqual(AllowedSemesterSteps(billing=True),
-                             self.cde.allowed_semester_steps(self.key))
+            self.assertEqual(
+                AllowedSemesterSteps(billing=True),
+                self.cde.allowed_semester_steps(self.key),
+            )
             self.cde.finish_semester_bill(self.key)
         else:
             self.fail("Invalid user configuration for this test.")
 
-        self.assertEqual(AllowedSemesterSteps(exmember_balance=True),
-                         self.cde.allowed_semester_steps(self.key))
+        self.assertEqual(
+            AllowedSemesterSteps(exmember_balance=True),
+            self.cde.allowed_semester_steps(self.key),
+        )
 
         # step 1.5 (in the UI, this is the first part of step 2)
         self.cde.finish_semester_exmember_update(self.key)
 
-        self.assertEqual(AllowedSemesterSteps(ejection=True, automated_archival=True),
-                         self.cde.allowed_semester_steps(self.key))
+        self.assertEqual(
+            AllowedSemesterSteps(ejection=True, automated_archival=True),
+            self.cde.allowed_semester_steps(self.key),
+        )
 
     @as_users("vera")
     def test_cde_log(self) -> None:
@@ -511,14 +587,19 @@ class TestCdEBackend(BackendTest):
         # now check it
         self.assertLogEqual([], 'cde')
 
-    @prepsql("UPDATE core.personas SET balance = 1, is_member = True"
-             " WHERE is_cde_realm = True AND is_archived = False")
+    @prepsql(
+        "UPDATE core.personas SET balance = 1, is_member = True"
+        " WHERE is_cde_realm = True AND is_archived = False"
+    )
     @as_users("vera")
     def test_query_aggregate(self) -> None:
         other_user = get_user("berta")
         query = Query(
-            QueryScope.cde_user, QueryScope.cde_user.get_spec(),
-            ['balance'], (), (),
+            QueryScope.cde_user,
+            QueryScope.cde_user.get_spec(),
+            ['balance'],
+            (),
+            (),
         )
 
         pevent_data = {
@@ -532,11 +613,11 @@ class TestCdEBackend(BackendTest):
         # Create two (identical) past events and add any cde user to them, to
         #  create duplicates in the cde user view.
         pevent_id = self.pastevent.create_past_event(self.key, pevent_data)
-        self.pastevent.add_participant(
-            self.key, pevent_id, pcourse_id=None, persona_id=self.user['id'])
+        self.pastevent.set_participant(self.key, pevent_id, persona_id=self.user['id'])
         pevent_id_duplicate = self.pastevent.create_past_event(self.key, pevent_data)
-        self.pastevent.add_participant(
-            self.key, pevent_id_duplicate, pcourse_id=None, persona_id=self.user['id'])
+        self.pastevent.set_participant(
+            self.key, pevent_id_duplicate, persona_id=self.user['id']
+        )
 
         # Check that the aggregate sums correctly.
         result = self.cde.submit_general_query(self.key, query, aggregate=False)
@@ -549,7 +630,8 @@ class TestCdEBackend(BackendTest):
 
         # Check duplication in core search:
         query = Query(
-            QueryScope.core_user, QueryScope.core_user.get_spec(),
+            QueryScope.core_user,
+            QueryScope.core_user.get_spec(),
             ['is_member'],
             [
                 ('personas.id', QueryOperators.equal, self.user['id']),
@@ -561,11 +643,14 @@ class TestCdEBackend(BackendTest):
 
         # Check that filtering by past event works.
         self.pastevent.remove_participant(
-            self.key, pevent_id_duplicate, pcourse_id=None, persona_id=self.user['id'])
-        self.pastevent.add_participant(
-            self.key, pevent_id_duplicate, pcourse_id=None, persona_id=other_user['id'])
+            self.key, pevent_id_duplicate, persona_id=self.user['id']
+        )
+        self.pastevent.set_participant(
+            self.key, pevent_id_duplicate, persona_id=other_user['id']
+        )
         query = Query(
-            QueryScope.cde_user, QueryScope.cde_user.get_spec(),
+            QueryScope.cde_user,
+            QueryScope.cde_user.get_spec(),
             ['personas.id', 'is_member'],
             [
                 ('pevent_id', QueryOperators.oneof, [pevent_id, pevent_id_duplicate]),
@@ -574,12 +659,16 @@ class TestCdEBackend(BackendTest):
         )
         self.assertEqual(
             {self.user['id'], other_user['id']},
-            {e[query.scope.get_primary_key()]
-             for e in self.cde.submit_general_query(self.key, query)},
+            {
+                e[query.scope.get_primary_key()]
+                for e in self.cde.submit_general_query(self.key, query)
+            },
         )
         self.assertEqual(
             2,
             self.cde.submit_general_query(
-                self.key, query, aggregate=True,
+                self.key,
+                query,
+                aggregate=True,
             )[0]['sum.is_member'],
         )

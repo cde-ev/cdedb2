@@ -9,7 +9,6 @@ from cdedb.config import Config, SecretsConfig, get_configpath, set_configpath
 
 
 class TestConfig(unittest.TestCase):
-
     real_config_path: ClassVar[pathlib.Path]
 
     @classmethod

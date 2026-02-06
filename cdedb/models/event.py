@@ -379,6 +379,9 @@ class Event(EventDataclass):
             )
         )
 
+    def is_current_for_orga(self) -> bool:
+        return self.begin > (now().date() - datetime.timedelta(days=365 * 2))
+
     @functools.cached_property
     def lodge_field(self) -> Optional["EventField"]:
         if self.lodge_field_id is None:
@@ -425,11 +428,15 @@ class Event(EventDataclass):
 class EventPart(EventDataclass):
     database_table = "event.event_parts"
 
+    id: vtypes.ID = dataclasses.field(
+        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict
+    )
+
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     title: str
-    shortname: str
+    shortname: vtypes.Identifier
 
     part_begin: datetime.date
     part_end: datetime.date
@@ -448,7 +455,10 @@ class EventPart(EventDataclass):
     )
 
     tracks: CdEDataclassMap["CourseTrack"] = dataclasses.field(
-        default_factory=dict, metadata=Meta.asdict_include.as_dict
+        default_factory=dict,
+        metadata=(
+            Meta.asdict_include | Meta.validate_include | Meta.validate_skip
+        ).as_dict,
     )
 
     part_groups: CdEDataclassMap["PartGroup"] = dataclasses.field(
@@ -693,7 +703,11 @@ class EventField(EventDataclass):
     # Usage configuration, i.e. where is this field used.
     checkin: bool = False
 
-    entries: dict[Any, str] | None = None
+    # Need to postpone validation of entries until kind is known.
+    # Also need to account for this accepting string and sequence input.
+    entries: dict[Any, str] | None = dataclasses.field(
+        default=None, metadata=Meta.validate_skip.as_dict
+    )
 
     @property
     def request_name(self) -> str:
@@ -713,17 +727,6 @@ class EventField(EventDataclass):
         ret = super().as_dict()
         ret['entries'] = normalize_field_entries(ret['entries'], self.kind)
         return ret
-
-    @classmethod
-    def validation_fields(
-        cls, *, creation: bool
-    ) -> tuple[vtypes.MutableTypeMapping, vtypes.MutableTypeMapping]:
-        mandatory, optional = super().validation_fields(creation=creation)
-        if "entries" in optional:
-            # Need to postpone validation of entries until kind is known.
-            # Also need to account for this accepting string and sequence input.
-            optional["entries"] = Any
-        return mandatory, optional
 
     @classmethod
     def _get_validator(cls, kind: const.FieldDatatypes) -> TypeForm[Any]:

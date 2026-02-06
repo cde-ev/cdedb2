@@ -21,9 +21,9 @@ QEMUOPTIONS ?= -m 1G -enable-kvm -net nic,model=virtio -net user,hostfwd=tcp:127
 QEMUCACHING ?= writethrough
 
 # depending whether we are on stable or oldstable...
-# DEBSERVER = https://cdimage.debian.org/cdimage/release
-DEBSERVER = https://meetings-archive.debian.net/cdimage/archive
-DEBVERSION = 12.8.0
+DEBSERVER = https://cdimage.debian.org/cdimage/release
+# DEBSERVER = https://meetings-archive.debian.net/cdimage/archive
+DEBVERSION = 13.3.0
 NETINSTISO = debian-${DEBVERSION}-amd64-netinst.iso
 
 DISTINFO_DATA?= ${AWK} -v alg=$$algo -v file=$${file} \
@@ -112,7 +112,7 @@ ${WORKDIR}/.done_cdimage:${WORKDIR}/.done_patch
 build-stage1:${WORKDIR}/.done_stage1
 ${WORKDIR}/.done_stage1:${WORKDIR}/.done_cdimage
 	rm -f ${WORKDIR}/stage1.qcow2
-	${QEMUIMG} create -f qcow2 ${WORKDIR}/stage1.qcow2 10G
+	${QEMUIMG} create -f qcow2 ${WORKDIR}/stage1.qcow2 20G
 	${QEMU} ${QEMUOPTIONS} -no-reboot -drive file=${WORKDIR}/stage1.qcow2,cache=${QEMUCACHING},if=virtio -drive file=${WORKDIR}/bootstrap.iso,media=cdrom,index=2 -boot order=d
 	touch $@
 

@@ -26,14 +26,21 @@ from tests.common import BasicTest
 class TestCommon(BasicTest):
     def test_mixed_existence_sorter(self) -> None:
         unsorted = [3, 8, -3, 5, 0, -4]
-        self.assertEqual(list(mixed_existence_sorter(unsorted)),
-                         [0, 3, 5, 8, -3, -4])
+        self.assertEqual(list(mixed_existence_sorter(unsorted)), [0, 3, 5, 8, -3, -4])
         self.assertEqual(sorted([-3, -4]), xsorted([-3, -4]))
 
     def test_extract_roles(self) -> None:
-        self.assertEqual({
-            "anonymous", "persona", "cde", "member", "searchable",
-            "ml", "assembly", "event"},
+        self.assertEqual(
+            {
+                "anonymous",
+                "persona",
+                "cde",
+                "member",
+                "searchable",
+                "ml",
+                "assembly",
+                "event",
+            },
             extract_roles({
                 'is_active': True,
                 'is_cde_realm': True,
@@ -42,7 +49,8 @@ class TestCommon(BasicTest):
                 'is_assembly_realm': True,
                 'is_member': True,
                 'is_searchable': True,
-                }))
+            }),
+        )
 
     def test_number_to_words(self) -> None:
         cases = {
@@ -136,14 +144,16 @@ class TestCommon(BasicTest):
             },
         ]
         shuffled_dicts = random.sample(dicts, len(dicts))
+        self.assertEqual(dicts, xsorted(shuffled_dicts, key=lambda x: x['string']))
         self.assertEqual(
-            dicts, xsorted(shuffled_dicts, key=lambda x: x['string']))
+            dicts, xsorted(shuffled_dicts, key=lambda x: x['id'], reverse=True)
+        )
         self.assertEqual(
-            dicts, xsorted(shuffled_dicts, key=lambda x: x['id'], reverse=True))
+            dicts, xsorted(shuffled_dicts, key=lambda x: x['neg'], reverse=False)
+        )
         self.assertEqual(
-            dicts, xsorted(shuffled_dicts, key=lambda x: x['neg'], reverse=False))
-        self.assertEqual(
-            dicts, xsorted(shuffled_dicts, key=lambda x: str(x['neg']), reverse=True))
+            dicts, xsorted(shuffled_dicts, key=lambda x: str(x['neg']), reverse=True)
+        )
 
         # Test correct sorting of tuples, which would be sorted differently as string
         tuples = [
@@ -170,8 +180,9 @@ class TestCommon(BasicTest):
         for col in ([1, 1.0], (1, "a"), {1.0, "a"}, {1: 1.0, "a": b"b"}):
             with self.assertRaises(ValueError) as cmv:
                 unwrap(col)
-            self.assertIn("Can only unwrap collections with one element.",
-                          cmv.exception.args[0])
+            self.assertIn(
+                "Can only unwrap collections with one element.", cmv.exception.args[0]
+            )
         for ncol in (1, 1.0, (i for i in range(1))):
             with self.subTest(ncol=ncol):
                 with self.assertRaises(TypeError) as cmt:
@@ -226,41 +237,54 @@ class TestCommon(BasicTest):
 
         matches = {
             lang: re.search(
-                fr".*/{lang}/LC_MESSAGES/cdedb.po: (?P<translated>\d+) translated messages"
+                rf".*/{lang}/LC_MESSAGES/cdedb.po: (?P<translated>\d+) translated messages"
                 r"(, (?P<fuzzy>\d+) fuzzy translations?)?"
                 r"(, (?P<untranslated>\d+) untranslated messages?)?"
                 r"\.",
                 result.stderr,
-            ) for lang in langs
+            )
+            for lang in langs
         }
 
         for lang, match in matches.items():
             assert match is not None
             with self.subTest(f"translated-{lang}"):
                 self.assertLess(
-                    0, int(match["translated"]), f"There are no translated strings({lang})."
+                    0,
+                    int(match["translated"]),
+                    f"There are no translated strings({lang}).",
                 )
             if lang != "en":
                 with self.subTest(f"untranslated-{lang}"):
-                    self.assertIsNone(match["untranslated"],
-                                      f"There are untranslated strings ({lang})."
-                                      " Make sure all strings are translated.")
+                    self.assertIsNone(
+                        match["untranslated"],
+                        f"There are untranslated strings ({lang})."
+                        " Make sure all strings are translated.",
+                    )
             with self.subTest(f"fuzzy-{lang}"):
-                self.assertIsNone(match["fuzzy"],
-                                  f"There are fuzzy translations ({lang}). Double check"
-                                  " these and remove the '#, fuzzy' marker afterwards.")
+                self.assertIsNone(
+                    match["fuzzy"],
+                    f"There are fuzzy translations ({lang}). Double check"
+                    " these and remove the '#, fuzzy' marker afterwards.",
+                )
 
     def test_nearly_now(self) -> None:
         base_time = now()
         self.assertEqual(base_time, nearly_now())
         self.assertEqual(base_time + datetime.timedelta(minutes=5), nearly_now())
         self.assertNotEqual(base_time + datetime.timedelta(minutes=15), nearly_now())
-        self.assertEqual(base_time + datetime.timedelta(minutes=15),
-                         nearly_now(datetime.timedelta(days=1)))
-        self.assertNotEqual(base_time + datetime.timedelta(minutes=5),
-                            nearly_now(datetime.timedelta(minutes=1)))
-        self.assertEqual(NearlyNow.fromisoformat("2012-12-21T12:34:56"),
-                         datetime.datetime.fromisoformat("2012-12-21T12:40:00"))
+        self.assertEqual(
+            base_time + datetime.timedelta(minutes=15),
+            nearly_now(datetime.timedelta(days=1)),
+        )
+        self.assertNotEqual(
+            base_time + datetime.timedelta(minutes=5),
+            nearly_now(datetime.timedelta(minutes=1)),
+        )
+        self.assertEqual(
+            NearlyNow.fromisoformat("2012-12-21T12:34:56"),
+            datetime.datetime.fromisoformat("2012-12-21T12:40:00"),
+        )
 
     def test_datetime_min(self) -> None:
         self.assertEqual(datetime.date.min, datetime.date(1, 1, 1))

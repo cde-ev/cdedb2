@@ -267,7 +267,13 @@ class ValidatorStorage(dict[TypeForm[T], Callable[..., T]]):
             ]
             for model_namespace in model_namespaces:
                 try:
-                    return self[type_._evaluate(vars(model_namespace), {}, set())]
+                    return self[
+                        type_._evaluate(
+                            vars(model_namespace),
+                            {},
+                            recursive_guard=set(),
+                        )
+                    ]
                 except NameError:
                     pass
             raise NameError(
@@ -452,35 +458,31 @@ def _create_dataclass_validator(
     def the_decorator(fun: F) -> F:
         for type_ in types:
 
-            def new_validator_template(
+            def new_validator(
                 val: Any,
                 argname: str = type_.__qualname__,
                 *,
-                type_: type[DC],
+                type__: type[DC] = type_,
                 creation: bool = False,
                 **kwargs: Any,
             ) -> CdEDBObject:
                 if isinstance(val, (CdEDataclass, GenericLogFilter)):
                     val = val._to_validation()
                 new_kwargs = {**kwargs_, **kwargs}
+                new_kwargs["type_"] = type__
                 val = _mapping(val, argname, **new_kwargs)
-                if issubclass(type_, GenericLogFilter):
-                    mandatory, optional = type_.validation_fields()
-                elif issubclass(type_, CdEDataclass):
-                    mandatory, optional = type_.validation_fields(creation=creation)
+                if issubclass(type__, GenericLogFilter):
+                    mandatory, optional = type__.validation_fields()
+                elif issubclass(type__, CdEDataclass):
+                    mandatory, optional = type__.validation_fields(creation=creation)
                 else:
                     raise RuntimeError("Impossible.")
                 if _prepare is not None:
-                    val = _prepare(val, creation=creation, type_=type_, **new_kwargs)
+                    val = _prepare(val, creation=creation, **new_kwargs)
                 val = _examine_dictionary_fields(val, mandatory, optional, **new_kwargs)
-                val = fun(val, argname, creation=creation, type_=type_, **new_kwargs)
+                val = fun(val, argname, creation=creation, **new_kwargs)
                 return val
 
-            # note that we use functools.partial to ensure the enclosure variable type_
-            # is set to the correct value
-            new_validator = functools.update_wrapper(
-                functools.partial(new_validator_template, type_=type_), fun
-            )
             _add_typed_validator(new_validator, type_)
 
         return fun
@@ -2506,7 +2508,11 @@ def _event(
     if 'parts' in val:
         with errs:
             val['parts'] = _optional_object_mapping_helper(
-                val['parts'], EventPart, 'parts', creation_only=creation, **kwargs
+                val['parts'],
+                models_event.EventPart,
+                'parts',
+                creation_only=creation,
+                **kwargs,
             )
 
     if 'fields' in val:
@@ -2536,60 +2542,22 @@ def _event(
     return Event(val)
 
 
-EVENT_PART_CREATION_MANDATORY_FIELDS: TypeMapping = {
-    'title': str,
-    'shortname': TokenString,
-    'part_begin': datetime.date,
-    'part_end': datetime.date,
-}
-
-EVENT_PART_CREATION_OPTIONAL_FIELDS: TypeMapping = {
-    'waitlist_field_id': Optional[ID],
-    'camping_mat_field_id': Optional[ID],
-    'tracks': Mapping,
-}
-
-EVENT_PART_COMMON_FIELDS: TypeMapping = {
-    **EVENT_PART_CREATION_MANDATORY_FIELDS,
-    **EVENT_PART_CREATION_OPTIONAL_FIELDS,
-}
-
-EVENT_PART_OPTIONAL_FIELDS: TypeMapping = {}
-
-
-@_add_typed_validator
+@_create_dataclass_validator(models_event.EventPart)
 def _event_part(
-    val: Any,
+    val: CdEDBObject,
     argname: str = "event_part",
     *,
     event: models_event.Event | None,
     creation: bool = False,
     **kwargs: Any,
-) -> EventPart:
-    """
-    :param creation: If ``True`` test the data set on fitness for creation
-      of a new entity.
-    """
-    val = _mapping(val, argname, **kwargs)
-
-    mandatory_fields: TypeMapping
-    optional_fields: TypeMapping
-
-    if creation:
-        mandatory_fields = {**EVENT_PART_CREATION_MANDATORY_FIELDS}
-        optional_fields = {**EVENT_PART_CREATION_OPTIONAL_FIELDS}
-    else:
-        mandatory_fields = {}
-        optional_fields = {**EVENT_PART_COMMON_FIELDS, **EVENT_PART_OPTIONAL_FIELDS}
-
-    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
-
+) -> CdEDBObject:
     errs = ValidationSummary()
-    if (
-        'part_begin' in val
-        and 'part_end' in val
-        and val['part_begin'] > val['part_end']
-    ):
+    part_begin = val.get("part_begin")
+    part_end = val.get("part_end")
+    if creation is False and event:
+        part_begin = part_begin or event.parts[kwargs["id_"]].part_begin
+        part_end = part_end or event.parts[kwargs["id_"]].part_end
+    if part_begin and part_end and part_begin > part_end:
         errs.append(ValueError("part_end", n_("Must be later than begin.")))
 
     if 'tracks' in val:
@@ -2656,7 +2624,7 @@ def _event_part(
     if errs:
         raise errs
 
-    return EventPart(val)
+    return val
 
 
 @_create_dataclass_validator(models_event.PartGroup)
