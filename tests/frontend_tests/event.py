@@ -35,7 +35,7 @@ from cdedb.common.sorting import xsorted
 from cdedb.filter import datetime_filter, iban_filter
 from cdedb.frontend.common import (
     CustomCSVDialect,
-    make_epc_qr_data,
+    _make_epc_qr_data,  # noqa: PLC2701
     make_event_fee_reference,
 )
 from cdedb.frontend.event.query_stats import (
@@ -1869,7 +1869,7 @@ EUR466.49
 Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertEqual(
             qr_expectation,
-            make_epc_qr_data(
+            _make_epc_qr_data(
                 account=cast(Accounts, event.iban),
                 reference=make_event_fee_reference(persona, event),
                 amount=decimal.Decimal("466.49"),

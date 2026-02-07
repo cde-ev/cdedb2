@@ -3418,7 +3418,7 @@ def calculate_loglinks(
 # Monkey patch segnos epc qr code generation to allow qrcodes with empty amount.
 
 
-def make_epc_qr_data(
+def _make_epc_qr_data(
     account: Accounts, reference: str, amount: decimal.Decimal | None
 ) -> bytes:
     data = {
@@ -3440,7 +3440,7 @@ def make_epc_qr(
     account: Accounts, reference: str, amount: decimal.Decimal | None
 ) -> segno.QRCode:
     return segno.make_qr(
-        make_epc_qr_data(account, reference, amount), error="m", boost_error=True
+        _make_epc_qr_data(account, reference, amount), error="m", boost_error=True
     )
 
 
