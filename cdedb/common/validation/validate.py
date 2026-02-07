@@ -2487,11 +2487,17 @@ def _event(
 
     errs = ValidationSummary()
 
-    configuration_fields = {k: v for k, v in val.items() if k in EVENT_EXPOSED_FIELDS}
+    configuration_keys: set[str] = set().union(
+        *map(
+            dict.keys,  # type: ignore[arg-type]
+            models_event._EventConfigurationMixin.validation_fields(creation=creation),
+        )
+    )
+    configuration_fields = {k: v for k, v in val.items() if k in configuration_keys}
     if configuration_fields:
         with errs:
-            configuration_fields = _ALL_TYPED[SerializedEventConfiguration](
-                configuration_fields, argname, creation=creation, **kwargs
+            configuration_fields = _ALL_TYPED[models_event._EventConfigurationMixin](
+                configuration_fields, creation=creation, **kwargs
             )
             val.update(configuration_fields)
 
@@ -3996,27 +4002,16 @@ def _serialized_event_questionnaire(
     return SerializedEventQuestionnaire(val)
 
 
-@_add_typed_validator
+@_create_dataclass_validator(models_event._EventConfigurationMixin)  # type: ignore[type-abstract]
 def _serialized_event_configuration(
     val: Any,
-    argname: str = "serialized_event_configuration",
+    argname: str,
     *,
     creation: bool = False,
     event: models_event.Event | None,
     **kwargs: Any,
-) -> SerializedEventConfiguration:
-    val = _mapping(val, argname, **kwargs)
+) -> CdEDBObject:
     current = event
-
-    if creation:
-        mandatory_fields = dict(**EVENT_COMMON_FIELDS)
-        optional_fields = dict(**EVENT_EXPOSED_OPTIONAL_FIELDS, **EVENT_FREETEXT_FIELDS)
-    else:
-        mandatory_fields = {}
-        optional_fields = dict(**EVENT_EXPOSED_FIELDS)
-
-    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
-
     errs = ValidationSummary()
 
     # Check IBAN to be valid

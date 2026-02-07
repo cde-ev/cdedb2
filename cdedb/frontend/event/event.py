@@ -57,6 +57,7 @@ from cdedb.frontend.common import (
     process_dynamic_input,
 )
 from cdedb.frontend.event.base import EventBaseFrontend, event_guard
+from cdedb.models.common import CdEDataclass
 from cdedb.models.ml import (
     EventAssociatedMailinglist,
     EventOrgaMailinglist,
@@ -265,12 +266,19 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdatadict(*models.Event.requestdict_fields(creation=False))
+    @REQUESTdatadict(
+        *models._EventConfigurationMixin.requestdict_fields(creation=False)
+    )
     def change_event(
         self, rs: RequestState, event_id: int, data: CdEDBObject
     ) -> Response:
         """Modify an event organized via DB."""
-        data = check(rs, models.Event, data, event=rs.ambience['event'])
+        data = check(
+            rs,
+            cast(type[CdEDataclass], models._EventConfigurationMixin),  # abstract model
+            data,
+            event=rs.ambience['event'],
+        )
         if (
             data
             and data['shortname']

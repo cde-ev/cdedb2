@@ -167,11 +167,8 @@ class EventFieldSpec(AbstractMetaData):
 #
 
 
-@dataclasses.dataclass(kw_only=True)
-class Event(EventDataclass):
-    database_table = "event.events"
-    entity_key = "id"
-
+@dataclasses.dataclass
+class _EventConfigurationMixin(CdEDataclass):
     id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
 
     title: str
@@ -179,44 +176,13 @@ class Event(EventDataclass):
 
     institution: const.PastInstitutions
 
-    registration_start: Optional[datetime.datetime]
-    registration_soft_limit: Optional[datetime.datetime]
-    registration_hard_limit: Optional[datetime.datetime]
+    registration_start: datetime.datetime | None
+    registration_soft_limit: datetime.datetime | None
+    registration_hard_limit: datetime.datetime | None
 
-    iban: Optional[Accounts]
-    orga_address: Optional[vtypes.Email]
-    website_url: Optional[str]
-
-    # Exclude from request to avoid unsetting when submitting `change_event_form`.
-    description: Optional[str] = dataclasses.field(
-        metadata=Meta.request_update_exclude.as_dict
-    )
-    registration_text: Optional[str] = dataclasses.field(
-        metadata=Meta.request_update_exclude.as_dict
-    )
-    mail_text: Optional[str] = dataclasses.field(
-        metadata=Meta.request_update_exclude.as_dict
-    )
-    participant_info: Optional[str] = dataclasses.field(
-        metadata=Meta.request_update_exclude.as_dict
-    )
-    notes: Optional[str] = dataclasses.field(
-        metadata=Meta.request_update_exclude.as_dict
-    )
-    field_definition_notes: Optional[str] = dataclasses.field(
-        metadata=Meta.request_update_exclude.as_dict
-    )
-
-    # Disallow setting via request altogether.
-    is_locked: bool = dataclasses.field(
-        default=False, metadata=Meta.request_exclude.as_dict
-    )
-    is_archived: bool = dataclasses.field(
-        default=False, metadata=Meta.request_exclude.as_dict
-    )
-    is_balanced: bool = dataclasses.field(
-        default=False, metadata=Meta.request_exclude.as_dict
-    )
+    iban: Accounts | None
+    orga_address: vtypes.Email | None
+    website_url: str | None
 
     is_cancelled: bool = False
     is_visible: bool = False
@@ -229,17 +195,58 @@ class Event(EventDataclass):
         const.NotifyOnRegistration.never
     )
 
-    lodge_field_id: Optional[vtypes.ID] = dataclasses.field(
+    lodge_field_id: vtypes.ID | None = dataclasses.field(
+        default=None,
         metadata=EventFieldSpec(
             legal_associations={const.FieldAssociations.registration},
             legal_kinds={const.FieldDatatypes.str},
-        ).as_dict
+        ).as_dict,
     )
-    reimbursement_iban_field_id: Optional[vtypes.ID] = dataclasses.field(
+    reimbursement_iban_field_id: vtypes.ID | None = dataclasses.field(
+        default=None,
         metadata=EventFieldSpec(
             legal_associations={const.FieldAssociations.registration},
             legal_kinds={const.FieldDatatypes.iban},
-        ).as_dict
+        ).as_dict,
+    )
+
+
+@dataclasses.dataclass
+class Event(EventDataclass, _EventConfigurationMixin):
+    database_table = "event.events"
+    entity_key = "id"
+
+    id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
+
+    # Exclude from request to avoid unsetting when submitting `change_event_form`.
+    description: str | None = dataclasses.field(
+        default=None, metadata=Meta.request_update_exclude.as_dict
+    )
+    registration_text: str | None = dataclasses.field(
+        default=None, metadata=Meta.request_update_exclude.as_dict
+    )
+    mail_text: str | None = dataclasses.field(
+        default=None, metadata=Meta.request_update_exclude.as_dict
+    )
+    participant_info: str | None = dataclasses.field(
+        default=None, metadata=Meta.request_update_exclude.as_dict
+    )
+    notes: str | None = dataclasses.field(
+        default=None, metadata=Meta.request_update_exclude.as_dict
+    )
+    field_definition_notes: str | None = dataclasses.field(
+        default=None, metadata=Meta.request_update_exclude.as_dict
+    )
+
+    # Disallow setting via request altogether.
+    is_locked: bool = dataclasses.field(
+        default=False, metadata=Meta.request_exclude.as_dict
+    )
+    is_archived: bool = dataclasses.field(
+        default=False, metadata=Meta.request_exclude.as_dict
+    )
+    is_balanced: bool = dataclasses.field(
+        default=False, metadata=Meta.request_exclude.as_dict
     )
 
     parts: CdEDataclassMap["EventPart"] = dataclasses.field(
