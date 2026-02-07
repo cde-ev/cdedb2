@@ -3995,16 +3995,10 @@ class TestEventBackend(BackendTest):
                     'checkin': True,
                 },
             },
-            'lodgement_groups': {
-                -1: {
-                    'title': "Draußen",
-                },
-                -2: {
-                    'title': "Drinnen",
-                },
-            },
         }
         new_id = self.event.create_event(self.key, data)
+        for lg_title in ["Draußen", "Drinnen"]:
+            self.event.create_lodgement_group(self.key, new_id, {'title': lg_title})
         # correct part and field ids
         tmp = self.event.get_event(self.key, new_id)
         part_map = {}
@@ -4307,6 +4301,11 @@ class TestEventBackend(BackendTest):
             {
                 'change_note': 'Second lecture',
                 'code': const.EventLogCodes.track_added,
+                'event_id': 1001,
+            },
+            {
+                'change_note': "New Link Academy",
+                'code': const.EventLogCodes.lodgement_group_created,
                 'event_id': 1001,
             },
             {

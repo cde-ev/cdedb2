@@ -67,7 +67,7 @@ from cdedb.common.privileges import (
     is_privileged_event as is_privileged,
 )
 from cdedb.common.query.log_filter import EventLogFilter
-from cdedb.common.sorting import mixed_existence_sorter, xsorted
+from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter
 from cdedb.models.core import EventPersona
@@ -902,12 +902,8 @@ class EventBaseBackend(EventLowLevelBackend):
                 self._set_event_fields(rs, new_id, data['fields'])
             if 'parts' in data:
                 self._set_event_parts(rs, new_id, data['parts'])
-            if groups := data.get('lodgement_groups'):
-                for creation_id in mixed_existence_sorter(groups):
-                    self.create_lodgement_group(rs, new_id, groups[creation_id])
-            else:
-                lg_data = {"title": data['title']}
-                self.create_lodgement_group(rs, new_id, lg_data)
+            lg_data = {"title": data['title']}
+            self.create_lodgement_group(rs, new_id, lg_data)
             self.event_keeper_create(rs, new_id)
         return new_id
 
