@@ -39,7 +39,6 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import EventIsBalancedError
 from cdedb.common.n_ import n_
-from cdedb.common.parse.util import Accounts
 from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
@@ -2540,8 +2539,11 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.serve_qrcode(rs, qrcode)
 
     def _registration_fee_qr(self, payment_data: CdEDBObject) -> segno.QRCode:
+        account = payment_data["account"]
+        if not account:
+            raise werkzeug.exceptions.BadRequest(n_("No IBAN set."))
         return make_epc_qr(
-            account=payment_data["account"],
+            account=account,
             reference=payment_data["reference"],
             amount=payment_data["to_pay"],
         )
@@ -2558,7 +2560,7 @@ class EventRegistrationMixin(EventBaseFrontend):
     ) -> Response:
         account = rs.ambience["event"].iban
         if not account:
-            account = Accounts.Skatbank
+            raise werkzeug.exceptions.BadRequest(n_("No IBAN set."))
         if not reference:
             reference = rs.ambience["event"].title
         rs.ignore_validation_errors()
@@ -2577,4 +2579,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         amount: decimal.Decimal | None,
     ) -> Response:
         rs.ignore_validation_errors()
+        if not rs.ambience["event"].iban:
+            rs.notify("error", n_("No IBAN set."))
+            return self.redirect(rs, 'event/show_event')
         return self.render(rs, "registration/payment")
