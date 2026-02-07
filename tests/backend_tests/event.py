@@ -5223,7 +5223,6 @@ class TestEventBackend(BackendTest):
         }
         self.event.create_event_fee(self.key, event_id, new_fee)
         event_data = {
-            'id': event_id,
             'parts': {
                 2: {
                     'shortname': "2.H.",

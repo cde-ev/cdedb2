@@ -834,7 +834,7 @@ class EventBaseBackend(EventLowLevelBackend):
         ret = 1
         with Atomizer(rs):
             current = self.get_event(rs, event_id)
-            data = affirm(vtypes.Event, data, event=current)
+            data = affirm(models.Event, data, event=current)
             data['id'] = event_id
 
             if not is_privileged(
@@ -885,7 +885,7 @@ class EventBaseBackend(EventLowLevelBackend):
     @access("event_admin")
     def create_event(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
         """Make a new event organized via DB."""
-        data = affirm(vtypes.Event, data, creation=True)
+        data = affirm(models.Event, data, creation=True)
         if not data.get('parts'):
             raise ValueError(n_("At least one event part required."))
         with Atomizer(rs):

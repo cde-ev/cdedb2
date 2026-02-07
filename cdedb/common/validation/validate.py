@@ -2474,26 +2474,16 @@ def _optional_object_mapping_helper(
     return ret
 
 
-@_add_typed_validator
+@_create_dataclass_validator(models_event.Event)
 def _event(
     val: Any, argname: str = "event", *, creation: bool = False, **kwargs: Any
-) -> Event:
+) -> CdEDBObject:
     """
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     """
-    val = _mapping(val, argname, **kwargs)
     if creation:
         kwargs['event'] = None
-
-    if creation:
-        mandatory_fields = {**EVENT_COMMON_FIELDS}
-        optional_fields = {**EVENT_OPTIONAL_FIELDS, **EVENT_CREATION_OPTIONAL_FIELDS}
-    else:
-        mandatory_fields = {}
-        optional_fields = {'id': ID, **EVENT_COMMON_FIELDS, **EVENT_OPTIONAL_FIELDS}
-
-    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
 
     errs = ValidationSummary()
 
@@ -2539,7 +2529,7 @@ def _event(
     if errs:
         raise errs
 
-    return Event(val)
+    return val
 
 
 @_create_dataclass_validator(models_event.EventPart)

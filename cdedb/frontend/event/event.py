@@ -270,7 +270,7 @@ class EventEventMixin(EventBaseFrontend):
         self, rs: RequestState, event_id: int, data: CdEDBObject
     ) -> Response:
         """Modify an event organized via DB."""
-        data = check(rs, vtypes.Event, data, event=rs.ambience['event'])
+        data = check(rs, models.Event, data, event=rs.ambience['event'])
         if (
             data
             and data['shortname']
@@ -1583,7 +1583,7 @@ class EventEventMixin(EventBaseFrontend):
                     ),
                 ),
             )
-        data = check(rs, vtypes.Event, data, creation=True)
+        data = check(rs, models.Event, data, creation=True)
         if orga_ids:
             try:
                 self.eventproxy.validate_event_persona_ids(rs, orga_ids)

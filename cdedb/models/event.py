@@ -167,10 +167,12 @@ class EventFieldSpec(AbstractMetaData):
 #
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True)
 class Event(EventDataclass):
     database_table = "event.events"
     entity_key = "id"
+
+    id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
 
     title: str
     shortname: str
@@ -206,18 +208,26 @@ class Event(EventDataclass):
     )
 
     # Disallow setting via request altogether.
-    is_locked: bool = dataclasses.field(metadata=Meta.request_exclude.as_dict)
-    is_archived: bool = dataclasses.field(metadata=Meta.request_exclude.as_dict)
-    is_balanced: bool = dataclasses.field(metadata=Meta.request_exclude.as_dict)
+    is_locked: bool = dataclasses.field(
+        default=False, metadata=Meta.request_exclude.as_dict
+    )
+    is_archived: bool = dataclasses.field(
+        default=False, metadata=Meta.request_exclude.as_dict
+    )
+    is_balanced: bool = dataclasses.field(
+        default=False, metadata=Meta.request_exclude.as_dict
+    )
 
-    is_cancelled: bool
-    is_visible: bool
-    is_course_list_visible: bool
-    is_course_state_visible: bool
-    is_participant_list_visible: bool
-    is_course_assignment_visible: bool
-    use_additional_questionnaire: bool
-    notify_on_registration: const.NotifyOnRegistration
+    is_cancelled: bool = False
+    is_visible: bool = False
+    is_course_list_visible: bool = False
+    is_course_state_visible: bool = False
+    is_participant_list_visible: bool = False
+    is_course_assignment_visible: bool = False
+    use_additional_questionnaire: bool = False
+    notify_on_registration: const.NotifyOnRegistration = (
+        const.NotifyOnRegistration.never
+    )
 
     lodge_field_id: Optional[vtypes.ID] = dataclasses.field(
         metadata=EventFieldSpec(
@@ -233,27 +243,33 @@ class Event(EventDataclass):
     )
 
     parts: CdEDataclassMap["EventPart"] = dataclasses.field(
-        metadata=Meta.asdict_include.as_dict
+        default_factory=dict,
+        metadata=(
+            Meta.validate_include | Meta.validate_skip | Meta.asdict_include
+        ).as_dict,
     )
     tracks: CdEDataclassMap["CourseTrack"] = dataclasses.field(
-        metadata=Meta.asdict_include.as_dict
+        default_factory=dict, metadata=Meta.asdict_include.as_dict
     )
 
     fields: CdEDataclassMap["EventField"] = dataclasses.field(
-        metadata=Meta.asdict_include.as_dict
+        default_factory=dict,
+        metadata=(
+            Meta.validate_include | Meta.validate_skip | Meta.asdict_include
+        ).as_dict,
     )
     custom_query_filters: CdEDataclassMap["CustomQueryFilter"] = dataclasses.field(
-        metadata=Meta.asdict_include.as_dict
+        default_factory=dict, metadata=Meta.asdict_include.as_dict
     )
     fees: CdEDataclassMap["EventFee"] = dataclasses.field(
-        metadata=Meta.asdict_include.as_dict
+        default_factory=dict, metadata=Meta.asdict_include.as_dict
     )
 
     part_groups: CdEDataclassMap["PartGroup"] = dataclasses.field(
-        metadata=Meta.asdict_include.as_dict
+        default_factory=dict, metadata=Meta.asdict_include.as_dict
     )
     track_groups: CdEDataclassMap["TrackGroup"] = dataclasses.field(
-        metadata=Meta.asdict_include.as_dict
+        default_factory=dict, metadata=Meta.asdict_include.as_dict
     )
 
     orgas: set[vtypes.ID] = dataclasses.field(

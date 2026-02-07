@@ -8336,7 +8336,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 'entries': None,
             },
         }
-        self.event.set_event(self.key, 1, {'id': 1, 'fields': new_fields})
+        self.event.set_event(self.key, 1, {'fields': new_fields})
         new_filter = models.CustomQueryFilter(
             id=-1,  # type: ignore[arg-type]
             event_id=1,  # type: ignore[arg-type]
