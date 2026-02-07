@@ -21,7 +21,7 @@ import datetime
 import decimal
 from collections.abc import Collection, Iterable
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Protocol
+from typing import TYPE_CHECKING, Optional, Protocol, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -70,6 +70,7 @@ from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter
+from cdedb.models.common import CdEDataclass
 from cdedb.models.core import EventPersona
 from cdedb.models.droid import OrgaToken
 
@@ -916,7 +917,9 @@ class EventBaseBackend(EventLowLevelBackend):
         change_note: Optional[str] = None,
     ) -> DefaultReturnCode:
         event_id = affirm(vtypes.ID, event_id)
-        data = affirm(vtypes.SerializedEventFreetexts, data)
+        data = affirm(
+            cast(type[CdEDataclass], models._EventFreetextMixin), data
+        )  # absstract model
         with Atomizer(rs):
             if not is_privileged(
                 rs, EventPrivileges.free_texts_write, event_id=event_id

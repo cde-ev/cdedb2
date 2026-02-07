@@ -167,7 +167,7 @@ class EventFieldSpec(AbstractMetaData):
 #
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(kw_only=True)
 class _EventConfigurationMixin(CdEDataclass):
     id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
 
@@ -211,11 +211,8 @@ class _EventConfigurationMixin(CdEDataclass):
     )
 
 
-@dataclasses.dataclass
-class Event(EventDataclass, _EventConfigurationMixin):
-    database_table = "event.events"
-    entity_key = "id"
-
+@dataclasses.dataclass(kw_only=True)
+class _EventFreetextMixin(CdEDataclass):
     id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
 
     # Exclude from request to avoid unsetting when submitting `change_event_form`.
@@ -237,6 +234,14 @@ class Event(EventDataclass, _EventConfigurationMixin):
     field_definition_notes: str | None = dataclasses.field(
         default=None, metadata=Meta.request_update_exclude.as_dict
     )
+
+
+@dataclasses.dataclass(kw_only=True)
+class Event(EventDataclass, _EventConfigurationMixin, _EventFreetextMixin):
+    database_table = "event.events"
+    entity_key = "id"
+
+    id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
 
     # Disallow setting via request altogether.
     is_locked: bool = dataclasses.field(

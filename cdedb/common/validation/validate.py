@@ -4100,18 +4100,12 @@ def _serialized_event_configuration(
     if errs:
         raise errs
 
-    return SerializedEventConfiguration(val)
+    return val
 
 
-@_add_typed_validator
-def _serialized_event_freetexts(
-    val: Any, argname: str = "serialized_event_freetexts", **kwargs: Any
-) -> SerializedEventFreetexts:
-    val = _mapping(val, argname, **kwargs)
-
-    val = _examine_dictionary_fields(val, {}, dict(**EVENT_FREETEXT_FIELDS), **kwargs)
-
-    return SerializedEventFreetexts(val)
+@_create_dataclass_validator(models_event._EventFreetextMixin)  # type: ignore[type-abstract]
+def _serialized_event_freetexts(val: Any, argname: str, **kwargs: Any) -> CdEDBObject:
+    return val
 
 
 @_create_dataclass_validator(*models_ml.ML_TYPE_MAP_INV.keys())
