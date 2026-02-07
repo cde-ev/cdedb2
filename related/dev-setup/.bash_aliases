@@ -1,6 +1,10 @@
 # This is sourced by ~/.bash_aliases but synced via repo.
 # If you want to change these locally, simply place a different alias later in ~/.bash_aliases
 
+alias reload-aliases=". ~/.bashrc"
+
+alias py="uv run --project=/cdedb2 python"
+
 alias check="uv run --project=/cdedb2 /cdedb2/bin/check.py -v"
 alias c="check"
 alias offline="uv run --project=/cdedb2 /cdedb2/bin/make_offline_vm.py --not-interactive --no-extra-packages --dev --no-offline-flag"
