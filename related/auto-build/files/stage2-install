@@ -61,6 +61,8 @@ echo "--------------------------------------------"
 apt-get install --yes --no-install-recommends                       \
     openssh-server sudo git file mc emacs-nox vim htop make gettext \
     \
+    moreutils                                                       \
+    \
     apache2 python3 fail2ban tzdata                                 \
     \
     ldap-utils                                                      \
@@ -77,8 +79,11 @@ apt-get install --yes --no-install-recommends                       \
     libxslt1-dev libpq-dev
 
 python3 -m pip install --break-system-packages uv
-echo 'eval "$(uv generate-shell-completion bash)"' >> ~/.bashrc
-echo 'eval "$(uvx --generate-shell-completion bash)"' >> ~/.bashrc
+cat >> ~/.bashrc << EOF
+
+eval "$(uv generate-shell-completion bash)"
+eval "$(uvx --generate-shell-completion bash)"
+EOF
 
 for file in /var/cache/apt/archives/*.deb
 do
@@ -113,14 +118,24 @@ useradd --system -g www-cde --create-home www-cde
 echo "PermitEmptyPasswords yes" >> /etc/ssh/sshd_config
 
 sudo -u cdedb touch /home/cdedb/.bashrc
-echo "" >> /home/cdedb/.bashrc
-echo "export EDITOR=nano" >> /home/cdedb/.bashrc
-echo "" >> /home/cdedb/.bashrc
-echo 'eval "$(uv generate-shell-completion bash)"' >> /home/cdedb/.bashrc
-echo 'eval "$(uvx --generate-shell-completion bash)"' >> /home/cdedb/.bashrc
+cat >> /home/cdedb/.bashrc << EOF
+
+eval "$(uv generate-shell-completion bash)"
+eval "$(uvx --generate-shell-completion bash)"
+EOF
+
 sudo -u cdedb touch /home/cdedb/.bash_profile
-echo "cd /cdedb2" >> /home/cdedb/.bash_profile
-echo "" >> /home/cdedb/.bash_profile
+cat >> /home/cdedb/.bash_profile << EOF
+
+cd /cdedb2
+EOF
+sudo -u cdedb touch /home/cdedb/.bash_aliases
+cat >> /home/cdedb/.bash_aliases << EOF
+
+if [ -f /cdedb2/related/dev-setup/.bash_aliases ]; then
+    . /cdedb2/related/dev-setup/.bash_aliases
+fi
+EOF
 # dPROD no sudo privileges (personalized accounts instead)
 echo "%cdedb ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
 
@@ -142,11 +157,11 @@ echo "--------------------------"
 mkdir -p /home/cdedb/.ssh
 chmod 755 /home/cdedb/.ssh
 # dPROD different ssh keys
-cp /media/cdrom0/ssh_user_rsa_key /home/cdedb/.ssh/id_rsa
-cp /media/cdrom0/ssh_user_rsa_key.pub /home/cdedb/.ssh/id_rsa.pub
+cp /media/cdrom0/ssh_user_key /home/cdedb/.ssh/id_deploy
+cp /media/cdrom0/ssh_user_key.pub /home/cdedb/.ssh/id_deploy.pub
 cp /media/cdrom0/ssh_user_known_hosts /home/cdedb/.ssh/known_hosts
-chmod 600 /home/cdedb/.ssh/id_rsa
-chmod 644 /home/cdedb/.ssh/id_rsa.pub
+chmod 600 /home/cdedb/.ssh/id_deploy
+chmod 644 /home/cdedb/.ssh/id_deploy.pub
 chown -R cdedb:cdedb /home/cdedb/.ssh/
 
 echo ""
