@@ -2381,32 +2381,6 @@ def _past_event(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
     return val
 
 
-EVENT_COMMON_FIELDS: Mapping[str, Any] = {
-    'title': str,
-    'institution': const.PastInstitutions,
-    # Event shortnames do not actually need to be that short.
-    'shortname': Identifier,
-}
-
-EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
-    'is_visible': bool,
-    'is_course_list_visible': bool,
-    'is_course_state_visible': bool,
-    'use_additional_questionnaire': bool,
-    'registration_start': Optional[datetime.datetime],
-    'registration_soft_limit': Optional[datetime.datetime],
-    'registration_hard_limit': Optional[datetime.datetime],
-    'is_participant_list_visible': bool,
-    'is_course_assignment_visible': bool,
-    'is_cancelled': bool,
-    'iban': Optional[Accounts],
-    'orga_address': Optional[Email],
-    'lodge_field_id': Optional[ID],
-    'reimbursement_iban_field_id': Optional[ID],
-    'website_url': Optional[Url],
-    'notify_on_registration': const.NotifyOnRegistration,
-}
-
 EVENT_FREETEXT_FIELDS: Mapping[str, Any] = {
     'description': Optional[str],
     'notes': Optional[str],
@@ -2415,23 +2389,6 @@ EVENT_FREETEXT_FIELDS: Mapping[str, Any] = {
     'registration_text': Optional[str],
     'participant_info': Optional[str],
 }
-
-EVENT_EXPOSED_FIELDS = {
-    **EVENT_COMMON_FIELDS,
-    **EVENT_EXPOSED_OPTIONAL_FIELDS,
-    **EVENT_FREETEXT_FIELDS,
-}
-
-EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
-    **EVENT_EXPOSED_OPTIONAL_FIELDS,
-    **EVENT_FREETEXT_FIELDS,
-    'orgas': set[ID],
-    'caretakers': set[ID],
-    'parts': Mapping,
-    'fields': Mapping,
-}
-
-EVENT_CREATION_OPTIONAL_FIELDS: TypeMapping = {'lodgement_groups': Mapping}
 
 
 def _optional_object_mapping_helper(

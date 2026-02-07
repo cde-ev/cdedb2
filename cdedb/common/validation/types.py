@@ -109,8 +109,6 @@ SerializedEventQuestionnaire = _NewType("SerializedEventQuestionnaire", _CdEDBOb
 SerializedEventQuestionnaireUpload = _NewType(
     "SerializedEventQuestionnaireUpload", SerializedEventQuestionnaire
 )
-SerializedEventConfiguration = _NewType("SerializedEventConfiguration", _CdEDBObject)
-SerializedEventFreetexts = _NewType("SerializedEventFreetexts", _CdEDBObject)
 
 PartialCourse = _NewType("PartialCourse", _CdEDBObject)
 PartialLodgementGroup = _NewType("PartialLodgementGroup", _CdEDBObject)
