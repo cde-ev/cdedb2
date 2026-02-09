@@ -67,6 +67,13 @@ def stop_freezing_new_configs() -> None:
 _LOGGER = logging.getLogger(__name__)
 _ROOT_LOGGER = logging.getLogger()
 
+
+def set_log_level(level: int) -> None:
+    _ROOT_LOGGER.setLevel(level)
+    for handler in _ROOT_LOGGER.handlers:
+        handler.setLevel(level)
+
+
 _currentdir = pathlib.Path(__file__).resolve().parent
 if _currentdir.parts[0] != '/' or _currentdir.parts[-1] != 'cdedb':  # pragma: no cover
     raise RuntimeError("Failed to locate repository")
@@ -525,7 +532,7 @@ class Config(BaseConfig):
         self._configchain = collections.ChainMap(override, _DEFAULTS)
         # This is a bit hacky, but the only opportunity to ensure the used log
         #  level is the one specified in the config.
-        _ROOT_LOGGER.setLevel(self._configchain["LOG_LEVEL"])
+        set_log_level(self._configchain["LOG_LEVEL"])
 
 
 class TestConfig(Config):
@@ -545,7 +552,7 @@ class TestConfig(Config):
         self._configchain = collections.ChainMap(override, _DEFAULTS)
         # This is a bit hacky, but the only opportunity to ensure the used log
         #  level is the one specified in the config.
-        _ROOT_LOGGER.setLevel(self._configchain["LOG_LEVEL"])
+        set_log_level(self._configchain["LOG_LEVEL"])
 
 
 class SecretsConfig(BaseConfig):
