@@ -2,13 +2,14 @@
 """Tests for functionality executed in the users's browser, manly JavaScript."""
 
 import functools
+import os
+import pathlib
 import re
-import tempfile
 import unittest
 from collections.abc import Callable
 from typing import Any
 
-from playwright.sync_api import Page, expect, sync_playwright
+from playwright.sync_api import Browser, Page, expect, sync_playwright
 
 from tests.common import BrowserTest, event_keeper, storage
 
@@ -32,8 +33,16 @@ def make_page(*args: Any, headless: bool = True, timeout: float = 5000) -> Calla
                 # FIXME webkit fails to log in mysteriously
                 # FIXME firefox fails to deterministically reproduce result
                 for name in ['chromium']:
-                    browser = getattr(pw, name).launch(headless=headless)
-                    page: Page = browser.new_page(locale='de-DE')
+                    browser: Browser = getattr(pw, name).launch(headless=headless)
+                    video_dir = (
+                        f"tests/playwright/{func.__name__}_{browser}"
+                        if not os.environ.get("CI")
+                        else None
+                    )
+                    context = browser.new_context(
+                        record_video_dir=video_dir, locale="de-DE"
+                    )
+                    page: Page = context.new_page()
                     page.set_default_timeout(timeout)
                     page.set_default_navigation_timeout(timeout)
                     fkwargs['page'] = page
@@ -41,15 +50,23 @@ def make_page(*args: Any, headless: bool = True, timeout: float = 5000) -> Calla
                         try:
                             func(self, *fargs, **fkwargs)
                         except Exception:  # pragma: no cover
-                            f = tempfile.NamedTemporaryFile(
-                                "rb",
-                                prefix="playwright-screenshot-on-fail-",
-                                suffix=".png",
-                                delete=False,
-                            )
-                            page.screenshot(full_page=True, path=f.name)
-                            print(f"Saved screenshot at point of failure to {f.name}")
+                            if page.video:
+                                print(
+                                    f"Saved video of failed test at {page.video.path()!r}."
+                                )
+                                path = pathlib.Path(page.video.path()).with_suffix(
+                                    ".png"
+                                )
+                                page.screenshot(full_page=True, path=path)
+                                print(
+                                    f"Saved screenshot at point of failure to '{path}'."
+                                )
                             raise
+                        else:
+                            if page.video:  # pragma: no cover
+                                pathlib.Path(page.video.path()).unlink()
+                                print(f"Removed '{page.video.path()}'.")
+                    context.close()
                     browser.close()
 
         return new_func
