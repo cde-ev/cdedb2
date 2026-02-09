@@ -21,7 +21,7 @@ import datetime
 import decimal
 from collections.abc import Collection, Iterable
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Protocol
+from typing import TYPE_CHECKING, Optional, Protocol, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -67,9 +67,10 @@ from cdedb.common.privileges import (
     is_privileged_event as is_privileged,
 )
 from cdedb.common.query.log_filter import EventLogFilter
-from cdedb.common.sorting import mixed_existence_sorter, xsorted
+from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter
+from cdedb.models.common import CdEDataclass
 from cdedb.models.core import EventPersona
 from cdedb.models.droid import OrgaToken
 
@@ -834,7 +835,7 @@ class EventBaseBackend(EventLowLevelBackend):
         ret = 1
         with Atomizer(rs):
             current = self.get_event(rs, event_id)
-            data = affirm(vtypes.Event, data, event=current)
+            data = affirm(models.Event, data, event=current)
             data['id'] = event_id
 
             if not is_privileged(
@@ -885,7 +886,7 @@ class EventBaseBackend(EventLowLevelBackend):
     @access("event_admin")
     def create_event(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
         """Make a new event organized via DB."""
-        data = affirm(vtypes.Event, data, creation=True)
+        data = affirm(models.Event, data, creation=True)
         if not data.get('parts'):
             raise ValueError(n_("At least one event part required."))
         with Atomizer(rs):
@@ -902,12 +903,8 @@ class EventBaseBackend(EventLowLevelBackend):
                 self._set_event_fields(rs, new_id, data['fields'])
             if 'parts' in data:
                 self._set_event_parts(rs, new_id, data['parts'])
-            if groups := data.get('lodgement_groups'):
-                for creation_id in mixed_existence_sorter(groups):
-                    self.create_lodgement_group(rs, new_id, groups[creation_id])
-            else:
-                lg_data = {"title": data['title']}
-                self.create_lodgement_group(rs, new_id, lg_data)
+            lg_data = {"title": data['title']}
+            self.create_lodgement_group(rs, new_id, lg_data)
             self.event_keeper_create(rs, new_id)
         return new_id
 
@@ -920,7 +917,9 @@ class EventBaseBackend(EventLowLevelBackend):
         change_note: Optional[str] = None,
     ) -> DefaultReturnCode:
         event_id = affirm(vtypes.ID, event_id)
-        data = affirm(vtypes.SerializedEventFreetexts, data)
+        data = affirm(
+            cast(type[CdEDataclass], models._EventFreetextMixin), data
+        )  # absstract model
         with Atomizer(rs):
             if not is_privileged(
                 rs, EventPrivileges.free_texts_write, event_id=event_id

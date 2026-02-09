@@ -90,7 +90,6 @@ Lastschrift = _NewType("Lastschrift", _CdEDBObject)
 SepaTransactions = _NewType("SepaTransactions", list[_CdEDBObject])
 SepaMeta = _NewType("SepaMeta", _CdEDBObject)
 Institution = _NewType("Institution", _CdEDBObject)
-Event = _NewType("Event", _CdEDBObject)
 EventFeeCondition = _NewType("EventFeeCondition", str)
 Registration = _NewType("Registration", _CdEDBObject)
 RegistrationPart = _NewType("RegistrationPart", _CdEDBObject)
@@ -110,8 +109,6 @@ SerializedEventQuestionnaire = _NewType("SerializedEventQuestionnaire", _CdEDBOb
 SerializedEventQuestionnaireUpload = _NewType(
     "SerializedEventQuestionnaireUpload", SerializedEventQuestionnaire
 )
-SerializedEventConfiguration = _NewType("SerializedEventConfiguration", _CdEDBObject)
-SerializedEventFreetexts = _NewType("SerializedEventFreetexts", _CdEDBObject)
 
 PartialCourse = _NewType("PartialCourse", _CdEDBObject)
 PartialLodgementGroup = _NewType("PartialLodgementGroup", _CdEDBObject)
