@@ -14,6 +14,7 @@ from cdedb.config import Config, SecretsConfig
 from cdedb.ldap.backend import LDAPsqlBackend
 from cdedb.ldap.entry import RootEntry
 from cdedb.ldap.server import LdapHandler
+from cdedb.logging_ import setup_root_logger
 
 logger = logging.getLogger("cdedb.ldap")
 
@@ -21,6 +22,9 @@ logger = logging.getLogger("cdedb.ldap")
 async def main() -> None:
     conf = Config()
     secrets = SecretsConfig()
+
+    if conf.get("CDEDB_TEST"):
+        setup_root_logger(test=True, replace=True)
 
     logger.debug("Waiting for database connection ...")
     conn_params = dict(

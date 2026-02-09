@@ -31,9 +31,8 @@ def setup_root_logger(*, test: bool = False, replace: bool = False) -> None:
         logging.raiseExceptions = False
 
     # setup handler
-    handler: logging.Handler = JournalHandler(
-        SYSLOG_IDENTIFIER="cdedb" if not test else "cdedb-test"
-    )
+    identifier = "cdedb" if not test else "cdedb-test"
+    handler: logging.Handler = JournalHandler(SYSLOG_IDENTIFIER=identifier)
     if is_container := pathlib.Path("/CONTAINER").is_file():
         # do not log anything in the CI
         if os.environ.get("CI"):
@@ -51,7 +50,7 @@ def setup_root_logger(*, test: bool = False, replace: bool = False) -> None:
     handler.setLevel(loglevel)
     logger.addHandler(handler)
 
-    logger.info("Logger successfully set up.")
+    logger.info(f"Logger {identifier} successfully set up.")
 
 
 class MyFormatter(logging.Formatter):
