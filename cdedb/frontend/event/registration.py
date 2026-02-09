@@ -2534,6 +2534,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         payment_data = self._get_payment_data(rs, event_id)
         if not payment_data:
             raise werkzeug.exceptions.BadRequest()
+        if not payment_data["account"]:
+            raise werkzeug.exceptions.BadRequest(n_("No IBAN set."))
 
         qrcode = self._registration_fee_qr(payment_data)
         return self.serve_qrcode(rs, qrcode)
@@ -2541,7 +2543,7 @@ class EventRegistrationMixin(EventBaseFrontend):
     def _registration_fee_qr(self, payment_data: CdEDBObject) -> segno.QRCode:
         account = payment_data["account"]
         if not account:
-            raise werkzeug.exceptions.BadRequest(n_("No IBAN set."))
+            raise RuntimeError(n_("No IBAN set."))
         return make_epc_qr(
             account=account,
             reference=payment_data["reference"],
