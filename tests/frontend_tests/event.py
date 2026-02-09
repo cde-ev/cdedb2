@@ -9209,3 +9209,64 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f["event_id"] = 3
         self.submit(f)
         self.assertTitle("Anmeldung von Garcia Generalis (CyberTestAkademie)")
+
+    @as_users("annika")
+    def test_approve_registration(self) -> None:
+        self.traverse("Veranstaltungen", "TripelAkademie")
+        self.assertPresence(
+            r"ab \d{2}.\d{2}.\d{4}", div="timeframe-registration", regex=True
+        )
+        f = self.response.forms["unapproveregistrationform"]
+        self.submit(f)
+        mail = self.fetch_mail_content()
+        self.assertIn("gesperrt", mail)
+        self.assertNotification(
+            "Es wurde ein Anmeldebeginn eingestellt,"
+            " aber die Anmeldung ist noch nicht freigeschaltet worden.",
+            "warning",
+            static=True,
+        )
+        self.assertDivNotExists("#timeframe-registration")
+        self.assertNoLink("/register", content="Anmelden")
+
+        self.get("/event/event/4/register")
+        self.assertTitle("TripelAkademie")
+        self.assertNotification("Anmeldung noch nicht eröffnet.", "warning")
+        self.traverse("Anmeldungen", "Anmeldung hinzufügen")
+        f = self.response.forms["addregistrationform"]
+        f["persona.persona_id"] = "DB-1-9"
+        self.submit(f)
+
+        self.traverse("Übersicht", "Betreuer verwalten")
+        f = self.response.forms["addcaretakersform"]
+        f["caretaker_ids"] = "DB-5-1"
+        self.submit(f)
+
+        with self.switch_user(5):
+            self.traverse("Veranstaltungen", "TripelAkademie")
+            f = self.response.forms["approveregistrationform"]
+            self.submit(f)
+            mail = self.fetch_mail_content()
+            self.assertIn("freigeschaltet", mail)
+
+        self.get("/event/event/4/register")
+        self.assertTitle("Anmeldung für TripelAkademie")
+
+        log_expectation: list[CdEDBObject] = [
+            {
+                "code": const.EventLogCodes.registration_unapproved,
+            },
+            {
+                "code": const.EventLogCodes.registration_created,
+                "persona_id": 1,
+            },
+            {
+                "code": const.EventLogCodes.caretaker_added,
+                "persona_id": 5,
+            },
+            {
+                "code": const.EventLogCodes.registration_approved,
+                "submitted_by": 5,
+            },
+        ]
+        self.assertLogEqual(log_expectation, "event", event_id=4)
