@@ -3212,9 +3212,12 @@ class CoreBaseFrontend(AbstractFrontend):
         """
         if not self.conf["CDEDB_DEV"]:  # pragma: no cover
             return self.redirect(rs, "core/index")
-        filename = pathlib.Path(tempfile.gettempdir(), f"cdedb-mail-{token}.txt")
-        with open(filename, 'rb') as f:
-            rawtext = f.read()
+        filepath = pathlib.Path(tempfile.gettempdir(), f"cdedb-mail-{token}.txt")
+        try:
+            rawtext = filepath.read_bytes()
+        except FileNotFoundError:
+            rs.notify("error", f"File {filepath.name!r} not found.")
+            return self.redirect(rs, "core/index")
         emailtext = quopri.decodestring(rawtext).decode('utf-8')
         return self.render(rs, "debug_email", {'emailtext': emailtext})
 
