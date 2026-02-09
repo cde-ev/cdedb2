@@ -93,8 +93,8 @@
                                 "consulting the chairmen of the CdE.")) }}
         {% call util.form_input_text(
                 name="registration_start", label=gettext("Registration Start"), type='datetime-local',
-                outerclass="has-warning" if not ambience['event'].registration_unlocked else "") %}
-            {% if not ambience['event'].registration_unlocked %}
+                outerclass="has-warning" if not ambience['event'].is_registration_approved else "") %}
+            {% if not ambience['event'].is_registration_approved %}
                 {% call util.output_info("", aclass="help-block alert alert-warning") %}
                     {{ gettext("Registration has not yet been approved. People will not be able to register at the time configured here.") }}
                 {% endcall %}
