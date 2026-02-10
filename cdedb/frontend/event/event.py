@@ -1866,7 +1866,7 @@ class EventEventMixin(EventBaseFrontend):
                 "registration_approved",
                 {
                     "To": to,
-                    "Subject": "Anmeldung freigeschaltet",
+                    "Subject": "Anmeldung gesperrt",
                     "Reply-To": event_admin_address,
                 },
                 {"approve": False},

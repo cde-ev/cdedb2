@@ -42,7 +42,7 @@ die Minderjährigen-Koordination und/oder das Akademieteam.
 
 .. _IncorrectIBANCV:
 
-Falsche IBAN Konfiguration
+Falsche IBAN-Konfiguration
 --------------------------
 
 Diese Situation tritt auf, wenn für deine Veranstaltung das alte, nicht mehr verwendete, CdE-Konto
