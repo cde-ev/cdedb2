@@ -1827,6 +1827,52 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify_return_code(code)
         return self.redirect(rs, "event/show_event")
 
+    @access("event", modi={"POST"})
+    @event_guard(EventPrivileges.approve_registration)
+    def approve_registration(self, rs: RequestState, event_id: int) -> Response:
+        if rs.ambience['event'].is_registration_approved:
+            rs.notify("warning", n_("Registration already approved."))
+        else:
+            code = self.eventproxy.approve_registration(rs, event_id)
+            rs.notify_return_code(code)
+            to = [event_admin_address := self.conf["EVENT_ADMIN_ADDRESS"]]
+            if orga_adress := rs.ambience['event'].orga_address:
+                to.append(orga_adress)
+            self.do_mail(
+                rs,
+                "registration_approved",
+                {
+                    "To": to,
+                    "Subject": "Anmeldung freigeschaltet",
+                    "Reply-To": event_admin_address,
+                },
+                {"approve": True},
+            )
+        return self.redirect(rs, "event/show_event")
+
+    @access("event", modi={"POST"})
+    @event_guard(EventPrivileges.approve_registration)
+    def unapprove_registration(self, rs: RequestState, event_id: int) -> Response:
+        if not rs.ambience['event'].is_registration_approved:
+            rs.notify("warning", n_("Registration already unapproved."))
+        else:
+            code = self.eventproxy.unapprove_registration(rs, event_id)
+            rs.notify_return_code(code)
+            to = [event_admin_address := self.conf["EVENT_ADMIN_ADDRESS"]]
+            if orga_adress := rs.ambience['event'].orga_address:
+                to.append(orga_adress)
+            self.do_mail(
+                rs,
+                "registration_approved",
+                {
+                    "To": to,
+                    "Subject": "Anmeldung gesperrt",
+                    "Reply-To": event_admin_address,
+                },
+                {"approve": False},
+            )
+        return self.redirect(rs, "event/show_event")
+
     @access("event")
     @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("phrase")

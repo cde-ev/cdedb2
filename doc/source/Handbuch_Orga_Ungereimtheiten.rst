@@ -25,6 +25,46 @@ schwerwiegend diese sind und wie schnell sich darum gekümmert werden sollte:
 In diesem Dokument werden die einzelnen Arten von Ungereimtheiten, auf die die
 Datenbank hinweisen kann, näher erläutert.
 
+Allgemeine Fehler
+=================
+
+.. _RegistrationLockedCV:
+
+Gesperrte Anmeldung
+-------------------
+
+Diese Ungereimtheit bedeutet, dass die Anmeldung für deine Veranstaltung noch nicht freigeschaltet wurde.
+
+Bevor die Anmeldung beginnen kann, muss das Akademieteam einige Dinge prüfen.
+Wende dich hierzu an die für dich zuständige Orgateambetreuung, das Akademie-Finanz-Team,
+die Minderjährigen-Koordination und/oder das Akademieteam.
+
+
+.. _IncorrectIBANCV:
+
+Falsche IBAN-Konfiguration
+--------------------------
+
+Diese Situation tritt auf, wenn für deine Veranstaltung das alte, nicht mehr verwendete, CdE-Konto
+(Sozialbank) zur Zahlung der Teilnahmebeiträge eingestellt ist.
+
+Sofern du dir nicht sehr sicher bist, dass dies kein Fehler ist, ändere das Konto auf das neue
+CdE-Konto bei der Skatbank.
+
+
+.. _InvalidExternalFeeCV:
+
+Ungültige Externenbeitragskonfigurationen
+-----------------------------------------
+
+Diese Ungereimtheit tritt auf, wenn ein Externenzusatzbeitrag existiert, dessen Formel nicht ``is_member``
+verwendet, oder wenn diese Variable in einem Teilnahmebeitrag eines anderen Typens verwendet wird.
+
+``is_member`` ist ein spezieller Wert, der genau für die Berechnung von Externenzusatzbeiträgen verwendet wird.
+Passe den Teilnahmebeitrag entsprechend an. Falls du dir unsicher bist, wie die Konfiguration aussehen sollte,
+wende dich an das Akademie-Finanz-Team.
+
+
 Fehler bei Anmeldungen
 ======================
 
@@ -175,7 +215,7 @@ Fehler bei Veranstaltungsteilen
 ===============================
 
 
-.. _IncorrectCampingMatAssignment:
+.. _IncorrectCampingMatAssignmentCV:
 
 Unzulässige Isomatteneinteilung
 -------------------------------
@@ -294,7 +334,7 @@ Um die Ursache zu beheben, teile Teilnehmende bzw. Kursleitende in den Kurs ein 
 sage den Kurs ab.
 
 
-.. _HiddenCoursesCV:
+.. _HiddenCourseCV:
 
 Versteckte Kurse
 ----------------

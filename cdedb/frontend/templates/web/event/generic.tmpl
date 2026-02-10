@@ -598,8 +598,8 @@
                 <td class="active-fee-condition nowrap {{ "eventfee-personalized" if not fee.condition else "" }} {{ aclass }}"
                         title="{{ atitle }}"
                         id="eventfee_condition_{{ fee.id }}">
-                    {% for icon in format.icons %}
-                        {{ util.make_icon(icon) }}
+                    {% for icon, icon_title in format.icons %}
+                        {{ util.make_icon(icon, icon_title) }}
                     {% endfor %}
                     {% if not fee.condition %}
                         <i>

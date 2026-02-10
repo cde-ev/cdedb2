@@ -1527,6 +1527,44 @@ class EventBaseBackend(EventLowLevelBackend):
             self.event_log(rs, const.EventLogCodes.event_unlocked, event_id)
         return ret
 
+    @access("event")
+    def approve_registration(
+        self, rs: RequestState, event_id: int
+    ) -> DefaultReturnCode:
+        event_id = affirm(vtypes.ID, event_id)
+        if not is_privileged(
+            rs, EventPrivileges.approve_registration, event_id=event_id
+        ):
+            raise PrivilegeError
+        with Atomizer(rs):
+            self.assert_lock(rs, event_id=event_id)
+            update = {
+                'id': event_id,
+                'is_registration_approved': True,
+            }
+            ret = self.sql_update(rs, "event.events", update)
+            self.event_log(rs, const.EventLogCodes.registration_approved, event_id)
+        return ret
+
+    @access("event")
+    def unapprove_registration(
+        self, rs: RequestState, event_id: int
+    ) -> DefaultReturnCode:
+        event_id = affirm(vtypes.ID, event_id)
+        if not is_privileged(
+            rs, EventPrivileges.approve_registration, event_id=event_id
+        ):
+            raise PrivilegeError
+        with Atomizer(rs):
+            self.assert_lock(rs, event_id=event_id)
+            update = {
+                'id': event_id,
+                'is_registration_approved': False,
+            }
+            ret = self.sql_update(rs, "event.events", update)
+            self.event_log(rs, const.EventLogCodes.registration_unapproved, event_id)
+        return ret
+
     @internal
     @access("event")
     def set_event_archived(self, rs: RequestState, event_id: int) -> DefaultReturnCode:

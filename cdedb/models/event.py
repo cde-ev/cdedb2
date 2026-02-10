@@ -253,6 +253,9 @@ class Event(EventDataclass, _EventConfigurationMixin, _EventFreetextMixin):
     is_balanced: bool = dataclasses.field(
         default=False, metadata=Meta.request_exclude.as_dict
     )
+    is_registration_approved: bool = dataclasses.field(
+        default=False, metadata=Meta.request_exclude.as_dict
+    )
 
     parts: CdEDataclassMap["EventPart"] = dataclasses.field(
         default_factory=dict,
@@ -385,6 +388,7 @@ class Event(EventDataclass, _EventConfigurationMixin, _EventFreetextMixin):
                 self.registration_hard_limit is None
                 or self.registration_hard_limit >= reference_time
             )
+            and self.is_registration_approved
         )
 
     def is_visible_for(
