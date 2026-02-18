@@ -334,6 +334,7 @@ class Script:
             self._translations = setup_translations(self.config)
         urls = CDEDB_PATHS.bind("db.cde-ev.de", script_name="/db/", url_scheme="https")
         rs = fake_rs(self._conn, persona_id, urls=urls)
+        rs.translations = self._translations
         self._request_states[persona_id] = rs
         return rs
 
