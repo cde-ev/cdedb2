@@ -159,6 +159,8 @@ with s:
         persona_data = {
             "persona": {
                 "name": make_persona_name(persona, use_legal_name=True),
+                "given_names": persona["given_names"],
+                "email": persona["username"],
                 "address": persona["address"],
                 "postal_code": persona["postal_code"],
                 "location": persona["location"],
