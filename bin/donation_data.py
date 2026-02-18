@@ -17,12 +17,16 @@ from cdedb.common.query.log_filter import CdELogFilter
 from cdedb.filter import money_filter
 from cdedb.script import Script
 
-s = Script(dbuser="cdb_admin", check_system_user=False)
+s = Script(dbuser="cdb_admin", check_system_user=False, dry_run=True)
 
 core = s.make_core_backend()
 cde = s.make_cde_backend()
 event = s.make_event_backend()
 event_raw = s.make_event_backend(proxy=False)
+
+if len(sys.argv) <= 1:
+    print("Please provide a year and optionally a filename for the export data.")
+    sys.exit()
 
 year = int(sys.argv[1])
 outfile = pathlib.Path(
