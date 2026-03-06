@@ -149,6 +149,19 @@
         </ul>
     {% endif %}
 
+    {% if caretaker_events %}
+        {{ util.h(n_("Caretaker Events")) }}
+        <ul class="spaced" id="caretaker-events">
+            {% for event in caretaker_events %}
+                <li>
+                    {{ event_heading(event) }}
+                    <br />
+                    {{ orga_event_details(event) }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
     {% if other_events %}
         {{ util.h(n_("Other Events")) }}
         <ul class="spaced" id="other-events">

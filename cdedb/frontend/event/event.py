@@ -107,6 +107,11 @@ class EventEventMixin(EventBaseFrontend):
             for event in self.eventproxy.get_events(rs, rs.user.orga).values()
             if event.is_current_for_orga()
         ]
+        caretaker_events = [
+            event
+            for event in self.eventproxy.get_events(rs, rs.user.caretaker).values()
+            if event.is_current_for_orga()
+        ]
 
         return self.render(
             rs,
@@ -114,6 +119,7 @@ class EventEventMixin(EventBaseFrontend):
             {
                 'current_events': current_events,
                 'orga_events': orga_events,
+                'caretaker_events': caretaker_events,
                 'other_events': other_events,
                 'events_registration': events_registration,
                 'events_payment_pending': events_payment_pending,

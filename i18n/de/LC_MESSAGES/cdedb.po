@@ -21138,6 +21138,9 @@ msgstr "Zur Zeit sind keine Veranstaltungen zur Anmeldung freigegeben."
 msgid "Organized Events"
 msgstr "Organisierte Veranstaltungen"
 
+msgid "Caretaker Events"
+msgstr "Betreute Veranstaltungen"
+
 #: cdedb/frontend/templates/web/event/event/index.tmpl:150
 msgid "Other Events"
 msgstr "Weitere Veranstaltungen"
