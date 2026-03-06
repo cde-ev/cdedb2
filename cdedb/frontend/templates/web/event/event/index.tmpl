@@ -10,13 +10,13 @@
 {{ util.breadcrumb_link(cdedblink("event/index"), gettext("Events"), active=True) }}
 {% endblock %}
 
-{% macro event_heading(event) %}
+{% macro event_heading(event) -%}
     {{ util.href(cdedblink("event/show_event", {"event_id": event.id}), event.title) }}
     <br />
     {{ event.begin|date(lang=lang) }}&#8239;&ndash;&#8239;{{ event.end|date(lang=lang) }}
-{% endmacro %}
+{%- endmacro %}
 
-{% macro orga_event_details(event) %}
+{% macro orga_event_details(event) -%}
     <span class="small">
         {{ util.href(cdedblink('event/registration_query', {'event_id': event.id}), gettext("Registrations"), icon='list') }}
         &bull;
@@ -26,7 +26,7 @@
             {{ util.href(cdedblink('event/course_stats', {'event_id': event.id}), gettext("Courses"), icon='book') }}
         {% endif %}
     </span>
-{% endmacro %}
+{%- endmacro %}
 
 {% block content %}
     {% if "event_mgmt" in user.admin_views %}
