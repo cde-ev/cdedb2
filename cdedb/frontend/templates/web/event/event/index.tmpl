@@ -9,6 +9,25 @@
 {% block breadcrumb %}
 {{ util.breadcrumb_link(cdedblink("event/index"), gettext("Events"), active=True) }}
 {% endblock %}
+
+{% macro event_heading(event) %}
+    {{ util.href(cdedblink("event/show_event", {"event_id": event.id}), event.title) }}
+    <br />
+    {{ event.begin|date(lang=lang) }}&#8239;&ndash;&#8239;{{ event.end|date(lang=lang) }}
+{% endmacro %}
+
+{% macro orga_event_details(event) %}
+    <span class="small">
+        {{ util.href(cdedblink('event/registration_query', {'event_id': event.id}), gettext("Registrations"), icon='list') }}
+        &bull;
+        {{ util.href(cdedblink('event/stats', {'event_id': event.id}), gettext("Statistics"), icon='chart-bar') }}
+        {% if event.tracks %}
+            &bull;
+            {{ util.href(cdedblink('event/course_stats', {'event_id': event.id}), gettext("Courses"), icon='book') }}
+        {% endif %}
+    </span>
+{% endmacro %}
+
 {% block content %}
     {% if "event_mgmt" in user.admin_views %}
         <div class="p button-par">
@@ -34,9 +53,7 @@
         <ul class="spaced" id="current-events">
             {% for event in current_events %}
                 <li>
-                    {{ util.href(cdedblink("event/show_event", {"event_id": event.id}), event['title']) }}
-                    <br />
-                    {{ event['begin']|date(lang=lang) }}&#8239;–&#8239;{{ event['end']|date(lang=lang) }},
+                    {{ event_heading(event) }},
                     {% if event.registration_start is none or not event.is_registration_approved %}
                         {% trans %}
                             Registration in future™.
@@ -122,24 +139,11 @@
     {% if orga_events %}
         {{ util.h(n_("Organized Events")) }}
         <ul class="spaced" id="organized-events">
-            {% for entry in orga_events %}
+            {% for event in orga_events %}
                 <li>
-                    {{ util.href(cdedblink("event/show_event", {"event_id": entry.id}), entry['title']) }}
+                    {{ event_heading(event) }}
                     <br />
-                    {{ entry['begin']|date(lang=lang) }}–{{ entry['end']|date(lang=lang) }}
-                    <br />
-                    <span class="small">
-                        {{ util.href(cdedblink('event/registration_query', {'event_id': entry.id}),
-                                     gettext("Registrations"), icon='list') }}
-                        &bull;
-                        {{ util.href(cdedblink('event/stats', {'event_id': entry.id}),
-                                     gettext("Statistics"), icon='chart-bar') }}
-                        {% if entry['tracks'] %}
-                            &bull;
-                            {{ util.href(cdedblink('event/course_stats', {'event_id': entry.id}),
-                                         gettext("Courses"), icon='book') }}
-                        {% endif %}
-                    </span>
+                    {{ orga_event_details(event) }}
                 </li>
             {% endfor %}
         </ul>
@@ -150,9 +154,7 @@
         <ul class="spaced" id="other-events">
             {% for event in other_events %}
                 <li>
-                    {{ util.href(cdedblink("event/show_event", {"event_id": event.id}), event['title']) }}
-                    <br />
-                    {{ event['begin']|date(lang=lang) }}&#8239;–&#8239;{{ event['end']|date(lang=lang) }}
+                    {{ event_heading(event) }}
                     {%- if event['is_cancelled'] -%}
                         , {% trans %}is cancelled{% endtrans %}.
                     {% endif %}
