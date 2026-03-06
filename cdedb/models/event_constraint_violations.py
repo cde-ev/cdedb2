@@ -971,7 +971,7 @@ class IncorrectCourseAssignedCV(RegistrationTrackConstraintViolation):
                 assigned_course=assigned_course,
                 instructed_course=instructed_course,
             )
-        if assigned_course is None:
+        if assigned_course is None or not track.num_choices:
             return None
         if assigned_course.id not in reg_track['choices'] and (
             instructed_course is None or assigned_course != instructed_course
