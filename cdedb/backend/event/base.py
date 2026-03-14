@@ -207,10 +207,12 @@ class EventBaseBackend(EventLowLevelBackend):
         params = {}
         if current is not None:
             if current:
-                constraints.append("e.event_end > now()")
+                constraints.append("e.event_end >= now()::date")
                 constraints.append("e.is_cancelled = False")
             else:
-                constraints.append("(e.event_end <= now() OR e.is_cancelled = True)")
+                constraints.append(
+                    "(e.event_end < now()::date OR e.is_cancelled = True)"
+                )
         if archived is not None:
             constraints.append("is_archived = %(is_archived)s")
             params["is_archived"] = archived
