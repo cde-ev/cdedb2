@@ -696,6 +696,35 @@ class ComplaintBackend(AbstractBackend):
         return code
 
     @access("complaint_admin")
+    def list_entry_versions_marked_for_purge(
+        self, rs: RequestState
+    ) -> list[models.ComplaintEntryVersion]:
+        with Atomizer(rs):
+            marked_for_purge = self.query_all(
+                rs,
+                f"""
+                    SELECT cev.id AS entry_version_id, ce.id AS entry_id, ce.case_id
+                    FROM {models.ComplaintEntryVersion.database_table} cev
+                        JOIN {models.ComplaintEntry.database_table} ce ON cev.entry_id = ce.id
+                    WHERE NOT is_purged AND marked_for_purge IS NOT NULL
+                """,
+                [],
+            )
+            cases = {}
+
+            ret = []
+            for datum in marked_for_purge:
+                case_id = datum["case_id"]
+                entry_id = datum["entry_id"]
+                entry_version_id = datum["entry_version_id"]
+
+                case = cases.get(case_id) or self.get_case(rs, case_id)
+                entry = case.entries[entry_id]
+                ret.append(entry.versions_by_id[entry_version_id])
+
+            return ret
+
+    @access("complaint_admin")
     def add_involved(
         self,
         rs: RequestState,
