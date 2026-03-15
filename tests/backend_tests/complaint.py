@@ -1,3 +1,4 @@
+import copy
 import datetime
 import functools
 from typing import cast
@@ -1350,6 +1351,8 @@ class TestComplaintBackend(BackendTest):
 
         self.complaint.mark_entry_version_for_purge(self.key, entry_id, version_id)
 
+        old_expectation = copy.deepcopy(expectation)
+
         expectation.marked_for_purge = nearly_now()
         expectation.purged_by = self.user["id"]
 
@@ -1365,8 +1368,29 @@ class TestComplaintBackend(BackendTest):
         ):
             self.complaint.mark_entry_version_for_purge(self.key, entry_id, version_id)
 
+        self.complaint.unmark_entry_version_for_purge(self.key, entry_id, version_id)
+
+        case = self.complaint.get_case(self.key, case_id)
+        self.assertEqual(
+            old_expectation.as_dict(),
+            case.entries[entry_id].versions_by_id[version_id].as_dict(),
+        )
+        self.assertEqual(
+            old_expectation, case.entries[entry_id].versions_by_id[version_id]
+        )
+
+        with self.assertRaisesRegex(ValueError, "Entry version not marked for purge."):
+            self.complaint.unmark_entry_version_for_purge(
+                self.key, entry_id, version_id
+            )
+
         with self.assertRaises(PrivilegeError):
             self.complaint.purge_entry_version(self.key, entry_id, version_id)
+
+        with self.assertRaisesRegex(ValueError, "Entry version not marked for purge."):
+            self.complaint.purge_entry_version(CRON, entry_id, version_id)
+
+        self.complaint.mark_entry_version_for_purge(self.key, entry_id, version_id)
 
         with self.assertRaisesRegex(ValueError, "Not yet ready for purge."):
             self.complaint.purge_entry_version(CRON, entry_id, version_id)

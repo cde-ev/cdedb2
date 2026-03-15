@@ -623,6 +623,34 @@ class ComplaintBackend(AbstractBackend):
             )
         return code
 
+    @access("complaint_admin")
+    def unmark_entry_version_for_purge(
+        self, rs: RequestState, entry_id: int, entry_version_id: int
+    ) -> DefaultReturnCode:
+        entry_id = affirm(vtypes.ID, entry_id)
+        entry_version_id = affirm(vtypes.ID, entry_version_id)
+
+        with Atomizer(rs):
+            case_id = self._get_case_id(rs, entry_id)
+            case = self.get_case(rs, case_id)
+            entry = case.entries[entry_id]
+
+            if not (entry_version := entry.versions_by_id.get(entry_version_id)):
+                raise ValueError(n_("Unknown entry version."))
+            if not entry_version.marked_for_purge:
+                raise ValueError(n_("Entry version not marked for purge."))
+
+            code = self.sql_update(
+                rs,
+                models.ComplaintEntryVersion.database_table,
+                {
+                    'id': entry_version_id,
+                    'marked_for_purge': None,
+                    'purged_by': None,
+                },
+            )
+        return code
+
     @access("cron")
     def purge_entry_version(
         self, rs: RequestState, entry_id: int, entry_version_id: int
