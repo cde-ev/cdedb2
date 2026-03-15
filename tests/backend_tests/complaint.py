@@ -1406,7 +1406,7 @@ class TestComplaintBackend(BackendTest):
             length=None,
             timestamp=datetime.datetime(2025, 5, 28, 16, tzinfo=datetime.UTC),
             ctime=nearly_now(),
-            submitted_by=None,
+            submitted_by=vtypes.ID(1),
             dtime=nearly_now(),
             deleted_by=vtypes.ID(1),
             dreason=None,

@@ -561,7 +561,7 @@ GRANT SELECT, UPDATE ON complaint.entries_id_seq TO cdb_persona;
 CREATE TABLE complaint.entry_versions (
         id                      serial PRIMARY KEY,
         entry_id                integer NOT NULL REFERENCES complaint.entries(id),
-        submitted_by            integer REFERENCES core.personas(id),
+        submitted_by            integer NOT NULL REFERENCES core.personas(id),
         description             bytea, -- encrypted
         length                  integer,
         CONSTRAINT complaint_entry_empty_description_length
@@ -594,8 +594,7 @@ CREATE TABLE complaint.entry_versions (
         is_purged               boolean NOT NULL DEFAULT False,
         CONSTRAINT complaint_entry_purged
             CHECK (
-                is_purged = (submitted_by IS NULL)
-                AND NOT is_purged OR (description IS NULL)
+                NOT is_purged OR (description IS NULL)
                 AND NOT is_purged OR (length IS NULL)
                 AND NOT is_purged OR (dreason IS NULL)
                 AND NOT is_purged OR (attachment_hash IS NULL)

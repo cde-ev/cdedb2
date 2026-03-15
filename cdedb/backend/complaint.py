@@ -678,7 +678,6 @@ class ComplaintBackend(AbstractBackend):
                 {
                     'id': entry_version_id,
                     'is_purged': True,
-                    'submitted_by': None,
                     'description': None,
                     'length': None,
                     'dreason': None,
