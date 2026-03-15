@@ -18,7 +18,7 @@ alias lint="uv run --directory=/cdedb2 ruff format --check; uv run --directory=/
 alias format="uv run --directory=/cdedb2 ruff format"
 alias ruff-cdedb="uv run --directory=/cdedb2 ruff check"
 alias mypy-cdedb="uv run --directory=/cdedb2 mypy"
-alias dmypy-cdedb="uv run --directory=/cdedb2 dmypy"
+alias dmypy-cdedb="uv run --directory=/cdedb2 dmypy run"
 
 alias app-logs="sudo journalctl --no-hostname -u cdedb-app"
 alias ldap-logs="sudo journalctl --no-hostname -u cde-ldap"
