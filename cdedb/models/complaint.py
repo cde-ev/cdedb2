@@ -290,6 +290,10 @@ class ComplaintEntry(CdEDataclass):
     def deleted_versions(self) -> list["ComplaintEntryVersion"]:
         return [version for version in self.all_versions if version.dtime]
 
+    @functools.cached_property
+    def versions_by_id(self) -> CdEDataclassMap["ComplaintEntryVersion"]:
+        return {version.id: version for version in self.all_versions}
+
     @property
     def parent(self) -> "ComplaintEntry | None":
         if self.parent_id is None:
@@ -370,6 +374,16 @@ class ComplaintEntryVersion(CdEDataclass):
     dreason: str | None = dataclasses.field(
         default=None,
         metadata=Meta.input_exclude.as_dict,
+    )
+
+    marked_for_purge: datetime.datetime | None = dataclasses.field(
+        default=None, metadata=Meta.input_exclude.as_dict
+    )
+    purged_by: vtypes.ID | None = dataclasses.field(
+        default=None, metadata=Meta.input_exclude.as_dict
+    )
+    is_purged: bool = dataclasses.field(
+        default=False, metadata=Meta.input_exclude.as_dict
     )
 
     authors: vtypes.CdedbIDList = dataclasses.field(

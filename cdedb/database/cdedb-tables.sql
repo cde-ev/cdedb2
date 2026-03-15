@@ -561,7 +561,7 @@ GRANT SELECT, UPDATE ON complaint.entries_id_seq TO cdb_persona;
 CREATE TABLE complaint.entry_versions (
         id                      serial PRIMARY KEY,
         entry_id                integer NOT NULL REFERENCES complaint.entries(id),
-        submitted_by            integer NOT NULL REFERENCES core.personas(id),
+        submitted_by            integer REFERENCES core.personas(id),
         description             bytea, -- encrypted
         length                  integer,
         CONSTRAINT complaint_entry_empty_description_length
@@ -583,14 +583,32 @@ CREATE TABLE complaint.entry_versions (
         deleted_by              integer REFERENCES core.personas(id) DEFAULT NULL,
         UNIQUE(entry_id, dtime),
         CONSTRAINT complaint_entry_deletion_reason
-            CHECK ((dtime IS NULL) = (dreason IS NULL)),
+            CHECK ((dtime IS NULL) = (dreason IS NULL) OR is_purged),
         CONSTRAINT complaint_entry_deletion_by
-            CHECK ((dtime IS NULL) = (deleted_by IS NULL))
+            CHECK ((dtime IS NULL) = (deleted_by IS NULL) OR is_purged),
+        -- indicated that the entry version was purged.
+        marked_for_purge        timestamp WITH TIME ZONE DEFAULT NULL,
+        purged_by               integer REFERENCES core.personas(id),
+        CONSTRAINT complaint_entry_marked_for_purge_by
+            CHECK ((marked_for_purge IS NULL) = (purged_by IS NULL)),
+        is_purged               boolean NOT NULL DEFAULT False,
+        CONSTRAINT complaint_entry_purged
+            CHECK (
+                is_purged = (submitted_by IS NULL)
+                AND NOT is_purged OR (description IS NULL)
+                AND NOT is_purged OR (length IS NULL)
+                AND NOT is_purged OR (dreason IS NULL)
+                AND NOT is_purged OR (attachment_hash IS NULL)
+                AND NOT is_purged OR (attachment_title IS NULL)
+                AND NOT is_purged OR (attachment_filename IS NULL)
+            )
 );
 CREATE UNIQUE INDEX entry_versions_id_current ON complaint.entry_versions(entry_id) WHERE dtime IS NULL;
 CREATE INDEX entry_versions_attachment_hash ON complaint.entry_versions(attachment_hash);
-GRANT SELECT, INSERT, UPDATE (dtime, dreason, deleted_by) ON complaint.entry_versions TO cdb_persona;
-GRANT SELECT, UPDATE ON complaint.entry_versions_id_seq TO cdb_persona;
+GRANT SELECT ON complaint.entry_versions TO cdb_persona;
+GRANT INSERT, UPDATE (dtime, dreason, deleted_by, marked_for_purge, purged_by) ON complaint.entry_versions TO cdb_admin;
+GRANT UPDATE (is_purged, submitted_by, description, length, dreason, attachment_hash, attachment_title, attachment_filename) ON complaint.entry_versions TO cdb_admin;
+GRANT SELECT, UPDATE ON complaint.entry_versions_id_seq TO cdb_admin;
 
 CREATE TABLE complaint.authors (
         id                      serial PRIMARY KEY,
@@ -598,8 +616,10 @@ CREATE TABLE complaint.authors (
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         UNIQUE(entry_version_id, persona_id)
 );
-GRANT SELECT, INSERT ON complaint.authors TO cdb_persona;
-GRANT SELECT, UPDATE ON complaint.authors_id_seq TO cdb_persona;
+GRANT SELECT ON complaint.authors TO cdb_persona;
+GRANT INSERT ON complaint.authors TO cdb_admin;
+GRANT DELETE ON complaint.authors TO cdb_admin;
+GRANT SELECT, UPDATE ON complaint.authors_id_seq TO cdb_admin;
 
 CREATE TABLE complaint.involved (
         id                      serial PRIMARY KEY,

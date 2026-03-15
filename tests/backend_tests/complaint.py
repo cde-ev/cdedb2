@@ -1,5 +1,8 @@
 import datetime
 import functools
+from typing import cast
+
+import freezegun
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -8,7 +11,7 @@ from cdedb.common import CdEDBObject, PrivilegeError, get_hash, nearly_now, now
 from cdedb.common.crypt import get_decrypt
 from cdedb.common.exceptions import AdverseCompanionError
 from cdedb.common.query import Query, QueryOperators, QueryScope
-from tests.common import USER_DICT, BackendTest, as_users, execsql, storage
+from tests.common import CRON, USER_DICT, BackendTest, as_users, execsql, storage
 from tests.other_tests.test_validation import INVAL, TestValidationBase
 
 
@@ -1317,6 +1320,84 @@ class TestComplaintBackend(BackendTest):
         self.assertFalse(
             self.complaint.get_attachment_store(self.key).is_available(attachment_hash)
         )
+
+    @as_users("simon")
+    def test_purge_entry_version(self) -> None:
+        case_id, entry_id, version_id = 1, 4, 4
+
+        expectation = models.ComplaintEntryVersion(
+            id=vtypes.ID(version_id),
+            entry_id=vtypes.ID(entry_id),
+            length=80,
+            timestamp=datetime.datetime(2025, 5, 28, 16, tzinfo=datetime.UTC),
+            ctime=nearly_now(),
+            submitted_by=vtypes.ID(1),
+            dtime=nearly_now(),
+            deleted_by=vtypes.ID(1),
+            dreason="Ungünstige Wortwahl.",
+            marked_for_purge=None,
+            purged_by=None,
+            is_purged=False,
+            authors=cast(vtypes.CdedbIDList, {vtypes.ID(3)}),
+        )
+
+        case = self.complaint.get_case(self.key, case_id)
+        self.assertEqual(
+            expectation.as_dict(),
+            case.entries[entry_id].versions_by_id[version_id].as_dict(),
+        )
+        self.assertEqual(expectation, case.entries[entry_id].versions_by_id[version_id])
+
+        self.complaint.mark_entry_version_for_purge(self.key, entry_id, version_id)
+
+        expectation.marked_for_purge = nearly_now()
+        expectation.purged_by = self.user["id"]
+
+        case = self.complaint.get_case(self.key, case_id)
+        self.assertEqual(
+            expectation.as_dict(),
+            case.entries[entry_id].versions_by_id[version_id].as_dict(),
+        )
+        self.assertEqual(expectation, case.entries[entry_id].versions_by_id[version_id])
+
+        with self.assertRaisesRegex(
+            ValueError, "Entry version already marked for purge."
+        ):
+            self.complaint.mark_entry_version_for_purge(self.key, entry_id, version_id)
+
+        with self.assertRaises(PrivilegeError):
+            self.complaint.purge_entry_version(self.key, entry_id, version_id)
+
+        with self.assertRaisesRegex(ValueError, "Not yet ready for purge."):
+            self.complaint.purge_entry_version(CRON, entry_id, version_id)
+
+        with freezegun.freeze_time(now()) as frozen_time:
+            frozen_time.tick(self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"])
+
+            self.complaint.purge_entry_version(CRON, entry_id, version_id)
+
+        expectation = models.ComplaintEntryVersion(
+            id=vtypes.ID(version_id),
+            entry_id=vtypes.ID(entry_id),
+            length=None,
+            timestamp=datetime.datetime(2025, 5, 28, 16, tzinfo=datetime.UTC),
+            ctime=nearly_now(),
+            submitted_by=None,
+            dtime=nearly_now(),
+            deleted_by=vtypes.ID(1),
+            dreason=None,
+            marked_for_purge=nearly_now(),
+            purged_by=self.user["id"],
+            is_purged=True,
+            authors=cast(vtypes.CdedbIDList, set()),
+        )
+
+        case = self.complaint.get_case(self.key, case_id)
+        self.assertEqual(
+            expectation.as_dict(),
+            case.entries[entry_id].versions_by_id[version_id].as_dict(),
+        )
+        self.assertEqual(expectation, case.entries[entry_id].versions_by_id[version_id])
 
 
 class TestComplaintValidation(TestValidationBase):

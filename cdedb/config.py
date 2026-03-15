@@ -376,6 +376,7 @@ _DEFAULTS = {
 
     # time which a access to a case remains active for.
     "COMPLAINT_UNLOCK_TIMEOUT": datetime.timedelta(minutes=30),
+    "COMPLAINT_ENTRY_VERSION_PURGE_DELAY": datetime.timedelta(days=10),
 
     ###############
     # Query stuff #
