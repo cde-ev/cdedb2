@@ -1404,7 +1404,7 @@ class TestComplaintBackend(BackendTest):
             id=vtypes.ID(version_id),
             entry_id=vtypes.ID(entry_id),
             length=None,
-            timestamp=datetime.datetime(2025, 5, 28, 16, tzinfo=datetime.UTC),
+            timestamp=None,
             ctime=nearly_now(),
             submitted_by=vtypes.ID(1),
             dtime=nearly_now(),

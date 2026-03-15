@@ -567,7 +567,7 @@ CREATE TABLE complaint.entry_versions (
         CONSTRAINT complaint_entry_empty_description_length
             CHECK ((description IS NULL) = (length IS NULL)),
         ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT NOW(),
-        timestamp               timestamp WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        timestamp               timestamp WITH TIME ZONE DEFAULT NOW(),
         etime                   timestamp WITH TIME ZONE DEFAULT NULL,
         -- attachment contents are stored encrypted. Metadata is not.
         attachment_hash         varchar DEFAULT NULL,
@@ -594,7 +594,8 @@ CREATE TABLE complaint.entry_versions (
         is_purged               boolean NOT NULL DEFAULT False,
         CONSTRAINT complaint_entry_purged
             CHECK (
-                NOT is_purged OR (description IS NULL)
+                is_purged = (timestamp IS NULL)
+                AND NOT is_purged OR (description IS NULL)
                 AND NOT is_purged OR (length IS NULL)
                 AND NOT is_purged OR (dreason IS NULL)
                 AND NOT is_purged OR (attachment_hash IS NULL)
@@ -606,7 +607,7 @@ CREATE UNIQUE INDEX entry_versions_id_current ON complaint.entry_versions(entry_
 CREATE INDEX entry_versions_attachment_hash ON complaint.entry_versions(attachment_hash);
 GRANT SELECT ON complaint.entry_versions TO cdb_persona;
 GRANT INSERT, UPDATE (dtime, dreason, deleted_by, marked_for_purge, purged_by) ON complaint.entry_versions TO cdb_admin;
-GRANT UPDATE (is_purged, submitted_by, description, length, dreason, attachment_hash, attachment_title, attachment_filename) ON complaint.entry_versions TO cdb_admin;
+GRANT UPDATE (is_purged, description, length, timestamp, dreason, attachment_hash, attachment_title, attachment_filename) ON complaint.entry_versions TO cdb_admin;
 GRANT SELECT, UPDATE ON complaint.entry_versions_id_seq TO cdb_admin;
 
 CREATE TABLE complaint.authors (

@@ -680,6 +680,7 @@ class ComplaintBackend(AbstractBackend):
                     'is_purged': True,
                     'description': None,
                     'length': None,
+                    'timestamp': None,
                     'dreason': None,
                     'attachment_hash': None,
                     'attachment_title': None,

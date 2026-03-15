@@ -311,7 +311,7 @@ class ComplaintEntry(CdEDataclass):
         return [entry for entry in self.children if entry.active_version]
 
     def get_sortkey(self) -> Sortkey:
-        return (self.all_versions[-1].timestamp,)
+        return (self.all_versions[-1].timestamp or datetime.datetime.max,)
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:
@@ -347,7 +347,7 @@ class ComplaintEntryVersion(CdEDataclass):
         default=None,
         metadata=Meta.input_exclude.as_dict,
     )
-    timestamp: datetime.datetime
+    timestamp: datetime.datetime | None
     etime: datetime.datetime | None = None
 
     # filehas and filename are retrieved from the request manually to feed to the
