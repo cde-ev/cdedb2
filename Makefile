@@ -67,8 +67,8 @@ UV_PROJECT_ENVIRONMENT ?= .venv
 ###########
 
 .PHONY: cron
-cron:
-	sudo -u www-cde -g www-data /cdedb2/bin/cron_execute.py
+cron: www-cde-venv
+	sudo -u www-cde -g www-data UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv $(UV) run --no-sync /cdedb2/bin/cron_execute.py
 
 .PHONY: doc
 doc:
@@ -132,6 +132,13 @@ $(UV_PROJECT_ENVIRONMENT)/bin/python:
 
 .PHONY: venv
 venv: $(UV_PROJECT_ENVIRONMENT)/bin/python
+
+.PHONE: www-cde-venv
+www-cde-venv:
+	sudo UV_PYTHON_INSTALL_DIR=/home/www-cde/.local/share/uv/python \
+		 UV_CACHE_DIR=/home/www-cde/.cache/uv \
+		 UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv/ \
+		 $(UV) sync --no-dev --group ldap
 
 .PHONY: format
 format: venv
