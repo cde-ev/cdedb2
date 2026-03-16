@@ -9270,3 +9270,20 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             },
         ]
         self.assertLogEqual(log_expectation, "event", event_id=4)
+
+    @as_users("garcia")
+    def test_change_instructor_no_choices(self) -> None:
+        event_id = 1
+        self.event.set_event(
+            self.key,
+            event_id,
+            {"parts": {3: {"tracks": {3: {"num_choices": 0, "min_choices": 0}}}}},
+        )
+
+        self.get(f"/event/event/{event_id}/registration/1/show")
+        self.assertPresence("Arbeitssitzung (Zweite Hälfte) Geleiteter Kurs —")
+        self.traverse("Bearbeiten")
+        f = self.response.forms["changeregistrationform"]
+        f["track3.course_instructor"] = 5
+        self.submit(f)
+        self.assertPresence("Arbeitssitzung (Zweite Hälfte) Geleiteter Kurs ε. Backup")
