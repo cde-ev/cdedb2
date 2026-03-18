@@ -2525,8 +2525,9 @@ def make_cron_backend_proxy(cron: CronFrontend, backend: B) -> B:
             attr = getattr(backend, name)
 
             @functools.wraps(attr)
-            def wrapper(rs: RequestState, *args: Any, **kwargs: Any) -> Any:
+            def wrapper(persona_id: int | None, *args: Any, **kwargs: Any) -> Any:
                 rs = cron.make_request_state()
+                rs.user.persona_id = persona_id
                 return attr(rs, *args, **kwargs)
 
             return wrapper
