@@ -710,7 +710,7 @@ class ComplaintBackend(AbstractBackend):
                 """,
                 [],
             )
-            cases = {}
+            cases: models.CdEDataclassMap[models.Case] = {}
 
             ret = []
             for datum in marked_for_purge:
@@ -718,7 +718,9 @@ class ComplaintBackend(AbstractBackend):
                 entry_id = datum["entry_id"]
                 entry_version_id = datum["entry_version_id"]
 
-                case = cases.get(case_id) or self.get_case(rs, case_id)
+                case = cases.get(case_id)
+                if not case:
+                    cases[case_id] = case = self.get_case(rs, case_id)
                 entry = case.entries[entry_id]
                 ret.append(entry.versions_by_id[entry_version_id])
 
