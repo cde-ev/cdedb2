@@ -1069,7 +1069,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
     @access("complaint_admin", modi={"POST"})
     def mark_entry_version_for_purge(
         self, rs: RequestState, case_id: int, entry_id: int, entry_version_id: int
-    ) -> None:
+    ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
         if not self.complaintproxy.is_unlocked(rs, case_id):
@@ -1084,7 +1084,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
     @access("complaint_admin", modi={"POST"})
     def unmark_entry_version_for_purge(
         self, rs: RequestState, case_id: int, entry_id: int, entry_version_id: int
-    ) -> None:
+    ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
         if not self.complaintproxy.is_unlocked(rs, case_id):
@@ -1099,17 +1099,44 @@ class CoreComplaintMixin(CoreBaseFrontend):
     @periodic("purge_complaint_entry_versions")
     def purge_complaint_entry_versions(
         self, rs: RequestState, state: CdEDBObject
-    ) -> None:
+    ) -> CdEDBObject:
         cutoff = now() - self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"]
         marked_for_purge = self.complaintproxy.list_entry_versions_marked_for_purge(rs)
 
         purged = 0
+        pending: set[int] = set(state.setdefault("pending", set()))
+        seen: set[int] = set()
+        new = []
+
         for entry_version in marked_for_purge:
             if entry_version.marked_for_purge < cutoff:
+                if entry_version.id not in pending:
+                    # TODO: What to do in this case?
+                    self.logger.warn("Purging entry version that was not pending.")
+                else:
+                    pending.remove(entry_version.id)
                 self.complaintproxy.purge_entry_version(
                     rs, entry_version.entry_id, entry_version.id
                 )
                 purged += 1
+            else:
+                if entry_version.id in pending:
+                    seen.add(entry_version.id)
+                    continue
+                new.append(entry_version)
+
+        if pending - seen:
+            self.logger.warn(
+                f"{len(pending - seen)} entry versions no longer marked for purge."
+            )
+            pending = seen
+            # TODO: send email?
+        if new:
+            # TODO: send email.
+            self.logger.info(f"{len(new)} new entry versions marked for purge.")
+            pending.update(entry_version.id for entry_version in new)
+
+        state["pending"] = pending
 
         if purged:
             self.logger.info(f"Purged {purged} complaint entry versions.")
