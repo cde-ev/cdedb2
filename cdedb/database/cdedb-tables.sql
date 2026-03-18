@@ -607,6 +607,7 @@ CREATE UNIQUE INDEX entry_versions_id_current ON complaint.entry_versions(entry_
 CREATE INDEX entry_versions_attachment_hash ON complaint.entry_versions(attachment_hash);
 GRANT SELECT ON complaint.entry_versions TO cdb_persona;
 GRANT INSERT, UPDATE (dtime, dreason, deleted_by, marked_for_purge, purged_by) ON complaint.entry_versions TO cdb_admin;
+-- This UPDATE should technically only be allowed for cron.
 GRANT UPDATE (is_purged, description, length, timestamp, dreason, attachment_hash, attachment_title, attachment_filename) ON complaint.entry_versions TO cdb_admin;
 GRANT SELECT, UPDATE ON complaint.entry_versions_id_seq TO cdb_admin;
 
@@ -618,6 +619,7 @@ CREATE TABLE complaint.authors (
 );
 GRANT SELECT ON complaint.authors TO cdb_persona;
 GRANT INSERT ON complaint.authors TO cdb_admin;
+-- This DELETE should technically only be allowed for cron.
 GRANT DELETE ON complaint.authors TO cdb_admin;
 GRANT SELECT, UPDATE ON complaint.authors_id_seq TO cdb_admin;
 
