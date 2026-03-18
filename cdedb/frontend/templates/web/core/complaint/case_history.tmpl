@@ -143,7 +143,7 @@
                                 {% trans ptime=version.marked_for_purge|datetime(lang=lang),
                                          purged_by=util.persona_anchor(personas[version.purged_by])
                                 %}
-                                    Lit aflame at {{ ptime }} by {{ purged_by }}.
+                                    Marked for purge at {{ ptime }} by {{ purged_by }}.
                                 {% endtrans %}
                             {% endif %}
                             </span>
