@@ -4639,6 +4639,14 @@
             "parent_id": 4,
             "concerned_id": 2,
             "is_revoked": false
+        },
+        {
+            "id": 10,
+            "case_id": 1,
+            "entry_type": 101,
+            "parent_id": null,
+            "concerned_id": null,
+            "is_revoked": false
         }
     ],
     "complaint.entry_versions": [
@@ -4831,6 +4839,25 @@
             "marked_for_purge": null,
             "purged_by": null,
             "is_purged": false
+        },
+        {
+            "id": 11,
+            "entry_id": 10,
+            "submitted_by": 1,
+            "description": null,
+            "length": null,
+            "ctime": "---now---",
+            "timestamp": null,
+            "etime": null,
+            "attachment_hash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
+            "dtime": "---now---",
+            "dreason": null,
+            "deleted_by": 1,
+            "marked_for_purge": "---now---",
+            "purged_by": 1,
+            "is_purged": true
         }
     ],
     "complaint.authors": [
