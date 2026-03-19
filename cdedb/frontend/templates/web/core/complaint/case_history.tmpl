@@ -66,7 +66,7 @@
                 {% for version in entry.all_versions %}
                     <div class="row" style="margin-left: -8px; margin-right: -8px; margin-top: -4px">
                         <div class="col-md-11 col-md-offset-1 {% if version.dtime %}text-muted {% endif %}{% if version.marked_for_purge or version.is_purged %}bg-danger {% endif %}"
-                             style="padding-left: 8px; padding-right: 8px; padding-top: 4px;">
+                             style="padding-left: 8px; padding-right: 8px; padding-top: 4px;" id="version{{ version.id }}">
                             {% if not loop.first %}
                                 <hr class="nosp" />
                             {% endif %}
@@ -80,7 +80,8 @@
                                 {% if version.dtime %}
                                     <div class="p button-par">
                                         {% if not version.marked_for_purge %}
-                                            <form action="{{ cdedblink("core/mark_entry_version_for_purge", {"entry_id": entry.id, "entry_version_id": version.id}) }}" method="POST">
+                                            <form action="{{ cdedblink("core/mark_entry_version_for_purge", {"entry_id": entry.id, "entry_version_id": version.id}) }}"
+                                                  method="POST" id="markentryforpurgeform{{ version.id }}">
                                                 {{ util.anti_csrf_token("core/mark_entry_version_for_purge") }}
                                                 {{ util.input_submit(label="",
                                                         title=gettext("Mark for purge"),
@@ -88,7 +89,8 @@
                                                         icon="fire") }}
                                             </form>
                                         {% elif not version.is_purged %}
-                                            <form action="{{ cdedblink("core/unmark_entry_version_for_purge", {"entry_id": entry.id, "entry_version_id": version.id}) }}" method="POST">
+                                            <form action="{{ cdedblink("core/unmark_entry_version_for_purge", {"entry_id": entry.id, "entry_version_id": version.id}) }}"
+                                                  method="POST" id="unmarkentryforpurgeform{{ version.id }}">
                                                 {{ util.anti_csrf_token("core/unmark_entry_version_for_purge") }}
                                                 {{ util.input_submit(label="",
                                                         title=gettext("Unmark for purge"),
