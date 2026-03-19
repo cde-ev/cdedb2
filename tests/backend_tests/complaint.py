@@ -243,6 +243,27 @@ class TestComplaintBackend(BackendTest):
                         )
                     ],
                 ),
+                10: models.ComplaintEntry(
+                    id=vtypes.ID(10),
+                    case_id=vtypes.ID(1),
+                    entry_type=const.ComplaintEntryType.generic_information,
+                    all_versions=[
+                        models.ComplaintEntryVersion(
+                            id=vtypes.ID(11),
+                            entry_id=vtypes.ID(10),
+                            length=None,
+                            timestamp=None,
+                            ctime=nearly_now(),
+                            submitted_by=vtypes.ID(1),
+                            deleted_by=vtypes.ID(1),
+                            dtime=nearly_now(),
+                            marked_for_purge=nearly_now(),
+                            purged_by=vtypes.ID(1),
+                            is_purged=True,
+                            authors=set(),  # type: ignore[arg-type]
+                        )
+                    ],
+                ),
             },
         )
         reality = self.complaint.get_case(self.key, 1)
