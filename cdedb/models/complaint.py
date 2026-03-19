@@ -311,7 +311,10 @@ class ComplaintEntry(CdEDataclass):
         return [entry for entry in self.children if entry.active_version]
 
     def get_sortkey(self) -> Sortkey:
-        return (self.all_versions[-1].timestamp or datetime.datetime.max,)
+        return (
+            self.all_versions[-1].timestamp
+            or datetime.datetime.max.replace(tzinfo=datetime.UTC),
+        )
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:
