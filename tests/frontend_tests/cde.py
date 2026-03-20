@@ -2871,6 +2871,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Übersicht", div='navigation')
         self.assertPresence("CdE", div='navigation')
         self.assertPresence("VAN", div='navigation')
+        self.assertNonPresence("BuB")
 
         # Institution CdE
         self.traverse({'description': '^CdE$'})
@@ -2890,6 +2891,12 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Übersicht", div='navigation')
         self.assertPresence("CdE", div='navigation')
         self.assertPresence("VAN", div='navigation')
+
+        # Institution BuB
+        self.get('/cde/past/event/list?institution=PastInstitutions.bub')
+        msg = "Es gibt keine Vergangenen Veranstaltungen mit dieser Institution."
+        self.assertNotification(msg, 'info')
+        self.assertNonPresence("BuB")
 
     @as_users("vera")
     def test_list_past_events_admin(self) -> None:
