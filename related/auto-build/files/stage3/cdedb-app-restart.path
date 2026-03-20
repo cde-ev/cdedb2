@@ -1,3 +1,5 @@
+# dPROD: This service is dev only.
+
 [Path]
 PathChanged=/cdedb2/pyproject.toml
 #PathChanged=/cdedb2/i18n/de/LC_MESSAGES/cdedb.po

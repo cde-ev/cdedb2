@@ -11,17 +11,13 @@ Group=www-data
 RuntimeDirectory=gunicorn
 WorkingDirectory=/cdedb2
 Environment="SCRIPT_NAME=/db"
-# Add --reload for easier development, this is not intended for production use
-# dPROD no --reload
-# dPROD -t 90
 ExecStart=/home/www-cde/.venv/bin/gunicorn \
-    --forwarded-allow-ips="*" -w 4 --reload \
+    --forwarded-allow-ips="*" -w 4 -t 90 \
     --limit-request-line 0 --limit-request-fields 0 \
     wsgi.cdedb-app:application
-ExecStartPre=+make www-cde-venv
+ExecStartPre=+make -C /cdedb2 www-cde-venv
 ExecReload=/bin/kill -s HUP $MAINPID
 KillMode=mixed
 TimeoutStopSec=5
 TimeoutStartSec=300
-# dPROD PrivateTmp=true
-PrivateTmp=false
+PrivateTmp=true

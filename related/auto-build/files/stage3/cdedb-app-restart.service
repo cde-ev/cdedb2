@@ -1,3 +1,5 @@
+# dPROD: This service is dev only.
+
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/make -C /cdedb2 reload
+ExecStart=/usr/bin/make -C /cdedb2 venv reload

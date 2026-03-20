@@ -62,6 +62,7 @@ I18NOUTDIR = ./i18n-output
 I18N_LANGUAGES = $(patsubst $(I18NDIR)/%/LC_MESSAGES, %, $(wildcard $(I18NDIR)/*/LC_MESSAGES))
 
 UV_PROJECT_ENVIRONMENT ?= .venv
+UV_PYTHON_INSTALL_DIR ?= /var/cache/uv-python/
 
 ###########
 # General #
@@ -129,15 +130,16 @@ $(I18NOUTDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
 ###################
 
 $(UV_PROJECT_ENVIRONMENT)/bin/python:
-	$(UV) venv
+	sudo UV_PYTHON_INSTALL_DIR=$(UV_PYTHON_INSTALL_DIR) \
+		$(UV) venv
 
 .PHONY: venv
 venv: $(UV_PROJECT_ENVIRONMENT)/bin/python
+	sudo $(UV) sync --all-groups
 
 .PHONY: www-cde-venv
 www-cde-venv:
-	sudo UV_PYTHON_INSTALL_DIR=/home/www-cde/.local/share/uv/python \
-		 UV_CACHE_DIR=/home/www-cde/.cache/uv \
+	sudo UV_PYTHON_INSTALL_DIR=$(UV_PYTHON_INSTALL_DIR) \
 		 UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv/ \
 		 $(UV) sync --no-dev --group ldap
 

@@ -1,0 +1,4 @@
+# unfortunately this is not available via config:
+# python-install-dir = "/var/cache/uv-python/"
+# Unfortunately this is only available via
+# default-groups = []
