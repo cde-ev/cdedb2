@@ -369,6 +369,8 @@ _DEFAULTS = {
     # Rate limit for orgas adding persons to their event
     # number of persons per day
     "ORGA_ADD_LIMIT": 10,
+    # Prevent frontend access on participant data before this event id
+    "EVENT_ACCESS_LIMITED_BEFORE_ID": 1,
 
     #
     # complaint stuff

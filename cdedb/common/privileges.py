@@ -3,6 +3,9 @@
 from enum import Flag, auto
 
 from cdedb.common import RequestState, User
+from cdedb.config import Config
+
+_CONF = Config()
 
 
 class EventPrivileges(Flag):
@@ -116,6 +119,11 @@ def is_privileged_event_user(
         | EP.payment_write
         | EP.balance
     )
+
+    if event_id < _CONF["EVENT_ACCESS_LIMITED_BEFORE_ID"] and required_privilege & (
+        EP._registrations_read_dummy | EP.registrations_write | EP.participant_list
+    ):  # pylint: disable=protected-access
+        return False
 
     return (
         # Special case for conclude which requires two admin privileges.

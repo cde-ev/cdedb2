@@ -251,7 +251,10 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         if not rs.ambience['event'].use_additional_questionnaire:
             rs.notify("error", n_("Questionnaire disabled."))
             return self.redirect(rs, "event/registration_status")
-        if self.is_locked(rs.ambience['event']):
+        if (
+            self.is_locked(rs.ambience['event'])
+            or event_id < self.conf["EVENT_ACCESS_LIMITED_BEFORE_ID"]
+        ):
             rs.notify("error", n_("Event locked."))
             return self.redirect(rs, "event/registration_status")
         data = self.extract_questionnaire_fields(
