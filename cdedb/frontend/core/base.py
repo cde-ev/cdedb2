@@ -571,7 +571,7 @@ class CoreBaseFrontend(AbstractFrontend):
     class AccessRealm(enum.Flag):
         """Manage realm access in show_user.
 
-        Realms the viewer may access of the users.
+        Realms of the user the viewer may access.
         This is independent of the actual realms the user possesses.
         Additionally, each viewer is eligible to view some basic infos.
         """
@@ -592,7 +592,7 @@ class CoreBaseFrontend(AbstractFrontend):
         # access to status bits for meta admins
         meta = enum.auto()
         # full access, do not strip any data, for core and relative admins,
-        #  and access to your own profile
+        #  and access to your own profile. Does not include admin_notes.
         _full = enum.auto()
         full = orga | moderator | meta | _full
 
@@ -741,7 +741,7 @@ class CoreBaseFrontend(AbstractFrontend):
         # This is the basic mechanism for restricting access, since we only
         # add attributes for which an access level is provided.
         target_roles = extract_roles(rs.ambience['persona'], introspection_only=True)
-        persona: models.AnyPersona
+        persona: models.Persona
         if self.AccessRealm.cde in access_realms and "cde" in target_roles:
             persona = self.coreproxy.new_get_cde_user(rs, persona_id)
         # event and assembly are independent realms, users may have both at the same time

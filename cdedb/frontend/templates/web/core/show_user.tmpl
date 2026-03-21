@@ -190,7 +190,7 @@
                     </small>
                 {% endif %}
             </dd>
-            {% if data.hasattr('legal_given_names') %}
+            {% if data.has('legal_given_names') %}
                 <dt title="{% trans %}Legal Name{% endtrans %}">
                     {% trans %}Legal Name{% endtrans %}
                 </dt>
@@ -258,7 +258,7 @@
                                               titles=[gettext("No"), gettext("Yes")]) }}
                     </dd>
                 {% endif %}
-                {% if data.hasattr("honorary_member") %}
+                {% if data.has("honorary_member") %}
                     <div id="honorary-member">
                         <dt title="{% trans %}Honorary Member{% endtrans %}">
                             {% trans %}Honorary Member{% endtrans %}

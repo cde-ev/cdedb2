@@ -499,10 +499,6 @@ class CdEPersona(EventAssemblyPersona):
         )
 
 
-# for easier type hinting, if its necessary
-AnyPersona = Persona | MlPersona | EventPersona | EventAssemblyPersona | CdEPersona
-
-
 @dataclasses.dataclass(kw_only=True)
 class GenesisCase(CdEDataclass):
     database_table = "core.genesis_cases"
