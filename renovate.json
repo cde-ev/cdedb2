@@ -1,6 +1,13 @@
 {
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
     "extends": [
-        "config:recommended"
-    ]
+        "config:best-practices",
+        ":semanticCommitScopeDisabled",
+        ":semanticCommitType(renovate)",
+        ":separateMultipleMajorReleases",
+        "mergeConfidence:all-badges",
+        "approveMajorUpdates"
+    ],
+    "labels": ["renovate"],
+    "osvVulnerabilityAlerts": true
 }
