@@ -74,6 +74,7 @@ dependencies = [
     { name = "coverage" },
     { name = "cryptography" },
     { name = "cssselect" },
+    { name = "cysystemd" },
     { name = "freezegun" },
     { name = "graphviz" },
     { name = "gunicorn" },
@@ -98,7 +99,6 @@ dependencies = [
     { name = "sphinx" },
     { name = "sphinx-rtd-theme" },
     { name = "subman" },
-    { name = "systemd-python" },
     { name = "tabulate" },
     { name = "typing-extensions" },
     { name = "webtest" },
@@ -122,10 +122,10 @@ dev = [
     { name = "types-zxcvbn" },
 ]
 ldap = [
+    { name = "cysystemd" },
     { name = "ldaptor" },
     { name = "psycopg", extra = ["binary", "pool"] },
     { name = "subman" },
-    { name = "systemd-python" },
 ]
 playwright = [
     { name = "playwright" },
@@ -139,6 +139,7 @@ requires-dist = [
     { name = "coverage", specifier = "==7.6.0" },
     { name = "cryptography", specifier = "==43.0.0" },
     { name = "cssselect", specifier = "==1.3.0" },
+    { name = "cysystemd", specifier = "==2.0.5" },
     { name = "freezegun", specifier = "==1.5.1" },
     { name = "graphviz", specifier = "==0.20.2" },
     { name = "gunicorn", specifier = "==23.0.0" },
@@ -163,7 +164,6 @@ requires-dist = [
     { name = "sphinx", specifier = "==8.1.3" },
     { name = "sphinx-rtd-theme", specifier = "==3.0.2" },
     { name = "subman", specifier = "==0.1.1" },
-    { name = "systemd-python", specifier = "==235" },
     { name = "tabulate", specifier = "==0.9.0" },
     { name = "typing-extensions", specifier = "==4.15.0" },
     { name = "webtest", specifier = "==3.0.6" },
@@ -187,10 +187,10 @@ dev = [
     { name = "types-zxcvbn" },
 ]
 ldap = [
+    { name = "cysystemd", specifier = "==2.0.5" },
     { name = "ldaptor", specifier = "==21.2.0" },
     { name = "psycopg", extras = ["binary", "pool"], specifier = "==3.2.12" },
     { name = "subman", specifier = "==0.1.1" },
-    { name = "systemd-python", specifier = "==235" },
 ]
 playwright = [{ name = "playwright", specifier = "==1.55.0" }]
 
@@ -307,6 +307,16 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/72/0a/c3ea9573b1dc2e151abfe88c7fe0c26d1892fe6ed02d0cdb30f0d57029d5/cssselect-1.3.0.tar.gz", hash = "sha256:57f8a99424cfab289a1b6a816a43075a4b00948c86b4dcf3ef4ee7e15f7ab0c7", size = 42870, upload-time = "2025-03-10T09:30:29.638Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ee/58/257350f7db99b4ae12b614a36256d9cc870d71d9e451e79c2dc3b23d7c3c/cssselect-1.3.0-py3-none-any.whl", hash = "sha256:56d1bf3e198080cc1667e137bc51de9cadfca259f03c2d4e09037b3e01e30f0d", size = 18786, upload-time = "2025-03-10T09:30:28.048Z" },
+]
+
+[[package]]
+name = "cysystemd"
+version = "2.0.5"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/11/ca/2451ce4dd2e9d9d770630486bdae5dd161cf10576e0bf7443a8b33d42a2f/cysystemd-2.0.5.tar.gz", hash = "sha256:faac7506b6a709e96c0b0028bc5b3b62c3f5457b31e13e7d82b7a5f1c1889d96", size = 338663, upload-time = "2026-03-04T21:55:52.79Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/19/98/51677d2b07e8fcec04288c0a2fd3e76d4676930a5751e1ed3927037300a4/cysystemd-2.0.5-cp313-cp313-manylinux_2_34_aarch64.whl", hash = "sha256:9ec006a3549f1eef13f34e87bf62eb744cd0d588171c936e90d93cf3e3ac4ec3", size = 2237884, upload-time = "2026-03-04T21:55:38.782Z" },
+    { url = "https://files.pythonhosted.org/packages/99/70/91cadc7439b8ecc2c35287226ba434eb19d82f1984d437d176429629dd37/cysystemd-2.0.5-cp313-cp313-manylinux_2_34_x86_64.whl", hash = "sha256:a8c573e6ec970b3643dfae675a904ef81aa59d78e8e9ff331896c293a4057279", size = 2369743, upload-time = "2026-03-04T21:55:40.541Z" },
 ]
 
 [[package]]
@@ -1074,12 +1084,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/41/e9/6cfe001400ce50e2c
 wheels = [
     { url = "https://files.pythonhosted.org/packages/16/75/0368ebae479f3529c012eb8edf238ed8e78dfff51d08669e92e5f29b5eea/subman-0.1.1-py3-none-any.whl", hash = "sha256:0e83016a97120e718b573c33f816144671f7f2d2128292726ad96b3e7b7321e2", size = 23717, upload-time = "2023-11-22T00:52:20.203Z" },
 ]
-
-[[package]]
-name = "systemd-python"
-version = "235"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/10/9e/ab4458e00367223bda2dd7ccf0849a72235ee3e29b36dce732685d9b7ad9/systemd-python-235.tar.gz", hash = "sha256:4e57f39797fd5d9e2d22b8806a252d7c0106c936039d1e71c8c6b8008e695c0a", size = 61677, upload-time = "2023-02-11T13:42:16.588Z" }
 
 [[package]]
 name = "tabulate"
