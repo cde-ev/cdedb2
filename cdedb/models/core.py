@@ -10,16 +10,17 @@ import functools
 import re
 from enum import auto
 from secrets import token_urlsafe
-from typing import TYPE_CHECKING, Any, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, now
+from cdedb.common import CdEDBObject, asciificator, now
 from cdedb.common.crypt import generate_encrytion_key, get_decrypt, get_encrypt
 from cdedb.common.exceptions import CryptographyError
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
 from cdedb.common.sorting import Sortkey
+from cdedb.filter import cdedbid_filter
 from cdedb.models.common import AbstractFlag, CdEDataclass, MetaFlag as Meta
 
 if TYPE_CHECKING:
@@ -218,7 +219,7 @@ class PersonaFlag(AbstractFlag):
 
 
 @dataclasses.dataclass(kw_only=True)
-class PersonaName(CdEDataclass):
+class PersonaName:
     title: str | None = None
     nickname: str | None = None
     legal_given_names: str | None = None
@@ -231,9 +232,69 @@ class PersonaName(CdEDataclass):
     name_supplement: str | None = None
     show_legal_given_names: bool = False
 
+    def get_forename(
+        self, *, use_legal_name: bool = False, include_nickname: bool = False
+    ) -> str:
+        """Construct the forename according to the display name specification.
+
+        The name specification can be found at the documentation page about
+        "User Experience Conventions".
+        """
+        if use_legal_name and include_nickname:
+            raise RuntimeError(n_("Invalid use of keyword parameters."))
+        if use_legal_name:
+            return self.legal_given_names or self.given_names
+        if include_nickname:
+            if not self.nickname:
+                return self.given_names
+            else:
+                return f"{self.given_names} ({self.nickname or ''})"
+        return self.given_names
+
+    def get_name(
+        self,
+        *,
+        use_legal_name: bool = False,
+        include_nickname: bool = False,
+        with_family_name: bool = True,
+        with_titles: bool = False,
+    ) -> str:
+        """Format the name according to the display name specification
+
+        For a full specification, which name variant should be used in which context, see
+        the documentation page about "User Experience Conventions".
+        """
+        forename = self.get_forename(
+            use_legal_name=use_legal_name, include_nickname=include_nickname
+        )
+        ret = []
+        if with_titles and self.title:
+            ret.append(self.title)
+        ret.append(forename)
+        if with_family_name:
+            ret.append(self.family_name)
+        if with_titles and self.name_supplement:
+            ret.append(self.name_supplement)
+        return " ".join(ret)
+
+    # Sentinel object to mark redacted properties.
+    REDACTED = cast(Any, object())
+
+    def hasattr(self, attr: str) -> bool:
+        return hasattr(self, attr) and getattr(self, attr) is not self.REDACTED
+
+    def has(self, attr: str) -> bool:
+        return self.hasattr(attr) and getattr(self, attr) is not None
+
+    def is_true(self, attr: str) -> bool:
+        return self.hasattr(attr) and getattr(self, attr) is True
+
+    def is_false(self, attr: str) -> bool:
+        return self.hasattr(attr) and getattr(self, attr) is False
+
 
 @dataclasses.dataclass(kw_only=True)
-class Persona(PersonaName):
+class Persona(CdEDataclass, PersonaName):
     database_table: ClassVar[str] = "core.personas"
 
     username: vtypes.Email = dataclasses.field(
@@ -271,6 +332,15 @@ class Persona(PersonaName):
 
     @classmethod
     @functools.cache
+    def get_realm_bits(cls) -> set[str]:
+        ret = set()
+        for field in dataclasses.fields(cls):
+            if field.name.startswith("is_") and field.name.endswith("_realm"):
+                ret.add(field.name)
+        return ret
+
+    @classmethod
+    @functools.cache
     def get_admin_bits(cls) -> set[str]:
         ret = set()
         for field in dataclasses.fields(cls):
@@ -287,6 +357,12 @@ class Persona(PersonaName):
     # TODO implement this properly
     def get_sortkey(self) -> Sortkey:
         return (self.family_name, self.given_names)
+
+    def to_database(self) -> CdEDBObject:
+        ret = super().to_database()
+        if any(val is self.REDACTED for val in ret.values()):
+            raise RuntimeError
+        return ret
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -361,7 +437,14 @@ class EventPersona(MlPersona):
 
 
 @dataclasses.dataclass(kw_only=True)
-class CdEPersona(AssemblyPersona, EventPersona):
+class EventAssemblyPersona(AssemblyPersona, EventPersona):
+    @property
+    def is_pure(self) -> bool:
+        return not self.is_cde_realm
+
+
+@dataclasses.dataclass(kw_only=True)
+class CdEPersona(EventAssemblyPersona):
     is_cde_realm: bool = dataclasses.field(
         default=False, metadata=PersonaFlag.mandatory_true_flag.as_dict
     )
@@ -402,6 +485,18 @@ class CdEPersona(AssemblyPersona, EventPersona):
     @property
     def is_pure(self) -> bool:
         return True
+
+    @property
+    def membership_fee_reference(self) -> str:
+        """Generate the desired reference for membership fee payment.
+
+        This is the "Verwendungszweck".
+        """
+        return "Mitgliedsbeitrag {gn} {fn}, {cdedbid}".format(  # noqa: UP032
+            gn=asciificator(self.given_names),
+            fn=asciificator(self.family_name),
+            cdedbid=cdedbid_filter(self.id),
+        )
 
 
 @dataclasses.dataclass(kw_only=True)
