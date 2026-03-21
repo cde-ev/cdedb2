@@ -6,8 +6,19 @@
         ":semanticCommitType(renovate)",
         ":separateMultipleMajorReleases",
         "mergeConfidence:all-badges",
-        ":approveMajorUpdates"
+        ":approveMajorUpdates",
+        ":automergePatch"
     ],
+    "packageRules": [
+        {
+            "automerge": true,
+            "matchPackageNames": [
+                "ruff",
+                "mypy"
+            ]
+        }
+    ],
+    "autoMergeStrategy": "fast-forward",
     "labels": ["renovate"],
     "osvVulnerabilityAlerts": true,
     "minimumReleaseAge": "14 days"
