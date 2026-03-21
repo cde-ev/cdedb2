@@ -91,7 +91,15 @@
                                 info=gettext("If checked, the event is shown as cancelled. This can be undone and "
                                 "allows the event to be archived. There are no further effects. Do not do this without "
                                 "consulting the chairmen of the CdE.")) }}
-        {{ util.form_input_text(name="registration_start", label=gettext("Registration Start"), type='datetime-local') }}
+        {% call util.form_input_text(
+                name="registration_start", label=gettext("Registration Start"), type='datetime-local',
+                outerclass="has-warning" if not ambience['event'].is_registration_approved else "") %}
+            {% if not ambience['event'].is_registration_approved %}
+                {% call util.output_info("", aclass="help-block alert alert-warning") %}
+                    {{ gettext("Registration has not yet been approved. People will not be able to register at the time configured here.") }}
+                {% endcall %}
+            {% endif %}
+        {% endcall %}
         {{ util.form_input_text(name="registration_soft_limit", label=gettext("Registration Soft Limit"),
                                 type="datetime-local",
                                 info=gettext("Is displayed initially. Changes to registration are only possible until "

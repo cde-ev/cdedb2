@@ -1759,8 +1759,8 @@ class CoreBaseFrontend(AbstractFrontend):
                 {
                     'To': (to,),
                     'Subject': subject,
-                    'From': self.conf["NOREPLY_ADDRESS"],
-                    'Reply-To': self.conf["NOREPLY_ADDRESS"],
+                    'From': self.conf["NOREPLY_SENDER"],
+                    'Reply-To': self.conf["NOREPLY_SENDER"],
                 },
                 {
                     'message_text': msg,
@@ -1771,14 +1771,14 @@ class CoreBaseFrontend(AbstractFrontend):
             )
         else:
             name = rs.user.persona_name()
-            sender = self.conf["NOREPLY_ADDRESS"]
+            noreply = self.conf["NOREPLY_ADDRESS"]
             self.do_mail(
                 rs,
                 "contact",
                 {
                     'To': (to,),
                     'Subject': subject,
-                    'From': f"{name} via Kontaktformular <{sender}>",
+                    'From': f"{name} via Kontaktformular <{noreply}>",
                     'Reply-To': rs.user.username,
                 },
                 {
@@ -1792,8 +1792,8 @@ class CoreBaseFrontend(AbstractFrontend):
             {
                 'To': (rs.user.username,),
                 'Subject': "Deine Nachricht ist angekommen.",
-                'From': self.conf["NOREPLY_ADDRESS"],
-                'Reply-To': self.conf["NOREPLY_ADDRESS"],
+                'From': self.conf["NOREPLY_SENDER"],
+                'Reply-To': self.conf["NOREPLY_SENDER"],
             },
             {
                 'message': msg,
@@ -1861,7 +1861,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 {
                     'To': {persona['username'], message.username},
                     'From': message.recipient,
-                    'Reply-To': self.conf["NOREPLY_ADDRESS"],
+                    'Reply-To': self.conf["NOREPLY_SENDER"],
                     'Subject': f"Re: {original_subject}",
                 },
                 {
@@ -1944,8 +1944,8 @@ class CoreBaseFrontend(AbstractFrontend):
                 {
                     'To': (anonymous_message.recipient,),
                     'Subject': "Anonyme Nachricht neu verschlüsselt",
-                    'From': self.conf["NOREPLY_ADDRESS"],
-                    'Reply-To': self.conf["NOREPLY_ADDRESS"],
+                    'From': self.conf["NOREPLY_SENDER"],
+                    'Reply-To': self.conf["NOREPLY_SENDER"],
                 },
                 {
                     'new_secret': new_secret,
@@ -3206,9 +3206,12 @@ class CoreBaseFrontend(AbstractFrontend):
         """
         if not self.conf["CDEDB_DEV"]:  # pragma: no cover
             return self.redirect(rs, "core/index")
-        filename = pathlib.Path(tempfile.gettempdir(), f"cdedb-mail-{token}.txt")
-        with open(filename, 'rb') as f:
-            rawtext = f.read()
+        filepath = pathlib.Path(tempfile.gettempdir(), f"cdedb-mail-{token}.txt")
+        try:
+            rawtext = filepath.read_bytes()
+        except FileNotFoundError:
+            rs.notify("error", f"File {filepath.name!r} not found.")
+            return self.redirect(rs, "core/index")
         emailtext = quopri.decodestring(rawtext).decode('utf-8')
         return self.render(rs, "debug_email", {'emailtext': emailtext})
 

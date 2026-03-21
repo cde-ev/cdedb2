@@ -34,26 +34,35 @@ class TestDatabase(unittest.TestCase):
         factory = connection_pool_factory(
             self.config["CDB_DATABASE_NAME"],
             ("cdb_anonymous", "cdb_persona", "cdb_admin"),
-            self.secrets, self.config["DB_HOST"], self.config["DB_PORT"])
+            self.secrets,
+            self.config["DB_HOST"],
+            self.config["DB_PORT"],
+        )
         with factory["cdb_persona"] as conn:
             self.assertIsInstance(conn, psycopg2.extensions.connection)
             self.assertIsInstance(conn, IrradiatedConnection)
         with self.assertRaises(ValueError):
-
             factory["nonexistentrole"]  # exception in __getitem__
 
     def test_less_users(self) -> None:
         factory = connection_pool_factory(
-            self.config["CDB_DATABASE_NAME"], ("cdb_anonymous", "cdb_admin"),
-            self.secrets, self.config["DB_HOST"], self.config["DB_PORT"])
+            self.config["CDB_DATABASE_NAME"],
+            ("cdb_anonymous", "cdb_admin"),
+            self.secrets,
+            self.config["DB_HOST"],
+            self.config["DB_PORT"],
+        )
         with self.assertRaises(ValueError):
-
             factory["cdb_persona"]  # exception in __getitem__
 
     def test_atomizer(self) -> None:
         factory = connection_pool_factory(
-            self.config["CDB_DATABASE_NAME"], ("cdb_persona",), self.secrets,
-            self.config["DB_HOST"], self.config["DB_PORT"])
+            self.config["CDB_DATABASE_NAME"],
+            ("cdb_persona",),
+            self.secrets,
+            self.config["DB_HOST"],
+            self.config["DB_PORT"],
+        )
         conn = factory["cdb_persona"]
 
         rs = ConnectionContainer()
@@ -64,8 +73,7 @@ class TestDatabase(unittest.TestCase):
             with rs.conn as nested_conn:
                 with nested_conn.cursor() as nested_cur:
                     nested_cur.execute("SELECT * FROM core.sessions")
-            self.assertNotEqual(psycopg2.extensions.STATUS_READY,
-                                nested_conn.status)
+            self.assertNotEqual(psycopg2.extensions.STATUS_READY, nested_conn.status)
         self.assertEqual(psycopg2.extensions.STATUS_READY, nested_conn.status)
 
         rs = cast(RequestState, rs)
@@ -97,8 +105,12 @@ class TestDatabase(unittest.TestCase):
 
     def test_suppressed_exception(self) -> None:
         factory = connection_pool_factory(
-            self.config["CDB_DATABASE_NAME"], ("cdb_admin",), self.secrets,
-            self.config["DB_HOST"], self.config["DB_PORT"])
+            self.config["CDB_DATABASE_NAME"],
+            ("cdb_admin",),
+            self.secrets,
+            self.config["DB_HOST"],
+            self.config["DB_PORT"],
+        )
         conn = factory["cdb_admin"]
 
         rs = ConnectionContainer()
@@ -112,8 +124,10 @@ class TestDatabase(unittest.TestCase):
                 try:
                     with rs.conn as nested_conn:
                         with nested_conn.cursor() as nested_cur:
-                            nested_cur.execute("UPDATE core.personas SET given_names"
-                                               " = 'ABBA (random name)'")
+                            nested_cur.execute(
+                                "UPDATE core.personas SET given_names"
+                                " = 'ABBA (random name)'"
+                            )
                             raise ValueError("test error")
                 except ValueError:
                     pass
@@ -121,5 +135,6 @@ class TestDatabase(unittest.TestCase):
             with conn.cursor() as cur:
                 cur.execute("SELECT given_names FROM core.personas")
                 result = cur.fetchall()
-                self.assertFalse(any(
-                    x['given_names'] == "ABBA (random name)" for x in result))
+                self.assertFalse(
+                    any(x['given_names'] == "ABBA (random name)" for x in result)
+                )

@@ -45,12 +45,6 @@ COVERAGE ?= $(PYTHONBIN) -m coverage
 MYPY ?= $(UV) run --all-groups mypy
 DMYPY ?= $(UV) run --all-groups dmypy
 
-include .ruff_targets
-
-MAKE_FORMAT_TARGETS ?= $(FORMAT_TARGETS)
-MAKE_LINT_TARGETS ?= $(LINT_TARGETS)
-MAKE_ISORT_TARGETS ?= $(ISORT_TARGETS)
-
 
 #####################
 # Default Variables #
@@ -73,8 +67,8 @@ UV_PROJECT_ENVIRONMENT ?= .venv
 ###########
 
 .PHONY: cron
-cron:
-	sudo -u www-cde -g www-data /cdedb2/bin/cron_execute.py
+cron: www-cde-venv
+	sudo -u www-cde -g www-data UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv $(UV) run --no-sync /cdedb2/bin/cron_execute.py
 
 .PHONY: doc
 doc:
@@ -139,27 +133,34 @@ $(UV_PROJECT_ENVIRONMENT)/bin/python:
 .PHONY: venv
 venv: $(UV_PROJECT_ENVIRONMENT)/bin/python
 
+.PHONY: www-cde-venv
+www-cde-venv:
+	sudo UV_PYTHON_INSTALL_DIR=/home/www-cde/.local/share/uv/python \
+		 UV_CACHE_DIR=/home/www-cde/.cache/uv \
+		 UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv/ \
+		 $(UV) sync --no-dev --group ldap
+
 .PHONY: format
 format: venv
-	$(ISORT) --fix $(MAKE_ISORT_TARGETS)
-	$(RUFF) format $(MAKE_FORMAT_TARGETS)
+	$(ISORT) --fix
+	$(RUFF) format
 
 .PHONY: autoformat
 autoformat: format
-	$(RUFF) check $(MAKE_LINT_TARGETS)
+	$(RUFF) check
 
 .PHONY: format-diff
 format-diff: venv
-	$(ISORT) $(MAKE_ISORT_TARGETS) --diff
-	$(RUFF) format $(MAKE_FORMAT_TARGETS) --diff
+	$(ISORT) --diff
+	$(RUFF) format --diff
 
 .PHONY: mypy
 mypy: venv
-	$(MYPY) bin/*.py $(MAKE_LINT_TARGETS)
+	$(MYPY)
 
 .PHONY: dmypy
 dmypy: venv
-	$(DMYPY) run bin/*.py $(MAKE_LINT_TARGETS)
+	$(DMYPY) run
 
 BANNERLINE := "================================================================================"
 
@@ -168,7 +169,7 @@ isort: venv
 	@echo $(BANNERLINE)
 	@echo "All of isort"
 	@echo $(BANNERLINE)
-	$(ISORT) $(MAKE_ISORT_TARGETS)
+	$(ISORT)
 	@echo ""
 
 .PHONY: ruff
@@ -178,17 +179,17 @@ ruff: venv
 	@echo $(BANNERLINE)
 ifeq ($(CI),true)
 	# Use the grouped output format to make it easier to read in CI
-	$(RUFF) check $(MAKE_LINT_TARGETS) --output-format=grouped
-	$(RUFF) format $(MAKE_FORMAT_TARGETS) --check
+	$(RUFF) check --output-format=grouped
+	$(RUFF) format --check
 else
-	$(RUFF) check $(MAKE_LINT_TARGETS)
-	$(RUFF) format $(MAKE_FORMAT_TARGETS) --check
+	$(RUFF) check
+	$(RUFF) format --check
 endif
 	@echo ""
 
 .PHONY: ruff-fix
 ruff-fix: venv
-	$(RUFF) check $(MAKE_LINT_TARGETS) --fix
+	$(RUFF) check --fix
 
 .PHONY: template-line-length
 template-line-length:

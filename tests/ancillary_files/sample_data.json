@@ -1845,7 +1845,7 @@
             "pronouns_profile": false,
             "gender": 10,
             "birthday": "2019-12-28",
-            "telephone": "+81314159263",
+            "telephone": "+81314159265",
             "mobile": null,
             "address_supplement": null,
             "address": "Kasumigaseki 1-3-2",
@@ -3705,7 +3705,7 @@
             "pronouns_nametag": false,
             "pronouns_profile": false,
             "birthday": "2019-12-28",
-            "telephone": "+81314159263",
+            "telephone": "+81314159265",
             "mobile": null,
             "address_supplement": null,
             "address": "Kasumigaseki 1-3-2",
@@ -5372,6 +5372,7 @@
             "is_archived": false,
             "is_cancelled": false,
             "is_balanced": false,
+            "is_registration_approved": true,
             "notify_on_registration": -1,
             "reimbursement_iban_field_id": null,
             "lodge_field_id": 3
@@ -5403,6 +5404,7 @@
             "is_archived": false,
             "is_cancelled": false,
             "is_balanced": false,
+            "is_registration_approved": true,
             "notify_on_registration": -1,
             "reimbursement_iban_field_id": null,
             "lodge_field_id": null
@@ -5434,6 +5436,7 @@
             "is_archived": false,
             "is_cancelled": false,
             "is_balanced": false,
+            "is_registration_approved": true,
             "notify_on_registration": -1,
             "reimbursement_iban_field_id": null,
             "lodge_field_id": null
@@ -5465,6 +5468,7 @@
             "is_archived": false,
             "is_cancelled": false,
             "is_balanced": false,
+            "is_registration_approved": true,
             "notify_on_registration": -1,
             "reimbursement_iban_field_id": null,
             "lodge_field_id": null

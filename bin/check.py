@@ -39,6 +39,7 @@ from cdedb.cli.storage import (
 )
 from cdedb.cli.util import is_docker
 from cdedb.config import SecretsConfig, TestConfig, set_configpath
+from cdedb.logging_ import setup_root_logger
 from tests.common import BasicTest
 
 
@@ -310,6 +311,7 @@ if __name__ == '__main__':
     )
 
     args = parser.parse_args()
+    setup_root_logger(test=True, replace=True)
 
     # Set the promised default value if no parts were specified
     if not args.parts and not args.all_ldap:

@@ -223,7 +223,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 )
 
         # Collect descriptions separately as a privacy precaution
-        descriptions = self.complaintproxy.get_visible_descriptions(rs, case.id)
+        descriptions = self.complaintproxy.get_visible_descriptions(
+            rs, case.id, deleted=None if include_deleted else False
+        )
         if get_hidden_descriptions:
             descriptions.update(
                 self.complaintproxy.get_hidden_descriptions(rs, case.id)

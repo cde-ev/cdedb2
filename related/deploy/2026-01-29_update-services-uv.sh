@@ -13,6 +13,7 @@ echo "Replacing services"
 sudo cp /cdedb2/related/auto-build/files/stage3/cdedb-app.service /etc/systemd/system/
 sudo cp /cdedb2/related/auto-build/files/stage3/cde-ldap.service /etc/systemd/system/
 sudo cp /cdedb2/related/auto-build/files/stage3/cde-ldap.service /etc/systemd/system/cde-ldap-test.service
+sed -i -r -e "s|Environment=CDEDB_CONFIGPATH=/etc/cdedb/config.py|Environment=CDEDB_CONFIGPATH=/cdedb2/tests/config/test_ldap.py\nEnvironment=PYTHONPATH=/cdedb2/|g" /etc/systemd/system/cde-ldap-test.service
 sudo systemctl daemon-reload
 echo "Services replaced and systemctl reloaded."
 

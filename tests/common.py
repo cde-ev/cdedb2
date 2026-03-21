@@ -165,9 +165,9 @@ def json_keys_to_int(obj: T) -> T:
     return ret
 
 
-def _read_sample_data(filename: PathLike = "/cdedb2/tests/ancillary_files/"
-                                           "sample_data.json",
-                      ) -> dict[str, CdEDBObjectMap]:
+def _read_sample_data(
+    filename: PathLike = "/cdedb2/tests/ancillary_files/sample_data.json",
+) -> dict[str, CdEDBObjectMap]:
     """Helper to turn the sample data from the JSON file into usable format."""
     with open(filename, encoding="utf8") as f:
         sample_data: dict[str, list[CdEDBObject]] = json.load(f)
@@ -191,7 +191,9 @@ B = TypeVar("B", bound=AbstractBackend)
 
 
 def _make_backend_shim(
-        backend: B, internal: bool = False, allow_private: bool = False,
+    backend: B,
+    internal: bool = False,
+    allow_private: bool = False,
 ) -> B:
     """Wrap a backend to only expose functions with an access decorator.
 
@@ -208,12 +210,18 @@ def _make_backend_shim(
     sessionproxy = SessionBackend()
     secrets = SecretsConfig()
     connpool = connection_pool_factory(
-        backend.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
-        secrets, backend.conf["DB_HOST"], backend.conf["DB_PORT"])
+        backend.conf["CDB_DATABASE_NAME"],
+        DATABASE_ROLES,
+        secrets,
+        backend.conf["DB_HOST"],
+        backend.conf["DB_PORT"],
+    )
     translations = setup_translations(backend.conf)
 
-    def setup_requeststate(key: Optional[str], ip: str = "127.0.0.0",
-                           ) -> RequestState:
+    def setup_requeststate(
+        key: Optional[str],
+        ip: str = "127.0.0.0",
+    ) -> RequestState:
         """
         Turn a provided sessionkey or apitoken into a RequestState object.
 
@@ -254,17 +262,13 @@ def _make_backend_shim(
                 rs.user.realm_roles["complaint"] = {"enforcer"}
         if "event" in rs.user.roles:
             if hasattr(backend, "orga_info"):
-                rs.user.orga = backend.orga_info(
-                    rs, rs.user.persona_id)
+                rs.user.orga = backend.orga_info(rs, rs.user.persona_id)
             if hasattr(backend, "caretaker_info"):
-                rs.user.caretaker = backend.caretaker_info(
-                    rs, rs.user.persona_id)
+                rs.user.caretaker = backend.caretaker_info(rs, rs.user.persona_id)
         if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
-            rs.user.moderator = backend.moderator_info(
-                rs, rs.user.persona_id)
+            rs.user.moderator = backend.moderator_info(rs, rs.user.persona_id)
         if "assembly" in rs.user.roles and hasattr(backend, "presider_info"):
-            rs.user.presider = backend.presider_info(
-                rs, rs.user.persona_id)
+            rs.user.presider = backend.presider_info(rs, rs.user.persona_id)
         return rs
 
     class Proxy:
@@ -309,6 +313,7 @@ def _make_backend_shim(
 
 class BasicTest(unittest.TestCase):
     """Provide some basic useful test functionalities."""
+
     needs_storage_marker = "_needs_storage"
     needs_event_keeper_marker = "_needs_event_keeper"
 
@@ -347,8 +352,11 @@ class BasicTest(unittest.TestCase):
         set_configpath(self._orig_configpath)
 
     @staticmethod
-    def get_sample_data(table: str, ids: Optional[Iterable[int]] = None,
-                        keys: Optional[Iterable[str]] = None) -> CdEDBObjectMap:
+    def get_sample_data(
+        table: str,
+        ids: Optional[Iterable[int]] = None,
+        keys: Optional[Iterable[str]] = None,
+    ) -> CdEDBObjectMap:
         """This mocks a select request against the sample data.
 
         "SELECT <keys> FROM <table> WHERE id = ANY(<ids>)"
@@ -364,6 +372,7 @@ class BasicTest(unittest.TestCase):
 
         :returns: The result of the above "query" mapping id to entry.
         """
+
         def parse_datetime(s: str) -> datetime.datetime:
             # Magic placeholder that is replaced with the current time.
             if s == "---now---":
@@ -398,8 +407,18 @@ class BasicTest(unittest.TestCase):
                         r[k] = parse_date(r[k])
                 if k in {'transaction_date'} and r[k]:
                     r[k] = parse_date(r[k])
-                if k in {'ctime', 'atime', 'vote_begin', 'vote_end',
-                         'vote_extension_end', 'signup_end'} and r[k]:
+                if (
+                    k
+                    in {
+                        'ctime',
+                        'atime',
+                        'vote_begin',
+                        'vote_end',
+                        'vote_extension_end',
+                        'signup_end',
+                    }
+                    and r[k]
+                ):
                     r[k] = parse_datetime(r[k])
             ret[anid] = r
         return ret
@@ -414,6 +433,7 @@ class AsyncBasicTest(unittest.IsolatedAsyncioTestCase, BasicTest):
 
 class CdEDBTest(BasicTest):
     """Reset the DB for every test."""
+
     longMessage = False
     _clean_data: ClassVar[str]
     _sample_data: ClassVar[str]
@@ -439,11 +459,15 @@ class CdEDBTest(BasicTest):
     @classmethod
     @contextlib.contextmanager
     def database_cursor(cls) -> Generator[RealDictCursor]:
-        with Script(
-            persona_id=-1,
-            dbuser="cdb",
-            check_system_user=False,
-        ).rs().conn as conn:
+        with (
+            Script(
+                persona_id=-1,
+                dbuser="cdb",
+                check_system_user=False,
+            )
+            .rs()
+            .conn as conn
+        ):
             conn.set_session(autocommit=True)
             with conn.cursor() as cur:
                 yield cur
@@ -460,6 +484,7 @@ class BackendTest(CdEDBTest):
     """
     Base class for a TestCase that uses some backends. Needs to be subclassed.
     """
+
     maxDiff = None
     session: ClassVar[SessionBackend]
     _raw_backend: ClassVar[CoreBackend]
@@ -488,9 +513,11 @@ class BackendTest(CdEDBTest):
         cls.complaint = cls.initialize_backend(ComplaintBackend)
         # Workaround to make orga and presider info available for calls into MLBackend.
         cls.ml.orga_info = lambda rs, persona_id: cls.event.orga_info(  # type: ignore[attr-defined]
-            rs.sessionkey, persona_id)
+            rs.sessionkey, persona_id
+        )
         cls.ml.presider_info = lambda rs, persona_id: cls.assembly.presider_info(  # type: ignore[attr-defined]
-            rs.sessionkey, persona_id)
+            rs.sessionkey, persona_id
+        )
         cls.translations = setup_translations(cls.conf)
 
     def setUp(self) -> None:
@@ -502,10 +529,14 @@ class BackendTest(CdEDBTest):
     def login(self, user: UserIdentifier, *, ip: str = "127.0.0.0") -> Optional[str]:
         user = get_user(user)
         if user["id"] is None:
-            raise RuntimeError("Anonymous users not supported for backend tests."  # pragma: no cover
-                               " Pass `ANONYMOUS` in place of `self.key` instead.")
-        self.key = cast(RequestState, self.core.login(
-            ANONYMOUS, user['username'], user['password'], ip))
+            raise RuntimeError(
+                "Anonymous users not supported for backend tests."  # pragma: no cover
+                " Pass `ANONYMOUS` in place of `self.key` instead."
+            )
+        self.key = cast(
+            RequestState,
+            self.core.login(ANONYMOUS, user['username'], user['password'], ip),
+        )
         if self.key:
             self.user = user
         else:
@@ -546,8 +577,9 @@ class BackendTest(CdEDBTest):
         users = {get_user(i)["id"] for i in identifiers}
         return self.user.get("id", -1) in users
 
-    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], realm: str,
-                       **kwargs: Any) -> None:
+    def assertLogEqual(
+        self, log_expectation: Sequence[CdEDBObject], realm: str, **kwargs: Any
+    ) -> None:
         """Helper to compare a log expectation to the actual thing."""
         logs: dict[str, tuple[Callable[..., CdEDBLog], type[GenericLogFilter]]] = {
             'core': (self.core.retrieve_log, CoreLogFilter),
@@ -590,8 +622,12 @@ class BackendTest(CdEDBTest):
                         exp_entry['ctime'] = log_entry['ctime']
         self.assertEqual(log, tuple(log_expectation))
 
-    def assertDictEqual(self, dict1: Mapping[Any, object], dict2: Mapping[Any, object],
-                        msg: str | None = None) -> None:
+    def assertDictEqual(
+        self,
+        dict1: Mapping[Any, object],
+        dict2: Mapping[Any, object],
+        msg: str | None = None,
+    ) -> None:
         """Helper to get more readable diffs of long dicts.
 
         This is useful since unittest by default outputs a text-based diff, while we
@@ -602,8 +638,10 @@ class BackendTest(CdEDBTest):
         super().assertDictEqual(*self._generate_diff_dicts(dict1, dict2), msg)
 
     @staticmethod
-    def _generate_diff_dicts(dict1: Mapping[Any, object], dict2: Mapping[Any, object],
-                             ) -> tuple[CdEDBObject, CdEDBObject]:
+    def _generate_diff_dicts(
+        dict1: Mapping[Any, object],
+        dict2: Mapping[Any, object],
+    ) -> tuple[CdEDBObject, CdEDBObject]:
         """Helper to extract differences from longer dicts.
 
         :return: two dicts containing only the differences between the input dicts.
@@ -623,8 +661,10 @@ class BackendTest(CdEDBTest):
         return res1, res2
 
     @classmethod
-    def initialize_raw_backend(cls, backendcls: type[SessionBackend],
-                               ) -> SessionBackend:
+    def initialize_raw_backend(
+        cls,
+        backendcls: type[SessionBackend],
+    ) -> SessionBackend:
         return backendcls()
 
     @classmethod
@@ -643,6 +683,7 @@ class BrowserTest(CdEDBTest):
     We instantiate a real (development) server for this usecase as a bare WSGI
     application won't do the trick.
     """
+
     serverProcess: subprocess.Popen[bytes] | None = None
 
     @classmethod
@@ -651,17 +692,18 @@ class BrowserTest(CdEDBTest):
         # pass the cdedb config path to the subprocess
         cls.serverProcess = subprocess.Popen(
             ['python3', '-m', 'cdedb', 'dev', 'serve', '--test'],
-            stderr=subprocess.DEVNULL, env=os.environ.copy())
+            stderr=subprocess.DEVNULL,
+            env=os.environ.copy(),
+        )
         for _ in range(42):
             try:
-                response = urllib.request.urlopen("http://localhost:5000/",
-                                                  timeout=.1)
+                response = urllib.request.urlopen("http://localhost:5000/", timeout=0.1)
                 if response.status == 200:
                     break
             except urllib.error.URLError:
-                time.sleep(.1)
+                time.sleep(0.1)
             except TimeoutError:
-                time.sleep(.1)
+                time.sleep(0.1)
         else:
             raise RuntimeError('Test server failed to start.')  # pragma: no cover
 
@@ -984,13 +1026,19 @@ def get_user(user: UserIdentifier) -> UserObject:
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def as_users(*users: UserIdentifier, maintain_data: bool = False,
-             ) -> Callable[[Callable[..., None]], Callable[..., None]]:
+def as_users(
+    *users: UserIdentifier,
+    maintain_data: bool = False,
+) -> Callable[[Callable[..., None]], Callable[..., None]]:
     """Decorate a test to run it as the specified user(s)."""
+
     def wrapper(fun: Callable[..., None]) -> Callable[..., None]:
         @functools.wraps(fun)
-        def new_fun(self: BackendTest | FrontendTest, *args: Any, **kwargs: Any,
-                    ) -> None:
+        def new_fun(
+            self: BackendTest | FrontendTest,
+            *args: Any,
+            **kwargs: Any,
+        ) -> None:
             for i, user in enumerate(users):
                 with self.subTest(user=user):
                     if i > 0:
@@ -1002,29 +1050,37 @@ def as_users(*users: UserIdentifier, maintain_data: bool = False,
                             self.setUp()
                     self.login(user)
                     fun(self, *args, **kwargs)
+
         return new_fun
+
     return wrapper
 
 
 def admin_views(*views: str) -> Callable[[F], F]:
     """Decorate a test to set different initial admin views."""
+
     def decorator(fun: F) -> F:
         @functools.wraps(fun)
         def new_fun(self: FrontendTest, *args: Any, **kwargs: Any) -> Any:
             self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(views))
             return fun(self, *args, **kwargs)
+
         return cast(F, new_fun)
+
     return decorator
 
 
 def prepsql(sql: str, verbose: int = 0) -> Callable[[F], F]:
     """Decorate a test to run some arbitrary SQL-code beforehand."""
+
     def decorator(fun: F) -> F:
         @functools.wraps(fun)
         def new_fun(*args: Any, **kwargs: Any) -> Any:
             execsql(sql, verbose=verbose)
             return fun(*args, **kwargs)
+
         return cast(F, new_fun)
+
     return decorator
 
 
@@ -1055,6 +1111,7 @@ class FrontendTest(BackendTest):
     All webpages encountered during testing can be saved to a temporary
     directory by specifying `SCRAP_ENCOUNTERED_PAGES` as environment variable.
     """
+
     lang = "de"
     app: ClassVar[webtest.TestApp]
     gettext: "staticmethod[[str], str]"
@@ -1065,7 +1122,8 @@ class FrontendTest(BackendTest):
         'REMOTE_ADDR': "127.0.0.0",
         'HTTP_HOST': "localhost",
         'SERVER_PROTOCOL': "HTTP/1.1",
-        'wsgi.url_scheme': 'https'}
+        'wsgi.url_scheme': 'https',
+    }
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -1122,26 +1180,32 @@ class FrontendTest(BackendTest):
             # path without host but with query string - capped at 64 chars
             # To enhance readability, we mark most chars as safe. All special chars are
             # allowed in linux file paths, but sadly windows is more restrictive...
-            url = urllib.parse.quote(
-                self.response.request.path_qs, safe='/;@&=+$,~')[:64]
+            url = urllib.parse.quote(self.response.request.path_qs, safe='/;@&=+$,~')[
+                :64
+            ]
             # since / chars are forbidden in file paths, we replace them by _
             url = url.replace('/', '_')
             # create a temporary file in scrap_path with url as a prefix
             # persisting after process completion and dump the response.
-            with tempfile.NamedTemporaryFile(dir=self.scrap_path, prefix=f'{url}.',
-                                             delete=False) as f:
+            with tempfile.NamedTemporaryFile(
+                dir=self.scrap_path, prefix=f'{url}.', delete=False
+            ) as f:
                 f.write(self.response.body)
 
-    def _log_generation_time(self, response: Optional[webtest.TestResponse] = None,
-                             ) -> None:
+    def _log_generation_time(
+        self,
+        response: Optional[webtest.TestResponse] = None,
+    ) -> None:
         if response is None:
             response = self.response
         # record performance information during test runs
         logger = logging.getLogger("cdedb.timing")
         msg = "{} {} {} {}".format(
-                response.request.path, response.request.method,
-                response.headers.get('X-Generation-Time'),
-                response.request.query_string)
+            response.request.path,
+            response.request.method,
+            response.headers.get('X-Generation-Time'),
+            response.request.query_string,
+        )
         logger.debug(msg)
 
     def get(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
@@ -1157,8 +1221,14 @@ class FrontendTest(BackendTest):
         if self.response != oldresponse:
             self._log_generation_time(oldresponse)
 
-    def assertRedirect(self, url: str, *args: Any, target_url: str,
-                       verbose: bool = False, **kwargs: Any) -> webtest.TestResponse:
+    def assertRedirect(
+        self,
+        url: str,
+        *args: Any,
+        target_url: str,
+        verbose: bool = False,
+        **kwargs: Any,
+    ) -> webtest.TestResponse:
         """Checck that a GET-request to the url returns a redirect to the target url."""
         response: webtest.TestResponse = self.app.get(url, *args, **kwargs)
         self.assertLessEqual(300, response.status_int)
@@ -1167,9 +1237,17 @@ class FrontendTest(BackendTest):
         self.assertIn(target_url, response)
         return response
 
-    def post(self, url: str, params: dict[str, Any], *args: Any, verbose: bool = False,
-             evade_anti_csrf: bool = True, csrf_token_name: str = ANTI_CSRF_TOKEN_NAME,
-             csrf_token_payload: str = ANTI_CSRF_TOKEN_PAYLOAD, **kwargs: Any) -> None:
+    def post(
+        self,
+        url: str,
+        params: dict[str, Any],
+        *args: Any,
+        verbose: bool = False,
+        evade_anti_csrf: bool = True,
+        csrf_token_name: str = ANTI_CSRF_TOKEN_NAME,
+        csrf_token_payload: str = ANTI_CSRF_TOKEN_PAYLOAD,
+        **kwargs: Any,
+    ) -> None:
         """Directly send a POST-request.
 
         Note that most of our POST-handlers require an Anti-CSRF token,
@@ -1184,16 +1262,26 @@ class FrontendTest(BackendTest):
             urls = urlmap.bind(self.app_extra_environ["HTTP_HOST"])
             endpoint, _ = urls.match(url, method="POST")
             params[csrf_token_name] = self.app.app.encode_anti_csrf_token(
-                endpoint, csrf_token_name, csrf_token_payload,
-                persona_id=self.user['id'])
+                endpoint,
+                csrf_token_name,
+                csrf_token_payload,
+                persona_id=self.user['id'],
+            )
         self.response = self.app.post(url, params, *args, **kwargs)
         self.follow()
         self.basic_validate(verbose=verbose)
 
-    def submit(self, form: webtest.Form, button: str = "submitform", *,
-               check_notification: bool = True, check_button_attrs: bool = False,
-               verbose: bool = False, value: Optional[str] = None,
-               check_mandatory_filled: bool = True) -> None:
+    def submit(
+        self,
+        form: webtest.Form,
+        button: str = "submitform",
+        *,
+        check_notification: bool = True,
+        check_button_attrs: bool = False,
+        verbose: bool = False,
+        value: Optional[str] = None,
+        check_mandatory_filled: bool = True,
+    ) -> None:
         """Submit a form.
 
         If the form has multiple submit buttons, they can be differentiated
@@ -1218,7 +1306,8 @@ class FrontendTest(BackendTest):
                 field: webtest.forms.Field = unwrap(field_list)
                 if "required" in field.attrs:
                     self.assertNotEqual(
-                        field.value, "", f"Required field {fieldname} left empty!")
+                        field.value, "", f"Required field {fieldname} left empty!"
+                    )
         # This is a workaround for the fact, that webtest does not care about the
         # `formaction` and `formmethod` atributes on submit buttons.
         if check_button_attrs and button:
@@ -1230,7 +1319,8 @@ class FrontendTest(BackendTest):
         method = form.method
         if value and not button:
             raise ValueError(
-                "Cannot specify button value without specifying button name.")  # pragma: no cover
+                "Cannot specify button value without specifying button name."
+            )  # pragma: no cover
         if not form.get(button, index=0, default=None):
             self.fail(f"No submit button {button!r} found.")
         self.response = form.submit(button, value=value)
@@ -1238,9 +1328,14 @@ class FrontendTest(BackendTest):
         self.basic_validate(verbose=verbose)
         if method == "POST" and check_notification:
             # check that we acknowledged the POST with a notification
-            self.assertNotification(ntype='success',
-                                    msg=("No success notification found in"
-                                         + self.response.text if verbose else None))
+            self.assertNotification(
+                ntype='success',
+                msg=(
+                    "No success notification found in" + self.response.text
+                    if verbose
+                    else None
+                ),
+            )
 
     def traverse(self, *links: LinkIdentifier, verbose: bool = False) -> None:
         """Follow a sequence of links, described by their kwargs.
@@ -1274,8 +1369,9 @@ class FrontendTest(BackendTest):
             self.follow()
             self.basic_validate(verbose=verbose)
 
-    def login(self, user: UserIdentifier, *,
-              ip: str = "", verbose: bool = False) -> Optional[str]:
+    def login(
+        self, user: UserIdentifier, *, ip: str = "", verbose: bool = False
+    ) -> Optional[str]:
         """Log in as the given user.
 
         :param verbose: If True display additional debug information.
@@ -1287,8 +1383,12 @@ class FrontendTest(BackendTest):
             f = self.response.forms['loginform']
             f['username'] = user['username']
             f['password'] = user['password']
-            self.submit(f, check_notification=False, verbose=verbose,
-                        check_mandatory_filled=False)
+            self.submit(
+                f,
+                check_notification=False,
+                verbose=verbose,
+                check_mandatory_filled=False,
+            )
         self.key = self.app.cookies.get('sessionkey', None)
         if not self.key:
             self.user = USER_DICT["anonymous"]
@@ -1301,10 +1401,16 @@ class FrontendTest(BackendTest):
         :param allow_anonymous: If False, this will throw an error if the current user
             is anonymous..
         """
+
         def _logout() -> None:
             f = self.response.forms['logoutform']
-            self.submit(f, check_notification=False, verbose=verbose,
-                        button="submitlogout", check_mandatory_filled=False)
+            self.submit(
+                f,
+                check_notification=False,
+                verbose=verbose,
+                button="submitlogout",
+                check_mandatory_filled=False,
+            )
 
         if allow_anonymous:
             if not self.user_in("anonymous"):
@@ -1327,8 +1433,9 @@ class FrontendTest(BackendTest):
             yield
         self.response = saved_response
 
-    def admin_view_profile(self, user: UserIdentifier, check: bool = True,
-                           verbose: bool = False) -> None:
+    def admin_view_profile(
+        self, user: UserIdentifier, check: bool = True, verbose: bool = False
+    ) -> None:
         """Shortcut to use the admin quicksearch to navigate to a user profile.
 
         This fails if the logged in user is not a `core_admin` or has the
@@ -1345,9 +1452,13 @@ class FrontendTest(BackendTest):
         if check:
             self.assertTitle(u['default_name_format'])
 
-    def realm_admin_view_profile(self, user: str, realm: str,
-                                 check: bool = True, verbose: bool = False,
-                                 ) -> None:
+    def realm_admin_view_profile(
+        self,
+        user: str,
+        realm: str,
+        check: bool = True,
+        verbose: bool = False,
+    ) -> None:
         """Shortcut to a user profile using realm-based usersearch.
 
         This fails if the logged in user is not an admin of the given realm
@@ -1357,9 +1468,9 @@ class FrontendTest(BackendTest):
         :param verbose: If True display additional debug information.
         """
         u = USER_DICT[user]
-        self.traverse({'href': f'/{realm}/$'},
-                      {'href': f'/{realm}/search/user'},
-                      verbose=verbose)
+        self.traverse(
+            {'href': f'/{realm}/$'}, {'href': f'/{realm}/search/user'}, verbose=verbose
+        )
         id_field = 'personas.id'
         f = self.response.forms['queryform']
         f['qsel_' + id_field].checked = True
@@ -1375,7 +1486,8 @@ class FrontendTest(BackendTest):
         Get the content of mails that were sent, using the E-Mail-notification.
         """
         elements = self.response.lxml.xpath(
-            "//div[@class='alert alert-info']/span/text()")
+            "//div[@class='alert alert-info']/span/text()"
+        )
 
         def _extract_path(s: str) -> Optional[str]:
             regex = r"E-Mail als (.*) auf der Festplatte gespeichert."
@@ -1404,7 +1516,9 @@ class FrontendTest(BackendTest):
         for line in self.fetch_mail_content(index).splitlines():
             if line.startswith(f'[{num}] '):
                 return line.split(maxsplit=1)[-1]
-        raise ValueError(f"Link [{num}] not found in mail [{index}].")  # pragma: no cover
+        raise ValueError(
+            f"Link [{num}] not found in mail [{index}]."
+        )  # pragma: no cover
 
     def fetch_orga_token(self) -> tuple[int, str]:
         new_token = self.response.lxml.xpath("//pre[@id='neworgatoken']/text()")[0]
@@ -1419,8 +1533,9 @@ class FrontendTest(BackendTest):
         The actual title has a prefix, which is checked automatically.
         :param exact: If False, presence as substring suffices.
         """
-        components = tuple(x.strip() for x in self.response.lxml.xpath(
-            '/html/head/title/text()'))
+        components = tuple(
+            x.strip() for x in self.response.lxml.xpath('/html/head/title/text()')
+        )
         self.assertEqual("CdEDB –", components[0][:7])
         normalized = re.sub(r'\s+', ' ', components[0][7:].strip())
         if exact:
@@ -1429,7 +1544,11 @@ class FrontendTest(BackendTest):
             self.assertIn(title.strip(), normalized)
 
     def _get_nodes(
-            self, selector: str, *, check_exists: bool = True, root_node: "lxml.html.Element | None" = None
+        self,
+        selector: str,
+        *,
+        check_exists: bool = True,
+        root_node: "lxml.html.Element | None" = None,
     ) -> list["lxml.html.Element"]:
         """Retrieve all HTML nodes matching the given css selector."""
         if not self.response.content_type == "text/html":
@@ -1452,14 +1571,20 @@ class FrontendTest(BackendTest):
         try:
             node = nodes[index]
         except IndexError:
-            self.fail(f"Invalid index {index} for element {selector!r}. Found {len(nodes)} elements.")
+            self.fail(
+                f"Invalid index {index} for element {selector!r}. Found {len(nodes)} elements."
+            )
         return node.text_content()
 
     def _get_content(self, selector: str, *, check_exists: bool, index: int) -> str:
         """Like `get_content` but accepts any css selector."""
-        return self._normalize_whitespace(self._get_raw_content(selector, check_exists=check_exists, index=index))
+        return self._normalize_whitespace(
+            self._get_raw_content(selector, check_exists=check_exists, index=index)
+        )
 
-    def get_content(self, div: str = "content", *, check_exists: bool = True, index: int = 0) -> str:
+    def get_content(
+        self, div: str = "content", *, check_exists: bool = True, index: int = 0
+    ) -> str:
         """Retrieve the normalized text content of the (nth) element with the given id."""
         return self._get_content(f"#{div}", check_exists=check_exists, index=index)
 
@@ -1492,8 +1617,15 @@ class FrontendTest(BackendTest):
             # Input checkbox.
             self.assertEqual(status, checkbox.get('checked') == 'checked')
 
-    def assertPresence(self, s: str, *, div: str = "content", regex: bool = False,
-                       exact: bool = False, msg: Optional[str] = None) -> None:
+    def assertPresence(
+        self,
+        s: str,
+        *,
+        div: str = "content",
+        regex: bool = False,
+        exact: bool = False,
+        msg: Optional[str] = None,
+    ) -> None:
         """Assert that a string is present in the element with the given id.
 
         The checked content is whitespace-normalized before comparison.
@@ -1509,8 +1641,9 @@ class FrontendTest(BackendTest):
         else:
             self.assertIn(s.strip(), content, msg=msg)
 
-    def assertNonPresence(self, s: Optional[str], *, div: str = "content",
-                          check_div: bool = True) -> None:
+    def assertNonPresence(
+        self, s: Optional[str], *, div: str = "content", check_div: bool = True
+    ) -> None:
         """Assert that a string is not present in the element with the given id.
 
         :param check_div: If True, this assertion fails if the div is not found.
@@ -1521,11 +1654,15 @@ class FrontendTest(BackendTest):
         content = self.get_content(div, check_exists=check_div)
         self.assertNotIn(s.strip(), content)
 
-    def _assertNodeHasClass(self, node: "lxml.html.Element", html_class: str, msg: str | None = None) -> None:
+    def _assertNodeHasClass(
+        self, node: "lxml.html.Element", html_class: str, msg: str | None = None
+    ) -> None:
         default_message = f"Node <{node.tag} id={node.get('id')}> does not have class {html_class!r}: {set(node.classes)!r}."
         self.assertIn(html_class, node.classes, msg=msg or default_message)
 
-    def _assertNodeNotHasClass(self, node: "lxml.html.Element", html_class: str, msg: str | None = None) -> None:
+    def _assertNodeNotHasClass(
+        self, node: "lxml.html.Element", html_class: str, msg: str | None = None
+    ) -> None:
         default_message = f"Node <{node.tag} id={node.get('id')}> unexpectedly has class {html_class!r}: {set(node.classes)!r}."
         self.assertNotIn(html_class, node.classes, msg=msg or default_message)
 
@@ -1561,8 +1698,9 @@ class FrontendTest(BackendTest):
         for selector in selectors:
             self.assertNotHasClass(selector, "softhide")
 
-    def assertTextContainedInElement(self, search_text: str, element_tag: str,
-                                     div: str = "content") -> None:
+    def assertTextContainedInElement(
+        self, search_text: str, element_tag: str, div: str = "content"
+    ) -> None:
         """
         Assert that `search_text` is present and is contained in a specific HTML tag.
 
@@ -1579,7 +1717,8 @@ class FrontendTest(BackendTest):
         :param div: HTML id of the outer container element to search for `search_text`
         """
         elements_with_searchtext = self.response.lxml.xpath(
-            f'//*[@id="{div}"]//*[text()[contains(.,"{search_text}")]]')
+            f'//*[@id="{div}"]//*[text()[contains(.,"{search_text}")]]'
+        )
         if len(elements_with_searchtext) == 0:
             self.fail(f"No HTML element found, containing the text '{search_text}'")
         num_searched_elements_with_matching_ancestor = sum(
@@ -1591,15 +1730,18 @@ class FrontendTest(BackendTest):
             if len(elements_with_searchtext) == 1:
                 self.fail(
                     f"Text '{search_text}' found, but not contained in a"
-                    f" <{element_tag}>")
+                    f" <{element_tag}>"
+                )
             else:
                 self.fail(
                     f"Text '{search_text}' found {len(elements_with_searchtext)} times,"
                     f" but only {num_searched_elements_with_matching_ancestor}"
-                    f" of them are contained in a <{element_tag}>")
+                    f" of them are contained in a <{element_tag}>"
+                )
 
-    def assertTextContainedInNthElement(self, search_text: str, element_tag: str,
-                                        n: int, div: str = "content") -> None:
+    def assertTextContainedInNthElement(
+        self, search_text: str, element_tag: str, n: int, div: str = "content"
+    ) -> None:
         """
         Assert that `search_text` is contained in an n-th sibling `tag` HTML element
 
@@ -1621,35 +1763,49 @@ class FrontendTest(BackendTest):
         :param div: HTML id of the outer container element to search for `search_text`
         """
         elements_with_searchtext = self.response.lxml.xpath(
-            f'//*[@id="{div}"]//*[text()[contains(.,"{search_text}")]]')
+            f'//*[@id="{div}"]//*[text()[contains(.,"{search_text}")]]'
+        )
         if len(elements_with_searchtext) == 0:
             self.fail(f"No HTML element containing the text '{search_text}' found")
         for element_with_searchtext in elements_with_searchtext:
             matching_ancestors = element_with_searchtext.xpath(
-                f'./ancestor-or-self::{element_tag}[1]')
+                f'./ancestor-or-self::{element_tag}[1]'
+            )
             if len(matching_ancestors) == 0:
-                self.fail(f"Text '{search_text}' found, but at least one occurance is "
-                          f"not in a <{element_tag}>")
+                self.fail(
+                    f"Text '{search_text}' found, but at least one occurance is "
+                    f"not in a <{element_tag}>"
+                )
             closest_matching_ancestor = matching_ancestors[0]
             if n < 0:
                 following_siblings = len(
-                    closest_matching_ancestor.xpath('./following-sibling::*'))
+                    closest_matching_ancestor.xpath('./following-sibling::*')
+                )
                 actual_n = -1 - following_siblings
                 if actual_n != n:
-                    self.fail(f"Text '{search_text}' found, but at least one occurance "
-                              f"is in {actual_n}th sibling <{element_tag}> "
-                              f"(expected {n})")
+                    self.fail(
+                        f"Text '{search_text}' found, but at least one occurance "
+                        f"is in {actual_n}th sibling <{element_tag}> "
+                        f"(expected {n})"
+                    )
             else:
                 preceding_siblings = len(
-                    closest_matching_ancestor.xpath('./preceding-sibling::*'))
+                    closest_matching_ancestor.xpath('./preceding-sibling::*')
+                )
                 actual_n = preceding_siblings
                 if actual_n != n:
-                    self.fail(f"Text '{search_text}' found, but at least one occurance "
-                              f"is in {actual_n}th sibling <{element_tag}> "
-                              f"(expected {n})")
+                    self.fail(
+                        f"Text '{search_text}' found, but at least one occurance "
+                        f"is in {actual_n}th sibling <{element_tag}> "
+                        f"(expected {n})"
+                    )
 
-    def getFullTextOfElementWithText(self, search_text: str, element_tag: str, div: str,
-                                     ) -> str:
+    def getFullTextOfElementWithText(
+        self,
+        search_text: str,
+        element_tag: str,
+        div: str,
+    ) -> str:
         """Returns the plain text content of the element containing `search_text`.
 
         Fails if the search_text is found in more than one HTML element.
@@ -1662,17 +1818,25 @@ class FrontendTest(BackendTest):
         :param div: HTML id of the outer container element to search for `search_text`
         """
         matching_elements = self.response.lxml.xpath(
-                f'//*[@id="{div}"]//{element_tag}[contains(.,"{search_text}")]')
+            f'//*[@id="{div}"]//{element_tag}[contains(.,"{search_text}")]'
+        )
         if len(matching_elements) == 0:
             self.fail(f"Text '{search_text}' not found")
         elif len(matching_elements) > 1:
-            self.fail(f"Text '{search_text}' found in {len(matching_elements)} "
-                      "(more than one) elements")
+            self.fail(
+                f"Text '{search_text}' found in {len(matching_elements)} "
+                "(more than one) elements"
+            )
         return ''.join(matching_elements[0].itertext())
 
-    def assertNotification(self, ntext: Optional[str] = None,
-                           ntype: Optional[str] = None, *, static: bool = False,
-                           msg: Optional[str] = None) -> None:
+    def assertNotification(
+        self,
+        ntext: Optional[str] = None,
+        ntype: Optional[str] = None,
+        *,
+        static: bool = False,
+        msg: Optional[str] = None,
+    ) -> None:
         """Check for a notification containing `ntext` under all `ntype` notifications.
 
         :param ntext: Substring to be present in the notification's message.
@@ -1692,7 +1856,9 @@ class FrontendTest(BackendTest):
         if not notifications:
             other_selector = f"div#{div} div.alert"
             msg = msg or f"Couldn't find any such notification: {selector!r}."
-            if other_notifications := self._get_nodes(other_selector, check_exists=False):
+            if other_notifications := self._get_nodes(
+                other_selector, check_exists=False
+            ):
                 msg += "\nI found these notifications instead:\n"
                 msg += "\n".join(
                     f"\t{' '.join(sorted(node.classes))}:"
@@ -1718,8 +1884,12 @@ class FrontendTest(BackendTest):
         self.assertPresence(name, div="displayname", exact=True)
 
     def assertValidationError(
-            self, fieldname: str, message: str = "", index: Optional[int] = None,
-            notification: Optional[str] = "Validierung fehlgeschlagen") -> None:
+        self,
+        fieldname: str,
+        message: str = "",
+        index: Optional[int] = None,
+        notification: Optional[str] = "Validierung fehlgeschlagen",
+    ) -> None:
         """
         Check for a specific form input field to be highlighted as .has-error
         and a specific error message to be shown near the field. Also check that an
@@ -1736,12 +1906,20 @@ class FrontendTest(BackendTest):
             .has-error container or error message is not found
         """
         self._assertValidationComplaint(
-            kind="error", fieldname=fieldname, message=message, index=index,
-            notification=notification)
+            kind="error",
+            fieldname=fieldname,
+            message=message,
+            index=index,
+            notification=notification,
+        )
 
     def assertValidationWarning(
-            self, fieldname: str, message: str = "", index: Optional[int] = None,
-            notification: Optional[str] = "Eingaben scheinen fehlerhaft") -> None:
+        self,
+        fieldname: str,
+        message: str = "",
+        index: Optional[int] = None,
+        notification: Optional[str] = "Eingaben scheinen fehlerhaft",
+    ) -> None:
         """
         Check for a specific form input field to be highlighted as .has-warning
         and a specific warning message to be shown near the field. Also check that an
@@ -1758,12 +1936,21 @@ class FrontendTest(BackendTest):
             .has-warning container or error message is not found
         """
         self._assertValidationComplaint(
-            kind="warning", fieldname=fieldname, message=message, index=index,
-            notification=notification)
+            kind="warning",
+            fieldname=fieldname,
+            message=message,
+            index=index,
+            notification=notification,
+        )
 
     def _assertValidationComplaint(
-            self, kind: str, fieldname: str, message: str, index: Optional[int],
-            notification: Optional[str]) -> None:
+        self,
+        kind: str,
+        fieldname: str,
+        message: str,
+        index: Optional[int],
+        notification: Optional[str],
+    ) -> None:
         """Common helper for assertValidationError and assertValidationWarning."""
         if kind == "error":
             alert_type = "danger"
@@ -1790,7 +1977,8 @@ class FrontendTest(BackendTest):
             except IndexError:  # pragma: no cover
                 raise self.failureException(
                     f"Input with name {f!r} and index {index} not found."
-                    f" {len(nodes)} inputs with name {f!r} found.") from None
+                    f" {len(nodes)} inputs with name {f!r} found."
+                ) from None
 
         error_containers = [
             ancestor.text_content()
@@ -1805,11 +1993,18 @@ class FrontendTest(BackendTest):
 
         normalized = [re.sub(r'[\n\s]+', ' ', content) for content in error_containers]
         if not any(message in content for content in normalized):
-            self.fail(f"Expected error message not found near input with name {f!r}:\n{normalized}")
+            self.fail(
+                f"Expected error message not found near input with name {f!r}:\n{normalized}"
+            )
 
-    def assertNoLink(self, href_pattern: Optional[str | Pattern[str]] = None,
-                     tag: str = 'a', href_attr: str = 'href',
-                     content: Optional[str] = None, verbose: bool = False) -> None:
+    def assertNoLink(
+        self,
+        href_pattern: Optional[str | Pattern[str]] = None,
+        tag: str = 'a',
+        href_attr: str = 'href',
+        content: Optional[str] = None,
+        verbose: bool = False,
+    ) -> None:
         """Assert that no tag that matches specific criteria is found. Possible
         criteria include:
 
@@ -1842,10 +2037,12 @@ class FrontendTest(BackendTest):
             printlog("  Link found")  # pragma: no cover
             self.fail(
                 f"Tag '{tag}' with {href_attr} == {element[href_attr]}"
-                f" and content '{el_content}' has been found.")
+                f" and content '{el_content}' has been found."
+            )
 
-    def assertLogEqual(self, log_expectation: Sequence[CdEDBObject], realm: str,
-                       **kwargs: Any) -> None:
+    def assertLogEqual(
+        self, log_expectation: Sequence[CdEDBObject], realm: str, **kwargs: Any
+    ) -> None:
         saved_response = self.response
 
         # Check raw log.
@@ -1863,8 +2060,12 @@ class FrontendTest(BackendTest):
         entity_ids = [e_id for e in log_expectation if (e_id := e.get(entity_key))]
         specific_log = False
         if realm == "event":
-            entities = {event_id: event.to_database() for event_id, event
-                        in self.event.get_events(self.key, entity_ids).items()}
+            entities = {
+                event_id: event.to_database()
+                for event_id, event in self.event.get_events(
+                    self.key, entity_ids
+                ).items()
+            }
             if event_id := kwargs.get('event_id'):
                 specific_log = True
                 self.get(f"/event/event/{event_id}/log")
@@ -1878,8 +2079,10 @@ class FrontendTest(BackendTest):
             else:
                 self.get("/assembly/log")
         elif realm == "ml":
-            entities = {ml_id: ml.to_database() for ml_id, ml
-                        in self.ml.get_mailinglists(self.key, entity_ids).items()}
+            entities = {
+                ml_id: ml.to_database()
+                for ml_id, ml in self.ml.get_mailinglists(self.key, entity_ids).items()
+            }
             if ml_id := kwargs.get('mailinglist_id'):  # TODO: coverage
                 self.get(f"/ml/mailinglist/{ml_id}/log")
                 specific_log = True
@@ -1915,18 +2118,24 @@ class FrontendTest(BackendTest):
             if entry['persona_id']:
                 name1 = make_persona_name(personas[entry['persona_id']])
                 name2 = make_persona_name(
-                    personas[entry['persona_id']], include_nickname=True,
+                    personas[entry['persona_id']],
+                    include_nickname=True,
                 )
                 self.assertPresence(
                     f'({re.escape(name1)}|{re.escape(name2)})',
-                    regex=True, div=f"{i}-{log_id}")
+                    regex=True,
+                    div=f"{i}-{log_id}",
+                )
             if (entity_id := entry.get(entity_key)) and not specific_log:
                 self.assertPresence(entities[entity_id]['title'], div=f"{i}-{log_id}")
 
         self.response = saved_response
 
-    def log_pagination(self, title: str, logs: tuple[tuple[int, CdEIntEnum], ...],
-                       ) -> None:
+    def log_pagination(
+        self,
+        title: str,
+        logs: tuple[tuple[int, CdEIntEnum], ...],
+    ) -> None:
         """Helper function to test the logic of the log pagination.
 
         This should be called from every frontend log, to ensure our pagination
@@ -1938,8 +2147,7 @@ class FrontendTest(BackendTest):
         # check the landing page
         f = self.response.forms['logshowform']
         total = len(logs)
-        self._log_subroutine(title, logs, start=1,
-                             end=total if total < 50 else 50)
+        self._log_subroutine(title, logs, start=1, end=total if total < 50 else 50)
         # check if the log page numbers are proper (no 0th page, no last+1 page)
         self.assertDivNotExists("#pagination-0")
         self.assertDivNotExists(f"#pagination-{str(total // 50 + 2)}")
@@ -1998,7 +2206,8 @@ class FrontendTest(BackendTest):
         self.traverse({'linkid': 'pagination-last'})
         self.assertNoLink(content='›')
         self._log_subroutine(
-            title, logs, start=length * ((total - 1) // length) + 1, end=total)
+            title, logs, start=length * ((total - 1) // length) + 1, end=total
+        )
 
         # tidy up the form
         f["offset"] = None
@@ -2022,22 +2231,30 @@ class FrontendTest(BackendTest):
         save = self.response
         self.response = f.submit("download", value="csv")
         self.assertIn('id;ctime;code;change_note;', self.response.text)
-        self.assertIn('persona_id;persona_id_family_name;persona_id_given_names;',
-                      self.response.text)
-        self.assertIn('submitted_by;submitted_by_family_name;submitted_by_given_names',
-                      self.response.text)
+        self.assertIn(
+            'persona_id;persona_id_family_name;persona_id_given_names;',
+            self.response.text,
+        )
+        self.assertIn(
+            'submitted_by;submitted_by_family_name;submitted_by_given_names',
+            self.response.text,
+        )
         self.response = save
 
-    def _log_subroutine(self, title: str,
-                        all_logs: tuple[tuple[int, CdEIntEnum], ...],
-                        start: int, end: int) -> None:
+    def _log_subroutine(
+        self,
+        title: str,
+        all_logs: tuple[tuple[int, CdEIntEnum], ...],
+        start: int,
+        end: int,
+    ) -> None:
         total = len(all_logs)
         self.assertTitle(f"{title} [{start}–{end} von {total}]")
 
         end = min(end, total)
 
         # adapt slicing to our count of log entries
-        logs = all_logs[start-1:end]
+        logs = all_logs[start - 1 : end]
         for index, log_entry in enumerate(logs, start=1):
             log_id, log_code = log_entry
             log_code_str = self.gettext(str(log_code))
@@ -2055,8 +2272,7 @@ class FrontendTest(BackendTest):
         :return: None
         """
         sidebar = self.response.html.find(id="sidebar-navigation")
-        present = {nav_point.get_text().strip()
-                   for nav_point in sidebar.find_all("a")}
+        present = {nav_point.get_text().strip() for nav_point in sidebar.find_all("a")}
         for nav_point in ins:
             self.assertPresence(nav_point, div='sidebar-navigation')
             saved_response = self.response
@@ -2068,8 +2284,11 @@ class FrontendTest(BackendTest):
         if present:
             self.fail(f"Unexpected sidebar elements '{present}' found.")
 
-    def check_create_archive_user(self, realm: str, data: Optional[CdEDBObject] = None,
-                                  ) -> None:
+    def check_create_archive_user(
+        self,
+        realm: str,
+        data: Optional[CdEDBObject] = None,
+    ) -> None:
         """Basic check for the user creation and archival functionality of each realm.
 
         :param data: realm-dependent data to use for the persona to be created
@@ -2086,15 +2305,20 @@ class FrontendTest(BackendTest):
             self.assertNonPresence(data.get('telephone'))
             self.assertNonPresence(data.get('country'))
 
-        self.traverse({'href': '/' + realm + '/$'},
-                      {'href': '/search/user'},
-                      {'href': '/user/create'})
-        merge_dicts(data, {
-            "username": 'zelda@example.cde',
-            "given_names": "Zelda",
-            "family_name": "Zeruda-Hime",
-            "notes": "some fancy talk",
-        })
+        self.traverse(
+            {'href': '/' + realm + '/$'},
+            {'href': '/search/user'},
+            {'href': '/user/create'},
+        )
+        merge_dicts(
+            data,
+            {
+                "username": 'zelda@example.cde',
+                "given_names": "Zelda",
+                "family_name": "Zeruda-Hime",
+                "notes": "some fancy talk",
+            },
+        )
         f = self.response.forms['newuserform']
         if f.get('country', default=None):
             self.assertEqual(f['country'].value, self.conf["DEFAULT_COUNTRY"])
@@ -2103,8 +2327,14 @@ class FrontendTest(BackendTest):
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
         for key, value in data.items():
-            if key not in {'birthday', 'telephone', 'mobile', 'country', 'country2',
-                           'gender'}:
+            if key not in {
+                'birthday',
+                'telephone',
+                'mobile',
+                'country',
+                'country2',
+                'gender',
+            }:
                 # Omit values with heavy formatting in the frontend here
                 self.assertPresence(value)
         # Now test archival
@@ -2143,8 +2373,9 @@ class FrontendTest(BackendTest):
         self.assertPresence('zeruda@example.cde')
         _check_deleted_data()
 
-    def _click_admin_view_button(self, label: str | Pattern[str],
-                                 current_state: Optional[bool] = None) -> None:
+    def _click_admin_view_button(
+        self, label: str | Pattern[str], current_state: Optional[bool] = None
+    ) -> None:
         """
         Helper function for checking the disableable admin views
 
@@ -2165,19 +2396,28 @@ class FrontendTest(BackendTest):
         f = self.response.forms['adminviewstoggleform']
         button = self.response.html.find(id="adminviewstoggleform").find(text=label)
         if not button:
-            raise KeyError(f"Admin view toggle with label {label!r} not found.")  # pragma: no cover
+            raise KeyError(
+                f"Admin view toggle with label {label!r} not found."
+            )  # pragma: no cover
         button = button.parent
         if current_state is not None:
             if current_state:
                 self.assertIn("active", button['class'])
             else:
                 self.assertNotIn("active", button['class'])
-        self.submit(f, button='view_specifier', check_button_attrs=False,
-                    value=button['value'])
+        self.submit(
+            f, button='view_specifier', check_button_attrs=False, value=button['value']
+        )
         return button
 
-    def join_worker_thread(self, worker_name: str, link: LinkIdentifier, *,
-                           realm: str = "cde", timeout: float = 2) -> None:
+    def join_worker_thread(
+        self,
+        worker_name: str,
+        link: LinkIdentifier,
+        *,
+        realm: str = "cde",
+        timeout: float = 2,
+    ) -> None:
         """Wait for the specified Worker thread to finish.
 
         :param realm: specify to which realm the Worker belongs. Currently only the
@@ -2191,13 +2431,16 @@ class FrontendTest(BackendTest):
         if worker:
             worker.join(timeout)
             if worker.is_alive():
-                self.fail(f"Worker {realm}/{worker_name} still active after {timeout}"
-                          f" seconds.")
+                self.fail(
+                    f"Worker {realm}/{worker_name} still active after {timeout}"
+                    f" seconds."
+                )
         self.traverse(link)
 
 
 class MultiAppFrontendTest(FrontendTest):
     """Subclass for testing multiple frontend instances simultaniously."""
+
     n: int = 2  # The number of instances that should be created.
     current_app: int  # Which instance is currently active 0 <= x < n
     apps: list[webtest.TestApp]
@@ -2252,7 +2495,9 @@ class MultiAppFrontendTest(FrontendTest):
         response.
         """
         if not 0 <= i < self.n:
-            raise ValueError(f"Invalid index. Must be between 0 and {self.n}.")  # pragma: no cover
+            raise ValueError(
+                f"Invalid index. Must be between 0 and {self.n}."
+            )  # pragma: no cover
         self.current_app = i
 
 
@@ -2277,6 +2522,7 @@ def make_cron_backend_proxy(cron: CronFrontend, backend: B) -> B:
             def wrapper(rs: RequestState, *args: Any, **kwargs: Any) -> Any:
                 rs = cron.make_request_state()
                 return attr(rs, *args, **kwargs)
+
             return wrapper
 
     return cast(B, CronBackendProxy())
@@ -2308,8 +2554,13 @@ class CronTest(CdEDBTest):
         cls.complaint = make_cron_backend_proxy(cls.cron, cls.cron.core.complaintproxy)
         cls._remaining_periodics = {
             job.cron['name']
-            for frontend in (cls.cron.core, cls.cron.cde, cls.cron.event,
-                             cls.cron.assembly, cls.cron.ml)
+            for frontend in (
+                cls.cron.core,
+                cls.cron.cde,
+                cls.cron.event,
+                cls.cron.assembly,
+                cls.cron.ml,
+            )
             for job in cls.cron.find_periodics(frontend)
         }
         cls._remaining_tests = {x for x in dir(cls) if x.startswith("test_")}
@@ -2319,7 +2570,8 @@ class CronTest(CdEDBTest):
         super().tearDownClass()
         if not cls._remaining_tests and cls._remaining_periodics:
             raise cls.failureException(
-                f"The following cron-periodics never ran: {cls._remaining_periodics}")
+                f"The following cron-periodics never ran: {cls._remaining_periodics}"
+            )
 
     def setUp(self) -> None:
         super().setUp()
@@ -2330,27 +2582,40 @@ class CronTest(CdEDBTest):
 
         def store_decorator(fun: F) -> F:
             @functools.wraps(fun)
-            def store_wrapper(rs: RequestState, name: str,
-                              data: CdEDBObject) -> CdEDBObject:
+            def store_wrapper(
+                rs: RequestState, name: str, data: CdEDBObject
+            ) -> CdEDBObject:
                 self.stores.append(StoreTrace(name, data))
                 return fun(rs, name, data)
+
             return cast(F, store_wrapper)
 
-        setattr(self.cron.core, "set_cron_store", store_decorator(
-            self.cron.core.set_cron_store))
+        setattr(
+            self.cron.core,
+            "set_cron_store",
+            store_decorator(self.cron.core.set_cron_store),
+        )
 
         def mail_decorator(front: AbstractFrontend) -> Callable[[F], F]:
             def the_decorator(fun: F) -> F:
                 @functools.wraps(fun)
-                def mail_wrapper(rs: RequestState, name: str,
-                                 *args: Any, **kwargs: Any) -> Optional[str]:
+                def mail_wrapper(
+                    rs: RequestState, name: str, *args: Any, **kwargs: Any
+                ) -> Optional[str]:
                     self.mails.append(MailTrace(front.realm, name, args, kwargs))
                     return fun(rs, name, *args, **kwargs)
+
                 return cast(F, mail_wrapper)
+
             return the_decorator
 
-        for frontend in (self.cron.core, self.cron.cde, self.cron.event,
-                         self.cron.assembly, self.cron.ml):
+        for frontend in (
+            self.cron.core,
+            self.cron.cde,
+            self.cron.event,
+            self.cron.assembly,
+            self.cron.ml,
+        ):
             setattr(frontend, "do_mail", mail_decorator(frontend)(frontend.do_mail))
 
     def execute(self, *args: Any, check_stores: bool = True) -> None:

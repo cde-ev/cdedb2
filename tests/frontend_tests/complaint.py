@@ -381,7 +381,7 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence("Version 1 von Charly Clown. 80 Zeichen.", div='entry4')
         self.assertPresence("Ersetzt am ", div='entry4')
         self.assertNonPresence("Gelöscht am ", div='entry4')
-        self.assertPresence("Anton Administrator: Ungünstige Wortwahl", div='entry4')
+        self.assertPresence("Anton Administrator. Ungünstige Wortwahl", div='entry4')
         self.assertPresence("lang und breit", div='entry4')
         self.assertPresence("Version 2 von Charly Clown. 77 Zeichen.", div='entry4')
         self.assertPresence("Version 3 von Charly Clown. 59 Zeichen.", div='entry4')

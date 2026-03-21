@@ -95,20 +95,19 @@
                             <br />
                             {% if version.dtime %}
                                 {% if loop.last %}
-                                    {% trans dtime=version.ctime|datetime(lang=lang),
-                                     deleted_by=util.persona_anchor(personas[version.submitted_by]),
-                                     dreason=version.dreason
-                                %}
-                                    Deleted at {{ dtime }} by {{ deleted_by }}: {{ dreason }}
-                                {% endtrans %}
-                                {% else %}
-                                    {% trans dtime=version.ctime|datetime(lang=lang),
-                                             deleted_by=util.persona_anchor(personas[version.submitted_by]),
-                                             dreason=version.dreason
+                                    {% trans dtime=version.dtime|datetime(lang=lang),
+                                             deleted_by=util.persona_anchor(personas[version.submitted_by])
                                     %}
-                                        Replaced at {{ dtime }} by {{ deleted_by }}: {{ dreason }}
+                                        Deleted at {{ dtime }} by {{ deleted_by }}.
+                                    {% endtrans %}
+                                {% else %}
+                                    {% trans dtime=version.dtime|datetime(lang=lang),
+                                             deleted_by=util.persona_anchor(personas[version.deleted_by])
+                                    %}
+                                        Replaced at {{ dtime }} by {{ deleted_by }}.
                                     {% endtrans %}
                                 {% endif %}
+                                {{ version.dreason }}
                             {% endif %}
                             </span>
                             {% if descriptions.get(version.id) %}

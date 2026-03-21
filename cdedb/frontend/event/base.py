@@ -273,6 +273,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         params['orga_view'] = orga_view
 
         params['ViolationFormat'] = models_cv.ViolationFormat
+        params["EVENT_ADMIN_ADDRESS"] = self.conf["EVENT_ADMIN_ADDRESS"]
 
         return super().render(
             rs, templatename, params=params, mandatory_fields=mandatory_fields

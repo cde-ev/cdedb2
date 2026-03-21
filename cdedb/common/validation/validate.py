@@ -2381,32 +2381,6 @@ def _past_event(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
     return val
 
 
-EVENT_COMMON_FIELDS: Mapping[str, Any] = {
-    'title': str,
-    'institution': const.PastInstitutions,
-    # Event shortnames do not actually need to be that short.
-    'shortname': Identifier,
-}
-
-EVENT_EXPOSED_OPTIONAL_FIELDS: Mapping[str, Any] = {
-    'is_visible': bool,
-    'is_course_list_visible': bool,
-    'is_course_state_visible': bool,
-    'use_additional_questionnaire': bool,
-    'registration_start': Optional[datetime.datetime],
-    'registration_soft_limit': Optional[datetime.datetime],
-    'registration_hard_limit': Optional[datetime.datetime],
-    'is_participant_list_visible': bool,
-    'is_course_assignment_visible': bool,
-    'is_cancelled': bool,
-    'iban': Optional[Accounts],
-    'orga_address': Optional[Email],
-    'lodge_field_id': Optional[ID],
-    'reimbursement_iban_field_id': Optional[ID],
-    'website_url': Optional[Url],
-    'notify_on_registration': const.NotifyOnRegistration,
-}
-
 EVENT_FREETEXT_FIELDS: Mapping[str, Any] = {
     'description': Optional[str],
     'notes': Optional[str],
@@ -2415,23 +2389,6 @@ EVENT_FREETEXT_FIELDS: Mapping[str, Any] = {
     'registration_text': Optional[str],
     'participant_info': Optional[str],
 }
-
-EVENT_EXPOSED_FIELDS = {
-    **EVENT_COMMON_FIELDS,
-    **EVENT_EXPOSED_OPTIONAL_FIELDS,
-    **EVENT_FREETEXT_FIELDS,
-}
-
-EVENT_OPTIONAL_FIELDS: Mapping[str, Any] = {
-    **EVENT_EXPOSED_OPTIONAL_FIELDS,
-    **EVENT_FREETEXT_FIELDS,
-    'orgas': set[ID],
-    'caretakers': set[ID],
-    'parts': Mapping,
-    'fields': Mapping,
-}
-
-EVENT_CREATION_OPTIONAL_FIELDS: TypeMapping = {'lodgement_groups': Mapping}
 
 
 def _optional_object_mapping_helper(
@@ -2474,34 +2431,30 @@ def _optional_object_mapping_helper(
     return ret
 
 
-@_add_typed_validator
+@_create_dataclass_validator(models_event.Event)
 def _event(
     val: Any, argname: str = "event", *, creation: bool = False, **kwargs: Any
-) -> Event:
+) -> CdEDBObject:
     """
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
     """
-    val = _mapping(val, argname, **kwargs)
     if creation:
         kwargs['event'] = None
 
-    if creation:
-        mandatory_fields = {**EVENT_COMMON_FIELDS}
-        optional_fields = {**EVENT_OPTIONAL_FIELDS, **EVENT_CREATION_OPTIONAL_FIELDS}
-    else:
-        mandatory_fields = {}
-        optional_fields = {'id': ID, **EVENT_COMMON_FIELDS, **EVENT_OPTIONAL_FIELDS}
-
-    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
-
     errs = ValidationSummary()
 
-    configuration_fields = {k: v for k, v in val.items() if k in EVENT_EXPOSED_FIELDS}
+    configuration_keys: set[str] = set().union(
+        *map(
+            dict.keys,  # type: ignore[arg-type]
+            models_event._EventConfigurationMixin.validation_fields(creation=creation),
+        )
+    )
+    configuration_fields = {k: v for k, v in val.items() if k in configuration_keys}
     if configuration_fields:
         with errs:
-            configuration_fields = _ALL_TYPED[SerializedEventConfiguration](
-                configuration_fields, argname, creation=creation, **kwargs
+            configuration_fields = _ALL_TYPED[models_event._EventConfigurationMixin](
+                configuration_fields, creation=creation, **kwargs
             )
             val.update(configuration_fields)
 
@@ -2539,7 +2492,7 @@ def _event(
     if errs:
         raise errs
 
-    return Event(val)
+    return val
 
 
 @_create_dataclass_validator(models_event.EventPart)
@@ -4006,27 +3959,16 @@ def _serialized_event_questionnaire(
     return SerializedEventQuestionnaire(val)
 
 
-@_add_typed_validator
+@_create_dataclass_validator(models_event._EventConfigurationMixin)  # type: ignore[type-abstract]
 def _serialized_event_configuration(
     val: Any,
-    argname: str = "serialized_event_configuration",
+    argname: str,
     *,
     creation: bool = False,
     event: models_event.Event | None,
     **kwargs: Any,
-) -> SerializedEventConfiguration:
-    val = _mapping(val, argname, **kwargs)
+) -> CdEDBObject:
     current = event
-
-    if creation:
-        mandatory_fields = dict(**EVENT_COMMON_FIELDS)
-        optional_fields = dict(**EVENT_EXPOSED_OPTIONAL_FIELDS, **EVENT_FREETEXT_FIELDS)
-    else:
-        mandatory_fields = {}
-        optional_fields = dict(**EVENT_EXPOSED_FIELDS)
-
-    val = _examine_dictionary_fields(val, mandatory_fields, optional_fields, **kwargs)
-
     errs = ValidationSummary()
 
     # Check IBAN to be valid
@@ -4115,18 +4057,12 @@ def _serialized_event_configuration(
     if errs:
         raise errs
 
-    return SerializedEventConfiguration(val)
+    return val
 
 
-@_add_typed_validator
-def _serialized_event_freetexts(
-    val: Any, argname: str = "serialized_event_freetexts", **kwargs: Any
-) -> SerializedEventFreetexts:
-    val = _mapping(val, argname, **kwargs)
-
-    val = _examine_dictionary_fields(val, {}, dict(**EVENT_FREETEXT_FIELDS), **kwargs)
-
-    return SerializedEventFreetexts(val)
+@_create_dataclass_validator(models_event._EventFreetextMixin)  # type: ignore[type-abstract]
+def _serialized_event_freetexts(val: Any, argname: str, **kwargs: Any) -> CdEDBObject:
+    return val
 
 
 @_create_dataclass_validator(*models_ml.ML_TYPE_MAP_INV.keys())
