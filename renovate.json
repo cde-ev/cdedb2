@@ -6,7 +6,7 @@
         ":semanticCommitType(renovate)",
         ":separateMultipleMajorReleases",
         "mergeConfidence:all-badges",
-        "approveMajorUpdates"
+        ":approveMajorUpdates"
     ],
     "labels": ["renovate"],
     "osvVulnerabilityAlerts": true
