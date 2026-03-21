@@ -268,7 +268,7 @@ rules = [
                 "/search",
                 get_("/member", endpoint="member_search"),
                 get_("/user", endpoint="user_search"),
-                get_("/course", endpoint="past_course_search"),
+                get_("/course", endpoint="", redirect_to="event/past/search/course"),
             ),
             get_("/i25p", endpoint="", redirect_to="cde/lastschrift/info"),
             sub(
@@ -706,6 +706,7 @@ rules = [
                         post("/delete", endpoint="delete_past_course"),
                     ),
                 ),
+                get_("/search/course", endpoint="past_course_search"),
             ),
         ),
     ),

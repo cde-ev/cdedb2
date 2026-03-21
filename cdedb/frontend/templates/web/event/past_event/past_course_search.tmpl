@@ -6,7 +6,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("cde/past_course_search"), gettext("Course Search"), active="True") }}
+    {{ util.breadcrumb_link(cdedblink("event/past_course_search"), gettext("Course Search"), active="True") }}
 {% endblock %}
 {% block content %}
     {% trans %}
@@ -50,7 +50,7 @@
         {% endif %}
     {% endif %}
 
-    <form action="{{ cdedblink('cde/past_course_search') }}" method="GET" id="coursesearchform" class="form-horizontal">
+    <form action="{{ cdedblink('event/past_course_search') }}" method="GET" id="coursesearchform" class="form-horizontal">
         {{ util.input_hidden(name="is_search", value=True) }}
         <div class="panel panel-primary mosp">
             <div class="panel-heading">

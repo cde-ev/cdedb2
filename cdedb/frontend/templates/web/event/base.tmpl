@@ -381,7 +381,7 @@ This will result in:
                 {% if "member" in user.roles or "past_event" in user.admin_views %}
                     {{ util.href(cdedblink("event/list_past_events"), gettext("Past Events"), icon="calendar-alt",
                             aclass="list-group-item", active=(sidenav_active=='event_past_events')) }}
-                    {{ util.href(cdedblink("cde/past_course_search"), gettext("Course Search"), icon="search",
+                    {{ util.href(cdedblink("event/past_course_search"), gettext("Course Search"), icon="search",
                                  aclass="list-group-item", active=(sidenav_active=='event_past_course_search')) }}
                 {% endif %}
                 {% if user.admin_views.intersection(('past_event', 'auditor')) %}
