@@ -1,7 +1,7 @@
-{% set sidenav_active='cde_past_events' %}
-{% extends "web/cde/base.tmpl" %}
+{% set sidenav_active='event_past_events' %}
+{% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% import "web/cde/past_event/generic.tmpl" as generic with context %}
+{% import "web/event/past_event/generic.tmpl" as generic with context %}
 
 {% if "past_event" in user.admin_views %}
     {% set jshint='weak' %}
@@ -17,17 +17,17 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events")) }}
-    {{ util.breadcrumb_link(cdedblink("cde/list_past_events", {"institution": ambience['pevent']['institution']}),
+    {{ util.breadcrumb_link(cdedblink("event/list_past_events"), gettext("Past Events")) }}
+    {{ util.breadcrumb_link(cdedblink("event/list_past_events", {"institution": ambience['pevent']['institution']}),
                             gettext(ambience['pevent']['institution'].shortname)) }}
-    {{ util.breadcrumb_link(cdedblink("cde/show_past_event", {"pevent_id": ambience['pevent']['id']}),
+    {{ util.breadcrumb_link(cdedblink("event/show_past_event", {"pevent_id": ambience['pevent']['id']}),
             ambience['pevent']['title'], icon="calendar-alt", active=True) }}
 {% endblock %}
 
 {% block content %}
     {% if "past_event" in user.admin_views %}
         <div class="p">
-        {{ util.href(cdedblink('cde/change_past_event_form'), gettext("Edit"), icon="pen",
+        {{ util.href(cdedblink('event/change_past_event_form'), gettext("Edit"), icon="pen",
                 aclass="btn btn-warning btn-sm") }}
         </div>
     {% endif %}
@@ -82,7 +82,7 @@
     {% endif %}
     {% if "past_event" in user.admin_views %}
         <div class="p">
-            {{ util.href(cdedblink('cde/create_past_course_form'), gettext("Add Course"), icon="plus",
+            {{ util.href(cdedblink('event/create_past_course_form'), gettext("Add Course"), icon="plus",
                     aclass="btn btn-success btn-sm") }}
         </div>
     {% endif %}
@@ -91,7 +91,7 @@
             {% for course in courses.values() %}
                 <li>
                     {{ course['nr'] }}.
-                    {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : course.id}), course.title) }}
+                    {{ util.href(cdedblink('event/show_past_course', {'pcourse_id' : course.id}), course.title) }}
                 </li>
             {% endfor %}
         </ul>
@@ -106,8 +106,8 @@
                 <h4 class="panel-title">{{util.make_icon('plus') }} {% trans %}Add Participant <u>without</u> Course{% endtrans %}</h4>
             </div>
             <div class="panel-body">
-                <form action="{{ cdedblink('cde/set_participants') }}" method="POST" id="addparticipantform">
-                    {{ util.anti_csrf_token('cde/set_participants') }}
+                <form action="{{ cdedblink('event/set_participants') }}" method="POST" id="addparticipantform">
+                    {{ util.anti_csrf_token('event/set_participants') }}
                     <div class="row">
                         <div class="col-sm-6 {% if 'persona_ids' in errors %}has-error{% endif %}">
                             {% call util.output_errors('persona_ids') %}
@@ -150,7 +150,7 @@
                             {% if assignment.instructor_status -%}
                                 <strong title="{{ gettext(assignment.instructor_status|string) }}">
                             {%- endif -%}
-                            {{ util.href(cdedblink('cde/show_past_course', {'pcourse_id' : assignment.pcourse_id}), assignment.pcourse.title) }}
+                            {{ util.href(cdedblink('event/show_past_course', {'pcourse_id' : assignment.pcourse_id}), assignment.pcourse.title) }}
                             {%- if assignment.instructor_status -%}
                                 <span class="sr-only"> ({{ gettext(assignment.instructor_status|string) }})</span></strong>
                             {%- endif -%}
@@ -163,10 +163,10 @@
                     {% endif %}
 
                     {% if "past_event" in user.admin_views %}
-                        <form action="{{ cdedblink('cde/remove_participant') }}" method="POST"
+                        <form action="{{ cdedblink('event/remove_participant') }}" method="POST"
                               id="removeparticipantform{{ participant.persona_id }}" style="display: inline;"
                               class="delete-participant-form hide-hover display-inline">
-                            {{ util.anti_csrf_token('cde/remove_participant') }}
+                            {{ util.anti_csrf_token('event/remove_participant') }}
                             {{ util.input_hidden(name="persona_id", value=participant.persona_id) }}
                             {{ util.ack_delete(gettext("The Participant will be removed from the Event.")) }}
                             {{ util.input_submit(title=gettext("Remove"), icon="minus", aclass="btn btn-xs btn-danger list-button-float", label="") }}
@@ -204,9 +204,9 @@
             <div class="row">
                 <div class="col-sm-4">
                     <div class="p">
-                        <form action="{{ cdedblink('cde/delete_past_event') }}" method="POST"
+                        <form action="{{ cdedblink('event/delete_past_event') }}" method="POST"
                                 id="deletepasteventform" style="display: inline;">
-                            {{ util.anti_csrf_token('cde/delete_past_event') }}
+                            {{ util.anti_csrf_token('event/delete_past_event') }}
                             {{ util.input_submit(label=gettext("Delete Event"), icon="trash-alt", aclass="btn btn-danger") }}
                             {{ util.ack_delete(gettext("The event will be permanently deleted.")) }}
                         </form>

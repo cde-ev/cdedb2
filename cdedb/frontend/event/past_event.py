@@ -85,7 +85,7 @@ class PastEventMixin(EventBaseFrontend):
                 if count == 1:
                     return self.redirect(
                         rs,
-                        "cde/show_past_course",
+                        "event/show_past_course",
                         {
                             'pevent_id': result[0]['courses.pevent_id'],
                             'pcourse_id': result[0]['courses.id'],
@@ -197,7 +197,7 @@ class PastEventMixin(EventBaseFrontend):
         assert data is not None
         code = self.pasteventproxy.set_past_event(rs, pevent_id, data)
         rs.notify_return_code(code)
-        return self.redirect(rs, "cde/show_past_event")
+        return self.redirect(rs, "event/show_past_event")
 
     @access("cde_admin")
     def create_past_event_form(self, rs: RequestState) -> Response:
@@ -248,7 +248,7 @@ class PastEventMixin(EventBaseFrontend):
                 course['pevent_id'] = new_id
                 self.pasteventproxy.create_past_course(rs, course)
         rs.notify_return_code(new_id, success=n_("Event created."))
-        return self.redirect(rs, "cde/show_past_event", {'pevent_id': new_id})
+        return self.redirect(rs, "event/show_past_event", {'pevent_id': new_id})
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata("ack_delete")
@@ -268,7 +268,7 @@ class PastEventMixin(EventBaseFrontend):
             rs, pevent_id, cascade=("courses", "participants", "log", "genesis_cases")
         )
         rs.notify_return_code(code)
-        return self.redirect(rs, "cde/list_past_events")
+        return self.redirect(rs, "event/list_past_events")
 
     @access("cde_admin")
     def change_past_course_form(
@@ -295,7 +295,7 @@ class PastEventMixin(EventBaseFrontend):
         assert data is not None
         code = self.pasteventproxy.set_past_course(rs, data)
         rs.notify_return_code(code)
-        return self.redirect(rs, "cde/show_past_course")
+        return self.redirect(rs, "event/show_past_course")
 
     @access("cde_admin")
     def create_past_course_form(self, rs: RequestState, pevent_id: int) -> Response:
@@ -319,7 +319,7 @@ class PastEventMixin(EventBaseFrontend):
         assert data is not None
         new_id = self.pasteventproxy.create_past_course(rs, data)
         rs.notify_return_code(new_id, success=n_("Course created."))
-        return self.redirect(rs, "cde/show_past_course", {'pcourse_id': new_id})
+        return self.redirect(rs, "event/show_past_course", {'pcourse_id': new_id})
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata("ack_delete")
@@ -342,7 +342,7 @@ class PastEventMixin(EventBaseFrontend):
             rs, pcourse_id, cascade=("participants", "genesis_cases", "log")
         )
         rs.notify_return_code(code)
-        return self.redirect(rs, "cde/show_past_event")
+        return self.redirect(rs, "event/show_past_event")
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata("persona_ids", "orga_status", "music_status")
@@ -378,7 +378,7 @@ class PastEventMixin(EventBaseFrontend):
                 rs, pevent_id, persona_id, orga_status, music_status
             )
         rs.notify_return_code(code)
-        return self.redirect(rs, "cde/show_past_event")
+        return self.redirect(rs, "event/show_past_event")
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata("pcourse_id", "persona_ids", "instructor_status")
@@ -416,7 +416,7 @@ class PastEventMixin(EventBaseFrontend):
                 rs, pcourse_id, persona_id, instructor_status
             )
         rs.notify_return_code(code)
-        return self.redirect(rs, "cde/show_past_course", {'pcourse_id': pcourse_id})
+        return self.redirect(rs, "event/show_past_course", {'pcourse_id': pcourse_id})
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata("persona_id", "ack_delete")
@@ -437,7 +437,7 @@ class PastEventMixin(EventBaseFrontend):
             return self.show_past_event(rs, pevent_id)
         code = self.pasteventproxy.remove_participant(rs, pevent_id, persona_id)
         rs.notify_return_code(code)
-        return self.redirect(rs, "cde/show_past_event")
+        return self.redirect(rs, "event/show_past_event")
 
     @access("cde_admin", modi={"POST"})
     @REQUESTdata("persona_id", "pcourse_id", "ack_delete")
@@ -459,7 +459,7 @@ class PastEventMixin(EventBaseFrontend):
             return self.show_past_course(rs, pevent_id, pcourse_id)
         code = self.pasteventproxy.remove_course_assignment(rs, pcourse_id, persona_id)
         rs.notify_return_code(code)
-        return self.redirect(rs, "cde/show_past_course", {'pcourse_id': pcourse_id})
+        return self.redirect(rs, "event/show_past_course", {'pcourse_id': pcourse_id})
 
     @REQUESTdatadict(*PastEventLogFilter.requestdict_fields())
     @REQUESTdata("download")

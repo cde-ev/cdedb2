@@ -1,13 +1,13 @@
-{% set sidenav_active='cde_past_events' %}
-{% extends "web/cde/base.tmpl" %}
+{% set sidenav_active='event_past_events' %}
+{% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}{% trans %}Create Past Event{% endtrans %}{% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-{{ util.breadcrumb_link(cdedblink("cde/list_past_events"), gettext("Past Events")) }}
-{{ util.breadcrumb_link(cdedblink("cde/create_past_event"), gettext("Create Past Event"), active=True) }}
+{{ util.breadcrumb_link(cdedblink("event/list_past_events"), gettext("Past Events")) }}
+{{ util.breadcrumb_link(cdedblink("event/create_past_event"), gettext("Create Past Event"), active=True) }}
 {% endblock %}
 {% block content %}
     <script nonce="{{ csp_nonce }}">
@@ -15,9 +15,9 @@
             $('#createeventform').cdedbProtectChanges();
         });
     </script>
-    <form action="{{ cdedblink('cde/create_past_event') }}" method="POST" id="createeventform"
+    <form action="{{ cdedblink('event/create_past_event') }}" method="POST" id="createeventform"
         class="form-horizontal">
-        {{ util.anti_csrf_token('cde/create_past_event') }}
+        {{ util.anti_csrf_token('event/create_past_event') }}
         {{ util.form_input_text(name="title", label=gettext("Title_[[name of an entity]]")) }}
         {{ util.form_input_text(name="shortname", label=gettext("Shortname")) }}
         {{ util.form_input_select(name="institution", label=gettext("Institution"),
@@ -34,6 +34,6 @@
         {{ util.form_input_static(aclass='text-info', icon='info-circle',
                           value=gettext("Warning: The new Event will be immediately visible to all CdE-Members "
                                         "viewing the list of past Events.")) }}
-        {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink("cde/list_past_events")) }}
+        {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink("event/list_past_events")) }}
     </form>
 {% endblock %}

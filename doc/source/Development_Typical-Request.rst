@@ -16,7 +16,7 @@ on the CdE server. Apache then delegates this to the WSGI application
 :py:class:`cdedb.frontend.Application` found in
 ``cdedb/frontend/application.py``. The URL is matched against the available
 patterns in ``cdedb/frontend/paths.py`` and the result is the endpoint
-``cde/show_past_event``. This contains a realm (``cde``) and an action
+``event/show_past_event``. This contains a realm (``cde``) and an action
 (``show_past_event``). Now a :py:class:`cdedb.common.RequestState` object is
 constructed; it contains the session information for the current
 request. Most notably it contains a :py:class:`cdedb.common.User` object

@@ -1777,7 +1777,7 @@ class EventEventMixin(EventBaseFrontend):
         elif len(new_ids) == 1:
             rs.notify("info", n_("Created past event."))
             return self.redirect(
-                rs, "cde/show_past_event", {'pevent_id': unwrap(new_ids)}
+                rs, "event/show_past_event", {'pevent_id': unwrap(new_ids)}
             )
         else:
             rs.notify("info", n_("Created multiple past events."))
