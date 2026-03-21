@@ -9,5 +9,6 @@
         ":approveMajorUpdates"
     ],
     "labels": ["renovate"],
-    "osvVulnerabilityAlerts": true
+    "osvVulnerabilityAlerts": true,
+    "minimumReleaseAge": "14 days"
 }
