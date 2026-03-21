@@ -10,6 +10,7 @@
         ":automergePatch",
         "security:only-security-updates"
     ],
+    "branchPrefix": "renovate-",
     "packageRules": [
         {
             "automerge": true,
