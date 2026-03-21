@@ -19,8 +19,9 @@ from tests.common import FrontendTest, as_users, storage
 
 
 class TestParseFrontend(FrontendTest):
-    def csv_submit(self, form: webtest.Form, button: str = "",
-                   value: Optional[str] = None) -> None:
+    def csv_submit(
+        self, form: webtest.Form, button: str = "", value: Optional[str] = None
+    ) -> None:
         super().submit(form, button=button, value=value, check_notification=False)
         self.assertEqual(self.response.text[0], "\ufeff")
         self.response.text = self.response.text[1:]
@@ -51,35 +52,55 @@ class TestParseFrontend(FrontendTest):
 
     def test_parse_statement_additional(self) -> None:
 
-        pseudo_winter = cast(models_event.Event, types.SimpleNamespace(**{
-            "title": "CdE Pseudo-WinterAkademie",
-            "shortname": "pwinter222223",
-            "begin": datetime.date(2222, 12, 27),
-            "end": datetime.date(2223, 1, 6)}))
-        test_pfingsten = cast(models_event.Event, types.SimpleNamespace(**{
-            "title": "Pfingstakademie 1234",
-            "shortname": "pa1234",
-            "begin": datetime.date(1234, 5, 20),
-            "end": datetime.date(1234, 5, 23)}))
-        naka = cast(models_event.Event, types.SimpleNamespace(**{
-            "title": "NachhaltigkeitsAkademie",
-            "shortname": "naka",
-            "begin": now().date(),
-            "end": now().date()}))
-        velbert = cast(models_event.Event, types.SimpleNamespace(**{
-            "title": "JuniorAkademie NRW – Nachtreffen Velbert 2019",
-            "shortname": "velbert19",
-            "begin": datetime.date(2019, 11, 15),
-            "end": datetime.date(2019, 11, 17)}))
+        pseudo_winter = cast(
+            models_event.Event,
+            types.SimpleNamespace(**{
+                "title": "CdE Pseudo-WinterAkademie",
+                "shortname": "pwinter222223",
+                "begin": datetime.date(2222, 12, 27),
+                "end": datetime.date(2223, 1, 6),
+            }),
+        )
+        test_pfingsten = cast(
+            models_event.Event,
+            types.SimpleNamespace(**{
+                "title": "Pfingstakademie 1234",
+                "shortname": "pa1234",
+                "begin": datetime.date(1234, 5, 20),
+                "end": datetime.date(1234, 5, 23),
+            }),
+        )
+        naka = cast(
+            models_event.Event,
+            types.SimpleNamespace(**{
+                "title": "NachhaltigkeitsAkademie",
+                "shortname": "naka",
+                "begin": now().date(),
+                "end": now().date(),
+            }),
+        )
+        velbert = cast(
+            models_event.Event,
+            types.SimpleNamespace(**{
+                "title": "JuniorAkademie NRW – Nachtreffen Velbert 2019",
+                "shortname": "velbert19",
+                "begin": datetime.date(2019, 11, 15),
+                "end": datetime.date(2019, 11, 17),
+            }),
+        )
 
-        def match(event: models_event.Event, reference: str,
-                  expected_confidence: Optional[parse.ConfidenceLevel]) -> None:
+        def match(
+            event: models_event.Event,
+            reference: str,
+            expected_confidence: Optional[parse.ConfidenceLevel],
+        ) -> None:
             fake_transaction = cast(
                 parse.Transaction,
                 types.SimpleNamespace(
                     reference=reference,
                     compile_pattern=parse.Transaction.compile_pattern,
-                ))
+                ),
+            )
             match = parse.Transaction._match_one_event(fake_transaction, event)
             if expected_confidence is None:
                 self.assertIsNone(match)
@@ -127,9 +148,12 @@ class TestParseFrontend(FrontendTest):
         transaction.persona = {'id': 1}
         event_backend = self.initialize_backend(EventBackend)
         event_backend.list_amounts_owed = unittest.mock.MagicMock(  # type: ignore[method-assign]
-            return_value={2: amount})
+            return_value={2: amount}
+        )
         events = self.event.get_events(self.key, self.event.list_events(self.key))
-        transaction._match_event(rs=self.key, event_backend=event_backend, events=events)
+        transaction._match_event(
+            rs=self.key, event_backend=event_backend, events=events
+        )
 
         # Check that reference match is better.
         self.assertIsNotNone(transaction.event)
@@ -162,7 +186,8 @@ class TestParseFrontend(FrontendTest):
         f = self.response.forms["statementform"]
         with open(self.testfile_dir / "statement.csv", mode="rb") as statementfile:
             f["statement_file"] = webtest.Upload(
-                "statement.csv", statementfile.read(), "text/csv")
+                "statement.csv", statementfile.read(), "text/csv"
+            )
         self.submit(f, check_notification=False, verbose=True)
 
         self.assertTitle("Kontoauszug parsen")
@@ -175,33 +200,42 @@ class TestParseFrontend(FrontendTest):
         # Fix Transactions with errors.
 
         # Check line 5:
-        self.assertPresence("event: Veranstaltung Große Testakademie 2222 nur über"
-                            " zu zahlenden Betrag zugeordnet.",
-                            div="transaction5_warnings")
+        self.assertPresence(
+            "event: Veranstaltung Große Testakademie 2222 nur über"
+            " zu zahlenden Betrag zugeordnet.",
+            div="transaction5_warnings",
+        )
 
         # Fix line 6:
-        self.assertPresence("cdedbid: Unsicher über Mitgliedszuordnung.",
-                            div="transaction6_errors")
+        self.assertPresence(
+            "cdedbid: Unsicher über Mitgliedszuordnung.", div="transaction6_errors"
+        )
         self.assertPresence(
             "given_names: Anton nicht im Verwendungszweck gefunden.",
-            div="transaction6_warnings")
+            div="transaction6_warnings",
+        )
         self.assertPresence(
             "family_name: Administrator nicht im Verwendungszweck gefunden.",
-            div="transaction6_warnings")
+            div="transaction6_warnings",
+        )
         self.assertEqual(f["cdedbid6"].value, "DB-1-9")
         f["persona_confirm6"].checked = True
 
         # Fix line 9:
-        self.assertPresence("cdedbid: Braucht Mitgliedszuordnung.",
-                            div="transaction9_errors")
+        self.assertPresence(
+            "cdedbid: Braucht Mitgliedszuordnung.", div="transaction9_errors"
+        )
         self.assertEqual(f["account_holder9"].value, "Daniel Dino")
         f["cdedbid9"] = "DB-4-3"
 
         # Fix line 11:
-        self.assertPresence("persona: Mehr als eine DB-ID gefunden: (DB-1-9, DB-2-7)",
-                            div="transaction11_warnings")
-        self.assertPresence("cdedbid: Unsicher über Mitgliedszuordnung.",
-                            div="transaction11_errors")
+        self.assertPresence(
+            "persona: Mehr als eine DB-ID gefunden: (DB-1-9, DB-2-7)",
+            div="transaction11_warnings",
+        )
+        self.assertPresence(
+            "cdedbid: Unsicher über Mitgliedszuordnung.", div="transaction11_errors"
+        )
         self.assertEqual(f["account_holder11"].value, "Anton & Berta")
         self.assertEqual(f["cdedbid11"].value, "DB-1-9")
         f["persona_confirm11"].checked = True
@@ -211,7 +245,8 @@ class TestParseFrontend(FrontendTest):
         # Line 8:
         self.assertPresence(
             "given_names: Garcia nicht im Verwendungszweck gefunden.",
-            div="transaction8_warnings")
+            div="transaction8_warnings",
+        )
 
         self.submit(f, button="validate", check_notification=False)
 
@@ -223,8 +258,9 @@ class TestParseFrontend(FrontendTest):
         # Check new error:
 
         # Line 9:
-        self.assertPresence("cdedbid: Unsicher über Mitgliedszuordnung.",
-                            div="transaction9_errors")
+        self.assertPresence(
+            "cdedbid: Unsicher über Mitgliedszuordnung.", div="transaction9_errors"
+        )
         self.assertEqual(f["cdedbid9"].value, "DB-4-3")
         f["persona_confirm9"].checked = True
 
@@ -241,12 +277,20 @@ class TestParseFrontend(FrontendTest):
         if self.user_in("farin"):
             self.assertNoLink("registration/2/show")
         else:
-            self.traverse({"description": "Zugeordnete Anmeldung", "linkid": "registration-link12"})
+            self.traverse({
+                "description": "Zugeordnete Anmeldung",
+                "linkid": "registration-link12",
+            })
             self.assertTitle("Anmeldung von Emilia Eventis (Große Testakademie 2222)")
             self.response = save
 
-        self.traverse({"description": "Teilnahmebeitragsdetails", "linkid": "registration-fee-link12"})
-        self.assertTitle("Teilnahmebeitragsdetails für Emilia Eventis (Große Testakademie 2222)")
+        self.traverse({
+            "description": "Teilnahmebeitragsdetails",
+            "linkid": "registration-fee-link12",
+        })
+        self.assertTitle(
+            "Teilnahmebeitragsdetails für Emilia Eventis (Große Testakademie 2222)"
+        )
 
         f = save.forms["parsedownloadform"]
 
@@ -254,9 +298,13 @@ class TestParseFrontend(FrontendTest):
 
         # Make sure to use the correct submit button.
         self.csv_submit(f, button="db_import")
-        result = list(csv.DictReader(self.response.text.split("\n"),
-                                     fieldnames=parse.ExportFields.db_import,
-                                     dialect=CustomCSVDialect))
+        result = list(
+            csv.DictReader(
+                self.response.text.split("\n"),
+                fieldnames=parse.ExportFields.db_import,
+                dialect=CustomCSVDialect,
+            )
+        )
 
         self.check_dict(
             result[0],
@@ -343,9 +391,13 @@ class TestParseFrontend(FrontendTest):
         # check transactions files
         # check account 00
         self.csv_submit(f, button="excel", value=str(Accounts.Sozialbank))
-        result = list(csv.DictReader(self.response.text.split("\n"),
-                                     fieldnames=parse.ExportFields.excel,
-                                     dialect=CustomCSVDialect))
+        result = list(
+            csv.DictReader(
+                self.response.text.split("\n"),
+                fieldnames=parse.ExportFields.excel,
+                dialect=CustomCSVDialect,
+            )
+        )
         self.check_dict(
             result[0],
             date="26.12.2018",
@@ -432,9 +484,13 @@ class TestParseFrontend(FrontendTest):
 
         # check account 01
         self.csv_submit(f, button="excel", value=str(Accounts.Sozialbank_Spenden))
-        result = list(csv.DictReader(self.response.text.split("\n"),
-                                     fieldnames=parse.ExportFields.excel,
-                                     dialect=CustomCSVDialect))
+        result = list(
+            csv.DictReader(
+                self.response.text.split("\n"),
+                fieldnames=parse.ExportFields.excel,
+                dialect=CustomCSVDialect,
+            )
+        )
 
         self.check_dict(
             result[0],

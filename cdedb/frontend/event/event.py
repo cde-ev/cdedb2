@@ -57,6 +57,7 @@ from cdedb.frontend.common import (
     process_dynamic_input,
 )
 from cdedb.frontend.event.base import EventBaseFrontend, event_guard
+from cdedb.models.common import CdEDataclass
 from cdedb.models.ml import (
     EventAssociatedMailinglist,
     EventOrgaMailinglist,
@@ -106,6 +107,11 @@ class EventEventMixin(EventBaseFrontend):
             for event in self.eventproxy.get_events(rs, rs.user.orga).values()
             if event.is_current_for_orga()
         ]
+        caretaker_events = [
+            event
+            for event in self.eventproxy.get_events(rs, rs.user.caretaker).values()
+            if event.is_current_for_orga()
+        ]
 
         return self.render(
             rs,
@@ -113,6 +119,7 @@ class EventEventMixin(EventBaseFrontend):
             {
                 'current_events': current_events,
                 'orga_events': orga_events,
+                'caretaker_events': caretaker_events,
                 'other_events': other_events,
                 'events_registration': events_registration,
                 'events_payment_pending': events_payment_pending,
@@ -265,12 +272,19 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdatadict(*models.Event.requestdict_fields(creation=False))
+    @REQUESTdatadict(
+        *models._EventConfigurationMixin.requestdict_fields(creation=False)
+    )
     def change_event(
         self, rs: RequestState, event_id: int, data: CdEDBObject
     ) -> Response:
         """Modify an event organized via DB."""
-        data = check(rs, vtypes.Event, data, event=rs.ambience['event'])
+        data = check(
+            rs,
+            cast(type[CdEDataclass], models._EventConfigurationMixin),  # abstract model
+            data,
+            event=rs.ambience['event'],
+        )
         if (
             data
             and data['shortname']
@@ -793,7 +807,7 @@ class EventEventMixin(EventBaseFrontend):
             raise ValueError(n_("Registrations exist, no part creation possible."))
 
         data = check(
-            rs, vtypes.EventPart, data, creation=True, event=rs.ambience["event"]
+            rs, models.EventPart, data, creation=True, event=rs.ambience["event"]
         )
         if rs.has_validation_errors():
             return self.add_part_form(rs, event_id)
@@ -827,7 +841,6 @@ class EventEventMixin(EventBaseFrontend):
         sorted_track_ids = [e.id for e in xsorted(part.tracks.values())]
 
         current = part.as_dict()
-        del current['id']
         del current['tracks']
 
         # Select the first track by id for every sync track group, disable altering
@@ -877,7 +890,7 @@ class EventEventMixin(EventBaseFrontend):
         self, rs: RequestState, event_id: int, part_id: int, data: CdEDBObject
     ) -> Response:
         """Change one part, including the associated tracks and fee modifiers."""
-        data = check(rs, vtypes.EventPart, data, event=rs.ambience["event"])
+        data = check(rs, models.EventPart, data, event=rs.ambience["event"])
         if rs.has_validation_errors():
             return self.change_part_form(rs, event_id, part_id)
         assert data is not None
@@ -925,7 +938,7 @@ class EventEventMixin(EventBaseFrontend):
                         for t_id in tg.tracks:
                             p_id = rs.ambience['event'].tracks[t_id].part_id
                             if p_id not in part_data:
-                                part_data[p_id] = vtypes.EventPart({'tracks': {}})
+                                part_data[p_id] = {'tracks': {}}
                             if t_id not in part_data[p_id]['tracks']:
                                 part_data[p_id]['tracks'][t_id] = {}
                             part_data[p_id]['tracks'][t_id].update({
@@ -1584,7 +1597,7 @@ class EventEventMixin(EventBaseFrontend):
                     ),
                 ),
             )
-        data = check(rs, vtypes.Event, data, creation=True)
+        data = check(rs, models.Event, data, creation=True)
         if orga_ids:
             try:
                 self.eventproxy.validate_event_persona_ids(rs, orga_ids)
@@ -1818,6 +1831,52 @@ class EventEventMixin(EventBaseFrontend):
         else:
             code = self.eventproxy.unbalance_event(rs, event_id)
             rs.notify_return_code(code)
+        return self.redirect(rs, "event/show_event")
+
+    @access("event", modi={"POST"})
+    @event_guard(EventPrivileges.approve_registration)
+    def approve_registration(self, rs: RequestState, event_id: int) -> Response:
+        if rs.ambience['event'].is_registration_approved:
+            rs.notify("warning", n_("Registration already approved."))
+        else:
+            code = self.eventproxy.approve_registration(rs, event_id)
+            rs.notify_return_code(code)
+            to = [event_admin_address := self.conf["EVENT_ADMIN_ADDRESS"]]
+            if orga_adress := rs.ambience['event'].orga_address:
+                to.append(orga_adress)
+            self.do_mail(
+                rs,
+                "registration_approved",
+                {
+                    "To": to,
+                    "Subject": "Anmeldung freigeschaltet",
+                    "Reply-To": event_admin_address,
+                },
+                {"approve": True},
+            )
+        return self.redirect(rs, "event/show_event")
+
+    @access("event", modi={"POST"})
+    @event_guard(EventPrivileges.approve_registration)
+    def unapprove_registration(self, rs: RequestState, event_id: int) -> Response:
+        if not rs.ambience['event'].is_registration_approved:
+            rs.notify("warning", n_("Registration already unapproved."))
+        else:
+            code = self.eventproxy.unapprove_registration(rs, event_id)
+            rs.notify_return_code(code)
+            to = [event_admin_address := self.conf["EVENT_ADMIN_ADDRESS"]]
+            if orga_adress := rs.ambience['event'].orga_address:
+                to.append(orga_adress)
+            self.do_mail(
+                rs,
+                "registration_approved",
+                {
+                    "To": to,
+                    "Subject": "Anmeldung gesperrt",
+                    "Reply-To": event_admin_address,
+                },
+                {"approve": False},
+            )
         return self.redirect(rs, "event/show_event")
 
     @access("event")

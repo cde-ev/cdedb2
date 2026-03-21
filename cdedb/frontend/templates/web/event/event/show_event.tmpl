@@ -73,7 +73,7 @@
                 {% endif %}
             </dd>
         {% endif %}
-        {% if not ambience['event']['registration_start'] is none %}
+        {% if ambience['event'].registration_start is not none and ambience['event'].is_registration_approved %}
             <dt title="{% trans %}Registration{% endtrans %}">
                 {% trans %}Registration{% endtrans %}
             </dt>
@@ -324,6 +324,42 @@
                     </div>
                 </div>
             {% endif %}
+            {% if is_privileged_for("event/approve_registration", admin_view_to_consider="event_mgmt") %}
+                <div class="row" id="approve-registration">
+                    <div class="col-sm-4">
+                        <div class="p">
+                            {% if not ambience['event'].is_registration_approved %}
+                                <form action="{{ cdedblink('event/approve_registration') }}" method="POST" id="approveregistrationform"
+                                      style="display: inline;">
+                                    {{ util.anti_csrf_token('event/approve_registration') }}
+                                    {{ util.input_submit(label=gettext("Approve Registration"), readonly=is_locked,
+                                                         aclass="btn btn-primary btn-wrap", icon="unlock") }}
+                                </form>
+                            {% else %}
+                                <form action="{{ cdedblink('event/unapprove_registration') }}" method="POST" id="unapproveregistrationform"
+                                      style="display: inline;">
+                                    {{ util.anti_csrf_token('event/unapprove_registration') }}
+                                    {{ util.input_submit(label=gettext("Unapprove Registration"), readonly=is_locked,
+                                                         aclass="btn btn-danger btn-wrap", icon="lock") }}
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-sm-8">
+                        <p class="text-muted">
+                            {% if not ambience['event'].is_registration_approved %}
+                                {% trans %}
+                                    Allows registration to begin at the configured time. Is reversible.
+                                {% endtrans %}
+                            {% else %}
+                                {% trans %}
+                                    Blocks registration regardless of the configured time. Is reversible.
+                                {% endtrans %}
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            {% endif %}
             {% if "event_mgmt" in user.admin_views %}
                 {% if "cde_admin" in user.roles and not ambience['event']['is_archived'] %}
                 <div class="row" id="archive-event">
@@ -420,8 +456,16 @@
 {% endblock %}
 
 {% block adminviews %}
-    {{ super() }}
-    {{ util.admin_views_toggle((
-            (gettext("Finance Administration"), ["finance"], None),
-        )) }}
+    {% if ambience['event'].id in (user.orga.union(user.caretaker)) %}
+        {{ util.admin_views_toggle((
+                (gettext("Event Administration"), ["event_mgmt", "event_list"], ["event_mgmt"]),
+                (gettext("Finance Administration"), ["finance"], None),
+            )) }}
+    {% else %}
+        {{ util.admin_views_toggle((
+                (gettext("Event Administration"), ["event_mgmt", "event_list"], ["event_mgmt"]),
+                (gettext("Orga Controls"), ["event_orga"], None),
+                (gettext("Finance Administration"), ["finance"], None),
+            )) }}
+    {% endif %}
 {% endblock %}

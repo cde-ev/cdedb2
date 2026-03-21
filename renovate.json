@@ -1,0 +1,28 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": [
+        "config:best-practices",
+        ":semanticCommitScopeDisabled",
+        ":semanticCommitType(renovate)",
+        ":separateMultipleMajorReleases",
+        "mergeConfidence:all-badges",
+        ":approveMajorUpdates",
+        ":automergePatch",
+        "security:only-security-updates"
+    ],
+    "branchPrefix": "renovate-",
+    "packageRules": [
+        {
+            "automerge": true,
+            "enabled": true,
+            "matchPackageNames": [
+                "ruff",
+                "mypy"
+            ]
+        }
+    ],
+    "automergeStrategy": "fast-forward",
+    "labels": ["renovate"],
+    "osvVulnerabilityAlerts": true,
+    "minimumReleaseAge": "14 days"
+}

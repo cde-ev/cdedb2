@@ -172,7 +172,7 @@ This will result in:
                 {{ util.href(cdedblink("event/additional_questionnaire_form", {"event_id": event['id']}), gettext("Questionnaire"),
                         aclass="list-group-item", icon="edit", active=(sidenav_active == 'event_quest')) }}
             {% endif %}
-            {% if event.is_course_assignment_visible and not event.is_archived and is_instructor %}
+            {% if event.is_course_assignment_visible and is_instructor %}
                 {{ util.href(cdedblink("event/show_instructed_courses"), gettext("My Instructed Courses"),
                              aclass="list-group-item", icon="book", active=(sidenav_active == "event_instructed")) }}
             {% endif %}
@@ -302,18 +302,36 @@ This will result in:
 
 {% block static_notifications %}
     {% if ambience['event'] %}
-        {% if ambience['event']['is_archived'] and ambience['event']['is_cancelled'] %}
+        {% if ambience['event'].is_archived and ambience['event'].is_cancelled %}
             {% call util.notification('info') %}
                 {% trans %}This event was cancelled and has been archived.{% endtrans %}
             {% endcall %}
-        {% elif ambience['event']['is_archived'] %}
+        {% elif ambience['event'].is_archived %}
             {% call util.notification('info') %}
                 {% trans %}This event has been archived.{% endtrans %}
             {% endcall %}
-        {% elif ambience['event']['is_cancelled'] %}
+        {% elif ambience['event'].is_cancelled %}
             {% call util.notification('info') %}
                 {% trans %}This event has been cancelled.{% endtrans %}
             {% endcall %}
+        {% elif ambience['event'].registration_start and not ambience['event'].is_registration_approved %}
+            {% if is_privileged_for("event/change_event") %}
+                {% call util.notification('warning') %}
+                    {% trans %}
+                        A registration start has been configured, but the registration has not yet been approved.
+                        People will not be able to register at the configured time.
+                    {% endtrans %}
+                    {% if ambience['event'].caretakers %}
+                        {% trans %}
+                            You should discuss this with your assigned caretakers.
+                        {% endtrans %}
+                    {% else %}
+                        {% trans akademieteam=util.href(util.mailto(EVENT_ADMIN_ADDRESS, cc=ambience['event'].orga_address|s), "Akademieteam") %}
+                            You should discuss this with the {{ akademieteam }}.
+                        {% endtrans %}
+                    {% endif %}
+                {% endcall %}
+            {% endif %}
         {% endif %}
     {% endif %}
 {% endblock %}

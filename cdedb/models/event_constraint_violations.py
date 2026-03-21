@@ -971,7 +971,7 @@ class IncorrectCourseAssignedCV(RegistrationTrackConstraintViolation):
                 assigned_course=assigned_course,
                 instructed_course=instructed_course,
             )
-        if assigned_course is None:
+        if assigned_course is None or not track.num_choices:
             return None
         if assigned_course.id not in reg_track['choices'] and (
             instructed_course is None or assigned_course != instructed_course
@@ -2276,6 +2276,28 @@ class IncorrectIBANCV(ConstraintViolation):
         msg = n_("Event fees should be collected at the Skatbank account.")
 
         return [msg], {}
+
+
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class RegistrationLockedCV(ConstraintViolation):
+    kind = ViolationKind.other
+
+    @classmethod
+    def check(cls, aux: ViolationAux, context: ViolationContext) -> Self | None:
+        if aux.event.is_registration_approved:
+            return None
+        ref_time = now()
+        if not aux.event.registration_start:
+            severity = ViolationSeverity.INFO
+        elif aux.event.registration_start - ref_time < datetime.timedelta(days=3):
+            severity = ViolationSeverity.ERROR
+        else:
+            severity = ViolationSeverity.WARNING
+
+        return cls(event=aux.event, severity=severity)
+
+    def get_translation(self, *, entity_page: str) -> tuple[list[str], CdEDBObject]:
+        return [n_("Registration is locked.")], {}
 
 
 @dataclasses.dataclass(frozen=True, kw_only=True)

@@ -197,6 +197,9 @@
         {% endif %}
     </form>
 
+    {% if button_par().strip() %}
+        <hr />
+    {% endif %}
     {{ button_par() }}
 
     <script nonce="{{ csp_nonce }}">

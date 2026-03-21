@@ -15,7 +15,6 @@ from tests.common import FrontendTest, storage
 
 
 class TestOffline(FrontendTest):
-
     @storage
     def test_offline_vm(self) -> None:
         repopath = self.conf["REPOSITORY_PATH"]
@@ -29,7 +28,10 @@ class TestOffline(FrontendTest):
 
         # write the original config in a temporary config file
         config = tempfile.NamedTemporaryFile(
-            "w", suffix=".py", delete=False, encoding="utf-8",
+            "w",
+            suffix=".py",
+            delete=False,
+            encoding="utf-8",
         )
         config.write(existing_config.read_text())
         config.flush()
@@ -49,36 +51,50 @@ class TestOffline(FrontendTest):
             # the whole repo to the PYTHONPATH so they are found.
             env = {**os.environ.copy(), "PYTHONPATH": str(repopath)}
             subprocess.run(
-                [repopath / 'bin/make_offline_vm.py',
-                 '--test', '--no-extra-packages', '--not-interactive',
-                 repopath / 'tests/ancillary_files/event_export.json'],
-                check=True, env=env)
+                [
+                    repopath / 'bin/make_offline_vm.py',
+                    '--test',
+                    '--no-extra-packages',
+                    '--not-interactive',
+                    repopath / 'tests/ancillary_files/event_export.json',
+                ],
+                check=True,
+                env=env,
+            )
             # Reset web test app for changed configuration
             new_app = Application()
             self.__class__.app = webtest.TestApp(
-                new_app, extra_environ=self.app_extra_environ)
+                new_app, extra_environ=self.app_extra_environ
+            )
             self.app.reset()
-            self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME,
-                                ",".join(ALL_ADMIN_VIEWS))
+            self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
 
             # Test that it's running
             self.get('/')
-            self.assertPresence('Dies ist eine Offline-Instanz der CdE-Datenbank',
-                                div='static-notifications')
+            self.assertPresence(
+                'Dies ist eine Offline-Instanz der CdE-Datenbank',
+                div='static-notifications',
+            )
             self.login(user)
 
             # Basic event functionality
-            self.traverse("Veranstaltungen", "Große Testakademie 2222",
-                          "Anmeldungen", "Alle Anmeldungen")
+            self.traverse(
+                "Veranstaltungen",
+                "Große Testakademie 2222",
+                "Anmeldungen",
+                "Alle Anmeldungen",
+            )
             self.assertPresence('6', div='query-results')
             self.assertPresence('Inga')
 
             # Test edit of profile
-            self.traverse({'href': 'event/event/1/registration/query'},
-                          {'description': 'Alle Anmeldungen'},
-                          {'href': 'event/event/1/registration/1/show'},
-                          {'href': 'core/persona/1/show'},
-                          {'href': 'core/persona/1/adminchange'})
+            self.traverse(
+                {'href': 'event/event/1/registration/query'},
+                {'description': 'Alle Anmeldungen'},
+                {'href': 'event/event/1/registration/1/show'},
+                {'href': 'core/persona/1/show'},
+                {'href': 'core/persona/1/adminchange'},
+            )
             self.assertTitle('Anton Administrator bearbeiten')
             f = self.response.forms['changedataform']
             f['nickname'] = "Zelda"
@@ -93,10 +109,11 @@ class TestOffline(FrontendTest):
             self.get(
                 '/event/offline/partial',
                 headers={
-                    model_droid.APIToken.request_header_key:
-                        model_droid.QuickPartialExportToken.get_token_string(
-                            self.secrets['API_TOKENS']['quick_partial_export']),
-                })
+                    model_droid.APIToken.request_header_key: model_droid.QuickPartialExportToken.get_token_string(
+                        self.secrets['API_TOKENS']['quick_partial_export']
+                    ),
+                },
+            )
             expectation = {
                 'EVENT_SCHEMA_VERSION',
                 'kind',

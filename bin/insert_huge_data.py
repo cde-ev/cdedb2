@@ -212,15 +212,15 @@ def event(context: Context) -> int:
                 'checkin': False,
             },
         },
-        'lodgement_groups': {
-            -1: {
-                'title': make_counter(context, 'Unterkunftsgruppe'),
-            },
-            -2: {
-                'title': make_counter(context, 'Unterkunftsgruppe'),
-            },
-        },
     }
+    lg_data = [
+        {
+            'title': make_counter(context, 'Unterkunftsgruppe'),
+        },
+        {
+            'title': make_counter(context, 'Unterkunftsgruppe'),
+        },
+    ]
     fee_data = [
         {
             "kind": const.EventFeeType.common,
@@ -255,6 +255,8 @@ def event(context: Context) -> int:
     ret = event.create_event(rs, data)
     for fee in fee_data:
         event.create_event_fee(rs, ret, fee)
+    for lg in lg_data:
+        event.create_lodgement_group(rs, ret, lg)
     lodgement_groups = event.get_lodgement_groups(rs, ret)
     alodgement = None
     for lg in lodgement_groups:

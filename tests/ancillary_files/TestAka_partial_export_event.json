@@ -305,6 +305,7 @@
         "is_course_state_visible": false,
         "is_locked": false,
         "is_participant_list_visible": false,
+        "is_registration_approved": true,
         "is_visible": true,
         "lodge_field": "lodge",
         "mail_text": "Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, m\u00fcsst ihr leider etwas auf die Teilnehmerliste warten.",
@@ -983,7 +984,7 @@
                 "pronouns_nametag": false,
                 "pronouns_profile": false,
                 "show_legal_given_names": false,
-                "telephone": "+81314159263",
+                "telephone": "+81314159265",
                 "title": null,
                 "username": "akira@example.cde"
             },

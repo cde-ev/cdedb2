@@ -21,11 +21,20 @@ def _get_registration_part_stati(f: webtest.Form) -> set[const.RegistrationPartS
     # If an input with multiple checkboxes is readonly, we only have one hidden input
     # containing the string of all set values. So we iterate over the disabled, but
     # user-facing input with the checkboxes.
-    fieldname = ("readonlyregistration_stati"
-                 if "readonlyregistration_stati" in f.fields else "registration_stati")
-    return set(filter(
-        None, (f.get(fieldname, index=i).value
-               for i in range(len(const.RegistrationPartStati)))))
+    fieldname = (
+        "readonlyregistration_stati"
+        if "readonlyregistration_stati" in f.fields
+        else "registration_stati"
+    )
+    return set(
+        filter(
+            None,
+            (
+                f.get(fieldname, index=i).value
+                for i in range(len(const.RegistrationPartStati))
+            ),
+        )
+    )
 
 
 class TestMlFrontend(FrontendTest):
@@ -52,53 +61,97 @@ class TestMlFrontend(FrontendTest):
             self.assertNonPresence("Aktualisieren der Subscription States")
             self.assertNonPresence("Mailman-Synchronisation")
 
-    @as_users("annika", "anton", "berta", "martin", "nina", "vera", "viktor",
-              "katarina", maintain_data=True)
+    @as_users(
+        "annika",
+        "anton",
+        "berta",
+        "martin",
+        "nina",
+        "vera",
+        "viktor",
+        "katarina",
+        maintain_data=True,
+    )
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Mailinglisten'})
         # Users with no administrated and no moderated mailinglists:
         if self.user_in('martin'):
             ins = {"Übersicht"}
-            out = {"Alle Mailinglisten", "Moderierte Mailinglisten",
-                   "Aktive Mailinglisten", "Nutzer verwalten", "Log"}
+            out = {
+                "Alle Mailinglisten",
+                "Moderierte Mailinglisten",
+                "Aktive Mailinglisten",
+                "Nutzer verwalten",
+                "Log",
+            }
         # Users with core admin privileges for some mailinglists:
         elif self.user_in('vera'):
-            ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten", "Log",
-                   "Nutzer verwalten"}
+            ins = {
+                "Aktive Mailinglisten",
+                "Administrierte Mailinglisten",
+                "Log",
+                "Nutzer verwalten",
+            }
             out = {"Übersicht", "Alle Mailinglisten", "Moderierte Mailinglisten"}
         # Users with relative admin privileges for some mailinglists:
         elif self.user_in('viktor'):
             ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten", "Log"}
-            out = {"Übersicht", "Alle Mailinglisten", "Moderierte Mailinglisten",
-                   "Nutzer verwalten"}
+            out = {
+                "Übersicht",
+                "Alle Mailinglisten",
+                "Moderierte Mailinglisten",
+                "Nutzer verwalten",
+            }
         # Users with moderated mailinglists and relative admin privileges
         # for some mailinglists:
         elif self.user_in('annika'):
-            ins = {"Aktive Mailinglisten", "Administrierte Mailinglisten",
-                   "Moderierte Mailinglisten", "Log"}
+            ins = {
+                "Aktive Mailinglisten",
+                "Administrierte Mailinglisten",
+                "Moderierte Mailinglisten",
+                "Log",
+            }
             out = {"Übersicht", "Alle Mailinglisten", "Nutzer verwalten"}
         # Users with moderated mailinglists, but no admin privileges.
         elif self.user_in('berta'):
             ins = {"Aktive Mailinglisten", "Moderierte Mailinglisten", "Log"}
-            out = {"Übersicht", "Administrierte Mailinglisten", "Alle Mailinglisten",
-                   "Nutzer verwalten"}
+            out = {
+                "Übersicht",
+                "Administrierte Mailinglisten",
+                "Alle Mailinglisten",
+                "Nutzer verwalten",
+            }
         # Users with full ml-admin privileges.
         elif self.user_in('nina'):
-            ins = {"Aktive Mailinglisten", "Alle Mailinglisten",
-                   "Accounts verschmelzen", "Nutzer verwalten",
-                   "Log", "Moderierte Mailinglisten"}
+            ins = {
+                "Aktive Mailinglisten",
+                "Alle Mailinglisten",
+                "Accounts verschmelzen",
+                "Nutzer verwalten",
+                "Log",
+                "Moderierte Mailinglisten",
+            }
             out = {"Übersicht"}
         # Users with moderated mailinglists with full ml-admin privileges.
         elif self.user_in('anton'):
-            ins = {"Aktive Mailinglisten", "Alle Mailinglisten",
-                   "Accounts verschmelzen", "Moderierte Mailinglisten",
-                   "Nutzer verwalten", "Log"}
+            ins = {
+                "Aktive Mailinglisten",
+                "Alle Mailinglisten",
+                "Accounts verschmelzen",
+                "Moderierte Mailinglisten",
+                "Nutzer verwalten",
+                "Log",
+            }
             out = {"Übersicht"}
         # Auditors
         elif self.user_in('katarina'):
             ins = {"Übersicht", "Log"}
-            out = {"Alle Mailinglisten", "Moderierte Mailinglisten",
-                   "Aktive Mailinglisten", "Nutzer verwalten"}
+            out = {
+                "Alle Mailinglisten",
+                "Moderierte Mailinglisten",
+                "Aktive Mailinglisten",
+                "Nutzer verwalten",
+            }
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -164,8 +217,9 @@ class TestMlFrontend(FrontendTest):
     )
     @as_users("nina")
     def test_merge_accounts(self) -> None:
-        self.traverse({'description': "Mailinglisten"},
-                      {'description': "Accounts verschmelzen"})
+        self.traverse(
+            {'description': "Mailinglisten"}, {'description': "Accounts verschmelzen"}
+        )
 
         berta_id = USER_DICT['berta']['DB-ID']
         janis_id = USER_DICT['janis']['DB-ID']
@@ -175,16 +229,20 @@ class TestMlFrontend(FrontendTest):
         f['source_persona_id'] = USER_DICT['rowena']['DB-ID']
         f['target_persona_id'] = berta_id
         self.submit(f, check_notification=False)
-        msg = ("Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin"
-               " sein.")
+        msg = (
+            "Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin"
+            " sein."
+        )
         self.assertValidationError('source_persona_id', msg)
 
         f = self.response.forms['merge-accounts']
         f['source_persona_id'] = USER_DICT['nina']['DB-ID']
         f['target_persona_id'] = berta_id
         self.submit(f, check_notification=False)
-        msg = ("Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin"
-               " sein.")
+        msg = (
+            "Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin"
+            " sein."
+        )
         self.assertValidationError('source_persona_id', msg)
 
         f = self.response.forms['merge-accounts']
@@ -199,21 +257,25 @@ class TestMlFrontend(FrontendTest):
         f['source_persona_id'] = janis_id
         f['target_persona_id'] = berta_id
         self.submit(f, check_notification=False)
-        msg = ("Beide Benutzer haben einen Bezug zu gleichen Mailinglisten: Witz des"
-               " Tages")
+        msg = (
+            "Beide Benutzer haben einen Bezug zu gleichen Mailinglisten: Witz des Tages"
+        )
         self.assertPresence(msg, div='notifications')
 
         # ... so we resolve the blocking ...
-        self.traverse({'description': 'Mailinglisten'},
-                      {'description': 'Witz des Tages'},
-                      {'description': 'Erweiterte Verwaltung'})
+        self.traverse(
+            {'description': 'Mailinglisten'},
+            {'description': 'Witz des Tages'},
+            {'description': 'Erweiterte Verwaltung'},
+        )
         self.assertPresence("Beispiel", div='unsubscriber-list')
         f = self.response.forms['resetunsubscriberform2']
         self.submit(f)
 
         # ... and finally merge the two.
-        self.traverse({'description': "Mailinglisten"},
-                      {'description': "Accounts verschmelzen"})
+        self.traverse(
+            {'description': "Mailinglisten"}, {'description': "Accounts verschmelzen"}
+        )
         f = self.response.forms['merge-accounts']
         f['source_persona_id'] = janis_id
         f['target_persona_id'] = berta_id
@@ -225,14 +287,16 @@ class TestMlFrontend(FrontendTest):
     )
     @as_users("anton", "nina")
     def test_merge_archived_accounts(self) -> None:
-        self.traverse({'description': "Mailinglisten"},
-                      {'description': "Accounts verschmelzen"})
+        self.traverse(
+            {'description': "Mailinglisten"}, {'description': "Accounts verschmelzen"}
+        )
 
         hades_id = USER_DICT['hades']['DB-ID']
         janis_id = USER_DICT['janis']['DB-ID']
 
-        self.traverse({'description': "Mailinglisten"},
-                      {'description': "Accounts verschmelzen"})
+        self.traverse(
+            {'description': "Mailinglisten"}, {'description': "Accounts verschmelzen"}
+        )
         f = self.response.forms['merge-accounts']
         f['source_persona_id'] = janis_id
         f['target_persona_id'] = hades_id
@@ -248,8 +312,9 @@ class TestMlFrontend(FrontendTest):
         self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
 
         self.traverse({'description': 'Mailinglisten'})
-        self._click_admin_view_button(re.compile(r"Benutzer-Administration"),
-                                      current_state=False)
+        self._click_admin_view_button(
+            re.compile(r"Benutzer-Administration"), current_state=False
+        )
 
         # Test Event Administration Admin View
         # This is still available because we are a moderator.
@@ -259,28 +324,34 @@ class TestMlFrontend(FrontendTest):
         self.assertNoLink('/ml/mailinglist/1/change')
         self.assertNoLink('/ml/mailinglist/1/log')
         self.assertPresence("Du hast diese Mailingliste abonniert.")
-        self._click_admin_view_button(re.compile(r"Mailinglisten-Administration"),
-                                      current_state=False)
+        self._click_admin_view_button(
+            re.compile(r"Mailinglisten-Administration"), current_state=False
+        )
         self.traverse({'href': '/ml/mailinglist/1/change'})
         self.assertPresence('Speichern')
-        self.traverse({'href': '/ml/'},
-                      {'href': '/ml/mailinglist/list'},
-                      {'href': '/ml/mailinglist/create'})
+        self.traverse(
+            {'href': '/ml/'},
+            {'href': '/ml/mailinglist/list'},
+            {'href': '/ml/mailinglist/create'},
+        )
 
         # Test Moderator Controls Admin View
-        self.traverse({'href': '/ml/'},
-                      {'href': '/ml/mailinglist/1/show'})
+        self.traverse({'href': '/ml/'}, {'href': '/ml/mailinglist/1/show'})
         self.assertNoLink('/ml/mailinglist/1/management')
         self.assertNoLink('/ml/mailinglist/1/management/advanced')
 
-        self._click_admin_view_button(re.compile(r"Mailinglisten-Administration"),
-                                      current_state=True)
-        self._click_admin_view_button(re.compile(r"Moderator-Schaltflächen"),
-                                      current_state=False)
-        self.traverse({'href': '/ml/mailinglist/1/management'},
-                      {'href': '/ml/mailinglist/1/management/advanced'},
-                      {'href': '/ml/mailinglist/1/log'},
-                      {'href': '/ml/mailinglist/1/change'})
+        self._click_admin_view_button(
+            re.compile(r"Mailinglisten-Administration"), current_state=True
+        )
+        self._click_admin_view_button(
+            re.compile(r"Moderator-Schaltflächen"), current_state=False
+        )
+        self.traverse(
+            {'href': '/ml/mailinglist/1/management'},
+            {'href': '/ml/mailinglist/1/management/advanced'},
+            {'href': '/ml/mailinglist/1/log'},
+            {'href': '/ml/mailinglist/1/change'},
+        )
         f = self.response.forms['configuremailinglistform']
         f['notes'] = "I can change this!"
         f['subject_prefix'] = "Spaß"
@@ -312,8 +383,9 @@ class TestMlFrontend(FrontendTest):
     def test_hide_admin_notes(self) -> None:
         # CdElokal Hogwarts
         ml_data = self.get_sample_datum('ml.mailinglists', 65)
-        self.traverse({'description': 'Mailinglisten'},
-                      {'description': ml_data['title']})
+        self.traverse(
+            {'description': 'Mailinglisten'}, {'description': ml_data['title']}
+        )
         # Make sure that admin notes exist.
         self.assertTrue(ml_data['notes'])
         if self.user_in("emilia", "nina"):
@@ -323,14 +395,30 @@ class TestMlFrontend(FrontendTest):
             # Berta has no admin privileges, Annika has none _for this list_.
             self.assertNonPresence(ml_data['notes'])
 
-    @as_users("annika", "anton", "berta", "martin", "nina", "vera", "werner",
-              "katarina", maintain_data=True)
+    @as_users(
+        "annika",
+        "anton",
+        "berta",
+        "martin",
+        "nina",
+        "vera",
+        "werner",
+        "katarina",
+        maintain_data=True,
+    )
     def test_sidebar_one_mailinglist(self) -> None:
-        self.traverse({'description': 'Mailinglisten'},
-                      {'description': 'Feriendorf Bau'})
+        self.traverse(
+            {'description': 'Mailinglisten'}, {'description': 'Feriendorf Bau'}
+        )
         everyone = {"Mailinglisten-Übersicht", "Übersicht"}
-        moderator = {"Verwaltung", "Erweiterte Verwaltung", "Konfiguration",
-                     "Nachrichtenmoderation", "Log", "Abonnenten"}
+        moderator = {
+            "Verwaltung",
+            "Erweiterte Verwaltung",
+            "Konfiguration",
+            "Nachrichtenmoderation",
+            "Log",
+            "Abonnenten",
+        }
 
         # Moderators:
         out = set()
@@ -392,8 +480,10 @@ class TestMlFrontend(FrontendTest):
 
         f = self.response.forms['subscribe-mod-form']
         self.submit(f)
-        self.assertPresence("Deine Anfrage für diese Mailingliste wartet auf "
-                            "Bestätigung durch einen Moderator. ")
+        self.assertPresence(
+            "Deine Anfrage für diese Mailingliste wartet auf "
+            "Bestätigung durch einen Moderator. "
+        )
         self.assertIn("cancel-request-form", self.response.forms)
 
     @as_users("anton", "berta", maintain_data=True)
@@ -418,8 +508,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("nina")
     def test_list_all_mailinglist(self) -> None:
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/list'})
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/list'})
         self.assertTitle("Alle Mailinglisten")
         # Exemplarily, test mailinglist 54 in detail.
         self.assertPresence("Gutscheine", div="mailinglist-54-row")
@@ -445,8 +534,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("annika")
     def test_list_event_mailinglist(self) -> None:
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/list'})
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/list'})
         self.assertTitle("Administrierte Mailinglisten")
         self.assertPresence("Große Testakademie 2222")
         self.assertPresence("CdE-Party 2050 Orgateam")
@@ -459,8 +547,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("berta", "janis")
     def test_moderated_mailinglist(self) -> None:
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/moderated'})
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/moderated'})
         self.assertTitle("Moderierte Mailinglisten")
         # Moderated mailinglists
         self.assertPresence("Mitgliedermailinglisten")
@@ -478,8 +565,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("annika")
     def test_admin_moderated_mailinglist(self) -> None:
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/moderated'})
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/moderated'})
         self.assertTitle("Moderierte Mailinglisten")
         # Moderated mailinglists
         self.assertPresence("Mitgliedermailinglisten")
@@ -493,16 +579,20 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("quintus")
     def test_mailinglist_cde_admin(self) -> None:
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/list'},
-                      {'href': '/ml/mailinglist/7/show'},
-                      {'href': '/ml/mailinglist/7/management'})
+        self.traverse(
+            {'href': '/ml/$'},
+            {'href': '/ml/mailinglist/list'},
+            {'href': '/ml/mailinglist/7/show'},
+            {'href': '/ml/mailinglist/7/management'},
+        )
 
     @as_users("nina", "berta")
     def test_mailinglist_management(self) -> None:
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/4'},
-                      {'href': '/ml/mailinglist/4/management'})
+        self.traverse(
+            {'href': '/ml/$'},
+            {'href': '/ml/mailinglist/4'},
+            {'href': '/ml/mailinglist/4/management'},
+        )
         self.assertTitle("Klatsch und Tratsch – Verwaltung")
         self.assertNonPresence("Inga Iota", div="moderator-list")
         self.assertNonPresence("Anton Administrator", div="moderator-list")
@@ -522,8 +612,7 @@ class TestMlFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Verwaltung")
         self.assertPresence("Inga Iota", div="moderator-list")
-        self.assertPresence("Anton Administrator",
-                            div="moderator-list")
+        self.assertPresence("Anton Administrator", div="moderator-list")
         f = self.response.forms['removemoderatorform9']
         self.submit(f)
         self.assertTitle("Klatsch und Tratsch – Verwaltung")
@@ -550,9 +639,11 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("nina")
     def test_mandatory_mailinglist(self) -> None:
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/1/'},
-                      {'href': '/ml/mailinglist/1/management'})
+        self.traverse(
+            {'href': '/ml/$'},
+            {'href': '/ml/mailinglist/1/'},
+            {'href': '/ml/mailinglist/1/management'},
+        )
         self.assertDivNotExists('removesubscriberform100')
         self.traverse("Erweiterte Verwaltung")
         self.assertTitle("Verkündungen – Erweiterte Verwaltung")
@@ -569,15 +660,18 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Daniel Dino")
         # Reload server- and client-side
         self.ml.write_subscription_states(self.key, (1,))
-        self.traverse({'href': '/ml/mailinglist/1'},
-                      {'href': '/ml/mailinglist/1/management'})
+        self.traverse(
+            {'href': '/ml/mailinglist/1'}, {'href': '/ml/mailinglist/1/management'}
+        )
         self.assertNonPresence("Daniel")
 
     @as_users("nina", "berta")
     def test_advanced_management(self) -> None:
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/4'},
-                      {'href': '/ml/mailinglist/4/management/advanced'})
+        self.traverse(
+            {'href': '/ml/$'},
+            {'href': '/ml/mailinglist/4'},
+            {'href': '/ml/mailinglist/4/management/advanced'},
+        )
 
         # add some persona
         self.assertTitle("Klatsch und Tratsch – Erweiterte Verwaltung")
@@ -608,21 +702,37 @@ class TestMlFrontend(FrontendTest):
 
         self.traverse({"href": "ml/mailinglist/4/download"})
 
-        result = list(csv.DictReader(
-            self.response.body.decode('utf-8-sig').split("\n"),
-            dialect=CustomCSVDialect))
+        result = list(
+            csv.DictReader(
+                self.response.body.decode('utf-8-sig').split("\n"),
+                dialect=CustomCSVDialect,
+            )
+        )
         all_rows = []
 
         for row in result:
-            line = (row['db_id'] + ";" + row['given_names'] + ";" +
-                    row['family_name'] + ";" + row['subscription_state'] + ";" +
-                    row['email'] + ";" + row['subscription_address'])
+            line = (
+                row['db_id']
+                + ";"
+                + row['given_names']
+                + ";"
+                + row['family_name']
+                + ";"
+                + row['subscription_state']
+                + ";"
+                + row['email']
+                + ";"
+                + row['subscription_address']
+            )
             all_rows.append(line)
 
-        self.assertIn('DB-5-1;Emilia;Eventis;unsubscription_override;'
-                      'emilia@example.cde;', all_rows)
-        self.assertIn('DB-9-4;Inga;Iota;subscription_override;'
-                      'inga@example.cde;', all_rows)
+        self.assertIn(
+            'DB-5-1;Emilia;Eventis;unsubscription_override;emilia@example.cde;',
+            all_rows,
+        )
+        self.assertIn(
+            'DB-9-4;Inga;Iota;subscription_override;inga@example.cde;', all_rows
+        )
 
         # remove the former added persona
         self.response = save
@@ -651,9 +761,11 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("nina")
     def test_remove_unsubscriptions(self) -> None:
-        self.traverse({'description': 'Mailinglisten'},
-                      {'description': 'Werbung'},
-                      {'description': 'Erweiterte Verwaltung'})
+        self.traverse(
+            {'description': 'Mailinglisten'},
+            {'description': 'Werbung'},
+            {'description': 'Erweiterte Verwaltung'},
+        )
         self.assertTitle("Werbung – Erweiterte Verwaltung")
         self.assertPresence("Annika", div='unsubscriber-list')
         self.assertPresence("Ferdinand", div='unsubscriber-list')
@@ -679,9 +791,11 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("janis")
     def test_not_remove_unsubscriptions(self) -> None:
-        self.traverse({'description': 'Mailinglisten'},
-                      {'description': 'Werbung'},
-                      {'description': 'Erweiterte Verwaltung'})
+        self.traverse(
+            {'description': 'Mailinglisten'},
+            {'description': 'Werbung'},
+            {'description': 'Erweiterte Verwaltung'},
+        )
         self.assertTitle("Werbung – Erweiterte Verwaltung")
         self.assertPresence("Annika", div='unsubscriber-list')
         self.assertPresence("Ferdinand", div='unsubscriber-list')
@@ -694,9 +808,11 @@ class TestMlFrontend(FrontendTest):
     # TODO add a presider as moderator and use him too in this test
     @as_users("nina")
     def test_mailinglist_management_outside_audience(self) -> None:
-        self.traverse({'description': 'Mailinglisten'},
-                      {'description': 'Sozialistischer Kampfbrief'},
-                      {'description': 'Erweiterte Verwaltung'})
+        self.traverse(
+            {'description': 'Mailinglisten'},
+            {'description': 'Sozialistischer Kampfbrief'},
+            {'description': 'Erweiterte Verwaltung'},
+        )
         self.assertTitle("Sozialistischer Kampfbrief – Erweiterte Verwaltung")
         self.assertNonPresence("Janis Jalapeño")
         f = self.response.forms['addmodsubscriberform']
@@ -707,9 +823,11 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("berta")
     def test_mailinglist_management_multi(self) -> None:
-        self.traverse({'description': 'Mailinglisten'},
-                      {'description': 'Aktivenforum 2001'},
-                      {'description': 'Verwaltung'})
+        self.traverse(
+            {'description': 'Mailinglisten'},
+            {'description': 'Aktivenforum 2001'},
+            {'description': 'Verwaltung'},
+        )
         self.assertTitle("Aktivenforum 2001 – Verwaltung")
         f = self.response.forms['addsubscriberform']
         f['subscriber_ids'] = "DB-1-9, DB-2-7"
@@ -725,40 +843,43 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['addsubscriberform']
         f['subscriber_ids'] = "DB-1-9, DB-9-4"
         self.submit(f)
-        self.assertPresence("Der Nutzer ist aktuell Abonnent.",
-                            div='notifications')
+        self.assertPresence("Der Nutzer ist aktuell Abonnent.", div='notifications')
         # One user archived. Action aborted.
         self.assertTitle("Aktivenforum 2001 – Verwaltung")
         f = self.response.forms['addsubscriberform']
         f['subscriber_ids'] = "DB-1-9, DB-8-6"
         self.submit(f, check_notification=False)
-        self.assertPresence("Einige dieser Nutzer existieren nicht "
-                            "oder sind archiviert.")
+        self.assertPresence(
+            "Einige dieser Nutzer existieren nicht oder sind archiviert."
+        )
         # one user is event user only
         self.assertTitle("Aktivenforum 2001 – Verwaltung")
         f = self.response.forms['addsubscriberform']
         f['subscriber_ids'] = "DB-7-8, DB-5-1"
         self.submit(f)
-        self.assertPresence("Der Nutzer hat keine Berechtigung auf "
-                            "dieser Liste zu stehen.",
-                            div='notifications')
+        self.assertPresence(
+            "Der Nutzer hat keine Berechtigung auf dieser Liste zu stehen.",
+            div='notifications',
+        )
         # noop with one event user
         self.assertTitle("Aktivenforum 2001 – Verwaltung")
         f = self.response.forms['addsubscriberform']
         f['subscriber_ids'] = "DB-7-8, DB-5-1"
         self.submit(f, check_notification=False)
-        self.assertPresence("Der Nutzer hat keine Berechtigung auf "
-                            "dieser Liste zu stehen.",
-                            div='notifications')
-        self.assertPresence("Der Nutzer ist aktuell Abonnent.",
-                            div='notifications')
+        self.assertPresence(
+            "Der Nutzer hat keine Berechtigung auf dieser Liste zu stehen.",
+            div='notifications',
+        )
+        self.assertPresence("Der Nutzer ist aktuell Abonnent.", div='notifications')
         self.assertPresence("Änderung fehlgeschlagen.", div='notifications')
 
     @as_users("berta")
     def test_advanced_management_multi(self) -> None:
-        self.traverse({'description': 'Mailinglisten'},
-                      {'description': 'Aktivenforum 2001'},
-                      {'description': 'Erweiterte Verwaltung'})
+        self.traverse(
+            {'description': 'Mailinglisten'},
+            {'description': 'Aktivenforum 2001'},
+            {'description': 'Erweiterte Verwaltung'},
+        )
         self.assertTitle("Aktivenforum 2001 – Erweiterte Verwaltung")
         for state in ('modsubscriber', 'modunsubscriber'):
             form = 'add' + state + 'form'
@@ -784,16 +905,18 @@ class TestMlFrontend(FrontendTest):
             f = self.response.forms[form]
             f[field] = "DB-1-9, DB-8-6"
             self.submit(f, check_notification=False)
-            self.assertPresence("Einige dieser Nutzer existieren nicht "
-                                "oder sind archiviert.")
+            self.assertPresence(
+                "Einige dieser Nutzer existieren nicht oder sind archiviert."
+            )
             # one user is event user only
             self.assertTitle("Aktivenforum 2001 – Erweiterte Verwaltung")
             f = self.response.forms[form]
             f[field] = "DB-7-8, DB-5-1"
             self.submit(f)
-            self.assertNonPresence("Der Nutzer hat keine Berechtigung auf "
-                                   "dieser Liste zu stehen.",
-                                    div='notifications')
+            self.assertNonPresence(
+                "Der Nutzer hat keine Berechtigung auf dieser Liste zu stehen.",
+                div='notifications',
+            )
             # clean up
             for anid in [1, 2, 5, 7, 9]:
                 self.assertTitle("Aktivenforum 2001 – Erweiterte Verwaltung")
@@ -803,20 +926,26 @@ class TestMlFrontend(FrontendTest):
     @as_users("charly")
     def test_roster(self) -> None:
         self.traverse("Mailinglisten", "Gutscheine")
-        self.assertPresence("Du kannst diese Mailingliste nicht abonnieren,"
-                            " da Du von ihren Moderatoren blockiert wurdest.")
+        self.assertPresence(
+            "Du kannst diese Mailingliste nicht abonnieren,"
+            " da Du von ihren Moderatoren blockiert wurdest."
+        )
         # Charly may not subscribe to the mailinglist, but may view it.
         self.assertNonPresence("Abonnenten", div="sidebar-navigation")
         with self.switch_user("anton"):
             self.traverse("Mailinglisten", "Gutscheine", "Konfiguration")
             f = self.response.forms['configuremailinglistform']
-            self.assertEqual(f['roster_visibility'].value,
-                             str(const.MailinglistRosterVisibility.subscribable))
+            self.assertEqual(
+                f['roster_visibility'].value,
+                str(const.MailinglistRosterVisibility.subscribable),
+            )
             f['roster_visibility'] = const.MailinglistRosterVisibility.viewers
             self.submit(f)
         self.traverse("Mailinglisten", "Gutscheine", "Abonnenten")
-        self.assertNonPresence("Die Abonnenten sind aktuell nur für Moderatoren",
-                               div='static-notifications')
+        self.assertNonPresence(
+            "Die Abonnenten sind aktuell nur für Moderatoren",
+            div='static-notifications',
+        )
         self.assertPresence("Akira Abukara")
 
         self.traverse("Mailinglisten", "Allumfassende Liste")
@@ -826,13 +955,17 @@ class TestMlFrontend(FrontendTest):
         with self.switch_user("anton"):
             self.traverse("Mailinglisten", "Allumfassende Liste", "Konfiguration")
             f = self.response.forms['configuremailinglistform']
-            self.assertEqual(f['roster_visibility'].value,
-                             str(const.MailinglistRosterVisibility.none))
+            self.assertEqual(
+                f['roster_visibility'].value,
+                str(const.MailinglistRosterVisibility.none),
+            )
             # but Anton can see the roster, since he is an admin
             self.assertPresence("Abonnenten", div="sidebar-navigation")
             self.traverse("Abonnenten")
-            self.assertPresence("Die Abonnenten sind aktuell nur für Moderatoren und"
-                                " Admins sichtbar.", div='static-notifications')
+            self.assertPresence(
+                "Die Abonnenten sind aktuell nur für Moderatoren und Admins sichtbar.",
+                div='static-notifications',
+            )
             self.assertPresence("Charly Clown")
 
     @as_users("nina")
@@ -897,17 +1030,23 @@ class TestMlFrontend(FrontendTest):
     @as_users("janis")
     def test_create_mailinglist_unprivileged(self) -> None:
         self.get("/ml/mailinglist/create", status=403)
-        self.get("/ml/mailinglist/create?ml_type=MailinglistTypes.general_opt_in",
-                 status=403)
-        self.post("/ml/mailinglist/create",
-                  {'ml_type': "MailinglistTypes.general_opt_in"}, status=403)
+        self.get(
+            "/ml/mailinglist/create?ml_type=MailinglistTypes.general_opt_in", status=403
+        )
+        self.post(
+            "/ml/mailinglist/create",
+            {'ml_type': "MailinglistTypes.general_opt_in"},
+            status=403,
+        )
 
     @as_users("nina")
     def test_change_mailinglist(self) -> None:
-        self.traverse({'description': 'Mailinglisten'},
-                      {'description': 'Alle Mailinglisten'},
-                      {'description': 'Werbung'},
-                      {'description': 'Konfiguration'})
+        self.traverse(
+            {'description': 'Mailinglisten'},
+            {'description': 'Alle Mailinglisten'},
+            {'description': 'Werbung'},
+            {'description': 'Konfiguration'},
+        )
         self.assertTitle("Werbung – Konfiguration")
 
         f = self.response.forms['configuremailinglistform']
@@ -969,19 +1108,23 @@ class TestMlFrontend(FrontendTest):
             const.MailinglistTypes.event_associated_exclusive,
         }
         general_types = {
-            t for t in const.MailinglistTypes if t not in (
-                assembly_types.union(event_types)
-            )}
+            t
+            for t in const.MailinglistTypes
+            if t not in (assembly_types.union(event_types))
+        }
         event_id = 1
         event_title = self.get_sample_datum('event.events', event_id)['title']
         assembly_id = 1
-        assembly_title = self.get_sample_datum(
-            'assembly.assemblies', assembly_id)['title']
+        assembly_title = self.get_sample_datum('assembly.assemblies', assembly_id)[
+            'title'
+        ]
 
-        self.traverse({'description': 'Mailinglisten'},
-                      {'description': 'Alle Mailinglisten'},
-                      {'description': 'Mitgestaltungsforum'},
-                      {'description': 'Konfiguration'})
+        self.traverse(
+            {'description': 'Mailinglisten'},
+            {'description': 'Alle Mailinglisten'},
+            {'description': 'Mitgestaltungsforum'},
+            {'description': 'Konfiguration'},
+        )
         self.assertTitle("Mitgestaltungsforum – Konfiguration")
         self.traverse({'description': 'Typ ändern'})
         self.assertTitle("Mitgestaltungsforum – Typ ändern")
@@ -1008,8 +1151,7 @@ class TestMlFrontend(FrontendTest):
                     f['event_id'] = event_id
                     self.submit(f)
                     self.traverse({'description': r"\sÜbersicht"})
-                    self.assertPresence(
-                        f"Mailingliste zur Veranstaltung {event_title}")
+                    self.assertPresence(f"Mailingliste zur Veranstaltung {event_title}")
                 elif ml_type in assembly_types:
                     self.submit(f)  # only works if all assembly-associated ml
                     # types can also not be associated with an assembly, which may
@@ -1020,7 +1162,8 @@ class TestMlFrontend(FrontendTest):
                     self.submit(f)
                     self.traverse({'description': r"\sÜbersicht"})
                     self.assertPresence(
-                        f"Mailingliste zur Versammlung {assembly_title}")
+                        f"Mailingliste zur Versammlung {assembly_title}"
+                    )
 
     @as_users("nina")
     def test_change_mailinglist_registration_stati(self) -> None:
@@ -1028,15 +1171,21 @@ class TestMlFrontend(FrontendTest):
         self.assertTitle("Teilnehmer-Liste – Konfiguration")
         f = self.response.forms['configuremailinglistform']
         reality = _get_registration_part_stati(f)
-        expectation = {str(const.RegistrationPartStati.participant),
-                       str(const.RegistrationPartStati.guest)}
+        expectation = {
+            str(const.RegistrationPartStati.participant),
+            str(const.RegistrationPartStati.guest),
+        }
         self.assertEqual(expectation, reality)
-        f['registration_stati'] = [const.RegistrationPartStati.waitlist,
-                                   const.RegistrationPartStati.cancelled]
+        f['registration_stati'] = [
+            const.RegistrationPartStati.waitlist,
+            const.RegistrationPartStati.cancelled,
+        ]
         self.submit(f)
         reality = _get_registration_part_stati(f)
-        expectation = {str(const.RegistrationPartStati.waitlist),
-                       str(const.RegistrationPartStati.cancelled)}
+        expectation = {
+            str(const.RegistrationPartStati.waitlist),
+            str(const.RegistrationPartStati.cancelled),
+        }
         self.assertEqual(expectation, reality)
 
     @as_users("nina")
@@ -1053,8 +1202,14 @@ class TestMlFrontend(FrontendTest):
         self.login(USER_DICT['inga'])
         self.traverse("Mailinglisten")
         # check icon
-        self.assertEqual(len(self.response.lxml.get_element_by_id('mailinglist4')
-                             .find_class('fa-times-circle')), 1)
+        self.assertEqual(
+            len(
+                self.response.lxml.get_element_by_id('mailinglist4').find_class(
+                    'fa-times-circle'
+                )
+            ),
+            1,
+        )
         self.traverse("Klatsch und Tratsch")
         self.assertTitle("Klatsch und Tratsch")
         f = self.response.forms['subscribe-mod-form']
@@ -1062,13 +1217,21 @@ class TestMlFrontend(FrontendTest):
         self.assertIn('cancel-request-form', self.response.forms)
         self.traverse("Mailinglisten-Übersicht")
         # check icon
-        self.assertEqual(len(self.response.lxml.get_element_by_id('mailinglist4')
-                             .find_class('fa-circle')), 1)
+        self.assertEqual(
+            len(
+                self.response.lxml.get_element_by_id('mailinglist4').find_class(
+                    'fa-circle'
+                )
+            ),
+            1,
+        )
         self.logout()
         self.login(USER_DICT['berta'])
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/4'},
-                      {'href': '/ml/mailinglist/4/management'})
+        self.traverse(
+            {'href': '/ml/$'},
+            {'href': '/ml/mailinglist/4'},
+            {'href': '/ml/mailinglist/4/management'},
+        )
         self.assertTitle("Klatsch und Tratsch – Verwaltung")
         f = self.response.forms['handlerequestform9']
         self.submit(f, button='action', value='accept')
@@ -1078,15 +1241,20 @@ class TestMlFrontend(FrontendTest):
         self.login(USER_DICT['inga'])
         self.traverse("Mailinglisten")
         # check icon
-        self.assertEqual(len(self.response.lxml.get_element_by_id('mailinglist4')
-                             .find_class('fa-check-circle')), 1)
+        self.assertEqual(
+            len(
+                self.response.lxml.get_element_by_id('mailinglist4').find_class(
+                    'fa-check-circle'
+                )
+            ),
+            1,
+        )
         self.traverse("Klatsch und Tratsch")
         self.assertIn('unsubscribeform', self.response.forms)
 
     @as_users("charly", "inga", maintain_data=True)
     def test_subscribe_unsubscribe(self) -> None:
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/3'})
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/3'})
         self.assertTitle("Witz des Tages")
         f = self.response.forms['subscribe-no-mod-form']
         self.submit(f)
@@ -1105,8 +1273,7 @@ class TestMlFrontend(FrontendTest):
         self.assertPresence("Anton Administrator")
 
     def _create_mailinglist(self, mdata: CdEDBObject) -> None:
-        self.traverse({'href': '/ml/'},
-                      {'href': '/ml/mailinglist/create'})
+        self.traverse({'href': '/ml/'}, {'href': '/ml/mailinglist/create'})
         f = self.response.forms['selectmltypeform']
         f['ml_type'] = mdata['ml_type']
         self.submit(f)
@@ -1154,8 +1321,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("berta", "charly")
     def test_change_sub_address(self) -> None:
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/4'})
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/4'})
         self.assertTitle("Klatsch und Tratsch")
         f = self.response.forms['changeaddressform']
         f['email'] = "pepper@example.cde"
@@ -1178,16 +1344,17 @@ class TestMlFrontend(FrontendTest):
         user = self.user
         self.logout()
         self.login(USER_DICT['inga'])
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/4'})
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/mailinglist/4'})
         self.assertTitle("Klatsch und Tratsch")
         f = self.response.forms['subscribe-mod-form']
         self.submit(f)
         self.logout()
         self.login(user)
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/4'},
-                      {'href': '/ml/mailinglist/4/management'})
+        self.traverse(
+            {'href': '/ml/$'},
+            {'href': '/ml/mailinglist/4'},
+            {'href': '/ml/mailinglist/4/management'},
+        )
         self.assertTitle("Klatsch und Tratsch – Verwaltung")
 
         # testing: try to add a subscription request
@@ -1196,20 +1363,23 @@ class TestMlFrontend(FrontendTest):
         f['subscriber_ids'] = USER_DICT["inga"]["DB-ID"]
         self.submit(f, check_notification=False)
         self.assertNotification(
-            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.", 'error')
+            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.", 'error'
+        )
         # as mod subscriber
         self.traverse({'href': '/ml/mailinglist/4/management/advanced'})
         f = self.response.forms['addmodsubscriberform']
         f['modsubscriber_ids'] = USER_DICT["inga"]["DB-ID"]
         self.submit(f, check_notification=False)
         self.assertNotification(
-            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.", 'error')
+            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.", 'error'
+        )
         # as mod unsubscribe
         f = self.response.forms['addmodunsubscriberform']
         f['modunsubscriber_ids'] = USER_DICT["inga"]["DB-ID"]
         self.submit(f, check_notification=False)
         self.assertNotification(
-            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.", 'error')
+            "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt.", 'error'
+        )
 
         # testing: mod subscribe and unsubscribe
         # add already subscribed user as mod subscribe
@@ -1233,8 +1403,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("berta", "janis", maintain_data=True)
     def test_moderator_access(self) -> None:
-        self.traverse({"href": "/ml"},
-                      {"href": "/ml/mailinglist/3/show"})
+        self.traverse({"href": "/ml"}, {"href": "/ml/mailinglist/3/show"})
         self.assertTitle("Witz des Tages")
         self.traverse({"href": "/ml/mailinglist/3/manage"})
         self.assertTitle("Witz des Tages – Verwaltung")
@@ -1249,9 +1418,11 @@ class TestMlFrontend(FrontendTest):
     @as_users("berta", "janis")
     @prepsql("INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES (60, 10)")
     def test_moderator_change_mailinglist(self) -> None:
-        self.traverse({"description": "Mailinglisten"},
-                      {"description": "CdE-Party 2050 Teilnehmer"},
-                      {"description": "Konfiguration"})
+        self.traverse(
+            {"description": "Mailinglisten"},
+            {"description": "CdE-Party 2050 Teilnehmer"},
+            {"description": "Konfiguration"},
+        )
 
         old_ml = self.get_sample_datum('ml.mailinglists', 60)
         f = self.response.forms['configuremailinglistform']
@@ -1287,18 +1458,20 @@ class TestMlFrontend(FrontendTest):
         if self.user_in('berta'):
             expectation = {str(const.RegistrationPartStati.guest)}
         else:
-            expectation = {str(const.RegistrationPartStati(status))
-                           for status in old_ml['registration_stati']}
+            expectation = {
+                str(const.RegistrationPartStati(status))
+                for status in old_ml['registration_stati']
+            }
         self.assertEqual(expectation, reality)
 
         # ... and these have changed.
         self.assertEqual("Wir machen Party!", f['description'].value)
         self.assertEqual("Nur geladene Gäste.", f['notes'].value)
-        self.assertEqual(str(const.ModerationPolicy.unmoderated),
-                         f['mod_policy'].value)
+        self.assertEqual(str(const.ModerationPolicy.unmoderated), f['mod_policy'].value)
         self.assertEqual("party", f['subject_prefix'].value)
-        self.assertEqual(str(const.AttachmentPolicy.allow),
-                         f['attachment_policy'].value)
+        self.assertEqual(
+            str(const.AttachmentPolicy.allow), f['attachment_policy'].value
+        )
         self.assertEqual('True', f['convert_html'].value)
         self.assertEqual("1111", f['maxsize'].value)
         self.assertEqual("Disco, Disco.", f['additional_footer'].value)
@@ -1307,27 +1480,38 @@ class TestMlFrontend(FrontendTest):
     # add Janis as restricted moderator
     @prepsql("INSERT INTO ml.moderators (mailinglist_id, persona_id) VALUES (9, 10)")
     # add someone (Charly) in unsubscription override state
-    @prepsql(f"INSERT INTO ml.subscription_states"
-             f" (mailinglist_id, persona_id, subscription_state)"
-             f" VALUES (9, 3, {const.SubscriptionState.unsubscription_override.value})")
+    @prepsql(
+        f"INSERT INTO ml.subscription_states"
+        f" (mailinglist_id, persona_id, subscription_state)"
+        f" VALUES (9, 3, {const.SubscriptionState.unsubscription_override.value})"
+    )
     # add someone (Daniel) in subscription override state
-    @prepsql(f"INSERT INTO ml.subscription_states"
-             f" (mailinglist_id, persona_id, subscription_state)"
-             f" VALUES (9, 4, {const.SubscriptionState.subscription_override.value})")
+    @prepsql(
+        f"INSERT INTO ml.subscription_states"
+        f" (mailinglist_id, persona_id, subscription_state)"
+        f" VALUES (9, 4, {const.SubscriptionState.subscription_override.value})"
+    )
     # add someone (Ferdinand) in unsubscription state (no implicit subscribing right)
-    @prepsql(f"INSERT INTO ml.subscription_states"
-             f" (mailinglist_id, persona_id, subscription_state)"
-             f" VALUES (9, 6, {const.SubscriptionState.unsubscribed.value})")
+    @prepsql(
+        f"INSERT INTO ml.subscription_states"
+        f" (mailinglist_id, persona_id, subscription_state)"
+        f" VALUES (9, 6, {const.SubscriptionState.unsubscribed.value})"
+    )
     # add someone (Werner) in request subscription state
-    @prepsql(f"INSERT INTO ml.subscription_states"
-             f" (mailinglist_id, persona_id, subscription_state)"
-             f" VALUES (9, 23, {const.SubscriptionState.pending.value})")
+    @prepsql(
+        f"INSERT INTO ml.subscription_states"
+        f" (mailinglist_id, persona_id, subscription_state)"
+        f" VALUES (9, 23, {const.SubscriptionState.pending.value})"
+    )
     def test_restricted_moderator(self) -> None:
-        self.traverse({"description": "Mailinglisten"},
-                      {"description": "Teilnehmer-Liste"},
-                      {"description": "Verwaltung"})
-        self.assertPresence("Du hast nur eingeschränkten Moderator-Zugriff",
-                            div="static-notifications")
+        self.traverse(
+            {"description": "Mailinglisten"},
+            {"description": "Teilnehmer-Liste"},
+            {"description": "Verwaltung"},
+        )
+        self.assertPresence(
+            "Du hast nur eingeschränkten Moderator-Zugriff", div="static-notifications"
+        )
 
         # he can neither add nor remove subscriptions ...
         self.assertNotIn('addsubscriberform', self.response.forms)
@@ -1350,8 +1534,9 @@ class TestMlFrontend(FrontendTest):
         self.assertNonPresence("Garcia", div='moderator-list')
 
         self.traverse({"description": "Erweiterte Verwaltung"})
-        self.assertPresence("Du hast nur eingeschränkten Moderator-Zugriff",
-                            div="static-notifications")
+        self.assertPresence(
+            "Du hast nur eingeschränkten Moderator-Zugriff", div="static-notifications"
+        )
 
         # he can neither add nor remove subscriptions ...
         self.assertNotIn('addmodsubscriberform', self.response.forms)
@@ -1378,8 +1563,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("ludwig")
     def test_cdelokal_admin(self) -> None:
-        self.traverse({"description": "Mailinglisten"},
-                      {"description": "Hogwarts"})
+        self.traverse({"description": "Mailinglisten"}, {"description": "Hogwarts"})
         admin_note = self.get_sample_datum('ml.mailinglists', 65)['notes']
         self.assertPresence(admin_note, div="adminnotes")
         self.traverse({"description": "Verwaltung"})
@@ -1396,22 +1580,24 @@ class TestMlFrontend(FrontendTest):
         f['notes'] = new_notes
         self.submit(f)
         self.assertPresence(new_notes, div="adminnotes")
-        self.traverse({"description": "Mailinglisten"},
-                      {"description": "Mailingliste anlegen"})
+        self.traverse(
+            {"description": "Mailinglisten"}, {"description": "Mailingliste anlegen"}
+        )
         f = self.response.forms['selectmltypeform']
         f['ml_type'] = const.MailinglistTypes.cdelokal
         self.assertEqual(len(f['ml_type'].options), 2)
         self.submit(f)
         f = self.response.forms['configuremailinglistform']
         f['title'] = "Little Whinging"
-        f['notes'] = "Only one wizard lives here, but he insisted on a" \
-                     " Lokalgruppen-Mailinglist."
-        f['description'] = "If anyone else lives here, please come by, " \
-                           "I am lonely."
+        f['notes'] = (
+            "Only one wizard lives here, but he insisted on a Lokalgruppen-Mailinglist."
+        )
+        f['description'] = "If anyone else lives here, please come by, I am lonely."
         f['local_part'] = "littlewhinging"
         f['domain'] = const.MailinglistDomain.cdelokal
-        self.assertEqual(len(f['domain'].options),
-                         len(CdeLokalMailinglist.available_domains))
+        self.assertEqual(
+            len(f['domain'].options), len(CdeLokalMailinglist.available_domains)
+        )
         moderator = USER_DICT["berta"]
         f['moderators'] = moderator["DB-ID"]
         self.submit(f)
@@ -1424,12 +1610,18 @@ class TestMlFrontend(FrontendTest):
         f = self.response.forms['configuremailinglistform']
         reality = _get_registration_part_stati(f)
         sample_data_stati = set(
-            str(const.RegistrationPartStati(x)) for x in self.get_sample_data(
-                "ml.mailinglists", (60,), ("registration_stati",),
-            )[60]["registration_stati"])
+            str(const.RegistrationPartStati(x))
+            for x in self.get_sample_data(
+                "ml.mailinglists",
+                (60,),
+                ("registration_stati",),
+            )[60]["registration_stati"]
+        )
         self.assertEqual(sample_data_stati, reality)
-        stati = [const.RegistrationPartStati.waitlist,
-                 const.RegistrationPartStati.guest]
+        stati = [
+            const.RegistrationPartStati.waitlist,
+            const.RegistrationPartStati.guest,
+        ]
         f['registration_stati'] = stati
         self.submit(f)
         self.traverse({"description": "Konfiguration"})
@@ -1462,7 +1654,8 @@ class TestMlFrontend(FrontendTest):
                 self.traverse("Verwaltung")
                 f = self.response.forms['addsubscriberform']
                 f['subscriber_ids'] = ",".join(
-                    u['DB-ID'] for u in USER_DICT.values() if u['DB-ID'])
+                    u['DB-ID'] for u in USER_DICT.values() if u['DB-ID']
+                )
                 self.submit(f, check_notification=False)
 
         self.traverse("Mailinglisten")
@@ -1470,8 +1663,9 @@ class TestMlFrontend(FrontendTest):
         self.submit(f)
 
     @staticmethod
-    def _prepare_moderation_mock(client_class: unittest.mock.Mock) -> tuple[
-            list[MockHeldMessage], unittest.mock.MagicMock, Any]:
+    def _prepare_moderation_mock(
+        client_class: unittest.mock.Mock,
+    ) -> tuple[list[MockHeldMessage], unittest.mock.MagicMock, Any]:
         messages = HELD_MESSAGE_SAMPLE
         mmlist = unittest.mock.MagicMock()
         moderation_response = unittest.mock.MagicMock()
@@ -1495,9 +1689,11 @@ class TestMlFrontend(FrontendTest):
         #
         # Run
         #
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/99'},
-                      {'href': '/ml/mailinglist/99/moderate'})
+        self.traverse(
+            {'href': '/ml/$'},
+            {'href': '/ml/mailinglist/99'},
+            {'href': '/ml/mailinglist/99/moderate'},
+        )
         self.assertTitle("Mailman-Migration – Nachrichtenmoderation")
         self.assertPresence("Finanzbericht")
         self.assertPresence("Verschwurbelung")
@@ -1538,26 +1734,34 @@ class TestMlFrontend(FrontendTest):
         # Creation
         self.assertEqual(
             mmlist.moderate_message.call_args_list,
-            [umcall(1, 'accept', comment=None),
-             umcall(2, 'reject', comment='naughty joke'),
-             umcall(3, 'discard', comment=None)])
+            [
+                umcall(1, 'accept', comment=None),
+                umcall(2, 'reject', comment='naughty joke'),
+                umcall(3, 'discard', comment=None),
+            ],
+        )
 
         self.traverse("Log")
         self.assertPresence("Nachricht akzeptiert", div="1-1001")
         self.assertPresence("Nachricht zurückgewiesen", div="2-1002")
         self.assertPresence("Nachricht verworfen", div="3-1003")
-        self.assertPresence("kassenwart@example.cde / Finanzbericht / Spam score: —",
-                            div="1-1001")
-        self.assertPresence("illuminati@example.cde / Verschwurbelung"
-                            " / Spam score: 1.108",
-                            div="2-1002")
-        self.assertPresence("nigerian_prince@example.cde / unerwartetes Erbe"
-                            " / Spam score: 2.725", div="3-1003")
+        self.assertPresence(
+            "kassenwart@example.cde / Finanzbericht / Spam score: —", div="1-1001"
+        )
+        self.assertPresence(
+            "illuminati@example.cde / Verschwurbelung / Spam score: 1.108", div="2-1002"
+        )
+        self.assertPresence(
+            "nigerian_prince@example.cde / unerwartetes Erbe / Spam score: 2.725",
+            div="3-1003",
+        )
 
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
     @as_users("anton")
-    def test_mailman_moderation_multi_accept(self, client_class: unittest.mock.Mock,
-                                             ) -> None:
+    def test_mailman_moderation_multi_accept(
+        self,
+        client_class: unittest.mock.Mock,
+    ) -> None:
         #
         # Prepare
         #
@@ -1566,9 +1770,11 @@ class TestMlFrontend(FrontendTest):
         #
         # Run
         #
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/99'},
-                      {'href': '/ml/mailinglist/99/moderate'})
+        self.traverse(
+            {'href': '/ml/$'},
+            {'href': '/ml/mailinglist/99'},
+            {'href': '/ml/mailinglist/99/moderate'},
+        )
         self.assertTitle("Mailman-Migration – Nachrichtenmoderation")
         self.assertPresence("Finanzbericht")
         self.assertPresence("Verschwurbelung")
@@ -1589,14 +1795,19 @@ class TestMlFrontend(FrontendTest):
         # Creation
         self.assertEqual(
             mmlist.moderate_message.call_args_list,
-            [umcall(1, 'accept', comment=None),
-             umcall(2, 'accept', comment=None),
-             umcall(3, 'accept', comment=None)])
+            [
+                umcall(1, 'accept', comment=None),
+                umcall(2, 'accept', comment=None),
+                umcall(3, 'accept', comment=None),
+            ],
+        )
 
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
     @as_users("anton")
-    def test_mailman_moderation_multi_discard(self, client_class: unittest.mock.Mock,
-                                              ) -> None:
+    def test_mailman_moderation_multi_discard(
+        self,
+        client_class: unittest.mock.Mock,
+    ) -> None:
         #
         # Prepare
         #
@@ -1605,9 +1816,11 @@ class TestMlFrontend(FrontendTest):
         #
         # Run
         #
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/99'},
-                      {'href': '/ml/mailinglist/99/moderate'})
+        self.traverse(
+            {'href': '/ml/$'},
+            {'href': '/ml/mailinglist/99'},
+            {'href': '/ml/mailinglist/99/moderate'},
+        )
         self.assertTitle("Mailman-Migration – Nachrichtenmoderation")
         self.assertPresence("Finanzbericht")
         self.assertPresence("Verschwurbelung")
@@ -1628,9 +1841,12 @@ class TestMlFrontend(FrontendTest):
         # Creation
         self.assertEqual(
             mmlist.moderate_message.call_args_list,
-            [umcall(1, 'discard', comment=None),
-             umcall(2, 'discard', comment=None),
-             umcall(3, 'discard', comment=None)])
+            [
+                umcall(1, 'discard', comment=None),
+                umcall(2, 'discard', comment=None),
+                umcall(3, 'discard', comment=None),
+            ],
+        )
 
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
     @as_users("anton")
@@ -1643,9 +1859,11 @@ class TestMlFrontend(FrontendTest):
         #
         # Run
         #
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/list'},
-                      {'href': '/ml/mailinglist/99/moderate'})
+        self.traverse(
+            {'href': '/ml/$'},
+            {'href': '/ml/mailinglist/list'},
+            {'href': '/ml/mailinglist/99/moderate'},
+        )
         self.assertTitle("Mailman-Migration – Nachrichtenmoderation")
         self.assertPresence("Finanzbericht")
         self.assertPresence("kassenwart@example.cde")
@@ -1667,77 +1885,84 @@ class TestMlFrontend(FrontendTest):
 
         # Now check it
         self.login(USER_DICT['anton'])
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/log'})
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/log'})
         self.assertTitle("Mailinglisten-Log [1–9 von 9]")
         self.assertNonPresence("LogCodes")
         f = self.response.forms['logshowform']
-        f['codes'] = [const.MlLogCodes.moderator_added,
-                      const.MlLogCodes.moderator_removed,
-                      const.MlLogCodes.subscription_requested,
-                      const.MlLogCodes.subscribed,
-                      const.MlLogCodes.subscription_changed]
+        f['codes'] = [
+            const.MlLogCodes.moderator_added,
+            const.MlLogCodes.moderator_removed,
+            const.MlLogCodes.subscription_requested,
+            const.MlLogCodes.subscribed,
+            const.MlLogCodes.subscription_changed,
+        ]
         f['mailinglist_id'] = 4
 
         self.submit(f)
         self.assertTitle("Mailinglisten-Log [1–4 von 4]")
 
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/mailinglist/list$'},
-                      {'href': '/ml/mailinglist/4'},
-                      {'href': '/ml/mailinglist/4/log'})
+        self.traverse(
+            {'href': '/ml/$'},
+            {'href': '/ml/mailinglist/list$'},
+            {'href': '/ml/mailinglist/4'},
+            {'href': '/ml/mailinglist/4/log'},
+        )
         self.assertTitle("Klatsch und Tratsch: Log [1–6 von 6]")
         self.logout()
 
         self.login(USER_DICT['berta'])
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/log'})
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/log'})
         self.assertTitle("Mailinglisten-Log [1–6 von 6]")
         self.assertPresence("Witz des Tages")
         self.assertNonPresence("Platin-Lounge")
         self.logout()
 
         self.login(USER_DICT['vera'])
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/log'})
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/log'})
         self.assertTitle("Mailinglisten-Log [1–6 von 6]")
         self.assertPresence("Aktivenforum 2001")
         self.assertNonPresence("CdE-Party")
         self.logout()
 
         self.login(USER_DICT['annika'])
-        self.traverse({'href': '/ml/$'},
-                      {'href': '/ml/log'})
+        self.traverse({'href': '/ml/$'}, {'href': '/ml/log'})
         self.assertTitle("Mailinglisten-Log [0–0 von 0]")
         self.assertNonPresence("Aktivenforum")
         self.assertPresence("CdE-Party")
 
     @as_users("nina", "janis")
     def test_defect_email_roster(self) -> None:
-        self.traverse({'description': 'Mailinglisten'},
-                      {'description': 'Werbung'},
-                      {'description': 'Verwaltung'})
+        self.traverse(
+            {'description': 'Mailinglisten'},
+            {'description': 'Werbung'},
+            {'description': 'Verwaltung'},
+        )
         self.assertTitle('Werbung – Verwaltung')
         self.assertPresence("Bertå Beispiel")
-        self.assertPresence("Abonnement mit defekter Email-Adresse;"
-                            " Email-Zustellung unterbrochen")
+        self.assertPresence(
+            "Abonnement mit defekter Email-Adresse; Email-Zustellung unterbrochen"
+        )
 
         backup = self.user
         vera = USER_DICT['vera']
         self.logout()
         self.login(vera)
-        self.traverse({'description': 'Index'},
-                      {'description': 'Defekte Email-Adressen'})
+        self.traverse(
+            {'description': 'Index'}, {'description': 'Defekte Email-Adressen'}
+        )
         formid = f'deleteemailstatus{get_hash(b"berta@example.cde")}'
         f = self.response.forms[formid]
         self.submit(f)
         self.logout()
         self.login(backup)
 
-        self.traverse({'description': 'Mailinglisten'},
-                      {'description': 'Werbung'},
-                      {'description': 'Verwaltung'})
+        self.traverse(
+            {'description': 'Mailinglisten'},
+            {'description': 'Werbung'},
+            {'description': 'Verwaltung'},
+        )
         self.assertTitle('Werbung – Verwaltung')
         self.assertPresence("Bertå Beispiel")
-        self.assertNonPresence("Abonnement mit defekter Email-Adresse;"
-                               " Email-Zustellung unterbrochen")
+        self.assertNonPresence(
+            "Abonnement mit defekter Email-Adresse; Email-Zustellung unterbrochen"
+        )

@@ -19,7 +19,7 @@ echo ""
 echo "Pacify git paranoia..."
 echo "--------------------------------------------"
 
-cp /media/cdrom0/gitconfig /etc/gitconfig
+cp /media/cdrom0/gitconfig-system /etc/gitconfig
 
 echo ""
 echo "Getting a copy of the cdedb sources..."
@@ -34,21 +34,9 @@ sudo -u cdedb git clone ssh://gitea@tracker.cde-ev.de:20009/cdedb/cdedb2.git /cd
 cd /cdedb2
 # correct upstream URL after auto-build
 sudo -u cdedb git remote set-url origin ssh://gitea@tracker.cde-ev.de:20009/cdedb/cdedb2.git
-# activate custom git hooks from the repo
+# custom git config
 # dPROD not present
-sudo -u cdedb git config --local core.hooksPath .githooks
-# insert po-git-handlers
-# dPROD not present
-sudo -u cdedb tee -a /cdedb2/.git/config <<EOF
-
-[diff "podiff"]
-        textconv = i18n/git-diff-filter-po.sh
-[merge "pomerge"]
-        name = Gettext merge driver
-        driver = i18n/git-merge-po.sh %O %A %B
-[pull]
-        rebase = merges
-EOF
+sudo -u cdedb cp /media/cdrom0/gitconfig-local /cdedb2/.git/config
 
 echo ""
 echo "Installing python dependencies..."

@@ -49,14 +49,14 @@
 
 {% macro select_all_course_choices(involved_tracks=None) %}
     {% for cco in choice_objects %}
-        {% if cco.num_choices and (involved_tracks is none or involved_tracks.intersection(cco.tracks)) %}
-            {% if cco.is_complex() %}
-                {% set course_choices = courses_per_track_group[cco.id] %}
-                {% set all_course_choices = all_courses_per_track_group[cco.id] %}
-            {% else %}
-                {% set course_choices = courses_per_track[cco.id] %}
-                {% set all_course_choices = all_courses_per_track[cco.id] %}
-            {% endif %}
+        {% if cco.is_complex() %}
+            {% set course_choices = courses_per_track_group[cco.id] %}
+            {% set all_course_choices = all_courses_per_track_group[cco.id] %}
+        {% else %}
+            {% set course_choices = courses_per_track[cco.id] %}
+            {% set all_course_choices = all_courses_per_track[cco.id] %}
+        {% endif %}
+        {% if involved_tracks is none or involved_tracks.intersection(cco.tracks) %}
             {{ select_course_choice(cco, courses, course_choices, all_course_choices,
                                     show_track_title=choice_objects|length > 1) }}
         {% endif %}
@@ -598,8 +598,8 @@
                 <td class="active-fee-condition nowrap {{ "eventfee-personalized" if not fee.condition else "" }} {{ aclass }}"
                         title="{{ atitle }}"
                         id="eventfee_condition_{{ fee.id }}">
-                    {% for icon in format.icons %}
-                        {{ util.make_icon(icon) }}
+                    {% for icon, icon_title in format.icons %}
+                        {{ util.make_icon(icon, icon_title) }}
                     {% endfor %}
                     {% if not fee.condition %}
                         <i>
