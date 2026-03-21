@@ -13,6 +13,7 @@
     "packageRules": [
         {
             "automerge": true,
+            "enabled": true,
             "matchPackageNames": [
                 "ruff",
                 "mypy"
