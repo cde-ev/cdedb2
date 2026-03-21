@@ -346,6 +346,35 @@ class TestEventFrontend(FrontendTest):
         self.assertIn('changeminorformform', self.response.forms)
         self.assertIn('lockeventform', self.response.forms)
 
+        # Test Past Event Admin View
+        self.traverse({'href': '/event/past/event/list'})
+        self.assertNoLink('/event/past/event/create')
+        self.traverse({'href': '/event/past/event/1/show'})
+        self.assertNoLink('/event/past/event/1/change')
+        self.assertNoLink('/event/past/event/1/course/create')
+        self.assertNotIn('addparticipantform', self.response.forms)
+        self.assertNotIn('removeparticipantform3', self.response.forms)
+        self.assertNotIn('deletepasteventform', self.response.forms)
+        self.assertNonPresence('Emilia')
+        self.assertPresence('weitere …')
+        self.traverse({'href': '/event/past/event/1/course/2/show'})
+
+        self._click_admin_view_button(
+            re.compile(r"Verg.-Veranst.-Administration"), current_state=False
+        )
+        self.traverse(
+            {'href': '/event/past/event/1/show'},
+            {'href': '/event/past/event/1/change'},
+            {'href': '/event/past/event/list'},
+            {'href': '/event/past/event/create'},
+            {'href': '/event/past/event/list'},
+            {'href': '/event/past/event/1/show'},
+        )
+        self.assertPresence('Emilia')
+        self.assertIn('addparticipantform', self.response.forms)
+        self.assertIn('removeparticipantform3', self.response.forms)
+        self.assertIn('deletepasteventform', self.response.forms)
+
     @as_users("annika")
     def test_list_events(self) -> None:
         self.traverse(
@@ -6417,7 +6446,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # since annika is no member, she can not access the past events
         self.logout()
         self.login(USER_DICT['berta'])
-        self.traverse("Mitglieder", "Verg. Veranstaltungen")
+        self.traverse("Veranstaltungen", "Verg. Veranstaltungen")
         self.assertTitle("Vergangene Veranstaltungen")
         self.assertNonPresence("Testakademie")
 
@@ -6578,7 +6607,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Diese Veranstaltung wurde archiviert.", div="static-notifications"
         )
         self.assertNotIn("archiveeventform", self.response.forms)
-        self.traverse("Mitglieder", "Verg. Veranstaltungen")
+        self.traverse("Veranstaltungen", "Verg. Veranstaltungen")
         self.assertPresence("Große Testakademie 2222 (Warmup)")
 
         # check log
@@ -6642,7 +6671,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         )
 
         # check that there is no past event
-        self.traverse("Mitglieder", "Verg.-Veranstaltungen")
+        self.traverse("Veranstaltungen", "Verg.-Veranstaltungen")
         self.assertNonPresence("CdE-Party 2050")
 
     @event_keeper

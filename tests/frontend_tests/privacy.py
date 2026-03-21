@@ -793,12 +793,12 @@ class TestPrivacyFrontend(FrontendTest):
         # non-members should not have access if they are no cde admin
         if self.user_in('daniel'):
             self.get(
-                '/cde/past/event/list',
-                status="403 Zugriff auf CdEFrontend/* verweigert.",
+                '/event/past/event/list',
+                status="403 Zugriff auf EventFrontend/* verweigert.",
             )
         else:
             self.traverse(
-                {'description': 'Mitglieder'},
+                {'description': 'Veranstaltungen'},
                 {'description': 'Verg. Veranstaltungen'},
                 {'description': 'PfingstAkademie 2014'},
             )
@@ -834,12 +834,12 @@ class TestPrivacyFrontend(FrontendTest):
         # non-members should not have access if they are no cde admin
         if self.user_in('daniel'):
             self.get(
-                '/cde/past/event/1/course/2/show',
-                status="403 Zugriff auf CdEFrontend/* verweigert.",
+                '/event/past/event/1/course/2/show',
+                status="403 Zugriff auf EventFrontend/* verweigert.",
             )
         else:
             self.traverse(
-                {'description': 'Mitglieder'},
+                {'description': 'Veranstaltungen'},
                 {'description': 'Verg. Veranstaltungen'},
                 {'description': 'PfingstAkademie 2014'},
                 {'description': 'Goethe zum Anfassen'},

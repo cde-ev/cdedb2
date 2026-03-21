@@ -3596,8 +3596,8 @@ class TestCoreFrontend(FrontendTest):
     def test_auditor(self) -> None:
         realm_logs = {
             "Index": ("Account-Log", "Nutzerdaten-Log"),
-            "Mitglieder": ("CdE-Log", "Finanz-Log", "Verg.-Veranstaltungen-Log"),
-            "Veranstaltungen": ("Log",),
+            "Mitglieder": ("CdE-Log", "Finanz-Log"),
+            "Veranstaltungen": ("Log", "Verg.-Veranstaltungen-Log"),
             "Mailinglisten": ("Log",),
             "Versammlungen": ("Log",),
         }

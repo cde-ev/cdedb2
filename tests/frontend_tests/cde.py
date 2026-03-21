@@ -395,35 +395,6 @@ class TestCdEFrontend(FrontendTest):
             {'href': '/cde/user/2/lastschrift'},
         )
 
-        # Test Past Event Admin View
-        self.traverse({'href': '/cde/past/event/list'})
-        self.assertNoLink('/cde/past/event/create')
-        self.traverse({'href': '/cde/past/event/1/show'})
-        self.assertNoLink('/cde/past/event/1/change')
-        self.assertNoLink('/cde/past/event/1/course/create')
-        self.assertNotIn('addparticipantform', self.response.forms)
-        self.assertNotIn('removeparticipantform3', self.response.forms)
-        self.assertNotIn('deletepasteventform', self.response.forms)
-        self.assertNonPresence('Emilia')
-        self.assertPresence('weitere …')
-        self.traverse({'href': '/cde/past/event/1/course/2/show'})
-
-        self._click_admin_view_button(
-            re.compile(r"Verg.-Veranst.-Administration"), current_state=False
-        )
-        self.traverse(
-            {'href': '/cde/past/event/1/show'},
-            {'href': '/cde/past/event/1/change'},
-            {'href': '/cde/past/event/list'},
-            {'href': '/cde/past/event/create'},
-            {'href': '/cde/past/event/list'},
-            {'href': '/cde/past/event/1/show'},
-        )
-        self.assertPresence('Emilia')
-        self.assertIn('addparticipantform', self.response.forms)
-        self.assertIn('removeparticipantform3', self.response.forms)
-        self.assertIn('deletepasteventform', self.response.forms)
-
     @as_users("vera")
     def test_validation(self) -> None:
         self.admin_view_profile('berta')
@@ -841,7 +812,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("inga", "farin", maintain_data=True)
     def test_past_course_search(self) -> None:
         # by description
-        self.traverse({'description': 'Mitglieder'}, {'description': 'Kurssuche'})
+        self.traverse({'description': 'Veranstaltungen'}, {'description': 'Kurssuche'})
         self.assertTitle("CdE-Kurssuche")
         self.assertNonPresence("Ergebnis")
         f = self.response.forms['coursesearchform']
@@ -857,21 +828,21 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Goethe zum Anfassen (PfingstAkademie 2014)")
 
         # by course title
-        self.traverse({'description': 'Mitglieder'}, {'description': 'Kurssuche'})
+        self.traverse({'description': 'Veranstaltungen'}, {'description': 'Kurssuche'})
         f = self.response.forms['coursesearchform']
         f['qval_courses.title'] = "Goethe"
         self.submit(f)
         self.assertTitle("Goethe zum Anfassen (PfingstAkademie 2014)")
 
         # by course nr
-        self.traverse({'description': 'Mitglieder'}, {'description': 'Kurssuche'})
+        self.traverse({'description': 'Veranstaltungen'}, {'description': 'Kurssuche'})
         f = self.response.forms['coursesearchform']
         f['qval_courses.nr'] = "Ω"
         self.submit(f)
         self.assertTitle("Goethe zum Anfassen (PfingstAkademie 2014)")
 
         # by academy
-        self.traverse({'description': 'Mitglieder'}, {'description': 'Kurssuche'})
+        self.traverse({'description': 'Veranstaltungen'}, {'description': 'Kurssuche'})
         self.assertTitle("CdE-Kurssuche")
         f = self.response.forms['coursesearchform']
         f['qval_events.title'] = "2014"
@@ -891,7 +862,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("Goethe zum Anfassen (PfingstAkademie 2014)")
 
         # no results
-        self.traverse({'description': 'Mitglieder'}, {'description': 'Kurssuche'})
+        self.traverse({'description': 'Veranstaltungen'}, {'description': 'Kurssuche'})
         f = self.response.forms['coursesearchform']
         f['qval_courses.title'] = "Schiller"
         self.assertTitle("CdE-Kurssuche")
@@ -1968,7 +1939,7 @@ class TestCdEFrontend(FrontendTest):
 
         # validate
         self.traverse(
-            {'description': 'Mitglieder'}, {'description': 'Verg. Veranstaltungen'}
+            {'description': 'Veranstaltungen'}, {'description': 'Verg. Veranstaltungen'}
         )
         self.assertTitle("Vergangene Veranstaltungen")
         self.traverse({'description': 'PfingstAkademie 2014'})
@@ -2871,7 +2842,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("berta")
     def test_list_past_events(self) -> None:
         self.traverse(
-            {'description': 'Mitglieder'}, {'description': 'Verg. Veranstaltungen'}
+            {'description': 'Veranstaltungen'}, {'description': 'Verg. Veranstaltungen'}
         )
         self.assertTitle("Vergangene Veranstaltungen")
 
@@ -2911,7 +2882,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera")
     def test_list_past_events_admin(self) -> None:
         self.traverse(
-            {'description': 'Mitglieder'}, {'description': 'Verg. Veranstaltungen'}
+            {'description': 'Veranstaltungen'}, {'description': 'Verg. Veranstaltungen'}
         )
         self.assertTitle("Vergangene Veranstaltungen")
 
@@ -2940,7 +2911,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("charly", "inga", maintain_data=True)
     def test_show_past_event_course(self) -> None:
         self.traverse(
-            {'description': 'Mitglieder'}, {'description': 'Verg. Veranstaltungen'}
+            {'description': 'Veranstaltungen'}, {'description': 'Verg. Veranstaltungen'}
         )
         self.assertTitle("Vergangene Veranstaltungen")
         self.traverse({'description': 'PfingstAkademie 2014'})
@@ -2961,7 +2932,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera", "berta", "charly", "ferdinand", "inga", maintain_data=True)
     def test_show_past_event_gallery(self) -> None:
         self.traverse(
-            {'description': 'Mitglieder'}, {'description': 'Verg. Veranstaltungen'}
+            {'description': 'Veranstaltungen'}, {'description': 'Verg. Veranstaltungen'}
         )
         self.assertTitle("Vergangene Veranstaltungen")
         self.traverse({'description': 'PfingstAkademie 2014'})
@@ -2992,7 +2963,9 @@ class TestCdEFrontend(FrontendTest):
     def test_show_past_event_privacy(self) -> None:
 
         def _traverse_back() -> None:
-            self.traverse('Mitglieder', 'Verg. Veranstaltungen', 'PfingstAkademie 2014')
+            self.traverse(
+                'Veranstaltungen', 'Verg. Veranstaltungen', 'PfingstAkademie 2014'
+            )
 
         _traverse_back()
         self.assertTitle("PfingstAkademie 2014")
@@ -3044,9 +3017,9 @@ class TestCdEFrontend(FrontendTest):
     @as_users("daniel")
     def test_show_past_event_unprivileged(self) -> None:
         self.traverse({'description': 'Mitglieder'})
-        self.assertNoLink('cde/past/event/list')
-        self.get("/cde/past/event/list", status=403)
-        self.get("/cde/past/event/1/show", status=403)
+        self.assertNoLink('event/past/event/list')
+        self.get("/event/past/event/list", status=403)
+        self.get("/event/past/event/1/show", status=403)
 
     @as_users("berta")
     def test_past_course_counting(self) -> None:
@@ -3055,14 +3028,16 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("berta", "charly", maintain_data=True)
     def test_show_past_event_own_link(self) -> None:
-        self.traverse('Mitglieder', 'Verg. Veranstaltungen', 'PfingstAkademie 2014')
+        self.traverse(
+            'Veranstaltungen', 'Verg. Veranstaltungen', 'PfingstAkademie 2014'
+        )
         self.assertTitle("PfingstAkademie 2014")
         self.traverse(self.user['given_names'])
 
     @as_users("anton", "charly", "garcia", "inga", maintain_data=True)
     def test_show_past_event_orgas(self) -> None:
         self.traverse(
-            {'description': 'Mitglieder'},
+            {'description': 'Veranstaltungen'},
             {'description': 'Verg. Veranstaltungen'},
             {'description': 'FingerAkademie 2020'},
         )
@@ -3094,7 +3069,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera")
     def test_change_past_event(self) -> None:
         self.traverse(
-            {'description': 'Mitglieder'},
+            {'description': 'Veranstaltungen'},
             {'description': 'Verg. Veranstaltungen'},
             {'description': 'PfingstAkademie 2014'},
             {'description': 'Bearbeiten'},
@@ -3116,7 +3091,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera")
     def test_create_past_event(self) -> None:
         self.traverse(
-            {'description': 'Mitglieder'},
+            {'description': 'Veranstaltungen'},
             {'description': 'Verg. Veranstaltungen'},
             {'description': 'Verg. Veranstaltung anlegen'},
         )
@@ -3140,7 +3115,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera")
     def test_create_past_event_with_courses(self) -> None:
         self.traverse(
-            {'description': 'Mitglieder'},
+            {'description': 'Veranstaltungen'},
             {'description': 'Verg. Veranstaltungen'},
             {'description': 'Verg. Veranstaltung anlegen'},
         )
@@ -3167,12 +3142,12 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera")
     def test_delete_past_event(self) -> None:
         self.traverse(
-            {'description': 'Mitglieder'}, {'description': 'Verg. Veranstaltungen'}
+            {'description': 'Veranstaltungen'}, {'description': 'Verg. Veranstaltungen'}
         )
         self.assertTitle("Vergangene Veranstaltungen")
         self.assertPresence("PfingstAkademie 2014", div='events-2014')
         self.traverse(
-            {'description': 'Mitglieder'},
+            {'description': 'Veranstaltungen'},
             {'description': 'Verg. Veranstaltungen'},
             {'description': 'PfingstAkademie 2014'},
         )
@@ -3186,7 +3161,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera")
     def test_change_past_course(self) -> None:
         self.traverse(
-            'Mitglieder',
+            'Veranstaltungen',
             'Verg. Veranstaltungen',
             'PfingstAkademie 2014',
             'Swish -- und alles ist gut',
@@ -3205,7 +3180,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera")
     def test_create_past_course(self) -> None:
         self.traverse(
-            {'description': 'Mitglieder'},
+            {'description': 'Veranstaltungen'},
             {'description': 'Verg. Veranstaltungen'},
             {'description': 'PfingstAkademie 2014'},
             {'description': 'Kurs hinzufügen'},
@@ -3222,7 +3197,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera")
     def test_delete_past_course(self) -> None:
         self.traverse(
-            {'description': 'Mitglieder'},
+            {'description': 'Veranstaltungen'},
             {'description': 'Verg. Veranstaltungen'},
             {'description': 'PfingstAkademie 2014'},
             {'description': 'Kurs hinzufügen'},
@@ -3242,7 +3217,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera")
     def test_participant_manipulation(self) -> None:
         self.traverse(
-            {'description': 'Mitglieder'},
+            {'description': 'Veranstaltungen'},
             {'description': 'Verg. Veranstaltungen'},
             {'description': 'PfingstAkademie 2014'},
             {'description': 'Swish -- und alles ist gut'},
@@ -3281,7 +3256,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertNonPresence("Garcia")
 
         self.traverse(
-            {'description': 'Mitglieder'},
+            {'description': 'Veranstaltungen'},
             {'description': 'Verg. Veranstaltungen'},
             {'description': 'PfingstAkademie 2014'},
         )
@@ -3342,7 +3317,7 @@ class TestCdEFrontend(FrontendTest):
 
         # add new past event
         self.traverse(
-            {'description': 'Mitglieder'},
+            {'description': 'Veranstaltungen'},
             {'description': 'Verg. Veranstaltungen'},
             {'description': 'Verg. Veranstaltung anlegen'},
         )
