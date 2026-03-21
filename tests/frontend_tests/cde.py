@@ -289,6 +289,8 @@ class TestCdEFrontend(FrontendTest):
             f['qval_fulltext'] = "lotta"
             self.submit(f)
             self.assertTitle("Bertå Beispiel")
+            self.assertNonPresence("Im Garten 77")
+            self.assertPresence("Strange Road 9 3/4")
             self.traverse("Mitglieder")
             f = self.response.forms['membersearchform']
             f['qval_fulltext'] = "Bert"
@@ -308,9 +310,17 @@ class TestCdEFrontend(FrontendTest):
             self.assertTitle("Anmeldung von Bertå Beispiel (Große Testakademie 2222)")
             self.assertPresence("Im Garten 77")
             self.traverse("DB-2-7")
+            self.assertPresence("Im Garten 77")
+            self.assertNonPresence("Strange Road 9 3/4")
+        with self.switch_user("anton"):
+            self.traverse("Mitglieder")
+            f = self.response.forms['membersearchform']
+            f['qval_fulltext'] = "lotta"
+            self.submit(f)
+            self.assertTitle("Bertå Beispiel")
             self.assertPresence("Im Garten 77", div='hidden-address')
             self.assertIn("Adresse für Mitgliedersuche versteckt", self.response.text)
-            self.assertNonPresence("Strange Road 9 3/4")
+            self.assertPresence("Strange Road 9 3/4")
 
     @as_users("quintus", "vera")
     def test_adminchangedata(self) -> None:
