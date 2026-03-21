@@ -19,7 +19,7 @@
             ]
         }
     ],
-    "autoMergeStrategy": "fast-forward",
+    "automergeStrategy": "fast-forward",
     "labels": ["renovate"],
     "osvVulnerabilityAlerts": true,
     "minimumReleaseAge": "14 days"
