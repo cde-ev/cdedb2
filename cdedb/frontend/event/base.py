@@ -230,8 +230,14 @@ class EventBaseFrontend(AbstractUserFrontend):
                 rs.ambience['event'].id in rs.user.orga | rs.user.caretaker
                 or 'event_orga' in rs.user.admin_views
             )
+            access_is_limited = (
+                orga_view
+                and rs.ambience['event'].id
+                < self.conf["EVENT_ACCESS_LIMITED_BEFORE_ID"]
+            )
         else:
             orga_view = None
+            access_is_limited = None
 
         params = params or {}
         if 'event' in rs.ambience:
@@ -271,6 +277,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         params['is_privileged'] = is_privileged
         params['is_privileged_for'] = is_privileged_for
         params['orga_view'] = orga_view
+        params['access_is_limited'] = access_is_limited
 
         params['ViolationFormat'] = models_cv.ViolationFormat
         params["EVENT_ADMIN_ADDRESS"] = self.conf["EVENT_ADMIN_ADDRESS"]
