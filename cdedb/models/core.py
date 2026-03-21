@@ -219,7 +219,7 @@ class PersonaFlag(AbstractFlag):
 
 
 @dataclasses.dataclass(kw_only=True)
-class PersonaName(CdEDataclass):
+class PersonaName:
     title: str | None = None
     nickname: str | None = None
     legal_given_names: str | None = None
@@ -292,15 +292,9 @@ class PersonaName(CdEDataclass):
     def is_false(self, attr: str) -> bool:
         return self.hasattr(attr) and getattr(self, attr) is False
 
-    def to_database(self) -> CdEDBObject:
-        ret = super().to_database()
-        if any(val is self.REDACTED for val in ret.values()):
-            raise RuntimeError
-        return ret
-
 
 @dataclasses.dataclass(kw_only=True)
-class Persona(PersonaName):
+class Persona(CdEDataclass, PersonaName):
     database_table: ClassVar[str] = "core.personas"
 
     username: vtypes.Email = dataclasses.field(
@@ -363,6 +357,12 @@ class Persona(PersonaName):
     # TODO implement this properly
     def get_sortkey(self) -> Sortkey:
         return (self.family_name, self.given_names)
+
+    def to_database(self) -> CdEDBObject:
+        ret = super().to_database()
+        if any(val is self.REDACTED for val in ret.values()):
+            raise RuntimeError
+        return ret
 
 
 @dataclasses.dataclass(kw_only=True)
