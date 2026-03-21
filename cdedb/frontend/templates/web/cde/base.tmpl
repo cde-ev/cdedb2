@@ -51,25 +51,11 @@
             </div>
         {% endif %}
 
-        {% if 'member' in user.roles or user.admin_views.intersection(('past_event', 'auditor')) %}
+        {% if "member" in user.roles %}
             <div class="list-group tear-down">
-                {% if "member" in user.roles or "past_event" in user.admin_views %}
-                    {{ util.href(cdedblink("cde/list_past_events"), gettext("Past Events"), icon="calendar-alt",
-                            aclass="list-group-item", active=(sidenav_active=='cde_past_events')) }}
-                    {{ util.href(cdedblink("cde/past_course_search"), gettext("Course Search"), icon="search",
-                                 aclass="list-group-item", active=(sidenav_active=='cde_past_course_search')) }}
-                {% endif %}
-                {% if user.admin_views.intersection(('past_event', 'auditor')) %}
-                    {{ util.href(cdedblink("cde/view_past_log"), gettext("Past Events Log"), icon="far fa-list-alt",
-                            aclass="list-group-item", active=(sidenav_active=='cde_past_events_log')) }}
-                {% endif %}
+                {{ util.href(cdedblink("cde/view_misc"), gettext("Miscellaneous"), icon="external-link-alt",
+                                aclass="list-group-item", active=(sidenav_active=='cde_misc')) }}
             </div>
-            {% if "member" in user.roles %}
-                <div class="list-group tear-down">
-                    {{ util.href(cdedblink("cde/view_misc"), gettext("Miscellaneous"), icon="external-link-alt",
-                                 aclass="list-group-item", active=(sidenav_active=='cde_misc')) }}
-                </div>
-            {% endif %}
         {% endif %}
         <hr class="strong visible-xs visible-sm" />
     {% endif %}
@@ -78,7 +64,6 @@
 {% block adminviews %}
     {{ util.admin_views_toggle((
             (gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user"], ["cde_user"]),
-            (gettext("Past Event Administration"), ["past_event"], None),
             (gettext("Finance Administration"), ["finance"], None),
             (gettext("Auditor"), ["auditor"], None),
         )) }}
