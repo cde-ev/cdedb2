@@ -3,12 +3,12 @@
     "extends": [
         "config:best-practices",
         ":semanticCommitScopeDisabled",
-        ":semanticCommitType(renovate)",
         ":separateMultipleMajorReleases",
         "mergeConfidence:all-badges",
         ":approveMajorUpdates",
         ":automergePatch",
-        "security:only-security-updates"
+        "security:only-security-updates",
+        ":semanticCommitType(renovate)"
     ],
     "branchPrefix": "renovate-",
     "packageRules": [
@@ -22,7 +22,7 @@
         }
     ],
     "automergeStrategy": "fast-forward",
-    "labels": ["renovate"],
+    "labels": ["tag/renovate", "area/dependencies"],
     "osvVulnerabilityAlerts": true,
     "minimumReleaseAge": "14 days"
 }
