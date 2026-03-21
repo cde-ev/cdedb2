@@ -26,7 +26,6 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import PastEventLogFilter
-from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect,
     REQUESTdata,
@@ -35,6 +34,7 @@ from cdedb.frontend.common import (
     access,
     check_validation as check,
 )
+from cdedb.frontend.event.base import EventBaseFrontend
 
 COURSESEARCH_DEFAULTS = {
     'qsel_courses.title': True,
@@ -52,7 +52,7 @@ COURSESEARCH_DEFAULTS = {
 }
 
 
-class CdEPastEventMixin(CdEBaseFrontend):
+class PastEventMixin(EventBaseFrontend):
     @access("member", "cde_admin")
     @REQUESTdata("is_search")
     def past_course_search(self, rs: RequestState, is_search: bool) -> Response:

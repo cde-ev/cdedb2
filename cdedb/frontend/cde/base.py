@@ -381,23 +381,6 @@ class CdEBaseFrontend(AbstractUserFrontend):
             },
         )
 
-    @staticmethod
-    def _fix_search_validation_error_references(
-        rs: RequestState, skip: Collection[str] = ()
-    ) -> None:
-        """A little hack to fix displaying of errors for course and meber search:
-
-        The form uses 'qval_<field>' as input name, the validation only returns the
-        field's name.
-        """
-        appraised = rs.validation_appraised
-        current = tuple(rs.retrieve_validation_errors())
-        rs.replace_validation_errors([
-            (f'qval_{k}', v) if k not in skip else (k, v) for k, v in current
-        ])
-        if appraised:
-            rs.ignore_validation_errors()
-
     @access("core_admin", "cde_admin")
     @REQUESTdata("download", "is_search")
     def user_search(

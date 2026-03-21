@@ -1869,6 +1869,23 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         else:
             return self.create_user_form(rs)
 
+    @staticmethod
+    def _fix_search_validation_error_references(
+        rs: RequestState, skip: Collection[str] = ()
+    ) -> None:
+        """A little hack to fix displaying of errors for course and member search:
+
+        The form uses 'qval_<field>' as input name, the validation only returns the
+        field's name.
+        """
+        appraised = rs.validation_appraised
+        current = tuple(rs.retrieve_validation_errors())
+        rs.replace_validation_errors([
+            (f'qval_{k}', v) if k not in skip else (k, v) for k, v in current
+        ])
+        if appraised:
+            rs.ignore_validation_errors()
+
 
 class CdEMailmanClient(mailmanclient.Client):
     """Custom wrapper around mailmanclient.Client.
