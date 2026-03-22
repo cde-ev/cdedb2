@@ -17,7 +17,7 @@ dependencies = [
     "legacy-cgi; python_version >= '3.13'",
     "lxml==5.4.0",
     "mailmanclient==3.3.5",
-    "markdown==3.7",
+    "markdown==3.8.1",
     "passlib==1.7.4",
     "phonenumbers==8.12.57",
     "pillow==11.1.0",
