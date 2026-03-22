@@ -21,7 +21,6 @@
             ]
         }
     ],
-    "platformAutomerge": false,
     "automergeStrategy": "fast-forward",
     "labels": ["tag/renovate", "area/dependencies"],
     "osvVulnerabilityAlerts": true,
