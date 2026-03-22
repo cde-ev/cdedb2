@@ -1,4 +1,6 @@
 # dPROD: This service is dev only.
+[Unit]
+AssertPathExists=!/PRODUCTIONVM
 
 [Service]
 Type=oneshot

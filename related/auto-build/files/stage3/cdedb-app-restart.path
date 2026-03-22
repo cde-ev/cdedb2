@@ -1,4 +1,6 @@
 # dPROD: This service is dev only.
+[Unit]
+AssertPathExists=!/PRODUCTIONVM
 
 [Path]
 PathChanged=/cdedb2/pyproject.toml

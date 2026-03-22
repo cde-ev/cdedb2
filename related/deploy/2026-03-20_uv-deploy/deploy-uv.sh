@@ -1,28 +1,24 @@
 #!/bin/bash
 
 echo "Installing python package build requirements"
-sudo apt-get install g++ pkg-config graphviz libmagic1 \
-    python3-dev libicu-dev libsystemd-dev libjpeg-dev libxml2-dev libxslt1-dev libpq-dev
+sudo apt-get install g++ pkg-config graphviz libmagic1 python3-dev libicu-dev libsystemd-dev
 
 echo "Installing uv"
 sudo python3 -m pip install --break-system-packages uv
 echo ""
 
 echo "Setting up uv shell-completion and python directory for root"
-sudo touch /root/.bashrc
-sudo cat /cdedb2/related/deploy/2026-03-20_uv-deploy/root-bashrc | sudo tee /root/.bashrc
+sudo cat /cdedb2/related/deploy/2026-03-20_uv-deploy/root-bashrc | sudo tee /root/.bashrc --append
 echo ""
 
 echo "Creating global uv config"
 sudo mkdir -p /etc/uv
-sudo touch /etc/uv/uv.toml
-sudo cat /cdedb2/related/deploy/2026-03-20_uv-deploy/etc-uv.toml | sudo tee /etc/uv/uv.toml
+sudo cp /cdedb2/related/deploy/2026-03-20_uv-deploy/etc-uv.toml /etc/uv/uv.toml
 echo ""
 
 echo "Creating root uv config"
 sudo mkdir -p /root/.config/uv
-sudo touch /root/.config/uv/uv.toml
-sudo cat /cdedb2/related/deploy/2026-03-20_uv-deploy/root-uv.toml | sudo tee /root/.config/uv/uv.toml
+sudo cp /cdedb2/related/deploy/2026-03-20_uv-deploy/root-uv.toml /root/.config/uv/uv.toml
 echo ""
 
 if [ -f /PRODUCTIONVM ]; then
