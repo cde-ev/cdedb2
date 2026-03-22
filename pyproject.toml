@@ -20,7 +20,7 @@ dependencies = [
     "markdown==3.8.1",
     "passlib==1.7.4",
     "phonenumbers==8.12.57",
-    "pillow==11.1.0",
+    "pillow==12.1.1",
     "psycopg2-binary==2.9.10",
     "pyicu==2.14",
     "pyparsing==3.1.2",
