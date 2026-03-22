@@ -44,12 +44,8 @@ echo "--------------------------------------------"
 
 cd /cdedb2
 
-# runtime dependencies for the gunicorn runner.
-sudo -u www-cde UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv uv sync --no-dev --group ldap --no-install-project
-
-# devtools
-# dPROD not present
-sudo -u cdedb uv sync --all-groups
+# Setup virtual environments for dev/scripting and for the gunicorn and ldap services.
+sudo make venv www-cde-venv
 
 echo ""
 echo "Create local config files..."

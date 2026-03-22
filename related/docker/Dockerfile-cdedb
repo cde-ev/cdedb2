@@ -53,7 +53,7 @@ RUN uv run playwright install --with-deps
 # - graphviz for the python package with the same name
 # - libicu-dev for pyicu
 # - libmagic1 for python-magic (see https://github.com/ahupp/python-magic/pull/294)
-# - libsystemd-dev for systemd-python
+# - libsystemd-dev for cysystemd
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3-dev \
     g++ \
