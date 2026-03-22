@@ -2894,7 +2894,7 @@ class TestCdEFrontend(FrontendTest):
 
         # Institution BuB
         self.get('/cde/past/event/list?institution=PastInstitutions.bub')
-        msg = "Es gibt keine Vergangenen Veranstaltungen mit dieser Institution."
+        msg = "Es gibt keine Vergangenen Veranstaltungen mit dieser Organisation."
         self.assertNotification(msg, 'info')
         self.assertNonPresence("BuB")
 

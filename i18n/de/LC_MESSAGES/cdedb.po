@@ -7912,7 +7912,7 @@ msgstr "Organisationsangabe ist verlorengegangen."
 
 #: cdedb/frontend/cde/past_event.py:161
 msgid "There are no past events with this institution."
-msgstr "Es gibt keine Vergangenen Veranstaltungen mit dieser Institution."
+msgstr "Es gibt keine Vergangenen Veranstaltungen mit dieser Organisation."
 
 #: cdedb/frontend/cde/past_event.py:240
 #, python-format
