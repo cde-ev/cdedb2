@@ -45,7 +45,7 @@ dependencies = [
 dev = [
     "mypy==1.19.1",
     "lxml-stubs",
-    "ruff==0.14.14",
+    "ruff==0.15.5",
     "types-bleach",
     "types-ldap3",
     "types-Markdown",
