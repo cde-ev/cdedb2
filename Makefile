@@ -130,18 +130,24 @@ $(I18NOUTDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
 ###################
 
 $(UV_PROJECT_ENVIRONMENT)/bin/python:
-	sudo UV_PYTHON_INSTALL_DIR=$(UV_PYTHON_INSTALL_DIR) \
-		$(UV) venv
+	if [ -d "/cdedb2"]; then
+		sudo UV_PYTHON_INSTALL_DIR=$(UV_PYTHON_INSTALL_DIR) \
+			$(UV) venv
+	fi
 
 .PHONY: venv
 venv: $(UV_PROJECT_ENVIRONMENT)/bin/python
-	sudo $(UV) sync --all-groups
+	if [ -d "/cdedb2"]; then
+		sudo $(UV) sync --all-groups
+	fi
 
 .PHONY: www-cde-venv
 www-cde-venv:
-	sudo UV_PYTHON_INSTALL_DIR=$(UV_PYTHON_INSTALL_DIR) \
-		 UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv/ \
-		 $(UV) sync --no-dev --group ldap
+	if [ -d "/cdedb2"]; then
+		sudo UV_PYTHON_INSTALL_DIR=$(UV_PYTHON_INSTALL_DIR) \
+			UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv/ \
+			$(UV) sync --no-dev --group ldap
+	fi
 
 .PHONY: format
 format: venv
