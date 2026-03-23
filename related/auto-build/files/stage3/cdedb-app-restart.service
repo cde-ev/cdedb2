@@ -1,4 +1,5 @@
-# dPROD: This service is dev only.
+# /etc/systemd/system/cdedb-app-restart.service
+# This service is dev only.
 [Unit]
 AssertPathExists=!/PRODUCTIONVM
 

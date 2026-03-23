@@ -161,11 +161,11 @@ echo "--------------------------------------------"
 cp /media/cdrom0/cde-ldap.service /etc/systemd/system/
 cp /media/cdrom0/cde-ldap.socket /etc/systemd/system/
 
-# create a separate service file for the test suite, with the right configpath
 # dPROD not present
+# create a separate service file for the test suite, create dev and test overrides
+cp /media/cdrom0/cde-ldap-dev.conf /etc/systemd/system/cde-ldap.service.d/50-dev-override.conf
 cp /media/cdrom0/cde-ldap.service /etc/systemd/system/cde-ldap-test.service
-# ensure the tests is accessible via python path, since config.test_ldap.py performs imports
-sed -i -r -e "s|Environment=CDEDB_CONFIGPATH=/etc/cdedb/config.py|Environment=CDEDB_CONFIGPATH=/cdedb2/tests/config/test_ldap.py\nEnvironment=PYTHONPATH=/cdedb2/|g" /etc/systemd/system/cde-ldap-test.service
+cp /media/cdrom0/cde-ldap-test.conf /etc/systemd/system/cde-ldap-test.service.d/50-test-override.conf
 
 # add the self-signed certificate to the trusted ldap certificates
 # (note the previous step in stage2)
@@ -198,6 +198,10 @@ echo "--------------------------------------------"
 cp /media/cdrom0/cdedb-app.service /etc/systemd/system/
 cp /media/cdrom0/cdedb-app.socket /etc/systemd/system/
 systemctl enable --now cdedb-app.socket
+
+# dPROD not present
+# Add override for dev environments.
+cp /media/cdrom0/cdedb-app-dev.conf /etc/systemd/system/cdedb-app.service.d/50-dev-override.conf
 
 # Add a service to auto restart the service upon some file changes.
 # dPROD not present
