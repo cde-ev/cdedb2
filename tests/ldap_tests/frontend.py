@@ -683,6 +683,27 @@ class TestLDAP(BasicTest):
             password=self.admin_dua_pw,
         )
 
+    def test_search_attributes_of_status_group(self) -> None:
+        group_cn = "is_cdelokal_admin"
+        attributes = ['objectClass', 'cn', 'uniqueMember']
+        search_filter = f"(&(objectClass=groupOfUniqueNames)(cn={group_cn}))"
+        expectation = {
+            'cn': ['is_cdelokal_admin'],
+            'objectClass': ['groupOfUniqueNames'],
+            'uniqueMember': [
+                "uid=1,ou=users,dc=cde-ev,dc=de",
+                "uid=38,ou=users,dc=cde-ev,dc=de",
+                "uid=100,ou=users,dc=cde-ev,dc=de",
+            ],
+        }
+        self.single_result_search(
+            search_filter,
+            expectation,
+            attributes=attributes,
+            user=self.admin_dua_dn,
+            password=self.admin_dua_pw,
+        )
+
     def test_search_user_attributes(self) -> None:
         """Search a user by given attributes and return some of its attributes."""
         user_id = 9
