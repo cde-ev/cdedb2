@@ -1,3 +1,3 @@
 BEGIN;
-    GRANT SELECT (is_active) ON ml.mailinglists TO cdb_ldap;
+    GRANT SELECT (ml_type, is_active) ON ml.mailinglists TO cdb_ldap;
 COMMIT;
