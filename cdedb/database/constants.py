@@ -561,6 +561,7 @@ class PastInstitutions(CdEIntEnum):
     van = 200  #:
     eisenberg = 400  #:
     other = 1000  #:
+    private = 2000  #:
 
     @classmethod
     def main_insitution(cls) -> "PastInstitutions":
@@ -578,6 +579,7 @@ class PastInstitutions(CdEIntEnum):
             self.van: "VAN",
             self.eisenberg: "FV Eisenberg",
             self.other: "Sonst.",
+            self.private: "Privat",
         }
         return shortnames.get(self, str(self))
 

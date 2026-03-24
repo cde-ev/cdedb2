@@ -53,6 +53,15 @@
     {% endif %}
 {% endmacro %}
 
+{% block static_notifications %}
+    {{ super() }}
+    {% if ambience['event']['institution'] == enums["PastInstitutions"].private %}
+        {% call util.notification('warning', id='is_private') %}
+            {% trans %}This event is not organized under the supervision of CdE, but independently by the Orgas.{% endtrans %}
+        {% endcall %}
+    {% endif %}
+{% endblock %}
+
 {% block content %}
     {{ button_par() }}
     <p>

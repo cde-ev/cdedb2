@@ -21,6 +21,11 @@
 {% endblock %}
 {% block static_notifications %}
     {{ super() }}
+    {% if ambience['event']['institution'] == enums["PastInstitutions"].private %}
+        {% call util.notification('warning', id='is_private') %}
+            {% trans %}This event is not organized under the supervision of CdE, but independently by the Orgas.{% endtrans %}
+        {% endcall %}
+    {% endif %}
     {% if "event" not in user.roles %}
         {% call util.notification('info', id='instructors-not-visible') %}
             {% trans %}More detailed information about the event is visible to logged in event users.{% endtrans %}
