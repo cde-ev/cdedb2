@@ -161,7 +161,7 @@ echo "--------------------------------------------"
 cp /media/cdrom0/cde-ldap.service /etc/systemd/system/
 cp /media/cdrom0/cde-ldap.socket /etc/systemd/system/
 
-# dPROD not present
+# dPROD: dev override and test service not present
 # create a separate service file for the test suite, create dev and test overrides
 cp /media/cdrom0/cde-ldap-dev.conf /etc/systemd/system/cde-ldap.service.d/50-dev-override.conf
 cp /media/cdrom0/cde-ldap.service /etc/systemd/system/cde-ldap-test.service

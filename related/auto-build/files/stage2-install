@@ -78,11 +78,20 @@ apt-get install --yes --no-install-recommends                       \
     python3-dev libicu-dev libsystemd-dev
 
 python3 -m pip install --break-system-packages "uv>=0.11.0"
-cat >> ~/.bashrc << 'EOF'
 
-eval "$(uv generate-shell-completion bash)"
-eval "$(uvx --generate-shell-completion bash)"
-EOF
+echo "Setting up uv shell-completion and python directory for root"
+cat /media/cdrom0/root-bashrc >> /root/.bashrc
+
+echo "Setting up uv shell-completion and python directory for root"
+cat /cdedb2/related/auto-build/files/stage3/root-bashrc >> /root/.bashrc
+
+echo "Creating global uv config"
+mkdir -p /etc/uv
+cp /cdedb2/related/auto-build/files/stage3/etc-uv.toml /etc/uv/uv.toml
+
+echo "Creating root uv config"
+mkdir -p /root/.config/uv
+cp /cdedb2/related/auto-build/files/stage3/root-uv.toml /root/.config/uv/uv.toml
 
 for file in /var/cache/apt/archives/*.deb
 do
