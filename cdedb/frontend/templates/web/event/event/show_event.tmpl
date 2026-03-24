@@ -461,8 +461,16 @@
 {% endblock %}
 
 {% block adminviews %}
-    {{ super() }}
-    {{ util.admin_views_toggle((
-            (gettext("Finance Administration"), ["finance"], None),
-        )) }}
+    {% if ambience['event'].id in (user.orga.union(user.caretaker)) %}
+        {{ util.admin_views_toggle((
+                (gettext("Event Administration"), ["event_mgmt", "event_list"], ["event_mgmt"]),
+                (gettext("Finance Administration"), ["finance"], None),
+            )) }}
+    {% else %}
+        {{ util.admin_views_toggle((
+                (gettext("Event Administration"), ["event_mgmt", "event_list"], ["event_mgmt"]),
+                (gettext("Orga Controls"), ["event_orga"], None),
+                (gettext("Finance Administration"), ["finance"], None),
+            )) }}
+    {% endif %}
 {% endblock %}

@@ -133,7 +133,7 @@ $(UV_PROJECT_ENVIRONMENT)/bin/python:
 .PHONY: venv
 venv: $(UV_PROJECT_ENVIRONMENT)/bin/python
 
-.PHONE: www-cde-venv
+.PHONY: www-cde-venv
 www-cde-venv:
 	sudo UV_PYTHON_INSTALL_DIR=/home/www-cde/.local/share/uv/python \
 		 UV_CACHE_DIR=/home/www-cde/.cache/uv \
