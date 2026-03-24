@@ -1,14 +1,23 @@
 FROM debian:trixie-20251020
 
 # python and utilities to install packages via pip
-# dependencies:
-# - libsystemd-dev for systemd-python
+# - python package dependencies:
+#   - building/running pyicu: g++ pkg-config python3-dev libicu-dev
+#   - building/running graphviz: graphviz
+#   - building/running python-magic: libmagic1
+#   - building/running python-systemd: libsystemd-dev
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3 \
     python3-pip \
-    python3-dev \
+    \
     g++ \
     pkg-config \
+    python3-dev \
+    libicu-dev \
+    \
+    graphviz \
+    \
+    libmagic1 \
     \
     libsystemd-dev \
     libicu-dev \

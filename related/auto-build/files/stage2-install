@@ -57,7 +57,11 @@ echo "--------------------------------------------"
 # this is categorized into
 # - devtools
 # - runtime dependencies (app, postgres, latex)
-# - playwright dependencies
+# - python package dependencies:
+#   - building/running pyicu: g++ pkg-config python3-dev libicu-dev
+#   - building/running graphviz: graphviz
+#   - building/running python-magic: libmagic1
+#   - building/running python-systemd: libsystemd-dev
 apt-get install --yes --no-install-recommends                       \
     openssh-server sudo git file mc emacs-nox vim htop make gettext \
     \
@@ -74,8 +78,13 @@ apt-get install --yes --no-install-recommends                       \
     \
     python3-pip                                                     \
     \
-    g++ pkg-config graphviz libmagic1                               \
-    python3-dev libicu-dev libsystemd-dev
+    g++ pkg-config python3-dev libicu-dev                           \
+    \
+    graphviz                                                        \
+    \
+    libmagic1                                                       \
+    \
+    libsystemd-dev
 
 python3 -m pip install --break-system-packages "uv>=0.11.0"
 

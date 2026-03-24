@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "Installing python package build requirements"
-sudo apt-get install g++ pkg-config graphviz libmagic1 python3-dev libicu-dev libsystemd-dev
+sudo apt-get install g++ pkg-config python3-dev libicu-dev graphviz libmagic1 libsystemd-dev
 
 echo "Installing uv"
 sudo python3 -m pip install --break-system-packages uv
