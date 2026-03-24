@@ -599,7 +599,11 @@ class TestLDAP(BasicTest):
             user=self.admin_dua_dn,
             password=self.admin_dua_pw,
         ) as conn:
-            conn.search(search_base=self.root_dn, search_filter=search_filter)
+            conn.search(
+                search_base=self.root_dn,
+                search_filter=search_filter,
+                attributes=ALL_ATTRIBUTES,
+            )
             result_names: set[str] = {entry.entry_dn for entry in conn.entries}
             self.assertEqual(expectation_all, result_names)
 
@@ -654,7 +658,11 @@ class TestLDAP(BasicTest):
             user=self.admin_dua_dn,
             password=self.admin_dua_pw,
         ) as conn:
-            conn.search(search_base=self.root_dn, search_filter=search_filter)
+            conn.search(
+                search_base=self.root_dn,
+                search_filter=search_filter,
+                attributes=ALL_ATTRIBUTES,
+            )
             result_names = {entry.entry_dn for entry in conn.entries}
             self.assertEqual(expectation_all, result_names)
 
