@@ -667,7 +667,9 @@ class LDAPsqlBackend:
                     ml.subscription_states
                     JOIN ml.mailinglists ON mailinglists.id = mailinglist_id
                 WHERE
-                    subscription_state = ANY(%(states)s) AND persona_id = ANY(%(persona_ids)s)
+                    subscription_state = ANY(%(states)s)
+                    AND persona_id = ANY(%(persona_ids)s)
+                    AND mailinglists.is_active
                 GROUP BY persona_id
             """
             params = {
@@ -688,7 +690,7 @@ class LDAPsqlBackend:
                 FROM
                     ml.moderators
                     JOIN ml.mailinglists ON mailinglists.id = mailinglist_id
-                WHERE persona_id = ANY(%(persona_ids)s)
+                WHERE persona_id = ANY(%(persona_ids)s) AND mailinglists.is_active
                 GROUP BY persona_id
             """
             return {
@@ -1210,7 +1212,7 @@ class LDAPsqlBackend:
         return cls._is_entry_dn(dn, cls.moderator_groups_dn, "cn")
 
     async def list_ml_moderator_groups(self) -> list[DN]:
-        query = "SELECT address FROM ml.mailinglists"
+        query = "SELECT address FROM ml.mailinglists WHERE is_active"
         return [
             self.moderator_group_dn(e['address'])
             async for e in self.query_all(query, [])
@@ -1318,7 +1320,7 @@ class LDAPsqlBackend:
         return cls._is_entry_dn(dn, cls.subscriber_groups_dn, "cn")
 
     async def list_ml_subscriber_groups(self) -> list[DN]:
-        query = "SELECT address FROM ml.mailinglists"
+        query = "SELECT address FROM ml.mailinglists WHERE is_active"
         return [
             self.subscriber_group_dn(e['address'])
             async for e in self.query_all(query, [])
