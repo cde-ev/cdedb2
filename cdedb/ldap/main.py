@@ -77,21 +77,24 @@ async def main() -> None:
     for s in server.sockets:
         logger.info(f"Listening on {s!r}")
 
-    def shutdown(server: asyncio.Server) -> None:
-        # TODO We should probably send a NoticeOfDisconnection
-        # after some grace period
-        logger.info("Shutting down")
-        server.close()
+    stop = asyncio.Event()
 
-    server.get_loop().add_signal_handler(signal.SIGTERM, lambda: shutdown(server))
-    server.get_loop().add_signal_handler(signal.SIGINT, lambda: shutdown(server))
+    server.get_loop().add_signal_handler(signal.SIGTERM, stop.set)
+    server.get_loop().add_signal_handler(signal.SIGINT, stop.set)
     logger.info("Startup completed")
 
     async with server:
         try:
-            await server.serve_forever()
-        except asyncio.CancelledError:
-            logger.info("Server shut down")
+            await server.start_serving()
+            await stop.wait()
+        finally:
+            logger.info("Closing server")
+            server.close()
+            logger.info("Closing clients")
+            server.close_clients()
+            logger.info("Waiting for close")
+            await server.wait_closed()
+            logger.info("Server closed")
 
 
 if __name__ == '__main__':
