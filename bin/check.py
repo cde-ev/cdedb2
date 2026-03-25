@@ -147,6 +147,8 @@ def run_application_tests(
         print("No tests to run.")
         return 1
 
+    print(f"Running {test_suite.countTestCases()} tests.")
+
     with CdEDBTestLock():
         conf = TestConfig()
         secrets = SecretsConfig()
@@ -319,9 +321,9 @@ if __name__ == '__main__':
 
     # Set args for presets.
     if args.first:
-        args.testpatterns.append('tests.frontend_tests.[abcd]*')
+        args.testpatterns.append('tests.frontend_tests.[e]*')
     if args.second:
-        args.testpatterns.append('tests.frontend_tests.[!abcd]*')
+        args.testpatterns.append('tests.frontend_tests.[!e]*')
     if args.third:
         args.testpatterns.append('tests.backend_tests.*')
         args.testpatterns.append('tests.other_tests.*')
