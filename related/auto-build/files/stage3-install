@@ -182,9 +182,7 @@ echo ""
 echo "Set up the apache2..."
 echo "--------------------------------------------"
 
-for i in proxy_http ssl headers authnz_ldap http2; do
-    a2enmod $i
-done;
+a2enmod proxy_http ssl headers authnz_ldap http2
 
 a2dissite 000-default
 

@@ -95,7 +95,7 @@ COPY ./related/auto-build/files/stage3 /tmp/autobuild/
 # - create the magic file to signal that we are inside a container.
 RUN cp /tmp/autobuild/gitconfig-system /etc/gitconfig \
     \
-    && a2enmod proxy_http ssl headers authnz_ldap \
+    && a2enmod proxy_http ssl headers authnz_ldap http2 \
     && a2dissite 000-default \
     && echo "" > /etc/apache2/ports.conf \
     && cp /tmp/autobuild/cdedb-site.conf /etc/apache2/sites-available \
