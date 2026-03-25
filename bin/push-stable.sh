@@ -14,17 +14,17 @@ then
 else
     function push_stable () {
         TAG=release/$(date +'%Y-%m-%d')
-        git tag -f $TAG
-        git push --delete origin $TAG
-        git push origin stable tag $TAG
-        git push --delete mirror $TAG
-        git push mirror stable tag $TAG
+        git tag -f "$TAG"
+        git push --delete origin "$TAG"
+        git push origin stable tag "$TAG"
+        git push --delete mirror "$TAG"
+        git push mirror stable tag "$TAG"
     }
 fi
 
 for rev in $(git rev-list origin/stable..stable); do
-    notice_lines $(git show -s $rev | grep -i '^\W*Deploy:' | sed -e "s/^\W*/${rev:0:8} /" | wc -l)
-    git show -s $rev | grep -i '^\W*Deploy:' | sed -e "s/^\W*/${rev:0:8} /"
+    notice_lines $(git show -s "$rev" | grep -i '^\W*Deploy:' | sed -e "s/^\W*/${rev:0:8} /" | wc -l)
+    git show -s "$rev" | grep -i '^\W*Deploy:' | sed -e "s/^\W*/${rev:0:8} /"
 done
 
 notice_lines $(git diff --name-status origin/stable..stable | grep "^A\s*related/deploy" | wc -l)
