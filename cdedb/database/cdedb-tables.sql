@@ -1655,7 +1655,7 @@ CREATE TABLE ml.mailinglists (
         -- assembly_id is not NULL if associated to an assembly
         assembly_id             integer REFERENCES assembly.assemblies(id)
 );
-GRANT SELECT (id, address, title) ON ml.mailinglists TO cdb_ldap;
+GRANT SELECT (id, address, title, ml_type, is_active) ON ml.mailinglists TO cdb_ldap;
 GRANT INSERT, SELECT, UPDATE ON ml.mailinglists TO cdb_persona;
 GRANT DELETE ON ml.mailinglists TO cdb_admin;
 GRANT SELECT, UPDATE ON ml.mailinglists_id_seq TO cdb_persona;

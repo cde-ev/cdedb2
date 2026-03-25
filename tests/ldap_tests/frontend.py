@@ -242,7 +242,6 @@ class TestLDAP(BasicTest):
         expectation = {
             'memberOf': [
                 'cn=42-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
-                'cn=aktivenforum2000@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=all@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=announce@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=everyone-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
@@ -263,9 +262,7 @@ class TestLDAP(BasicTest):
                 'cn=is_ml_admin,ou=status,ou=groups,dc=cde-ev,dc=de',
                 'cn=is_ml_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
                 'cn=is_searchable,ou=status,ou=groups,dc=cde-ev,dc=de',
-                'cn=kanonisch@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=klatsch@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-                'cn=kongress@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=lokalgruppen-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=migration-owner@testmail.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=mitgestaltung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
@@ -275,10 +272,8 @@ class TestLDAP(BasicTest):
                 'cn=orga,ou=any,ou=groups,dc=cde-ev,dc=de',
                 'cn=orgas-2,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
                 'cn=orgas-3,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
-                'cn=participants@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=party50-all-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=party50-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
-                'cn=party50@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=platin-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=platin@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=struktur@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
@@ -552,15 +547,12 @@ class TestLDAP(BasicTest):
             'cn=is_member,ou=status,ou=groups,dc=cde-ev,dc=de',
         }
         expectation_subscriber = {
-            'cn=aka@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=all@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=announce@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=everyone@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=info@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-            'cn=kanonisch@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=mitgestaltung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=moderatoren@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-            'cn=participants@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=werbung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=gu@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
         }
@@ -618,11 +610,7 @@ class TestLDAP(BasicTest):
         }
         expectation_subscriber = {
             'cn=everyone@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-            'cn=kongress@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-            'cn=kongress-leitung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=moderatoren@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-            'cn=opt@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-            'cn=wal@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
         }
         expectation_moderator = {
             'cn=kanonisch-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',

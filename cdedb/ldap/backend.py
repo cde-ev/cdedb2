@@ -26,10 +26,12 @@ from psycopg.rows import DictRow
 from psycopg_pool import AsyncConnectionPool
 from twisted.python.util import InsensitiveDict
 
+import cdedb.models.ml as models_ml
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.constants import (
     AssemblyLogCodes,
     EventLogCodes,
+    MailinglistTypes,
     MlLogCodes,
     SubscriptionState,
 )
@@ -117,6 +119,13 @@ def now() -> datetime.datetime:
 class LdapLeaf(TypedDict):
     get_entities: Callable[[list[DN]], LDAPObjectMap]
     list_entities: Callable[[], list[DN]]
+
+
+EXPOSED_ML_TYPES: Collection[MailinglistTypes] = [
+    ml_type
+    for ml_type, ml_model in models_ml.ML_TYPE_MAP.items()
+    if ml_model.ldap_expose
+]
 
 
 class LDAPsqlBackend:
@@ -667,12 +676,16 @@ class LDAPsqlBackend:
                     ml.subscription_states
                     JOIN ml.mailinglists ON mailinglists.id = mailinglist_id
                 WHERE
-                    subscription_state = ANY(%(states)s) AND persona_id = ANY(%(persona_ids)s)
+                    subscription_state = ANY(%(states)s)
+                    AND persona_id = ANY(%(persona_ids)s)
+                    AND mailinglists.is_active
+                    AND mailinglists.ml_type = ANY(%(ml_types)s)
                 GROUP BY persona_id
             """
             params = {
                 "states": SubscriptionState.subscribing_states(),
                 "persona_ids": persona_ids,
+                "ml_types": EXPOSED_ML_TYPES,
             }
             return {
                 e['persona_id']: [
@@ -688,7 +701,7 @@ class LDAPsqlBackend:
                 FROM
                     ml.moderators
                     JOIN ml.mailinglists ON mailinglists.id = mailinglist_id
-                WHERE persona_id = ANY(%(persona_ids)s)
+                WHERE persona_id = ANY(%(persona_ids)s) AND mailinglists.is_active
                 GROUP BY persona_id
             """
             return {
@@ -1221,7 +1234,7 @@ class LDAPsqlBackend:
         return cls._is_entry_dn(dn, cls.moderator_groups_dn, "cn")
 
     async def list_ml_moderator_groups(self) -> list[DN]:
-        query = "SELECT address FROM ml.mailinglists"
+        query = "SELECT address FROM ml.mailinglists WHERE is_active"
         return [
             self.moderator_group_dn(e['address'])
             async for e in self.query_all(query, [])
@@ -1329,10 +1342,13 @@ class LDAPsqlBackend:
         return cls._is_entry_dn(dn, cls.subscriber_groups_dn, "cn")
 
     async def list_ml_subscriber_groups(self) -> list[DN]:
-        query = "SELECT address FROM ml.mailinglists"
+        query = """
+            SELECT address FROM ml.mailinglists
+            WHERE is_active AND mailinglists.ml_type = ANY(%(ml_types)s)
+        """
         return [
             self.subscriber_group_dn(e['address'])
-            async for e in self.query_all(query, [])
+            async for e in self.query_all(query, {"ml_types": EXPOSED_ML_TYPES})
         ]
 
     async def get_subscribers(self, adresses: Collection[str]) -> dict[str, list[int]]:
