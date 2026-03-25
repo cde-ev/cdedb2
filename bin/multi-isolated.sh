@@ -12,7 +12,7 @@ else
 fi
 
 if [[ $# -ne ${#ARGSPEC[@]} ]]; then
-    echo "Usage: $(basename "$0") ${ARGSPEC[@]}"
+    echo "Usage: $(basename "$0")" "${ARGSPEC[@]}"
     echo "       portprefix should be a number between 10 and 64"
     echo "       git names can generally be any reference acceptable to git"
     exit

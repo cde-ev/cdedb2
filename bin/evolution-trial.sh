@@ -43,9 +43,9 @@ git checkout "$NEWREVISION"
 echo ""
 echo "Compiling list of evolutions to apply:"
 truncate -s0 /tmp/todoevolutions.txt
-ls cdedb/database/evolutions | sort > /tmp/newevolutions.txt
+ls cdedb/database/evolutions > /tmp/newevolutions.txt
 (grep /tmp/newevolutions.txt -v -f /tmp/oldevolutions.txt > /tmp/todoevolutions.txt) || true
-ls related/deploy | sort > /tmp/newdeploys.txt
+ls related/deploy > /tmp/newdeploys.txt
 (grep /tmp/newdeploys.txt -v -f /tmp/olddeploys.txt > /tmp/tododeploys.txt) || true
 echo ""
 cat /tmp/todoevolutions.txt

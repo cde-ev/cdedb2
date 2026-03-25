@@ -3,7 +3,7 @@
 COUNT=0
 
 function notice_lines () {
-    COUNT=$(($COUNT + $1))
+    COUNT=$((COUNT + $1))
 }
 
 if [ $# -gt 0 ]
@@ -23,11 +23,11 @@ else
 fi
 
 for rev in $(git rev-list origin/stable..stable); do
-    notice_lines $(git show -s "$rev" | grep -i '^\W*Deploy:' | sed -e "s/^\W*/${rev:0:8} /" | wc -l)
+    notice_lines "$(git show -s "$rev" | grep -i '^\W*Deploy:' | sed -e "s/^\W*/${rev:0:8} /" | wc -l)"
     git show -s "$rev" | grep -i '^\W*Deploy:' | sed -e "s/^\W*/${rev:0:8} /"
 done
 
-notice_lines $(git diff --name-status origin/stable..stable | grep "^A\s*related/deploy" | wc -l)
+notice_lines "$(git diff --name-status origin/stable..stable | grep -c "^A\s*related/deploy")"
 git diff --name-status origin/stable..stable | grep "^A\s*related/deploy"
 
 if [ $COUNT -gt 0 ]
