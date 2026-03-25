@@ -8,17 +8,17 @@ sudo python3 -m pip install --break-system-packages uv
 echo ""
 
 echo "Setting up uv shell-completion and python directory for root"
-sudo cat /cdedb2/related/auto-build/files/stage3/root-bashrc | sudo tee /root/.bashrc --append
+sudo cat /cdedb2/related/auto-build/files/stage2/root-bashrc | sudo tee /root/.bashrc --append
 echo ""
 
 echo "Creating global uv config"
 sudo mkdir -p /etc/uv
-sudo cp /cdedb2/related/auto-build/files/stage3/etc-uv.toml /etc/uv/uv.toml
+sudo cp /cdedb2/related/auto-build/files/stage2/etc-uv.toml /etc/uv/uv.toml
 echo ""
 
 echo "Creating root uv config"
 sudo mkdir -p /root/.config/uv
-sudo cp /cdedb2/related/auto-build/files/stage3/root-uv.toml /root/.config/uv/uv.toml
+sudo cp /cdedb2/related/auto-build/files/stage2/root-uv.toml /root/.config/uv/uv.toml
 echo ""
 
 if [ ! -d /home/www-cde ]; then
