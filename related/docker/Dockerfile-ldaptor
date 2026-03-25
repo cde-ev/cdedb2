@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install uv --break-system-packages
+RUN pip install uv>=0.11.0 --break-system-packages
 
 # copy project configuration for uv
 COPY ./pyproject.toml /tmp/
