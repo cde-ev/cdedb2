@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     pkg-config \
     \
     libsystemd-dev \
+    libicu-dev \
     \
     && rm -rf /var/lib/apt/lists/*
 
@@ -21,6 +22,8 @@ COPY ./pyproject.toml /tmp/
 
 # install packages
 RUN uv pip install --group /tmp/pyproject.toml:ldap --system --break-system-packages
+
+RUN uv pip install -r /tmp/pyproject.toml --system --break-system-packages
 
 COPY ./related/docker/ldaptor-entrypoint.sh ./related/auto-build/files/stage3 /tmp/autobuild/
 
