@@ -37,7 +37,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     texlive-luatex \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install uv>=0.11.0 --break-system-packages
+RUN pip install "uv>=0.11.0" --break-system-packages
 
 # install packages
 RUN uv pip install playwright==1.55.0 --system --break-system-packages
