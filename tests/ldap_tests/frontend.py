@@ -599,7 +599,11 @@ class TestLDAP(BasicTest):
             user=self.admin_dua_dn,
             password=self.admin_dua_pw,
         ) as conn:
-            conn.search(search_base=self.root_dn, search_filter=search_filter)
+            conn.search(
+                search_base=self.root_dn,
+                search_filter=search_filter,
+                attributes=ALL_ATTRIBUTES,
+            )
             result_names: set[str] = {entry.entry_dn for entry in conn.entries}
             self.assertEqual(expectation_all, result_names)
 
@@ -654,7 +658,11 @@ class TestLDAP(BasicTest):
             user=self.admin_dua_dn,
             password=self.admin_dua_pw,
         ) as conn:
-            conn.search(search_base=self.root_dn, search_filter=search_filter)
+            conn.search(
+                search_base=self.root_dn,
+                search_filter=search_filter,
+                attributes=ALL_ATTRIBUTES,
+            )
             result_names = {entry.entry_dn for entry in conn.entries}
             self.assertEqual(expectation_all, result_names)
 
@@ -675,6 +683,27 @@ class TestLDAP(BasicTest):
         }
         self.check_search_access(search_filter)
         # TODO use appropiate non-admin-dua here
+        self.single_result_search(
+            search_filter,
+            expectation,
+            attributes=attributes,
+            user=self.admin_dua_dn,
+            password=self.admin_dua_pw,
+        )
+
+    def test_search_attributes_of_status_group(self) -> None:
+        group_cn = "is_cdelokal_admin"
+        attributes = ['objectClass', 'cn', 'uniqueMember']
+        search_filter = f"(&(objectClass=groupOfUniqueNames)(cn={group_cn}))"
+        expectation = {
+            'cn': ['is_cdelokal_admin'],
+            'objectClass': ['groupOfUniqueNames'],
+            'uniqueMember': [
+                "uid=1,ou=users,dc=cde-ev,dc=de",
+                "uid=38,ou=users,dc=cde-ev,dc=de",
+                "uid=100,ou=users,dc=cde-ev,dc=de",
+            ],
+        }
         self.single_result_search(
             search_filter,
             expectation,

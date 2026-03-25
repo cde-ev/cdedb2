@@ -920,7 +920,9 @@ class LDAPsqlBackend:
     async def list_status_groups(self) -> list[DN]:
         return [self.status_group_dn(name) for name in self.STATUS_GROUPS]
 
-    async def _get_status_group(self, dn: DN, name: str) -> tuple[DN, LDAPObject]:
+    async def _get_status_group(
+        self, dn: DN, name: str, attributes: Optional[AttributeDescriptionList] = None
+    ) -> tuple[DN, LDAPObject]:
         """Uninlined code from get_status_groups."""
         if name == "is_searchable":
             condition = "is_member AND is_searchable"
@@ -929,18 +931,27 @@ class LDAPsqlBackend:
         query = "SELECT MAX(ctime) AS ctime FROM core.changelog"
         ctime = (await self.query_one(query, []))["ctime"]  # type: ignore[index]
         query = f"SELECT id FROM core.personas WHERE {condition}"
+        # Skip fetching members if they are not requested and would be filtered out higher up in the stack anyways.
+        members = []
+        if (
+            attributes is None
+            or len(attributes) == 0
+            or b"*" in attributes
+            or b"uniqueMember" in attributes
+        ):
+            members = [self.user_dn(e["id"]) async for e in self.query_all(query, ())]
         return dn, self._to_bytes({
             b"cn": [self.status_group_cn(name)],
             b"objectClass": ["groupOfUniqueNames"],
             b"description": [self.STATUS_GROUPS[name]],
-            b"uniqueMember": [
-                self.user_dn(e["id"]) async for e in self.query_all(query, ())
-            ],
+            b"uniqueMember": members,
             b"ipaUniqueID": [f"status_groups/{name}"],
             b"modifyTimestamp": [self.format_timestamp(ctime)],
         })
 
-    async def get_status_groups(self, dns: list[DN]) -> LDAPObjectMap:
+    async def get_status_groups(
+        self, dns: list[DN], attributes: Optional[AttributeDescriptionList] = None
+    ) -> LDAPObjectMap:
         dn_to_name = dict()
         for dn in dns:
             name = self.status_group_name(dn)
@@ -956,7 +967,7 @@ class LDAPsqlBackend:
         return dict(
             await asyncio.gather(
                 *(
-                    self._get_status_group(dn, name)
+                    self._get_status_group(dn, name, attributes=attributes)
                     for dn, name in dn_to_name.items()
                     if name in self.STATUS_GROUPS
                 )
