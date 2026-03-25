@@ -120,7 +120,7 @@ steps:
     path: /etc/ssl/ldap
   environment:
     CDEDB_CONFIGPATH: tests/config/test_ldap.py
-- name: frontend tests a-d
+- name: frontend tests event
   image: cdedb
   pull: never # do not try to pull image from docker hub
   depends_on:
@@ -136,7 +136,7 @@ steps:
     path: /coverage
   commands:
   - COVERAGE_FILE=/coverage/.coverage.1 python3 -m coverage run -p bin/check.py --verbose --first # everything before event
-- name: frontend tests e-z
+- name: frontend tests other
   image: cdedb
   pull: never # do not try to pull image from docker hub
   depends_on:
@@ -192,8 +192,8 @@ steps:
   image: cdedb
   pull: never
   depends_on:
-  - frontend tests a-d
-  - frontend tests e-z
+  - frontend tests event
+  - frontend tests other
   - non-frontend tests
   - ldap tests
   when:
@@ -248,8 +248,8 @@ steps:
   image: docker:20.10-git
   pull: never # do not try to pull image from docker hub
   depends_on:
-  - frontend tests a-d
-  - frontend tests e-z
+  - frontend tests event
+  - frontend tests other
   - non-frontend tests
   - ldap tests
   - xss
