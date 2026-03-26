@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-03-24 22:54+0100\n"
+"POT-Creation-Date: 2026-03-26 15:04+0100\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -12098,8 +12098,8 @@ msgid "Transactions which are initialised today will be booked at %(date)s."
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:65
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:234
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:259
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:284
 #: cdedb/frontend/templates/web/generic.tmpl:530
 msgid "Profile"
 msgstr ""
@@ -12203,52 +12203,57 @@ msgstr ""
 msgid "This transaction needs to be cancelled!"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:198
-msgid "All selected:"
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:190
+msgid "All selected"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:199
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:192
+#, python-format
+msgid "(Selected: %(num)s, Total: %(total)s)"
+msgstr ""
+
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:196
 msgid "SEPA-PAIN"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:202
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:199
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:209
 msgid "Success"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:203
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:200
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:219
 msgid "Failed"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:204
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:201
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:229
 msgid "Cancelled"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:209
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:234
 msgid "There are currently no Direct Debits pending."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:214
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:239
 msgid "All active Authorizations"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:216
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:241
 #, python-format
 msgid "The total amount of donations is %(money)s."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:219
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:244
 #, python-format
 msgid "Including the annual membership fees, this sums up to %(money)s."
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:242
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:267
 msgid "All inactive Authorizations"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:244
+#: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:269
 msgid "Only authorizations of users without an active authorization are shown."
 msgstr ""
 
