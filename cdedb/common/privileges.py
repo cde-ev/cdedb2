@@ -96,6 +96,19 @@ def is_privileged_event_user(
     from templates.
     """
     EP = EventPrivileges
+
+    # Limit access to really old events as configured based on id.
+    # Any action requiring _any_ of these privileges will be disallowed.
+    limited_access_disallow = (
+        EP._registrations_read_dummy | EP.registrations_write | EP.participant_list
+    )
+
+    if (
+        event_id < _CONF["EVENT_ACCESS_LIMITED_BEFORE_ID"]
+        and required_privilege & limited_access_disallow
+    ):
+        return False
+
     admin_privileges = ~(EP.conclude | EP.balance)
     orga_privileges = ~(
         EP.conclude | EP.balance | EP.delete | EP.orgas_change | EP.caretakers_change
@@ -119,11 +132,6 @@ def is_privileged_event_user(
         | EP.payment_write
         | EP.balance
     )
-
-    if event_id < _CONF["EVENT_ACCESS_LIMITED_BEFORE_ID"] and required_privilege & (
-        EP._registrations_read_dummy | EP.registrations_write | EP.participant_list
-    ):  # pylint: disable=protected-access
-        return False
 
     return (
         # Special case for conclude which requires two admin privileges.
