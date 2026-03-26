@@ -288,5 +288,4 @@ sample-data-dump: venv
 
 .PHONY: sample-data
 sample-data: venv
-	$(UV) sync --all-groups
 	sudo $(PYTHONBIN) -m cdedb dev apply-sample-data --owner www-cde --group www-data
