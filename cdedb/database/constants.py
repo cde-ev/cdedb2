@@ -948,6 +948,17 @@ class ComplaintLogCodes(CdEIntEnum):
         """List log codes which are relevant to display on a case history"""
         return 1 < self.value < 100
 
+    def optgroup_label(self) -> str:
+        if self.name.startswith("case"):
+            return n_("Case")
+        if self.name.startswith("involved"):
+            return n_("Involved")
+        if self.name.startswith("companion"):
+            return n_("Companion")
+        if self.name.startswith("enforcer"):
+            return n_("Enforcer")
+        return n_("Other")
+
 
 @enum.unique
 class CdeLogCodes(CdEIntEnum):
