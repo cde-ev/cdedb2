@@ -4562,6 +4562,19 @@ def _custom_query_filter(
     return val
 
 
+@_create_dataclass_validator(models_event.StoredEventQuery)
+def _stored_query(
+    val: CdEDBObject,
+    argname: str,
+    *,
+    creation: bool = False,
+    spec: QuerySpec,
+    **kwargs: Any,
+) -> CdEDBObject:
+    val["serialized_query"] = val["serialized_query"].serialize()
+    return val
+
+
 @_add_typed_validator
 def _query_input(
     val: Any,

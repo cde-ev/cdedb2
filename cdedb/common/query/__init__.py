@@ -955,7 +955,7 @@ class Query:
             return ""
         return f" ORDER BY {', '.join(order.order_by for order in self._order_entries)}"
 
-    def serialize(self, timezone_aware: bool) -> CdEDBObject:
+    def serialize(self, timezone_aware: bool = True) -> CdEDBObject:
         """
         Serialize a query into a dict.
 
