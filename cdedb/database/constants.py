@@ -882,6 +882,37 @@ class CoreLogCodes(CdEIntEnum):
     reply_to_anonymous_message = 101  #:
     rotate_anonymous_message = 102  #:
 
+    def optgroup_label(self) -> str:
+        return {
+            self.persona_creation: n_("Persona"),
+            self.persona_change: n_("Persona"),
+            self.persona_archived: n_("Persona"),
+            self.persona_dearchived: n_("Persona"),
+            self.persona_purged: n_("Persona"),
+            self.realm_change: n_("Persona"),
+            self.username_change: n_("Persona"),
+            self.password_change: n_("Password"),
+            self.password_reset_cookie: n_("Password"),
+            self.password_reset: n_("Password"),
+            self.password_invalidated: n_("Password"),
+            self.genesis_request: n_("Genesis"),
+            self.genesis_approved: n_("Genesis"),
+            self.genesis_rejected: n_("Genesis"),
+            self.genesis_deleted: n_("Genesis"),
+            self.genesis_verified: n_("Genesis"),
+            self.genesis_merged: n_("Genesis"),
+            self.genesis_change: n_("Genesis"),
+            self.privilege_change_pending: n_("Privilege Change"),
+            self.privilege_change_approved: n_("Privilege Change"),
+            self.privilege_change_rejected: n_("Privilege Change"),
+            self.quota_violation: n_("Other"),
+            self.modify_email_status: n_("Other"),
+            self.delete_email_status: n_("Other"),
+            self.send_anonymous_message: n_("Other"),
+            self.reply_to_anonymous_message: n_("Other"),
+            self.rotate_anonymous_message: n_("Other"),
+        }.get(self, n_("Other"))
+
 
 @enum.unique
 class ComplaintLogCodes(CdEIntEnum):
