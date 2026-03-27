@@ -981,7 +981,9 @@ class CdeLogCodes(CdEIntEnum):
 class FinanceLogCodes(CdEIntEnum):
     """Available log messages cde.finance_log."""
 
-    new_member = 1  #:
+    # Do not reuse:
+    # new_member = 1  #:
+
     gain_membership = 2  #:
     lose_membership = 3  #:
     increase_balance = 10  #:
@@ -1005,6 +1007,31 @@ class FinanceLogCodes(CdEIntEnum):
     honorary_membership_revoked = 52  #:
     #: Fallback for strange cases
     other = 99
+
+    def optgroup_label(self) -> str:
+        return {
+            self.gain_membership: n_("Membership"),
+            self.lose_membership: n_("Membership"),
+            self.end_trial_membership: n_("Membership"),
+            self.start_trial_membership: n_("Membership"),
+            self.honorary_membership_granted: n_("Membership"),
+            self.honorary_membership_revoked: n_("Membership"),
+            self.increase_balance: n_("Balance"),
+            self.deduct_membership_fee: n_("Balance"),
+            self.manual_balance_correction: n_("Balance"),
+            self.remove_balance_on_archival: n_("Balance"),
+            self.remove_exmember_balance: n_("Balance"),
+            self.grant_lastschrift: n_("Lastschrift"),
+            self.revoke_lastschrift: n_("Lastschrift"),
+            self.modify_lastschrift: n_("Lastschrift"),
+            self.lastschrift_deleted: n_("Lastschrift"),
+            self.lastschrift_transaction_issue: n_("Lastschrift Transaction"),
+            self.lastschrift_transaction_success: n_("Lastschrift Transaction"),
+            self.lastschrift_transaction_failure: n_("Lastschrift Transaction"),
+            self.lastschrift_transaction_skip: n_("Lastschrift Transaction"),
+            self.lastschrift_transaction_cancelled: n_("Lastschrift Transaction"),
+            self.lastschrift_transaction_revoked: n_("Lastschrift Transaction"),
+        }.get(self, n_("Other"))
 
 
 @enum.unique
