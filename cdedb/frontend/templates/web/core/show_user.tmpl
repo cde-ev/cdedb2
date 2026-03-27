@@ -258,7 +258,7 @@
                                               titles=[gettext("No"), gettext("Yes")]) }}
                     </dd>
                 {% endif %}
-                {% if data.has("honorary_member") %}
+                {% if data.has("honorary_member") and data.is_true("honorary_member") %}
                     <div id="honorary-member">
                         <dt title="{% trans %}Honorary Member{% endtrans %}">
                             {% trans %}Honorary Member{% endtrans %}
