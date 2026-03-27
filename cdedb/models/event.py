@@ -54,11 +54,9 @@ import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
 from cdedb.common import (
     CdEDBObject,
-    Error,
     User,
     cast_field_entries,
     cast_fields,
-    json_serialize,
     n_,
     normalize_field_entries,
     now,
@@ -66,7 +64,6 @@ from cdedb.common import (
 from cdedb.common.parse.util import Accounts
 from cdedb.common.privileges import EventPrivileges, is_privileged_event_user
 from cdedb.common.query import (
-    Query,
     QueryScope,
     QuerySpec,
     QuerySpecEntry,
@@ -80,6 +77,7 @@ from cdedb.models.common import (
     CdEDataclass,
     CdEDataclassMap,
     MetaFlag as Meta,
+    StoredQuery as _StoredQuery,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -1022,59 +1020,21 @@ class QuestionnaireRow(EventDataclass):
 
 
 @dataclasses.dataclass
-class StoredEventQuery(EventDataclass):
+class StoredEventQuery(EventDataclass, _StoredQuery):
     database_table = "event.stored_queries"
 
-    id: vtypes.ID = dataclasses.field(metadata=Meta.input_creation_exclude.as_dict)
-
+    event_id: vtypes.ID = dataclasses.field(
+        default=vtypes.ID(-1), metadata=Meta.request_exclude.as_dict
+    )
     event: Event = dataclasses.field(
-        init=False,
         compare=False,
         repr=False,
         default=cast(Event, None),
         metadata=Meta.input_exclude.as_dict,
     )
-    event_id: vtypes.ID = dataclasses.field(metadata=Meta.request_exclude.as_dict)
 
-    query_name: str
-    scope: QueryScope = dataclasses.field(metadata=Meta.request_exclude.as_dict)
-    serialized_query: vtypes.QueryInput = dataclasses.field(
-        metadata=Meta.request_exclude.as_dict
-    )
-    errors: list["Error"] = dataclasses.field(
-        default_factory=list,
-        init=False,
-        compare=False,
-        repr=False,
-        metadata=Meta.exclude.as_dict,
-    )
-
-    @functools.cached_property
-    def query(self) -> Query:
-        spec = self.scope.get_spec(event=self.event)
-        from cdedb.common.validation.validate import validate_check  # noqa: PLC0415
-
-        query: Query | None
-        query, errs = validate_check(
-            vtypes.QueryInput,
-            self.serialized_query,
-            ignore_warnings=True,
-            spec=spec,
-        )
-        if not query:
-            self.errors = errs
-            return cast(Query, None)
-        query.query_id = self.id
-        query.name = self.query_name
-        return query
-
-    def to_database(self) -> CdEDBObject:
-        ret = super().to_database()
-        ret["serialized_query"] = json_serialize(self.serialized_query)
-        return ret
-
-    def get_sortkey(self) -> Sortkey:
-        return (self.event.get_sortkey() if self.event else ()) + (self.query_name,)
+    def _get_spec(self) -> QuerySpec:
+        return self.scope.get_spec(event=self.event)
 
 
 #

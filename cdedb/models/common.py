@@ -24,10 +24,13 @@ from typing import (
 import cdedb.common.validation.types as vtypes
 from cdedb.common import (
     CdEDBObject,
+    Error,
     get_mandatory_form_fields,
     get_mandatory_type,
     is_optional_type,
+    json_serialize,
 )
+from cdedb.common.query import Query, QueryScope, QuerySpec
 from cdedb.common.sorting import Sortkey, collate, xsorted
 from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
 
@@ -521,3 +524,54 @@ class CdEDataclass:
             return NotImplemented
 
         return self._lt_inner(other)
+
+
+@dataclasses.dataclass
+class StoredQuery(CdEDataclass):
+    id: vtypes.ID = dataclasses.field(metadata=MetaFlag.input_creation_exclude.as_dict)
+
+    query_name: str
+    scope: QueryScope = dataclasses.field(metadata=MetaFlag.request_exclude.as_dict)
+    serialized_query: vtypes.QueryInput = dataclasses.field(
+        metadata=MetaFlag.request_exclude.as_dict
+    )
+    errors: list["Error"] = dataclasses.field(
+        default_factory=list,
+        compare=False,
+        repr=False,
+        metadata=MetaFlag.exclude.as_dict,
+    )
+
+    @property
+    def user_created(self) -> bool:
+        return bool(self.id and self.id > 0)
+
+    def _get_spec(self) -> QuerySpec:
+        return self.scope.get_spec()
+
+    @functools.cached_property
+    def query(self) -> Query:
+        spec = self._get_spec()
+        from cdedb.common.validation.validate import validate_check  # noqa: PLC0415
+
+        query: Query | None
+        query, errs = validate_check(
+            vtypes.QueryInput,
+            self.serialized_query,
+            ignore_warnings=True,
+            spec=spec,
+        )
+        if not query:
+            self.errors = errs
+            return cast(Query, None)
+        query.query_id = self.id
+        query.name = self.query_name
+        return query
+
+    def to_database(self) -> CdEDBObject:
+        ret = super().to_database()
+        ret["serialized_query"] = json_serialize(self.serialized_query)
+        return ret
+
+    def get_sortkey(self) -> Sortkey:
+        return (self.query_name,)

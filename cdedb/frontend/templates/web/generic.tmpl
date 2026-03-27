@@ -377,21 +377,32 @@
                 {% for list in queries | sort | slice(num_columns) %}
                 <div class="col-sm-{{ 12 // num_columns }}">
                     <ul class="slim {% if not loop.last %}nosp{% endif %}">
-                        {% for query_name in list %}
-                            {% with query = queries[query_name] -%}
-                                <li>
+                        {% for stored_query in list %}
+                            {% set query = stored_query.query %}
+                            {% set name = stored_query.query_name %}
+                            {% set name = gettext(name) if not stored_query.user_created else name %}
+                            <li>
+                                {% if query %}
                                     {{ util.href(cdedblink(scope.get_target(), query.serialize_to_url()) + '#query-results',
-                                            query.name if query.name else gettext(query_name), aclass="default-query") }}
-                                    {% if query.query_id %}
-                                        <form action="{{ cdedblink('event/delete_event_query') }}" method="post" class="display-inline" id="deletequeryform{{ query.query_id }}">
-                                            {{ util.anti_csrf_token('event/delete_event_query') }}
-                                            {{ util.input_hidden("query_id", value=query.query_id) }}
-                                            {{ util.input_hidden("query_scope", value=query.scope) }}
-                                            {{ util.input_submit(label="", aclass='btn btn-xs btn-danger', icon="trash-alt", title=gettext('Delete query')) }}
-                                        </form>
-                                    {% endif %}
-                                </li>
-                            {%- endwith %}
+                                            name, aclass="default-query") }}
+                                {% else %}
+                                    {% set title -%}
+                                        {% trans %}Invalid stored query:{% endtrans %}{{ "\n" }}
+                                        {%- for name, err in stored_query.errors -%}
+                                            {{ name }}: {{ util.format_error(err, newline="\n") }}
+                                        {%- endfor %}
+                                    {%- endset %}
+                                    {{ util.href("", name, readonly=True, title=title) }}
+                                {% endif %}
+                                {% if stored_query.user_created %}
+                                    <form action="{{ cdedblink('event/delete_event_query') }}" method="post" class="display-inline" id="deletequeryform{{ stored_query.id }}">
+                                        {{ util.anti_csrf_token('event/delete_event_query') }}
+                                        {{ util.input_hidden("query_id", value=stored_query.id) }}
+                                        {{ util.input_hidden("query_scope", value=scope) }}
+                                        {{ util.input_submit(label="", aclass='btn btn-xs btn-danger', icon="trash-alt", title=gettext('Delete query')) }}
+                                    </form>
+                                {% endif %}
+                            </li>
                         {% endfor %}
                     </ul>
                 </div>
