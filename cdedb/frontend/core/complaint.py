@@ -172,7 +172,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
                 persona_ids: set[int] = set()
                 for case in cases.values():
-                    persona_ids.update(case.all_involved.keys())
+                    persona_ids.update(case.involved_persona_ids)
                 personas = self.coreproxy.get_personas(rs, persona_ids)
 
         return self.render(
@@ -515,7 +515,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
         if companion_ids:
-            if companion_ids & rs.ambience['case'].all_involved.keys():
+            if set(companion_ids) & rs.ambience['case'].involved_persona_ids:
                 rs.append_validation_error((
                     "companion_ids",
                     ValueError(n_("Companion may not be involved.")),
@@ -590,7 +590,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             raise werkzeug.exceptions.Forbidden()
         if companion_id not in rs.ambience['case'].companions:
             rs.notify("error", n_("This user is no companion."))
-        elif companion_id in rs.ambience['case'].all_involved.keys():
+        elif companion_id in rs.ambience['case'].involved_persona_ids:
             rs.notify("error", n_("Active companion may not be involved."))
         else:
             ret = self.complaintproxy.set_companion_withdrawn(

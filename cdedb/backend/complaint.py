@@ -290,8 +290,8 @@ class ComplaintBackend(AbstractBackend):
         _related_cases = {
             maybe_related_case_id: case
             for maybe_related_case_id, case in _cases.items()
-            if _cases[case_id].all_properly_involved.keys()
-            & case.all_properly_involved.keys()
+            if _cases[case_id].properly_involved_persona_ids
+            & case.properly_involved_persona_ids
         }
         del _related_cases[case_id]
 
@@ -761,8 +761,10 @@ class ComplaintBackend(AbstractBackend):
 
             # If some of these users are involved already, remove their involvement first.
             #  This also removes their companions.
-            other_involved = persona_ids & case.all_involved.keys() - case.involved.get(
-                involved_type, set()
+            other_involved = (
+                persona_ids
+                & case.involved_persona_ids
+                - case.involved_persona_ids_by_type(involved_type)
             )
             if other_involved:
                 # Silence logging of companion removal, explicitly redo the logging
@@ -775,7 +777,9 @@ class ComplaintBackend(AbstractBackend):
                         code=const.ComplaintLogCodes.involved_removed,
                         case_id=case_id,
                         persona_id=involved_id,
-                        change_note=rs.log_gettext(str(case.all_involved[involved_id])),
+                        change_note=rs.log_gettext(
+                            str(case.involved[involved_id].type_)
+                        ),
                     )
                     if not is_informed and involved_id in case.informed_involved:
                         self.complaint_log(
@@ -870,7 +874,9 @@ class ComplaintBackend(AbstractBackend):
                 raise ValueError(n_("Unknown users."))
 
             case = self.get_case(rs, case_id)
-            removed = persona_ids & case.all_involved.keys()
+            removed = persona_ids & {
+                involved.persona_id for involved in case.involved.values()
+            }
             if not removed:
                 return -1
             query = f"""
@@ -979,7 +985,7 @@ class ComplaintBackend(AbstractBackend):
 
             if companion_ids & case.adverse_companions(involved_type):
                 raise AdverseCompanionError
-            if companion_ids & case.all_involved.keys():
+            if companion_ids & case.involved_persona_ids:
                 raise ValueError(n_("Involved companion."))
 
             values = [

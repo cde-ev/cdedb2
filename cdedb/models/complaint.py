@@ -33,27 +33,43 @@ class Case(CdEDataclass):
     entries: CdEDataclassMap["ComplaintEntry"] = dataclasses.field(
         metadata=Meta.asdict_include.as_dict
     )
-    involved: dict[const.ComplaintInvolvementType, set[int]] = dataclasses.field(
+    involved: CdEDataclassMap["ComplaintInvolved"] = dataclasses.field(
         metadata=Meta.exclude.as_dict,
     )
     informed_involved: set[int] = dataclasses.field(metadata=Meta.exclude.as_dict)
 
     @functools.cached_property
-    def all_involved(self) -> dict[int, const.ComplaintInvolvementType]:
+    def properly_involved(self) -> dict[int, "ComplaintInvolved"]:
+        """This ignores the withheld type."""
         return {
-            persona_id: involved_type
-            for involved_type, involved in self.involved.items()
-            for persona_id in involved
+            involved_id: involved
+            for involved_id, involved in self.involved.items()
+            if involved.type_ != const.ComplaintInvolvementType.withheld
         }
 
     @functools.cached_property
-    def all_properly_involved(self) -> dict[int, const.ComplaintInvolvementType]:
-        """This ignores the withheld type."""
+    def involved_persona_ids(self) -> set[int]:
         return {
-            persona_id: involved_type
-            for involved_type, involved in self.involved.items()
-            if involved_type != const.ComplaintInvolvementType.withheld
-            for persona_id in involved
+            involved.persona_id
+            for involved in self.involved.values()
+            if involved.persona_id is not None
+        }
+
+    @functools.cached_property
+    def properly_involved_persona_ids(self) -> set[int]:
+        return {
+            involved.persona_id
+            for involved in self.properly_involved.values()
+            if involved.persona_id is not None
+        }
+
+    def involved_persona_ids_by_type(
+        self, it: const.ComplaintInvolvementType
+    ) -> set[int]:
+        return {
+            involved.persona_id
+            for involved in self.involved.values()
+            if involved.persona_id is not None and involved.type_ == it
         }
 
     # Companions to set of involved personas they accompany
@@ -65,8 +81,8 @@ class Case(CdEDataclass):
     def companions_by_involved(self) -> dict[int, set[int]]:
         ret: dict[int, set[int]] = {}
         for companion, accompanied in self.companions.items():
-            for persona_id in accompanied:
-                ret.setdefault(persona_id, set()).add(companion)
+            for involved_id in accompanied:
+                ret.setdefault(involved_id, set()).add(companion)
         return ret
 
     @functools.cached_property
@@ -74,10 +90,9 @@ class Case(CdEDataclass):
         self,
     ) -> dict[const.ComplaintInvolvementType, set[int]]:
         ret: dict[const.ComplaintInvolvementType, set[int]] = {}
-        for involvement_type, involved_personas in self.involved.items():
-            for persona_id in involved_personas:
-                companions = self.companions_by_involved.get(persona_id, set())
-                ret.setdefault(involvement_type, set()).update(companions)
+        for involved_id, involved in self.involved.items():
+            companions = self.companions_by_involved.get(involved_id, set())
+            ret.setdefault(involved.type_, set()).update(companions)
         return ret
 
     withdrawn_companions: dict[int, set[int]] = dataclasses.field(
@@ -88,8 +103,8 @@ class Case(CdEDataclass):
     def withdrawn_companions_by_involved(self) -> dict[int, set[int]]:
         ret: dict[int, set[int]] = {}
         for companion, accompanied in self.withdrawn_companions.items():
-            for persona_id in accompanied:
-                ret.setdefault(persona_id, set()).add(companion)
+            for involved_id in accompanied:
+                ret.setdefault(involved_id, set()).add(companion)
         return ret
 
     @functools.cached_property
@@ -117,12 +132,13 @@ class Case(CdEDataclass):
         Beware that his is not symmetric."""
         it = const.ComplaintInvolvementType
         return bool(
-            case.all_properly_involved.keys() & self.involved.get(it.target, set())
+            case.properly_involved_persona_ids
+            & self.involved_persona_ids_by_type(it.target)
         ) and bool(
-            case.all_properly_involved.keys()
+            case.properly_involved_persona_ids
             & (
-                self.involved.get(it.affected, set())
-                | self.involved.get(it.appellant, set())
+                self.involved_persona_ids_by_type(it.affected)
+                | self.involved_persona_ids_by_type(it.appellant)
             )
         )
 
@@ -130,10 +146,10 @@ class Case(CdEDataclass):
         """Whether a user can see a case in principle.
 
         For now, assumes the user is at least complaint admin."""
-        return user.persona_id not in self.all_involved
+        return user.persona_id not in self.involved_persona_ids
 
     def get_persona_ids(self, log_entries: tuple[CdEDBObject, ...]) -> set[int]:
-        ret: set[int] = set(self.all_involved)
+        ret: set[int] = self.involved_persona_ids
         ret.update(self.companions)
         if log_entries:
             ret.update(e['submitted_by'] for e in log_entries if e['submitted_by'])
@@ -435,6 +451,9 @@ class ComplaintAuthors:
 class ComplaintInvolved:
     database_table = "complaint.involved"
     entity_key = "case_id"
+
+    persona_id: int | None
+    type_: const.ComplaintInvolvementType
 
 
 class ComplaintCompanion:
