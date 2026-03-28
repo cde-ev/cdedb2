@@ -3,15 +3,15 @@ revision = 3
 requires-python = "==3.13.*"
 
 [options]
-exclude-newer = "2026-03-14T01:06:44.877552948Z"
+exclude-newer = "2026-03-14T01:07:07.826336122Z"
 exclude-newer-span = "P14D"
 
 [options.exclude-newer-package]
-subman = { timestamp = "2026-03-28T01:05:44.877579088Z", span = "PT1M" }
-werkzeug = { timestamp = "2026-03-27T01:06:44.877578687Z", span = "P1D" }
-passlib = { timestamp = "2026-03-27T01:06:44.877578367Z", span = "P1D" }
-schulze-condorcet = { timestamp = "2026-03-28T01:05:44.877579709Z", span = "PT1M" }
-gunicorn = { timestamp = "2026-03-27T01:06:44.877566194Z", span = "P1D" }
+subman = { timestamp = "2026-03-28T01:06:07.826360699Z", span = "PT1M" }
+werkzeug = { timestamp = "2026-03-27T01:07:07.826360298Z", span = "P1D" }
+passlib = { timestamp = "2026-03-27T01:07:07.826360008Z", span = "P1D" }
+schulze-condorcet = { timestamp = "2026-03-28T01:06:07.82636136Z", span = "PT1M" }
+gunicorn = { timestamp = "2026-03-27T01:07:07.826346471Z", span = "P1D" }
 
 [[package]]
 name = "alabaster"
@@ -104,7 +104,6 @@ dependencies = [
     { name = "python-dateutil" },
     { name = "python-magic" },
     { name = "pytz" },
-    { name = "requests" },
     { name = "schulze-condorcet" },
     { name = "segno" },
     { name = "sphinx" },
@@ -167,7 +166,6 @@ requires-dist = [
     { name = "python-dateutil", specifier = "==2.9.0" },
     { name = "python-magic", specifier = "==0.4.27" },
     { name = "pytz", specifier = "==2025.2" },
-    { name = "requests", specifier = "==2.32.4" },
     { name = "schulze-condorcet", specifier = "==2.0.1" },
     { name = "segno", specifier = "==1.6.6" },
     { name = "sphinx", specifier = "==8.1.3" },
