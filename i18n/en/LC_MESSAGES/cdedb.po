@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-03-28 01:27+0100\n"
+"POT-Creation-Date: 2026-03-29 00:45+0100\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -1003,288 +1003,288 @@ msgid "EventLogCodes.event_archived"
 msgstr "Event archived"
 
 #: cdedb/.i18n_additional.py:249
-msgid "EventLogCodes.helper_added"
-msgstr "Event helper added"
-
-#: cdedb/.i18n_additional.py:250
-msgid "EventLogCodes.helper_removed"
-msgstr "Event helper removed"
-
-#: cdedb/.i18n_additional.py:251
-msgid "EventLogCodes.orga_added"
-msgstr "Orga added"
-
-#: cdedb/.i18n_additional.py:252
-msgid "EventLogCodes.orga_removed"
-msgstr "Orga removed"
-
-#: cdedb/.i18n_additional.py:253
-msgid "EventLogCodes.caretaker_added"
-msgstr "Caretaker added"
-
-#: cdedb/.i18n_additional.py:254
-msgid "EventLogCodes.caretaker_removed"
-msgstr "Caretaker removed"
-
-#: cdedb/.i18n_additional.py:255
-msgid "EventLogCodes.part_created"
-msgstr "Event Part created"
-
-#: cdedb/.i18n_additional.py:256
-msgid "EventLogCodes.part_changed"
-msgstr "Event Part changed"
-
-#: cdedb/.i18n_additional.py:257
-msgid "EventLogCodes.part_deleted"
-msgstr "Event Part deleted"
-
-#: cdedb/.i18n_additional.py:258
-msgid "EventLogCodes.field_added"
-msgstr "Field added"
-
-#: cdedb/.i18n_additional.py:259
-msgid "EventLogCodes.field_updated"
-msgstr "Field updated"
-
-#: cdedb/.i18n_additional.py:260
-msgid "EventLogCodes.field_removed"
-msgstr "Field removed"
-
-#: cdedb/.i18n_additional.py:261
-msgid "EventLogCodes.lodgement_changed"
-msgstr "Lodgement changed"
-
-#: cdedb/.i18n_additional.py:262
-msgid "EventLogCodes.lodgement_created"
-msgstr "Lodgement created"
-
-#: cdedb/.i18n_additional.py:263
-msgid "EventLogCodes.lodgement_deleted"
-msgstr "Lodgement deleted"
-
-#: cdedb/.i18n_additional.py:264
-msgid "EventLogCodes.questionnaire_changed"
-msgstr "Questionanire changed"
-
-#: cdedb/.i18n_additional.py:265
-msgid "EventLogCodes.track_added"
-msgstr "Track added"
-
-#: cdedb/.i18n_additional.py:266
-msgid "EventLogCodes.track_updated"
-msgstr "Track updated"
-
-#: cdedb/.i18n_additional.py:267
-msgid "EventLogCodes.track_removed"
-msgstr "Track removed"
-
-#: cdedb/.i18n_additional.py:268
-msgid "EventLogCodes.course_created"
-msgstr "Course created"
-
-#: cdedb/.i18n_additional.py:269
-msgid "EventLogCodes.course_changed"
-msgstr "Course changed"
-
-#: cdedb/.i18n_additional.py:270
-msgid "EventLogCodes.course_segment_deleted"
-msgstr "Course segment deleted"
-
-#: cdedb/.i18n_additional.py:271
-msgid "EventLogCodes.course_segment_created"
-msgstr "Course segments created"
-
-#: cdedb/.i18n_additional.py:272
-msgid "EventLogCodes.course_segment_deactivated"
-msgstr "Course segment deactivated"
-
-#: cdedb/.i18n_additional.py:273
-msgid "EventLogCodes.course_segment_activated"
-msgstr "Course segment activated"
-
-#: cdedb/.i18n_additional.py:274
-msgid "EventLogCodes.course_deleted"
-msgstr "Course deleted"
-
-#: cdedb/.i18n_additional.py:275
-msgid "EventLogCodes.registration_created"
-msgstr "Registration created"
-
-#: cdedb/.i18n_additional.py:276
-msgid "EventLogCodes.registration_changed"
-msgstr "Registration changed"
-
-#: cdedb/.i18n_additional.py:277
-msgid "EventLogCodes.registration_deleted"
-msgstr "Registration deleted"
-
-#: cdedb/.i18n_additional.py:278
-msgid "EventLogCodes.registration_payment_received"
-msgstr "Payment received"
-
-#: cdedb/.i18n_additional.py:279
-msgid "EventLogCodes.registration_payment_reimbursed"
-msgstr "Payment reimbursed"
-
-#: cdedb/.i18n_additional.py:280
-msgid "EventLogCodes.registration_payment_received_orga"
-msgstr "Payment received by orga"
-
-#: cdedb/.i18n_additional.py:281
-msgid "EventLogCodes.registration_payment_reimbursed_orga"
-msgstr "Payment reimbursed by orga"
-
-#: cdedb/.i18n_additional.py:282
 msgid "EventLogCodes.event_locked"
 msgstr "Event locked"
 
-#: cdedb/.i18n_additional.py:283
+#: cdedb/.i18n_additional.py:250
 msgid "EventLogCodes.event_unlocked"
 msgstr "Event unlocked"
 
-#: cdedb/.i18n_additional.py:284
-msgid "EventLogCodes.event_partial_import"
-msgstr "Partial Import"
+#: cdedb/.i18n_additional.py:251
+msgid "EventLogCodes.registration_created"
+msgstr "Registration created"
 
-#: cdedb/.i18n_additional.py:285
-msgid "EventLogCodes.lodgement_group_created"
-msgstr "Lodgement group created"
+#: cdedb/.i18n_additional.py:252
+msgid "EventLogCodes.registration_changed"
+msgstr "Registration changed"
 
-#: cdedb/.i18n_additional.py:286
-msgid "EventLogCodes.lodgement_group_changed"
-msgstr "Lodgement group changed"
+#: cdedb/.i18n_additional.py:253
+msgid "EventLogCodes.registration_deleted"
+msgstr "Registration deleted"
 
-#: cdedb/.i18n_additional.py:287
-msgid "EventLogCodes.lodgement_group_deleted"
-msgstr "Lodgement group deleted"
-
-#: cdedb/.i18n_additional.py:288
-msgid "EventLogCodes.event_fee_created"
-msgstr "Fee created"
-
-#: cdedb/.i18n_additional.py:289
-msgid "EventLogCodes.event_fee_modified"
-msgstr "Fee changed"
-
-#: cdedb/.i18n_additional.py:290
-msgid "EventLogCodes.event_fee_deleted"
-msgstr "Fee deleted"
-
-#: cdedb/.i18n_additional.py:291
-msgid "EventLogCodes.minor_form_updated"
-msgstr "Minor Form updated"
-
-#: cdedb/.i18n_additional.py:292
-msgid "EventLogCodes.minor_form_removed"
-msgstr "Minor Form removed"
-
-#: cdedb/.i18n_additional.py:293
-msgid "EventLogCodes.query_stored"
-msgstr "Query stored"
-
-#: cdedb/.i18n_additional.py:294
-msgid "EventLogCodes.query_deleted"
-msgstr "Stored Query deleted"
-
-#: cdedb/.i18n_additional.py:295
-msgid "EventLogCodes.custom_filter_created"
-msgstr "Custom filter created"
-
-#: cdedb/.i18n_additional.py:296
-msgid "EventLogCodes.custom_filter_changed"
-msgstr "Custom filter changed"
-
-#: cdedb/.i18n_additional.py:297
-msgid "EventLogCodes.custom_filter_deleted"
-msgstr "Custom filter deleted"
-
-#: cdedb/.i18n_additional.py:298
-msgid "EventLogCodes.part_group_created"
-msgstr "Part Group created"
-
-#: cdedb/.i18n_additional.py:299
-msgid "EventLogCodes.part_group_changed"
-msgstr "Part Group changed"
-
-#: cdedb/.i18n_additional.py:300
-msgid "EventLogCodes.part_group_deleted"
-msgstr "Part Group deleted"
-
-#: cdedb/.i18n_additional.py:301
-msgid "EventLogCodes.part_group_link_created"
-msgstr "Event Part linked to Part Group"
-
-#: cdedb/.i18n_additional.py:302
-msgid "EventLogCodes.part_group_link_deleted"
-msgstr "Event Part unlinked from Part Group"
-
-#: cdedb/.i18n_additional.py:303
-msgid "EventLogCodes.track_group_created"
-msgstr "Track Group created"
-
-#: cdedb/.i18n_additional.py:304
-msgid "EventLogCodes.track_group_changed"
-msgstr "Track Group changed"
-
-#: cdedb/.i18n_additional.py:305
-msgid "EventLogCodes.track_group_deleted"
-msgstr "Track Group deleted"
-
-#: cdedb/.i18n_additional.py:306
-msgid "EventLogCodes.track_group_link_created"
-msgstr "Course Track linked to Track Group"
-
-#: cdedb/.i18n_additional.py:307
-msgid "EventLogCodes.track_group_link_deleted"
-msgstr "Course Track unlinked from Track Group"
-
-#: cdedb/.i18n_additional.py:308
-msgid "EventLogCodes.orga_token_created"
-msgstr "Orga token crated"
-
-#: cdedb/.i18n_additional.py:309
-msgid "EventLogCodes.orga_token_changed"
-msgstr "Orga token changed"
-
-#: cdedb/.i18n_additional.py:310
-msgid "EventLogCodes.orga_token_revoked"
-msgstr "Orga token revoked"
-
-#: cdedb/.i18n_additional.py:311
-msgid "EventLogCodes.orga_token_deleted"
-msgstr "Orga token deleted"
-
-#: cdedb/.i18n_additional.py:312
+#: cdedb/.i18n_additional.py:254
 msgid "EventLogCodes.registration_status_changed"
 msgstr "Registration status changed"
 
-#: cdedb/.i18n_additional.py:313
+#: cdedb/.i18n_additional.py:255
+msgid "EventLogCodes.registration_payment_received"
+msgstr "Payment received"
+
+#: cdedb/.i18n_additional.py:256
+msgid "EventLogCodes.registration_payment_reimbursed"
+msgstr "Payment reimbursed"
+
+#: cdedb/.i18n_additional.py:257
+msgid "EventLogCodes.registration_payment_received_orga"
+msgstr "Payment received by orga"
+
+#: cdedb/.i18n_additional.py:258
+msgid "EventLogCodes.registration_payment_reimbursed_orga"
+msgstr "Payment reimbursed by orga"
+
+#: cdedb/.i18n_additional.py:259
+msgid "EventLogCodes.course_created"
+msgstr "Course created"
+
+#: cdedb/.i18n_additional.py:260
+msgid "EventLogCodes.course_changed"
+msgstr "Course changed"
+
+#: cdedb/.i18n_additional.py:261
+msgid "EventLogCodes.course_segment_deleted"
+msgstr "Course segment deleted"
+
+#: cdedb/.i18n_additional.py:262
+msgid "EventLogCodes.course_segment_created"
+msgstr "Course segments created"
+
+#: cdedb/.i18n_additional.py:263
+msgid "EventLogCodes.course_segment_deactivated"
+msgstr "Course segment deactivated"
+
+#: cdedb/.i18n_additional.py:264
+msgid "EventLogCodes.course_segment_activated"
+msgstr "Course segment activated"
+
+#: cdedb/.i18n_additional.py:265
+msgid "EventLogCodes.course_deleted"
+msgstr "Course deleted"
+
+#: cdedb/.i18n_additional.py:266
+msgid "EventLogCodes.lodgement_changed"
+msgstr "Lodgement changed"
+
+#: cdedb/.i18n_additional.py:267
+msgid "EventLogCodes.lodgement_created"
+msgstr "Lodgement created"
+
+#: cdedb/.i18n_additional.py:268
+msgid "EventLogCodes.lodgement_deleted"
+msgstr "Lodgement deleted"
+
+#: cdedb/.i18n_additional.py:269
+msgid "EventLogCodes.lodgement_group_created"
+msgstr "Lodgement group created"
+
+#: cdedb/.i18n_additional.py:270
+msgid "EventLogCodes.lodgement_group_changed"
+msgstr "Lodgement group changed"
+
+#: cdedb/.i18n_additional.py:271
+msgid "EventLogCodes.lodgement_group_deleted"
+msgstr "Lodgement group deleted"
+
+#: cdedb/.i18n_additional.py:272
+msgid "EventLogCodes.part_created"
+msgstr "Event Part created"
+
+#: cdedb/.i18n_additional.py:273
+msgid "EventLogCodes.part_changed"
+msgstr "Event Part changed"
+
+#: cdedb/.i18n_additional.py:274
+msgid "EventLogCodes.part_deleted"
+msgstr "Event Part deleted"
+
+#: cdedb/.i18n_additional.py:275
+msgid "EventLogCodes.track_added"
+msgstr "Track added"
+
+#: cdedb/.i18n_additional.py:276
+msgid "EventLogCodes.track_updated"
+msgstr "Track updated"
+
+#: cdedb/.i18n_additional.py:277
+msgid "EventLogCodes.track_removed"
+msgstr "Track removed"
+
+#: cdedb/.i18n_additional.py:278
+msgid "EventLogCodes.field_added"
+msgstr "Field added"
+
+#: cdedb/.i18n_additional.py:279
+msgid "EventLogCodes.field_updated"
+msgstr "Field updated"
+
+#: cdedb/.i18n_additional.py:280
+msgid "EventLogCodes.field_removed"
+msgstr "Field removed"
+
+#: cdedb/.i18n_additional.py:281
+msgid "EventLogCodes.questionnaire_changed"
+msgstr "Questionanire changed"
+
+#: cdedb/.i18n_additional.py:282
+msgid "EventLogCodes.event_fee_created"
+msgstr "Fee created"
+
+#: cdedb/.i18n_additional.py:283
+msgid "EventLogCodes.event_fee_modified"
+msgstr "Fee changed"
+
+#: cdedb/.i18n_additional.py:284
+msgid "EventLogCodes.event_fee_deleted"
+msgstr "Fee deleted"
+
+#: cdedb/.i18n_additional.py:285
 msgid "EventLogCodes.personalized_fee_amount_set"
 msgstr "Personalized Fee set"
 
-#: cdedb/.i18n_additional.py:314
+#: cdedb/.i18n_additional.py:286
 msgid "EventLogCodes.personalized_fee_amount_deleted"
 msgstr "Personalized Fee removed"
 
-#: cdedb/.i18n_additional.py:315
+#: cdedb/.i18n_additional.py:287
+msgid "EventLogCodes.query_stored"
+msgstr "Query stored"
+
+#: cdedb/.i18n_additional.py:288
+msgid "EventLogCodes.query_deleted"
+msgstr "Stored Query deleted"
+
+#: cdedb/.i18n_additional.py:289
+msgid "EventLogCodes.custom_filter_created"
+msgstr "Custom filter created"
+
+#: cdedb/.i18n_additional.py:290
+msgid "EventLogCodes.custom_filter_changed"
+msgstr "Custom filter changed"
+
+#: cdedb/.i18n_additional.py:291
+msgid "EventLogCodes.custom_filter_deleted"
+msgstr "Custom filter deleted"
+
+#: cdedb/.i18n_additional.py:292
 msgid "EventLogCodes.checkin_added"
 msgstr "Checkin hinzugefügt"
 
-#: cdedb/.i18n_additional.py:316
+#: cdedb/.i18n_additional.py:293
 msgid "EventLogCodes.checkout_added"
 msgstr "Checkout hinzugefügt"
 
-#: cdedb/.i18n_additional.py:317
+#: cdedb/.i18n_additional.py:294
 msgid "EventLogCodes.checkin_changed"
 msgstr "Checkin geändert"
 
-#: cdedb/.i18n_additional.py:318
+#: cdedb/.i18n_additional.py:295
 msgid "EventLogCodes.checkout_changed"
 msgstr "Checkout changed"
 
-#: cdedb/.i18n_additional.py:319
+#: cdedb/.i18n_additional.py:296
 msgid "EventLogCodes.checkin_period_deleted"
 msgstr "Anwesenheit gelöscht"
+
+#: cdedb/.i18n_additional.py:297
+msgid "EventLogCodes.part_group_created"
+msgstr "Part Group created"
+
+#: cdedb/.i18n_additional.py:298
+msgid "EventLogCodes.part_group_changed"
+msgstr "Part Group changed"
+
+#: cdedb/.i18n_additional.py:299
+msgid "EventLogCodes.part_group_deleted"
+msgstr "Part Group deleted"
+
+#: cdedb/.i18n_additional.py:300
+msgid "EventLogCodes.part_group_link_created"
+msgstr "Event Part linked to Part Group"
+
+#: cdedb/.i18n_additional.py:301
+msgid "EventLogCodes.part_group_link_deleted"
+msgstr "Event Part unlinked from Part Group"
+
+#: cdedb/.i18n_additional.py:302
+msgid "EventLogCodes.track_group_created"
+msgstr "Track Group created"
+
+#: cdedb/.i18n_additional.py:303
+msgid "EventLogCodes.track_group_changed"
+msgstr "Track Group changed"
+
+#: cdedb/.i18n_additional.py:304
+msgid "EventLogCodes.track_group_deleted"
+msgstr "Track Group deleted"
+
+#: cdedb/.i18n_additional.py:305
+msgid "EventLogCodes.track_group_link_created"
+msgstr "Course Track linked to Track Group"
+
+#: cdedb/.i18n_additional.py:306
+msgid "EventLogCodes.track_group_link_deleted"
+msgstr "Course Track unlinked from Track Group"
+
+#: cdedb/.i18n_additional.py:307
+msgid "EventLogCodes.orga_token_created"
+msgstr "Orga token crated"
+
+#: cdedb/.i18n_additional.py:308
+msgid "EventLogCodes.orga_token_changed"
+msgstr "Orga token changed"
+
+#: cdedb/.i18n_additional.py:309
+msgid "EventLogCodes.orga_token_revoked"
+msgstr "Orga token revoked"
+
+#: cdedb/.i18n_additional.py:310
+msgid "EventLogCodes.orga_token_deleted"
+msgstr "Orga token deleted"
+
+#: cdedb/.i18n_additional.py:311
+msgid "EventLogCodes.helper_added"
+msgstr "Event helper added"
+
+#: cdedb/.i18n_additional.py:312
+msgid "EventLogCodes.helper_removed"
+msgstr "Event helper removed"
+
+#: cdedb/.i18n_additional.py:313
+msgid "EventLogCodes.orga_added"
+msgstr "Orga added"
+
+#: cdedb/.i18n_additional.py:314
+msgid "EventLogCodes.orga_removed"
+msgstr "Orga removed"
+
+#: cdedb/.i18n_additional.py:315
+msgid "EventLogCodes.caretaker_added"
+msgstr "Caretaker added"
+
+#: cdedb/.i18n_additional.py:316
+msgid "EventLogCodes.caretaker_removed"
+msgstr "Caretaker removed"
+
+#: cdedb/.i18n_additional.py:317
+msgid "EventLogCodes.event_partial_import"
+msgstr "Partial Import"
+
+#: cdedb/.i18n_additional.py:318
+msgid "EventLogCodes.minor_form_updated"
+msgstr "Minor Form updated"
+
+#: cdedb/.i18n_additional.py:319
+msgid "EventLogCodes.minor_form_removed"
+msgstr "Minor Form removed"
 
 #: cdedb/.i18n_additional.py:320
 msgid "EventLogCodes.event_balanced"
@@ -5935,7 +5935,9 @@ msgstr ""
 #: cdedb/common/query/__init__.py:1176 cdedb/common/query/__init__.py:1177
 #: cdedb/common/query/__init__.py:1179 cdedb/common/query/__init__.py:1180
 #: cdedb/common/query/__init__.py:1181 cdedb/common/query/__init__.py:1182
-#: cdedb/common/query/__init__.py:1183
+#: cdedb/common/query/__init__.py:1183 cdedb/database/constants.py:1221
+#: cdedb/database/constants.py:1222 cdedb/database/constants.py:1223
+#: cdedb/database/constants.py:1224 cdedb/database/constants.py:1225
 #: cdedb/frontend/templates/web/event/base.tmpl:265
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:10
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:22
@@ -6125,7 +6127,9 @@ msgid "any track"
 msgstr ""
 
 #: cdedb/common/query/__init__.py:1414 cdedb/common/query/__init__.py:1558
-#: cdedb/common/query/__init__.py:1663
+#: cdedb/common/query/__init__.py:1663 cdedb/database/constants.py:1169
+#: cdedb/database/constants.py:1170 cdedb/database/constants.py:1171
+#: cdedb/database/constants.py:1172
 #: cdedb/frontend/templates/web/event/generic.tmpl:224
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:208
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:464
@@ -7282,7 +7286,7 @@ msgstr ""
 #: cdedb/database/constants.py:910 cdedb/database/constants.py:911
 #: cdedb/database/constants.py:912 cdedb/database/constants.py:913
 #: cdedb/database/constants.py:914 cdedb/database/constants.py:960
-#: cdedb/database/constants.py:1034
+#: cdedb/database/constants.py:1034 cdedb/database/constants.py:1226
 msgid "Other"
 msgstr ""
 
@@ -7329,6 +7333,232 @@ msgstr ""
 #: cdedb/database/constants.py:1030 cdedb/database/constants.py:1031
 #: cdedb/database/constants.py:1032 cdedb/database/constants.py:1033
 msgid "Lastschrift Transaction"
+msgstr ""
+
+#: cdedb/database/constants.py:1150 cdedb/database/constants.py:1151
+#: cdedb/database/constants.py:1152 cdedb/database/constants.py:1153
+#: cdedb/database/constants.py:1154 cdedb/database/constants.py:1155
+#: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:138
+#: cdedb/frontend/templates/web/core/promote_user.tmpl:32
+#: cdedb/frontend/templates/web/event/base.tmpl:345
+#: cdedb/frontend/templates/web/event/base/constraint_violations.tmpl:19
+#: cdedb/frontend/templates/web/event/base/participant_info.tmpl:15
+#: cdedb/frontend/templates/web/event/base/participant_list.tmpl:16
+#: cdedb/frontend/templates/web/event/base/view_event_log.tmpl:17
+#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:35
+#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:38
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:22
+#: cdedb/frontend/templates/web/event/course/course_list.tmpl:19
+#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:19
+#: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:23
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:26
+#: cdedb/frontend/templates/web/event/course/show_instructed_courses.tmpl:21
+#: cdedb/frontend/templates/web/event/downloads.tmpl:15
+#: cdedb/frontend/templates/web/event/event/add_part.tmpl:12
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:21
+#: cdedb/frontend/templates/web/event/event/change_part.tmpl:19
+#: cdedb/frontend/templates/web/event/event/configure_part_group.tmpl:21
+#: cdedb/frontend/templates/web/event/event/configure_part_group.tmpl:24
+#: cdedb/frontend/templates/web/event/event/configure_track_group.tmpl:20
+#: cdedb/frontend/templates/web/event/event/configure_track_group.tmpl:24
+#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:21
+#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:24
+#: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:12
+#: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:32
+#: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:35
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:12
+#: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:12
+#: cdedb/frontend/templates/web/event/event/group_summary.tmpl:17
+#: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:17
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:16
+#: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:20
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:28
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:20
+#: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:26
+#: cdedb/frontend/templates/web/event/import/partial_import.tmpl:18
+#: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:15
+#: cdedb/frontend/templates/web/event/import/questionnaire_import.tmpl:18
+#: cdedb/frontend/templates/web/event/lodgement/change_lodgement.tmpl:24
+#: cdedb/frontend/templates/web/event/lodgement/create_lodgement.tmpl:23
+#: cdedb/frontend/templates/web/event/lodgement/lodgement_group_summary.tmpl:23
+#: cdedb/frontend/templates/web/event/lodgement/lodgement_wishes_graph_form.tmpl:13
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:15
+#: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:23
+#: cdedb/frontend/templates/web/event/lodgement/move_lodgements.tmpl:22
+#: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:24
+#: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:40
+#: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:42
+#: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:44
+#: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:46
+#: cdedb/frontend/templates/web/event/query/course_query.tmpl:17
+#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:34
+#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:36
+#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:38
+#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:40
+#: cdedb/frontend/templates/web/event/query/lodgement_query.tmpl:18
+#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:18
+#: cdedb/frontend/templates/web/event/query/stats.tmpl:15
+#: cdedb/frontend/templates/web/event/questionnaire/additional_questionnaire.tmpl:35
+#: cdedb/frontend/templates/web/event/questionnaire/configure_questionnaire.tmpl:35
+#: cdedb/frontend/templates/web/event/questionnaire/configure_questionnaire.tmpl:38
+#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:39
+#: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:34
+#: cdedb/frontend/templates/web/event/registration/amend_registration.tmpl:25
+#: cdedb/frontend/templates/web/event/registration/batch_fees.tmpl:27
+#: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:25
+#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:23
+#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:17
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:19
+#: cdedb/frontend/templates/web/event/registration/register.tmpl:38
+#: cdedb/frontend/templates/web/event/registration/registration_fee_summary.tmpl:14
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:25
+#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:23
+#: cdedb/frontend/templates/web/logging.tmpl:105
+#: cdedb/frontend/templates/web/logging.tmpl:119
+#: cdedb/frontend/templates/web/ml/change_ml_type.tmpl:51
+#: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:142
+msgid "Event"
+msgstr ""
+
+#: cdedb/database/constants.py:1160 cdedb/database/constants.py:1161
+#: cdedb/database/constants.py:1162 cdedb/database/constants.py:1163
+#: cdedb/database/constants.py:1164 cdedb/database/constants.py:1165
+msgid "Event Roles"
+msgstr ""
+
+#: cdedb/database/constants.py:1166 cdedb/database/constants.py:1167
+#: cdedb/database/constants.py:1168 cdedb/database/constants.py:1179
+#: cdedb/database/constants.py:1180 cdedb/database/constants.py:1181
+msgid "Event Parts & Course Tracks"
+msgstr ""
+
+#: cdedb/database/constants.py:1173 cdedb/database/constants.py:1174
+#: cdedb/database/constants.py:1175 cdedb/database/constants.py:1176
+#: cdedb/database/constants.py:1177 cdedb/database/constants.py:1178
+#: cdedb/frontend/templates/web/event/base.tmpl:220
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:40
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:32
+#: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:261
+#: cdedb/frontend/templates/web/event/lodgement/change_lodgement.tmpl:18
+#: cdedb/frontend/templates/web/event/lodgement/create_lodgement.tmpl:18
+#: cdedb/frontend/templates/web/event/lodgement/lodgement_group_summary.tmpl:18
+#: cdedb/frontend/templates/web/event/lodgement/lodgement_wishes_graph_form.tmpl:19
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:12
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:15
+#: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:17
+#: cdedb/frontend/templates/web/event/lodgement/move_lodgements.tmpl:17
+#: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:18
+#: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:67
+#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:57
+#: cdedb/frontend/templates/web/event/query/lodgement_query.tmpl:17
+#: cdedb/frontend/templates/web/event/query/lodgement_query.tmpl:23
+msgid "Lodgements"
+msgstr ""
+
+#: cdedb/database/constants.py:1182 cdedb/database/constants.py:1183
+#: cdedb/database/constants.py:1184 cdedb/database/constants.py:1185
+#: cdedb/database/constants.py:1186 cdedb/database/constants.py:1187
+#: cdedb/database/constants.py:1188
+#: cdedb/frontend/templates/web/cde/past_event/create_past_event.tmpl:30
+#: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:79
+#: cdedb/frontend/templates/web/core/index.tmpl:168
+#: cdedb/frontend/templates/web/event/base.tmpl:215
+#: cdedb/frontend/templates/web/event/base/participant_list.tmpl:99
+#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:24
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:17
+#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:12
+#: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:17
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:18
+#: cdedb/frontend/templates/web/event/event/index.tmpl:26
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:37
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:29
+#: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:176
+#: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:62
+#: cdedb/frontend/templates/web/event/query/course_query.tmpl:17
+#: cdedb/frontend/templates/web/event/query/course_query.tmpl:22
+#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:53
+#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:152
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:249
+msgid "Courses"
+msgstr ""
+
+#: cdedb/database/constants.py:1189 cdedb/database/constants.py:1190
+#: cdedb/database/constants.py:1191 cdedb/database/constants.py:1192
+#: cdedb/database/constants.py:1193 cdedb/database/constants.py:1194
+#: cdedb/database/constants.py:1195 cdedb/database/constants.py:1196
+#: cdedb/frontend/templates/web/core/index.tmpl:161
+#: cdedb/frontend/templates/web/event/base.tmpl:206
+#: cdedb/frontend/templates/web/event/downloads.tmpl:184
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:46
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:55
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:73
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:124
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:133
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:165
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:174
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:30
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:106
+#: cdedb/frontend/templates/web/event/event/index.tmpl:21
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:35
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:27
+#: cdedb/frontend/templates/web/event/generic.tmpl:476
+#: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:96
+#: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:58
+#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:50
+#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:17
+#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:23
+#: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:19
+#: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:19
+#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:18
+#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:89
+#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:25
+#: cdedb/frontend/templates/web/event/registration/registration_fee_summary.tmpl:19
+#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:18
+msgid "Registrations"
+msgstr ""
+
+#: cdedb/database/constants.py:1197 cdedb/database/constants.py:1198
+#: cdedb/database/constants.py:1199 cdedb/database/constants.py:1200
+#: cdedb/database/constants.py:1201
+#: cdedb/frontend/templates/web/event/base.tmpl:224
+#: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:42
+#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:17
+#: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:12
+#: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:17
+#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:27
+#: cdedb/frontend/templates/web/event/registration/batch_fees.tmpl:21
+msgid "Fees"
+msgstr ""
+
+#: cdedb/database/constants.py:1202 cdedb/database/constants.py:1203
+#: cdedb/database/constants.py:1204 cdedb/database/constants.py:1205
+#: cdedb/database/constants.py:1206
+msgid "Queries"
+msgstr ""
+
+#: cdedb/database/constants.py:1207 cdedb/database/constants.py:1208
+#: cdedb/database/constants.py:1209 cdedb/database/constants.py:1210
+#: cdedb/database/constants.py:1211
+#: cdedb/frontend/templates/web/event/event/group_summary.tmpl:41
+msgid "Part Groups"
+msgstr ""
+
+#: cdedb/database/constants.py:1212 cdedb/database/constants.py:1213
+#: cdedb/database/constants.py:1214 cdedb/database/constants.py:1215
+#: cdedb/database/constants.py:1216
+#: cdedb/frontend/templates/web/event/event/group_summary.tmpl:113
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:127
+msgid "Track Groups"
+msgstr ""
+
+#: cdedb/database/constants.py:1217 cdedb/database/constants.py:1218
+#: cdedb/database/constants.py:1219 cdedb/database/constants.py:1220
+#: cdedb/frontend/templates/web/event/downloads.tmpl:23
+#: cdedb/frontend/templates/web/event/event/change_event.tmpl:27
+#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:32
+#: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:12
+#: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:18
+msgid "Orga Tokens"
 msgstr ""
 
 #: cdedb/database/query.py:174 cdedb/database/query.py:271
@@ -9613,9 +9843,9 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/base/view_log.tmpl:14
 #: cdedb/frontend/templates/web/event/base.tmpl:258
 #: cdedb/frontend/templates/web/event/base.tmpl:386
-#: cdedb/frontend/templates/web/event/base/view_event_log.tmpl:14
-#: cdedb/frontend/templates/web/event/base/view_event_log.tmpl:20
-#: cdedb/frontend/templates/web/event/base/view_log.tmpl:15
+#: cdedb/frontend/templates/web/event/base/view_event_log.tmpl:16
+#: cdedb/frontend/templates/web/event/base/view_event_log.tmpl:22
+#: cdedb/frontend/templates/web/event/base/view_log.tmpl:16
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:35
 #: cdedb/frontend/templates/web/ml/base.tmpl:28
 #: cdedb/frontend/templates/web/ml/base.tmpl:91
@@ -11256,7 +11486,7 @@ msgid "This search will only show pure assembly users."
 msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/base/view_assembly_log.tmpl:9
-#: cdedb/frontend/templates/web/event/base/view_event_log.tmpl:10
+#: cdedb/frontend/templates/web/event/base/view_event_log.tmpl:12
 #: cdedb/frontend/templates/web/ml/view_ml_log.tmpl:9
 #, python-format
 msgid "%(title)s: Log"
@@ -12646,88 +12876,6 @@ msgstr ""
 msgid "Fee Details"
 msgstr ""
 
-#: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:138
-#: cdedb/frontend/templates/web/core/promote_user.tmpl:32
-#: cdedb/frontend/templates/web/event/base.tmpl:345
-#: cdedb/frontend/templates/web/event/base/constraint_violations.tmpl:19
-#: cdedb/frontend/templates/web/event/base/participant_info.tmpl:15
-#: cdedb/frontend/templates/web/event/base/participant_list.tmpl:16
-#: cdedb/frontend/templates/web/event/base/view_event_log.tmpl:15
-#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:35
-#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:38
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:22
-#: cdedb/frontend/templates/web/event/course/course_list.tmpl:19
-#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:19
-#: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:23
-#: cdedb/frontend/templates/web/event/course/show_course.tmpl:26
-#: cdedb/frontend/templates/web/event/course/show_instructed_courses.tmpl:21
-#: cdedb/frontend/templates/web/event/downloads.tmpl:15
-#: cdedb/frontend/templates/web/event/event/add_part.tmpl:12
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:21
-#: cdedb/frontend/templates/web/event/event/change_part.tmpl:19
-#: cdedb/frontend/templates/web/event/event/configure_part_group.tmpl:21
-#: cdedb/frontend/templates/web/event/event/configure_part_group.tmpl:24
-#: cdedb/frontend/templates/web/event/event/configure_track_group.tmpl:20
-#: cdedb/frontend/templates/web/event/event/configure_track_group.tmpl:24
-#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:21
-#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:24
-#: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:12
-#: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:32
-#: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:35
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:12
-#: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:12
-#: cdedb/frontend/templates/web/event/event/group_summary.tmpl:17
-#: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:17
-#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:16
-#: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:20
-#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:28
-#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:20
-#: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:26
-#: cdedb/frontend/templates/web/event/import/partial_import.tmpl:18
-#: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:15
-#: cdedb/frontend/templates/web/event/import/questionnaire_import.tmpl:18
-#: cdedb/frontend/templates/web/event/lodgement/change_lodgement.tmpl:24
-#: cdedb/frontend/templates/web/event/lodgement/create_lodgement.tmpl:23
-#: cdedb/frontend/templates/web/event/lodgement/lodgement_group_summary.tmpl:23
-#: cdedb/frontend/templates/web/event/lodgement/lodgement_wishes_graph_form.tmpl:13
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:15
-#: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:23
-#: cdedb/frontend/templates/web/event/lodgement/move_lodgements.tmpl:22
-#: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:24
-#: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:40
-#: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:42
-#: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:44
-#: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:46
-#: cdedb/frontend/templates/web/event/query/course_query.tmpl:17
-#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:34
-#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:36
-#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:38
-#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:40
-#: cdedb/frontend/templates/web/event/query/lodgement_query.tmpl:18
-#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:18
-#: cdedb/frontend/templates/web/event/query/stats.tmpl:15
-#: cdedb/frontend/templates/web/event/questionnaire/additional_questionnaire.tmpl:35
-#: cdedb/frontend/templates/web/event/questionnaire/configure_questionnaire.tmpl:35
-#: cdedb/frontend/templates/web/event/questionnaire/configure_questionnaire.tmpl:38
-#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:39
-#: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:34
-#: cdedb/frontend/templates/web/event/registration/amend_registration.tmpl:25
-#: cdedb/frontend/templates/web/event/registration/batch_fees.tmpl:27
-#: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:25
-#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:23
-#: cdedb/frontend/templates/web/event/registration/checkin.tmpl:17
-#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:19
-#: cdedb/frontend/templates/web/event/registration/register.tmpl:38
-#: cdedb/frontend/templates/web/event/registration/registration_fee_summary.tmpl:14
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:25
-#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:23
-#: cdedb/frontend/templates/web/logging.tmpl:105
-#: cdedb/frontend/templates/web/logging.tmpl:119
-#: cdedb/frontend/templates/web/ml/change_ml_type.tmpl:51
-#: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:142
-msgid "Event"
-msgstr ""
-
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:152
 msgid "Go to next Error."
 msgstr ""
@@ -12856,29 +13004,6 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/past_event/create_past_event.tmpl:10
 #: cdedb/frontend/templates/web/cde/past_event/list_past_events.tmpl:16
 msgid "Create Past Event"
-msgstr ""
-
-#: cdedb/frontend/templates/web/cde/past_event/create_past_event.tmpl:30
-#: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:79
-#: cdedb/frontend/templates/web/core/index.tmpl:168
-#: cdedb/frontend/templates/web/event/base.tmpl:215
-#: cdedb/frontend/templates/web/event/base/participant_list.tmpl:99
-#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:24
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:17
-#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:12
-#: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:17
-#: cdedb/frontend/templates/web/event/course/show_course.tmpl:18
-#: cdedb/frontend/templates/web/event/event/index.tmpl:26
-#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:37
-#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:29
-#: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:176
-#: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:62
-#: cdedb/frontend/templates/web/event/query/course_query.tmpl:17
-#: cdedb/frontend/templates/web/event/query/course_query.tmpl:22
-#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:53
-#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:152
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:249
-msgid "Courses"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/past_event/create_past_event.tmpl:31
@@ -14823,37 +14948,6 @@ msgstr ""
 msgid "(Registration not yet approved)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/index.tmpl:161
-#: cdedb/frontend/templates/web/event/base.tmpl:206
-#: cdedb/frontend/templates/web/event/downloads.tmpl:184
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:46
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:55
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:73
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:124
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:133
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:165
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:174
-#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:30
-#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:106
-#: cdedb/frontend/templates/web/event/event/index.tmpl:21
-#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:35
-#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:27
-#: cdedb/frontend/templates/web/event/generic.tmpl:476
-#: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:96
-#: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:58
-#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:50
-#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:17
-#: cdedb/frontend/templates/web/event/query/registration_query.tmpl:23
-#: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:19
-#: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:19
-#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:18
-#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:89
-#: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:25
-#: cdedb/frontend/templates/web/event/registration/registration_fee_summary.tmpl:19
-#: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:18
-msgid "Registrations"
-msgstr ""
-
 #: cdedb/frontend/templates/web/core/index.tmpl:164
 #: cdedb/frontend/templates/web/event/base.tmpl:210
 #: cdedb/frontend/templates/web/event/event/index.tmpl:23
@@ -16043,36 +16137,6 @@ msgstr ""
 msgid "Participant list"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/base.tmpl:220
-#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:40
-#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:32
-#: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:261
-#: cdedb/frontend/templates/web/event/lodgement/change_lodgement.tmpl:18
-#: cdedb/frontend/templates/web/event/lodgement/create_lodgement.tmpl:18
-#: cdedb/frontend/templates/web/event/lodgement/lodgement_group_summary.tmpl:18
-#: cdedb/frontend/templates/web/event/lodgement/lodgement_wishes_graph_form.tmpl:19
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:12
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:15
-#: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:17
-#: cdedb/frontend/templates/web/event/lodgement/move_lodgements.tmpl:17
-#: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:18
-#: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:67
-#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:57
-#: cdedb/frontend/templates/web/event/query/lodgement_query.tmpl:17
-#: cdedb/frontend/templates/web/event/query/lodgement_query.tmpl:23
-msgid "Lodgements"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/base.tmpl:224
-#: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:42
-#: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:17
-#: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:12
-#: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:17
-#: cdedb/frontend/templates/web/event/event/fee/personalized_fee_multiset.tmpl:27
-#: cdedb/frontend/templates/web/event/registration/batch_fees.tmpl:21
-msgid "Fees"
-msgstr ""
-
 #: cdedb/frontend/templates/web/event/base.tmpl:229
 #: cdedb/frontend/templates/web/event/base.tmpl:368
 #: cdedb/frontend/templates/web/event/base/constraint_violations.tmpl:11
@@ -16276,7 +16340,7 @@ msgstr ""
 msgid "There are no participants yet."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/base/view_log.tmpl:10
+#: cdedb/frontend/templates/web/event/base/view_log.tmpl:11
 msgid "Event Log"
 msgstr ""
 
@@ -16836,14 +16900,6 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/import/questionnaire_import.tmpl:17
 #: cdedb/frontend/templates/web/event/questionnaire/configure_questionnaire.tmpl:58
 msgid "Questionnaire Import"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/downloads.tmpl:23
-#: cdedb/frontend/templates/web/event/event/change_event.tmpl:27
-#: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:32
-#: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:12
-#: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:18
-msgid "Orga Tokens"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:26
@@ -17777,10 +17833,6 @@ msgstr ""
 msgid "Groups_[[part or track]] (%(title)s)"
 msgstr "Groups (%(title)s)"
 
-#: cdedb/frontend/templates/web/event/event/group_summary.tmpl:41
-msgid "Part Groups"
-msgstr ""
-
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:87
 msgid "Create Mailinglist for this Part Group"
 msgstr ""
@@ -17793,11 +17845,6 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:102
 #, python-format
 msgid "Delete part group %(shortname)s"
-msgstr ""
-
-#: cdedb/frontend/templates/web/event/event/group_summary.tmpl:113
-#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:127
-msgid "Track Groups"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:115

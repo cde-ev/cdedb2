@@ -1038,29 +1038,25 @@ class FinanceLogCodes(CdEIntEnum):
 class EventLogCodes(CdEIntEnum):
     """Available log messages event.log."""
 
+    # Event
     event_created = 1  #:
     event_changed = 2  #:
     event_deleted = 3  #:
     event_archived = 4  #:
-    helper_added = 7  #:
-    helper_removed = 8  #:
-    orga_added = 10  #:
-    orga_removed = 11  #:
-    caretaker_added = 12  #:
-    caretaker_removed = 13  #:
-    part_created = 15  #:
-    part_changed = 16  #:
-    part_deleted = 17  #:
-    field_added = 20  #:
-    field_updated = 21  #:
-    field_removed = 22  #:
-    lodgement_changed = 25  #:
-    lodgement_created = 26  #:
-    lodgement_deleted = 27  #:
-    questionnaire_changed = 30  #:
-    track_added = 35  #:
-    track_updated = 36  #:
-    track_removed = 37  #:
+    event_locked = 60  #:
+    event_unlocked = 61  #:
+
+    # Registrations
+    registration_created = 50  #:
+    registration_changed = 51  #:
+    registration_deleted = 52  #:
+    registration_status_changed = 300  #:
+    registration_payment_received = 55  #:
+    registration_payment_reimbursed = 56  #:
+    registration_payment_received_orga = 57  #:
+    registration_payment_reimbursed_orga = 58  #:
+
+    # Courses
     course_created = 40  #:
     course_changed = 41  #:
     course_segment_deleted = 420  #:
@@ -1068,55 +1064,166 @@ class EventLogCodes(CdEIntEnum):
     course_segment_deactivated = 430  #:
     course_segment_activated = 431  #:
     course_deleted = 44  #:
-    registration_created = 50  #:
-    registration_changed = 51  #:
-    registration_deleted = 52  #:
-    registration_payment_received = 55  #:
-    registration_payment_reimbursed = 56  #:
-    registration_payment_received_orga = 57  #:
-    registration_payment_reimbursed_orga = 58  #:
-    event_locked = 60  #:
-    event_unlocked = 61  #:
-    event_partial_import = 62  #:
+
+    # Lodgements
+    lodgement_changed = 25  #:
+    lodgement_created = 26  #:
+    lodgement_deleted = 27  #:
     lodgement_group_created = 70  #:
     lodgement_group_changed = 71  #:
     lodgement_group_deleted = 72  #:
+
+    # Parts & Tracks
+    part_created = 15  #:
+    part_changed = 16  #:
+    part_deleted = 17  #:
+    track_added = 35  #:
+    track_updated = 36  #:
+    track_removed = 37  #:
+
+    # Fields
+    field_added = 20  #:
+    field_updated = 21  #:
+    field_removed = 22  #:
+    questionnaire_changed = 30  #:
+
+    # Fees
     event_fee_created = 80  #:
     event_fee_modified = 81  #:
     event_fee_deleted = 82  #:
-    minor_form_updated = 85  #:
-    minor_form_removed = 86  #:
+    personalized_fee_amount_set = 400  #:
+    personalized_fee_amount_deleted = 401  #:
+
+    # Queries
     query_stored = 90  #:
     query_deleted = 91  #:
     custom_filter_created = 95  #:
     custom_filter_changed = 96  #:
     custom_filter_deleted = 97  #:
-    part_group_created = 100  #:
-    part_group_changed = 101  #:
-    part_group_deleted = 102  #:
-    part_group_link_created = 105  #:
-    part_group_link_deleted = 106  #:
-    track_group_created = 110  #:
-    track_group_changed = 111  #:
-    track_group_deleted = 112  #:
-    track_group_link_created = 113  #:
-    track_group_link_deleted = 114  #:
-    orga_token_created = 200  #:
-    orga_token_changed = 201  #:
-    orga_token_revoked = 202  #:
-    orga_token_deleted = 203  #:
-    registration_status_changed = 300  #:
-    personalized_fee_amount_set = 400  #:
-    personalized_fee_amount_deleted = 401  #:
+
+    # Checkin
     checkin_added = 500  #:
     checkout_added = 505  #:
     checkin_changed = 510  #:
     checkout_changed = 515  #:
     checkin_period_deleted = 530  #:
+
+    # Part Groups
+    part_group_created = 100  #:
+    part_group_changed = 101  #:
+    part_group_deleted = 102  #:
+    part_group_link_created = 105  #:
+    part_group_link_deleted = 106  #:
+
+    # Track Groups
+    track_group_created = 110  #:
+    track_group_changed = 111  #:
+    track_group_deleted = 112  #:
+    track_group_link_created = 113  #:
+    track_group_link_deleted = 114  #:
+
+    # Orga Tokens
+    orga_token_created = 200  #:
+    orga_token_changed = 201  #:
+    orga_token_revoked = 202  #:
+    orga_token_deleted = 203  #:
+
+    # Event Roles
+    helper_added = 7  #:
+    helper_removed = 8  #:
+    orga_added = 10  #:
+    orga_removed = 11  #:
+    caretaker_added = 12  #:
+    caretaker_removed = 13  #:
+
+    # Other
+    event_partial_import = 62  #:
+    minor_form_updated = 85  #:
+    minor_form_removed = 86  #:
     event_balanced = 600  #:
     event_unbalanced = 610  #:
     registration_approved = 700  #:
     registration_unapproved = 710  #:
+
+    def optgroup_label(self) -> str:
+        return {
+            self.event_created: n_("Event"),
+            self.event_changed: n_("Event"),
+            self.event_deleted: n_("Event"),
+            self.event_archived: n_("Event"),
+            self.event_locked: n_("Event"),
+            self.event_unlocked: n_("Event"),
+            # self.event_balanced: n_("Event"),
+            # self.event_unbalanced: n_("Event"),
+            # self.registration_approved: n_("Event"),
+            # self.registration_unapproved: n_("Event"),
+            self.registration_created: n_("Registrations"),
+            self.registration_changed: n_("Registrations"),
+            self.registration_deleted: n_("Registrations"),
+            self.registration_payment_received: n_("Registrations"),
+            self.registration_payment_reimbursed: n_("Registrations"),
+            self.registration_payment_received_orga: n_("Registrations"),
+            self.registration_payment_reimbursed_orga: n_("Registrations"),
+            self.registration_status_changed: n_("Registrations"),
+            self.course_created: n_("Courses"),
+            self.course_changed: n_("Courses"),
+            self.course_deleted: n_("Courses"),
+            self.course_segment_deleted: n_("Courses"),
+            self.course_segment_created: n_("Courses"),
+            self.course_segment_deactivated: n_("Courses"),
+            self.course_segment_activated: n_("Courses"),
+            self.lodgement_changed: n_("Lodgements"),
+            self.lodgement_deleted: n_("Lodgements"),
+            self.lodgement_created: n_("Lodgements"),
+            self.lodgement_group_created: n_("Lodgements"),
+            self.lodgement_group_changed: n_("Lodgements"),
+            self.lodgement_group_deleted: n_("Lodgements"),
+            self.part_created: n_("Event Parts & Course Tracks"),
+            self.part_changed: n_("Event Parts & Course Tracks"),
+            self.part_deleted: n_("Event Parts & Course Tracks"),
+            self.track_added: n_("Event Parts & Course Tracks"),
+            self.track_updated: n_("Event Parts & Course Tracks"),
+            self.track_removed: n_("Event Parts & Course Tracks"),
+            self.field_added: n_("Custom Fields"),
+            self.field_updated: n_("Custom Fields"),
+            self.field_removed: n_("Custom Fields"),
+            self.questionnaire_changed: n_("Custom Fields"),
+            self.event_fee_created: n_("Fees"),
+            self.event_fee_modified: n_("Fees"),
+            self.event_fee_deleted: n_("Fees"),
+            self.personalized_fee_amount_set: n_("Fees"),
+            self.personalized_fee_amount_deleted: n_("Fees"),
+            self.query_stored: n_("Queries"),
+            self.query_deleted: n_("Queries"),
+            self.custom_filter_created: n_("Queries"),
+            self.custom_filter_changed: n_("Queries"),
+            self.custom_filter_deleted: n_("Queries"),
+            self.checkin_added: n_("Checkin"),
+            self.checkout_added: n_("Checkin"),
+            self.checkin_changed: n_("Checkin"),
+            self.checkout_changed: n_("Checkin"),
+            self.checkin_period_deleted: n_("Checkin"),
+            self.part_group_created: n_("Part Groups"),
+            self.part_group_changed: n_("Part Groups"),
+            self.part_group_deleted: n_("Part Groups"),
+            self.part_group_link_created: n_("Part Groups"),
+            self.part_group_link_deleted: n_("Part Groups"),
+            self.track_group_created: n_("Track Groups"),
+            self.track_group_changed: n_("Track Groups"),
+            self.track_group_deleted: n_("Track Groups"),
+            self.track_group_link_created: n_("Track Groups"),
+            self.track_group_link_deleted: n_("Track Groups"),
+            self.orga_token_created: n_("Orga Tokens"),
+            self.orga_token_changed: n_("Orga Tokens"),
+            self.orga_token_revoked: n_("Orga Tokens"),
+            self.orga_token_deleted: n_("Orga Tokens"),
+            self.helper_added: n_("Event Roles"),
+            self.helper_removed: n_("Event Roles"),
+            self.orga_added: n_("Event Roles"),
+            self.orga_removed: n_("Event Roles"),
+            self.caretaker_added: n_("Event Roles"),
+            self.caretaker_removed: n_("Event Roles"),
+        }.get(self, n_("Other"))
 
 
 @enum.unique
