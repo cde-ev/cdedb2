@@ -3,15 +3,15 @@ revision = 3
 requires-python = "==3.13.*"
 
 [options]
-exclude-newer = "2026-03-14T00:59:53.528650539Z"
+exclude-newer = "2026-03-14T01:06:44.877552948Z"
 exclude-newer-span = "P14D"
 
 [options.exclude-newer-package]
-subman = { timestamp = "2026-03-28T00:58:53.528677379Z", span = "PT1M" }
-werkzeug = { timestamp = "2026-03-27T00:59:53.528676888Z", span = "P1D" }
-passlib = { timestamp = "2026-03-27T00:59:53.528676468Z", span = "P1D" }
-schulze-condorcet = { timestamp = "2026-03-28T00:58:53.528678161Z", span = "PT1M" }
-gunicorn = { timestamp = "2026-03-27T00:59:53.5286617Z", span = "P1D" }
+subman = { timestamp = "2026-03-28T01:05:44.877579088Z", span = "PT1M" }
+werkzeug = { timestamp = "2026-03-27T01:06:44.877578687Z", span = "P1D" }
+passlib = { timestamp = "2026-03-27T01:06:44.877578367Z", span = "P1D" }
+schulze-condorcet = { timestamp = "2026-03-28T01:05:44.877579709Z", span = "PT1M" }
+gunicorn = { timestamp = "2026-03-27T01:06:44.877566194Z", span = "P1D" }
 
 [[package]]
 name = "alabaster"
@@ -133,10 +133,8 @@ dev = [
     { name = "types-zxcvbn" },
 ]
 ldap = [
-    { name = "cysystemd" },
     { name = "ldaptor" },
     { name = "psycopg", extra = ["binary", "pool"] },
-    { name = "subman" },
 ]
 playwright = [
     { name = "playwright" },
@@ -198,10 +196,8 @@ dev = [
     { name = "types-zxcvbn" },
 ]
 ldap = [
-    { name = "cysystemd", specifier = "==2.0.5" },
     { name = "ldaptor", specifier = "==21.2.0" },
     { name = "psycopg", extras = ["binary", "pool"], specifier = "==3.2.12" },
-    { name = "subman", specifier = "==0.1.1" },
 ]
 playwright = [{ name = "playwright", specifier = "==1.55.0" }]
 
