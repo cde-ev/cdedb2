@@ -374,7 +374,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
             event_id = affirm(vtypes.ID, event_id)
             if not is_privileged(
                 rs, EventPrivileges.registrations_read, event_id=event_id
-            ):
+            ) and not is_privileged(rs, EventPrivileges.checkin, event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
             query.constraints.append(("event_id", QueryOperators.equal, event_id))
             query.spec['event_id'] = QuerySpecEntry("bool", "")

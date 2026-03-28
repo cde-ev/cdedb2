@@ -50,6 +50,12 @@ class EventPrivileges(Flag):
     token = auto()
     log_read = auto()
 
+    # This privilege allows reading all registration data except for custom fields not
+    # visible on the checkin page, as well as editing these registrations and their
+    # checkin data.
+    # Most of this is only enforced on template level, i.e. exploitable on write.
+    checkin = auto()
+
     # create = auto()
     conclude = auto()
     balance = auto()
@@ -106,6 +112,7 @@ def is_privileged_event_user(
         | EP.registrations_read_internal
         | EP.participant_list
     )
+    checkin_helper_privileges = event_helper_privileges | EP.checkin
     auditor_privileges = EP.basic_read | EP.log_read
     finance_admin_privileges = (
         EP.basic_read
@@ -126,6 +133,10 @@ def is_privileged_event_user(
         or ("event_admin" in user.roles and required_privilege in admin_privileges)
         or (event_id in user.orga and required_privilege in orga_privileges)
         or (event_id in user.caretaker and required_privilege in caretaker_privileges)
+        or (
+            event_id in user.checkin_helper
+            and required_privilege in checkin_helper_privileges
+        )
         # Due to use in ml realm, users without event realm might come across this
         or (
             "event_helper" in user.realm_roles.get('event', {})

@@ -155,6 +155,33 @@ class EventBaseBackend(EventLowLevelBackend):
     )
 
     @access("persona")
+    def checkin_helper_infos(
+        self,
+        rs: RequestState,
+        persona_ids: Collection[int],
+    ) -> dict[int, set[int]]:
+        """List events cared for by specific personas."""
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
+        data = self.sql_select(
+            rs,
+            "event.checkin_helpers",
+            ("persona_id", "event_id"),
+            persona_ids,
+            entity_key="persona_id",
+        )
+        ret: dict[int, set[int]] = {}
+        for anid in persona_ids:
+            ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
+        return ret
+
+    class _CheckinHelperInfoProtocol(Protocol):
+        def __call__(self, rs: RequestState, persona_id: int) -> set[int]: ...
+
+    checkin_helper_info: _CheckinHelperInfoProtocol = singularize(
+        checkin_helper_infos, "persona_ids", "persona_id"
+    )
+
+    @access("persona")
     def get_event_helpers(self, rs: RequestState) -> set[vtypes.ID]:
         """List all event helpers."""
         data = self.query_all(rs, "SELECT persona_id FROM event.helpers", [])

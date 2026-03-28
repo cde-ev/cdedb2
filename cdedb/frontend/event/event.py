@@ -11,7 +11,7 @@ import copy
 import datetime
 import json
 from collections.abc import Collection
-from typing import Optional, cast
+from typing import Literal, Optional, cast
 
 import werkzeug.datastructures
 import werkzeug.exceptions
@@ -449,7 +449,7 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(EventPrivileges.orgas_change, EventPrivileges.caretakers_change)
-    def manage_orgas(self, rs: RequestState, event_id: int) -> Response:
+    def manage_roles(self, rs: RequestState, event_id: int) -> Response:
         orgas = {
             e['id']: e
             for e in xsorted(
@@ -467,7 +467,7 @@ class EventEventMixin(EventBaseFrontend):
             )
         }
         return self.render(
-            rs, 'event/manage_orgas', {"orgas": orgas, "caretakers": caretakers}
+            rs, 'event/manage_roles', {"orgas": orgas, "caretakers": caretakers}
         )
 
     @access("event", modi={"POST"})
@@ -476,7 +476,7 @@ class EventEventMixin(EventBaseFrontend):
     def add_orgas(
         self, rs: RequestState, event_id: int, orga_ids: vtypes.CdedbIDList
     ) -> Response:
-        return self._add_orgas_or_caretakers(rs, event_id, orga_ids, as_caretaker=False)
+        return self._add_event_roles(rs, event_id, orga_ids, role='orga')
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.caretakers_change)
@@ -484,58 +484,73 @@ class EventEventMixin(EventBaseFrontend):
     def add_caretakers(
         self, rs: RequestState, event_id: int, caretaker_ids: vtypes.CdedbIDList
     ) -> Response:
-        return self._add_orgas_or_caretakers(
-            rs, event_id, caretaker_ids, as_caretaker=True
+        return self._add_event_roles(rs, event_id, caretaker_ids, role='caretaker')
+
+    @access("event", modi={"POST"})
+    @event_guard(EventPrivileges.basic_write)
+    @REQUESTdata("checkin_helper_ids")
+    def add_checkin_helpers(
+        self, rs: RequestState, event_id: int, checkin_helper_ids: vtypes.CdedbIDList
+    ) -> Response:
+        return self._add_event_roles(
+            rs, event_id, checkin_helper_ids, role='checkin_helper'
         )
 
-    def _add_orgas_or_caretakers(
+    def _add_event_roles(
         self,
         rs: RequestState,
         event_id: int,
         persona_ids: vtypes.CdedbIDList,
-        as_caretaker: bool = False,
+        role: Literal["orga", "caretaker", "checkin_helper"],
     ) -> Response:
         # Check privileges
-        if as_caretaker:
-            if not self.is_privileged(rs, EventPrivileges.caretakers_change):
-                raise werkzeug.exceptions.Forbidden()
-        elif not self.is_privileged(rs, EventPrivileges.orgas_change):
+        if (
+            role == 'caretaker'
+            and not self.is_privileged(rs, EventPrivileges.caretakers_change)
+            or role == 'orga'
+            and not self.is_privileged(rs, EventPrivileges.orgas_change)
+            or role == 'checkin_helper'
+            and not self.is_privileged(rs, EventPrivileges.basic_write)
+        ):
             raise werkzeug.exceptions.Forbidden()
 
         if rs.has_validation_errors():
             # Shortcircuit if we have got no workable ids.
-            return self.manage_orgas(rs, event_id)
+            return self.manage_roles(rs, event_id)
         try:
             self.eventproxy.validate_event_persona_ids(rs, persona_ids)
         except ValueError as e:
-            rs.append_validation_error((
-                "caretaker_ids" if as_caretaker else "orga_ids",
-                e,
-            ))
+            rs.append_validation_error((f"{role}_ids", e))
         if rs.has_validation_errors():
-            return self.manage_orgas(rs, event_id)
+            return self.manage_roles(rs, event_id)
 
-        if as_caretaker:
+        if role == 'caretaker':
             persona_ids = set(persona_ids) - rs.ambience['event'].caretakers  # type: ignore[assignment, operator]
             code = self.eventproxy.add_event_caretakers(rs, event_id, persona_ids)
-        else:
+        elif role == 'orga':
             persona_ids = set(persona_ids) - rs.ambience['event'].orgas  # type: ignore[assignment, operator]
             code = self.eventproxy.add_event_orgas(rs, event_id, persona_ids)
+        elif role == 'checkin_helper':
+            persona_ids = set(persona_ids) - rs.ambience['event'].checkin_helpers  # type: ignore[assignment, operator]
+            code = self.eventproxy.add_checkin_helpers(rs, event_id, persona_ids)
+        else:
+            raise RuntimeError(n_("Impossible."))
 
         if not persona_ids:
             rs.notify("info", n_("Action had no effect."))
         else:
             rs.notify_return_code(code)
 
-        if code and persona_ids:
+        if code and persona_ids and role != 'checkin_helper':
             personas = xsorted(
                 self.coreproxy.get_personas(rs, persona_ids).values(),
                 key=EntitySorter.persona,
             )
-            if as_caretaker:
-                subject = f"{len(persona_ids)} Betreuer hinzugefügt ({rs.ambience['event'].shortname})"
+            if role == 'caretaker':
+                role_str = "Betreuer"
             else:
-                subject = f"{len(persona_ids)} Orgas hinzugefügt ({rs.ambience['event'].shortname})"
+                role_str = "Orgas"
+            subject = f"{len(persona_ids)} {role_str} hinzugefügt ({rs.ambience['event'].shortname})"
             to = [self.conf["EVENT_ADMIN_ADDRESS"]]
             if rs.ambience['event'].orga_address:
                 to.append(rs.ambience['event'].orga_address)
@@ -546,10 +561,10 @@ class EventEventMixin(EventBaseFrontend):
                 {
                     'personas': personas,
                     'event': rs.ambience['event'],
-                    'as_caretaker': as_caretaker,
+                    'role_str': role_str,
                 },
             )
-        return self.redirect(rs, "event/manage_orgas")
+        return self.redirect(rs, "event/manage_roles")
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.orgas_change)
@@ -569,7 +584,7 @@ class EventEventMixin(EventBaseFrontend):
                 ValueError(n_("Must be checked.")),
             ))
         if rs.has_validation_errors():
-            return self.manage_orgas(rs, event_id)
+            return self.manage_roles(rs, event_id)
         code = self.eventproxy.remove_event_orga(rs, event_id, orga_id)
         rs.notify_return_code(code, info=n_("Action had no effect."))
         if code:
@@ -585,7 +600,7 @@ class EventEventMixin(EventBaseFrontend):
                     'as_caretaker': False,
                 },
             )
-        return self.redirect(rs, "event/manage_orgas")
+        return self.redirect(rs, "event/manage_roles")
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.caretakers_change)
@@ -603,7 +618,7 @@ class EventEventMixin(EventBaseFrontend):
                 ValueError(n_("Must be checked.")),
             ))
         if rs.has_validation_errors():
-            return self.manage_orgas(rs, event_id)
+            return self.manage_roles(rs, event_id)
         code = self.eventproxy.remove_event_caretaker(rs, event_id, caretaker_id)
         rs.notify_return_code(code, info=n_("Action had no effect."))
         if code:
@@ -619,7 +634,7 @@ class EventEventMixin(EventBaseFrontend):
                     'as_caretaker': True,
                 },
             )
-        return self.redirect(rs, "event/manage_orgas")
+        return self.redirect(rs, "event/manage_roles")
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
@@ -1880,7 +1895,7 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_event")
 
     @access("event")
-    @event_guard(EventPrivileges.registrations_read)
+    @event_guard(EventPrivileges.registrations_read, EventPrivileges.checkin)
     @REQUESTdata("phrase")
     def quick_show_registration(
         self, rs: RequestState, event_id: int, phrase: str

@@ -9609,7 +9609,7 @@ msgstr "Nie eingecheckt"
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:47
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:44
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:45
-#: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:27
+#: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:27
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:117
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:118
 msgid "Orgas"
@@ -11016,8 +11016,8 @@ msgstr "Name"
 #: cdedb/frontend/templates/web/core/email_status_overview.tmpl:27
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:138
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:43
-#: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:40
-#: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:98
+#: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:40
+#: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:98
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:127
 #: cdedb/frontend/templates/web/event/generic.tmpl:320
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_group_summary.tmpl:49
@@ -11814,8 +11814,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/index.tmpl:33
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:56
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:39
-#: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:53
-#: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:110
+#: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:53
+#: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:110
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:46
 #: cdedb/frontend/templates/web/logging.tmpl:87
 #: cdedb/frontend/templates/web/logging.tmpl:91
@@ -13498,7 +13498,7 @@ msgstr "Teilnahmebeitragsdetails"
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:12
 #: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:12
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:17
-#: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:17
+#: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:17
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:16
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:20
 #: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:28
@@ -18858,7 +18858,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:47
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:48
-#: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:86
+#: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:86
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:132
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:133
 msgid "Caretakers"
@@ -19404,35 +19404,35 @@ msgstr[1] "%(count)s Orgas"
 msgid "Archived Events"
 msgstr "Archivierte Veranstaltungen"
 
-#: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:11
+#: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:11
 #, python-format
 msgid "Manage Orgas & Caretakers (%(title)s)"
 msgstr "Orgas & Betreuer verwalten (%(title)s)"
 
-#: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:16
-#: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:22
+#: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:16
+#: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:22
 msgid "Manage Orgas & Caretakers"
 msgstr "Orgas & Betreuer verwalten"
 
-#: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:38
+#: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:38
 msgid "IDs of the new orgas"
 msgstr "IDs der neuen Orgas"
 
-#: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:59
+#: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:59
 msgid "You should not add/remove orgas for your own event."
 msgstr ""
 "Du solltest bei deiner eigenen Veranstaltung keine Orgas hinzufügen/"
 "entfernen."
 
-#: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:75
+#: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:75
 msgid "Remove Orga"
 msgstr "Orga entfernen"
 
-#: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:96
+#: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:96
 msgid "IDs of the new caretakers"
 msgstr "IDs der neuen Betreuer"
 
-#: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:117
+#: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:117
 msgid ""
 "Caretakers have the same access to a specific event as orgas, allowing them "
 "to do anything an orga can do. Additionally they are able to manage orgas, "
@@ -19441,7 +19441,7 @@ msgstr ""
 "Betreuer haben die gleichen Zugriffsrechte wie Orgas und können alles tun, "
 "was Orgas tun können. Sie können außerdem Orgas hinzufügen oder entfernen."
 
-#: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:131
+#: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:131
 msgid "Remove Caretaker"
 msgstr "Betreuer entfernen"
 

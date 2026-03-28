@@ -1211,8 +1211,12 @@ class EventRegistrationBackend(EventBaseBackend):
             # Retrieve some basic data about the registration.
             persona_id, event_id = self._get_registration_info(rs, reg_id=data['id'])
             self.assert_lock(rs, event_id=event_id)
-            if persona_id != rs.user.persona_id and not is_privileged(
-                rs, EventPrivileges.registrations_write, event_id=event_id
+            if (
+                persona_id != rs.user.persona_id
+                and not is_privileged(
+                    rs, EventPrivileges.registrations_write, event_id=event_id
+                )
+                and not is_privileged(rs, EventPrivileges.checkin, event_id=event_id)
             ):
                 raise PrivilegeError(n_("Not privileged."))
             event = self.get_event(rs, event_id)
@@ -2247,7 +2251,7 @@ class EventRegistrationBackend(EventBaseBackend):
             # All registrations have the same event_id, and hence, the same privileges.
             if not is_privileged(
                 rs,
-                EventPrivileges.registrations_write,
+                EventPrivileges.checkin,
                 next(iter(regs.values()))['event_id'],
             ):
                 raise PrivilegeError
@@ -2339,7 +2343,7 @@ class EventRegistrationBackend(EventBaseBackend):
             # All registrations have the same event_id, and hence, the same privileges.
             if not is_privileged(
                 rs,
-                EventPrivileges.registrations_write,
+                EventPrivileges.checkin,
                 next(iter(regs.values()))['event_id'],
             ):
                 raise PrivilegeError
@@ -2409,9 +2413,7 @@ class EventRegistrationBackend(EventBaseBackend):
         ret = 1
         with Atomizer(rs):
             reg = self.get_registration(rs, registration_id)
-            if not is_privileged(
-                rs, EventPrivileges.registrations_write, reg['event_id']
-            ):
+            if not is_privileged(rs, EventPrivileges.checkin, reg['event_id']):
                 raise PrivilegeError
 
             old_periods: list[CheckinPeriod] = reg['checkin_periods']
@@ -2489,9 +2491,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
         with Atomizer(rs):
             reg = self.get_registration(rs, registration_id)
-            if not is_privileged(
-                rs, EventPrivileges.registrations_write, reg['event_id']
-            ):
+            if not is_privileged(rs, EventPrivileges.checkin, reg['event_id']):
                 raise PrivilegeError
 
             periods = {t.id: t for t in reg['checkin_periods']}
@@ -2564,9 +2564,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
         with Atomizer(rs):
             reg = self.get_registration(rs, registration_id)
-            if not is_privileged(
-                rs, EventPrivileges.registrations_write, reg['event_id']
-            ):
+            if not is_privileged(rs, EventPrivileges.checkin, reg['event_id']):
                 raise PrivilegeError
 
             id_to_period = {ct.id: ct for ct in reg['checkin_periods']}

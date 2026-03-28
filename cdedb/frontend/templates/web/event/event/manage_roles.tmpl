@@ -19,7 +19,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-    {{ util.breadcrumb_link(cdedblink("event/manage_orgas"), gettext("Manage Orgas & Caretakers"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/manage_roles"), gettext("Manage Orgas & Caretakers"), active=True) }}
 {% endblock %}
 {% block content %}
     <div class="row">

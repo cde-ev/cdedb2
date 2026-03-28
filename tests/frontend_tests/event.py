@@ -283,7 +283,7 @@ class TestEventFrontend(FrontendTest):
         self.assertNoLink('/event/event/log')
         self.assertNoLink('/event/event/list', content="Alle Veranstaltungen")
         self.traverse({'href': '/event/event/1/show'})
-        self.assertNoLink('/event/event/1/orga/manage')
+        self.assertNoLink('/event/event/1/roles/manage')
         self.assertNotIn('deleteeventform', self.response.forms)
         self.traverse({'href': '/event/event/1/registration/status'})
         self._click_admin_view_button(

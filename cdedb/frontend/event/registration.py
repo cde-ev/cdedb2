@@ -1177,27 +1177,33 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.redirect(rs, "event/registration_status")
 
     @access("event")
-    @event_guard(EventPrivileges.registrations_read)
+    @event_guard(EventPrivileges.registrations_read, EventPrivileges.checkin)
     def show_registration(
         self, rs: RequestState, event_id: int, registration_id: int
     ) -> Response:
         """Display all information pertaining to one registration."""
+        is_restricted = not self.is_privileged(rs, EventPrivileges.registrations_read)
         payment_data = self._get_payment_data(rs, event_id, registration_id)
         persona = payment_data.pop('persona')
         age = determine_age_class(persona['birthday'], rs.ambience['event'].begin)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
-        waitlist_position = self.eventproxy.get_waitlist_position(
-            rs, event_id, persona_id=persona['id']
-        )
-        constraint_violations = self.get_constraint_violations(
-            rs, rs.ambience['event'], registration_id=registration_id, course_id=-1
-        )
+
+        waitlist_position = None
+        constraint_violations = None
+        if not is_restricted:
+            waitlist_position = self.eventproxy.get_waitlist_position(
+                rs, event_id, persona_id=persona['id']
+            )
+            constraint_violations = self.get_constraint_violations(
+                rs, rs.ambience['event'], registration_id=registration_id, course_id=-1
+            )
         course_choice_parameters = self.get_course_choice_params(rs, event_id)
         return self.render(
             rs,
             "registration/show_registration",
             {
+                'is_restricted': is_restricted,
                 'persona': persona,
                 'age': age,
                 'lodgements': lodgements,
@@ -1486,7 +1492,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.redirect(rs, "event/fee_summary")
 
     @access("event")
-    @event_guard(EventPrivileges.registrations_write)
+    @event_guard(EventPrivileges.registrations_write, EventPrivileges.checkin)
     @REQUESTdata("change_note")
     def change_registration_form(
         self,
@@ -1503,6 +1509,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         """
         if rs.has_validation_errors() and not internal:
             return self.redirect(rs, 'event/show_registration')
+        is_restricted = not self.is_privileged(rs, EventPrivileges.registrations_read)
         registration = rs.ambience['registration']
         persona = self.coreproxy.get_event_user(
             rs, registration['persona_id'], event_id
@@ -1519,6 +1526,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs,
             "registration/change_registration",
             {
+                'is_restricted': is_restricted,
                 'persona': persona,
                 'lodgements': lodgements,
                 'change_note': change_note,
@@ -1527,7 +1535,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write)
+    @event_guard(EventPrivileges.registrations_write, EventPrivileges.checkin)
     @REQUESTdata("change_note")
     def change_registration(
         self,
@@ -1839,7 +1847,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.redirect(rs, scope.get_target(), query.serialize_to_url())
 
     @access("event")
-    @event_guard(EventPrivileges.registrations_write)
+    @event_guard(EventPrivileges.checkin)
     @REQUESTdata("part_ids", "checkout")
     def checkin_form(
         self,
@@ -1909,7 +1917,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write)
+    @event_guard(EventPrivileges.checkin)
     @REQUESTdata("from_checkin_page", "part_ids")
     def add_checkin(
         self,
@@ -1943,7 +1951,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write)
+    @event_guard(EventPrivileges.checkin)
     @REQUESTdata("from_checkin_page", "part_ids")
     def add_checkout(
         self,
@@ -1976,7 +1984,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
 
     @access('event', modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write)
+    @event_guard(EventPrivileges.checkin)
     @REQUESTdata("checkin_time", "checkout_time")
     def add_backdated_checkin_period(
         self,
@@ -2059,7 +2067,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
 
     @access('event', modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write)
+    @event_guard(EventPrivileges.checkin)
     @REQUESTdata("period_id")
     def change_checkin_period(
         self,
@@ -2131,7 +2139,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
 
     @access('event', modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write)
+    @event_guard(EventPrivileges.checkin)
     @REQUESTdata("period_id")
     def delete_checkin_period(
         self,
