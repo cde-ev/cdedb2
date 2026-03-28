@@ -3583,9 +3583,9 @@ class TestCoreFrontend(FrontendTest):
         self.log_pagination("Account-Log", tuple(enumerate(logs, start=1001)))
         f = self.response.forms["logshowform"]
         f["codes"] = [
-            const.CoreLogCodes.genesis_verified.value,
-            const.CoreLogCodes.realm_change.value,
-            const.CoreLogCodes.username_change.value,
+            const.CoreLogCodes.genesis_verified,
+            const.CoreLogCodes.realm_change,
+            const.CoreLogCodes.username_change,
         ]
         self.submit(f)
         self.assertPresence(promotion_change_note)
