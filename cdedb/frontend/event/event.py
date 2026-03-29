@@ -577,8 +577,8 @@ class EventEventMixin(EventBaseFrontend):
                         f" ({cdedbid_filter(checkin_helper_id)}) with no ctime."
                     )
                 elif log_entries[-1]["ctime"] < cutoff:
-                    count += self.eventproxy.remove_event_checkin_helper(
-                        rs, event.id, checkin_helper_id
+                    count += self.eventproxy.remove_event_role(
+                        rs, event.id, checkin_helper_id, 'checkin_helper'
                     )
         if count > 0:
             self.logger.info(f"Removed {count} checkin helpers.")
