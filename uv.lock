@@ -3,8 +3,15 @@ revision = 3
 requires-python = "==3.13.*"
 
 [options]
-exclude-newer = "2026-03-12T23:15:36.358837176Z"
+exclude-newer = "2026-03-14T01:07:07.826336122Z"
 exclude-newer-span = "P14D"
+
+[options.exclude-newer-package]
+subman = { timestamp = "2026-03-28T01:06:07.826360699Z", span = "PT1M" }
+werkzeug = { timestamp = "2026-03-27T01:07:07.826360298Z", span = "P1D" }
+passlib = { timestamp = "2026-03-27T01:07:07.826360008Z", span = "P1D" }
+schulze-condorcet = { timestamp = "2026-03-28T01:06:07.82636136Z", span = "PT1M" }
+gunicorn = { timestamp = "2026-03-27T01:07:07.826346471Z", span = "P1D" }
 
 [[package]]
 name = "alabaster"
@@ -97,7 +104,6 @@ dependencies = [
     { name = "python-dateutil" },
     { name = "python-magic" },
     { name = "pytz" },
-    { name = "requests" },
     { name = "schulze-condorcet" },
     { name = "segno" },
     { name = "sphinx" },
@@ -126,10 +132,8 @@ dev = [
     { name = "types-zxcvbn" },
 ]
 ldap = [
-    { name = "cysystemd" },
     { name = "ldaptor" },
     { name = "psycopg", extra = ["binary", "pool"] },
-    { name = "subman" },
 ]
 playwright = [
     { name = "playwright" },
@@ -162,7 +166,6 @@ requires-dist = [
     { name = "python-dateutil", specifier = "==2.9.0" },
     { name = "python-magic", specifier = "==0.4.27" },
     { name = "pytz", specifier = "==2025.2" },
-    { name = "requests", specifier = "==2.32.4" },
     { name = "schulze-condorcet", specifier = "==2.0.1" },
     { name = "segno", specifier = "==1.6.6" },
     { name = "sphinx", specifier = "==8.1.3" },
@@ -191,10 +194,8 @@ dev = [
     { name = "types-zxcvbn" },
 ]
 ldap = [
-    { name = "cysystemd", specifier = "==2.0.5" },
     { name = "ldaptor", specifier = "==21.2.0" },
     { name = "psycopg", extras = ["binary", "pool"], specifier = "==3.2.12" },
-    { name = "subman", specifier = "==0.1.1" },
 ]
 playwright = [{ name = "playwright", specifier = "==1.55.0" }]
 

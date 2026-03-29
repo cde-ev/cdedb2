@@ -27,7 +27,6 @@ dependencies = [
     "python-dateutil==2.9.0",
     "python-magic==0.4.27",
     "pytz==2025.2",
-    "requests==2.32.4",
     "schulze-condorcet==2.0.1",  # not in debian
     "segno==1.6.6",
     "sphinx==8.1.3",
@@ -65,9 +64,6 @@ playwright = [
 ldap = [
     "ldaptor==21.2.0",
     "psycopg[binary,pool]==3.2.12",
-    # Duplicated from above, because we install _only_ this group for the ldap container.
-    "subman==0.1.1",
-    "cysystemd==2.0.5",
 ]
 
 [build-system]
@@ -80,6 +76,19 @@ module-root = ""
 
 [tool.uv]
 exclude-newer = "14 days"
+
+[tool.uv.exclude-newer-package]
+# Critical infrastructure packages we want to allow timely security updates for.
+gunicorn = "1 day"
+passlib = "1 day"
+werkzeug = "1 day"
+
+# We only use this internally so this isn't critical.
+# cryptography = "1 day"
+
+# Our first party packages. If they are updated we probably want that update right away.
+subman = "1 minute"
+schulze-condorcet = "1 minute"
 
 [tool.ruff]
 target-version = "py313"
