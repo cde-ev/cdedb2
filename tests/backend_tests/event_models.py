@@ -423,6 +423,7 @@ class TestEventModels(BackendTest):
             },
             part_groups={},
             track_groups={},
+            checkin_helpers={38},  # type: ignore[arg-type]
         )
 
         reality = self.event.get_event(self.key, event_id)
