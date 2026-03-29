@@ -448,27 +448,24 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/list_event_helpers")
 
     @access("event")
-    @event_guard(EventPrivileges.orgas_change, EventPrivileges.caretakers_change)
+    @event_guard(
+        EventPrivileges.orgas_change,
+        EventPrivileges.caretakers_change,
+        EventPrivileges.basic_write,
+    )
     def manage_roles(self, rs: RequestState, event_id: int) -> Response:
-        orgas = {
-            e['id']: e
-            for e in xsorted(
-                self.coreproxy.get_personas(rs, rs.ambience['event'].orgas).values(),
-                key=EntitySorter.persona,
-            )
-        }
-        caretakers = {
-            e['id']: e
-            for e in xsorted(
-                self.coreproxy.get_personas(
-                    rs, rs.ambience['event'].caretakers
-                ).values(),
-                key=EntitySorter.persona,
-            )
-        }
-        return self.render(
-            rs, 'event/manage_roles', {"orgas": orgas, "caretakers": caretakers}
-        )
+        params = {}
+        for role in ("orgas", "caretakers", "checkin_helpers"):
+            params[role] = {
+                e['id']: e
+                for e in xsorted(
+                    self.coreproxy.get_personas(
+                        rs, getattr(rs.ambience['event'], role)
+                    ).values(),
+                    key=EntitySorter.persona,
+                )
+            }
+        return self.render(rs, 'event/manage_roles', params)
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.orgas_change)
@@ -524,10 +521,8 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.manage_roles(rs, event_id)
 
-        persona_ids = set(persona_ids) - getattr(rs.ambience['event'], role)  # type: ignore[assignment, operator]
-        code = self.eventproxy.add_event_roles(
-            rs, event_id, persona_ids, role
-        )
+        persona_ids = set(persona_ids) - getattr(rs.ambience['event'], role)
+        code = self.eventproxy.add_event_roles(rs, event_id, persona_ids, role)
 
         if not persona_ids:
             rs.notify("info", n_("Action had no effect."))
@@ -629,6 +624,33 @@ class EventEventMixin(EventBaseFrontend):
                     'as_caretaker': True,
                 },
             )
+        return self.redirect(rs, "event/manage_roles")
+
+    @access("event", modi={"POST"})
+    @event_guard(EventPrivileges.basic_write)
+    @REQUESTdata("checkin_helper_id", "ack_delete")
+    def remove_checkin_helper(
+        self,
+        rs: RequestState,
+        event_id: int,
+        checkin_helper_id: vtypes.ID,
+        ack_delete: bool,
+    ) -> Response:
+        """Remove a persona as caretaker of an event.
+
+        This is only available for admins. This can drop your own caretaker role.
+        """
+        if not ack_delete:
+            rs.append_validation_error((
+                "ack_delete",
+                ValueError(n_("Must be checked.")),
+            ))
+        if rs.has_validation_errors():
+            return self.manage_roles(rs, event_id)
+        code = self.eventproxy.remove_event_role(
+            rs, event_id, checkin_helper_id, 'checkin_helper'
+        )
+        rs.notify_return_code(code, info=n_("Action had no effect."))
         return self.redirect(rs, "event/manage_roles")
 
     @access("event", modi={"POST"})

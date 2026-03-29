@@ -435,7 +435,7 @@ class EventBaseBackend(EventLowLevelBackend):
         rs: RequestState,
         event_id: int,
         persona_ids: Collection[int],
-        role: Literal['orga', 'caretaker'],
+        role: Literal['orga', 'caretaker', 'checkin_helper'],
     ) -> DefaultReturnCode:
         """Add orgas to an event.
 
@@ -490,7 +490,7 @@ class EventBaseBackend(EventLowLevelBackend):
         rs: RequestState,
         event_id: int,
         persona_id: int,
-        role: Literal['orga', 'caretaker'],
+        role: Literal['orga', 'caretaker', 'checkin_helper'],
     ) -> DefaultReturnCode:
         """Remove a single orga of an event.
 
