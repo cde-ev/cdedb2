@@ -476,7 +476,9 @@ class EventBaseBackend(EventLowLevelBackend):
             if not is_privileged(rs, EventPrivileges.orgas_change, event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
         elif role == 'caretaker':
-            if not self.is_admin(rs):
+            if not is_privileged(
+                rs, EventPrivileges.caretakers_change, event_id=event_id
+            ):
                 raise PrivilegeError(n_("Not privileged."))
         else:
             raise RuntimeError(n_("Impossible."))
