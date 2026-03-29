@@ -3817,24 +3817,24 @@ class TestEventBackend(BackendTest):
     def test_set_event_orgas(self) -> None:
         event_id = 1
         self.assertEqual({7}, self.event.get_event(self.key, event_id).orgas)
-        self.assertLess(0, self.event.add_event_orgas(self.key, event_id, {1}))
+        self.assertLess(0, self.event.add_event_roles(self.key, event_id, {1}, 'orga'))
         self.assertEqual({1, 7}, self.event.get_event(self.key, event_id).orgas)
-        self.assertLess(0, self.event.remove_event_orga(self.key, event_id, 1))
-        self.assertLess(0, self.event.add_event_orgas(self.key, event_id, {1}))
+        self.assertLess(0, self.event.remove_event_role(self.key, event_id, 1, 'orga'))
+        self.assertLess(0, self.event.add_event_roles(self.key, event_id, {1}, 'orga'))
         self.assertEqual({1, 7}, self.event.get_event(self.key, event_id).orgas)
 
         with self.assertRaises(ValueError) as cm:
-            self.event.add_event_orgas(self.key, event_id, {8})
+            self.event.add_event_roles(self.key, event_id, {8}, 'orga')
         self.assertIn(
             "Some of these personas do not exist or are archived.", cm.exception.args
         )
         with self.assertRaises(ValueError) as cm:
-            self.event.add_event_orgas(self.key, event_id, {1000})
+            self.event.add_event_roles(self.key, event_id, {1000}, 'orga')
         self.assertIn(
             "Some of these personas do not exist or are archived.", cm.exception.args
         )
         with self.assertRaises(ValueError) as cm:
-            self.event.add_event_orgas(self.key, event_id, {11})
+            self.event.add_event_roles(self.key, event_id, {11}, 'orga')
         self.assertIn("Some of these personas are not event users.", cm.exception.args)
 
     @event_keeper
@@ -4074,8 +4074,8 @@ class TestEventBackend(BackendTest):
             ],
             'checkin': True,
         }
-        self.event.add_event_orgas(self.key, new_id, {2, 1})
-        self.event.remove_event_orga(self.key, new_id, 2)
+        self.event.add_event_roles(self.key, new_id, {2, 1}, 'orga')
+        self.event.remove_event_role(self.key, new_id, 2, 'orga')
         self.event.set_event(
             self.key,
             new_id,
