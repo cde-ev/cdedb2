@@ -21,7 +21,7 @@ import datetime
 import decimal
 from collections.abc import Collection, Iterable
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Protocol, cast
+from typing import TYPE_CHECKING, Literal, Optional, Protocol, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -430,8 +430,12 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @access("event")
-    def add_event_orgas(
-        self, rs: RequestState, event_id: int, persona_ids: Collection[int]
+    def add_event_roles(
+        self,
+        rs: RequestState,
+        event_id: int,
+        persona_ids: Collection[int],
+        role: Literal['orga', 'caretaker'],
     ) -> DefaultReturnCode:
         """Add orgas to an event.
 
@@ -443,8 +447,14 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id = affirm(vtypes.ID, event_id)
         persona_ids = affirm(set[vtypes.ID], persona_ids)
 
-        if not is_privileged(rs, EventPrivileges.orgas_change, event_id=event_id):
-            raise PrivilegeError(n_("Not privileged."))
+        if role == 'orga':
+            if not is_privileged(rs, EventPrivileges.orgas_change, event_id=event_id):
+                raise PrivilegeError(n_("Not privileged."))
+        elif role == 'caretaker':
+            if not self.is_admin(rs):
+                raise PrivilegeError(n_("Not privileged."))
+        else:
+            raise RuntimeError(n_("Impossible."))
 
         ret = 1
         with Atomizer(rs):
@@ -456,22 +466,31 @@ class EventBaseBackend(EventLowLevelBackend):
                     'event_id': event_id,
                 }
                 # on conflict do nothing
-                r = self.sql_insert(rs, "event.orgas", new_orga, drop_on_conflict=True)
+                r = self.sql_insert(
+                    rs, f"event.{role}s", new_orga, drop_on_conflict=True
+                )
                 if r:
                     self.event_log(
-                        rs, const.EventLogCodes.orga_added, event_id, persona_id=anid
+                        rs,
+                        const.EventLogCodes[role + "_added"],
+                        event_id,
+                        persona_id=anid,
                     )
                     ret *= r
 
-        # Update session orga status
+        # Update session status
         if rs.user.persona_id in persona_ids:
-            rs.user.orga.add(event_id)
+            getattr(rs.user, role).add(event_id)
 
         return ret
 
     @access("event")
-    def remove_event_orga(
-        self, rs: RequestState, event_id: int, persona_id: int
+    def remove_event_role(
+        self,
+        rs: RequestState,
+        event_id: int,
+        persona_id: int,
+        role: Literal['orga', 'caretaker'],
     ) -> DefaultReturnCode:
         """Remove a single orga of an event.
 
@@ -480,11 +499,19 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id = affirm(vtypes.ID, event_id)
         persona_id = affirm(vtypes.ID, persona_id)
 
-        if not is_privileged(rs, EventPrivileges.orgas_change, event_id=event_id):
-            raise PrivilegeError(n_("Not privileged."))
+        if role == 'orga':
+            if not is_privileged(rs, EventPrivileges.orgas_change, event_id=event_id):
+                raise PrivilegeError(n_("Not privileged."))
+        elif role == 'caretaker':
+            if not is_privileged(
+                rs, EventPrivileges.caretakers_change, event_id=event_id
+            ):
+                raise PrivilegeError(n_("Not privileged."))
+        else:
+            raise RuntimeError(n_("Impossible."))
 
-        query = """
-            DELETE FROM event.orgas
+        query = f"""
+            DELETE FROM event.{role}s
             WHERE persona_id = %(persona_id)s AND event_id = %(event_id)s
         """
         params = {"persona_id": persona_id, "event_id": event_id}
@@ -493,82 +520,14 @@ class EventBaseBackend(EventLowLevelBackend):
             if ret:
                 self.event_log(
                     rs,
-                    const.EventLogCodes.orga_removed,
+                    const.EventLogCodes[role + "_removed"],
                     event_id,
                     persona_id=persona_id,
                 )
 
         # Update session orga status
         if rs.user.persona_id == persona_id:
-            rs.user.orga.remove(event_id)
-
-        return ret
-
-    @access("event_admin")
-    def add_event_caretakers(
-        self, rs: RequestState, event_id: int, persona_ids: Collection[int]
-    ) -> DefaultReturnCode:
-        """Add caretakers for an event.
-
-        These have similar permissions to orgas, but are external caretakers.
-        """
-        event_id = affirm(vtypes.ID, event_id)
-        persona_ids = affirm(set[vtypes.ID], persona_ids)
-
-        ret = 1
-        with Atomizer(rs):
-            self.validate_event_persona_ids(rs, persona_ids)
-
-            for anid in xsorted(persona_ids):
-                new_caretaker = {
-                    'persona_id': anid,
-                    'event_id': event_id,
-                }
-                # on conflict do nothing
-                r = self.sql_insert(
-                    rs, "event.caretakers", new_caretaker, drop_on_conflict=True
-                )
-                if r:
-                    self.event_log(
-                        rs,
-                        const.EventLogCodes.caretaker_added,
-                        event_id,
-                        persona_id=anid,
-                    )
-                    ret *= r
-
-        # Update session caretaker status
-        if rs.user.persona_id in persona_ids:
-            rs.user.caretaker.add(event_id)
-
-        return ret
-
-    @access("event_admin")
-    def remove_event_caretaker(
-        self, rs: RequestState, event_id: int, persona_id: int
-    ) -> DefaultReturnCode:
-        """Remove a single caretaker of an event."""
-        event_id = affirm(vtypes.ID, event_id)
-        persona_id = affirm(vtypes.ID, persona_id)
-
-        query = """
-            DELETE FROM event.caretakers
-            WHERE persona_id = %(persona_id)s AND event_id = %(event_id)s
-        """
-        params = {"persona_id": persona_id, "event_id": event_id}
-        with Atomizer(rs):
-            ret = self.query_exec(rs, query, params)
-            if ret:
-                self.event_log(
-                    rs,
-                    const.EventLogCodes.caretaker_removed,
-                    event_id,
-                    persona_id=persona_id,
-                )
-
-        # Update session caretaker status
-        if rs.user.persona_id == persona_id:
-            rs.user.caretaker.remove(event_id)
+            getattr(rs.user, role).remove(event_id)
 
         return ret
 
@@ -889,7 +848,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 )
 
             if 'orgas' in data:
-                ret *= self.add_event_orgas(rs, event_id, data['orgas'])
+                ret *= self.add_event_roles(rs, event_id, data['orgas'], 'orga')
             if 'fields' in data:
                 ret *= self._set_event_fields(rs, event_id, data['fields'])
             # This also includes taking care of course tracks, since
@@ -925,9 +884,9 @@ class EventBaseBackend(EventLowLevelBackend):
             new_id = self.sql_insert(rs, "event.events", edata)
             self.event_log(rs, const.EventLogCodes.event_created, new_id)
             if data.get('orgas'):
-                self.add_event_orgas(rs, new_id, data['orgas'])
+                self.add_event_roles(rs, new_id, data['orgas'], 'orga')
             if data.get('caretakers'):
-                self.add_event_caretakers(rs, new_id, data['caretakers'])
+                self.add_event_roles(rs, new_id, data['caretakers'], 'caretaker')
             if 'fields' in data:
                 self._set_event_fields(rs, new_id, data['fields'])
             if 'parts' in data:
