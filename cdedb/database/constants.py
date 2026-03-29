@@ -1046,6 +1046,8 @@ class EventLogCodes(CdEIntEnum):
     event_unbalanced = 610  #:
     registration_approved = 700  #:
     registration_unapproved = 710  #:
+    checkin_helper_added = 800  #:
+    checkin_helper_removed = 810  #:
 
 
 @enum.unique

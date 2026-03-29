@@ -13,6 +13,7 @@ import freezegun
 import cdedb.database.constants as const
 import cdedb.models.complaint as models_complaint
 from cdedb.common import CdEDBObject, RequestState, now
+from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import xsorted
 from tests.common import CronTest, event_keeper, execsql, prepsql, storage
 
@@ -624,6 +625,32 @@ class TestCron(CronTest):
         self.execute('forget_complaint_attachments')
         self.assertFalse(store.is_available(new_attachment_hash))
         self.assertTrue(store.is_available(old_attachment_hash))
+
+    def test_cleanup_event_checkin_helpers(self) -> None:
+        event_id = 1
+        log_filter = EventLogFilter(
+            event_id=event_id,
+            codes=[
+                const.EventLogCodes.checkin_helper_added,
+                const.EventLogCodes.checkin_helper_removed,
+            ],
+        )
+        event = self.event.get_event(RS, event_id)
+        self.assertEqual(event.checkin_helpers, {38})
+        log_len, _ = self.event.retrieve_log(RS, log_filter)
+        self.assertEqual(log_len, 1)
+        self.execute('cleanup_event_checkin_helpers')
+        event = self.event.get_event(RS, event_id)
+        self.assertEqual(event.checkin_helpers, {38})
+        log_len, _ = self.event.retrieve_log(RS, log_filter)
+        self.assertEqual(log_len, 1)
+        with freezegun.freeze_time(now()) as frozen_time:
+            frozen_time.tick(self.conf["EVENT_CHECKIN_HELPERS_DURATION"])
+            self.execute('cleanup_event_checkin_helpers')
+            event = self.event.get_event(RS, event_id)
+            self.assertEqual(event.checkin_helpers, {})
+            log_len, _ = self.event.retrieve_log(RS, log_filter)
+            self.assertEqual(log_len, 2)
 
     @storage
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")

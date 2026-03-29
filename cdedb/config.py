@@ -370,6 +370,9 @@ _DEFAULTS = {
     # number of persons per day
     "ORGA_ADD_LIMIT": 10,
 
+    # How long until a checkin helper is automatically removed again.
+    "EVENT_CHECKIN_HELPER_DURATION": datetime.timedelta(hours=24),
+
     #
     # complaint stuff
     #

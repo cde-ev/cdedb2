@@ -40,8 +40,9 @@ from cdedb.common.query import (
     QueryScope,
     QuerySpecEntry,
 )
+from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import EntitySorter, xsorted
-from cdedb.filter import iban_filter
+from cdedb.filter import cdedbid_filter, iban_filter
 from cdedb.frontend.common import (
     Headers,
     REQUESTdata,
@@ -553,6 +554,35 @@ class EventEventMixin(EventBaseFrontend):
                 },
             )
         return self.redirect(rs, "event/manage_roles")
+
+    @periodic("cleanup_event_checkin_helpers", period=4)
+    def cleanup_event_checkin_helpers(
+        self, rs: RequestState, state: CdEDBObject
+    ) -> CdEDBObject:
+        events = self.eventproxy.get_events(rs, self.eventproxy.list_events(rs))
+
+        cutoff = now() - self.conf["EVENT_CHECKIN_HELPER_DURATION"]
+        count = 0
+        for event in events.values():
+            for checkin_helper_id in event.checkin_helpers:
+                log_filer = EventLogFilter(
+                    codes=[const.EventLogCodes.checkin_helper_added],
+                    persona_id=checkin_helper_id,
+                    event_id=event.id,
+                )
+                _, log_entries = self.eventproxy.retrieve_log(rs, log_filer)
+                if not log_entries:
+                    self.logger.error(
+                        f"Event '{event.shortname}' has a checkin helper"
+                        f" ({cdedbid_filter(checkin_helper_id)}) with no ctime."
+                    )
+                elif log_entries[-1]["ctime"] < cutoff:
+                    count += self.eventproxy.remove_event_checkin_helper(
+                        rs, event.id, checkin_helper_id
+                    )
+        if count > 0:
+            self.logger.info(f"Removed {count} checkin helpers.")
+        return state
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.orgas_change)
