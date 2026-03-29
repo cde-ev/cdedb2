@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-03-29 00:45+0100\n"
+"POT-Creation-Date: 2026-03-29 18:38+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -5935,9 +5935,9 @@ msgstr ""
 #: cdedb/common/query/__init__.py:1176 cdedb/common/query/__init__.py:1177
 #: cdedb/common/query/__init__.py:1179 cdedb/common/query/__init__.py:1180
 #: cdedb/common/query/__init__.py:1181 cdedb/common/query/__init__.py:1182
-#: cdedb/common/query/__init__.py:1183 cdedb/database/constants.py:1221
-#: cdedb/database/constants.py:1222 cdedb/database/constants.py:1223
-#: cdedb/database/constants.py:1224 cdedb/database/constants.py:1225
+#: cdedb/common/query/__init__.py:1183 cdedb/database/constants.py:1197
+#: cdedb/database/constants.py:1198 cdedb/database/constants.py:1199
+#: cdedb/database/constants.py:1200 cdedb/database/constants.py:1201
 #: cdedb/frontend/templates/web/event/base.tmpl:265
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:10
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:22
@@ -6127,9 +6127,9 @@ msgid "any track"
 msgstr ""
 
 #: cdedb/common/query/__init__.py:1414 cdedb/common/query/__init__.py:1558
-#: cdedb/common/query/__init__.py:1663 cdedb/database/constants.py:1169
-#: cdedb/database/constants.py:1170 cdedb/database/constants.py:1171
-#: cdedb/database/constants.py:1172
+#: cdedb/common/query/__init__.py:1663 cdedb/database/constants.py:1183
+#: cdedb/database/constants.py:1184 cdedb/database/constants.py:1185
+#: cdedb/database/constants.py:1186
 #: cdedb/frontend/templates/web/event/generic.tmpl:224
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:208
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:464
@@ -7286,7 +7286,7 @@ msgstr ""
 #: cdedb/database/constants.py:910 cdedb/database/constants.py:911
 #: cdedb/database/constants.py:912 cdedb/database/constants.py:913
 #: cdedb/database/constants.py:914 cdedb/database/constants.py:960
-#: cdedb/database/constants.py:1034 cdedb/database/constants.py:1226
+#: cdedb/database/constants.py:1034 cdedb/database/constants.py:1222
 msgid "Other"
 msgstr ""
 
@@ -7420,72 +7420,10 @@ msgstr ""
 msgid "Event"
 msgstr ""
 
+#: cdedb/database/constants.py:1156 cdedb/database/constants.py:1157
+#: cdedb/database/constants.py:1158 cdedb/database/constants.py:1159
 #: cdedb/database/constants.py:1160 cdedb/database/constants.py:1161
 #: cdedb/database/constants.py:1162 cdedb/database/constants.py:1163
-#: cdedb/database/constants.py:1164 cdedb/database/constants.py:1165
-msgid "Event Roles"
-msgstr ""
-
-#: cdedb/database/constants.py:1166 cdedb/database/constants.py:1167
-#: cdedb/database/constants.py:1168 cdedb/database/constants.py:1179
-#: cdedb/database/constants.py:1180 cdedb/database/constants.py:1181
-msgid "Event Parts & Course Tracks"
-msgstr ""
-
-#: cdedb/database/constants.py:1173 cdedb/database/constants.py:1174
-#: cdedb/database/constants.py:1175 cdedb/database/constants.py:1176
-#: cdedb/database/constants.py:1177 cdedb/database/constants.py:1178
-#: cdedb/frontend/templates/web/event/base.tmpl:220
-#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:40
-#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:32
-#: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:261
-#: cdedb/frontend/templates/web/event/lodgement/change_lodgement.tmpl:18
-#: cdedb/frontend/templates/web/event/lodgement/create_lodgement.tmpl:18
-#: cdedb/frontend/templates/web/event/lodgement/lodgement_group_summary.tmpl:18
-#: cdedb/frontend/templates/web/event/lodgement/lodgement_wishes_graph_form.tmpl:19
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:12
-#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:15
-#: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:17
-#: cdedb/frontend/templates/web/event/lodgement/move_lodgements.tmpl:17
-#: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:18
-#: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:67
-#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:57
-#: cdedb/frontend/templates/web/event/query/lodgement_query.tmpl:17
-#: cdedb/frontend/templates/web/event/query/lodgement_query.tmpl:23
-msgid "Lodgements"
-msgstr ""
-
-#: cdedb/database/constants.py:1182 cdedb/database/constants.py:1183
-#: cdedb/database/constants.py:1184 cdedb/database/constants.py:1185
-#: cdedb/database/constants.py:1186 cdedb/database/constants.py:1187
-#: cdedb/database/constants.py:1188
-#: cdedb/frontend/templates/web/cde/past_event/create_past_event.tmpl:30
-#: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:79
-#: cdedb/frontend/templates/web/core/index.tmpl:168
-#: cdedb/frontend/templates/web/event/base.tmpl:215
-#: cdedb/frontend/templates/web/event/base/participant_list.tmpl:99
-#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:24
-#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:17
-#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:12
-#: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:17
-#: cdedb/frontend/templates/web/event/course/show_course.tmpl:18
-#: cdedb/frontend/templates/web/event/event/index.tmpl:26
-#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:37
-#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:29
-#: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:176
-#: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:62
-#: cdedb/frontend/templates/web/event/query/course_query.tmpl:17
-#: cdedb/frontend/templates/web/event/query/course_query.tmpl:22
-#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:53
-#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:152
-#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:249
-msgid "Courses"
-msgstr ""
-
-#: cdedb/database/constants.py:1189 cdedb/database/constants.py:1190
-#: cdedb/database/constants.py:1191 cdedb/database/constants.py:1192
-#: cdedb/database/constants.py:1193 cdedb/database/constants.py:1194
-#: cdedb/database/constants.py:1195 cdedb/database/constants.py:1196
 #: cdedb/frontend/templates/web/core/index.tmpl:161
 #: cdedb/frontend/templates/web/event/base.tmpl:206
 #: cdedb/frontend/templates/web/event/downloads.tmpl:184
@@ -7517,9 +7455,65 @@ msgstr ""
 msgid "Registrations"
 msgstr ""
 
-#: cdedb/database/constants.py:1197 cdedb/database/constants.py:1198
-#: cdedb/database/constants.py:1199 cdedb/database/constants.py:1200
-#: cdedb/database/constants.py:1201
+#: cdedb/database/constants.py:1164 cdedb/database/constants.py:1165
+#: cdedb/database/constants.py:1166 cdedb/database/constants.py:1167
+#: cdedb/database/constants.py:1168 cdedb/database/constants.py:1169
+#: cdedb/database/constants.py:1170
+#: cdedb/frontend/templates/web/cde/past_event/create_past_event.tmpl:30
+#: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:79
+#: cdedb/frontend/templates/web/core/index.tmpl:168
+#: cdedb/frontend/templates/web/event/base.tmpl:215
+#: cdedb/frontend/templates/web/event/base/participant_list.tmpl:99
+#: cdedb/frontend/templates/web/event/course/configure_course.tmpl:24
+#: cdedb/frontend/templates/web/event/course/course_choices.tmpl:17
+#: cdedb/frontend/templates/web/event/course/course_stats.tmpl:12
+#: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:17
+#: cdedb/frontend/templates/web/event/course/show_course.tmpl:18
+#: cdedb/frontend/templates/web/event/event/index.tmpl:26
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:37
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:29
+#: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:176
+#: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:62
+#: cdedb/frontend/templates/web/event/query/course_query.tmpl:17
+#: cdedb/frontend/templates/web/event/query/course_query.tmpl:22
+#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:53
+#: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:152
+#: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:249
+msgid "Courses"
+msgstr ""
+
+#: cdedb/database/constants.py:1171 cdedb/database/constants.py:1172
+#: cdedb/database/constants.py:1173 cdedb/database/constants.py:1174
+#: cdedb/database/constants.py:1175 cdedb/database/constants.py:1176
+#: cdedb/frontend/templates/web/event/base.tmpl:220
+#: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:40
+#: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:32
+#: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:261
+#: cdedb/frontend/templates/web/event/lodgement/change_lodgement.tmpl:18
+#: cdedb/frontend/templates/web/event/lodgement/create_lodgement.tmpl:18
+#: cdedb/frontend/templates/web/event/lodgement/lodgement_group_summary.tmpl:18
+#: cdedb/frontend/templates/web/event/lodgement/lodgement_wishes_graph_form.tmpl:19
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:12
+#: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:15
+#: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:17
+#: cdedb/frontend/templates/web/event/lodgement/move_lodgements.tmpl:17
+#: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:18
+#: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:67
+#: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:57
+#: cdedb/frontend/templates/web/event/query/lodgement_query.tmpl:17
+#: cdedb/frontend/templates/web/event/query/lodgement_query.tmpl:23
+msgid "Lodgements"
+msgstr ""
+
+#: cdedb/database/constants.py:1177 cdedb/database/constants.py:1178
+#: cdedb/database/constants.py:1179 cdedb/database/constants.py:1180
+#: cdedb/database/constants.py:1181 cdedb/database/constants.py:1182
+msgid "Event Parts & Course Tracks"
+msgstr ""
+
+#: cdedb/database/constants.py:1187 cdedb/database/constants.py:1188
+#: cdedb/database/constants.py:1189 cdedb/database/constants.py:1190
+#: cdedb/database/constants.py:1191
 #: cdedb/frontend/templates/web/event/base.tmpl:224
 #: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:42
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:17
@@ -7530,35 +7524,34 @@ msgstr ""
 msgid "Fees"
 msgstr ""
 
-#: cdedb/database/constants.py:1202 cdedb/database/constants.py:1203
-#: cdedb/database/constants.py:1204 cdedb/database/constants.py:1205
-#: cdedb/database/constants.py:1206
+#: cdedb/database/constants.py:1192 cdedb/database/constants.py:1193
+#: cdedb/database/constants.py:1194 cdedb/database/constants.py:1195
+#: cdedb/database/constants.py:1196
 msgid "Queries"
 msgstr ""
 
-#: cdedb/database/constants.py:1207 cdedb/database/constants.py:1208
-#: cdedb/database/constants.py:1209 cdedb/database/constants.py:1210
-#: cdedb/database/constants.py:1211
-#: cdedb/frontend/templates/web/event/event/group_summary.tmpl:41
-msgid "Part Groups"
+#: cdedb/database/constants.py:1202 cdedb/database/constants.py:1203
+#: cdedb/database/constants.py:1204 cdedb/database/constants.py:1205
+#: cdedb/database/constants.py:1206 cdedb/database/constants.py:1207
+#: cdedb/database/constants.py:1208 cdedb/database/constants.py:1209
+#: cdedb/database/constants.py:1210 cdedb/database/constants.py:1211
+msgid "Part & Track Groups"
 msgstr ""
 
 #: cdedb/database/constants.py:1212 cdedb/database/constants.py:1213
 #: cdedb/database/constants.py:1214 cdedb/database/constants.py:1215
-#: cdedb/database/constants.py:1216
-#: cdedb/frontend/templates/web/event/event/group_summary.tmpl:113
-#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:127
-msgid "Track Groups"
-msgstr ""
-
-#: cdedb/database/constants.py:1217 cdedb/database/constants.py:1218
-#: cdedb/database/constants.py:1219 cdedb/database/constants.py:1220
 #: cdedb/frontend/templates/web/event/downloads.tmpl:23
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:27
 #: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:32
 #: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:12
 #: cdedb/frontend/templates/web/event/event/droid/summary.tmpl:18
 msgid "Orga Tokens"
+msgstr ""
+
+#: cdedb/database/constants.py:1216 cdedb/database/constants.py:1217
+#: cdedb/database/constants.py:1218 cdedb/database/constants.py:1219
+#: cdedb/database/constants.py:1220 cdedb/database/constants.py:1221
+msgid "Event Roles"
 msgstr ""
 
 #: cdedb/database/query.py:174 cdedb/database/query.py:271
@@ -9845,7 +9838,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/base.tmpl:386
 #: cdedb/frontend/templates/web/event/base/view_event_log.tmpl:16
 #: cdedb/frontend/templates/web/event/base/view_event_log.tmpl:22
-#: cdedb/frontend/templates/web/event/base/view_log.tmpl:16
+#: cdedb/frontend/templates/web/event/base/view_log.tmpl:17
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:35
 #: cdedb/frontend/templates/web/ml/base.tmpl:28
 #: cdedb/frontend/templates/web/ml/base.tmpl:91
@@ -16340,7 +16333,7 @@ msgstr ""
 msgid "There are no participants yet."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/base/view_log.tmpl:11
+#: cdedb/frontend/templates/web/event/base/view_log.tmpl:12
 msgid "Event Log"
 msgstr ""
 
@@ -17833,6 +17826,10 @@ msgstr ""
 msgid "Groups_[[part or track]] (%(title)s)"
 msgstr "Groups (%(title)s)"
 
+#: cdedb/frontend/templates/web/event/event/group_summary.tmpl:41
+msgid "Part Groups"
+msgstr ""
+
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:87
 msgid "Create Mailinglist for this Part Group"
 msgstr ""
@@ -17845,6 +17842,11 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:102
 #, python-format
 msgid "Delete part group %(shortname)s"
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/event/group_summary.tmpl:113
+#: cdedb/frontend/templates/web/event/event/part_summary.tmpl:127
+msgid "Track Groups"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/group_summary.tmpl:115
