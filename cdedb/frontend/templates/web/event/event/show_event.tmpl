@@ -34,11 +34,8 @@
                 {% if orga_view %}
                     {{ generic.edit_free_text_button("description", label=gettext("Edit description"), small=False, pull_right=False) }}
                 {% endif %}
-                {% if is_privileged_for("event/remove_orga", admin_view_to_consider="event_mgmt") %}
-                    {{ util.href(cdedblink("event/manage_roles") + "#orgas", gettext("Manage Orgas"), aclass="btn btn-warning btn-sm", icon="user-friends") }}
-                {% endif %}
-                {% if is_privileged_for("event/remove_caretaker", admin_view_to_consider="event_mgmt") %}
-                    {{ util.href(cdedblink("event/manage_roles") + "#caretakers", gettext("Manage Caretakers"), aclass="btn btn-warning btn-sm", icon="hands-holding-circle") }}
+                {% if is_privileged_for("event/manage_roles", admin_view_to_consider="event_mgmt") %}
+                    {{ util.href(cdedblink("event/manage_roles"), gettext("Manage Roles"), aclass="btn btn-warning btn-sm", icon="user-friends") }}
                 {% endif %}
             </div>
         {% endif %}

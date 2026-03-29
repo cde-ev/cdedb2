@@ -522,7 +522,7 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.manage_roles(rs, event_id)
 
-        persona_ids = set(persona_ids) - getattr(rs.ambience['event'], role)
+        persona_ids = set(persona_ids) - getattr(rs.ambience['event'], f"{role}s")
         code = self.eventproxy.add_event_roles(rs, event_id, persona_ids, role)
 
         if not persona_ids:
