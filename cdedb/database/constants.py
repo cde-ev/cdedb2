@@ -1308,29 +1308,38 @@ class AssemblyLogCodes(CdEIntEnum):
 class MlLogCodes(CdEIntEnum):
     """Available log messages for ml.log."""
 
+    # Mailinglist
     list_created = 1  #:
     list_changed = 2  #:
     list_deleted = 3  #:
     moderator_added = 10  #:
     moderator_removed = 11  #:
-    whitelist_added = 12  #:
-    whitelist_removed = 13  #:
-    subscription_requested = 20  #: SubscriptionState.subscription_requested
+
+    # Subscribers
     subscribed = 21  #: SubscriptionState.subscribed
-    subscription_changed = 22  #: This is now used for address changes.
     unsubscribed = 23  #: SubscriptionState.unsubscribed
     marked_override = 24  #: SubscriptionState.subscription_override
     marked_blocked = 25  #: SubscriptionState.unsubscription_override
-    reset = 27  #:
+    subscription_changed = 22  #: This is now used for address changes.
     automatically_removed = 28  #:
+
+    # Subscription requests
+    subscription_requested = 20  #: SubscriptionState.subscription_requested
     request_approved = 30  #:
     request_denied = 31  #:
     request_cancelled = 32  #:
     request_blocked = 33  #:
-    email_trouble = 40  #:
+
+    # Message Moderation
     moderate_accept = 50  #:
     moderate_reject = 51  #:
     moderate_discard = 52  #:
+    whitelist_added = 12  #:
+    whitelist_removed = 13  #:
+
+    # Other
+    email_trouble = 40  #:
+    reset = 27  #:
 
     @classmethod
     def from_subman(cls, action: SubscriptionAction) -> "MlLogCodes":
@@ -1351,6 +1360,31 @@ class MlLogCodes(CdEIntEnum):
             SubscriptionAction.reset: cls.reset,
         }
         return log_code_map[action]
+
+    def optgroup_label(self) -> str:
+        return {
+            self.list_created: n_("Mailinglist"),
+            self.list_changed: n_("Mailinglist"),
+            self.list_deleted: n_("Mailinglist"),
+            self.moderator_added: n_("Mailinglist"),
+            self.moderator_removed: n_("Mailinglist"),
+            self.subscribed: n_("Subscribers"),
+            self.unsubscribed: n_("Subscribers"),
+            self.marked_override: n_("Subscribers"),
+            self.marked_blocked: n_("Subscribers"),
+            self.subscription_changed: n_("Subscribers"),
+            self.automatically_removed: n_("Subscribers"),
+            self.subscription_requested: n_("Subscription Requests"),
+            self.request_approved: n_("Subscription Requests"),
+            self.request_denied: n_("Subscription Requests"),
+            self.request_cancelled: n_("Subscription Requests"),
+            self.request_blocked: n_("Subscription Requests"),
+            self.moderate_accept: n_("Message Moderation"),
+            self.moderate_reject: n_("Message Moderation"),
+            self.moderate_discard: n_("Message Moderation"),
+            self.whitelist_added: n_("Message Moderation"),
+            self.whitelist_removed: n_("Message Moderation"),
+        }.get(self, n_("Other"))
 
 
 @enum.unique
