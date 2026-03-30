@@ -610,6 +610,7 @@ class PastMusicKind(CdEIntEnum):
     none = 0
     ensemble = 1
     kuemu = 2
+    kueak = 4
 
     @property
     def shortname(self) -> str:
@@ -617,6 +618,7 @@ class PastMusicKind(CdEIntEnum):
             self.none: "",
             self.ensemble: "EL",
             self.kuemu: "KüMu",
+            self.kueak: "KüAK"
         }[self]
 
 

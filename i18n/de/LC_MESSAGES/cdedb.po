@@ -538,6 +538,9 @@ msgstr "Ensembleleitung"
 msgid "PastMusicKind.kuemu"
 msgstr "Kursübergreifende Musikleitung"
 
+msgid "PastMusicKind.kueak"
+msgstr "Leitung der Kursübergreifenden Angebote Kultur"
+
 #: cdedb/.i18n_additional.py:133
 msgid "PastInstructorKind.none"
 msgstr "keine Kursleitung"
