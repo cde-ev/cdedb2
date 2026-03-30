@@ -79,7 +79,7 @@
                     {{ generic.print_persona(personas[participant.persona_id]) }}
                     {% if participant.instructor_status %}</strong>{% endif %}
                     {% if participant.instructor_status %}
-                        ({{ gettext(participant.instructor_status|string) }})
+                        (<span title="{{ gettext(participant.instructor_status|string) }}">{{ gettext(participant.instructor_status.shortname|string) }}</span>)
                     {% endif %}
                     {% if "past_event" in user.admin_views %}
                         <form action="{{ cdedblink('cde/remove_course_assignment') }}" method="POST"

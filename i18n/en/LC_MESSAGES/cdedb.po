@@ -512,11 +512,11 @@ msgstr "Independent"
 
 #: cdedb/.i18n_additional.py:126
 msgid "PastOrgaKind.none"
-msgstr "no Orga"
+msgstr "no Organiser"
 
 #: cdedb/.i18n_additional.py:127
 msgid "PastOrgaKind.orga"
-msgstr "Orga"
+msgstr "Organiser"
 
 #: cdedb/.i18n_additional.py:128
 msgid "PastOrgaKind.al"
@@ -532,11 +532,11 @@ msgstr "no Music Leader"
 
 #: cdedb/.i18n_additional.py:131
 msgid "PastMusicKind.ensemble"
-msgstr "Ensemble"
+msgstr "Ensemble Director"
 
 #: cdedb/.i18n_additional.py:132
 msgid "PastMusicKind.kuemu"
-msgstr "KüMu"
+msgstr "Head of Interdisciplinary Music"
 
 #: cdedb/.i18n_additional.py:133
 msgid "PastInstructorKind.none"

@@ -512,11 +512,11 @@ msgstr "Privat"
 
 #: cdedb/.i18n_additional.py:126
 msgid "PastOrgaKind.none"
-msgstr "kein Orga"
+msgstr "kein Organisator"
 
 #: cdedb/.i18n_additional.py:127
 msgid "PastOrgaKind.orga"
-msgstr "Orga"
+msgstr "Organisator"
 
 #: cdedb/.i18n_additional.py:128
 msgid "PastOrgaKind.al"
@@ -536,19 +536,19 @@ msgstr "Ensembleleitung"
 
 #: cdedb/.i18n_additional.py:132
 msgid "PastMusicKind.kuemu"
-msgstr "KüMu"
+msgstr "Kursübergreifende Musikleitung"
 
 #: cdedb/.i18n_additional.py:133
 msgid "PastInstructorKind.none"
-msgstr "kein KL"
+msgstr "keine Kursleitung"
 
 #: cdedb/.i18n_additional.py:134
 msgid "PastInstructorKind.kl"
-msgstr "KL"
+msgstr "Kursleitung"
 
 #: cdedb/.i18n_additional.py:135
 msgid "PastInstructorKind.co_kl"
-msgstr "Co-KL"
+msgstr "Co-Kursleitung"
 
 #: cdedb/.i18n_additional.py:136
 msgid "ComplaintKind.physical_sexual_transgression"

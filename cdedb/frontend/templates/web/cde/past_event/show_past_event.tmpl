@@ -159,7 +159,7 @@
                         )
                     {% endif %}
                     {% if participant.status %}
-                        ({%- for status in participant.status %}{{ gettext(status|string) }}{% if not loop.last %}, {% endif %}{% endfor %})
+                        ({%- for status in participant.status %}<span title="{{ gettext(status|string) }}">{{ gettext(status.shortname|string) }}</span>{% if not loop.last %}, {% endif %}{% endfor %})
                     {% endif %}
 
                     {% if "past_event" in user.admin_views %}
