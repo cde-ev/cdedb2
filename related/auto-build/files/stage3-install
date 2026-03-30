@@ -34,7 +34,7 @@ sudo -u cdedb git clone ssh://gitea@tracker.cde-ev.de:20009/cdedb/cdedb2.git /cd
 cd /cdedb2
 # custom git config
 # dPROD not present
-sudo -u cdedb cp /media/cdrom0/gitconfig-local /cdedb2/.git/config
+sudo -u cdedb cp /media/cdrom0/gitconfig-local | sudo -u cdedb tee /cdedb2/.git/config > /dev/null
 # set upstream URL in git config
 sudo -u cdedb git remote add origin ssh://gitea@tracker.cde-ev.de:20009/cdedb/cdedb2.git
 
@@ -163,6 +163,8 @@ cp /media/cdrom0/cde-ldap.socket /etc/systemd/system/
 
 # dPROD: dev override and test service not present
 # create a separate service file for the test suite, create dev and test overrides
+mkdir /etc/systemd/system/cde-ldap.service.d/
+mkdir /etc/systemd/system/cde-ldap-test.service.d/
 cp /media/cdrom0/cde-ldap-dev.conf /etc/systemd/system/cde-ldap.service.d/50-dev-override.conf
 cp /media/cdrom0/cde-ldap.service /etc/systemd/system/cde-ldap-test.service
 cp /media/cdrom0/cde-ldap-test.conf /etc/systemd/system/cde-ldap-test.service.d/50-test-override.conf
@@ -201,6 +203,7 @@ systemctl enable --now cdedb-app.socket
 
 # dPROD not present
 # Add override for dev environments.
+mkdir /etc/systemd/system/cdedb-app.service.d/
 cp /media/cdrom0/cdedb-app-dev.conf /etc/systemd/system/cdedb-app.service.d/50-dev-override.conf
 
 # Add a service to auto restart the service upon some file changes.
