@@ -224,17 +224,24 @@ class CourseTrackGroupType(CdEIntEnum):
 class EventFeeType(CdEIntEnum):
     """Different kinds of event fees, to be displayed and/or treated differently."""
 
+    # Participation Fee
     common = 1
-    storno = 2
-    external = 3
-    instructor_refund = 5
-    instructor_donation = 6
     solidary_reduction = 10
-    solidary_donation = 11
     solidary_increase = 12
+    external = 3
+
+    # Donation
+    solidary_donation = 11
+    instructor_donation = 6
     other_donation = 20
+
+    # Reimbursement
+    instructor_refund = 5
     crisis_refund = 30
     other_refund = 31
+
+    # Storno
+    storno = 2
 
     def get_icon(self) -> str:
         return {
