@@ -144,27 +144,29 @@ class TestEventFrontend(FrontendTest):
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
         everyone = {"Veranstaltungen", "Übersicht", "Veranstaltungshelfer"}
+        past_events = {"Verg. Veranstaltungen", "Kurssuche"}
+        past_event_admin = {"Verg.-Veranstaltungen-Log"}
         admin = {"Alle Veranstaltungen", "Ungereimtheiten", "Log"}
 
         # not event admins (also orgas!)
         if self.user_in('emilia', 'martin', 'werner'):
             ins = everyone
-            out = admin | {"Nutzer verwalten"}
+            out = admin | {"Nutzer verwalten"} | past_events | past_event_admin
         # core admins
         elif self.user_in('vera'):
-            ins = everyone | {"Nutzer verwalten"}
-            out = admin
+            ins = everyone | {"Nutzer verwalten"} | past_events | past_event_admin
+            out = admin - {"Log"}  # This falsely matches the past event log.
         # event admins
         elif self.user_in('annika'):
             ins = everyone | admin | {"Nutzer verwalten"}
-            out = set()
+            out = past_events | past_event_admin
         # event helpers
         elif self.user_in('petra'):
-            ins = everyone | {"Alle Veranstaltungen", "Ungereimtheiten"}
-            out = {"Log"}
+            ins = everyone | {"Alle Veranstaltungen", "Ungereimtheiten"} | past_events
+            out = {"Log"} | past_event_admin
         # auditors
         elif self.user_in('katarina'):
-            ins = everyone | {"Log"}
+            ins = everyone | past_event_admin | {"Log"}
             out = admin - {"Log"}
         else:
             self.fail("Please adjust users for this tests.")
@@ -347,7 +349,7 @@ class TestEventFrontend(FrontendTest):
         self.assertIn('lockeventform', self.response.forms)
 
         # Test Past Event Admin View
-        self.traverse({'href': '/event/past/event/list'})
+        self.traverse("Veranstaltungen", {'href': '/event/past/event/list'})
         self.assertNoLink('/event/past/event/create')
         self.traverse({'href': '/event/past/event/1/show'})
         self.assertNoLink('/event/past/event/1/change')

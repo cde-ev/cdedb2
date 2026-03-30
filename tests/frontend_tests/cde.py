@@ -177,12 +177,11 @@ class TestCdEFrontend(FrontendTest):
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Mitglieder'})
         everyone = {"Mitglieder", "Übersicht"}
-        past_event = {"Verg. Veranstaltungen", "Kurssuche"}
         member = {"Verschiedenes", "Datenschutzerklärung"}
         searchable = {"CdE-Mitglied suchen"}
         cde_admin_or_member = {"Mitglieder-Statistik"}
         cde_admin = {"Nutzer verwalten", "Semesterverwaltung"}
-        cde_admin_or_auditor = {"Finanz-Log", "CdE-Log", "Verg.-Veranstaltungen-Log"}
+        cde_admin_or_auditor = {"Finanz-Log", "CdE-Log"}
         finance_admin = {
             "Einzugsermächtigungen",
             "Kontoauszug parsen",
@@ -192,37 +191,23 @@ class TestCdEFrontend(FrontendTest):
         # non-members
         if self.user_in('annika', 'werner', 'martin'):
             ins = everyone
-            out = (
-                past_event
-                | member
-                | searchable
-                | cde_admin
-                | cde_admin_or_auditor
-                | finance_admin
-            )
+            out = member | searchable | cde_admin | cde_admin_or_auditor | finance_admin
         # searchable member
         elif self.user_in('berta'):
-            ins = everyone | past_event | member | cde_admin_or_member | searchable
+            ins = everyone | member | cde_admin_or_member | searchable
             out = cde_admin | cde_admin_or_auditor | finance_admin
         # not-searchable member
         elif self.user_in('charly'):
-            ins = everyone | past_event | member | cde_admin_or_member
+            ins = everyone | member | cde_admin_or_member
             out = searchable | cde_admin | cde_admin_or_auditor | finance_admin
         # cde but not finance admin (vera is no member)
         elif self.user_in('vera'):
-            ins = (
-                everyone
-                | past_event
-                | cde_admin_or_member
-                | cde_admin
-                | cde_admin_or_auditor
-            )
+            ins = everyone | cde_admin_or_member | cde_admin | cde_admin_or_auditor
             out = member | searchable | finance_admin
         # cde and finance admin (farin is no member)
         elif self.user_in('farin'):
             ins = (
                 everyone
-                | past_event
                 | cde_admin_or_member
                 | cde_admin
                 | cde_admin_or_auditor
@@ -232,14 +217,7 @@ class TestCdEFrontend(FrontendTest):
         # auditor
         elif self.user_in('katarina'):
             ins = everyone | cde_admin_or_auditor
-            out = (
-                past_event
-                | member
-                | searchable
-                | cde_admin_or_member
-                | cde_admin
-                | finance_admin
-            )
+            out = member | searchable | cde_admin_or_member | cde_admin | finance_admin
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -2874,7 +2852,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("VAN", div='navigation')
 
         # Institution BuB
-        self.get('/cde/past/event/list?institution=PastInstitutions.bub')
+        self.get('/event/past/event/list?institution=PastInstitutions.bub')
         msg = "Es gibt keine Vergangenen Veranstaltungen mit dieser Organisation."
         self.assertNotification(msg, 'info')
         self.assertNonPresence("BuB")
