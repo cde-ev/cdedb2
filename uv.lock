@@ -3,15 +3,15 @@ revision = 3
 requires-python = "==3.13.*"
 
 [options]
-exclude-newer = "2026-03-16T00:00:40.892695779Z"
+exclude-newer = "2026-03-16T00:15:42.793558178Z"
 exclude-newer-span = "P14D"
 
 [options.exclude-newer-package]
-subman = { timestamp = "2026-03-29T23:59:40.892718271Z", span = "PT1M" }
-werkzeug = { timestamp = "2026-03-29T00:00:40.89271791Z", span = "P1D" }
-passlib = { timestamp = "2026-03-29T00:00:40.89271765Z", span = "P1D" }
-schulze-condorcet = { timestamp = "2026-03-29T23:59:40.892718823Z", span = "PT1M" }
-gunicorn = { timestamp = "2026-03-29T00:00:40.892708904Z", span = "P1D" }
+subman = { timestamp = "2026-03-30T00:14:42.793588184Z", span = "PT1M" }
+werkzeug = { timestamp = "2026-03-29T00:15:42.793587683Z", span = "P1D" }
+passlib = { timestamp = "2026-03-29T00:15:42.793587272Z", span = "P1D" }
+schulze-condorcet = { timestamp = "2026-03-30T00:14:42.793589186Z", span = "PT1M" }
+gunicorn = { timestamp = "2026-03-29T00:15:42.793577665Z", span = "P1D" }
 
 [[package]]
 name = "alabaster"
