@@ -1119,21 +1119,29 @@ class CoreComplaintMixin(CoreBaseFrontend):
         cutoff = now() - self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"]
         marked_for_purge = self.complaintproxy.list_entry_versions_marked_for_purge(rs)
 
-        purged = 0
-        pending = 0
+        purged = []
+        pending = []
         for entry_version in marked_for_purge:
             if entry_version.marked_for_purge < cutoff:
                 self.complaintproxy.purge_entry_version(
                     rs, entry_version.entry_id, entry_version.id
                 )
-                purged += 1
+                purged.append(entry_version.id)
             else:
-                pending += 1
+                pending.append(entry_version.id)
 
         if pending:
-            self.logger.info(f"{pending} entry versions pending purge.")
+            versions = ", ".join(map(str, pending))
+            self.logger.info(
+                f"{len(pending)} entry versions pending purge ({versions})."
+            )
         if purged:
-            self.logger.info(f"Purged {purged} complaint entry versions.")
+            versions = ", ".join(map(str, purged))
+            self.logger.info(
+                f"Purged {len(purged)} complaint entry versions ({versions})."
+            )
+
+        state = {"pending": pending, "purged": state.get("purged", []) + purged}
 
         return state
 
