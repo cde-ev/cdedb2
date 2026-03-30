@@ -268,7 +268,6 @@ rules = [
                 "/search",
                 get_("/member", endpoint="member_search"),
                 get_("/user", endpoint="user_search"),
-                get_("/course", endpoint="", redirect_to="event/past/search/course"),
             ),
             get_("/i25p", endpoint="", redirect_to="cde/lastschrift/info"),
             sub(
@@ -292,9 +291,6 @@ rules = [
             sub(
                 "/past/",
                 get_("/event/list", endpoint="", redirect_to="event/past/event/list"),
-                get_(
-                    "/event/create", endpoint="", redirect_to="event/past/event/create"
-                ),
                 get_("/log", endpoint="", redirect_to="event/past/log"),
                 sub(
                     "/event/<int:pevent_id>",
@@ -303,32 +299,12 @@ rules = [
                         endpoint="",
                         redirect_to="event/past/event/<pevent_id>/show",
                     ),
-                    get_(
-                        "/download",
-                        endpoint="",
-                        redirect_to="event/past/event/<pevent_id>/download",
-                    ),
-                    get_(
-                        "/change",
-                        endpoint="",
-                        redirect_to="event/past/event/<pevent_id>/change",
-                    ),
-                    get_(
-                        "/course/create",
-                        endpoint="",
-                        redirect_to="event/past/event/<pevent_id>/course/create",
-                    ),
                     sub(
                         "/course/<int:pcourse_id>",
                         get_(
                             "/show",
                             endpoint="",
                             redirect_to="event/past/event/<pevent_id>/course/<pcourse_id>/show",
-                        ),
-                        get_(
-                            "/change",
-                            endpoint="",
-                            redirect_to="event/past/event/<pevent_id>/course/<pcourse_id>/change",
                         ),
                     ),
                 ),
@@ -688,7 +664,6 @@ rules = [
                 sub(
                     "/event/<int:pevent_id>",
                     get_("/show", endpoint="show_past_event"),
-                    get_("/download", endpoint="download_past_event_participantlist"),
                     get_("/change", endpoint="change_past_event_form"),
                     post("/change", endpoint="change_past_event"),
                     post("/delete", endpoint="delete_past_event"),
