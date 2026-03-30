@@ -516,7 +516,7 @@ msgstr "kein Organisator"
 
 #: cdedb/.i18n_additional.py:127
 msgid "PastOrgaKind.orga"
-msgstr "Organisator"
+msgstr "Orga"
 
 #: cdedb/.i18n_additional.py:128
 msgid "PastOrgaKind.al"
