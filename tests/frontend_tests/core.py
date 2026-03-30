@@ -3,6 +3,7 @@ import datetime
 import random
 import re
 import urllib.parse
+from collections.abc import Collection
 from typing import Optional
 
 import webtest
@@ -26,6 +27,7 @@ from cdedb.common.query.log_filter import ChangelogLogFilter
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.filter import iban_filter
 from tests.common import (
+    ANONYMOUS,
     USER_DICT,
     FrontendTest,
     UserIdentifier,
@@ -488,272 +490,196 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': '/core/self/show'})
         self.assertNonPresence("Bei Überweisungen aus dem Ausland achte bitte")
 
-    @as_users("anton")
-    def test_selectpersona(self) -> None:
-        self.get('/core/persona/select?kind=admin_persona&phrase=din')
-        expectation = {
-            'personas': [
-                {'email': 'daniel@example.cde', 'id': 4, 'name': 'Daniel Dino'},
-                {'email': 'ferdinand@example.cde', 'id': 6, 'name': 'Ferdinand Findus'},
-            ]
-        }
-        self.assertEqual(expectation, self.response.json)
-        self.get('/core/persona/select?kind=admin_all_users&phrase=had')
-        expectation = {'personas': [{'email': None, 'id': 8, 'name': "Hades Hell"}]}
-        self.assertEqual(expectation, self.response.json)
-        self.get('/core/persona/select?kind=ml_user&phrase=@exam')
-        expectation = (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        self.get('/core/persona/select?kind=pure_ml_user&phrase=@exam')
-        expectation = (10, 14)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        self.get('/core/persona/select?kind=event_user&phrase=bert')
-        expectation = (2,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        self.get('/core/persona/select?kind=pure_assembly_user&phrase=kal')
-        expectation = (11,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        self.get('/core/persona/select?kind=other&phrase=@exam')
-        self.assertEqual({}, self.response.json)
-        self.get('/core/persona/select?kind=ml_user&phrase=@exam&aux=other')
-        self.assertEqual({}, self.response.json)
-        # Legal given names match only if searchable
-        self.get('/core/persona/select?kind=admin_persona&phrase=ibn')
-        expectation = (11,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        self.get('/core/persona/select?kind=admin_persona&phrase=Armin')
-        self.assertEqual({'personas': []}, self.response.json)
-
-    @as_users("quintus")
-    def test_selectpersona_two(self) -> None:
-        # Quintus is unsearchable, but this should not matter here.
-        self.get('/core/persona/select?kind=admin_persona&phrase=din')
-        expectation = (4, 6)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-
-    @as_users(
-        "annika",
-        "berta",
-        "katarina",
-        "martin",
-        "nina",
-        "paul",
-        "rowena",
-        "quintus",
-        "viktor",
-        "werner",
-        maintain_data=True,
+    @prepsql(
+        "UPDATE core.personas SET family_name = 'Test';"
+        "DELETE FROM ml.moderators WHERE id != 2;"
     )
-    def test_selectpersona_403(self) -> None:
-        # only core and ml admins
-        if not self.user_in("paul", "nina"):
-            self.get(
-                '/core/persona/select?kind=admin_all_users&phrase=hades', status=403
+    def test_selectpersona(self) -> None:
+        core_admins = {"anton", "akira", "farin", "vera", "paul"}
+        cde_admins = {"anton", "akira", "quintus", "farin", "vera", "ferdinand", "olaf"}
+        event_admins = {"anton", "akira", "annika", "ferdinand"}
+        assembly_admins = {"anton", "akira", "ferdinand", "viktor"}
+        ml_admins = {"anton", "akira", "nina", "ferdinand"}
+        complaint_admins = {"anton", "akira", "simon"}
+        cdelokal_admins = {"ludwig"}
+        auditors = {"katarina"}
+        presiders = {"werner"}
+        orgas = {"garcia", "emilia", "anton", "akira", "berta"}
+        moderators = {"janis"}
+        caretakers: set[str] = set()
+
+        all_users = list(USER_DICT)
+        sessionkeys = {}
+        for user_nick, user in USER_DICT.items():
+            if not user["username"]:
+                continue
+            sessionkeys[user_nick] = self.core.login(
+                ANONYMOUS, user["username"], user["password"], ip="127.0.0.0"
             )
-            self.assertTitle('403: Forbidden')
-        # only core or cde or ml admins and auditors
-        if not self.user_in("paul", "quintus", "nina", "katarina"):
-            self.get('/core/persona/select?kind=admin_persona&phrase=@exam', status=403)
-            self.assertTitle('403: Forbidden')
-        # only cde admins or auditors
-        if not self.user_in("quintus", "katarina"):
-            self.get('/core/persona/select?kind=cde_user&phrase=@exam', status=403)
-            self.assertTitle('403: Forbidden')
-            self.get(
-                '/core/persona/select?kind=past_event_user&phrase=@exam', status=403
-            )
-            self.assertTitle('403: Forbidden')
-        # only auditors, assembly admins and presiders
-        if not self.user_in("katarina", "viktor", "werner"):
-            self.get('/core/persona/select?kind=assembly_user&phrase=@exam', status=403)
-            self.assertTitle('403: Forbidden')
-        # only assembly admins and presiders
-        if not self.user_in("viktor", "werner"):
-            self.get(
-                '/core/persona/select?kind=pure_assembly_user&phrase=@exam', status=403
-            )
-            self.assertTitle('403: Forbidden')
-        # visible to all admins except for meta admins
-        if self.user_in("martin", "rowena"):
-            self.get('/core/persona/select?kind=ml_user&phrase=@exam', status=403)
-            self.assertTitle('403: Forbidden')
-        # only ml admins
-        if not self.user_in("nina"):
-            self.get('/core/persona/select?kind=pure_ml_user&phrase=@exam', status=403)
-            self.assertTitle('403: Forbidden')
-        # only event admins, orgas and auditors
-        if not self.user_in("annika", "berta", "katarina"):
-            self.get('/core/persona/select?kind=event_user&phrase=@exam', status=403)
-            self.assertTitle('403: Forbidden')
-        # everyone who may manage the given mailinglist
-        if self.user_in("martin", "rowena", "werner"):
-            self.get(
-                '/core/persona/select?kind=ml_subscriber&phrase=@exam&aux=57',
-                status=403,
-            )
-            self.assertTitle('403: Forbidden')
 
-    @as_users("vera")
-    def test_selectpersona_relative_cde_admin(self) -> None:
-        self.get('/core/persona/select?kind=ml_user&phrase=@exam')
-        expectation = (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
+        def url(
+            kind: str, phrase: str = "Test", *, aux: int | str | None = None
+        ) -> str:
+            return f"/core/persona/select?kind={kind}&phrase={phrase}&aux={aux or ''}"
 
-    @as_users("annika")
-    def test_selectpersona_relative_event_admin(self) -> None:
-        self.get('/core/persona/select?kind=ml_user&phrase=@exam')
-        expectation = (1, 2, 3)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
+        def check_kind(
+            kind: str,
+            allow: set[str],
+            *,
+            allow_username: bool = False,
+            max_len: int = 12,
+            ins: Collection[str] = (),
+            outs: Collection[str] = (),
+            aux: int | None = None,
+        ) -> None:
+            for user in all_users:
+                if not sessionkeys.get(user):
+                    continue
+                with self.subTest(user=user, kind=kind):
+                    self.app.set_cookie('sessionkey', sessionkeys[user])
+                    if user in allow:
+                        self.get(url(kind, aux=aux))
+                        result = set(p["id"] for p in self.response.json["personas"])
+                        expected_len = min(max_len, 12 if user in core_admins else 3)
+                        self.assertEqual(expected_len, len(result))
+                        if allow_username:
+                            self.assertTrue(
+                                all(
+                                    "email" in p for p in self.response.json["personas"]
+                                ),
+                                "E-Mail unexpectedly not returned.",
+                            )
+                        else:
+                            self.assertFalse(
+                                any(
+                                    "email" in p for p in self.response.json["personas"]
+                                ),
+                                "E-Mail unexpectedly returned.",
+                            )
+                        for hit in ins:
+                            name = urllib.parse.quote_plus(
+                                USER_DICT[hit]["given_names"]
+                            )
+                            self.get(url(kind, name, aux=aux))
+                            self.assertEqual(1, len(self.response.json["personas"]))
+                        for miss in outs:
+                            name = urllib.parse.quote_plus(
+                                USER_DICT[miss]["given_names"]
+                            )
+                            self.get(url(kind, name, aux=aux))
+                            self.assertEqual([], self.response.json["personas"])
 
-    @as_users("viktor")
-    def test_selectpersona_relative_assembly_admin(self) -> None:
-        self.get('/core/persona/select?kind=ml_user&phrase=@exam')
-        expectation = (1, 2, 3)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
+                        self.get(url(kind, "@exam", aux=aux))
+                        if allow_username:
+                            self.assertEqual(
+                                expected_len, len(self.response.json["personas"])
+                            )
+                        else:
+                            self.assertEqual([], self.response.json["personas"])
+                    else:
+                        self.get(url(kind, aux=aux), status=403)
 
-    @as_users("garcia", "nina", maintain_data=True)
-    def test_selectpersona_ml_event(self) -> None:
-        # Only event participants are shown
-        # ml_admins are allowed to do this even if they are no orgas.
-        self.get('/core/persona/select?kind=ml_subscriber&phrase=@exam&aux=9')
-        expectation = (1, 2, 5)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        self.get('/core/persona/select?kind=ml_subscriber&phrase=@exam', status=400)
-        self.get('/core/persona/select?kind=ml_subscriber&phrase=inga&aux=9')
-        expectation = (9,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-
-    @as_users("berta")
-    def test_selectpersona_ml_event_403(self) -> None:
-        self.get(
-            '/core/persona/select?kind=ml_subscriber&phrase=@exam&aux=9', status=403
+        check_kind(
+            "admin_persona",
+            core_admins | cde_admins | complaint_admins | ml_admins | auditors,
+            allow_username=True,
+            outs=("hades",),
         )
-        self.assertTitle('403: Forbidden')
+        check_kind(
+            "admin_all_users",
+            core_admins | complaint_admins | ml_admins,
+            allow_username=True,
+            ins=("hades",),
+        )
+        check_kind(
+            "cde_user",
+            cde_admins | auditors,
+            outs=("kalif", "janis", "emilia"),
+        )
+        check_kind(
+            "past_event_user",
+            cde_admins | auditors,
+            ins=("hades",),
+            outs=("kalif", "janis"),
+        )
+        check_kind(
+            "pure_assembly_user",
+            presiders | assembly_admins,
+            ins=("kalif",),
+            outs=("berta", "janis"),
+        )
+        check_kind(
+            "assembly_user",
+            presiders | assembly_admins | auditors,
+            ins=("berta", "kalif"),
+            outs=("janis",),
+        )
+        check_kind(
+            "event_user",
+            orgas | caretakers | event_admins | auditors,
+            ins=("berta", "emilia"),
+            outs=("kalif", "janis"),
+        )
+        check_kind(
+            "ml_user",
+            core_admins
+            | cde_admins
+            | event_admins
+            | auditors
+            | assembly_admins
+            | ml_admins
+            | cdelokal_admins
+            | moderators,
+            outs=("hades",),
+        )
+        check_kind(
+            "pure_ml_user",
+            ml_admins,
+            allow_username=True,
+            max_len=2,
+            outs=("berta", "emilia", "kalif"),
+            ins=("janis",),
+        )
+        check_kind(
+            "ml_subscriber",
+            allow=ml_admins | moderators,
+            allow_username=True,
+            max_len=9,
+            aux=2,
+        )
 
-    @as_users("berta", "werner", maintain_data=True)
-    def test_selectpersona_ml_assembly(self) -> None:
-        # Only assembly participants are shown
-        self.get('/core/persona/select?kind=ml_subscriber&phrase=@exam&aux=5')
-        expectation = (1, 2, 9)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-
-    @as_users("garcia")
-    def test_selectpersona_unprivileged_event(self) -> None:
-        self.get('/core/persona/select?kind=event_user&phrase=bert')
-        expectation = (2,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-
-    @as_users("werner")
-    def test_selectpersona_unprivileged_assembly(self) -> None:
-        # Normal use search
-        self.get('/core/persona/select?kind=assembly_user&phrase=bert')
-        expectation = (2,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        # Pure assembly user search
-        self.get('/core/persona/select?kind=pure_assembly_user&phrase=kalif')
-        expectation = (11,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        self.get('/core/persona/select?kind=pure_assembly_user&phrase=bert')
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(tuple(), reality)
-
-    @as_users("berta")
-    def test_selectpersona_unprivileged_ml(self) -> None:
-        self.get('/core/persona/select?kind=ml_user&phrase=@exam')
-        expectation = (1, 2, 3)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-
-    @as_users("janis")
-    def test_selectpersona_unprivileged_ml2(self) -> None:
-        self.get('/core/persona/select?kind=ml_user&phrase=@exam')
-        expectation = (1, 2, 3)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-
-    @as_users("katarina")
-    def test_selectpersona_auditor(self) -> None:
-        self.get('/core/persona/select?kind=admin_persona&phrase=din')
-        expectation = {
-            'personas': [
-                {
-                    'id': 4,
-                    'name': 'Daniel Dino',
-                },
-                {
-                    'id': 6,
-                    'name': 'Ferdinand Findus',
-                },
-            ],
-        }
-        self.assertEqual(expectation, self.response.json)
-        self.get('/core/persona/select?kind=ml_user&phrase=@exam')
-        expectation = (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation[: self.conf["NUM_PREVIEW_PERSONAS"]], reality)
-        self.get('/core/persona/select?kind=event_user&phrase=bert')
-        expectation = (2,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        self.get('/core/persona/select?kind=past_event_user&phrase=emil')
-        expectation = (5,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        self.get('/core/persona/select?kind=assembly_user&phrase=kalif')
-        expectation = (11,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        self.get('/core/persona/select?kind=pure_assembly_user&phrase=kal', status=403)
-        self.get('/core/persona/select?kind=pure_ml_user&phrase=@exam', status=403)
-        for ml_id in self.ml.list_mailinglists(self.key):
-            self.get(
-                f'/core/persona/select?kind=ml_subscriber&phrase=@exam&aux={ml_id}',
-                status=403,
-            )
-
-    @as_users("quintus")
-    def test_selectpersona_past_event(self) -> None:
-        # yield archived users
-        self.get('/core/persona/select?kind=past_event_user&phrase=Hades')
-        expectation = (8,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
+        for user_nick in all_users:
+            if not sessionkeys.get(user_nick):
+                continue
+            self.app.set_cookie('sessionkey', sessionkeys[user_nick])
+            self.get(url("invalid"))
+            self.assertEqual({}, self.response.json)
+            self.get(url("ml_subscriber"), status=400)
+            self.get(url("ml_subscriber", aux="invalid"))
+            self.assertEqual({}, self.response.json)
 
     @as_users("paul")
     def test_selectpersona_ids(self) -> None:
-        self.get('/core/persona/select?kind=admin_persona&phrase=DB-2-7')
-        expectation = (2,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        self.get('/core/persona/select?kind=ml_user&phrase=14')
-        expectation = (14,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
+        with self.switch_user("paul"):
+            self.get('/core/persona/select?kind=admin_persona&phrase=DB-2-7')
+            expectation = (2,)
+            reality = tuple(e['id'] for e in self.response.json['personas'])
+            self.assertEqual(expectation, reality)
+            self.get('/core/persona/select?kind=ml_user&phrase=14')
+            expectation = (14,)
+            reality = tuple(e['id'] for e in self.response.json['personas'])
+            self.assertEqual(expectation, reality)
+            self.get("/")
 
-    @as_users("inga")
-    def test_selectpersona_ids_unprivileged(self) -> None:
-        # search by ID only for admins, not moderators
-        self.get('/core/persona/select?kind=ml_user&phrase=DB-2-7')
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(tuple(), reality)
-        # too short search phrase
-        self.get('/core/persona/select?kind=ml_subscriber&aux=54&phrase=14')
-        self.assertEqual({}, self.response.json)
+        with self.switch_user("inga"):
+            # search by ID only for admins, not moderators
+            self.get('/core/persona/select?kind=ml_user&phrase=DB-2-7')
+            reality = tuple(e['id'] for e in self.response.json['personas'])
+            self.assertEqual(tuple(), reality)
+            # too short search phrase
+            self.get('/core/persona/select?kind=ml_subscriber&aux=54&phrase=14')
+            self.assertEqual({}, self.response.json)
+            self.get("/")
 
     @as_users("vera")
     def test_adminshowuser_advanced(self) -> None:

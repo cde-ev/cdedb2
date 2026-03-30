@@ -158,7 +158,7 @@ class TestBrowser(BrowserTest):
         page.wait_for_url("http://localhost:5000/")
         page.locator("#adminshowuserform .selectize-input").click()
         page.locator("#adminshowuserform .selectize-input input").type("emi")
-        page.get_by_text("Emilia EventisDB-5-1 • emilia@example.cde").click()
+        page.get_by_text("Emilia (Emmy) EventisDB-5-1 • emilia@example.cde").click()
         page.press("#adminshowuserform .selectize-input", key="Enter")
         page.wait_for_url("http://localhost:5000/core/persona/5/show?*")
 
