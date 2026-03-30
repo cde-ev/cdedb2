@@ -1246,10 +1246,15 @@ class PastEventLogCodes(CdEIntEnum):
 class AssemblyLogCodes(CdEIntEnum):
     """Available log messages core.log."""
 
+    # Assembly
     assembly_created = 1  #:
     assembly_changed = 2  #:
     assembly_concluded = 3  #:
     assembly_deleted = 4  #:
+    assembly_presider_added = 35  #:
+    assembly_presider_removed = 36  #:
+
+    # Ballot
     ballot_created = 10  #:
     ballot_changed = 11  #:
     ballot_deleted = 12  #:
@@ -1258,17 +1263,45 @@ class AssemblyLogCodes(CdEIntEnum):
     candidate_added = 20  #:
     candidate_updated = 21  #:
     candidate_removed = 22  #:
-    new_attendee = 30  #:
-    assembly_presider_added = 35  #:
-    assembly_presider_removed = 36  #:
+
+    # Attachment
     attachment_added = 40  #:
     attachment_removed = 41  #:
     attachment_changed = 42  #:
-    attachment_ballot_link_created = 43  #:
-    attachment_ballot_link_deleted = 44  #:
     attachment_version_added = 50  #:
     attachment_version_removed = 51  #:
     attachment_version_changed = 52  #:
+    attachment_ballot_link_created = 43  #:
+    attachment_ballot_link_deleted = 44  #:
+
+    # Other
+    new_attendee = 30  #:
+
+    def optgroup_label(self) -> str:
+        return {
+            self.assembly_created: n_("Assembly"),
+            self.assembly_changed: n_("Assembly"),
+            self.assembly_concluded: n_("Assembly"),
+            self.assembly_deleted: n_("Assembly"),
+            self.assembly_presider_added: n_("Assembly"),
+            self.assembly_presider_removed: n_("Assembly"),
+            self.ballot_created: n_("Ballot"),
+            self.ballot_changed: n_("Ballot"),
+            self.ballot_deleted: n_("Ballot"),
+            self.ballot_extended: n_("Ballot"),
+            self.ballot_tallied: n_("Ballot"),
+            self.candidate_added: n_("Ballot"),
+            self.candidate_updated: n_("Ballot"),
+            self.candidate_removed: n_("Ballot"),
+            self.attachment_added: n_("Attachment"),
+            self.attachment_removed: n_("Attachment"),
+            self.attachment_changed: n_("Attachment"),
+            self.attachment_version_added: n_("Attachment"),
+            self.attachment_version_removed: n_("Attachment"),
+            self.attachment_version_changed: n_("Attachment"),
+            self.attachment_ballot_link_created: n_("Attachment"),
+            self.attachment_ballot_link_deleted: n_("Attachment"),
+        }.get(self, n_("Other"))
 
 
 @enum.unique
