@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-03-15 03:52+0100\n"
+"POT-Creation-Date: 2026-03-30 04:35+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -3541,11 +3541,11 @@ msgstr ""
 #: cdedb/backend/event/registration.py:1376
 #: cdedb/backend/event/registration.py:1532 cdedb/backend/ml.py:221
 #: cdedb/backend/ml.py:345 cdedb/backend/ml.py:481 cdedb/backend/ml.py:531
-#: cdedb/backend/ml.py:577 cdedb/backend/ml.py:604 cdedb/backend/ml.py:856
-#: cdedb/backend/ml.py:917 cdedb/backend/ml.py:1009 cdedb/backend/ml.py:1055
-#: cdedb/backend/ml.py:1098 cdedb/backend/ml.py:1167 cdedb/backend/ml.py:1208
-#: cdedb/backend/ml.py:1246 cdedb/backend/ml.py:1329 cdedb/backend/ml.py:1386
-#: cdedb/backend/ml.py:1413 cdedb/backend/ml.py:1460 cdedb/backend/ml.py:1559
+#: cdedb/backend/ml.py:577 cdedb/backend/ml.py:604 cdedb/backend/ml.py:858
+#: cdedb/backend/ml.py:919 cdedb/backend/ml.py:1011 cdedb/backend/ml.py:1057
+#: cdedb/backend/ml.py:1100 cdedb/backend/ml.py:1169 cdedb/backend/ml.py:1210
+#: cdedb/backend/ml.py:1248 cdedb/backend/ml.py:1331 cdedb/backend/ml.py:1388
+#: cdedb/backend/ml.py:1415 cdedb/backend/ml.py:1462 cdedb/backend/ml.py:1561
 #: cdedb/common/exceptions.py:32 cdedb/frontend/assembly/attachment.py:115
 #: cdedb/frontend/assembly/attachment.py:390
 #: cdedb/frontend/assembly/ballot.py:105 cdedb/frontend/assembly/ballot.py:305
@@ -3879,7 +3879,7 @@ msgstr ""
 #: cdedb/frontend/assembly/ballot.py:640 cdedb/frontend/cde/base.py:897
 #: cdedb/frontend/cde/lastschrift.py:679
 #: cdedb/frontend/cde/parse_statement.py:726 cdedb/frontend/common.py:806
-#: cdedb/frontend/event/base.py:700 cdedb/frontend/event/query_stats.py:506
+#: cdedb/frontend/event/base.py:707 cdedb/frontend/event/query_stats.py:506
 #: cdedb/frontend/event/query_stats.py:700
 #: cdedb/frontend/event/query_stats.py:746
 #: cdedb/frontend/event/query_stats.py:777
@@ -4005,8 +4005,8 @@ msgstr "signum arcanum muta"
 #: cdedb/backend/event/lowlevel.py:860 cdedb/backend/event/lowlevel.py:898
 #: cdedb/backend/event/lowlevel.py:1103 cdedb/backend/event/lowlevel.py:1166
 #: cdedb/backend/event/registration.py:1543
-#: cdedb/backend/event/registration.py:1606 cdedb/backend/ml.py:925
-#: cdedb/backend/ml.py:966 cdedb/backend/past_event.py:265
+#: cdedb/backend/event/registration.py:1606 cdedb/backend/ml.py:927
+#: cdedb/backend/ml.py:968 cdedb/backend/past_event.py:265
 #: cdedb/backend/past_event.py:321 cdedb/backend/past_event.py:467
 #, python-format
 msgid "Deletion of %(type)s blocked by %(block)s."
@@ -4822,8 +4822,8 @@ msgstr "Annuntiationes"
 msgid "Only registrations from exactly one event allowed."
 msgstr "epistula electronica ad verificandum mitte"
 
-#: cdedb/backend/event/registration.py:1035 cdedb/frontend/event/base.py:403
-#: cdedb/frontend/event/base.py:609
+#: cdedb/backend/event/registration.py:1035 cdedb/frontend/event/base.py:410
+#: cdedb/frontend/event/base.py:616
 msgid "No participant of event."
 msgstr ""
 
@@ -5004,49 +5004,49 @@ msgstr ""
 msgid "Restricted moderators are not allowed to change this."
 msgstr ""
 
-#: cdedb/backend/ml.py:791
+#: cdedb/backend/ml.py:793
 msgid "Not privileged to create mailinglist of this type."
 msgstr ""
 
-#: cdedb/backend/ml.py:822
+#: cdedb/backend/ml.py:824
 #, fuzzy
 msgid "Non-unique mailinglist address"
 msgstr "tabellae epistularum electronicarum moderatae"
 
-#: cdedb/backend/ml.py:832
+#: cdedb/backend/ml.py:834
 #, python-format
 msgid "Mailinglist address may not contain \"%(subaddress)s\"."
 msgstr ""
 
-#: cdedb/backend/ml.py:1170 cdedb/frontend/ml/base.py:1418
+#: cdedb/backend/ml.py:1172 cdedb/frontend/ml/base.py:1418
 msgid "Address already taken by another user."
 msgstr ""
 
-#: cdedb/backend/ml.py:1654
+#: cdedb/backend/ml.py:1656
 msgid "Moderator access has been restricted."
 msgstr ""
 
-#: cdedb/backend/ml.py:1799
+#: cdedb/backend/ml.py:1801
 msgid "Source User is admin and can not be merged."
 msgstr ""
 
-#: cdedb/backend/ml.py:1803
+#: cdedb/backend/ml.py:1805
 msgid "Source persona must be a ml-only user."
 msgstr ""
 
-#: cdedb/backend/ml.py:1805
+#: cdedb/backend/ml.py:1807
 msgid "Source User is not accessible."
 msgstr ""
 
-#: cdedb/backend/ml.py:1812
+#: cdedb/backend/ml.py:1814
 msgid "Target User is no valid ml user."
 msgstr ""
 
-#: cdedb/backend/ml.py:1818 cdedb/frontend/ml/base.py:417
+#: cdedb/backend/ml.py:1820 cdedb/frontend/ml/base.py:417
 msgid "Can not merge user into himself."
 msgstr ""
 
-#: cdedb/backend/ml.py:1834
+#: cdedb/backend/ml.py:1836
 #, python-format
 msgid "Both users are related to the same mailinglists: %(mls)s"
 msgstr ""
@@ -5616,7 +5616,7 @@ msgstr "regnum"
 #: cdedb/common/query/__init__.py:576
 #: cdedb/frontend/templates/web/base.tmpl:166
 #: cdedb/frontend/templates/web/event/base.tmpl:300
-#: cdedb/frontend/templates/web/event/base.tmpl:361
+#: cdedb/frontend/templates/web/event/base.tmpl:365
 #: cdedb/frontend/templates/web/event/event/index.tmpl:5
 #: cdedb/frontend/templates/web/event/event/index.tmpl:10
 #: cdedb/frontend/templates/web/util.tmpl:1111
@@ -7383,13 +7383,13 @@ msgstr ""
 #: cdedb/common/validation/validate.py:3288
 #: cdedb/common/validation/validate.py:4796
 #: cdedb/common/validation/validate.py:4852
-#: cdedb/frontend/event/questionnaire.py:320
+#: cdedb/frontend/event/questionnaire.py:323
 #, fuzzy
 msgid "Invalid field."
 msgstr "Annuntiationes"
 
 #: cdedb/common/validation/validate.py:3301
-#: cdedb/frontend/event/questionnaire.py:325
+#: cdedb/frontend/event/questionnaire.py:328
 msgid "Registration questionnaire rows may not be readonly."
 msgstr ""
 
@@ -9041,32 +9041,32 @@ msgstr ""
 msgid "This page can only be accessed by orgas."
 msgstr ""
 
-#: cdedb/frontend/event/base.py:305
+#: cdedb/frontend/event/base.py:312
 msgid "No event context given"
 msgstr ""
 
-#: cdedb/frontend/event/base.py:414
+#: cdedb/frontend/event/base.py:421
 msgid "Participant list not published yet."
 msgstr ""
 
-#: cdedb/frontend/event/base.py:468 cdedb/frontend/event/lodgement.py:117
+#: cdedb/frontend/event/base.py:475 cdedb/frontend/event/lodgement.py:117
 #, fuzzy
 msgid "Invalid part id."
 msgstr "signum arcanum muta"
 
-#: cdedb/frontend/event/base.py:510
+#: cdedb/frontend/event/base.py:517
 #, fuzzy
 msgid "Only one part id allowed."
 msgstr "epistula electronica ad verificandum mitte"
 
-#: cdedb/frontend/event/base.py:592
+#: cdedb/frontend/event/base.py:599
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:201
 msgid ""
 "You can not access the Participant List as you have not agreed to have your "
 "own data sent to other participants before the event."
 msgstr ""
 
-#: cdedb/frontend/event/base.py:661
+#: cdedb/frontend/event/base.py:668
 msgid "Invalid key. Expected 'course_id' or 'lodgement_id"
 msgstr ""
 
@@ -9647,7 +9647,7 @@ msgid "Questionnaire disabled."
 msgstr "Interrogatio"
 
 #: cdedb/frontend/event/questionnaire.py:212
-#: cdedb/frontend/event/questionnaire.py:255
+#: cdedb/frontend/event/questionnaire.py:258
 #: cdedb/frontend/event/registration.py:343
 #: cdedb/frontend/event/registration.py:805
 #: cdedb/frontend/event/registration.py:1091
@@ -9665,24 +9665,24 @@ msgstr ""
 msgid "Questionnaire is not enabled yet."
 msgstr "Interrogatio"
 
-#: cdedb/frontend/event/questionnaire.py:310
+#: cdedb/frontend/event/questionnaire.py:313
 msgid "Must not duplicate field."
 msgstr ""
 
-#: cdedb/frontend/event/questionnaire.py:333
+#: cdedb/frontend/event/questionnaire.py:336
 msgid "This field is already in use in another questionnaire."
 msgstr ""
 
-#: cdedb/frontend/event/questionnaire.py:392
+#: cdedb/frontend/event/questionnaire.py:395
 #, fuzzy
 msgid "Unknown questionnaire kind."
 msgstr "Interrogatio"
 
-#: cdedb/frontend/event/questionnaire.py:406
+#: cdedb/frontend/event/questionnaire.py:409
 msgid "No questionnaire rows of this kind found."
 msgstr ""
 
-#: cdedb/frontend/event/questionnaire.py:439
+#: cdedb/frontend/event/questionnaire.py:442
 msgid "Every row must occur exactly once."
 msgstr ""
 
@@ -10102,7 +10102,7 @@ msgstr "documentatio"
 #: cdedb/frontend/templates/web/assembly/base/view_assembly_log.tmpl:19
 #: cdedb/frontend/templates/web/assembly/base/view_log.tmpl:14
 #: cdedb/frontend/templates/web/event/base.tmpl:258
-#: cdedb/frontend/templates/web/event/base.tmpl:386
+#: cdedb/frontend/templates/web/event/base.tmpl:390
 #: cdedb/frontend/templates/web/event/base/view_event_log.tmpl:14
 #: cdedb/frontend/templates/web/event/base/view_event_log.tmpl:20
 #: cdedb/frontend/templates/web/event/base/view_log.tmpl:15
@@ -11377,7 +11377,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/past_event/list_past_events.tmpl:24
 #: cdedb/frontend/templates/web/core/base.tmpl:59
 #: cdedb/frontend/templates/web/event/base.tmpl:161
-#: cdedb/frontend/templates/web/event/base.tmpl:363
+#: cdedb/frontend/templates/web/event/base.tmpl:367
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:74
 #: cdedb/frontend/templates/web/event/registration/registration_fee_summary.tmpl:26
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:272
@@ -11422,7 +11422,7 @@ msgstr "conspectus coetus"
 #: cdedb/frontend/templates/web/core/create_user.tmpl:18
 #: cdedb/frontend/templates/web/core/index.tmpl:28
 #: cdedb/frontend/templates/web/core/user_search.tmpl:18
-#: cdedb/frontend/templates/web/event/base.tmpl:382
+#: cdedb/frontend/templates/web/event/base.tmpl:386
 #: cdedb/frontend/templates/web/event/user/create_user.tmpl:15
 #: cdedb/frontend/templates/web/event/user/user_search.tmpl:16
 #: cdedb/frontend/templates/web/ml/base.tmpl:87
@@ -11446,7 +11446,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/base.tmpl:80
 #: cdedb/frontend/templates/web/core/base.tmpl:131
 #: cdedb/frontend/templates/web/core/show_user.tmpl:24
-#: cdedb/frontend/templates/web/event/base.tmpl:412
+#: cdedb/frontend/templates/web/event/base.tmpl:416
 #: cdedb/frontend/templates/web/ml/base.tmpl:118
 #, fuzzy
 msgid "User Administration"
@@ -11456,7 +11456,7 @@ msgstr "Annuntiationes"
 #: cdedb/frontend/templates/web/cde/base.tmpl:83
 #: cdedb/frontend/templates/web/core/base.tmpl:135
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:37
-#: cdedb/frontend/templates/web/event/base.tmpl:414
+#: cdedb/frontend/templates/web/event/base.tmpl:418
 #: cdedb/frontend/templates/web/ml/base.tmpl:120
 #: cdedb/frontend/templates/web/util.tmpl:1135
 msgid "Auditor"
@@ -12074,7 +12074,8 @@ msgstr "eventus praeteriti"
 
 #: cdedb/frontend/templates/web/cde/base.tmpl:82
 #: cdedb/frontend/templates/web/core/show_user.tmpl:28
-#: cdedb/frontend/templates/web/event/event/show_event.tmpl:461
+#: cdedb/frontend/templates/web/event/event/show_event.tmpl:462
+#: cdedb/frontend/templates/web/event/event/show_event.tmpl:468
 #, fuzzy
 msgid "Finance Administration"
 msgstr "administrator pecuniae"
@@ -13235,7 +13236,7 @@ msgstr "Singula"
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:138
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:32
-#: cdedb/frontend/templates/web/event/base.tmpl:345
+#: cdedb/frontend/templates/web/event/base.tmpl:349
 #: cdedb/frontend/templates/web/event/base/constraint_violations.tmpl:19
 #: cdedb/frontend/templates/web/event/base/participant_info.tmpl:15
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:16
@@ -16235,7 +16236,8 @@ msgid "Moderator Controls"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:34
-#: cdedb/frontend/templates/web/event/base.tmpl:407
+#: cdedb/frontend/templates/web/event/base.tmpl:411
+#: cdedb/frontend/templates/web/event/event/show_event.tmpl:467
 msgid "Orga Controls"
 msgstr ""
 
@@ -16891,7 +16893,7 @@ msgid "Fees"
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/base.tmpl:229
-#: cdedb/frontend/templates/web/event/base.tmpl:368
+#: cdedb/frontend/templates/web/event/base.tmpl:372
 #: cdedb/frontend/templates/web/event/base/constraint_violations.tmpl:11
 #: cdedb/frontend/templates/web/event/base/constraint_violations.tmpl:16
 #: cdedb/frontend/templates/web/event/base/constraint_violations.tmpl:19
@@ -16940,39 +16942,46 @@ msgstr "Annuntiationes"
 msgid "Configure Questionnaire"
 msgstr "Interrogatio"
 
-#: cdedb/frontend/templates/web/event/base.tmpl:307
+#: cdedb/frontend/templates/web/event/base.tmpl:308
 msgid "This event was cancelled and has been archived."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/base.tmpl:311
+#: cdedb/frontend/templates/web/event/base.tmpl:310
 msgid "This event has been archived."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/base.tmpl:315
+#: cdedb/frontend/templates/web/event/base.tmpl:312
 msgid "This event has been cancelled."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/base.tmpl:320
+#: cdedb/frontend/templates/web/event/base.tmpl:315
+#, python-format
+msgid ""
+"Note that access to this event has been limited due to its advanced age. "
+"Contact %(mailto)s if you have some need of information stored here."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/base.tmpl:324
 msgid ""
 "A registration start has been configured, but the registration has not yet "
 "been approved. People will not be able to register at the configured time."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/base.tmpl:325
+#: cdedb/frontend/templates/web/event/base.tmpl:329
 msgid "You should discuss this with your assigned caretakers."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/base.tmpl:329
+#: cdedb/frontend/templates/web/event/base.tmpl:333
 #, python-format
 msgid "You should discuss this with the %(akademieteam)s."
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/base.tmpl:342
+#: cdedb/frontend/templates/web/event/base.tmpl:346
 #, fuzzy
 msgid "Event-Overview"
 msgstr "conspectus coetus"
 
-#: cdedb/frontend/templates/web/event/base.tmpl:366
+#: cdedb/frontend/templates/web/event/base.tmpl:370
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:13
 #: cdedb/frontend/templates/web/event/event/list_events.tmpl:5
 #: cdedb/frontend/templates/web/event/event/list_events.tmpl:11
@@ -16980,16 +16989,18 @@ msgstr "conspectus coetus"
 msgid "All Events"
 msgstr "eventus"
 
-#: cdedb/frontend/templates/web/event/base.tmpl:372
+#: cdedb/frontend/templates/web/event/base.tmpl:376
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:9
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:14
 #, fuzzy
 msgid "Event Helpers"
 msgstr "eventus"
 
-#: cdedb/frontend/templates/web/event/base.tmpl:402
 #: cdedb/frontend/templates/web/event/base.tmpl:406
-#: cdedb/frontend/templates/web/event/base.tmpl:413
+#: cdedb/frontend/templates/web/event/base.tmpl:410
+#: cdedb/frontend/templates/web/event/base.tmpl:417
+#: cdedb/frontend/templates/web/event/event/show_event.tmpl:461
+#: cdedb/frontend/templates/web/event/event/show_event.tmpl:466
 #, fuzzy
 msgid "Event Administration"
 msgstr "administrator eventuum"
