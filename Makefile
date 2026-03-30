@@ -129,16 +129,11 @@ $(I18NOUTDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
 # Code formatting #
 ###################
 
-$(UV_PROJECT_ENVIRONMENT)/bin/python:
+.PHONY: venv
+venv:
 	if [ -d "/cdedb2" ]; then \
 		sudo UV_PYTHON_INSTALL_DIR=$(UV_PYTHON_INSTALL_DIR) \
-			$(UV) venv; \
-	fi
-
-.PHONY: venv
-venv: $(UV_PROJECT_ENVIRONMENT)/bin/python
-	if [ -d "/cdedb2" ]; then \
-		sudo $(UV) sync --all-groups; \
+			$(UV) sync --all-groups; \
 	fi
 
 .PHONY: www-cde-venv
