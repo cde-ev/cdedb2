@@ -1080,7 +1080,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         subject = f"Eintragsversion wird in {delay} Tagen unwiderruflich gelöscht"
         self.do_mail(
             rs,
-            "complaint/entry_marked_for_purge",
+            "complaint/entry_version_marked_for_purge",
             {'To': (self.conf['COMPLAINT_ADMIN_ADDRESS'],), 'Subject': subject},
             {'case_id': case_id, "entry_version_id": entry_version_id, 'delay': delay},
         )
@@ -1103,10 +1103,10 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs, entry_id, entry_version_id
         )
         rs.notify_return_code(code)
-        subject = f"Löschung von Eintragsversion wurde aufgehalten"
+        subject = "Löschung von Eintragsversion wurde aufgehalten"
         self.do_mail(
             rs,
-            "complaint/entry_unmarked_for_purge",
+            "complaint/entry_version_unmarked_for_purge",
             {'To': (self.conf['COMPLAINT_ADMIN_ADDRESS'],), 'Subject': subject},
             {'case_id': case_id, "entry_version_id": entry_version_id},
         )

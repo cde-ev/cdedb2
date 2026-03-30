@@ -9,7 +9,7 @@ BEGIN;
             CHECK ((dtime IS NULL) = (dreason IS NULL) OR is_purged);
     ALTER TABLE complaint.entry_versions ADD CONSTRAINT complaint_entry_deletion_by
             CHECK ((dtime IS NULL) = (deleted_by IS NULL) OR is_purged);
-    ALTER TABLE complaint.entry_versions ADD CONSTRAINT complaint_entry_marked_for_purge_by
+    ALTER TABLE complaint.entry_versions ADD CONSTRAINT complaint_entry_version_marked_for_purge_by
             CHECK ((marked_for_purge IS NULL) = (purged_by IS NULL));
     ALTER TABLE complaint.entry_versions ADD CONSTRAINT complaint_entry_purged
             CHECK (

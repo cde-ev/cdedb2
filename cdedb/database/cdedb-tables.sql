@@ -589,7 +589,7 @@ CREATE TABLE complaint.entry_versions (
         -- indicated that the entry version was purged.
         marked_for_purge        timestamp WITH TIME ZONE DEFAULT NULL,
         purged_by               integer REFERENCES core.personas(id),
-        CONSTRAINT complaint_entry_marked_for_purge_by
+        CONSTRAINT complaint_entry_version_marked_for_purge_by
             CHECK ((marked_for_purge IS NULL) = (purged_by IS NULL)),
         is_purged               boolean NOT NULL DEFAULT False,
         CONSTRAINT complaint_entry_purged
