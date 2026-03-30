@@ -23,7 +23,7 @@
             <li role="presentation" {% if 'institution' not in values or not values['institution'] %}class="active" aria-current="page" {% endif %}>
                 {{ util.href(cdedblink('cde/list_past_events', {'institution': None}), gettext("Overview")) }}
             </li>
-            {% for i in enums['PastInstitutions'] %}
+            {% for i in used_institutions|sort %}
                 <li role="presentation" {% if i|string == values['institution'] %}class="active" aria-current="page" {% endif %}>
                     {{ util.href(cdedblink('cde/list_past_events', {'institution': i}), i.shortname) }}
                 </li>

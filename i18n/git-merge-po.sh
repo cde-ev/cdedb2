@@ -51,9 +51,9 @@ grep_conflicts() {
 
 # select messages from $1 that are also in $2 but whose contents have changed
 extract_changes() {
-  msgcat -o - $1 $2 \
+  msgcat -o - "$1" "$2" \
     | grep_conflicts \
-    | m_msgmerge -o - $1 - \
+    | m_msgmerge -o - "$1" - \
     | strip_graveyard
 }
 
@@ -64,48 +64,48 @@ REMOTE=$3
 OUTPUT=$LOCAL
 TEMP=$(mktemp /tmp/merge-po.XXXXXX)
 
-echo "Using custom PO merge driver (`show_file ${LOCAL}`; $TEMP)"
+echo "Using custom PO merge driver ($(show_file "${LOCAL}"); $TEMP)"
 
 # Extract the PO header from the current branch (top of file until first empty line)
-sed -e '/^$/q' < $LOCAL > ${TEMP}.header
+sed -e '/^$/q' < "$LOCAL" > "${TEMP}".header
 
 # clean input files
-msguniq --force-po -o ${TEMP}.base ${BASE}
-msguniq --force-po -o ${TEMP}.local ${LOCAL}
-msguniq --force-po -o ${TEMP}.remote ${REMOTE}
+msguniq --force-po -o "${TEMP}".base "${BASE}"
+msguniq --force-po -o "${TEMP}".local "${LOCAL}"
+msguniq --force-po -o "${TEMP}".remote "${REMOTE}"
 
 # messages changed on local
-extract_changes ${TEMP}.local ${TEMP}.base > ${TEMP}.local-changes
+extract_changes "${TEMP}".local "${TEMP}".base > "${TEMP}".local-changes
 
 # messages changed on remote
-extract_changes ${TEMP}.remote ${TEMP}.base > ${TEMP}.remote-changes
+extract_changes "${TEMP}".remote "${TEMP}".base > "${TEMP}".remote-changes
 
 # unchanged messages
-m_msgcat -o - ${TEMP}.base ${TEMP}.local ${TEMP}.remote \
+m_msgcat -o - "${TEMP}".base "${TEMP}".local "${TEMP}".remote \
   | grep_conflicts -v \
-  > ${TEMP}.unchanged
+  > "${TEMP}".unchanged
 
 # the big merge
-m_msgcat -o ${TEMP}.merge1 ${TEMP}.unchanged ${TEMP}.local-changes ${TEMP}.remote-changes
+m_msgcat -o "${TEMP}".merge1 "${TEMP}".unchanged "${TEMP}".local-changes "${TEMP}".remote-changes
 
 # create a template to filter messages actually needed (those on local and remote)
 # and remove messages that became obsolete
-m_msgcat -o - ${TEMP}.local ${TEMP}.remote \
-  | m_msgmerge -o - ${TEMP}.merge1 - \
-  | msgattrib --no-obsolete -o ${TEMP}.merge2 -
+m_msgcat -o - "${TEMP}".local "${TEMP}".remote \
+  | m_msgmerge -o - "${TEMP}".merge1 - \
+  | msgattrib --no-obsolete -o "${TEMP}".merge2 -
 
 # final merge, adds saved header
-m_msgcat --sort-by-file -o ${TEMP}.merge3 --use-first ${TEMP}.header ${TEMP}.merge2
+m_msgcat --sort-by-file -o "${TEMP}".merge3 --use-first "${TEMP}".header "${TEMP}".merge2
 
 # produce output file (overwrites input LOCAL file)
-cat ${TEMP}.merge3 > $OUTPUT
+cat "${TEMP}".merge3 > "$OUTPUT"
 
 # check for conflicts
-if grep -q '#-#-#-#-#' $OUTPUT ; then
+if grep -q '#-#-#-#-#' "$OUTPUT" ; then
   echo "Conflict(s) detected"
   echo "   between ${TEMP}.local and ${TEMP}.remote"
   exit 1
 fi
-rm -f ${TEMP}*
+rm -f "${TEMP}"*
 exit 0
 

@@ -119,6 +119,10 @@ class Mailinglist(CdEDataclass):
     allow_unsub: ClassVar[bool] = True
     notify_owner_on_bounce: ClassVar[bool] = False
 
+    # Whether to expose subscription to such mailinglists via LDAP.
+    #  Moderators are exposed anyhow for now.
+    ldap_expose: ClassVar[bool] = True
+
     database_table = "ml.mailinglists"
 
     def __post_init__(self) -> None:
@@ -469,6 +473,7 @@ class EventMailinglist(GeneralMailinglist):
     available_domains = [MailinglistDomain.aka]
     viewer_roles = {"event"}
     relevant_admins = {"event_admin"}
+    ldap_expose = False
 
 
 @dataclass
@@ -479,6 +484,7 @@ class AssemblyMailinglist(GeneralMailinglist):
     viewer_roles = {"assembly"}
     relevant_admins = {"assembly_admin"}
     notify_owner_on_bounce = True
+    ldap_expose = False
 
 
 @dataclass
@@ -886,6 +892,7 @@ class CdeLokalMailinglist(SemiPublicMailinglist):
     sortkey = MailinglistGroup.cdelokal
     available_domains = [MailinglistDomain.cdelokal]
     relevant_admins = {"cdelokal_admin"}
+    ldap_expose = False
 
 
 @dataclass

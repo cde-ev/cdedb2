@@ -1,7 +1,6 @@
 #!/bin/bash
 # Event keeper apache deployment script.
-sudo a2enmod ldap
-sudo a2enmod authnz_ldap
+sudo a2enmod ldap authnz_ldap
 sudo cdedb-update.sh
 
 # Then run make ldap-update

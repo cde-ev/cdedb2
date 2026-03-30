@@ -32,11 +32,11 @@ chown cdedb:cdedb /cdedb2
 # dPROD use ssh://gitea@10.9.0.2:63332/cdedb/cdedb2.git
 sudo -u cdedb git clone ssh://gitea@tracker.cde-ev.de:20009/cdedb/cdedb2.git /cdedb2 || sudo -u cdedb git clone ssh://gitea@10.9.0.2:63332/cdedb/cdedb2.git /cdedb2
 cd /cdedb2
-# correct upstream URL after auto-build
-sudo -u cdedb git remote set-url origin ssh://gitea@tracker.cde-ev.de:20009/cdedb/cdedb2.git
 # custom git config
 # dPROD not present
 sudo -u cdedb cp /media/cdrom0/gitconfig-local /cdedb2/.git/config
+# set upstream URL in git config
+sudo -u cdedb git remote add origin ssh://gitea@tracker.cde-ev.de:20009/cdedb/cdedb2.git
 
 echo ""
 echo "Installing python dependencies..."
@@ -182,9 +182,7 @@ echo ""
 echo "Set up the apache2..."
 echo "--------------------------------------------"
 
-for i in proxy_http ssl headers authnz_ldap http2; do
-    a2enmod $i
-done;
+a2enmod proxy_http ssl headers authnz_ldap http2
 
 a2dissite 000-default
 

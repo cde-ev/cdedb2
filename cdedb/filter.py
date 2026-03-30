@@ -326,11 +326,14 @@ def persona_name_filter(
         return val.persona_name(*args, **kwargs)
     else:
         # TODO this leads to cyclic imports otherwise
-        from cdedb.models.common import (  # noqa: PLC0415  # pylint: disable=import-outside-toplevel
+        from cdedb.models.core import (  # noqa: PLC0415  # pylint: disable=import-outside-toplevel
             CdEDataclass,
+            PersonaName,
         )
 
-        if isinstance(val, CdEDataclass):
+        if isinstance(val, PersonaName):
+            return val.get_name(*args, **kwargs)
+        elif isinstance(val, CdEDataclass):
             val = val.as_dict()
         return make_persona_name(val, *args, **kwargs)
 
@@ -722,16 +725,11 @@ def enum_entries_filter(
         pre = lambda x: x
     else:
         pre = lambda x: x.display_str() if hasattr(x, "display_str") else str(x)
-    if intval:
-        sortkey = lambda x: x
-    else:
-        sortkey = lambda e: e[0].value
-    to_sort = (
+    ret = (
         (int(entry) if intval else entry, prefix + processing(pre(entry)))
         for entry in enum
         if entry not in exempt
     )
-    ret = xsorted(to_sort, key=sortkey)
     grouped = collections.defaultdict(list)
     for value, label in ret:
         group_label = value.optgroup_label() if hasattr(value, "optgroup_label") else ""
