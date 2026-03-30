@@ -237,7 +237,10 @@ class EventLodgementMixin(EventBaseFrontend):
             lodgements[sorted_ids[i + 1]] if i + 1 < len(sorted_ids) else None
         )
 
-        if self.is_privileged(rs, EventPrivileges.registrations_read):
+        if (
+            self.is_privileged(rs, EventPrivileges.registrations_read)
+            or self.is_privileged(rs, EventPrivileges.checkin)
+        ):  # fmt: skip
             params['involved_inhabitants'] = involved_inhabitants
             params['uninvolved_inhabitants'] = uninvolved_inhabitants
             params['registrations'] = violation_data['all_registrations']
