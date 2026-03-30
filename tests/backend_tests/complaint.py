@@ -31,10 +31,19 @@ class TestComplaintBackend(BackendTest):
             start_date=datetime.date(2025, 5, 28),
             end_date=None,
             involved={
-                const.ComplaintInvolvementType.affected: {4},
-                const.ComplaintInvolvementType.target: {2},
+                1: models.ComplaintInvolved(
+                    id=1,
+                    persona_id=4,
+                    type_=const.ComplaintInvolvementType.affected,
+                    is_informed=True,
+                ),
+                2: models.ComplaintInvolved(
+                    id=2,
+                    persona_id=2,
+                    type_=const.ComplaintInvolvementType.target,
+                    is_informed=False,
+                ),
             },
-            informed_involved={4},
             companions={
                 3: {2},
                 7: {4},
@@ -281,7 +290,7 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(expectation, reality)
 
         self.assertEqual({1, 2, 3, 4, 7, 42}, reality.get_persona_ids(tuple()))
-        self.assertEqual({2, 4}, reality.all_involved.keys())
+        self.assertEqual({2, 4}, reality.involved_persona_ids)
         self.assertEqual({2: {3}, 4: {7}}, reality.companions_by_involved)
         self.assertEqual({2: {3}}, reality.withdrawn_companions_by_involved)
         self.assertEqual({7: {4}}, reality.active_companions)
@@ -343,7 +352,6 @@ class TestComplaintBackend(BackendTest):
             **new_case_data,
             entries={},
             involved={},
-            informed_involved=set(),
             companions={},
             withdrawn_companions={},
         )
@@ -456,11 +464,13 @@ class TestComplaintBackend(BackendTest):
         new_involved = 1
         _case = self.complaint.get_case(self.key, case_id)
         original_involved = sorted(
-            _case.involved[const.ComplaintInvolvementType.target]
+            _case.involved_persona_ids_by_type(const.ComplaintInvolvementType.target)
         )[0]
         original_companions = sorted(_case.companions_by_involved[original_involved])
         self.assertNotIn(
-            new_involved, _case.all_involved, "Sample data changed. Review test setup."
+            new_involved,
+            _case.involved_persona_ids,
+            "Sample data changed. Review test setup.",
         )
 
         original_case = self.complaint.get_case(self.key, case_id)
@@ -496,9 +506,12 @@ class TestComplaintBackend(BackendTest):
 
         # Check that new target shows up in the case.
         case = self.complaint.get_case(self.key, case_id)
-        expectation.involved.setdefault(
-            const.ComplaintInvolvementType.target, set()
-        ).add(new_involved)
+        expectation.involved[1001] = models.ComplaintInvolved(
+            id=1001,
+            persona_id=new_involved,
+            type_=const.ComplaintInvolvementType.target,
+            is_informed=False,
+        )
 
         self.assertEqual(expectation.as_dict(), case.as_dict())
         self.assertEqual(expectation, case)
@@ -904,9 +917,13 @@ class TestComplaintBackend(BackendTest):
 
         case = self.complaint.get_case(self.key, case_id)
 
-        target_id = list(case.involved[const.ComplaintInvolvementType.target])[0]
+        target_id = list(
+            case.involved_persona_ids_by_type(const.ComplaintInvolvementType.target)
+        )[0]
         target_companion_id = list(case.companions_by_involved[target_id])[0]
-        affected_id = list(case.involved[const.ComplaintInvolvementType.affected])[0]
+        affected_id = list(
+            case.involved_persona_ids_by_type(const.ComplaintInvolvementType.affected)
+        )[0]
         affected_companion_id = list(case.companions_by_involved[affected_id])[0]
         appellant_id = 5
         appellant_companion_id = 6

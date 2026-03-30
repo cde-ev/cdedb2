@@ -36,7 +36,6 @@ class Case(CdEDataclass):
     involved: CdEDataclassMap["ComplaintInvolved"] = dataclasses.field(
         metadata=Meta.exclude.as_dict,
     )
-    informed_involved: set[int] = dataclasses.field(metadata=Meta.exclude.as_dict)
 
     @functools.cached_property
     def properly_involved(self) -> dict[int, "ComplaintInvolved"]:
@@ -211,16 +210,15 @@ class Case(CdEDataclass):
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:
-        data["informed_involved"] = set()
-        new_involved: dict[const.ComplaintInvolvementType, set[int]] = {}
-        for involved in data["involved"]:
-            involved_type = const.ComplaintInvolvementType(involved[1])
-            if involved_type not in new_involved:
-                new_involved[involved_type] = set()
-            new_involved[involved_type].add(involved[0])
-            if involved[2]:
-                data["informed_involved"].add(involved[0])
-        data["involved"] = dict(sorted(new_involved.items()))
+        data["involved"] = {
+            involved_datum[0]: ComplaintInvolved(
+                id=involved_datum[0],
+                persona_id=involved_datum[1],
+                type_=const.ComplaintInvolvementType(involved_datum[2]),
+                is_informed=bool(involved_datum[3]),
+            )
+            for involved_datum in data["involved"]
+        }
 
         new_companions: dict[int, set[int]] = {}
         withdrawn_companions: dict[int, set[int]] = {}
@@ -247,6 +245,7 @@ class Case(CdEDataclass):
                 array(
                     SELECT
                         ARRAY[
+                            involved.id,
                             involved.persona_id,
                             involved.involved_type,
                             involved.is_informed::int
@@ -448,12 +447,15 @@ class ComplaintAuthors:
     entity_key = "entry_version_id"
 
 
+@dataclasses.dataclass()
 class ComplaintInvolved:
     database_table = "complaint.involved"
     entity_key = "case_id"
 
+    id: int
     persona_id: int | None
     type_: const.ComplaintInvolvementType
+    is_informed: bool
 
 
 class ComplaintCompanion:
