@@ -1022,7 +1022,17 @@ class TestComplaintFrontend(FrontendTest):
             regex=True,
         )
         self.assertHasClass("#version4", "bg-danger")
-        # TODO Test unmark for purge
+
+        f = self.response.forms["unmarkentryforpurgeform4"]
+        self.submit(f)
+        text = self.fetch_mail_content()
+        self.assertIn("Aufhalten der Löschung", text)
+        self.assertIn('/case/1/history#version4', text)
+        self.assertNonPresence("Löschung", div="version4")
+        self.assertNotHasClass("#version4", "bg-danger")
+
+        f = self.response.forms["markentryforpurgeform4"]
+        self.submit(f)
 
         with freezegun.freeze_time(now()) as frozen_time:
             frozen_time.tick(self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"])
