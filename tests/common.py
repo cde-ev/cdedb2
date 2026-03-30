@@ -2218,14 +2218,22 @@ class FrontendTest(BackendTest):
         f = self.response.forms['logshowform']
         # use internal value property as I don't see a way to get the
         # checkbox value otherwise
-        codes = [field._value for field in f.fields['codes']]
+        if isinstance(f.fields['codes'][0], webtest.forms.Checkbox):
+            codes = [field._value for field in f.fields['codes']]
+        else:
+            # codes are multiselect.
+            codes = [value for value, _, _ in f['codes'].options]
         f['codes'] = codes
         self.assertGreater(len(codes), 1)
         self.submit(f)
         self.traverse({'linkid': 'pagination-first'})
         f = self.response.forms['logshowform']
-        for field in f.fields['codes']:
-            self.assertTrue(field.checked)
+        if isinstance(f.fields['codes'][0], webtest.forms.Checkbox):
+            for field in f.fields['codes']:
+                self.assertTrue(field.checked, f"Box '{field._value}' not checked.")
+        else:
+            for value, selected, label in f['codes'].options:
+                self.assertTrue(selected, f"Option {value} '{label}' not selected.")
 
         # Check csv export
         save = self.response
