@@ -1075,6 +1075,15 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if not self.complaintproxy.is_unlocked(rs, case_id):
             rs.notify('error', n_("Need to unlock case."))
             return self.redirect(rs, "core/show_case")
+        # This is done before to ensure the mail is sent even in error scenarios
+        delay = self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"].days
+        subject = f"Eintragsversion wird in {delay} Tagen unwiderruflich gelöscht"
+        self.do_mail(
+            rs,
+            "complaint/entry_marked_for_purge",
+            {'To': (self.conf['COMPLAINT_ADMIN_ADDRESS'],), 'Subject': subject},
+            {'case_id': case_id, "entry_version_id": entry_version_id, 'delay': delay},
+        )
         code = self.complaintproxy.mark_entry_version_for_purge(
             rs, entry_id, entry_version_id
         )
@@ -1094,6 +1103,13 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs, entry_id, entry_version_id
         )
         rs.notify_return_code(code)
+        subject = f"Löschung von Eintragsversion wurde aufgehalten"
+        self.do_mail(
+            rs,
+            "complaint/entry_unmarked_for_purge",
+            {'To': (self.conf['COMPLAINT_ADMIN_ADDRESS'],), 'Subject': subject},
+            {'case_id': case_id, "entry_version_id": entry_version_id},
+        )
         return self.redirect(rs, "core/case_history", anchor=f"entry{entry_id}")
 
     @periodic("purge_complaint_entry_versions")
@@ -1104,40 +1120,18 @@ class CoreComplaintMixin(CoreBaseFrontend):
         marked_for_purge = self.complaintproxy.list_entry_versions_marked_for_purge(rs)
 
         purged = 0
-        pending: set[int] = set(state.setdefault("pending", set()))
-        seen: set[int] = set()
-        new = []
-
+        pending = 0
         for entry_version in marked_for_purge:
             if entry_version.marked_for_purge < cutoff:
-                if entry_version.id not in pending:
-                    # TODO: What to do in this case?
-                    self.logger.warn("Purging entry version that was not pending.")
-                else:
-                    pending.remove(entry_version.id)
                 self.complaintproxy.purge_entry_version(
                     rs, entry_version.entry_id, entry_version.id
                 )
                 purged += 1
             else:
-                if entry_version.id in pending:
-                    seen.add(entry_version.id)
-                    continue
-                new.append(entry_version)
+                pending += 1
 
-        if pending - seen:
-            self.logger.warn(
-                f"{len(pending - seen)} entry versions no longer marked for purge."
-            )
-            pending = seen
-            # TODO: send email?
-        if new:
-            # TODO: send email.
-            self.logger.info(f"{len(new)} new entry versions marked for purge.")
-            pending.update(entry_version.id for entry_version in new)
-
-        state["pending"] = pending
-
+        if pending:
+            self.logger.info(f"{pending} entry versions pending purge.")
         if purged:
             self.logger.info(f"Purged {purged} complaint entry versions.")
 

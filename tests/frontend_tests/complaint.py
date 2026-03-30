@@ -999,6 +999,9 @@ class TestComplaintFrontend(FrontendTest):
 
         f = self.response.forms["markentryforpurgeform4"]
         self.submit(f)
+        text = self.fetch_mail_content()
+        self.assertIn("unwiderruflich gelöscht", text)
+        self.assertIn('/case/1/history#version4', text)
         self.assertPresence("Version 1 von Charly Clown. 80 Zeichen.", div="version4")
         self.assertPresence("28.05.2025, 18:00:00", div="version4")
         self.assertPresence(
@@ -1019,6 +1022,7 @@ class TestComplaintFrontend(FrontendTest):
             regex=True,
         )
         self.assertHasClass("#version4", "bg-danger")
+        # TODO Test unmark for purge
 
         with freezegun.freeze_time(now()) as frozen_time:
             frozen_time.tick(self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"])
