@@ -854,15 +854,22 @@ class ComplaintEntryType(CdEIntEnum):
 class CoreLogCodes(CdEIntEnum):
     """Available log messages core.log."""
 
+    # Persona
     persona_creation = 1  #:
     persona_change = 2  #:
     persona_archived = 3  #:
     persona_dearchived = 4  #:
     persona_purged = 5  #:
+    realm_change = 40  #:
+    username_change = 50  #:
+
+    # Password
     password_change = 10  #:
     password_reset_cookie = 11  #:
     password_reset = 12  #:
     password_invalidated = 13  #:
+
+    # Genesis
     genesis_request = 20  #:
     genesis_approved = 21  #:
     genesis_rejected = 22  #:
@@ -870,11 +877,13 @@ class CoreLogCodes(CdEIntEnum):
     genesis_verified = 24  #:
     genesis_merged = 25  #:
     genesis_change = 28  #:
+
+    # Privilege Change
     privilege_change_pending = 30  #:
     privilege_change_approved = 31  #:
     privilege_change_rejected = 32  #:
-    realm_change = 40  #:
-    username_change = 50  #:
+
+    # Other
     quota_violation = 60  #:
     modify_email_status = 70  #:
     delete_email_status = 71  #:
@@ -984,27 +993,36 @@ class FinanceLogCodes(CdEIntEnum):
     # Do not reuse:
     # new_member = 1  #:
 
+    # Membership
     gain_membership = 2  #:
     lose_membership = 3  #:
+    end_trial_membership = 12  #:
+    start_trial_membership = 15  #:
+    honorary_membership_granted = 51  #:
+    honorary_membership_revoked = 52  #:
+
+    # Balance
     increase_balance = 10  #:
     deduct_membership_fee = 11  #:
-    end_trial_membership = 12  #:
     manual_balance_correction = 13  #:
     remove_balance_on_archival = 14  #:
-    start_trial_membership = 15  #:
     remove_exmember_balance = 17  #:
+
+    # Lastschrift
     grant_lastschrift = 20  #:
     revoke_lastschrift = 21  #:
     modify_lastschrift = 22  #:
     lastschrift_deleted = 23  #:
+
+    # Lastschrift Transaction
     lastschrift_transaction_issue = 30  #:
     lastschrift_transaction_success = 31  #:
     lastschrift_transaction_failure = 32  #:
     lastschrift_transaction_skip = 33  #:
     lastschrift_transaction_cancelled = 34  #:
     lastschrift_transaction_revoked = 35  #:
-    honorary_membership_granted = 51  #:
-    honorary_membership_revoked = 52  #:
+
+    # Other
     #: Fallback for strange cases
     other = 99
 
