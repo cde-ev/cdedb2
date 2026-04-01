@@ -175,9 +175,9 @@ def parse_amount(amount: str) -> decimal.Decimal:
     try:
         # parentheses indicate negative amount
         if '(' in amount:
-            match = re.match(r'\(([\d,.]+)\)', amount)
+            match = re.match(r'\((.+)\)', amount)
             if match:
-                amount = '-' + match.group(1)
+                amount = '-' + match.group(1).strip()
         # remove currency suffix
         amount = amount.removesuffix('€')
         ret = decimal.Decimal(amount)

@@ -3287,12 +3287,15 @@ def process_dynamic_input(
 
 
 class CustomCSVDialect(csv.Dialect):
-    delimiter = ';'
     quoting = csv.QUOTE_MINIMAL
     quotechar = '"'
     doublequote = True
     lineterminator = '\n'
     escapechar = None
+
+    def __init__(self, delimiter: str = ';'):
+        self.delimiter = delimiter
+        super().__init__()
 
 
 def csv_output(
