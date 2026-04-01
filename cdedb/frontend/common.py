@@ -3287,6 +3287,7 @@ def process_dynamic_input(
 
 
 class CustomCSVDialect(csv.Dialect):
+    delimiter = ';'
     quoting = csv.QUOTE_MINIMAL
     quotechar = '"'
     doublequote = True
