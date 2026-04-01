@@ -259,7 +259,7 @@ class CdEParseMixin(CdEBaseFrontend):
             fields = parse.ExportFields.excel
             if account == Accounts.Festgeld:
                 fields = parse.ExportFields.festgeld
-            write_header = False
+            write_header = True
         elif db_import is not None:
             accounts = {t.account for t in transactions}
             if len(accounts) == 1:

@@ -1667,7 +1667,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         :returns: The processed input datum.
         """
-        raw = datum['raw']
+        raw = {k: v.strip() for k, v in datum['raw'].items()}
         problems, infos = [], []
 
         if category is None:
@@ -1687,18 +1687,18 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         persona_id, p = inspect_validation(
             vtypes.CdedbID,
-            (datum['raw']['cdedbid'] or "").strip(),
+            (raw['cdedbid'] or "").strip(),
             argname="persona_id",
         )
         problems.extend(p)
 
         family_name, p = inspect_validation(
-            str, datum['raw']['family_name'], argname="family_name"
+            str, raw['family_name'], argname="family_name"
         )
         problems.extend(p)
 
         given_names, p = inspect_validation(
-            str, datum['raw']['given_names'], argname="given_names"
+            str, raw['given_names'], argname="given_names"
         )
         problems.extend(p)
 
