@@ -483,17 +483,17 @@
                                 {{ query.spec[field].get_title(gettext) }}
                                 {% if values.get("qop_{}".format(field)) %}
                                     <span class="label label-default" title="{% trans %}filtered column{% endtrans %}">
-                                        {{ util.make_icon('filter') }}
+                                        {{- util.make_icon('filter') -}}
                                     </span>
                                 {% endif %}
                                 {% for i in range(MAX_QUERY_ORDERS) %}
                                     {% if values.get("qord_" + i|string) == field %}
                                         <span id="queryresult-sorted-column-marker" class="label label-default" title="{% trans %}sorted column{% endtrans %}">
-                                        {% if values.get("qord_" + i|string + "_ascending") == "False" %}
-                                            {{ util.make_icon('sort-alpha-down') }}
-                                        {% else %}
-                                            {{ util.make_icon('sort-alpha-down-alt') }}
-                                        {% endif %}
+                                        {%- if values.get("qord_" + i|string + "_ascending") == "False" -%}
+                                            {{- util.make_icon('sort-alpha-down') -}}
+                                        {%- else -%}
+                                            {{- util.make_icon('sort-alpha-down-alt') -}}
+                                        {%- endif -%}
                                         </span>
                                         {% break %}
                                     {% endif %}
