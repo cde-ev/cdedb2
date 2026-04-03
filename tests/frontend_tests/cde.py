@@ -617,6 +617,17 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '/core/persona/2/show'})
         self.assertTitle(USER_DICT['berta']['default_name_format'])
         self.assertPresence("Im Garten 77", div='address')
+        # by past course
+        self.traverse(
+            {'description': 'Mitglieder'}, {'description': 'CdE-Mitglied suchen'}
+        )
+        f = self.response.forms['membersearchform']
+        f['qval_pevent_id'] = 1
+        self.submit(f)
+        f = self.response.forms['membersearchform']
+        f['qval_pcourse_id'] = 1
+        self.submit(f)
+        self.assertTitle(USER_DICT['berta']['default_name_format'])
 
         # by fulltext. This matchs only complete words, here on ...
         self.traverse(
