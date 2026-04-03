@@ -1780,7 +1780,7 @@ msgstr "Falsche IBAN-Konfiguration"
 
 #: cdedb/.i18n_additional.py:443
 msgid "RegistrationLockedCV"
-msgstr "Geperrte Anmeldung"
+msgstr "Gesperrte Anmeldung"
 
 #: cdedb/.i18n_additional.py:444
 msgid "InconsistentPaymentCV"
