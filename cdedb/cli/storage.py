@@ -109,6 +109,7 @@ def populate_storage(conf: Config) -> None:
         "statement.csv",  # cde: sample input for parse_statement
         "money_transfers.csv",  # cde: sample input for member fees (money transfers)
         "money_transfers_valid.csv",  # cde: valid sample input for money transfers
+        "money_transfers_valid.tsv",  # cde: valid sample input for money transfers
         "form.pdf",  # event: sample minor form
         "event_export.json",  # event: example result of full event export
         "TestAka_partial_export_event.json",  # event: example result of partial export

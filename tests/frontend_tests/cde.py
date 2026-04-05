@@ -2258,6 +2258,7 @@ class TestCdEFrontend(FrontendTest):
             ),
             (
                 "date: Ungültige Eingabe für ein Datum.",
+                "amount: Ungültige Eingabe für einen Betrag.",
                 "persona_id: Falsches Format.",
             ),
             (
@@ -2265,19 +2266,23 @@ class TestCdEFrontend(FrontendTest):
                 "category: Unzulässige Kategorie.",
             ),
             ("amount: Ungültige Eingabe für einen Betrag.",),
+            ("persona_id: Benutzer ist nicht für diese Veranstaltung angemeldet.",),
             (
                 "amount: Muss größer als Null sein.",
                 "given_names: Rufnamen passen nicht zusammen.",
             ),
-            ("persona_id: Benutzer ist nicht für diese Veranstaltung angemeldet.",),
             (
-                "date: Zahlungseingang vor Anmeldezeitpunkt.",
-                "amount: Zu viel Geld.",
-                r"Mehrere Überweisungen für diesen Account \(Zeilen 7 und 8\).",
+                "persona_id: Benutzer ist nicht für diese Veranstaltung angemeldet.",
+                "given_names: Rufnamen passen nicht zusammen.",
             ),
             (
                 "date: Zahlungseingang vor Anmeldezeitpunkt.",
-                r"Mehrere Überweisungen für diesen Account \(Zeilen 7 und 8\).",
+                "amount: Zu viel Geld.",
+                r"Mehrere Überweisungen für diesen Account \(Zeilen 8 und 9\).",
+            ),
+            (
+                "date: Zahlungseingang vor Anmeldezeitpunkt.",
+                r"Mehrere Überweisungen für diesen Account \(Zeilen 8 und 9\).",
             ),
         )
         for ex, out in zip(expectation, output, strict=True):
@@ -2289,7 +2294,7 @@ class TestCdEFrontend(FrontendTest):
         inputdata = (
             '\n'
             .join(
-                lines[4:],
+                lines[5:],
             )
             .replace(
                 '-12.34',
@@ -2459,21 +2464,26 @@ class TestCdEFrontend(FrontendTest):
     @storage
     @as_users("farin")
     def test_money_transfers_file(self) -> None:
-        self.traverse(
-            {'description': 'Mitglieder'}, {'description': 'Überweisungen eintragen'}
-        )
-        f = self.response.forms['transfersform']
+        for sep in ('csv', 'tsv'):
+            with self.subTest(f"Separator: {sep}"):
+                self.traverse(
+                    {'description': 'Mitglieder'},
+                    {'description': 'Überweisungen eintragen'},
+                )
+                f = self.response.forms['transfersform']
 
-        with open(self.testfile_dir / "money_transfers_valid.csv", 'rb') as datafile:
-            data = datafile.read().replace(b"\r", b"").replace(b"\n", b"\r\n")
+                with open(
+                    self.testfile_dir / f"money_transfers_valid.{sep}", 'rb'
+                ) as datafile:
+                    data = datafile.read().replace(b"\r", b"").replace(b"\n", b"\r\n")
 
-        self.assertIn(b"\r\n", data)
-        f['transfers_file'] = webtest.Upload(
-            "money_transfers_valid.csv", data, "text/csv"
-        )
-        self.submit(f, check_notification=False)
-        f = self.response.forms['transfersform']
-        self.submit(f)
+                self.assertIn(b"\r\n", data)
+                f['transfers_file'] = webtest.Upload(
+                    f"money_transfers_valid.{sep}", data, "text/csv"
+                )
+                self.submit(f, check_notification=False)
+                f = self.response.forms['transfersform']
+                self.submit(f)
 
     @as_users("farin")
     def test_money_transfer_low_balance(self) -> None:
