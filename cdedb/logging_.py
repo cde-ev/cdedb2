@@ -59,8 +59,15 @@ class MyFormatter(logging.Formatter):
     default_msec_format = None
 
     def format(self, record: logging.LogRecord) -> str:
+        # Getting a key from the config may cause a log entry.
+        #  Therefore we access the '_configchain' directly to avoid recursion.
+
         # to distinguish between tests
-        if self._config["CDEDB_TEST"]:
-            record.name += "-" + self._config["CDB_DATABASE_NAME"].split("_")[-1]
-        setattr(record, "CDB_DATABASE_NAME", self._config["CDB_DATABASE_NAME"])
+        if self._config._configchain["CDEDB_TEST"]:
+            record.name += (
+                "-" + self._config._configchain["CDB_DATABASE_NAME"].split("_")[-1]
+            )
+        setattr(
+            record, "CDB_DATABASE_NAME", self._config._configchain["CDB_DATABASE_NAME"]
+        )
         return super().format(record)

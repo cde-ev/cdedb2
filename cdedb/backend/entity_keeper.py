@@ -52,7 +52,7 @@ class EntityKeeper:
 
         # Initialize logger.
         self.logger = logging.getLogger("cdedb.backend.entitykeeper")
-        self.logger.debug(f"Instantiated {self} with configpath {conf._configpath}.")
+        self.logger.debug(f"Instantiated {self} with config {conf}.")
 
     def _run(
         self,

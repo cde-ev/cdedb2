@@ -14,11 +14,10 @@ import getpass
 import gettext
 import os
 import pathlib
-import tempfile
 import time
 from collections.abc import Mapping
 from types import TracebackType
-from typing import IO, Any, Optional, TypeVar, cast
+from typing import Any, Optional, TypeVar, cast
 
 import psycopg2
 import psycopg2.extensions
@@ -35,14 +34,7 @@ from cdedb.backend.session import SessionBackend
 from cdedb.cli.util import fake_rs, redirect_to_file
 from cdedb.common import AbstractBackend, PathLike, RequestState, make_proxy
 from cdedb.common.n_ import n_
-from cdedb.config import (
-    Config,
-    SecretsConfig,
-    get_configpath,
-    set_configpath,
-    start_freezing_new_configs,
-    stop_freezing_new_configs,
-)
+from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import Atomizer, IrradiatedConnection
 from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.cde import CdEFrontend
@@ -60,83 +52,6 @@ __all__ = ['DryRunError', 'Script', 'ScriptAtomizer']
 
 B = TypeVar("B", bound=AbstractBackend)
 F = TypeVar("F", bound=AbstractFrontend)
-
-
-class TempConfig:
-    """Provide a thin wrapper around a temporary file.
-
-    The advantage of this is that it works with both a given configpath xor config
-    keyword arguments. If either of both is given, the current config path is used.
-    If this is not set, we use the DEFAULT_CONFIGPATH.
-
-    If config keyword arguments are given, the config options from the real configpath
-    (taken from the environment) are used as fallback values.
-    If a configpath is given, only the config options specified there are taken into
-    account.
-    """
-
-    def __init__(self, configpath: Optional[PathLike] = None, **config: Any):
-        if configpath and config:  # pragma: no cover
-            raise ValueError(
-                f"Do not provide both config ({config}) and configpath ({configpath})."
-            )
-        self._configpath = configpath
-        self._config = config
-        # this will be used to hold the current configpath from the environment
-        # and restore it later on
-        self._real_configpath: pathlib.Path
-        self._f: Optional[IO[str]] = None
-
-    def __enter__(self) -> None:
-        # First, mark all new config instances as frozen
-        start_freezing_new_configs()
-        # This also sets the config path to the default one if no config path is set.
-        self._real_configpath = get_configpath()
-        if self._config:
-            secrets = SecretsConfig()
-            self._f = tempfile.NamedTemporaryFile("w", suffix=".py", encoding="utf-8")
-            f = self._f.__enter__()
-            # copy the real_config into the temporary config
-            with open(self._real_configpath, encoding="utf-8") as cf:
-                real_config = cf.read()
-            f.write(real_config)
-            # now, add all keyword config options. Since they are added _after_ the
-            # real_config options, they overwrite them if necessary
-            for k, v in self._config.items():
-                if k in secrets:
-                    msg = (
-                        "Override secret config options via kwarg is not possible."
-                        " Please use the SECRET_CONFIGPATH config argument instead."
-                    )
-                    raise ValueError(msg)
-                f.write(f"\n{k} = {v!r}")
-            f.flush()
-            set_configpath(f.name)
-        elif self._configpath:
-            assert self._configpath is not None
-            set_configpath(self._configpath)
-
-    def __exit__(
-        self,
-        exc_type: Optional[type[Exception]],
-        exc_val: Optional[Exception],
-        exc_tb: Optional[TracebackType],
-    ) -> Optional[bool]:
-        # restore the real configpath
-        set_configpath(self._real_configpath)
-        # last of all, stop marking new configs as frozen
-        stop_freezing_new_configs()
-        if self._f:
-            return self._f.__exit__(exc_type, exc_val, exc_tb)
-        return False
-
-    def __str__(self) -> str:
-        if self._config:
-            return str(self._config)
-        elif self._configpath:
-            return pathlib.Path(self._configpath).read_text(encoding="utf-8")
-        else:
-            return ""
 
 
 class Script:
@@ -191,10 +106,8 @@ class Script:
         :param cursor: CursorFactory for the cursor used by this connection.
         :param check_system_user: Whether or not ot check for the correct invoking user,
             you need to have a really good reason to turn this off.
-        :param configpath: Path to additional config file. Mutually exclusive with
-            `config`.
-        :param config: Additional config options via keyword arguments. Mutually
-            exclusive with `configpath`.
+        :param configpath: Path to additional config file.
+        :param config: Additional config options via keyword arguments.
         """
         if check_system_user and getpass.getuser() != "www-cde":
             raise RuntimeError("Must be run as user www-cde.")  # pragma: no cover
@@ -224,10 +137,10 @@ class Script:
         # Setup internals.
         self._redirect: Optional[contextlib.AbstractContextManager[None]] = None
         self._atomizer: Optional[ScriptAtomizer] = None
-        self._tempconfig = TempConfig(configpath, **config)
-        with self._tempconfig:
-            self.config = Config()
-            self._secrets = SecretsConfig()
+        self._configpath = configpath
+        self._config_overrides = config
+        self.config = Config()
+        self._secrets = SecretsConfig()
         self._translations: Optional[Mapping[str, gettext.NullTranslations]]
         self._backends: dict[tuple[Any, bool], AbstractBackend] = {}
         self._frontends: dict[tuple[Any, bool], AbstractFrontend] = {}
@@ -259,8 +172,7 @@ class Script:
         """Create backend, either as a proxy or not."""
         if ret := self._backends.get((backend_class, proxy)):
             return cast(B, ret)
-        with self._tempconfig:
-            backend = backend_class()
+        backend = backend_class()
         self._backends[(backend_class, False)] = backend
         self._backends[(backend_class, True)] = make_proxy(backend)
         if proxy:
@@ -274,8 +186,7 @@ class Script:
         """Create a frontend."""
         if ret := self._frontends.get((frontend_class, proxy)):
             return cast(F, ret)
-        with self._tempconfig:
-            frontend = frontend_class()
+        frontend = frontend_class()
         if not proxy:
             for backend_name, backend_class in self.backend_map.items():
                 setattr(
@@ -340,11 +251,18 @@ class Script:
 
     def __enter__(self) -> IrradiatedConnection:
         """Thin wrapper around `ScriptAtomizer`."""
+        self._exit_stack = contextlib.ExitStack()
         if not self._atomizer:
             self._atomizer = ScriptAtomizer(self.rs(), dry_run=self.dry_run)
         if self.outfile:
             self._redirect = redirect_to_file(self.outfile, self.outfile_append)
-            self._redirect.__enter__()
+            self._exit_stack.enter_context(self._redirect)
+        self._exit_stack.enter_context(
+            self.config.with_overrides(
+                **{Config._temp_config_key: self._configpath}, **self._config_overrides
+            )
+        )
+        self._exit_stack.__enter__()
         return self._atomizer.__enter__()
 
     def __exit__(
@@ -356,9 +274,9 @@ class Script:
         """Thin wrapper around `ScriptAtomizer`."""
         if self._atomizer is None:
             raise RuntimeError(n_("Impossible."))
-        if self._redirect:
-            self._redirect.__exit__(exc_type, exc_val, exc_tb)
-        return self._atomizer.__exit__(exc_type, exc_val, exc_tb)
+        ret = self._atomizer.__exit__(exc_type, exc_val, exc_tb)
+        self._exit_stack.__exit__(exc_type, exc_val, exc_tb)
+        return ret
 
 
 class DryRunError(Exception):
