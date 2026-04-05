@@ -1667,7 +1667,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         :returns: The processed input datum.
         """
-        raw = {k: v.strip() for k, v in datum['raw'].items()}
+        raw = {k: (v.strip() if v else v) for k, v in datum['raw'].items()}
         problems, infos = [], []
 
         if category is None:
