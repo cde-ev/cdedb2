@@ -2464,7 +2464,7 @@ class TestCdEFrontend(FrontendTest):
     @storage
     @as_users("farin")
     def test_money_transfers_file(self) -> None:
-        for sep in ('csv', 'tsv'):
+        for sep in ('comma', 'tab'):
             with self.subTest(f"Separator: {sep}"):
                 self.traverse(
                     {'description': 'Mitglieder'},
@@ -2473,13 +2473,15 @@ class TestCdEFrontend(FrontendTest):
                 f = self.response.forms['transfersform']
 
                 with open(
-                    self.testfile_dir / f"money_transfers_valid.{sep}", 'rb'
+                    self.testfile_dir / "money_transfers_valid.csv", 'rb'
                 ) as datafile:
                     data = datafile.read().replace(b"\r", b"").replace(b"\n", b"\r\n")
+                    if sep == 'tab':
+                        data = data.replace(b";", b"\t")
 
                 self.assertIn(b"\r\n", data)
                 f['transfers_file'] = webtest.Upload(
-                    f"money_transfers_valid.{sep}", data, "text/csv"
+                    "money_transfers_valid.csv", data, "text/csv"
                 )
                 self.submit(f, check_notification=False)
                 f = self.response.forms['transfersform']
