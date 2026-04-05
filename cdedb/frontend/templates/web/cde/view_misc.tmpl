@@ -2,11 +2,11 @@
 {% extends "web/cde/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans %}Miscellaneous{% endtrans %}
+    {% trans %}Link Collection{% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
 {{ super() }}
-    {{ util.breadcrumb_link(cdedblink("cde/view_misc"), gettext("Miscellaneous"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("cde/view_misc"), gettext("Link Collection"), active=True) }}
 {% endblock %}
 {% block content %}
     {{ cde_misc|md }}

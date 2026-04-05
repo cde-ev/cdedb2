@@ -12071,6 +12071,10 @@ msgstr "Kurssuche"
 msgid "Past Events Log"
 msgstr "Verg.-Veranstaltungen-Log"
 
+#: cdedb/frontend/templates/web/cde/base.tmpl:69
+msgid "Link Collection"
+msgstr "Linksammlung"
+
 #: cdedb/frontend/templates/web/cde/base.tmpl:81
 msgid "Past Event Administration"
 msgstr "Verg.-Veranst.-Administration"
