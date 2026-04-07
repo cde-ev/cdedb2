@@ -84,7 +84,8 @@ passlib = "1 day"
 werkzeug = "1 day"
 
 # We only use this internally so this isn't critical.
-# cryptography = "1 day"
+#  Renovate doesn't know that though and this reduces PR spam.
+cryptography = "1 day"
 
 # Our first party packages. If they are updated we probably want that update right away.
 subman = "1 minute"
