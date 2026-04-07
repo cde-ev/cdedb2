@@ -55,58 +55,60 @@
         {% set entry = entries[measure.entry_id] %}
         {% set inactive = entry.is_revoked or measure.etime and now() > measure.etime %}
         {% set not_yet_active = now() < measure.timestamp %}
-        <div id="entry{{ entry.id }}-{{ measure.id }}"
-             class="list-group-item{% if inactive %} list-group-item-muted{% endif %}">
-            <div class="float-right text-right{% if not_yet_active %} text-italic{% endif %}">
-                {{ measure.timestamp|datetime(lang=lang) -}}
-                {% if measure.etime %}
-                    – {{ measure.etime|datetime(lang=lang) }}
-                {% endif %}
+        {% if not entry.entry_type == enums["ComplaintEntryType"].provisional_measure or not inactive %}
+            <div id="entry{{ entry.id }}-{{ measure.id }}"
+                 class="list-group-item{% if inactive %} list-group-item-muted{% endif %}">
+                <div class="float-right text-right{% if not_yet_active %} text-italic{% endif %}">
+                    {{ measure.timestamp|datetime(lang=lang) -}}
+                    {% if measure.etime %}
+                        – {{ measure.etime|datetime(lang=lang) }}
+                    {% endif %}
+                </div>
+                <strong>
+                    {% if not_yet_active %}
+                        <span class="text-muted text-italic">
+                    {% elif inactive %}
+                        <s>
+                    {% endif %}
+                    {{ util.make_icon(entry.entry_type.get_icon(), title=gettext(entry.entry_type|string)) }}{{ nbsp -}}
+                    {{- gettext(entry.entry_type|string) -}}
+                    {% if inactive -%}
+                        </s> <span class="text-unmuted">
+                        {%- if- entry.is_revoked -%}
+                            ({% trans %}revoked{% endtrans %})
+                        {%- else -%}
+                            ({% trans %}expired{% endtrans %})
+                        {%- endif -%}
+                        </span>
+                    {% elif not_yet_active %}
+                        </span>
+                        <span class="text-info">
+                            ({% trans %}not yet active{% endtrans %})
+                        </span>
+                    {% endif %}
+                </strong>
+                <br>
+                <span class="text-muted">
+                    {% trans %}by{% endtrans %}
+                    {% for author_id in measure.authors -%}
+                        {%- if not loop.first -%}, {% endif -%}
+                        {{ util.persona_anchor(authors[author_id]) -}}
+                    {% endfor %}
+                    {% if "complaint" in user.admin_views %}
+                        –
+                        {% trans case=util.href(
+                                cdedblink("core/show_case", {'case_id': entry['case_id']}),
+                                gettext("Case %s")|s|format(entry['case_id']),
+                                readonly="complaint_admin" not in user.roles)
+                        %}
+                            from {{ case }}
+                        {% endtrans %}
+                    {% endif %}
+                </span>
+                <hr class="nosp" />
+                {{ descriptions[measure.id]|md }}
             </div>
-            <strong>
-                {% if not_yet_active %}
-                    <span class="text-muted text-italic">
-                {% elif inactive %}
-                    <s>
-                {% endif %}
-                {{ util.make_icon(entry.entry_type.get_icon(), title=gettext(entry.entry_type|string)) }}{{ nbsp -}}
-                {{- gettext(entry.entry_type|string) -}}
-                {% if inactive -%}
-                    </s> <span class="text-unmuted">
-                    {%- if- entry.is_revoked -%}
-                        ({% trans %}revoked{% endtrans %})
-                    {%- else -%}
-                        ({% trans %}expired{% endtrans %})
-                    {%- endif -%}
-                    </span>
-                {% elif not_yet_active %}
-                    </span>
-                    <span class="text-info">
-                        ({% trans %}not yet active{% endtrans %})
-                    </span>
-                {% endif %}
-            </strong>
-            <br>
-            <span class="text-muted">
-                {% trans %}by{% endtrans %}
-                {% for author_id in measure.authors -%}
-                    {%- if not loop.first -%}, {% endif -%}
-                    {{ util.persona_anchor(authors[author_id]) -}}
-                {% endfor %}
-                {% if "complaint" in user.admin_views %}
-                    –
-                    {% trans case=util.href(
-                            cdedblink("core/show_case", {'case_id': entry['case_id']}),
-                            gettext("Case %s")|s|format(entry['case_id']),
-                            readonly="complaint_admin" not in user.roles)
-                    %}
-                        from {{ case }}
-                    {% endtrans %}
-                {% endif %}
-            </span>
-            <hr class="nosp" />
-            {{ descriptions[measure.id]|md }}
-        </div>
+        {% endif %}
     {% else %}
         <p class="text-muted">
             {% trans %}
