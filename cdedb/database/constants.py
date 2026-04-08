@@ -876,7 +876,7 @@ class ComplaintEntryType(CdEIntEnum):
             et.provisional_statement_given: n_("Statement_[[in a case]]"),
             et.agreement: n_("Agreement"),
             et.agreement_measure: n_("Measure"),
-            et.provisional_to_arbcom: n_("Arbcom"),
+            et.provisional_to_arbcom: n_("Provisional Arbcom"),
             et.provisional_measure: n_("Provisional measure"),
             et.definite_to_arbcom: n_("Arbcom"),
             et.definite_measure: n_("Measure"),
