@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 import datetime
 
+import freezegun
 import webtest
 
 import cdedb.database.constants as const
 import cdedb.models.complaint as models
+from cdedb.common import now
 from cdedb.common.query.log_filter import ComplaintLogFilter
 from cdedb.config import TestConfig
 from tests.common import (
+    CRON,
     USER_DICT,
     FrontendTest,
     as_users,
@@ -968,3 +971,94 @@ class TestComplaintFrontend(FrontendTest):
             expectation,
             self._get_raw_content("#case1-export", check_exists=True, index=0),
         )
+
+    @storage
+    @as_users("simon")
+    def test_purge_entry_version(self) -> None:
+        self.get("/core/complaint/case/1/show")
+        f = self.response.forms["unlockcaseform"]
+        f['reason'] = "Test the purge."
+        self.submit(f)
+        self.traverse("Eintragshistorie zeigen")
+        self.assertPresence("Version 1 von Charly Clown. 80 Zeichen.", div="version4")
+        self.assertPresence("28.05.2025, 18:00:00", div="version4")
+        self.assertPresence(
+            r"Erstellt am .*? von Anton Administrator\.", div="version4", regex=True
+        )
+        self.assertPresence(
+            r"Ersetzt am .*? von Anton Administrator\. Ungünstige Wortwahl\.",
+            div="version4",
+            regex=True,
+        )
+        self.assertPresence(
+            "Berta hat lang und breit erklärt zukünftig immer ein Einzelzimmer zu beantragen.",
+            div="version4",
+        )
+        self.assertNonPresence("Löschung", div="version4")
+        self.assertHasClass("#version4", "text-muted")
+
+        f = self.response.forms["markentryforpurgeform4"]
+        self.submit(f)
+        text = self.fetch_mail_content()
+        self.assertIn("unwiderruflich gelöscht", text)
+        self.assertIn('/case/1/history#version4', text)
+        self.assertPresence("Version 1 von Charly Clown. 80 Zeichen.", div="version4")
+        self.assertPresence("28.05.2025, 18:00:00", div="version4")
+        self.assertPresence(
+            r"Erstellt am .*? von Anton Administrator\.", div="version4", regex=True
+        )
+        self.assertPresence(
+            r"Ersetzt am .*? von Anton Administrator\. Ungünstige Wortwahl\.",
+            div="version4",
+            regex=True,
+        )
+        self.assertPresence(
+            "Berta hat lang und breit erklärt zukünftig immer ein Einzelzimmer zu beantragen.",
+            div="version4",
+        )
+        self.assertPresence(
+            f"Löschung vorgemerkt am .*? von {self.user['given_names']}",
+            div="version4",
+            regex=True,
+        )
+        self.assertHasClass("#version4", "bg-danger")
+
+        f = self.response.forms["unmarkentryforpurgeform4"]
+        self.submit(f)
+        text = self.fetch_mail_content()
+        self.assertIn("Aufhalten der Löschung", text)
+        self.assertIn('/case/1/history#version4', text)
+        self.assertNonPresence("Löschung", div="version4")
+        self.assertNotHasClass("#version4", "bg-danger")
+
+        f = self.response.forms["markentryforpurgeform4"]
+        self.submit(f)
+
+        with freezegun.freeze_time(now()) as frozen_time:
+            frozen_time.tick(self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"])
+
+            self.complaint.purge_entry_version(CRON, 4, 4)
+
+        self.get("/core/complaint/case/1/history")
+        self.assertPresence("Version 1 (permanent gelöscht)", div="version4")
+        self.assertNonPresence("80 Zeichen", div="version4")
+        self.assertNonPresence("28.05.2025, 18:00:00", div="version4")
+        self.assertPresence(
+            r"Erstellt am .*? von Anton Administrator\.", div="version4", regex=True
+        )
+        self.assertPresence(
+            r"Ersetzt am .*? von Anton Administrator\.",
+            div="version4",
+            regex=True,
+        )
+        self.assertNonPresence("Ungünstige Wortwahl", div="version4")
+        self.assertNonPresence(
+            "Berta hat lang und breit erklärt zukünftig immer ein Einzelzimmer zu beantragen.",
+            div="version4",
+        )
+        self.assertPresence(
+            f"Löschung vorgemerkt am .*? von {self.user['given_names']}",
+            div="version4",
+            regex=True,
+        )
+        self.assertHasClass("#version4", "bg-danger")

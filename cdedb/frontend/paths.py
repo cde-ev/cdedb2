@@ -231,6 +231,14 @@ rules = [
                             "/version/<int:version_idx>",
                             get_("/attachment", endpoint="get_complaint_attachment"),
                         ),
+                        sub(
+                            "/version/<int:entry_version_id>",
+                            post("/purge", endpoint="mark_entry_version_for_purge"),
+                            post(
+                                "/purge/cancel",
+                                endpoint="unmark_entry_version_for_purge",
+                            ),
+                        ),
                     ),
                     sub(
                         "/entry/<int:parent_id>",
