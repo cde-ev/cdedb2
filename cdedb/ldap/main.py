@@ -6,6 +6,7 @@ import os
 import signal
 import socket
 import ssl
+import sys
 
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
@@ -72,26 +73,37 @@ async def main() -> None:
         port=port,
         sock=sock,
         ssl=context,
+        # Delay start until handlers are fully set up.
+        start_serving=False,
     )
 
     for s in server.sockets:
         logger.info(f"Listening on {s!r}")
 
-    def shutdown(server: asyncio.Server) -> None:
-        # TODO We should probably send a NoticeOfDisconnection
-        # after some grace period
-        logger.info("Shutting down")
-        server.close()
+    stop = asyncio.Event()
 
-    server.get_loop().add_signal_handler(signal.SIGTERM, lambda: shutdown(server))
-    server.get_loop().add_signal_handler(signal.SIGINT, lambda: shutdown(server))
+    server.get_loop().add_signal_handler(signal.SIGTERM, stop.set)
+    server.get_loop().add_signal_handler(signal.SIGINT, stop.set)
     logger.info("Startup completed")
 
     async with server:
         try:
-            await server.serve_forever()
-        except asyncio.CancelledError:
-            logger.info("Server shut down")
+            await server.start_serving()
+            await stop.wait()
+        finally:
+            # This entire block could be dropped if this issue is resolved (and backported):
+            #  https://github.com/python/cpython/pull/124689#issuecomment-2746315898
+            logger.info("Closing server")
+            server.close()
+            # TODO: drop version check once 3.13 is deployed with uv.
+            if sys.version_info >= (3, 13):  # noqa: UP036
+                logger.info("Closing clients")
+                server.close_clients()
+            logger.info("Waiting for close")
+            await server.wait_closed()
+            logger.info("Server closed")
+
+            # TODO: Send a NoticeOfDisconnection after a while.
 
 
 if __name__ == '__main__':

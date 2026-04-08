@@ -10,9 +10,10 @@ from typing import Any, cast
 
 import freezegun
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.complaint as models_complaint
-from cdedb.common import CdEDBObject, RequestState, now
+from cdedb.common import CdEDBObject, RequestState, nearly_now, now
 from cdedb.common.sorting import xsorted
 from tests.common import CronTest, event_keeper, execsql, prepsql, storage
 
@@ -182,6 +183,8 @@ def privilege_change_template(**kwargs: Any) -> str:
 
 
 class TestCron(CronTest):
+    maxDiff = None
+
     def test_genesis_remind_empty(self) -> None:
         self.execute('genesis_remind')
 
@@ -624,6 +627,90 @@ class TestCron(CronTest):
         self.execute('forget_complaint_attachments')
         self.assertFalse(store.is_available(new_attachment_hash))
         self.assertTrue(store.is_available(old_attachment_hash))
+
+    @storage
+    def test_purge_complaint_entry_versions(self) -> None:
+        case_id, entry_id, version_id = 1, 4, 4
+        user_id = cast(RequestState, 1)
+
+        ctime = nearly_now()
+
+        with freezegun.freeze_time(now()) as frozen_time:
+            self.execute("purge_complaint_entry_versions")
+            self.assertEqual(
+                {"pending": [], "purged": []},
+                self.core.get_cron_store(RS, "purge_complaint_entry_versions"),
+            )
+            self.assertEqual([], [mail.template for mail in self.mails])
+
+            self.complaint.mark_entry_version_for_purge(user_id, entry_id, version_id)
+            self.execute("purge_complaint_entry_versions")
+            self.assertEqual(
+                {"pending": [version_id], "purged": []},
+                self.core.get_cron_store(RS, "purge_complaint_entry_versions"),
+            )
+
+            self.complaint.unmark_entry_version_for_purge(user_id, entry_id, version_id)
+
+            # Tick twice the delay and check that no purge happens due to unmarking.
+            frozen_time.tick(self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"] * 2)
+
+            self.execute("purge_complaint_entry_versions")
+            self.assertEqual(
+                {"pending": [], "purged": []},
+                self.core.get_cron_store(RS, "purge_complaint_entry_versions"),
+            )
+
+            self.complaint.mark_entry_version_for_purge(user_id, entry_id, version_id)
+            marked_for_purge = now()
+            self.execute("purge_complaint_entry_versions")
+            self.assertEqual(
+                {"pending": [version_id], "purged": []},
+                self.core.get_cron_store(RS, "purge_complaint_entry_versions"),
+            )
+
+            # Tick less than the delay and check that no purge happens.
+            frozen_time.tick(self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"] / 2)
+
+            self.execute("purge_complaint_entry_versions")
+            self.assertEqual(
+                {"pending": [version_id], "purged": []},
+                self.core.get_cron_store(RS, "purge_complaint_entry_versions"),
+            )
+
+            # Tick (more than) the remaining delay and check that the purge happens.
+            frozen_time.tick(self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"])
+
+            self.execute("purge_complaint_entry_versions")
+            self.assertEqual(
+                {"pending": [], "purged": [version_id]},
+                self.core.get_cron_store(RS, "purge_complaint_entry_versions"),
+            )
+
+            expectation = models_complaint.ComplaintEntryVersion(
+                id=vtypes.ID(version_id),
+                entry_id=vtypes.ID(entry_id),
+                length=None,
+                timestamp=None,
+                ctime=ctime,
+                submitted_by=vtypes.ID(1),
+                dtime=ctime,
+                deleted_by=vtypes.ID(1),
+                dreason=None,
+                marked_for_purge=marked_for_purge,
+                purged_by=cast(vtypes.ID, user_id),
+                is_purged=True,
+                authors=cast(vtypes.CdedbIDList, set()),
+            )
+
+            case = self.complaint.get_case(RS, case_id)
+            self.assertEqual(
+                expectation.as_dict(),
+                case.entries[entry_id].versions_by_id[version_id].as_dict(),
+            )
+            self.assertEqual(
+                expectation, case.entries[entry_id].versions_by_id[version_id]
+            )
 
     @storage
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")

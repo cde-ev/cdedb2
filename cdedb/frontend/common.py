@@ -2347,6 +2347,12 @@ def reconnoitre_ambience(obj: AbstractFrontend, rs: RequestState) -> AmbienceDic
             'entry_version',
             (),
         ),
+        Scout(
+            lambda anid: ambience['entry'].versions_by_id[anid],
+            'entry_version_id',
+            'entry_version',
+            (),
+        ),
     )
     scouts_dict = {s.param_name: s for s in scouts}
     ambience: AmbienceDict = {}

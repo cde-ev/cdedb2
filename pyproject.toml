@@ -8,7 +8,7 @@ dependencies = [
     "click==8.2.0",
     "coverage==7.6.0",
     "cssselect==1.3.0",
-    "cryptography==43.0.0",
+    "cryptography==46.0.6",
     "freezegun==1.5.1",
     "graphviz==0.20.2",
     "gunicorn==23.0.0",
@@ -17,23 +17,22 @@ dependencies = [
     "legacy-cgi; python_version >= '3.13'",
     "lxml==5.4.0",
     "mailmanclient==3.3.5",
-    "markdown==3.7",
+    "markdown==3.8.1",
     "passlib==1.7.4",
     "phonenumbers==8.12.57",
-    "pillow==11.1.0",
+    "pillow==12.1.1",
     "psycopg2-binary==2.9.10",
     "pyicu==2.14",
     "pyparsing==3.1.2",
     "python-dateutil==2.9.0",
     "python-magic==0.4.27",
     "pytz==2025.2",
-    "requests==2.32.4",
     "schulze-condorcet==2.0.1",  # not in debian
     "segno==1.6.6",
     "sphinx==8.1.3",
     "sphinx-rtd-theme==3.0.2",
     "subman==0.1.1",  # not in debian
-    "systemd-python==235",
+    "cysystemd==2.0.5",
     "tabulate==0.9.0",
     "typing-extensions==4.15.0",
     "webtest==3.0.6",  # This is more up-to-date than trixie.
@@ -43,9 +42,9 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "mypy==1.19.0",
+    "mypy==1.19.1",
     "lxml-stubs",
-    "ruff==0.14.14",
+    "ruff==0.15.7",
     "types-bleach",
     "types-ldap3",
     "types-Markdown",
@@ -65,9 +64,6 @@ playwright = [
 ldap = [
     "ldaptor==21.2.0",
     "psycopg[binary,pool]==3.2.12",
-    # Duplicated from above, because we install _only_ this group for the ldap container.
-    "subman==0.1.1",
-    "systemd-python==235",
 ]
 
 [build-system]
@@ -77,6 +73,23 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 module-name = "cdedb"
 module-root = ""
+
+[tool.uv]
+exclude-newer = "14 days"
+
+[tool.uv.exclude-newer-package]
+# Critical infrastructure packages we want to allow timely security updates for.
+gunicorn = "1 day"
+passlib = "1 day"
+werkzeug = "1 day"
+
+# We only use this internally so this isn't critical.
+#  Renovate doesn't know that though and this reduces PR spam.
+cryptography = "1 day"
+
+# Our first party packages. If they are updated we probably want that update right away.
+subman = "1 minute"
+schulze-condorcet = "1 minute"
 
 [tool.ruff]
 target-version = "py313"

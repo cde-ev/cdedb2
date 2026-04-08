@@ -696,16 +696,19 @@ class TestEventFrontend(FrontendTest):
             {'description': 'Konfiguration'},
         )
         self.assertTitle("Große Testakademie 2222 – Konfiguration")
+        self.assertNonPresence("getragen", div='static-notifications', check_div=False)
         # basic event data
         f = self.response.forms['changeeventform']
         self.assertEqual(f['registration_start'].value, "2000-10-30T01:00:00")
         f['title'] = "Universale Akademie"
         f['registration_start'] = "2001-10-30 00:00:00"
         f['use_additional_questionnaire'].checked = True
+        f['institution'] = const.PastInstitutions.private
         self.submit(f)
         self.assertTitle("Universale Akademie")
         self.assertNonPresence("30.10.2000")
         self.assertPresence("30.10.2001", div='timeframe-registration')
+        self.assertPresence("nicht durch den CdE getragen", div='static-notifications')
         # orgas
         self.assertNonPresence("Beispiel")
         # check visibility and hint text on empty participant_info
@@ -1484,7 +1487,7 @@ etc;anything else""",
         self.assertTitle("Veranstaltung anlegen")
         f = self.response.forms['createeventform']
         f['title'] = "Universale Akademie"
-        f['institution'] = const.PastInstitutions.cde
+        f['institution'] = const.PastInstitutions.private
         f['description'] = "Mit Co und Coco."
         f['shortname'] = "UnAka"
         f['part_begin'] = "2345-01-01"

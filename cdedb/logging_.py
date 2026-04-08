@@ -5,7 +5,7 @@ import os
 import pathlib
 import sys
 
-from systemd.journal import JournalHandler
+from cysystemd.journal import JournaldLogHandler
 
 from cdedb.config import DEFAULT_LOG_LEVEL, Config
 
@@ -32,7 +32,7 @@ def setup_root_logger(*, test: bool = False, replace: bool = False) -> None:
 
     # setup handler
     identifier = "cdedb" if not test else "cdedb-test"
-    handler: logging.Handler = JournalHandler(SYSLOG_IDENTIFIER=identifier)
+    handler: logging.Handler = JournaldLogHandler(identifier=identifier)
     if is_container := pathlib.Path("/CONTAINER").is_file():
         # do not log anything in the CI
         if os.environ.get("CI"):

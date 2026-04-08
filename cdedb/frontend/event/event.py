@@ -517,10 +517,14 @@ class EventEventMixin(EventBaseFrontend):
 
         if as_caretaker:
             persona_ids = set(persona_ids) - rs.ambience['event'].caretakers  # type: ignore[assignment, operator]
-            code = self.eventproxy.add_event_caretakers(rs, event_id, persona_ids)
+            code = self.eventproxy.add_event_roles(
+                rs, event_id, persona_ids, role='caretaker'
+            )
         else:
             persona_ids = set(persona_ids) - rs.ambience['event'].orgas  # type: ignore[assignment, operator]
-            code = self.eventproxy.add_event_orgas(rs, event_id, persona_ids)
+            code = self.eventproxy.add_event_roles(
+                rs, event_id, persona_ids, role='orga'
+            )
 
         if not persona_ids:
             rs.notify("info", n_("Action had no effect."))
@@ -570,7 +574,7 @@ class EventEventMixin(EventBaseFrontend):
             ))
         if rs.has_validation_errors():
             return self.manage_orgas(rs, event_id)
-        code = self.eventproxy.remove_event_orga(rs, event_id, orga_id)
+        code = self.eventproxy.remove_event_role(rs, event_id, orga_id, 'orga')
         rs.notify_return_code(code, info=n_("Action had no effect."))
         if code:
             orga = self.coreproxy.get_persona(rs, orga_id)
@@ -604,7 +608,9 @@ class EventEventMixin(EventBaseFrontend):
             ))
         if rs.has_validation_errors():
             return self.manage_orgas(rs, event_id)
-        code = self.eventproxy.remove_event_caretaker(rs, event_id, caretaker_id)
+        code = self.eventproxy.remove_event_role(
+            rs, event_id, caretaker_id, 'caretaker'
+        )
         rs.notify_return_code(code, info=n_("Action had no effect."))
         if code:
             orga = self.coreproxy.get_persona(rs, caretaker_id)

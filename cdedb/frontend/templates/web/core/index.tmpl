@@ -119,17 +119,19 @@
                                 {% endtrans %}
                             {% endif %}
                             {% if event.registration_start and event.is_registration_approved %}
-                                <br />
                                 {% if event['registration_start'] <= dashboard['present'] %}
                                     {% if not event['registration_hard_limit'] and not event['registration_soft_limit'] %}
+                                        <br />
                                         {% trans %}
                                             (Registration open)
                                         {% endtrans %}
                                     {% elif not event['registration_hard_limit'] and event['registration_soft_limit'] and event['registration_soft_limit'] >= dashboard['present'] %}
+                                        <br />
                                         {% trans date=event['registration_soft_limit']|datetime(lang=lang) %}
                                             (Registration until {{ date }}, late registration open.)
                                         {% endtrans %}
                                     {% elif event['registration_hard_limit'] and event['registration_soft_limit'] and event['registration_soft_limit'] >= dashboard['present'] %}
+                                        <br />
                                         {% if event['registration_hard_limit'] == event['registration_soft_limit'] %}
                                             {% trans date=event['registration_soft_limit']|datetime(lang=lang) %}
                                                 (Registration until {{ date }})
@@ -140,11 +142,13 @@
                                             {% endtrans %}
                                         {% endif %}
                                     {% elif event['registration_hard_limit'] and event['registration_hard_limit'] >= dashboard['present'] %}
+                                        <br />
                                         {% trans date=event['registration_hard_limit']|datetime(lang=lang) %}
                                             (Late registration until {{ date }})
                                         {% endtrans %}
                                     {% endif %}
                                 {% else %}
+                                    <br />
                                     {% trans date=event['registration_start']|datetime(lang=lang) %}
                                     	(Registration starts {{ date }})
                                     {% endtrans %}

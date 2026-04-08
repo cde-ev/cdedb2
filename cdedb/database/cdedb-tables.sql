@@ -567,7 +567,7 @@ CREATE TABLE complaint.entry_versions (
         CONSTRAINT complaint_entry_empty_description_length
             CHECK ((description IS NULL) = (length IS NULL)),
         ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT NOW(),
-        timestamp               timestamp WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        timestamp               timestamp WITH TIME ZONE DEFAULT NOW(),
         etime                   timestamp WITH TIME ZONE DEFAULT NULL,
         -- attachment contents are stored encrypted. Metadata is not.
         attachment_hash         varchar DEFAULT NULL,
@@ -583,14 +583,33 @@ CREATE TABLE complaint.entry_versions (
         deleted_by              integer REFERENCES core.personas(id) DEFAULT NULL,
         UNIQUE(entry_id, dtime),
         CONSTRAINT complaint_entry_deletion_reason
-            CHECK ((dtime IS NULL) = (dreason IS NULL)),
+            CHECK ((dtime IS NULL) = (dreason IS NULL) OR is_purged),
         CONSTRAINT complaint_entry_deletion_by
-            CHECK ((dtime IS NULL) = (deleted_by IS NULL))
+            CHECK ((dtime IS NULL) = (deleted_by IS NULL) OR is_purged),
+        -- indicated that the entry version was purged.
+        marked_for_purge        timestamp WITH TIME ZONE DEFAULT NULL,
+        purged_by               integer REFERENCES core.personas(id),
+        CONSTRAINT complaint_entry_version_marked_for_purge_by
+            CHECK ((marked_for_purge IS NULL) = (purged_by IS NULL)),
+        is_purged               boolean NOT NULL DEFAULT False,
+        CONSTRAINT complaint_entry_purged
+            CHECK (
+                is_purged = (timestamp IS NULL)
+                AND NOT is_purged OR (description IS NULL)
+                AND NOT is_purged OR (length IS NULL)
+                AND NOT is_purged OR (dreason IS NULL)
+                AND NOT is_purged OR (attachment_hash IS NULL)
+                AND NOT is_purged OR (attachment_title IS NULL)
+                AND NOT is_purged OR (attachment_filename IS NULL)
+            )
 );
 CREATE UNIQUE INDEX entry_versions_id_current ON complaint.entry_versions(entry_id) WHERE dtime IS NULL;
 CREATE INDEX entry_versions_attachment_hash ON complaint.entry_versions(attachment_hash);
-GRANT SELECT, INSERT, UPDATE (dtime, dreason, deleted_by) ON complaint.entry_versions TO cdb_persona;
-GRANT SELECT, UPDATE ON complaint.entry_versions_id_seq TO cdb_persona;
+GRANT SELECT ON complaint.entry_versions TO cdb_persona;
+GRANT INSERT, UPDATE (dtime, dreason, deleted_by, marked_for_purge, purged_by) ON complaint.entry_versions TO cdb_admin;
+-- This UPDATE should technically only be allowed for cron.
+GRANT UPDATE (is_purged, description, length, timestamp, dreason, attachment_hash, attachment_title, attachment_filename) ON complaint.entry_versions TO cdb_admin;
+GRANT SELECT, UPDATE ON complaint.entry_versions_id_seq TO cdb_admin;
 
 CREATE TABLE complaint.authors (
         id                      serial PRIMARY KEY,
@@ -598,8 +617,11 @@ CREATE TABLE complaint.authors (
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         UNIQUE(entry_version_id, persona_id)
 );
-GRANT SELECT, INSERT ON complaint.authors TO cdb_persona;
-GRANT SELECT, UPDATE ON complaint.authors_id_seq TO cdb_persona;
+GRANT SELECT ON complaint.authors TO cdb_persona;
+GRANT INSERT ON complaint.authors TO cdb_admin;
+-- This DELETE should technically only be allowed for cron.
+GRANT DELETE ON complaint.authors TO cdb_admin;
+GRANT SELECT, UPDATE ON complaint.authors_id_seq TO cdb_admin;
 
 CREATE TABLE complaint.involved (
         id                      serial PRIMARY KEY,
@@ -1655,7 +1677,7 @@ CREATE TABLE ml.mailinglists (
         -- assembly_id is not NULL if associated to an assembly
         assembly_id             integer REFERENCES assembly.assemblies(id)
 );
-GRANT SELECT (id, address, title) ON ml.mailinglists TO cdb_ldap;
+GRANT SELECT (id, address, title, ml_type, is_active) ON ml.mailinglists TO cdb_ldap;
 GRANT INSERT, SELECT, UPDATE ON ml.mailinglists TO cdb_persona;
 GRANT DELETE ON ml.mailinglists TO cdb_admin;
 GRANT SELECT, UPDATE ON ml.mailinglists_id_seq TO cdb_persona;

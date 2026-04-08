@@ -26,10 +26,12 @@ from psycopg.rows import DictRow
 from psycopg_pool import AsyncConnectionPool
 from twisted.python.util import InsensitiveDict
 
+import cdedb.models.ml as models_ml
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.constants import (
     AssemblyLogCodes,
     EventLogCodes,
+    MailinglistTypes,
     MlLogCodes,
     SubscriptionState,
 )
@@ -117,6 +119,13 @@ def now() -> datetime.datetime:
 class LdapLeaf(TypedDict):
     get_entities: Callable[[list[DN]], LDAPObjectMap]
     list_entities: Callable[[], list[DN]]
+
+
+EXPOSED_ML_TYPES: Collection[MailinglistTypes] = [
+    ml_type
+    for ml_type, ml_model in models_ml.ML_TYPE_MAP.items()
+    if ml_model.ldap_expose
+]
 
 
 class LDAPsqlBackend:
@@ -667,12 +676,16 @@ class LDAPsqlBackend:
                     ml.subscription_states
                     JOIN ml.mailinglists ON mailinglists.id = mailinglist_id
                 WHERE
-                    subscription_state = ANY(%(states)s) AND persona_id = ANY(%(persona_ids)s)
+                    subscription_state = ANY(%(states)s)
+                    AND persona_id = ANY(%(persona_ids)s)
+                    AND mailinglists.is_active
+                    AND mailinglists.ml_type = ANY(%(ml_types)s)
                 GROUP BY persona_id
             """
             params = {
                 "states": SubscriptionState.subscribing_states(),
                 "persona_ids": persona_ids,
+                "ml_types": EXPOSED_ML_TYPES,
             }
             return {
                 e['persona_id']: [
@@ -688,7 +701,7 @@ class LDAPsqlBackend:
                 FROM
                     ml.moderators
                     JOIN ml.mailinglists ON mailinglists.id = mailinglist_id
-                WHERE persona_id = ANY(%(persona_ids)s)
+                WHERE persona_id = ANY(%(persona_ids)s) AND mailinglists.is_active
                 GROUP BY persona_id
             """
             return {
@@ -920,7 +933,9 @@ class LDAPsqlBackend:
     async def list_status_groups(self) -> list[DN]:
         return [self.status_group_dn(name) for name in self.STATUS_GROUPS]
 
-    async def _get_status_group(self, dn: DN, name: str) -> tuple[DN, LDAPObject]:
+    async def _get_status_group(
+        self, dn: DN, name: str, attributes: Optional[AttributeDescriptionList] = None
+    ) -> tuple[DN, LDAPObject]:
         """Uninlined code from get_status_groups."""
         if name == "is_searchable":
             condition = "is_member AND is_searchable"
@@ -929,18 +944,27 @@ class LDAPsqlBackend:
         query = "SELECT MAX(ctime) AS ctime FROM core.changelog"
         ctime = (await self.query_one(query, []))["ctime"]  # type: ignore[index]
         query = f"SELECT id FROM core.personas WHERE {condition}"
+        # Skip fetching members if they are not requested and would be filtered out higher up in the stack anyways.
+        members = []
+        if (
+            attributes is None
+            or len(attributes) == 0
+            or b"*" in attributes
+            or b"uniqueMember" in attributes
+        ):
+            members = [self.user_dn(e["id"]) async for e in self.query_all(query, ())]
         return dn, self._to_bytes({
             b"cn": [self.status_group_cn(name)],
             b"objectClass": ["groupOfUniqueNames"],
             b"description": [self.STATUS_GROUPS[name]],
-            b"uniqueMember": [
-                self.user_dn(e["id"]) async for e in self.query_all(query, ())
-            ],
+            b"uniqueMember": members,
             b"ipaUniqueID": [f"status_groups/{name}"],
             b"modifyTimestamp": [self.format_timestamp(ctime)],
         })
 
-    async def get_status_groups(self, dns: list[DN]) -> LDAPObjectMap:
+    async def get_status_groups(
+        self, dns: list[DN], attributes: Optional[AttributeDescriptionList] = None
+    ) -> LDAPObjectMap:
         dn_to_name = dict()
         for dn in dns:
             name = self.status_group_name(dn)
@@ -956,7 +980,7 @@ class LDAPsqlBackend:
         return dict(
             await asyncio.gather(
                 *(
-                    self._get_status_group(dn, name)
+                    self._get_status_group(dn, name, attributes=attributes)
                     for dn, name in dn_to_name.items()
                     if name in self.STATUS_GROUPS
                 )
@@ -1210,7 +1234,7 @@ class LDAPsqlBackend:
         return cls._is_entry_dn(dn, cls.moderator_groups_dn, "cn")
 
     async def list_ml_moderator_groups(self) -> list[DN]:
-        query = "SELECT address FROM ml.mailinglists"
+        query = "SELECT address FROM ml.mailinglists WHERE is_active"
         return [
             self.moderator_group_dn(e['address'])
             async for e in self.query_all(query, [])
@@ -1318,10 +1342,13 @@ class LDAPsqlBackend:
         return cls._is_entry_dn(dn, cls.subscriber_groups_dn, "cn")
 
     async def list_ml_subscriber_groups(self) -> list[DN]:
-        query = "SELECT address FROM ml.mailinglists"
+        query = """
+            SELECT address FROM ml.mailinglists
+            WHERE is_active AND mailinglists.ml_type = ANY(%(ml_types)s)
+        """
         return [
             self.subscriber_group_dn(e['address'])
-            async for e in self.query_all(query, [])
+            async for e in self.query_all(query, {"ml_types": EXPOSED_ML_TYPES})
         ]
 
     async def get_subscribers(self, adresses: Collection[str]) -> dict[str, list[int]]:

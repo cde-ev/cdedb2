@@ -51,3 +51,5 @@ bin/**/*.json
 
 # internal wiki - separate git repository
 /wiki/
+
+mkosi/
