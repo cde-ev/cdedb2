@@ -596,6 +596,137 @@ class ComplaintBackend(AbstractBackend):
             return self.add_entry(rs, case_id, new_entry, version_data)
 
     @access("complaint_admin")
+    def mark_entry_version_for_purge(
+        self, rs: RequestState, entry_id: int, entry_version_id: int
+    ) -> DefaultReturnCode:
+        entry_id = affirm(vtypes.ID, entry_id)
+        entry_version_id = affirm(vtypes.ID, entry_version_id)
+
+        with Atomizer(rs):
+            case_id = self._get_case_id(rs, entry_id)
+            case = self.get_case(rs, case_id)
+            entry = case.entries[entry_id]
+
+            if not (entry_version := entry.versions_by_id.get(entry_version_id)):
+                raise ValueError(n_("Unknown entry version."))
+            if entry_version.marked_for_purge:
+                raise ValueError(n_("Entry version already marked for purge."))
+
+            code = self.sql_update(
+                rs,
+                models.ComplaintEntryVersion.database_table,
+                {
+                    'id': entry_version_id,
+                    'marked_for_purge': now(),
+                    'purged_by': rs.user.persona_id,
+                },
+            )
+        return code
+
+    @access("complaint_admin")
+    def unmark_entry_version_for_purge(
+        self, rs: RequestState, entry_id: int, entry_version_id: int
+    ) -> DefaultReturnCode:
+        entry_id = affirm(vtypes.ID, entry_id)
+        entry_version_id = affirm(vtypes.ID, entry_version_id)
+
+        with Atomizer(rs):
+            case_id = self._get_case_id(rs, entry_id)
+            case = self.get_case(rs, case_id)
+            entry = case.entries[entry_id]
+
+            if not (entry_version := entry.versions_by_id.get(entry_version_id)):
+                raise ValueError(n_("Unknown entry version."))
+            if not entry_version.marked_for_purge:
+                raise ValueError(n_("Entry version not marked for purge."))
+
+            code = self.sql_update(
+                rs,
+                models.ComplaintEntryVersion.database_table,
+                {
+                    'id': entry_version_id,
+                    'marked_for_purge': None,
+                    'purged_by': None,
+                },
+            )
+        return code
+
+    @access("cron")
+    def purge_entry_version(
+        self, rs: RequestState, entry_id: int, entry_version_id: int
+    ) -> DefaultReturnCode:
+        entry_id = affirm(vtypes.ID, entry_id)
+        entry_version_id = affirm(vtypes.ID, entry_version_id)
+
+        with Atomizer(rs):
+            case_id = self._get_case_id(rs, entry_id)
+            case = self.get_case(rs, case_id)
+            entry = case.entries[entry_id]
+
+            if not (entry_version := entry.versions_by_id[entry_version_id]):
+                raise ValueError(n_("Unknown entry version."))
+
+            purge_delay = self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"]
+            if not entry_version.marked_for_purge:
+                raise ValueError(n_("Entry version not marked for purge."))
+            if now() - entry_version.marked_for_purge < purge_delay:
+                raise ValueError(n_("Not yet ready for purge."))
+
+            code = self.sql_update(
+                rs,
+                models.ComplaintEntryVersion.database_table,
+                {
+                    'id': entry_version_id,
+                    'is_purged': True,
+                    'description': None,
+                    'length': None,
+                    'timestamp': None,
+                    'dreason': None,
+                    'attachment_hash': None,
+                    'attachment_title': None,
+                    'attachment_filename': None,
+                },
+            )
+            self.sql_delete(
+                rs,
+                models.ComplaintAuthors.database_table,
+                [entry_version_id],
+                entity_key="entry_version_id",
+            )
+        return code
+
+    @access("complaint_admin")
+    def list_entry_versions_marked_for_purge(
+        self, rs: RequestState
+    ) -> list[models.ComplaintEntryVersion]:
+        with Atomizer(rs):
+            marked_for_purge = self.query_all(
+                rs,
+                f"""
+                    SELECT cev.id AS entry_version_id, ce.id AS entry_id, ce.case_id
+                    FROM {models.ComplaintEntryVersion.database_table} cev
+                        JOIN {models.ComplaintEntry.database_table} ce ON cev.entry_id = ce.id
+                    WHERE NOT is_purged AND marked_for_purge IS NOT NULL
+                """,
+                [],
+            )
+            cases: models.CdEDataclassMap[models.Case] = {}
+
+            ret = []
+            for datum in marked_for_purge:
+                case_id = datum["case_id"]
+                entry_id = datum["entry_id"]
+                entry_version_id = datum["entry_version_id"]
+
+                case = cases.get(case_id)
+                if not case:
+                    cases[case_id] = case = self.get_case(rs, case_id)
+                entry = case.entries[entry_id]
+                ret.append(entry.versions_by_id[entry_version_id])
+
+            return ret
+
+    @access("complaint_admin")
     def add_involved(
         self,
         rs: RequestState,

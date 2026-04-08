@@ -20,6 +20,7 @@ from cdedb.common import (
     determine_age_class,
     make_persona_name,
     merge_dicts,
+    now,
 )
 from cdedb.common.exceptions import AdverseCompanionError
 from cdedb.common.n_ import n_
@@ -1064,6 +1065,85 @@ class CoreComplaintMixin(CoreBaseFrontend):
         ret = self.complaintproxy.delete_entry(rs, entry_id, dreason)
         rs.notify_return_code(ret)
         return self.redirect(rs, "core/show_case")
+
+    @access("complaint_admin", modi={"POST"})
+    def mark_entry_version_for_purge(
+        self, rs: RequestState, case_id: int, entry_id: int, entry_version_id: int
+    ) -> Response:
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
+        if not self.complaintproxy.is_unlocked(rs, case_id):
+            rs.notify('error', n_("Need to unlock case."))
+            return self.redirect(rs, "core/show_case")
+        # This is done before to ensure the mail is sent even in error scenarios
+        delay = self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"].days
+        subject = f"Eintragsversion wird in {delay} Tagen unwiderruflich gelöscht"
+        self.do_mail(
+            rs,
+            "complaint/entry_version_marked_for_purge",
+            {'To': (self.conf['COMPLAINT_ADMIN_ADDRESS'],), 'Subject': subject},
+            {'case_id': case_id, "entry_version_id": entry_version_id, 'delay': delay},
+        )
+        code = self.complaintproxy.mark_entry_version_for_purge(
+            rs, entry_id, entry_version_id
+        )
+        rs.notify_return_code(code)
+        return self.redirect(rs, "core/case_history", anchor=f"entry{entry_id}")
+
+    @access("complaint_admin", modi={"POST"})
+    def unmark_entry_version_for_purge(
+        self, rs: RequestState, case_id: int, entry_id: int, entry_version_id: int
+    ) -> Response:
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
+        if not self.complaintproxy.is_unlocked(rs, case_id):
+            rs.notify('error', n_("Need to unlock case."))
+            return self.redirect(rs, "core/show_case")
+        code = self.complaintproxy.unmark_entry_version_for_purge(
+            rs, entry_id, entry_version_id
+        )
+        rs.notify_return_code(code)
+        subject = "Löschung von Eintragsversion wurde aufgehalten"
+        self.do_mail(
+            rs,
+            "complaint/entry_version_unmarked_for_purge",
+            {'To': (self.conf['COMPLAINT_ADMIN_ADDRESS'],), 'Subject': subject},
+            {'case_id': case_id, "entry_version_id": entry_version_id},
+        )
+        return self.redirect(rs, "core/case_history", anchor=f"entry{entry_id}")
+
+    @periodic("purge_complaint_entry_versions")
+    def purge_complaint_entry_versions(
+        self, rs: RequestState, state: CdEDBObject
+    ) -> CdEDBObject:
+        cutoff = now() - self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"]
+        marked_for_purge = self.complaintproxy.list_entry_versions_marked_for_purge(rs)
+
+        purged = []
+        pending = []
+        for entry_version in marked_for_purge:
+            if entry_version.marked_for_purge < cutoff:
+                self.complaintproxy.purge_entry_version(
+                    rs, entry_version.entry_id, entry_version.id
+                )
+                purged.append(entry_version.id)
+            else:
+                pending.append(entry_version.id)
+
+        if pending:
+            versions = ", ".join(map(str, pending))
+            self.logger.info(
+                f"{len(pending)} entry versions pending purge ({versions})."
+            )
+        if purged:
+            versions = ", ".join(map(str, purged))
+            self.logger.info(
+                f"Purged {len(purged)} complaint entry versions ({versions})."
+            )
+
+        state = {"pending": pending, "purged": state.get("purged", []) + purged}
+
+        return state
 
     @access("complaint_admin")
     def get_complaint_attachment(

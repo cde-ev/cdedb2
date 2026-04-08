@@ -290,6 +290,10 @@ class ComplaintEntry(CdEDataclass):
     def deleted_versions(self) -> list["ComplaintEntryVersion"]:
         return [version for version in self.all_versions if version.dtime]
 
+    @functools.cached_property
+    def versions_by_id(self) -> CdEDataclassMap["ComplaintEntryVersion"]:
+        return {version.id: version for version in self.all_versions}
+
     @property
     def parent(self) -> "ComplaintEntry | None":
         if self.parent_id is None:
@@ -307,7 +311,10 @@ class ComplaintEntry(CdEDataclass):
         return [entry for entry in self.children if entry.active_version]
 
     def get_sortkey(self) -> Sortkey:
-        return (self.all_versions[-1].timestamp,)
+        return (
+            self.all_versions[-1].timestamp
+            or datetime.datetime.max.replace(tzinfo=datetime.UTC),
+        )
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:
@@ -343,7 +350,7 @@ class ComplaintEntryVersion(CdEDataclass):
         default=None,
         metadata=Meta.input_exclude.as_dict,
     )
-    timestamp: datetime.datetime
+    timestamp: datetime.datetime | None
     etime: datetime.datetime | None = None
 
     # filehas and filename are retrieved from the request manually to feed to the
@@ -370,6 +377,16 @@ class ComplaintEntryVersion(CdEDataclass):
     dreason: str | None = dataclasses.field(
         default=None,
         metadata=Meta.input_exclude.as_dict,
+    )
+
+    marked_for_purge: datetime.datetime | None = dataclasses.field(
+        default=None, metadata=Meta.input_exclude.as_dict
+    )
+    purged_by: vtypes.ID | None = dataclasses.field(
+        default=None, metadata=Meta.input_exclude.as_dict
+    )
+    is_purged: bool = dataclasses.field(
+        default=False, metadata=Meta.input_exclude.as_dict
     )
 
     authors: vtypes.CdedbIDList = dataclasses.field(

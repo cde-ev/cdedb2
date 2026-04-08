@@ -61,7 +61,7 @@ class CronFrontend(BaseApp):
         self.ml = MlFrontend()
 
     def make_request_state(self) -> RequestState:
-        roles = ALL_ROLES
+        roles = ALL_ROLES | {"cron"}
         user = User(roles=roles, persona_id=None)
         lang = "en"
         urls = self.urlmap.bind("db.cde-ev.de", script_name="/db/", url_scheme="https")

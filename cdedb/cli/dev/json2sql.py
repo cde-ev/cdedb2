@@ -85,7 +85,7 @@ def prepare_aux(data: CdEDBObject) -> AuxData:
         "hash", "filename", "file_hash", "address", "local_part", "new_balance",
         "modifier_name", "transaction_date", "condition", "donation", "payment_date",
         'etime', 'rtime', 'secret_hash', 'member_total', "start_date", "end_date",
-        "timestamp",
+        "timestamp", "marked_for_purge",
     }  # fmt: skip
     xss_table_excludes = {
         "cde.org_period",

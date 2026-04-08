@@ -224,17 +224,24 @@ class CourseTrackGroupType(CdEIntEnum):
 class EventFeeType(CdEIntEnum):
     """Different kinds of event fees, to be displayed and/or treated differently."""
 
+    # Participation Fee
     common = 1
-    storno = 2
-    external = 3
-    instructor_refund = 5
-    instructor_donation = 6
     solidary_reduction = 10
-    solidary_donation = 11
     solidary_increase = 12
+    external = 3
+
+    # Donation
+    solidary_donation = 11
+    instructor_donation = 6
     other_donation = 20
+
+    # Reimbursement
+    instructor_refund = 5
     crisis_refund = 30
     other_refund = 31
+
+    # Storno
+    storno = 2
 
     def get_icon(self) -> str:
         return {
@@ -593,6 +600,15 @@ class PastOrgaKind(CdEIntEnum):
     al = 2  # of DSAs etc,
     co_al = 4
 
+    @property
+    def shortname(self) -> str | None:
+        return {
+            self.none: None,
+            self.orga: None,  # we use "Orga" as longname and shortname
+            self.al: "AL",
+            self.co_al: "Co-AL",
+        }[self]
+
 
 @enum.unique
 class PastMusicKind(CdEIntEnum):
@@ -601,6 +617,16 @@ class PastMusicKind(CdEIntEnum):
     none = 0
     ensemble = 1
     kuemu = 2
+    kueak = 4
+
+    @property
+    def shortname(self) -> str | None:
+        return {
+            self.none: None,
+            self.ensemble: "EL",
+            self.kuemu: "KüMu",
+            self.kueak: "KüAK",
+        }[self]
 
 
 @enum.unique
@@ -608,6 +634,14 @@ class PastInstructorKind(CdEIntEnum):
     none = 0
     kl = 1
     co_kl = 2
+
+    @property
+    def shortname(self) -> str | None:
+        return {
+            self.none: None,
+            self.kl: "KL",
+            self.co_kl: "Co-KL",
+        }[self]
 
 
 @enum.unique
@@ -854,15 +888,22 @@ class ComplaintEntryType(CdEIntEnum):
 class CoreLogCodes(CdEIntEnum):
     """Available log messages core.log."""
 
+    # Persona
     persona_creation = 1  #:
     persona_change = 2  #:
     persona_archived = 3  #:
     persona_dearchived = 4  #:
     persona_purged = 5  #:
+    realm_change = 40  #:
+    username_change = 50  #:
+
+    # Password
     password_change = 10  #:
     password_reset_cookie = 11  #:
     password_reset = 12  #:
     password_invalidated = 13  #:
+
+    # Genesis
     genesis_request = 20  #:
     genesis_approved = 21  #:
     genesis_rejected = 22  #:
@@ -870,11 +911,13 @@ class CoreLogCodes(CdEIntEnum):
     genesis_verified = 24  #:
     genesis_merged = 25  #:
     genesis_change = 28  #:
+
+    # Privilege Change
     privilege_change_pending = 30  #:
     privilege_change_approved = 31  #:
     privilege_change_rejected = 32  #:
-    realm_change = 40  #:
-    username_change = 50  #:
+
+    # Other
     quota_violation = 60  #:
     modify_email_status = 70  #:
     delete_email_status = 71  #:
@@ -984,27 +1027,36 @@ class FinanceLogCodes(CdEIntEnum):
     # Do not reuse:
     # new_member = 1  #:
 
+    # Membership
     gain_membership = 2  #:
     lose_membership = 3  #:
+    end_trial_membership = 12  #:
+    start_trial_membership = 15  #:
+    honorary_membership_granted = 51  #:
+    honorary_membership_revoked = 52  #:
+
+    # Balance
     increase_balance = 10  #:
     deduct_membership_fee = 11  #:
-    end_trial_membership = 12  #:
     manual_balance_correction = 13  #:
     remove_balance_on_archival = 14  #:
-    start_trial_membership = 15  #:
     remove_exmember_balance = 17  #:
+
+    # Lastschrift
     grant_lastschrift = 20  #:
     revoke_lastschrift = 21  #:
     modify_lastschrift = 22  #:
     lastschrift_deleted = 23  #:
+
+    # Lastschrift Transaction
     lastschrift_transaction_issue = 30  #:
     lastschrift_transaction_success = 31  #:
     lastschrift_transaction_failure = 32  #:
     lastschrift_transaction_skip = 33  #:
     lastschrift_transaction_cancelled = 34  #:
     lastschrift_transaction_revoked = 35  #:
-    honorary_membership_granted = 51  #:
-    honorary_membership_revoked = 52  #:
+
+    # Other
     #: Fallback for strange cases
     other = 99
 
@@ -1246,10 +1298,15 @@ class PastEventLogCodes(CdEIntEnum):
 class AssemblyLogCodes(CdEIntEnum):
     """Available log messages core.log."""
 
+    # Assembly
     assembly_created = 1  #:
     assembly_changed = 2  #:
     assembly_concluded = 3  #:
     assembly_deleted = 4  #:
+    assembly_presider_added = 35  #:
+    assembly_presider_removed = 36  #:
+
+    # Ballot
     ballot_created = 10  #:
     ballot_changed = 11  #:
     ballot_deleted = 12  #:
@@ -1258,46 +1315,83 @@ class AssemblyLogCodes(CdEIntEnum):
     candidate_added = 20  #:
     candidate_updated = 21  #:
     candidate_removed = 22  #:
-    new_attendee = 30  #:
-    assembly_presider_added = 35  #:
-    assembly_presider_removed = 36  #:
+
+    # Attachment
     attachment_added = 40  #:
     attachment_removed = 41  #:
     attachment_changed = 42  #:
-    attachment_ballot_link_created = 43  #:
-    attachment_ballot_link_deleted = 44  #:
     attachment_version_added = 50  #:
     attachment_version_removed = 51  #:
     attachment_version_changed = 52  #:
+    attachment_ballot_link_created = 43  #:
+    attachment_ballot_link_deleted = 44  #:
+
+    # Other
+    new_attendee = 30  #:
+
+    def optgroup_label(self) -> str:
+        return {
+            self.assembly_created: n_("Assembly"),
+            self.assembly_changed: n_("Assembly"),
+            self.assembly_concluded: n_("Assembly"),
+            self.assembly_deleted: n_("Assembly"),
+            self.assembly_presider_added: n_("Assembly"),
+            self.assembly_presider_removed: n_("Assembly"),
+            self.ballot_created: n_("Ballot"),
+            self.ballot_changed: n_("Ballot"),
+            self.ballot_deleted: n_("Ballot"),
+            self.ballot_extended: n_("Ballot"),
+            self.ballot_tallied: n_("Ballot"),
+            self.candidate_added: n_("Ballot"),
+            self.candidate_updated: n_("Ballot"),
+            self.candidate_removed: n_("Ballot"),
+            self.attachment_added: n_("Attachment"),
+            self.attachment_removed: n_("Attachment"),
+            self.attachment_changed: n_("Attachment"),
+            self.attachment_version_added: n_("Attachment"),
+            self.attachment_version_removed: n_("Attachment"),
+            self.attachment_version_changed: n_("Attachment"),
+            self.attachment_ballot_link_created: n_("Attachment"),
+            self.attachment_ballot_link_deleted: n_("Attachment"),
+        }.get(self, n_("Other"))
 
 
 @enum.unique
 class MlLogCodes(CdEIntEnum):
     """Available log messages for ml.log."""
 
+    # Mailinglist
     list_created = 1  #:
     list_changed = 2  #:
     list_deleted = 3  #:
     moderator_added = 10  #:
     moderator_removed = 11  #:
-    whitelist_added = 12  #:
-    whitelist_removed = 13  #:
-    subscription_requested = 20  #: SubscriptionState.subscription_requested
+
+    # Subscribers
     subscribed = 21  #: SubscriptionState.subscribed
-    subscription_changed = 22  #: This is now used for address changes.
     unsubscribed = 23  #: SubscriptionState.unsubscribed
     marked_override = 24  #: SubscriptionState.subscription_override
     marked_blocked = 25  #: SubscriptionState.unsubscription_override
-    reset = 27  #:
+    subscription_changed = 22  #: This is now used for address changes.
     automatically_removed = 28  #:
+
+    # Subscription requests
+    subscription_requested = 20  #: SubscriptionState.subscription_requested
     request_approved = 30  #:
     request_denied = 31  #:
     request_cancelled = 32  #:
     request_blocked = 33  #:
-    email_trouble = 40  #:
+
+    # Message Moderation
     moderate_accept = 50  #:
     moderate_reject = 51  #:
     moderate_discard = 52  #:
+    whitelist_added = 12  #:
+    whitelist_removed = 13  #:
+
+    # Other
+    email_trouble = 40  #:
+    reset = 27  #:
 
     @classmethod
     def from_subman(cls, action: SubscriptionAction) -> "MlLogCodes":
@@ -1318,6 +1412,31 @@ class MlLogCodes(CdEIntEnum):
             SubscriptionAction.reset: cls.reset,
         }
         return log_code_map[action]
+
+    def optgroup_label(self) -> str:
+        return {
+            self.list_created: n_("Mailinglist"),
+            self.list_changed: n_("Mailinglist"),
+            self.list_deleted: n_("Mailinglist"),
+            self.moderator_added: n_("Mailinglist"),
+            self.moderator_removed: n_("Mailinglist"),
+            self.subscribed: n_("Subscribers"),
+            self.unsubscribed: n_("Subscribers"),
+            self.marked_override: n_("Subscribers"),
+            self.marked_blocked: n_("Subscribers"),
+            self.subscription_changed: n_("Subscribers"),
+            self.automatically_removed: n_("Subscribers"),
+            self.subscription_requested: n_("Subscription Requests"),
+            self.request_approved: n_("Subscription Requests"),
+            self.request_denied: n_("Subscription Requests"),
+            self.request_cancelled: n_("Subscription Requests"),
+            self.request_blocked: n_("Subscription Requests"),
+            self.moderate_accept: n_("Message Moderation"),
+            self.moderate_reject: n_("Message Moderation"),
+            self.moderate_discard: n_("Message Moderation"),
+            self.whitelist_added: n_("Message Moderation"),
+            self.whitelist_removed: n_("Message Moderation"),
+        }.get(self, n_("Other"))
 
 
 @enum.unique
