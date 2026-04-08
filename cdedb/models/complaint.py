@@ -321,7 +321,10 @@ class ComplaintEntry(CdEDataclass):
         data["all_versions"] = list(
             ComplaintEntryVersion.many_from_database(data["all_versions"]).values()
         )
-        return super().from_database(data)
+        ret = super().from_database(data)
+        for version in data["all_versions"]:
+            version.entry = ret
+        return ret
 
     @classmethod
     def mandatory_form_fields(cls, *, creation: bool) -> set[str]:
@@ -339,6 +342,7 @@ class ComplaintEntryVersion(CdEDataclass):
 
     id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
+    entry: ComplaintEntry = dataclasses.field(init=False, compare=False, repr=False)
     entry_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     description: str | None = dataclasses.field(

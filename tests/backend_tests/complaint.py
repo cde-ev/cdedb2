@@ -1135,13 +1135,13 @@ class TestComplaintBackend(BackendTest):
             set(), self.complaint.list_user_measures(self.key, 3, is_active=None)
         )
         self.assertEqual(
-            set(), self.complaint.list_user_measures(self.key, 4, is_active=None)
+            {11}, self.complaint.list_user_measures(self.key, 4, is_active=None)
         )
         self.assertEqual(
             set(), self.complaint.list_user_measures(self.key, 7, is_active=None)
         )
         self.assertEqual(
-            {7, 10}, self.complaint.list_user_measures(self.key, 2, is_active=False)
+            {6, 9}, self.complaint.list_user_measures(self.key, 2, is_active=False)
         )
 
         with self.switch_user("simon"):
@@ -1149,7 +1149,7 @@ class TestComplaintBackend(BackendTest):
         measure = case.entries[active_measure_entry_id].active_version
         assert measure is not None
         self.assertEqual(
-            {measure.id},
+            {active_measure_entry_id},
             self.complaint.list_user_measures(self.key, active_measure_persona_id),
         )
 
@@ -1173,7 +1173,7 @@ class TestComplaintBackend(BackendTest):
         measure = case.entries[active_measure_entry_id].active_version
         assert measure is not None
         self.assertEqual(
-            {7, 10},
+            {6, 9},
             self.complaint.list_user_measures(
                 self.key, active_measure_persona_id, is_active=False
             ),
@@ -1181,7 +1181,8 @@ class TestComplaintBackend(BackendTest):
 
     @as_users("berta")
     def test_user_measures_unprivileged(self) -> None:
-        measure_entry_id = 6
+        measure_entry_id = 5
+        measure_entry_version_id = 6
         measure_persona_id = 2
         # access own measures
         self.assertEqual(
@@ -1189,12 +1190,11 @@ class TestComplaintBackend(BackendTest):
             self.complaint.list_user_measures(self.key, measure_persona_id),
         )
 
-        measures, descriptions, entries = self.complaint.get_measures(
+        entries, descriptions = self.complaint.get_measures(
             self.key, {measure_entry_id}
         )
-        self.assertEqual({measure_entry_id}, measures.keys())
-        self.assertEqual({measure_entry_id}, descriptions.keys())
-        self.assertEqual({measures[measure_entry_id].entry_id}, entries.keys())
+        self.assertEqual({measure_entry_version_id}, descriptions.keys())
+        self.assertEqual({measure_entry_id}, entries.keys())
 
         with self.assertRaises(PrivilegeError):
             self.complaint.list_measures(self.key)
@@ -1208,37 +1208,39 @@ class TestComplaintBackend(BackendTest):
 
     @as_users("simon", "janis")
     def test_measures(self) -> None:
-        measure_ids_expectation = {6: 1}
+        measure_ids_expectation = {5}
         self.assertEqual(
             measure_ids_expectation,
             self.complaint.list_measures(self.key),
         )
 
-        measures_expectation = {
-            6: models.ComplaintEntryVersion(
-                id=6,  # type: ignore[arg-type]
-                entry_id=5,  # type: ignore[arg-type]
-                length=53,
-                ctime=nearly_now(),
-                submitted_by=1,  # type: ignore[arg-type]
-                authors={3},  # type: ignore[arg-type]
-                timestamp=datetime.datetime(2025, 5, 28, 16, tzinfo=datetime.UTC),
-            ),
-        }
         descriptions_expectation = {
             6: "Berta muss bei Anmeldung ein Einzelzimmer beantragen.",
         }
         entries_expectation = {
-            5: {
-                "case_id": 1,
-                "concerned_id": 2,
-                "entry_type": const.ComplaintEntryType.agreement_measure,
-                "id": 5,
-                "is_revoked": False,
-            }
+            5: models.ComplaintEntry(
+                id=vtypes.ID(5),
+                case_id=vtypes.ID(1),
+                entry_type=const.ComplaintEntryType.agreement_measure,
+                parent_id=vtypes.ID(4),
+                concerned_id=vtypes.ID(2),
+                all_versions=[
+                    models.ComplaintEntryVersion(
+                        id=vtypes.ID(6),
+                        entry_id=vtypes.ID(5),
+                        length=53,
+                        ctime=nearly_now(),
+                        submitted_by=vtypes.ID(1),
+                        authors={3},  # type: ignore[arg-type]
+                        timestamp=datetime.datetime(
+                            2025, 5, 28, 16, tzinfo=datetime.UTC
+                        ),
+                    ),
+                ],
+            )
         }
         self.assertEqual(
-            (measures_expectation, descriptions_expectation, entries_expectation),
+            (entries_expectation, descriptions_expectation),
             self.complaint.get_measures(
                 self.key, self.complaint.list_measures(self.key)
             ),

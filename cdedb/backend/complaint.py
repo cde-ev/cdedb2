@@ -1104,8 +1104,7 @@ class ComplaintBackend(AbstractBackend):
         rs: RequestState,
         *,
         case_id: int | None = None,
-        entry_id: int | None = None,
-        version_ids: Collection[int] | None = None,
+        entry_ids: Collection[int] | None = None,
         visible: bool | None,
         deleted: bool | None = False,
     ) -> dict[int, str]:
@@ -1123,13 +1122,9 @@ class ComplaintBackend(AbstractBackend):
             conditions.append("entries.case_id = %(case_id)s")
             params["case_id"] = case_id
 
-        if entry_id is not None:
-            conditions.append("entry_id = %(entry_id)s")
-            params['entry_id'] = entry_id
-
-        if version_ids is not None:
-            conditions.append("versions.id = ANY(%(version_ids)s)")
-            params['version_ids'] = version_ids
+        if entry_ids is not None:
+            conditions.append("entries.id = ANY(%(entry_ids)s)")
+            params['entry_ids'] = entry_ids
 
         if visible is not None:
             conditions.append("entries.entry_type = ANY(%(entry_types)s)")
@@ -1157,7 +1152,7 @@ class ComplaintBackend(AbstractBackend):
         self,
         rs: RequestState,
         case_id: int,
-        entry_id: int | None = None,
+        entry_ids: Collection[int] | None = None,
         deleted: bool | None = False,
     ) -> dict[int, str]:
         """List all descriptions that are visible without unlock.
@@ -1165,10 +1160,10 @@ class ComplaintBackend(AbstractBackend):
         :returns: Mapping of entry *version* ids to descriptions.
         """
         case_id = affirm(int, case_id)
-        entry_id = affirm(int | None, entry_id)
+        entry_ids = affirm(set[vtypes.ID] | None, entry_ids)
         deleted = affirm(bool | None, deleted)
         return self._get_descriptions(
-            rs, case_id=case_id, entry_id=entry_id, visible=True, deleted=deleted
+            rs, case_id=case_id, entry_ids=entry_ids, visible=True, deleted=deleted
         )
 
     def _log_unlock(
@@ -1361,7 +1356,7 @@ class ComplaintBackend(AbstractBackend):
         ):
             raise PrivilegeError
         query = f"""
-            SELECT versions.id
+            SELECT entries.id
             FROM {models.ComplaintEntryVersion.database_table} AS versions
                 LEFT JOIN {models.ComplaintEntry.database_table} AS entries
                     ON entries.id = versions.entry_id
@@ -1393,7 +1388,7 @@ class ComplaintBackend(AbstractBackend):
         rs: RequestState,
         entry_types: set[const.ComplaintEntryType] | None = None,
         is_active: bool | None = True,
-    ) -> dict[int, int]:
+    ) -> set[int]:
         is_active = affirm(bool | None, is_active)
         if entry_types is None:
             entry_types = const.ComplaintEntryType.measure_types()
@@ -1403,7 +1398,7 @@ class ComplaintBackend(AbstractBackend):
                 raise ValueError(n_("Can only list measures."))
 
         query = f"""
-            SELECT versions.id, entries.case_id
+            SELECT entries.id, entries.case_id
             FROM {models.ComplaintEntryVersion.database_table} AS versions
                 JOIN {models.ComplaintEntry.database_table} AS entries
                     ON entries.id = versions.entry_id
@@ -1425,15 +1420,14 @@ class ComplaintBackend(AbstractBackend):
             """
             params["is_active"] = is_active
 
-        return {e['id']: e['case_id'] for e in self.query_all(rs, query, params)}
+        return {e['id'] for e in self.query_all(rs, query, params)}
 
     @access("persona")
     def get_measures(
         self, rs: RequestState, measure_ids: Collection[int]
     ) -> tuple[
-        models.CdEDataclassMap[models.ComplaintEntryVersion],
+        models.CdEDataclassMap[models.ComplaintEntry],
         dict[int, str],
-        dict[int, CdEDBObject],
     ]:
         """Get relevant information on specified measures
 
@@ -1441,30 +1435,31 @@ class ComplaintBackend(AbstractBackend):
             some keys on the respective entries.
         """
         measure_ids = affirm(set[vtypes.ID], measure_ids)
+        entry_data = {
+            e["id"]: e
+            for e in self.query_all(
+                rs,
+                *models.ComplaintEntry.get_select_query(measure_ids, entity_key="id"),
+            )
+        }
         version_data = self.query_all(
             rs,
             *models.ComplaintEntryVersion.get_select_query(
-                measure_ids, entity_key="id"
+                measure_ids, entity_key="entry_id"
             ),
         )
-        versions = models.ComplaintEntryVersion.many_from_database(version_data)
-        descriptions = self._get_descriptions(rs, version_ids=measure_ids, visible=True)
-        entry_ids = {e.entry_id for e in versions.values()}
-        entry_data = self.sql_select(
-            rs,
-            models.ComplaintEntry.database_table,
-            ['id', 'concerned_id', 'entry_type', 'case_id', 'is_revoked'],
-            entry_ids,
-        )
+        descriptions = self._get_descriptions(rs, entry_ids=measure_ids, visible=True)
+        for v in version_data:
+            entry_data[v["entry_id"]]["all_versions"] = [v]
+
+        entries = models.ComplaintEntry.many_from_database(entry_data.values())
+
         if not {
             "complaint_admin",
             "complaint.enforcer",
         } & rs.user.all_roles and not all(
-            entry['concerned_id'] == rs.user.persona_id for entry in entry_data
+            entry.concerned_id == rs.user.persona_id for entry in entries.values()
         ):
             raise PrivilegeError
-        for e in entry_data:
-            e['entry_type'] = const.ComplaintEntryType(e['entry_type'])
-        entries = {e['id']: e for e in entry_data}
 
-        return versions, descriptions, entries
+        return entries, descriptions

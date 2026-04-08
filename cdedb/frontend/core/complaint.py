@@ -1205,16 +1205,17 @@ class CoreComplaintMixin(CoreBaseFrontend):
     def measures(self, rs: RequestState) -> Response:
         """Search for active measures against a persona."""
         measure_ids = self.complaintproxy.list_measures(rs)
-        measures, descriptions, entries = self.complaintproxy.get_measures(
-            rs, measure_ids
+        entries, descriptions = self.complaintproxy.get_measures(rs, measure_ids)
+        author_ids = set(
+            chain.from_iterable(
+                e.active_version.authors for e in entries.values() if e.active_version
+            )
         )
-        author_ids = set(chain.from_iterable(e.authors for e in measures.values()))
-        concerned_ids = {e['concerned_id'] for e in entries.values()}
+        concerned_ids = {e.concerned_id for e in entries.values() if e.concerned_id}
         personas = self.coreproxy.get_personas(rs, author_ids | concerned_ids)
         params = {
-            'measures': measures,
-            'descriptions': descriptions,
             'entries': entries,
+            'descriptions': descriptions,
             'personas': personas,
         }
         return self.render(rs, "complaint/measures", params)
@@ -1237,15 +1238,16 @@ class CoreComplaintMixin(CoreBaseFrontend):
         measure_ids = self.complaintproxy.list_user_measures(
             rs, persona_id, is_active=None
         )
-        measures, descriptions, entries = self.complaintproxy.get_measures(
-            rs, measure_ids
+        entries, descriptions = self.complaintproxy.get_measures(rs, measure_ids)
+        author_ids = set(
+            chain.from_iterable(
+                e.active_version.authors for e in entries.values() if e.active_version
+            )
         )
-        author_ids = set(chain.from_iterable(e.authors for e in measures.values()))
         authors = self.coreproxy.get_personas(rs, author_ids)
         params = {
-            'measures': measures,
-            'descriptions': descriptions,
             'entries': entries,
+            'descriptions': descriptions,
             'authors': authors,
         }
         return self.render(rs, "complaint/show_user_measures", params)
