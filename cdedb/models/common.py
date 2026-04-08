@@ -568,10 +568,25 @@ class StoredQuery(CdEDataclass):
         return query
 
     def serialize_to_url(self) -> CdEDBObject:
-        ret = self.query.serialize_to_url()
+        ret: CdEDBObject = {}
+        if self.query:
+            ret |= self.query.serialize_to_url()
         if self.user_created:
             ret |= {"query_name": self.query_name}
         return ret
+
+    def query_by_name(self) -> tuple[str, CdEDBObject]:
+        if self.scope in {
+            QueryScope.registration,
+            QueryScope.lodgement,
+            QueryScope.event_course,
+        }:
+            return "event/event_query_by_name", {"query_name": self.query_name}
+        else:
+            return "core/query_by_name", {
+                "query_name": self.query_name,
+                "scope": self.scope,
+            }
 
     def to_database(self) -> CdEDBObject:
         ret = super().to_database()

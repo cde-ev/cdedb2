@@ -1352,8 +1352,7 @@ class TestCoreFrontend(FrontendTest):
         # Check results of Any Admin query.
         self.login(admin1)
         self.get('/core/search/user')
-        save = self.response
-        self.response = save.click(description="Alle Admins")
+        self.traverse("Alle Admins")
         self.assertPresence("Ergebnis [17]", div='query-results')
         self.assertPresence("Akira", div='query-result')
         self.assertPresence("Anton", div='query-result')

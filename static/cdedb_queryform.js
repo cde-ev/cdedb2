@@ -733,13 +733,17 @@
          *            before the first question mark will be stripped.
          */
         this.queryFromURL = function(url) {
-            // First get the parameters in an indexed object
+            // Parse parameters from URL
             var parameters = {};
             for (const entry of (new URLSearchParams(url.split('?').pop().split('#')[0])).entries()) {
                 parameters[entry[0]] = decodeURIComponent(entry[1]);
             }
 
-            // Now clear formular
+            this.queryFromParameters(parameters);
+        };
+
+        this.queryFromParameters = function (parameters) {
+            // Clear form
             this.clearFilters();
             this.clearViewFields();
             this.clearSortFields();
@@ -752,9 +756,13 @@
                     f.input_filter_value.val(decodeURIComponent(parameters[f.input_filter_value.attr('name')]));
                     this.addFilterRow(i, false);
                 }
-                if (f.input_select && parameters[f.input_select.attr('name')] == 'True') {
-                    f.input_select.prop('checked',true);
-                    this.addViewRow(i);
+
+                if (f.input_select) {
+                    val = parameters[f.input_select.attr('name')];
+                    if (val === true || val === 'True') {
+                        f.input_select.prop('checked', true);
+                        this.addViewRow(i);
+                    }
                 }
             }
             this.refreshViewFieldSelect();
@@ -764,6 +772,7 @@
                 if (parameters[sortInputs[i].input_field.attr('name')]) {
                     sortInputs[i].input_field.val(parameters[sortInputs[i].input_field.attr('name')]);
                     var order_value = parameters[sortInputs[i].input_order.attr('name')];
+                    order_value = order_value.toString().at(0).toUpperCase() + order_value.toString().slice(1);
                     sortInputs[i].input_order.val(order_value);
                     //Search field in fieldList
                     var field = -1;

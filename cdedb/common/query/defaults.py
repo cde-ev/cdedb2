@@ -234,14 +234,14 @@ _not_archived_constraint = ("is_archived", QueryOperators.equal, False)
 DEFAULT_QUERIES = {
     QueryScope.all_cde_users: [
         _make_stored_query(
-            QueryScope.cde_user,
+            QueryScope.all_cde_users,
             n_("00_query_cde_user_all"),
             fields_of_interest=_default_fields_of_interest,
             constraints=[_not_archived_constraint],
             order=_default_sort,
         ),
         _make_stored_query(
-            QueryScope.cde_user,
+            QueryScope.all_cde_users,
             n_("02_query_cde_members"),
             fields_of_interest=_default_fields_of_interest,
             constraints=[
@@ -261,7 +261,7 @@ DEFAULT_QUERIES = {
             order=_default_sort,
         ),
         _make_stored_query(
-            QueryScope.cde_user,
+            QueryScope.all_cde_users,
             n_("20_query_cde_user_expuls"),
             fields_of_interest=[
                 "personas.id",
@@ -284,7 +284,7 @@ DEFAULT_QUERIES = {
     ],
     QueryScope.all_event_users: [
         _make_stored_query(
-            QueryScope.event_user,
+            QueryScope.all_event_users,
             n_("00_query_event_user_all"),
             fields_of_interest=_default_fields_of_interest,
             constraints=[_not_archived_constraint],
@@ -293,14 +293,14 @@ DEFAULT_QUERIES = {
     ],
     QueryScope.all_core_users: [
         _make_stored_query(
-            QueryScope.core_user,
+            QueryScope.all_core_users,
             n_("00_query_core_user_all"),
             fields_of_interest=_default_fields_of_interest,
             constraints=[_not_archived_constraint],
             order=_default_sort,
         ),
         _make_stored_query(
-            QueryScope.core_user,
+            QueryScope.all_core_users,
             n_("10_query_core_any_admin"),
             fields_of_interest=_default_fields_of_interest + list(ADMIN_KEYS),
             constraints=[
@@ -312,7 +312,7 @@ DEFAULT_QUERIES = {
     ],
     QueryScope.all_assembly_users: [
         _make_stored_query(
-            QueryScope.persona,
+            QueryScope.all_assembly_users,
             n_("00_query_assembly_user_all"),
             fields_of_interest=_default_fields_of_interest,
             constraints=[_not_archived_constraint],
@@ -321,7 +321,7 @@ DEFAULT_QUERIES = {
     ],
     QueryScope.all_ml_users: [
         _make_stored_query(
-            QueryScope.persona,
+            QueryScope.all_ml_users,
             n_("00_query_ml_user_all"),
             fields_of_interest=_default_fields_of_interest,
             constraints=[_not_archived_constraint],

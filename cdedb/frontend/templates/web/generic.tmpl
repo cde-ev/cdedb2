@@ -383,8 +383,9 @@
                             {% set name = gettext(name) if not stored_query.user_created else name %}
                             <li>
                                 {% if query %}
-                                    {{ util.href(cdedblink(scope.get_target(), stored_query.serialize_to_url()) + '#query-results',
-                                            name, aclass="default-query") }}
+                                    {{ util.href(
+                                            cdedblink(*stored_query.query_by_name()), name, aclass="default-query",
+                                            attributes={"data-query": stored_query.serialize_to_url()|tojson|forceescape}|xmlattr) }}
                                 {% else %}
                                     {% set title -%}
                                         {% trans %}Invalid stored query:{% endtrans %}{{ "\n" }}
@@ -411,14 +412,14 @@
         {% endcall %}
         <script nonce="{{ csp_nonce }}">
             $('.default-query').each(function(){
-                var url = $(this).attr('href');
+                var params = $(this).data("query");
                 var $link = $('<a></a>', {'href':'#',
                                           'title':'{% trans %}show in search mask{% endtrans %}',
                                           'aria-label':'{% trans %}show in search mask{% endtrans %}',
                                           'class': 'btn btn-default btn-xs'})
                     .append($('<span></span>',{'class':'fas fa-eye', 'aria-hidden':'true'}))
                     .click(function(){
-                        $('#queryform').data('cdedbQueryForm').queryFromURL(url);
+                        $('#queryform').data('cdedbQueryForm').queryFromParameters(params);
                         return false;
                     });
                 $(this).after($link).after(' ');

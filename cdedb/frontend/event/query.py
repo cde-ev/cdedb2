@@ -317,6 +317,46 @@ class EventQueryMixin(EventBaseFrontend):
             return self.redirect(rs, query_scope.get_target(), query_input)
         return self.redirect(rs, "event/show_event", query_input)
 
+    @access("event")
+    @event_guard(EventPrivileges.basic_read)
+    @REQUESTdata("query_name")
+    def event_query_by_name(
+        self, rs: RequestState, event_id: int, query_name: str
+    ) -> Response:
+        """Show a stored or default event query by name."""
+        rs.ignore_validation_errors()
+        event_queries_by_name = {
+            sq.query_name: sq
+            for sq in self.eventproxy.get_event_queries(rs, event_id).values()
+        }
+        if query_name not in event_queries_by_name:
+            all_default_queries = {
+                sq.query_name: sq
+                for sq in (
+                    generate_event_registration_default_queries(rs.ambience["event"])
+                    + generate_event_course_default_queries(rs.ambience["event"])
+                    # + generate_event_lodgement_default_queries(rs.ambience["event"])
+                )
+            }
+            if query_name in all_default_queries:
+                stored_query = all_default_queries[query_name]
+            else:
+                rs.notify(
+                    "error",
+                    n_("Unknown query name: '%(query_name)s'"),
+                    {"query_name": query_name},
+                )
+                return self.redirect(rs, "event/show_event")
+        else:
+            stored_query = event_queries_by_name[query_name]
+        query_scope = stored_query.scope
+        return self.redirect(
+            rs,
+            query_scope.get_target(),
+            stored_query.serialize_to_url(),
+            "query-results",
+        )
+
     @staticmethod
     def retrieve_custom_filter_fields(rs: RequestState, spec: QuerySpec) -> set[str]:
         field_spec = {f"cf_{f}": bool for f in spec}
