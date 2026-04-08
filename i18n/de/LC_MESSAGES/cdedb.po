@@ -18,6 +18,9 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
 
+msgid "PastMusicKind.kueak"
+msgstr "Leitung der Kursübergreifenden Angebote Kultur"
+
 #: bin/archive/migrate_execute.py:392
 msgid "Initial import."
 msgstr "Ursprünglicher Import."
@@ -536,19 +539,19 @@ msgstr "Ensembleleitung"
 
 #: cdedb/.i18n_additional.py:131 cdedb/.i18n_additional.py:132
 msgid "PastMusicKind.kuemu"
-msgstr "KüMu"
+msgstr "Kursübergreifende Musikleitung"
 
 #: cdedb/.i18n_additional.py:132 cdedb/.i18n_additional.py:133
 msgid "PastInstructorKind.none"
-msgstr "kein KL"
+msgstr "keine Kursleitung"
 
 #: cdedb/.i18n_additional.py:133 cdedb/.i18n_additional.py:134
 msgid "PastInstructorKind.kl"
-msgstr "KL"
+msgstr "Kursleitung"
 
 #: cdedb/.i18n_additional.py:134 cdedb/.i18n_additional.py:135
 msgid "PastInstructorKind.co_kl"
-msgstr "Co-KL"
+msgstr "Co-Kursleitung"
 
 #: cdedb/.i18n_additional.py:135 cdedb/.i18n_additional.py:136
 msgid "ComplaintKind.physical_sexual_transgression"

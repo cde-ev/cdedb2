@@ -600,6 +600,15 @@ class PastOrgaKind(CdEIntEnum):
     al = 2  # of DSAs etc,
     co_al = 4
 
+    @property
+    def shortname(self) -> str | None:
+        return {
+            self.none: None,
+            self.orga: None,  # we use "Orga" as longname and shortname
+            self.al: "AL",
+            self.co_al: "Co-AL",
+        }[self]
+
 
 @enum.unique
 class PastMusicKind(CdEIntEnum):
@@ -608,6 +617,16 @@ class PastMusicKind(CdEIntEnum):
     none = 0
     ensemble = 1
     kuemu = 2
+    kueak = 4
+
+    @property
+    def shortname(self) -> str | None:
+        return {
+            self.none: None,
+            self.ensemble: "EL",
+            self.kuemu: "KüMu",
+            self.kueak: "KüAK",
+        }[self]
 
 
 @enum.unique
@@ -615,6 +634,14 @@ class PastInstructorKind(CdEIntEnum):
     none = 0
     kl = 1
     co_kl = 2
+
+    @property
+    def shortname(self) -> str | None:
+        return {
+            self.none: None,
+            self.kl: "KL",
+            self.co_kl: "Co-KL",
+        }[self]
 
 
 @enum.unique

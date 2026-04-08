@@ -18,6 +18,9 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
 
+msgid "PastMusicKind.kueak"
+msgstr "Head of Cross-Curricular Cultural Activities"
+
 #: bin/archive/migrate_execute.py:392
 msgid "Initial import."
 msgstr ""
@@ -512,11 +515,11 @@ msgstr "Independent"
 
 #: cdedb/.i18n_additional.py:125 cdedb/.i18n_additional.py:126
 msgid "PastOrgaKind.none"
-msgstr "no Orga"
+msgstr "no Organiser"
 
 #: cdedb/.i18n_additional.py:126 cdedb/.i18n_additional.py:127
 msgid "PastOrgaKind.orga"
-msgstr "Orga"
+msgstr "Organiser"
 
 #: cdedb/.i18n_additional.py:127 cdedb/.i18n_additional.py:128
 msgid "PastOrgaKind.al"
@@ -532,11 +535,11 @@ msgstr "no Music Leader"
 
 #: cdedb/.i18n_additional.py:130 cdedb/.i18n_additional.py:131
 msgid "PastMusicKind.ensemble"
-msgstr "Ensemble"
+msgstr "Ensemble Director"
 
 #: cdedb/.i18n_additional.py:131 cdedb/.i18n_additional.py:132
 msgid "PastMusicKind.kuemu"
-msgstr "KüMu"
+msgstr "Head of Cross-Curricular Music"
 
 #: cdedb/.i18n_additional.py:132 cdedb/.i18n_additional.py:133
 msgid "PastInstructorKind.none"

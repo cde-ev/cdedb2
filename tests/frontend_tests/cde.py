@@ -1989,7 +1989,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Gerhard Schröder", div='list-participants')
         self.assertPresence("Angela Merkel", div='list-participants')
         self.assertPresence(
-            "Gustav Heinemann (1a. Swish -- und alles ist gut) (Akademieleitung)",
+            "Gustav Heinemann (1a. Swish -- und alles ist gut) (AL)",
             div='list-participants',
         )
         save_response = self.response
@@ -3299,7 +3299,9 @@ class TestCdEFrontend(FrontendTest):
         # removing someone from a course does not remove them form the event
         self.assertPresence("Garcia")
         self.assertNonPresence("Garcia Generalis (Orga, KüMu)")
-        self.assertPresence("Charly Clown (1a. Swish -- und alles ist gut (Co-KL))")
+        self.assertPresence(
+            "Charly Clown (1a. Swish -- und alles ist gut (Co-Kursleitung))"
+        )
         f = self.response.forms['addparticipantform']
         # changing orga/music status does not remove course assignments
         f['persona_ids'] = "DB-3-5, DB-7-8"
@@ -3309,7 +3311,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("PfingstAkademie 2014")
         self.assertPresence("Garcia Generalis (Orga, KüMu)")
         self.assertPresence(
-            "Charly Clown (1a. Swish -- und alles ist gut (Co-KL)) (Orga, KüMu)"
+            "Charly Clown (1a. Swish -- und alles ist gut (Co-Kursleitung)) (Orga, KüMu)"
         )
         # but removing someone with a course assignment is possible
         f = self.response.forms['removeparticipantform3']
@@ -3446,8 +3448,8 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Verg.-Veranstaltungen-Log'})
         self.log_pagination("Verg.-Veranstaltungen-Log", tuple(logs))
         self.assertPresence("Piraten Arrrkademie", div="4-1004")
-        self.assertPresence("KL", div="5-1005")
-        self.assertPresence("KL", div="7-1007")
+        self.assertPresence("Kursleitung", div="5-1005")
+        self.assertPresence("Kursleitung", div="7-1007")
         self.assertPresence("Orga, Ensembleleitung", div="10-1010")
 
     @as_users("farin")
