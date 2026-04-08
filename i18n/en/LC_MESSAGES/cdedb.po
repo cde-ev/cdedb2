@@ -536,10 +536,10 @@ msgstr "Ensemble Director"
 
 #: cdedb/.i18n_additional.py:132
 msgid "PastMusicKind.kuemu"
-msgstr "Head of Interdisciplinary Music"
+msgstr "Head of Cross-Curricular Music"
 
 msgid "PastMusicKind.kueak"
-msgstr "Head of Interdisciplinary Cultural Activities"
+msgstr "Head of Cross-Curricular Cultural Activities"
 
 #: cdedb/.i18n_additional.py:133
 msgid "PastInstructorKind.none"

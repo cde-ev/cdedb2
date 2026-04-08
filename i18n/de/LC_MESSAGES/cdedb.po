@@ -512,7 +512,7 @@ msgstr "Privat"
 
 #: cdedb/.i18n_additional.py:126
 msgid "PastOrgaKind.none"
-msgstr "kein Organisator"
+msgstr "kein Orga"
 
 #: cdedb/.i18n_additional.py:127
 msgid "PastOrgaKind.orga"
