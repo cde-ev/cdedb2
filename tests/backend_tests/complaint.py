@@ -264,14 +264,55 @@ class TestComplaintBackend(BackendTest):
                         )
                     ],
                 ),
+                11: models.ComplaintEntry(
+                    id=vtypes.ID(11),
+                    case_id=vtypes.ID(1),
+                    entry_type=const.ComplaintEntryType.provisional_to_arbcom,
+                    all_versions=[
+                        models.ComplaintEntryVersion(
+                            id=vtypes.ID(12),
+                            entry_id=vtypes.ID(11),
+                            length=29,
+                            timestamp=datetime.datetime(
+                                2025, 5, 28, 15, 30, tzinfo=datetime.UTC
+                            ),
+                            ctime=nearly_now(),
+                            submitted_by=vtypes.ID(1),
+                            authors={7},  # type: ignore[arg-type]
+                        )
+                    ],
+                ),
+                12: models.ComplaintEntry(
+                    id=vtypes.ID(12),
+                    case_id=vtypes.ID(1),
+                    entry_type=const.ComplaintEntryType.provisional_measure,
+                    concerned_id=vtypes.CdedbID(vtypes.ID(4)),
+                    parent_id=vtypes.ID(11),
+                    all_versions=[
+                        models.ComplaintEntryVersion(
+                            id=vtypes.ID(13),
+                            entry_id=vtypes.ID(12),
+                            length=16,
+                            timestamp=datetime.datetime(
+                                2025, 5, 28, 15, 45, tzinfo=datetime.UTC
+                            ),
+                            etime=datetime.datetime(
+                                2025, 5, 29, 7, tzinfo=datetime.UTC
+                            ),
+                            ctime=nearly_now(),
+                            submitted_by=vtypes.ID(1),
+                            authors={7},  # type: ignore[arg-type]
+                        )
+                    ],
+                ),
             },
         )
         reality = self.complaint.get_case(self.key, 1)
         for expected_entry, real_entry in zip(
-            expectation.entries.values(), reality.entries.values()
+            sorted(expectation.entries.values()), reality.entries.values()
         ):
             for expected_version, real_version in zip(
-                expected_entry.all_versions, real_entry.all_versions
+                sorted(expected_entry.all_versions), real_entry.all_versions
             ):
                 self.assertEqual(expected_version.as_dict(), real_version.as_dict())
                 self.assertEqual(expected_version, real_version)
@@ -1135,7 +1176,7 @@ class TestComplaintBackend(BackendTest):
             set(), self.complaint.list_user_measures(self.key, 3, is_active=None)
         )
         self.assertEqual(
-            {11}, self.complaint.list_user_measures(self.key, 4, is_active=None)
+            {12}, self.complaint.list_user_measures(self.key, 4, is_active=None)
         )
         self.assertEqual(
             set(), self.complaint.list_user_measures(self.key, 7, is_active=None)
@@ -1223,7 +1264,7 @@ class TestComplaintBackend(BackendTest):
                 case_id=vtypes.ID(1),
                 entry_type=const.ComplaintEntryType.agreement_measure,
                 parent_id=vtypes.ID(4),
-                concerned_id=vtypes.ID(2),
+                concerned_id=vtypes.CdedbID(vtypes.ID(2)),
                 all_versions=[
                     models.ComplaintEntryVersion(
                         id=vtypes.ID(6),
