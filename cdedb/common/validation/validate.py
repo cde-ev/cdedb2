@@ -4776,7 +4776,6 @@ def _query(val: Any, argname: Optional[str] = None, **kwargs: Any) -> Query:
 
     # scope and name
     _ALL_TYPED[QueryScope](val.scope, "scope", **kwargs)
-    _ALL_TYPED[str | None](val.name, "name", **kwargs)
 
     # spec
     for field, spec_entry in val.spec.items():

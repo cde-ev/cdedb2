@@ -383,7 +383,7 @@
                             {% set name = gettext(name) if not stored_query.user_created else name %}
                             <li>
                                 {% if query %}
-                                    {{ util.href(cdedblink(scope.get_target(), query.serialize_to_url()) + '#query-results',
+                                    {{ util.href(cdedblink(scope.get_target(), stored_query.serialize_to_url()) + '#query-results',
                                             name, aclass="default-query") }}
                                 {% else %}
                                     {% set title -%}

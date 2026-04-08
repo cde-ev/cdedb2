@@ -565,8 +565,13 @@ class StoredQuery(CdEDataclass):
             self.errors = errs
             return cast(Query, None)
         query.query_id = self.id
-        query.name = self.query_name
         return query
+
+    def serialize_to_url(self) -> CdEDBObject:
+        ret = self.query.serialize_to_url()
+        if self.user_created:
+            ret |= {"query_name": self.query_name}
+        return ret
 
     def to_database(self) -> CdEDBObject:
         ret = super().to_database()
