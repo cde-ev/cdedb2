@@ -40,7 +40,11 @@ from cdedb.common import (
 )
 from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
-from cdedb.common.privileges import EventPrivileges, is_privileged_event
+from cdedb.common.privileges import (
+    EventPrivileges,
+    is_event_access_limited,
+    is_privileged_event,
+)
 from cdedb.common.query import QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import EntitySorter, KeyFunction, Sortkey, xsorted
@@ -226,15 +230,12 @@ class EventBaseFrontend(AbstractUserFrontend):
             return is_privileged and admin_view_to_consider in rs.user.admin_views
 
         if 'event' in rs.ambience:
+            event_id = rs.ambience['event'].id
             orga_view = (
-                rs.ambience['event'].id in rs.user.orga | rs.user.caretaker
+                event_id in rs.user.orga | rs.user.caretaker
                 or 'event_orga' in rs.user.admin_views
             )
-            access_is_limited = (
-                orga_view
-                and rs.ambience['event'].id
-                < self.conf["EVENT_ACCESS_LIMITED_BEFORE_ID"]
-            )
+            access_is_limited = orga_view and is_event_access_limited(event_id)
         else:
             orga_view = None
             access_is_limited = None

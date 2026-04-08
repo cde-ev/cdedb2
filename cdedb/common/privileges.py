@@ -80,6 +80,10 @@ class EventPrivileges(Flag):
     )
 
 
+def is_event_access_limited(event_id: int) -> bool:
+    return event_id <= _CONF["EVENT_LIMITED_ACCESS_CUTOFF_ID"]
+
+
 def is_privileged_event(
     rs: RequestState, required_privilege: EventPrivileges, event_id: int
 ) -> bool:
@@ -102,7 +106,7 @@ def is_privileged_event_user(
     limited_access_disallow = EP._registrations_read_dummy | EP.registrations_write
 
     if (
-        event_id < _CONF["EVENT_ACCESS_LIMITED_BEFORE_ID"]
+        is_event_access_limited(event_id)
         and required_privilege & limited_access_disallow
     ):
         return False
