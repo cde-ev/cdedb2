@@ -254,16 +254,8 @@ class EventQueryMixin(EventBaseFrontend):
         # Tricky logic: In case of no validation errors we perform a query
         if not rs.has_validation_errors() and is_search and query:
             query.scope = scope
-            params['result'] = self.eventproxy.submit_general_query(
-                rs, query, event_id=event_id
-            )
-            params["aggregates"] = unwrap(
-                self.eventproxy.submit_general_query(
-                    rs, query, event_id=event_id, aggregate=True
-                )
-            )
             return self._send_query_result(
-                rs, download, "registration_result", scope, query, params
+                rs, download, "registration_result", query, params
             )
         else:
             rs.values['is_search'] = is_search = False
@@ -553,17 +545,7 @@ class EventQueryMixin(EventBaseFrontend):
 
         if not rs.has_validation_errors() and is_search and query:
             query.scope = scope
-            params['result'] = self.eventproxy.submit_general_query(
-                rs, query, event_id=event_id
-            )
-            params["aggregates"] = unwrap(
-                self.eventproxy.submit_general_query(
-                    rs, query, event_id=event_id, aggregate=True
-                )
-            )
-            return self._send_query_result(
-                rs, download, "course_result", scope, query, params
-            )
+            return self._send_query_result(rs, download, "course_result", query, params)
         else:
             rs.values['is_search'] = is_search = False
             return self.render(rs, "query/course_query", params)
@@ -628,16 +610,8 @@ class EventQueryMixin(EventBaseFrontend):
 
         if not rs.has_validation_errors() and is_search and query:
             query.scope = scope
-            params['result'] = self.eventproxy.submit_general_query(
-                rs, query, event_id=event_id
-            )
-            params["aggregates"] = unwrap(
-                self.eventproxy.submit_general_query(
-                    rs, query, event_id=event_id, aggregate=True
-                )
-            )
             return self._send_query_result(
-                rs, download, "lodgement_result", scope, query, params
+                rs, download, "lodgement_result", query, params
             )
         else:
             rs.values['is_search'] = is_search = False
@@ -659,12 +633,19 @@ class EventQueryMixin(EventBaseFrontend):
     def _send_query_result(
         self,
         rs: RequestState,
-        download: Optional[str],
+        download: str | None,
         filename: str,
-        scope: QueryScope,
         query: Query,
         params: CdEDBObject,
     ) -> Response:
+        params['result'] = self.eventproxy.submit_general_query(
+            rs, query, event_id=rs.ambience["event"].id
+        )
+        params["aggregates"] = unwrap(
+            self.eventproxy.submit_general_query(
+                rs, query, event_id=rs.ambience["event"].id, aggregate=True
+            )
+        )
         if download:
             shortname = rs.ambience['event'].shortname
             return self.send_query_download(
@@ -675,7 +656,7 @@ class EventQueryMixin(EventBaseFrontend):
                 filename=f"{shortname}_{filename}",
             )
         else:
-            return self.render(rs, scope.get_target(redirect=False), params)
+            return self.render(rs, query.scope.get_target(redirect=False), params)
 
     @access("event")
     @REQUESTdata("phrase", "kind", "aux")
