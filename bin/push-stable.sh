@@ -13,8 +13,13 @@ then
     }
 else
     function push_stable () {
+        OLD_TAG="$(git describe --tags origin/stable)"
         TAG=release/$(date +'%Y-%m-%d')
+        RELEASE_FILE="related/release/${OLD_TAG#"release/"}_${TAG#"release/"}_$(git rev-parse HEAD | head -c8).md"
         git tag -f "$TAG"
+        mkdir related/release
+        bin/create_release_description.py "$OLD_TAG" "$TAG" > "$RELEASE_FILE"
+        echo "Wrote release note template to '$RELEASE_FILE'."
         git push --delete origin "$TAG"
         git push origin stable tag "$TAG"
         git push --delete mirror "$TAG"
