@@ -303,14 +303,9 @@
     {% for entry in all_entries %}
         <div class="list-group list-group-hover nosp">
         {% if entry.entry_type %}
-            <div id="entry{{ entry.id }}" class="list-group-item{% if entry.is_revoked %} list-group-item-muted{% endif %}">
+            <div id="entry{{ entry.id }}" class="list-group-item {{ entry.status.list_group_item_styles() }}">
                 <div class="float-right text-right">
-                    <div style="margin-bottom: 5px;">
-                        {{ entry.active_version.timestamp|datetime(lang=lang) -}}
-                        {% if entry.active_version.etime %}
-                            – {{ entry.active_version.etime|datetime(lang=lang) }}
-                        {% endif %}
-                    </div>
+                    {{ generic_complaint.entry_version_timeline(entry.active_version) }}
                     <div class="p button-par">
                         {% if entry.entry_type.possible_children != [enums["ComplaintEntryType"].revocation_explanation]|set %}
                             {{ util.href(cdedblink('core/add_entry_form', {'parent_id': entry.id}),
