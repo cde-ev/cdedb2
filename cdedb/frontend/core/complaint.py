@@ -1204,8 +1204,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
     @access("complaint_admin", "complaint.enforcer")
     def measures(self, rs: RequestState) -> Response:
         """Search for active measures against a persona."""
-        measure_ids = self.complaintproxy.list_measures(rs)
-        entries, descriptions = self.complaintproxy.get_measures(rs, measure_ids)
+        entries, descriptions = self.complaintproxy.list_measures(rs)
         author_ids = set(
             chain.from_iterable(
                 # The entries are guaranteed to have an active version.
@@ -1239,10 +1238,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         ):
             del rs.ambience['persona']['username']
 
-        measure_ids = self.complaintproxy.list_user_measures(
-            rs, persona_id, is_active=None
-        )
-        entries, descriptions = self.complaintproxy.get_measures(rs, measure_ids)
+        entries, descriptions = self.complaintproxy.list_user_measures(rs, persona_id)
         author_ids = set(
             chain.from_iterable(
                 # The entries are guaranteed to have an active version.

@@ -334,6 +334,30 @@ class ComplaintEntry(CdEDataclass):
             ret.add('dreason')
         return ret
 
+    @property
+    def is_measure(self) -> bool:
+        return self.entry_type.is_measure
+
+    @property
+    def is_provisional(self) -> bool:
+        return self.entry_type.is_provisional
+
+    @functools.cached_property
+    def is_active_measure(self) -> bool:
+        av = self.active_version
+        if self.is_revoked or not self.is_measure or not av or not av.timestamp:
+            return False
+        ref = now()
+        return ref > av.timestamp and not self.is_expired_measure
+
+    @functools.cached_property
+    def is_expired_measure(self) -> bool:
+        av = self.active_version
+        if self.is_revoked or not self.is_measure or not av or not av.timestamp:
+            return False
+        ref = now()
+        return bool(av.etime and ref > av.etime)
+
 
 @dataclasses.dataclass(kw_only=True)
 class ComplaintEntryVersion(CdEDataclass):
