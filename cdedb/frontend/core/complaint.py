@@ -1208,7 +1208,11 @@ class CoreComplaintMixin(CoreBaseFrontend):
         entries, descriptions = self.complaintproxy.get_measures(rs, measure_ids)
         author_ids = set(
             chain.from_iterable(
-                e.active_version.authors for e in entries.values() if e.active_version
+                # The entries are guaranteed to have an active version.
+                # mypy doesn't know this.
+                e.active_version.authors
+                for e in entries.values()
+                if e.active_version
             )
         )
         concerned_ids = {e.concerned_id for e in entries.values() if e.concerned_id}
@@ -1241,7 +1245,11 @@ class CoreComplaintMixin(CoreBaseFrontend):
         entries, descriptions = self.complaintproxy.get_measures(rs, measure_ids)
         author_ids = set(
             chain.from_iterable(
-                e.active_version.authors for e in entries.values() if e.active_version
+                # The entries are guaranteed to have an active version.
+                # mypy doesn't know this.
+                e.active_version.authors
+                for e in entries.values()
+                if e.active_version
             )
         )
         authors = self.coreproxy.get_personas(rs, author_ids)
