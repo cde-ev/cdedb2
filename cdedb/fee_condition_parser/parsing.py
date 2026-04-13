@@ -38,9 +38,9 @@ def create_parser() -> pp.ParserElement:
     ).set_name("field, part, special bool, true or false")
 
     # full expressions (forward declaration) and parenthesized expressions
-    operator_or = pp.Forward().set_name("expression")
+    full_expression = pp.Forward()
 
-    operator_parenthesis = (pp.Suppress("(") - operator_or - pp.Suppress(")")) | operator_bool_atom
+    operator_parenthesis = (pp.Suppress("(") - full_expression - pp.Suppress(")")) | operator_bool_atom
 
     # Operators (right-chainable) in order of precendence
     operator_not = pp.Forward()
@@ -71,14 +71,17 @@ def create_parser() -> pp.ParserElement:
         | operator_and
     ).set_name("expression")
 
-    operator_or << (  # type: ignore[operator]
+    operator_or = pp.Forward()
+    operator_or << (
         pp.Group(
             operator_xor + pp.CaselessKeyword("or").suppress() - operator_or,
         ).set_results_name("or")
         | operator_xor
     ).set_name("expression")
 
-    return operator_or
+    full_expression << operator_or
+
+    return full_expression
 
 
 _PARSER = create_parser()
