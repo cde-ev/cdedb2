@@ -30,7 +30,7 @@ def create_parser() -> pp.ParserElement:
     ).setResultsName("bool")
 
     operator_age = pp.Group(
-        pp.Combine(pp.Suppress(pp.CaselessKeyword("age") + ".U") - pp.Word(pp.nums))
+        pp.Combine(pp.Suppress(pp.CaselessKeyword("age") + pp.CaselessLiteral(".U")) - pp.Word(pp.nums))
     ).setResultsName("age")
 
     operator_bool_atom = (
