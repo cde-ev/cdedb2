@@ -12,12 +12,14 @@ file has to be present as environment variable CDEDB_CONFIGPATH.
 import abc
 import collections
 import contextlib
+import functools
 import importlib.util
 import logging
 import os
 import pathlib
-from collections.abc import Iterator, Mapping, MutableMapping
-from typing import Any, ClassVar, Self
+from collections.abc import Iterator, Mapping, Sequence
+from types import ModuleType
+from typing import Any, ClassVar, Final, Self
 
 from cdedb.config.defaults import DEFAULT_LOG_LEVEL  # noqa: F401
 
@@ -34,17 +36,13 @@ _LOGGER = logging.getLogger(__name__)
 _ROOT_LOGGER = logging.getLogger()
 
 
-_DEFAULTS = vars(importlib.import_module("cdedb.config.defaults"))
-_SECRECTS_DEFAULTS = vars(importlib.import_module("cdedb.config.default_secrets"))
-
-
 def set_log_level(level: int) -> None:
     _ROOT_LOGGER.setLevel(level)
     for handler in _ROOT_LOGGER.handlers:
         handler.setLevel(level)
 
 
-def _import_from_file(path: PathLike | None) -> MutableMapping[str, Any]:
+def _import_from_file(path: PathLike | None) -> dict[str, Any]:
     """Import all variables from the given file and return them as dict."""
     if path is None:
         _LOGGER.warning("No file path provided")
@@ -56,12 +54,27 @@ def _import_from_file(path: PathLike | None) -> MutableMapping[str, Any]:
     if not path.read_text(encoding="utf-8"):
         _LOGGER.warning(f"Config file {path.as_posix()!r} is empty.")
         return {}
-    spec = importlib.util.spec_from_file_location("override", str(path))
+    return _import_from_file_inner(str(path))
+
+
+@functools.cache
+def _import_from_file_inner(path_str: str) -> dict[str, Any]:
+    spec = importlib.util.spec_from_file_location("override", path_str)
     if not spec or not spec.loader:
         raise ImportError(spec, spec.loader if spec else None)  # pragma: no cover
     override = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(override)
-    return {key: getattr(override, key) for key in dir(override)}
+    return dict_from_module(override)
+
+
+def dict_from_module(module: ModuleType) -> dict[str, Any]:
+    return {key: getattr(module, key) for key in dir(module) if not key.startswith("_")}
+
+
+_DEFAULTS = dict_from_module(importlib.import_module("cdedb.config.defaults"))
+_SECRECTS_DEFAULTS = dict_from_module(
+    importlib.import_module("cdedb.config.default_secrets")
+)
 
 
 class NewBaseConfig(Mapping[str, Any], abc.ABC):
@@ -111,65 +124,53 @@ class NewBaseConfig(Mapping[str, Any], abc.ABC):
 
 class NewConfig(NewBaseConfig):
     _defaults = _DEFAULTS
+    _config_paths_env_name = "CDEDB_CONFIGPATHS"
+    _default_config_paths: Final = [pathlib.Path("/etc/cdedb/config.py")]
 
-    # Config file with persistent adjustments to those overrides.
-    _temp_config_path: pathlib.Path | None
-    _temp_config_key = "TEMP_CONFIG_PATH"
+    # List of paths to read config overrides from.
+    _config_paths: list[pathlib.Path]
     # Ephemeral config overrides provided via context manager.
     _context_manager_overrides: dict[str, Any]
+    # Final constructed configs.
+    _configs: dict[str, dict[str, Any]]
+    _config_chain: collections.ChainMap[str, Any]
 
     def _init_once(self) -> None:
-        self._local_config_path = self.read_configpath()
-        self._temp_config_path = None
+        self._config_paths = self.read_configpaths()
         self._context_manager_overrides = {}
         super()._init_once()
 
+    @staticmethod
+    def parse_paths(paths: Sequence[PathLike | None]) -> list[pathlib.Path]:
+        return [pathlib.Path(path).resolve() for path in paths if path]
+
     @classmethod
-    def read_configpath(cls) -> pathlib.Path:
+    def read_configpaths(cls) -> list[pathlib.Path]:
         """Helper to get the config path from the environment."""
-        if path := os.environ.get("CDEDB_CONFIGPATH"):
-            return pathlib.Path(path)
-        return DEFAULT_CONFIGPATH
+        if cls._config_paths_env_name in os.environ:
+            return cls.parse_paths(os.environ[cls._config_paths_env_name].split(":"))
+        return cls._default_config_paths
 
     @classmethod
     def get_configpath(cls) -> pathlib.Path:
-        return cls()._local_config_path
+        return cls()._config_paths[0]
 
     @classmethod
-    def set_config_path(cls, local_config_path: PathLike) -> None:
-        cls()._local_config_path = pathlib.Path(local_config_path)
+    def set_config_path(cls, path: PathLike) -> None:
+        cls()._config_paths = cls.parse_paths([path])
         cls().reload()
 
     def reload(self, recurse: bool = True) -> None:
-        local_config = self._filter_overrides(
-            _import_from_file(self._local_config_path)
-        )
-
-        # Temporarily create a configchain without the temp config in order to figure
-        #  out where to locate the temp config.
-        _fake_config_chain = collections.ChainMap(
-            self._filter_overrides(self._context_manager_overrides),
-            local_config,
-            self._defaults,
-        )
-
-        temp_config = {}
-        _temp_config_path = _fake_config_chain[self._temp_config_key]
-        if _temp_config_path is not None:
-            self._temp_config_path = pathlib.Path(_temp_config_path)
-            temp_config = self._filter_overrides(
-                _import_from_file(self._temp_config_path)
-            )
-            if self._temp_config_key in temp_config:
-                if temp_config[self._temp_config_key] != self._temp_config_path:
-                    raise RuntimeError(
-                        f'May not set differing "{self._temp_config_key}" in temp config.'
-                    )
+        self._configs = {
+            "cm": self._filter_overrides(self._context_manager_overrides),
+            **{
+                f"_{path}": self._filter_overrides(_import_from_file(path))
+                for path in self._config_paths
+            },
+        }
 
         self._configchain = collections.ChainMap(
-            self._filter_overrides(self._context_manager_overrides),
-            temp_config,
-            local_config,
+            *self._configs.values(),
             self._defaults,
         )
 
@@ -181,19 +182,17 @@ class NewConfig(NewBaseConfig):
     def with_overrides(
         self,
         *,
-        local_config_path: PathLike | None = None,
+        config_paths: Sequence[PathLike | None] | None = None,
         **kwargs: Any,
     ) -> Iterator[None]:
         """Allow temporarily overriding config values via context manager."""
 
-        _LOGGER.debug(
-            f"Starting config override with {local_config_path=} and {kwargs=}."
-        )
-        _real_local_config_path = self._local_config_path
-        _real_context_manager_overrides = self._context_manager_overrides
+        _LOGGER.debug(f"Starting config override with {config_paths=} and {kwargs=}.")
+        real_config_paths = self._config_paths
+        real_context_manager_overrides = self._context_manager_overrides
 
-        if local_config_path:
-            self._local_config_path = pathlib.Path(local_config_path)
+        if config_paths is not None:
+            self._config_paths = self.parse_paths(config_paths)
         if kwargs:
             # Do not filter the kwargs here, so the NewSecretsConfig can use them too.
             self._context_manager_overrides = kwargs
@@ -205,11 +204,11 @@ class NewConfig(NewBaseConfig):
         yield
 
         _LOGGER.debug(
-            f"Resetting after config override to {_real_local_config_path=} and {_real_context_manager_overrides=}."
+            f"Resetting after config override to {real_config_paths=} and {real_context_manager_overrides=}."
         )
 
-        self._local_config_path = _real_local_config_path
-        self._context_manager_overrides = _real_context_manager_overrides
+        self._config_paths = real_config_paths
+        self._context_manager_overrides = real_context_manager_overrides
 
         self.reload()
 
@@ -218,19 +217,23 @@ class NewConfig(NewBaseConfig):
     # The repr is only relevant for debugging.
     def __repr__(self) -> str:  # pragma: no cover
         name = self.__class__.__qualname__
-        return f"{name}(cm={self._configchain.maps[0]!r} temp={self._configchain.maps[1]!r} local={self._configchain.maps[2]!r})"
+        configs = [
+            (repr(k[1:]) if k.startswith("_") else k) + "=" + repr(v)
+            for k, v in self._configs.items()
+        ]
+        return f"{name}({' '.join(configs)})"
 
 
 class NewSecretsConfig(NewBaseConfig):
     _defaults = _SECRECTS_DEFAULTS
-    _local_config_key = "SECRETS_CONFIGPATH"
+    _config_path_key = "SECRETS_CONFIGPATH"
 
     def _init_once(self) -> None:
         self._config = NewConfig()
 
     def reload(self, recurse: bool = True) -> None:
         local_config = self._filter_overrides(
-            _import_from_file(self._config[self._local_config_key])
+            _import_from_file(self._config[self._config_path_key])
         )
 
         # for security reasons, do not use the _SECRETS_DEFAULT in production

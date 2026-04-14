@@ -259,7 +259,8 @@ class Script:
             self._exit_stack.enter_context(self._redirect)
         self._exit_stack.enter_context(
             self.config.with_overrides(
-                **{Config._temp_config_key: self._configpath}, **self._config_overrides
+                config_paths=[self._configpath] if self._configpath else None,
+                **self._config_overrides,
             )
         )
         self._exit_stack.__enter__()

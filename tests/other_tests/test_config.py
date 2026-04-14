@@ -34,10 +34,7 @@ class TestConfig(unittest.TestCase):
         cls.real_config_path = get_configpath()
 
     def setUp(self) -> None:
-        if (
-            self.config._temp_config_path is not None
-            or self.config._context_manager_overrides
-        ):
+        if self.config._context_manager_overrides:
             self.fail("Started config test with active config overrides.")
 
     def tearDown(self) -> None:
@@ -90,12 +87,12 @@ class TestConfig(unittest.TestCase):
         check_config_defaults()
         check_secrets_defaults()
 
-        # Check override via local config path.
+        # Check override via config path.
         #  (This replaces the config path set for the testsuite.)
 
         override_path = pathlib.Path("tests/ancillary_files/extra_config.py")
 
-        with self.config.with_overrides(local_config_path=override_path):
+        with self.config.with_overrides(config_paths=[override_path]):
             check_config_overrides()
             # The override config also adjusts the secrets config path.
             check_secrets_overrides()
@@ -103,19 +100,13 @@ class TestConfig(unittest.TestCase):
         check_config_defaults()
         check_secrets_defaults()
 
-        # Check override via temp file (via kwarg override).
-        #  (This keeps the local config path set for the testsuite but takes precedence.)
-
-        with self.config.with_overrides(TEMP_CONFIG_PATH=override_path):
-            check_config_overrides()
-            # The override config also adjusts the secrets config path.
-            check_secrets_overrides()
-
-        check_config_defaults()
-        check_secrets_defaults()
+        # Check override via config path.
+        #  (This replaces the config path set for the testsuite. So take care to extend it.)
 
         with tempfile.NamedTemporaryFile("w", encoding="utf8", suffix=".py") as f:
-            with self.config.with_overrides(TEMP_CONFIG_PATH=pathlib.Path(f.name)):
+            with self.config.with_overrides(
+                config_paths=[pathlib.Path(f.name)] + self.config._config_paths
+            ):
                 # File is still empty.
                 check_config_defaults()
                 check_secrets_defaults()

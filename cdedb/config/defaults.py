@@ -1,11 +1,11 @@
-import datetime
-import decimal
-import logging
-import pathlib
-import subprocess
-import zoneinfo
+import datetime as _datetime
+import decimal as _decimal
+import logging as _logging
+import pathlib as _pathlib
+import subprocess as _subprocess
+import zoneinfo as _zoneinfo
 
-_currentdir = pathlib.Path(__file__).resolve().parent
+_currentdir = _pathlib.Path(__file__).resolve().parent.parent
 if _currentdir.parts[0] != '/' or _currentdir.parts[-1] != 'cdedb':  # pragma: no cover
     raise RuntimeError("Failed to locate repository")
 _repopath = _currentdir.parent
@@ -13,7 +13,7 @@ _repopath = _currentdir.parent
 
 try:
     _git_commit = (
-        subprocess
+        _subprocess
         .check_output(("git", "rev-parse", "HEAD"), cwd=_repopath)
         .decode()
         .strip()
@@ -26,7 +26,7 @@ except FileNotFoundError:  # pragma: no cover, only catch git executable not fou
         _git_commit = (
             (_repopath / ".git" / _git_commit.removeprefix("ref: ")).read_text().strip()
         )
-except subprocess.CalledProcessError as e:  # pragma: no cover
+except _subprocess.CalledProcessError as e:  # pragma: no cover
     # It can happen that we use a git worktree where the primary repository
     # is outside of the sandbox/VM in which we are running. Testing this is infeasible.
     _git_reference = (_repopath / ".git").read_text().strip()
@@ -54,10 +54,7 @@ HTTP_HOSTS = [
 REPOSITORY_PATH = _repopath
 
 # path to the file which holds the password overrides of the SecretsConfig
-SECRETS_CONFIGPATH = pathlib.Path("/etc/cdedb/public-secrets.py")
-
-# path to a file containing additional config overrides. May be None.
-TEMP_CONFIG_PATH = None
+SECRETS_CONFIGPATH = _pathlib.Path("/etc/cdedb/public-secrets.py")
 
 # name of database to use
 CDB_DATABASE_NAME = "cdb"
@@ -92,17 +89,17 @@ CDEDB_DEV = False
 CDEDB_TEST = False
 
 # place for uploaded data
-STORAGE_DIR = pathlib.Path("/var/lib/cdedb/")
+STORAGE_DIR = _pathlib.Path("/var/lib/cdedb/")
 
 # log level of our application
-DEFAULT_LOG_LEVEL = logging.INFO
+DEFAULT_LOG_LEVEL = _logging.INFO
 LOG_LEVEL = DEFAULT_LOG_LEVEL
 
 # hash id of the current HEAD/running version
 GIT_COMMIT = _git_commit
 
 # default timezone for input and output
-DEFAULT_TIMEZONE = zoneinfo.ZoneInfo("Europe/Berlin")
+DEFAULT_TIMEZONE = _zoneinfo.ZoneInfo("Europe/Berlin")
 
 # droids which are allowed access during lockdown.
 INFRASTRUCTURE_DROIDS = {"resolve"}
@@ -112,9 +109,9 @@ INFRASTRUCTURE_DROIDS = {"resolve"}
 ##################
 
 # timeout for protected url parameters to prevent replay
-PARAMETER_TIMEOUT = datetime.timedelta(hours=3)
+PARAMETER_TIMEOUT = _datetime.timedelta(hours=3)
 # timeout for protected parameters, that are not security related or are triggered by another user.
-EXTENDED_PARAMETER_TIMEOUT = datetime.timedelta(days=5)
+EXTENDED_PARAMETER_TIMEOUT = _datetime.timedelta(days=5)
 # maximum length of rationale for requesting an account
 MAX_RATIONALE = 500
 # for shortnames longer than this, a ValidationWarning will be raised
@@ -139,7 +136,7 @@ I18N_LANGUAGES = ("de", "en", "la")
 # Advertised languages in the UI
 I18N_ADVERTISED_LANGUAGES = ("de", "en")
 # timeout for cleaning up genesis cases
-GENESIS_CLEANUP_TIMEOUT = datetime.timedelta(days=90)
+GENESIS_CLEANUP_TIMEOUT = _datetime.timedelta(days=90)
 
 ###############
 # email stuff #
@@ -234,7 +231,7 @@ MAILMAN_ACCEPTABLE_ALIASES = {
 #
 
 # amount of time after which an inactive account may be archived.
-AUTOMATED_ARCHIVAL_CUTOFF = datetime.timedelta(days=365 * 2)
+AUTOMATED_ARCHIVAL_CUTOFF = _datetime.timedelta(days=365 * 2)
 # ID of the last event where we do not care about remaining_owed.
 EVENT_ARCHIVAL_BALANCE_CUTOFF = 64  # NachhaltigkeitsAkademie 2023
 
@@ -243,11 +240,11 @@ EVENT_ARCHIVAL_BALANCE_CUTOFF = 64  # NachhaltigkeitsAkademie 2023
 #
 
 # time which a session remains active without sending a new request
-SESSION_TIMEOUT = datetime.timedelta(days=2)
+SESSION_TIMEOUT = _datetime.timedelta(days=2)
 # maximum time which a session may remain active
-SESSION_LIFESPAN = datetime.timedelta(days=7)
+SESSION_LIFESPAN = _datetime.timedelta(days=7)
 # minimum time which sessions stay in the database
-SESSION_SAVETIME = datetime.timedelta(days=30)
+SESSION_SAVETIME = _datetime.timedelta(days=30)
 
 # Maximum concurrent sessions per user.
 MAX_ACTIVE_SESSIONS = 5
@@ -270,14 +267,14 @@ NEARBY_SEARCH_RADII = {
 # id of the first semester for which relevant data exists.
 MIN_RELEVANT_SEMESTER = 42
 # amount deducted from balance each period (semester)
-MEMBERSHIP_FEE = decimal.Decimal('4.00')
+MEMBERSHIP_FEE = _decimal.Decimal('4.00')
 # probably always 1 or 2
 PERIODS_PER_YEAR = 2
 # the minimal and maximal donation we accept per annual lastschrifts
-MINIMAL_LASTSCHRIFT_DONATION = decimal.Decimal('2.00')
-MAXIMAL_LASTSCHRIFT_DONATION = decimal.Decimal('1000.00')
+MINIMAL_LASTSCHRIFT_DONATION = _decimal.Decimal('2.00')
+MAXIMAL_LASTSCHRIFT_DONATION = _decimal.Decimal('1000.00')
 # the predefined donation amount of a lastschrift, if the user didn't specified one
-TYPICAL_LASTSCHRIFT_DONATION = decimal.Decimal('20.00')
+TYPICAL_LASTSCHRIFT_DONATION = _decimal.Decimal('20.00')
 
 # Address of the originating organization
 # The actual address consists of multiple lines
@@ -288,13 +285,13 @@ SEPA_GLAEUBIGERID = "DE00ZZZ00099999999"
 # Old "Gläubiger-ID" if it changed.
 SEPA_ORIGINAL_GLAEUBIGERID = ""
 # Date at which SEPA was introduced
-SEPA_INITIALISATION_DATE = datetime.date(2013, 7, 30)
+SEPA_INITIALISATION_DATE = _datetime.date(2013, 7, 30)
 # Date after which SEPA was used exclusively
-SEPA_CUTOFF_DATE = datetime.date(2013, 10, 14)
+SEPA_CUTOFF_DATE = _datetime.date(2013, 10, 14)
 # Timespan to wait between issuing of SEPA order and fulfillment
-SEPA_PAYMENT_OFFSET = datetime.timedelta(days=17)
+SEPA_PAYMENT_OFFSET = _datetime.timedelta(days=17)
 # processing fee we incur if a transaction is rolled back
-SEPA_ROLLBACK_FEE = decimal.Decimal('4.50')
+SEPA_ROLLBACK_FEE = _decimal.Decimal('4.50')
 
 #
 # event stuff
@@ -309,8 +306,8 @@ ORGA_ADD_LIMIT = 10
 #
 
 # time which a access to a case remains active for.
-COMPLAINT_UNLOCK_TIMEOUT = datetime.timedelta(minutes=30)
-COMPLAINT_ENTRY_VERSION_PURGE_DELAY = datetime.timedelta(days=10)
+COMPLAINT_UNLOCK_TIMEOUT = _datetime.timedelta(minutes=30)
+COMPLAINT_ENTRY_VERSION_PURGE_DELAY = _datetime.timedelta(days=10)
 
 ###############
 # Query stuff #
