@@ -109,6 +109,7 @@ RUN cp /tmp/autobuild/gitconfig-system /etc/gitconfig \
     && chown www-cde:www-data /etc/cdedb-mailman-htpasswd \
     && chmod 640 /etc/cdedb-mailman-htpasswd \
     \
+    && mkdir -p /etc/cdedb \
     && touch /etc/cdedb/config.py \
     && touch /etc/cdedb/public-secrets.py \
     \
