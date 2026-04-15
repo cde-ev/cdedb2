@@ -18,8 +18,9 @@ from typing import Collection
 from psycopg2.extras import Json, RealDictCursor
 
 import cdedb.models.event as models
-from cdedb.cli.__main__ import apply_sample_data
+from cdedb.cli.__main__ import apply_sample_data, populate_event_keeper_cmd
 from cdedb.cli.storage import populate_event_keeper
+from cdedb.cli.util import switch_user
 from cdedb.common import EVENT_SCHEMA_VERSION, CdEDBObject
 from cdedb.config import (
     Config,
@@ -193,7 +194,14 @@ def work(
             if input("Are you sure (type uppercase YES)? ").strip() != "YES":
                 print("Aborting.")
                 sys.exit()
-        apply_sample_data(conf)
+        try:
+            apply_sample_data(conf)
+        except PermissionError:
+            try:
+                with switch_user(user="www-cde", group="www-data"):
+                    apply_sample_data(conf)
+            except PermissionError as e:
+                raise PermissionError("Unable to apply sample data. Might need to be run as root.") from e
 
     # connect to the database, using elevated access
     connection = Script(dbuser="cdb", check_system_user=False).rs().conn
@@ -214,7 +222,14 @@ def work(
             subprocess.run(["sudo", "rm", "-r", str(thing)], check=True)
 
     print("Setup the eventkeeper git repository.")
-    populate_event_keeper(conf, [data['id']])
+    try:
+        populate_event_keeper(conf, event_ids=[data['id']])
+    except PermissionError:
+        try:
+            with switch_user(user="www-cde", group="www-data"):
+                populate_event_keeper(conf, event_ids=[data['id']])
+        except PermissionError as e:
+            raise PermissionError("Unable to setup event keeper. Might need to be run as root.") from e
 
     print("Make orgas into admins")
     orgas = {e['persona_id'] for e in data['event.orgas'].values()}
