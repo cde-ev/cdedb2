@@ -4,9 +4,10 @@
 a way to override them. Any hardcoded values should be found in
 here. An exception are the default queries, which are defined in `query_defaults.py`.
 
-Each config object takes into account the default values found in here. They can
-be overwritten with values in an additional config file, where the path to this
-file has to be present as environment variable CDEDB_CONFIGPATH.
+Each config object takes into account the default values found in 'defaults.py'.
+They can be overwritten with values in additional config files, whose paths are given
+via the environment variable 'CDEDB_CONFIGPATHS'. By default an override config is read
+from '/etc/cdedb/config.py'.
 """
 
 import abc
@@ -141,6 +142,10 @@ class NewConfig(NewBaseConfig):
         if cls._config_paths_env_name in os.environ:
             return cls.parse_paths(os.environ[cls._config_paths_env_name].split(":"))
         return cls._default_config_paths
+
+    @classmethod
+    def get_config_env(cls) -> dict[str, str]:
+        return {cls._config_paths_env_name: ":".join(map(str, cls.get_config_paths()))}
 
     @classmethod
     def get_config_paths(cls) -> list[pathlib.Path]:

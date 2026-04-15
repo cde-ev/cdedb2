@@ -40,10 +40,6 @@ class TestOffline(FrontendTest):
                     curr.execute(purge_database.read_text())
 
             try:
-                # give the environment (especially the current CDEDB_CONFIGPATH) to the
-                # subprocess. Since the test configpaths use imports from test, we append
-                # the whole repo to the PYTHONPATH so they are found.
-
                 work(
                     repopath / "tests" / "ancillary_files" / "event_export.json",
                     conf=self.conf,

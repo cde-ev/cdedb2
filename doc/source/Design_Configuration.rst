@@ -7,6 +7,8 @@ used in the actual code.
 "Hardcoded values" means hereby literally anything, from passwords over the name of the database
 to the default time zone or the log directory.
 
+.. FIXME:
+
 The config is build hierarchically:
 First, there are default values for each config variable in the file :mod:`cdedb.config`.
 They can be overwritten by specifying the path to a custom config file via the environment
