@@ -75,7 +75,9 @@ module-name = "cdedb"
 module-root = ""
 
 [tool.uv]
-exclude-newer = "14 days"
+# Reduce for now, because of uv and renovate interaction.
+#exclude-newer = "14 days"
+exclude-newer = "1 day"
 
 [tool.uv.exclude-newer-package]
 # Critical infrastructure packages we want to allow timely security updates for.

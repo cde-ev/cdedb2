@@ -3,16 +3,16 @@ revision = 3
 requires-python = "==3.13.*"
 
 [options]
-exclude-newer = "2026-03-31T17:00:55.829982993Z"
-exclude-newer-span = "P14D"
+exclude-newer = "2026-04-14T18:00:39.966461901Z"
+exclude-newer-span = "P1D"
 
 [options.exclude-newer-package]
-subman = { timestamp = "2026-04-14T16:59:55.829998663Z", span = "PT1M" }
-werkzeug = { timestamp = "2026-04-13T17:00:55.829998002Z", span = "P1D" }
-passlib = { timestamp = "2026-04-13T17:00:55.829997711Z", span = "P1D" }
-cryptography = { timestamp = "2026-04-13T17:00:55.829998252Z", span = "P1D" }
-schulze-condorcet = { timestamp = "2026-04-14T16:59:55.829999133Z", span = "PT1M" }
-gunicorn = { timestamp = "2026-04-13T17:00:55.82999163Z", span = "P1D" }
+subman = { timestamp = "2026-04-15T17:59:39.966486959Z", span = "PT1M" }
+werkzeug = { timestamp = "2026-04-14T18:00:39.966485977Z", span = "P1D" }
+passlib = { timestamp = "2026-04-14T18:00:39.966485526Z", span = "P1D" }
+cryptography = { timestamp = "2026-04-14T18:00:39.966486308Z", span = "P1D" }
+schulze-condorcet = { timestamp = "2026-04-15T17:59:39.96648757Z", span = "PT1M" }
+gunicorn = { timestamp = "2026-04-14T18:00:39.966474015Z", span = "P1D" }
 
 [[package]]
 name = "alabaster"
