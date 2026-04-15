@@ -5,37 +5,35 @@ The guiding spirit for development is that there are no hardcoded values anywher
 Instead, there is a central place, the ``Config``, holding all hardcoded values, which can then be
 used in the actual code.
 "Hardcoded values" means hereby literally anything, from passwords over the name of the database
-to the default time zone or the log directory.
-
-.. FIXME:
+to the default time zone or the storage directory.
 
 The config is build hierarchically:
-First, there are default values for each config variable in the file :mod:`cdedb.config`.
-They can be overwritten by specifying the path to a custom config file via the environment
-variable ``CDEDB_CONFIGPATH``. [#apacheconfig]_
+First, there are default values for each config variable in the file :mod:`cdedb.config.defaults`.
+They can be overridden via custom config files. Any number of such config files can be given via
+the environment variable ``CDEDB_CONFIGPATHS``, separated by ``:``. Earlier files take precedence.
+Empty or non-existant files are ignored. If the environment variable is not set, overrides are loaded
+from ``/etc/cdedb/config.py``.
 
 To provide a second layer of protection, there is a separate Config class holding all critical
 (mostly password) config options: the ``SecretsConfig``.
 To overwrite this subset of config values (which is highly recommended!), let the
-``SECRETS_CONFIGPATH`` config option point to your custom secrets config file.
+``SECRETS_CONFIGPATH`` config option to point to your custom secrets config file.
 This file can then be further protected, for example by shrinking its access permissions on
 the file system to a specific user which is running the application (conventionally named
 ``www-cde``).
 
-Note that both ``Config`` and ``SecretsConfig`` are recompiled with the new config values
-if the ``CDEDB_CONFIGPATH`` environment variable changed. This happens before the next
-access to the respective config object is performed.
+Note that the specified files are only read once, at application start, any changes to these files
+will only take effect after a restart or by explicitly clearing the config cache.
 
-Both ``Config`` and ``SecretsConfig`` take config options from a custom file without a default
-value in :mod:`cdedb.config` not into account. However, there are cases where it would be
-desirable to add values to the config objects which are not used in the actual codebase, f.e.
-if they are needed inside the test-suite. To honor such usecases, there is the class
-``TestConfig`` inheriting from ``Config``, allowing to set arbitrary values inside the overwrite
-files.
+If you need to temporarily adjust config values, ``Config`` provides a ``with_override`` context manager
+method, that can be used both to set different config paths or to explicitly override keys from either
+``Config`` or ``SecretsConfig``.
 
-All config objects can in principle be instantiated anywhere in the codebase. If they are
-available otherwise (f.e. as instance attribute), using them is preferred over instantiation.
-As a direct consequence of this design principle, the config is read-only and can not be
-changed at runtime.
+Both ``Config`` and ``SecretsConfig`` are singletons, so instantiating them will always return
+the exact same singular instance respectively. Thus any change made to the config via ``with_override``
+immediately takes effect for every single config object anywhere, regardless of if it was instantiated
+before or after the override.
+
+Note that it is not possible to directly write to the config.
 
 .. [#apacheconfig] For the subtleties of the Apache Configuration, see :doc:`Design_WSGI`.
