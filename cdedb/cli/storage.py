@@ -16,7 +16,7 @@ from cdedb.cli.util import (
     sanity_check_production,
     switch_user,
 )
-from cdedb.config import Config, SecretsConfig, get_configpath
+from cdedb.config import Config, SecretsConfig
 
 
 def _recreate_directory(directory: pathlib.Path) -> None:
@@ -165,7 +165,7 @@ def reset_config(conf: Config) -> tuple[Config, SecretsConfig]:
     sample_config_path: pathlib.Path = (
         conf["REPOSITORY_PATH"] / "related/auto-build/files/stage3/localconfig.py"
     )
-    config_path = get_configpath()
+    config_path = conf.get_config_paths()[0]
 
     # there is obviously nothing to do
     if sample_config_path.samefile(config_path):

@@ -38,26 +38,15 @@ from cdedb.cli.util import (
     switch_user,
 )
 from cdedb.common import CustomJSONEncoder
-from cdedb.config import DEFAULT_CONFIGPATH, SecretsConfig, TestConfig, set_configpath
+from cdedb.config import Config, SecretsConfig, TestConfig
 
 
 @click.group()
-@click.option(
-    "--configpath",
-    envvar="CDEDB_CONFIGPATH",
-    default=DEFAULT_CONFIGPATH,
-    type=pathlib.Path,
-    show_default=True,
-)
-def cli(configpath: pathlib.Path) -> None:
+def cli() -> None:
     """Command line interface for setup of CdEDB.
 
     This is divided in command subgroups for the different points of setup.
-
-    To change the setup process, you can provide a custom path to your configuration
-    file. This may also be done by setting the CDEDB_CONFIGPATH environment variable.
     """
-    set_configpath(configpath)
 
 
 @cli.group(name="config")
@@ -81,7 +70,7 @@ def get_config_var(config: TestConfig, variable: str) -> None:
 @config.command(name="default-configpath")
 def get_default_configpath() -> None:
     """Get the default configpath."""
-    click.echo(DEFAULT_CONFIGPATH)
+    click.echo(Config._default_config_paths)
 
 
 @cli.group(name="filesystem")
@@ -368,14 +357,14 @@ def check_sample_data_consistency(ctx: click.Context) -> None:
     # setup fresh database
     # it does not matter which database we use here, but we don't want to flush the
     # current one, so we use a test database instead.
-    set_configpath("/cdedb2/tests/config/test_ldap.py")
-    config = TestConfig()
-    secrets = SecretsConfig()
-    create_database(config, secrets)
-    populate_database(config, secrets)
+    config = Config()
+    with config.with_overrides(config_paths="/cdedb2/tests/config/test_ldap.py"):
+        secrets = SecretsConfig()
+        create_database(config, secrets)
+        populate_database(config, secrets)
 
-    # get a fresh sample_data.json from this database
-    ctx.forward(compile_sample_data_json, outfile=clean_data, silent=True)
+        # get a fresh sample_data.json from this database
+        ctx.forward(compile_sample_data_json, outfile=clean_data, silent=True)
 
     # compare the fresh one with the current one
     with open(clean_data, encoding='UTF-8') as f:

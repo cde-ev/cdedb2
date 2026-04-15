@@ -152,12 +152,17 @@ class NewConfig(NewBaseConfig):
         return cls._default_config_paths
 
     @classmethod
-    def get_configpath(cls) -> pathlib.Path:
-        return cls()._config_paths[0]
+    def get_config_paths(cls) -> list[pathlib.Path]:
+        return cls()._config_paths
 
     @classmethod
-    def set_config_path(cls, path: PathLike) -> None:
-        cls()._config_paths = cls.parse_paths([path])
+    def set_config_paths(cls, *paths: PathLike) -> None:
+        cls()._config_paths = cls.parse_paths(paths)
+        cls().reload()
+
+    @classmethod
+    def clear_config_cache(cls) -> None:
+        _import_from_file_inner.cache_clear()
         cls().reload()
 
     def reload(self, recurse: bool = True) -> None:
@@ -258,6 +263,3 @@ class NewSecretsConfig(NewBaseConfig):
 Config = NewConfig
 TestConfig = NewConfig
 SecretsConfig = NewSecretsConfig
-
-get_configpath = NewConfig.get_configpath
-set_configpath = NewConfig.set_config_path

@@ -6,62 +6,36 @@ import tempfile
 import unittest
 from typing import ClassVar
 
-from cdedb.config import (
-    Config,
-    SecretsConfig,
-    get_configpath,
-    set_configpath,
-)
+from cdedb.config import Config, SecretsConfig
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def reset_config(configpath: pathlib.Path) -> None:
+def reset_config(configpaths: list[pathlib.Path]) -> None:
     # This is technically wrong, since it overwrites any kwarg overrides previously given.
     #  We just assume that this won't happen in order to run these tests.
     Config()._init_once()
-    set_configpath(configpath)
+    Config().set_config_paths(*configpaths)
 
 
 class TestConfig(unittest.TestCase):
-    real_config_path: ClassVar[pathlib.Path]
+    real_config_paths: ClassVar[list[pathlib.Path]]
     config = Config()
     secrets = SecretsConfig()
 
     @classmethod
     def setUpClass(cls) -> None:
         # store the real config path, so we can reset it after each test
-        cls.real_config_path = get_configpath()
+        cls.real_config_paths = cls.config.get_config_paths()
 
     def setUp(self) -> None:
         if self.config._context_manager_overrides:
             self.fail("Started config test with active config overrides.")
 
     def tearDown(self) -> None:
-        reset_config(self.real_config_path)
+        reset_config(self.real_config_paths)
 
     def test_override(self) -> None:
-        # check config default values
-        config = Config()
-        self.assertIn(config["DB_PORT"], {6432, 5432})
-
-        # check secret config default values
-        secret = SecretsConfig()
-        self.assertEqual(secret["URL_PARAMETER_SALT"], "aoeuidhtns9KT6AOR2kNjq2zO")
-
-        # override default values by providing a config path
-        set_configpath("tests/ancillary_files/extra_config.py")
-
-        # check config override
-        extraconfig = Config()
-        self.assertEqual(extraconfig["DB_PORT"], 42)
-        self.assertEqual(extraconfig["CDB_DATABASE_NAME"], "skynet")
-
-        # check secret config override
-        extrasecret = SecretsConfig()
-        self.assertEqual(extrasecret["URL_PARAMETER_SALT"], "matrix")
-
-    def test_override_new(self) -> None:
         def check_config_defaults() -> None:
             # self.assertIs(self.config, NewConfig())
             # check config default values
@@ -105,7 +79,7 @@ class TestConfig(unittest.TestCase):
 
         with tempfile.NamedTemporaryFile("w", encoding="utf8", suffix=".py") as f:
             with self.config.with_overrides(
-                config_paths=[pathlib.Path(f.name)] + self.config._config_paths
+                config_paths=[pathlib.Path(f.name)] + self.config.get_config_paths()
             ):
                 # File is still empty.
                 check_config_defaults()
@@ -143,20 +117,6 @@ class TestConfig(unittest.TestCase):
 
         check_config_defaults()
         check_secrets_defaults()
-
-    def test_caching(self) -> None:
-        current_configpath = get_configpath()
-        # the new config configures itself as secret config override!
-        set_configpath("tests/ancillary_files/extra_config.py")
-
-        # check that the secrets config was overridden
-        extrasecret = SecretsConfig()
-        self.assertEqual(extrasecret["URL_PARAMETER_SALT"], "matrix")
-
-        # check that everything works fine if we reset to the previous configpath
-        set_configpath(current_configpath)
-        testsecret = SecretsConfig()
-        self.assertEqual(testsecret["URL_PARAMETER_SALT"], "aoeuidhtns9KT6AOR2kNjq2zO")
 
     def test_production_secrets(self) -> None:
         production_vm_marker = pathlib.Path("/PRODUCTIONVM")
