@@ -21,16 +21,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from types import ModuleType
 from typing import Any, ClassVar, Final, Self
 
-from cdedb.config.defaults import DEFAULT_LOG_LEVEL  # noqa: F401
-
 PathLike = pathlib.Path | str
-
-
-# The default path were a configuration file is expected. It is easier to hardcode this
-# at some places where the configpath environment variable is unfeasible (like in
-# wsgi.py, the entry point of apache2). This reflects also the configpath were the
-# autobuild, docker-compose and production expect the config per default.
-DEFAULT_CONFIGPATH = pathlib.Path("/etc/cdedb/config.py")
 
 _LOGGER = logging.getLogger(__name__)
 _ROOT_LOGGER = logging.getLogger()

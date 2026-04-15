@@ -70,7 +70,7 @@ def get_config_var(config: TestConfig, variable: str) -> None:
 @config.command(name="default-configpath")
 def get_default_configpath() -> None:
     """Get the default configpath."""
-    click.echo(Config._default_config_paths)
+    click.echo(Config._default_config_paths[0])
 
 
 @cli.group(name="filesystem")
