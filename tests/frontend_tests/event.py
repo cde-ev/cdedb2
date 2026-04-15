@@ -2016,6 +2016,7 @@ etc;anything else""",
 
         event_frontend: EventFrontend = self.app.app.event
         qr_data = event_frontend._registration_fee_qr_data(payment_data)
+        assert qr_data is not None
 
         qr_expectation = b"""\
 BCD
