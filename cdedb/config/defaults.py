@@ -380,8 +380,13 @@ ORGA_ADD_LIMIT = 10
 COMPLAINT_UNLOCK_TIMEOUT = _datetime.timedelta(minutes=30)
 COMPLAINT_ENTRY_VERSION_PURGE_DELAY = _datetime.timedelta(days=10)
 
-###############
-# Query stuff #
-###############
+##############
+# Test stuff #
+##############
 
-# this can be found and overridden in cdedb2/query_defaults.py
+XSS_OUTDIR = _pathlib.Path("./out")
+XSS_PAYLOAD = "<script>abcdef</script>"
+XSS_PAYLOAD_SECONDARY = [
+    "&amp;lt;",
+    "&amp;gt;",
+]
