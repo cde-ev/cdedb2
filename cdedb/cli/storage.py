@@ -16,7 +16,7 @@ from cdedb.cli.util import (
     sanity_check_production,
     switch_user,
 )
-from cdedb.config import Config, SecretsConfig
+from cdedb.config import Config
 
 
 def _recreate_directory(directory: pathlib.Path) -> None:
@@ -160,18 +160,10 @@ def populate_sample_event_keepers(conf: Config) -> None:
 
 
 @sanity_check
-def reset_config(conf: Config) -> tuple[Config, SecretsConfig]:
+def reset_config(conf: Config) -> None:
     """Replace the current config file with the sample config."""
-    sample_config_path: pathlib.Path = (
-        conf["REPOSITORY_PATH"] / "related/auto-build/files/stage3/localconfig.py"
-    )
-    config_path = conf.get_config_paths()[0]
+    config_paths = conf.get_config_paths()
 
-    # there is obviously nothing to do
-    if sample_config_path.samefile(config_path):
-        return Config(), SecretsConfig()
-
-    config_path.unlink()
-    shutil.copy(sample_config_path, config_path)
-    shutil.chown(config_path, "cdedb", "cdedb")
-    return Config(), SecretsConfig()
+    for path in config_paths:
+        path.write_bytes(b"")
+        shutil.chown(path, "cdedb", "cdedb")

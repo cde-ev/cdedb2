@@ -274,7 +274,8 @@ def compile_sample_data_sql(
 @pass_config
 def apply_sample_data(config: TestConfig, owner: str, group: Optional[str]) -> None:
     """Repopulates the application with sample data."""
-    config, secrets = reset_config(config)
+    reset_config(config)
+    secrets = SecretsConfig()
     with switch_user(owner, group):
         create_storage(config)
         populate_storage(config)

@@ -43,7 +43,7 @@ def _import_from_file(path: PathLike | None) -> dict[str, Any]:
         _LOGGER.warning(f"Config file {path.as_posix()!r} does not exist.")
         return {}
     if not path.read_text(encoding="utf-8"):
-        _LOGGER.warning(f"Config file {path.as_posix()!r} is empty.")
+        _LOGGER.info(f"Config file {path.as_posix()!r} is empty.")
         return {}
     return _import_from_file_inner(str(path))
 
