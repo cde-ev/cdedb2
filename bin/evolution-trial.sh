@@ -10,7 +10,7 @@ cd /cdedb2
 # silence git output after switching to a detached head
 git config advice.detachedHead false
 
-if [[ "$(git rev-parse $OLDREVISION^{})" = "$(git rev-parse $NEWREVISION^{})" ]]; then
+if [[ "$(git rev-parse "$OLDREVISION"^{})" = "$(git rev-parse "$NEWREVISION"^{})" ]]; then
     echo "Source and target are identical."
     exit 0
 fi
@@ -18,7 +18,7 @@ fi
 # old revision
 echo ""
 echo "Checkout $OLDREVISION"
-git checkout $OLDREVISION
+git checkout "$OLDREVISION"
 
 echo ""
 echo "Creating pristine database and gathering list of evolutions."
@@ -26,7 +26,7 @@ ls cdedb/database/evolutions > /tmp/oldevolutions.txt
 ls related/deploy > /tmp/olddeploys.txt
 # Leave this setting in place – the history shows that there will be a time the syntax
 # changes and we need this again...
-if git merge-base --is-ancestor 5f18f7e5239fc4c10b6c79dfdd4b68a260a99e00 $OLDREVISION; then
+if git merge-base --is-ancestor 5f18f7e5239fc4c10b6c79dfdd4b68a260a99e00 "$OLDREVISION"; then
     python3 -m cdedb dev apply-evolution-trial
 else
     python3 -m cdedb db create-users
@@ -37,15 +37,15 @@ fi
 # new revision
 echo ""
 echo "Checkout $NEWREVISION"
-git checkout $NEWREVISION
+git checkout "$NEWREVISION"
 
 # determine evolutions to apply.
 echo ""
 echo "Compiling list of evolutions to apply:"
 truncate -s0 /tmp/todoevolutions.txt
-ls cdedb/database/evolutions | sort > /tmp/newevolutions.txt
+ls cdedb/database/evolutions > /tmp/newevolutions.txt
 (grep /tmp/newevolutions.txt -v -f /tmp/oldevolutions.txt > /tmp/todoevolutions.txt) || true
-ls related/deploy | sort > /tmp/newdeploys.txt
+ls related/deploy > /tmp/newdeploys.txt
 (grep /tmp/newdeploys.txt -v -f /tmp/olddeploys.txt > /tmp/tododeploys.txt) || true
 echo ""
 cat /tmp/todoevolutions.txt
@@ -60,15 +60,15 @@ while read -r evolution; do
     if [[ $evolution == *.postgres.sql ]]; then
         echo ""
         echo "Apply evolution $evolution as postgres database user."| tee -a /tmp/output-evolution.txt
-        sudo CDEDB_CONFIGPATH=$CDEDB_CONFIGPATH POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
+        sudo CDEDB_CONFIGPATH="$CDEDB_CONFIGPATH" POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
              python3 -m cdedb dev execute-sql-script --as-postgres -vv \
-             -f cdedb/database/evolutions/$evolution \
+             -f cdedb/database/evolutions/"$evolution" \
              -o $evolution_output --outfile-append || echo "Error while applying $evolution"
     elif [[ $evolution == *.sql ]]; then
         echo ""
         echo "Apply evolution $evolution" | tee -a /tmp/output-evolution.txt
         python3 -m cdedb dev execute-sql-script -vv \
-             -f cdedb/database/evolutions/$evolution \
+             -f cdedb/database/evolutions/"$evolution" \
              -o $evolution_output --outfile-append || echo "Error while applying $evolution"
     elif [[ $evolution == *.py ]]; then
         echo ""
@@ -80,9 +80,9 @@ while read -r evolution; do
             EVOLUTION_TRIAL_OVERRIDE_PERSONA_ID=1 \
             EVOLUTION_TRIAL_OVERRIDE_OUTFILE=$evolution_output \
             EVOLUTION_TRIAL_OVERRIDE_OUTFILE_APPEND=1 \
-            PYTHONPATH=$PYTHONPATH \
-            CDEDB_CONFIGPATH=$CDEDB_CONFIGPATH \
-            python3 cdedb/database/evolutions/$evolution || echo "Error while applying $evolution"
+            PYTHONPATH="$PYTHONPATH" \
+            CDEDB_CONFIGPATH="$CDEDB_CONFIGPATH" \
+            python3 cdedb/database/evolutions/"$evolution" || echo "Error while applying $evolution"
     else
         echo "Unhandled evolution $evolution" | tee -a /tmp/output-evolution.txt
     fi

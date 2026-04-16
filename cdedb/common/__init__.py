@@ -953,7 +953,7 @@ class AgeClasses(CdEIntEnum):
         """Whether persons of this age may be legally accomodated in a mixed
         lodging together with the opposite gender.
         """
-        return self in {AgeClasses.full, AgeClasses.u18, AgeClasses.u10}
+        return self in {AgeClasses.full, AgeClasses.u18, AgeClasses.u16, AgeClasses.u10}
 
     def with_guardian(self) -> bool:
         """Whether we assume that the child is accompanied by a legal guardian

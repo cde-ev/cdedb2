@@ -12,4 +12,4 @@
 #
 # taken from: https://gist.github.com/stephenharris/3c3792568494b2a7cf48
 
-grep -vE '^#:|POT-Creation-Date' $1
+grep -vE '^#:|POT-Creation-Date' "$1"

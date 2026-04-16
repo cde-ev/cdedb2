@@ -224,17 +224,24 @@ class CourseTrackGroupType(CdEIntEnum):
 class EventFeeType(CdEIntEnum):
     """Different kinds of event fees, to be displayed and/or treated differently."""
 
+    # Participation Fee
     common = 1
-    storno = 2
-    external = 3
-    instructor_refund = 5
-    instructor_donation = 6
     solidary_reduction = 10
-    solidary_donation = 11
     solidary_increase = 12
+    external = 3
+
+    # Donation
+    solidary_donation = 11
+    instructor_donation = 6
     other_donation = 20
+
+    # Reimbursement
+    instructor_refund = 5
     crisis_refund = 30
     other_refund = 31
+
+    # Storno
+    storno = 2
 
     def get_icon(self) -> str:
         return {
@@ -561,6 +568,7 @@ class PastInstitutions(CdEIntEnum):
     van = 200  #:
     eisenberg = 400  #:
     other = 1000  #:
+    private = 2000  #:
 
     @classmethod
     def main_insitution(cls) -> "PastInstitutions":
@@ -578,6 +586,7 @@ class PastInstitutions(CdEIntEnum):
             self.van: "VAN",
             self.eisenberg: "FV Eisenberg",
             self.other: "Sonst.",
+            self.private: "Privat",
         }
         return shortnames.get(self, str(self))
 
@@ -591,6 +600,15 @@ class PastOrgaKind(CdEIntEnum):
     al = 2  # of DSAs etc,
     co_al = 4
 
+    @property
+    def shortname(self) -> str | None:
+        return {
+            self.none: None,
+            self.orga: None,  # we use "Orga" as longname and shortname
+            self.al: "AL",
+            self.co_al: "Co-AL",
+        }[self]
+
 
 @enum.unique
 class PastMusicKind(CdEIntEnum):
@@ -599,6 +617,16 @@ class PastMusicKind(CdEIntEnum):
     none = 0
     ensemble = 1
     kuemu = 2
+    kueak = 4
+
+    @property
+    def shortname(self) -> str | None:
+        return {
+            self.none: None,
+            self.ensemble: "EL",
+            self.kuemu: "KüMu",
+            self.kueak: "KüAK",
+        }[self]
 
 
 @enum.unique
@@ -606,6 +634,14 @@ class PastInstructorKind(CdEIntEnum):
     none = 0
     kl = 1
     co_kl = 2
+
+    @property
+    def shortname(self) -> str | None:
+        return {
+            self.none: None,
+            self.kl: "KL",
+            self.co_kl: "Co-KL",
+        }[self]
 
 
 @enum.unique
@@ -852,15 +888,22 @@ class ComplaintEntryType(CdEIntEnum):
 class CoreLogCodes(CdEIntEnum):
     """Available log messages core.log."""
 
+    # Persona
     persona_creation = 1  #:
     persona_change = 2  #:
     persona_archived = 3  #:
     persona_dearchived = 4  #:
     persona_purged = 5  #:
+    realm_change = 40  #:
+    username_change = 50  #:
+
+    # Password
     password_change = 10  #:
     password_reset_cookie = 11  #:
     password_reset = 12  #:
     password_invalidated = 13  #:
+
+    # Genesis
     genesis_request = 20  #:
     genesis_approved = 21  #:
     genesis_rejected = 22  #:
@@ -868,17 +911,50 @@ class CoreLogCodes(CdEIntEnum):
     genesis_verified = 24  #:
     genesis_merged = 25  #:
     genesis_change = 28  #:
+
+    # Privilege Change
     privilege_change_pending = 30  #:
     privilege_change_approved = 31  #:
     privilege_change_rejected = 32  #:
-    realm_change = 40  #:
-    username_change = 50  #:
+
+    # Other
     quota_violation = 60  #:
     modify_email_status = 70  #:
     delete_email_status = 71  #:
     send_anonymous_message = 100  #:
     reply_to_anonymous_message = 101  #:
     rotate_anonymous_message = 102  #:
+
+    def optgroup_label(self) -> str:
+        return {
+            self.persona_creation: n_("Persona"),
+            self.persona_change: n_("Persona"),
+            self.persona_archived: n_("Persona"),
+            self.persona_dearchived: n_("Persona"),
+            self.persona_purged: n_("Persona"),
+            self.realm_change: n_("Persona"),
+            self.username_change: n_("Persona"),
+            self.password_change: n_("Password"),
+            self.password_reset_cookie: n_("Password"),
+            self.password_reset: n_("Password"),
+            self.password_invalidated: n_("Password"),
+            self.genesis_request: n_("Genesis"),
+            self.genesis_approved: n_("Genesis"),
+            self.genesis_rejected: n_("Genesis"),
+            self.genesis_deleted: n_("Genesis"),
+            self.genesis_verified: n_("Genesis"),
+            self.genesis_merged: n_("Genesis"),
+            self.genesis_change: n_("Genesis"),
+            self.privilege_change_pending: n_("Privilege Change"),
+            self.privilege_change_approved: n_("Privilege Change"),
+            self.privilege_change_rejected: n_("Privilege Change"),
+            self.quota_violation: n_("Other"),
+            self.modify_email_status: n_("Other"),
+            self.delete_email_status: n_("Other"),
+            self.send_anonymous_message: n_("Other"),
+            self.reply_to_anonymous_message: n_("Other"),
+            self.rotate_anonymous_message: n_("Other"),
+        }.get(self, n_("Other"))
 
 
 @enum.unique
@@ -915,6 +991,17 @@ class ComplaintLogCodes(CdEIntEnum):
         """List log codes which are relevant to display on a case history"""
         return 1 < self.value < 100
 
+    def optgroup_label(self) -> str:
+        if self.name.startswith("case"):
+            return n_("Case")
+        if self.name.startswith("involved"):
+            return n_("Involved")
+        if self.name.startswith("companion"):
+            return n_("Companion")
+        if self.name.startswith("enforcer"):
+            return n_("Enforcer")
+        return n_("Other")
+
 
 @enum.unique
 class CdeLogCodes(CdEIntEnum):
@@ -937,59 +1024,91 @@ class CdeLogCodes(CdEIntEnum):
 class FinanceLogCodes(CdEIntEnum):
     """Available log messages cde.finance_log."""
 
-    new_member = 1  #:
+    # Do not reuse:
+    # new_member = 1  #:
+
+    # Membership
     gain_membership = 2  #:
     lose_membership = 3  #:
+    end_trial_membership = 12  #:
+    start_trial_membership = 15  #:
+    honorary_membership_granted = 51  #:
+    honorary_membership_revoked = 52  #:
+
+    # Balance
     increase_balance = 10  #:
     deduct_membership_fee = 11  #:
-    end_trial_membership = 12  #:
     manual_balance_correction = 13  #:
     remove_balance_on_archival = 14  #:
-    start_trial_membership = 15  #:
     remove_exmember_balance = 17  #:
+
+    # Lastschrift
     grant_lastschrift = 20  #:
     revoke_lastschrift = 21  #:
     modify_lastschrift = 22  #:
     lastschrift_deleted = 23  #:
+
+    # Lastschrift Transaction
     lastschrift_transaction_issue = 30  #:
     lastschrift_transaction_success = 31  #:
     lastschrift_transaction_failure = 32  #:
     lastschrift_transaction_skip = 33  #:
     lastschrift_transaction_cancelled = 34  #:
     lastschrift_transaction_revoked = 35  #:
-    honorary_membership_granted = 51  #:
-    honorary_membership_revoked = 52  #:
+
+    # Other
     #: Fallback for strange cases
     other = 99
+
+    def optgroup_label(self) -> str:
+        return {
+            self.gain_membership: n_("Membership"),
+            self.lose_membership: n_("Membership"),
+            self.end_trial_membership: n_("Membership"),
+            self.start_trial_membership: n_("Membership"),
+            self.honorary_membership_granted: n_("Membership"),
+            self.honorary_membership_revoked: n_("Membership"),
+            self.increase_balance: n_("Balance"),
+            self.deduct_membership_fee: n_("Balance"),
+            self.manual_balance_correction: n_("Balance"),
+            self.remove_balance_on_archival: n_("Balance"),
+            self.remove_exmember_balance: n_("Balance"),
+            self.grant_lastschrift: n_("Lastschrift"),
+            self.revoke_lastschrift: n_("Lastschrift"),
+            self.modify_lastschrift: n_("Lastschrift"),
+            self.lastschrift_deleted: n_("Lastschrift"),
+            self.lastschrift_transaction_issue: n_("Lastschrift Transaction"),
+            self.lastschrift_transaction_success: n_("Lastschrift Transaction"),
+            self.lastschrift_transaction_failure: n_("Lastschrift Transaction"),
+            self.lastschrift_transaction_skip: n_("Lastschrift Transaction"),
+            self.lastschrift_transaction_cancelled: n_("Lastschrift Transaction"),
+            self.lastschrift_transaction_revoked: n_("Lastschrift Transaction"),
+        }.get(self, n_("Other"))
 
 
 @enum.unique
 class EventLogCodes(CdEIntEnum):
     """Available log messages event.log."""
 
+    # Event
     event_created = 1  #:
     event_changed = 2  #:
     event_deleted = 3  #:
     event_archived = 4  #:
-    helper_added = 7  #:
-    helper_removed = 8  #:
-    orga_added = 10  #:
-    orga_removed = 11  #:
-    caretaker_added = 12  #:
-    caretaker_removed = 13  #:
-    part_created = 15  #:
-    part_changed = 16  #:
-    part_deleted = 17  #:
-    field_added = 20  #:
-    field_updated = 21  #:
-    field_removed = 22  #:
-    lodgement_changed = 25  #:
-    lodgement_created = 26  #:
-    lodgement_deleted = 27  #:
-    questionnaire_changed = 30  #:
-    track_added = 35  #:
-    track_updated = 36  #:
-    track_removed = 37  #:
+    event_locked = 60  #:
+    event_unlocked = 61  #:
+
+    # Registrations
+    registration_created = 50  #:
+    registration_changed = 51  #:
+    registration_deleted = 52  #:
+    registration_status_changed = 300  #:
+    registration_payment_received = 55  #:
+    registration_payment_reimbursed = 56  #:
+    registration_payment_received_orga = 57  #:
+    registration_payment_reimbursed_orga = 58  #:
+
+    # Courses
     course_created = 40  #:
     course_changed = 41  #:
     course_segment_deleted = 420  #:
@@ -997,57 +1116,164 @@ class EventLogCodes(CdEIntEnum):
     course_segment_deactivated = 430  #:
     course_segment_activated = 431  #:
     course_deleted = 44  #:
-    registration_created = 50  #:
-    registration_changed = 51  #:
-    registration_deleted = 52  #:
-    registration_payment_received = 55  #:
-    registration_payment_reimbursed = 56  #:
-    registration_payment_received_orga = 57  #:
-    registration_payment_reimbursed_orga = 58  #:
-    event_locked = 60  #:
-    event_unlocked = 61  #:
-    event_partial_import = 62  #:
+
+    # Lodgements
+    lodgement_changed = 25  #:
+    lodgement_created = 26  #:
+    lodgement_deleted = 27  #:
     lodgement_group_created = 70  #:
     lodgement_group_changed = 71  #:
     lodgement_group_deleted = 72  #:
+
+    # Parts & Tracks
+    part_created = 15  #:
+    part_changed = 16  #:
+    part_deleted = 17  #:
+    track_added = 35  #:
+    track_updated = 36  #:
+    track_removed = 37  #:
+
+    # Fields
+    field_added = 20  #:
+    field_updated = 21  #:
+    field_removed = 22  #:
+    questionnaire_changed = 30  #:
+
+    # Fees
     event_fee_created = 80  #:
     event_fee_modified = 81  #:
     event_fee_deleted = 82  #:
-    minor_form_updated = 85  #:
-    minor_form_removed = 86  #:
+    personalized_fee_amount_set = 400  #:
+    personalized_fee_amount_deleted = 401  #:
+
+    # Queries
     query_stored = 90  #:
     query_deleted = 91  #:
     custom_filter_created = 95  #:
     custom_filter_changed = 96  #:
     custom_filter_deleted = 97  #:
-    part_group_created = 100  #:
-    part_group_changed = 101  #:
-    part_group_deleted = 102  #:
-    part_group_link_created = 105  #:
-    part_group_link_deleted = 106  #:
-    track_group_created = 110  #:
-    track_group_changed = 111  #:
-    track_group_deleted = 112  #:
-    track_group_link_created = 113  #:
-    track_group_link_deleted = 114  #:
-    orga_token_created = 200  #:
-    orga_token_changed = 201  #:
-    orga_token_revoked = 202  #:
-    orga_token_deleted = 203  #:
-    registration_status_changed = 300  #:
-    personalized_fee_amount_set = 400  #:
-    personalized_fee_amount_deleted = 401  #:
+
+    # Checkin
     checkin_added = 500  #:
     checkout_added = 505  #:
     checkin_changed = 510  #:
     checkout_changed = 515  #:
     checkin_period_deleted = 530  #:
+
+    # Part Groups
+    part_group_created = 100  #:
+    part_group_changed = 101  #:
+    part_group_deleted = 102  #:
+    part_group_link_created = 105  #:
+    part_group_link_deleted = 106  #:
+
+    # Track Groups
+    track_group_created = 110  #:
+    track_group_changed = 111  #:
+    track_group_deleted = 112  #:
+    track_group_link_created = 113  #:
+    track_group_link_deleted = 114  #:
+
+    # Orga Tokens
+    orga_token_created = 200  #:
+    orga_token_changed = 201  #:
+    orga_token_revoked = 202  #:
+    orga_token_deleted = 203  #:
+
+    # Event Roles
+    helper_added = 7  #:
+    helper_removed = 8  #:
+    orga_added = 10  #:
+    orga_removed = 11  #:
+    caretaker_added = 12  #:
+    caretaker_removed = 13  #:
+
+    # Other
+    event_partial_import = 62  #:
+    minor_form_updated = 85  #:
+    minor_form_removed = 86  #:
     event_balanced = 600  #:
     event_unbalanced = 610  #:
     registration_approved = 700  #:
     registration_unapproved = 710  #:
     checkin_helper_added = 800  #:
     checkin_helper_removed = 810  #:
+
+    def optgroup_label(self) -> str:
+        return {
+            self.event_created: n_("Event"),
+            self.event_changed: n_("Event"),
+            self.event_deleted: n_("Event"),
+            self.event_archived: n_("Event"),
+            self.event_locked: n_("Event"),
+            self.event_unlocked: n_("Event"),
+            self.registration_created: n_("Registrations"),
+            self.registration_changed: n_("Registrations"),
+            self.registration_deleted: n_("Registrations"),
+            self.registration_payment_received: n_("Registrations"),
+            self.registration_payment_reimbursed: n_("Registrations"),
+            self.registration_payment_received_orga: n_("Registrations"),
+            self.registration_payment_reimbursed_orga: n_("Registrations"),
+            self.registration_status_changed: n_("Registrations"),
+            self.course_created: n_("Courses"),
+            self.course_changed: n_("Courses"),
+            self.course_deleted: n_("Courses"),
+            self.course_segment_deleted: n_("Courses"),
+            self.course_segment_created: n_("Courses"),
+            self.course_segment_deactivated: n_("Courses"),
+            self.course_segment_activated: n_("Courses"),
+            self.lodgement_changed: n_("Lodgements"),
+            self.lodgement_deleted: n_("Lodgements"),
+            self.lodgement_created: n_("Lodgements"),
+            self.lodgement_group_created: n_("Lodgements"),
+            self.lodgement_group_changed: n_("Lodgements"),
+            self.lodgement_group_deleted: n_("Lodgements"),
+            self.part_created: n_("Event Parts & Course Tracks"),
+            self.part_changed: n_("Event Parts & Course Tracks"),
+            self.part_deleted: n_("Event Parts & Course Tracks"),
+            self.track_added: n_("Event Parts & Course Tracks"),
+            self.track_updated: n_("Event Parts & Course Tracks"),
+            self.track_removed: n_("Event Parts & Course Tracks"),
+            self.field_added: n_("Custom Fields"),
+            self.field_updated: n_("Custom Fields"),
+            self.field_removed: n_("Custom Fields"),
+            self.questionnaire_changed: n_("Custom Fields"),
+            self.event_fee_created: n_("Fees"),
+            self.event_fee_modified: n_("Fees"),
+            self.event_fee_deleted: n_("Fees"),
+            self.personalized_fee_amount_set: n_("Fees"),
+            self.personalized_fee_amount_deleted: n_("Fees"),
+            self.query_stored: n_("Queries"),
+            self.query_deleted: n_("Queries"),
+            self.custom_filter_created: n_("Queries"),
+            self.custom_filter_changed: n_("Queries"),
+            self.custom_filter_deleted: n_("Queries"),
+            self.checkin_added: n_("Checkin"),
+            self.checkout_added: n_("Checkin"),
+            self.checkin_changed: n_("Checkin"),
+            self.checkout_changed: n_("Checkin"),
+            self.checkin_period_deleted: n_("Checkin"),
+            self.part_group_created: n_("Part & Track Groups"),
+            self.part_group_changed: n_("Part & Track Groups"),
+            self.part_group_deleted: n_("Part & Track Groups"),
+            self.part_group_link_created: n_("Part & Track Groups"),
+            self.part_group_link_deleted: n_("Part & Track Groups"),
+            self.track_group_created: n_("Part & Track Groups"),
+            self.track_group_changed: n_("Part & Track Groups"),
+            self.track_group_deleted: n_("Part & Track Groups"),
+            self.track_group_link_created: n_("Part & Track Groups"),
+            self.track_group_link_deleted: n_("Part & Track Groups"),
+            self.orga_token_created: n_("Orga Tokens"),
+            self.orga_token_changed: n_("Orga Tokens"),
+            self.orga_token_revoked: n_("Orga Tokens"),
+            self.orga_token_deleted: n_("Orga Tokens"),
+            self.helper_added: n_("Event Roles"),
+            self.helper_removed: n_("Event Roles"),
+            self.orga_added: n_("Event Roles"),
+            self.orga_removed: n_("Event Roles"),
+            self.caretaker_added: n_("Event Roles"),
+            self.caretaker_removed: n_("Event Roles"),
+        }.get(self, n_("Other"))
 
 
 @enum.unique
@@ -1074,10 +1300,15 @@ class PastEventLogCodes(CdEIntEnum):
 class AssemblyLogCodes(CdEIntEnum):
     """Available log messages core.log."""
 
+    # Assembly
     assembly_created = 1  #:
     assembly_changed = 2  #:
     assembly_concluded = 3  #:
     assembly_deleted = 4  #:
+    assembly_presider_added = 35  #:
+    assembly_presider_removed = 36  #:
+
+    # Ballot
     ballot_created = 10  #:
     ballot_changed = 11  #:
     ballot_deleted = 12  #:
@@ -1086,46 +1317,83 @@ class AssemblyLogCodes(CdEIntEnum):
     candidate_added = 20  #:
     candidate_updated = 21  #:
     candidate_removed = 22  #:
-    new_attendee = 30  #:
-    assembly_presider_added = 35  #:
-    assembly_presider_removed = 36  #:
+
+    # Attachment
     attachment_added = 40  #:
     attachment_removed = 41  #:
     attachment_changed = 42  #:
-    attachment_ballot_link_created = 43  #:
-    attachment_ballot_link_deleted = 44  #:
     attachment_version_added = 50  #:
     attachment_version_removed = 51  #:
     attachment_version_changed = 52  #:
+    attachment_ballot_link_created = 43  #:
+    attachment_ballot_link_deleted = 44  #:
+
+    # Other
+    new_attendee = 30  #:
+
+    def optgroup_label(self) -> str:
+        return {
+            self.assembly_created: n_("Assembly"),
+            self.assembly_changed: n_("Assembly"),
+            self.assembly_concluded: n_("Assembly"),
+            self.assembly_deleted: n_("Assembly"),
+            self.assembly_presider_added: n_("Assembly"),
+            self.assembly_presider_removed: n_("Assembly"),
+            self.ballot_created: n_("Ballot"),
+            self.ballot_changed: n_("Ballot"),
+            self.ballot_deleted: n_("Ballot"),
+            self.ballot_extended: n_("Ballot"),
+            self.ballot_tallied: n_("Ballot"),
+            self.candidate_added: n_("Ballot"),
+            self.candidate_updated: n_("Ballot"),
+            self.candidate_removed: n_("Ballot"),
+            self.attachment_added: n_("Attachment"),
+            self.attachment_removed: n_("Attachment"),
+            self.attachment_changed: n_("Attachment"),
+            self.attachment_version_added: n_("Attachment"),
+            self.attachment_version_removed: n_("Attachment"),
+            self.attachment_version_changed: n_("Attachment"),
+            self.attachment_ballot_link_created: n_("Attachment"),
+            self.attachment_ballot_link_deleted: n_("Attachment"),
+        }.get(self, n_("Other"))
 
 
 @enum.unique
 class MlLogCodes(CdEIntEnum):
     """Available log messages for ml.log."""
 
+    # Mailinglist
     list_created = 1  #:
     list_changed = 2  #:
     list_deleted = 3  #:
     moderator_added = 10  #:
     moderator_removed = 11  #:
-    whitelist_added = 12  #:
-    whitelist_removed = 13  #:
-    subscription_requested = 20  #: SubscriptionState.subscription_requested
+
+    # Subscribers
     subscribed = 21  #: SubscriptionState.subscribed
-    subscription_changed = 22  #: This is now used for address changes.
     unsubscribed = 23  #: SubscriptionState.unsubscribed
     marked_override = 24  #: SubscriptionState.subscription_override
     marked_blocked = 25  #: SubscriptionState.unsubscription_override
-    reset = 27  #:
+    subscription_changed = 22  #: This is now used for address changes.
     automatically_removed = 28  #:
+
+    # Subscription requests
+    subscription_requested = 20  #: SubscriptionState.subscription_requested
     request_approved = 30  #:
     request_denied = 31  #:
     request_cancelled = 32  #:
     request_blocked = 33  #:
-    email_trouble = 40  #:
+
+    # Message Moderation
     moderate_accept = 50  #:
     moderate_reject = 51  #:
     moderate_discard = 52  #:
+    whitelist_added = 12  #:
+    whitelist_removed = 13  #:
+
+    # Other
+    email_trouble = 40  #:
+    reset = 27  #:
 
     @classmethod
     def from_subman(cls, action: SubscriptionAction) -> "MlLogCodes":
@@ -1146,6 +1414,31 @@ class MlLogCodes(CdEIntEnum):
             SubscriptionAction.reset: cls.reset,
         }
         return log_code_map[action]
+
+    def optgroup_label(self) -> str:
+        return {
+            self.list_created: n_("Mailinglist"),
+            self.list_changed: n_("Mailinglist"),
+            self.list_deleted: n_("Mailinglist"),
+            self.moderator_added: n_("Mailinglist"),
+            self.moderator_removed: n_("Mailinglist"),
+            self.subscribed: n_("Subscribers"),
+            self.unsubscribed: n_("Subscribers"),
+            self.marked_override: n_("Subscribers"),
+            self.marked_blocked: n_("Subscribers"),
+            self.subscription_changed: n_("Subscribers"),
+            self.automatically_removed: n_("Subscribers"),
+            self.subscription_requested: n_("Subscription Requests"),
+            self.request_approved: n_("Subscription Requests"),
+            self.request_denied: n_("Subscription Requests"),
+            self.request_cancelled: n_("Subscription Requests"),
+            self.request_blocked: n_("Subscription Requests"),
+            self.moderate_accept: n_("Message Moderation"),
+            self.moderate_reject: n_("Message Moderation"),
+            self.moderate_discard: n_("Message Moderation"),
+            self.whitelist_added: n_("Message Moderation"),
+            self.whitelist_removed: n_("Message Moderation"),
+        }.get(self, n_("Other"))
 
 
 @enum.unique

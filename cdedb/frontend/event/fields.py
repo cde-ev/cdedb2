@@ -132,7 +132,8 @@ class EventFieldMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.field_summary_form(rs, event_id)
         for field_id, field in rs.ambience['event'].fields.items():
-            if fields.get(field_id) == field:
+            new_field = fields.get(field_id)
+            if new_field and all(field.as_dict()[k] == v for k, v in new_field.items()):
                 # remove unchanged
                 del fields[field_id]
         self.eventproxy.event_keeper_commit(

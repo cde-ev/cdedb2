@@ -484,6 +484,8 @@ _QUERY_VIEWS = {
     QueryScope.cde_user: (_CDE_USER_VIEW := """core.personas
         LEFT OUTER JOIN past_event.participants
             ON personas.id = participants.persona_id
+        LEFT OUTER JOIN past_event.course_participants
+            ON participants.id = course_participants.participant_id
         LEFT OUTER JOIN (
             SELECT
                 id, granted_at, revoked_at,
@@ -500,6 +502,8 @@ _QUERY_VIEWS = {
     QueryScope.cde_member: (_PERSONAS_PAST_EVENT_VIEW := """core.personas
         LEFT OUTER JOIN past_event.participants
             ON personas.id = participants.persona_id
+        LEFT OUTER JOIN past_event.course_participants
+            ON participants.id = course_participants.participant_id
         """),
     QueryScope.past_event_user: _PERSONAS_PAST_EVENT_VIEW,
     QueryScope.core_user: _PERSONAS_PAST_EVENT_VIEW,

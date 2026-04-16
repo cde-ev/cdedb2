@@ -124,6 +124,7 @@ LinkIdentifier = MutableMapping[str, Any] | str
 
 # This is to be used in place of `self.key` for anonymous requests. It makes mypy happy.
 ANONYMOUS = cast(RequestState, None)
+CRON = cast(RequestState, "CRON")
 
 
 def create_mock_image(file_type: str = "png") -> bytes:
@@ -234,6 +235,11 @@ def _make_backend_shim(
         # we only use one slot to transport the key (for simplicity and
         # probably for historic reasons); the following lookup process
         # mimicks the one in frontend/application.py
+        if key == cast(str, CRON):
+            rs = CronFrontend().make_request_state()
+            rs.conn = rs._conn
+            return rs
+
         if key and APIToken.token_string_pattern.fullmatch(key):
             user = sessionproxy.lookuptoken(key, ip)
             apitoken = key
@@ -2220,14 +2226,22 @@ class FrontendTest(BackendTest):
         f = self.response.forms['logshowform']
         # use internal value property as I don't see a way to get the
         # checkbox value otherwise
-        codes = [field._value for field in f.fields['codes']]
+        if isinstance(f.fields['codes'][0], webtest.forms.Checkbox):
+            codes = [field._value for field in f.fields['codes']]
+        else:
+            # codes are multiselect.
+            codes = [value for value, _, _ in f['codes'].options]
         f['codes'] = codes
         self.assertGreater(len(codes), 1)
         self.submit(f)
         self.traverse({'linkid': 'pagination-first'})
         f = self.response.forms['logshowform']
-        for field in f.fields['codes']:
-            self.assertTrue(field.checked)
+        if isinstance(f.fields['codes'][0], webtest.forms.Checkbox):
+            for field in f.fields['codes']:
+                self.assertTrue(field.checked, f"Box '{field._value}' not checked.")
+        else:
+            for value, selected, label in f['codes'].options:
+                self.assertTrue(selected, f"Option {value} '{label}' not selected.")
 
         # Check csv export
         save = self.response
@@ -2521,8 +2535,9 @@ def make_cron_backend_proxy(cron: CronFrontend, backend: B) -> B:
             attr = getattr(backend, name)
 
             @functools.wraps(attr)
-            def wrapper(rs: RequestState, *args: Any, **kwargs: Any) -> Any:
+            def wrapper(persona_id: int | None, *args: Any, **kwargs: Any) -> Any:
                 rs = cron.make_request_state()
+                rs.user.persona_id = persona_id
                 return attr(rs, *args, **kwargs)
 
             return wrapper

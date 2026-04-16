@@ -19,6 +19,7 @@ help:
 	@echo "format              -- automatically sort imports and reformat code"
 	@echo "autoformat          -- automatically sort imports, reformat code and lint"
 	@echo "format-diff         -- show the changes 'format' would make but do not apply them"
+	@echo "shellcheck		   -- run shellcheck over all shell scripts"
 	@echo ""
 	@echo "Code testing:"
 	@echo "check               -- run (parts of the) test suite"
@@ -190,6 +191,18 @@ endif
 .PHONY: ruff-fix
 ruff-fix: venv
 	$(RUFF) check --fix
+
+.PHONY: shellcheck
+shellcheck:
+	@echo $(BANNERLINE)
+	@echo "All of shellcheck"
+	@echo $(BANNERLINE)
+	shellcheck $$( \
+		find bin/ i18n/ related/ \
+			-type f \
+			\( -name '*.sh' -or \( -executable -not -name '*.py' \) \) \
+			-not \( -path bin/archive/'*' -or -path related/deploy/archive/'*' -or -path related/auto-build/bin/'*' \) \
+	)
 
 .PHONY: template-line-length
 template-line-length:

@@ -2378,7 +2378,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Probemitglied", div="cde-membership")
         self.assertPresence("PfingstAkademie", div="past-events")
         self.assertPresence("Swish", div="past-events")
-        self.assertPresence("KL", div="past-events")
+        self.assertPresence("Kursleitung", div="past-events")
 
         # check for correct welcome mail
         mail = self.fetch_mail_content()
@@ -2878,7 +2878,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Goethe")
         self.traverse({'href': '/cde'})
         self.assertTitle('CdE-Mitgliederbereich')
-        self.traverse({'description': 'Verschiedenes'})
+        self.traverse('Linksammlung')
 
     @as_users("paul")
     def test_genesis_overview(self) -> None:
@@ -3583,9 +3583,9 @@ class TestCoreFrontend(FrontendTest):
         self.log_pagination("Account-Log", tuple(enumerate(logs, start=1001)))
         f = self.response.forms["logshowform"]
         f["codes"] = [
-            const.CoreLogCodes.genesis_verified.value,
-            const.CoreLogCodes.realm_change.value,
-            const.CoreLogCodes.username_change.value,
+            const.CoreLogCodes.genesis_verified,
+            const.CoreLogCodes.realm_change,
+            const.CoreLogCodes.username_change,
         ]
         self.submit(f)
         self.assertPresence(promotion_change_note)

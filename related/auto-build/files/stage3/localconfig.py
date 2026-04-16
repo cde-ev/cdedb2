@@ -16,8 +16,12 @@ if pathlib.Path('/CONTAINER').is_file():
     # there is no pgbouncer so the postgres port is the original one
     DB_PORT = 5432
 
-    # in docker, we need to print every log message to stdout, which makes it
-    # quite cumbersome to run command from the terminal.
+    # In docker, we need to print every log message to stdout, so we don't want to
+    #  overwhelm the output with debug messages.
+    LOG_LEVEL = logging.INFO
+else:
+    # In the VM we can easily filter the journal by message priority, so we can
+    # freely log debug messages.
     LOG_LEVEL = logging.DEBUG
 
 # dPROD relevant excerpt from actual config follows:

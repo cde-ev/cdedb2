@@ -151,9 +151,14 @@ class CdEPastEventMixin(CdEBaseFrontend):
 
         stats = self.pasteventproxy.past_event_stats(rs)
 
+        used_institutions = {pevent.institution for pevent in pevents}
         # group past events of the given institution by the year they took place
         if institution:
-            pevents = list(filter(lambda x: x.institution == institution, pevents))
+            if institution in used_institutions:
+                pevents = list(filter(lambda x: x.institution == institution, pevents))
+            else:
+                pevents = []
+                rs.notify('info', n_("There are no past events with this institution."))
         years = [
             (year, list(events))
             for year, events in itertools.groupby(pevents, lambda x: x.tempus.year)
@@ -162,7 +167,12 @@ class CdEPastEventMixin(CdEBaseFrontend):
         return self.render(
             rs,
             "past_event/list_past_events",
-            {'years': years, 'stats': stats, 'institution': institution},
+            {
+                'years': years,
+                'stats': stats,
+                'institution': institution,
+                'used_institutions': used_institutions,
+            },
         )
 
     @access("cde_admin")
