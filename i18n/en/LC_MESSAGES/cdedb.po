@@ -1307,14 +1307,12 @@ msgid "EventLogCodes.registration_unapproved"
 msgstr "Registration unapproved"
 
 #: cdedb/.i18n_additional.py:325
-#, fuzzy
 msgid "EventLogCodes.checkin_helper_added"
-msgstr "Checkin hinzugefügt"
+msgstr "Checkin helper added"
 
 #: cdedb/.i18n_additional.py:326
-#, fuzzy
 msgid "EventLogCodes.checkin_helper_removed"
-msgstr "Event helper removed"
+msgstr "Checkin helper removed"
 
 #: cdedb/.i18n_additional.py:327
 msgid "PastEventLogCodes.event_created"

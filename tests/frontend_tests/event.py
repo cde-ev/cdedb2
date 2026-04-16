@@ -755,7 +755,7 @@ class TestEventFrontend(FrontendTest):
             self.assertTitle("Orgas & Betreuer verwalten (Universale Akademie)")
             self.assertPresence("Beispiel", div='orgas_list')
             text = self.fetch_mail_content()
-            self.assertIn("als Orga hinzugefügt", text)
+            self.assertIn("als Orgas hinzugefügt", text)
             f = self.response.forms['removeorgaform2']
             f['ack_delete'].checked = True
             self.submit(f)

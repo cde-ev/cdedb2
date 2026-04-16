@@ -265,6 +265,8 @@
             "registration_id": 6
         }
     },
+    "event.caretakers": {},
+    "event.checkin_helpers": {},
     "event.course_choices": {
         "1": {
             "course_id": 1,

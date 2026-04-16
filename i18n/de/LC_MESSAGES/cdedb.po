@@ -1307,14 +1307,12 @@ msgid "EventLogCodes.registration_unapproved"
 msgstr "Anmeldung gesperrt"
 
 #: cdedb/.i18n_additional.py:325
-#, fuzzy
 msgid "EventLogCodes.checkin_helper_added"
-msgstr "Checkin hinzugefügt"
+msgstr "Checkin-Helfer hinzugefügt"
 
 #: cdedb/.i18n_additional.py:326
-#, fuzzy
 msgid "EventLogCodes.checkin_helper_removed"
-msgstr "Veranstaltungshelfer entfernt"
+msgstr "Checkin-Helfer entfernt"
 
 #: cdedb/.i18n_additional.py:327
 msgid "PastEventLogCodes.event_created"
@@ -17992,9 +17990,8 @@ msgstr "Freitexte"
 #: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:16
 #: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:22
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:43
-#, fuzzy
 msgid "Manage Roles"
-msgstr "Kurse verwalten"
+msgstr "Rollen verwalten"
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:36
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:20
@@ -19008,14 +19005,12 @@ msgid "Remove Caretaker"
 msgstr "Betreuer entfernen"
 
 #: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:146
-#, fuzzy
 msgid "Checkin Helpers"
-msgstr "Checkin-Zeiten"
+msgstr "Checkin-Helfer"
 
 #: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:156
-#, fuzzy
 msgid "IDs of the new checkin helpers"
-msgstr "ID des neuen Veranstaltungshelfer"
+msgstr "IDs der neuen Checkin-Helfer"
 
 #: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:177
 msgid ""
@@ -19026,9 +19021,8 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:193
-#, fuzzy
 msgid "Remove Checkin Helper"
-msgstr "Betreuer entfernen"
+msgstr "Checkin-Helfer entfernen"
 
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:10
 #, python-format
@@ -19585,7 +19579,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:496
 #, fuzzy
 msgid "No custom fields in this group available to you."
-msgstr "Keine Datenfelder für Kurse vorhanden."
+msgstr "In dieser Gruppe sind keine Datenfelder für dich verfügbar."
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:249
 msgid "No custom fields for lodgements available."

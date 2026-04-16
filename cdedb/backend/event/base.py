@@ -1623,6 +1623,8 @@ class EventBaseBackend(EventLowLevelBackend):
                 ),
                 models.CourseSegment.full_export_spec("track_id"),
                 ('event.orgas', "event_id", ('id', 'persona_id', 'event_id')),
+                ('event.caretakers', "event_id", ('id', 'persona_id', 'event_id')),
+                ('event.checkin_helpers', "event_id", ('id', 'persona_id', 'event_id')),
                 ('event.registrations', "event_id", REGISTRATION_FIELDS),
                 models.CheckinPeriod.full_export_spec(),
                 ('event.registration_parts', "part_id", REGISTRATION_PART_FIELDS),

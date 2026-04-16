@@ -648,7 +648,7 @@ class TestCron(CronTest):
         log_len, _ = self.event.retrieve_log(RS, log_filter)
         self.assertEqual(log_len, 1)
         with freezegun.freeze_time(now()) as frozen_time:
-            frozen_time.tick(self.conf["EVENT_CHECKIN_HELPERS_DURATION"])
+            frozen_time.tick(self.conf["EVENT_CHECKIN_HELPER_DURATION"])
             self.execute('cleanup_event_checkin_helpers')
             event = self.event.get_event(RS, event_id)
             self.assertEqual(event.checkin_helpers, {})
