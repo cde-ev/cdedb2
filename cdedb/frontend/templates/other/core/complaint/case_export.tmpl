@@ -18,12 +18,12 @@
 {%- for type, involved_ids in case.involved.items() if type != enums['ComplaintInvolvementType'].withheld %}
 - {{ gettext(type|string) }}:
     {#- Be cautionary and hide people not marked as informed. #}
-    {%- for involved_id in involved_ids if involved_id in case.informed_involved %}
+    {%- for involved_id in involved_ids if case.involved[involved_id].is_informed %}
     - {{ personas[involved_id]|persona_name }}
         {%- if age_classes.get(involved_id, enums['AgeClasses'].full) != enums['AgeClasses'].full -%}
             {# #} ({{ gettext(age_classes[involved_id]|string) -}})
         {%- endif %}
-        {%- if involved_id in case.informed_involved -%}
+        {%- if case.involved[involved_id].is_informed -%}
             {# #} ({% trans %}is informed{% endtrans %})
         {%- endif %}
         {%- if case.companions_by_involved[involved_id] %}

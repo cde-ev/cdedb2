@@ -639,6 +639,7 @@ GRANT SELECT, UPDATE ON complaint.involved_id_seq TO cdb_admin;
 CREATE TABLE complaint.companions (
         id                      serial PRIMARY KEY,
         -- Who is being accompanied in which case.
+        -- TODO Drop this?
         case_id                 int NOT NULL REFERENCES complaint.cases(id),
         -- TODO Drop this?
         involved_persona_id     int REFERENCES core.personas(id),

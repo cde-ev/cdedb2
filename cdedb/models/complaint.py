@@ -71,48 +71,19 @@ class Case(CdEDataclass):
             if involved.persona_id is not None and involved.type_ == it
         }
 
-    # Companions to set of involved personas they accompany
-    companions: dict[int, set[int]] = dataclasses.field(
-        metadata=Meta.exclude.as_dict,
-    )
-
-    @functools.cached_property
-    def companions_by_involved(self) -> dict[int, set[int]]:
+    def companions(self, is_active: bool | None) -> dict[int, set[int]]:
+        """Maps all companions to a set of involved_ids."""
         ret: dict[int, set[int]] = {}
-        for companion, accompanied in self.companions.items():
-            for involved_id in accompanied:
-                ret.setdefault(involved_id, set()).add(companion)
+        for involved_id, involved in self.involved.items():
+            ret.setdefault(involved.type_, set()).update(involved.companions(is_active))
         return ret
 
-    @functools.cached_property
     def companions_by_involved_type(
-        self,
+        self, is_active: bool | None
     ) -> dict[const.ComplaintInvolvementType, set[int]]:
         ret: dict[const.ComplaintInvolvementType, set[int]] = {}
         for involved_id, involved in self.involved.items():
-            companions = self.companions_by_involved.get(involved_id, set())
-            ret.setdefault(involved.type_, set()).update(companions)
-        return ret
-
-    withdrawn_companions: dict[int, set[int]] = dataclasses.field(
-        metadata=Meta.exclude.as_dict,
-    )
-
-    @functools.cached_property
-    def withdrawn_companions_by_involved(self) -> dict[int, set[int]]:
-        ret: dict[int, set[int]] = {}
-        for companion, accompanied in self.withdrawn_companions.items():
-            for involved_id in accompanied:
-                ret.setdefault(involved_id, set()).add(companion)
-        return ret
-
-    @functools.cached_property
-    def active_companions(self) -> dict[int, set[int]]:
-        ret: dict[int, set[int]] = {}
-        for companion, accompanied in self.companions.items():
-            withdrawn = self.withdrawn_companions.get(companion, set())
-            if active_accompanied := (accompanied - withdrawn):
-                ret[companion] = active_accompanied
+            ret.setdefault(involved.type_, set()).update(involved.companions(is_active))
         return ret
 
     def adverse_companions(
@@ -120,7 +91,7 @@ class Case(CdEDataclass):
     ) -> set[int]:
         return set(
             chain.from_iterable(
-                self.companions_by_involved_type.get(type_, set())
+                self.companions_by_involved_type(is_active=True).get(type_, set())
                 for type_ in involved_type.adverse()
             )
         )
@@ -149,7 +120,7 @@ class Case(CdEDataclass):
 
     def get_persona_ids(self, log_entries: tuple[CdEDBObject, ...]) -> set[int]:
         ret: set[int] = self.involved_persona_ids
-        ret.update(self.companions)
+        ret.update(self.companions(is_active=None).keys())
         if log_entries:
             ret.update(e['submitted_by'] for e in log_entries if e['submitted_by'])
             ret.update(e['persona_id'] for e in log_entries if e['persona_id'])
@@ -210,12 +181,14 @@ class Case(CdEDataclass):
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:
+        # TODO Fix companions
         data["involved"] = {
             involved_datum[0]: ComplaintInvolved(
                 id=involved_datum[0],
                 persona_id=involved_datum[1],
                 type_=const.ComplaintInvolvementType(involved_datum[2]),
                 is_informed=bool(involved_datum[3]),
+                _companions={0: True},
             )
             for involved_datum in data["involved"]
         }
@@ -256,7 +229,7 @@ class Case(CdEDataclass):
                 array(
                     SELECT
                         ARRAY[
-                            companion.involved_persona_id,
+                            companion.involved_id,
                             companion.companion_persona_id,
                             companion.is_withdrawn::int
                         ]
@@ -456,6 +429,17 @@ class ComplaintInvolved:
     persona_id: int | None
     type_: const.ComplaintInvolvementType
     is_informed: bool
+    _companions: dict[int, bool]
+
+    def companions(self, is_active: bool | None) -> set[int]:
+        if is_active is None:
+            return set(self._companions.keys())
+        else:
+            return {
+                companion
+                for companion, is_active_ in self._companions.items()
+                if is_active == is_active_
+            }
 
 
 class ComplaintCompanion:

@@ -19,7 +19,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("core/complaint_index"), gettext("Cases")) }}
-    {{ util.breadcrumb_link(cdedblink("core/show_case"), gettext("Case %s")|format(ambience['case']['id']),
+    {{ util.breadcrumb_link(cdedblink("core/show_case"), gettext("Case %s")|format(ambience['case'].id),
                             icon="gavel", active=True) }}
 {% endblock %}
 
@@ -28,7 +28,7 @@
     <div class="p button-par">
         {{ util.href(cdedblink('core/change_case'), gettext("Edit"),
                      aclass="btn btn-sm btn-warning", icon="pen") }}
-        {{ util.href(cdedblink('core/view_complaint_log', {'case_id': ambience['case']['id'], 'case_id_include_empty': enums["IncludeEmpty"].no}),
+        {{ util.href(cdedblink('core/view_complaint_log', {'case_id': ambience['case'].id, 'case_id_include_empty': enums["IncludeEmpty"].no}),
                      gettext("View Log"), aclass="btn btn-sm btn-default", icon="list") }}
     </div>
 
@@ -81,9 +81,9 @@
     </dl>
 
 
-    {% if ambience['case']['notes'] %}
+    {% if ambience['case'].notes %}
         {% call util.bootstrap_panel(title=gettext("Notes"), icon="tag", aclass="panel-default") %}
-            <div id="case-notes">{{ ambience['case']['notes']|md }}</div>
+            <div id="case-notes">{{ ambience['case'].notes|md }}</div>
         {% endcall %}
     {% endif %}
 
@@ -123,28 +123,29 @@
                     {% call util.bootstrap_panel(
                         title=gettext(type|string), aclass="panel-info", icon=type.get_icon(), level=4) %}
                     {% for involved_id in involved_ids %}
+                        {% set involved = ambience["case"].involved[involved_id] %}
                         <div class="hide-hover-container">
                             {{ util.persona_anchor(personas[involved_id]) }}
                             {# assembly and ml users are missing here #}
                             {% if age_classes.get(involved_id, enums['AgeClasses'].full) != enums['AgeClasses'].full %}
                                 <strong>({{ gettext(age_classes[involved_id]|string) }})</strong>
                             {% endif %}
-                            {% if involved_id in ambience['case'].informed_involved %}
+                            {% if involved.is_informed %}
                                 <small class="text-muted">
                                     ({% trans %}is informed{% endtrans %})
                                 </small>
                             {% endif %}
                             <div class="list-button-float hide-hover">
-                                {{ util.href(cdedblink('core/manage_companions_form', {'persona_id': involved_id}),
+                                {{ util.href(cdedblink('core/manage_companions_form', {'involved_id': involved_id}),
                                      label="",
                                      title=gettext("Manage Companions"),
                                      aclass="btn btn-xs btn-warning",
                                      icon="people-group")
                                 }}
                                 {% if not type == enums['ComplaintInvolvementType'].appellant %}
-                                    {% if involved_id in ambience['case'].informed_involved %}
+                                    {% if involved.is_informed %}
                                         <form
-                                                action="{{ cdedblink("core/uninform_involved", {'persona_id': involved_id}) }}"
+                                                action="{{ cdedblink("core/uninform_involved", {'involved_id': involved_id}) }}"
                                                 method="POST"
                                                 id="uninforminvolvedform{{ involved_id }}"
                                                 class="display-inline"
@@ -157,7 +158,7 @@
                                         </form>
                                     {% else %}
                                         <form
-                                            action="{{ cdedblink("core/inform_involved", {'persona_id': involved_id}) }}"
+                                            action="{{ cdedblink("core/inform_involved", {'involved_id': involved_id}) }}"
                                             method="POST"
                                             id="informinvolvedform{{ involved_id }}"
                                             class="display-inline"
@@ -171,7 +172,7 @@
                                     {% endif %}
                                 {% endif %}
                                 <form
-                                    action="{{ cdedblink("core/remove_involved", {'persona_id': involved_id}) }}"
+                                    action="{{ cdedblink("core/remove_involved", {'involved_id': involved_id}) }}"
                                     method="POST"
                                     id="removeinvolvedform{{ involved_id }}"
                                     class="display-inline"
@@ -183,22 +184,22 @@
                                                          icon="minus") }}
                                 </form>
                             </div>
-                            {% if ambience['case'].companions_by_involved[involved_id] %}
+                            {% if involved.companions(is_active=None) %}
                                 <br />
                                 <span class="hide-hover">
                                     {{ gettext("Companions") }}:
-                                    {% if ambience['case'].companions_by_involved[involved_id]|length == 1 %}
-                                        {% set companion_id = (ambience['case'].companions_by_involved[involved_id]|list)[0] %}
+                                    {% if involved.companions(is_active=None)|length == 1 %}
+                                        {% set companion_id = (involved.companions(is_active=None)|list)[0] %}
                                         {{ util.strike(util.persona_anchor(personas[companion_id]),
-                                                       companion_id not in ambience['case'].withdrawn_companions,
+                                                       companion_id not in involved.companions(is_active=False),
                                                        gettext("has withdrawn")) }}
                                     {% else %}
                                         <ul class="slim">
-                                        {% for companion_id in ambience['case'].companions_by_involved[involved_id] %}
+                                        {% for companion_id in involved.companions(is_active=None) %}
                                             <li>
                                                 {{ util.strike(
                                                     util.persona_anchor(personas[companion_id]),
-                                                    companion_id not in ambience['case'].withdrawn_companions,
+                                                    companion_id not in involved.companions(is_active=False),
                                                     gettext("has withdrawn")
                                                 ) }}
                                             </li>
@@ -260,7 +261,7 @@
     <div class="p button-par">
         {{ util.href(cdedblink('core/add_entry_form'), gettext("Add standalone entry"),
                      aclass="btn btn-sm btn-success", icon="plus") }}
-        {{ util.href(cdedblink('core/show_case', {'case_id': ambience['case']['id'], 'show_log_entries': not show_log_entries})
+        {{ util.href(cdedblink('core/show_case', {'case_id': ambience['case'].id, 'show_log_entries': not show_log_entries})
                      + "#Events_[[in_a_complaint]]"|s,
                      gettext("Show log entries"), aclass="btn btn-sm btn-default", icon="list-alt", active=show_log_entries) }}
         {{ util.href(cdedblink('core/case_history'), gettext("Show entry history"),

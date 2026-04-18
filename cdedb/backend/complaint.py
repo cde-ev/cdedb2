@@ -27,7 +27,7 @@ from cdedb.common.exceptions import AdverseCompanionError, PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import ComplaintLogFilter
-from cdedb.common.sorting import mixed_existence_sorter, xsorted
+from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import ComplaintLogCodes
@@ -371,9 +371,6 @@ class ComplaintBackend(AbstractBackend):
                 **data,
                 entries={},
                 involved={},
-                informed_involved=set(),
-                companions={},
-                withdrawn_companions={},
             )
             self.complaint_log(
                 rs=rs, code=const.ComplaintLogCodes.case_created, case_id=new_id
@@ -761,45 +758,51 @@ class ComplaintBackend(AbstractBackend):
 
             # If some of these users are involved already, remove their involvement first.
             #  This also removes their companions.
-            other_involved = (
+            other_involved_persona_ids = (
                 persona_ids
                 & case.involved_persona_ids
                 - case.involved_persona_ids_by_type(involved_type)
             )
-            if other_involved:
+            other_involved_ids = {
+                involved_id
+                for involved_id, involved in case.involved.items()
+                if involved.persona_id in other_involved_persona_ids
+            }
+            if other_involved_ids:
                 # Silence logging of companion removal, explicitly redo the logging
                 #  of involved removed.
+                num_uninformed = 0
                 with Silencer(rs):
-                    self.remove_involved(rs, case_id, other_involved)
-                for involved_id in mixed_existence_sorter(other_involved):
+                    self.remove_involved(rs, case_id, other_involved_ids)
+                for involved_id in mixed_existence_sorter(other_involved_ids):
+                    involved = case.involved[involved_id]
                     self.complaint_log(
                         rs=rs,
                         code=const.ComplaintLogCodes.involved_removed,
                         case_id=case_id,
-                        persona_id=involved_id,
-                        change_note=rs.log_gettext(
-                            str(case.involved[involved_id].type_)
-                        ),
+                        persona_id=involved.persona_id,
+                        change_note=rs.log_gettext(str(involved.type_)),
                     )
-                    if not is_informed and involved_id in case.informed_involved:
+                    if not is_informed and case.involved[involved_id].is_informed:
+                        num_uninformed += 1
                         self.complaint_log(
                             rs=rs,
                             code=const.ComplaintLogCodes.involved_uninformed,
                             case_id=case_id,
-                            persona_id=involved_id,
+                            persona_id=involved.persona_id,
                         )
-                if num := len(other_involved & case.informed_involved):
+                if num_uninformed:
                     rs.notify(
                         "info",
                         n_("%(num)s involved lost their informed status."),
-                        {"num": num},
+                        {"num": num_uninformed},
                     )
 
-            if persona_ids & case.active_companions.keys():
+            if persona_ids & case.companions(is_active=True).keys():
                 raise ValueError(n_("Already active companions."))
 
             newly_involved = set(persona_ids)
-            newly_involved -= case.involved.get(involved_type, set())
+            newly_involved -= case.involved_persona_ids_by_type(involved_type)
             if not newly_involved:
                 ret = -1
             else:
@@ -833,17 +836,16 @@ class ComplaintBackend(AbstractBackend):
                     )
 
             # Add back any companions we removed previously.
-            for persona_id in mixed_existence_sorter(other_involved):
+            for involved_id in mixed_existence_sorter(other_involved_ids):
+                involved = case.involved[involved_id]
                 with Silencer(rs):
                     self.add_companions(
                         rs,
                         case_id,
-                        persona_id,
-                        case.companions_by_involved.get(persona_id, set()),
+                        involved_id,
+                        involved.companions(is_active=None),
                     )
-                    for companion_id in xsorted(
-                        case.withdrawn_companions_by_involved.get(persona_id, set())
-                    ):
+                    for companion_id in involved.companions(is_active=False):
                         self.set_companion_withdrawn(
                             rs, case_id, persona_id, companion_id, is_withdrawn=True
                         )
@@ -854,7 +856,7 @@ class ComplaintBackend(AbstractBackend):
         self,
         rs: RequestState,
         case_id: int,
-        persona_ids: Collection[int],
+        involved_ids: Collection[int],
     ) -> DefaultReturnCode:
         """Remove some users as involved with a case.
 
@@ -864,76 +866,67 @@ class ComplaintBackend(AbstractBackend):
             The number of removed personas otherwise.
         """
         case_id = affirm(vtypes.ID, case_id)
-        persona_ids = affirm(set[vtypes.ID], persona_ids)
+        involved_ids = affirm(set[vtypes.ID], involved_ids)
 
-        if not persona_ids:
+        if not involved_ids:
             return 0
 
         with Atomizer(rs):
-            if not self.core.verify_ids(rs, persona_ids):
-                raise ValueError(n_("Unknown users."))
-
             case = self.get_case(rs, case_id)
-            removed = persona_ids & {
-                involved.persona_id for involved in case.involved.values()
-            }
+            removed = involved_ids & case.involved.keys()
             if not removed:
                 return -1
             query = f"""
                 DELETE FROM {models.ComplaintInvolved.database_table}
-                WHERE case_id = %(case_id)s AND persona_id = ANY(%(persona_ids)s)
+                WHERE id = ANY(%(involved_ids)s)
             """
             ret = self.query_exec(
                 rs,
                 query,
-                {
-                    "case_id": case_id,
-                    "persona_ids": persona_ids,
-                },
+                {"involved_ids": involved_ids},
             )
-            for persona_id in mixed_existence_sorter(removed):
+            for involved_id in mixed_existence_sorter(removed):
+                involved = case.involved[involved_id]
+                companions = involved.companions(is_active=None)
                 ret *= self.complaint_log(
                     rs=rs,
                     code=const.ComplaintLogCodes.involved_removed,
                     case_id=case_id,
-                    persona_id=persona_id,
-                    change_note=rs.log_gettext(str(case.all_involved[persona_id])),
+                    persona_id=involved.persona_id,
+                    change_note=rs.log_gettext(str(involved.type_)),
                 )
-                for companion_id in mixed_existence_sorter(
-                    case.companions_by_involved.get(persona_id, set())
-                ):
+                for companion_id in mixed_existence_sorter(companions):
                     ret *= self.complaint_log(
                         rs=rs,
                         code=const.ComplaintLogCodes.companion_removed,
                         case_id=case_id,
-                        persona_id=persona_id,
+                        persona_id=involved.persona_id,
                         companion_id=companion_id,
                     )
         return ret
 
     @access("complaint_admin")
     def set_involved_informed(
-        self, rs: RequestState, case_id: int, persona_id: int, is_informed: bool
+        self, rs: RequestState, case_id: int, involved_id: int, is_informed: bool
     ) -> DefaultReturnCode:
         """Set the informed status of an involved person."""
         case_id = affirm(vtypes.ID, case_id)
-        persona_id = affirm(vtypes.ID, persona_id)
+        involved_id = affirm(vtypes.ID, involved_id)
         is_informed = affirm(bool, is_informed)
 
         with Atomizer(rs):
             case = self.get_case(rs, case_id)
-            if persona_id not in case.all_involved:
+            if involved_id not in case.involved:
                 raise ValueError(n_("Uninvolved user."))
-            if is_informed == (persona_id in case.informed_involved):
+            if is_informed == case.involved[involved_id].is_informed:
                 return -1
             query = f"""
                 UPDATE {models.ComplaintInvolved.database_table}
                 SET is_informed = %(is_informed)s
-                WHERE case_id = %(case_id)s AND persona_id = %(persona_id)s
+                WHERE id = %(involved_id)s
             """
             params = {
-                "case_id": case_id,
-                "persona_id": persona_id,
+                "id": involved_id,
                 "is_informed": is_informed,
             }
             ret = self.query_exec(rs, query, params)
@@ -941,6 +934,7 @@ class ComplaintBackend(AbstractBackend):
                 code = const.ComplaintLogCodes.involved_informed
             else:
                 code = const.ComplaintLogCodes.involved_uninformed
+            persona_id = case.involved[involved_id].persona_id
             ret *= self.complaint_log(
                 rs=rs, code=code, case_id=case_id, persona_id=persona_id
             )
@@ -951,12 +945,12 @@ class ComplaintBackend(AbstractBackend):
         self,
         rs: RequestState,
         case_id: int,
-        persona_id: int,
+        involved_id: int,
         companion_ids: Collection[int],
     ) -> DefaultReturnCode:
         """Add companions to a person involved in a case."""
         case_id = affirm(vtypes.ID, case_id)
-        persona_id = affirm(vtypes.ID, persona_id)
+        involved_id = affirm(vtypes.ID, involved_id)
         companion_ids = affirm(set[vtypes.ID], companion_ids)
 
         if not companion_ids:
@@ -967,31 +961,23 @@ class ComplaintBackend(AbstractBackend):
                 raise ValueError(n_("Unknown companions."))
 
             case = self.get_case(rs, case_id)
-            companion_ids -= case.companions_by_involved.get(persona_id, set())
+            if involved_id not in case.involved:
+                raise ValueError(n_("Uninvolved user."))
+            involved = case.involved[involved_id]
+            companion_ids -= involved.companions(is_active=None)
             if not companion_ids:
                 return -1
 
-            # Retrieve id of the involvement table.
-            query = f"""
-                SELECT id, involved_type
-                FROM {models.ComplaintInvolved.database_table}
-                WHERE case_id = %(case_id)s AND persona_id = %(persona_id)s
-            """
-            params = {"case_id": case_id, "persona_id": persona_id}
-            if not (involved := self.query_one(rs, query, params)):
-                raise ValueError(n_("Uninvolved user."))
-            involved_id = involved["id"]
-            involved_type = const.ComplaintInvolvementType(involved["involved_type"])
-
-            if companion_ids & case.adverse_companions(involved_type):
+            if companion_ids & case.adverse_companions(involved.type_):
                 raise AdverseCompanionError
             if companion_ids & case.involved_persona_ids:
                 raise ValueError(n_("Involved companion."))
 
             values = [
+                # TODO Check needs for duplication
                 {
                     "case_id": case_id,
-                    "involved_persona_id": persona_id,
+                    "involved_persona_id": involved.persona_id,
                     "involved_id": involved_id,
                     "companion_persona_id": companion_id,
                 }
@@ -1005,7 +991,7 @@ class ComplaintBackend(AbstractBackend):
                     rs=rs,
                     code=const.ComplaintLogCodes.companion_added,
                     case_id=case_id,
-                    persona_id=persona_id,
+                    persona_id=involved.persona_id,
                     companion_id=companion_id,
                 )
         return ret
@@ -1015,30 +1001,31 @@ class ComplaintBackend(AbstractBackend):
         self,
         rs: RequestState,
         case_id: int,
-        persona_id: int,
+        involved_id: int,
         companion_ids: Collection[int],
     ) -> DefaultReturnCode:
         """Remove companions from a person involved in a case."""
         case_id = affirm(vtypes.ID, case_id)
-        persona_id = affirm(vtypes.ID, persona_id)
+        involved_id = affirm(vtypes.ID, involved_id)
         companion_ids = affirm(set[vtypes.ID], companion_ids)
         if not companion_ids:
             return 0
         with Atomizer(rs):
             case = self.get_case(rs, case_id)
-            companion_ids &= case.companions_by_involved.get(persona_id, set())
+            if involved_id not in case.involved:
+                raise ValueError(n_("Uninvolved user."))
+            involved = case.involved[involved_id]
+            companion_ids &= involved.companions(is_active=None)
             if not companion_ids:
                 return -1
 
             query = f"""
                 DELETE FROM {models.ComplaintCompanion.database_table}
-                WHERE case_id = %(case_id)s
-                    AND involved_persona_id = %(persona_id)s
+                    WHERE involved_id = %(involved_id)s
                     AND companion_persona_id = ANY(%(companion_ids)s)
             """
             params: dict[str, DatabaseValue_s] = {
-                "case_id": case_id,
-                "persona_id": persona_id,
+                "involved_id": involved_id,
                 "companion_ids": companion_ids,
             }
             ret = self.query_exec(rs, query, params)
@@ -1048,7 +1035,7 @@ class ComplaintBackend(AbstractBackend):
                     rs=rs,
                     code=const.ComplaintLogCodes.companion_removed,
                     case_id=case_id,
-                    persona_id=persona_id,
+                    persona_id=involved.persona_id,
                     companion_id=companion_id,
                 )
         return ret
@@ -1058,36 +1045,33 @@ class ComplaintBackend(AbstractBackend):
         self,
         rs: RequestState,
         case_id: int,
-        persona_id: int,
+        involved_id: int,
         companion_id: int,
         is_withdrawn: bool,
     ) -> DefaultReturnCode:
         """Set the informed status of an involved person."""
         case_id = affirm(vtypes.ID, case_id)
-        persona_id = affirm(vtypes.ID, persona_id)
+        involved_id = affirm(vtypes.ID, involved_id)
         companion_id = affirm(vtypes.ID, companion_id)
         is_withdrawn = affirm(bool, is_withdrawn)
 
         with Atomizer(rs):
             case = self.get_case(rs, case_id)
-            if persona_id not in case.all_involved:
+            if involved_id not in case.involved:
                 raise ValueError(n_("Uninvolved user."))
-            if companion_id not in case.companions_by_involved.get(persona_id, set()):
+            involved = case.involved[involved_id]
+            if companion_id not in involved.companions(is_active=None):
                 raise ValueError(n_("Not a companion."))
-            if is_withdrawn == (
-                persona_id in case.withdrawn_companions.get(companion_id, set())
-            ):
+            if is_withdrawn == (companion_id in involved.companions(is_active=False)):
                 return -1
             query = f"""
                 UPDATE {models.ComplaintCompanion.database_table}
                 SET is_withdrawn = %(is_withdrawn)s
-                WHERE case_id = %(case_id)s
-                    AND involved_persona_id = %(persona_id)s
+                WHERE involved_id = %(involved_id)s
                     AND companion_persona_id = %(companion_id)s
             """
             params = {
-                "case_id": case_id,
-                "persona_id": persona_id,
+                "involved_id": involved_id,
                 "companion_id": companion_id,
                 "is_withdrawn": is_withdrawn,
             }
@@ -1100,7 +1084,7 @@ class ComplaintBackend(AbstractBackend):
                 rs=rs,
                 code=code,
                 case_id=case_id,
-                persona_id=persona_id,
+                persona_id=involved.persona_id,
                 companion_id=companion_id,
             )
         return ret
