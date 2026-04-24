@@ -20981,7 +20981,7 @@ msgid ""
 "You can display this QR-Code at your event to help people who want to "
 "transfer money for the event, e.g. for the \"Offene Kasse\"."
 msgstr ""
-"Du kannst diesen QR-Code auf deiner Veranstaltung aushängen um das Überweisen für die Veranstaltung, bpsw. für die \"Offene Kasse\" zu erleichtern."
+"Du kannst diesen QR-Code auf deiner Veranstaltung aushängen um das Überweisen für die Veranstaltung, beispielsweise für die „Offene Kasse“, zu erleichtern."
 
 #: cdedb/frontend/templates/web/event/registration/payment.tmpl:33
 msgid "You can use Ctrl+P to print this page in a nice format."
