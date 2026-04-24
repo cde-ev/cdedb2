@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-04-16 23:58+0200\n"
+"POT-Creation-Date: 2026-04-24 20:28+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -3281,15 +3281,15 @@ msgstr "Nur Admins dürfen auf das globale Log zugreifen."
 #: cdedb/backend/core/base.py:851 cdedb/backend/core/base.py:1140
 #: cdedb/backend/core/genesis.py:267 cdedb/backend/core/genesis.py:271
 #: cdedb/backend/core/genesis.py:303 cdedb/backend/core/genesis.py:352
-#: cdedb/backend/core/genesis.py:452 cdedb/backend/event/base.py:209
-#: cdedb/backend/event/base.py:440 cdedb/backend/event/base.py:445
-#: cdedb/backend/event/base.py:448 cdedb/backend/event/base.py:836
-#: cdedb/backend/event/base.py:917 cdedb/backend/event/base.py:956
-#: cdedb/backend/event/base.py:1007 cdedb/backend/event/base.py:1037
-#: cdedb/backend/event/base.py:1051 cdedb/backend/event/base.py:1112
-#: cdedb/backend/event/base.py:1145 cdedb/backend/event/base.py:1326
-#: cdedb/backend/event/base.py:1415 cdedb/backend/event/base.py:1589
-#: cdedb/backend/event/base.py:1695 cdedb/backend/event/base.py:2001
+#: cdedb/backend/core/genesis.py:452 cdedb/backend/event/base.py:210
+#: cdedb/backend/event/base.py:441 cdedb/backend/event/base.py:446
+#: cdedb/backend/event/base.py:449 cdedb/backend/event/base.py:837
+#: cdedb/backend/event/base.py:918 cdedb/backend/event/base.py:957
+#: cdedb/backend/event/base.py:1008 cdedb/backend/event/base.py:1038
+#: cdedb/backend/event/base.py:1052 cdedb/backend/event/base.py:1113
+#: cdedb/backend/event/base.py:1146 cdedb/backend/event/base.py:1327
+#: cdedb/backend/event/base.py:1416 cdedb/backend/event/base.py:1590
+#: cdedb/backend/event/base.py:1698 cdedb/backend/event/base.py:2004
 #: cdedb/backend/event/course.py:362 cdedb/backend/event/lodgement.py:215
 #: cdedb/backend/event/lodgement.py:259 cdedb/backend/event/lowlevel.py:1263
 #: cdedb/backend/event/query.py:88 cdedb/backend/event/query.py:378
@@ -3661,7 +3661,7 @@ msgstr ""
 #: cdedb/backend/assembly.py:2802 cdedb/backend/cde/base.py:553
 #: cdedb/backend/cde/lastschrift.py:541 cdedb/backend/common.py:455
 #: cdedb/backend/common.py:461 cdedb/backend/core/base.py:3016
-#: cdedb/backend/event/base.py:450 cdedb/backend/event/base.py:1663
+#: cdedb/backend/event/base.py:451 cdedb/backend/event/base.py:1666
 #: cdedb/common/__init__.py:324 cdedb/frontend/assembly/ballot.py:642
 #: cdedb/frontend/cde/base.py:897 cdedb/frontend/cde/lastschrift.py:679
 #: cdedb/frontend/cde/parse_statement.py:726 cdedb/frontend/common.py:806
@@ -3775,8 +3775,8 @@ msgstr "Ungültiger Benutzer."
 
 #: cdedb/backend/cde/lastschrift.py:271 cdedb/backend/cde/lastschrift.py:301
 #: cdedb/backend/core/genesis.py:137 cdedb/backend/core/genesis.py:167
-#: cdedb/backend/event/__init__.py:311 cdedb/backend/event/__init__.py:437
-#: cdedb/backend/event/base.py:740 cdedb/backend/event/base.py:781
+#: cdedb/backend/event/__init__.py:319 cdedb/backend/event/__init__.py:449
+#: cdedb/backend/event/base.py:741 cdedb/backend/event/base.py:782
 #: cdedb/backend/event/course.py:369 cdedb/backend/event/course.py:461
 #: cdedb/backend/event/lodgement.py:168 cdedb/backend/event/lodgement.py:199
 #: cdedb/backend/event/lodgement.py:431 cdedb/backend/event/lodgement.py:464
@@ -4332,31 +4332,31 @@ msgstr "Emailadresse bereits vergeben."
 msgid "Invalid genesis state."
 msgstr "Ungültiger Zustand für Accountanfrage."
 
-#: cdedb/backend/event/__init__.py:496 cdedb/backend/event/registration.py:2166
+#: cdedb/backend/event/__init__.py:508 cdedb/backend/event/registration.py:2166
 msgid "Event mismatch."
 msgstr "Falsche Veranstaltung."
 
-#: cdedb/backend/event/__init__.py:502
+#: cdedb/backend/event/__init__.py:514
 msgid "Version mismatch – aborting."
 msgstr "Versionen stimmen nicht überein."
 
-#: cdedb/backend/event/__init__.py:552
+#: cdedb/backend/event/__init__.py:564
 msgid "Referential integrity of lodgement groups violated."
 msgstr "Referentielle Integrität der Unterkunftsgruppen wurde verletzt."
 
-#: cdedb/backend/event/base.py:101
+#: cdedb/backend/event/base.py:102
 msgid "Event does not exist"
 msgstr "Veranstaltung existiert nicht."
 
-#: cdedb/backend/event/base.py:110 cdedb/frontend/event/base.py:83
+#: cdedb/backend/event/base.py:111 cdedb/frontend/event/base.py:83
 msgid "This event is locked."
 msgstr "Veranstaltung ist gesperrt."
 
-#: cdedb/backend/event/base.py:344
+#: cdedb/backend/event/base.py:345
 msgid "Must be orga or admin to change the minor form."
 msgstr "Nur Orgas und Admins können das Minderjährigenformular aktualisieren."
 
-#: cdedb/backend/event/base.py:373 cdedb/common/validation/validate.py:727
+#: cdedb/backend/event/base.py:374 cdedb/common/validation/validate.py:727
 #: cdedb/common/validation/validate.py:865
 #: cdedb/common/validation/validate.py:1020
 #: cdedb/common/validation/validate.py:1140
@@ -4372,35 +4372,35 @@ msgstr "Nur Orgas und Admins können das Minderjährigenformular aktualisieren."
 msgid "Must not be empty."
 msgstr "Darf nicht leer sein."
 
-#: cdedb/backend/event/base.py:375
+#: cdedb/backend/event/base.py:376
 msgid "Some of these personas do not exist or are archived."
 msgstr "Einige dieser Accounts existieren nicht oder sind archiviert."
 
-#: cdedb/backend/event/base.py:377
+#: cdedb/backend/event/base.py:378
 msgid "Some of these personas are not event users."
 msgstr "Einige dieser Accounts sind keine Veranstaltungsnutzer."
 
-#: cdedb/backend/event/base.py:573
+#: cdedb/backend/event/base.py:574
 msgid "Only orga tokens from one event allowed."
 msgstr "Alle Orga-Tokens müssen zur gleichen Veranstaltung gehören."
 
-#: cdedb/backend/event/base.py:603
+#: cdedb/backend/event/base.py:604
 msgid "May not create new orga token in offline instance."
 msgstr "Im Offlinemodus können keine neuen Orga-Tokens erstellt werden."
 
-#: cdedb/backend/event/base.py:637
+#: cdedb/backend/event/base.py:638
 msgid "May not change orga token in offline instance."
 msgstr "Im Offlinemodus können Orga-Tokens nicht verändert werden."
 
-#: cdedb/backend/event/base.py:669 cdedb/backend/event/base.py:748
+#: cdedb/backend/event/base.py:670 cdedb/backend/event/base.py:749
 msgid "May not revoke orga token in offline instance."
 msgstr "Im Offlinemodus können Orga-Tokens nicht widerrufen werden."
 
-#: cdedb/backend/event/base.py:672
+#: cdedb/backend/event/base.py:673
 msgid "This orga token has already been revoked."
 msgstr "Dieses Orga-Token wurde bereits widerrufen."
 
-#: cdedb/backend/event/base.py:871 cdedb/backend/event/registration.py:1343
+#: cdedb/backend/event/base.py:872 cdedb/backend/event/registration.py:1343
 #: cdedb/frontend/event/registration.py:1560
 #: cdedb/frontend/event/registration.py:1816
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:32
@@ -4410,32 +4410,32 @@ msgstr ""
 "Veranstaltung ist finanziell abgeschlossen. Teilnahmebeitrag darf sich nicht "
 "mehr ändern."
 
-#: cdedb/backend/event/base.py:881 cdedb/backend/event/lowlevel.py:591
+#: cdedb/backend/event/base.py:882 cdedb/backend/event/lowlevel.py:591
 msgid "At least one event part required."
 msgstr "Mindestens ein Veranstaltungsteil muss angegeben werden."
 
-#: cdedb/backend/event/base.py:936 cdedb/backend/event/lodgement.py:103
+#: cdedb/backend/event/base.py:937 cdedb/backend/event/lodgement.py:103
 #: cdedb/backend/event/lodgement.py:159
 msgid "Not privileged to modify lodgement groups."
 msgstr ""
 "Nicht die notwendige Zugriffsberechtigung um Unterkunftsgruppen zu ändern."
 
-#: cdedb/backend/event/base.py:1066 cdedb/frontend/event/event.py:1362
+#: cdedb/backend/event/base.py:1067 cdedb/frontend/event/event.py:1362
 msgid "Cannot create CCS group due to incompatible existing course choices."
 msgstr ""
 "Kursschienensynchronisierung fehlgeschlagen, weil inkompatible Kurswahlen "
 "existieren."
 
-#: cdedb/backend/event/base.py:1174
+#: cdedb/backend/event/base.py:1175
 msgid "Event fee does not exist."
 msgstr "Teilnahmebeitrag existiert nicht."
 
-#: cdedb/backend/event/base.py:1177
+#: cdedb/backend/event/base.py:1178
 msgid "Not privileged to modify event fees."
 msgstr ""
 "Nicht die notwendige Zugriffsberechtigung um Teilnahmebeiträge zu ändern."
 
-#: cdedb/backend/event/base.py:1183 cdedb/frontend/event/event.py:1164
+#: cdedb/backend/event/base.py:1184 cdedb/frontend/event/event.py:1164
 #: cdedb/frontend/event/event.py:1204 cdedb/frontend/event/event.py:1232
 #: cdedb/frontend/event/registration.py:1250
 #: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:25
@@ -4448,20 +4448,20 @@ msgstr ""
 "Veranstaltung ist finanziell abgeschlossen. Teilnahmbeiträge dürfen nicht "
 "mehr bearbeitet werden."
 
-#: cdedb/backend/event/base.py:1452 cdedb/frontend/event/event.py:1881
+#: cdedb/backend/event/base.py:1453 cdedb/frontend/event/event.py:1882
 msgid "Event already balanced."
 msgstr "Veranstaltung ist bereits abgeschlossen."
 
-#: cdedb/backend/event/base.py:1473 cdedb/backend/event/base.py:1568
-#: cdedb/frontend/event/event.py:1892
+#: cdedb/backend/event/base.py:1474 cdedb/backend/event/base.py:1569
+#: cdedb/frontend/event/event.py:1893
 msgid "Event isn't balanced."
 msgstr "Veranstaltung ist nicht abgeschlossen."
 
-#: cdedb/backend/event/base.py:1510 cdedb/frontend/event/event.py:1750
+#: cdedb/backend/event/base.py:1511 cdedb/frontend/event/event.py:1750
 msgid "Event isn't locked."
 msgstr "Veranstaltung ist nicht gesperrt."
 
-#: cdedb/backend/event/base.py:1998
+#: cdedb/backend/event/base.py:2001
 msgid "Cannot use questionnaire import to delete questionnaire."
 msgstr ""
 "Fragebogenimport darf nicht zum Löschen des Fragebogens verwendet werden."
@@ -9304,23 +9304,23 @@ msgstr "Vergangene Veranstaltung erstellt."
 msgid "Created multiple past events."
 msgstr "Mehrere vergangene Veranstaltungen erstellt."
 
-#: cdedb/frontend/event/event.py:1873
+#: cdedb/frontend/event/event.py:1874
 msgid "Event deleted."
 msgstr "Veranstaltung gelöscht."
 
-#: cdedb/frontend/event/event.py:1902
+#: cdedb/frontend/event/event.py:1903
 msgid "Registration already approved."
 msgstr "Anmeldung ist bereits freigeschaltet."
 
-#: cdedb/frontend/event/event.py:1925
+#: cdedb/frontend/event/event.py:1926
 msgid "Registration already unapproved."
 msgstr "Anmeldung ist bereits gesperrt."
 
-#: cdedb/frontend/event/event.py:1985
+#: cdedb/frontend/event/event.py:1986
 msgid "Active characters found in search."
 msgstr "Aktive Zeichen in der Eingabe gefunden."
 
-#: cdedb/frontend/event/event.py:2051
+#: cdedb/frontend/event/event.py:2052
 msgid "No registration found."
 msgstr "Keine Anmeldung gefunden."
 
@@ -19015,10 +19015,15 @@ msgstr "IDs der neuen Checkin-Helfer"
 #: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:177
 msgid ""
 "Checkin helpers have read access to all non-personal data in your event. "
-"Furthermore, they can read and write registation data, with the exception of "
-"detailed fee information and custom fields not shown at checkin. Checkin "
+"Furthermore, they can read and write registration data, with the exception "
+"of detailed fee information and custom fields not shown at checkin. Checkin "
 "helpers are removed automatically 24 hours after they have been added."
 msgstr ""
+"Checkin-Helfer haben Lesezugriff auf alle nicht personenbezogenen Daten in "
+"der Veranstaltung. Darüber hinaus haben sie Vollzugriff auf die "
+"Anmeldedaten, mit Ausnahme von detaillierten Beitragsinformationen und "
+"Datenfeldern, die beim Checkin nicht angezeigt werden. Checkin-Helfer werden "
+"24 Stunden, nachdem sie hinzugefügt wurden, automatisch wieder entfernt."
 
 #: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:193
 msgid "Remove Checkin Helper"
@@ -19573,11 +19578,10 @@ msgstr "Anmerkungen für Orgas"
 #: cdedb/frontend/templates/web/event/generic.tmpl:228
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:476
 msgid "Checkin helpers may only access a subset of custom fields."
-msgstr ""
+msgstr "Checkin-Helfer dürfen nur auf einen Teil der Datenfelder zugreifen."
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:243
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:496
-#, fuzzy
 msgid "No custom fields in this group available to you."
 msgstr "In dieser Gruppe sind keine Datenfelder für dich verfügbar."
 

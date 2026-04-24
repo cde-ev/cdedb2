@@ -116,7 +116,9 @@
     },
     "event": {
         "caretakers": [],
-        "checkin_helpers": [],
+        "checkin_helpers": [
+            38
+        ],
         "description": "Everybody come!",
         "fees": {
             "Externenzusatzbeitrag": {

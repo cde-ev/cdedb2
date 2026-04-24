@@ -105,6 +105,7 @@ class TestEventBackend(BackendTest):
             'field_definition_notes': "No fields plz",
             'orgas': {2, 7},
             'caretakers': {3},
+            'checkin_helpers': set(),
             'parts': {
                 -1: {
                     'tracks': {
@@ -598,6 +599,7 @@ class TestEventBackend(BackendTest):
                         "mailinglists",
                         "event_fees",
                         "caretakers",
+                        "checkin_helpers",
                     ),
                 ),
             )
@@ -2915,6 +2917,7 @@ class TestEventBackend(BackendTest):
             expectation = self.cleanup_event_export(json.load(f))
         expectation['timestamp'] = nearly_now()
         expectation['event']['caretakers'] = set(expectation['event']['caretakers'])
+        expectation['event']['checkin_helpers'] = set(expectation['event']['checkin_helpers'])
         for reg in expectation['registrations'].values():
             reg['ctime'] = nearly_now()
             reg['mtime'] = None
@@ -3275,7 +3278,9 @@ class TestEventBackend(BackendTest):
                 'code': const.EventLogCodes.event_partial_import,
             },
         ]
-        self.assertLogEqual(log_expectation, event_id=1, realm="event", offset=11)
+        self.assertLogEqual(
+            log_expectation, event_id=1, realm="event", offset=self.EVENT_LOG_OFFSET
+        )
 
     @storage
     @event_keeper
@@ -3912,6 +3917,13 @@ class TestEventBackend(BackendTest):
                 "persona_id": 2,
                 "submitted_by": 1,
                 "change_note": "23.02.2022, 10:00:00",
+            },
+            {
+                'code': const.EventLogCodes.checkin_helper_added,
+                'event_id': 1,
+                'persona_id': 38,
+                'submitted_by': 7,
+                'change_note': None,
             },
         )
 

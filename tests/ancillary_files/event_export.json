@@ -255,6 +255,48 @@
             "telephone": null,
             "title": null,
             "username": "inga@example.cde"
+        },
+        "38": {
+            "is_active": true,
+            "is_meta_admin": false,
+            "is_core_admin": false,
+            "is_cde_admin": false,
+            "is_finance_admin": false,
+            "is_event_admin": false,
+            "is_ml_admin": false,
+            "is_assembly_admin": false,
+            "is_complaint_admin": false,
+            "is_cde_realm": true,
+            "is_event_realm": true,
+            "is_ml_realm": true,
+            "is_assembly_realm": true,
+            "is_cdelokal_admin": true,
+            "is_auditor": false,
+            "is_member": false,
+            "is_searchable": true,
+            "is_archived": false,
+            "is_purged": false,
+            "id": 38,
+            "username": "ludwig@example.cde",
+            "family_name": "Lokus",
+            "given_names": "Ludwig",
+            "nickname": null,
+            "legal_given_names": null,
+            "title": null,
+            "name_supplement": null,
+            "show_legal_given_names": false,
+            "gender": 2,
+            "birthday": "1990-09-19",
+            "telephone": null,
+            "mobile": null,
+            "address_supplement": null,
+            "address": null,
+            "postal_code": null,
+            "location": null,
+            "country": "DE",
+            "pronouns": null,
+            "pronouns_nametag": false,
+            "pronouns_profile": false
         }
     },
     "event.checkin_periods": {
@@ -266,7 +308,13 @@
         }
     },
     "event.caretakers": {},
-    "event.checkin_helpers": {},
+    "event.checkin_helpers": {
+        "1": {
+            "id": 1,
+            "persona_id": 38,
+            "event_id": 1
+        }
+    },
     "event.course_choices": {
         "1": {
             "course_id": 1,
@@ -1161,6 +1209,15 @@
             "id": 11,
             "persona_id": 2,
             "submitted_by": 1
+        },
+        "12": {
+            "id": 12,
+            "ctime": "2026-04-24T15:34:27.593566+00:00",
+            "code": 800,
+            "submitted_by": 7,
+            "event_id": 1,
+            "persona_id": 38,
+            "change_note": null
         },
         "2": {
             "change_note": null,

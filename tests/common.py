@@ -434,6 +434,8 @@ class BasicTest(unittest.TestCase):
     def get_sample_datum(self, table: str, id_: int) -> CdEDBObject:
         return self.get_sample_data(table, [id_])[id_]
 
+    EVENT_LOG_OFFSET = len(get_sample_data("event.log"))
+
 
 class AsyncBasicTest(unittest.IsolatedAsyncioTestCase, BasicTest):
     pass

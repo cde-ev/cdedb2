@@ -64,8 +64,6 @@ from tests.common import (
 
 
 class TestEventFrontend(FrontendTest):
-    EVENT_LOG_OFFSET = len(FrontendTest.get_sample_data("event.log"))
-
     def _set_payment_info(
         self,
         reg_id: int,

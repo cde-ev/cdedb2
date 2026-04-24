@@ -2536,7 +2536,9 @@ class TestCdEFrontend(FrontendTest):
                 'change_note': "338,99 € am 01.03.2025 gezahlt.",
             },
         ]
-        self.assertLogEqual(log_expectation, "event", offset=11)
+        self.assertLogEqual(
+            log_expectation, "event", offset=TestEventFrontend.EVENT_LOG_OFFSET
+        )
 
     @as_users("anton")
     def test_money_transfers_waived_fee(self) -> None:

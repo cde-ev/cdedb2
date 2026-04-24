@@ -1862,8 +1862,9 @@ class EventEventMixin(EventBaseFrontend):
         cascade = {
             "registrations", "courses", "lodgement_groups", "lodgements",
             "field_definitions", "course_tracks", "event_parts", "event_fees",
-            "orgas", "questionnaire", "stored_queries", "log", "mailinglists",
-            "part_groups", "orga_tokens", "custom_query_filters",
+            "orgas", "caretakers", "checkin_helpers", "questionnaire",
+            "stored_queries", "log", "mailinglists", "part_groups", "orga_tokens",
+            "custom_query_filters",
         }  # fmt: skip
 
         code = self.eventproxy.delete_event(rs, event_id, cascade & blockers.keys())

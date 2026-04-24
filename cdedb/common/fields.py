@@ -153,6 +153,9 @@ PRIVILEGE_CHANGE_FIELDS = (
     "reviewer",
 )
 
+#: Fields of an event-specific role
+EVENT_ROLE_FIELDS = ('id', 'persona_id', 'event_id')
+
 #: Fields of an extended attribute associated to an event entity
 FIELD_DEFINITION_FIELDS = (
     "id",

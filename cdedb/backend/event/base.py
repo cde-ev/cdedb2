@@ -54,6 +54,7 @@ from cdedb.common import (
 from cdedb.common.crypt import encrypt_password
 from cdedb.common.exceptions import EventIsBalancedError, PrivilegeError
 from cdedb.common.fields import (
+    EVENT_ROLE_FIELDS,
     PERSONA_EVENT_FIELDS,
     QUESTIONNAIRE_ROW_FIELDS,
     REGISTRATION_FIELDS,
@@ -1622,9 +1623,9 @@ class EventBaseBackend(EventLowLevelBackend):
                     ("track_group_id", "track_id"),
                 ),
                 models.CourseSegment.full_export_spec("track_id"),
-                ('event.orgas', "event_id", ('id', 'persona_id', 'event_id')),
-                ('event.caretakers', "event_id", ('id', 'persona_id', 'event_id')),
-                ('event.checkin_helpers', "event_id", ('id', 'persona_id', 'event_id')),
+                ('event.orgas', "event_id", EVENT_ROLE_FIELDS),
+                ('event.caretakers', "event_id", EVENT_ROLE_FIELDS),
+                ('event.checkin_helpers', "event_id", EVENT_ROLE_FIELDS),
                 ('event.registrations', "event_id", REGISTRATION_FIELDS),
                 models.CheckinPeriod.full_export_spec(),
                 ('event.registration_parts', "part_id", REGISTRATION_PART_FIELDS),
