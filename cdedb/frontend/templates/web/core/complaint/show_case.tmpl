@@ -305,7 +305,7 @@
         {% if entry.entry_type %}
             <div id="entry{{ entry.id }}" class="list-group-item {{ entry.status.list_group_item_styles() }}">
                 <div class="float-right text-right">
-                    {{ generic_complaint.entry_version_timeline(entry.active_version) }}
+                    {{ generic_complaint.entry_version_timespan(entry.active_version) }}
                     <div class="p button-par">
                         {% if entry.entry_type.possible_children != [enums["ComplaintEntryType"].revocation_explanation]|set %}
                             {{ util.href(cdedblink('core/add_entry_form', {'parent_id': entry.id}),

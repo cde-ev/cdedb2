@@ -62,7 +62,7 @@ class ComplaintEntryStatus(enum.Enum):
             ret.append("text-info")
         return " ".join(ret)
 
-    def timeline_styles(self) -> str:
+    def timespan_styles(self) -> str:
         ret = []
         if self == self.pending_measure:
             ret.extend(["text-info", "text-italic"])

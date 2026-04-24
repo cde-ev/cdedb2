@@ -45,8 +45,8 @@
     {% endif %}
 {% endmacro %}
 
-{% macro entry_version_timeline(entry_version) %}
-    <div class="float-right text-right {{ entry_version.entry.status.timeline_styles() }}" style="margin-bottom: 5px;">
+{% macro entry_version_timespan(entry_version) %}
+    <div class="float-right text-right {{ entry_version.entry.status.timespan_styles() }}" style="margin-bottom: 5px;">
         {{ entry_version.timestamp|datetime(lang=lang) -}}
         {% if entry_version.etime %}
             – {{ entry_version.etime|datetime(lang=lang) }}

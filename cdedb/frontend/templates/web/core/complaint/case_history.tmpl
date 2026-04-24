@@ -71,7 +71,7 @@
                                 <hr class="nosp" />
                             {% endif %}
                             <div class="float-right text-right">
-                                {{ generic_complaint.entry_version_timeline(version) }}
+                                {{ generic_complaint.entry_version_timespan(version) }}
                                 {% if version.dtime %}
                                     <div class="p button-par">
                                         {% if not version.marked_for_purge %}
