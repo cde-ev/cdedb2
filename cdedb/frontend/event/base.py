@@ -97,7 +97,7 @@ def event_associated_fields_extractor(
     rs: RequestState,
     event: models.Event,
     association: const.FieldAssociations,
-    field_ids: set[int] | None = None,
+    field_ids: Collection[int] | None = None,
     *,
     filter_params: Callable[[vtypes.TypeMapping], vtypes.TypeMapping] | None = None,
     suffix: str = "",
@@ -122,12 +122,11 @@ def event_associated_fields_extractor(
     }
     if filter_params:
         field_params = filter_params(field_params)
-    # omit_missing allows to show restricted forms to some roles
-    raw_fields = request_extractor(rs, field_params, omit_missing=True)
+    raw_fields = request_extractor(rs, field_params)
     return {
         field.field_name: raw_fields.get(f"{field.request_name}{suffix}")
         for field in fields
-        if f"{field.request_name}{suffix}" in raw_fields
+        if f"{field.request_name}{suffix}" in field_params
     }
 
 

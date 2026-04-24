@@ -530,7 +530,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         parts: Optional[CdEDBObjectMap] = None,
         check_enabled: bool = False,
     ) -> CdEDBObject:
-        """Helper to retrieve input data for e registration and convert it into a
+        """Helper to retrieve input data for a registration and convert it into a
         registration dict that can be used for `create_registration` or
         `set_registration`.
 
@@ -758,10 +758,18 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         # Custom data field data:
         if orga_input:
+            # Prefilter based on privileges, otherwise fields not shown in template
+            # are deleted.
+            field_ids = None
+            if not self.is_privileged(rs, EventPrivileges.registrations_read):
+                field_ids = {
+                    field.id for field in event.fields.values() if field.checkin
+                }
             registration["fields"] = event_associated_fields_extractor(
                 rs,
                 rs.ambience["event"],
                 const.FieldAssociations.registration,
+                field_ids,
                 filter_params=filter_params,
             )
         else:
