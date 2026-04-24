@@ -279,6 +279,14 @@ class ComplaintEntry(CdEDataclass):
         metadata=(Meta.validate_exclude | Meta.database_exclude).as_dict,
     )
 
+    _now: datetime.datetime = dataclasses.field(
+        init=False,
+        compare=False,
+        repr=False,
+        default_factory=now,
+        metadata=(Meta.exclude | Meta.asdict_exclude).as_dict,
+    )
+
     @functools.cached_property
     def active_version(self) -> "ComplaintEntryVersion | None":
         for version in self.all_versions:
@@ -346,17 +354,19 @@ class ComplaintEntry(CdEDataclass):
     def is_active_measure(self) -> bool:
         av = self.active_version
         if self.is_revoked or not self.is_measure or not av or not av.timestamp:
+            # Only purged versions do not have a timestamp.
+            #  This tells mypy that the timestamp cannot be None below.
             return False
-        ref = now()
-        return ref > av.timestamp and not self.is_expired_measure
+        return self._now > av.timestamp and not self.is_expired_measure
 
     @functools.cached_property
     def is_expired_measure(self) -> bool:
         av = self.active_version
         if self.is_revoked or not self.is_measure or not av or not av.timestamp:
+            # Only purged versions do not have a timestamp.
+            #  This tells mypy that the timestamp cannot be None below.
             return False
-        ref = now()
-        return bool(av.etime and ref > av.etime)
+        return bool(av.etime and self._now > av.etime)
 
 
 @dataclasses.dataclass(kw_only=True)
