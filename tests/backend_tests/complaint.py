@@ -1172,10 +1172,10 @@ class TestComplaintBackend(BackendTest):
         active_measure_entry_id = 5
         active_measure_persona_id = 2
 
-        self.assertEqual(({}, {}), self.complaint.list_user_measures(self.key, 3))
-        self.assertEqual(({}, {}), self.complaint.list_user_measures(self.key, 4))
-        self.assertEqual(({}, {}), self.complaint.list_user_measures(self.key, 7))
-        entries, descriptions = self.complaint.list_user_measures(self.key, 2)
+        self.assertEqual(({}, {}), self.complaint.get_user_measures(self.key, 3))
+        self.assertEqual(({}, {}), self.complaint.get_user_measures(self.key, 4))
+        self.assertEqual(({}, {}), self.complaint.get_user_measures(self.key, 7))
+        entries, descriptions = self.complaint.get_user_measures(self.key, 2)
         self.assertEqual({5, 6, 9}, set(entries))
         self.assertEqual({6, 7, 10}, set(descriptions))
 
@@ -1184,7 +1184,7 @@ class TestComplaintBackend(BackendTest):
         measure_entry = case.entries[active_measure_entry_id]
         measure_version = measure_entry.active_version
         assert measure_version is not None
-        entries, descriptions = self.complaint.list_user_measures(
+        entries, descriptions = self.complaint.get_user_measures(
             self.key, active_measure_persona_id
         )
         self.assertEqual(measure_entry, entries[active_measure_entry_id])
@@ -1198,7 +1198,7 @@ class TestComplaintBackend(BackendTest):
         with self.switch_user("simon"):
             self.complaint.revoke_entry(self.key, active_measure_entry_id, revoke_data)
 
-        entries, descriptions = self.complaint.list_user_measures(
+        entries, descriptions = self.complaint.get_user_measures(
             self.key, active_measure_persona_id
         )
         self.assertNotIn(active_measure_entry_id, entries)
@@ -1208,7 +1208,7 @@ class TestComplaintBackend(BackendTest):
             case = self.complaint.get_case(self.key, case_id)
         measure = case.entries[active_measure_entry_id].active_version
         assert measure is not None
-        entries, descriptions = self.complaint.list_user_measures(
+        entries, descriptions = self.complaint.get_user_measures(
             self.key, active_measure_persona_id
         )
         self.assertEqual({6, 9}, set(entries))
@@ -1218,19 +1218,19 @@ class TestComplaintBackend(BackendTest):
     def test_user_measures_unprivileged(self) -> None:
         measure_persona_id = 2
         # access own measures
-        entries, descriptions = self.complaint.list_user_measures(
+        entries, descriptions = self.complaint.get_user_measures(
             self.key, measure_persona_id
         )
         self.assertEqual({5, 6, 9}, set(entries))
         self.assertEqual({6, 7, 10}, set(descriptions))
 
         with self.assertRaises(PrivilegeError):
-            self.complaint.list_measures(self.key)
+            self.complaint.get_measures(self.key)
 
         # non-affected user
         with self.switch_user("inga"):
             with self.assertRaises(PrivilegeError):
-                self.complaint.list_user_measures(self.key, measure_persona_id)
+                self.complaint.get_user_measures(self.key, measure_persona_id)
 
     @as_users("simon", "janis")
     def test_measures(self) -> None:
@@ -1261,7 +1261,7 @@ class TestComplaintBackend(BackendTest):
         }
         self.assertEqual(
             (entries_expectation, descriptions_expectation),
-            self.complaint.list_measures(self.key),
+            self.complaint.get_measures(self.key),
         )
 
     @as_users("simon")

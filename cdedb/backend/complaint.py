@@ -1345,7 +1345,7 @@ class ComplaintBackend(AbstractBackend):
         return self.general_query(rs, query, view=view)
 
     @access("persona")
-    def list_user_measures(
+    def get_user_measures(
         self, rs: RequestState, concerned_id: int, is_active: bool | None = True
     ) -> tuple[models.CdEDataclassMap[models.ComplaintEntry], dict[int, str]]:
         """Get all measures against a specific user.
@@ -1365,7 +1365,7 @@ class ComplaintBackend(AbstractBackend):
             raise PrivilegeError
 
         query = f"""
-            SELECT entries.id
+            SELECT entries.id AS entry_id, versions.id AS version_id
             FROM {models.ComplaintEntryVersion.database_table} AS versions
                 LEFT JOIN {models.ComplaintEntry.database_table} AS entries
                     ON entries.id = versions.entry_id
@@ -1381,8 +1381,9 @@ class ComplaintBackend(AbstractBackend):
             "entry_types": const.ComplaintEntryType.measure_types(),
         }
 
-        entry_ids = {e['id'] for e in self.query_all(rs, query, params)}
-        entries = self._get_measures(rs, entry_ids)
+        data = self.query_all(rs, query, params)
+        entry_ids_to_version_ids = {e['entry_id']: e['version_id'] for e in data}
+        entries = self._get_measures(rs, entry_ids_to_version_ids)
 
         entries = {
             e_id: e
@@ -1395,7 +1396,7 @@ class ComplaintBackend(AbstractBackend):
         return entries, descriptions
 
     @access("complaint_admin", "complaint.enforcer")
-    def list_measures(
+    def get_measures(
         self, rs: RequestState
     ) -> tuple[models.CdEDataclassMap[models.ComplaintEntry], dict[int, str]]:
         """Get all active measures against all users.
@@ -1404,7 +1405,7 @@ class ComplaintBackend(AbstractBackend):
         It also does not include deleted, revoked or purged measures.
         """
         query = f"""
-            SELECT entries.id
+            SELECT entries.id AS entry_id, versions.id AS version_id
             FROM {models.ComplaintEntryVersion.database_table} AS versions
                 LEFT JOIN {models.ComplaintEntry.database_table} AS entries
                     ON entries.id = versions.entry_id
@@ -1418,8 +1419,9 @@ class ComplaintBackend(AbstractBackend):
             "entry_types": const.ComplaintEntryType.measure_types(),
         }
 
-        entry_ids = {e['id'] for e in self.query_all(rs, query, params)}
-        entries = self._get_measures(rs, entry_ids)
+        data = self.query_all(rs, query, params)
+        entry_ids_to_version_ids = {e['entry_id']: e['version_id'] for e in data}
+        entries = self._get_measures(rs, entry_ids_to_version_ids)
 
         entries = {e_id: e for e_id, e in entries.items() if e.is_active_measure}
         descriptions = self._get_descriptions(
@@ -1428,7 +1430,7 @@ class ComplaintBackend(AbstractBackend):
         return entries, descriptions
 
     def _get_measures(
-        self, rs: RequestState, entry_ids: Collection[int]
+        self, rs: RequestState, entry_ids_to_version_ids: dict[int, int]
     ) -> models.CdEDataclassMap[models.ComplaintEntry]:
         """Get relevant information on specified measures
 
@@ -1439,13 +1441,15 @@ class ComplaintBackend(AbstractBackend):
             e["id"]: e
             for e in self.query_all(
                 rs,
-                *models.ComplaintEntry.get_select_query(entry_ids, entity_key="id"),
+                *models.ComplaintEntry.get_select_query(
+                    entry_ids_to_version_ids.keys(), entity_key="id"
+                ),
             )
         }
         version_data = self.query_all(
             rs,
             *models.ComplaintEntryVersion.get_select_query(
-                entry_ids, entity_key="entry_id"
+                entry_ids_to_version_ids.values(), entity_key="id"
             ),
         )
         for v in version_data:
