@@ -253,6 +253,8 @@ _DEFAULTS = {
     "FINANCE_ADMIN_ADDRESS": "buchhaltung@lists.cde-ev.de",
     # email for event related finance mails
     "EVENT_FINANCE_ADMIN_ADDRESS": "aka-finanzen@lists.cde-ev.de",
+    # email for complaint case related mails
+    "COMPLAINT_ADMIN_ADDRESS": "fallkoordination@lists.cde-ev.de",
 
     # email for privilege changes
     "META_ADMIN_ADDRESS": "admin@cde-ev.de",
@@ -378,6 +380,7 @@ _DEFAULTS = {
 
     # time which a access to a case remains active for.
     "COMPLAINT_UNLOCK_TIMEOUT": datetime.timedelta(minutes=30),
+    "COMPLAINT_ENTRY_VERSION_PURGE_DELAY": datetime.timedelta(days=10),
 
     ###############
     # Query stuff #

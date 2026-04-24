@@ -1,0 +1,11 @@
+Liebe Fallkoordination,
+
+eine Eintragsversion von Fall {{ case_id }} wurde zur Löschung vorgemerkt.
+Nachdem der Fall entsperrt wurrde, findet ihr die entsprechende Eintragsversion hier:
+{{ cdedblink('core/case_history', {'case_id': case_id}) + "#version"|s + entry_version_id|string }}
+
+Wird die Löschung nicht aufgehalten, wird die Eintragsversion in {{ delay }} Tagen unwiderruflich gelöscht.
+Bitte prüft bis dahin, ob die Löschung ihre Richtigkeit hat.
+
+
+Die Datenbank

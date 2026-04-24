@@ -1,9 +1,11 @@
 {% set sidenav_active='assembly_log' %}
 {% extends "web/assembly/base.tmpl" %}
+{% set jshint="weak" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/logging.tmpl" as logging with context %}
 {% block scripts %}
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
 {% endblock %}
 {% block title %}
     {% trans %}Assembly Log{% endtrans %}
