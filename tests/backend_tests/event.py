@@ -2917,7 +2917,9 @@ class TestEventBackend(BackendTest):
             expectation = self.cleanup_event_export(json.load(f))
         expectation['timestamp'] = nearly_now()
         expectation['event']['caretakers'] = set(expectation['event']['caretakers'])
-        expectation['event']['checkin_helpers'] = set(expectation['event']['checkin_helpers'])
+        expectation['event']['checkin_helpers'] = set(
+            expectation['event']['checkin_helpers']
+        )
         for reg in expectation['registrations'].values():
             reg['ctime'] = nearly_now()
             reg['mtime'] = None
