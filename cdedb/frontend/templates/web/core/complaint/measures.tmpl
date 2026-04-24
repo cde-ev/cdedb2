@@ -1,6 +1,7 @@
 {% set sidenav_active='show_measures' %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/core/complaint/generic.tmpl" as generic_complaint with context %}
 
 {% block title %}
     {% trans %}
@@ -18,19 +19,14 @@
     {% for entry in entries.values() %}
         {% set measure = entry.active_version %}
         <div class="list-group list-group-hover nosp">
-            <div id="entry{{ entry.id }}-{{ measure.id }}" class="list-group-item">
+            <div id="entry{{ entry.id }}-{{ measure.id }}" class="list-group-item {{ entry.status.list_group_item_styles() }}">
                 <div class="float-right text-right">
                     {{ measure.timestamp|datetime(lang=lang) -}}
                     {% if measure.etime %}
                         – {{ measure.etime|datetime(lang=lang) }}
                     {% endif %}
                 </div>
-                <strong>
-                    {{ util.make_icon(entry.entry_type.get_icon(), title=gettext(entry.entry_type|string)) }}
-                    {% trans concerned=util.persona_anchor(personas[entry['concerned_id']], icon='user') %}
-                        Measure against {{ concerned }}
-                    {% endtrans %}
-                </strong>
+                {{ generic_complaint.pretty_entry_heading(entry) }}
                 <br />
                 <span class="text-muted">
                     {% trans %}by{% endtrans %}

@@ -7549,6 +7549,7 @@ msgstr "Anmerkung"
 #: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:50
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:77
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:78
+#: cdedb/models/complaint.py:34
 msgid "revoked"
 msgstr "widerrufen"
 
@@ -10341,12 +10342,18 @@ msgstr "Betrifft"
 #: cdedb/frontend/templates/web/assembly/util.tmpl:90
 #: cdedb/frontend/templates/web/assembly/util.tmpl:109
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:79
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:104
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:109
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:144
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:178
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:183
 #: cdedb/frontend/templates/web/core/complaint/generic.tmpl:44
+#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:60
+#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:32
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:36
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:389
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:394
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:66
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:91
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:92
 msgid "by"
@@ -10370,6 +10377,7 @@ msgstr "Anhang: Hash"
 
 #: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:83
 #: cdedb/frontend/templates/web/core/complaint/generic.tmpl:52
+#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:68
 #, python-format
 msgid "%(length)s characters"
 msgstr "%(length)s Zeichen"
@@ -13975,6 +13983,7 @@ msgstr "Der Teilnehmer wird aus diesem Kurs entfernt."
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:181
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:49
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:181
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:338
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:343
 #: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:58
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:131
@@ -14728,7 +14737,9 @@ msgstr "Fallarchiv"
 
 #: cdedb/frontend/templates/web/core/base.tmpl:108
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:6
+#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:7
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:13
+#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:14
 msgid "Measure Overview"
 msgstr "Maßnahmenübersicht"
 
@@ -14939,13 +14950,16 @@ msgstr "Verifizierungs-E-Mail abschicken"
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:11
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:20
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:27
+#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:41
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:45
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:6
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:12
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:19
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:22
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:243
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:409
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:414
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:75
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:100
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:101
 #: cdedb/frontend/templates/web/core/complaint/view_complaint_log.tmpl:24
@@ -14983,6 +14997,7 @@ msgid "%(count)s versions"
 msgstr "%(count)s Versionen"
 
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:49
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:365
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:370
 #, python-format
 msgid "%(label)s at %(stamp)s"
@@ -14994,62 +15009,76 @@ msgid "%(label)s (deleted)"
 msgstr "%(label)s (gelöscht)"
 
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:78
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:100
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:105
 #, python-format
 msgid "Version %s"
 msgstr "Version %s"
 
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:82
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:87
+msgid "Mark for purge"
+msgstr "Löschung vormerken"
+
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:86
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:112
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:117
 #, python-format
 msgid "%(length)s characters."
 msgstr "%(length)s Zeichen."
 
-#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:87
-msgid "Mark for purge"
-msgstr "Löschung vormerken"
-
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:91
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:117
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:122
 #: cdedb/frontend/templates/web/core/complaint/generic.tmpl:71
+#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:87
 #, python-format
 msgid "Created at %(ctime)s by %(submitted_by)s."
 msgstr "Erstellt am %(ctime)s von %(submitted_by)s."
 
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:91
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:96
 msgid "Unmark for purge"
 msgstr "Löschung aufhalten"
 
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:98
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:124
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:129
 #, python-format
 msgid "Deleted at %(dtime)s by %(deleted_by)s."
 msgstr "Gelöscht am %(dtime)s von %(deleted_by)s."
 
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:102
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:107
+msgid "purged"
+msgstr "permanent gelöscht"
+
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:104
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:130
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:135
 #, python-format
 msgid "Replaced at %(dtime)s by %(deleted_by)s."
 msgstr "Ersetzt am %(dtime)s von %(deleted_by)s."
 
-#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:107
-msgid "purged"
-msgstr "permanent gelöscht"
-
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:137
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:171
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:176
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:382
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:387
 #, python-format
 msgid "(for %(involved)s)"
 msgstr "(für %(involved)s)"
 
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:140
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:145
 #, python-format
 msgid "Marked for purge at %(ptime)s by %(purged_by)s."
 msgstr "Löschung vorgemerkt am %(ptime)s von %(purged_by)s."
 
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:148
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:182
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:187
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:393
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:398
 #, python-format
 msgid "; %(change_note)s"
@@ -15224,6 +15253,7 @@ msgstr ""
 "festgehalten werden."
 
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:131
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:329
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:334
 msgid "Revoke"
 msgstr "Widerrufen"
@@ -15237,6 +15267,7 @@ msgstr ""
 "Wenn du einen verkehrten Eintrag angelegt hast, lösche ihn stattdessen."
 
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:139
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:320
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:325
 msgid "Replace"
 msgstr "Ersetzen"
@@ -15260,16 +15291,19 @@ msgid "Export"
 msgstr "Datenexport"
 
 #: cdedb/frontend/templates/web/core/complaint/generic.tmpl:35
+#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:42
 #, python-format
 msgid "(for %(concerned)s)"
 msgstr "(für %(concerned)s)"
 
 #: cdedb/frontend/templates/web/core/complaint/generic.tmpl:59
+#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:75
 #, python-format
 msgid "%s previous versions."
 msgstr "%s vorherige Versionen."
 
 #: cdedb/frontend/templates/web/core/complaint/generic.tmpl:63
+#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:79
 #, python-format
 msgid ""
 "Created at %(ctime)s by %(first_submitted_by)s; last changed at %(mtime)s by "
@@ -15372,13 +15406,16 @@ msgstr "%(name)s als Fallbegleitung entfernen"
 msgid "Measure against %(concerned)s"
 msgstr "Maßnahme gegen %(concerned)s"
 
+#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:39
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:43
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:73
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:98
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:99
 #, python-format
 msgid "from %(case)s"
 msgstr "aus %(case)s"
 
+#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:54
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:58
 msgid "Currently, there are no active measures."
 msgstr "Derzeit sind keine Maßnahmen in Kraft."
@@ -15462,14 +15499,17 @@ msgstr "Beschreibungen entsperren"
 msgid "Lock descriptions"
 msgstr "Beschreibungen sperren"
 
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:313
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:318
 msgid "Add child entry"
 msgstr "Kind-Eintrag hinzufügen"
 
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:413
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:418
 msgid "strongly related"
 msgstr "eng zusammenhängend"
 
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:421
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:426
 msgid "Intersecting involved"
 msgstr "Überlappende Beteiligte"
@@ -15502,14 +15542,17 @@ msgstr "Hier sind alle Maßnahmen gegen diese Person aufgelistet."
 
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:79
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:80
+#: cdedb/models/complaint.py:36
 msgid "expired"
 msgstr "abgelaufen"
 
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:85
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:86
+#: cdedb/models/complaint.py:38
 msgid "not yet active"
 msgstr "noch nicht aktiv"
 
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:87
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:112
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:113
 msgid "There are no measures targeting this persona."
@@ -22951,6 +22994,10 @@ msgstr "(Probemitglied)"
 #: cdedb/frontend/templates/web/util.tmpl:1205
 msgid "Info"
 msgstr "Info"
+
+#: cdedb/models/complaint.py:32
+msgid "deleted"
+msgstr "gelöscht"
 
 #: cdedb/models/core.py:617
 msgid "CdE membership & events"
