@@ -86,6 +86,7 @@ rules = [
             get_("/changelog/view", endpoint="view_changelog_meta"),
             get_("/foto/<filename:foto>", endpoint="get_foto"),
             get_("/debugemail/<token>", endpoint="debug_email"),
+            get_("/query/share", endpoint="query_by_name"),
             sub(
                 "/self",
                 get_("/show", endpoint="mydata"),
@@ -464,6 +465,7 @@ rules = [
                     ),
                     post("/store", endpoint="store_event_query"),
                     post("/delete", endpoint="delete_event_query"),
+                    get_("/share", endpoint="event_query_by_name"),
                 ),
                 get_("/register", endpoint="register_form"),
                 post("/register", endpoint="register"),

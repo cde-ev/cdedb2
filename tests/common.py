@@ -235,7 +235,7 @@ def _make_backend_shim(
         # we only use one slot to transport the key (for simplicity and
         # probably for historic reasons); the following lookup process
         # mimicks the one in frontend/application.py
-        if key == CRON:
+        if key == cast(str, CRON):
             rs = CronFrontend().make_request_state()
             rs.conn = rs._conn
             return rs

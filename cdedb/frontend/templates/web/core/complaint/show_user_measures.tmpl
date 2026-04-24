@@ -1,5 +1,6 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/core/complaint/generic.tmpl" as generic_complaint with context %}
 {% block title %}
     {% trans name=ambience['persona']|persona_name %}
         {{ name }} – Measures
@@ -51,8 +52,8 @@
         {% endtrans %}
     </p>
     <div class="list-group list-group-hover">
-    {% for measure in measures.values() %}
-        {% set entry = entries[measure.entry_id] %}
+    {% for entry in entries.values() %}
+        {% set measure = entry.active_version %}
         {% set inactive = entry.is_revoked or measure.etime and now() > measure.etime %}
         {% set not_yet_active = now() < measure.timestamp %}
         <div id="entry{{ entry.id }}-{{ measure.id }}"

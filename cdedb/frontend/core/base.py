@@ -58,6 +58,7 @@ from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.roles import (
     ADMIN_KEYS,
@@ -3214,6 +3215,30 @@ class CoreBaseFrontend(AbstractFrontend):
         code = self.coreproxy.purge_persona(rs, persona_id)
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
+
+    @REQUESTdata("query_name", "scope")
+    @access("persona")
+    def query_by_name(
+        self, rs: RequestState, query_name: str, scope: QueryScope
+    ) -> Response:
+        if rs.has_validation_errors():  # pragma: no cover
+            rs.notify("error", str(rs.retrieve_validation_errors()))
+            return self.redirect(rs, "core/index")
+        queries_by_name = {sq.query_name: sq for sq in DEFAULT_QUERIES.get(scope, [])}
+        if query_name not in queries_by_name:
+            rs.notify(
+                "error",
+                n_("Unknown query name: '%(query_name)s'"),
+                {"query_name": query_name},
+            )
+            return self.redirect(rs, scope.get_target())
+
+        return self.redirect(
+            rs,
+            scope.get_target(),
+            queries_by_name[query_name].serialize_to_url(),
+            "query-results",
+        )
 
     @REQUESTdatadict(*ChangelogLogFilter.requestdict_fields())
     @REQUESTdata("download")
