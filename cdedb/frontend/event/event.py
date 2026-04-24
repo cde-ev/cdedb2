@@ -516,12 +516,12 @@ class EventEventMixin(EventBaseFrontend):
             return self.manage_orgas(rs, event_id)
 
         if as_caretaker:
-            persona_ids = set(persona_ids) - rs.ambience['event'].caretakers  # type: ignore[assignment, operator]
+            persona_ids = set(persona_ids) - rs.ambience['event'].caretakers  # type: ignore[assignment]
             code = self.eventproxy.add_event_roles(
                 rs, event_id, persona_ids, role='caretaker'
             )
         else:
-            persona_ids = set(persona_ids) - rs.ambience['event'].orgas  # type: ignore[assignment, operator]
+            persona_ids = set(persona_ids) - rs.ambience['event'].orgas  # type: ignore[assignment]
             code = self.eventproxy.add_event_roles(
                 rs, event_id, persona_ids, role='orga'
             )

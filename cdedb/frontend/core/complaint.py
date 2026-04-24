@@ -20,6 +20,7 @@ from cdedb.common import (
     determine_age_class,
     make_persona_name,
     merge_dicts,
+    now,
 )
 from cdedb.common.exceptions import AdverseCompanionError
 from cdedb.common.n_ import n_
@@ -1065,6 +1066,85 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs.notify_return_code(ret)
         return self.redirect(rs, "core/show_case")
 
+    @access("complaint_admin", modi={"POST"})
+    def mark_entry_version_for_purge(
+        self, rs: RequestState, case_id: int, entry_id: int, entry_version_id: int
+    ) -> Response:
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
+        if not self.complaintproxy.is_unlocked(rs, case_id):
+            rs.notify('error', n_("Need to unlock case."))
+            return self.redirect(rs, "core/show_case")
+        # This is done before to ensure the mail is sent even in error scenarios
+        delay = self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"].days
+        subject = f"Eintragsversion wird in {delay} Tagen unwiderruflich gelöscht"
+        self.do_mail(
+            rs,
+            "complaint/entry_version_marked_for_purge",
+            {'To': (self.conf['COMPLAINT_ADMIN_ADDRESS'],), 'Subject': subject},
+            {'case_id': case_id, "entry_version_id": entry_version_id, 'delay': delay},
+        )
+        code = self.complaintproxy.mark_entry_version_for_purge(
+            rs, entry_id, entry_version_id
+        )
+        rs.notify_return_code(code)
+        return self.redirect(rs, "core/case_history", anchor=f"entry{entry_id}")
+
+    @access("complaint_admin", modi={"POST"})
+    def unmark_entry_version_for_purge(
+        self, rs: RequestState, case_id: int, entry_id: int, entry_version_id: int
+    ) -> Response:
+        if not rs.ambience['case'].is_visible_for(rs.user):
+            raise werkzeug.exceptions.Forbidden()
+        if not self.complaintproxy.is_unlocked(rs, case_id):
+            rs.notify('error', n_("Need to unlock case."))
+            return self.redirect(rs, "core/show_case")
+        code = self.complaintproxy.unmark_entry_version_for_purge(
+            rs, entry_id, entry_version_id
+        )
+        rs.notify_return_code(code)
+        subject = "Löschung von Eintragsversion wurde aufgehalten"
+        self.do_mail(
+            rs,
+            "complaint/entry_version_unmarked_for_purge",
+            {'To': (self.conf['COMPLAINT_ADMIN_ADDRESS'],), 'Subject': subject},
+            {'case_id': case_id, "entry_version_id": entry_version_id},
+        )
+        return self.redirect(rs, "core/case_history", anchor=f"entry{entry_id}")
+
+    @periodic("purge_complaint_entry_versions")
+    def purge_complaint_entry_versions(
+        self, rs: RequestState, state: CdEDBObject
+    ) -> CdEDBObject:
+        cutoff = now() - self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"]
+        marked_for_purge = self.complaintproxy.list_entry_versions_marked_for_purge(rs)
+
+        purged = []
+        pending = []
+        for entry_version in marked_for_purge:
+            if entry_version.marked_for_purge < cutoff:
+                self.complaintproxy.purge_entry_version(
+                    rs, entry_version.entry_id, entry_version.id
+                )
+                purged.append(entry_version.id)
+            else:
+                pending.append(entry_version.id)
+
+        if pending:
+            versions = ", ".join(map(str, pending))
+            self.logger.info(
+                f"{len(pending)} entry versions pending purge ({versions})."
+            )
+        if purged:
+            versions = ", ".join(map(str, purged))
+            self.logger.info(
+                f"Purged {len(purged)} complaint entry versions ({versions})."
+            )
+
+        state = {"pending": pending, "purged": state.get("purged", []) + purged}
+
+        return state
+
     @access("complaint_admin")
     def get_complaint_attachment(
         self, rs: RequestState, case_id: int, entry_id: int, version_idx: int
@@ -1124,17 +1204,21 @@ class CoreComplaintMixin(CoreBaseFrontend):
     @access("complaint_admin", "complaint.enforcer")
     def measures(self, rs: RequestState) -> Response:
         """Search for active measures against a persona."""
-        measure_ids = self.complaintproxy.list_measures(rs)
-        measures, descriptions, entries = self.complaintproxy.get_measures(
-            rs, measure_ids
+        entries, descriptions = self.complaintproxy.get_measures(rs)
+        author_ids = set(
+            chain.from_iterable(
+                # The entries are guaranteed to have an active version.
+                # mypy doesn't know this.
+                e.active_version.authors
+                for e in entries.values()
+                if e.active_version
+            )
         )
-        author_ids = set(chain.from_iterable(e.authors for e in measures.values()))
-        concerned_ids = {e['concerned_id'] for e in entries.values()}
+        concerned_ids = {e.concerned_id for e in entries.values() if e.concerned_id}
         personas = self.coreproxy.get_personas(rs, author_ids | concerned_ids)
         params = {
-            'measures': measures,
-            'descriptions': descriptions,
             'entries': entries,
+            'descriptions': descriptions,
             'personas': personas,
         }
         return self.render(rs, "complaint/measures", params)
@@ -1154,18 +1238,20 @@ class CoreComplaintMixin(CoreBaseFrontend):
         ):
             del rs.ambience['persona']['username']
 
-        measure_ids = self.complaintproxy.list_user_measures(
-            rs, persona_id, is_active=None
+        entries, descriptions = self.complaintproxy.get_user_measures(rs, persona_id)
+        author_ids = set(
+            chain.from_iterable(
+                # The entries are guaranteed to have an active version.
+                # mypy doesn't know this.
+                e.active_version.authors
+                for e in entries.values()
+                if e.active_version
+            )
         )
-        measures, descriptions, entries = self.complaintproxy.get_measures(
-            rs, measure_ids
-        )
-        author_ids = set(chain.from_iterable(e.authors for e in measures.values()))
         authors = self.coreproxy.get_personas(rs, author_ids)
         params = {
-            'measures': measures,
-            'descriptions': descriptions,
             'entries': entries,
+            'descriptions': descriptions,
             'authors': authors,
         }
         return self.render(rs, "complaint/show_user_measures", params)

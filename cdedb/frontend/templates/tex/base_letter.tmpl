@@ -41,27 +41,6 @@
         <<% block backaddress_oneline -%>>
             CdE e. V., c/o Rechtsanwalt Manger, Goseriede 13, 30159 Hannover
         <<%- endblock %>>}
-    \setkomavar{firsthead}{\centerline{\includegraphics[height=3cm]{./cde-logo.jpg}}}
-    \setkomavar{firstfoot}{\hrule\scriptsize\centerline{%
-        \begin{tabular}{p{.2\textwidth}p{.2\textwidth}p{.3\textwidth}p{.2\textwidth}}
-            \textbf{Antwortadresse:} & \textbf{Internet:} & \textbf{Bankverbindung:} & \textbf{Vereinsadresse:} \\
-            <<% block backaddress_line1 %>>CdE e. V.<<% endblock %>> &
-            \url{www.cde-ev.de} &
-            <<% block bankaddress_line1 %>>CdE e. V.<<% endblock %>> &
-            CdE e. V. \\
-            <<% block backaddress_line2 %>>c/o Rechtsanwalt Manger<<% endblock %>> &
-            \url{info@cde-ev.de} &
-            <<% block bankaddress_line2 %>>IBAN: DE23 8306 5408 0005 3744 99<<% endblock %>> &
-            c/o Rechtsanwalt Manger \\
-            <<% block backaddress_line3 %>>Goseriede 13<<% endblock %>> &
-            \textbf{Vereinsregister:} &
-            <<% block bankaddress_line3 %>>BIC: BFSWDE33XXX<<% endblock %>> &
-            Goseriede 13 \\
-            <<% block backaddress_line4 %>>30159 Hannover<<% endblock %>> &
-            VR 202126, AG Hannover &
-            <<% block bankaddress_line4 %>>Skatbank<<% endblock %>> &
-            30159 Hannover \\
-        \end{tabular}}}
     \makeatletter
     \@addtoplength{firstfootvpos}{-10mm}
     \makeatother

@@ -15,8 +15,8 @@
 
 {% block content %}
     <div>
-    {% for measure in measures.values() %}
-        {% set entry = entries[measure.entry_id] %}
+    {% for entry in entries.values() %}
+        {% set measure = entry.active_version %}
         <div class="list-group list-group-hover nosp">
             <div id="entry{{ entry.id }}-{{ measure.id }}" class="list-group-item">
                 <div class="float-right text-right">

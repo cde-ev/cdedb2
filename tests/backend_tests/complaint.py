@@ -1,5 +1,9 @@
+import copy
 import datetime
 import functools
+from typing import cast
+
+import freezegun
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -8,7 +12,7 @@ from cdedb.common import CdEDBObject, PrivilegeError, get_hash, nearly_now, now
 from cdedb.common.crypt import get_decrypt
 from cdedb.common.exceptions import AdverseCompanionError
 from cdedb.common.query import Query, QueryOperators, QueryScope
-from tests.common import USER_DICT, BackendTest, as_users, execsql, storage
+from tests.common import CRON, USER_DICT, BackendTest, as_users, execsql, storage
 from tests.other_tests.test_validation import INVAL, TestValidationBase
 
 
@@ -239,14 +243,76 @@ class TestComplaintBackend(BackendTest):
                         )
                     ],
                 ),
+                10: models.ComplaintEntry(
+                    id=vtypes.ID(10),
+                    case_id=vtypes.ID(1),
+                    entry_type=const.ComplaintEntryType.generic_information,
+                    all_versions=[
+                        models.ComplaintEntryVersion(
+                            id=vtypes.ID(11),
+                            entry_id=vtypes.ID(10),
+                            length=None,
+                            timestamp=None,
+                            ctime=nearly_now(),
+                            submitted_by=vtypes.ID(1),
+                            deleted_by=vtypes.ID(1),
+                            dtime=nearly_now(),
+                            marked_for_purge=nearly_now(),
+                            purged_by=vtypes.ID(1),
+                            is_purged=True,
+                            authors=set(),  # type: ignore[arg-type]
+                        )
+                    ],
+                ),
+                11: models.ComplaintEntry(
+                    id=vtypes.ID(11),
+                    case_id=vtypes.ID(1),
+                    entry_type=const.ComplaintEntryType.provisional_to_arbcom,
+                    all_versions=[
+                        models.ComplaintEntryVersion(
+                            id=vtypes.ID(12),
+                            entry_id=vtypes.ID(11),
+                            length=29,
+                            timestamp=datetime.datetime(
+                                2025, 5, 28, 15, 30, tzinfo=datetime.UTC
+                            ),
+                            ctime=nearly_now(),
+                            submitted_by=vtypes.ID(1),
+                            authors={7},  # type: ignore[arg-type]
+                        )
+                    ],
+                ),
+                12: models.ComplaintEntry(
+                    id=vtypes.ID(12),
+                    case_id=vtypes.ID(1),
+                    entry_type=const.ComplaintEntryType.provisional_measure,
+                    concerned_id=vtypes.CdedbID(vtypes.ID(4)),
+                    parent_id=vtypes.ID(11),
+                    all_versions=[
+                        models.ComplaintEntryVersion(
+                            id=vtypes.ID(13),
+                            entry_id=vtypes.ID(12),
+                            length=16,
+                            timestamp=datetime.datetime(
+                                2025, 5, 28, 15, 45, tzinfo=datetime.UTC
+                            ),
+                            etime=datetime.datetime(
+                                2025, 5, 29, 7, tzinfo=datetime.UTC
+                            ),
+                            ctime=nearly_now(),
+                            submitted_by=vtypes.ID(1),
+                            authors={7},  # type: ignore[arg-type]
+                        )
+                    ],
+                ),
             },
         )
         reality = self.complaint.get_case(self.key, 1)
         for expected_entry, real_entry in zip(
-            expectation.entries.values(), reality.entries.values()
+            sorted(expectation.entries.values()), reality.entries.values()
         ):
             for expected_version, real_version in zip(
-                expected_entry.all_versions, real_entry.all_versions
+                sorted(expected_entry.all_versions), real_entry.all_versions
             ):
                 self.assertEqual(expected_version.as_dict(), real_version.as_dict())
                 self.assertEqual(expected_version, real_version)
@@ -1106,27 +1172,23 @@ class TestComplaintBackend(BackendTest):
         active_measure_entry_id = 5
         active_measure_persona_id = 2
 
-        self.assertEqual(
-            set(), self.complaint.list_user_measures(self.key, 3, is_active=None)
-        )
-        self.assertEqual(
-            set(), self.complaint.list_user_measures(self.key, 4, is_active=None)
-        )
-        self.assertEqual(
-            set(), self.complaint.list_user_measures(self.key, 7, is_active=None)
-        )
-        self.assertEqual(
-            {7, 10}, self.complaint.list_user_measures(self.key, 2, is_active=False)
-        )
+        self.assertEqual(({}, {}), self.complaint.get_user_measures(self.key, 3))
+        self.assertEqual(({}, {}), self.complaint.get_user_measures(self.key, 4))
+        self.assertEqual(({}, {}), self.complaint.get_user_measures(self.key, 7))
+        entries, descriptions = self.complaint.get_user_measures(self.key, 2)
+        self.assertEqual({5, 6, 9}, set(entries))
+        self.assertEqual({6, 7, 10}, set(descriptions))
 
         with self.switch_user("simon"):
             case = self.complaint.get_case(self.key, case_id)
-        measure = case.entries[active_measure_entry_id].active_version
-        assert measure is not None
-        self.assertEqual(
-            {measure.id},
-            self.complaint.list_user_measures(self.key, active_measure_persona_id),
+        measure_entry = case.entries[active_measure_entry_id]
+        measure_version = measure_entry.active_version
+        assert measure_version is not None
+        entries, descriptions = self.complaint.get_user_measures(
+            self.key, active_measure_persona_id
         )
+        self.assertEqual(measure_entry, entries[active_measure_entry_id])
+        self.assertIn(measure_version.id, descriptions)
 
         revoke_data: CdEDBObject = {
             "timestamp": now(),
@@ -1136,87 +1198,70 @@ class TestComplaintBackend(BackendTest):
         with self.switch_user("simon"):
             self.complaint.revoke_entry(self.key, active_measure_entry_id, revoke_data)
 
-        self.assertEqual(
-            set(),
-            self.complaint.list_user_measures(
-                self.key, active_measure_persona_id, is_active=True
-            ),
+        entries, descriptions = self.complaint.get_user_measures(
+            self.key, active_measure_persona_id
         )
+        self.assertNotIn(active_measure_entry_id, entries)
+        self.assertNotIn(measure_version.id, descriptions)
 
         with self.switch_user("simon"):
             case = self.complaint.get_case(self.key, case_id)
         measure = case.entries[active_measure_entry_id].active_version
         assert measure is not None
-        self.assertEqual(
-            {7, 10},
-            self.complaint.list_user_measures(
-                self.key, active_measure_persona_id, is_active=False
-            ),
+        entries, descriptions = self.complaint.get_user_measures(
+            self.key, active_measure_persona_id
         )
+        self.assertEqual({6, 9}, set(entries))
+        self.assertEqual({7, 10}, set(descriptions))
 
     @as_users("berta")
     def test_user_measures_unprivileged(self) -> None:
-        measure_entry_id = 6
         measure_persona_id = 2
         # access own measures
-        self.assertEqual(
-            {measure_entry_id},
-            self.complaint.list_user_measures(self.key, measure_persona_id),
+        entries, descriptions = self.complaint.get_user_measures(
+            self.key, measure_persona_id
         )
-
-        measures, descriptions, entries = self.complaint.get_measures(
-            self.key, {measure_entry_id}
-        )
-        self.assertEqual({measure_entry_id}, measures.keys())
-        self.assertEqual({measure_entry_id}, descriptions.keys())
-        self.assertEqual({measures[measure_entry_id].entry_id}, entries.keys())
+        self.assertEqual({5, 6, 9}, set(entries))
+        self.assertEqual({6, 7, 10}, set(descriptions))
 
         with self.assertRaises(PrivilegeError):
-            self.complaint.list_measures(self.key)
+            self.complaint.get_measures(self.key)
 
         # non-affected user
         with self.switch_user("inga"):
             with self.assertRaises(PrivilegeError):
-                self.complaint.list_user_measures(self.key, measure_persona_id)
-            with self.assertRaises(PrivilegeError):
-                self.complaint.get_measures(self.key, {measure_entry_id})
+                self.complaint.get_user_measures(self.key, measure_persona_id)
 
     @as_users("simon", "janis")
     def test_measures(self) -> None:
-        measure_ids_expectation = {6: 1}
-        self.assertEqual(
-            measure_ids_expectation,
-            self.complaint.list_measures(self.key),
-        )
-
-        measures_expectation = {
-            6: models.ComplaintEntryVersion(
-                id=6,  # type: ignore[arg-type]
-                entry_id=5,  # type: ignore[arg-type]
-                length=53,
-                ctime=nearly_now(),
-                submitted_by=1,  # type: ignore[arg-type]
-                authors={3},  # type: ignore[arg-type]
-                timestamp=datetime.datetime(2025, 5, 28, 16, tzinfo=datetime.UTC),
-            ),
-        }
         descriptions_expectation = {
             6: "Berta muss bei Anmeldung ein Einzelzimmer beantragen.",
         }
         entries_expectation = {
-            5: {
-                "case_id": 1,
-                "concerned_id": 2,
-                "entry_type": const.ComplaintEntryType.agreement_measure,
-                "id": 5,
-                "is_revoked": False,
-            }
+            5: models.ComplaintEntry(
+                id=vtypes.ID(5),
+                case_id=vtypes.ID(1),
+                entry_type=const.ComplaintEntryType.agreement_measure,
+                parent_id=vtypes.ID(4),
+                concerned_id=vtypes.CdedbID(vtypes.ID(2)),
+                all_versions=[
+                    models.ComplaintEntryVersion(
+                        id=vtypes.ID(6),
+                        entry_id=vtypes.ID(5),
+                        length=53,
+                        ctime=nearly_now(),
+                        submitted_by=vtypes.ID(1),
+                        authors={3},  # type: ignore[arg-type]
+                        timestamp=datetime.datetime(
+                            2025, 5, 28, 16, tzinfo=datetime.UTC
+                        ),
+                    ),
+                ],
+            )
         }
         self.assertEqual(
-            (measures_expectation, descriptions_expectation, entries_expectation),
-            self.complaint.get_measures(
-                self.key, self.complaint.list_measures(self.key)
-            ),
+            (entries_expectation, descriptions_expectation),
+            self.complaint.get_measures(self.key),
         )
 
     @as_users("simon")
@@ -1317,6 +1362,107 @@ class TestComplaintBackend(BackendTest):
         self.assertFalse(
             self.complaint.get_attachment_store(self.key).is_available(attachment_hash)
         )
+
+    @as_users("simon")
+    def test_purge_entry_version(self) -> None:
+        case_id, entry_id, version_id = 1, 4, 4
+
+        expectation = models.ComplaintEntryVersion(
+            id=vtypes.ID(version_id),
+            entry_id=vtypes.ID(entry_id),
+            length=80,
+            timestamp=datetime.datetime(2025, 5, 28, 16, tzinfo=datetime.UTC),
+            ctime=nearly_now(),
+            submitted_by=vtypes.ID(1),
+            dtime=nearly_now(),
+            deleted_by=vtypes.ID(1),
+            dreason="Ungünstige Wortwahl.",
+            marked_for_purge=None,
+            purged_by=None,
+            is_purged=False,
+            authors=cast(vtypes.CdedbIDList, {vtypes.ID(3)}),
+        )
+
+        case = self.complaint.get_case(self.key, case_id)
+        self.assertEqual(
+            expectation.as_dict(),
+            case.entries[entry_id].versions_by_id[version_id].as_dict(),
+        )
+        self.assertEqual(expectation, case.entries[entry_id].versions_by_id[version_id])
+
+        self.complaint.mark_entry_version_for_purge(self.key, entry_id, version_id)
+
+        old_expectation = copy.deepcopy(expectation)
+
+        expectation.marked_for_purge = nearly_now()
+        expectation.purged_by = self.user["id"]
+
+        case = self.complaint.get_case(self.key, case_id)
+        self.assertEqual(
+            expectation.as_dict(),
+            case.entries[entry_id].versions_by_id[version_id].as_dict(),
+        )
+        self.assertEqual(expectation, case.entries[entry_id].versions_by_id[version_id])
+
+        with self.assertRaisesRegex(
+            ValueError, "Entry version already marked for purge."
+        ):
+            self.complaint.mark_entry_version_for_purge(self.key, entry_id, version_id)
+
+        self.complaint.unmark_entry_version_for_purge(self.key, entry_id, version_id)
+
+        case = self.complaint.get_case(self.key, case_id)
+        self.assertEqual(
+            old_expectation.as_dict(),
+            case.entries[entry_id].versions_by_id[version_id].as_dict(),
+        )
+        self.assertEqual(
+            old_expectation, case.entries[entry_id].versions_by_id[version_id]
+        )
+
+        with self.assertRaisesRegex(ValueError, "Entry version not marked for purge."):
+            self.complaint.unmark_entry_version_for_purge(
+                self.key, entry_id, version_id
+            )
+
+        with self.assertRaises(PrivilegeError):
+            self.complaint.purge_entry_version(self.key, entry_id, version_id)
+
+        with self.assertRaisesRegex(ValueError, "Entry version not marked for purge."):
+            self.complaint.purge_entry_version(CRON, entry_id, version_id)
+
+        self.complaint.mark_entry_version_for_purge(self.key, entry_id, version_id)
+
+        with self.assertRaisesRegex(ValueError, "Not yet ready for purge."):
+            self.complaint.purge_entry_version(CRON, entry_id, version_id)
+
+        with freezegun.freeze_time(now()) as frozen_time:
+            frozen_time.tick(self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"])
+
+            self.complaint.purge_entry_version(CRON, entry_id, version_id)
+
+        expectation = models.ComplaintEntryVersion(
+            id=vtypes.ID(version_id),
+            entry_id=vtypes.ID(entry_id),
+            length=None,
+            timestamp=None,
+            ctime=nearly_now(),
+            submitted_by=vtypes.ID(1),
+            dtime=nearly_now(),
+            deleted_by=vtypes.ID(1),
+            dreason=None,
+            marked_for_purge=nearly_now(),
+            purged_by=self.user["id"],
+            is_purged=True,
+            authors=cast(vtypes.CdedbIDList, set()),
+        )
+
+        case = self.complaint.get_case(self.key, case_id)
+        self.assertEqual(
+            expectation.as_dict(),
+            case.entries[entry_id].versions_by_id[version_id].as_dict(),
+        )
+        self.assertEqual(expectation, case.entries[entry_id].versions_by_id[version_id])
 
 
 class TestComplaintValidation(TestValidationBase):

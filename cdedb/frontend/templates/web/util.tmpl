@@ -279,15 +279,15 @@
  # Macros to add additional information (infotext, validation errors, ...) around input fields #
  # ########################################################################################### #}
 
-{% macro format_error(error) %}
+{% macro format_error(error, newline="<br />"|s) %}
     {%- if error.args|length == 1 %}
-        {{- gettext(error.args[0]|string) }}<br />
+        {{- gettext(error.args[0]|string) }}{{ newline }}
     {%- elif error.args|length == 2 %}
-        {{- gettext(error.args[0]|string)|format(**error.args[1]) }}<br />
+        {{- gettext(error.args[0]|string)|format(**error.args[1]) }}{{ newline }}
     {%- elif error.args|length == 0 %}
         {#- Display nothing if no message was supplied. #}
     {%- else %}
-        {% trans %}Malformed error.{% endtrans %}<br />
+        {% trans %}Malformed error.{% endtrans %}{{ newline }}
     {%- endif %}
 {%- endmacro %}
 

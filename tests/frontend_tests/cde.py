@@ -178,7 +178,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'})
         everyone = {"Mitglieder", "Übersicht"}
         past_event = {"Verg. Veranstaltungen", "Kurssuche"}
-        member = {"Verschiedenes", "Datenschutzerklärung"}
+        member = {"Linksammlung", "Datenschutzerklärung"}
         searchable = {"CdE-Mitglied suchen"}
         cde_admin_or_member = {"Mitglieder-Statistik"}
         cde_admin = {"Nutzer verwalten", "Semesterverwaltung"}
@@ -617,6 +617,17 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'href': '/core/persona/2/show'})
         self.assertTitle(USER_DICT['berta']['default_name_format'])
         self.assertPresence("Im Garten 77", div='address')
+        # by past course
+        self.traverse(
+            {'description': 'Mitglieder'}, {'description': 'CdE-Mitglied suchen'}
+        )
+        f = self.response.forms['membersearchform']
+        f['qval_pevent_id'] = 1
+        self.submit(f)
+        f = self.response.forms['membersearchform']
+        f['qval_pcourse_id'] = 1
+        self.submit(f)
+        self.assertTitle(USER_DICT['berta']['default_name_format'])
 
         # by fulltext. This matchs only complete words, here on ...
         self.traverse(
@@ -1978,7 +1989,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Gerhard Schröder", div='list-participants')
         self.assertPresence("Angela Merkel", div='list-participants')
         self.assertPresence(
-            "Gustav Heinemann (1a. Swish -- und alles ist gut) (Akademieleitung)",
+            "Gustav Heinemann (1a. Swish -- und alles ist gut) (AL)",
             div='list-participants',
         )
         save_response = self.response
@@ -3300,7 +3311,9 @@ class TestCdEFrontend(FrontendTest):
         # removing someone from a course does not remove them form the event
         self.assertPresence("Garcia")
         self.assertNonPresence("Garcia Generalis (Orga, KüMu)")
-        self.assertPresence("Charly Clown (1a. Swish -- und alles ist gut (Co-KL))")
+        self.assertPresence(
+            "Charly Clown (1a. Swish -- und alles ist gut (Co-Kursleitung))"
+        )
         f = self.response.forms['addparticipantform']
         # changing orga/music status does not remove course assignments
         f['persona_ids'] = "DB-3-5, DB-7-8"
@@ -3310,7 +3323,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("PfingstAkademie 2014")
         self.assertPresence("Garcia Generalis (Orga, KüMu)")
         self.assertPresence(
-            "Charly Clown (1a. Swish -- und alles ist gut (Co-KL)) (Orga, KüMu)"
+            "Charly Clown (1a. Swish -- und alles ist gut (Co-Kursleitung)) (Orga, KüMu)"
         )
         # but removing someone with a course assignment is possible
         f = self.response.forms['removeparticipantform3']
@@ -3447,8 +3460,8 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Verg.-Veranstaltungen-Log'})
         self.log_pagination("Verg.-Veranstaltungen-Log", tuple(logs))
         self.assertPresence("Piraten Arrrkademie", div="4-1004")
-        self.assertPresence("KL", div="5-1005")
-        self.assertPresence("KL", div="7-1007")
+        self.assertPresence("Kursleitung", div="5-1005")
+        self.assertPresence("Kursleitung", div="7-1007")
         self.assertPresence("Orga, Ensembleleitung", div="10-1010")
 
     @as_users("farin")
