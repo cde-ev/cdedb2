@@ -3,6 +3,9 @@
 from enum import Flag, auto
 
 from cdedb.common import RequestState, User
+from cdedb.config import Config
+
+_CONF = Config()
 
 
 class EventPrivileges(Flag):
@@ -77,6 +80,10 @@ class EventPrivileges(Flag):
     )
 
 
+def is_event_access_limited(event_id: int) -> bool:
+    return event_id <= _CONF["EVENT_LIMITED_ACCESS_CUTOFF_ID"]
+
+
 def is_privileged_event(
     rs: RequestState, required_privilege: EventPrivileges, event_id: int
 ) -> bool:
@@ -93,6 +100,17 @@ def is_privileged_event_user(
     from templates.
     """
     EP = EventPrivileges
+
+    # Limit access to really old events as configured based on id.
+    # Any action requiring _any_ of these privileges will be disallowed.
+    limited_access_disallow = EP._registrations_read_dummy | EP.registrations_write
+
+    if (
+        is_event_access_limited(event_id)
+        and required_privilege & limited_access_disallow
+    ):
+        return False
+
     admin_privileges = ~(EP.conclude | EP.balance)
     orga_privileges = ~(
         EP.conclude | EP.balance | EP.delete | EP.orgas_change | EP.caretakers_change
