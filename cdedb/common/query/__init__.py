@@ -858,7 +858,6 @@ class Query:
         self.fields_of_interest = list(fields_of_interest)
         self.constraints = list(constraints)
         self.order = list(order)
-        self.name = name
         self.query_id = query_id
 
     def __repr__(self) -> str:
@@ -955,7 +954,7 @@ class Query:
             return ""
         return f" ORDER BY {', '.join(order.order_by for order in self._order_entries)}"
 
-    def serialize(self, timezone_aware: bool) -> CdEDBObject:
+    def serialize(self, timezone_aware: bool = True) -> CdEDBObject:
         """
         Serialize a query into a dict.
 
@@ -1003,7 +1002,6 @@ class Query:
             params[f'qord_{postfix}_ascending'] = ascending
         params['is_search'] = True
         params['scope'] = str(self.scope)
-        params['query_name'] = self.name
         return params
 
     def serialize_to_url(self) -> CdEDBObject:
