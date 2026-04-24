@@ -1280,6 +1280,9 @@ tr.eventfee .eventfee-personalized {
 .nowrap {
     white-space: nowrap;
 }
+.strikethrough {
+    text-decoration: line-through;
+}
 .link-disabled:not(.text-muted,.text-info,.text-warning,.text-danger) {
     /* Make text look like a disabled link */
     color: #777;

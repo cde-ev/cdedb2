@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-04-24 16:21+0200\n"
+"POT-Creation-Date: 2026-04-24 20:22+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -7240,7 +7240,7 @@ msgstr ""
 
 #: cdedb/database/constants.py:877
 #: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:50
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:78
+#: cdedb/models/complaint.py:34
 msgid "revoked"
 msgstr ""
 
@@ -9847,12 +9847,12 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/util.tmpl:67
 #: cdedb/frontend/templates/web/assembly/util.tmpl:90
 #: cdedb/frontend/templates/web/assembly/util.tmpl:109
-#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:109
-#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:183
-#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:44
-#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:36
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:394
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:92
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:104
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:178
+#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:60
+#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:32
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:389
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:66
 msgid "by"
 msgstr ""
 
@@ -9873,7 +9873,7 @@ msgid "Attachment Hash"
 msgstr ""
 
 #: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:83
-#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:52
+#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:68
 #, python-format
 msgid "%(length)s characters"
 msgstr ""
@@ -13161,7 +13161,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:181
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:49
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:181
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:343
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:338
 #: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:58
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:131
 #: cdedb/frontend/templates/web/event/generic.tmpl:324
@@ -13860,8 +13860,8 @@ msgid "Case Archive"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/base.tmpl:108
-#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:6
-#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:13
+#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:7
+#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:14
 msgid "Measure Overview"
 msgstr ""
 
@@ -14052,14 +14052,14 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:11
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:20
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:27
-#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:45
+#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:41
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:6
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:12
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:19
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:22
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:243
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:414
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:101
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:409
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:75
 #: cdedb/frontend/templates/web/core/complaint/view_complaint_log.tmpl:24
 #, python-format
 msgid "Case %s"
@@ -14095,7 +14095,7 @@ msgid "%(count)s versions"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:49
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:370
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:365
 #, python-format
 msgid "%(label)s at %(stamp)s"
 msgstr ""
@@ -14105,57 +14105,57 @@ msgstr ""
 msgid "%(label)s (deleted)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:87
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:82
 msgid "Mark for purge"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:96
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:91
 msgid "Unmark for purge"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:105
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:100
 #, python-format
 msgid "Version %s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:107
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:102
 msgid "purged"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:117
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:112
 #, python-format
 msgid "%(length)s characters."
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:122
-#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:71
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:117
+#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:87
 #, python-format
 msgid "Created at %(ctime)s by %(submitted_by)s."
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:129
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:124
 #, python-format
 msgid "Deleted at %(dtime)s by %(deleted_by)s."
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:135
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:130
 #, python-format
 msgid "Replaced at %(dtime)s by %(deleted_by)s."
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:145
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:140
 #, python-format
 msgid "Marked for purge at %(ptime)s by %(purged_by)s."
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:176
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:387
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:171
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:382
 #, python-format
 msgid "(for %(involved)s)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:187
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:398
+#: cdedb/frontend/templates/web/core/complaint/case_history.tmpl:182
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:393
 #, python-format
 msgid "; %(change_note)s"
 msgstr ""
@@ -14314,7 +14314,7 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:131
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:334
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:329
 msgid "Revoke"
 msgstr ""
 
@@ -14325,7 +14325,7 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:139
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:325
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:320
 msgid "Replace"
 msgstr ""
 
@@ -14345,17 +14345,17 @@ msgstr ""
 msgid "Export"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:35
+#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:42
 #, python-format
 msgid "(for %(concerned)s)"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:59
+#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:75
 #, python-format
 msgid "%s previous versions."
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:63
+#: cdedb/frontend/templates/web/core/complaint/generic.tmpl:79
 #, python-format
 msgid ""
 "Created at %(ctime)s by %(first_submitted_by)s; last changed at %(mtime)s by "
@@ -14449,18 +14449,13 @@ msgstr ""
 msgid "Remove %(name)s as companion"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:30
-#, python-format
-msgid "Measure against %(concerned)s"
-msgstr ""
-
-#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:43
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:99
+#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:39
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:73
 #, python-format
 msgid "from %(case)s"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:58
+#: cdedb/frontend/templates/web/core/complaint/measures.tmpl:54
 msgid "Currently, there are no active measures."
 msgstr ""
 
@@ -14541,15 +14536,15 @@ msgstr ""
 msgid "Lock descriptions"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:318
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:313
 msgid "Add child entry"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:418
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:413
 msgid "strongly related"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:426
+#: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:421
 msgid "Intersecting involved"
 msgstr ""
 
@@ -14573,15 +14568,7 @@ msgstr ""
 msgid "This lists all measures targeting this persona."
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:80
-msgid "expired"
-msgstr ""
-
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:86
-msgid "not yet active"
-msgstr ""
-
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:113
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:87
 msgid "There are no measures targeting this persona."
 msgstr ""
 
@@ -21410,6 +21397,18 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/util.tmpl:1205
 msgid "Info"
+msgstr ""
+
+#: cdedb/models/complaint.py:32
+msgid "deleted"
+msgstr ""
+
+#: cdedb/models/complaint.py:36
+msgid "expired"
+msgstr ""
+
+#: cdedb/models/complaint.py:38
+msgid "not yet active"
 msgstr ""
 
 #: cdedb/models/core.py:617
