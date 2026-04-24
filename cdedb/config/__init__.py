@@ -69,7 +69,7 @@ _SECRECTS_DEFAULTS = dict_from_module(
 )
 
 
-class NewBaseConfig(Mapping[str, Any], abc.ABC):
+class BaseConfig(Mapping[str, Any], abc.ABC):
     _instance: ClassVar[Self | None] = None
     _defaults: ClassVar[Mapping[str, Any]]
 
@@ -114,7 +114,7 @@ class NewBaseConfig(Mapping[str, Any], abc.ABC):
         return self._configchain.__len__()
 
 
-class NewConfig(NewBaseConfig):
+class Config(BaseConfig):
     _defaults = _DEFAULTS
     _config_paths_env_name = "CDEDB_CONFIGPATHS"
     _default_config_paths: Final = [pathlib.Path("/etc/cdedb/config.py")]
@@ -176,7 +176,7 @@ class NewConfig(NewBaseConfig):
         )
 
         if recurse:
-            NewSecretsConfig().reload()
+            SecretsConfig().reload()
             set_log_level(self._configchain["LOG_LEVEL"])
 
     @contextlib.contextmanager
@@ -225,12 +225,12 @@ class NewConfig(NewBaseConfig):
         return f"{name}({' '.join(configs)})"
 
 
-class NewSecretsConfig(NewBaseConfig):
+class SecretsConfig(BaseConfig):
     _defaults = _SECRECTS_DEFAULTS
     _config_path_key = "SECRETS_CONFIGPATH"
 
     def _init_once(self) -> None:
-        self._config = NewConfig()
+        self._config = Config()
 
     def reload(self, recurse: bool = True) -> None:
         local_config = self._filter_overrides(
@@ -256,6 +256,4 @@ class NewSecretsConfig(NewBaseConfig):
         return f"{name}(cm={self._configchain.maps[0]!r} local={local_config!r})"
 
 
-Config = NewConfig
-TestConfig = NewConfig
-SecretsConfig = NewSecretsConfig
+TestConfig = Config
