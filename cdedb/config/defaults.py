@@ -372,6 +372,9 @@ SEPA_ROLLBACK_FEE = _decimal.Decimal('4.50')
 # Rate limit for orgas adding persons to their event number of persons per day
 ORGA_ADD_LIMIT = 10
 
+# Prevent frontend access on participant data up to this event id.
+EVENT_LIMITED_ACCESS_CUTOFF_ID = 0
+
 #
 # complaint stuff
 #

@@ -77,6 +77,7 @@ from cdedb.models.common import (
     CdEDataclass,
     CdEDataclassMap,
     MetaFlag as Meta,
+    StoredQuery as _StoredQuery,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -1016,6 +1017,24 @@ class QuestionnaireRow(EventDataclass):
 
     def get_sortkey(self) -> Sortkey:
         return (0,)
+
+
+@dataclasses.dataclass
+class StoredEventQuery(EventDataclass, _StoredQuery):
+    database_table = "event.stored_queries"
+
+    event_id: vtypes.ID = dataclasses.field(
+        default=vtypes.ID(-1), metadata=Meta.request_exclude.as_dict
+    )
+    event: Event = dataclasses.field(
+        compare=False,
+        repr=False,
+        default=cast(Event, None),
+        metadata=Meta.input_exclude.as_dict,
+    )
+
+    def _get_spec(self) -> QuerySpec:
+        return self.scope.get_spec(event=self.event)
 
 
 #
