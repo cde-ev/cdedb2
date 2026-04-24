@@ -272,7 +272,9 @@ def _make_backend_shim(
             if hasattr(backend, "caretaker_info"):
                 rs.user.caretaker = backend.caretaker_info(rs, rs.user.persona_id)
             if hasattr(backend, "checkin_helper_info"):
-                rs.user.caretaker = backend.checkin_helper_info(rs, rs.user.persona_id)
+                rs.user.checkin_helper = backend.checkin_helper_info(
+                    rs, rs.user.persona_id
+                )
         if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
             rs.user.moderator = backend.moderator_info(rs, rs.user.persona_id)
         if "assembly" in rs.user.roles and hasattr(backend, "presider_info"):
