@@ -3300,10 +3300,6 @@ class CustomCSVDialect(csv.Dialect):
     lineterminator = '\n'
     escapechar = None
 
-    def __init__(self, delimiter: str = ';'):
-        self.delimiter = delimiter
-        super().__init__()
-
 
 def csv_output(
     data: Collection[CdEDBObject],

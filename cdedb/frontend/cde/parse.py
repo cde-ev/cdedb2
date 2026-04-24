@@ -357,7 +357,8 @@ class CdEParseMixin(CdEBaseFrontend):
         reader = csv.DictReader(
             transferlines,
             fieldnames=fields,
-            dialect=CustomCSVDialect(delimiter=detected_dialect.delimiter),
+            dialect=CustomCSVDialect,
+            delimiter=detected_dialect.delimiter,
         )
         data = []
         amounts_paid: dict[int, decimal.Decimal] = {}
