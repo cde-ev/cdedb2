@@ -38,7 +38,7 @@
             </span>
         {% endif %}
     </strong>
-    {% if entry.concerned_id and personas %}
+    {% if entry.concerned_id and (not ambience['persona'] or ambience['persona']['id'] != entry.concerned_id) %}
         {% trans concerned=util.persona_anchor(personas[entry.concerned_id], icon='user') %}
              (for {{ concerned }})
         {% endtrans %}
