@@ -72,6 +72,32 @@
             {% endif %}
         {% endfor %}
     </div>
+    {{ util.h(n_("Stats by Institution")) }}
+    <div id="cde-simple-stats">
+        <table class="table table-slim table-condensed">
+            <thead>
+                <tr>
+                    <th colspan="2"></th>
+                    <th class="text-right">{% trans %}Members by Institution{% endtrans %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for key, value in institution_stats.items() %}
+                    <tr>
+                        {% if "num_of" in key %}
+                        <td class="indent"></td>
+                        {% endif %}
+                        <th {% if not "num_of" in key %}colspan="2"{% endif %}>
+                            {{ gettext(key) }}
+                        </th>
+                        <td id="simple-stats-{{ key }}" class="text-right">
+                            {{ value }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% endblock %}
 
 {% macro stat_table(view, view_stats, processing="") %}

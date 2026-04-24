@@ -259,7 +259,7 @@ class CdEBaseBackend(AbstractBackend):
     @access("member", "cde_admin")
     def get_member_stats(
         self, rs: RequestState
-    ) -> tuple[CdEDBObject, CdEDBObject, CdEDBObject]:
+    ) -> tuple[CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject]:
         """Retrieve some generic statistics about members."""
         # Simple stats first.
         query = """SELECT
@@ -421,7 +421,37 @@ class CdEBaseBackend(AbstractBackend):
             )
         )
 
-        return simple_stats, other_stats, year_stats
+        query = """
+            SELECT
+                e.institution,
+                COUNT(*)
+            FROM (
+                SELECT DISTINCT
+                    pa.persona_id,
+                    FIRST_VALUE(e.id) OVER(
+                        PARTITION BY pa.persona_id
+                        ORDER BY e.tempus, e.institution, e.id
+                    ) AS first_event_id
+                FROM past_event.participants pa
+                JOIN past_event.events e
+                    ON pa.pevent_id = e.id
+            ) AS personas
+            JOIN past_event.events e
+                ON personas.first_event_id = e.id
+            JOIN past_event.participants p
+                ON personas.persona_id = p.persona_id
+                AND e.id = p.pevent_id
+            GROUP BY e.institution;
+        """
+
+        data = self.query_all(rs, query, ())
+        assert data is not None
+
+        institution_stats: CdEDBObject = {}
+        for result in data:
+            institution_stats[const.PastInstitutions(result["institution"]).shortname] = result["count"]
+
+        return simple_stats, other_stats, year_stats, institution_stats
 
     def _perform_one_batch_admission(
         self,
