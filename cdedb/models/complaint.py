@@ -2,6 +2,7 @@
 
 import dataclasses
 import datetime
+import enum
 import functools
 import itertools
 from collections.abc import Collection
@@ -11,9 +12,71 @@ from typing import Self, Union
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, User, now
+from cdedb.common.n_ import n_
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.database.query import DatabaseValue_s
 from cdedb.models.common import CdEDataclass, CdEDataclassMap, MetaFlag as Meta
+
+
+class ComplaintEntryStatus(enum.Enum):
+    deleted = enum.auto()
+    # TODO: purged
+    revoked = enum.auto()
+    pending_measure = enum.auto()
+    active_measure = enum.auto()
+    expired_measure = enum.auto()
+    other = enum.auto()
+
+    def get_label(self) -> str:
+        if self == self.deleted:
+            return n_("deleted")
+        if self == self.revoked:
+            return n_("revoked")
+        if self == self.expired_measure:
+            return n_("expired")
+        if self == self.pending_measure:
+            return n_("not yet active")
+        return ""
+
+    def heading_styles(self) -> str:
+        ret = []
+        if self in {
+            self.deleted,
+            self.expired_measure,
+            self.revoked,
+        }:
+            ret.append("strikethrough")
+        if self == self.pending_measure:
+            ret.extend(["text-muted", "text-italic"])
+        return " ".join(ret)
+
+    def label_styles(self) -> str:
+        ret = []
+        if self in {
+            self.deleted,
+            self.expired_measure,
+            self.revoked,
+        }:
+            ret.append("text-unmuted")
+        if self == self.pending_measure:
+            ret.append("text-info")
+        return " ".join(ret)
+
+    def timespan_styles(self) -> str:
+        ret = []
+        if self == self.pending_measure:
+            ret.extend(["text-info", "text-italic"])
+        return " ".join(ret)
+
+    def list_group_item_styles(self) -> str:
+        ret = []
+        if self in {
+            self.deleted,
+            self.revoked,
+            self.expired_measure,
+        }:
+            ret.append("list-group-item-muted")
+        return " ".join(ret)
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -367,6 +430,20 @@ class ComplaintEntry(CdEDataclass):
             #  This tells mypy that the timestamp cannot be None below.
             return False
         return bool(av.etime and self._now > av.etime)
+
+    @functools.cached_property
+    def status(self) -> ComplaintEntryStatus:
+        if self.is_revoked:
+            return ComplaintEntryStatus.revoked
+        if not self.active_version:
+            return ComplaintEntryStatus.deleted
+        if not self.is_measure:
+            return ComplaintEntryStatus.other
+        if self.is_expired_measure:
+            return ComplaintEntryStatus.expired_measure
+        if self.is_active_measure:
+            return ComplaintEntryStatus.active_measure
+        return ComplaintEntryStatus.pending_measure
 
 
 @dataclasses.dataclass(kw_only=True)

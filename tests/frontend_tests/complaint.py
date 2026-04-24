@@ -251,7 +251,9 @@ class TestComplaintFrontend(FrontendTest):
         # Excursion part 1: Check measure is displayed in overview
         self.traverse("Maßnahmenübersicht")
         self.assertTitle("Maßnahmenübersicht")
-        self.assertPresence("Maßnahme gegen Bertå Beispiel", div='entry5-6')
+        self.assertPresence(
+            "Maßnahme gemäß Übereinkunft (für Bertå Beispiel)", div='entry5-6'
+        )
         self.assertPresence("von Charly Clown", div='entry5-6')
         self.assertPresence(
             "Berta muss bei Anmeldung ein Einzelzimmer beantragen.", div='entry5-6'
@@ -347,7 +349,9 @@ class TestComplaintFrontend(FrontendTest):
         # Excursion part 3: Check revoked measure revocation leads to display
         self.traverse("Maßnahmenübersicht")
         self.assertTitle("Maßnahmenübersicht")
-        self.assertPresence("Maßnahme gegen Bertå Beispiel", div='entry5-6')
+        self.assertPresence(
+            "Maßnahme gemäß Übereinkunft (für Bertå Beispiel)", div='entry5-6'
+        )
         self.traverse("Fall 1")
 
         # Remove entry
@@ -888,7 +892,9 @@ class TestComplaintFrontend(FrontendTest):
     def test_measure_overview(self) -> None:
         self.traverse("Maßnahmenübersicht")
         self.assertTitle("Maßnahmenübersicht")
-        self.assertPresence("Maßnahme gegen Bertå Beispiel", div='entry5-6')
+        self.assertPresence(
+            "Maßnahme gemäß Übereinkunft (für Bertå Beispiel)", div='entry5-6'
+        )
         self.assertPresence("von Charly Clown", div='entry5-6')
         self.assertPresence(
             "Berta muss bei Anmeldung ein Einzelzimmer beantragen.", div='entry5-6'
