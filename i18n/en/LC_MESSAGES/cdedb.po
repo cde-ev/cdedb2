@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-04-24 15:58+0200\n"
+"POT-Creation-Date: 2026-04-24 16:21+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -3313,7 +3313,7 @@ msgstr ""
 #: cdedb/frontend/core/base.py:1232 cdedb/frontend/core/base.py:1245
 #: cdedb/frontend/core/base.py:2561 cdedb/frontend/core/base.py:2580
 #: cdedb/frontend/core/base.py:3096 cdedb/frontend/core/base.py:3123
-#: cdedb/frontend/core/complaint.py:1229 cdedb/frontend/core/genesis.py:369
+#: cdedb/frontend/core/complaint.py:1233 cdedb/frontend/core/genesis.py:369
 #: cdedb/frontend/core/genesis.py:424 cdedb/frontend/core/genesis.py:482
 #: cdedb/frontend/core/genesis.py:505 cdedb/frontend/core/genesis.py:535
 #: cdedb/frontend/event/query.py:741 cdedb/frontend/ml/base.py:252
@@ -3321,7 +3321,7 @@ msgid "Not privileged."
 msgstr ""
 
 #: cdedb/backend/assembly.py:404 cdedb/backend/cde/base.py:681
-#: cdedb/backend/complaint.py:1286 cdedb/backend/core/base.py:3732
+#: cdedb/backend/complaint.py:1281 cdedb/backend/core/base.py:3732
 #: cdedb/backend/event/query.py:774 cdedb/backend/ml.py:375
 #: cdedb/backend/past_event.py:1102
 msgid "Bad scope."
@@ -3373,9 +3373,9 @@ msgid "Cannot delete assembly with locked ballots."
 msgstr ""
 
 #: cdedb/backend/assembly.py:938 cdedb/backend/assembly.py:998
-#: cdedb/database/constants.py:1334 cdedb/database/constants.py:1335
-#: cdedb/database/constants.py:1336 cdedb/database/constants.py:1337
-#: cdedb/database/constants.py:1338 cdedb/database/constants.py:1339
+#: cdedb/database/constants.py:1342 cdedb/database/constants.py:1343
+#: cdedb/database/constants.py:1344 cdedb/database/constants.py:1345
+#: cdedb/database/constants.py:1346 cdedb/database/constants.py:1347
 #: cdedb/frontend/templates/web/assembly/attachment/add_attachment.tmpl:11
 #: cdedb/frontend/templates/web/assembly/attachment/configure_attachment_version.tmpl:27
 #: cdedb/frontend/templates/web/assembly/attachment/list_attachments.tmpl:18
@@ -3443,10 +3443,10 @@ msgid "Cannot delete ballot that has votes."
 msgstr ""
 
 #: cdedb/backend/assembly.py:1467 cdedb/backend/assembly.py:1504
-#: cdedb/database/constants.py:1340 cdedb/database/constants.py:1341
-#: cdedb/database/constants.py:1342 cdedb/database/constants.py:1343
-#: cdedb/database/constants.py:1344 cdedb/database/constants.py:1345
-#: cdedb/database/constants.py:1346 cdedb/database/constants.py:1347
+#: cdedb/database/constants.py:1348 cdedb/database/constants.py:1349
+#: cdedb/database/constants.py:1350 cdedb/database/constants.py:1351
+#: cdedb/database/constants.py:1352 cdedb/database/constants.py:1353
+#: cdedb/database/constants.py:1354 cdedb/database/constants.py:1355
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:19
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:223
 #: cdedb/frontend/templates/web/assembly/ballot/ballot_template.tmpl:20
@@ -3868,7 +3868,7 @@ msgstr ""
 
 #: cdedb/backend/complaint.py:137 cdedb/backend/complaint.py:159
 #: cdedb/backend/event/registration.py:1379 cdedb/frontend/assembly/base.py:602
-#: cdedb/frontend/core/complaint.py:1275
+#: cdedb/frontend/core/complaint.py:1281
 #: cdedb/frontend/event/registration.py:1603
 msgid "This user does not exist or is archived."
 msgstr ""
@@ -3953,10 +3953,6 @@ msgstr ""
 msgid "Not a companion."
 msgstr ""
 
-#: cdedb/backend/complaint.py:1403
-msgid "Can only list measures."
-msgstr ""
-
 #: cdedb/backend/core/base.py:419
 msgid "Given changelog generation must be committed."
 msgstr ""
@@ -3970,8 +3966,8 @@ msgid "Persona and Changelog are inconsistent."
 msgstr ""
 
 #: cdedb/backend/core/base.py:587 cdedb/backend/core/base.py:1631
-#: cdedb/frontend/core/base.py:2532 cdedb/frontend/core/complaint.py:1281
-#: cdedb/frontend/core/complaint.py:1295
+#: cdedb/frontend/core/base.py:2532 cdedb/frontend/core/complaint.py:1287
+#: cdedb/frontend/core/complaint.py:1301
 #: cdedb/frontend/event/registration.py:1485 cdedb/frontend/ml/base.py:631
 msgid "Nothing changed."
 msgstr ""
@@ -5004,8 +5000,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:90
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:83
 #: cdedb/frontend/templates/web/core/change_user.tmpl:89
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:35
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:36
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:37
 #: cdedb/frontend/templates/web/core/genesis/genesis_modify_form.tmpl:36
 #: cdedb/frontend/templates/web/core/genesis/genesis_request.tmpl:44
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:116
@@ -5717,7 +5713,7 @@ msgid "Author"
 msgstr ""
 
 #: cdedb/common/query/__init__.py:764 cdedb/common/query/__init__.py:765
-#: cdedb/common/query/__init__.py:766 cdedb/database/constants.py:998
+#: cdedb/common/query/__init__.py:766 cdedb/database/constants.py:1006
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:55
 #: cdedb/frontend/templates/web/core/complaint/index.tmpl:162
 msgid "Involved"
@@ -5732,7 +5728,7 @@ msgid "Is Informed"
 msgstr ""
 
 #: cdedb/common/query/__init__.py:767 cdedb/common/query/__init__.py:768
-#: cdedb/database/constants.py:1000
+#: cdedb/database/constants.py:1008
 #: cdedb/frontend/templates/web/core/complaint/index.tmpl:181
 #: cdedb/frontend/templates/web/logging.tmpl:110
 msgid "Companion"
@@ -5764,8 +5760,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_subscription_form_fill.tmpl:25
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_subscription_form_fill.tmpl:41
 #: cdedb/frontend/templates/web/cde/parse/money_transfers.tmpl:41
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:29
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:30
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:31
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:99
 #: cdedb/frontend/templates/web/core/show_user.tmpl:246
 #: cdedb/frontend/templates/web/core/show_user.tmpl:247
@@ -5797,7 +5793,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/admin_username_change.tmpl:22
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:17
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:29
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:17
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:18
 #: cdedb/frontend/templates/web/core/dearchive_user.tmpl:15
 #: cdedb/frontend/templates/web/core/dearchive_user.tmpl:25
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:19
@@ -5952,9 +5948,9 @@ msgstr ""
 #: cdedb/common/query/__init__.py:1178 cdedb/common/query/__init__.py:1179
 #: cdedb/common/query/__init__.py:1181 cdedb/common/query/__init__.py:1182
 #: cdedb/common/query/__init__.py:1183 cdedb/common/query/__init__.py:1184
-#: cdedb/common/query/__init__.py:1185 cdedb/database/constants.py:1249
-#: cdedb/database/constants.py:1250 cdedb/database/constants.py:1251
-#: cdedb/database/constants.py:1252 cdedb/database/constants.py:1253
+#: cdedb/common/query/__init__.py:1185 cdedb/database/constants.py:1257
+#: cdedb/database/constants.py:1258 cdedb/database/constants.py:1259
+#: cdedb/database/constants.py:1260 cdedb/database/constants.py:1261
 #: cdedb/frontend/templates/web/event/base.tmpl:265
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:10
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:22
@@ -6144,9 +6140,9 @@ msgid "any track"
 msgstr ""
 
 #: cdedb/common/query/__init__.py:1416 cdedb/common/query/__init__.py:1560
-#: cdedb/common/query/__init__.py:1665 cdedb/database/constants.py:1235
-#: cdedb/database/constants.py:1236 cdedb/database/constants.py:1237
-#: cdedb/database/constants.py:1238
+#: cdedb/common/query/__init__.py:1665 cdedb/database/constants.py:1243
+#: cdedb/database/constants.py:1244 cdedb/database/constants.py:1245
+#: cdedb/database/constants.py:1246
 #: cdedb/frontend/templates/web/event/generic.tmpl:224
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:208
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:464
@@ -7213,114 +7209,118 @@ msgstr ""
 msgid "This domain is not supported."
 msgstr ""
 
-#: cdedb/database/constants.py:860
+#: cdedb/database/constants.py:868
 msgid "signed"
 msgstr ""
 
-#: cdedb/database/constants.py:861
+#: cdedb/database/constants.py:869
 msgid "cleared"
 msgstr ""
 
-#: cdedb/database/constants.py:862
+#: cdedb/database/constants.py:870
 msgid "sent"
 msgstr ""
 
-#: cdedb/database/constants.py:863
+#: cdedb/database/constants.py:871
 msgid "received"
 msgstr ""
 
-#: cdedb/database/constants.py:864 cdedb/database/constants.py:865
-#: cdedb/database/constants.py:866
+#: cdedb/database/constants.py:872 cdedb/database/constants.py:873
+#: cdedb/database/constants.py:874
 msgid "measure"
 msgstr ""
 
-#: cdedb/database/constants.py:867
+#: cdedb/database/constants.py:875
 msgid "explanation"
 msgstr ""
 
-#: cdedb/database/constants.py:868
+#: cdedb/database/constants.py:876
 msgid "comment"
 msgstr ""
 
-#: cdedb/database/constants.py:869
+#: cdedb/database/constants.py:877
 #: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:50
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:77
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:78
 msgid "revoked"
 msgstr ""
 
-#: cdedb/database/constants.py:876
+#: cdedb/database/constants.py:884
 msgid "Statement_[[in a case]]"
 msgstr "Statement"
 
-#: cdedb/database/constants.py:877
+#: cdedb/database/constants.py:885
 msgid "Agreement"
 msgstr ""
 
-#: cdedb/database/constants.py:878 cdedb/database/constants.py:882
+#: cdedb/database/constants.py:886 cdedb/database/constants.py:890
 msgid "Measure"
 msgstr ""
 
-#: cdedb/database/constants.py:879 cdedb/database/constants.py:881
-msgid "Arbcom"
+#: cdedb/database/constants.py:887
+msgid "Provisional Arbcom"
 msgstr ""
 
-#: cdedb/database/constants.py:880
+#: cdedb/database/constants.py:888
 msgid "Provisional measure"
 msgstr ""
 
-#: cdedb/database/constants.py:883
+#: cdedb/database/constants.py:889
+msgid "Arbcom"
+msgstr ""
+
+#: cdedb/database/constants.py:891
 msgid "Revocation"
 msgstr ""
 
-#: cdedb/database/constants.py:930 cdedb/database/constants.py:931
-#: cdedb/database/constants.py:932 cdedb/database/constants.py:933
-#: cdedb/database/constants.py:934 cdedb/database/constants.py:935
-#: cdedb/database/constants.py:936
+#: cdedb/database/constants.py:938 cdedb/database/constants.py:939
+#: cdedb/database/constants.py:940 cdedb/database/constants.py:941
+#: cdedb/database/constants.py:942 cdedb/database/constants.py:943
+#: cdedb/database/constants.py:944
 msgid "Persona"
 msgstr ""
 
-#: cdedb/database/constants.py:937 cdedb/database/constants.py:938
-#: cdedb/database/constants.py:939 cdedb/database/constants.py:940
+#: cdedb/database/constants.py:945 cdedb/database/constants.py:946
+#: cdedb/database/constants.py:947 cdedb/database/constants.py:948
 #: cdedb/frontend/templates/web/core/do_username_change.tmpl:20
 #: cdedb/frontend/templates/web/core/login.tmpl:28
 msgid "Password"
 msgstr ""
 
-#: cdedb/database/constants.py:941 cdedb/database/constants.py:942
-#: cdedb/database/constants.py:943 cdedb/database/constants.py:944
-#: cdedb/database/constants.py:945 cdedb/database/constants.py:946
-#: cdedb/database/constants.py:947
+#: cdedb/database/constants.py:949 cdedb/database/constants.py:950
+#: cdedb/database/constants.py:951 cdedb/database/constants.py:952
+#: cdedb/database/constants.py:953 cdedb/database/constants.py:954
+#: cdedb/database/constants.py:955
 msgid "Genesis"
 msgstr ""
 
-#: cdedb/database/constants.py:948 cdedb/database/constants.py:949
-#: cdedb/database/constants.py:950
+#: cdedb/database/constants.py:956 cdedb/database/constants.py:957
+#: cdedb/database/constants.py:958
 #: cdedb/frontend/templates/web/core/show_privilege_change.tmpl:17
 msgid "Privilege Change"
 msgstr ""
 
-#: cdedb/database/constants.py:951 cdedb/database/constants.py:952
-#: cdedb/database/constants.py:953 cdedb/database/constants.py:954
-#: cdedb/database/constants.py:955 cdedb/database/constants.py:956
-#: cdedb/database/constants.py:957 cdedb/database/constants.py:1003
-#: cdedb/database/constants.py:1086 cdedb/database/constants.py:1274
-#: cdedb/database/constants.py:1356 cdedb/database/constants.py:1439
+#: cdedb/database/constants.py:959 cdedb/database/constants.py:960
+#: cdedb/database/constants.py:961 cdedb/database/constants.py:962
+#: cdedb/database/constants.py:963 cdedb/database/constants.py:964
+#: cdedb/database/constants.py:965 cdedb/database/constants.py:1011
+#: cdedb/database/constants.py:1094 cdedb/database/constants.py:1282
+#: cdedb/database/constants.py:1364 cdedb/database/constants.py:1447
 msgid "Other"
 msgstr ""
 
-#: cdedb/database/constants.py:996
+#: cdedb/database/constants.py:1004
 #: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:1
 #: cdedb/frontend/templates/web/logging.tmpl:108
 msgid "Case"
 msgstr ""
 
-#: cdedb/database/constants.py:1002
+#: cdedb/database/constants.py:1010
 msgid "Enforcer"
 msgstr ""
 
-#: cdedb/database/constants.py:1065 cdedb/database/constants.py:1066
-#: cdedb/database/constants.py:1067 cdedb/database/constants.py:1068
-#: cdedb/database/constants.py:1069 cdedb/database/constants.py:1070
+#: cdedb/database/constants.py:1073 cdedb/database/constants.py:1074
+#: cdedb/database/constants.py:1075 cdedb/database/constants.py:1076
+#: cdedb/database/constants.py:1077 cdedb/database/constants.py:1078
 #: cdedb/frontend/templates/web/core/change_user.tmpl:61
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:139
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:140
@@ -7329,9 +7329,9 @@ msgstr ""
 msgid "Membership"
 msgstr ""
 
-#: cdedb/database/constants.py:1071 cdedb/database/constants.py:1072
-#: cdedb/database/constants.py:1073 cdedb/database/constants.py:1074
-#: cdedb/database/constants.py:1075
+#: cdedb/database/constants.py:1079 cdedb/database/constants.py:1080
+#: cdedb/database/constants.py:1081 cdedb/database/constants.py:1082
+#: cdedb/database/constants.py:1083
 #: cdedb/frontend/templates/web/cde/view_finance_log.tmpl:28
 #: cdedb/frontend/templates/web/core/inspect_change.tmpl:101
 #: cdedb/frontend/templates/web/core/show_history.tmpl:262
@@ -7342,20 +7342,20 @@ msgstr ""
 msgid "Balance"
 msgstr ""
 
-#: cdedb/database/constants.py:1076 cdedb/database/constants.py:1077
-#: cdedb/database/constants.py:1078 cdedb/database/constants.py:1079
+#: cdedb/database/constants.py:1084 cdedb/database/constants.py:1085
+#: cdedb/database/constants.py:1086 cdedb/database/constants.py:1087
 msgid "Lastschrift"
 msgstr ""
 
-#: cdedb/database/constants.py:1080 cdedb/database/constants.py:1081
-#: cdedb/database/constants.py:1082 cdedb/database/constants.py:1083
-#: cdedb/database/constants.py:1084 cdedb/database/constants.py:1085
+#: cdedb/database/constants.py:1088 cdedb/database/constants.py:1089
+#: cdedb/database/constants.py:1090 cdedb/database/constants.py:1091
+#: cdedb/database/constants.py:1092 cdedb/database/constants.py:1093
 msgid "Lastschrift Transaction"
 msgstr ""
 
-#: cdedb/database/constants.py:1202 cdedb/database/constants.py:1203
-#: cdedb/database/constants.py:1204 cdedb/database/constants.py:1205
-#: cdedb/database/constants.py:1206 cdedb/database/constants.py:1207
+#: cdedb/database/constants.py:1210 cdedb/database/constants.py:1211
+#: cdedb/database/constants.py:1212 cdedb/database/constants.py:1213
+#: cdedb/database/constants.py:1214 cdedb/database/constants.py:1215
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:138
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:32
 #: cdedb/frontend/templates/web/event/base.tmpl:349
@@ -7438,10 +7438,10 @@ msgstr ""
 msgid "Event"
 msgstr ""
 
-#: cdedb/database/constants.py:1208 cdedb/database/constants.py:1209
-#: cdedb/database/constants.py:1210 cdedb/database/constants.py:1211
-#: cdedb/database/constants.py:1212 cdedb/database/constants.py:1213
-#: cdedb/database/constants.py:1214 cdedb/database/constants.py:1215
+#: cdedb/database/constants.py:1216 cdedb/database/constants.py:1217
+#: cdedb/database/constants.py:1218 cdedb/database/constants.py:1219
+#: cdedb/database/constants.py:1220 cdedb/database/constants.py:1221
+#: cdedb/database/constants.py:1222 cdedb/database/constants.py:1223
 #: cdedb/frontend/templates/web/core/index.tmpl:165
 #: cdedb/frontend/templates/web/event/base.tmpl:206
 #: cdedb/frontend/templates/web/event/downloads.tmpl:184
@@ -7473,10 +7473,10 @@ msgstr ""
 msgid "Registrations"
 msgstr ""
 
-#: cdedb/database/constants.py:1216 cdedb/database/constants.py:1217
-#: cdedb/database/constants.py:1218 cdedb/database/constants.py:1219
-#: cdedb/database/constants.py:1220 cdedb/database/constants.py:1221
-#: cdedb/database/constants.py:1222
+#: cdedb/database/constants.py:1224 cdedb/database/constants.py:1225
+#: cdedb/database/constants.py:1226 cdedb/database/constants.py:1227
+#: cdedb/database/constants.py:1228 cdedb/database/constants.py:1229
+#: cdedb/database/constants.py:1230
 #: cdedb/frontend/templates/web/cde/past_event/create_past_event.tmpl:30
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:79
 #: cdedb/frontend/templates/web/core/index.tmpl:172
@@ -7500,9 +7500,9 @@ msgstr ""
 msgid "Courses"
 msgstr ""
 
-#: cdedb/database/constants.py:1223 cdedb/database/constants.py:1224
-#: cdedb/database/constants.py:1225 cdedb/database/constants.py:1226
-#: cdedb/database/constants.py:1227 cdedb/database/constants.py:1228
+#: cdedb/database/constants.py:1231 cdedb/database/constants.py:1232
+#: cdedb/database/constants.py:1233 cdedb/database/constants.py:1234
+#: cdedb/database/constants.py:1235 cdedb/database/constants.py:1236
 #: cdedb/frontend/templates/web/event/base.tmpl:220
 #: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:40
 #: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:32
@@ -7523,15 +7523,15 @@ msgstr ""
 msgid "Lodgements"
 msgstr ""
 
-#: cdedb/database/constants.py:1229 cdedb/database/constants.py:1230
-#: cdedb/database/constants.py:1231 cdedb/database/constants.py:1232
-#: cdedb/database/constants.py:1233 cdedb/database/constants.py:1234
+#: cdedb/database/constants.py:1237 cdedb/database/constants.py:1238
+#: cdedb/database/constants.py:1239 cdedb/database/constants.py:1240
+#: cdedb/database/constants.py:1241 cdedb/database/constants.py:1242
 msgid "Event Parts & Course Tracks"
 msgstr ""
 
-#: cdedb/database/constants.py:1239 cdedb/database/constants.py:1240
-#: cdedb/database/constants.py:1241 cdedb/database/constants.py:1242
-#: cdedb/database/constants.py:1243
+#: cdedb/database/constants.py:1247 cdedb/database/constants.py:1248
+#: cdedb/database/constants.py:1249 cdedb/database/constants.py:1250
+#: cdedb/database/constants.py:1251
 #: cdedb/frontend/templates/web/event/base.tmpl:224
 #: cdedb/frontend/templates/web/event/event/fee/configure_fee.tmpl:42
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:17
@@ -7542,22 +7542,22 @@ msgstr ""
 msgid "Fees"
 msgstr ""
 
-#: cdedb/database/constants.py:1244 cdedb/database/constants.py:1245
-#: cdedb/database/constants.py:1246 cdedb/database/constants.py:1247
-#: cdedb/database/constants.py:1248
+#: cdedb/database/constants.py:1252 cdedb/database/constants.py:1253
+#: cdedb/database/constants.py:1254 cdedb/database/constants.py:1255
+#: cdedb/database/constants.py:1256
 msgid "Queries"
 msgstr ""
 
-#: cdedb/database/constants.py:1254 cdedb/database/constants.py:1255
-#: cdedb/database/constants.py:1256 cdedb/database/constants.py:1257
-#: cdedb/database/constants.py:1258 cdedb/database/constants.py:1259
-#: cdedb/database/constants.py:1260 cdedb/database/constants.py:1261
 #: cdedb/database/constants.py:1262 cdedb/database/constants.py:1263
+#: cdedb/database/constants.py:1264 cdedb/database/constants.py:1265
+#: cdedb/database/constants.py:1266 cdedb/database/constants.py:1267
+#: cdedb/database/constants.py:1268 cdedb/database/constants.py:1269
+#: cdedb/database/constants.py:1270 cdedb/database/constants.py:1271
 msgid "Part & Track Groups"
 msgstr ""
 
-#: cdedb/database/constants.py:1264 cdedb/database/constants.py:1265
-#: cdedb/database/constants.py:1266 cdedb/database/constants.py:1267
+#: cdedb/database/constants.py:1272 cdedb/database/constants.py:1273
+#: cdedb/database/constants.py:1274 cdedb/database/constants.py:1275
 #: cdedb/frontend/templates/web/event/downloads.tmpl:23
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:27
 #: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:32
@@ -7566,16 +7566,16 @@ msgstr ""
 msgid "Orga Tokens"
 msgstr ""
 
-#: cdedb/database/constants.py:1268 cdedb/database/constants.py:1269
-#: cdedb/database/constants.py:1270 cdedb/database/constants.py:1271
-#: cdedb/database/constants.py:1272 cdedb/database/constants.py:1273
+#: cdedb/database/constants.py:1276 cdedb/database/constants.py:1277
+#: cdedb/database/constants.py:1278 cdedb/database/constants.py:1279
+#: cdedb/database/constants.py:1280 cdedb/database/constants.py:1281
 msgid "Event Roles"
 msgstr ""
 
-#: cdedb/database/constants.py:1348 cdedb/database/constants.py:1349
-#: cdedb/database/constants.py:1350 cdedb/database/constants.py:1351
-#: cdedb/database/constants.py:1352 cdedb/database/constants.py:1353
-#: cdedb/database/constants.py:1354 cdedb/database/constants.py:1355
+#: cdedb/database/constants.py:1356 cdedb/database/constants.py:1357
+#: cdedb/database/constants.py:1358 cdedb/database/constants.py:1359
+#: cdedb/database/constants.py:1360 cdedb/database/constants.py:1361
+#: cdedb/database/constants.py:1362 cdedb/database/constants.py:1363
 #: cdedb/frontend/templates/web/assembly/attachment/configure_attachment_version.tmpl:26
 #: cdedb/frontend/templates/web/assembly/util.tmpl:3
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:123
@@ -7584,9 +7584,9 @@ msgstr ""
 msgid "Attachment"
 msgstr ""
 
-#: cdedb/database/constants.py:1418 cdedb/database/constants.py:1419
-#: cdedb/database/constants.py:1420 cdedb/database/constants.py:1421
-#: cdedb/database/constants.py:1422
+#: cdedb/database/constants.py:1426 cdedb/database/constants.py:1427
+#: cdedb/database/constants.py:1428 cdedb/database/constants.py:1429
+#: cdedb/database/constants.py:1430
 #: cdedb/frontend/templates/web/logging.tmpl:122
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:27
 #: cdedb/frontend/templates/web/ml/base.tmpl:49
@@ -7599,23 +7599,23 @@ msgstr ""
 msgid "Mailinglist"
 msgstr ""
 
-#: cdedb/database/constants.py:1423 cdedb/database/constants.py:1424
-#: cdedb/database/constants.py:1425 cdedb/database/constants.py:1426
-#: cdedb/database/constants.py:1427 cdedb/database/constants.py:1428
+#: cdedb/database/constants.py:1431 cdedb/database/constants.py:1432
+#: cdedb/database/constants.py:1433 cdedb/database/constants.py:1434
+#: cdedb/database/constants.py:1435 cdedb/database/constants.py:1436
 #: cdedb/frontend/templates/web/ml/management.tmpl:140
 msgid "Subscribers"
 msgstr ""
 
-#: cdedb/database/constants.py:1429 cdedb/database/constants.py:1430
-#: cdedb/database/constants.py:1431 cdedb/database/constants.py:1432
-#: cdedb/database/constants.py:1433
+#: cdedb/database/constants.py:1437 cdedb/database/constants.py:1438
+#: cdedb/database/constants.py:1439 cdedb/database/constants.py:1440
+#: cdedb/database/constants.py:1441
 #: cdedb/frontend/templates/web/ml/management.tmpl:98
 msgid "Subscription Requests"
 msgstr ""
 
-#: cdedb/database/constants.py:1434 cdedb/database/constants.py:1435
-#: cdedb/database/constants.py:1436 cdedb/database/constants.py:1437
-#: cdedb/database/constants.py:1438
+#: cdedb/database/constants.py:1442 cdedb/database/constants.py:1443
+#: cdedb/database/constants.py:1444 cdedb/database/constants.py:1445
+#: cdedb/database/constants.py:1446
 #: cdedb/frontend/templates/web/ml/base.tmpl:19
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:14
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:18
@@ -8832,7 +8832,7 @@ msgstr ""
 msgid "Need to unlock case to access attachment."
 msgstr ""
 
-#: cdedb/frontend/core/complaint.py:1291
+#: cdedb/frontend/core/complaint.py:1297
 msgid "This user does not exist or is no enforcer."
 msgstr ""
 
@@ -9852,7 +9852,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/complaint/generic.tmpl:44
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:36
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:394
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:91
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:92
 msgid "by"
 msgstr ""
 
@@ -10648,8 +10648,8 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:345
 #: cdedb/frontend/templates/web/cde/past_event/past_course_search.tmpl:63
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:23
 #: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:24
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:25
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:92
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:93
 #: cdedb/frontend/templates/web/core/show_history.tmpl:155
@@ -14059,7 +14059,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:22
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:243
 #: cdedb/frontend/templates/web/core/complaint/show_case.tmpl:414
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:100
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:101
 #: cdedb/frontend/templates/web/core/complaint/view_complaint_log.tmpl:24
 #, python-format
 msgid "Case %s"
@@ -14455,7 +14455,7 @@ msgid "Measure against %(concerned)s"
 msgstr ""
 
 #: cdedb/frontend/templates/web/core/complaint/measures.tmpl:43
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:98
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:99
 #, python-format
 msgid "from %(case)s"
 msgstr ""
@@ -14553,35 +14553,35 @@ msgstr ""
 msgid "Intersecting involved"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:4
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:5
 #, python-format
 msgid "%(name)s – Measures"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:12
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:16
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:47
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:13
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:17
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:48
 msgid "Measures"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:21
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:22
 #: cdedb/frontend/templates/web/core/show_user_mailinglists.tmpl:21
 msgid "Global information"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:49
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:50
 msgid "This lists all measures targeting this persona."
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:79
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:80
 msgid "expired"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:85
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:86
 msgid "not yet active"
 msgstr ""
 
-#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:112
+#: cdedb/frontend/templates/web/core/complaint/show_user_measures.tmpl:113
 msgid "There are no measures targeting this persona."
 msgstr ""
 

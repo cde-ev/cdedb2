@@ -279,6 +279,14 @@ class ComplaintEntry(CdEDataclass):
         metadata=(Meta.validate_exclude | Meta.database_exclude).as_dict,
     )
 
+    _now: datetime.datetime = dataclasses.field(
+        init=False,
+        compare=False,
+        repr=False,
+        default_factory=now,
+        metadata=(Meta.exclude | Meta.asdict_exclude).as_dict,
+    )
+
     @functools.cached_property
     def active_version(self) -> "ComplaintEntryVersion | None":
         for version in self.all_versions:
@@ -321,7 +329,10 @@ class ComplaintEntry(CdEDataclass):
         data["all_versions"] = list(
             ComplaintEntryVersion.many_from_database(data["all_versions"]).values()
         )
-        return super().from_database(data)
+        ret = super().from_database(data)
+        for version in data["all_versions"]:
+            version.entry = ret
+        return ret
 
     @classmethod
     def mandatory_form_fields(cls, *, creation: bool) -> set[str]:
@@ -331,6 +342,32 @@ class ComplaintEntry(CdEDataclass):
             ret.add('dreason')
         return ret
 
+    @property
+    def is_measure(self) -> bool:
+        return self.entry_type.is_measure
+
+    @property
+    def is_provisional(self) -> bool:
+        return self.entry_type.is_provisional
+
+    @functools.cached_property
+    def is_active_measure(self) -> bool:
+        av = self.active_version
+        if self.is_revoked or not self.is_measure or not av or not av.timestamp:
+            # Only purged versions do not have a timestamp.
+            #  This tells mypy that the timestamp cannot be None below.
+            return False
+        return self._now > av.timestamp and not self.is_expired_measure
+
+    @functools.cached_property
+    def is_expired_measure(self) -> bool:
+        av = self.active_version
+        if self.is_revoked or not self.is_measure or not av or not av.timestamp:
+            # Only purged versions do not have a timestamp.
+            #  This tells mypy that the timestamp cannot be None below.
+            return False
+        return bool(av.etime and self._now > av.etime)
+
 
 @dataclasses.dataclass(kw_only=True)
 class ComplaintEntryVersion(CdEDataclass):
@@ -339,6 +376,7 @@ class ComplaintEntryVersion(CdEDataclass):
 
     id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
+    entry: ComplaintEntry = dataclasses.field(init=False, compare=False, repr=False)
     entry_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     description: str | None = dataclasses.field(
