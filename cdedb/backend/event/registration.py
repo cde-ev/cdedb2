@@ -614,7 +614,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 rs.user.persona_id in ret.values()
                 or is_privileged(rs, EventPrivileges.participant_list, event_id)
             )
-            or is_privileged(rs, EventPrivileges.registrations_read, event_id)
+            or is_privileged(rs, EventPrivileges.registrations_read_internal, event_id)
         ):
             raise PrivilegeError(n_("Not privileged."))
         return ret
