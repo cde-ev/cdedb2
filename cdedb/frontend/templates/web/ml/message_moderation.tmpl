@@ -55,7 +55,7 @@
                     <li class="hide-hover-container clearfix-after">
                         {{ email.sender }} / {{ email.subject }}
                         <br />
-                        {% trans %}Rejection Reason:{% endtrans %} {{ email.reason }}
+                        {% trans %}Filter Reason:{% endtrans %} {{ email.reason }}
                         <br />
                         <form action="{{ cdedblink('ml/message_moderation') }}"
                                   method="POST"
