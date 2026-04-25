@@ -4409,6 +4409,7 @@ ASSEMBLY_ATTACHMENT_VERSION_FIELDS: Mapping[str, Any] = {
     'title': str,
     'authors': Optional[str],
     'filename': str,
+    'changenotes': Optional[str],
     'file_hash': str,
 }
 

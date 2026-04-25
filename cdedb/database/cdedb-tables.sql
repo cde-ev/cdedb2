@@ -1583,6 +1583,7 @@ CREATE TABLE assembly.attachment_versions (
         title                   varchar,
         authors                 varchar,
         filename                varchar,
+        changenotes             varchar,
         ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
         dtime                   timestamp WITH TIME ZONE DEFAULT NULL,
         -- Store the hash of the file for comparison and proof.
@@ -1590,7 +1591,7 @@ CREATE TABLE assembly.attachment_versions (
         UNIQUE (attachment_id, version_nr)
 );
 GRANT SELECT, INSERT, DELETE ON assembly.attachment_versions TO cdb_member;
-GRANT UPDATE (title, authors, filename, dtime) ON assembly.attachment_versions TO cdb_member;
+GRANT UPDATE (title, authors, filename, changenotes, dtime) ON assembly.attachment_versions TO cdb_member;
 GRANT SELECT, UPDATE on assembly.attachment_versions_id_seq TO cdb_member;
 
 CREATE TABLE assembly.attachment_ballot_links (
