@@ -195,23 +195,23 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     )
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Versammlungen'})
-        everyone = {"Versammlungen", "Übersicht"}
+        everyone = {"Versammlungen", "Übersicht", "Log"}
 
         # not assembly admins
         if self.user_in("annika", "martin", "werner"):
             ins = everyone
-            out = {"Nutzer verwalten", "Log"}
+            out = {"Nutzer verwalten"}
         # core admins
         elif self.user_in("vera"):
             ins = everyone | {"Nutzer verwalten"}
             out = {"Log"}
         # assembly admins
         elif self.user_in("anton"):
-            ins = everyone | {"Nutzer verwalten", "Log"}
+            ins = everyone | {"Nutzer verwalten"}
             out = set()
         # auditors
         elif self.user_in("katarina"):
-            ins = everyone | {"Log"}
+            ins = everyone
             out = {"Nutzer verwalten"}
         else:
             self.fail("Please adjust users for this tests.")
@@ -296,13 +296,11 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             {'href': '/assembly/assembly/1/show'},
         )
         self.assertNoLink('assembly/assembly/1/change')
-        self.assertNoLink('assembly/assembly/1/log')
         self.assertNotIn('concludeassemblyform', self.response.forms)
         self._click_admin_view_button(
             re.compile(r"Versammlungs-Administration"), current_state=False
         )
         self.assertIn('concludeassemblyform', self.response.forms)
-        self.assertNoLink('assembly/assembly/1/log')
         self.assertNoLink('assembly/assembly/1/change')
 
         # Test Presider Controls Admin View
@@ -391,8 +389,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             "Abstimmungen",
             "Zusammenfassung",
             "Dateien",
+            "Log",
         }
-        admin = {"Konfiguration", "Log"}
+        admin = {"Konfiguration"}
 
         # not assembly admins
         if self.user_in('annika', 'martin', 'vera', 'katarina'):

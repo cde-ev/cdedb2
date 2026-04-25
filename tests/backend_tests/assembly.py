@@ -2182,11 +2182,6 @@ class TestAssemblyBackend(BackendTest):
                                 attachment_id,
                             ),
                         )
-
-            with self.assertRaises(PrivilegeError):
-                self.assembly.retrieve_log(
-                    self.key, AssemblyLogFilter(assembly_id=attended_assembly_id)
-                )
             with self.assertRaises(PrivilegeError):
                 self.assembly.retrieve_log(
                     self.key, AssemblyLogFilter(assembly_id=non_attended_assembly_id)
@@ -2234,11 +2229,6 @@ class TestAssemblyBackend(BackendTest):
 
                 with self.assertRaises(PrivilegeError):
                     self.assembly.set_assembly(self.key, {'id': assembly_id})
-
-                with self.assertRaises(PrivilegeError):
-                    self.assembly.retrieve_log(
-                        self.key, AssemblyLogFilter(assembly_id=assembly_id)
-                    )
 
         with self.switch_user(unprivileged):
             for assembly_id in assembly_ids:
