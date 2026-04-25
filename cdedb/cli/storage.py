@@ -165,5 +165,6 @@ def reset_config(conf: Config) -> None:
     config_paths = conf.get_config_paths()
 
     for path in config_paths:
+        # Overwrite config with an empty file. (i.e. delete any overrides).
         path.write_bytes(b"")
         shutil.chown(path, "cdedb", "cdedb")
