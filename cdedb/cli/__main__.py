@@ -38,7 +38,7 @@ from cdedb.cli.util import (
     switch_user,
 )
 from cdedb.common import CustomJSONEncoder
-from cdedb.config import Config, SecretsConfig, TestConfig
+from cdedb.config import Config, SecretsConfig
 
 
 @click.group()
@@ -57,7 +57,7 @@ def config() -> None:
 @config.command(name="get")
 @click.argument("variable")
 @pass_config
-def get_config_var(config: TestConfig, variable: str) -> None:
+def get_config_var(config: Config, variable: str) -> None:
     """Retrieve the given variable from the current config."""
     try:
         val = config[variable]
@@ -100,7 +100,7 @@ def storage() -> None:
 @storage.command(name="create")
 @click.pass_obj
 @pass_config
-def create_storage_cmd(config: TestConfig, ownership: dict[str, str]) -> None:
+def create_storage_cmd(config: Config, ownership: dict[str, str]) -> None:
     """Create the file storage."""
     click.echo(f"Create storage directory at {config['STORAGE_DIR']}.")
     with switch_user(**ownership):
@@ -110,7 +110,7 @@ def create_storage_cmd(config: TestConfig, ownership: dict[str, str]) -> None:
 @storage.command(name="populate")
 @click.pass_obj
 @pass_config
-def populate_storage_cmd(config: TestConfig, ownership: dict[str, str]) -> None:
+def populate_storage_cmd(config: Config, ownership: dict[str, str]) -> None:
     """Populate the file storage with sample data."""
     click.echo(f"Populate storage directory at {config['STORAGE_DIR']}.")
     with switch_user(**ownership):
@@ -123,7 +123,7 @@ def populate_storage_cmd(config: TestConfig, ownership: dict[str, str]) -> None:
 @click.pass_obj
 @pass_config
 def populate_event_keeper_cmd(
-    config: TestConfig, ownership: dict[str, str], event_id: int
+    config: Config, ownership: dict[str, str], event_id: int
 ) -> None:
     """Populate the event keeper."""
     path = config['STORAGE_DIR'] / 'event_keeper'
@@ -140,7 +140,7 @@ def database() -> None:
 
 @database.command("create-users")
 @pass_config
-def create_database_users_cmd(config: TestConfig) -> None:
+def create_database_users_cmd(config: Config) -> None:
     """Creates the database users."""
     click.echo("Create database users.")
     create_database_users(config)
@@ -149,7 +149,7 @@ def create_database_users_cmd(config: TestConfig) -> None:
 @database.command(name="create")
 @pass_secrets
 @pass_config
-def create_database_cmd(config: TestConfig, secrets: SecretsConfig) -> None:
+def create_database_cmd(config: Config, secrets: SecretsConfig) -> None:
     """Create the tables of the database from the config."""
     click.echo(f"Create database {config['CDB_DATABASE_NAME']}.")
     create_database(config, secrets)
@@ -164,9 +164,7 @@ def create_database_cmd(config: TestConfig, secrets: SecretsConfig) -> None:
 )
 @pass_secrets
 @pass_config
-def populate_database_cmd(
-    config: TestConfig, secrets: SecretsConfig, xss: bool
-) -> None:
+def populate_database_cmd(config: Config, secrets: SecretsConfig, xss: bool) -> None:
     """Populate the database tables with sample data."""
     click.echo(f"Populate database {config['CDB_DATABASE_NAME']}.")
     populate_database(config, secrets, xss)
@@ -175,7 +173,7 @@ def populate_database_cmd(
 @database.command(name="remove-transactions")
 @pass_secrets
 @pass_config
-def remove_transactions_cmd(config: TestConfig, secrets: SecretsConfig) -> None:
+def remove_transactions_cmd(config: Config, secrets: SecretsConfig) -> None:
     """Clean up stale prepared transactions."""
     remove_prepared_transactions(config, secrets)
 
@@ -202,7 +200,7 @@ def development() -> None:
 @pass_secrets
 @pass_config
 def compile_sample_data_json(
-    config: TestConfig, secrets: SecretsConfig, outfile: pathlib.Path, silent: bool
+    config: Config, secrets: SecretsConfig, outfile: pathlib.Path, silent: bool
 ) -> None:
     """Generate a JSON-file from the current state of the database."""
     data = sql2json(config, secrets, silent=silent)
@@ -232,7 +230,7 @@ def compile_sample_data_json(
 @pass_secrets
 @pass_config
 def compile_sample_data_sql(
-    config: TestConfig,
+    config: Config,
     secrets: SecretsConfig,
     infile: pathlib.Path,
     outfile: pathlib.Path,
@@ -272,7 +270,7 @@ def compile_sample_data_sql(
     show_default="same as owner",
 )
 @pass_config
-def apply_sample_data(config: TestConfig, owner: str, group: Optional[str]) -> None:
+def apply_sample_data(config: Config, owner: str, group: Optional[str]) -> None:
     """Repopulates the application with sample data."""
     reset_config(config)
     secrets = SecretsConfig()
@@ -288,17 +286,16 @@ def apply_sample_data(config: TestConfig, owner: str, group: Optional[str]) -> N
 @development.command(name="apply-evolution-trial")
 @pass_secrets
 @pass_config
-def apply_evolution_trial(config: TestConfig, secrets: SecretsConfig) -> None:
+def apply_evolution_trial(config: Config, secrets: SecretsConfig) -> None:
     create_database_users(config)
     create_database(config, secrets)
     populate_database(config, secrets)
 
 
 @development.command(name="serve")
-@click.option('-t', '--test', is_flag=True)
-def serve_debugger_cmd(test: bool) -> None:
+def serve_debugger_cmd() -> None:
     """Serve the cdedb using the werkzeug development server"""
-    serve_debugger(test)
+    serve_debugger()
 
 
 @development.command(name="execute-sql-script")
@@ -316,7 +313,7 @@ def serve_debugger_cmd(test: bool) -> None:
 @pass_secrets
 @pass_config
 def execute_sql_script_cmd(
-    config: TestConfig,
+    config: Config,
     secrets: SecretsConfig,
     file: pathlib.Path,
     verbose: int,
@@ -339,7 +336,7 @@ def execute_sql_script_cmd(
 @pass_secrets
 @pass_config
 def describe_database(
-    config: TestConfig, secrets: SecretsConfig, outfile: pathlib.Path
+    config: Config, secrets: SecretsConfig, outfile: pathlib.Path
 ) -> None:
     description_file = pathlib.Path("/cdedb2/bin/describe_database.sql")
     with redirect_to_file(outfile, append=False):

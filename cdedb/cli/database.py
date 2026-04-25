@@ -13,7 +13,7 @@ from cdedb.cli.util import (
     is_docker,
     sanity_check,
 )
-from cdedb.config import Config, SecretsConfig, TestConfig
+from cdedb.config import Config, SecretsConfig
 
 
 def restart_services(*services: str) -> None:
@@ -82,9 +82,7 @@ def create_database(conf: Config, secrets: SecretsConfig) -> None:
 
 
 @sanity_check
-def populate_database(
-    conf: TestConfig, secrets: SecretsConfig, xss: bool = False
-) -> None:
+def populate_database(conf: Config, secrets: SecretsConfig, xss: bool = False) -> None:
     """Populate the database with sample data."""
     repo_path: pathlib.Path = conf['REPOSITORY_PATH']
 

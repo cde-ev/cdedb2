@@ -8,17 +8,10 @@ import cdedb.database.constants as const
 import cdedb.models.complaint as models
 from cdedb.common import now
 from cdedb.common.query.log_filter import ComplaintLogFilter
-from cdedb.config import TestConfig
-from tests.common import (
-    CRON,
-    USER_DICT,
-    FrontendTest,
-    as_users,
-    prepsql,
-    storage,
-)
+from cdedb.config import Config
+from tests.common import CRON, USER_DICT, FrontendTest, as_users, prepsql, storage
 
-_CONFIG = TestConfig()
+_CONFIG = Config()
 
 
 class TestComplaintFrontend(FrontendTest):
