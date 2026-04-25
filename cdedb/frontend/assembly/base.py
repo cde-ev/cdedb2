@@ -148,11 +148,15 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
     @REQUESTdatadict(*AssemblyLogFilter.requestdict_fields())
     @REQUESTdata("download")
     @access("assembly")
-    @assembly_guard
     def view_assembly_log(
         self, rs: RequestState, assembly_id: int, data: CdEDBObject, download: bool
     ) -> Response:
         """View activities."""
+        if not self.assemblyproxy.may_assemble(
+            rs, assembly_id=assembly_id
+        ):  # pragma: no cover
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        
         rs.values['assembly_id'] = data['assembly_id'] = assembly_id
         ballots = self.assemblyproxy.list_ballots(rs, assembly_id)
         return self.generic_view_log(

@@ -26,10 +26,10 @@
                                  gettext("Configuration"), aclass="list-group-item", icon="cog",
                                   active=(sidenav_active == 'assembly_config')) }}
                 {% endif %}
-                {{ util.href(cdedblink("assembly/view_assembly_log", {'assembly_id': assembly['id']}),
+            {% endif %}
+            {{ util.href(cdedblink("assembly/view_assembly_log", {'assembly_id': assembly['id']}),
                              gettext("Log"), aclass="list-group-item", icon="far fa-list-alt",
                              active=(sidenav_active == 'assembly_assembly_log')) }}
-            {% endif %}
         </div>
 {% endmacro %}
 

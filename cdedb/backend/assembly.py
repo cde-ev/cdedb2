@@ -368,7 +368,7 @@ class AssemblyBackend(AbstractBackend):
             pass
         elif not assembly_ids:
             raise PrivilegeError(n_("Must be admin to access global log."))
-        elif all(self.is_presider(rs, assembly_id=id_) for id_ in assembly_ids):
+        elif all(self.may_assemble(rs, assembly_id=id_) for id_ in assembly_ids):
             pass
         else:
             raise PrivilegeError(n_("Not privileged."))
