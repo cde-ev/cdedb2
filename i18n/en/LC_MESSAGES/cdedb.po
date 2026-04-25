@@ -18,6 +18,12 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
 
+msgid "Members by institution of first event"
+msgstr ""
+
+msgid "Stats by Institution"
+msgstr ""
+
 #: bin/archive/migrate_execute.py:392
 msgid "Initial import."
 msgstr ""
