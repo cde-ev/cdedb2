@@ -120,6 +120,10 @@ msgstr "Text"
 msgid "FieldDatatypes.bool"
 msgstr "Ja/Nein"
 
+#: cdedb/.i18n_additional.py:26
+msgid "FieldDatatypes.str_multiline"
+msgstr "Text (mehrzeilig)"
+
 #: cdedb/.i18n_additional.py:27
 msgid "FieldDatatypes.int"
 msgstr "Zahl"
@@ -17625,8 +17629,8 @@ msgid ""
 "updating of balances."
 msgstr ""
 "Finanz-Admins verwalten Einzugsberechtigungen und Überweisungen von "
-"Mitgliedsbeiträgen. Außerdem kümmern sie sich um die Semesterverwaltung, "
-"d.h. das Versenden von Zahlungsaufforderungen, das Streichen von inaktiven "
+"Mitgliedsbeiträgen. Außerdem kümmern sie sich um die Semesterverwaltung, d."
+"h. das Versenden von Zahlungsaufforderungen, das Streichen von inaktiven "
 "Mitgliedern, sowie das Aktualisieren der Mitgliedsguthaben."
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:88
@@ -20063,8 +20067,8 @@ msgstr "IDs der neuen Betreuer"
 #: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:121
 msgid ""
 "Caretakers have the same access to a specific event as orgas, allowing them "
-"to do anything an orga can do. Additionally they are able to manage orgas, "
-"i.e. remove or add orgas."
+"to do anything an orga can do. Additionally they are able to manage orgas, i."
+"e. remove or add orgas."
 msgstr ""
 "Betreuer haben die gleichen Zugriffsrechte wie Orgas und können alles tun, "
 "was Orgas tun können. Sie können außerdem Orgas hinzufügen oder entfernen."
@@ -20338,9 +20342,9 @@ msgid ""
 "should usually not be done before the event has been archived and fully "
 "concluded."
 msgstr ""
-"Löscht die Veranstaltung inklusive aller Kurse und Teilnehmer "
-"irreversibel.Das sollte nicht geschehen, bevor die Veranstaltung nicht "
-"archiviert wurde und vollständig abgeschlossen ist."
+"Löscht die Veranstaltung inklusive aller Kurse und Teilnehmer irreversibel."
+"Das sollte nicht geschehen, bevor die Veranstaltung nicht archiviert wurde "
+"und vollständig abgeschlossen ist."
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:432
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:435
