@@ -161,7 +161,7 @@ class EventBaseBackend(EventLowLevelBackend):
         rs: RequestState,
         persona_ids: Collection[int],
     ) -> dict[int, set[int]]:
-        """List events cared for by specific personas."""
+        """List events where specific personas are checkin helpers."""
         persona_ids = affirm(set[vtypes.ID], persona_ids)
         data = self.sql_select(
             rs,

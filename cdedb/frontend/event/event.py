@@ -502,15 +502,17 @@ class EventEventMixin(EventBaseFrontend):
         role: Literal["orga", "caretaker", "checkin_helper"],
     ) -> Response:
         # Check privileges
-        if (
-            role == 'caretaker'
-            and not self.is_privileged(rs, EventPrivileges.caretakers_change)
-            or role == 'orga'
-            and not self.is_privileged(rs, EventPrivileges.orgas_change)
-            or role == 'checkin_helper'
-            and not self.is_privileged(rs, EventPrivileges.basic_write)
-        ):
-            raise werkzeug.exceptions.Forbidden()
+        if role == 'caretaker':
+            if not self.is_privileged(rs, EventPrivileges.caretakers_change):
+                raise werkzeug.exceptions.Forbidden()
+        elif role == 'orga':
+            if not self.is_privileged(rs, EventPrivileges.orgas_change):
+                raise werkzeug.exceptions.Forbidden()
+        elif role == 'checkin_helper':
+            if not self.is_privileged(rs, EventPrivileges.basic_write):
+                raise werkzeug.exceptions.Forbidden()
+        else:
+            raise RuntimeError(n_("Impossible"))
 
         if rs.has_validation_errors():
             # Shortcircuit if we have got no workable ids.
@@ -666,7 +668,7 @@ class EventEventMixin(EventBaseFrontend):
         checkin_helper_id: vtypes.ID,
         ack_delete: bool,
     ) -> Response:
-        """Remove a persona as caretaker of an event.
+        """Remove a persona as checkin helper of an event.
 
         This is only available for admins. This can drop your own caretaker role.
         """
