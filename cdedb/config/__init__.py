@@ -18,7 +18,7 @@ import importlib.util
 import logging
 import os
 import pathlib
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Iterator, Mapping, MutableMapping, Sequence
 from types import ModuleType
 from typing import Any, ClassVar, Final, Self
 
@@ -122,7 +122,7 @@ class Config(BaseConfig):
     # List of paths to read config overrides from.
     _config_paths: list[pathlib.Path]
     # Ephemeral config overrides provided via context manager.
-    _context_manager_overrides: dict[str, Any]
+    _context_manager_overrides: MutableMapping[str, Any]
     # Final constructed configs.
     _configs: dict[str, dict[str, Any]]
     _config_chain: collections.ChainMap[str, Any]

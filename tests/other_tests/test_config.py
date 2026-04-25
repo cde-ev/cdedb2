@@ -128,6 +128,16 @@ class TestConfig(unittest.TestCase):
                 check_config_overrides()
                 check_secrets_overrides()
 
+                with self.config.with_overrides(
+                    DB_PORT=69, CDB_DATABASE_NAME="metaverse", URL_PARAMETER_SALT="neo"
+                ):
+                    self.assertEqual(self.config["DB_PORT"], 69)
+                    self.assertEqual(self.config["CDB_DATABASE_NAME"], "metaverse")
+                    self.assertEqual(self.secrets["URL_PARAMETER_SALT"], "neo")
+
+                check_config_overrides()
+                check_secrets_overrides()
+
             check_config_overrides()
             check_secrets_defaults()
 
