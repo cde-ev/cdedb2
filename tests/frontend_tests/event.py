@@ -6473,7 +6473,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         reality = tuple(e['id'] for e in self.response.json['registrations'])
         self.assertEqual(expectation, reality)
 
-    @as_users("annika", "garcia")
+    @as_users("annika", "garcia", "ludwig")
     def test_quick_registration(self) -> None:
         self.traverse({'href': '/event/$'}, {'href': '/event/event/1/show'})
         self.assertTitle("Große Testakademie 2222")
@@ -6485,6 +6485,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f = self.response.forms['quickregistrationform']
         f['phrase'] = "i a"
         self.submit(f)
+        if self.user_in("ludwig"):
+            self.assertTitle("Große Testakademie 2222")
+            self.assertNotification(ntype='warning')
+            return
         self.assertTitle("Anmeldungen (Große Testakademie 2222)")
         # TODO who knows if this is correct...
         self.assertPresence("Ergebnis [4]")

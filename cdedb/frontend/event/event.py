@@ -2049,7 +2049,11 @@ class EventEventMixin(EventBaseFrontend):
                     {'registration_id': result[0][query.scope.get_primary_key()]},
                 )
             elif result:
-                params = query.serialize_to_url()
-                return self.redirect(rs, "event/registration_query", params)
+                if self.is_privileged(rs, EventPrivileges.registrations_read):
+                    params = query.serialize_to_url()
+                    return self.redirect(rs, "event/registration_query", params)
+                else:
+                    rs.notify("warning", n_("Multiple registrations found."))
+                    return self.show_event(rs, event_id)
         rs.notify("warning", n_("No registration found."))
         return self.show_event(rs, event_id)
