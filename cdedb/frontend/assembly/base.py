@@ -156,7 +156,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             rs, assembly_id=assembly_id
         ):  # pragma: no cover
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        
+
         rs.values['assembly_id'] = data['assembly_id'] = assembly_id
         ballots = self.assemblyproxy.list_ballots(rs, assembly_id)
         return self.generic_view_log(
