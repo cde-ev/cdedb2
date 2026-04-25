@@ -67,7 +67,8 @@
                             <div class="button-par">
                                 {{ util.input_submit(label=gettext('Whitelist_[[verb]]'), icon='plus',
                                                      value='whitelist', name="action",
-                                                     aclass=("btn btn-sm btn-success")) }}
+                                                     aclass=("btn btn-sm btn-success"),
+                                                     readonly=(email.sender in ambience["mailinglist"].whitelist)) }}
                                 {{ util.input_submit(label=gettext('Accept'), icon='check', value='accept',
                                                      name="action", aclass=("btn btn-sm btn-success")) }}
                                 {{ util.input_submit(label=gettext('Reject'), icon='reply', value='reject',
