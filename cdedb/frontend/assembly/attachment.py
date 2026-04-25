@@ -200,6 +200,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             'assembly_id': assembly_id,
             'filename': filename,
             'authors': authors,
+            'changenotes': "",
             'file_hash': rs.values['attachment_hash'],
         }
         code = self.assemblyproxy.add_attachment(rs, data)
@@ -288,6 +289,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         "title",
         "authors",
         "filename",
+        "changenotes",
         "ack_creation",
         "attachment_hash",
         "attachment_filename",
@@ -304,6 +306,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         title: str,
         filename: Optional[vtypes.Identifier],
         authors: Optional[str],
+        changenotes: Optional[str],
         ack_creation: Optional[bool] = None,
     ) -> Response:
         """Create a new version of an existing attachment.
@@ -374,6 +377,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             'title': title,
             'filename': filename,
             'authors': authors,
+            'changenotes': changenotes,
             'file_hash': rs.values['attachment_hash'],
         }
         code = self.assemblyproxy.add_attachment_version(rs, data)
