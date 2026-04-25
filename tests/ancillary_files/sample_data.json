@@ -6337,7 +6337,7 @@
             "id": 3,
             "event_id": 1,
             "field_name": "lodge",
-            "kind": 1,
+            "kind": 50,
             "association": 1,
             "title": "Zimmerwünsche",
             "description": null,
@@ -7988,7 +7988,6 @@
             "pos": 0,
             "title": "Ich bin unter 13 Jahre alt.",
             "info": null,
-            "input_size": null,
             "readonly": false,
             "default_value": null,
             "kind": 1
@@ -8000,7 +7999,6 @@
             "pos": 0,
             "title": "Unterüberschrift",
             "info": "mit Text darunter",
-            "input_size": null,
             "readonly": null,
             "default_value": null,
             "kind": 2
@@ -8012,7 +8010,6 @@
             "pos": 1,
             "title": "Bälle",
             "info": "Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.",
-            "input_size": null,
             "readonly": false,
             "default_value": "True",
             "kind": 2
@@ -8024,7 +8021,6 @@
             "pos": 2,
             "title": null,
             "info": "nur etwas Text",
-            "input_size": null,
             "readonly": null,
             "default_value": null,
             "kind": 2
@@ -8036,7 +8032,6 @@
             "pos": 3,
             "title": "Weitere Überschrift",
             "info": null,
-            "input_size": null,
             "readonly": null,
             "default_value": null,
             "kind": 2
@@ -8048,7 +8043,6 @@
             "pos": 4,
             "title": "Vehikel",
             "info": null,
-            "input_size": null,
             "readonly": false,
             "default_value": "etc",
             "kind": 2
@@ -8060,7 +8054,6 @@
             "pos": 5,
             "title": "Hauswunsch",
             "info": null,
-            "input_size": 3,
             "readonly": false,
             "default_value": null,
             "kind": 2

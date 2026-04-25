@@ -215,7 +215,6 @@ QUESTIONNAIRE_ROW_FIELDS = (
     "pos",
     "title",
     "info",
-    "input_size",
     "readonly",
     "default_value",
     "kind",
