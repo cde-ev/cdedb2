@@ -72,6 +72,30 @@
             {% endif %}
         {% endfor %}
     </div>
+
+    {{ util.h(n_("Stats by Institution")) }}
+    <div id="cde-intitution-stats">
+        <table class="table table-slim table-condensed">
+            <thead>
+                <tr>
+                    <th colspan="2"></th>
+                    <th class="text-right">{% trans %}Members by institution of first event{% endtrans %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for key, value in institution_stats.items() %}
+                    <tr>
+                        <th colspan="2">
+                            {{ gettext(key) }}
+                        </th>
+                        <td id="institution-stats-{{ key }}" class="text-right">
+                            {{ value }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% endblock %}
 
 {% macro stat_table(view, view_stats, processing="") %}

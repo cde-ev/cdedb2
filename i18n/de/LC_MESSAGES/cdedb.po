@@ -23047,3 +23047,9 @@ msgstr "%(num)s Teilnahmebeiträge verbucht für %(event)s."
 #, python-format
 msgid "Booked %(num)s reimbursements for %(event)s."
 msgstr "%(num)s Erstattungen eingetragen für %(event)s."
+
+msgid "Stats by Institution"
+msgstr "Statistik nach Organisation"
+
+msgid "Members by institution of first event"
+msgstr "Mitglieder nach Organisation erster Veranstaltung"

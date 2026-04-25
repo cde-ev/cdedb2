@@ -21901,3 +21901,9 @@ msgstr ""
 #, python-format
 msgid "Booked %(num)s reimbursements for %(event)s."
 msgstr ""
+
+msgid "Stats by Institution"
+msgstr ""
+
+msgid "Members by institution of first event"
+msgstr ""
