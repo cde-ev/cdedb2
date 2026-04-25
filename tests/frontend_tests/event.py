@@ -9034,10 +9034,10 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("2 + 1")
         if self.user_in("petra"):
             self.assertNonPresence("Akira")
-            self.assertNotIn('emilia', self.response.html)
+            self.assertNotIn('emilia', self.response.text)
         else:
             self.assertPresence("Akira")
-            self.assertIn('emilia', self.response.html)
+            self.assertIn('emilia', self.response.text)
         self.traverse(
             {'href': "/event/event/1/course/stats"},
             {'href': "/event/event/1/course/query"},
