@@ -10,11 +10,10 @@ import re
 import tempfile
 import unittest
 from collections.abc import Collection, Sequence
-from typing import Optional
+from typing import Optional, cast
 
 import freezegun
 import lxml.etree
-import segno.helpers
 import webtest
 from subman import SubscriptionError
 
@@ -34,8 +33,11 @@ from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.common.sorting import xsorted
 from cdedb.filter import datetime_filter, iban_filter
-from cdedb.frontend.common import CustomCSVDialect, make_event_fee_reference
-from cdedb.frontend.event import EventFrontend
+from cdedb.frontend.common import (
+    CustomCSVDialect,
+    _make_epc_qr_data,  # noqa: PLC2701
+    make_event_fee_reference,
+)
 from cdedb.frontend.event.query_stats import (
     PART_STATISTICS,
     TRACK_STATISTICS,
@@ -2016,16 +2018,6 @@ etc;anything else""",
 
         event = self.event.get_event(self.key, 1)
         persona = self.core.get_persona(self.key, self.user['id'])
-        payment_data = {
-            'meta_info': self.core.get_meta_info(self.key),
-            'reference': make_event_fee_reference(persona, event),
-            'to_pay': decimal.Decimal("466.49"),
-            'account': event.iban,
-        }
-
-        event_frontend: EventFrontend = self.app.app.event
-        qr_data = event_frontend._registration_fee_qr_data(payment_data)
-        assert qr_data is not None
 
         qr_expectation = b"""\
 BCD
@@ -2039,7 +2031,14 @@ EUR466.49
 
 
 Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
-        self.assertEqual(qr_expectation, segno.helpers._make_epc_qr_data(**qr_data))  # type: ignore[attr-defined]
+        self.assertEqual(
+            qr_expectation,
+            _make_epc_qr_data(
+                account=cast(Accounts, event.iban),
+                reference=make_event_fee_reference(persona, event),
+                amount=decimal.Decimal("466.49"),
+            ),
+        )
 
     @as_users("anton")
     def test_registration_status(self) -> None:

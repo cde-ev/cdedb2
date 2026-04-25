@@ -55,13 +55,9 @@ echo ""
 echo "Create local config files..."
 echo "--------------------------------------------"
 
-# set the configpath to the default value
-# we use the default configurationpath, so no need to set CDEDB_CONFIGPATH
-
-# move the defaultconfig to the right place
+# Create an empty override config.
 mkdir /etc/cdedb
 touch /etc/cdedb/config.py
-install -D /media/cdrom0/localconfig.py "$(uv run python3 -m cdedb config default-configpath)"
 chown cdedb:cdedb "$(uv run python3 -m cdedb config default-configpath)"
 # make it world-readable, since it contains no secret data
 chmod 644 "$(uv run python3 -m cdedb config default-configpath)"

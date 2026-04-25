@@ -742,6 +742,22 @@
     </table>
 {%- endmacro %}
 
+
+{% macro registration_fee_qr(registration=none) %}
+    {% set registration = registration or ambience['registration'] %}
+    {{ util.href(cdedblink('event/registration_fee_qr'), label=gettext("QR"), icon='qrcode',
+                 aclass="btn btn-xs btn-default pull-right", anid="show-registration-fee-qr",
+                 title=gettext("Bank transfer data as QR code")) }}
+    <script nonce="{{ csp_nonce }}">
+        $("#show-registration-fee-qr").cdedbQRCodeModal(
+            {{ {'title': ambience['event']['title'],
+                'loading': gettext("Loading..."),
+                'note': "",
+                'close': gettext("Close") }|tojson }})
+    </script>
+{% endmacro %}
+
+
 {% macro edit_free_text_button(key, label=gettext("Edit"), display=True, small=True, pull_right=True) %}
     {% if is_privileged_for("change_free_text") %}
         {{ util.href(

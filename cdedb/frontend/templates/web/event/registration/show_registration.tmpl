@@ -501,6 +501,7 @@
     {% endif %}
 
     {% if ambience['event']['iban'] %}
+    {{ generic_event.registration_fee_qr() }}
     <h3 class="heading-underline">{% trans %}Copy-Paste Template{% endtrans %}</h3>
     <pre>
 Beachte bitte, dass Deine Anmeldung erst mit Überweisung des Teilnahmebeitrags gültig wird.

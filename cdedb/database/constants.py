@@ -816,6 +816,14 @@ class ComplaintEntryType(CdEIntEnum):
         return self.has_description and self._is_hidden
 
     @property
+    def is_provisional(self) -> bool:
+        return self in {
+            # TODO: Clarify why no privisional statement.
+            ComplaintEntryType.provisional_measure,
+            ComplaintEntryType.provisional_to_arbcom,
+        }
+
+    @property
     def has_concerned(self) -> bool:
         return self in {
             ComplaintEntryType.provisional_statement_given,
@@ -876,7 +884,7 @@ class ComplaintEntryType(CdEIntEnum):
             et.provisional_statement_given: n_("Statement_[[in a case]]"),
             et.agreement: n_("Agreement"),
             et.agreement_measure: n_("Measure"),
-            et.provisional_to_arbcom: n_("Arbcom"),
+            et.provisional_to_arbcom: n_("Provisional Arbcom"),
             et.provisional_measure: n_("Provisional measure"),
             et.definite_to_arbcom: n_("Arbcom"),
             et.definite_measure: n_("Measure"),

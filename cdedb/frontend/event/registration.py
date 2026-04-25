@@ -8,7 +8,6 @@ for managing registrations both by orgas and participants.
 import csv
 import datetime
 import decimal
-import io
 import itertools
 from collections import OrderedDict
 from collections.abc import Collection
@@ -40,7 +39,6 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import EventIsBalancedError
 from cdedb.common.n_ import n_
-from cdedb.common.parse.util import Accounts
 from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
@@ -54,6 +52,7 @@ from cdedb.frontend.common import (
     access,
     cdedbid_filter,
     check_validation as check,
+    make_epc_qr,
     make_event_fee_reference,
     periodic,
     request_extractor,
@@ -2550,33 +2549,55 @@ class EventRegistrationMixin(EventBaseFrontend):
     def registration_fee_qr(self, rs: RequestState, event_id: int) -> Response:
         payment_data = self._get_payment_data(rs, event_id)
         if not payment_data:
-            return self.redirect(rs, "event/show_event")
+            raise werkzeug.exceptions.BadRequest()
+        if not payment_data["account"]:
+            raise werkzeug.exceptions.BadRequest(n_("No IBAN set."))
+
         qrcode = self._registration_fee_qr(payment_data)
-        if not qrcode:
-            return self.redirect(rs, "event/show_event")
+        return self.serve_qrcode(rs, qrcode)
 
-        buffer = io.BytesIO()
-        qrcode.save(buffer, kind='svg', scale=4)
+    def _registration_fee_qr(self, payment_data: CdEDBObject) -> segno.QRCode:
+        account = payment_data["account"]
+        if not account:
+            raise RuntimeError(n_("No IBAN set."))
+        return make_epc_qr(
+            account=account,
+            reference=payment_data["reference"],
+            amount=payment_data["to_pay"],
+        )
 
-        return self.send_file(rs, afile=buffer, mimetype="image/svg+xml")
+    @access("event")
+    @event_guard(EventPrivileges.basic_read)
+    @REQUESTdata("reference", "amount")
+    def event_payment_qrcode(
+        self,
+        rs: RequestState,
+        event_id: int,
+        reference: str,
+        amount: decimal.Decimal | None,
+    ) -> Response:
+        account = rs.ambience["event"].iban
+        if not account:
+            raise werkzeug.exceptions.BadRequest(n_("No IBAN set."))
+        if not reference:
+            reference = rs.ambience["event"].title
+        rs.ignore_validation_errors()
 
-    @staticmethod
-    def _registration_fee_qr_data(payment_data: CdEDBObject) -> Optional[CdEDBObject]:
-        if not payment_data['account']:
-            return None
-        # Ensure that the "free-"text parts are not too long. The exact size is limited
-        # by third parties.
-        account: Accounts = payment_data['account']
-        return {
-            'name': account.get_account_holder()[:70],
-            'text': payment_data['reference'][:140],
-            'amount': payment_data['to_pay'],
-            'iban': account.get_iban(),
-            'bic': account.get_bic(),
-        }
+        qrcode = make_epc_qr(account, reference, amount=amount)
+        return self.serve_qrcode(rs, qrcode)
 
-    def _registration_fee_qr(self, payment_data: CdEDBObject) -> Optional[segno.QRCode]:
-        data = self._registration_fee_qr_data(payment_data)
-        if not data:
-            return None
-        return segno.helpers.make_epc_qr(**data)
+    @access("event")
+    @event_guard(EventPrivileges.basic_read)
+    @REQUESTdata("reference", "amount")
+    def event_payment(
+        self,
+        rs: RequestState,
+        event_id: int,
+        reference: str | None,
+        amount: decimal.Decimal | None,
+    ) -> Response:
+        rs.ignore_validation_errors()
+        if not rs.ambience["event"].iban:
+            rs.notify("error", n_("No IBAN set."))
+            return self.redirect(rs, 'event/show_event')
+        return self.render(rs, "registration/payment")

@@ -40,7 +40,11 @@ from cdedb.common import (
 )
 from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
-from cdedb.common.privileges import EventPrivileges, is_privileged_event
+from cdedb.common.privileges import (
+    EventPrivileges,
+    is_event_access_limited,
+    is_privileged_event,
+)
 from cdedb.common.query import QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import EntitySorter, KeyFunction, Sortkey, xsorted
@@ -226,13 +230,15 @@ class EventBaseFrontend(AbstractUserFrontend):
             return is_privileged and admin_view_to_consider in rs.user.admin_views
 
         if 'event' in rs.ambience:
+            event_id = rs.ambience['event'].id
             orga_view = (
-                rs.ambience['event'].id
-                in rs.user.orga | rs.user.caretaker | rs.user.checkin_helper
+                event_id in rs.user.orga | rs.user.caretaker | rs.user.checkin_helper
                 or 'event_orga' in rs.user.admin_views
             )
+            access_is_limited = orga_view and is_event_access_limited(event_id)
         else:
             orga_view = None
+            access_is_limited = None
 
         params = params or {}
         if 'event' in rs.ambience:
@@ -272,6 +278,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         params['is_privileged'] = is_privileged
         params['is_privileged_for'] = is_privileged_for
         params['orga_view'] = orga_view
+        params['access_is_limited'] = access_is_limited
 
         params['ViolationFormat'] = models_cv.ViolationFormat
         params["EVENT_ADMIN_ADDRESS"] = self.conf["EVENT_ADMIN_ADDRESS"]

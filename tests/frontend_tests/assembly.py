@@ -2474,6 +2474,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             with open(script, 'wb') as f:
                 f.write(self.response.body)
             script.chmod(0o755)
+            # This passes on the environment, so works with uv without a problem.
             output = subprocess.check_output(
                 [str(script), "tests/ancillary_files/ballot_result.json"],
             )

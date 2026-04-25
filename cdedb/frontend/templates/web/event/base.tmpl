@@ -315,17 +315,21 @@ This will result in:
 
 {% block static_notifications %}
     {% if ambience['event'] %}
-        {% if ambience['event'].is_archived and ambience['event'].is_cancelled %}
+        {% if ambience['event'].is_archived or ambience['event'].is_cancelled or access_is_limited %}
             {% call util.notification('info') %}
-                {% trans %}This event was cancelled and has been archived.{% endtrans %}
-            {% endcall %}
-        {% elif ambience['event'].is_archived %}
-            {% call util.notification('info') %}
-                {% trans %}This event has been archived.{% endtrans %}
-            {% endcall %}
-        {% elif ambience['event'].is_cancelled %}
-            {% call util.notification('info') %}
-                {% trans %}This event has been cancelled.{% endtrans %}
+                {% if ambience['event'].is_archived and ambience['event'].is_cancelled %}
+                    {% trans %}This event was cancelled and has been archived.{% endtrans %}
+                {% elif ambience['event'].is_archived %}
+                    {% trans %}This event has been archived.{% endtrans %}
+                {% elif ambience['event'].is_cancelled %}
+                    {% trans %}This event has been cancelled.{% endtrans %}
+                {% endif %}
+                {% if access_is_limited %}
+                    {% trans mailto=util.href(util.mailto('cdedb@lists.cde-ev.de'), 'cdedb@lists.cde-ev.de') %}
+                        Note that access to this event has been limited due to its advanced age.
+                        Contact {{ mailto }} if you have some need of information stored here.
+                    {% endtrans %}
+                {% endif %}
             {% endcall %}
         {% elif ambience['event'].registration_start and not ambience['event'].is_registration_approved %}
             {% if is_privileged_for("event/change_event") %}

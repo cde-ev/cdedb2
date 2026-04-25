@@ -259,7 +259,7 @@ class CdEParseMixin(CdEBaseFrontend):
             fields = parse.ExportFields.excel
             if account == Accounts.Festgeld:
                 fields = parse.ExportFields.festgeld
-            write_header = False
+            write_header = True
         elif db_import is not None:
             accounts = {t.account for t in transactions}
             if len(accounts) == 1:
@@ -353,8 +353,12 @@ class CdEParseMixin(CdEBaseFrontend):
         events = self.eventproxy.get_events(rs, self.eventproxy.list_events(rs))
         events_by_shortname = {event.shortname: event for event in events.values()}
         fields = parse.ExportFields.db_import
+        detected_dialect = csv.Sniffer().sniff(transferlines[0], ';\t')
         reader = csv.DictReader(
-            transferlines, fieldnames=fields, dialect=CustomCSVDialect()
+            transferlines,
+            fieldnames=fields,
+            dialect=CustomCSVDialect,
+            delimiter=detected_dialect.delimiter,
         )
         data = []
         amounts_paid: dict[int, decimal.Decimal] = {}

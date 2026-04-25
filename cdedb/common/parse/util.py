@@ -1,5 +1,6 @@
 import decimal
 import enum
+import re
 from typing import TYPE_CHECKING
 
 from cdedb.common.n_ import n_
@@ -172,6 +173,14 @@ def parse_amount(amount: str) -> decimal.Decimal:
     if not amount:
         raise ParseAmountError
     try:
+        amount = amount.strip()
+        # parentheses indicate negative amount
+        if '(' in amount:
+            match = re.match(r'^\((.+)\)$', amount)
+            if match:
+                amount = '-' + match.group(1).strip()
+        # remove currency suffix
+        amount = amount.removesuffix('€')
         ret = decimal.Decimal(amount)
     except decimal.InvalidOperation:
         amount = number_from_german(amount)

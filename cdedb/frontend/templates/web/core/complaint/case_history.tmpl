@@ -33,7 +33,7 @@
     {% for entry in all_entries %}
         <div class="list-group list-group-hover nosp">
         {% if entry.entry_type %}
-            <div id="entry{{ entry.id }}" class="list-group-item{% if entry.is_revoked or not entry.active_version %} list-group-item-muted{% endif %}">
+            <div id="entry{{ entry.id }}" class="list-group-item {{ entry.status.list_group_item_styles() }}">
                 <div class="float-right text-right">
                     {% trans count=entry.all_versions|length %}
                         {{ count }} versions
@@ -71,12 +71,7 @@
                                 <hr class="nosp" />
                             {% endif %}
                             <div class="float-right text-right">
-                                <div style="margin-bottom: 5px;">
-                                    {{ version.timestamp|datetime(lang=lang) }}
-                                    {% if version.etime %}
-                                        – {{ version.etime|datetime(lang=lang) }}
-                                    {% endif %}
-                                </div>
+                                {{ generic_complaint.entry_version_timespan(version) }}
                                 {% if version.dtime %}
                                     <div class="p button-par">
                                         {% if not version.marked_for_purge %}

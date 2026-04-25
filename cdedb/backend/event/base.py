@@ -60,7 +60,6 @@ from cdedb.common.fields import (
     REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS,
     REGISTRATION_TRACK_FIELDS,
-    STORED_EVENT_QUERY_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import (
@@ -1637,7 +1636,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 ),
                 models.PersonalizedFee.full_export_spec(),
                 ('event.questionnaire_rows', "event_id", QUESTIONNAIRE_ROW_FIELDS),
-                ('event.stored_queries', "event_id", STORED_EVENT_QUERY_FIELDS),
+                models.StoredEventQuery.full_export_spec(),
                 (
                     'event.log',
                     "event_id",

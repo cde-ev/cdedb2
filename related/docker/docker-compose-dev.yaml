@@ -18,8 +18,6 @@ services:
     ports:
       - 8443:443 # apache
       - 127.0.0.1:5000:5000 # werkzeug server including interactive debugger
-    environment:
-        CDEDB_CONFIGPATH: /etc/cdedb/config.py # DEFAULT_CONFIGPATH from cdedb.config
     depends_on:
       - cdb
     logging:

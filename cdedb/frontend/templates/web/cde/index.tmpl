@@ -125,42 +125,52 @@
                 </p>
             {% endif %}
             {% if not data['honorary_member'] %}
-                <p>
-                    {% trans %}
-                        To replenish your Account Balance, transfer money to the following Account:
-                    {% endtrans %}
-                </p>
-                <table class="table table-condensed" id="payment-info">
-                    <tbody>
-                        <tr>
-                            <td>{% trans %}Account holder{% endtrans %}</td>
-                            <td>{{ meta_info.membership_fee_account.get_account_holder() }}</td>
-                        </tr>
-                        <tr>
-                            <td>{% trans %}IBAN{% endtrans %}</td>
-                            <td>{{ meta_info.membership_fee_account.get_iban()|iban }}</td>
-                        </tr>
-                        <tr>
-                            <td>{% trans %}BIC{% endtrans %}</td>
-                            <td>{{ meta_info.membership_fee_account.get_bic() }}</td>
-                        </tr>
-                        <tr>
-                            <td>{% trans %}Bank{% endtrans %}</td>
-                            <td>{{ meta_info.membership_fee_account.get_bank() }}</td>
-                        </tr>
-                        <tr>
-                            <td>{% trans %}Payment reference{% endtrans %}</td>
-                            <td>{{ reference }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <p class="text-muted">
-                    {{ util.make_icon('info-circle') }}
-                    {% trans %}
-                        Note: After your transfer incurred at the bank account, it may take some time
-                        (up to a few weeks) until the payment is registered here.
-                    {% endtrans %}
-                </p>
+                <div class="row">
+                    <div class="col-md-8">
+                        <p>
+                            {% trans %}
+                                To replenish your Account Balance, transfer money to the following Account.
+                            {% endtrans %}
+                            {% trans amount=annual_fee|money %}
+                                Current membership fee is {{ amount }} per year. You can pay for multiple years in advance.
+                            {% endtrans %}
+                        </p>
+                        <table class="table table-condensed" id="payment-info">
+                            <tbody>
+                                <tr>
+                                    <td>{% trans %}Account holder{% endtrans %}</td>
+                                    <td>{{ meta_info.membership_fee_account.get_account_holder() }}</td>
+                                </tr>
+                                <tr>
+                                    <td>{% trans %}IBAN{% endtrans %}</td>
+                                    <td>{{ meta_info.membership_fee_account.get_iban()|iban }}</td>
+                                </tr>
+                                <tr>
+                                    <td>{% trans %}BIC{% endtrans %}</td>
+                                    <td>{{ meta_info.membership_fee_account.get_bic() }}</td>
+                                </tr>
+                                <tr>
+                                    <td>{% trans %}Bank{% endtrans %}</td>
+                                    <td>{{ meta_info.membership_fee_account.get_bank() }}</td>
+                                </tr>
+                                <tr>
+                                    <td>{% trans %}Payment reference{% endtrans %}</td>
+                                    <td>{{ reference }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-muted">
+                            {{ util.make_icon('info-circle') }}
+                            {% trans %}
+                                Note: After your transfer incurred at the bank account, it may take some time
+                                (up to a few weeks) until the payment is registered here.
+                            {% endtrans %}
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                        <img src="{{ cdedblink("cde/membership_qr") }}" alt="{{ reference }}" width="80%" class="center-block">
+                    </div>
+                </div>
             {% endif %}
         {% endcall %}
     {% endif %}
