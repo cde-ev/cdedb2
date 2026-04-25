@@ -700,6 +700,7 @@ class MlBackend(AbstractBackend):
             # perform the actual change
             update.update({"id": mailinglist_id, "ml_type": ml_type})
             ret *= self.sql_update(rs, Mailinglist.database_table, update)
+            self.ml_log(rs, const.MlLogCodes.list_changed, mailinglist_id)
 
         # update the subscription states
         ret *= self.write_subscription_states(rs, (mailinglist_id,))
