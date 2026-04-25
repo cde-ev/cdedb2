@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-04-25 18:09+0200\n"
+"POT-Creation-Date: 2026-04-25 15:38+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -3323,7 +3323,7 @@ msgstr "Nur Admins dürfen auf das globale Log zugreifen."
 msgid "Not privileged."
 msgstr "Nicht die nötige Zugriffsberechtigung."
 
-#: cdedb/backend/assembly.py:404 cdedb/backend/cde/base.py:713
+#: cdedb/backend/assembly.py:404 cdedb/backend/cde/base.py:681
 #: cdedb/backend/complaint.py:1281 cdedb/backend/core/base.py:3732
 #: cdedb/backend/event/query.py:774 cdedb/backend/ml.py:375
 #: cdedb/backend/past_event.py:1102
@@ -3649,12 +3649,12 @@ msgid "Cannot remove the last remaining version of an attachment."
 msgstr ""
 "Die letzte verbleibende Version einer Datei kann nicht gelöscht werden."
 
-#: cdedb/backend/assembly.py:2802 cdedb/backend/cde/base.py:585
+#: cdedb/backend/assembly.py:2802 cdedb/backend/cde/base.py:553
 #: cdedb/backend/cde/lastschrift.py:541 cdedb/backend/common.py:453
 #: cdedb/backend/common.py:459 cdedb/backend/core/base.py:3016
 #: cdedb/backend/event/base.py:429 cdedb/backend/event/base.py:483
 #: cdedb/backend/event/base.py:1633 cdedb/common/__init__.py:322
-#: cdedb/frontend/assembly/ballot.py:642 cdedb/frontend/cde/base.py:911
+#: cdedb/frontend/assembly/ballot.py:642 cdedb/frontend/cde/base.py:908
 #: cdedb/frontend/cde/lastschrift.py:679
 #: cdedb/frontend/cde/parse_statement.py:726 cdedb/frontend/common.py:805
 #: cdedb/frontend/event/base.py:708 cdedb/frontend/event/query_stats.py:506
@@ -3733,23 +3733,23 @@ msgstr "Accounts nach erster Veranstaltung"
 msgid "unique_participants_per_year"
 msgstr "Verschiedene CdE-Akademie-Teilnehmer"
 
-#: cdedb/backend/cde/base.py:498
+#: cdedb/backend/cde/base.py:466
 msgid "Cannot restore purged account."
 msgstr "Geleerter Account kann nicht wiederhergestellt werden."
 
-#: cdedb/backend/cde/base.py:546
+#: cdedb/backend/cde/base.py:514
 msgid "Need extra data."
 msgstr "Weitere Daten benötigt."
 
-#: cdedb/backend/cde/base.py:569 cdedb/frontend/cde/base.py:695
+#: cdedb/backend/cde/base.py:537 cdedb/frontend/cde/base.py:692
 msgid "May not grant trial membership to member."
 msgstr "Probemitgliedschaft für Mitglieder nicht erlaubt."
 
-#: cdedb/backend/cde/base.py:675 cdedb/backend/core/base.py:2716
+#: cdedb/backend/cde/base.py:643 cdedb/backend/core/base.py:2716
 msgid "Too many queries."
 msgstr "Zu viele Anfragen."
 
-#: cdedb/backend/cde/base.py:690 cdedb/backend/event/query.py:378
+#: cdedb/backend/cde/base.py:658 cdedb/backend/event/query.py:378
 msgid "Admin only."
 msgstr "Nur für Admins erlaubt."
 
@@ -4310,8 +4310,8 @@ msgstr "Fehler bei der Wiederherstellung."
 msgid "Username change failed."
 msgstr "Fehler bei Aktualisierung des Benutzernamens."
 
-#: cdedb/backend/core/genesis.py:496 cdedb/frontend/cde/base.py:646
-#: cdedb/frontend/cde/base.py:675 cdedb/frontend/core/genesis.py:468
+#: cdedb/backend/core/genesis.py:496 cdedb/frontend/cde/base.py:643
+#: cdedb/frontend/cde/base.py:672 cdedb/frontend/core/genesis.py:468
 #: cdedb/frontend/core/genesis.py:545
 msgid "Email address already taken."
 msgstr "Emailadresse bereits vergeben."
@@ -4351,8 +4351,8 @@ msgstr "Nur Orgas und Admins können das Minderjährigenformular aktualisieren."
 #: cdedb/common/validation/validate.py:2700
 #: cdedb/common/validation/validate.py:4075
 #: cdedb/common/validation/validate.py:4793
-#: cdedb/common/validation/validate.py:4967 cdedb/frontend/cde/base.py:308
-#: cdedb/frontend/cde/base.py:312 cdedb/frontend/common.py:724
+#: cdedb/common/validation/validate.py:4967 cdedb/frontend/cde/base.py:305
+#: cdedb/frontend/cde/base.py:309 cdedb/frontend/common.py:724
 #: cdedb/frontend/core/base.py:1489 cdedb/frontend/core/complaint.py:408
 #: cdedb/frontend/core/complaint.py:538 cdedb/frontend/core/genesis.py:146
 #: cdedb/frontend/event/event.py:392 cdedb/frontend/event/registration.py:788
@@ -6651,7 +6651,7 @@ msgstr "Muss ein existierender Bereich sein."
 msgid "This realm is not supported for genesis."
 msgstr "Accountanfragen in diesem Bereich sind nicht möglich."
 
-#: cdedb/common/validation/validate.py:993 cdedb/frontend/cde/base.py:280
+#: cdedb/common/validation/validate.py:993 cdedb/frontend/cde/base.py:277
 msgid "Wrong formatting."
 msgstr "Falsches Format."
 
@@ -7340,9 +7340,8 @@ msgid "Measure"
 msgstr "Maßnahme"
 
 #: cdedb/database/constants.py:887
-#, fuzzy
 msgid "Provisional Arbcom"
-msgstr "Vorläufige Maßnahme"
+msgstr "Schiedsgericht (vorläufig)"
 
 #: cdedb/database/constants.py:888
 msgid "Provisional measure"
@@ -7987,68 +7986,68 @@ msgstr "Zustimmung gespeichert."
 msgid "Decision noted."
 msgstr "Entscheidung gespeichert."
 
-#: cdedb/frontend/cde/base.py:298 cdedb/frontend/core/base.py:1782
+#: cdedb/frontend/cde/base.py:295 cdedb/frontend/core/base.py:1782
 #: cdedb/frontend/core/base.py:1792
 msgid "Invalid choice."
 msgstr "Unzulässige Auswahl."
 
-#: cdedb/frontend/cde/base.py:301
+#: cdedb/frontend/cde/base.py:298
 msgid "Incompatible with postal code search."
 msgstr "Inkompatibel mit PLZ-Suche."
 
-#: cdedb/frontend/cde/base.py:323
+#: cdedb/frontend/cde/base.py:320
 msgid "Unknown postal code."
 msgstr "Unbekannte Postleitzahl."
 
-#: cdedb/frontend/cde/base.py:360 cdedb/frontend/cde/past_event.py:80
+#: cdedb/frontend/cde/base.py:357 cdedb/frontend/cde/past_event.py:80
 msgid "You have to specify some filters."
 msgstr "Du musst Suchkriterien eingeben."
 
-#: cdedb/frontend/cde/base.py:382
+#: cdedb/frontend/cde/base.py:379
 msgid "Too many query results."
 msgstr "Zu viele Treffer."
 
-#: cdedb/frontend/cde/base.py:545
+#: cdedb/frontend/cde/base.py:542
 msgid "Entry changed."
 msgstr "Eintrag geändert."
 
-#: cdedb/frontend/cde/base.py:617
+#: cdedb/frontend/cde/base.py:614
 msgid "Persona is younger than 10 years."
 msgstr "Person ist jünger als 10 Jahre."
 
-#: cdedb/frontend/cde/base.py:620
+#: cdedb/frontend/cde/base.py:617
 msgid "No gender specified."
 msgstr "Kein Geschlecht angegeben."
 
-#: cdedb/frontend/cde/base.py:633
+#: cdedb/frontend/cde/base.py:630
 msgid "No course available."
 msgstr "Kein Kurs verfügbar."
 
-#: cdedb/frontend/cde/base.py:652
+#: cdedb/frontend/cde/base.py:649
 msgid "Doppelgangers found."
 msgstr "Ähnlicher Account gefunden."
 
-#: cdedb/frontend/cde/base.py:656
+#: cdedb/frontend/cde/base.py:653
 msgid "Doppelganger choice doesn’t fit resolution."
 msgstr "Accountzusammenführung inkonsistent mit Aktion."
 
-#: cdedb/frontend/cde/base.py:662
+#: cdedb/frontend/cde/base.py:659
 msgid "Doppelganger unavailable."
 msgstr "Accountzusammenführung nicht möglich."
 
-#: cdedb/frontend/cde/base.py:680
+#: cdedb/frontend/cde/base.py:677
 msgid "Doppelganger will upgrade to CdE."
 msgstr "Accountzusammenführung mit nicht-CdE Account."
 
-#: cdedb/frontend/cde/base.py:686
+#: cdedb/frontend/cde/base.py:683
 msgid "Unmodified realm upgrade."
 msgstr "Übergang in CdE-Bereich ohne Datenübernahme."
 
-#: cdedb/frontend/cde/base.py:691
+#: cdedb/frontend/cde/base.py:688
 msgid "Missing data for realm upgrade."
 msgstr "Fehlende Datengrundlage für Bereichswechsel."
 
-#: cdedb/frontend/cde/base.py:702
+#: cdedb/frontend/cde/base.py:699
 msgid ""
 "Participation already recorded with different status (e.g. orga), which will "
 "be overwritten."
@@ -8056,61 +8055,61 @@ msgstr ""
 "Teilnahme bereits mit anderem Status (bspw. Orga) erfasst, der überschrieben "
 "wird."
 
-#: cdedb/frontend/cde/base.py:709
+#: cdedb/frontend/cde/base.py:706
 msgid "Participation already recorded."
 msgstr "Teilnahme bereits erfasst."
 
-#: cdedb/frontend/cde/base.py:831 cdedb/frontend/cde/parse.py:341
+#: cdedb/frontend/cde/base.py:828 cdedb/frontend/cde/parse.py:341
 #: cdedb/frontend/event/registration.py:117
 msgid "Only one input method allowed."
 msgstr "Nur eine Eingabe-Methode erlaubt."
 
-#: cdedb/frontend/cde/base.py:839 cdedb/frontend/cde/parse.py:350
+#: cdedb/frontend/cde/base.py:836 cdedb/frontend/cde/parse.py:350
 #: cdedb/frontend/common.py:1264 cdedb/frontend/event/registration.py:125
 msgid "No input provided."
 msgstr "Keine Eingabe gefunden."
 
-#: cdedb/frontend/cde/base.py:892
+#: cdedb/frontend/cde/base.py:889
 #, python-format
 msgid "Lines %(first)s and %(second)s are the same."
 msgstr "Zeilen %(first)s und %(second)s sind identisch."
 
-#: cdedb/frontend/cde/base.py:902
+#: cdedb/frontend/cde/base.py:899
 #, python-format
 msgid "Lines %(first)s and %(second)s look the same."
 msgstr "Zeilen %(first)s und %(second)s sehen gleich aus."
 
-#: cdedb/frontend/cde/base.py:929 cdedb/frontend/cde/parse.py:397
+#: cdedb/frontend/cde/base.py:926 cdedb/frontend/cde/parse.py:397
 #: cdedb/frontend/event/registration.py:168
 msgid "Lines didn’t match up."
 msgstr "Daten wurden geändert."
 
-#: cdedb/frontend/cde/base.py:934
+#: cdedb/frontend/cde/base.py:931
 msgid "Only member admission supported."
 msgstr "Nur Aufnahme von Mitglieder unterstützt."
 
-#: cdedb/frontend/cde/base.py:955
+#: cdedb/frontend/cde/base.py:952
 #, python-format
 msgid "%(num)s new members."
 msgstr "%(num)s Neuaufnahmen."
 
-#: cdedb/frontend/cde/base.py:959
+#: cdedb/frontend/cde/base.py:956
 #, python-format
 msgid "Modified %(num)s existing members."
 msgstr "%(num)s Wiederaufnahmen."
 
-#: cdedb/frontend/cde/base.py:965 cdedb/frontend/cde/parse.py:458
+#: cdedb/frontend/cde/base.py:962 cdedb/frontend/cde/parse.py:458
 #: cdedb/frontend/event/registration.py:210
 msgid "DB serialization error."
 msgstr "Datenbank-Transaktions-Fehler."
 
-#: cdedb/frontend/cde/base.py:968 cdedb/frontend/cde/parse.py:462
+#: cdedb/frontend/cde/base.py:965 cdedb/frontend/cde/parse.py:462
 #: cdedb/frontend/event/registration.py:214
 #, python-format
 msgid "Unexpected error on line %(num)s."
 msgstr "Unerwarteter Fehler in Zeile %(num)s."
 
-#: cdedb/frontend/cde/base.py:1004
+#: cdedb/frontend/cde/base.py:1001
 msgid "*Nothing here yet.*"
 msgstr "*Hier gibt es noch nichts.*"
 
@@ -8802,7 +8801,7 @@ msgstr "Änderung unterdrückt."
 #: cdedb/frontend/core/base.py:3227 cdedb/frontend/event/query.py:346
 #, python-format
 msgid "Unknown query name: '%(query_name)s'"
-msgstr ""
+msgstr "Unbekannter Queryname: '%(query_name)s'"
 
 #: cdedb/frontend/core/complaint.py:67
 #: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:48
@@ -9871,7 +9870,7 @@ msgstr "Personen dürfen nicht eingecheckt sein."
 #: cdedb/frontend/event/registration.py:2565
 #: cdedb/frontend/event/registration.py:2585
 msgid "No IBAN set."
-msgstr ""
+msgstr "Keine IBAN eingestellt."
 
 #: cdedb/frontend/ml/__init__.py:53
 msgid "Skipping mailman request in dev/offline mode."
@@ -12615,11 +12614,10 @@ msgstr ""
 "lediglich Dein Guthaben auffüllen."
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:131
-#, fuzzy
 msgid ""
 "To replenish your Account Balance, transfer money to the following Account."
 msgstr ""
-"Um Dein Guthaben aufzufüllen, überweise bitte Geld auf folgendes Konto:"
+"Um Dein Guthaben aufzufüllen, überweise bitte Geld auf folgendes Konto."
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:134
 #, python-format
@@ -12627,6 +12625,8 @@ msgid ""
 "Current membership fee is %(amount)s per year. You can pay for multiple "
 "years in advance."
 msgstr ""
+"Der Aktuelle Mitgliedsbeitrag beträgt %(amount)s im Jahr. Du kannst auch ein "
+"Vielfaches davon im Voraus überweisen."
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:141
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:79
@@ -13279,14 +13279,6 @@ msgstr "Statistik nach Jahr"
 msgid "Stats by Location"
 msgstr "Statistik nach Ort"
 
-#: cdedb/frontend/templates/web/cde/member_stats.tmpl:76
-msgid "Stats by Institution"
-msgstr "Statistik nach Organisation"
-
-#: cdedb/frontend/templates/web/cde/member_stats.tmpl:82
-msgid "Members by institution of first event"
-msgstr "Mitglieder nach Organisation erster Veranstaltung"
-
 #: cdedb/frontend/templates/web/cde/parse/money_transfers.tmpl:13
 #: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:32
 #: cdedb/frontend/templates/web/event/registration/batch_fees.tmpl:22
@@ -13410,9 +13402,8 @@ msgid "Fee Details"
 msgstr "Teilnahmebeitragsdetails"
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:152
-#, fuzzy
 msgid "Go to next Error / Warning."
-msgstr "Gehe zum nächsten Fehler"
+msgstr "Gehe zum nächsten Fehler / Warnung"
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:159
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:212
@@ -13424,11 +13415,8 @@ msgid "Statement"
 msgstr "Kontoauszug"
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:174
-#, fuzzy
 msgid "Directly paste the Bank Statement from SozialBank or Skatbank here."
-msgstr ""
-"Füge hier direkt den Kontoauszug der Bank für Sozialwirtschaft oder der "
-"Skatbank ein."
+msgstr "Füge hier direkt den Kontoauszug der SozialBank oder der Skatbank ein."
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:176
 msgid "Parse"
@@ -13450,9 +13438,8 @@ msgid "%(count)s Successful Transactions"
 msgstr "%(count)s fehlerfreie Transaktionen"
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:205
-#, fuzzy
 msgid "Go to first Error / Warning."
-msgstr "Gehe zum ersten Fehler"
+msgstr "Gehe zum ersten Fehler / Warnung"
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:221
 #: cdedb/frontend/templates/web/util.tmpl:830
@@ -16691,8 +16678,8 @@ msgid ""
 "updating of balances."
 msgstr ""
 "Finanz-Admins verwalten Einzugsberechtigungen und Überweisungen von "
-"Mitgliedsbeiträgen. Außerdem kümmern sie sich um die Semesterverwaltung, "
-"d.h. das Versenden von Zahlungsaufforderungen, das Streichen von inaktiven "
+"Mitgliedsbeiträgen. Außerdem kümmern sie sich um die Semesterverwaltung, d."
+"h. das Versenden von Zahlungsaufforderungen, das Streichen von inaktiven "
 "Mitgliedern, sowie das Aktualisieren der Mitgliedsguthaben."
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:88
@@ -16996,6 +16983,9 @@ msgid ""
 "Note that access to this event has been limited due to its advanced age. "
 "Contact %(mailto)s if you have some need of information stored here."
 msgstr ""
+"Da die Veranstaltung bereits einige Zeit zurückliegt, wurde der Zugriff auf "
+"die zugehörigen Daten beschränkt. Richte dich an %(mailto)s, falls du hier "
+"hinterlegte Daten benötigt."
 
 #: cdedb/frontend/templates/web/event/base.tmpl:324
 msgid ""
@@ -19013,8 +19003,8 @@ msgstr "IDs der neuen Betreuer"
 #: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:117
 msgid ""
 "Caretakers have the same access to a specific event as orgas, allowing them "
-"to do anything an orga can do. Additionally they are able to manage orgas, "
-"i.e. remove or add orgas."
+"to do anything an orga can do. Additionally they are able to manage orgas, i."
+"e. remove or add orgas."
 msgstr ""
 "Betreuer haben die gleichen Zugriffsrechte wie Orgas und können alles tun, "
 "was Orgas tun können. Sie können außerdem Orgas hinzufügen oder entfernen."
@@ -19078,9 +19068,8 @@ msgstr "Beschreibung bearbeiten"
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:49
 #: cdedb/frontend/templates/web/event/registration/payment.tmpl:17
 #: cdedb/frontend/templates/web/event/registration/payment.tmpl:21
-#, fuzzy
 msgid "Payment QR-Code"
-msgstr "Ausführungsdatum"
+msgstr "Bezahl-QR-Code"
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:66
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:67
@@ -19228,9 +19217,9 @@ msgid ""
 "should usually not be done before the event has been archived and fully "
 "concluded."
 msgstr ""
-"Löscht die Veranstaltung inklusive aller Kurse und Teilnehmer "
-"irreversibel.Das sollte nicht geschehen, bevor die Veranstaltung nicht "
-"archiviert wurde und vollständig abgeschlossen ist."
+"Löscht die Veranstaltung inklusive aller Kurse und Teilnehmer irreversibel."
+"Das sollte nicht geschehen, bevor die Veranstaltung nicht archiviert wurde "
+"und vollständig abgeschlossen ist."
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:435
 msgid "Balance Event"
@@ -20967,29 +20956,34 @@ msgid "Delete checkout times"
 msgstr "Checkoutzeiten löschen"
 
 #: cdedb/frontend/templates/web/event/registration/payment.tmpl:10
-#, fuzzy, python-format
+#, python-format
 msgid "Payment QR-Code (%(title)s)"
-msgstr "Unterkunftssuche (%(title)s)"
+msgstr "Bezahl-QR-Code (%(title)s)"
 
 #: cdedb/frontend/templates/web/event/registration/payment.tmpl:27
 msgid ""
 "You can display this QR-Code at your event to help people who want to "
 "transfer money for the event, e.g. for the \"Offene Kasse\"."
 msgstr ""
+"Du kannst diesen QR-Code auf deiner Veranstaltung aushängen um das "
+"Überweisen für die Veranstaltung, beispielsweise für die „Offene Kasse“, zu "
+"erleichtern."
 
 #: cdedb/frontend/templates/web/event/registration/payment.tmpl:33
 msgid "You can use Ctrl+P to print this page in a nice format."
-msgstr ""
+msgstr "Benutze Strg+P um diese Seite in einem schönen Format auszudrucken."
 
 #: cdedb/frontend/templates/web/event/registration/payment.tmpl:60
 msgid ""
 "Prefill an amount or leave this empty to let people select the amount "
 "themselves."
 msgstr ""
+"Du kannst hier einen Betrag voreinstellen oder das Feld leer lassen um die "
+"Leute selbst einen Betrag auswählen zu lassen."
 
 #: cdedb/frontend/templates/web/event/registration/payment.tmpl:61
 msgid "Refresh"
-msgstr ""
+msgstr "Aktualisieren"
 
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:13
 #, python-format
@@ -21493,9 +21487,8 @@ msgid "Default Queries"
 msgstr "Standardabfragen"
 
 #: cdedb/frontend/templates/web/generic.tmpl:391
-#, fuzzy
 msgid "Invalid stored query:"
-msgstr "Ungültiger Name für eine Suchabfrage."
+msgstr "Ungültige gespeicherte Abfrage:"
 
 #: cdedb/frontend/templates/web/generic.tmpl:403
 msgid "Delete query"
@@ -22558,9 +22551,8 @@ msgid "Info"
 msgstr "Info"
 
 #: cdedb/models/complaint.py:32
-#, fuzzy
 msgid "deleted"
-msgstr "Gelöscht"
+msgstr "gelöscht"
 
 #: cdedb/models/complaint.py:36
 msgid "expired"
@@ -23055,3 +23047,9 @@ msgstr "%(num)s Teilnahmebeiträge verbucht für %(event)s."
 #, python-format
 msgid "Booked %(num)s reimbursements for %(event)s."
 msgstr "%(num)s Erstattungen eingetragen für %(event)s."
+
+msgid "Stats by Institution"
+msgstr "Statistik nach Organisation"
+
+msgid "Members by institution of first event"
+msgstr "Mitglieder nach Organisation erster Veranstaltung"
