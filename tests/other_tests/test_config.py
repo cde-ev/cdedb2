@@ -118,6 +118,22 @@ class TestConfig(unittest.TestCase):
         check_config_defaults()
         check_secrets_defaults()
 
+        # Check nested overrides:
+
+        with self.config.with_overrides(DB_PORT=42, CDB_DATABASE_NAME="skynet"):
+            check_config_overrides()
+            check_secrets_defaults()
+
+            with self.config.with_overrides(URL_PARAMETER_SALT="matrix"):
+                check_config_overrides()
+                check_secrets_overrides()
+
+            check_config_overrides()
+            check_secrets_defaults()
+
+        check_config_defaults()
+        check_secrets_defaults()
+
     def test_production_secrets(self) -> None:
         production_vm_marker = pathlib.Path("/PRODUCTIONVM")
 

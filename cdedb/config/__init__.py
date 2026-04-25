@@ -194,9 +194,10 @@ class Config(BaseConfig):
 
         if config_paths is not None:
             self._config_paths = self.parse_paths(config_paths)
-        if kwargs:
-            # Do not filter the kwargs here, so the NewSecretsConfig can use them too.
-            self._context_manager_overrides = kwargs
+        # Do not filter the kwargs here, so the NewSecretsConfig can use them too.
+        self._context_manager_overrides = collections.ChainMap(
+            kwargs, real_context_manager_overrides
+        )
 
         self.reload()
 
