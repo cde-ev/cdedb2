@@ -72,8 +72,9 @@
             {% endif %}
         {% endfor %}
     </div>
+
     {{ util.h(n_("Stats by Institution")) }}
-    <div id="cde-simple-stats">
+    <div id="cde-intitution-stats">
         <table class="table table-slim table-condensed">
             <thead>
                 <tr>
@@ -84,13 +85,10 @@
             <tbody>
                 {% for key, value in institution_stats.items() %}
                     <tr>
-                        {% if "num_of" in key %}
-                        <td class="indent"></td>
-                        {% endif %}
-                        <th {% if not "num_of" in key %}colspan="2"{% endif %}>
+                        <th colspan="2">
                             {{ gettext(key) }}
                         </th>
-                        <td id="simple-stats-{{ key }}" class="text-right">
+                        <td id="institution-stats-{{ key }}" class="text-right">
                             {{ value }}
                         </td>
                     </tr>
