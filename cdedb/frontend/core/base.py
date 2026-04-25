@@ -1130,33 +1130,36 @@ class CoreBaseFrontend(AbstractFrontend):
 
         Allowed kinds:
 
-        - ``admin_persona``: Search for users as
-          (core|cde|complaint|ml)_admin or auditor.
-        - ``admin_all_users``: Like ``admin_persona``, but including archived users.
-        - ``cde_user``: Search for a cde user as cde_admin.
-        - ``past_event_user``: Search for an event user to add to a past
-          event as cde_admin
-        - ``pure_assembly_user``: Search for an assembly only user as
-          assembly_admin or presider. Needed for external_signup.
-        - ``assembly_user``: Search for an assembly user as assembly_admin or presider
+        - ``admin_persona``: Search for users as (core|cde|complaint|ml)_admin or auditor.
+            Allows search by username.
+        - ``admin_all_users``: Search for users as (core|complaint|ml)_admin but
+            including archived users. Allows search by username.
+        - ``cde_user``: Search for a cde user as cde_admin or auditor.
+            Allows search by username.
+        - ``past_event_user``: Search for an event user to add to a past event as
+            cde_admin or auditor.
+        - ``pure_assembly_user``: Search for an assembly only user as assembly_admin or
+            presider. Needed for external_signup.
+        - ``assembly_user``: Search for an assembly user as assembly_admin or presider or auditor.
         - ``ml_user``: Search for a mailinglist user as ml_admin or moderator
         - ``pure_ml_user``: Search for an assembly only user as ml_admin.
-          Needed for the account merger.
+            Needed for the account merger. Allows seach by username.
         - ``ml_subscriber``: Search for a mailinglist user for subscription purposes.
-          Needed for add_subscriber action only.
-        - ``event_user``: Search an event user as event_admin or orga
+            Needed for add_subscriber action only.
+        - ``event_user``: Search an event user as event_admin or orga or auditor.
+            Allows search by username.
 
         The aux parameter allows to supply an additional id for example
-        in the case of a moderator this would be the relevant
-        mailinglist id.
+        in the case of a moderator this would be the relevant mailinglist id.
 
         Required aux value based on the 'kind':
 
-        * ``ml_subscriber``: Id of the mailinglist for context
+        * ``ml_subscriber``: ID of the mailinglist for context.
         """
         if rs.has_validation_errors():
             return self.send_json(rs, {})
 
+        constraints = []
         search_additions = []
         scope = QueryScope.core_user
         mailinglist = None
@@ -1171,31 +1174,34 @@ class CoreBaseFrontend(AbstractFrontend):
                 & rs.user.roles
             ):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+            search_additions.append("username")
         elif kind == "admin_all_users":
             if not {"core_admin", "ml_admin", "complaint_admin"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+            search_additions.append("username")
             scope = QueryScope.all_core_users
         elif kind == "cde_user":
             if not {"cde_admin", "auditor"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-            search_additions.append(("is_cde_realm", QueryOperators.equal, True))
+            search_additions.append("username")
+            constraints.append(("is_cde_realm", QueryOperators.equal, True))
         elif kind == "past_event_user":
             if not {"cde_admin", "auditor"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             # adding archived users to past events is a common task
             scope = QueryScope.all_core_users
-            search_additions.append(("is_event_realm", QueryOperators.equal, True))
+            constraints.append(("is_event_realm", QueryOperators.equal, True))
         elif kind == "pure_assembly_user":
             # No check by assembly, as this behaves identical for each assembly.
             if not rs.user.presider and "assembly_admin" not in rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-            search_additions.append(("is_assembly_realm", QueryOperators.equal, True))
-            search_additions.append(("is_member", QueryOperators.equal, False))
+            constraints.append(("is_assembly_realm", QueryOperators.equal, True))
+            constraints.append(("is_member", QueryOperators.equal, False))
         elif kind == "assembly_user":
             # No check by assembly, as this behaves identical for each assembly.
             if not (rs.user.presider or {"assembly_admin", "auditor"} & rs.user.roles):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-            search_additions.append(("is_assembly_realm", QueryOperators.equal, True))
+            constraints.append(("is_assembly_realm", QueryOperators.equal, True))
         elif kind == "event_user":
             # No check by event, as this behaves identical for each event.
             # TODO How to migrate this to EventPrivileges?
@@ -1206,7 +1212,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 or {"event_admin", "auditor"} & rs.user.roles
             ):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-            search_additions.append(("is_event_realm", QueryOperators.equal, True))
+            constraints.append(("is_event_realm", QueryOperators.equal, True))
         elif kind == "ml_user":
             relevant_admin_roles = {
                 "core_admin",
@@ -1220,11 +1226,12 @@ class CoreBaseFrontend(AbstractFrontend):
             # No check by mailinglist, as this behaves identical for each list.
             if not (rs.user.moderator or relevant_admin_roles & rs.user.roles):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-            search_additions.append(("is_ml_realm", QueryOperators.equal, True))
+            constraints.append(("is_ml_realm", QueryOperators.equal, True))
         elif kind == "pure_ml_user":
             if "ml_admin" not in rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-            search_additions.extend((
+            search_additions.append("username")
+            constraints.extend((
                 ("is_ml_realm", QueryOperators.equal, True),
                 ("is_assembly_realm", QueryOperators.equal, False),
                 ("is_event_realm", QueryOperators.equal, False),
@@ -1237,7 +1244,8 @@ class CoreBaseFrontend(AbstractFrontend):
             mailinglist = self.mlproxy.get_mailinglist(rs, aux)
             if not self.mlproxy.may_manage(rs, aux, allow_restricted=False):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-            search_additions.append(("is_ml_realm", QueryOperators.equal, True))
+            search_additions.append("username")
+            constraints.append(("is_ml_realm", QueryOperators.equal, True))
         else:
             return self.send_json(rs, {})
 
@@ -1275,25 +1283,33 @@ class CoreBaseFrontend(AbstractFrontend):
             if not valid:
                 data = tuple()
             else:
-                search: list[tuple[str, QueryOperators, Any]]
-                # TODO Decide when to include legal_given_names here
-                key = (
-                    "username,family_name,given_names,nickname,"
-                    "searchable_legal_given_names"
-                )
-                search = [(key, QueryOperators.match, t) for t in terms]
-                search.extend(search_additions)
-                spec = scope.get_spec()
-                spec[key] = QuerySpecEntry("str", "")
-                fields_of_interest = [
-                    "personas.id",
-                    "username",
+                search_constraints: list[tuple[str, QueryOperators, Any]]
+                # Don't search for username by default.
+                search_fields = [
                     "family_name",
                     "given_names",
                     "nickname",
+                ] + search_additions
+                search_key = ",".join(search_fields)
+                search_constraints = [
+                    (search_key, QueryOperators.match, t) for t in terms
                 ]
+                search_constraints.extend(constraints)
+                spec = scope.get_spec()
+                spec[search_key] = QuerySpecEntry("str", "")
+                # Don't always select username.
+                fields_of_interest = [
+                    "personas.id",
+                    "family_name",
+                    "given_names",
+                    "nickname",
+                ] + search_additions
                 query = Query(
-                    scope, spec, fields_of_interest, search, (("personas.id", True),)
+                    scope,
+                    spec,
+                    fields_of_interest,
+                    search_constraints,
+                    (("personas.id", True),),
                 )
                 data = self.coreproxy.submit_select_persona_query(rs, query)
 
@@ -1310,39 +1326,19 @@ class CoreBaseFrontend(AbstractFrontend):
                 xsorted(data, key=lambda e: e[scope.get_primary_key()])[:len_preview]
             )
 
-        # Check if name occurs multiple times to add email address in this case
-        counter: dict[str, int] = collections.defaultdict(lambda: 0)
         for entry in data:
-            counter[make_persona_name(entry)] += 1
             if 'id' not in entry:
                 entry['id'] = entry[scope.get_primary_key()]
 
         # Generate return JSON list
         ret = []
         for entry in xsorted(data, key=EntitySorter.persona):
-            name = make_persona_name(entry)
+            name = make_persona_name(entry, include_nickname=True)
             result = {
                 'id': entry['id'],
                 'name': name,
             }
-            # Email/username is only delivered if we have relative_admins
-            # rights, a search term with an @ (and more) matches the mail
-            # address, or the mail address is required to distinguish equally
-            # named users
-            searched_email = any(
-                (
-                    '@' in t
-                    and len(t) > self.conf["NUM_PREVIEW_CHARS"]
-                    and entry['username']
-                    and t in entry['username']
-                )
-                for t in terms
-            )
-            if (
-                counter[name] > 1
-                or searched_email
-                or self.coreproxy.is_relative_admin(rs, entry['id'])
-            ):
+            if 'username' in entry:
                 result['email'] = entry['username']
             ret.append(result)
         return self.send_json(rs, {'personas': ret})
