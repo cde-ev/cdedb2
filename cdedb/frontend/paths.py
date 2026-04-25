@@ -431,9 +431,9 @@ rules = [
                     get_("/get", endpoint="get_minor_form"),
                     post("/change", endpoint="change_minor_form"),
                 ),
+                get_("/roles/manage", endpoint="manage_roles"),
                 sub(
                     "/orga",
-                    get_("/manage", endpoint="manage_orgas"),
                     post("/add", endpoint="add_orgas"),
                     post("/remove", endpoint="remove_orga"),
                 ),
@@ -441,6 +441,11 @@ rules = [
                     "/caretaker",
                     post("/add", endpoint="add_caretakers"),
                     post("/remove", endpoint="remove_caretaker"),
+                ),
+                sub(
+                    "/checkin_helper",
+                    post("/add", endpoint="add_checkin_helpers"),
+                    post("/remove", endpoint="remove_checkin_helper"),
                 ),
                 sub(
                     "/query",

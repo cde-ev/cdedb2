@@ -294,11 +294,15 @@ class Event(EventDataclass, _EventConfigurationMixin, _EventFreetextMixin):
     caretakers: set[vtypes.ID] = dataclasses.field(
         default_factory=set, metadata=Meta.io_exclude.as_dict
     )
+    checkin_helpers: set[vtypes.ID] = dataclasses.field(
+        default_factory=set, metadata=Meta.io_exclude.as_dict
+    )
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
         data['orgas'] = set(data['orgas'])
         data['caretakers'] = set(data['caretakers'])
+        data['checkin_helpers'] = set(data['checkin_helpers'])
         data['parts'] = EventPart.many_from_database(data['parts'])
         data['tracks'] = CourseTrack.many_from_database(data['tracks'])
         data['fields'] = EventField.many_from_database(data['fields'])
@@ -364,7 +368,12 @@ class Event(EventDataclass, _EventConfigurationMixin, _EventFreetextMixin):
                     SELECT persona_id
                     FROM event.caretakers
                     WHERE event_id = events.id
-                ) AS caretakers
+                ) AS caretakers,
+                array(
+                    SELECT persona_id
+                    FROM event.checkin_helpers
+                    WHERE event_id = events.id
+                ) AS checkin_helpers
             FROM {cls.database_table}
             WHERE {entity_key or cls.entity_key} = ANY(%s)
             """

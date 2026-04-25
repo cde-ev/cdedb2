@@ -271,6 +271,10 @@ def _make_backend_shim(
                 rs.user.orga = backend.orga_info(rs, rs.user.persona_id)
             if hasattr(backend, "caretaker_info"):
                 rs.user.caretaker = backend.caretaker_info(rs, rs.user.persona_id)
+            if hasattr(backend, "checkin_helper_info"):
+                rs.user.checkin_helper = backend.checkin_helper_info(
+                    rs, rs.user.persona_id
+                )
         if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
             rs.user.moderator = backend.moderator_info(rs, rs.user.persona_id)
         if "assembly" in rs.user.roles and hasattr(backend, "presider_info"):
@@ -428,6 +432,8 @@ class BasicTest(unittest.TestCase):
 
     def get_sample_datum(self, table: str, id_: int) -> CdEDBObject:
         return self.get_sample_data(table, [id_])[id_]
+
+    EVENT_LOG_OFFSET = len(get_sample_data("event.log"))
 
 
 class AsyncBasicTest(unittest.IsolatedAsyncioTestCase, BasicTest):

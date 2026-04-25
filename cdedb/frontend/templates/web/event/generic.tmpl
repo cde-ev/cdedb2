@@ -219,17 +219,29 @@
 {%- endmacro %}
 
 
-{% macro print_field_inputs(association) %}
+{% macro print_field_inputs(association, is_restricted=False) %}
     {% if ambience['event'].grouped_fields[association]|length > 0 %}
         <h3 class="heading-underline">{% trans %}Custom Fields{% endtrans %}</h3>
+        {% if is_restricted %}
+            <p class="text-info">
+                {{ util.make_icon("info-circle") }}{{ nbsp -}}
+                {% trans %}
+                    Checkin helpers may only access a subset of custom fields.
+                {% endtrans %}
+            <p>
+        {% endif %}
         {% for title, fields in ambience['event'].grouped_fields[association].items() %}
             {% if ambience['event'].grouped_fields[association]|length > 1 %}
                 <h4 class="heading-underline">
                     {{ title or gettext("Other Fields") }}
                 </h4>
             {% endif %}
-            {% for field in fields %}
+            {% for field in fields if field.checkin or not is_restricted %}
                 {{ form_field_input(field, info=field.description) }}
+            {% else %}
+                <p class="text-muted">
+                    {% trans %}No custom fields in this group available to you.{% endtrans %}
+                </p>
             {% endfor %}
         {% else %}
             <p class="text-muted">

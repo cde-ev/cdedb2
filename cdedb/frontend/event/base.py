@@ -101,7 +101,7 @@ def event_associated_fields_extractor(
     rs: RequestState,
     event: models.Event,
     association: const.FieldAssociations,
-    field_ids: set[int] | None = None,
+    field_ids: Collection[int] | None = None,
     *,
     filter_params: Callable[[vtypes.TypeMapping], vtypes.TypeMapping] | None = None,
     suffix: str = "",
@@ -222,7 +222,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
             is_privileged = self.is_privileged(rs, *privileges, event_id=event_id)
             if (
-                event_id in rs.user.orga | rs.user.caretaker
+                event_id in rs.user.orga | rs.user.caretaker | rs.user.checkin_helper
                 or admin_view_to_consider is None
                 or admin_view_to_consider not in rs.user.available_admin_views
             ):
@@ -232,7 +232,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         if 'event' in rs.ambience:
             event_id = rs.ambience['event'].id
             orga_view = (
-                event_id in rs.user.orga | rs.user.caretaker
+                event_id in rs.user.orga | rs.user.caretaker | rs.user.checkin_helper
                 or 'event_orga' in rs.user.admin_views
             )
             access_is_limited = orga_view and is_event_access_limited(event_id)
@@ -417,7 +417,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             list_consent = registration['list_consent']
         else:
             list_consent = True
-        if not self.is_privileged(rs, EventPrivileges.registrations_read):
+        EP = EventPrivileges
+        if not self.is_privileged(rs, EP.registrations_read, EP.checkin):
             if not rs.ambience['event'].is_participant_list_visible:
                 rs.notify("error", n_("Participant list not published yet."))
                 return self.redirect(rs, "event/show_event")

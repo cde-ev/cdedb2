@@ -6906,6 +6906,13 @@
         }
     ],
     "event.caretakers": [],
+    "event.checkin_helpers": [
+        {
+            "id": 1,
+            "persona_id": 38,
+            "event_id": 1
+        }
+    ],
     "event.helpers": [
         {
             "id": 1,
@@ -8215,6 +8222,15 @@
             "event_id": 1,
             "persona_id": 2,
             "change_note": "23.02.2022, 10:00:00"
+        },
+        {
+            "ctime": "---now---",
+            "code": 800,
+            "submitted_by": 7,
+            "droid_id": null,
+            "event_id": 1,
+            "persona_id": 38,
+            "change_note": null
         }
     ],
     "assembly.assemblies": [
