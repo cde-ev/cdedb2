@@ -255,6 +255,3 @@ class SecretsConfig(BaseConfig):
         name = self.__class__.__qualname__
         local_config = {k: '***' for k in self._configchain.maps[1]}
         return f"{name}(cm={self._configchain.maps[0]!r} local={local_config!r})"
-
-
-TestConfig = Config

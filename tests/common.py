@@ -102,11 +102,7 @@ from cdedb.common.roles import (
     ALL_ADMIN_VIEWS,
     roles_to_db_role,
 )
-from cdedb.config import (
-    Config,
-    SecretsConfig,
-    TestConfig,
-)
+from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
@@ -330,7 +326,7 @@ class BasicTest(unittest.TestCase):
     storage_dir: ClassVar[pathlib.Path]
     testfile_dir: ClassVar[pathlib.Path]
     _orig_config_paths: ClassVar[list[pathlib.Path]]
-    conf: ClassVar[TestConfig]
+    conf: ClassVar[Config]
     secrets: ClassVar[SecretsConfig]
 
     @classmethod
@@ -698,7 +694,7 @@ class BrowserTest(CdEDBTest):
         super().setUpClass()
         # pass config environment to subprocess.
         cls.serverProcess = subprocess.Popen(
-            ['python3', '-m', 'cdedb', 'dev', 'serve', '--test'],
+            ['python3', '-m', 'cdedb', 'dev', 'serve'],
             stderr=subprocess.DEVNULL,
             env=os.environ.copy() | cls.conf.get_config_env(),
         )
@@ -1105,7 +1101,7 @@ def event_keeper(fun: F) -> F:
 
 def execsql(sql: str, verbose: int = 0) -> None:
     """Execute arbitrary SQL-code on the test database."""
-    execute_sql_script(TestConfig(), SecretsConfig(), sql, verbose=verbose)
+    execute_sql_script(Config(), SecretsConfig(), sql, verbose=verbose)
 
 
 class FrontendTest(BackendTest):

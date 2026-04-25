@@ -18,10 +18,10 @@ import werkzeug.routing
 
 from cdedb.common import RequestState, User
 from cdedb.common.roles import ALL_ROLES
-from cdedb.config import Config, SecretsConfig, TestConfig
+from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import IrradiatedConnection
 
-pass_config = click.make_pass_decorator(TestConfig, ensure=True)
+pass_config = click.make_pass_decorator(Config, ensure=True)
 pass_secrets = click.make_pass_decorator(SecretsConfig, ensure=True)
 
 # relative path to the sample_data.json file, from the repository root
@@ -217,7 +217,7 @@ def redirect_to_file(
 
 
 def execute_sql_script(
-    config: TestConfig,
+    config: Config,
     secrets: SecretsConfig,
     sql_text: str,
     verbose: int = 0,

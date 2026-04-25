@@ -5,13 +5,13 @@ import subprocess
 
 from werkzeug.serving import run_simple
 
-from cdedb.config import Config, TestConfig
+from cdedb.config import Config
 from cdedb.frontend.application import Application
 
 
-def serve_debugger(test: bool) -> None:
+def serve_debugger() -> None:
     """Serve the cdedb using the werkzeug development server"""
-    conf = TestConfig() if test else Config()
+    conf = Config()
 
     repo_path: pathlib.Path = conf["REPOSITORY_PATH"]
     subprocess.run(
