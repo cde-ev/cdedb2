@@ -7,7 +7,6 @@ import collections
 import datetime
 import decimal
 import enum
-import io
 import itertools
 import operator
 import pathlib
@@ -15,7 +14,6 @@ import quopri
 import tempfile
 from typing import Any, Optional
 
-import segno
 import segno.helpers
 import werkzeug.datastructures
 import werkzeug.exceptions
@@ -470,11 +468,7 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.index(rs)
 
         vcard = self._create_vcard(rs, persona_id, include_foto=False)
-
-        buffer = io.BytesIO()
-        segno.make_qr(vcard).save(buffer, kind='svg', scale=4)
-
-        return self.send_file(rs, afile=buffer, mimetype="image/svg+xml")
+        return self.serve_qrcode(rs, vcard)
 
     def _make_vcard_data(
         self, rs: RequestState, persona: CdEDBObject, include_foto: bool
