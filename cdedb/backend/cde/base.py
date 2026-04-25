@@ -444,12 +444,14 @@ class CdEBaseBackend(AbstractBackend):
             GROUP BY e.institution;
         """
 
-        data = self.query_all(rs, query, ())
-        assert data is not None
+        institution_query_outputs = self.query_all(rs, query, ())
+        assert institution_query_outputs is not None
 
         institution_stats: CdEDBObject = {}
-        for result in data:
-            institution_stats[const.PastInstitutions(result["institution"]).shortname] = result["count"]
+        for result in institution_query_outputs:
+            institution_stats[
+                const.PastInstitutions(result["institution"]).shortname
+            ] = result["count"]
 
         return simple_stats, other_stats, year_stats, institution_stats
 

@@ -200,7 +200,9 @@ class CdEBaseFrontend(AbstractUserFrontend):
     @access("cde_admin", "member")
     def member_stats(self, rs: RequestState) -> Response:
         """Display stats about our members."""
-        simple_stats, other_stats, year_stats, institution_stats = self.cdeproxy.get_member_stats(rs)
+        simple_stats, other_stats, year_stats, institution_stats = (
+            self.cdeproxy.get_member_stats(rs)
+        )
         all_years = list(collections.ChainMap(*year_stats.values()))
         return self.render(
             rs,
@@ -210,7 +212,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
                 'other_stats': other_stats,
                 'year_stats': year_stats,
                 'all_years': all_years,
-                'institution_stats': institution_stats
+                'institution_stats': institution_stats,
             },
         )
 

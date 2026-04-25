@@ -12842,14 +12842,12 @@ msgid "Stats by Location"
 msgstr ""
 
 #: cdedb/frontend/templates/web/cde/member_stats.tmpl:75
-#, fuzzy
 msgid "Stats by Institution"
-msgstr "Club der Ehemaligen"
+msgstr ""
 
 #: cdedb/frontend/templates/web/cde/member_stats.tmpl:81
-#, fuzzy
 msgid "Members by institution of first event"
-msgstr "Members by first event"
+msgstr ""
 
 #: cdedb/frontend/templates/web/cde/parse/money_transfers.tmpl:13
 #: cdedb/frontend/templates/web/event/event/fee/fee_summary.tmpl:32
