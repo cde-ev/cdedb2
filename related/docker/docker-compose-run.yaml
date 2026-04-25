@@ -17,8 +17,6 @@ services:
       - i18nwritable:/cdedb2/i18n-output # scratch space for generated files
     ports:
       - 8443:443 # apache
-    environment:
-        CDEDB_CONFIGPATH: /etc/cdedb/config.py # DEFAULT_CONFIGPATH from cdedb.config
     depends_on:
       - cdb
     logging:

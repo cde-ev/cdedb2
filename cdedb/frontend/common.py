@@ -69,6 +69,7 @@ import jinja2
 import mailmanclient.restobjects.held_message
 import mailmanclient.restobjects.mailinglist
 import markupsafe
+import segno.helpers
 import werkzeug
 import werkzeug.datastructures
 import werkzeug.exceptions
@@ -132,7 +133,7 @@ from cdedb.common.exceptions import (
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
-from cdedb.common.parse.util import TransactionType
+from cdedb.common.parse.util import Accounts, TransactionType
 from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.common.query.log_filter import GenericLogFilter
@@ -222,9 +223,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         else:
             logger_name = "cdedb.frontend"
         self.logger = logging.getLogger(logger_name)  # logger are thread-safe!
-        self.logger.debug(
-            f"Instantiated {self} with configpath {self.conf._configpath}."
-        )
+        self.logger.debug(f"Instantiated {self} with config {self.conf}.")
         # local variable to prevent closure over secrets
         url_parameter_salt = secrets["URL_PARAMETER_SALT"]
         self.decode_parameter = lambda target, name, param, persona_id: (
@@ -1667,7 +1666,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         :returns: The processed input datum.
         """
-        raw = datum['raw']
+        raw = {k: (v.strip() if v else v) for k, v in datum['raw'].items()}
         problems, infos = [], []
 
         if category is None:
@@ -1687,18 +1686,18 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         persona_id, p = inspect_validation(
             vtypes.CdedbID,
-            (datum['raw']['cdedbid'] or "").strip(),
+            (raw['cdedbid'] or "").strip(),
             argname="persona_id",
         )
         problems.extend(p)
 
         family_name, p = inspect_validation(
-            str, datum['raw']['family_name'], argname="family_name"
+            str, raw['family_name'], argname="family_name"
         )
         problems.extend(p)
 
         given_names, p = inspect_validation(
-            str, datum['raw']['given_names'], argname="given_names"
+            str, raw['given_names'], argname="given_names"
         )
         problems.extend(p)
 
@@ -1826,6 +1825,15 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         })
         return datum
 
+    def serve_qrcode(self, rs: RequestState, qrcode: segno.QRCode | str) -> Response:
+        if isinstance(qrcode, str):
+            qrcode = segno.make_qr(qrcode)
+
+        buffer = io.BytesIO()
+        qrcode.save(buffer, kind='svg', scale=4)
+
+        return self.send_file(rs, afile=buffer, mimetype="image/svg+xml")
+
 
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     """Base class for all frontends which have their own user realm.
@@ -1893,7 +1901,7 @@ class CdEMailmanClient(mailmanclient.Client):
 
         # Initialize logger. This needs the base class initialization to be done.
         self.logger = logging.getLogger("cdedb.frontend.mailmanclient")
-        self.logger.debug(f"Instantiated {self} with configpath {conf._configpath}.")
+        self.logger.debug(f"Instantiated {self} with config {conf}.")
 
     def get_list_safe(
         self, address: str
@@ -2334,6 +2342,12 @@ def reconnoitre_ambience(obj: AbstractFrontend, rs: RequestState) -> AmbienceDic
         Scout(
             lambda idx: ambience['entry'].all_versions[idx - 1],
             'version_idx',
+            'entry_version',
+            (),
+        ),
+        Scout(
+            lambda anid: ambience['entry'].versions_by_id[anid],
+            'entry_version_id',
             'entry_version',
             (),
         ),
@@ -3403,6 +3417,35 @@ def calculate_loglinks(
     ret: dict[str, CdEDBMultiDict | list[CdEDBMultiDict]]
     ret = dict(**loglinks, **{"pre-current": pre, "post-current": post})
     return ret
+
+
+# Monkey patch segnos epc qr code generation to allow qrcodes with empty amount.
+
+
+def _make_epc_qr_data(
+    account: Accounts, reference: str, amount: decimal.Decimal | None
+) -> bytes:
+    data = {
+        "name": account.get_account_holder()[:70],
+        "iban": account.get_iban(),
+        "bic": account.get_bic(),
+        "text": reference[:140],
+    }
+    if amount:
+        return segno.helpers._make_epc_qr_data(**data, amount=amount)  # type: ignore[attr-defined]
+
+    # Monkey patch to create epc qrcode without a specified amount.
+    qrcode_data = segno.helpers._make_epc_qr_data(**data, amount=1).splitlines()  # type: ignore[attr-defined]
+    qrcode_data[7] = b""
+    return b"\n".join(qrcode_data)
+
+
+def make_epc_qr(
+    account: Accounts, reference: str, amount: decimal.Decimal | None
+) -> segno.QRCode:
+    return segno.make_qr(
+        _make_epc_qr_data(account, reference, amount), error="m", boost_error=True
+    )
 
 
 class TransactionObserver:

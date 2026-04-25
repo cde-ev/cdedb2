@@ -75,8 +75,14 @@
 {% macro filter(endpoint, enum, kind, filter_name=None) %}
     {% call util.bootstrap_panel(title=gettext("Filter"), icon="search", aclass="panel-primary") %}
         <form action="{{ cdedblink(endpoint) }}" method="GET" id="logshowform" class="form-horizontal">
-            {{ util.form_input_checkboxes("codes", label=gettext("Categories"), info=gettext("No selection means everything."),
-                    entries=enum|enum_entries(processing=gettext), small=True, wide=True, slice=2) }}
+            {% set entries = enum|enum_entries(processing=gettext) %}
+            {% if entries is mapping %}
+                {{ util.form_input_multi_select("codes", label=gettext("Categories"), info=gettext("No selection means everything."),
+                        entries=entries, small=True, size=10, selectize="new") }}
+            {% else %}
+                {{ util.form_input_checkboxes("codes", label=gettext("Categories"), info=gettext("No selection means everything."),
+                        entries=entries, small=True, wide=True, slice=2) }}
+            {% endif %}
             {{ util.form_input_text(type="search", name="submitted_by", label=gettext("Submitted By"), small=True,
                         anid="input-submitted_by") }}
             {{ util.form_input_text(type="search", name="persona_id", label=gettext("Affected"), small=True,

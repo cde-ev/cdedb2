@@ -36,7 +36,8 @@ RUN uv pip install -r /tmp/pyproject.toml --system --break-system-packages
 
 COPY ./related/docker/ldaptor-entrypoint.sh ./related/auto-build/files/stage3 /tmp/autobuild/
 
-RUN install -D /tmp/autobuild/localconfig.py /etc/cdedb/config.py \
+RUN mkdir -p /etc/cdedb \
+    && touch /etc/cdedb/config.py \
     && touch /etc/cdedb/public-secrets.py \
     && touch /CONTAINER \
     \
@@ -52,6 +53,5 @@ EXPOSE 636
 # mount the code here
 WORKDIR /cdedb2
 
-ENV CDEDB_CONFIGPATH /etc/cdedb/config.py
 ENTRYPOINT ["/ldaptor-entrypoint.sh"]
 CMD ["python3", "-m", "cdedb.ldap.main"]

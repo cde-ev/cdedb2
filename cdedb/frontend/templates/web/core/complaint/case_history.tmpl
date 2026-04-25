@@ -33,7 +33,7 @@
     {% for entry in all_entries %}
         <div class="list-group list-group-hover nosp">
         {% if entry.entry_type %}
-            <div id="entry{{ entry.id }}" class="list-group-item{% if entry.is_revoked or not entry.active_version %} list-group-item-muted{% endif %}">
+            <div id="entry{{ entry.id }}" class="list-group-item {{ entry.status.list_group_item_styles() }}">
                 <div class="float-right text-right">
                     {% trans count=entry.all_versions|length %}
                         {{ count }} versions
@@ -64,23 +64,49 @@
                 {% endif %}
                 <hr class="nosp" />
                 {% for version in entry.all_versions %}
-                    <div class="row">
-                        <div class="col-md-11 col-md-offset-1 {% if version.dtime %}text-muted{% endif %}">
+                    <div class="row" style="margin-left: -8px; margin-right: -8px; margin-top: -4px">
+                        <div class="col-md-11 col-md-offset-1 {% if version.dtime %}text-muted {% endif %}{% if version.marked_for_purge or version.is_purged %}bg-danger {% endif %}"
+                             style="padding-left: 8px; padding-right: 8px; padding-top: 4px;" id="version{{ version.id }}">
                             {% if not loop.first %}
                                 <hr class="nosp" />
                             {% endif %}
                             <div class="float-right text-right">
-                                {{ version.timestamp|datetime(lang=lang) }}
-                                {% if version.etime %}
-                                    – {{ version.etime|datetime(lang=lang) }}
+                                {{ generic_complaint.entry_version_timespan(version) }}
+                                {% if version.dtime %}
+                                    <div class="p button-par">
+                                        {% if not version.marked_for_purge %}
+                                            <form action="{{ cdedblink("core/mark_entry_version_for_purge", {"entry_id": entry.id, "entry_version_id": version.id}) }}"
+                                                  method="POST" id="markentryforpurgeform{{ version.id }}">
+                                                {{ util.anti_csrf_token("core/mark_entry_version_for_purge") }}
+                                                {{ util.input_submit(label="",
+                                                        title=gettext("Mark for purge"),
+                                                        aclass="btn btn-xs btn-danger",
+                                                        icon="fire") }}
+                                            </form>
+                                        {% elif not version.is_purged %}
+                                            <form action="{{ cdedblink("core/unmark_entry_version_for_purge", {"entry_id": entry.id, "entry_version_id": version.id}) }}"
+                                                  method="POST" id="unmarkentryforpurgeform{{ version.id }}">
+                                                {{ util.anti_csrf_token("core/unmark_entry_version_for_purge") }}
+                                                {{ util.input_submit(label="",
+                                                        title=gettext("Unmark for purge"),
+                                                        aclass="btn btn-xs btn-primary",
+                                                        icon="fire-extinguisher") }}
+                                            </form>
+                                        {% endif %}
+                                    </div>
                                 {% endif %}
                             </div>
-                            <strong>{{ gettext("Version %s")|format(loop.index)}}</strong>
-                            {{ gettext("by") }}
-                            {% for author_id in version.authors %}
-                                {{ util.persona_anchor(personas[author_id]) -}}
-                                {%- if not loop.last -%}, {% else %}.{% endif %}
-                            {% endfor %}
+                            <strong {% if version.is_purged %}class="text-danger" style="text-decoration: line-through;"{% endif %}>
+                                {{- gettext("Version %s")|format(loop.index) -}}
+                            </strong>
+                            {% if version.is_purged %}({% trans %}purged{% endtrans %}){% endif %}
+                            {% if version.authors %}
+                                {{ gettext("by") }}
+                                {% for author_id in version.authors %}
+                                    {{ util.persona_anchor(personas[author_id]) -}}
+                                    {%- if not loop.last -%}, {% else %}.{% endif %}
+                                {% endfor %}
+                            {% endif %}
                             <span class="text-muted">
                             {% if version.length %}
                                 {% trans length=version.length %}
@@ -108,6 +134,14 @@
                                     {% endtrans %}
                                 {% endif %}
                                 {{ version.dreason }}
+                                <br />
+                            {% endif %}
+                            {% if version.marked_for_purge %}
+                                {% trans ptime=version.marked_for_purge|datetime(lang=lang),
+                                         purged_by=util.persona_anchor(personas[version.purged_by])
+                                %}
+                                    Marked for purge at {{ ptime }} by {{ purged_by }}.
+                                {% endtrans %}
                             {% endif %}
                             </span>
                             {% if descriptions.get(version.id) %}

@@ -780,10 +780,12 @@ class MlBackend(AbstractBackend):
             ml_class.is_relevant_admin(rs.user)
             or (
                 issubclass(ml_class, EventAssociatedMetaMailinglist)
+                and data["event_id"]
                 and is_privileged_event(rs, EP.basic_write, data["event_id"])
             )
             or (
                 issubclass(ml_class, AssemblyAssociatedMailinglist)
+                and data["assembly_id"]
                 and data["assembly_id"] in rs.user.presider
             )
         ):

@@ -484,6 +484,8 @@ _QUERY_VIEWS = {
     QueryScope.cde_user: (_CDE_USER_VIEW := """core.personas
         LEFT OUTER JOIN past_event.participants
             ON personas.id = participants.persona_id
+        LEFT OUTER JOIN past_event.course_participants
+            ON participants.id = course_participants.participant_id
         LEFT OUTER JOIN (
             SELECT
                 id, granted_at, revoked_at,
@@ -500,6 +502,8 @@ _QUERY_VIEWS = {
     QueryScope.cde_member: (_PERSONAS_PAST_EVENT_VIEW := """core.personas
         LEFT OUTER JOIN past_event.participants
             ON personas.id = participants.persona_id
+        LEFT OUTER JOIN past_event.course_participants
+            ON participants.id = course_participants.participant_id
         """),
     QueryScope.past_event_user: _PERSONAS_PAST_EVENT_VIEW,
     QueryScope.core_user: _PERSONAS_PAST_EVENT_VIEW,
@@ -854,7 +858,6 @@ class Query:
         self.fields_of_interest = list(fields_of_interest)
         self.constraints = list(constraints)
         self.order = list(order)
-        self.name = name
         self.query_id = query_id
 
     def __repr__(self) -> str:
@@ -951,7 +954,7 @@ class Query:
             return ""
         return f" ORDER BY {', '.join(order.order_by for order in self._order_entries)}"
 
-    def serialize(self, timezone_aware: bool) -> CdEDBObject:
+    def serialize(self, timezone_aware: bool = True) -> CdEDBObject:
         """
         Serialize a query into a dict.
 
@@ -999,7 +1002,6 @@ class Query:
             params[f'qord_{postfix}_ascending'] = ascending
         params['is_search'] = True
         params['scope'] = str(self.scope)
-        params['query_name'] = self.name
         return params
 
     def serialize_to_url(self) -> CdEDBObject:

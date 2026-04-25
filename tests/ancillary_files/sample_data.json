@@ -4639,6 +4639,30 @@
             "parent_id": 4,
             "concerned_id": 2,
             "is_revoked": false
+        },
+        {
+            "id": 10,
+            "case_id": 1,
+            "entry_type": 101,
+            "parent_id": null,
+            "concerned_id": null,
+            "is_revoked": false
+        },
+        {
+            "id": 11,
+            "case_id": 1,
+            "entry_type": 401,
+            "parent_id": null,
+            "concerned_id": null,
+            "is_revoked": false
+        },
+        {
+            "id": 12,
+            "case_id": 1,
+            "entry_type": 411,
+            "parent_id": 11,
+            "concerned_id": 4,
+            "is_revoked": false
         }
     ],
     "complaint.entry_versions": [
@@ -4656,7 +4680,10 @@
             "attachment_filename": null,
             "dtime": null,
             "dreason": null,
-            "deleted_by": null
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
         },
         {
             "id": 2,
@@ -4672,7 +4699,10 @@
             "attachment_filename": "aussage_charly.pdf",
             "dtime": null,
             "dreason": null,
-            "deleted_by": null
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
         },
         {
             "id": 3,
@@ -4688,7 +4718,10 @@
             "attachment_filename": null,
             "dtime": null,
             "dreason": null,
-            "deleted_by": null
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
         },
         {
             "id": 4,
@@ -4704,7 +4737,10 @@
             "attachment_filename": null,
             "dtime": "---now---",
             "dreason": "Ungünstige Wortwahl.",
-            "deleted_by": 1
+            "deleted_by": 1,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
         },
         {
             "id": 5,
@@ -4720,7 +4756,10 @@
             "attachment_filename": null,
             "dtime": null,
             "dreason": null,
-            "deleted_by": null
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
         },
         {
             "id": 6,
@@ -4736,7 +4775,10 @@
             "attachment_filename": null,
             "dtime": null,
             "dreason": null,
-            "deleted_by": null
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
         },
         {
             "id": 7,
@@ -4752,7 +4794,10 @@
             "attachment_filename": null,
             "dtime": null,
             "dreason": null,
-            "deleted_by": null
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
         },
         {
             "id": 8,
@@ -4768,7 +4813,10 @@
             "attachment_filename": null,
             "dtime": null,
             "dreason": null,
-            "deleted_by": null
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
         },
         {
             "id": 9,
@@ -4784,7 +4832,10 @@
             "attachment_filename": null,
             "dtime": null,
             "dreason": null,
-            "deleted_by": null
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
         },
         {
             "id": 10,
@@ -4800,7 +4851,67 @@
             "attachment_filename": null,
             "dtime": null,
             "dreason": null,
-            "deleted_by": null
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
+        },
+        {
+            "id": 11,
+            "entry_id": 10,
+            "submitted_by": 1,
+            "description": null,
+            "length": null,
+            "ctime": "---now---",
+            "timestamp": null,
+            "etime": null,
+            "attachment_hash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
+            "dtime": "---now---",
+            "dreason": null,
+            "deleted_by": 1,
+            "marked_for_purge": "---now---",
+            "purged_by": 1,
+            "is_purged": true
+        },
+        {
+            "id": 12,
+            "entry_id": 11,
+            "submitted_by": 1,
+            "description": "Umquartierung für eine Nacht.",
+            "length": 29,
+            "ctime": "---now---",
+            "timestamp": "2025-05-28T15:30:00+00:00",
+            "etime": null,
+            "attachment_hash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
+            "dtime": null,
+            "dreason": null,
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
+        },
+        {
+            "id": 13,
+            "entry_id": 12,
+            "submitted_by": 1,
+            "description": "Erholungsurlaub.",
+            "length": 16,
+            "ctime": "---now---",
+            "timestamp": "2025-05-28T15:45:00+00:00",
+            "etime": "2025-05-29T07:00:00+00:00",
+            "attachment_hash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
+            "dtime": null,
+            "dreason": null,
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
         }
     ],
     "complaint.authors": [
@@ -4853,6 +4964,16 @@
             "id": 10,
             "entry_version_id": 10,
             "persona_id": 3
+        },
+        {
+            "id": 11,
+            "entry_version_id": 12,
+            "persona_id": 7
+        },
+        {
+            "id": 12,
+            "entry_version_id": 13,
+            "persona_id": 7
         }
     ],
     "complaint.involved": [

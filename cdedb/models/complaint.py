@@ -2,6 +2,7 @@
 
 import dataclasses
 import datetime
+import enum
 import functools
 import itertools
 from collections.abc import Collection
@@ -11,9 +12,71 @@ from typing import Self, Union
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, User, now
+from cdedb.common.n_ import n_
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.database.query import DatabaseValue_s
 from cdedb.models.common import CdEDataclass, CdEDataclassMap, MetaFlag as Meta
+
+
+class ComplaintEntryStatus(enum.Enum):
+    deleted = enum.auto()
+    # TODO: purged
+    revoked = enum.auto()
+    pending_measure = enum.auto()
+    active_measure = enum.auto()
+    expired_measure = enum.auto()
+    other = enum.auto()
+
+    def get_label(self) -> str:
+        if self == self.deleted:
+            return n_("deleted")
+        if self == self.revoked:
+            return n_("revoked")
+        if self == self.expired_measure:
+            return n_("expired")
+        if self == self.pending_measure:
+            return n_("not yet active")
+        return ""
+
+    def heading_styles(self) -> str:
+        ret = []
+        if self in {
+            self.deleted,
+            self.expired_measure,
+            self.revoked,
+        }:
+            ret.append("strikethrough")
+        if self == self.pending_measure:
+            ret.extend(["text-muted", "text-italic"])
+        return " ".join(ret)
+
+    def label_styles(self) -> str:
+        ret = []
+        if self in {
+            self.deleted,
+            self.expired_measure,
+            self.revoked,
+        }:
+            ret.append("text-unmuted")
+        if self == self.pending_measure:
+            ret.append("text-info")
+        return " ".join(ret)
+
+    def timespan_styles(self) -> str:
+        ret = []
+        if self == self.pending_measure:
+            ret.extend(["text-info", "text-italic"])
+        return " ".join(ret)
+
+    def list_group_item_styles(self) -> str:
+        ret = []
+        if self in {
+            self.deleted,
+            self.revoked,
+            self.expired_measure,
+        }:
+            ret.append("list-group-item-muted")
+        return " ".join(ret)
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -279,6 +342,14 @@ class ComplaintEntry(CdEDataclass):
         metadata=(Meta.validate_exclude | Meta.database_exclude).as_dict,
     )
 
+    _now: datetime.datetime = dataclasses.field(
+        init=False,
+        compare=False,
+        repr=False,
+        default_factory=now,
+        metadata=(Meta.exclude | Meta.asdict_exclude).as_dict,
+    )
+
     @functools.cached_property
     def active_version(self) -> "ComplaintEntryVersion | None":
         for version in self.all_versions:
@@ -289,6 +360,10 @@ class ComplaintEntry(CdEDataclass):
     @functools.cached_property
     def deleted_versions(self) -> list["ComplaintEntryVersion"]:
         return [version for version in self.all_versions if version.dtime]
+
+    @functools.cached_property
+    def versions_by_id(self) -> CdEDataclassMap["ComplaintEntryVersion"]:
+        return {version.id: version for version in self.all_versions}
 
     @property
     def parent(self) -> "ComplaintEntry | None":
@@ -307,14 +382,20 @@ class ComplaintEntry(CdEDataclass):
         return [entry for entry in self.children if entry.active_version]
 
     def get_sortkey(self) -> Sortkey:
-        return (self.all_versions[-1].timestamp,)
+        return (
+            self.all_versions[-1].timestamp
+            or datetime.datetime.max.replace(tzinfo=datetime.UTC),
+        )
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:
         data["all_versions"] = list(
             ComplaintEntryVersion.many_from_database(data["all_versions"]).values()
         )
-        return super().from_database(data)
+        ret = super().from_database(data)
+        for version in data["all_versions"]:
+            version.entry = ret
+        return ret
 
     @classmethod
     def mandatory_form_fields(cls, *, creation: bool) -> set[str]:
@@ -324,6 +405,46 @@ class ComplaintEntry(CdEDataclass):
             ret.add('dreason')
         return ret
 
+    @property
+    def is_measure(self) -> bool:
+        return self.entry_type.is_measure
+
+    @property
+    def is_provisional(self) -> bool:
+        return self.entry_type.is_provisional
+
+    @functools.cached_property
+    def is_active_measure(self) -> bool:
+        av = self.active_version
+        if self.is_revoked or not self.is_measure or not av or not av.timestamp:
+            # Only purged versions do not have a timestamp.
+            #  This tells mypy that the timestamp cannot be None below.
+            return False
+        return self._now > av.timestamp and not self.is_expired_measure
+
+    @functools.cached_property
+    def is_expired_measure(self) -> bool:
+        av = self.active_version
+        if self.is_revoked or not self.is_measure or not av or not av.timestamp:
+            # Only purged versions do not have a timestamp.
+            #  This tells mypy that the timestamp cannot be None below.
+            return False
+        return bool(av.etime and self._now > av.etime)
+
+    @functools.cached_property
+    def status(self) -> ComplaintEntryStatus:
+        if self.is_revoked:
+            return ComplaintEntryStatus.revoked
+        if not self.active_version:
+            return ComplaintEntryStatus.deleted
+        if not self.is_measure:
+            return ComplaintEntryStatus.other
+        if self.is_expired_measure:
+            return ComplaintEntryStatus.expired_measure
+        if self.is_active_measure:
+            return ComplaintEntryStatus.active_measure
+        return ComplaintEntryStatus.pending_measure
+
 
 @dataclasses.dataclass(kw_only=True)
 class ComplaintEntryVersion(CdEDataclass):
@@ -332,6 +453,7 @@ class ComplaintEntryVersion(CdEDataclass):
 
     id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
+    entry: ComplaintEntry = dataclasses.field(init=False, compare=False, repr=False)
     entry_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     description: str | None = dataclasses.field(
@@ -343,7 +465,7 @@ class ComplaintEntryVersion(CdEDataclass):
         default=None,
         metadata=Meta.input_exclude.as_dict,
     )
-    timestamp: datetime.datetime
+    timestamp: datetime.datetime | None
     etime: datetime.datetime | None = None
 
     # filehas and filename are retrieved from the request manually to feed to the
@@ -370,6 +492,16 @@ class ComplaintEntryVersion(CdEDataclass):
     dreason: str | None = dataclasses.field(
         default=None,
         metadata=Meta.input_exclude.as_dict,
+    )
+
+    marked_for_purge: datetime.datetime | None = dataclasses.field(
+        default=None, metadata=Meta.input_exclude.as_dict
+    )
+    purged_by: vtypes.ID | None = dataclasses.field(
+        default=None, metadata=Meta.input_exclude.as_dict
+    )
+    is_purged: bool = dataclasses.field(
+        default=False, metadata=Meta.input_exclude.as_dict
     )
 
     authors: vtypes.CdedbIDList = dataclasses.field(

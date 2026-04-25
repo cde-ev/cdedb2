@@ -45,6 +45,9 @@
                 {% if is_privileged_for("event/remove_caretaker", admin_view_to_consider="event_mgmt") %}
                     {{ util.href(cdedblink("event/manage_orgas") + "#caretakers", gettext("Manage Caretakers"), aclass="btn btn-warning btn-sm", icon="hands-holding-circle") }}
                 {% endif %}
+                {% if orga_view and ambience['event'].iban %}
+                    {{ util.href(cdedblink("event/event_payment"), label=gettext("Payment QR-Code"), icon="euro", aclass="btn btn-sm btn-info") }}
+                {% endif %}
             </div>
         {% endif %}
         <div id="description">{{ ambience['event']['description']|md }}</div>

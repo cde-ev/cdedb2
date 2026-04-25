@@ -8,7 +8,8 @@ Documentation=https://db.cde-ev.de/doc/API_LDAP.html
 
 [Service]
 Type=exec
-Environment=CDEDB_CONFIGPATH=/etc/cdedb/config.py
+Environment=UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv
+Environment=UV_PROJECT=/cdedb2
 ExecStart=/home/www-cde/.venv/bin/python -m cdedb.ldap.main
 ExecStartPre=+make -C /cdedb2 www-cde-venv
 Restart=on-failure
