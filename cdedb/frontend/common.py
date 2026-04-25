@@ -223,9 +223,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         else:
             logger_name = "cdedb.frontend"
         self.logger = logging.getLogger(logger_name)  # logger are thread-safe!
-        self.logger.debug(
-            f"Instantiated {self} with configpath {self.conf._configpath}."
-        )
+        self.logger.debug(f"Instantiated {self} with config {self.conf}.")
         # local variable to prevent closure over secrets
         url_parameter_salt = secrets["URL_PARAMETER_SALT"]
         self.decode_parameter = lambda target, name, param, persona_id: (
@@ -1903,7 +1901,7 @@ class CdEMailmanClient(mailmanclient.Client):
 
         # Initialize logger. This needs the base class initialization to be done.
         self.logger = logging.getLogger("cdedb.frontend.mailmanclient")
-        self.logger.debug(f"Instantiated {self} with configpath {conf._configpath}.")
+        self.logger.debug(f"Instantiated {self} with config {conf}.")
 
     def get_list_safe(
         self, address: str

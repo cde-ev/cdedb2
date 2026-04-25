@@ -2,6 +2,7 @@
 """Tests for functionality executed in the users's browser, manly JavaScript."""
 
 import functools
+import logging
 import os
 import pathlib
 import re
@@ -12,6 +13,8 @@ from typing import Any
 from playwright.sync_api import Browser, Page, expect, sync_playwright
 
 from tests.common import BrowserTest, event_keeper, storage
+
+_LOGGER = logging.getLogger(__file__)
 
 
 def make_page(*args: Any, headless: bool = True, timeout: float = 5000) -> Callable:  # type: ignore[type-arg]
@@ -35,10 +38,12 @@ def make_page(*args: Any, headless: bool = True, timeout: float = 5000) -> Calla
                 for name in ['chromium']:
                     browser: Browser = getattr(pw, name).launch(headless=headless)
                     video_dir = (
-                        f"tests/playwright/{func.__name__}_{browser}"
+                        f"tests/playwright/{func.__name__}_{name}"
                         if not os.environ.get("CI")
                         else None
                     )
+                    if video_dir:  # pragma: no cover
+                        pathlib.Path(video_dir).mkdir(parents=True, exist_ok=True)
                     context = browser.new_context(
                         record_video_dir=video_dir, locale="de-DE"
                     )
@@ -51,21 +56,21 @@ def make_page(*args: Any, headless: bool = True, timeout: float = 5000) -> Calla
                             func(self, *fargs, **fkwargs)
                         except Exception:  # pragma: no cover
                             if page.video:
-                                print(
+                                _LOGGER.info(
                                     f"Saved video of failed test at {page.video.path()!r}."
                                 )
                                 path = pathlib.Path(page.video.path()).with_suffix(
                                     ".png"
                                 )
                                 page.screenshot(full_page=True, path=path)
-                                print(
+                                _LOGGER.info(
                                     f"Saved screenshot at point of failure to '{path}'."
                                 )
                             raise
                         else:
                             if page.video:  # pragma: no cover
                                 pathlib.Path(page.video.path()).unlink()
-                                print(f"Removed '{page.video.path()}'.")
+                                _LOGGER.info(f"Removed '{page.video.path()}'.")
                     context.close()
                     browser.close()
 

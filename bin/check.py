@@ -38,7 +38,7 @@ from cdedb.cli.storage import (
     populate_storage,
 )
 from cdedb.cli.util import is_docker
-from cdedb.config import SecretsConfig, TestConfig, set_configpath
+from cdedb.config import SecretsConfig, TestConfig, Config
 from cdedb.logging_ import setup_root_logger
 from tests.common import BasicTest
 
@@ -103,7 +103,7 @@ class CdEDBTestLock:
     def __enter__(self) -> "CdEDBTestLock":
         self.acquire()
         print(f"Using thread {self.thread}", file=sys.stderr)
-        set_configpath(self.configpath)
+        Config.set_config_paths(self.configpath)
         return self
 
     def __exit__(
