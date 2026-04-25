@@ -583,6 +583,19 @@ class TestCoreFrontend(FrontendTest):
             "admin_persona",
             core_admins | cde_admins | complaint_admins | ml_admins | auditors,
             allow_username=True,
+            ins=(
+                "anton",
+                "berta",
+                "charly",
+                "daniel",
+                "emilia",
+                "farin",
+                "garcia",
+                "inga",
+                "janis",
+                "kalif",
+                "martin",
+            ),
             outs=("hades",),
         )
         check_kind(
@@ -594,11 +607,13 @@ class TestCoreFrontend(FrontendTest):
         check_kind(
             "cde_user",
             cde_admins | auditors,
+            allow_username=True,
             outs=("kalif", "janis", "emilia"),
         )
         check_kind(
             "past_event_user",
             cde_admins | auditors,
+            allow_username=True,
             ins=("hades",),
             outs=("kalif", "janis"),
         )
@@ -648,15 +663,15 @@ class TestCoreFrontend(FrontendTest):
             aux=2,
         )
 
-        for user_nick in all_users:
-            if not sessionkeys.get(user_nick):
-                continue
-            self.app.set_cookie('sessionkey', sessionkeys[user_nick])
-            self.get(url("invalid"))
-            self.assertEqual({}, self.response.json)
-            self.get(url("ml_subscriber"), status=400)
-            self.get(url("ml_subscriber", aux="invalid"))
-            self.assertEqual({}, self.response.json)
+        self.app.set_cookie('sessionkey', sessionkeys["anton"])
+        # Check empty return on invalid kind.
+        self.get(url("invalid"))
+        self.assertEqual({}, self.response.json)
+        # Check error on missing aux value.
+        self.get(url("ml_subscriber"), status=400)
+        # Check empty return on invalid aux value.
+        self.get(url("ml_subscriber", aux="invalid"))
+        self.assertEqual({}, self.response.json)
 
     @as_users("paul")
     def test_selectpersona_ids(self) -> None:

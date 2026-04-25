@@ -1135,29 +1135,31 @@ class CoreBaseFrontend(AbstractFrontend):
 
         Allowed kinds:
 
-        - ``admin_persona``: Search for users as
-          (core|cde|complaint|ml)_admin or auditor.
-        - ``admin_all_users``: Like ``admin_persona``, but including archived users.
-        - ``cde_user``: Search for a cde user as cde_admin.
-        - ``past_event_user``: Search for an event user to add to a past
-          event as cde_admin
-        - ``pure_assembly_user``: Search for an assembly only user as
-          assembly_admin or presider. Needed for external_signup.
-        - ``assembly_user``: Search for an assembly user as assembly_admin or presider
+        - ``admin_persona``: Search for users as (core|cde|complaint|ml)_admin or auditor.
+            Allows search by username.
+        - ``admin_all_users``: Search for users as (core|complaint|ml)_admin but
+            including archived users. Allows search by username.
+        - ``cde_user``: Search for a cde user as cde_admin or auditor.
+            Allows search by username.
+        - ``past_event_user``: Search for an event user to add to a past event as
+            cde_admin or auditor. Allows search by username.
+        - ``pure_assembly_user``: Search for an assembly only user as assembly_admin or
+            presider. Needed for external_signup.
+        - ``assembly_user``: Search for an assembly user as assembly_admin or presider or auditor.
         - ``ml_user``: Search for a mailinglist user as ml_admin or moderator
         - ``pure_ml_user``: Search for an assembly only user as ml_admin.
-          Needed for the account merger.
+            Needed for the account merger. Allows seach by username.
         - ``ml_subscriber``: Search for a mailinglist user for subscription purposes.
-          Needed for add_subscriber action only.
-        - ``event_user``: Search an event user as event_admin or orga
+            Needed for add_subscriber action only.
+        - ``event_user``: Search an event user as event_admin or orga or auditor.
+            Allows search by username.
 
         The aux parameter allows to supply an additional id for example
-        in the case of a moderator this would be the relevant
-        mailinglist id.
+        in the case of a moderator this would be the relevant mailinglist id.
 
         Required aux value based on the 'kind':
 
-        * ``ml_subscriber``: Id of the mailinglist for context
+        * ``ml_subscriber``: ID of the mailinglist for context.
         """
         if rs.has_validation_errors():
             return self.send_json(rs, {})
@@ -1186,10 +1188,12 @@ class CoreBaseFrontend(AbstractFrontend):
         elif kind == "cde_user":
             if not {"cde_admin", "auditor"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+            search_additions.append("username")
             constraints.append(("is_cde_realm", QueryOperators.equal, True))
         elif kind == "past_event_user":
             if not {"cde_admin", "auditor"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+            search_additions.append("username")
             # adding archived users to past events is a common task
             scope = QueryScope.all_core_users
             constraints.append(("is_event_realm", QueryOperators.equal, True))
@@ -1328,10 +1332,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 xsorted(data, key=lambda e: e[scope.get_primary_key()])[:len_preview]
             )
 
-        # Check if name occurs multiple times to add email address in this case
-        counter: dict[str, int] = collections.defaultdict(lambda: 0)
         for entry in data:
-            counter[make_persona_name(entry, include_nickname=True)] += 1
             if 'id' not in entry:
                 entry['id'] = entry[scope.get_primary_key()]
 
