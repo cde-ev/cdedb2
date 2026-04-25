@@ -27,7 +27,7 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.privileges import EventPrivileges
+from cdedb.common.privileges import EventPrivileges, is_event_access_limited
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.common.validation.validate import QUESTIONNAIRE_ROW_MANDATORY_FIELDS
 from cdedb.frontend.common import (
@@ -251,7 +251,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         if not rs.ambience['event'].use_additional_questionnaire:
             rs.notify("error", n_("Questionnaire disabled."))
             return self.redirect(rs, "event/registration_status")
-        if self.is_locked(rs.ambience['event']):
+        if self.is_locked(rs.ambience['event']) or is_event_access_limited(event_id):
             rs.notify("error", n_("Event locked."))
             return self.redirect(rs, "event/registration_status")
         data = self.extract_questionnaire_fields(

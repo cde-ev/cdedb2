@@ -8,6 +8,20 @@ nav{
 #footer{
     display: none;
 }
+.page {
+    border: none;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+/* Restore column next to side nav to full width. */
+.row nav.col-md-3 + .col-md-9 {
+    width: 100%;
+}
+.print-zoom {
+    zoom: 150%;
+}
 
 
 /* style buttons, links etc */

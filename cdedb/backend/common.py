@@ -182,9 +182,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         # initialize logging
         # logger are thread-safe!
         self.logger = logging.getLogger(f"cdedb.backend.{self.realm}")
-        self.logger.debug(
-            f"Instantiated {self} with configpath {self.conf._configpath}."
-        )
+        self.logger.debug(f"Instantiated {self} with config {self.conf}.")
         # make the logger available to the query mixin
         super().__init__(self.logger)
         # Everybody needs access to the core backend
