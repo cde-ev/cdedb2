@@ -555,26 +555,17 @@ class TestEventBackend(BackendTest):
             ['reg.notes'],
             [('reg.notes', QueryOperators.nonempty, None)],
             [('reg.notes', True)],
-            name="test_query",
         )
-        self.assertTrue(self.event.store_event_query(self.key, new_id, query))
-        self.assertEqual(
-            self.event.get_event_queries(self.key, new_id)[
-                "test_query"
-            ].serialize_to_url(),
-            query.serialize_to_url(),
+        query_id = self.event.store_event_query(
+            self.key,
+            new_id,
+            scope,
+            {"query_name": "test_query", "serialized_query": query.serialize()},
         )
+        self.assertTrue(query_id)
         self.assertEqual(
-            self.event.get_event_queries(
-                self.key,
-                new_id,
-                scopes={QueryScope.registration},
-            )["test_query"].serialize_to_url(),
-            query.serialize_to_url(),
-        )
-        self.assertEqual(
-            self.event.get_event_queries(self.key, new_id, scopes={QueryScope.persona}),
-            {},
+            self.event.get_event_queries(self.key, new_id)[query_id].serialize_to_url(),
+            query.serialize_to_url() | {"query_name": "test_query"},
         )
 
         with self.switch_user("annika"):
@@ -2690,6 +2681,16 @@ class TestEventBackend(BackendTest):
     def test_store_event_query(self) -> None:
         event_id = 1
         event = self.event.get_event(self.key, event_id)
+
+        def store(query: Query, name: str) -> int:
+            query.query_id = self.event.store_event_query(
+                self.key,
+                event_id,
+                query.scope,
+                {"query_name": name, "serialized_query": query.serialize()},
+            )
+            return query.query_id
+
         # Try storing valid queries.
         expectation = {}
         query = Query(
@@ -2706,10 +2707,10 @@ class TestEventBackend(BackendTest):
             ],
             constraints=[],
             order=[],
-            name="My registration query :)",
         )
-        query.query_id = self.event.store_event_query(self.key, event_id, query)
-        expectation[query.name] = query
+        name = "My registration query :)"
+        store(query, name)
+        expectation[name] = query
         query = Query(
             QueryScope.lodgement,
             QueryScope.lodgement.get_spec(event=event),
@@ -2721,10 +2722,10 @@ class TestEventBackend(BackendTest):
             ],
             constraints=[],
             order=[],
-            name="Lodgement Query with funny symbol: 🏠",
         )
-        query.query_id = self.event.store_event_query(self.key, event_id, query)
-        expectation[query.name] = query
+        name = "Lodgement Query with funny symbol: 🏠"
+        store(query, name)
+        expectation[name] = query
         query = Query(
             QueryScope.event_course,
             QueryScope.event_course.get_spec(event=event),
@@ -2735,13 +2736,14 @@ class TestEventBackend(BackendTest):
             ],
             constraints=[],
             order=[],
-            name="custom_course_query",
         )
-        query.query_id = self.event.store_event_query(self.key, event_id, query)
-        expectation[query.name] = query
+        name = "custom_course_query"
+        store(query, name)
+        expectation[name] = query
 
-        result = self.event.get_event_queries(self.key, event_id)
-        for name, query in result.items():
+        queries = self.event.get_event_queries(self.key, event_id)
+        for stored_query in queries.values():
+            name, query = stored_query.query_name, stored_query.query
             if name != "Test-Query":
                 self.assertIn(name, expectation)
                 q = expectation[name]
@@ -2762,25 +2764,33 @@ class TestEventBackend(BackendTest):
             fields_of_interest=[],
             constraints=[],
             order=[],
-            name="",
         )
+        name = ""
         with self.assertRaises(ValueError) as cm:
-            self.event.store_event_query(self.key, event_id, query)
+            store(query, name)
         self.assertIn(
             "Invalid input for the enumeration %(enum)s (scope)", cm.exception.args
         )
+
         query.scope = QueryScope.persona
         with self.assertRaises(ValueError) as cm:
-            self.event.store_event_query(self.key, event_id, query)
-        self.assertIn("Must not be empty. (fields_of_interest)", cm.exception.args)
-        query.fields_of_interest = ["persona.id"]
-        with self.assertRaises(ValueError) as cm:
-            self.event.store_event_query(self.key, event_id, query)
+            store(query, name)
         self.assertIn("Cannot store this kind of query.", cm.exception.args)
+
         query.scope = QueryScope.registration
-        self.assertFalse(self.event.store_event_query(self.key, event_id, query))
-        query.name = "test"
-        self.assertTrue(self.event.store_event_query(self.key, event_id, query))
+        with self.assertRaises(ValueError) as cm:
+            store(query, name)
+        self.assertIn("Must not be empty. (query_name)", cm.exception.args)
+
+        name = "test"
+        with self.assertRaises(ValueError) as cm:
+            store(query, name)
+        self.assertIn(
+            "Selection may not be empty. (serialized_query)", cm.exception.args
+        )
+
+        query.fields_of_interest = ["persona.id"]
+        self.assertTrue(store(query, name))
 
         # Store a query using a custom datafield using a datatype specific comparison.
         field_data = {
@@ -2802,10 +2812,10 @@ class TestEventBackend(BackendTest):
             ["reg_fields.xfield_foo"],
             [("reg_fields.xfield_foo", QueryOperators.equal, "foo")],
             [],
-            name="foo_string",
         )
-        self.assertTrue(self.event.store_event_query(self.key, event_id, query))
-        self.assertIn(query.name, self.event.get_event_queries(self.key, event_id))
+        name = "foo_string"
+        query_id = store(query, name)
+        self.assertIn(query.query_id, self.event.get_event_queries(self.key, event_id))
 
         # Now change the datatype of that field.
         field_data["kind"] = const.FieldDatatypes.date
@@ -2815,14 +2825,18 @@ class TestEventBackend(BackendTest):
         self.event.set_event(self.key, event_id, event_data)
 
         # The query can no longer be retrieved.
-        self.assertNotIn(query.name, self.event.get_event_queries(self.key, event_id))
+        stored_query = self.event.get_event_queries(self.key, event_id)[query_id]
+        self.assertIsNone(stored_query.query)
+        self.assertTrue(stored_query.errors)
 
         # Change the field back.
         field_data["kind"] = const.FieldDatatypes.str
         self.event.set_event(self.key, event_id, event_data)
 
         # The query is valid again.
-        self.assertIn(query.name, self.event.get_event_queries(self.key, event_id))
+        self.assertIsNotNone(
+            self.event.get_event_queries(self.key, event_id)[query_id].query
+        )
 
     @event_keeper
     @as_users("annika", "garcia")

@@ -57,6 +57,7 @@ steps:
     - cdb
   environment:
     CDEDB_CONFIGPATH: tests/config/test_1.py
+    CDEDB_CONFIGPATHS: tests/config/test_1.py
     POSTGRES_PASSWORD: passwd
   commands:
     - make i18n-compile # needed for sample-data creation in evolution-trial.sh
@@ -97,7 +98,7 @@ steps:
       - failure
       - success
   environment:
-    CDEDB_CONFIGPATH: tests/config/test_ldap.py
+    CDEDB_CONFIGPATHS: tests/config/test_ldap.py
   commands:
   - make i18n-compile # required for sample-data target
   - pg_isready --host=cdb --timeout=15 # wait for database to come online
@@ -119,7 +120,7 @@ steps:
   - name: ldap
     path: /etc/ssl/ldap
   environment:
-    CDEDB_CONFIGPATH: tests/config/test_ldap.py
+    CDEDB_CONFIGPATHS: tests/config/test_ldap.py
 - name: frontend tests event
   image: cdedb
   pull: never # do not try to pull image from docker hub
@@ -241,7 +242,7 @@ steps:
     - name: tmp_dir
       path: /tmp
   environment:
-    CDEDB_CONFIGPATH: tests/config/test_ldap.py
+    CDEDB_CONFIGPATHS: tests/config/test_ldap.py
   commands:
     - python3 -m cdedb dev check-sample-data-consistency
 - name: check for merge conflicts

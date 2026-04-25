@@ -1,14 +1,23 @@
 FROM debian:trixie-20251020
 
 # python and utilities to install packages via pip
-# dependencies:
-# - libsystemd-dev for systemd-python
+# - python package dependencies:
+#   - building/running pyicu: g++ pkg-config python3-dev libicu-dev
+#   - building/running graphviz: graphviz
+#   - building/running python-magic: libmagic1
+#   - building/running python-systemd: libsystemd-dev
 RUN apt-get update && apt-get install --yes --no-install-recommends \
     python3 \
     python3-pip \
-    python3-dev \
+    \
     g++ \
     pkg-config \
+    python3-dev \
+    libicu-dev \
+    \
+    graphviz \
+    \
+    libmagic1 \
     \
     libsystemd-dev \
     libicu-dev \
@@ -27,7 +36,8 @@ RUN uv pip install -r /tmp/pyproject.toml --system --break-system-packages
 
 COPY ./related/docker/ldaptor-entrypoint.sh ./related/auto-build/files/stage3 /tmp/autobuild/
 
-RUN install -D /tmp/autobuild/localconfig.py /etc/cdedb/config.py \
+RUN mkdir -p /etc/cdedb \
+    && touch /etc/cdedb/config.py \
     && touch /etc/cdedb/public-secrets.py \
     && touch /CONTAINER \
     \
@@ -43,6 +53,5 @@ EXPOSE 636
 # mount the code here
 WORKDIR /cdedb2
 
-ENV CDEDB_CONFIGPATH /etc/cdedb/config.py
 ENTRYPOINT ["/ldaptor-entrypoint.sh"]
 CMD ["python3", "-m", "cdedb.ldap.main"]

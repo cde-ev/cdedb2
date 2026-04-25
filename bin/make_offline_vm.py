@@ -18,12 +18,12 @@ from typing import Collection
 from psycopg2.extras import Json, RealDictCursor
 
 import cdedb.models.event as models
+from cdedb.cli.__main__ import apply_sample_data, populate_event_keeper_cmd
+from cdedb.cli.storage import populate_event_keeper
+from cdedb.cli.util import switch_user
 from cdedb.common import EVENT_SCHEMA_VERSION, CdEDBObject
 from cdedb.config import (
     Config,
-    TestConfig,
-    get_configpath,
-    set_configpath,
 )
 from cdedb.models.droid import OrgaToken
 from cdedb.script import Script
@@ -194,13 +194,14 @@ def work(
             if input("Are you sure (type uppercase YES)? ").strip() != "YES":
                 print("Aborting.")
                 sys.exit()
-        cmd = ['sudo', '-E', 'uv', 'run', 'cdedb', 'dev', 'apply-sample-data']
-        if not args.test:
-            cmd.append('--owner')
-            cmd.append('www-cde')
-            cmd.append('--group')
-            cmd.append('www-data')
-        subprocess.run(cmd, check=True)
+        try:
+            apply_sample_data(conf)
+        except PermissionError:
+            try:
+                with switch_user(user="www-cde", group="www-data"):
+                    apply_sample_data(conf)
+            except PermissionError as e:
+                raise PermissionError("Unable to apply sample data. Might need to be run as root.") from e
 
     # connect to the database, using elevated access
     connection = Script(dbuser="cdb", check_system_user=False).rs().conn
@@ -221,23 +222,14 @@ def work(
             subprocess.run(["sudo", "rm", "-r", str(thing)], check=True)
 
     print("Setup the eventkeeper git repository.")
-    cmd = [
-        'sudo',
-        '-E',
-        'uv',
-        'run',
-        'cdedb',
-        'filesystem',
-        'storage',
-        'populate-event-keeper',
-        str(data['id']),
-    ]
-    if not args.test:
-        cmd.insert(6, '--owner')
-        cmd.insert(7, 'www-cde')
-        cmd.insert(8, '--group')
-        cmd.insert(9, 'www-data')
-    subprocess.run(cmd, check=True)
+    try:
+        populate_event_keeper(conf, event_ids=[data['id']])
+    except PermissionError:
+        try:
+            with switch_user(user="www-cde", group="www-data"):
+                populate_event_keeper(conf, event_ids=[data['id']])
+        except PermissionError as e:
+            raise PermissionError("Unable to setup event keeper. Might need to be run as root.") from e
 
     print("Make orgas into admins")
     orgas = {e['persona_id'] for e in data['event.orgas'].values()}
@@ -376,22 +368,18 @@ def work(
                     cur.execute("INSERT INTO cde.expuls_period (id) VALUES (42)")
 
     # Adjust config.
-    config_path = get_configpath()
+    config_path = conf.get_config_paths()[0]
 
     if not dev_mode:
         print("Enabling offline mode")
         # make sure to unset the development vm config option, so we do not clash
-        subprocess.run(
-            [
-                "sudo",
-                "sed",
-                "-i",
-                "-e",
-                "s/CDEDB_DEV = True/CDEDB_DEV = False/",
-                str(config_path),
-            ],
-            check=True,
-        )
+        with config_path.open("a", encoding="utf-8") as f:
+            f.write("CDEDB_DEV = False\n")
+
+        conf.clear_config_cache()
+
+        if conf["CDEDB_DEV"]:
+            raise RuntimeError("Failed to disable CDEDB_DEV mode.")
 
         print("Protecting data from accidental reset")
         subprocess.run(["sudo", "touch", "/OFFLINEVM"], check=True)
@@ -399,23 +387,13 @@ def work(
     if not dev_mode or offline_mode:
         # mark the config as offline vm
         offline_deploy_key = "CDEDB_OFFLINE_DEPLOYMENT"
-        if not Config()[offline_deploy_key]:
-            # Try replacing config entry.
-            subprocess.run(
-                [
-                    "sudo",
-                    "sed",
-                    "-i",
-                    "-e",
-                    f"s/{offline_deploy_key} = False/{offline_deploy_key} = True/",
-                    str(config_path),
-                ],
-                check=True,
-            )
-            # If that didn't work, add a new one.
-            if not Config()[offline_deploy_key]:
-                with open(str(config_path), 'a', encoding='UTF-8') as conf_file:
-                    conf_file.write(f"\n{offline_deploy_key} = True\n")
+        with config_path.open("a", encoding="utf-8") as f:
+            f.write(f"{offline_deploy_key} = True\n")
+
+        conf.clear_config_cache()
+
+        if not conf[offline_deploy_key]:
+            raise RuntimeError(f"Failed to enable {offline_deploy_key} mode.")
 
     if no_extra_packages:
         print("Skipping installation of fonts for template renderer.")
@@ -447,9 +425,6 @@ def work(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Prepare for offline usage.')
     parser.add_argument('data_path', help="Path to exported event data")
-    parser.add_argument(
-        '-t', '--test', action="store_true", help="Operate on test database"
-    )
     parser.add_argument(
         '--not-interactive',
         action="store_true",
@@ -497,7 +472,7 @@ if __name__ == "__main__":
 
     data_path = pathlib.Path(args.data_path)
 
-    config: Config = TestConfig() if args.test else Config()
+    config = Config()
 
     work(
         data_path,

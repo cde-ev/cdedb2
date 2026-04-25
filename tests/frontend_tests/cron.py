@@ -451,10 +451,6 @@ class TestCron(CronTest):
         # We just want to test that no exception is raised.
         self.execute('deactivate_old_sessions', 'clean_session_log')
 
-    def test_validate_stored_event_queries(self) -> None:
-        # We just want to test that no exception is raised.
-        self.execute('validate_stored_event_queries')
-
     @event_keeper
     def test_event_keeper(self) -> None:
         # We just want to test that no exception is raised.

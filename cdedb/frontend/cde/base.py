@@ -58,6 +58,7 @@ from cdedb.frontend.common import (
     access,
     check_validation as check,
     inspect_validation as inspect,
+    make_epc_qr,
     make_membership_fee_reference,
     request_extractor,
 )
@@ -136,6 +137,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         deadline = None
         reference = make_membership_fee_reference(data)
+        annual_fee = self.cdeproxy.annual_membership_fee(rs)
         has_lastschrift = False
         if "member" in rs.user.roles:
             assert rs.user.persona_id is not None
@@ -155,8 +157,17 @@ class CdEBaseFrontend(AbstractUserFrontend):
                 'meta_info': meta_info,
                 'deadline': deadline,
                 'reference': reference,
+                'annual_fee': annual_fee,
             },
         )
+
+    @access("cde")
+    def membership_qr(self, rs: RequestState) -> Response:
+        meta_info = self.coreproxy.get_meta_info(rs)
+        data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+        reference = make_membership_fee_reference(data)
+        qr = make_epc_qr(meta_info.membership_fee_account, reference, amount=None)
+        return self.serve_qrcode(rs, qr)
 
     @access("member")
     def consent_decision_form(self, rs: RequestState) -> Response:

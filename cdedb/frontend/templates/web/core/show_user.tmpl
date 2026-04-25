@@ -558,7 +558,7 @@
             {% endif %}
 
             {% if (data.has('address2') or data.has('address_supplement2') or data.has('postal_code2')
-                   or data.has('location2') or data.has('country2')) %}
+                   or data.has('location2')) %} {# not check for country name; it has a default value #}
                 <dl class="dl-horizontal">
                     <dt title="{% trans %}Second Address{% endtrans %}">
                         {% trans %}Second Address{% endtrans %}

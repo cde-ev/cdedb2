@@ -397,7 +397,7 @@ class TestParseFrontend(FrontendTest):
                 fieldnames=parse.ExportFields.excel,
                 dialect=CustomCSVDialect,
             )
-        )
+        )[1:]  # skip headers
         self.check_dict(
             result[0],
             date="26.12.2018",
@@ -490,7 +490,7 @@ class TestParseFrontend(FrontendTest):
                 fieldnames=parse.ExportFields.excel,
                 dialect=CustomCSVDialect,
             )
-        )
+        )[1:]  # skip headers
 
         self.check_dict(
             result[0],

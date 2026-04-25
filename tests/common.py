@@ -102,7 +102,7 @@ from cdedb.common.roles import (
     ALL_ADMIN_VIEWS,
     roles_to_db_role,
 )
-from cdedb.config import SecretsConfig, TestConfig, get_configpath, set_configpath
+from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
@@ -325,18 +325,15 @@ class BasicTest(unittest.TestCase):
 
     storage_dir: ClassVar[pathlib.Path]
     testfile_dir: ClassVar[pathlib.Path]
-    configpath: ClassVar[pathlib.Path]
-    _orig_configpath: ClassVar[pathlib.Path]
-    conf: ClassVar[TestConfig]
+    _orig_config_paths: ClassVar[list[pathlib.Path]]
+    conf: ClassVar[Config]
     secrets: ClassVar[SecretsConfig]
 
     @classmethod
     def setUpClass(cls) -> None:
-        configpath = get_configpath()
-        cls.configpath = configpath
         # save the configpath in an extra variable to reset it after each test
-        cls._orig_configpath = configpath
-        cls.conf = TestConfig()
+        cls.conf = Config()
+        cls._orig_config_paths = cls.conf.get_config_paths()
         cls.secrets = SecretsConfig()
         cls.storage_dir = cls.conf['STORAGE_DIR']
         cls.testfile_dir = cls.storage_dir / "testfiles"
@@ -355,7 +352,7 @@ class BasicTest(unittest.TestCase):
             shutil.rmtree(self.storage_dir)
         # reset the configpath after each test. This prevents interference between tests
         # playing around with this.
-        set_configpath(self._orig_configpath)
+        self.conf.set_config_paths(*self._orig_config_paths)
 
     @staticmethod
     def get_sample_data(
@@ -695,11 +692,11 @@ class BrowserTest(CdEDBTest):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        # pass the cdedb config path to the subprocess
+        # pass config environment to subprocess.
         cls.serverProcess = subprocess.Popen(
-            ['python3', '-m', 'cdedb', 'dev', 'serve', '--test'],
+            ['python3', '-m', 'cdedb', 'dev', 'serve'],
             stderr=subprocess.DEVNULL,
-            env=os.environ.copy(),
+            env=os.environ.copy() | cls.conf.get_config_env(),
         )
         for _ in range(42):
             try:
@@ -1104,7 +1101,7 @@ def event_keeper(fun: F) -> F:
 
 def execsql(sql: str, verbose: int = 0) -> None:
     """Execute arbitrary SQL-code on the test database."""
-    execute_sql_script(TestConfig(), SecretsConfig(), sql, verbose=verbose)
+    execute_sql_script(Config(), SecretsConfig(), sql, verbose=verbose)
 
 
 class FrontendTest(BackendTest):

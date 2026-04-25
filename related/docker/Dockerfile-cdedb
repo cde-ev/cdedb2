@@ -49,19 +49,21 @@ RUN uv run playwright install --with-deps
 # RUN sudo -u cdedb /usr/local/bin/playwright install
 
 # utilities and to install packages via pip, and package dependencies
-# dependencies:
-# - graphviz for the python package with the same name
-# - libicu-dev for pyicu
-# - libmagic1 for python-magic (see https://github.com/ahupp/python-magic/pull/294)
-# - libsystemd-dev for systemd-python
+# - python package dependencies:
+#   - building/running pyicu: g++ pkg-config python3-dev libicu-dev
+#   - building/running graphviz: graphviz
+#   - building/running python-magic: libmagic1
+#   - building/running python-systemd: libsystemd-dev
 RUN apt-get update && apt-get install --yes --no-install-recommends \
-    python3-dev \
     g++ \
     pkg-config \
+    python3-dev \
+    libicu-dev \
     \
     graphviz \
-    libicu-dev \
+    \
     libmagic1 \
+    \
     libsystemd-dev \
     \
     && rm -rf /var/lib/apt/lists/*
@@ -109,7 +111,8 @@ RUN cp /tmp/autobuild/gitconfig-system /etc/gitconfig \
     && chown www-cde:www-data /etc/cdedb-mailman-htpasswd \
     && chmod 640 /etc/cdedb-mailman-htpasswd \
     \
-    && install -D /tmp/autobuild/localconfig.py /etc/cdedb/config.py \
+    && mkdir -p /etc/cdedb \
+    && touch /etc/cdedb/config.py \
     && touch /etc/cdedb/public-secrets.py \
     \
     && rm -rf /tmp/autobuild \
