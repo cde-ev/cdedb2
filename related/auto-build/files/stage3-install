@@ -34,7 +34,7 @@ sudo -u cdedb git clone ssh://gitea@tracker.cde-ev.de:20009/cdedb/cdedb2.git /cd
 cd /cdedb2
 # custom git config
 # dPROD not present
-sudo -u cdedb cp /media/cdrom0/gitconfig-local /cdedb2/.git/config
+sudo -u cdedb cp /media/cdrom0/gitconfig-local | sudo -u cdedb tee /cdedb2/.git/config > /dev/null
 # set upstream URL in git config
 sudo -u cdedb git remote add origin ssh://gitea@tracker.cde-ev.de:20009/cdedb/cdedb2.git
 
@@ -44,12 +44,8 @@ echo "--------------------------------------------"
 
 cd /cdedb2
 
-# runtime dependencies for the gunicorn runner.
-sudo -u www-cde UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv uv sync --no-dev --group ldap --no-install-project
-
-# devtools
-# dPROD not present
-sudo -u cdedb uv sync --all-groups
+# Setup virtual environments for dev/scripting and for the gunicorn and ldap services.
+sudo make venv www-cde-venv
 
 echo ""
 echo "Create local config files..."
@@ -161,11 +157,13 @@ echo "--------------------------------------------"
 cp /media/cdrom0/cde-ldap.service /etc/systemd/system/
 cp /media/cdrom0/cde-ldap.socket /etc/systemd/system/
 
-# create a separate service file for the test suite, with the right configpath
-# dPROD not present
+# dPROD: dev override and test service not present
+# create a separate service file for the test suite, create dev and test overrides
+mkdir /etc/systemd/system/cde-ldap.service.d/
+mkdir /etc/systemd/system/cde-ldap-test.service.d/
+cp /media/cdrom0/cde-ldap-dev.conf /etc/systemd/system/cde-ldap.service.d/50-dev-override.conf
 cp /media/cdrom0/cde-ldap.service /etc/systemd/system/cde-ldap-test.service
-# ensure the tests is accessible via python path, since config.test_ldap.py performs imports
-sed -i -r -e "s|Environment=CDEDB_CONFIGPATH=/etc/cdedb/config.py|Environment=CDEDB_CONFIGPATH=/cdedb2/tests/config/test_ldap.py\nEnvironment=PYTHONPATH=/cdedb2/|g" /etc/systemd/system/cde-ldap-test.service
+cp /media/cdrom0/cde-ldap-test.conf /etc/systemd/system/cde-ldap-test.service.d/50-test-override.conf
 
 # add the self-signed certificate to the trusted ldap certificates
 # (note the previous step in stage2)
@@ -198,6 +196,11 @@ echo "--------------------------------------------"
 cp /media/cdrom0/cdedb-app.service /etc/systemd/system/
 cp /media/cdrom0/cdedb-app.socket /etc/systemd/system/
 systemctl enable --now cdedb-app.socket
+
+# dPROD not present
+# Add override for dev environments.
+mkdir /etc/systemd/system/cdedb-app.service.d/
+cp /media/cdrom0/cdedb-app-dev.conf /etc/systemd/system/cdedb-app.service.d/50-dev-override.conf
 
 # Add a service to auto restart the service upon some file changes.
 # dPROD not present

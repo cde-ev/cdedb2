@@ -57,7 +57,11 @@ echo "--------------------------------------------"
 # this is categorized into
 # - devtools
 # - runtime dependencies (app, postgres, latex)
-# - playwright dependencies
+# - python package dependencies:
+#   - building/running pyicu: g++ pkg-config python3-dev libicu-dev
+#   - building/running graphviz: graphviz
+#   - building/running python-magic: libmagic1
+#   - building/running python-systemd: libsystemd-dev
 apt-get install --yes --no-install-recommends                       \
     openssh-server sudo git file mc emacs-nox vim htop make gettext \
     \
@@ -74,16 +78,29 @@ apt-get install --yes --no-install-recommends                       \
     \
     python3-pip                                                     \
     \
-    g++ pkg-config graphviz libmagic1                               \
-    python3-dev libicu-dev libsystemd-dev libjpeg-dev libxml2-dev   \
-    libxslt1-dev libpq-dev
+    g++ pkg-config python3-dev libicu-dev                           \
+    \
+    graphviz                                                        \
+    \
+    libmagic1                                                       \
+    \
+    libsystemd-dev
 
 python3 -m pip install --break-system-packages "uv>=0.11.0"
-cat >> ~/.bashrc << 'EOF'
 
-eval "$(uv generate-shell-completion bash)"
-eval "$(uvx --generate-shell-completion bash)"
-EOF
+echo "Setting up uv shell-completion and python directory for root"
+cat /media/cdrom0/root-bashrc >> /root/.bashrc
+
+echo "Setting up uv shell-completion and python directory for root"
+cat /media/cdrom0/root-bashrc >> /root/.bashrc
+
+echo "Creating global uv config"
+mkdir -p /etc/uv
+cp /media/cdrom0/etc-uv.toml /etc/uv/uv.toml
+
+echo "Creating root uv config"
+mkdir -p /root/.config/uv
+cp /media/cdrom0/root-uv.toml /root/.config/uv/uv.toml
 
 for file in /var/cache/apt/archives/*.deb
 do
@@ -93,7 +110,7 @@ done
 echo ""
 echo "We do not initialize playwright as this consumes lots of space."
 echo "To do so later run the following command as user cdedb:"
-echo "uv playwright install --with-deps"
+echo "sudo uv run playwright install --with-deps"
 echo "This matters only when executing the test suite and in that case"
 echo "will fail with a helpful error message."
 
