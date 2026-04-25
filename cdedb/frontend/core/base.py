@@ -1142,7 +1142,7 @@ class CoreBaseFrontend(AbstractFrontend):
         - ``cde_user``: Search for a cde user as cde_admin or auditor.
             Allows search by username.
         - ``past_event_user``: Search for an event user to add to a past event as
-            cde_admin or auditor. Allows search by username.
+            cde_admin or auditor.
         - ``pure_assembly_user``: Search for an assembly only user as assembly_admin or
             presider. Needed for external_signup.
         - ``assembly_user``: Search for an assembly user as assembly_admin or presider or auditor.
@@ -1193,7 +1193,6 @@ class CoreBaseFrontend(AbstractFrontend):
         elif kind == "past_event_user":
             if not {"cde_admin", "auditor"} & rs.user.roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-            search_additions.append("username")
             # adding archived users to past events is a common task
             scope = QueryScope.all_core_users
             constraints.append(("is_event_realm", QueryOperators.equal, True))

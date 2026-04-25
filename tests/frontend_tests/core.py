@@ -613,7 +613,6 @@ class TestCoreFrontend(FrontendTest):
         check_kind(
             "past_event_user",
             cde_admins | auditors,
-            allow_username=True,
             ins=("hades",),
             outs=("kalif", "janis"),
         )
