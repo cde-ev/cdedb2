@@ -271,6 +271,7 @@ ASSEMBLY_ATTACHMENT_VERSION_FIELDS = (
     "title",
     "authors",
     "filename",
+    "changenotes",
     "ctime",
     "dtime",
     "file_hash",

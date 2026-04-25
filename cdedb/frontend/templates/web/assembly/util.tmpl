@@ -70,6 +70,9 @@
         {%- if version["dtime"] -%}
             , {% trans dtime=version["dtime"]|datetime(lang=lang) %}deleted {{ dtime }}{% endtrans %}
         {% endif %}
+        {% if version["changenotes"] %}
+            <br /> {% trans %}Changenotes{% endtrans %}: {{ version["changenotes"] }}
+        {% endif %}
     </div>
 {% endmacro %}
 
