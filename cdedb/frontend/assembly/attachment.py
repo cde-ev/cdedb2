@@ -424,7 +424,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdata("title", "authors", "filename")
+    @REQUESTdata("title", "authors", "filename", "changenotes")
     def change_attachment_version(
         self,
         rs: RequestState,
@@ -434,6 +434,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         title: str,
         filename: vtypes.Identifier,
         authors: Optional[str],
+        changenotes: Optional[str],
     ) -> Response:
         """Change the metadata of a new version of an existing attachment."""
         # the check that the attachment belongs to the assembly is already done in
@@ -454,6 +455,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             'title': title,
             'filename': filename,
             'authors': authors,
+            'changenotes': changenotes,
         }
         code = self.assemblyproxy.change_attachment_version(rs, data)
         rs.notify_return_code(code, success=n_("Attachment changed."))
