@@ -35,5 +35,3 @@ immediately takes effect for every single config object anywhere, regardless of 
 before or after the override.
 
 Note that it is not possible to directly write to the config.
-
-.. [#apacheconfig] For the subtleties of the Apache Configuration, see :doc:`Design_WSGI`.
