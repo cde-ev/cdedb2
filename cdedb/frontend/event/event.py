@@ -1818,10 +1818,10 @@ class EventEventMixin(EventBaseFrontend):
 
         # Lock all questionnaire entries
         aq = const.QuestionnaireUsages.additional
-        questionnaire = self.eventproxy.get_questionnaire(rs, event_id, [aq])[aq]
+        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)[aq]
         for entry in questionnaire:
-            entry['readonly'] = True
-        self.eventproxy.set_questionnaire(rs, event_id, {aq: questionnaire})
+            entry.readonly = True
+        self.eventproxy.set_questionnaire(rs, event_id, {aq: questionnaire.as_dicts()})
 
         # Delete non-pseudonymized event keeper only after internal work has been
         # concluded successfully

@@ -74,8 +74,8 @@ class EventFieldMixin(EventBaseFrontend):
         full_questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         for v in full_questionnaire.values():
             for row in v:
-                if row['field_id']:
-                    referenced.add(row['field_id'])
+                if row.field_id:
+                    referenced.add(row.field_id)
         if rs.ambience['event'].lodge_field:
             referenced.add(rs.ambience['event'].lodge_field.id)
         if rs.ambience['event'].reimbursement_iban_field:

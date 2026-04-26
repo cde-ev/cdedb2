@@ -72,7 +72,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         current = {
             f"{key}_{i}": value
             for i, entry in enumerate(questionnaire)
-            for key, value in entry.items()
+            for key, value in entry.as_dict().items()
         }
         merge_dicts(rs.values, current)
         registration_fields = {
@@ -83,7 +83,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         }
         checksum = get_hash(json_serialize(questionnaire).encode())
 
-        return questionnaire, checksum, registration_fields
+        return questionnaire.as_dicts(), checksum, registration_fields
 
     def configure_questionnaire_form(
         self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages
@@ -140,15 +140,10 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages
     ) -> DefaultReturnCode:
         """Deduplicated code to set questionnaire rows of one kind."""
-        other_kinds = set(const.QuestionnaireUsages) - {kind}
-        other_questionnaire = self.eventproxy.get_questionnaire(
-            rs, event_id, kinds=other_kinds
-        )
+        other_questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
+        other_questionnaire.pop(kind)
         other_used_fields = {
-            e['field_id']
-            for v in other_questionnaire.values()
-            for e in v
-            if e['field_id']
+            e.field_id for v in other_questionnaire.values() for e in v if e.field_id
         }
 
         checksum = request_extractor(rs, {"checksum": str | None})["checksum"]
@@ -190,11 +185,9 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         """
         if rs.has_validation_errors() and not internal:
             return self.redirect(rs, "event/show_event")
-        add_questionnaire = unwrap(
-            self.eventproxy.get_questionnaire(
-                rs, event_id, kinds=(const.QuestionnaireUsages.additional,)
-            )
-        )
+        add_questionnaire = self.eventproxy.get_questionnaire(rs, event_id)[
+            const.QuestionnaireUsages.additional
+        ]
         wish_data = {}
         if not preview:
             registration_id = self.eventproxy.list_registrations(
@@ -215,7 +208,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             }
             merge_dicts(rs.values, values)
             if field := rs.ambience['event'].lodge_field:
-                if any(row['field_id'] == field.id for row in add_questionnaire):
+                if any(row.field_id == field.id for row in add_questionnaire):
                     wish_data = self._get_user_lodgement_wishes(rs, event_id)
         else:
             if not self.is_privileged(rs, EventPrivileges.basic_read):
@@ -288,7 +281,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         deletes = {i for i in range(num) if del_flags[f'delete_{i}']}
         spec: vtypes.TypeMapping = dict(
             QUESTIONNAIRE_ROW_MANDATORY_FIELDS,
-            field_id=Optional[vtypes.ID],
+            field_id=vtypes.ID | None,
         )
         marker = 1
         while marker < 2**10:
@@ -395,9 +388,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
                 # we want to render the errors from reorder_questionnaire on this page,
                 # so we only redirect to another page if 'kind' does not pass validation
                 pass
-        questionnaire = unwrap(
-            self.eventproxy.get_questionnaire(rs, event_id, kinds=(kind,))
-        )
+        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)[kind]
         redirects = {
             const.QuestionnaireUsages.registration: "event/configure_registration",
             const.QuestionnaireUsages.additional: "event/configure_additional_questionnaire",
@@ -429,9 +420,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.reorder_questionnaire_form(rs, event_id, kind=kind)
 
-        questionnaire = unwrap(
-            self.eventproxy.get_questionnaire(rs, event_id, kinds=(kind,))
-        )
+        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)[kind].as_dicts()
 
         if not set(order) == set(range(len(questionnaire))):
             rs.append_validation_error((

@@ -56,6 +56,7 @@ from cdedb.common import (
     CdEDBObject,
     User,
     cast_field_entries,
+    cast_field_value,
     cast_fields,
     n_,
     normalize_field_entries,
@@ -71,6 +72,7 @@ from cdedb.common.query import (
     make_registration_query_spec,
 )
 from cdedb.common.sorting import Sortkey, xsorted
+from cdedb.config import Config
 from cdedb.filter import datetime_filter
 from cdedb.models.common import (
     AbstractMetaData,
@@ -81,6 +83,7 @@ from cdedb.models.common import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+CONF = Config()
 
 if TYPE_CHECKING:
     from cdedb.database.query import (
@@ -1013,20 +1016,81 @@ class SyncTrackGroup(TrackGroup, CourseChoiceObject):  # type: ignore[misc]
 
 
 @dataclasses.dataclass
-class Questionnaire:
-    registration: list["QuestionnaireRow"]
-    additional: list["QuestionnaireRow"]
-
-
-@dataclasses.dataclass
 class QuestionnaireRow(EventDataclass):
     database_table = "event.questionnaire_rows"
 
-    event: Event
-    field: Optional[EventField]
+    event_id: vtypes.ID = dataclasses.field(
+        metadata=Meta.request_exclude.as_dict,
+    )
+    event: Event = dataclasses.field(
+        init=False,
+        compare=False,
+        repr=False,
+        default=cast(Event, None),
+        metadata=Meta.input_exclude.as_dict,
+    )
+    field_id: vtypes.ID | None
+    pos: int
+    title: str
+    info: str
+    readonly: bool
+    default_value: Any
+    kind: const.QuestionnaireUsages
+
+    @property
+    def field(self) -> EventField | None:
+        return self.event.fields.get(self.field_id)  # type: ignore[arg-type]
+
+    @classmethod
+    def from_database(cls, data: "CdEDBObject") -> "Self":
+        event: Event = data.pop("event")
+        ret = super().from_database(data)
+        ret.event = event
+        if ret.field:
+            # Deserialize the stored string into the datatype of the field if able.
+            ret.default_value = cast_field_value(ret.default_value, ret.field.kind)
+            # Special case for datetimes: Convert them to the default timezone so
+            #  they can be submitted again even without the timezone.
+            #  This is required for use with 'datetime-local' inputs.
+            if ret.field.kind == const.FieldDatatypes.datetime:
+                if ret.default_value:
+                    ret.default_value = ret.default_value.astimezone(
+                        CONF["DEFAULT_TIMEZONE"]
+                    )
+        return ret
 
     def get_sortkey(self) -> Sortkey:
-        return (0,)
+        return (
+            self.kind,
+            self.pos,
+        )
+
+
+class Questionnaire(list[QuestionnaireRow]):
+    def as_dicts(self) -> list[CdEDBObject]:
+        return [row.as_dict() for row in self]
+
+
+class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
+    @classmethod
+    def from_database(cls, data: Collection["CdEDBObject"]) -> "Self":
+        rows: dict[const.QuestionnaireUsages, Questionnaire] = collections.defaultdict(
+            Questionnaire
+        )
+        for row in QuestionnaireRow.many_from_database(data).values():
+            rows[row.kind].append(row)
+        return cls(rows)
+
+    @property
+    def registration(self) -> Questionnaire:
+        return self[const.QuestionnaireUsages.registration]
+
+    @property
+    def additional(self) -> Questionnaire:
+        return self[const.QuestionnaireUsages.additional]
+
+    def as_dict(self) -> dict[const.QuestionnaireUsages, list[CdEDBObject]]:
+        return {kind: questionnaire.as_dicts() for kind, questionnaire in self.items()}
 
 
 @dataclasses.dataclass

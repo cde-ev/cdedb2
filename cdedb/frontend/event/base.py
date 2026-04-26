@@ -623,13 +623,13 @@ class EventBaseFrontend(AbstractUserFrontend):
         self, rs: RequestState, kind: const.QuestionnaireUsages
     ) -> CdEDBObject:
         """Extract questionnaire inputs."""
-        questionnaire = unwrap(
-            self.eventproxy.get_questionnaire(rs, rs.ambience["event"].id, kinds=[kind])
-        )
+        questionnaire = self.eventproxy.get_questionnaire(rs, rs.ambience["event"].id)[
+            kind
+        ]
         field_ids = {
-            entry["field_id"]
+            entry.field_id
             for entry in questionnaire
-            if entry["field_id"] and not entry["readonly"]
+            if entry.field_id and not entry.readonly
         }
         return event_associated_fields_extractor(
             rs, rs.ambience["event"], const.FieldAssociations.registration, field_ids

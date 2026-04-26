@@ -43,7 +43,6 @@ from cdedb.common import (
     DeletionBlockers,
     RequestState,
     cast_field_entries,
-    cast_field_value,
     cast_fields,
     json_serialize,
     make_persona_name,
@@ -1345,46 +1344,15 @@ class EventBaseBackend(EventLowLevelBackend):
         self,
         rs: RequestState,
         event_id: int,
-        kinds: Optional[Collection[const.QuestionnaireUsages]] = None,
-    ) -> CdEDBQuestionnaire:
-        """Retrieve the questionnaire rows for a specific event.
-
-        Rows are seperated by kind. Specifying a kinds will get you only rows
-        of those kinds, otherwise you get them all.
-        """
+    ) -> models.QuestionnaireContainer:
+        """Retrieve the questionnaire rows for a specific event."""
         event_id = affirm(vtypes.ID, event_id)
         event = self.get_event(rs, event_id)
-        kinds = affirm(set[const.QuestionnaireUsages], kinds or [])
-        columns = ', '.join(k for k in QUESTIONNAIRE_ROW_FIELDS if k != 'event_id')
-        query = f"SELECT {columns} FROM {models.QuestionnaireRow.database_table}"
-        constraints = ["event_id = %(event_id)s"]
-        params: CdEDBObject = {"event_id": event_id}
-        if kinds:
-            constraints.append("kind = ANY(%(kinds)s)")
-            params["kinds"] = kinds
-        query += " WHERE " + " AND ".join(c for c in constraints)
-        d = self.query_all(rs, query, params)
-        for row in d:
-            row['kind'] = const.QuestionnaireUsages(row['kind'])
-            if field := event.fields.get(row['field_id']):
-                # Deserialize the stored string into the datatype of the field if able.
-                row['default_value'] = cast_field_value(
-                    row['default_value'], field.kind
-                )
-                # Special case for datetimes: Convert them to the default timezone so
-                #  they can be submitted again even without the timezone.
-                #  This is required for use with 'datetime-local' inputs.
-                if field.kind == const.FieldDatatypes.datetime:
-                    if row['default_value']:
-                        row['default_value'] = row['default_value'].astimezone(
-                            self.conf["DEFAULT_TIMEZONE"]
-                        )
-
-        ret = {
-            k: xsorted([e for e in d if e['kind'] == k], key=lambda x: x['pos'])
-            for k in kinds or const.QuestionnaireUsages
-        }
-        return ret
+        query = models.QuestionnaireRow.get_select_query([event_id])
+        data = self.query_all(rs, *query)
+        for row in data:
+            row["event"] = event
+        return models.QuestionnaireContainer.from_database(data)
 
     @access("event")
     def set_questionnaire(
@@ -1401,7 +1369,7 @@ class EventBaseBackend(EventLowLevelBackend):
         event = self.get_event(rs, event_id)
         fees_by_field = self.get_event_fees_per_entity(rs, event_id).fields
         if data is not None:
-            current = self.get_questionnaire(rs, event_id)
+            current = self.get_questionnaire(rs, event_id).as_dict()
             current.update(data)
             field_defitions = {k: v.as_dict() for k, v in event.fields.items()}
             # FIXME what is the correct type here?
@@ -1780,7 +1748,7 @@ class EventBaseBackend(EventLowLevelBackend):
                     entity_key="event_id",
                 )
             )
-            questionnaire = self.get_questionnaire(rs, event_id)
+            questionnaire = self.get_questionnaire(rs, event_id).as_dict()
             persona_ids = tuple(reg['persona_id'] for reg in registrations.values())
             personas = self.core.get_event_users(rs, persona_ids, event_id)
 
