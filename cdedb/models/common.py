@@ -112,7 +112,7 @@ class MetaFlag(AbstractFlag):
     """Validate this field as `Any` in `cls.validation_fields(creation=False)`.
     Can be used for fields that are validated manually."""
     validate_skip = validate_creation_skip | validate_update_skip
-    """Validate this field as `Any` in `cls.validation_fields(creation=False)`.
+    """Validate this field as `Any` in `cls.validation_fields(creation=None)`.
     Can be used for fields that are validated manually."""
 
     # request

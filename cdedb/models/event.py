@@ -1071,13 +1071,11 @@ class QuestionnaireRow(EventDataclass):
     )
     field_id: vtypes.ID | None
     pos: int
-    title: str
-    info: str
+    title: str | None
+    info: str | None
     readonly: bool
     default_value: Any
-    kind: const.QuestionnaireUsages = dataclasses.field(
-        metadata=Meta.validate_exclude.as_dict
-    )
+    kind: const.QuestionnaireUsages
 
     @property
     def field(self) -> EventField | None:

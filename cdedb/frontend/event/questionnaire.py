@@ -128,25 +128,27 @@ class EventQuestionnaireMixin(EventBaseFrontend):
     ) -> DefaultReturnCode:
         """Deduplicated code to set questionnaire rows of one kind."""
         checksum = request_extractor(rs, {"checksum": str | None})["checksum"]
-        full_questionnaire, questionnaire, old_checksum = (
+        all_questionnaires, questionnaire, old_checksum = (
             self._prepare_questionnaire_form(rs, event_id, kind)
         )
 
         new_questionnaire = process_dynamic_input(
             rs,
             models.QuestionnaireRow,
-            existing=questionnaire.get_ids(),
+            existing=list(range(len(questionnaire))),
             spec=dict(models.QuestionnaireRow.requestdict_fields(creation=False)),
             creation_spec=dict(
                 models.QuestionnaireRow.requestdict_fields(creation=True)
             ),
-            additional_validation={
-                "event": rs.ambience["event"],
-                "full_questionnaire": full_questionnaire,
-            },
+            skip_validation=True,
         )
         new_questionnaire = check(
-            rs, vtypes.Questionnaire, new_questionnaire, event=rs.ambience["event"]
+            rs,
+            vtypes.Questionnaire,
+            list(filter(None, new_questionnaire.values())),
+            kind=kind,
+            event=rs.ambience["event"],
+            all_questionnaires=all_questionnaires,
         )
 
         if rs.has_validation_errors() or new_questionnaire is None:

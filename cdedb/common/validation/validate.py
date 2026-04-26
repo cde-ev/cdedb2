@@ -3241,8 +3241,7 @@ def _questionnaire_row(
     elif val['default_value']:
         val['default_value'] = None
 
-    val['readonly'] = bool(val['readonly']) if field_id else None
-    if val['readonly'] and not kind.allow_readonly():
+    if val['readonly'] and val['field_id'] is not None and not kind.allow_readonly():
         msg = n_("Registration questionnaire rows may not be readonly.")
         errs.append(ValueError(argname_prefix + 'readonly', msg))
 
@@ -3271,16 +3270,13 @@ def _questionnaire(
         row["kind"] = kind
         row["pos"] = i + 1
         row_argname = argname + f"[{kind.name}][{i + 1}]"
-        try:
-            row = _questionnaire_row(
+        with errs:
+            row = _ALL_TYPED[models_event.QuestionnaireRow](
                 row,
                 row_argname,
                 available_fields=available_fields,
             )
-        except ValidationSummary as e:
-            errs.extend(e)
-            continue
-        ret.append(row)
+            ret.append(row)
 
     for e1, e2 in itertools.combinations(ret, 2):
         if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:
