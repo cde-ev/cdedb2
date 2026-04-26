@@ -2249,6 +2249,16 @@ class CoreBaseFrontend(AbstractFrontend):
                 }
                 self.do_mail(rs, "privilege_change_finalized", headers, params)
         return self.redirect(rs, "core/list_privilege_changes")
+        if case_status == const.PrivilegeChangeStati.approved:
+            to = {"vorstand@cde-ev.de", META_ADMIN_ADDRESS}
+            self.do_mail(
+                    rs,
+                    "privilege_change_notification",
+                    {'To': to, 'Subject': "Admin hinzugefügt/Adminrolle geändert"},
+                    {
+                        'personas': personas,
+                    },
+                )
 
     @periodic("privilege_change_remind", period=24)
     def privilege_change_remind(
