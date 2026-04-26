@@ -3243,11 +3243,13 @@ def _questionnaire_row(
                 kind=field.kind,
                 **kwargs,
             )
+            # TODO: check field entries.
     # remove default value without a linked field
     elif val['default_value']:
         val['default_value'] = None
 
     if val['readonly'] and val['field_id'] is not None and not kind.allow_readonly():
+        # TODO: more generic error message?
         msg = n_("Registration questionnaire rows may not be readonly.")
         errs.append(ValueError('readonly', msg))
 
@@ -3268,7 +3270,7 @@ def _questionnaire(
     **kwargs: Any,
 ) -> Questionnaire:
     val = _iterable(val, argname, **kwargs)
-    available_fields = all_questionnaires.get_available_fields(kind, event)
+    available_fields = all_questionnaires.get_available_fields(kind)
 
     errs = ValidationSummary()
     ret: list[CdEDBObject] = []

@@ -1350,7 +1350,7 @@ class EventBaseBackend(EventLowLevelBackend):
         data = self.query_all(rs, *query)
         for row in data:
             row["event"] = event
-        return models.QuestionnaireContainer.from_database(data)
+        return models.QuestionnaireContainer.from_database(data, event)
 
     @access("event")
     def set_questionnaire(

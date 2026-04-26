@@ -84,9 +84,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             {
                 "questionnaire": questionnaire,
                 "checksum": checksum,
-                "registration_fields": full_questionnaire.get_available_fields(
-                    kind, rs.ambience["event"]
-                ),
+                "registration_fields": full_questionnaire.get_available_fields(kind),
                 "kind": kind,
             },
         )

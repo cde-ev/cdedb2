@@ -1062,31 +1062,23 @@ class QuestionnaireRow(EventDataclass):
     event_id: vtypes.ID = dataclasses.field(
         metadata=(Meta.request_exclude | Meta.asdict_exclude).as_dict,
     )
-    event: Event = dataclasses.field(
-        init=False,
-        compare=False,
-        repr=False,
-        default=cast(Event, None),
-        metadata=Meta.input_exclude.as_dict,
-    )
     field_id: vtypes.ID | None
+    field: EventField | None = dataclasses.field(
+        init=False, default=None, metadata=(Meta.exclude | Meta.asdict_exclude).as_dict
+    )
     pos: int
     title: str | None
     info: str | None
     readonly: bool
-    default_value: Any
+    default_value: Any  # TODO: ByDatafieldKind maybe some union?
     kind: const.QuestionnaireUsages
-
-    @property
-    def field(self) -> EventField | None:
-        return self.event.fields.get(self.field_id)  # type: ignore[arg-type]
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
         event: Event = data.pop("event")
         ret = super().from_database(data)
-        ret.event = event
-        if ret.field:
+        if ret.field_id:
+            ret.field = event.fields[ret.field_id]
             # Deserialize the stored string into the datatype of the field if able.
             ret.default_value = cast_field_value(ret.default_value, ret.field.kind)
             # Special case for datetimes: Convert them to the default timezone so
@@ -1110,9 +1102,6 @@ class Questionnaire(list[QuestionnaireRow]):
     def as_dicts(self) -> list[CdEDBObject]:
         return [row.as_dict() for row in self]
 
-    def get_ids(self) -> set[int]:
-        return {row.id for row in self}
-
     def get_field_ids(self) -> set[int]:
         return {row.field_id for row in self if row.field_id is not None}
 
@@ -1120,6 +1109,12 @@ class Questionnaire(list[QuestionnaireRow]):
     def allows(
         cls, kind: const.QuestionnaireUsages, field: EventField, has_fees: bool
     ) -> bool:
+        """
+        Determines whether the given field is allowed for the given questionnaire kind.
+
+        :param has_fees: True if the given field is used in a conditional fee, which
+            is incompatible with some questionnaire kinds.
+        """
         if not field.association == const.FieldAssociations.registration:
             return False
         if not kind.allow_fee_condition() and has_fees:
@@ -1128,34 +1123,29 @@ class Questionnaire(list[QuestionnaireRow]):
 
 
 class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
+    event: Event
+
     @classmethod
-    def from_database(cls, data: Collection["CdEDBObject"]) -> "Self":
+    def from_database(cls, data: Collection["CdEDBObject"], event: Event) -> "Self":
         rows: dict[const.QuestionnaireUsages, Questionnaire] = collections.defaultdict(
             Questionnaire
         )
         for row in QuestionnaireRow.many_from_database(data).values():
             rows[row.kind].append(row)
-        return cls(rows)
+        ret = cls(rows)
+        ret.event = event
+        return ret
 
     def __missing__(self, key: const.QuestionnaireUsages) -> Questionnaire:
+        """Allows accessing empty kinds, which are not initialized in this dict."""
         return Questionnaire()
-
-    @property
-    def registration(self) -> Questionnaire:
-        return self[const.QuestionnaireUsages.registration]
-
-    @property
-    def additional(self) -> Questionnaire:
-        return self[const.QuestionnaireUsages.additional]
 
     def as_dict(self) -> dict[const.QuestionnaireUsages, list[CdEDBObject]]:
         return {kind: questionnaire.as_dicts() for kind, questionnaire in self.items()}
 
-    def get_ids(self) -> set[int]:
-        return set().union(*(q.get_ids() for q in self.values()))
-
     def field_usage(self) -> Mapping[int, const.QuestionnaireUsages]:
         """Map field ids to the questionnaire kind they are used in."""
+        # These dicts are disjunct therfore the chainmap is just a big union.
         return collections.ChainMap(
             *(
                 {field_id: kind}
@@ -1165,14 +1155,14 @@ class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
         )
 
     def get_available_fields(
-        self, kind: const.QuestionnaireUsages, event: Event
+        self, kind: const.QuestionnaireUsages
     ) -> CdEDataclassMap[EventField]:
         """Return all fields available for use in a questionnaire of the given kind."""
         field_usage = self.field_usage()
-        fees_by_field = EventFee.get_fees_per_entity(event).fields
+        fees_by_field = EventFee.get_fees_per_entity(self.event).fields
         return {
             field.id: field
-            for field in event.fields.values()
+            for field in self.event.fields.values()
             if Questionnaire.allows(
                 kind=kind, field=field, has_fees=bool(fees_by_field[field.id])
             )
