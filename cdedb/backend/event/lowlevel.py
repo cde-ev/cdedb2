@@ -8,7 +8,6 @@ used by the `EventBaseBackend` and its subclasses.
 import abc
 import collections
 import copy
-import dataclasses
 import decimal
 from collections.abc import Collection
 from pathlib import Path
@@ -49,18 +48,6 @@ from cdedb.common.privileges import (
 )
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.query import DatabaseValue_s, ParamDict
-from cdedb.fee_condition_parser.evaluation import get_referenced_names
-
-
-@dataclasses.dataclass
-class EventFeesPerEntity:
-    """Simple container for data on event fee references.
-
-    Each member is a map of entities to a set of fees that reference that entity.
-    """
-
-    fields: dict[int, set[int]]
-    parts: dict[int, set[int]]
 
 
 class EventLowLevelBackend(AbstractBackend):
@@ -400,43 +387,6 @@ class EventLowLevelBackend(AbstractBackend):
 
     get_event: _NewGetEventProtocol
 
-    @access("event")
-    def get_event_fees_per_entity(
-        self, rs: RequestState, event_id: int
-    ) -> EventFeesPerEntity:
-        """Retrieve maps of entites to all event fees, referencing that entity."""
-        event = self.get_event(rs, event_id)
-        field_names_to_id: dict[str, int] = {
-            e.field_name: e.id for e in event.fields.values()
-        }
-        part_names_to_id: dict[str, int] = {
-            e.shortname: e.id for e in event.parts.values()
-        }
-
-        event_fee_references = {
-            e.id: get_referenced_names(
-                fcp_parsing.parse(e.condition) if e.condition else None
-            )
-            for e in event.fees.values()
-        }
-
-        fields: dict[int, set[int]] = {
-            field_id: set() for field_id in field_names_to_id.values()
-        }
-        parts: dict[int, set[int]] = {
-            part_id: set() for part_id in part_names_to_id.values()
-        }
-        for fee_id, rn in event_fee_references.items():
-            for fn in rn.field_names:
-                fields[field_names_to_id[fn]].add(fee_id)
-            for pn in rn.part_names:
-                parts[part_names_to_id[pn]].add(fee_id)
-
-        return EventFeesPerEntity(
-            fields=fields,
-            parts=parts,
-        )
-
     @abc.abstractmethod
     def delete_event_fee(self, rs: RequestState, fee_id: int) -> DefaultReturnCode: ...
 
@@ -464,7 +414,9 @@ class EventLowLevelBackend(AbstractBackend):
         )
         assert part is not None
 
-        event_fees_per_part = self.get_event_fees_per_entity(rs, part['event_id']).parts
+        event = self.get_event(rs, part["event_id"])
+
+        event_fees_per_part = models.EventFee.get_fees_per_entity(event).parts
         if fee_ids := event_fees_per_part[part_id]:
             blockers["event_fees"] = list(fee_ids)
 
@@ -1020,12 +972,11 @@ class EventLowLevelBackend(AbstractBackend):
         event_id = affirm(vtypes.ID, event_id)
         blockers = {}
 
-        # This also ensures the field belongs to this event.
-        current = self._get_event_field(rs, field_id, event_id=event_id)
+        event = self.get_event(rs, event_id)
+        if field_id not in event.fields:
+            raise KeyError
 
-        event_fees_per_field = self.get_event_fees_per_entity(
-            rs, current.event_id
-        ).fields
+        event_fees_per_field = models.EventFee.get_fees_per_entity(event).fields
         if fee_ids := event_fees_per_field[field_id]:
             blockers["event_fees"] = list(fee_ids)
 
@@ -1192,7 +1143,8 @@ class EventLowLevelBackend(AbstractBackend):
         if not updated_fields | deleted_fields <= existing_fields:
             raise ValueError(n_("Non-existing fields specified."))
 
-        event_fees_per_field = self.get_event_fees_per_entity(rs, event_id).fields
+        event = self.get_event(rs, event_id)
+        event_fees_per_field = models.EventFee.get_fees_per_entity(event).fields
 
         # Do deletion first to avoid error due to duplicate field names.
         for x in mixed_existence_sorter(deleted_fields):

@@ -32,7 +32,7 @@ import decimal
 import functools
 import logging
 import sys
-from collections.abc import Callable, Collection
+from collections.abc import Callable, Collection, Mapping
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -73,6 +73,7 @@ from cdedb.common.query import (
 )
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.config import Config
+from cdedb.fee_condition_parser.evaluation import get_referenced_names
 from cdedb.filter import datetime_filter
 from cdedb.models.common import (
     AbstractMetaData,
@@ -713,6 +714,39 @@ class EventFee(EventDataclass):
     def get_sortkey(self) -> Sortkey:
         return self.kind, self.title, self.amount or decimal.Decimal(0)
 
+    @staticmethod
+    def get_fees_per_entity(event: Event) -> "EventFeesPerEntity":
+        field_names_to_id: dict[str, int] = {
+            e.field_name: e.id for e in event.fields.values()
+        }
+        part_names_to_id: dict[str, int] = {
+            e.shortname: e.id for e in event.parts.values()
+        }
+
+        event_fee_references = {
+            e.id: get_referenced_names(
+                fcp_parsing.parse(e.condition) if e.condition else None
+            )
+            for e in event.fees.values()
+        }
+
+        fields: dict[int, set[int]] = {
+            field_id: set() for field_id in field_names_to_id.values()
+        }
+        parts: dict[int, set[int]] = {
+            part_id: set() for part_id in part_names_to_id.values()
+        }
+        for fee_id, rn in event_fee_references.items():
+            for fn in rn.field_names:
+                fields[field_names_to_id[fn]].add(fee_id)
+            for pn in rn.part_names:
+                parts[part_names_to_id[pn]].add(fee_id)
+
+        return EventFeesPerEntity(
+            fields=fields,
+            parts=parts,
+        )
+
 
 @dataclasses.dataclass
 class EventField(EventDataclass):
@@ -1070,6 +1104,22 @@ class Questionnaire(list[QuestionnaireRow]):
     def as_dicts(self) -> list[CdEDBObject]:
         return [row.as_dict() for row in self]
 
+    def get_ids(self) -> set[int]:
+        return {row.id for row in self}
+
+    def get_field_ids(self) -> set[int]:
+        return {row.field_id for row in self if row.field_id is not None}
+
+    @classmethod
+    def allows(
+        cls, kind: const.QuestionnaireUsages, field: EventField, has_fees: bool
+    ) -> bool:
+        if not field.association == const.FieldAssociations.registration:
+            return False
+        if not kind.allow_fee_condition() and has_fees:
+            return False
+        return True
+
 
 class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
     @classmethod
@@ -1081,6 +1131,9 @@ class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
             rows[row.kind].append(row)
         return cls(rows)
 
+    def __missing__(self, key: const.QuestionnaireUsages) -> Questionnaire:
+        return Questionnaire()
+
     @property
     def registration(self) -> Questionnaire:
         return self[const.QuestionnaireUsages.registration]
@@ -1091,6 +1144,34 @@ class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
 
     def as_dict(self) -> dict[const.QuestionnaireUsages, list[CdEDBObject]]:
         return {kind: questionnaire.as_dicts() for kind, questionnaire in self.items()}
+
+    def get_ids(self) -> set[int]:
+        return set().union(*(q.get_ids() for q in self.values()))
+
+    def field_usage(self) -> Mapping[int, const.QuestionnaireUsages]:
+        """Map field ids to the questionnaire kind they are used in."""
+        return collections.ChainMap(
+            *(
+                {field_id: kind}
+                for kind, q in self.items()
+                for field_id in q.get_field_ids()
+            )
+        )
+
+    def get_available_fields(
+        self, kind: const.QuestionnaireUsages, event: Event
+    ) -> CdEDataclassMap[EventField]:
+        """Return all fields available for use in a questionnaire of the given kind."""
+        field_usage = self.field_usage()
+        fees_by_field = EventFee.get_fees_per_entity(event).fields
+        return {
+            field.id: field
+            for field in event.fields.values()
+            if Questionnaire.allows(
+                kind=kind, field=field, has_fees=bool(fees_by_field[field.id])
+            )
+            and field_usage.get(field.id, kind) == kind
+        }
 
 
 @dataclasses.dataclass
@@ -1578,3 +1659,14 @@ class AttendeeStats:
 
     involved: Attendees
     uninvolved: Attendees
+
+
+@dataclasses.dataclass
+class EventFeesPerEntity:
+    """Simple container for data on event fee references.
+
+    Each member is a map of entities to a set of fees that reference that entity.
+    """
+
+    fields: dict[int, set[int]]
+    parts: dict[int, set[int]]
