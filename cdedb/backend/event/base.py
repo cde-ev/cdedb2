@@ -1388,9 +1388,7 @@ class EventBaseBackend(EventLowLevelBackend):
             ret = 1
             for pos, row in enumerate(data):
                 new_row = copy.deepcopy(row)
-                new_row['pos'] = pos
                 new_row['event_id'] = event_id
-                new_row['kind'] = kind
                 ret *= self.sql_insert(
                     rs, models.QuestionnaireRow.database_table, new_row
                 )

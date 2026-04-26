@@ -215,6 +215,16 @@ class ValidationSummary(ValueError, Sequence[Exception]):
         with self.callback(callback):
             yield self
 
+    @contextlib.contextmanager
+    def append_to_argname(self, suffix: str) -> Iterator[Self]:
+
+        def callback(errors: Iterable[Exception]) -> list[Exception]:
+            ret = [exc.__class__(exc.args[0] + suffix, *exc.args[1:]) for exc in errors]
+            return ret
+
+        with self.callback(callback):
+            yield self
+
     def __enter__(self) -> Self:
         return self
 
@@ -3212,12 +3222,11 @@ QUESTIONNAIRE_ROW_MANDATORY_FIELDS: TypeMapping = {
 @_create_dataclass_validator(models_event.QuestionnaireRow)
 def _questionnaire_row(
     val: CdEDBObject,
-    argname: str = "questionnaire_row",
+    argname: str = "",
     *,
     available_fields: CdEDataclassMap[models_event.EventField],
     **kwargs: Any,
 ) -> CdEDBObject:
-    argname_prefix = argname + "." if argname else ""
 
     # TODO allow selection by field_name for questionnaire import
 
@@ -3226,10 +3235,7 @@ def _questionnaire_row(
 
     if field_id := val["field_id"]:
         if not (field := available_fields.get(field_id)):
-            # TODO shouldn't this be field_id?
-            errs.append(
-                KeyError(argname_prefix + 'default_value', n_("Invalid field."))
-            )
+            errs.append(KeyError('field_id', n_("Invalid field.")))
         if val['default_value'] and field:
             val['default_value'] = _by_field_datatype(
                 val['default_value'],
@@ -3243,7 +3249,7 @@ def _questionnaire_row(
 
     if val['readonly'] and val['field_id'] is not None and not kind.allow_readonly():
         msg = n_("Registration questionnaire rows may not be readonly.")
-        errs.append(ValueError(argname_prefix + 'readonly', msg))
+        errs.append(ValueError('readonly', msg))
 
     if errs:
         raise errs
@@ -3268,12 +3274,10 @@ def _questionnaire(
     ret: list[CdEDBObject] = []
     for i, row in enumerate(val):
         row["kind"] = kind
-        row["pos"] = i + 1
-        row_argname = argname + f"[{kind.name}][{i + 1}]"
-        with errs:
+        row["pos"] = i
+        with errs.append_to_argname(f"_{i}"):
             row = _ALL_TYPED[models_event.QuestionnaireRow](
                 row,
-                row_argname,
                 available_fields=available_fields,
             )
             ret.append(row)
