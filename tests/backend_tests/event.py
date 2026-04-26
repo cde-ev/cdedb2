@@ -2125,7 +2125,7 @@ class TestEventBackend(BackendTest):
         )
 
     @as_users("berta", "emilia", maintain_data=True)
-    def test_get_questionnaire(self) -> None:
+    def test_get_all_questionnaires(self) -> None:
         event_id = 1
         expectation = {
             const.QuestionnaireUsages.registration: [
@@ -2198,7 +2198,7 @@ class TestEventBackend(BackendTest):
             ],
         }
         self.assertEqual(
-            expectation, self.event.get_questionnaire(self.key, event_id).as_dict()
+            expectation, self.event.get_all_questionnaires(self.key, event_id).as_dict()
         )
 
     @as_users("annika", "garcia")
@@ -2280,7 +2280,7 @@ class TestEventBackend(BackendTest):
         for pos, row in enumerate(rq_data):
             row['pos'] = pos
             row['kind'] = const.QuestionnaireUsages.registration
-        result = self.event.get_questionnaire(self.key, event_id)
+        result = self.event.get_all_questionnaires(self.key, event_id)
         expectation = {
             const.QuestionnaireUsages.additional: aq_data,
             const.QuestionnaireUsages.registration: rq_data,

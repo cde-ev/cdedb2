@@ -71,7 +71,7 @@ class EventFieldMixin(EventBaseFrontend):
             field_id for field_id, fee_ids in event_fees_per_field.items() if fee_ids
         }
         referenced = set()
-        full_questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
+        full_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)
         for v in full_questionnaire.values():
             for row in v:
                 if row.field_id:

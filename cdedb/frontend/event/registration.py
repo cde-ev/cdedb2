@@ -377,7 +377,7 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         course_choice_params = self.get_course_choice_params(rs, event_id, orga=False)
 
-        reg_questionnaire = self.eventproxy.get_questionnaire(rs, event_id)[
+        reg_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[
             const.QuestionnaireUsages.registration
         ]
         return self.render(
@@ -990,7 +990,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             for part in xsorted(rs.ambience['event'].parts.values())
             if part.id in registration['parts']
         )
-        reg_questionnaire = self.eventproxy.get_questionnaire(rs, event_id)[
+        reg_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[
             const.QuestionnaireUsages.registration
         ]
         waitlist_position = self.eventproxy.get_waitlist_position(
@@ -1111,7 +1111,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             if reg_part['status'].has_to_pay()
         }
 
-        reg_questionnaire = self.eventproxy.get_questionnaire(rs, event_id)[
+        reg_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[
             const.QuestionnaireUsages.registration
         ]
         course_choice_params = self.get_course_choice_params(rs, event_id, orga=False)

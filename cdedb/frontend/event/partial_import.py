@@ -75,7 +75,7 @@ class EventImportMixin(EventBaseFrontend):
             'extend_questionnaire': extend_questionnaire,
             'skip_existing_fields': skip_existing_fields,
             'event': rs.ambience['event'],
-            'all_questionnaires': self.eventproxy.get_questionnaire(rs, event_id),
+            'all_questionnaires': self.eventproxy.get_all_questionnaires(rs, event_id),
         }
         data = check(rs, vtypes.SerializedEventQuestionnaireUpload, json_file, **kwargs)
         if rs.has_validation_errors():

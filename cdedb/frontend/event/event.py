@@ -1208,7 +1208,7 @@ class EventEventMixin(EventBaseFrontend):
                 "error", n_("Event is balanced. May not change fee configuration.")
             )
             return self.redirect(rs, "event/fee_summary")
-        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
+        questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)
         fee_data = check(
             rs,
             models.EventFee,
@@ -1820,7 +1820,7 @@ class EventEventMixin(EventBaseFrontend):
 
         # Lock all questionnaire entries
         aq = const.QuestionnaireUsages.additional
-        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)[aq]
+        questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[aq]
         for entry in questionnaire:
             entry.readonly = True
         self.eventproxy.set_questionnaire(rs, event_id, aq, questionnaire.as_dicts())

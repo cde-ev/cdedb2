@@ -1191,7 +1191,7 @@ class EventBaseBackend(EventLowLevelBackend):
         with Atomizer(rs):
             event = self._event_fee_privilege_check(rs, event_id=event_id)
 
-            quest = self.get_questionnaire(rs, event_id)
+            quest = self.get_all_questionnaires(rs, event_id)
             data = affirm(
                 models.EventFee,
                 data,
@@ -1224,7 +1224,7 @@ class EventBaseBackend(EventLowLevelBackend):
             event = self._event_fee_privilege_check(rs, fee_id=fee_id)
             current_fee = event.fees[fee_id]
 
-            quest = self.get_questionnaire(rs, event.id)
+            quest = self.get_all_questionnaires(rs, event.id)
             data = affirm(
                 models.EventFee,
                 data,
@@ -1340,7 +1340,7 @@ class EventBaseBackend(EventLowLevelBackend):
         return num < self.conf["ORGA_ADD_LIMIT"]
 
     @access("event", "droid_quick_partial_export", "droid_orga")
-    def get_questionnaire(
+    def get_all_questionnaires(
         self,
         rs: RequestState,
         event_id: int,
@@ -1371,7 +1371,7 @@ class EventBaseBackend(EventLowLevelBackend):
             data,
             kind=kind,
             event=event,
-            all_questionnaires=self.get_questionnaire(rs, event_id),
+            all_questionnaires=self.get_all_questionnaires(rs, event_id),
         )
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
@@ -1735,7 +1735,7 @@ class EventBaseBackend(EventLowLevelBackend):
                     entity_key="event_id",
                 )
             )
-            questionnaire = self.get_questionnaire(rs, event_id).as_dict()
+            questionnaire = self.get_all_questionnaires(rs, event_id).as_dict()
             persona_ids = tuple(reg['persona_id'] for reg in registrations.values())
             personas = self.core.get_event_users(rs, persona_ids, event_id)
 

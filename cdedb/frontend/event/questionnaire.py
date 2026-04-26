@@ -59,7 +59,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages
     ) -> tuple[models.QuestionnaireContainer, models.Questionnaire, str]:
         """Helper to retrieve some data for questionnaire configuration."""
-        full_questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
+        full_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)
         questionnaire = full_questionnaire[kind]
         current = {
             f"{key}_{i}": value
@@ -182,7 +182,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         """
         if rs.has_validation_errors() and not internal:
             return self.redirect(rs, "event/show_event")
-        add_questionnaire = self.eventproxy.get_questionnaire(rs, event_id)[
+        add_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[
             const.QuestionnaireUsages.additional
         ]
         wish_data = {}
@@ -272,7 +272,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
                 # we want to render the errors from reorder_questionnaire on this page,
                 # so we only redirect to another page if 'kind' does not pass validation
                 pass
-        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)[kind]
+        questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[kind]
         redirects = {
             const.QuestionnaireUsages.registration: "event/configure_registration",
             const.QuestionnaireUsages.additional: "event/configure_additional_questionnaire",
@@ -304,7 +304,9 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.reorder_questionnaire_form(rs, event_id, kind=kind)
 
-        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)[kind].as_dicts()
+        questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[
+            kind
+        ].as_dicts()
 
         if not set(order) == set(range(len(questionnaire))):
             rs.append_validation_error((
