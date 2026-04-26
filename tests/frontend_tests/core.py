@@ -502,6 +502,7 @@ class TestCoreFrontend(FrontendTest):
         ml_admins = {"anton", "akira", "nina", "ferdinand"}
         complaint_admins = {"anton", "akira", "simon"}
         cdelokal_admins = {"ludwig"}
+        meta_admins = {"martin"}
         auditors = {"katarina"}
         presiders = {"werner"}
         orgas = {"garcia", "emilia", "anton", "akira", "berta"}
@@ -581,7 +582,12 @@ class TestCoreFrontend(FrontendTest):
 
         check_kind(
             "admin_persona",
-            core_admins | cde_admins | complaint_admins | ml_admins | auditors,
+            core_admins
+            | cde_admins
+            | complaint_admins
+            | ml_admins
+            | meta_admins
+            | auditors,
             allow_username=True,
             ins=(
                 "anton",
@@ -1332,8 +1338,8 @@ class TestCoreFrontend(FrontendTest):
         }
         new_password = "ihsokdmfsod"
         new_admin_copy = self._approve_privilege_change(
-            USER_DICT["anton"],
             USER_DICT["martin"],
+            USER_DICT["anton"],
             new_admin,
             new_privileges,
             old_privileges,
@@ -1512,7 +1518,7 @@ class TestCoreFrontend(FrontendTest):
     ) -> None:
         """Helper to initialize a privilege change."""
         self.login(admin1)
-        f = self.response.forms['adminshowuserform']
+        f = self.response.forms['quickpersonasearch']
         f['phrase'] = new_admin["DB-ID"]
         self.submit(f)
         self.traverse({'href': '/core/persona/{}/privileges'.format(new_admin["id"])})
