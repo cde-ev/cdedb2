@@ -296,15 +296,12 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             {'href': '/assembly/assembly/1/show'},
         )
         self.assertNoLink('assembly/assembly/1/change')
-        self.assertNoLink('assembly/assembly/1/log')
         self.assertNotIn('concludeassemblyform', self.response.forms)
         self._click_admin_view_button(
             re.compile(r"Versammlungs-Administration"), current_state=False
         )
         self.assertIn('concludeassemblyform', self.response.forms)
-        self.assertNoLink('assembly/assembly/1/log')
         self.assertNoLink('assembly/assembly/1/change')
-
         # Test Presider Controls Admin View
         self.traverse({'href': '/assembly/assembly/1/ballot/list'})
         self.assertNoLink('/assembly/assembly/1/ballot/2/change')
@@ -391,9 +388,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             "Abstimmungen",
             "Zusammenfassung",
             "Dateien",
+            "Log",
         }
-        admin = {"Konfiguration", "Log"}
 
+        admin = {"Konfiguration"}
         # not assembly admins
         if self.user_in('annika', 'martin', 'vera', 'katarina'):
             ins = attendee
