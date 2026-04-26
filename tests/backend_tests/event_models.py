@@ -160,7 +160,7 @@ class TestEventModels(BackendTest):
                     id=3,  # type: ignore[arg-type]
                     event_id=1,  # type: ignore[arg-type]
                     field_name="lodge",  # type: ignore[arg-type]
-                    kind=const.FieldDatatypes.str,
+                    kind=const.FieldDatatypes.str_multiline,
                     association=const.FieldAssociations.registration,
                     title="Zimmerwünsche",
                     sort_group=None,

@@ -1374,7 +1374,6 @@ CREATE TABLE event.questionnaire_rows (
         pos                     integer NOT NULL,
         title                   varchar,
         info                    varchar,
-        input_size              integer,
         -- This must be NULL exactly for text-only entries.
         readonly                boolean,
         CONSTRAINT questionnaire_row_readonly_field

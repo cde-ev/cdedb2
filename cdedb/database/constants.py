@@ -145,6 +145,7 @@ class FieldDatatypes(CdEIntEnum):
     """Spec for the datatypes available as custom data fields."""
 
     str = 1  #:
+    str_multiline = 50  #:
     bool = 2  #:
     int = 3  #:
     float = 4  #:
@@ -161,7 +162,19 @@ class FieldDatatypes(CdEIntEnum):
             return 'float'
         if self == FieldDatatypes.non_negative_int:
             return 'int'
+        if self == FieldDatatypes.str_multiline:
+            return 'str'
         return self.name
+
+    @property
+    def is_str(self) -> builtins.bool:
+        return self in {FieldDatatypes.str, FieldDatatypes.str_multiline}
+
+    @property
+    def text_rows(self) -> builtins.int:
+        if self == FieldDatatypes.str_multiline:
+            return 5
+        return 0
 
 
 @enum.unique

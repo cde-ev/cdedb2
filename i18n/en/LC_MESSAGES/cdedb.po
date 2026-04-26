@@ -120,6 +120,10 @@ msgstr "Text"
 msgid "FieldDatatypes.bool"
 msgstr "Yes/No"
 
+#: cdedb/.i18n_additional.py:26
+msgid "FieldDatatypes.str_multiline"
+msgstr "Text (multiline)"
+
 #: cdedb/.i18n_additional.py:27
 msgid "FieldDatatypes.int"
 msgstr "Integer"
@@ -19215,8 +19219,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:121
 msgid ""
 "Caretakers have the same access to a specific event as orgas, allowing them "
-"to do anything an orga can do. Additionally they are able to manage orgas, "
-"i.e. remove or add orgas."
+"to do anything an orga can do. Additionally they are able to manage orgas, i."
+"e. remove or add orgas."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/manage_orgas.tmpl:131

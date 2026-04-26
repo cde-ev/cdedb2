@@ -78,7 +78,7 @@
                                         <span class="nowrap">→ [{{ FIELD['field_name'] }}]</span>
                                     </div>
                                 {% else %}
-                                    {% if entry['input_size'] %}
+                                    {% if FIELD.kind.text_rows %}
                                         <div class="miniature-textarea">→ [{{ FIELD['field_name'] }}]</div>
                                     {% else %}
                                         <div class="miniature-text">→ [{{ FIELD['field_name'] }}]</div>

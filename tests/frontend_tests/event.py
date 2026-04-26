@@ -2318,7 +2318,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                         "title": "Ich bin unter 13 Jahre alt.",
                         "field_id": 1001,
                         "default_value": None,
-                        "input_size": None,
                         "info": None,
                         "readonly": False,
                     },
@@ -2326,7 +2325,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                         "title": "Ich bringe noch jemanden mit.",
                         "field_id": 1002,
                         "default_value": None,
-                        "input_size": None,
                         "info": None,
                         "readonly": False,
                     },
@@ -2334,7 +2332,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                         "title": "Name des Partners.",
                         "field_id": 1003,
                         "default_value": None,
-                        "input_size": None,
                         "info": None,
                         "readonly": False,
                     },
@@ -2342,7 +2339,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                         "title": "Anzahl an Kissen",
                         "field_id": 1004,
                         "default_value": None,
-                        "input_size": None,
                         "info": None,
                         "readonly": False,
                     },
@@ -2350,7 +2346,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                         "title": "Essgewohnheiten.",
                         "field_id": 1005,
                         "default_value": None,
-                        "input_size": None,
                         "info": None,
                         "readonly": False,
                     },
@@ -2358,7 +2353,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                         "title": "Dein Lieblingstag",
                         "field_id": 1006,
                         "default_value": None,
-                        "input_size": None,
                         "info": None,
                         "readonly": False,
                     },
@@ -5490,8 +5484,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
         f = self.response.forms['configurequestionnaireform']
         self.assertEqual("3", f['field_id_5'].value)
-        self.assertEqual("3", f['input_size_5'].value)
-        f['input_size_5'] = 3
         self.assertEqual("2", f['field_id_4'].value)
         f['field_id_4'] = ""
         self.assertEqual("Weitere Überschrift", f['title_3'].value)
@@ -5502,7 +5494,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
         f = self.response.forms['configurequestionnaireform']
         self.assertEqual("3", f['field_id_5'].value)
-        self.assertEqual("3", f['input_size_5'].value)
         self.assertEqual("Hauswunsch", f['title_5'].value)
         self.assertEqual("", f['field_id_4'].value)
         self.assertEqual("Immernoch Überschrift", f['title_3'].value)
@@ -5515,13 +5506,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertEqual("Unterüberschrift", f['title_0'].value)
         self.assertEqual("nur etwas Text", f['info_2'].value)
         self.assertEqual("3", f['field_id_4'].value)
-        self.assertEqual("3", f['input_size_4'].value)
         self.assertEqual("Hauswunsch", f['title_4'].value)
         f['create_-1'].checked = True
         f['field_id_-1'] = 4
         f['title_-1'] = "Input"
         f['readonly_-1'].checked = True
-        f['input_size_-1'] = 2
         self.submit(f)
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
 
