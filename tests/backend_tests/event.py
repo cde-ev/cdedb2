@@ -2197,7 +2197,9 @@ class TestEventBackend(BackendTest):
                 },
             ],
         }
-        self.assertEqual(expectation, self.event.get_questionnaire(self.key, event_id))
+        self.assertEqual(
+            expectation, self.event.get_questionnaire(self.key, event_id).as_dict()
+        )
 
     @as_users("annika", "garcia")
     def test_set_questionnaire(self) -> None:
@@ -2213,62 +2215,77 @@ class TestEventBackend(BackendTest):
             },
         }
         self.event.set_event(self.key, event_id, edata)
-        qdata: dict[const.QuestionnaireUsages, list[CdEDBObject]] = {
-            const.QuestionnaireUsages.additional: [
-                {
-                    'field_id': None,
-                    'default_value': None,
-                    'info': None,
-                    'readonly': None,
-                    'title': 'Weitere bla Überschrift',
-                },
-                {
-                    'field_id': 2,
-                    'default_value': 'etc',
-                    'info': None,
-                    'readonly': True,
-                    'title': 'Vehikel',
-                },
-                {
-                    'field_id': None,
-                    'default_value': None,
-                    'info': 'mit Text darunter und so',
-                    'readonly': None,
-                    'title': 'Unterüberschrift',
-                },
-                {
-                    'field_id': 3,
-                    'default_value': None,
-                    'info': None,
-                    'readonly': True,
-                    'title': 'Vehikel',
-                },
-                {
-                    'field_id': None,
-                    'default_value': None,
-                    'info': 'nur etwas mehr Text',
-                    'readonly': None,
-                    'title': None,
-                },
-            ],
-            const.QuestionnaireUsages.registration: [
-                {
-                    'field_id': 1001,
-                    'default_value': None,
-                    'info': "Du kannst freiwillig etwas mehr bezahlen um zukünftige"
-                    " Akademien zu unterstützen.",
-                    'readonly': False,
-                    'title': "Ich möchte den Solidaritätszuschlag bezahlen.",
-                },
-            ],
-        }
-        self.assertLess(0, self.event.set_questionnaire(self.key, event_id, qdata))
-        for k, v in qdata.items():
-            for pos, row in enumerate(v):
-                row['pos'] = pos
-                row['kind'] = k
+        aq_data: list[CdEDBObject] = [
+            {
+                'field_id': None,
+                'default_value': None,
+                'info': None,
+                'readonly': None,
+                'title': 'Weitere bla Überschrift',
+            },
+            {
+                'field_id': 2,
+                'default_value': 'etc',
+                'info': None,
+                'readonly': True,
+                'title': 'Vehikel',
+            },
+            {
+                'field_id': None,
+                'default_value': None,
+                'info': 'mit Text darunter und so',
+                'readonly': None,
+                'title': 'Unterüberschrift',
+            },
+            {
+                'field_id': 3,
+                'default_value': None,
+                'info': None,
+                'readonly': True,
+                'title': 'Vehikel',
+            },
+            {
+                'field_id': None,
+                'default_value': None,
+                'info': 'nur etwas mehr Text',
+                'readonly': None,
+                'title': None,
+            },
+        ]
+        rq_data: list[CdEDBObject] = [
+            {
+                'field_id': 1001,
+                'default_value': None,
+                'info': "Du kannst freiwillig etwas mehr bezahlen um zukünftige"
+                " Akademien zu unterstützen.",
+                'readonly': False,
+                'title': "Ich möchte den Solidaritätszuschlag bezahlen.",
+            },
+        ]
+        self.assertLess(
+            0,
+            self.event.set_questionnaire(
+                self.key, event_id, const.QuestionnaireUsages.additional, aq_data
+            ),
+        )
+        self.assertLess(
+            0,
+            self.event.set_questionnaire(
+                self.key, event_id, const.QuestionnaireUsages.registration, rq_data
+            ),
+        )
+        for pos, row in enumerate(aq_data):
+            row['pos'] = pos
+            row['kind'] = const.QuestionnaireUsages.additional
+        for pos, row in enumerate(rq_data):
+            row['pos'] = pos
+            row['kind'] = const.QuestionnaireUsages.registration
         result = self.event.get_questionnaire(self.key, event_id)
-        self.assertEqual(qdata, result)
+        expectation = {
+            const.QuestionnaireUsages.additional: aq_data,
+            const.QuestionnaireUsages.registration: rq_data,
+        }
+        self.assertEqual(expectation, result.as_dict())
 
     @as_users("annika", "garcia")
     def test_registration_query(self) -> None:
@@ -4222,51 +4239,51 @@ class TestEventBackend(BackendTest):
         }
         self.event.set_lodgement(self.key, new_id, update)
         self.event.delete_lodgement(self.key, new_id)
-        data: dict[const.QuestionnaireUsages, list[CdEDBObject]] = {
-            const.QuestionnaireUsages.additional: [
-                {
-                    'field_id': None,
-                    'default_value': None,
-                    'info': None,
-                    'readonly': None,
-                    'title': 'Weitere bla Überschrift',
-                    'kind': const.QuestionnaireUsages.additional,
-                },
-                {
-                    'field_id': 2,
-                    'default_value': 'etc',
-                    'info': None,
-                    'readonly': True,
-                    'title': 'Vehikel',
-                    'kind': const.QuestionnaireUsages.additional,
-                },
-                {
-                    'field_id': None,
-                    'default_value': None,
-                    'info': 'mit Text darunter und so',
-                    'readonly': None,
-                    'title': 'Unterüberschrift',
-                    'kind': const.QuestionnaireUsages.additional,
-                },
-                {
-                    'field_id': 3,
-                    'default_value': None,
-                    'info': None,
-                    'readonly': True,
-                    'title': 'Vehikel',
-                    'kind': const.QuestionnaireUsages.additional,
-                },
-                {
-                    'field_id': None,
-                    'default_value': None,
-                    'info': 'nur etwas mehr Text',
-                    'readonly': None,
-                    'title': None,
-                    'kind': const.QuestionnaireUsages.additional,
-                },
-            ],
-        }
-        self.event.set_questionnaire(self.key, 1, data)
+        data: list[CdEDBObject] = [
+            {
+                'field_id': None,
+                'default_value': None,
+                'info': None,
+                'readonly': None,
+                'title': 'Weitere bla Überschrift',
+                'kind': const.QuestionnaireUsages.additional,
+            },
+            {
+                'field_id': 2,
+                'default_value': 'etc',
+                'info': None,
+                'readonly': True,
+                'title': 'Vehikel',
+                'kind': const.QuestionnaireUsages.additional,
+            },
+            {
+                'field_id': None,
+                'default_value': None,
+                'info': 'mit Text darunter und so',
+                'readonly': None,
+                'title': 'Unterüberschrift',
+                'kind': const.QuestionnaireUsages.additional,
+            },
+            {
+                'field_id': 3,
+                'default_value': None,
+                'info': None,
+                'readonly': True,
+                'title': 'Vehikel',
+                'kind': const.QuestionnaireUsages.additional,
+            },
+            {
+                'field_id': None,
+                'default_value': None,
+                'info': 'nur etwas mehr Text',
+                'readonly': None,
+                'title': None,
+                'kind': const.QuestionnaireUsages.additional,
+            },
+        ]
+        self.event.set_questionnaire(
+            self.key, 1, const.QuestionnaireUsages.additional, data
+        )
 
         # now check it
         expectation = (

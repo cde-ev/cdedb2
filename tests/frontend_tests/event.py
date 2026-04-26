@@ -2312,52 +2312,51 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.event.set_questionnaire(
             self.key,
             event_id,
-            {
-                const.QuestionnaireUsages.registration: [
-                    {
-                        "title": "Ich bin unter 13 Jahre alt.",
-                        "field_id": 1001,
-                        "default_value": None,
-                        "info": None,
-                        "readonly": False,
-                    },
-                    {
-                        "title": "Ich bringe noch jemanden mit.",
-                        "field_id": 1002,
-                        "default_value": None,
-                        "info": None,
-                        "readonly": False,
-                    },
-                    {
-                        "title": "Name des Partners.",
-                        "field_id": 1003,
-                        "default_value": None,
-                        "info": None,
-                        "readonly": False,
-                    },
-                    {
-                        "title": "Anzahl an Kissen",
-                        "field_id": 1004,
-                        "default_value": None,
-                        "info": None,
-                        "readonly": False,
-                    },
-                    {
-                        "title": "Essgewohnheiten.",
-                        "field_id": 1005,
-                        "default_value": None,
-                        "info": None,
-                        "readonly": False,
-                    },
-                    {
-                        "title": "Dein Lieblingstag",
-                        "field_id": 1006,
-                        "default_value": None,
-                        "info": None,
-                        "readonly": False,
-                    },
-                ]
-            },
+            const.QuestionnaireUsages.registration,
+            [
+                {
+                    "title": "Ich bin unter 13 Jahre alt.",
+                    "field_id": 1001,
+                    "default_value": None,
+                    "info": None,
+                    "readonly": False,
+                },
+                {
+                    "title": "Ich bringe noch jemanden mit.",
+                    "field_id": 1002,
+                    "default_value": None,
+                    "info": None,
+                    "readonly": False,
+                },
+                {
+                    "title": "Name des Partners.",
+                    "field_id": 1003,
+                    "default_value": None,
+                    "info": None,
+                    "readonly": False,
+                },
+                {
+                    "title": "Anzahl an Kissen",
+                    "field_id": 1004,
+                    "default_value": None,
+                    "info": None,
+                    "readonly": False,
+                },
+                {
+                    "title": "Essgewohnheiten.",
+                    "field_id": 1005,
+                    "default_value": None,
+                    "info": None,
+                    "readonly": False,
+                },
+                {
+                    "title": "Dein Lieblingstag",
+                    "field_id": 1006,
+                    "default_value": None,
+                    "info": None,
+                    "readonly": False,
+                },
+            ],
         )
 
         self.get(f"/event/event/{event_id}/register")
@@ -6972,7 +6971,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         )
 
         # Fifth: Reset Questionnaire and fields and try the full import again:
-        self.event.set_questionnaire(self.key, 1, None)
+        self.event.set_questionnaire(
+            self.key, 1, const.QuestionnaireUsages.additional, []
+        )
+        self.event.set_questionnaire(
+            self.key, 1, const.QuestionnaireUsages.registration, []
+        )
         event = self.event.get_event(self.key, 1)
         self.event.set_event(
             self.key,

@@ -273,7 +273,7 @@
             {{ util.h(entry['title'], level=(3 if entry['kind'] == enums['QuestionnaireUsages'].additional else 4),
                             underline=True, translate=False) }}
         {% endif %}
-        {{ entry.get('info', '')|md }}
+        {{ entry.info|md }}
     {% endif %}
 {% endmacro %}
 

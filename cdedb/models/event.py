@@ -1053,8 +1053,14 @@ class SyncTrackGroup(TrackGroup, CourseChoiceObject):  # type: ignore[misc]
 class QuestionnaireRow(EventDataclass):
     database_table = "event.questionnaire_rows"
 
+    id: vtypes.ID = dataclasses.field(
+        compare=False,
+        repr=False,
+        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict,
+    )
+
     event_id: vtypes.ID = dataclasses.field(
-        metadata=Meta.request_exclude.as_dict,
+        metadata=(Meta.request_exclude | Meta.asdict_exclude).as_dict,
     )
     event: Event = dataclasses.field(
         init=False,

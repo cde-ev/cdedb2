@@ -1356,55 +1356,44 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @access("event")
     def set_questionnaire(
-        self, rs: RequestState, event_id: int, data: Optional[CdEDBQuestionnaire]
+        self,
+        rs: RequestState,
+        event_id: int,
+        kind: const.QuestionnaireUsages,
+        data: list[CdEDBObject],
     ) -> DefaultReturnCode:
-        """Replace current questionnaire rows for a specific event, by kind.
-
-        This superseeds the current questionnaire for all given kinds.
-        Kinds that are not present in data, will not be touched.
-
-        To delete all questionnaire rows, you can specify data as None.
-        """
+        """Replace the current questionnaire of the given kind for the given event."""
         event_id = affirm(vtypes.ID, event_id)
+        kind = affirm(const.QuestionnaireUsages, kind)
         event = self.get_event(rs, event_id)
-        fees_by_field = self.get_event_fees_per_entity(rs, event_id).fields
-        if data is not None:
-            current = self.get_questionnaire(rs, event_id).as_dict()
-            current.update(data)
-            field_defitions = {k: v.as_dict() for k, v in event.fields.items()}
-            # FIXME what is the correct type here?
-            data = affirm(
-                vtypes.Questionnaire,
-                current,  # type: ignore[assignment]
-                field_definitions=field_defitions,
-                fees_by_field=fees_by_field,
-            )
+        data = affirm(
+            vtypes.Questionnaire,
+            data,
+            kind=kind,
+            event=event,
+            all_questionnaires=self.get_questionnaire(rs, event_id),
+        )
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_lock(rs, event_id=event_id)
         with Atomizer(rs):
-            ret = 1
-            # Allow deletion of enitre questionnaire by specifying None.
-            if data is None:
-                self.sql_delete(
-                    rs, "event.questionnaire_rows", (event_id,), entity_key="event_id"
-                )
-                return 1
+            # Always delete everything then recreate.
+            query = f"""
+                                DELETE FROM {models.QuestionnaireRow.database_table}
+                                WHERE event_id = %(event_id)s and kind = %(kind)s
+                            """
+            params = {"event_id": event_id, "kind": kind}
+            self.query_exec(rs, query, params)
             # Otherwise replace rows for all given kinds.
-            for kind, rows in data.items():
-                query = f"""
-                    DELETE FROM {models.QuestionnaireRow.database_table}
-                    WHERE event_id = %(event_id)s AND kind = %(kind)s
-                """
-                self.query_exec(rs, query, {"event_id": event_id, "kind": kind})
-                for pos, row in enumerate(rows):
-                    new_row = copy.deepcopy(row)
-                    new_row['pos'] = pos
-                    new_row['event_id'] = event_id
-                    new_row['kind'] = kind
-                    ret *= self.sql_insert(
-                        rs, models.QuestionnaireRow.database_table, new_row
-                    )
+            ret = 1
+            for pos, row in enumerate(data):
+                new_row = copy.deepcopy(row)
+                new_row['pos'] = pos
+                new_row['event_id'] = event_id
+                new_row['kind'] = kind
+                ret *= self.sql_insert(
+                    rs, models.QuestionnaireRow.database_table, new_row
+                )
             self.event_log(rs, const.EventLogCodes.questionnaire_changed, event_id)
         return ret
 

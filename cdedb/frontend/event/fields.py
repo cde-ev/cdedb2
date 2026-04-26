@@ -64,8 +64,8 @@ class EventFieldMixin(EventBaseFrontend):
             if key != 'id'
         }
         merge_dicts(rs.values, current)
-        event_fees_per_field = self.eventproxy.get_event_fees_per_entity(
-            rs, event_id
+        event_fees_per_field = models.EventFee.get_fees_per_entity(
+            rs.ambience["event"]
         ).fields
         locked = {
             field_id for field_id, fee_ids in event_fees_per_field.items() if fee_ids
