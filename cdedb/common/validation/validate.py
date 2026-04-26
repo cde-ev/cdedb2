@@ -146,7 +146,7 @@ from cdedb.common.validation.types import *  # noqa: F403
 from cdedb.config import Config
 from cdedb.database.constants import FieldAssociations, FieldDatatypes
 from cdedb.enums import ALL_ENUMS, ALL_INFINITE_ENUMS
-from cdedb.models.common import CdEDataclass
+from cdedb.models.common import CdEDataclass, CdEDataclassMap
 from cdedb.models.event import ReducedCheckinPeriod
 from cdedb.uncommon.intenum import CdEIntEnum
 
@@ -3209,101 +3209,47 @@ QUESTIONNAIRE_ROW_MANDATORY_FIELDS: TypeMapping = {
 }
 
 
+@_create_dataclass_validator(models_event.QuestionnaireRow)
 def _questionnaire_row(
-    val: Any,
+    val: CdEDBObject,
     argname: str = "questionnaire_row",
     *,
-    field_definitions: CdEDBObjectMap,
-    fees_by_field: Mapping[int, set[int]],
-    kind: Optional[const.QuestionnaireUsages] = None,
+    available_fields: CdEDataclassMap[models_event.EventField],
     **kwargs: Any,
-) -> QuestionnaireRow:
+) -> CdEDBObject:
     argname_prefix = argname + "." if argname else ""
-    value = _mapping(val, argname, **kwargs)
 
-    optional_fields: TypeMapping = {
-        'field_id': Optional[ID],
-        'field_name': Optional[RestrictiveIdentifier],
-        'kind': const.QuestionnaireUsages,
-        'pos': int,
-    }
-
-    value = _examine_dictionary_fields(
-        value,
-        QUESTIONNAIRE_ROW_MANDATORY_FIELDS,
-        optional_fields,
-        argname=argname,
-        **kwargs,
-    )
+    # TODO allow selection by field_name for questionnaire import
 
     errs = ValidationSummary()
-    if kind:
-        if 'kind' in value:
-            if value['kind'] != kind:
-                msg = n_("Incorrect kind for this part of the questionnaire")
-                errs.append(ValueError(argname_prefix + 'kind', msg))
-        else:
-            value['kind'] = kind
-    elif 'kind' in value:
-        kind = value['kind']
-    else:
-        errs.append(ValueError(argname_prefix + 'kind', n_("No kind specified.")))
-        raise errs
-    assert kind is not None
+    kind = const.QuestionnaireUsages(val["kind"])
 
-    field_definitions = {
-        field_id: field
-        for field_id, field in field_definitions.items()
-        if field['association'] == const.FieldAssociations.registration
-        and (kind.allow_fee_condition() or not fees_by_field.get(field_id))
-    }
-    fields_by_name = {f['field_name']: f for f in field_definitions.values()}
-    if 'field_name' in value:
-        if not value['field_name']:
-            del value['field_name']
-        elif value.get('field_id'):
-            msg = n_("Cannot specify both field id and field name.")
-            errs.append(ValueError(argname_prefix + 'field_id', msg))
-            errs.append(ValueError(argname_prefix + 'field_name', msg))
-        elif value['field_name'] not in fields_by_name:
+    if field_id := val["field_id"]:
+        if not (field := available_fields.get(field_id)):
+            # TODO shouldn't this be field_id?
             errs.append(
-                KeyError(
-                    argname_prefix + 'field_name',
-                    n_("No field with name '%(name)s' exists."),
-                    {"name": value['field_name']},
-                )
-            )
-        else:
-            value['field_id'] = fields_by_name[value['field_name']].get('id')
-            if value['field_id']:
-                del value['field_name']
-    if 'field_id' not in value:
-        value['field_id'] = None
-
-    if value['field_id']:
-        field = field_definitions.get(value['field_id'], None)
-        if not field:
-            raise ValidationSummary(
                 KeyError(argname_prefix + 'default_value', n_("Invalid field."))
             )
-        if value['default_value']:
-            value['default_value'] = _by_field_datatype(
-                value['default_value'],
+        if val['default_value'] and field:
+            val['default_value'] = _by_field_datatype(
+                val['default_value'],
                 "default_value",
-                kind=field.get('kind', FieldDatatypes.str),
+                kind=field.kind,
                 **kwargs,
             )
+    # remove default value without a linked field
+    elif val['default_value']:
+        val['default_value'] = None
 
-    field_id = value['field_id']
-    value['readonly'] = bool(value['readonly']) if field_id else None
-    if value['readonly'] and not kind.allow_readonly():
+    val['readonly'] = bool(val['readonly']) if field_id else None
+    if val['readonly'] and not kind.allow_readonly():
         msg = n_("Registration questionnaire rows may not be readonly.")
         errs.append(ValueError(argname_prefix + 'readonly', msg))
 
     if errs:
         raise errs
 
-    return QuestionnaireRow(value)
+    return val
 
 
 @_add_typed_validator
@@ -3311,47 +3257,38 @@ def _questionnaire(
     val: Any,
     argname: str = "questionnaire",
     *,
-    field_definitions: CdEDBObjectMap,
-    fees_by_field: Mapping[int, set[int]],
+    event: models_event.Event,
+    kind: const.QuestionnaireUsages,
+    all_questionnaires: models_event.QuestionnaireContainer,
     **kwargs: Any,
 ) -> Questionnaire:
-    val = _mapping(val, argname, **kwargs)
+    val = _iterable(val, argname, **kwargs)
+    available_fields = all_questionnaires.get_available_fields(kind, event)
 
     errs = ValidationSummary()
-    ret: dict[int, list[QuestionnaireRow]] = {}
-    for k, v in copy.deepcopy(val).items():
+    ret: list[CdEDBObject] = []
+    for i, row in enumerate(val):
+        row["kind"] = kind
+        row["pos"] = i + 1
+        row_argname = argname + f"[{kind.name}][{i + 1}]"
         try:
-            k = _ALL_TYPED[const.QuestionnaireUsages](k, argname, **kwargs)
-            v = _iterable(v, argname, **kwargs)
+            row = _questionnaire_row(
+                row,
+                row_argname,
+                available_fields=available_fields,
+            )
         except ValidationSummary as e:
             errs.extend(e)
-        else:
-            ret[k] = []
-            for i, value in enumerate(v):
-                row_argname = argname + f"[{k.name}][{i + 1}]"
-                try:
-                    value = _questionnaire_row(
-                        value,
-                        row_argname,
-                        field_definitions=field_definitions,
-                        fees_by_field=fees_by_field,
-                        kind=k,
-                        **kwargs,
-                    )
-                except ValidationSummary as e:
-                    errs.extend(e)
-                    continue
-                value['pos'] = i + 1
-                ret[k].append(value)
+            continue
+        ret.append(row)
 
-    all_rows = itertools.chain.from_iterable(ret.values())
-    for e1, e2 in itertools.combinations(all_rows, 2):
+    for e1, e2 in itertools.combinations(ret, 2):
         if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:
             errs.append(
                 ValueError(
                     'field_id',
                     n_("Must not duplicate field ('%(field_name)s')."),
-                    {'field_name': field_definitions[e1['field_id']]['field_name']},
+                    {'field_name': event.fields[e1['field_id']].field_name},
                 )
             )
 
