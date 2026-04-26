@@ -1379,9 +1379,9 @@ class EventBaseBackend(EventLowLevelBackend):
         with Atomizer(rs):
             # Always delete everything then recreate.
             query = f"""
-                                DELETE FROM {models.QuestionnaireRow.database_table}
-                                WHERE event_id = %(event_id)s and kind = %(kind)s
-                            """
+                DELETE FROM {models.QuestionnaireRow.database_table}
+                WHERE event_id = %(event_id)s and kind = %(kind)s
+            """
             params = {"event_id": event_id, "kind": kind}
             self.query_exec(rs, query, params)
             # Otherwise replace rows for all given kinds.
