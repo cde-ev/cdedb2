@@ -2250,13 +2250,19 @@ class CoreBaseFrontend(AbstractFrontend):
                 self.do_mail(rs, "privilege_change_finalized", headers, params)
         return self.redirect(rs, "core/list_privilege_changes")
         if case_status == const.PrivilegeChangeStati.approved:
+            persona = self.coreproxy.get_persona(rs, privilege_change["persona_id"])
+            submitter = self.coreproxy.get_persona(rs, privilege_change["submitted_by"])
+            reviewer = self.coreproxy.get_persona(rs, privilege_change["reviewer"])
             to = {"vorstand@cde-ev.de", META_ADMIN_ADDRESS}
             self.do_mail(
                     rs,
                     "privilege_change_notification",
                     {'To': to, 'Subject': "Admin hinzugefügt/Adminrolle geändert"},
                     {
-                        'personas': personas,
+                        "persona": persona,
+                        "submitter": submitter,
+                        "reviewer": reviewer,
+                        "admin_keys": ADMIN_KEYS,
                     },
                 )
 

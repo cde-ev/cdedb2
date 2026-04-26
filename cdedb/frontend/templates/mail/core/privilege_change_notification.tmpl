@@ -1,6 +1,7 @@
 Lieber Vorstand und liebes Adminteam,
 
-{{ persona|persona_name(include_nickname=True) }} wurde von {{ user|persona_name(include_nickname=True) }}
-als Admin hinzugefügt.
+{{ persona|persona_name(include_nickname=True) }} wurde von {{ submitter|persona_name(include_nickname=True) }}
+als {{ admin_keys }} hinzugefügt und die Änderung wurde durch {{ reviewer|persona_name(include_nickname=True) }} autorisiert.
+
 
 Die Datenbank
