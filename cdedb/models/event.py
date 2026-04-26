@@ -668,7 +668,7 @@ class EventFee(EventDataclass):
     title: str
     notes: Optional[str]
 
-    condition: Optional[vtypes.EventFeeCondition]
+    condition: vtypes.EventFeeCondition | None
     amount: Optional[decimal.Decimal]
     amount_min: Optional[decimal.Decimal] = dataclasses.field(
         default=None, metadata=Meta.exclude.as_dict

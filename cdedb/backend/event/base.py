@@ -1191,13 +1191,12 @@ class EventBaseBackend(EventLowLevelBackend):
         with Atomizer(rs):
             event = self._event_fee_privilege_check(rs, event_id=event_id)
 
-            quest = self.get_all_questionnaires(rs, event_id)
             data = affirm(
                 models.EventFee,
                 data,
                 event=event,
                 current=None,
-                questionnaire=quest,
+                all_questionnaires=self.get_all_questionnaires(rs, event_id),
                 creation=True,
             )
 
@@ -1224,13 +1223,12 @@ class EventBaseBackend(EventLowLevelBackend):
             event = self._event_fee_privilege_check(rs, fee_id=fee_id)
             current_fee = event.fees[fee_id]
 
-            quest = self.get_all_questionnaires(rs, event.id)
             data = affirm(
                 models.EventFee,
                 data,
                 event=event,
                 current=current_fee,
-                questionnaire=quest,
+                all_questionnaires=self.get_all_questionnaires(rs, event.id),
             )
 
             data["id"] = fee_id

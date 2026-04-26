@@ -1208,13 +1208,12 @@ class EventEventMixin(EventBaseFrontend):
                 "error", n_("Event is balanced. May not change fee configuration.")
             )
             return self.redirect(rs, "event/fee_summary")
-        questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)
         fee_data = check(
             rs,
             models.EventFee,
             data,
             event=rs.ambience['event'],
-            questionnaire=questionnaire,
+            all_questionnaires=self.eventproxy.get_all_questionnaires(rs, event_id),
             current=rs.ambience['event'].fees.get(fee_id or -1),
             personalized=personalized,
         )

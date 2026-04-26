@@ -1284,7 +1284,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             data,
             current=None,
             event=rs.ambience['event'],
-            questionnaire={},
+            all_questionnaires={},
             personalized=True,
         )
         if rs.has_validation_errors() or not fee_data:
