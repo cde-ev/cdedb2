@@ -296,12 +296,12 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             {'href': '/assembly/assembly/1/show'},
         )
         self.assertNoLink('assembly/assembly/1/change')
+        self.assertNotIn('concludeassemblyform', self.response.forms)
         self._click_admin_view_button(
             re.compile(r"Versammlungs-Administration"), current_state=False
         )
         self.assertIn('concludeassemblyform', self.response.forms)
         self.assertNoLink('assembly/assembly/1/change')
-        self.assertNotIn('concludeassemblyform', self.response.forms)
         # Test Presider Controls Admin View
         self.traverse({'href': '/assembly/assembly/1/ballot/list'})
         self.assertNoLink('/assembly/assembly/1/ballot/2/change')
