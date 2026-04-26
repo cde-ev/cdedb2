@@ -2248,23 +2248,29 @@ class CoreBaseFrontend(AbstractFrontend):
                     "Subject": "Admin-Privilegien geändert",
                 }
                 self.do_mail(rs, "privilege_change_finalized", headers, params)
+                persona = self.coreproxy.get_persona(rs, privilege_change["persona_id"])
+                submitter = self.coreproxy.get_persona(rs, privilege_change["submitted_by"])
+                to = {"vorstand@cde-ev.de", self.conf["META_ADMIN_ADDRESS"]}
+                gained_privileges = [
+                    privilege for privilege in ADMIN_KEYS
+                    if rs.ambience['privilege_change'].get(privilege) is True
+                ]
+                lost_privileges = [
+                    privilege for privilege in ADMIN_KEYS
+                    if rs.ambience['privilege_change'].get(privilege) is False
+                ]
+                self.do_mail(
+                        rs,
+                        "privilege_change_notification",
+                        {'To': to, 'Subject': "Admin hinzugefügt/Adminrolle geändert"},
+                        {
+                            "persona": persona,
+                            "submitter": submitter,
+                            "gained": gained_privileges,
+                            "lost": lost_privileges,
+                        },
+                    )
         return self.redirect(rs, "core/list_privilege_changes")
-        if case_status == const.PrivilegeChangeStati.approved:
-            persona = self.coreproxy.get_persona(rs, privilege_change["persona_id"])
-            submitter = self.coreproxy.get_persona(rs, privilege_change["submitted_by"])
-            reviewer = self.coreproxy.get_persona(rs, privilege_change["reviewer"])
-            to = {"vorstand@cde-ev.de", self.conf["META_ADMIN_ADDRESS"]}
-            self.do_mail(
-                    rs,
-                    "privilege_change_notification",
-                    {'To': to, 'Subject': "Admin hinzugefügt/Adminrolle geändert"},
-                    {
-                        "persona": persona,
-                        "submitter": submitter,
-                        "reviewer": reviewer,
-                        "admin_keys": ADMIN_KEYS,
-                    },
-                )
 
     @periodic("privilege_change_remind", period=24)
     def privilege_change_remind(
