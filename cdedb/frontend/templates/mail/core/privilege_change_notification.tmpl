@@ -3,9 +3,18 @@ Lieber Vorstand und liebes Adminteam,
 für {{ persona|persona_name(include_nickname=True) }} wurde von {{ submitter|persona_name(include_nickname=True) }}
 eine Änderung angestoßen, die durch {{ user|persona_name(include_nickname=True) }} autorisiert wurde.
 
-Dabei wurden folgende Adminprivilegien hinzugefügt:
-{{ gained }}
-und folgende Privilegien entfernt: 
-{{ lost }}
+{% if gained %}Dabei wurden für {{ persona|persona_name(include_nickname=True) }} folgende Adminprivilegien hinzugefügt:
+{% endif %}
+{% for privilege in gained %}
+- {{ gettext(privilege) }}
+{% endfor %}
+{% if lost and gained %}
+
+und folgende Privilegien entfernt:
+{% elif lost %}Dabei wurden für {{ persona|persona_name(include_nickname=True) }} folgende Adminprivilegien entfernt:
+{% endif %}
+{% for privilege in lost %}
+- {{ gettext(privilege) }}
+{% endfor %}
 
 Die Datenbank

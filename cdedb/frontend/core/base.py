@@ -2262,7 +2262,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 self.do_mail(
                         rs,
                         "privilege_change_notification",
-                        {'To': to, 'Subject': "Admin hinzugefügt/Adminrolle geändert"},
+                        {'To': to, 'Subject': "Adminrolle geändert"},
                         {
                             "persona": persona,
                             "submitter": submitter,
