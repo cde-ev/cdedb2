@@ -309,7 +309,7 @@
                         {% trans %}Admin Privileges{% endtrans %}
                     </dt>
                     <dd id="admin-realms">
-                        {% for key in data.get_admin_bits() if data.is_true(key) %}
+                        {% for key in admin_bits %}
                             {{ util.privilege_icon(key) }}
                         {% else %}
                             <i>{% trans %}None{% endtrans %}</i>

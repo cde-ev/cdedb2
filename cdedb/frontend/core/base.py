@@ -95,6 +95,7 @@ from cdedb.frontend.common import (
     periodic,
     request_dict_extractor,
 )
+from cdedb.models.core import CdEPersona
 from cdedb.models.ml import MailinglistGroup
 from cdedb.uncommon.submanshim import SubscriptionPolicy
 
@@ -781,14 +782,6 @@ class CoreBaseFrontend(AbstractFrontend):
                     persona.address2 = REDACTED
                     persona.address_supplement2 = REDACTED
 
-        if self.AccessLevel.meta not in access_levels:
-            status_bits = persona.get_status_bits()
-            # allow orgas to view member status
-            if self.AccessLevel.orga in access_levels and "is_member" in status_bits:
-                status_bits.remove("is_member")
-            for field in status_bits:
-                setattr(persona, field, REDACTED)
-
         if self.AccessLevel.orga not in access_levels:
             # May be hidden from member search, but not from orga view.
             if not persona.show_legal_given_names:
@@ -804,13 +797,24 @@ class CoreBaseFrontend(AbstractFrontend):
                     persona.address = REDACTED
                     persona.address_supplement = REDACTED
 
+        admin_bits = None
         notes = REDACTED
-        if is_relative_or_meta_admin and is_relative_or_meta_admin_view:
+        if self.AccessLevel.meta in access_levels:
             # This is a bit involved to not contaminate the data dict
             # with keys which are not applicable to the requested persona
             total = self.coreproxy.get_total_persona(rs, persona_id)
-            notes = total['notes']
+            admin_bits = {bit for bit in CdEPersona.get_admin_bits() if total[bit]}
             persona.username = total['username']
+            if is_relative_or_meta_admin and is_relative_or_meta_admin_view:
+                # This is not shown to the persona themselves
+                notes = total['notes']
+        else:
+            status_bits = persona.get_status_bits()
+            # allow orgas to view member status
+            if self.AccessLevel.orga in access_levels and "is_member" in status_bits:
+                status_bits.remove("is_member")
+            for field in status_bits:
+                setattr(persona, field, REDACTED)
 
         # Determine if vcard should be visible
         show_vcard = self.AccessRealm.cde in access_realms and is_searchable_to_you
@@ -846,6 +850,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.render(rs, "show_user", {
             # TODO rename in template
             'data': persona,
+            'admin_bits': admin_bits,
             'meta_info': meta_info,
             'is_relative_admin_view': is_relative_admin_view,
             'quoteable': quoteable,
@@ -1053,7 +1058,7 @@ class CoreBaseFrontend(AbstractFrontend):
             },
         )
 
-    @access("core_admin")
+    @access("core_admin", "meta_admin")
     @REQUESTdata("phrase", "include_archived")
     def admin_show_user(
         self, rs: RequestState, phrase: str, include_archived: bool
@@ -1106,6 +1111,10 @@ class CoreBaseFrontend(AbstractFrontend):
         result = self.coreproxy.submit_general_query(rs, query)
         if len(result) == 1:
             return self.redirect_show_user(rs, result[0][query.scope.get_primary_key()])
+        elif not self.is_admin(rs):
+            # Shortcircuit for meta admins
+            rs.notify("warning", n_("Multiple accounts found."))
+            return self.index(rs)
         elif result:
             params = query.serialize_to_url()
             rs.values.update(params)
@@ -1130,8 +1139,8 @@ class CoreBaseFrontend(AbstractFrontend):
 
         Allowed kinds:
 
-        - ``admin_persona``: Search for users as (core|cde|complaint|ml)_admin or auditor.
-            Allows search by username.
+        - ``admin_persona``: Search for users as (core|cde|complaint|meta|ml)_admin
+            or auditor. Allows search by username.
         - ``admin_all_users``: Search for users as (core|complaint|ml)_admin but
             including archived users. Allows search by username.
         - ``cde_user``: Search for a cde user as cde_admin or auditor.
@@ -1170,9 +1179,10 @@ class CoreBaseFrontend(AbstractFrontend):
         )
         if kind == "admin_persona":
             if not (
-                {"core_admin", "cde_admin", "complaint_admin", "ml_admin", "auditor"}
+                {"core_admin", "cde_admin", "complaint_admin", "ml_admin", "meta_admin",
+                 "auditor"}
                 & rs.user.roles
-            ):
+            ):  # fmt: skip
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append("username")
         elif kind == "admin_all_users":
