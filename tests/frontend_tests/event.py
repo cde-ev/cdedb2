@@ -6899,7 +6899,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @storage
     @as_users("garcia")
     @unittest.expectedFailure
-    def test_questionnaire_import(self) -> None:
+    def test_questionnaire_import(self) -> None:  # pragma: no cover
         self.traverse(
             "Veranstaltungen",
             "Große Testakademie 2222",
