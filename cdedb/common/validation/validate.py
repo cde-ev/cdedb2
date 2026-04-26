@@ -2894,15 +2894,15 @@ def _event_fee_condition(
     argname: str = "event_fee_condition",
     *,
     event: models_event.Event,
-    questionnaire: dict[const.QuestionnaireUsages, list[CdEDBObject]],
+    questionnaire: models_event.QuestionnaireContainer,
     **kwargs: Any,
 ) -> EventFeeCondition:
     val = _str(val, argname, **kwargs)
 
     additional_questionnaire_fields = {
-        row['field_id']
-        for row in questionnaire.get(const.QuestionnaireUsages.additional, [])
-        if row['field_id']
+        row.field_id
+        for row in questionnaire[const.QuestionnaireUsages.additional]
+        if row.field_id
     }
     field_names = {
         f.field_name
