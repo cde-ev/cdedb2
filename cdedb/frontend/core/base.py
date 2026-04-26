@@ -2253,7 +2253,7 @@ class CoreBaseFrontend(AbstractFrontend):
             persona = self.coreproxy.get_persona(rs, privilege_change["persona_id"])
             submitter = self.coreproxy.get_persona(rs, privilege_change["submitted_by"])
             reviewer = self.coreproxy.get_persona(rs, privilege_change["reviewer"])
-            to = {"vorstand@cde-ev.de", META_ADMIN_ADDRESS}
+            to = {"vorstand@cde-ev.de", self.conf["META_ADMIN_ADDRESS"]}
             self.do_mail(
                     rs,
                     "privilege_change_notification",
