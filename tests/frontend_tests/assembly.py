@@ -301,6 +301,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         )
         self.assertIn('concludeassemblyform', self.response.forms)
         self.assertNoLink('assembly/assembly/1/change')
+        self.assertNotIn('concludeassemblyform', self.response.forms)
         # Test Presider Controls Admin View
         self.traverse({'href': '/assembly/assembly/1/ballot/list'})
         self.assertNoLink('/assembly/assembly/1/ballot/2/change')
@@ -390,7 +391,6 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             "Log",
         }
 
-        admin = {"Konfiguration"}
         admin = {"Konfiguration"}
         # not assembly admins
         if self.user_in('annika', 'martin', 'vera', 'katarina'):
