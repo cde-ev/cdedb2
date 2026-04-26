@@ -1945,24 +1945,20 @@ class EventBaseBackend(EventLowLevelBackend):
         rs: RequestState,
         event_id: int,
         fields: CdEDBObjectMap,
-        questionnaire: CdEDBQuestionnaire,
+        questionnaires: dict[const.QuestionnaireUsages, vtypes.Questionnaire],
     ) -> DefaultReturnCode:
         """Special import for custom datafields and questionnaire rows."""
         event_id = affirm(vtypes.ID, event_id)
         # validation of input is delegated to the setters, because it is rather
         # involved and dependent on each other.
-        # Do not allow special use of `set_questionnaire` for deleting everything.
-        if questionnaire is None:
-            raise ValueError(
-                n_("Cannot use questionnaire import to delete questionnaire.")
-            )
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_lock(rs, event_id=event_id)
 
         with Atomizer(rs):
             ret = self.set_event(rs, event_id, {'fields': fields})
-            ret *= self.set_questionnaire(rs, event_id, questionnaire)
+            for kind, questionnaire in questionnaires.items():
+                ret *= self.set_questionnaire(rs, event_id, kind, questionnaire)
         return ret
 
     @access("event_admin")
