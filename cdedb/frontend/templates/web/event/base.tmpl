@@ -393,11 +393,13 @@ This will result in:
         {% if 'event_list' in user.admin_views %}
             {{ event_quicksearch() }}
         {% endif %}
-        {% if 'member' in user.roles or user.admin_views.intersection(('past_event', 'auditor')) %}
+        {% if 'event' in user.roles or user.admin_views.intersection(('past_event', 'auditor')) %}
             <div class="list-group tear-down">
-                {% if "member" in user.roles or "past_event" in user.admin_views %}
+                {% if "event" in user.roles or "past_event" in user.admin_views %}
                     {{ util.href(cdedblink("event/list_past_events"), gettext("Past Events"), icon="calendar-alt",
                             aclass="list-group-item", active=(sidenav_active=='event_past_events')) }}
+                {% endif %}
+                {% if "member" in user.roles or "past_event" in user.admin_views %}
                     {{ util.href(cdedblink("event/past_course_search"), gettext("Course Search"), icon="search",
                                  aclass="list-group-item", active=(sidenav_active=='event_past_course_search')) }}
                 {% endif %}
