@@ -90,6 +90,7 @@ if TYPE_CHECKING:
     from cdedb.database.query import (
         DatabaseValue_s,
     )
+    from cdedb.models.event.questionnaire_builtins import BuiltinQuestionnaireBlock
 
 
 #
@@ -1058,20 +1059,27 @@ class QuestionnaireRow(EventDataclass):
         repr=False,
         metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict,
     )
-
     event_id: vtypes.ID = dataclasses.field(
         metadata=(Meta.request_exclude | Meta.asdict_exclude).as_dict,
     )
+    kind: const.QuestionnaireUsages
+
+    pos: int
+    title: str | None
+    info: str | None
+
+    readonly: bool
+    default_value: Any  # TODO: ByDatafieldKind maybe some union?
+
     field_id: vtypes.ID | None
     field: EventField | None = dataclasses.field(
         init=False, default=None, metadata=(Meta.exclude | Meta.asdict_exclude).as_dict
     )
-    pos: int
-    title: str | None
-    info: str | None
-    readonly: bool
-    default_value: Any  # TODO: ByDatafieldKind maybe some union?
-    kind: const.QuestionnaireUsages
+    builtin_element: const.QuestionnaireBuiltinElement | None
+    builtin: "BuiltinQuestionnaireBlock | None" = dataclasses.field(
+        init=False, default=None, metadata=(Meta.exclude | Meta.asdict_exclude).as_dict
+    )
+    builtin_aux: Any
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
@@ -1089,6 +1097,17 @@ class QuestionnaireRow(EventDataclass):
                     ret.default_value = ret.default_value.astimezone(
                         CONF["DEFAULT_TIMEZONE"]
                     )
+        if ret.builtin_element:
+            _builtin_class: type[BuiltinQuestionnaireBlock] = (
+                ret.builtin_element.get_class()
+            )
+
+            from cdedb.common.validation.validate import validate_check  # noqa: PLC0415
+
+            ret.builtin_aux, _errs = validate_check(
+                _builtin_class.get_aux_type(), ret.builtin_aux, ignore_warnings=True
+            )
+            ret.builtin = _builtin_class(event, ret.builtin_aux)
         return ret
 
     def get_sortkey(self) -> Sortkey:
@@ -1111,27 +1130,37 @@ class QuestionnaireRow(EventDataclass):
 
 
 class Questionnaire(list[QuestionnaireRow]):
+    kind: const.QuestionnaireUsages
+
+    def __init__(self, *args: Any, kind: const.QuestionnaireUsages) -> None:
+        super().__init__(*args)
+        self.kind = kind
+
     def as_dicts(self) -> list[CdEDBObject]:
         return [row.as_dict() for row in self]
 
     def get_field_ids(self) -> set[int]:
         return {row.field_id for row in self if row.field_id is not None}
 
-    @classmethod
-    def allows(
-        cls, kind: const.QuestionnaireUsages, field: EventField, has_fees: bool
-    ) -> bool:
+    def allows_field(self, field: EventField, has_fees: bool) -> bool:
         """
-        Determines whether the given field is allowed for the given questionnaire kind.
+        Determines whether the given field is allowed for this questionnaire kind.
 
         :param has_fees: True if the given field is used in a conditional fee, which
             is incompatible with some questionnaire kinds.
         """
         if not field.association == const.FieldAssociations.registration:
             return False
-        if not kind.allow_fee_condition() and has_fees:
+        if not self.kind.allow_fee_condition() and has_fees:
             return False
         return True
+
+    def get_builtins(self) -> set[const.QuestionnaireBuiltinElement]:
+        return {row.builtin_element for row in self if row.builtin_element is not None}
+
+    def allows_builtin(self, builtin: const.QuestionnaireBuiltinElement) -> bool:
+        builtin_class = builtin.get_class()
+        return self.kind in builtin_class.valid_kinds
 
 
 class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
@@ -1139,18 +1168,16 @@ class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
 
     @classmethod
     def from_database(cls, data: Collection["CdEDBObject"], event: Event) -> "Self":
-        rows: dict[const.QuestionnaireUsages, Questionnaire] = collections.defaultdict(
-            Questionnaire
-        )
-        for row in QuestionnaireRow.many_from_database(data).values():
-            rows[row.kind].append(row)
-        ret = cls(rows)
+        ret = cls()
         ret.event = event
+        for row in QuestionnaireRow.many_from_database(data).values():
+            ret[row.kind].append(row)
         return ret
 
-    def __missing__(self, key: const.QuestionnaireUsages) -> Questionnaire:
+    def __missing__(self, kind: const.QuestionnaireUsages) -> Questionnaire:
         """Allows accessing empty kinds, which are not initialized in this dict."""
-        return Questionnaire()
+        self[kind] = Questionnaire(kind=kind)
+        return self[kind]
 
     def as_dict(
         self, full: bool = False
@@ -1178,11 +1205,39 @@ class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
         return {
             field.id: field
             for field in self.event.fields.values()
-            if Questionnaire.allows(
-                kind=kind, field=field, has_fees=bool(fees_by_field[field.id])
+            if self[kind].allows_field(
+                field=field, has_fees=bool(fees_by_field[field.id])
             )
             and field_usage.get(field.id, kind) == kind
         }
+
+    def builtin_usage(
+        self,
+    ) -> Mapping[const.QuestionnaireBuiltinElement, const.QuestionnaireUsages]:
+        """Map builtin elements to the questionnaire kind they are used in."""
+        # These dicts are disjunct therfore the chainmap is just a big union.
+        return collections.ChainMap(
+            *(
+                {builtin: kind}
+                for kind, q in self.items()
+                for builtin in q.get_builtins()
+            )
+        )
+
+    def get_available_builtins(
+        self, kind: const.QuestionnaireUsages
+    ) -> list[const.QuestionnaireBuiltinElement]:
+        """Return all builtins available for use in a questionnaire of the given kind."""
+        builtin_usage = self.builtin_usage()
+        return [
+            builtin_element
+            for builtin_element in const.QuestionnaireBuiltinElement
+            if self[kind].allows_builtin(builtin_element)
+            and (
+                builtin_usage.get(builtin_element, kind) == kind
+                or builtin_element.get_class().readonly
+            )
+        ]
 
 
 @dataclasses.dataclass

@@ -1369,16 +1369,30 @@ GRANT SELECT ON event.personalized_fees TO cdb_anonymous;
 CREATE TABLE event.questionnaire_rows (
         id                      bigserial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
-        -- This is NULL for text-only entries.
-        field_id                integer REFERENCES event.field_definitions(id),
+        -- The specific qeustionnaire variant where this row will be used. See cdedb.constants.QuestionnaireUsages.
+        kind                    integer NOT NULL,
+        -- The position in at which this element is shown in the questionnaire.
         pos                     integer NOT NULL,
+        -- A customized heading for this element. May have different behaviour depending on the element variant.
         title                   varchar,
+        -- Additional text that is displayed for this element. May have different behaviour depending on the element variant.
         info                    varchar,
-        -- This must be NULL exactly for text-only entries.
+        -- If set (for a row that is not text-only) the value can no longer be changed.
         readonly                boolean NOT NULL,
+        -- If set (for a field input row) a value that is prefilled into the form if there is no stored value.
         default_value           varchar,
-        -- Where the row will be used (registration, questionnaire). See cdedb.constants.QuestionnaireUsages.
-        kind                    integer NOT NULL
+        -- These fields determine what variant of content is rendered via this row.
+        -- Only one of these may be set. If none are set this row simply displays a heading and some text.
+        -- If field id is set, display input for the linked field.
+        field_id                integer REFERENCES event.field_definitions(id),
+        -- If builtin element is set, display an automatically generated block e.g. course choices for one track.
+        builtin_element         integer,
+        -- Additional information for a builtin element. Can be e.g. a track id for a course choice element.
+        builtin_aux             varchar,
+        CONSTRAINT questionnaire_row_builtin_aux
+            CHECK (builtin_aux IS NULL OR builtin_element IS NOT NULL),
+        CONSTRAINT questionnaire_row_variant
+            CHECK (NOT (field_id IS NOT NULL AND builtin_element IS NOT NULL))
 );
 CREATE INDEX questionnaire_rows_event_id_idx ON event.questionnaire_rows(event_id);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_rows TO cdb_persona;

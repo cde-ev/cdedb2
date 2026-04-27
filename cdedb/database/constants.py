@@ -11,7 +11,7 @@ import builtins
 import collections
 import enum
 from functools import cached_property
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from cdedb.uncommon.intenum import CdEIntEnum
 
@@ -20,6 +20,9 @@ from cdedb.uncommon.submanshim import (  # noqa: F401
     SubscriptionAction,
     SubscriptionState,
 )
+
+if TYPE_CHECKING:
+    from cdedb.models.event.questionnaire_builtins import BuiltinQuestionnaireBlock
 
 
 def n_(x: str) -> str:  # pragma: no cover
@@ -191,6 +194,31 @@ class QuestionnaireUsages(CdEIntEnum):
     def allow_fee_condition(self) -> bool:
         """Whether or not rows with this usage may use fee condition fields."""
         return self == QuestionnaireUsages.registration
+
+    @property
+    def title_level(self) -> int:
+        """Heading-level for custom titles in this kind of questionnaire."""
+        if self == QuestionnaireUsages.additional:
+            return 3
+        return 4
+
+
+@enum.unique
+class QuestionnaireBuiltinElement(CdEIntEnum):
+    course_choices = 10
+    # part_selection = 20
+    fee_preview = 30
+    # list_consent = 40
+    # mixed_lodging = 50
+    # foto_notice = 60
+    # registration_notes = 70
+
+    def get_class(self) -> type["BuiltinQuestionnaireBlock"]:
+        from cdedb.models.event.questionnaire_builtins import (  # noqa: PLC0415
+            BuiltinQuestionnaireBlock,
+        )
+
+        return BuiltinQuestionnaireBlock.get_class(self)
 
 
 @enum.unique

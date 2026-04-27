@@ -88,7 +88,7 @@
     </form>
     <script type="text/javascript" nonce="{{ csp_nonce }}">
         (function() {
-            let field_list = {{ registration_fields|tojson }};
+            let field_list = {{ available_fields|tojson }};
             let translations = {
                 "true": "{{ gettext("true") }}",
                 "false": "{{ gettext("false") }}",

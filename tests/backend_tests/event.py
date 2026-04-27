@@ -2131,70 +2131,84 @@ class TestEventBackend(BackendTest):
         expectation = {
             const.QuestionnaireUsages.registration: [
                 {
-                    'field_id': 7,
-                    'default_value': None,
-                    'info': None,
-                    'pos': 0,
-                    'readonly': False,
-                    'title': 'Ich bin unter 13 Jahre alt.',
                     'kind': const.QuestionnaireUsages.registration,
+                    'pos': 0,
+                    'title': 'Ich bin unter 13 Jahre alt.',
+                    'info': None,
+                    'readonly': False,
+                    'default_value': None,
+                    'field_id': 7,
+                    'builtin_element': None,
+                    'builtin_aux': None,
                 },
             ],
             const.QuestionnaireUsages.additional: [
                 {
-                    'field_id': None,
-                    'default_value': None,
-                    'info': 'mit Text darunter',
-                    'pos': 0,
-                    'readonly': False,
-                    'title': 'Unterüberschrift',
                     'kind': const.QuestionnaireUsages.additional,
+                    'pos': 0,
+                    'title': 'Unterüberschrift',
+                    'info': 'mit Text darunter',
+                    'readonly': False,
+                    'default_value': None,
+                    'field_id': None,
+                    'builtin_element': None,
+                    'builtin_aux': None,
                 },
                 {
-                    'field_id': 1,
-                    'default_value': True,
+                    'kind': const.QuestionnaireUsages.additional,
+                    'pos': 1,
+                    'title': 'Bälle',
                     'info': 'Du bringst genug Bälle mit um einen ganzen Kurs'
                     ' abzuwerfen.',
-                    'pos': 1,
+                    'default_value': True,
                     'readonly': False,
-                    'title': 'Bälle',
-                    'kind': const.QuestionnaireUsages.additional,
+                    'field_id': 1,
+                    'builtin_element': None,
+                    'builtin_aux': None,
                 },
                 {
-                    'field_id': None,
-                    'default_value': None,
-                    'info': 'nur etwas Text',
+                    'kind': const.QuestionnaireUsages.additional,
                     'pos': 2,
-                    'readonly': False,
                     'title': None,
-                    'kind': const.QuestionnaireUsages.additional,
-                },
-                {
+                    'info': 'nur etwas Text',
+                    'readonly': False,
+                    'default_value': None,
                     'field_id': None,
-                    'default_value': None,
-                    'info': None,
+                    'builtin_element': None,
+                    'builtin_aux': None,
+                },
+                {
+                    'kind': const.QuestionnaireUsages.additional,
                     'pos': 3,
-                    'readonly': False,
                     'title': 'Weitere Überschrift',
-                    'kind': const.QuestionnaireUsages.additional,
-                },
-                {
-                    'field_id': 2,
-                    'default_value': 'etc',
                     'info': None,
-                    'pos': 4,
                     'readonly': False,
-                    'title': 'Vehikel',
-                    'kind': const.QuestionnaireUsages.additional,
-                },
-                {
-                    'field_id': 3,
                     'default_value': None,
-                    'info': None,
-                    'pos': 5,
-                    'readonly': False,
-                    'title': 'Hauswunsch',
+                    'field_id': None,
+                    'builtin_element': None,
+                    'builtin_aux': None,
+                },
+                {
                     'kind': const.QuestionnaireUsages.additional,
+                    'pos': 4,
+                    'title': 'Vehikel',
+                    'info': None,
+                    'readonly': False,
+                    'default_value': 'etc',
+                    'field_id': 2,
+                    'builtin_element': None,
+                    'builtin_aux': None,
+                },
+                {
+                    'kind': const.QuestionnaireUsages.additional,
+                    'pos': 5,
+                    'title': 'Hauswunsch',
+                    'info': None,
+                    'readonly': False,
+                    'default_value': None,
+                    'field_id': 3,
+                    'builtin_element': None,
+                    'builtin_aux': None,
                 },
             ],
         }
@@ -2278,9 +2292,11 @@ class TestEventBackend(BackendTest):
         for pos, row in enumerate(aq_data):
             row['pos'] = pos
             row['kind'] = const.QuestionnaireUsages.additional
+            row['builtin_element'] = row['builtin_aux'] = None
         for pos, row in enumerate(rq_data):
             row['pos'] = pos
             row['kind'] = const.QuestionnaireUsages.registration
+            row['builtin_element'] = row['builtin_aux'] = None
         result = self.event.get_all_questionnaires(self.key, event_id)
         expectation = {
             const.QuestionnaireUsages.additional: aq_data,

@@ -300,9 +300,17 @@
                     {%- endcall %}
                 </div>
                 <div class="col-md-6">
+                    {{ util.form_input_select("builtin_element_{}".format(part_id), label=gettext("Builtin"),
+                                              entries=available_builtins|enum_entries(processing=gettext),
+                                              nulloption=gettext("— None —"),
+                                              attributes=('data-basename="builtin_element_"'|s if newrow else ''),
+                                              aclass='input-builtin drow-input', horizontal=False) }}
+                    {{ util.form_input_text("builtin_aux_{}".format(part_id), label=gettext("Builtin Aux"),
+                                            attributes=('data-basename="builtin_aux_"'|s if newrow else ''),
+                                            aclass='input-builtin-aux drow-input', horizontal=False) }}
                     {{ util.form_input_select("field_id_{}".format(part_id), label=gettext("Query"),
-                                              entries=registration_fields|entries('id', 'field_name'),
-                                              nulloption=gettext("— Only Text —"),
+                                              entries=available_fields|entries('id', 'field_name'),
+                                              nulloption=gettext("— None —"),
                                               attributes=('data-basename="field_id_"'|s if newrow else ''),
                                               aclass='input-field drow-input', horizontal=False) }}
                     {{ util.form_input_textarea(
