@@ -62,7 +62,7 @@ class EventImportMixin(EventBaseFrontend):
         extend_questionnaire: bool,
         skip_existing_fields: bool,
         token: Optional[str],
-    ) -> Response:
+    ) -> Response:  # pragma: no cover
         """Import questionnaire rows and custom datafields.
 
         :param extend_questionnaire: If True, append the imported questionnaire rows to

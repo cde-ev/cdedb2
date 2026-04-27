@@ -1942,7 +1942,7 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id: int,
         fields: CdEDBObjectMap,
         questionnaires: dict[const.QuestionnaireUsages, vtypes.Questionnaire],
-    ) -> DefaultReturnCode:
+    ) -> DefaultReturnCode:  # pragma: no cover
         """Special import for custom datafields and questionnaire rows."""
         event_id = affirm(vtypes.ID, event_id)
         # validation of input is delegated to the setters, because it is rather

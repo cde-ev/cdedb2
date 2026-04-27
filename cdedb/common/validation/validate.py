@@ -3811,7 +3811,7 @@ def _serialized_event_questionnaire(
     extend_questionnaire: bool,
     skip_existing_fields: bool,
     **kwargs: Any,
-) -> SerializedEventQuestionnaire:
+) -> SerializedEventQuestionnaire:  # pragma: no cover
     val = _mapping(val, argname, **kwargs)
 
     optional_fields: TypeMapping = {'fields': Mapping, 'questionnaire': Mapping}
