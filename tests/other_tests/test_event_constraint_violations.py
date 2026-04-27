@@ -6,7 +6,7 @@ from unittest.mock import Mock
 from cdedb.common import CdEDBObject
 from cdedb.database.constants import RegistrationPartStati
 from cdedb.models import event as models
-from cdedb.models.event_constraint_violations import (
+from cdedb.models.event.constraint_violations import (
     AbsentCheckedinCV,
     ConstraintViolation,
     PresentNeverCheckedinCV,

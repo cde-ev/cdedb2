@@ -19,7 +19,7 @@ from subman import SubscriptionError
 
 import cdedb.database.constants as const
 import cdedb.models.event as models
-import cdedb.models.event_constraint_violations as models_cv
+import cdedb.models.event.constraint_violations as models_cv
 from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME,
     IGNORE_WARNINGS_NAME,

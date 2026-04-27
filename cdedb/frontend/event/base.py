@@ -28,7 +28,7 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
-import cdedb.models.event_constraint_violations as models_cv
+import cdedb.models.event.constraint_violations as models_cv
 from cdedb.common import (
     EVENT_SCHEMA_VERSION,
     CdEDBObject,
