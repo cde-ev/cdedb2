@@ -6,6 +6,8 @@ for configuring and filling in the different kinds of questionnaires offered for
 event.
 """
 
+import abc
+
 import werkzeug.exceptions
 from werkzeug import Response
 
@@ -13,6 +15,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
+    CdEDBObject,
     DefaultReturnCode,
     RequestState,
     get_hash,
@@ -164,6 +167,9 @@ class EventQuestionnaireMixin(EventBaseFrontend):
 
         return self.eventproxy.set_questionnaire(rs, event_id, kind, new_questionnaire)
 
+    @abc.abstractmethod
+    def get_register_params(self, rs: RequestState) -> CdEDBObject: ...
+
     @access("event")
     @REQUESTdata("preview")
     def additional_questionnaire_form(
@@ -184,6 +190,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             const.QuestionnaireUsages.additional
         ]
         wish_data = None
+        reg_params = self.get_register_params(rs)
         if not preview:
             registration_id = self.eventproxy.list_registrations(
                 rs, event_id, persona_id=rs.user.persona_id
@@ -217,6 +224,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
                 'add_questionnaire': add_questionnaire,
                 'preview': preview,
                 'lodgement_wishes': wish_data or {},
+                **reg_params,
             },
         )
 

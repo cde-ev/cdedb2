@@ -257,21 +257,28 @@
     {% endif %}
 {% endmacro %}
 
+{% macro print_builtin_questionnaire_block(row) %}
+    {% if row.builtin.name == "FeePreview" %}
+        {{ fee_preview_panel() }}
+    {% else %}
+        {{ row.builtin.name }}
+    {% endif %}
+{% endmacro %}
+
 {% macro print_questionnaire_entry(entry) %}
     {# Field entry #}
-    {% if entry['field_id'] %}
-        {% with FIELD = ambience['event']['fields'][entry['field_id']],
-                readonly = entry['readonly'] or is_locked %}
-            {{ form_field_input(
-                    FIELD, label=entry['title'], info=entry['info'],
-                    readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "",
-                    bool_label=entry['title']) }}
-        {% endwith %}
+    {% if entry.field %}
+        {{ form_field_input(
+                entry.field, label=entry.title, info=entry.info, readonly=readonly or is_locked,
+                defaultvalue=entry.default_value if not (readonly or is_locked) else "",
+                bool_label=entry.title) }}
+    {# Builtin entry #}
+    {% elif entry.builtin %}
+        {{ print_builtin_questionnaire_block(entry) }}
     {# Text-only entry #}
     {% else %}
-        {% if entry['title'] %}
-            {{ util.h(entry['title'], level=(3 if entry['kind'] == enums['QuestionnaireUsages'].additional else 4),
-                            underline=True, translate=False) }}
+        {% if entry.title %}
+            {{ util.h(entry.title, level=entry.kind.title_level, underline=True, translate=False) }}
         {% endif %}
         {{ entry.info|md }}
     {% endif %}

@@ -342,17 +342,17 @@ class EventRegistrationMixin(EventBaseFrontend):
             parts_per_track_group_per_course=parts_per_track_group_per_course,
         )
 
-    @access("event")
-    @REQUESTdata("preview")
-    def register_form(
-        self, rs: RequestState, event_id: int, preview: bool = False
-    ) -> Response:
-        """Render form."""
-        event = rs.ambience['event']
-        registrations = self.eventproxy.list_registrations(
-            rs, event_id, persona_id=rs.user.persona_id
+    def get_register_params(self, rs: RequestState) -> CdEDBObject:
+        registration_ids = self.eventproxy.list_registrations(
+            rs, rs.ambience['event'].id, persona_id=rs.user.persona_id
         )
-        persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
+        registration_id = unwrap(registration_ids.keys() or None)
+        registration = None
+        if registration_id:
+            registration = self.eventproxy.get_registration(rs, registration_id)
+        persona = self.coreproxy.get_event_user(
+            rs, rs.user.persona_id, rs.ambience['event'].id
+        )
 
         begin = rs.ambience['event'].begin
         bd = persona.birthday
@@ -361,9 +361,42 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
         age_class = determine_age_class(bd, begin)
 
+        involved_tracks = payment_parts = None
+        if registration:
+            stat = lambda track: registration['parts'][track.part_id]['status']
+            involved_tracks = {
+                track_id
+                for track_id, track in rs.ambience['event'].tracks.items()
+                if const.RegistrationPartStati(stat(track)).is_involved()
+            }
+
+            payment_parts = {
+                part_id
+                for part_id, reg_part in registration['parts'].items()
+                if reg_part['status'].has_to_pay()
+            }
+        return {
+            "registration": registration,
+            "persona": persona,
+            "persona_age": persona_age,
+            "age_class": age_class,
+            "involved_tracks": involved_tracks,
+            "payment_parts": payment_parts,
+        }
+
+    @access("event")
+    @REQUESTdata("preview")
+    def register_form(
+        self, rs: RequestState, event_id: int, preview: bool = False
+    ) -> Response:
+        """Render form."""
         rs.ignore_validation_errors()
+
+        event = rs.ambience['event']
+        reg_params = self.get_register_params(rs)
+
         if not preview:
-            if rs.user.persona_id in registrations.values():
+            if reg_params["registration"]:
                 rs.notify("info", n_("Already registered."))
                 return self.redirect(rs, "event/registration_status")
             if not event.is_open:
@@ -380,7 +413,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 return self.redirect(rs, "event/show_event")
             if (
                 not self.eventproxy.has_minor_form(rs, event_id)
-                and age_class.is_minor()
+                and reg_params['age_class'].is_minor()
             ):
                 rs.notify(
                     "info", n_("No minors may register. Please contact the Orgateam.")
@@ -415,13 +448,11 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs,
             "registration/register",
             {
-                'persona': persona,
-                'age_class': age_class,
-                'persona_age': persona_age,
                 'semester_fee': semester_fee,
                 'reg_questionnaire': reg_questionnaire,
                 'preview': preview,
                 'part_options': part_options,
+                **reg_params,
                 **course_choice_params,
             },
         )
@@ -1104,43 +1135,22 @@ class EventRegistrationMixin(EventBaseFrontend):
     def amend_registration_form(self, rs: RequestState, event_id: int) -> Response:
         """Render form."""
         event = rs.ambience['event']
-        tracks = event.tracks
-        registration_id = unwrap(
-            self.eventproxy.list_registrations(
-                rs, event_id, persona_id=rs.user.persona_id
-            ).keys()
-            or None
-        )
-        if not registration_id:
+        reg_params = self.get_register_params(rs)
+
+        if not reg_params['registration']:
             rs.notify("warning", n_("Not registered for event."))
             return self.redirect(rs, "event/show_event")
         if event.is_archived:
             rs.notify("warning", n_("Event is already archived."))
             return self.redirect(rs, "event/show_event")
-        registration = self.eventproxy.get_registration(rs, registration_id)
         if event.registration_soft_limit and now() > event.registration_soft_limit:
             rs.notify("warning", n_("Registration closed, no changes possible."))
             return self.redirect(rs, "event/registration_status")
         if self.is_locked(rs.ambience['event']):
             rs.notify("warning", n_("Event locked."))
             return self.redirect(rs, "event/registration_status")
-        persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
-        age = determine_age_class(persona.birthday, rs.ambience['event'].begin)
-        values = self._prepare_registration_values(event, registration)
+        values = self._prepare_registration_values(event, reg_params['registration'])
         merge_dicts(rs.values, values)
-
-        stat = lambda track: registration['parts'][track.part_id]['status']
-        involved_tracks = {
-            track_id
-            for track_id, track in tracks.items()
-            if const.RegistrationPartStati(stat(track)).is_involved()
-        }
-
-        payment_parts = {
-            part_id
-            for part_id, reg_part in registration['parts'].items()
-            if reg_part['status'].has_to_pay()
-        }
 
         reg_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[
             const.QuestionnaireUsages.registration
@@ -1150,13 +1160,9 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs,
             "registration/amend_registration",
             {
-                'age': age,
-                'involved_tracks': involved_tracks,
-                'persona': persona,
                 'semester_fee': self.conf['MEMBERSHIP_FEE'],
                 'reg_questionnaire': reg_questionnaire,
-                'payment_parts': payment_parts,
-                'was_member': registration['is_member'],
+                **reg_params,
                 **course_choice_params,
             },
         )
