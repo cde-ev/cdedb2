@@ -2909,17 +2909,15 @@ def _event_fee_condition(
 ) -> EventFeeCondition:
     val = _str(val, argname, **kwargs)
 
-    additional_questionnaire_fields = {
-        row.field_id
-        for row in all_questionnaires[const.QuestionnaireUsages.additional]
-        if row.field_id
-    }
+    field_usage = all_questionnaires.field_usage()
     field_names = {
         f.field_name
         for f in event.fields.values()
         if f.association == const.FieldAssociations.registration
         and f.kind == const.FieldDatatypes.bool
-        and f.id not in additional_questionnaire_fields
+        and field_usage.get(
+            f.id, const.QuestionnaireUsages.registration
+        ).allow_fee_condition()
     }
     part_names = {p.shortname for p in event.parts.values()}
 
