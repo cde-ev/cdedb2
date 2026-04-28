@@ -422,7 +422,9 @@ class Event(EventDataclass, _EventConfigurationMixin, _EventFreetextMixin):
 
     @functools.cached_property
     def registration_fields(self) -> dict[int, "RegistrationField"]:
-        return {k: v for k,v in self.fields.items() if isinstance(v, RegistrationField)}
+        return {
+            k: v for k, v in self.fields.items() if isinstance(v, RegistrationField)
+        }
 
     @functools.cached_property
     def lodge_field(self) -> Optional["EventField"]:
@@ -742,6 +744,10 @@ class EventField(EventDataclass):
     sortkey: int = 0  # Sortkey of the field (within it's group).
     description: str | None = None  # Shown as hovertext of the label.
 
+    # Usage configuration, i.e. where is this field used.
+    # TODO Shift this to RegistrationField
+    checkin: bool = False
+
     # Need to postpone validation of entries until kind is known.
     # Also need to account for this accepting string and sequence input.
     entries: dict[Any, str] | None = dataclasses.field(
@@ -752,17 +758,18 @@ class EventField(EventDataclass):
         if isinstance(self, FIELD_ASSOCIATION_TO_CLASS[self.association]):
             pass
         elif self.__class__ in FIELD_ASSOCIATION_TO_CLASS.values():
-            raise RuntimeError(n_("Inconsistent field association"))
+            raise RuntimeError("Inconsistent field association")
 
     @property
     def request_name(self) -> str:
         return f"fields.{self.field_name}"
 
     @classmethod
-    def from_database(cls, data: "CdEDBObject") -> "Self":
+    def from_database(cls, data: "CdEDBObject") -> "EventField":
         data['entries'] = cast_field_entries(data['entries'], data['kind'])
-        # TODO Does not work yet
-        return super(cls, FIELD_ASSOCIATION_TO_CLASS[data['association']]).from_database(data)
+        return super(
+            cls, FIELD_ASSOCIATION_TO_CLASS[data['association']]
+        ).from_database(data)
 
     def to_database(self) -> CdEDBObject:
         ret = super().to_database()
@@ -811,8 +818,7 @@ class EventField(EventDataclass):
 
 @dataclasses.dataclass
 class RegistrationField(EventField):
-    # Usage configuration, i.e. where is this field used.
-    checkin: bool = False
+    pass
 
 
 @dataclasses.dataclass
