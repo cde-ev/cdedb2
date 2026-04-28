@@ -2249,27 +2249,31 @@ class CoreBaseFrontend(AbstractFrontend):
                 }
                 self.do_mail(rs, "privilege_change_finalized", headers, params)
                 persona = self.coreproxy.get_persona(rs, privilege_change["persona_id"])
-                submitter = self.coreproxy.get_persona(rs, privilege_change["submitted_by"])
+                submitter = self.coreproxy.get_persona(
+                    rs, privilege_change["submitted_by"]
+                )
                 to = {"vorstand@cde-ev.de", self.conf["META_ADMIN_ADDRESS"]}
                 gained_privileges = [
-                    privilege for privilege in ADMIN_KEYS
+                    privilege
+                    for privilege in ADMIN_KEYS
                     if rs.ambience['privilege_change'].get(privilege) is True
                 ]
                 lost_privileges = [
-                    privilege for privilege in ADMIN_KEYS
+                    privilege
+                    for privilege in ADMIN_KEYS
                     if rs.ambience['privilege_change'].get(privilege) is False
                 ]
                 self.do_mail(
-                        rs,
-                        "privilege_change_notification",
-                        {'To': to, 'Subject': "Adminrolle geändert"},
-                        {
-                            "persona": persona,
-                            "submitter": submitter,
-                            "gained": gained_privileges,
-                            "lost": lost_privileges,
-                        },
-                    )
+                    rs,
+                    "privilege_change_notification",
+                    {'To': to, 'Subject': "Adminrolle geändert"},
+                    {
+                        "persona": persona,
+                        "submitter": submitter,
+                        "gained": gained_privileges,
+                        "lost": lost_privileges,
+                    },
+                )
         return self.redirect(rs, "core/list_privilege_changes")
 
     @periodic("privilege_change_remind", period=24)
