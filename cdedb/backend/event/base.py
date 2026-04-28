@@ -1732,7 +1732,7 @@ class EventBaseBackend(EventLowLevelBackend):
                     entity_key="event_id",
                 )
             )
-            questionnaire = self.get_all_questionnaires(rs, event_id).as_dict()
+            questionnaire = self.get_all_questionnaires(rs, event_id).as_dict(full=True)
             persona_ids = tuple(reg['persona_id'] for reg in registrations.values())
             personas = self.core.get_event_users(rs, persona_ids, event_id)
 
