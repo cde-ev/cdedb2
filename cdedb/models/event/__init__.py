@@ -1097,6 +1097,15 @@ class QuestionnaireRow(EventDataclass):
             self.pos,
         )
 
+    @classmethod
+    def validation_fields(
+        cls, *, creation: bool
+    ) -> tuple[vtypes.MutableTypeMapping, vtypes.MutableTypeMapping]:
+        mandatory, optional = super().validation_fields(creation=creation)
+        optional["field_id"] = vtypes.PartialImportID | None
+        optional["field_name"] = vtypes.RestrictiveIdentifier | None
+        return mandatory, optional
+
 
 class Questionnaire(list[QuestionnaireRow]):
     def as_dicts(self) -> list[CdEDBObject]:

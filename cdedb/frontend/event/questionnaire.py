@@ -145,7 +145,6 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             vtypes.Questionnaire,
             list(filter(None, new_questionnaire.values())),
             kind=kind,
-            event=rs.ambience["event"],
             all_questionnaires=all_questionnaires,
         )
 

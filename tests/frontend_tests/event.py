@@ -6976,8 +6976,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
     @storage
     @as_users("garcia")
-    @unittest.expectedFailure
-    def test_questionnaire_import(self) -> None:  # pragma: no cover
+    def test_questionnaire_import(self) -> None:
         self.traverse(
             "Veranstaltungen",
             "Große Testakademie 2222",
@@ -7000,7 +6999,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['json_file'] = create_upload({'questionnaire': data['questionnaire']})
         self.submit(f, check_notification=False)
         self.assertPresence(
-            "Es gibt kein Feld mit dem Namen 'KleidungAnmerkungen'.",
+            "Unknown field name: 'KleidungAnmerkungen'",
             div="importerrorsummary",
         )
 
@@ -7012,7 +7011,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertEqual(f['skip_existing_fields'].checked, False)
         self.submit(f, check_notification=False)
         self.assertPresence(
-            "Es gibt bereits ein Feld mit diesem Namen ('KleidungAnmerkungen').",
+            "fields[KleidungAnmerkungen]: A field with this name already exists.",
             div="importerrorsummary",
         )
         f['skip_existing_fields'].checked = True
@@ -7041,7 +7040,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['json_file'] = create_upload(data)
         self.submit(f, check_notification=False)
         self.assertPresence(
-            "Es gibt bereits ein Feld mit diesem Namen ('KleidungAnmerkungen').",
+            "fields[KleidungAnmerkungen]: A field with this name already exists.",
             div="importerrorsummary",
         )
         self.assertPresence(
