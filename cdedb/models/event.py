@@ -421,6 +421,10 @@ class Event(EventDataclass, _EventConfigurationMixin, _EventFreetextMixin):
         return self.begin > (now().date() - datetime.timedelta(days=365 * 2))
 
     @functools.cached_property
+    def registration_fields(self) -> dict[int, "RegistrationField"]:
+        return {k: v for k,v in self.fields.items() if isinstance(v, RegistrationField)}
+
+    @functools.cached_property
     def lodge_field(self) -> Optional["EventField"]:
         if self.lodge_field_id is None:
             return None
@@ -738,14 +742,17 @@ class EventField(EventDataclass):
     sortkey: int = 0  # Sortkey of the field (within it's group).
     description: str | None = None  # Shown as hovertext of the label.
 
-    # Usage configuration, i.e. where is this field used.
-    checkin: bool = False
-
     # Need to postpone validation of entries until kind is known.
     # Also need to account for this accepting string and sequence input.
     entries: dict[Any, str] | None = dataclasses.field(
         default=None, metadata=Meta.validate_skip.as_dict
     )
+
+    def __post_init__(self) -> None:
+        if isinstance(self, FIELD_ASSOCIATION_TO_CLASS[self.association]):
+            pass
+        elif self.__class__ in FIELD_ASSOCIATION_TO_CLASS.values():
+            raise RuntimeError(n_("Inconsistent field association"))
 
     @property
     def request_name(self) -> str:
@@ -754,7 +761,8 @@ class EventField(EventDataclass):
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
         data['entries'] = cast_field_entries(data['entries'], data['kind'])
-        return super().from_database(data)
+        # TODO Does not work yet
+        return super(cls, FIELD_ASSOCIATION_TO_CLASS[data['association']]).from_database(data)
 
     def to_database(self) -> CdEDBObject:
         ret = super().to_database()
@@ -793,6 +801,35 @@ class EventField(EventDataclass):
             self.title,
             self.field_name,
         )
+
+    def __lt__(self, other: "CdEDataclass") -> bool:
+        # enable sorting of all event field sub classes
+        if not isinstance(other, EventField):
+            return NotImplemented
+        return self._lt_inner(other)
+
+
+@dataclasses.dataclass
+class RegistrationField(EventField):
+    # Usage configuration, i.e. where is this field used.
+    checkin: bool = False
+
+
+@dataclasses.dataclass
+class CourseField(EventField):
+    pass
+
+
+@dataclasses.dataclass
+class LodgementField(EventField):
+    pass
+
+
+FIELD_ASSOCIATION_TO_CLASS: dict[const.FieldAssociations, type[EventField]] = {
+    const.FieldAssociations.registration: RegistrationField,
+    const.FieldAssociations.course: CourseField,
+    const.FieldAssociations.lodgement: LodgementField,
+}
 
 
 @dataclasses.dataclass
@@ -1023,7 +1060,7 @@ class QuestionnaireRow(EventDataclass):
     database_table = "event.questionnaire_rows"
 
     event: Event
-    field: Optional[EventField]
+    field: Optional[RegistrationField]
 
     def get_sortkey(self) -> Sortkey:
         return (0,)

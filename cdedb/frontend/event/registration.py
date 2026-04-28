@@ -762,7 +762,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             field_ids = None
             if not self.is_privileged(rs, EventPrivileges.registrations_read):
                 field_ids = {
-                    field.id for field in event.fields.values() if field.checkin
+                    f.id for f in event.registration_fields.values() if f.checkin
                 }
             registration["fields"] = event_associated_fields_extractor(
                 rs,
@@ -1903,8 +1903,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
         checkin_fields = {
             field_id: f
-            for field_id, f in rs.ambience['event'].fields.items()
-            if f.checkin and f.association == const.FieldAssociations.registration
+            for field_id, f in rs.ambience['event'].registration_fields.items()
+            if f.checkin
         }
         camping_mat_field_names = self._get_camping_mat_field_names(
             rs.ambience['event']
