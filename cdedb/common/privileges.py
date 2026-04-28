@@ -118,10 +118,6 @@ def is_privileged_event_user(
         return False
 
     admin_privileges = ~(EP.conclude | EP.balance)
-    orga_privileges = ~(
-        EP.conclude | EP.balance | EP.delete | EP.orgas_change | EP.caretakers_change
-    )
-    caretaker_privileges = orga_privileges | EP.orgas_change | EP.approve_registration
     event_helper_privileges = (
         EP.basic_read
         | EP.courses_read
@@ -130,6 +126,19 @@ def is_privileged_event_user(
         | EP.registrations_read_internal
         | EP.participant_list
     )
+    orga_privileges = (
+        event_helper_privileges
+        | EP.registrations_read
+        | EP.log_read
+        | EP.checkin
+        | EP.entities_write
+        | EP.basic_write
+        | EP.free_texts_write
+        | EP.payment_write
+        | EP.lock
+        | EP.token
+    )
+    caretaker_privileges = orga_privileges | EP.orgas_change | EP.approve_registration
     checkin_helper_privileges = event_helper_privileges | EP.checkin
     auditor_privileges = EP.basic_read | EP.log_read
     finance_admin_privileges = (

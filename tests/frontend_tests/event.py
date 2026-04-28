@@ -429,10 +429,10 @@ class TestEventFrontend(FrontendTest):
             self.assertIn('createparticipantlistform', self.response.forms)
         if self.user_in("berta", "garcia"):
             # no admin
-            self.assertNotIn("addorgaform", self.response.forms)
-            self.assertNotIn("removeorgaform7", self.response.forms)
             self.assertNotIn("archiveeventform", self.response.forms)
             self.assertNotIn("deleteeventform", self.response.forms)
+            self.assertNotIn("approveregistrationform", self.response.forms)
+            self.assertNotIn("unapproveregistrationform", self.response.forms)
 
     @as_users("charly")
     def test_manage_orgas(self) -> None:
