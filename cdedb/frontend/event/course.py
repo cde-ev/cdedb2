@@ -153,7 +153,8 @@ class EventCourseMixin(EventBaseFrontend):
             params['attendee_stats'] = violation_data['attendee_stats']
             violations: ViolationList = violation_data['violations']
 
-            if self.is_privileged(rs, EventPrivileges.registrations_read):
+            EP = EventPrivileges
+            if self.is_privileged(rs, EP.registrations_read, EP.checkin):
                 params['registrations'] = violation_data['registrations']
                 instructor_ids = set(
                     reg['persona_id']

@@ -54,6 +54,7 @@ from cdedb.common import (
 from cdedb.common.crypt import encrypt_password
 from cdedb.common.exceptions import EventIsBalancedError, PrivilegeError
 from cdedb.common.fields import (
+    EVENT_ROLE_FIELDS,
     PERSONA_EVENT_FIELDS,
     QUESTIONNAIRE_ROW_FIELDS,
     REGISTRATION_FIELDS,
@@ -151,6 +152,33 @@ class EventBaseBackend(EventLowLevelBackend):
 
     caretaker_info: _CaretakerInfoProtocol = singularize(
         caretaker_infos, "persona_ids", "persona_id"
+    )
+
+    @access("persona")
+    def checkin_helper_infos(
+        self,
+        rs: RequestState,
+        persona_ids: Collection[int],
+    ) -> dict[int, set[int]]:
+        """List events where specific personas are checkin helpers."""
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
+        data = self.sql_select(
+            rs,
+            "event.checkin_helpers",
+            ("persona_id", "event_id"),
+            persona_ids,
+            entity_key="persona_id",
+        )
+        ret: dict[int, set[int]] = {}
+        for anid in persona_ids:
+            ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
+        return ret
+
+    class _CheckinHelperInfoProtocol(Protocol):
+        def __call__(self, rs: RequestState, persona_id: int) -> set[int]: ...
+
+    checkin_helper_info: _CheckinHelperInfoProtocol = singularize(
+        checkin_helper_infos, "persona_ids", "persona_id"
     )
 
     @access("persona")
@@ -401,13 +429,33 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
+    def _affirm_event_role_privileges(
+        self,
+        rs: RequestState,
+        event_id: int,
+        role: Literal['orga', 'caretaker', 'checkin_helper'],
+    ) -> None:
+        if role == 'orga':
+            if not is_privileged(rs, EventPrivileges.orgas_change, event_id=event_id):
+                raise PrivilegeError(n_("Not privileged."))
+        elif role == 'caretaker':
+            if not is_privileged(
+                rs, EventPrivileges.caretakers_change, event_id=event_id
+            ):
+                raise PrivilegeError(n_("Not privileged."))
+        elif role == 'checkin_helper':
+            if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
+                raise PrivilegeError(n_("Not privileged."))
+        else:
+            raise RuntimeError(n_("Impossible."))
+
     @access("event")
     def add_event_roles(
         self,
         rs: RequestState,
         event_id: int,
         persona_ids: Collection[int],
-        role: Literal['orga', 'caretaker'],
+        role: Literal['orga', 'caretaker', 'checkin_helper'],
     ) -> DefaultReturnCode:
         """Add orgas to an event.
 
@@ -418,15 +466,7 @@ class EventBaseBackend(EventLowLevelBackend):
         """
         event_id = affirm(vtypes.ID, event_id)
         persona_ids = affirm(set[vtypes.ID], persona_ids)
-
-        if role == 'orga':
-            if not is_privileged(rs, EventPrivileges.orgas_change, event_id=event_id):
-                raise PrivilegeError(n_("Not privileged."))
-        elif role == 'caretaker':
-            if not self.is_admin(rs):
-                raise PrivilegeError(n_("Not privileged."))
-        else:
-            raise RuntimeError(n_("Impossible."))
+        self._affirm_event_role_privileges(rs, event_id, role)
 
         ret = 1
         with Atomizer(rs):
@@ -462,7 +502,7 @@ class EventBaseBackend(EventLowLevelBackend):
         rs: RequestState,
         event_id: int,
         persona_id: int,
-        role: Literal['orga', 'caretaker'],
+        role: Literal['orga', 'caretaker', 'checkin_helper'],
     ) -> DefaultReturnCode:
         """Remove a single orga of an event.
 
@@ -470,17 +510,7 @@ class EventBaseBackend(EventLowLevelBackend):
         """
         event_id = affirm(vtypes.ID, event_id)
         persona_id = affirm(vtypes.ID, persona_id)
-
-        if role == 'orga':
-            if not is_privileged(rs, EventPrivileges.orgas_change, event_id=event_id):
-                raise PrivilegeError(n_("Not privileged."))
-        elif role == 'caretaker':
-            if not is_privileged(
-                rs, EventPrivileges.caretakers_change, event_id=event_id
-            ):
-                raise PrivilegeError(n_("Not privileged."))
-        else:
-            raise RuntimeError(n_("Impossible."))
+        self._affirm_event_role_privileges(rs, event_id, role)
 
         query = f"""
             DELETE FROM event.{role}s
@@ -1592,7 +1622,9 @@ class EventBaseBackend(EventLowLevelBackend):
                     ("track_group_id", "track_id"),
                 ),
                 models.CourseSegment.full_export_spec("track_id"),
-                ('event.orgas', "event_id", ('id', 'persona_id', 'event_id')),
+                ('event.orgas', "event_id", EVENT_ROLE_FIELDS),
+                ('event.caretakers', "event_id", EVENT_ROLE_FIELDS),
+                ('event.checkin_helpers', "event_id", EVENT_ROLE_FIELDS),
                 ('event.registrations', "event_id", REGISTRATION_FIELDS),
                 models.CheckinPeriod.full_export_spec(),
                 ('event.registration_parts', "part_id", REGISTRATION_PART_FIELDS),

@@ -62,6 +62,7 @@ I18NOUTDIR = ./i18n-output
 I18N_LANGUAGES = $(patsubst $(I18NDIR)/%/LC_MESSAGES, %, $(wildcard $(I18NDIR)/*/LC_MESSAGES))
 
 UV_PROJECT_ENVIRONMENT ?= .venv
+UV_PYTHON_INSTALL_DIR ?= /var/cache/uv-python/
 
 ###########
 # General #
@@ -128,18 +129,20 @@ $(I18NOUTDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
 # Code formatting #
 ###################
 
-$(UV_PROJECT_ENVIRONMENT)/bin/python:
-	$(UV) venv
-
 .PHONY: venv
-venv: $(UV_PROJECT_ENVIRONMENT)/bin/python
+venv:
+	if [ -d "/cdedb2" ]; then \
+		sudo UV_PYTHON_INSTALL_DIR=$(UV_PYTHON_INSTALL_DIR) \
+			$(UV) sync --all-groups; \
+	fi
 
 .PHONY: www-cde-venv
 www-cde-venv:
-	sudo UV_PYTHON_INSTALL_DIR=/home/www-cde/.local/share/uv/python \
-		 UV_CACHE_DIR=/home/www-cde/.cache/uv \
-		 UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv/ \
-		 $(UV) sync --no-dev --group ldap
+	if [ -d "/cdedb2" ]; then \
+		sudo UV_PYTHON_INSTALL_DIR=$(UV_PYTHON_INSTALL_DIR) \
+			UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv/ \
+			$(UV) sync --no-dev --group ldap; \
+	fi
 
 .PHONY: format
 format: venv
@@ -280,5 +283,4 @@ sample-data-dump: venv
 
 .PHONY: sample-data
 sample-data: venv
-	$(UV) sync --all-groups
 	sudo $(PYTHONBIN) -m cdedb dev apply-sample-data --owner www-cde --group www-data

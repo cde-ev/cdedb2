@@ -1,7 +1,7 @@
 Liebes Akademieteam,
 
 Die folgenden Personen wurden der Veranstaltung "{{ event.title }}"
-durch {{ user|persona_name(include_nickname=True) }} als {% if as_caretaker %}Betreuer{% else %}Orga{% endif %} hinzugefügt:
+durch {{ user|persona_name(include_nickname=True) }} als {{ role_str }} hinzugefügt:
 
 {% for persona in personas %}
 - {{ persona|persona_name(include_nickname=True) }}

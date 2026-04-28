@@ -1303,7 +1303,7 @@ class TestMlFrontend(FrontendTest):
                 self._create_mailinglist(mdata)
                 # Add the user as orga. (Garcia is orga already.)
                 if user["id"] in {USER_DICT["emilia"]["id"], USER_DICT["inga"]["id"]}:
-                    self.get('/event/event/1/orga/manage')
+                    self.get('/event/event/1/roles/manage')
                     f = self.response.forms['addorgasform']
                     f['orga_ids'] = user['DB-ID']
                     self.submit(f, check_notification=False)

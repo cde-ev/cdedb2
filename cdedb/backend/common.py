@@ -703,6 +703,7 @@ PYTHON_TO_SQL_MAP = {
     FieldDatatypes.int: "integer",
     FieldDatatypes.non_negative_int: "integer",
     FieldDatatypes.str: "varchar",
+    FieldDatatypes.str_multiline: "varchar",
     FieldDatatypes.phone: "varchar",
     FieldDatatypes.iban: "varchar",
     FieldDatatypes.float: "double precision",

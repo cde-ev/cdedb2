@@ -11,18 +11,18 @@ from cdedb.backend.core import CoreBackend
 from cdedb.cli.util import redirect_to_file
 from cdedb.common import unwrap
 from cdedb.common.exceptions import APITokenError
-from cdedb.config import Config, SecretsConfig, TestConfig
+from cdedb.config import Config, SecretsConfig
 from cdedb.frontend.core import CoreFrontend
 from cdedb.script import DryRunError, Script, ScriptAtomizer
 
 
 class TestScript(unittest.TestCase):
-    conf: ClassVar[TestConfig]
+    conf: ClassVar[Config]
     script: Script
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.conf = TestConfig()
+        cls.conf = Config()
 
     def setUp(self) -> None:
         self.script = self.get_script()

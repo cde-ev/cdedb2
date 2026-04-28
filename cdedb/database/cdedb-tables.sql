@@ -1191,6 +1191,17 @@ GRANT INSERT, DELETE ON event.caretakers TO cdb_admin;
 GRANT SELECT, UPDATE ON event.caretakers_id_seq TO cdb_admin;
 GRANT SELECT ON event.caretakers TO cdb_anonymous, cdb_ldap;
 
+CREATE TABLE event.checkin_helpers (
+        id                      serial PRIMARY KEY,
+        persona_id              integer NOT NULL REFERENCES core.personas(id),
+        event_id                integer NOT NULL REFERENCES event.events(id),
+        UNIQUE (persona_id, event_id)
+);
+CREATE INDEX checkin_helpers_id_idx ON event.checkin_helpers(event_id);
+GRANT INSERT, DELETE ON event.checkin_helpers TO cdb_persona;
+GRANT SELECT, UPDATE ON event.checkin_helpers_id_seq TO cdb_persona;
+GRANT SELECT ON event.checkin_helpers TO cdb_anonymous, cdb_ldap;
+
 CREATE TABLE event.helpers (
         id                      serial PRIMARY KEY,
         persona_id              integer UNIQUE NOT NULL REFERENCES core.personas(id)
@@ -1363,7 +1374,6 @@ CREATE TABLE event.questionnaire_rows (
         pos                     integer NOT NULL,
         title                   varchar,
         info                    varchar,
-        input_size              integer,
         -- This must be NULL exactly for text-only entries.
         readonly                boolean,
         CONSTRAINT questionnaire_row_readonly_field
@@ -1583,6 +1593,7 @@ CREATE TABLE assembly.attachment_versions (
         title                   varchar,
         authors                 varchar,
         filename                varchar,
+        changenotes             varchar,
         ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
         dtime                   timestamp WITH TIME ZONE DEFAULT NULL,
         -- Store the hash of the file for comparison and proof.
@@ -1590,7 +1601,7 @@ CREATE TABLE assembly.attachment_versions (
         UNIQUE (attachment_id, version_nr)
 );
 GRANT SELECT, INSERT, DELETE ON assembly.attachment_versions TO cdb_member;
-GRANT UPDATE (title, authors, filename, dtime) ON assembly.attachment_versions TO cdb_member;
+GRANT UPDATE (title, authors, filename, changenotes, dtime) ON assembly.attachment_versions TO cdb_member;
 GRANT SELECT, UPDATE on assembly.attachment_versions_id_seq TO cdb_member;
 
 CREATE TABLE assembly.attachment_ballot_links (

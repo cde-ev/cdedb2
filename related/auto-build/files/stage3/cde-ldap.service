@@ -11,7 +11,7 @@ Type=exec
 Environment=UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv
 Environment=UV_PROJECT=/cdedb2
 ExecStart=/home/www-cde/.venv/bin/python -m cdedb.ldap.main
-ExecStartPre=+uv sync --no-dev --group ldap
+ExecStartPre=+make -C /cdedb2 www-cde-venv
 Restart=on-failure
 
 # TODO move secrets into credentials and use DynamicUser=
@@ -21,8 +21,7 @@ User=www-cde
 Group=www-cde
 # restrict the privileges of the running process
 RemoveIPC=true
-# dPROD PrivateTmp=true
-PrivateTmp=false
+PrivateTmp=true
 NoNewPrivileges=true
 RestrictSUIDSGID=true
 ProtectHome=read-only

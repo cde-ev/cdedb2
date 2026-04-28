@@ -49,6 +49,9 @@ cdedb/.i18n_additional.py
 # bin processing data
 bin/**/*.json
 
+# auto generated release note templates
+related/release/
+
 # internal wiki - separate git repository
 /wiki/
 

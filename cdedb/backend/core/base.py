@@ -2823,8 +2823,7 @@ class CoreBaseBackend(AbstractBackend):
     ) -> CdEDBObjectMap:
         """Acquire data sets for specified ids.
 
-        This includes all attributes regardless of which realm they
-        pertain to.
+        This includes all attributes regardless of which realm they pertain to.
         """
         persona_ids = affirm(set[vtypes.ID], persona_ids)
         if (
@@ -3732,7 +3731,7 @@ class CoreBaseBackend(AbstractBackend):
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query, aggregate=aggregate)
 
-    submit_general_query = access("core_admin")(_submit_general_query)
+    submit_general_query = access("core_admin", "meta_admin")(_submit_general_query)
 
     @access("persona")
     def submit_select_persona_query(

@@ -153,6 +153,9 @@ PRIVILEGE_CHANGE_FIELDS = (
     "reviewer",
 )
 
+#: Fields of an event-specific role
+EVENT_ROLE_FIELDS = ('id', 'persona_id', 'event_id')
+
 #: Fields of an extended attribute associated to an event entity
 FIELD_DEFINITION_FIELDS = (
     "id",
@@ -212,7 +215,6 @@ QUESTIONNAIRE_ROW_FIELDS = (
     "pos",
     "title",
     "info",
-    "input_size",
     "readonly",
     "default_value",
     "kind",
@@ -271,6 +273,7 @@ ASSEMBLY_ATTACHMENT_VERSION_FIELDS = (
     "title",
     "authors",
     "filename",
+    "changenotes",
     "ctime",
     "dtime",
     "file_hash",

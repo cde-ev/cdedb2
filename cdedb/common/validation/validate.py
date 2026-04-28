@@ -3204,7 +3204,6 @@ def _by_field_datatype(
 QUESTIONNAIRE_ROW_MANDATORY_FIELDS: TypeMapping = {
     'title': Optional[str],
     'info': Optional[str],
-    'input_size': Optional[int],
     'readonly': Optional[bool],
     'default_value': Optional[str],
 }
@@ -4409,6 +4408,7 @@ ASSEMBLY_ATTACHMENT_VERSION_FIELDS: Mapping[str, Any] = {
     'title': str,
     'authors': Optional[str],
     'filename': str,
+    'changenotes': Optional[str],
     'file_hash': str,
 }
 

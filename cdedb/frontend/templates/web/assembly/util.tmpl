@@ -17,9 +17,7 @@
                                {'attachment_id': version["attachment_id"], 'version_nr': version["version_nr"]}),
                      version["title"]|string + " " + gettext("(Version %(version)s)")|format(version=version["version_nr"]),
                      icon="file") }}
-        {% if edit_right %}
-            <span class="text-muted small">[{{ version['filename'] }}]</span>
-        {% endif %}
+        <span class="text-muted small">[{{ version['filename'] }}]</span>
         {% if edit_right and (add or delete) %}
             <div class="list-button-float" id="versionmanagement">
                 {% if add %}
@@ -69,6 +67,9 @@
         {% trans ctime=version["ctime"]|datetime(lang=lang) %}uploaded {{ ctime }}{% endtrans %}
         {%- if version["dtime"] -%}
             , {% trans dtime=version["dtime"]|datetime(lang=lang) %}deleted {{ dtime }}{% endtrans %}
+        {% endif %}
+        {% if version["changenotes"] %}
+            <br /> {% trans %}Changenotes{% endtrans %}: {{ version["changenotes"] }}
         {% endif %}
     </div>
 {% endmacro %}

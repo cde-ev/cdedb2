@@ -105,6 +105,7 @@ class TestEventBackend(BackendTest):
             'field_definition_notes': "No fields plz",
             'orgas': {2, 7},
             'caretakers': {3},
+            'checkin_helpers': set(),
             'parts': {
                 -1: {
                     'tracks': {
@@ -589,6 +590,7 @@ class TestEventBackend(BackendTest):
                         "mailinglists",
                         "event_fees",
                         "caretakers",
+                        "checkin_helpers",
                     ),
                 ),
             )
@@ -2133,7 +2135,6 @@ class TestEventBackend(BackendTest):
                     'info': None,
                     'pos': 0,
                     'readonly': False,
-                    'input_size': None,
                     'title': 'Ich bin unter 13 Jahre alt.',
                     'kind': const.QuestionnaireUsages.registration,
                 },
@@ -2145,7 +2146,6 @@ class TestEventBackend(BackendTest):
                     'info': 'mit Text darunter',
                     'pos': 0,
                     'readonly': None,
-                    'input_size': None,
                     'title': 'Unterüberschrift',
                     'kind': const.QuestionnaireUsages.additional,
                 },
@@ -2156,7 +2156,6 @@ class TestEventBackend(BackendTest):
                     ' abzuwerfen.',
                     'pos': 1,
                     'readonly': False,
-                    'input_size': None,
                     'title': 'Bälle',
                     'kind': const.QuestionnaireUsages.additional,
                 },
@@ -2166,7 +2165,6 @@ class TestEventBackend(BackendTest):
                     'info': 'nur etwas Text',
                     'pos': 2,
                     'readonly': None,
-                    'input_size': None,
                     'title': None,
                     'kind': const.QuestionnaireUsages.additional,
                 },
@@ -2176,7 +2174,6 @@ class TestEventBackend(BackendTest):
                     'info': None,
                     'pos': 3,
                     'readonly': None,
-                    'input_size': None,
                     'title': 'Weitere Überschrift',
                     'kind': const.QuestionnaireUsages.additional,
                 },
@@ -2186,7 +2183,6 @@ class TestEventBackend(BackendTest):
                     'info': None,
                     'pos': 4,
                     'readonly': False,
-                    'input_size': None,
                     'title': 'Vehikel',
                     'kind': const.QuestionnaireUsages.additional,
                 },
@@ -2196,7 +2192,6 @@ class TestEventBackend(BackendTest):
                     'info': None,
                     'pos': 5,
                     'readonly': False,
-                    'input_size': 3,
                     'title': 'Hauswunsch',
                     'kind': const.QuestionnaireUsages.additional,
                 },
@@ -2225,7 +2220,6 @@ class TestEventBackend(BackendTest):
                     'default_value': None,
                     'info': None,
                     'readonly': None,
-                    'input_size': None,
                     'title': 'Weitere bla Überschrift',
                 },
                 {
@@ -2233,7 +2227,6 @@ class TestEventBackend(BackendTest):
                     'default_value': 'etc',
                     'info': None,
                     'readonly': True,
-                    'input_size': None,
                     'title': 'Vehikel',
                 },
                 {
@@ -2241,7 +2234,6 @@ class TestEventBackend(BackendTest):
                     'default_value': None,
                     'info': 'mit Text darunter und so',
                     'readonly': None,
-                    'input_size': None,
                     'title': 'Unterüberschrift',
                 },
                 {
@@ -2249,7 +2241,6 @@ class TestEventBackend(BackendTest):
                     'default_value': None,
                     'info': None,
                     'readonly': True,
-                    'input_size': 5,
                     'title': 'Vehikel',
                 },
                 {
@@ -2257,7 +2248,6 @@ class TestEventBackend(BackendTest):
                     'default_value': None,
                     'info': 'nur etwas mehr Text',
                     'readonly': None,
-                    'input_size': None,
                     'title': None,
                 },
             ],
@@ -2268,7 +2258,6 @@ class TestEventBackend(BackendTest):
                     'info': "Du kannst freiwillig etwas mehr bezahlen um zukünftige"
                     " Akademien zu unterstützen.",
                     'readonly': False,
-                    'input_size': None,
                     'title': "Ich möchte den Solidaritätszuschlag bezahlen.",
                 },
             ],
@@ -2929,6 +2918,9 @@ class TestEventBackend(BackendTest):
             expectation = self.cleanup_event_export(json.load(f))
         expectation['timestamp'] = nearly_now()
         expectation['event']['caretakers'] = set(expectation['event']['caretakers'])
+        expectation['event']['checkin_helpers'] = set(
+            expectation['event']['checkin_helpers']
+        )
         for reg in expectation['registrations'].values():
             reg['ctime'] = nearly_now()
             reg['mtime'] = None
@@ -3289,7 +3281,9 @@ class TestEventBackend(BackendTest):
                 'code': const.EventLogCodes.event_partial_import,
             },
         ]
-        self.assertLogEqual(log_expectation, event_id=1, realm="event", offset=11)
+        self.assertLogEqual(
+            log_expectation, event_id=1, realm="event", offset=self.EVENT_LOG_OFFSET
+        )
 
     @storage
     @event_keeper
@@ -3927,6 +3921,13 @@ class TestEventBackend(BackendTest):
                 "submitted_by": 1,
                 "change_note": "23.02.2022, 10:00:00",
             },
+            {
+                'code': const.EventLogCodes.checkin_helper_added,
+                'event_id': 1,
+                'persona_id': 38,
+                'submitted_by': 7,
+                'change_note': None,
+            },
         )
 
         self.assertLogEqual(expectation, realm="event")
@@ -4228,7 +4229,6 @@ class TestEventBackend(BackendTest):
                     'default_value': None,
                     'info': None,
                     'readonly': None,
-                    'input_size': None,
                     'title': 'Weitere bla Überschrift',
                     'kind': const.QuestionnaireUsages.additional,
                 },
@@ -4237,7 +4237,6 @@ class TestEventBackend(BackendTest):
                     'default_value': 'etc',
                     'info': None,
                     'readonly': True,
-                    'input_size': None,
                     'title': 'Vehikel',
                     'kind': const.QuestionnaireUsages.additional,
                 },
@@ -4246,7 +4245,6 @@ class TestEventBackend(BackendTest):
                     'default_value': None,
                     'info': 'mit Text darunter und so',
                     'readonly': None,
-                    'input_size': None,
                     'title': 'Unterüberschrift',
                     'kind': const.QuestionnaireUsages.additional,
                 },
@@ -4255,7 +4253,6 @@ class TestEventBackend(BackendTest):
                     'default_value': None,
                     'info': None,
                     'readonly': True,
-                    'input_size': 5,
                     'title': 'Vehikel',
                     'kind': const.QuestionnaireUsages.additional,
                 },
@@ -4264,7 +4261,6 @@ class TestEventBackend(BackendTest):
                     'default_value': None,
                     'info': 'nur etwas mehr Text',
                     'readonly': None,
-                    'input_size': None,
                     'title': None,
                     'kind': const.QuestionnaireUsages.additional,
                 },

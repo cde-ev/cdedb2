@@ -186,7 +186,7 @@ def event(context: Context) -> int:
                 'field_name': make_counter(context, 'VeranstaltungsfeldIntern'),
                 'title': make_counter(context, 'Veranstaltungsfeld'),
                 'sortkey': 0,
-                'kind': const.FieldDatatypes.str,
+                'kind': const.FieldDatatypes.str_multiline,
                 'entries': None,
                 'checkin': False,
             },
@@ -307,7 +307,6 @@ def event(context: Context) -> int:
                 'default_value': None,
                 'info': make_counter(context, 'FragebogenText'),
                 'readonly': None,
-                'input_size': None,
                 'title': make_counter(context, 'FragebogenÜberschrift'),
             }
         ],
@@ -317,7 +316,6 @@ def event(context: Context) -> int:
                 'default_value': None,
                 'info': make_counter(context, 'FragebogenText'),
                 'readonly': None,
-                'input_size': None,
                 'title': make_counter(context, 'FragebogenÜberschrift'),
             }
         ],

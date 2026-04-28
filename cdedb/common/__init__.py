@@ -132,6 +132,7 @@ class User:
         username: str = "",
         orga: Optional[Collection[int]] = None,
         caretaker: Optional[Collection[int]] = None,
+        checkin_helper: Optional[Collection[int]] = None,
         moderator: Optional[Collection[int]] = None,
         presider: Optional[Collection[int]] = None,
     ) -> None:
@@ -147,6 +148,7 @@ class User:
         self.family_name = family_name
         self.orga: set[int] = set(orga) if orga else set()
         self.caretaker: set[int] = set(caretaker) if caretaker else set()
+        self.checkin_helper: set[int] = set(checkin_helper) if checkin_helper else set()
         self.moderator: set[int] = set(moderator) if moderator else set()
         self.presider: set[int] = set(presider) if presider else set()
         self.admin_views: set[AdminView] = set()
