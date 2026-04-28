@@ -17,7 +17,7 @@ else
         TAG=release/$(date +'%Y-%m-%d')
         RELEASE_FILE="related/release/${OLD_TAG#"release/"}_${TAG#"release/"}_$(git rev-parse HEAD | head -c8).md"
         git tag -f "$TAG"
-        mkdir related/release
+        mkdir -p related/release
         bin/create_release_description.py "$OLD_TAG" "$TAG" > "$RELEASE_FILE"
         echo "Wrote release note template to '$RELEASE_FILE'."
         git push --delete origin "$TAG"
