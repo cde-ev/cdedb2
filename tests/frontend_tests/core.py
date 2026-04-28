@@ -1345,7 +1345,15 @@ class TestCoreFrontend(FrontendTest):
             old_privileges,
             new_password=new_password,
         )
-        self.assertNotification("E-Mail", 'info')
+        user_mail = self.fetch_mail_content(0)
+        self.assertIn(
+            "Deine Adminrechte in der CdE-Datenbank haben sich geändert.", user_mail
+        )
+        admins_mail = self.fetch_mail_content(1)
+        self.assertIn("folgende Adminprivilegien hinzugefügt:", admins_mail)
+        self.assertIn("Veranstaltungs-Admin", admins_mail)
+        self.assertIn("Versammlungs-Admin", admins_mail)
+        self.assertIn("CdElokal-Admin", admins_mail)
         # Check success.
         self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
         self.assertTitle(
