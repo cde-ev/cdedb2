@@ -1020,13 +1020,13 @@ class PastEventBackend(AbstractBackend):
                     )
 
         # now add the participants to the past event
-        for persona_id, courses in participants_to_courses.items():
+        for persona_id, course_ids in participants_to_courses.items():
             orga_status = const.PastOrgaKind.none
             if persona_id in event.orgas:
                 orga_status = const.PastOrgaKind.orga
             self.set_participant(rs, new_id, persona_id, orga_status=orga_status)
-            for course_id, is_instructor in courses.items():
-                if not course.active_segments & set(part.tracks):
+            for course_id, is_instructor in course_ids.items():
+                if not courses[course_id].active_segments & set(part.tracks):
                     self.logger.warning(
                         f"During archival of event {event.id}, persona {persona_id}"
                         f" participated in cancelled course {course_id} in part {part.id}."
