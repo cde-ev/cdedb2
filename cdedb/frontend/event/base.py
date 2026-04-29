@@ -648,9 +648,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             rs, rs.ambience["event"].id
         )[kind]
         field_ids = {
-            entry.field_id
-            for entry in questionnaire
-            if entry.field_id and not entry.readonly
+            entry.field_id for entry in questionnaire.field_rows if not entry.readonly
         }
         return event_associated_fields_extractor(
             rs, rs.ambience["event"], const.FieldAssociations.registration, field_ids

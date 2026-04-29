@@ -1346,8 +1346,23 @@ class EventBaseBackend(EventLowLevelBackend):
         """Retrieve the questionnaire rows for a specific event."""
         event_id = affirm(vtypes.ID, event_id)
         event = self.get_event(rs, event_id)
-        query = models.QuestionnaireRow.get_select_query([event_id])
-        data = self.query_all(rs, *query)
+        data: list[CdEDBObject] = []
+        data.extend(
+            self.query_all(
+                rs, *models.QuestionnaireTextRow.get_select_query([event_id])
+            )
+        )
+        data.extend(
+            self.query_all(
+                rs, *models.QuestionnaireFieldRow.get_select_query([event_id])
+            )
+        )
+        data.extend(
+            self.query_all(
+                rs, *models.QuestionnaireMagicRow.get_select_query([event_id])
+            )
+        )
+
         for row in data:
             row["event"] = event
         return models.QuestionnaireContainer.from_database(data, event)
@@ -1374,13 +1389,14 @@ class EventBaseBackend(EventLowLevelBackend):
         self.assert_lock(rs, event_id=event_id)
         with Atomizer(rs):
             # Always delete everything then recreate.
-            query = f"""
-                DELETE FROM {models.QuestionnaireRow.database_table}
-                WHERE event_id = %(event_id)s and kind = %(kind)s
-            """
-            params = {"event_id": event_id, "kind": kind}
-            self.query_exec(rs, query, params)
-            # Otherwise replace rows for all given kinds.
+            for cls in models.QuestionnaireRow.__subclasses__():
+                query = f"""
+                    DELETE FROM {cls.database_table}
+                    WHERE event_id = %(event_id)s and kind = %(kind)s
+                """
+                params = {"event_id": event_id, "kind": kind}
+                self.query_exec(rs, query, params)
+
             ret = 1
             for pos, row in enumerate(data):
                 new_row = copy.deepcopy(row)
@@ -1388,9 +1404,8 @@ class EventBaseBackend(EventLowLevelBackend):
                 # The questionnaire import allows specifying fields by name.
                 #  We cannot remove this before, due to validation idempotency.
                 new_row.pop("field_name", None)
-                ret *= self.sql_insert(
-                    rs, models.QuestionnaireRow.database_table, new_row
-                )
+                cls = models.QuestionnaireRow.get_variant_class(new_row)
+                ret *= self.sql_insert(rs, cls.database_table, new_row)
             self.event_log(rs, const.EventLogCodes.questionnaire_changed, event_id)
         return ret
 

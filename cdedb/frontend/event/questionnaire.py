@@ -29,7 +29,9 @@ from cdedb.frontend.common import (
     REQUESTdata,
     access,
     check_validation as check,
-    process_dynamic_input,
+    drow_create,
+    drow_delete,
+    drow_name,
     request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend, event_guard
@@ -69,7 +71,10 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             for i, entry in enumerate(questionnaire)
             for key, value in entry.as_dict().items()
         }
-        merge_dicts(rs.values, current)
+        variants = {
+            f"variant_{i}": entry.variant for i, entry in enumerate(questionnaire)
+        }
+        merge_dicts(rs.values, current, variants)
 
         checksum = get_hash(json_serialize(questionnaire).encode())
 
@@ -88,7 +93,9 @@ class EventQuestionnaireMixin(EventBaseFrontend):
                 "questionnaire": questionnaire,
                 "checksum": checksum,
                 "available_fields": full_questionnaire.get_available_fields(kind),
-                "available_builtins": full_questionnaire.get_available_builtins(kind),
+                "available_magic_roles": full_questionnaire.get_available_magic_roles(
+                    kind
+                ),
                 "kind": kind,
             },
         )
@@ -125,6 +132,27 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/configure_additional_questionnaire_form")
 
+    def _extract_questionnaire_row(
+        self, rs: RequestState, pos: int
+    ) -> CdEDBObject | None:
+        if unwrap(request_extractor(rs, {drow_delete(pos): bool})):
+            return None
+        variant = unwrap(request_extractor(rs, {drow_name("variant", pos): str | None}))
+        if not variant:
+            return None
+        variant_cls: type[models.QuestionnaireRow] | None = getattr(
+            models, variant, None
+        )
+        if not variant_cls:
+            return None
+        spec = variant_cls.requestdict_fields(creation=True)
+        data = request_extractor(
+            rs,
+            {drow_name(key, pos): val for key, val in spec},  # type: ignore[misc]
+            postpone_validation=True,
+        )
+        return {key: data[drow_name(key, pos)] for key, _ in spec}
+
     def _set_questionnaire(
         self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages
     ) -> DefaultReturnCode:
@@ -134,20 +162,25 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             self._prepare_questionnaire_form(rs, event_id, kind)
         )
 
-        new_questionnaire = process_dynamic_input(
-            rs,
-            models.QuestionnaireRow,
-            existing=list(range(len(questionnaire))),
-            spec=dict(models.QuestionnaireRow.requestdict_fields(creation=False)),
-            creation_spec=dict(
-                models.QuestionnaireRow.requestdict_fields(creation=True)
-            ),
-            skip_validation=True,
-        )
+        new_questionnaire: list[CdEDBObject] = [
+            row
+            for pos in range(len(questionnaire))
+            if (row := self._extract_questionnaire_row(rs, pos))
+        ]
+
+        marker = 1
+        while marker < 2**10:
+            if unwrap(request_extractor(rs, {drow_create(-marker): bool})):
+                if row := self._extract_questionnaire_row(rs, -marker):
+                    new_questionnaire.append(row)
+                marker += 1
+            else:
+                break
+
         new_questionnaire = check(
             rs,
             vtypes.Questionnaire,
-            list(filter(None, new_questionnaire.values())),
+            new_questionnaire,
             kind=kind,
             all_questionnaires=all_questionnaires,
         )

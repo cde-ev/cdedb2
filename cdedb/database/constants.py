@@ -22,7 +22,7 @@ from cdedb.uncommon.submanshim import (  # noqa: F401
 )
 
 if TYPE_CHECKING:
-    from cdedb.models.event.questionnaire_builtins import BuiltinQuestionnaireBlock
+    from cdedb.models.event import QuestionnaireMagicRow
 
 
 def n_(x: str) -> str:  # pragma: no cover
@@ -204,7 +204,7 @@ class QuestionnaireUsages(CdEIntEnum):
 
 
 @enum.unique
-class QuestionnaireBuiltinElement(CdEIntEnum):
+class QuestionnaireRowMagicRole(CdEIntEnum):
     course_choices = 10
     # part_selection = 20
     fee_preview = 30
@@ -213,12 +213,10 @@ class QuestionnaireBuiltinElement(CdEIntEnum):
     # foto_notice = 60
     # registration_notes = 70
 
-    def get_class(self) -> type["BuiltinQuestionnaireBlock"]:
-        from cdedb.models.event.questionnaire_builtins import (  # noqa: PLC0415
-            BuiltinQuestionnaireBlock,
-        )
+    def get_class(self) -> type["QuestionnaireMagicRow"]:
+        from cdedb.models.event import QuestionnaireMagicRow  # noqa: PLC0415
 
-        return BuiltinQuestionnaireBlock.get_class(self)
+        return QuestionnaireMagicRow.get_class(self)
 
 
 @enum.unique

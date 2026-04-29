@@ -7980,97 +7980,89 @@
             "amount": "-30.00"
         }
     ],
-    "event.questionnaire_rows": [
+    "event.questionnaire_text_rows": [
         {
-            "id": 1,
+            "event_id": 1,
+            "kind": 2,
+            "pos": 0,
+            "title": "Unterüberschrift",
+            "info": "mit Text darunter"
+        },
+        {
+            "event_id": 1,
+            "kind": 2,
+            "pos": 2,
+            "title": null,
+            "info": "nur etwas Text"
+        },
+        {
+            "event_id": 1,
+            "kind": 2,
+            "pos": 3,
+            "title": "Weitere Überschrift",
+            "info": null
+        }
+    ],
+    "event.questionnaire_field_rows": [
+        {
             "event_id": 1,
             "kind": 1,
             "pos": 0,
             "title": "Ich bin unter 13 Jahre alt.",
             "info": null,
-            "readonly": false,
-            "default_value": null,
             "field_id": 7,
-            "builtin_element": null,
-            "builtin_aux": null
-        },
-        {
-            "id": 2,
-            "event_id": 1,
-            "kind": 2,
-            "pos": 0,
-            "title": "Unterüberschrift",
-            "info": "mit Text darunter",
             "readonly": false,
-            "default_value": null,
-            "field_id": null,
-            "builtin_element": null,
-            "builtin_aux": null
+            "default_value": null
         },
         {
-            "id": 3,
             "event_id": 1,
             "kind": 2,
             "pos": 1,
             "title": "Bälle",
             "info": "Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.",
-            "readonly": false,
-            "default_value": "True",
             "field_id": 1,
-            "builtin_element": null,
-            "builtin_aux": null
-        },
-        {
-            "id": 4,
-            "event_id": 1,
-            "kind": 2,
-            "pos": 2,
-            "title": null,
-            "info": "nur etwas Text",
             "readonly": false,
-            "default_value": null,
-            "field_id": null,
-            "builtin_element": null,
-            "builtin_aux": null
+            "default_value": "True"
         },
         {
-            "id": 5,
-            "event_id": 1,
-            "kind": 2,
-            "pos": 3,
-            "title": "Weitere Überschrift",
-            "info": null,
-            "readonly": false,
-            "default_value": null,
-            "field_id": null,
-            "builtin_element": null,
-            "builtin_aux": null
-        },
-        {
-            "id": 6,
             "event_id": 1,
             "kind": 2,
             "pos": 4,
             "title": "Vehikel",
             "info": null,
-            "readonly": false,
-            "default_value": "etc",
             "field_id": 2,
-            "builtin_element": null,
-            "builtin_aux": null
+            "readonly": false,
+            "default_value": "etc"
         },
         {
-            "id": 7,
             "event_id": 1,
             "kind": 2,
             "pos": 5,
             "title": "Hauswunsch",
             "info": null,
-            "readonly": false,
-            "default_value": null,
             "field_id": 3,
-            "builtin_element": null,
-            "builtin_aux": null
+            "readonly": false,
+            "default_value": null
+        }
+    ],
+    "event.questionnaire_magic_rows": [
+        {
+            "event_id": 1,
+            "kind": 1,
+            "pos": 1,
+            "title": null,
+            "info": null,
+            "role": 10,
+            "aux": null
+        },
+        {
+            "event_id": 1,
+            "kind": 1,
+            "pos": 2,
+            "title": null,
+            "info": null,
+            "role": 30,
+            "aux": null
         }
     ],
     "event.stored_queries": [

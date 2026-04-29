@@ -2138,8 +2138,22 @@ class TestEventBackend(BackendTest):
                     'readonly': False,
                     'default_value': None,
                     'field_id': 7,
-                    'builtin_element': None,
-                    'builtin_aux': None,
+                },
+                {
+                    'kind': const.QuestionnaireUsages.registration,
+                    'pos': 1,
+                    'title': None,
+                    'info': None,
+                    'role': const.QuestionnaireRowMagicRole.course_choices,
+                    'aux': None,
+                },
+                {
+                    'kind': const.QuestionnaireUsages.registration,
+                    'pos': 2,
+                    'title': None,
+                    'info': None,
+                    'role': const.QuestionnaireRowMagicRole.fee_preview,
+                    'aux': None,
                 },
             ],
             const.QuestionnaireUsages.additional: [
@@ -2148,67 +2162,45 @@ class TestEventBackend(BackendTest):
                     'pos': 0,
                     'title': 'Unterüberschrift',
                     'info': 'mit Text darunter',
-                    'readonly': False,
-                    'default_value': None,
-                    'field_id': None,
-                    'builtin_element': None,
-                    'builtin_aux': None,
                 },
                 {
                     'kind': const.QuestionnaireUsages.additional,
                     'pos': 1,
                     'title': 'Bälle',
-                    'info': 'Du bringst genug Bälle mit um einen ganzen Kurs'
-                    ' abzuwerfen.',
-                    'default_value': True,
-                    'readonly': False,
+                    'info': 'Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.',
                     'field_id': 1,
-                    'builtin_element': None,
-                    'builtin_aux': None,
+                    'readonly': False,
+                    'default_value': True,
                 },
                 {
                     'kind': const.QuestionnaireUsages.additional,
                     'pos': 2,
                     'title': None,
                     'info': 'nur etwas Text',
-                    'readonly': False,
-                    'default_value': None,
-                    'field_id': None,
-                    'builtin_element': None,
-                    'builtin_aux': None,
                 },
                 {
                     'kind': const.QuestionnaireUsages.additional,
                     'pos': 3,
                     'title': 'Weitere Überschrift',
                     'info': None,
-                    'readonly': False,
-                    'default_value': None,
-                    'field_id': None,
-                    'builtin_element': None,
-                    'builtin_aux': None,
                 },
                 {
                     'kind': const.QuestionnaireUsages.additional,
                     'pos': 4,
                     'title': 'Vehikel',
                     'info': None,
+                    'field_id': 2,
                     'readonly': False,
                     'default_value': 'etc',
-                    'field_id': 2,
-                    'builtin_element': None,
-                    'builtin_aux': None,
                 },
                 {
                     'kind': const.QuestionnaireUsages.additional,
                     'pos': 5,
                     'title': 'Hauswunsch',
                     'info': None,
+                    'field_id': 3,
                     'readonly': False,
                     'default_value': None,
-                    'field_id': 3,
-                    'builtin_element': None,
-                    'builtin_aux': None,
                 },
             ],
         }
@@ -2232,49 +2224,51 @@ class TestEventBackend(BackendTest):
         self.event.set_event(self.key, event_id, edata)
         aq_data: list[CdEDBObject] = [
             {
-                'field_id': None,
-                'default_value': None,
-                'info': None,
-                'readonly': False,
                 'title': 'Weitere bla Überschrift',
+                'info': None,
             },
             {
+                'title': 'Vehikel',
+                'info': None,
                 'field_id': 2,
+                'readonly': True,
                 'default_value': 'etc',
-                'info': None,
-                'readonly': True,
-                'title': 'Vehikel',
             },
             {
-                'field_id': None,
-                'default_value': None,
-                'info': 'mit Text darunter und so',
-                'readonly': False,
                 'title': 'Unterüberschrift',
+                'info': 'mit Text darunter und so',
             },
             {
-                'field_id': 3,
-                'default_value': None,
-                'info': None,
-                'readonly': True,
                 'title': 'Vehikel',
+                'info': None,
+                'field_id': 3,
+                'readonly': True,
+                'default_value': None,
             },
             {
-                'field_id': None,
-                'default_value': None,
-                'info': 'nur etwas mehr Text',
-                'readonly': False,
                 'title': None,
+                'info': 'nur etwas mehr Text',
             },
         ]
         rq_data: list[CdEDBObject] = [
             {
-                'field_id': 1001,
-                'default_value': None,
-                'info': "Du kannst freiwillig etwas mehr bezahlen um zukünftige"
-                " Akademien zu unterstützen.",
-                'readonly': False,
+                'title': None,
+                'info': None,
+                'role': const.QuestionnaireRowMagicRole.course_choices,
+                'aux': 1,
+            },
+            {
                 'title': "Ich möchte den Solidaritätszuschlag bezahlen.",
+                'info': "Du kannst freiwillig etwas mehr bezahlen um zukünftige Akademien zu unterstützen.",
+                'field_id': 1001,
+                'readonly': False,
+                'default_value': None,
+            },
+            {
+                'title': None,
+                'info': None,
+                'role': const.QuestionnaireRowMagicRole.fee_preview,
+                'aux': None,
             },
         ]
         self.assertLess(
@@ -2292,11 +2286,9 @@ class TestEventBackend(BackendTest):
         for pos, row in enumerate(aq_data):
             row['pos'] = pos
             row['kind'] = const.QuestionnaireUsages.additional
-            row['builtin_element'] = row['builtin_aux'] = None
         for pos, row in enumerate(rq_data):
             row['pos'] = pos
             row['kind'] = const.QuestionnaireUsages.registration
-            row['builtin_element'] = row['builtin_aux'] = None
         result = self.event.get_all_questionnaires(self.key, event_id)
         expectation = {
             const.QuestionnaireUsages.additional: aq_data,

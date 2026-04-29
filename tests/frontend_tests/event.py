@@ -5488,7 +5488,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f = self.response.forms['configurequestionnaireform']
         self.assertEqual("3", f['field_id_5'].value)
         self.assertEqual("2", f['field_id_4'].value)
-        f['field_id_4'] = ""
         self.assertEqual("Weitere Überschrift", f['title_3'].value)
         f['title_3'] = "Immernoch Überschrift"
         self.assertEqual("mit Text darunter", f['info_0'].value)
@@ -5498,7 +5497,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f = self.response.forms['configurequestionnaireform']
         self.assertEqual("3", f['field_id_5'].value)
         self.assertEqual("Hauswunsch", f['title_5'].value)
-        self.assertEqual("", f['field_id_4'].value)
         self.assertEqual("Immernoch Überschrift", f['title_3'].value)
         self.assertEqual("mehr Text darunter\nviel mehr", f['info_0'].value)
         f['delete_4'].checked = True
@@ -5511,6 +5509,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertEqual("3", f['field_id_4'].value)
         self.assertEqual("Hauswunsch", f['title_4'].value)
         f['create_-1'].checked = True
+        f['variant_-1'] = "QuestionnaireFieldRow"
         f['field_id_-1'] = 4
         f['title_-1'] = "Input"
         f['readonly_-1'].checked = True
@@ -5531,6 +5530,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         # Add a row with a datetime field and check that the default value works.
         f['create_-1'] = True
+        f['variant_-1'] = "QuestionnaireFieldRow"
         f['field_id_-1'] = 9  # 'arrival_at'
         f['default_value_-1'] = expectation = "2025-05-24 23:47:32"
         self.submit(f)

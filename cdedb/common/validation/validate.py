@@ -3223,14 +3223,20 @@ QUESTIONNAIRE_ROW_MANDATORY_FIELDS: TypeMapping = {
 }
 
 
-@_create_dataclass_validator(models_event.QuestionnaireRow)
-def _questionnaire_row(
+@_create_dataclass_validator(models_event.QuestionnaireTextRow)
+def _questionnaire_text_row(
+    val: CdEDBObject, argname: str = "", **kwargs: Any
+) -> CdEDBObject:
+    return val
+
+
+@_create_dataclass_validator(models_event.QuestionnaireFieldRow)
+def _questionnaire_field_row(
     val: CdEDBObject,
     argname: str = "",
     *,
     event: models_event.Event,
     available_fields: CdEDataclassMap[models_event.EventField],
-    available_builtins: set[const.QuestionnaireBuiltinElement],
     **kwargs: Any,
 ) -> CdEDBObject:
 
@@ -3269,35 +3275,41 @@ def _questionnaire_row(
     elif val['default_value']:
         val['default_value'] = None
 
-    if builtin := val.get("builtin_element"):
-        builtin_aux = None
-        if builtin not in available_builtins:
-            errs.append(KeyError("builtin_element", n_("Invalid builtin element.")))
-        else:
-            assert isinstance(builtin, const.QuestionnaireBuiltinElement)
-            _builtin_class = builtin.get_class()
-            with errs:
-                builtin_aux = _ALL_TYPED[_builtin_class.get_aux_type()](
-                    val["builtin_aux"], "builtin_aux"
-                )
-                _builtin = _builtin_class(event, builtin_aux)
-                if not _builtin.is_valid_aux():
-                    errs.append(
-                        ValueError("builtin_aux", n_("Invalid value for this builtin."))
-                    )
-        val["builtin_aux"] = builtin_aux
-    else:
-        val["builtin_aux"] = None
-
-    if val["field_id"] and val.get("builtin_element"):
-        msg = n_("Cannot have both field and builtin element.")
-        errs.append(ValueError("field_id", msg))
-        errs.append(ValueError("builtin_element", msg))
-
     if val['readonly'] and val['field_id'] is not None and not kind.allow_readonly():
         # TODO: more generic error message?
         msg = n_("Registration questionnaire rows may not be readonly.")
         errs.append(ValueError('readonly', msg))
+
+    if errs:
+        raise errs
+
+    return val
+
+
+@_create_dataclass_validator(models_event.QuestionnaireMagicRow)  # type: ignore[type-abstract]
+def _questionnaire_magic_row(
+    val: CdEDBObject,
+    argname: str = "",
+    *,
+    event: models_event.Event,
+    available_magic_roles: set[const.QuestionnaireRowMagicRole],
+    **kwargs: Any,
+) -> CdEDBObject:
+
+    errs = ValidationSummary()
+    role: const.QuestionnaireRowMagicRole = val["role"]
+
+    if role not in available_magic_roles:
+        errs.append(KeyError("role", n_("Invalid magic role.")))
+        val["aux"] = None
+    else:
+        _role_class = role.get_class()
+        with errs:
+            aux = _ALL_TYPED[_role_class.get_aux_type()](val["aux"], "aux")
+            if not _role_class.is_valid_aux(event, aux):
+                errs.append(ValueError("aux", n_("Invalid value for this magic role.")))
+            else:
+                val["aux"] = aux
 
     if errs:
         raise errs
@@ -3314,9 +3326,10 @@ def _questionnaire(
     all_questionnaires: models_event.QuestionnaireContainer,
     **kwargs: Any,
 ) -> Questionnaire:
-    val = _iterable(val, argname, **kwargs)
+    val = _ALL_TYPED[list[dict[str, Any]]](val, argname, **kwargs)
+
     available_fields = all_questionnaires.get_available_fields(kind)
-    available_builtins = all_questionnaires.get_available_builtins(kind)
+    available_magic_roles = all_questionnaires.get_available_magic_roles(kind)
 
     errs = ValidationSummary()
     ret: list[CdEDBObject] = []
@@ -3324,11 +3337,12 @@ def _questionnaire(
         row["kind"] = kind
         row["pos"] = i
         with errs.modify_argname(suffix=f"_{i}"):
-            row = _ALL_TYPED[models_event.QuestionnaireRow](
+            cls = models_event.QuestionnaireRow.get_variant_class(row)
+            row = _ALL_TYPED[cls](
                 row,
                 event=event,
                 available_fields=available_fields,
-                available_builtins=available_builtins,
+                available_magic_roles=available_magic_roles,
             )
             ret.append(row)
 

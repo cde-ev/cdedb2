@@ -257,11 +257,11 @@
     {% endif %}
 {% endmacro %}
 
-{% macro print_builtin_questionnaire_block(row) %}
-    {% if row.builtin.name == "FeePreview" %}
+{% macro print_magic_questionnaire_row(row) %}
+    {% if row.variant == "FeePreview" %}
         {{ fee_preview_panel() }}
     {% else %}
-        {{ row.builtin.name }}
+        {{ row.variant }}({{ row.aux }})
     {% endif %}
 {% endmacro %}
 
@@ -273,8 +273,8 @@
                 defaultvalue=entry.default_value if not (readonly or is_locked) else "",
                 bool_label=entry.title) }}
     {# Builtin entry #}
-    {% elif entry.builtin %}
-        {{ print_builtin_questionnaire_block(entry) }}
+    {% elif entry.role %}
+        {{ print_magic_questionnaire_row(entry) }}
     {# Text-only entry #}
     {% else %}
         {% if entry.title %}
@@ -292,6 +292,7 @@
     <div class="panel panel-default {{ aclass }}" data-drow-id="{{ part_id }}">
         <div class="panel-body">
             <div class="row">
+                {{ util.input_hidden("variant_" ~ part_id) }}
                 <div class="col-md-6">
                     {{ util.form_input_text(name="title_{}".format(part_id), label=gettext("Title_[[name of an entity]]"),
                                             attributes=('data-basename="title_"'|s if newrow else ''),
@@ -307,14 +308,14 @@
                     {%- endcall %}
                 </div>
                 <div class="col-md-6">
-                    {{ util.form_input_select("builtin_element_{}".format(part_id), label=gettext("Builtin"),
-                                              entries=available_builtins|enum_entries(processing=gettext),
+                    {{ util.form_input_select("role_{}".format(part_id), label=gettext("Magic Role"),
+                                              entries=available_magic_roles|enum_entries(processing=gettext),
                                               nulloption=gettext("— None —"),
-                                              attributes=('data-basename="builtin_element_"'|s if newrow else ''),
-                                              aclass='input-builtin drow-input', horizontal=False) }}
-                    {{ util.form_input_text("builtin_aux_{}".format(part_id), label=gettext("Builtin Aux"),
-                                            attributes=('data-basename="builtin_aux_"'|s if newrow else ''),
-                                            aclass='input-builtin-aux drow-input', horizontal=False) }}
+                                              attributes=('data-basename="role_"'|s if newrow else ''),
+                                              aclass='input-role drow-input', horizontal=False) }}
+                    {{ util.form_input_text("aux_{}".format(part_id), label=gettext("Magic Role Aux"),
+                                            attributes=('data-basename="aux_"'|s if newrow else ''),
+                                            aclass='input-aux drow-input', horizontal=False) }}
                     {{ util.form_input_select("field_id_{}".format(part_id), label=gettext("Query"),
                                               entries=available_fields|entries('id', 'field_name'),
                                               nulloption=gettext("— None —"),

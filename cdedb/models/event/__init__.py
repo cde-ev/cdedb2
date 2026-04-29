@@ -90,7 +90,6 @@ if TYPE_CHECKING:
     from cdedb.database.query import (
         DatabaseValue_s,
     )
-    from cdedb.models.event.questionnaire_builtins import BuiltinQuestionnaireBlock
 
 
 #
@@ -1052,8 +1051,6 @@ class SyncTrackGroup(TrackGroup, CourseChoiceObject):  # type: ignore[misc]
 
 @dataclasses.dataclass
 class QuestionnaireRow(EventDataclass):
-    database_table = "event.questionnaire_rows"
-
     id: vtypes.ID = dataclasses.field(
         compare=False,
         repr=False,
@@ -1062,53 +1059,29 @@ class QuestionnaireRow(EventDataclass):
     event_id: vtypes.ID = dataclasses.field(
         metadata=(Meta.request_exclude | Meta.asdict_exclude).as_dict,
     )
+    event: dataclasses.InitVar[Event]
     kind: const.QuestionnaireUsages
-
     pos: int
+
     title: str | None
     info: str | None
 
-    readonly: bool
-    default_value: Any  # TODO: ByDatafieldKind maybe some union?
+    @classmethod
+    def get_variant_class(cls, data: CdEDBObject) -> type["QuestionnaireRow"]:
+        if "field_id" in data:
+            return QuestionnaireFieldRow
+        elif "role" in data:
+            return QuestionnaireMagicRow
+        else:
+            return QuestionnaireTextRow
 
-    field_id: vtypes.ID | None
-    field: EventField | None = dataclasses.field(
-        init=False, default=None, metadata=(Meta.exclude | Meta.asdict_exclude).as_dict
-    )
-    builtin_element: const.QuestionnaireBuiltinElement | None
-    builtin: "BuiltinQuestionnaireBlock | None" = dataclasses.field(
-        init=False, default=None, metadata=(Meta.exclude | Meta.asdict_exclude).as_dict
-    )
-    builtin_aux: Any
+    @property
+    def variant(self) -> str:
+        return self.__class__.__qualname__
 
     @classmethod
-    def from_database(cls, data: "CdEDBObject") -> "Self":
-        event: Event = data.pop("event")
-        ret = super().from_database(data)
-        if ret.field_id:
-            ret.field = event.fields[ret.field_id]
-            # Deserialize the stored string into the datatype of the field if able.
-            ret.default_value = cast_field_value(ret.default_value, ret.field.kind)
-            # Special case for datetimes: Convert them to the default timezone so
-            #  they can be submitted again even without the timezone.
-            #  This is required for use with 'datetime-local' inputs.
-            if ret.field.kind == const.FieldDatatypes.datetime:
-                if ret.default_value:
-                    ret.default_value = ret.default_value.astimezone(
-                        CONF["DEFAULT_TIMEZONE"]
-                    )
-        if ret.builtin_element:
-            _builtin_class: type[BuiltinQuestionnaireBlock] = (
-                ret.builtin_element.get_class()
-            )
-
-            from cdedb.common.validation.validate import validate_check  # noqa: PLC0415
-
-            ret.builtin_aux, _errs = validate_check(
-                _builtin_class.get_aux_type(), ret.builtin_aux, ignore_warnings=True
-            )
-            ret.builtin = _builtin_class(event, ret.builtin_aux)
-        return ret
+    def from_database(cls, data: CdEDBObject) -> "QuestionnaireRow":
+        return cls.get_variant_class(data).from_database(data)
 
     def get_sortkey(self) -> Sortkey:
         return (
@@ -1128,6 +1101,131 @@ class QuestionnaireRow(EventDataclass):
         optional["field_name"] = vtypes.RestrictiveIdentifier | None
         return mandatory, optional
 
+    def __lt__(self, other: Any) -> bool:
+        if not isinstance(other, QuestionnaireRow):
+            return NotImplemented
+        return self._lt_inner(other)
+
+
+@dataclasses.dataclass
+class QuestionnaireTextRow(QuestionnaireRow):
+    database_table = "event.questionnaire_text_rows"
+
+    @classmethod
+    def from_database(cls, data: CdEDBObject) -> "Self":
+        return super(QuestionnaireRow, cls).from_database(data)
+
+
+@dataclasses.dataclass
+class QuestionnaireFieldRow(QuestionnaireRow):
+    database_table = "event.questionnaire_field_rows"
+
+    field_id: vtypes.ID
+    field: EventField = dataclasses.field(
+        init=False,
+        default=cast(EventField, None),
+        repr=False,
+        compare=False,
+        metadata=(Meta.exclude | Meta.asdict_exclude).as_dict,
+    )
+    readonly: bool
+    default_value: Any  # TODO: ByDatafieldKind maybe some union?
+
+    @classmethod
+    def from_database(cls, data: "CdEDBObject") -> "Self":
+        event: Event = data["event"]
+        ret = super(QuestionnaireRow, cls).from_database(data)
+        ret.field = event.fields[ret.field_id]
+
+        # Deserialize the stored string into the datatype of the field if able.
+        ret.default_value = cast_field_value(ret.default_value, ret.field.kind)
+        # Special case for datetimes: Convert them to the default timezone so
+        #  they can be submitted again even without the timezone.
+        #  This is required for use with 'datetime-local' inputs.
+        if ret.field.kind == const.FieldDatatypes.datetime:
+            if ret.default_value:
+                ret.default_value = ret.default_value.astimezone(
+                    CONF["DEFAULT_TIMEZONE"]
+                )
+
+        return ret
+
+
+@dataclasses.dataclass
+class QuestionnaireMagicRow(QuestionnaireRow):
+    database_table = "event.questionnaire_magic_rows"
+    enum_member: ClassVar[const.QuestionnaireRowMagicRole]
+
+    valid_kinds: ClassVar[dict[const.QuestionnaireUsages, int]]
+    readonly: ClassVar[bool] = False  # TODO: move into valid_kinds
+
+    role: const.QuestionnaireRowMagicRole
+    aux: Any
+
+    @classmethod
+    def from_database(cls, data: "CdEDBObject") -> "QuestionnaireMagicRow":
+        role = const.QuestionnaireRowMagicRole(data["role"])
+        ret = super(QuestionnaireRow, role.get_class()).from_database(data)
+
+        from cdedb.common.validation.validate import validate_check  # noqa: PLC0415
+
+        ret.aux, _errs = validate_check(
+            role.get_class().get_aux_type(), ret.aux, ignore_warnings=True
+        )
+        return ret
+
+    @staticmethod
+    def get_class(
+        enum_member: const.QuestionnaireRowMagicRole,
+    ) -> type["QuestionnaireMagicRow"]:
+        for cls in QuestionnaireMagicRow.__subclasses__():
+            if cls.enum_member == enum_member:
+                return cls
+        raise KeyError
+
+    @classmethod
+    def get_aux_type(cls) -> TypeForm[Any]:
+        for field in dataclasses.fields(cls):
+            if field.name == "aux":
+                if field.type is None:
+                    return type(None)
+                return cast(TypeForm[Any], field.type)
+        return None
+
+    @classmethod
+    @abc.abstractmethod
+    def is_valid_aux(cls, event: Event, aux: Any) -> bool: ...
+
+
+@dataclasses.dataclass
+class CourseChoices(QuestionnaireMagicRow):
+    enum_member = const.QuestionnaireRowMagicRole.course_choices
+    valid_kinds = {const.QuestionnaireUsages.registration: 1}
+
+    aux: vtypes.ID | None
+
+    @classmethod
+    def is_valid_aux(cls, event: Event, aux: Any) -> bool:
+        if aux is None:
+            return True
+        return aux in event.tracks
+
+
+@dataclasses.dataclass
+class FeePreview(QuestionnaireMagicRow):
+    enum_member = const.QuestionnaireRowMagicRole.fee_preview
+    valid_kinds = {
+        const.QuestionnaireUsages.registration: 0,
+        const.QuestionnaireUsages.additional: 0,
+    }
+    readonly = True
+
+    aux: None
+
+    @classmethod
+    def is_valid_aux(cls, event: Event, aux: Any) -> bool:
+        return aux is None
+
 
 class Questionnaire(list[QuestionnaireRow]):
     kind: const.QuestionnaireUsages
@@ -1139,8 +1237,12 @@ class Questionnaire(list[QuestionnaireRow]):
     def as_dicts(self) -> list[CdEDBObject]:
         return [row.as_dict() for row in self]
 
+    @functools.cached_property
+    def field_rows(self) -> list[QuestionnaireFieldRow]:
+        return [row for row in self if isinstance(row, QuestionnaireFieldRow)]
+
     def get_field_ids(self) -> set[int]:
-        return {row.field_id for row in self if row.field_id is not None}
+        return {row.field_id for row in self if isinstance(row, QuestionnaireFieldRow)}
 
     def allows_field(self, field: EventField, has_fees: bool) -> bool:
         """
@@ -1155,10 +1257,10 @@ class Questionnaire(list[QuestionnaireRow]):
             return False
         return True
 
-    def get_builtins(self) -> set[const.QuestionnaireBuiltinElement]:
-        return {row.builtin_element for row in self if row.builtin_element is not None}
+    def get_magic_roles(self) -> set[const.QuestionnaireRowMagicRole]:
+        return {row.role for row in self if isinstance(row, QuestionnaireMagicRow)}
 
-    def allows_builtin(self, builtin: const.QuestionnaireBuiltinElement) -> bool:
+    def allows_builtin(self, builtin: const.QuestionnaireRowMagicRole) -> bool:
         builtin_class = builtin.get_class()
         return self.kind in builtin_class.valid_kinds
 
@@ -1170,7 +1272,7 @@ class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
     def from_database(cls, data: Collection["CdEDBObject"], event: Event) -> "Self":
         ret = cls()
         ret.event = event
-        for row in QuestionnaireRow.many_from_database(data).values():
+        for row in QuestionnaireRow.many_from_database_list(data):
             ret[row.kind].append(row)
         return ret
 
@@ -1211,27 +1313,28 @@ class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
             and field_usage.get(field.id, kind) == kind
         }
 
-    def builtin_usage(
+    def magic_role_usage(
         self,
-    ) -> Mapping[const.QuestionnaireBuiltinElement, const.QuestionnaireUsages]:
-        """Map builtin elements to the questionnaire kind they are used in."""
+    ) -> Mapping[const.QuestionnaireRowMagicRole, const.QuestionnaireUsages]:
+        """Map magic roles to the questionnaire kind they are used in."""
         # These dicts are disjunct therfore the chainmap is just a big union.
+        #  TODO: is it?
         return collections.ChainMap(
             *(
                 {builtin: kind}
                 for kind, q in self.items()
-                for builtin in q.get_builtins()
+                for builtin in q.get_magic_roles()
             )
         )
 
-    def get_available_builtins(
+    def get_available_magic_roles(
         self, kind: const.QuestionnaireUsages
-    ) -> list[const.QuestionnaireBuiltinElement]:
+    ) -> list[const.QuestionnaireRowMagicRole]:
         """Return all builtins available for use in a questionnaire of the given kind."""
-        builtin_usage = self.builtin_usage()
+        builtin_usage = self.magic_role_usage()
         return [
             builtin_element
-            for builtin_element in const.QuestionnaireBuiltinElement
+            for builtin_element in const.QuestionnaireRowMagicRole
             if self[kind].allows_builtin(builtin_element)
             and (
                 builtin_usage.get(builtin_element, kind) == kind

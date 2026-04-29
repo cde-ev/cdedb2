@@ -1366,37 +1366,65 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON event.personalized_fees TO cdb_persona;
 GRANT SELECT, UPDATE ON event.personalized_fees_id_seq TO cdb_persona;
 GRANT SELECT ON event.personalized_fees TO cdb_anonymous;
 
-CREATE TABLE event.questionnaire_rows (
+CREATE TABLE event.questionnaire_text_rows (
         id                      bigserial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
         -- The specific qeustionnaire variant where this row will be used. See cdedb.constants.QuestionnaireUsages.
         kind                    integer NOT NULL,
-        -- The position in at which this element is shown in the questionnaire.
+        -- The position at which this element is shown in the questionnaire.
         pos                     integer NOT NULL,
-        -- A customized heading for this element. May have different behaviour depending on the element variant.
+        -- A customized heading for this element.
         title                   varchar,
-        -- Additional text that is displayed for this element. May have different behaviour depending on the element variant.
+        -- Additional formatted text that is displayed below the heading if any.
+        info                    varchar
+);
+CREATE INDEX questionnaire_text_rows_event_id_kind_idx ON event.questionnaire_text_rows(event_id, kind);
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_text_rows TO cdb_persona;
+GRANT SELECT, UPDATE ON event.questionnaire_text_rows_id_seq TO cdb_persona;
+
+CREATE TABLE event.questionnaire_field_rows (
+        id                      bigserial PRIMARY KEY,
+        event_id                integer NOT NULL REFERENCES event.events(id),
+        -- The specific qeustionnaire variant where this row will be used. See cdedb.constants.QuestionnaireUsages.
+        kind                    integer NOT NULL,
+        -- The position at which this element is shown in the questionnaire.
+        pos                     integer NOT NULL,
+        -- A customized label for this element.
+        title                   varchar,
+        -- Additional information that is displayed below the field input.
         info                    varchar,
-        -- If set (for a row that is not text-only) the value can no longer be changed.
-        readonly                boolean NOT NULL,
-        -- If set (for a field input row) a value that is prefilled into the form if there is no stored value.
-        default_value           varchar,
         -- These fields determine what variant of content is rendered via this row.
         -- Only one of these may be set. If none are set this row simply displays a heading and some text.
         -- If field id is set, display input for the linked field.
         field_id                integer REFERENCES event.field_definitions(id),
-        -- If builtin element is set, display an automatically generated block e.g. course choices for one track.
-        builtin_element         integer,
-        -- Additional information for a builtin element. Can be e.g. a track id for a course choice element.
-        builtin_aux             varchar,
-        CONSTRAINT questionnaire_row_builtin_aux
-            CHECK (builtin_aux IS NULL OR builtin_element IS NOT NULL),
-        CONSTRAINT questionnaire_row_variant
-            CHECK (NOT (field_id IS NOT NULL AND builtin_element IS NOT NULL))
+        -- If set, the value for the linked field can no longer be changed.
+        readonly                boolean NOT NULL,
+        -- If set, a value that is prefilled into the form if there is no stored value.
+        default_value           varchar
 );
-CREATE INDEX questionnaire_rows_event_id_idx ON event.questionnaire_rows(event_id);
-GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_rows TO cdb_persona;
-GRANT SELECT, UPDATE ON event.questionnaire_rows_id_seq TO cdb_persona;
+CREATE INDEX questionnaire_field_rows_event_id_kind_idx ON event.questionnaire_field_rows(event_id, kind);
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_field_rows TO cdb_persona;
+GRANT SELECT, UPDATE ON event.questionnaire_field_rows_id_seq TO cdb_persona;
+
+CREATE TABLE event.questionnaire_magic_rows (
+        id                      bigserial PRIMARY KEY,
+        event_id                integer NOT NULL REFERENCES event.events(id),
+        -- The specific qeustionnaire variant where this row will be used. See cdedb.constants.QuestionnaireUsages.
+        kind                    integer NOT NULL,
+        -- The position at which this element is shown in the questionnaire.
+        pos                     integer NOT NULL,
+        -- A customized title for this element. TODO: Do we want this?
+        title                   varchar,
+        -- Additional information that is displayed near this element. Behaves differently depending on the magic role.
+        info                    varchar,
+        -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowMagicRole.
+        role                    integer,
+        -- Additional information depending on the role.
+        aux                     varchar
+);
+CREATE INDEX questionnaire_magic_rows_event_id_kind_idx ON event.questionnaire_magic_rows(event_id, kind);
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_magic_rows TO cdb_persona;
+GRANT SELECT, UPDATE ON event.questionnaire_magic_rows_id_seq TO cdb_persona;
 
 CREATE TABLE event.stored_queries (
         id                      bigserial PRIMARY KEY,

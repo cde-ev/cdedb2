@@ -1820,7 +1820,7 @@ class EventEventMixin(EventBaseFrontend):
         # Lock all questionnaire entries
         aq = const.QuestionnaireUsages.additional
         questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[aq]
-        for entry in questionnaire:
+        for entry in questionnaire.field_rows:
             entry.readonly = True
         self.eventproxy.set_questionnaire(rs, event_id, aq, questionnaire.as_dicts())
 

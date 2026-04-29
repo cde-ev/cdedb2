@@ -286,8 +286,14 @@ class CdEDataclass:
     def many_from_database(
         cls, list_of_data: Collection[CdEDBObject], sort: bool = True
     ) -> CdEDataclassMap["Self"]:
-        sort = xsorted if sort else list
-        return {obj.id: obj for obj in sort(map(cls.from_database, list_of_data))}
+        sorter = xsorted if sort else list
+        return {obj.id: obj for obj in sorter(map(cls.from_database, list_of_data))}
+
+    @classmethod
+    def many_from_database_list(
+        cls, list_of_data: Collection[CdEDBObject]
+    ) -> list["Self"]:
+        return xsorted(map(cls.from_database, list_of_data))
 
     @classmethod
     def get_select_query(
