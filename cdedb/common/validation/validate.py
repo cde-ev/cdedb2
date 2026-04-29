@@ -664,6 +664,9 @@ def _None(val: Any, argname: Optional[str] = None, **kwargs: Any) -> None:
         raise ValidationSummary(ValueError(argname, n_("Must be empty.")))
 
 
+_ALL_TYPED[None] = _None
+
+
 @_add_typed_validator
 def _any(val: Any, argname: Optional[str] = None, **kwargs: Any) -> Any:
     """Dummy to allow arbitrary things.
