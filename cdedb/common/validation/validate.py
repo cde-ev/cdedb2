@@ -3232,11 +3232,11 @@ def _questionnaire_row(
     **kwargs: Any,
 ) -> CdEDBObject:
 
-    # TODO allow selection by field_name for questionnaire import
-
     errs = ValidationSummary()
     kind = const.QuestionnaireUsages(val["kind"])
 
+    # The questionnaire import allows specifying fields by name instead of id.
+    #  This method is not used elsewhere.
     fields_by_name = {f.field_name: f.id for f in available_fields.values()}
 
     if field_name := val.get("field_name"):

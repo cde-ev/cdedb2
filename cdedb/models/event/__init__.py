@@ -1102,6 +1102,9 @@ class QuestionnaireRow(EventDataclass):
         cls, *, creation: bool
     ) -> tuple[vtypes.MutableTypeMapping, vtypes.MutableTypeMapping]:
         mandatory, optional = super().validation_fields(creation=creation)
+        # During questionnaire import the field id can be negative and the field can
+        #  instead be identified by name. The validation still ensures that the field
+        #  "exists", even if the id is negative during validation.
         optional["field_id"] = vtypes.PartialImportID | None
         optional["field_name"] = vtypes.RestrictiveIdentifier | None
         return mandatory, optional

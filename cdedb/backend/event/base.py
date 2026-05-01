@@ -1385,6 +1385,8 @@ class EventBaseBackend(EventLowLevelBackend):
             for pos, row in enumerate(data):
                 new_row = copy.deepcopy(row)
                 new_row['event_id'] = event_id
+                # The questionnaire import allows specifying fields by name.
+                #  We cannot remove this before, due to validation idempotency.
                 new_row.pop("field_name", None)
                 ret *= self.sql_insert(
                     rs, models.QuestionnaireRow.database_table, new_row
