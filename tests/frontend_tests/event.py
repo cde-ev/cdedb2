@@ -6656,7 +6656,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             # cancelled
             self.assertNonPresence("Inga")
 
-            # Erste Hälfte has some courses (had one course tracks)
+            # Zweite Hälfte has some courses (had one course tracks)
             self.traverse(
                 "Mitglieder",
                 "Verg. Veranstaltungen",
