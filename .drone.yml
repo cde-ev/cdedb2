@@ -81,7 +81,7 @@ steps:
   image: cdedb
   pull: never # do not try to pull image from docker hub
   depends_on:
-    - evolution-trial # wait for all git operations to be done
+    - mypy
   when:
     status:
     - failure
