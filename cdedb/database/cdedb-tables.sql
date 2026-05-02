@@ -1373,6 +1373,7 @@ CREATE TABLE event.questionnaire_text_rows (
         kind                    integer NOT NULL,
         -- The position at which this element is shown in the questionnaire.
         pos                     integer NOT NULL,
+        role                    integer NOT NULL,
         -- A customized heading for this element.
         title                   varchar,
         -- Additional formatted text that is displayed below the heading if any.
@@ -1389,6 +1390,7 @@ CREATE TABLE event.questionnaire_field_rows (
         kind                    integer NOT NULL,
         -- The position at which this element is shown in the questionnaire.
         pos                     integer NOT NULL,
+        role                    integer NOT NULL,
         -- A customized label for this element.
         title                   varchar,
         -- Additional information that is displayed below the field input.

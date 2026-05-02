@@ -29,6 +29,7 @@ import collections
 import dataclasses
 import datetime
 import decimal
+import enum
 import functools
 import logging
 import sys
@@ -1049,8 +1050,24 @@ class SyncTrackGroup(TrackGroup, CourseChoiceObject):  # type: ignore[misc]
 #
 
 
+class QuestionnaireFrequency(enum.Enum):
+    never = 0, 0
+    once = 1, 1
+    min_once = 1, None
+    max_once = 0, 1
+    any = 0, None
+
+    @property
+    def min(self) -> int:
+        return self.value[0]
+
+    @property
+    def max(self) -> int | None:
+        return self.value[1]
+
+
 @dataclasses.dataclass
-class QuestionnaireRow(EventDataclass):
+class QuestionnaireRow(EventDataclass, abc.ABC):
     id: vtypes.ID = dataclasses.field(
         compare=False,
         repr=False,
@@ -1063,25 +1080,39 @@ class QuestionnaireRow(EventDataclass):
     kind: const.QuestionnaireUsages
     pos: int
 
+    role: const.QuestionnaireRowMagicRole
+    enum_member: ClassVar[const.QuestionnaireRowMagicRole]
+    valid_kinds: ClassVar[dict[const.QuestionnaireUsages, QuestionnaireFrequency]]
+    allow_multiple_kinds: ClassVar[bool] = True
+
     title: str | None
     info: str | None
 
-    @classmethod
-    def get_variant_class(cls, data: CdEDBObject) -> type["QuestionnaireRow"]:
-        if "field_id" in data:
-            return QuestionnaireFieldRow
-        elif "role" in data:
-            return QuestionnaireMagicRow
-        else:
-            return QuestionnaireTextRow
-
     @property
-    def variant(self) -> str:
+    def name(self) -> str:
         return self.__class__.__qualname__
 
     @classmethod
+    @abc.abstractmethod
+    def get_drow_html_classes(cls) -> list[str]: ...
+
+    @staticmethod
+    def get_class(
+        role: const.QuestionnaireRowMagicRole,
+    ) -> type["QuestionnaireRow"]:
+        for cls in (
+            QuestionnaireRow.__subclasses__() + QuestionnaireMagicRow.__subclasses__()
+        ):
+            if cls is QuestionnaireMagicRow:
+                continue
+            if cls.enum_member == role:
+                return cls
+        raise KeyError
+
+    @classmethod
     def from_database(cls, data: CdEDBObject) -> "QuestionnaireRow":
-        return cls.get_variant_class(data).from_database(data)
+        role = const.QuestionnaireRowMagicRole(data["role"])
+        return cls.get_class(role).from_database(data)
 
     def get_sortkey(self) -> Sortkey:
         return (
@@ -1110,15 +1141,27 @@ class QuestionnaireRow(EventDataclass):
 @dataclasses.dataclass
 class QuestionnaireTextRow(QuestionnaireRow):
     database_table = "event.questionnaire_text_rows"
+    enum_member = const.QuestionnaireRowMagicRole.text_only
+    valid_kinds = {
+        kind: QuestionnaireFrequency.any for kind in const.QuestionnaireUsages
+    }
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
         return super(QuestionnaireRow, cls).from_database(data)
 
+    @classmethod
+    def get_drow_html_classes(cls) -> list[str]:
+        return ["shaded-info"]
+
 
 @dataclasses.dataclass
 class QuestionnaireFieldRow(QuestionnaireRow):
     database_table = "event.questionnaire_field_rows"
+    enum_member = const.QuestionnaireRowMagicRole.event_field
+    valid_kinds = {
+        kind: QuestionnaireFrequency.any for kind in const.QuestionnaireUsages
+    }
 
     field_id: vtypes.ID
     field: EventField = dataclasses.field(
@@ -1150,81 +1193,46 @@ class QuestionnaireFieldRow(QuestionnaireRow):
 
         return ret
 
+    @classmethod
+    def get_drow_html_classes(cls) -> list[str]:
+        return []
+
 
 @dataclasses.dataclass
 class QuestionnaireMagicRow(QuestionnaireRow):
     database_table = "event.questionnaire_magic_rows"
-    enum_member: ClassVar[const.QuestionnaireRowMagicRole]
-
-    valid_kinds: ClassVar[dict[const.QuestionnaireUsages, int]]
-    readonly: ClassVar[bool] = False  # TODO: move into valid_kinds
-
-    role: const.QuestionnaireRowMagicRole
-    aux: Any
+    allow_multiple_kinds = False
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "QuestionnaireMagicRow":
         role = const.QuestionnaireRowMagicRole(data["role"])
-        ret = super(QuestionnaireRow, role.get_class()).from_database(data)
-
-        from cdedb.common.validation.validate import validate_check  # noqa: PLC0415
-
-        ret.aux, _errs = validate_check(
-            role.get_class().get_aux_type(), ret.aux, ignore_warnings=True
+        return cast(
+            QuestionnaireMagicRow,
+            super(QuestionnaireRow, role.get_class()).from_database(data),
         )
-        return ret
-
-    @staticmethod
-    def get_class(
-        enum_member: const.QuestionnaireRowMagicRole,
-    ) -> type["QuestionnaireMagicRow"]:
-        for cls in QuestionnaireMagicRow.__subclasses__():
-            if cls.enum_member == enum_member:
-                return cls
-        raise KeyError
 
     @classmethod
-    def get_aux_type(cls) -> TypeForm[Any]:
-        for field in dataclasses.fields(cls):
-            if field.name == "aux":
-                if field.type is None:
-                    return type(None)
-                return cast(TypeForm[Any], field.type)
-        return None
-
-    @classmethod
-    @abc.abstractmethod
-    def is_valid_aux(cls, event: Event, aux: Any) -> bool: ...
+    def get_drow_html_classes(cls) -> list[str]:
+        return ["shaded-magic"]
 
 
 @dataclasses.dataclass
 class CourseChoices(QuestionnaireMagicRow):
     enum_member = const.QuestionnaireRowMagicRole.course_choices
-    valid_kinds = {const.QuestionnaireUsages.registration: 1}
-
-    aux: vtypes.ID | None
-
-    @classmethod
-    def is_valid_aux(cls, event: Event, aux: Any) -> bool:
-        if aux is None:
-            return True
-        return aux in event.tracks
+    valid_kinds = {const.QuestionnaireUsages.registration: QuestionnaireFrequency.once}
 
 
 @dataclasses.dataclass
 class FeePreview(QuestionnaireMagicRow):
     enum_member = const.QuestionnaireRowMagicRole.fee_preview
     valid_kinds = {
-        const.QuestionnaireUsages.registration: 0,
-        const.QuestionnaireUsages.additional: 0,
+        const.QuestionnaireUsages.registration: QuestionnaireFrequency.min_once,
+        const.QuestionnaireUsages.additional: QuestionnaireFrequency.any,
     }
-    readonly = True
+    allow_multiple_kinds = True
 
-    aux: None
-
-    @classmethod
-    def is_valid_aux(cls, event: Event, aux: Any) -> bool:
-        return aux is None
+    title: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
+    info: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
 
 
 class Questionnaire(list[QuestionnaireRow]):
@@ -1260,9 +1268,10 @@ class Questionnaire(list[QuestionnaireRow]):
     def get_magic_roles(self) -> set[const.QuestionnaireRowMagicRole]:
         return {row.role for row in self if isinstance(row, QuestionnaireMagicRow)}
 
-    def allows_builtin(self, builtin: const.QuestionnaireRowMagicRole) -> bool:
-        builtin_class = builtin.get_class()
-        return self.kind in builtin_class.valid_kinds
+    def allows_magic_role(self, magic_role: const.QuestionnaireRowMagicRole) -> bool:
+        magic_role_class = magic_role.get_class()
+        never = QuestionnaireFrequency.never
+        return magic_role_class.valid_kinds.get(self.kind, never) != never
 
 
 class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
@@ -1316,29 +1325,28 @@ class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
     def magic_role_usage(
         self,
     ) -> Mapping[const.QuestionnaireRowMagicRole, const.QuestionnaireUsages]:
-        """Map magic roles to the questionnaire kind they are used in."""
+        """Map magic roles to the questionnaire kind they are used in.
+
+        Does not include the 'text_only' and 'event_field' roles.
+        """
         # These dicts are disjunct therfore the chainmap is just a big union.
         #  TODO: is it?
         return collections.ChainMap(
-            *(
-                {builtin: kind}
-                for kind, q in self.items()
-                for builtin in q.get_magic_roles()
-            )
+            *({role: kind} for kind, q in self.items() for role in q.get_magic_roles())
         )
 
     def get_available_magic_roles(
         self, kind: const.QuestionnaireUsages
     ) -> list[const.QuestionnaireRowMagicRole]:
         """Return all builtins available for use in a questionnaire of the given kind."""
-        builtin_usage = self.magic_role_usage()
+        magic_role_usage = self.magic_role_usage()
         return [
-            builtin_element
-            for builtin_element in const.QuestionnaireRowMagicRole
-            if self[kind].allows_builtin(builtin_element)
+            magic_role
+            for magic_role in const.QuestionnaireRowMagicRole
+            if self[kind].allows_magic_role(magic_role)
             and (
-                builtin_usage.get(builtin_element, kind) == kind
-                or builtin_element.get_class().readonly
+                magic_role_usage.get(magic_role, kind) == kind
+                or magic_role.get_class().allow_multiple_kinds
             )
         ]
 

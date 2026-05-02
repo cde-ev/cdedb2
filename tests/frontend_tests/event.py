@@ -2319,6 +2319,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             const.QuestionnaireUsages.registration,
             [
                 {
+                    "role": const.QuestionnaireRowMagicRole.fee_preview,
+                },
+                {
+                    "role": const.QuestionnaireRowMagicRole.course_choices,
+                },
+                {
+                    "role": const.QuestionnaireRowMagicRole.event_field,
                     "title": "Ich bin unter 13 Jahre alt.",
                     "field_id": 1001,
                     "default_value": None,
@@ -2326,6 +2333,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                     "readonly": False,
                 },
                 {
+                    "role": const.QuestionnaireRowMagicRole.event_field,
                     "title": "Ich bringe noch jemanden mit.",
                     "field_id": 1002,
                     "default_value": None,
@@ -2333,6 +2341,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                     "readonly": False,
                 },
                 {
+                    "role": const.QuestionnaireRowMagicRole.event_field,
                     "title": "Name des Partners.",
                     "field_id": 1003,
                     "default_value": None,
@@ -2340,6 +2349,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                     "readonly": False,
                 },
                 {
+                    "role": const.QuestionnaireRowMagicRole.event_field,
                     "title": "Anzahl an Kissen",
                     "field_id": 1004,
                     "default_value": None,
@@ -2347,6 +2357,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                     "readonly": False,
                 },
                 {
+                    "role": const.QuestionnaireRowMagicRole.event_field,
                     "title": "Essgewohnheiten.",
                     "field_id": 1005,
                     "default_value": None,
@@ -2354,6 +2365,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                     "readonly": False,
                 },
                 {
+                    "role": const.QuestionnaireRowMagicRole.event_field,
                     "title": "Dein Lieblingstag",
                     "field_id": 1006,
                     "default_value": None,
@@ -5509,7 +5521,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertEqual("3", f['field_id_4'].value)
         self.assertEqual("Hauswunsch", f['title_4'].value)
         f['create_-1'].checked = True
-        f['variant_-1'] = "QuestionnaireFieldRow"
+        f['role_-1'] = const.QuestionnaireRowMagicRole.event_field
         f['field_id_-1'] = 4
         f['title_-1'] = "Input"
         f['readonly_-1'].checked = True
@@ -5530,7 +5542,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         # Add a row with a datetime field and check that the default value works.
         f['create_-1'] = True
-        f['variant_-1'] = "QuestionnaireFieldRow"
+        f['role_-1'] = const.QuestionnaireRowMagicRole.event_field
         f['field_id_-1'] = 9  # 'arrival_at'
         f['default_value_-1'] = expectation = "2025-05-24 23:47:32"
         self.submit(f)

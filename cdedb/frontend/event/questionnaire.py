@@ -31,6 +31,7 @@ from cdedb.frontend.common import (
     check_validation as check,
     drow_create,
     drow_delete,
+    drow_last_index,
     drow_name,
     request_extractor,
 )
@@ -71,10 +72,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             for i, entry in enumerate(questionnaire)
             for key, value in entry.as_dict().items()
         }
-        variants = {
-            f"variant_{i}": entry.variant for i, entry in enumerate(questionnaire)
-        }
-        merge_dicts(rs.values, current, variants)
+        merge_dicts(rs.values, current)
 
         checksum = get_hash(json_serialize(questionnaire).encode())
 
@@ -137,21 +135,22 @@ class EventQuestionnaireMixin(EventBaseFrontend):
     ) -> CdEDBObject | None:
         if unwrap(request_extractor(rs, {drow_delete(pos): bool})):
             return None
-        variant = unwrap(request_extractor(rs, {drow_name("variant", pos): str | None}))
-        if not variant:
-            return None
-        variant_cls: type[models.QuestionnaireRow] | None = getattr(
-            models, variant, None
+        role: const.QuestionnaireRowMagicRole | None = unwrap(
+            request_extractor(
+                rs, {drow_name("role", pos): const.QuestionnaireRowMagicRole | None}
+            )
         )
-        if not variant_cls:
+        if not role:
             return None
-        spec = variant_cls.requestdict_fields(creation=True)
+        cls = role.get_class()
+        spec = cls.requestdict_fields(creation=True)
         data = request_extractor(
             rs,
             {drow_name(key, pos): val for key, val in spec},  # type: ignore[misc]
             postpone_validation=True,
         )
-        return {key: data[drow_name(key, pos)] for key, _ in spec}
+        # Pass 'pos' as 'id' to correctly map validation errors.
+        return {key: data[drow_name(key, pos)] for key, _ in spec} | {"id": pos}
 
     def _set_questionnaire(
         self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages
@@ -162,6 +161,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             self._prepare_questionnaire_form(rs, event_id, kind)
         )
 
+        # TODO: search until role is not there.
         new_questionnaire: list[CdEDBObject] = [
             row
             for pos in range(len(questionnaire))
@@ -176,6 +176,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
                 marker += 1
             else:
                 break
+        rs.values[drow_last_index()] = marker - 1
 
         new_questionnaire = check(
             rs,

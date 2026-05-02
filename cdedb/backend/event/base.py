@@ -1404,7 +1404,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 # The questionnaire import allows specifying fields by name.
                 #  We cannot remove this before, due to validation idempotency.
                 new_row.pop("field_name", None)
-                cls = models.QuestionnaireRow.get_variant_class(new_row)
+                cls = models.QuestionnaireRow.get_class(new_row["role"])
                 ret *= self.sql_insert(rs, cls.database_table, new_row)
             self.event_log(rs, const.EventLogCodes.questionnaire_changed, event_id)
         return ret

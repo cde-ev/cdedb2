@@ -22,7 +22,7 @@ from cdedb.uncommon.submanshim import (  # noqa: F401
 )
 
 if TYPE_CHECKING:
-    from cdedb.models.event import QuestionnaireMagicRow
+    from cdedb.models.event import QuestionnaireRow
 
 
 def n_(x: str) -> str:  # pragma: no cover
@@ -198,13 +198,13 @@ class QuestionnaireUsages(CdEIntEnum):
     @property
     def title_level(self) -> int:
         """Heading-level for custom titles in this kind of questionnaire."""
-        if self == QuestionnaireUsages.additional:
-            return 3
-        return 4
+        return 3
 
 
 @enum.unique
 class QuestionnaireRowMagicRole(CdEIntEnum):
+    text_only = 1
+    event_field = 5
     course_choices = 10
     # part_selection = 20
     fee_preview = 30
@@ -213,10 +213,12 @@ class QuestionnaireRowMagicRole(CdEIntEnum):
     # foto_notice = 60
     # registration_notes = 70
 
-    def get_class(self) -> type["QuestionnaireMagicRow"]:
-        from cdedb.models.event import QuestionnaireMagicRow  # noqa: PLC0415
+    def get_class(self) -> type["QuestionnaireRow"]:
+        from cdedb.models.event import (  # noqa: PLC0415
+            QuestionnaireRow,
+        )
 
-        return QuestionnaireMagicRow.get_class(self)
+        return QuestionnaireRow.get_class(self)
 
 
 @enum.unique

@@ -3286,7 +3286,7 @@ def _questionnaire_field_row(
     return val
 
 
-@_create_dataclass_validator(models_event.QuestionnaireMagicRow)  # type: ignore[type-abstract]
+@_create_dataclass_validator(models_event.CourseChoices, models_event.FeePreview)
 def _questionnaire_magic_row(
     val: CdEDBObject,
     argname: str = "",
@@ -3301,15 +3301,6 @@ def _questionnaire_magic_row(
 
     if role not in available_magic_roles:
         errs.append(KeyError("role", n_("Invalid magic role.")))
-        val["aux"] = None
-    else:
-        _role_class = role.get_class()
-        with errs:
-            aux = _ALL_TYPED[_role_class.get_aux_type()](val["aux"], "aux")
-            if not _role_class.is_valid_aux(event, aux):
-                errs.append(ValueError("aux", n_("Invalid value for this magic role.")))
-            else:
-                val["aux"] = aux
 
     if errs:
         raise errs
@@ -3331,13 +3322,27 @@ def _questionnaire(
     available_fields = all_questionnaires.get_available_fields(kind)
     available_magic_roles = all_questionnaires.get_available_magic_roles(kind)
 
+    # Map list position to "id" to display errors at the correct place in the frontend.
+    pos_to_id = {}
+
     errs = ValidationSummary()
     ret: list[CdEDBObject] = []
     for i, row in enumerate(val):
-        row["kind"] = kind
-        row["pos"] = i
         with errs.modify_argname(suffix=f"_{i}"):
-            cls = models_event.QuestionnaireRow.get_variant_class(row)
+            tmp = _examine_dictionary_fields(
+                row,
+                {"role": const.QuestionnaireRowMagicRole},
+                allow_superfluous=True,
+                **kwargs,
+            )
+            cls = models_event.QuestionnaireRow.get_class(tmp["role"])
+
+            # See 'pos_to_id' above.
+            if "id" in row:
+                pos_to_id[i] = row.pop("id")
+
+            row["kind"] = kind
+            row["pos"] = i
             row = _ALL_TYPED[cls](
                 row,
                 event=event,
@@ -3356,6 +3361,37 @@ def _questionnaire(
                     {'field_name': field.field_name},
                 )
             )
+
+    magic_role_counts = collections.Counter(row["role"] for row in ret if "role" in row)
+
+    for magic_role in const.QuestionnaireRowMagicRole:
+        count = magic_role_counts[magic_role]
+        role_class = magic_role.get_class()
+        allowed_frequency = role_class.valid_kinds.get(kind)
+        if allowed_frequency is None:
+            # Error already processed.
+            pass
+        elif count < allowed_frequency.min:
+            # TODO: Where to display this?
+            errs.append(
+                ValueError(
+                    "role",
+                    n_("Missing role: '%(magic_role)s'."),
+                    {"magic_role": magic_role},
+                ),
+            )
+        elif allowed_frequency.max is not None and count > allowed_frequency.max:
+            for pos, row in enumerate(ret):
+                if row["role"] == magic_role:
+                    # If we have ids, adjust the error argname.
+                    idx = pos_to_id.get(pos, pos)
+                    errs.append(
+                        ValueError(
+                            f"role_{idx}",
+                            n_("Must not duplicate this role: '%(magic_role)s'"),
+                            {"magic_role": magic_role},
+                        ),
+                    )
 
     if errs:
         raise errs

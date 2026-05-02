@@ -2133,6 +2133,7 @@ class TestEventBackend(BackendTest):
                 {
                     'kind': const.QuestionnaireUsages.registration,
                     'pos': 0,
+                    'role': const.QuestionnaireRowMagicRole.event_field,
                     'title': 'Ich bin unter 13 Jahre alt.',
                     'info': None,
                     'readonly': False,
@@ -2142,30 +2143,30 @@ class TestEventBackend(BackendTest):
                 {
                     'kind': const.QuestionnaireUsages.registration,
                     'pos': 1,
+                    'role': const.QuestionnaireRowMagicRole.course_choices,
                     'title': None,
                     'info': None,
-                    'role': const.QuestionnaireRowMagicRole.course_choices,
-                    'aux': None,
                 },
                 {
                     'kind': const.QuestionnaireUsages.registration,
                     'pos': 2,
+                    'role': const.QuestionnaireRowMagicRole.fee_preview,
                     'title': None,
                     'info': None,
-                    'role': const.QuestionnaireRowMagicRole.fee_preview,
-                    'aux': None,
                 },
             ],
             const.QuestionnaireUsages.additional: [
                 {
                     'kind': const.QuestionnaireUsages.additional,
                     'pos': 0,
+                    'role': const.QuestionnaireRowMagicRole.text_only,
                     'title': 'Unterüberschrift',
                     'info': 'mit Text darunter',
                 },
                 {
                     'kind': const.QuestionnaireUsages.additional,
                     'pos': 1,
+                    'role': const.QuestionnaireRowMagicRole.event_field,
                     'title': 'Bälle',
                     'info': 'Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.',
                     'field_id': 1,
@@ -2175,18 +2176,21 @@ class TestEventBackend(BackendTest):
                 {
                     'kind': const.QuestionnaireUsages.additional,
                     'pos': 2,
+                    'role': const.QuestionnaireRowMagicRole.text_only,
                     'title': None,
                     'info': 'nur etwas Text',
                 },
                 {
                     'kind': const.QuestionnaireUsages.additional,
                     'pos': 3,
+                    'role': const.QuestionnaireRowMagicRole.text_only,
                     'title': 'Weitere Überschrift',
                     'info': None,
                 },
                 {
                     'kind': const.QuestionnaireUsages.additional,
                     'pos': 4,
+                    'role': const.QuestionnaireRowMagicRole.event_field,
                     'title': 'Vehikel',
                     'info': None,
                     'field_id': 2,
@@ -2196,6 +2200,7 @@ class TestEventBackend(BackendTest):
                 {
                     'kind': const.QuestionnaireUsages.additional,
                     'pos': 5,
+                    'role': const.QuestionnaireRowMagicRole.event_field,
                     'title': 'Hauswunsch',
                     'info': None,
                     'field_id': 3,
@@ -2224,10 +2229,12 @@ class TestEventBackend(BackendTest):
         self.event.set_event(self.key, event_id, edata)
         aq_data: list[CdEDBObject] = [
             {
+                'role': const.QuestionnaireRowMagicRole.text_only,
                 'title': 'Weitere bla Überschrift',
                 'info': None,
             },
             {
+                'role': const.QuestionnaireRowMagicRole.event_field,
                 'title': 'Vehikel',
                 'info': None,
                 'field_id': 2,
@@ -2235,10 +2242,12 @@ class TestEventBackend(BackendTest):
                 'default_value': 'etc',
             },
             {
+                'role': const.QuestionnaireRowMagicRole.text_only,
                 'title': 'Unterüberschrift',
                 'info': 'mit Text darunter und so',
             },
             {
+                'role': const.QuestionnaireRowMagicRole.event_field,
                 'title': 'Vehikel',
                 'info': None,
                 'field_id': 3,
@@ -2246,18 +2255,19 @@ class TestEventBackend(BackendTest):
                 'default_value': None,
             },
             {
+                'role': const.QuestionnaireRowMagicRole.text_only,
                 'title': None,
                 'info': 'nur etwas mehr Text',
             },
         ]
         rq_data: list[CdEDBObject] = [
             {
+                'role': const.QuestionnaireRowMagicRole.course_choices,
                 'title': None,
                 'info': None,
-                'role': const.QuestionnaireRowMagicRole.course_choices,
-                'aux': 1,
             },
             {
+                'role': const.QuestionnaireRowMagicRole.event_field,
                 'title': "Ich möchte den Solidaritätszuschlag bezahlen.",
                 'info': "Du kannst freiwillig etwas mehr bezahlen um zukünftige Akademien zu unterstützen.",
                 'field_id': 1001,
@@ -2265,10 +2275,9 @@ class TestEventBackend(BackendTest):
                 'default_value': None,
             },
             {
+                'role': const.QuestionnaireRowMagicRole.fee_preview,
                 'title': None,
                 'info': None,
-                'role': const.QuestionnaireRowMagicRole.fee_preview,
-                'aux': None,
             },
         ]
         self.assertLess(
