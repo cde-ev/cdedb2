@@ -214,20 +214,18 @@
         {% endif %}
         {{ row.text|md }}
     {% elif row.name == "FeePreview" %}
-        {{ fee_preview_panel() }}
-    {% elif row.name == "NonMemberSurchargeInfo" %}
-        {% if not persona["is_member"] %}
+        {% call fee_preview_panel() %}
             <p class="text-info fw-bold" id="nonmember-surcharge">
                 {% trans %}
-                    Because you are not a CdE-Member, you might have to pay an additional fee.
+                    Because you are not a CdE-Member, you might have to pay an additional "External Fee".
                 {% endtrans %}
-                {% if persona["is cde_realm"] %}
+                {% if persona["is_cde_realm"] %}
                     {% trans %}
                         If you pay your membership fee before your registration fee, the additional fee will be waived.
                     {% endtrans %}
                 {% endif %}
             </p>
-        {% endif %}
+        {% endcall %}
     {% elif row.name == "CourseChoices" %}
         {% if choice_objects %}
             {{ select_all_course_choices(involved_tracks=involved_tracks) }}

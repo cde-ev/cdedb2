@@ -1225,14 +1225,6 @@ class CourseChoices(QuestionnaireMagicRow):
 
 
 @dataclasses.dataclass
-class NonMemberSurchargeInfo(QuestionnaireMagicRow):
-    _role = const.QuestionnaireRowMagicRole.nonmember_surcharge_info
-    valid_kinds = {
-        const.QuestionnaireUsages.registration: QuestionnaireFrequency.once,
-    }
-
-
-@dataclasses.dataclass
 class FeePreview(QuestionnaireMagicRow):
     _role = const.QuestionnaireRowMagicRole.fee_preview
     valid_kinds = {

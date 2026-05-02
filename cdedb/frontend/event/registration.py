@@ -549,9 +549,9 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
 
         msg = rs.gettext(
-            "Because you are not a CdE-Member, you will have to pay an"
-            " additional fee of %(additional_fee)s"
-            " (already included in the above figure)."
+            'Because you are not a CdE-Member, you will have to pay'
+            ' an additional "External Fee" of %(additional_fee)s'
+            ' (already included in the figure below).'
         )
         nonmember_msg = msg % {
             'additional_fee': money_filter(
@@ -559,6 +559,11 @@ class EventRegistrationMixin(EventBaseFrontend):
             )
             or "",
         }
+        if persona_id and self.coreproxy.verify_persona(rs, persona_id, "is_cde_realm"):
+            nonmember_msg += " " + rs.gettext(
+                "If you pay your membership fee before your registration fee,"
+                " the additional fee will be waived."
+            )
 
         fee_breakdown_template = """
 {%- import "web/event/generic.tmpl" as generic_event with context -%}
