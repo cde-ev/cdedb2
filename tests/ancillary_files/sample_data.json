@@ -8008,7 +8008,15 @@
         {
             "event_id": 1,
             "kind": 1,
-            "pos": 3,
+            "pos": 2,
+            "role": 1,
+            "title": "Kurswahlen",
+            "text": null
+        },
+        {
+            "event_id": 1,
+            "kind": 1,
+            "pos": 4,
             "role": 1,
             "title": "Weitere Angaben",
             "text": null
@@ -8051,7 +8059,7 @@
         {
             "event_id": 1,
             "kind": 1,
-            "pos": 5,
+            "pos": 6,
             "role": 5,
             "label": "Ich bin unter 13 Jahre alt.",
             "info": "Denk daran, deine Eltern mitzubringen!",
@@ -8076,37 +8084,37 @@
         {
             "event_id": 1,
             "kind": 1,
-            "pos": 2,
+            "pos": 3,
             "role": 10
         },
         {
             "event_id": 1,
             "kind": 1,
-            "pos": 4,
+            "pos": 5,
             "role": 40
         },
         {
             "event_id": 1,
             "kind": 1,
-            "pos": 6,
+            "pos": 7,
             "role": 50
         },
         {
             "event_id": 1,
             "kind": 1,
-            "pos": 7,
+            "pos": 8,
             "role": 60
         },
         {
             "event_id": 1,
             "kind": 1,
-            "pos": 8,
+            "pos": 9,
             "role": 70
         },
         {
             "event_id": 1,
             "kind": 1,
-            "pos": 9,
+            "pos": 10,
             "role": 30
         }
     ],

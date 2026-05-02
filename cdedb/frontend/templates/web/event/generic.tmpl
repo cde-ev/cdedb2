@@ -230,10 +230,6 @@
         {% endif %}
     {% elif row.name == "CourseChoices" %}
         {% if choice_objects %}
-            {{ util.h(row.title or n_("Course Choices"), underline=true, translate=not row.title) }}
-            {% if row.info %}
-                {{ row.info|md }}
-            {% endif %}
             {{ select_all_course_choices(involved_tracks=involved_tracks) }}
         {% endif %}
     {% elif row.name == "ListConsent" %}
