@@ -89,6 +89,8 @@
     <script type="text/javascript" nonce="{{ csp_nonce }}">
         (function() {
             let field_list = {{ available_fields|tojson }};
+            let classes_by_role = {{ drow_classes_by_role|tojson }};
+            let all_classes = {{ all_drow_classes|tojson }};
             let translations = {
                 "true": "{{ gettext("true") }}",
                 "false": "{{ gettext("false") }}",
@@ -97,11 +99,11 @@
                 {
                     addButton: $("#drow-addbutton"),
                     callback: function () {
-                        $(this).cdedbQuestionnaireConfig(field_list, translations);
+                        $(this).cdedbQuestionnaireConfig(field_list, translations, classes_by_role, all_classes);
                     },
                     delButtonTitle: "{{ gettext("Delete Questionnaire Part") }}"
                 });
-            $(".drow-row").cdedbQuestionnaireConfig(field_list, translations);
+            $(".drow-row").cdedbQuestionnaireConfig(field_list, translations, classes_by_role, all_classes);
             $("#configurequestionnaireform").cdedbProtectChanges();
         })()
     </script>

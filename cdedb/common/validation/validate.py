@@ -3286,7 +3286,15 @@ def _questionnaire_field_row(
     return val
 
 
-@_create_dataclass_validator(models_event.CourseChoices, models_event.FeePreview)
+@_create_dataclass_validator(
+    models_event.CourseChoices,
+    models_event.NonMemberSurchargeInfo,
+    models_event.FeePreview,
+    models_event.ListConsent,
+    models_event.MixedLodging,
+    models_event.FotoNotice,
+    models_event.RegistrationNotes,
+)
 def _questionnaire_magic_row(
     val: CdEDBObject,
     argname: str = "",

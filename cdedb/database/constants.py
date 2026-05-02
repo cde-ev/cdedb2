@@ -207,11 +207,12 @@ class QuestionnaireRowMagicRole(CdEIntEnum):
     event_field = 5
     course_choices = 10
     # part_selection = 20
+    nonmember_surcharge_info = 25
     fee_preview = 30
-    # list_consent = 40
-    # mixed_lodging = 50
-    # foto_notice = 60
-    # registration_notes = 70
+    list_consent = 40
+    mixed_lodging = 50
+    foto_notice = 60
+    registration_notes = 70
 
     def get_class(self) -> type["QuestionnaireRow"]:
         from cdedb.models.event import (  # noqa: PLC0415

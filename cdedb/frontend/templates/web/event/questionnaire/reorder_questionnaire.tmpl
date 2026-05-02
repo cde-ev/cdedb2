@@ -53,7 +53,7 @@
                             {{ loop.index0 }}
                         </span>
                     </div>
-                    {% if entry['field_id'] %}
+                    {% if entry.name == "QuestionnaireFieldRow" %}
                         {% with FIELD = ambience['event']['fields'][entry['field_id']] %}
                             {# In case of a checkbox (bool field without choices), we don't need a left-hand side label #}
                             {% if FIELD['kind'] != enums['FieldDatatypes'].bool or FIELD['entries'] %}
@@ -88,13 +88,21 @@
                         {% endwith %}
 
                     {# Text-only entry #}
+                    {% elif entry.name == "QuestionnaireTextRow" %}
+                        {% if entry.title %}
+                            <div class="miniature-heading">{{ entry.title }}</div>
+                        {% endif %}
+                        {% if entry.info %}
+                            <div class="miniature-pre">{{ entry.info|truncate(200, False, ' …') }}</div>
+                        {% endif %}
+                        {% if not entry.title and not entry.info %}
+                            <div class="text-italic">Some Text</div>
+                        {% endif %}
                     {% else %}
-                        {% if entry['title'] %}
-                            <div class="miniature-heading">{{ entry['title'] }}</div>
-                        {% endif %}
-                        {% if entry['info'] %}
-                            <div class="miniature-pre">{{ entry['info']|truncate(200,False,' …') }}</div>
-                        {% endif %}
+                        <div class="miniature-heading alert alert-info {{ entry.get_drow_html_classes()|join(" ") }}">
+                            {% trans %}Magic Role{% endtrans %}:
+                            {{ gettext(entry.role|string) }}
+                        </div>
                     {% endif %}
                 </div>
             </div>

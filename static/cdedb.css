@@ -789,6 +789,9 @@ tr.drow-delete>td, tr.drow-delete1>td {
 .panel.shaded-info>.panel-body {
     background-color: #e8e8e8;
 }
+.panel.shaded-magic>.panel-body {
+    background-color: #d9edf7;
+}
 .panel.drow-new, .panel.drow-new {
     border-color: #d6e9c6;
 }

@@ -63,63 +63,6 @@
     {% endfor %}
 {% endmacro %}
 
-{# Insert general and additional fields in the registration form, including
-    * lodging preference
-    * Photo consent
-    * Agreement to be visible in online participant list
-    * custom orga fields
-    * general notes field
-
-    age                 An age class object, determining the restrictions of lodging preferences.
-    reg_questionnaire   The registration questionnaire object of the current event
-#}
-{% macro additional_registration_choices(age, reg_questionnaire) %}
-
-    {{ util.form_input_checkbox(name="reg.list_consent", defaultvalue='True', label=gettext("Privacy consent"), info=gettext(
-            "I agree that my data, including my name, address and my email, may be sent "
-            "to other participants of this event beforehand.")) }}
-
-    {% if not age.may_mix() %}
-        {{ util.input_hidden(name="reg.mixed_lodging", value=False) }}
-        {{ util.form_input_static(label=gettext("Mixed Lodging"), value=gettext("Mixed Lodging not possible.")) }}
-    {% else %}
-        {% if age.is_minor() %}
-            {% set mix_info = gettext("The selection must be compatible with the parental consent form.") %}
-        {% else %}
-            {% set mix_info = "" %}
-        {% endif %}
-        {{ util.form_input_select(name="reg.mixed_lodging", entries=(
-            (True, gettext("I agree to mixed lodging.")),
-            (False, gettext("I want to be lodged separated by gender."))),
-            label=gettext("Mixed Lodging"), info=mix_info) }}
-    {% endif %}
-
-    {% call util.form_input_general(label=gettext("Photo consent"), displayerrors=False) %}
-        <p class="nosp">
-            {% trans %}
-                In the context of this event, photos and recordings will be made to be used for the
-                event-documentation and a CdE-internal, password protected media collection. Individual photos and
-                recordings can be excluded from this by request.
-            {% endtrans %}
-        </p>
-    {% endcall %}
-
-    {% if reg_questionnaire %}
-        <div id="registrationquestionnaire">
-            {% for entry in reg_questionnaire %}
-                {{ print_questionnaire_entry(entry) }}
-            {% endfor %}
-        </div>
-    {% endif %}
-
-    {%- if ambience["event"]["tracks"] %}
-        {%- set noteslabel = gettext("Notes for Orgas and Instructors") %}
-    {%- else %}
-        {%- set noteslabel = gettext("Notes for Orgas") %}
-    {%- endif %}
-    {{ util.form_input_textarea(name="reg.notes", label=noteslabel, rows="5") }}
-{% endmacro %}
-
 {# Display the value of a custom event field.
    This is the counterpart of (form_)field_input.
 
@@ -259,6 +202,7 @@
 
 
 {% macro print_questionnaire_entry(row) %}
+    <div id="questionnaire_row_{{ row.pos }}">
     {% if row.name == "QuestionnaireFieldRow" %}
         {{ form_field_input(
                 row.field, label=row.title, info=row.info, readonly=readonly or is_locked,
@@ -271,9 +215,75 @@
         {{ row.info|md }}
     {% elif row.name == "FeePreview" %}
         {{ fee_preview_panel() }}
+    {% elif row.name == "NonMemberSurchargeInfo" %}
+        {% if not persona["is_member"] %}
+            <p class="text-info fw-bold" id="nonmember-surcharge">
+                {% trans %}
+                    Because you are not a CdE-Member, you might have to pay an additional fee.
+                {% endtrans %}
+                {% if persona["is cde_realm"] %}
+                    {% trans %}
+                        If you pay your membership fee before your registration fee, the additional fee will be waived.
+                    {% endtrans %}
+                {% endif %}
+            </p>
+        {% endif %}
+    {% elif row.name == "CourseChoices" %}
+        {% if choice_objects %}
+            {{ util.h(row.title or n_("Course Choices"), underline=true, translate=not row.title) }}
+            {% if row.info %}
+                {{ row.info|md }}
+            {% endif %}
+            {{ select_all_course_choices(involved_tracks=involved_tracks) }}
+        {% endif %}
+    {% elif row.name == "ListConsent" %}
+        {{ util.form_input_checkbox(
+                name="reg.list_consent", defaultvalue='True', label=gettext("Privacy consent"),
+                info=gettext(
+                    "I agree that my data, including my name, address and my email, may be sent"
+                    " to other participants of this event beforehand."
+                )
+            ) }}
+    {% elif row.name == "MixedLodging" %}
+        {% if not age_class.may_mix() %}
+            {{ util.input_hidden(name="reg.mixed_lodging", value=False) }}
+            {{ util.form_input_static(label=gettext("Mixed Lodging"), value=gettext("Mixed Lodging not possible.")) }}
+        {% else %}
+            {% if age_class.is_minor() %}
+                {% set mix_info = gettext("The selection must be compatible with the parental consent form.") %}
+            {% else %}
+                {% set mix_info = "" %}
+            {% endif %}
+            {{ util.form_input_select(
+                    name="reg.mixed_lodging",
+                    entries=(
+                        (True, gettext("I agree to mixed lodging.")),
+                        (False, gettext("I want to be lodged separated by gender.")),
+                    ),
+                    label=gettext("Mixed Lodging"), info=mix_info
+                ) }}
+        {% endif %}
+    {% elif row.name == "FotoNotice" %}
+        {% call util.form_input_general(label=gettext("Photo consent"), displayerrors=False) %}
+            <p class="nosp">
+                {% trans %}
+                    In the context of this event, photos and recordings will be made to be used for the
+                    event-documentation and a CdE-internal, password protected media collection. Individual photos and
+                    recordings can be excluded from this by request.
+                {% endtrans %}
+            </p>
+        {% endcall %}
+    {% elif row.name == "RegistrationNotes" %}
+        {%- if ambience["event"].tracks %}
+            {%- set noteslabel = gettext("Notes for Orgas and Instructors") %}
+        {%- else %}
+            {%- set noteslabel = gettext("Notes for Orgas") %}
+        {%- endif %}
+        {{ util.form_input_textarea(name="reg.notes", label=noteslabel, rows="5") }}
     {% else %}
         {{ row.name }}
     {% endif %}
+    </div>
 {% endmacro %}
 
 

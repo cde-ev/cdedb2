@@ -36,28 +36,11 @@
             {% endcall %}
         {% endif %}
 
-        <h3 class="sr-only">{% trans %}Course Choices{% endtrans %}</h3>
-        {{ generic_event.select_all_course_choices(involved_tracks=involved_tracks) }}
-
-        {{ util.h(n_("Additional Information"), underline=true) }}
-        {{ generic_event.additional_registration_choices(age_class, reg_questionnaire) }}
-
-        {{ generic_event.fee_preview_panel() }}
-
-        {% if not registration['is_member'] %}
-            <div class="heading-underline text-info" style="font-weight: bold;">
-                <p id="nonmember-surcharge">
-                {% trans %}
-                    Because you were not a CdE-Member at registration, you might have to pay an additional fee.
-                {% endtrans %}
-                {% if persona["is cde_realm"] %}
-                    {% trans %}
-                        If you pay your membership fee before your registration fee, the additional fee will be waived.
-                    {% endtrans %}
-                {% endif %}
-                </p>
-            </div>
-        {% endif %}
+        <div id="registrationquestionnaire">
+            {% for entry in reg_questionnaire %}
+                {{ generic_event.print_questionnaire_entry(entry) }}
+            {% endfor %}
+        </div>
 
         {{ util.form_input_submit(label=gettext("Save"), readonly=readonly,
                                   cancellink=cdedblink("event/registration_status")) }}

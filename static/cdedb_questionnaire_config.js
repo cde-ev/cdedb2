@@ -94,41 +94,44 @@ var inputTypes = {
      * jQuery plugin to be used on each single row in questionnaire_summary formular. It adds an event listener to the
      * field_id input and calls it to hide/show some labels.
      */
-    $.fn.cdedbQuestionnaireConfig = function(field_list, translations) {
+    $.fn.cdedbQuestionnaireConfig = function(field_list, translations, classes_by_role, all_classes) {
         $(this).each(function(){
             var $container = $(this);
+            var $input_role = $(this).find('.input-role');
             var $input_field = $(this).find('.input-field');
             var $input_group_readonly = $(this).find('.input-readonly').closest('.checkbox');
             var $input_group_defaultvalue = $(this).find('.input-defaultvalue').closest('.form-group');
             var $input_helpblock_info = $(this).find('.input-info').closest('.form-group').find('.help-block');
 
-            /* Callback handler to be executed when the data field of this questionnaire part is triggered */
+            /* Callback handler for changes to the role input. */
+            var input_role_handler = function() {
+                var val = $(this).val();
+                $container.find(".drow-input").each(function() {
+                    let show_for_role = $(this).data("show_for_role");
+                    if (show_for_role === undefined || show_for_role.includes(val)) {
+                        $(this).closest(".form-group,.checkbox").show();
+                    } else {
+                        $(this).closest(".form-group,.checkbox").hide();
+                    }
+                })
+                $container.removeClass(all_classes);
+                $container.addClass(classes_by_role[val]);
+            };
+
+            /* Callback handler for changes to the selected event field. */
             var input_field_handler = function() {
                 var val = $(this).val();
-                /* Text-only questionnaire part */
-                if (val === '') {
-                    $input_group_readonly.hide();
-                    $input_group_defaultvalue.hide();
-                    $input_helpblock_info.show();
-                    $container.addClass('shaded-info');
-
-                /* Questionnaire part with input field */
-                } else {
-                    $input_group_readonly.show();
-                    $input_group_defaultvalue.show();
-                    $input_helpblock_info.hide();
-                    $container.removeClass('shaded-info');
-
-                    // Change default_value input field's type and attributes according to selected field's type
-                    var field_spec = field_list[val];
-                    if (field_spec) {
-                        var $input_defaultvalue = $container.find('.input-defaultvalue');
-                        replace_defaultvalue_input(field_spec, $input_defaultvalue, translations);
-                    }
+                // Change default_value input field's type and attributes according to selected field's type
+                var field_spec = field_list[val];
+                if (field_spec) {
+                    var $input_defaultvalue = $container.find('.input-defaultvalue');
+                    replace_defaultvalue_input(field_spec, $input_defaultvalue, translations);
                 }
             };
 
-            /* Call input_field_handler() on change of field-input and once for intialization */
+            /* Register handlers for input changes and trigger them once for intialization. */
+            $input_role.on("change", input_role_handler);
+            $input_role.trigger("change");
             $input_field.on("change", input_field_handler);
             $input_field.trigger("change");
         });

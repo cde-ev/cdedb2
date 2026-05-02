@@ -84,6 +84,17 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         full_questionnaire, questionnaire, checksum = self._prepare_questionnaire_form(
             rs, event_id, kind
         )
+        spec_per_role = {
+            role: dict(role.get_class().requestdict_fields(creation=True))
+            for role in const.QuestionnaireRowMagicRole
+        }
+        get_roles_with_field = lambda key: [
+            role for role, spec in spec_per_role.items() if key in spec
+        ]
+        drow_classes_by_role = {
+            str(kind): kind.get_class().get_drow_html_classes()
+            for kind in const.QuestionnaireRowMagicRole
+        }
         return self.render(
             rs,
             "questionnaire/configure_questionnaire",
@@ -94,6 +105,9 @@ class EventQuestionnaireMixin(EventBaseFrontend):
                 "available_magic_roles": full_questionnaire.get_available_magic_roles(
                     kind
                 ),
+                "drow_classes_by_role": drow_classes_by_role,
+                "all_drow_classes": set().union(*drow_classes_by_role.values()),
+                "get_roles_with_field": get_roles_with_field,
                 "kind": kind,
             },
         )

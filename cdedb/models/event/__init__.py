@@ -1223,6 +1223,16 @@ class CourseChoices(QuestionnaireMagicRow):
 
 
 @dataclasses.dataclass
+class NonMemberSurchargeInfo(QuestionnaireMagicRow):
+    enum_member = const.QuestionnaireRowMagicRole.nonmember_surcharge_info
+    valid_kinds = {
+        const.QuestionnaireUsages.registration: QuestionnaireFrequency.once,
+    }
+    title: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
+    info: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
+
+
+@dataclasses.dataclass
 class FeePreview(QuestionnaireMagicRow):
     enum_member = const.QuestionnaireRowMagicRole.fee_preview
     valid_kinds = {
@@ -1231,6 +1241,46 @@ class FeePreview(QuestionnaireMagicRow):
     }
     allow_multiple_kinds = True
 
+    title: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
+    info: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
+
+
+@dataclasses.dataclass
+class ListConsent(QuestionnaireMagicRow):
+    enum_member = const.QuestionnaireRowMagicRole.list_consent
+    valid_kinds = {
+        const.QuestionnaireUsages.registration: QuestionnaireFrequency.once,
+    }
+    title: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
+    info: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
+
+
+@dataclasses.dataclass
+class MixedLodging(QuestionnaireMagicRow):
+    enum_member = const.QuestionnaireRowMagicRole.mixed_lodging
+    valid_kinds = {
+        const.QuestionnaireUsages.registration: QuestionnaireFrequency.once,
+    }
+    title: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
+    info: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
+
+
+@dataclasses.dataclass
+class FotoNotice(QuestionnaireMagicRow):
+    enum_member = const.QuestionnaireRowMagicRole.foto_notice
+    valid_kinds = {
+        const.QuestionnaireUsages.registration: QuestionnaireFrequency.once,
+    }
+    title: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
+    info: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
+
+
+@dataclasses.dataclass
+class RegistrationNotes(QuestionnaireMagicRow):
+    enum_member = const.QuestionnaireRowMagicRole.registration_notes
+    valid_kinds = {
+        const.QuestionnaireUsages.registration: QuestionnaireFrequency.max_once,
+    }
     title: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
     info: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
 
