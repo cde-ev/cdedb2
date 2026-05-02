@@ -3381,10 +3381,9 @@ def _questionnaire(
             # Error already processed.
             pass
         elif count < allowed_frequency.min:
-            # TODO: Where to display this?
             errs.append(
                 ValueError(
-                    "role",
+                    argname,
                     n_("Missing role: '%(magic_role)s'."),
                     {"magic_role": magic_role},
                 ),

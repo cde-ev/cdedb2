@@ -65,6 +65,8 @@
         {{ util.anti_csrf_token(config_endpoint) }}
         {{ util.input_hidden("checksum", value=checksum) }}
 
+        {{ util.output_errors("questionnaire", wrapper=True) }}
+
         <div id="drow-container">
             {# Old items, already stored in the database #}
             {% for entry in questionnaire %}
