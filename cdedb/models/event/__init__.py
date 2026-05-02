@@ -1081,7 +1081,7 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
     pos: int
 
     role: const.QuestionnaireRowMagicRole
-    enum_member: ClassVar[const.QuestionnaireRowMagicRole]
+    _role: ClassVar[const.QuestionnaireRowMagicRole]
     valid_kinds: ClassVar[dict[const.QuestionnaireUsages, QuestionnaireFrequency]]
     allow_multiple_kinds: ClassVar[bool] = True
 
@@ -1105,7 +1105,7 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
         ):
             if cls is QuestionnaireMagicRow:
                 continue
-            if cls.enum_member == role:
+            if cls._role == role:
                 return cls
         raise KeyError
 
@@ -1141,7 +1141,7 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
 @dataclasses.dataclass
 class QuestionnaireTextRow(QuestionnaireRow):
     database_table = "event.questionnaire_text_rows"
-    enum_member = const.QuestionnaireRowMagicRole.text_only
+    _role = const.QuestionnaireRowMagicRole.text_only
     valid_kinds = {
         kind: QuestionnaireFrequency.any for kind in const.QuestionnaireUsages
     }
@@ -1158,7 +1158,7 @@ class QuestionnaireTextRow(QuestionnaireRow):
 @dataclasses.dataclass
 class QuestionnaireFieldRow(QuestionnaireRow):
     database_table = "event.questionnaire_field_rows"
-    enum_member = const.QuestionnaireRowMagicRole.event_field
+    _role = const.QuestionnaireRowMagicRole.event_field
     valid_kinds = {
         kind: QuestionnaireFrequency.any for kind in const.QuestionnaireUsages
     }
@@ -1218,13 +1218,13 @@ class QuestionnaireMagicRow(QuestionnaireRow):
 
 @dataclasses.dataclass
 class CourseChoices(QuestionnaireMagicRow):
-    enum_member = const.QuestionnaireRowMagicRole.course_choices
+    _role = const.QuestionnaireRowMagicRole.course_choices
     valid_kinds = {const.QuestionnaireUsages.registration: QuestionnaireFrequency.once}
 
 
 @dataclasses.dataclass
 class NonMemberSurchargeInfo(QuestionnaireMagicRow):
-    enum_member = const.QuestionnaireRowMagicRole.nonmember_surcharge_info
+    _role = const.QuestionnaireRowMagicRole.nonmember_surcharge_info
     valid_kinds = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.once,
     }
@@ -1234,7 +1234,7 @@ class NonMemberSurchargeInfo(QuestionnaireMagicRow):
 
 @dataclasses.dataclass
 class FeePreview(QuestionnaireMagicRow):
-    enum_member = const.QuestionnaireRowMagicRole.fee_preview
+    _role = const.QuestionnaireRowMagicRole.fee_preview
     valid_kinds = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.min_once,
         const.QuestionnaireUsages.additional: QuestionnaireFrequency.any,
@@ -1247,7 +1247,7 @@ class FeePreview(QuestionnaireMagicRow):
 
 @dataclasses.dataclass
 class ListConsent(QuestionnaireMagicRow):
-    enum_member = const.QuestionnaireRowMagicRole.list_consent
+    _role = const.QuestionnaireRowMagicRole.list_consent
     valid_kinds = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.once,
     }
@@ -1257,7 +1257,7 @@ class ListConsent(QuestionnaireMagicRow):
 
 @dataclasses.dataclass
 class MixedLodging(QuestionnaireMagicRow):
-    enum_member = const.QuestionnaireRowMagicRole.mixed_lodging
+    _role = const.QuestionnaireRowMagicRole.mixed_lodging
     valid_kinds = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.once,
     }
@@ -1267,7 +1267,7 @@ class MixedLodging(QuestionnaireMagicRow):
 
 @dataclasses.dataclass
 class FotoNotice(QuestionnaireMagicRow):
-    enum_member = const.QuestionnaireRowMagicRole.foto_notice
+    _role = const.QuestionnaireRowMagicRole.foto_notice
     valid_kinds = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.once,
     }
@@ -1277,7 +1277,7 @@ class FotoNotice(QuestionnaireMagicRow):
 
 @dataclasses.dataclass
 class RegistrationNotes(QuestionnaireMagicRow):
-    enum_member = const.QuestionnaireRowMagicRole.registration_notes
+    _role = const.QuestionnaireRowMagicRole.registration_notes
     valid_kinds = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.max_once,
     }
