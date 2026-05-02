@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import collections
 import datetime
 from collections.abc import Collection
 from typing import Protocol, cast
@@ -1457,3 +1458,12 @@ class ComplaintBackend(AbstractBackend):
 
         entries = models.ComplaintEntry.many_from_database(entry_data.values())
         return entries
+
+    @access("complaint_admin")
+    def list_companions(self, rs: RequestState) -> dict[int, set[int]]:
+        """Get dict from companion to associated case ids."""
+        query = """SELECT companion_persona_id, case_id FROM complaint.companions"""
+        ret = collections.defaultdict(set)
+        for e in self.query_all(rs, query, []):
+            ret[e['companion_persona_id']].add(e['case_id'])
+        return ret

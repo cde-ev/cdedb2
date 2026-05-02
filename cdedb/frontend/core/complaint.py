@@ -26,7 +26,7 @@ from cdedb.common.exceptions import AdverseCompanionError
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import ComplaintLogFilter
-from cdedb.common.sorting import xsorted
+from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import (
     REQUESTdata,
@@ -1256,7 +1256,37 @@ class CoreComplaintMixin(CoreBaseFrontend):
         }
         return self.render(rs, "complaint/show_user_measures", params)
 
-    @access("complaint_admin", "complaint.enforcer", "complaint.monitor")
+    @access("complaint_admin")
+    def list_companions(self, rs: RequestState) -> Response:
+        companions_to_cases = self.complaintproxy.list_companions(rs)
+        personas = xsorted(
+            self.coreproxy.get_personas(rs, companions_to_cases.keys()).values(),
+            key=EntitySorter.persona,
+        )
+        case_ids = set().union(*(e for e in companions_to_cases.values()))
+        cases = self.complaintproxy.get_cases(rs, case_ids)
+        active_companions = {
+            companion_id
+            for companion_id, case_ids in companions_to_cases.items()
+            # Both case and companion are active
+            if any(
+                case.is_active and companion_id not in case.withdrawn_companions
+                for case in cases.values()
+            )
+        }
+
+        return self.render(
+            rs,
+            "complaint/list_companions",
+            {
+                "companions_to_cases": companions_to_cases,
+                "active_companions": active_companions,
+                "cases": cases,
+                "personas": personas,
+            },
+        )
+
+    @access("complaint_admin", "complaint.enforcer")
     def list_complaint_helpers(self, rs: RequestState) -> Response:
         """View list of enforcers and monitors."""
         enforcer_ids = self.complaintproxy.list_enforcers(rs)

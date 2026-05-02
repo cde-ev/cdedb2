@@ -108,6 +108,10 @@
                     {{ util.href(cdedblink("core/measures"), gettext("Measure Overview"), aclass="list-group-item",
                                  icon="shield-halved", active=(sidenav_active=='show_measures')) }}
                 {% endif %}
+                {% if "complaint_admin" in user.roles %}
+                    {{ util.href(cdedblink("core/list_companions"), gettext("Companions_[[plural]]"), aclass="list-group-item",
+                                 icon="people-group", active=(sidenav_active=='list_companions')) }}
+                {% endif %}
                 {{ util.href(cdedblink("core/list_complaint_helpers"), gettext("Complaint Helpers"), aclass="list-group-item",
                              icon="handshake-angle", active=(sidenav_active=='complaint_helpers')) }}
                 {% if "complaint_admin" in user.roles %}
