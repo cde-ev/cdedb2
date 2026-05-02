@@ -64,18 +64,18 @@ class EventFieldMixin(EventBaseFrontend):
             if key != 'id'
         }
         merge_dicts(rs.values, current)
-        event_fees_per_field = self.eventproxy.get_event_fees_per_entity(
-            rs, event_id
+        event_fees_per_field = models.EventFee.get_fees_per_entity(
+            rs.ambience["event"]
         ).fields
         locked = {
             field_id for field_id, fee_ids in event_fees_per_field.items() if fee_ids
         }
         referenced = set()
-        full_questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
+        full_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)
         for v in full_questionnaire.values():
             for row in v:
-                if row['field_id']:
-                    referenced.add(row['field_id'])
+                if row.field_id:
+                    referenced.add(row.field_id)
         if rs.ambience['event'].lodge_field:
             referenced.add(rs.ambience['event'].lodge_field.id)
         if rs.ambience['event'].reimbursement_iban_field:

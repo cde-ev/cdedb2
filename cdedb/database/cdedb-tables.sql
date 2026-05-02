@@ -1375,9 +1375,7 @@ CREATE TABLE event.questionnaire_rows (
         title                   varchar,
         info                    varchar,
         -- This must be NULL exactly for text-only entries.
-        readonly                boolean,
-        CONSTRAINT questionnaire_row_readonly_field
-            CHECK ((field_id IS NULL) = (readonly IS NULL)),
+        readonly                boolean NOT NULL,
         default_value           varchar,
         -- Where the row will be used (registration, questionnaire). See cdedb.constants.QuestionnaireUsages.
         kind                    integer NOT NULL

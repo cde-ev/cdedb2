@@ -96,8 +96,7 @@ RegistrationPart = _NewType("RegistrationPart", _CdEDBObject)
 RegistrationTrack = _NewType("RegistrationTrack", _CdEDBObject)
 EventAssociatedFields = _NewType("EventAssociatedFields", _CdEDBObject)
 QuestionnaireRow = _NewType("QuestionnaireRow", _CdEDBObject)
-# TODO maybe cast keys to str
-Questionnaire = _NewType("Questionnaire", dict[int, list[QuestionnaireRow]])
+Questionnaire = _NewType("Questionnaire", list[_CdEDBObject])
 
 SerializedEvent = _NewType("SerializedEvent", _CdEDBObject)
 SerializedEventUpload = _NewType("SerializedEventUpload", SerializedEvent)

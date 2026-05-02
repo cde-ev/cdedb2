@@ -101,7 +101,7 @@
                 "default_value": null,
                 "field_name": null,
                 "info": "Bitte gib hier Deine Kleidungsw\u00fcnsche an.",
-                "readonly": null,
+                "readonly": false,
                 "title": "Akademiekleidung"
             },
             {
