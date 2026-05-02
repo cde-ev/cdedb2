@@ -25,6 +25,7 @@ from cdedb.common import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import EventPrivileges, is_event_access_limited
+from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.frontend.common import (
     REQUESTdata,
     access,
@@ -145,13 +146,13 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         return self.redirect(rs, "event/configure_additional_questionnaire_form")
 
     def _extract_questionnaire_row(
-        self, rs: RequestState, pos: int
+        self, rs: RequestState, drow_id: int
     ) -> CdEDBObject | None:
-        if unwrap(request_extractor(rs, {drow_delete(pos): bool})):
+        if unwrap(request_extractor(rs, {drow_delete(drow_id): bool})):
             return None
         role: const.QuestionnaireRowMagicRole | None = unwrap(
             request_extractor(
-                rs, {drow_name("role", pos): const.QuestionnaireRowMagicRole | None}
+                rs, {drow_name("role", drow_id): const.QuestionnaireRowMagicRole | None}
             )
         )
         if not role:
@@ -160,11 +161,11 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         spec = cls.requestdict_fields(creation=True)
         data = request_extractor(
             rs,
-            {drow_name(key, pos): val for key, val in spec},  # type: ignore[misc]
+            {drow_name(key, drow_id): val for key, val in spec},  # type: ignore[misc]
             postpone_validation=True,
         )
-        # Pass 'pos' as 'id' to correctly map validation errors.
-        return {key: data[drow_name(key, pos)] for key, _ in spec} | {"id": pos}
+        # Pass 'drow_id' as 'id' to correctly map validation errors.
+        return {key: data[drow_name(key, drow_id)] for key, _ in spec} | {"id": drow_id}
 
     def _set_questionnaire(
         self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages
@@ -175,12 +176,15 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             self._prepare_questionnaire_form(rs, event_id, kind)
         )
 
-        # TODO: search until role is not there.
-        new_questionnaire: list[CdEDBObject] = [
-            row
-            for pos in range(len(questionnaire))
-            if (row := self._extract_questionnaire_row(rs, pos))
-        ]
+        new_questionnaire = []
+        marker = 0
+        while True:
+            if unwrap(request_extractor(rs, {drow_name("role", marker): bool})):
+                if row := self._extract_questionnaire_row(rs, marker):
+                    new_questionnaire.append(row)
+                marker += 1
+            elif marker >= len(questionnaire):
+                break
 
         marker = 1
         while marker < 2**10:
@@ -191,6 +195,9 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             else:
                 break
         rs.values[drow_last_index()] = marker - 1
+
+        tmp = {int(row["pos"]): row for row in new_questionnaire}
+        new_questionnaire = [tmp[pos] for pos in mixed_existence_sorter(tmp)]
 
         new_questionnaire = check(
             rs,
