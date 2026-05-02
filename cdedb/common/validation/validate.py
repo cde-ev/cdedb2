@@ -3336,7 +3336,7 @@ def _questionnaire(
     errs = ValidationSummary()
     ret: list[CdEDBObject] = []
     for i, row in enumerate(val):
-        with errs.modify_argname(suffix=f"_{i}"):
+        with errs.append_to_argname(f"_{row.get('id', i)}"):
             tmp = _examine_dictionary_fields(
                 row,
                 {"role": const.QuestionnaireRowMagicRole},
@@ -3361,14 +3361,16 @@ def _questionnaire(
 
     for e1, e2 in itertools.combinations(ret, 2):
         if e1.get('field_id') is not None and e1.get('field_id') == e2.get('field_id'):
-            field = all_questionnaires.event.fields[e1['field_id']]
-            errs.append(
+            msg = n_("Must not duplicate field: '%(field_name)s'")
+            params = {'field_name': event.fields[e1['field_id']].field_name}
+            errs.extend([
                 ValueError(
-                    'field_id',
-                    n_("Must not duplicate field ('%(field_name)s')."),
-                    {'field_name': field.field_name},
-                )
-            )
+                    f'field_id_{pos_to_id.get(e1["pos"], e1["pos"])}', msg, params
+                ),
+                ValueError(
+                    f'field_id_{pos_to_id.get(e2["pos"], e2["pos"])}', msg, params
+                ),
+            ])
 
     magic_role_counts = collections.Counter(row["role"] for row in ret if "role" in row)
 
