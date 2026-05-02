@@ -1085,9 +1085,6 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
     valid_kinds: ClassVar[dict[const.QuestionnaireUsages, QuestionnaireFrequency]]
     allow_multiple_kinds: ClassVar[bool] = True
 
-    title: str | None
-    info: str | None
-
     @property
     def name(self) -> str:
         return self.__class__.__qualname__
@@ -1145,6 +1142,8 @@ class QuestionnaireTextRow(QuestionnaireRow):
     valid_kinds = {
         kind: QuestionnaireFrequency.any for kind in const.QuestionnaireUsages
     }
+    title: str | None
+    text: str | None
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
@@ -1173,6 +1172,9 @@ class QuestionnaireFieldRow(QuestionnaireRow):
     )
     readonly: bool
     default_value: Any  # TODO: ByDatafieldKind maybe some union?
+
+    label: str | None
+    info: str | None
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
@@ -1228,8 +1230,6 @@ class NonMemberSurchargeInfo(QuestionnaireMagicRow):
     valid_kinds = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.once,
     }
-    title: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
-    info: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
 
 
 @dataclasses.dataclass
@@ -1241,9 +1241,6 @@ class FeePreview(QuestionnaireMagicRow):
     }
     allow_multiple_kinds = True
 
-    title: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
-    info: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
-
 
 @dataclasses.dataclass
 class ListConsent(QuestionnaireMagicRow):
@@ -1251,8 +1248,6 @@ class ListConsent(QuestionnaireMagicRow):
     valid_kinds = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.once,
     }
-    title: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
-    info: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
 
 
 @dataclasses.dataclass
@@ -1261,8 +1256,6 @@ class MixedLodging(QuestionnaireMagicRow):
     valid_kinds = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.once,
     }
-    title: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
-    info: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
 
 
 @dataclasses.dataclass
@@ -1271,8 +1264,6 @@ class FotoNotice(QuestionnaireMagicRow):
     valid_kinds = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.once,
     }
-    title: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
-    info: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
 
 
 @dataclasses.dataclass
@@ -1281,8 +1272,6 @@ class RegistrationNotes(QuestionnaireMagicRow):
     valid_kinds = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.max_once,
     }
-    title: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
-    info: None = dataclasses.field(metadata=Meta.request_exclude.as_dict)
 
 
 class Questionnaire(list[QuestionnaireRow]):

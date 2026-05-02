@@ -7987,7 +7987,7 @@
             "pos": 0,
             "role": 1,
             "title": "Unterüberschrift",
-            "info": "mit Text darunter"
+            "text": "mit Text darunter"
         },
         {
             "event_id": 1,
@@ -7995,7 +7995,7 @@
             "pos": 2,
             "role": 1,
             "title": null,
-            "info": "nur etwas Text"
+            "text": "nur etwas Text"
         },
         {
             "event_id": 1,
@@ -8003,7 +8003,7 @@
             "pos": 3,
             "role": 1,
             "title": "Weitere Überschrift",
-            "info": null
+            "text": null
         },
         {
             "event_id": 1,
@@ -8011,7 +8011,7 @@
             "pos": 3,
             "role": 1,
             "title": "Weitere Angaben",
-            "info": null
+            "text": null
         }
     ],
     "event.questionnaire_field_rows": [
@@ -8020,7 +8020,7 @@
             "kind": 2,
             "pos": 1,
             "role": 5,
-            "title": "Bälle",
+            "label": "Bälle",
             "info": "Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.",
             "field_id": 1,
             "readonly": false,
@@ -8031,7 +8031,7 @@
             "kind": 2,
             "pos": 4,
             "role": 5,
-            "title": "Vehikel",
+            "label": "Vehikel",
             "info": null,
             "field_id": 2,
             "readonly": false,
@@ -8042,7 +8042,7 @@
             "kind": 2,
             "pos": 5,
             "role": 5,
-            "title": "Hauswunsch",
+            "label": "Hauswunsch",
             "info": null,
             "field_id": 3,
             "readonly": false,
@@ -8053,7 +8053,7 @@
             "kind": 1,
             "pos": 5,
             "role": 5,
-            "title": "Ich bin unter 13 Jahre alt.",
+            "label": "Ich bin unter 13 Jahre alt.",
             "info": "Denk daran, deine Eltern mitzubringen!",
             "field_id": 7,
             "readonly": false,
@@ -8065,73 +8065,49 @@
             "event_id": 1,
             "kind": 1,
             "pos": 0,
-            "title": null,
-            "info": null,
-            "role": 30,
-            "aux": null
+            "role": 30
         },
         {
             "event_id": 1,
             "kind": 1,
             "pos": 1,
-            "title": null,
-            "info": null,
-            "role": 25,
-            "aux": null
+            "role": 25
         },
         {
             "event_id": 1,
             "kind": 1,
             "pos": 2,
-            "title": null,
-            "info": null,
-            "role": 10,
-            "aux": null
+            "role": 10
         },
         {
             "event_id": 1,
             "kind": 1,
             "pos": 4,
-            "title": null,
-            "info": null,
-            "role": 40,
-            "aux": null
+            "role": 40
         },
         {
             "event_id": 1,
             "kind": 1,
             "pos": 6,
-            "title": null,
-            "info": null,
-            "role": 50,
-            "aux": null
+            "role": 50
         },
         {
             "event_id": 1,
             "kind": 1,
             "pos": 7,
-            "title": null,
-            "info": null,
-            "role": 60,
-            "aux": null
+            "role": 60
         },
         {
             "event_id": 1,
             "kind": 1,
             "pos": 8,
-            "title": null,
-            "info": null,
-            "role": 70,
-            "aux": null
+            "role": 70
         },
         {
             "event_id": 1,
             "kind": 1,
             "pos": 9,
-            "title": null,
-            "info": null,
-            "role": 30,
-            "aux": null
+            "role": 30
         }
     ],
     "event.stored_queries": [

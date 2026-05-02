@@ -1377,7 +1377,7 @@ CREATE TABLE event.questionnaire_text_rows (
         -- A customized heading for this element.
         title                   varchar,
         -- Additional formatted text that is displayed below the heading if any.
-        info                    varchar
+        text                    varchar
 );
 CREATE INDEX questionnaire_text_rows_event_id_kind_idx ON event.questionnaire_text_rows(event_id, kind);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_text_rows TO cdb_persona;
@@ -1392,7 +1392,7 @@ CREATE TABLE event.questionnaire_field_rows (
         pos                     integer NOT NULL,
         role                    integer NOT NULL,
         -- A customized label for this element.
-        title                   varchar,
+        label                   varchar,
         -- Additional information that is displayed below the field input.
         info                    varchar,
         -- These fields determine what variant of content is rendered via this row.
@@ -1415,14 +1415,8 @@ CREATE TABLE event.questionnaire_magic_rows (
         kind                    integer NOT NULL,
         -- The position at which this element is shown in the questionnaire.
         pos                     integer NOT NULL,
-        -- A customized title for this element. TODO: Do we want this?
-        title                   varchar,
-        -- Additional information that is displayed near this element. Behaves differently depending on the magic role.
-        info                    varchar,
         -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowMagicRole.
-        role                    integer,
-        -- Additional information depending on the role.
-        aux                     varchar
+        role                    integer
 );
 CREATE INDEX questionnaire_magic_rows_event_id_kind_idx ON event.questionnaire_magic_rows(event_id, kind);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_magic_rows TO cdb_persona;

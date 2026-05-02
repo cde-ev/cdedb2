@@ -102,7 +102,6 @@
 #}
 {% macro field_input(field, name=none, readonly=False, defaultvalue='', anid=none, bool_label=none) %}
     {%- set name = name or "fields." + field['field_name'] %}
-    {%- set bool_label = bool_label or field['title'] %}
     {# Wrapping is necessary to identify the data field for the fee preview. #}
     <div id="field.{{ field['field_name'] }}" data-field_id="{{ field['id'] }}">
     {%- if field['entries'] %}
@@ -149,15 +148,16 @@
     force_label Enforce the presentation of the label in the surrounding form_* even if the field is of type bool
 #}
 {% macro form_field_input(field, name=none, label=none, info='', displayerrors=True, readonly=False,
-                          defaultvalue='', anid=none, force_label=False, bool_label=none, outerclass='') %}
-    {%- set name = name or "fields." + field['field_name'] %}
-    {%- set label = (none if (field['kind'] == enums['FieldDatatypes'].bool
-                              and not force_label and not field['entries'])
-                     else label or field['title']) %}
+                          defaultvalue='', anid=none, force_label=False, outerclass='') %}
+    {%- set name = name or "fields." + field.field_name %}
+    {%- set form_label = label or field.title %}
+    {%- if field.kind == enums['FieldDatatypes'].bool and not force_label and not field.entries %}
+        {%- set form_label = none %}
+    {%- endif %}
     {%- set anid = anid or "event-input-{}".format(name) %}
-    {%- call util.form_input_general(name=name, label=label, anid=anid, small=False, info=info,
+    {%- call util.form_input_general(name=name, label=form_label, anid=anid, small=False, info=info,
                                      displayerrors=displayerrors, horizontal=True, aclass=outerclass) %}
-        {{- field_input(field, name, readonly, defaultvalue, anid, bool_label) }}
+        {{- field_input(field, name, readonly, defaultvalue, anid, bool_label=label or field.title) }}
     {%- endcall %}
 {%- endmacro %}
 
@@ -205,14 +205,14 @@
     <div id="questionnaire_row_{{ row.pos }}">
     {% if row.name == "QuestionnaireFieldRow" %}
         {{ form_field_input(
-                row.field, label=row.title, info=row.info, readonly=readonly or is_locked,
-                defaultvalue=row.default_value if not (readonly or is_locked) else "",
-                bool_label=row.title) }}
+                row.field, label=row.label, info=row.info|md|replace("<p>", "")|replace("</p>", "") if row.info else "",
+                readonly=readonly or is_locked, defaultvalue=row.default_value if not (readonly or is_locked) else ""
+            ) }}
     {% elif row.name == "QuestionnaireTextRow" %}
         {% if row.title %}
             {{ util.h(row.title, level=row.kind.title_level, underline=True, translate=False) }}
         {% endif %}
-        {{ row.info|md }}
+        {{ row.text|md }}
     {% elif row.name == "FeePreview" %}
         {{ fee_preview_panel() }}
     {% elif row.name == "NonMemberSurchargeInfo" %}
