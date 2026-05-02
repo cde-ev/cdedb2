@@ -5,6 +5,7 @@
 /** Enum of possible types of custom DataFields. Reflects cdedb.database.constants.FieldDatatypes */
 FieldDatatypes = {
     "str": 1,
+    "multine_str": 50,
     "bool": 2,
     "int": 3,
     "float": 4,
@@ -13,11 +14,12 @@ FieldDatatypes = {
 };
 /** Mapping of CdEDB datafield types to HTML input types */
 var inputTypes = {
-    1 : 'text',
     3 : 'number',
-    4 : 'text',
     5 : 'date',
-    6 : 'datetime-local'};
+    6 : 'datetime-local',
+    10: 'number',
+    20: 'tel',
+};
 
 (function($){
     /**
@@ -67,13 +69,14 @@ var inputTypes = {
 
                 $i.val(defaultvalue);
 
-            // For string type fields, we use a textarea (to allow entering line breaks w/o copy&paste)
+            // For multiline string type fields, we use a textarea (to allow entering line breaks w/o copy&paste).
             } else {
-                $i = $(field_type === FieldDatatypes.str && size > 0 ? '<textarea>' : '<input>', {
-                    'class': "form-control input-defaultvalue drow-input",
+                $i = $(field_type === FieldDatatypes.multine_str ? '<textarea>' : '<input>', {
+                    'class': $input_defaultvalue.attr('class'),
                     'id': $input_defaultvalue.attr('id'),
                     'name': $input_defaultvalue.attr('name'),
-                    'type': inputTypes[field_type]
+                    'type': inputTypes[field_type] ?? 'text',
+                    'rows': 5,
                 })
                     .val(defaultvalue);
 
@@ -101,7 +104,6 @@ var inputTypes = {
             var $input_field = $(this).find('.input-field');
             var $input_group_readonly = $(this).find('.input-readonly').closest('.checkbox');
             var $input_group_defaultvalue = $(this).find('.input-defaultvalue').closest('.form-group');
-            var $input_helpblock_info = $(this).find('.input-info').closest('.form-group').find('.help-block');
 
             /* Callback handler for changes to the role input. */
             var input_role_handler = function() {

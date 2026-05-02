@@ -292,17 +292,45 @@
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
 {% macro questionnaire_config_entry(part_id, kind, aclass="", newrow=False) %}
     <div class="panel panel-default {{ aclass }}" data-drow-id="{{ part_id }}">
+        <div class="panel-heading" style="padding: 15px">
+            <div>
+                <div class="pull-right" style="margin: -2px 0">
+                    <span class="drow-buttonspace">
+                        {% if newrow %}
+                            {{ util.input_checkbox(
+                                    "create_" ~ part_id, label=gettext("Add"), aclass='drow-indicator',
+                                    attributes={"data-basename": "create_"}|xmlattr
+                                ) }}
+                        {% else %}
+                            {{ util.input_checkbox(
+                                    "delete_" ~ part_id, label=gettext("Remove"), aclass='drow-indicator'
+                                ) }}
+                        {% endif %}
+                    </span>
+                </div>
+                {% if newrow %}
+                    <div style="width: 90%;">
+                        {{ util.form_input_select(
+                                "role_" ~ part_id, label=gettext("Role"),
+                                entries=available_magic_roles|enum_entries(processing=gettext),
+                                aclass='input-role drow-input', horizontal=False, small=True,
+                                attributes={
+                                    "data-basename": "role_",
+                                }|xmlattr
+                            ) }}
+                    </div>
+                {% else %}
+                    <strong>
+                        {{ gettext(values["role_" ~ part_id]|string) }}
+                    </strong>
+                    {{ util.input_hidden("role_" ~ part_id, aclass="input-role") }}
+                {% endif %}
+            </div>
+            <div style="clear:both;"></div>
+        </div>
         <div class="panel-body">
             <div class="row">
                 <div class="col-md-6">
-                    {{ util.form_input_select(
-                            "role_" ~ part_id, label=gettext("Role"),
-                            entries=available_magic_roles|enum_entries(processing=gettext),
-                            aclass='input-role drow-input', horizontal=False,
-                            attributes={
-                                "data-basename": "role_",
-                            }|xmlattr
-                        ) }}
                     {{ util.form_input_select(
                             "field_id_" ~ part_id, label=gettext("Query"),
                             entries=available_fields|entries('id', 'field_name'),
@@ -335,37 +363,39 @@
                 </div>
                 <div class="col-md-6">
                     {{ util.form_input_text(
-                            "title_" ~ part_id, label=gettext("Title_[[name of an entity]]"),
-                            aclass='input-title drow-input', horizontal=false,
+                            "label_" ~ part_id, label=gettext("Label"),
+                            aclass='input-label drow-input', horizontal=false,
                             attributes={
-                                "data-basename": "title_",
-                                "data-show_for_role": get_roles_with_field("title")|map("string")|list,
+                                "data-basename": "label_",
+                                "data-show_for_role": get_roles_with_field("label")|map("string")|list,
                             }|xmlattr
                         ) }}
                     {{ util.form_input_textarea(
-                            "info_" ~ part_id, label=gettext("Text"), markdown=True,
+                            "info_" ~ part_id, label=gettext("Info"), markdown=True,
                             aclass='input-info drow-input', horizontal=False, rows=5,
                             attributes={
                                 "data-basename": "info_",
                                 "data-show_for_role": get_roles_with_field("info")|map("string")|list,
                             }|xmlattr
                         ) }}
-                    <div class="text-right">
-                        <span class="drow-buttonspace">
-                            {% if newrow %}
-                                {{ util.input_checkbox(
-                                        "create_" ~ part_id, label=gettext("Add"), aclass='drow-indicator',
-                                        attributes={"data-basename": "create_"}|xmlattr
-                                    ) }}
-                            {% else %}
-                                {{ util.input_checkbox(
-                                        "delete_" ~ part_id, label=gettext("Remove"), aclass='drow-indicator'
-                                    ) }}
-                            {% endif %}
-                        </span>
-                    </div>
                 </div>
             </div>
+            {{ util.form_input_text(
+                    "title_" ~ part_id, label=gettext("Title"),
+                    aclass='input-title drow-input', horizontal=false,
+                    attributes={
+                        "data-basename": "title_",
+                        "data-show_for_role": get_roles_with_field("title")|map("string")|list,
+                    }|xmlattr
+                ) }}
+            {{ util.form_input_textarea(
+                    "text_" ~ part_id, label=gettext("Text"), markdown=True,
+                    aclass='input-text drow-input', horizontal=False, rows=5,
+                    attributes={
+                        "data-basename": "text_",
+                        "data-show_for_role": get_roles_with_field("text")|map("string")|list,
+                    }|xmlattr
+                ) }}
         </div>
     </div>
 {% endmacro %}
