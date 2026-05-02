@@ -1925,13 +1925,11 @@ class EventBaseBackend(EventLowLevelBackend):
         new_questionnaire = {str(usage): rows for usage, rows in questionnaire.items()}
         for usage, rows in new_questionnaire.items():
             for q in rows:
-                if q['field_id']:
+                if 'field_id' in q:
                     q['field_name'] = event.fields[q['field_id']].field_name
-                else:
-                    q['field_name'] = None
+                    del q['field_id']
                 del q['pos']
                 del q['kind']
-                del q['field_id']
         for field in new_fields.values():
             del field['field_name']
             del field['event_id']
