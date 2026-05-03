@@ -1735,7 +1735,10 @@ class EventBaseBackend(EventLowLevelBackend):
             )
             questionnaire = self.get_all_questionnaires(rs, event_id).as_dict()
             persona_ids = tuple(reg['persona_id'] for reg in registrations.values())
-            personas = self.core.get_event_users(rs, persona_ids, event_id)
+            personas = {
+                p.id: p.as_dict()
+                for p in self.core.get_event_users(rs, persona_ids, event_id).values()
+            }
 
         # Now process all the data.
         # basics

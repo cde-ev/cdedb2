@@ -219,7 +219,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         for persona_id, persona in personas.items():
             if persona['is_event_realm'] and rs.ambience['case'].start_date:
                 age_classes[persona_id] = determine_age_class(
-                    self.coreproxy.get_event_user(rs, persona_id)['birthday'],
+                    self.coreproxy.get_event_user(rs, persona_id).birthday,
                     rs.ambience['case'].start_date,
                 )
 

@@ -161,7 +161,7 @@ class CdEBaseBackend(AbstractBackend):
                 persona_ids = {t['persona_id'] for t in transfers}
                 event_personas = self.core.get_event_users(rs, persona_ids)
                 cde_personas = self.core.get_cde_users(
-                    rs, {p["id"] for p in event_personas.values() if p["is_cde_realm"]}
+                    rs, {p.id for p in event_personas.values() if p.is_cde_realm}
                 )
                 for index, transfer in enumerate(transfers):
                     amount, date = transfer['amount'], transfer['date']
@@ -196,7 +196,7 @@ class CdEBaseBackend(AbstractBackend):
                             )
                             result.new_members += bool(code)
                             cde_persona.is_member = bool(code)
-                            event_personas[cde_persona.id]["is_member"] = bool(code)
+                            event_personas[cde_persona.id].is_member = bool(code)
 
                         # Add to tally.
                         result.membership_fees.append(
@@ -215,11 +215,11 @@ class CdEBaseBackend(AbstractBackend):
                             amount=amount,
                             date=date,
                             by_orga=False,
-                            is_member=event_persona['is_member'],
+                            is_member=event_persona.is_member,
                         )
                         event_id = registration['event_id']
                         ret = models_finance.MoneyTransfer(
-                            persona=event_persona,
+                            persona=event_persona.as_dict(),
                             amount=amount,
                             date=date,
                             registration=registration,
@@ -547,7 +547,8 @@ class CdEBaseBackend(AbstractBackend):
                     for field in mandatory_fields:
                         promotion[field] = datum['persona'][field]
                 else:
-                    current = self.core.get_event_user(rs, persona_id)
+                    # TODO migrate upgrade logik to dataclasses
+                    current = self.core.get_event_user(rs, persona_id).as_dict()
                     # take care that we do not override existent data
                     current_fields = {
                         field

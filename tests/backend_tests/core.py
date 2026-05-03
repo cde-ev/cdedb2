@@ -133,7 +133,7 @@ class TestCoreBackend(BackendTest):
             if not persona['is_event_realm']:
                 continue
 
-            persona = self.core.get_event_user(self.key, persona_id)
+            persona = self.core.get_event_user(self.key, persona_id).as_dict()
             if persona_id != USER_DICT["inga"]["id"]:
                 affirm(vtypes.Persona, persona)
             else:
@@ -872,9 +872,8 @@ class TestCoreBackend(BackendTest):
         new_id = self.core.genesis(self.key, case_id)
         self.assertLess(0, new_id)
         value = self.core.get_event_user(self.key, new_id)
-        persona_expectation = expectation.persona.as_dict()
-        persona_expectation["id"] = new_id
-        self.assertEqual(persona_expectation, value)
+        expectation.persona.id = vtypes.ID(new_id)
+        self.assertEqual(expectation.persona, value)
 
     @as_users("anton")
     def test_genesis_ml(self) -> None:
@@ -1166,7 +1165,10 @@ class TestCoreBackend(BackendTest):
             'telephone': '+495432987654321',
             'title': 'Dr.',
         })
-        self.assertEqual(expectation_event, self.core.get_event_user(self.key, 2))
+        self.assertEqual(
+            models.EventPersona(**expectation),  # type: ignore[arg-type]
+            self.core.get_event_user(self.key, 2),
+        )
         expectation.update({**expectation_event, **expectation_assembly})
         expectation.update({
             'is_cde_admin': False,

@@ -63,6 +63,7 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 from cdedb.models.common import CdEDataclassMap
+from cdedb.models.core import EventPersona
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -71,7 +72,7 @@ class ParticipantListData(typing.TypedDict):
     registrations: CdEDBObjectMap
     ordered: list[int]
     reg_counts: dict[int | None, int]
-    personas: CdEDBObjectMap
+    personas: CdEDataclassMap[EventPersona]
     personas_stati: CdEDBObjectMap
     courses: CdEDataclassMap[models.Course]
     parts: CdEDataclassMap[models.EventPart]
@@ -79,7 +80,7 @@ class ParticipantListData(typing.TypedDict):
 
 class UserLodgementWishes(typing.TypedDict):
     field: models.EventField | None
-    wished_personas: list[CdEDBObject]
+    wished_personas: list[EventPersona]
     problems: list[Notification]
 
 
@@ -87,7 +88,7 @@ class ConstraintViolationsData(typing.TypedDict):
     violations: models_cv.ViolationList
     all_registrations: CdEDBObjectMap
     registrations: CdEDBObjectMap
-    personas: CdEDBObjectMap
+    personas: CdEDataclassMap[EventPersona]
     all_courses: CdEDataclassMap[models.Course]
     courses: CdEDataclassMap[models.Course]
     choice_stats: models.ChoiceStats
@@ -477,7 +478,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                     event_id,
                     part_ids,
                     include_total_count=True,
-                    sortkey=sortkey or "persona",
+                    sort_by=sortkey or "persona",
                     reverse=reverse,
                 ),
             },
@@ -490,7 +491,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         part_ids: Collection[int] = (),
         orga_list: bool = False,
         include_total_count: bool = False,
-        sortkey: str = "persona",
+        sort_by: str = "persona",
         reverse: bool = False,
     ) -> ParticipantListData:
         """This provides data for download and online participant list.
@@ -533,7 +534,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         personas = self.coreproxy.get_event_users(rs, persona_ids, event_id)
         personas_stati = self.coreproxy.get_personas(rs, persona_ids)
 
-        all_sortkeys = {
+        all_sorters: dict[str, KeyFunction] = {
             "given_names": EntitySorter.make_persona_sorter(family_name_first=False),
             "family_name": EntitySorter.make_persona_sorter(family_name_first=True),
             "email": EntitySorter.email,
@@ -545,56 +546,37 @@ class EventBaseFrontend(AbstractUserFrontend):
             "persona": EntitySorter.make_persona_sorter(family_name_first=False),
         }
 
-        # FIXME: the result can have different lengths depending an amount of
-        #  courses someone is assigned to.
-        def sort_rank(sortkey: str, anid: int) -> Sortkey:
-            prim_sorter: KeyFunction = all_sortkeys.get(
-                sortkey, all_sortkeys["persona"]
-            )
-            sec_sorter: KeyFunction = all_sortkeys["persona"]
-            if sortkey == "course":
+        def get_sortkey(anid: int) -> Sortkey:
+            sortkey: Sortkey = tuple()
+            registration = registrations[anid]
+            persona = personas[registration['persona_id']].as_dict()
+            if sort_by == "course":
                 if not len(part_ids) == 1:
                     raise werkzeug.exceptions.BadRequest(
                         n_("Only one part id allowed.")
                     )
                 part_id = unwrap(part_ids)
-                all_tracks = parts[part_id].tracks
-                registered_tracks = [
-                    registrations[anid]['tracks'][track_id] for track_id in all_tracks
-                ]
-                # TODO sort tracks by title?
-                tracks = xsorted(
-                    registered_tracks,
-                    key=lambda track: all_tracks[track['track_id']].sortkey,
-                )
-                course_ids = [track['course_id'] for track in tracks]
-                prim_rank: Sortkey = tuple()
-                for course_id in course_ids:
-                    if course_id:
-                        prim_rank += courses[course_id].get_sortkey()
+                for track in parts[part_id].tracks.values():
+                    if course_id := registration['tracks'][track.id]['course_id']:
+                        sortkey += courses[course_id].get_sortkey()
                     else:
-                        prim_rank += ("0", "", "")
+                        sortkey += ("0", "", "")
             else:
-                prim_key = personas[registrations[anid]['persona_id']]
-                prim_rank = prim_sorter(prim_key)
-            sec_key = personas[registrations[anid]['persona_id']]
-            sec_rank = sec_sorter(sec_key)
-            return prim_rank + sec_rank
+                sorter = all_sorters.get(sort_by, all_sorters["persona"])
+                sortkey += sorter(persona)
+            sortkey += all_sorters["persona"](persona)
+            return sortkey
 
-        ordered = xsorted(
-            registrations.keys(),
-            reverse=reverse,
-            key=lambda anid: sort_rank(sortkey, anid),
+        ordered = xsorted(registrations.keys(), reverse=reverse, key=get_sortkey)
+        return ParticipantListData(
+            courses=courses,
+            registrations=registrations,
+            personas=personas,
+            ordered=ordered,
+            parts=parts,
+            reg_counts=reg_counts,
+            personas_stati=personas_stati,
         )
-        return {
-            'courses': courses,
-            'registrations': registrations,
-            'personas': personas,
-            'ordered': ordered,
-            'parts': parts,
-            'reg_counts': reg_counts,
-            'personas_stati': personas_stati,
-        }
 
     def _get_user_lodgement_wishes(
         self, rs: RequestState, event_id: int
@@ -805,7 +787,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         registrations = dict(
             keydictsort_filter(
                 registrations,
-                lambda reg: EntitySorter.persona(personas[reg['persona_id']]),
+                lambda reg: EntitySorter.persona(personas[reg['persona_id']].as_dict()),
             )
         )
 

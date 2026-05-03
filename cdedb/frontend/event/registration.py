@@ -66,7 +66,7 @@ from cdedb.frontend.event.base import (
     event_guard,
 )
 from cdedb.models.common import CdEDataclassMap
-from cdedb.models.core import MetaInfo
+from cdedb.models.core import EventPersona, MetaInfo
 
 
 class CourseChoiceParams(typing.TypedDict):
@@ -85,7 +85,7 @@ class CourseChoiceParams(typing.TypedDict):
 
 class PaymentData(typing.TypedDict):
     registration: CdEDBObject
-    persona: CdEDBObject
+    persona: EventPersona
     meta_info: MetaInfo
     reference: str
     to_pay: decimal.Decimal
@@ -355,7 +355,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
 
         begin = rs.ambience['event'].begin
-        bd: datetime.date = persona['birthday']
+        bd = persona.birthday
         persona_age = (
             begin.year - bd.year - ((begin.month, begin.day) < (bd.month, bd.day))
         )
@@ -855,7 +855,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         registration['event_id'] = event_id
         registration['persona_id'] = rs.user.persona_id
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
-        age = determine_age_class(persona['birthday'], rs.ambience['event'].begin)
+        age = determine_age_class(persona.birthday, rs.ambience['event'].begin)
         if not self.eventproxy.has_minor_form(rs, event_id) and age.is_minor():
             rs.notify(
                 "error", n_("No minors may register. Please contact the Orgateam.")
@@ -904,7 +904,9 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         if event.notify_on_registration.send_on_register() and registration_id:
             registration = self.eventproxy.get_registration(rs, registration_id)
-            persona = self.coreproxy.get_event_user(rs, registration['persona_id'])
+            persona = self.coreproxy.get_event_user(
+                rs, registration['persona_id']
+            ).as_dict()
             persona['registration_id'] = registration_id
             registrations: tuple[CdEDBObject, ...] = (persona,)
             query: Query | None = None
@@ -1015,7 +1017,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         persona = payment_data['persona']
         registration = payment_data['registration']
 
-        age = determine_age_class(persona['birthday'], rs.ambience['event'].begin)
+        age = determine_age_class(persona.birthday, rs.ambience['event'].begin)
         registration['parts'] = OrderedDict(
             (part.id, registration['parts'][part.id])
             for part in xsorted(rs.ambience['event'].parts.values())
@@ -1123,7 +1125,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs.notify("warning", n_("Event locked."))
             return self.redirect(rs, "event/registration_status")
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
-        age = determine_age_class(persona['birthday'], rs.ambience['event'].begin)
+        age = determine_age_class(persona.birthday, rs.ambience['event'].begin)
         values = self._prepare_registration_values(event, registration)
         merge_dicts(rs.values, values)
 
@@ -1197,7 +1199,7 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         registration['id'] = registration_id
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
-        age = determine_age_class(persona['birthday'], rs.ambience['event'].begin)
+        age = determine_age_class(persona.birthday, rs.ambience['event'].begin)
         registration['mixed_lodging'] = registration['mixed_lodging'] and age.may_mix()
         change_note = "Anmeldung durch Teilnehmer bearbeitet."
         code = self.eventproxy.set_registration(
@@ -1217,7 +1219,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         if payment_data is None:
             raise werkzeug.exceptions.BadRequest()
         persona = payment_data['persona']
-        age = determine_age_class(persona['birthday'], rs.ambience['event'].begin)
+        age = determine_age_class(persona.birthday, rs.ambience['event'].begin)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
 
@@ -1225,7 +1227,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         constraint_violations = None
         if not is_restricted:
             waitlist_position = self.eventproxy.get_waitlist_position(
-                rs, event_id, persona_id=persona['id']
+                rs, event_id, persona_id=persona.id
             )
             constraint_violations = self.get_constraint_violations(
                 rs, rs.ambience['event'], registration_id=registration_id, course_id=-1
@@ -1733,7 +1735,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, [r['persona_id'] for r in reg_vals], event_id
         )
         for reg in reg_vals:
-            reg['gender'] = personas[reg['persona_id']]['gender']
+            reg['gender'] = personas[reg['persona_id']].gender
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
 
@@ -1797,7 +1799,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         reg_order = xsorted(
             registrations.keys(),
             key=lambda anid: EntitySorter.persona(
-                personas[registrations[anid]['persona_id']]
+                personas[registrations[anid]['persona_id']].as_dict()
             ),
         )
 
@@ -1913,13 +1915,13 @@ class EventRegistrationMixin(EventBaseFrontend):
         lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
         for registration in registrations.values():
             registration['age'] = determine_age_class(
-                personas[registration['persona_id']]['birthday'],
+                personas[registration['persona_id']].birthday,
                 rs.ambience['event'].begin,
             )
         reg_order = xsorted(
             registrations.keys(),
             key=lambda anid: EntitySorter.persona(
-                personas[registrations[anid]['persona_id']]
+                personas[registrations[anid]['persona_id']].as_dict()
             ),
         )
         registrations = OrderedDict(

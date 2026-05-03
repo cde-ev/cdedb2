@@ -3112,17 +3112,14 @@ def make_membership_fee_reference(persona: CdEDBObject) -> str:
     )
 
 
-def make_event_fee_reference(persona: CdEDBObject, event: models_event.Event) -> str:
+def make_event_fee_reference(
+    persona: models_core.Persona, event: models_event.Event
+) -> str:
     """Generate the desired reference for event fee payment.
 
     This is the "Verwendungszweck".
     """
-    return "Teilnahmebeitrag {event}, {gn} {fn}, {cdedbid}".format(
-        event=asciificator(event.title),
-        gn=asciificator(persona['given_names']),
-        fn=asciificator(persona['family_name']),
-        cdedbid=cdedbid_filter(persona['id']),
-    )
+    return f"Teilnahmebeitrag {asciificator(event.title)}, {asciificator(persona.given_names)} {asciificator(persona.family_name)}, {cdedbid_filter(persona.id)}"
 
 
 def drow_name(field_name: str, entity_id: int, prefix: str = "") -> str:

@@ -49,6 +49,7 @@ from cdedb.common import (
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.filter import keydictsort_filter, money_filter
 from cdedb.models.common import CdEDataclassMap
+from cdedb.models.core import EventPersona
 from cdedb.uncommon.intenum import CdEEnum
 
 if TYPE_CHECKING:
@@ -322,7 +323,7 @@ class ViolationAux:
 
     event: models.Event
     registrations: CdEDBObjectMap
-    personas: CdEDBObjectMap
+    personas: CdEDataclassMap[EventPersona]
 
     all_courses: CdEDataclassMap[models.Course]
     # Violations are only checked for these courses.
@@ -597,7 +598,7 @@ class RegistrationConstraintViolation(ConstraintViolation, abc.ABC):
             persona = aux.personas[registration_['persona_id']]
             registration_['persona'] = persona
             registration_['age'] = determine_age_class(
-                persona['birthday'], aux.event.begin
+                persona.birthday, aux.event.begin
             )
             registration_['remaining_owed'] = (
                 registration_['amount_owed'] - registration_['amount_paid']
@@ -605,7 +606,7 @@ class RegistrationConstraintViolation(ConstraintViolation, abc.ABC):
 
             for part in aux.event.parts.values():
                 registration_['parts'][part.id]['age'] = determine_age_class(
-                    persona['birthday'], part.part_begin
+                    persona.birthday, part.part_begin
                 )
 
         return [
@@ -2216,9 +2217,7 @@ class IllegalMixedLodgementCV(LodgementPartConstraintViolation):
         non_mixing_regs = [reg for reg in inhabitants.all if not reg['mixed_lodging']]
         if not non_mixing_regs:
             return None
-        genders = set(
-            aux.personas[reg['persona_id']]['gender'] for reg in inhabitants.all
-        )
+        genders = set(aux.personas[reg['persona_id']].gender for reg in inhabitants.all)
         if const.Genders.not_specified in genders:
             return cls(
                 event=aux.event,

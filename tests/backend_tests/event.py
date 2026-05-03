@@ -59,12 +59,13 @@ class TestEventBackend(BackendTest):
     @as_users("emilia")
     def test_basics(self) -> None:
         data = self.core.get_event_user(self.key, self.user['id'])
-        data['nickname'] = "Zelda"
-        data['name_supplement'] = "von und zu Hylia"
+        data.nickname = "Zelda"
+        data.name_supplement = "von und zu Hylia"
         setter = {
-            k: v
-            for k, v in data.items()
-            if k in {'id', 'name_supplement', 'nickname', 'telephone'}
+            "id": data.id,
+            "nickname": data.nickname,
+            "name_supplement": data.name_supplement,
+            "telephone": data.telephone,
         }
         self.core.change_persona(self.key, setter)
         new_data = self.core.get_event_user(self.key, self.user['id'])

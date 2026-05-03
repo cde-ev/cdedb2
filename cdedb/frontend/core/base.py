@@ -745,10 +745,10 @@ class CoreBaseFrontend(AbstractFrontend):
                 and self.AccessRealm.assembly in access_realms and "assembly" in target_roles):
             persona = models.EventAssemblyPersona(**{
                 **self.coreproxy.new_get_assembly_user(rs, persona_id).as_dict(),
-                **self.coreproxy.new_get_event_user(rs, persona_id, event_id).as_dict(),
+                **self.coreproxy.get_event_user(rs, persona_id, event_id).as_dict(),
             })
         elif self.AccessRealm.event in access_realms and "event" in target_roles:
-            persona = self.coreproxy.new_get_event_user(rs, persona_id, event_id)
+            persona = self.coreproxy.get_event_user(rs, persona_id, event_id)
         elif self.AccessRealm.assembly in access_realms and "assembly" in target_roles:
             persona = self.coreproxy.new_get_assembly_user(rs, persona_id)
         elif self.AccessRealm.ml in access_realms and "ml" in target_roles:
