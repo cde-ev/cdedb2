@@ -288,8 +288,8 @@
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
 {% macro questionnaire_config_entry(part_id, kind, aclass="", newrow=False) %}
     <div class="panel panel-default {{ aclass }}" data-drow-id="{{ part_id }}">
-        <div class="panel-heading" style="padding: 15px">
-            <div class="pull-right" style="margin: -2px 0">
+        <div class="panel-heading">
+            <div class="pull-right">
                 <span class="drow-hide">
                     {% if newrow %}
                         {{ util.input_checkbox(
@@ -334,9 +334,10 @@
                         ) }}
                 </div>
             {% else %}
-                <strong>
+                <h3 class="panel-title">
+                    {{ util.make_icon("heading") }}
                     {{ gettext(values["role_" ~ part_id]|string) }}
-                </strong>
+                </h3>
                 {{ util.input_hidden("role_" ~ part_id, aclass="input-role") }}
             {% endif %}
             <div style="clear:both;"></div>
