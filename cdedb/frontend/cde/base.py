@@ -58,7 +58,6 @@ from cdedb.frontend.common import (
     check_validation as check,
     inspect_validation as inspect,
     make_epc_qr,
-    make_membership_fee_reference,
     request_extractor,
 )
 
@@ -97,9 +96,8 @@ class CdEBaseFrontend(AbstractUserFrontend):
     def index(self, rs: RequestState) -> Response:
         """Render start page."""
         meta_info = self.coreproxy.get_meta_info(rs)
-        data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+        user = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         deadline = None
-        reference = make_membership_fee_reference(data)
         annual_fee = self.cdeproxy.annual_membership_fee(rs)
         has_lastschrift = False
         if "member" in rs.user.roles:
@@ -116,10 +114,9 @@ class CdEBaseFrontend(AbstractUserFrontend):
             "index",
             {
                 'has_lastschrift': has_lastschrift,
-                'data': data,
+                'user': user,
                 'meta_info': meta_info,
                 'deadline': deadline,
-                'reference': reference,
                 'annual_fee': annual_fee,
             },
         )
@@ -127,9 +124,10 @@ class CdEBaseFrontend(AbstractUserFrontend):
     @access("cde")
     def membership_qr(self, rs: RequestState) -> Response:
         meta_info = self.coreproxy.get_meta_info(rs)
-        data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
-        reference = make_membership_fee_reference(data)
-        qr = make_epc_qr(meta_info.membership_fee_account, reference, amount=None)
+        user = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+        qr = make_epc_qr(
+            meta_info.membership_fee_account, user.membership_fee_reference, amount=None
+        )
         return self.serve_qrcode(rs, qr)
 
     @access("member")
@@ -140,9 +138,9 @@ class CdEBaseFrontend(AbstractUserFrontend):
         This is the default page after login, but most users will instantly
         be redirected.
         """
-        data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+        user = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         return self.render(
-            rs, "consent_decision", {'decided_search': data['decided_search']}
+            rs, "consent_decision", {'decided_search': user.decided_search}
         )
 
     @access("member", modi={"POST"})
@@ -151,7 +149,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         """Record decision."""
         if rs.has_validation_errors():
             return self.consent_decision_form(rs)
-        data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+        user = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         new = {
             'id': rs.user.persona_id,
             'decided_search': True,
@@ -167,7 +165,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         rs.notify_return_code(code, success=message)
         if not code:
             return self.consent_decision_form(rs)
-        if not data['decided_search']:
+        if not user.decided_search:
             return self.redirect(rs, "core/index")
         return self.redirect(rs, "cde/index")
 

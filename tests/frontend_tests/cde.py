@@ -11,6 +11,7 @@ from typing import cast
 
 import webtest
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.core as models
 from cdedb.common import (
@@ -86,17 +87,17 @@ class TestCdEFrontend(FrontendTest):
             )
 
         member = models.CdEPersona(
-            id=-1,
+            id=vtypes.ID(-1),
             given_names="",
             family_name="",
-            username="",
+            username=vtypes.Email(""),
             gender=const.Genders.not_specified,
-            birthday=datetime.datetime.fromisoformat("2000-01-01"),
+            birthday=datetime.datetime.fromisoformat("2000-01-01"),  # type: ignore[arg-type]
             is_ml_realm=True,
             is_assembly_realm=True,
             is_event_realm=True,
             is_cde_realm=True,
-            balance=0,
+            balance=decimal.Decimal(0),
             trial_member=False,
         )
         trial_member = copy.deepcopy(member)

@@ -35,7 +35,7 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.n_ import n_
-from cdedb.common.sorting import EntitySorter, Sortkey, xsorted
+from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.common.validation.validate import LASTSCHRIFT_COMMON_FIELDS
 from cdedb.filter import keydictsort_filter, money_filter
 from cdedb.frontend.cde.base import CdEBaseFrontend
@@ -84,25 +84,25 @@ class CdELastschriftMixin(CdEBaseFrontend):
         )
         personas = self.coreproxy.get_cde_users(rs, persona_ids)
         active_lastschrift_donations = sum(
-            personas[p_id]['donation'] for p_id in active_personas
+            personas[p_id].donation for p_id in active_personas
         )
         open_permits = self.determine_open_permits(rs, active_lastschrift_ids)
         for lastschrift in active_lastschrifts.values():
             lastschrift['open'] = lastschrift['id'] in open_permits
         active_last_order = xsorted(
             active_lastschrifts.keys(),
-            key=lambda anid: EntitySorter.persona(
-                personas[active_lastschrifts[anid]['persona_id']]
-            ),
+            key=lambda anid: personas[
+                active_lastschrifts[anid]['persona_id']
+            ].get_sortkey(),
         )
         active_lastschrifts = OrderedDict(
             (anid, active_lastschrifts[anid]) for anid in active_last_order
         )
         inactive_last_order = xsorted(
             inactive_lastschrifts.keys(),
-            key=lambda anid: EntitySorter.persona(
-                personas[inactive_lastschrifts[anid]['persona_id']]
-            ),
+            key=lambda anid: personas[
+                inactive_lastschrifts[anid]['persona_id']
+            ].get_sortkey(),
         )
         inactive_lastschrifts = OrderedDict(
             (anid, inactive_lastschrifts[anid]) for anid in inactive_last_order
@@ -111,7 +111,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         def transaction_sortkey(transaction: CdEDBObject) -> Sortkey:
             lastschrift_id = transaction["lastschrift_id"]
             persona = personas[all_lastschrifts[lastschrift_id]["persona_id"]]
-            return transaction['issued_at'], *EntitySorter.persona(persona)
+            return transaction['issued_at'], *persona.get_sortkey()
 
         sorted_transactions = keydictsort_filter(
             transactions, sortkey=transaction_sortkey
@@ -232,7 +232,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         current_donation = None
         if persona_id:
             persona = self.coreproxy.get_cde_user(rs, persona_id)
-            current_donation = persona["donation"] or None
+            current_donation = persona.donation or None
         mandatory_fields = get_mandatory_form_fields(
             LASTSCHRIFT_COMMON_FIELDS, self.lastschrift_create
         )
@@ -264,16 +264,12 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 ValueError(n_("Persona must have cde realm.")),
             ))
         persona = self.coreproxy.get_cde_user(rs, persona_id)
-        if (
-            persona["donation"]
-            and persona["donation"] != donation
-            and not rs.ignore_warnings
-        ):
+        if persona.donation and persona.donation != donation and not rs.ignore_warnings:
             rs.append_validation_error((
                 "donation",
                 ValidationWarning(
                     n_("User already set a different donation of %(donation)s."),
-                    {"donation": money_filter(persona["donation"])},
+                    {"donation": money_filter(persona.donation)},
                 ),
             ))
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
@@ -734,7 +730,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         if rs.user.persona_id:
             persona = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
             not_minor = not determine_age_class(
-                persona['birthday'], now().date()
+                persona.birthday, now().date()
             ).is_minor()
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
         typical_donation = self.conf["TYPICAL_LASTSCHRIFT_DONATION"]

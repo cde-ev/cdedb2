@@ -1598,11 +1598,11 @@ class CoreBaseBackend(AbstractBackend):
 
             # Determine target state.
             if is_member is None:
-                is_member = current['is_member']
+                is_member = current.is_member
             if trial_member is None:
-                trial_member = current['trial_member']
+                trial_member = current.trial_member
             if honorary_member is None:
-                honorary_member = current['honorary_member']
+                honorary_member = current.honorary_member
 
             # Do some sanity checks
             if trial_member and not is_member:
@@ -1624,9 +1624,9 @@ class CoreBaseBackend(AbstractBackend):
 
             # check if nothing changed at all
             if (
-                is_member == current['is_member']
-                and trial_member == current['trial_member']
-                and honorary_member == current['honorary_member']
+                is_member == current.is_member
+                and trial_member == current.trial_member
+                and honorary_member == current.honorary_member
             ):
                 rs.notify('info', n_("Nothing changed."))
                 return 1
@@ -1646,19 +1646,19 @@ class CoreBaseBackend(AbstractBackend):
             )
 
             # Perform logging
-            if is_member != current['is_member']:
+            if is_member != current.is_member:
                 if is_member:
                     code = const.FinanceLogCodes.gain_membership
                 else:
                     code = const.FinanceLogCodes.lose_membership
                 self.finance_log(rs, code, persona_id, delta=None, new_balance=None)
-            if trial_member != current['trial_member']:
+            if trial_member != current.trial_member:
                 if trial_member:
                     code = const.FinanceLogCodes.start_trial_membership
                 else:
                     code = const.FinanceLogCodes.end_trial_membership
                 self.finance_log(rs, code, persona_id, delta=None, new_balance=None)
-            if honorary_member != current['honorary_member']:
+            if honorary_member != current.honorary_member:
                 if honorary_member:
                     code = const.FinanceLogCodes.honorary_membership_granted
                 else:
@@ -2706,7 +2706,7 @@ class CoreBaseBackend(AbstractBackend):
         )
 
     @access("cde")
-    def new_get_cde_users(
+    def get_cde_users(
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> CdEDataclassMap[models.CdEPersona]:
         """Get an cde view on some data sets."""
@@ -2734,19 +2734,7 @@ class CoreBaseBackend(AbstractBackend):
             self, rs: RequestState, persona_id: Optional[int]
         ) -> models.CdEPersona: ...
 
-    new_get_cde_user: _GetCdEUserProtocol = singularize(
-        new_get_cde_users, "persona_ids", "persona_id"
-    )
-
-    @access("cde")
-    def get_cde_users(
-        self, rs: RequestState, persona_ids: Collection[int]
-    ) -> CdEDBObjectMap:
-        return {
-            k: v.as_dict() for k, v in self.new_get_cde_users(rs, persona_ids).items()
-        }
-
-    get_cde_user: _GetPersonaProtocol = singularize(
+    get_cde_user: _GetCdEUserProtocol = singularize(
         get_cde_users, "persona_ids", "persona_id"
     )
 
