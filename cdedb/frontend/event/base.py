@@ -18,6 +18,7 @@ become the full `EventFrontend` in this modules `__init__.py`.
 import abc
 import functools
 import operator
+import typing
 from collections import OrderedDict
 from collections.abc import Callable, Collection
 from typing import Any, Optional, TypeVar, cast
@@ -29,10 +30,12 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 import cdedb.models.event.constraint_violations as models_cv
+from cdedb.backend.event.lodgement import LodgementInhabitants
 from cdedb.common import (
     EVENT_SCHEMA_VERSION,
     CdEDBObject,
     CdEDBObjectMap,
+    Notification,
     RequestState,
     get_mandatory_form_fields,
     merge_dicts,
@@ -59,8 +62,39 @@ from cdedb.frontend.common import (
     request_extractor,
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
+from cdedb.models.common import CdEDataclassMap
 
 F = TypeVar("F", bound=Callable[..., Any])
+
+
+class ParticipantListData(typing.TypedDict):
+    registrations: CdEDBObjectMap
+    ordered: list[int]
+    reg_counts: dict[int | None, int]
+    personas: CdEDBObjectMap
+    personas_stati: CdEDBObjectMap
+    courses: CdEDataclassMap[models.Course]
+    parts: CdEDataclassMap[models.EventPart]
+
+
+class UserLodgementWish(typing.TypedDict):
+    field: models.EventField | None
+    wished_personas: list[CdEDBObject]
+    problems: list[Notification]
+
+
+class ConstraintViolationsData(typing.TypedDict):
+    violations: models_cv.ViolationList
+    all_registrations: CdEDBObjectMap
+    registrations: CdEDBObjectMap
+    personas: CdEDBObjectMap
+    all_courses: CdEDataclassMap[models.Course]
+    courses: CdEDataclassMap[models.Course]
+    choice_stats: models.ChoiceStats
+    attendee_stats: models.AttendeeStats
+    all_lodgements: CdEDataclassMap[models.Lodgement]
+    lodgements: CdEDataclassMap[models.Lodgement]
+    inhabitants: dict[int, dict[int, LodgementInhabitants]]
 
 
 def event_guard(*required_privileges: EventPrivileges) -> Callable[[F], F]:
@@ -438,11 +472,17 @@ class EventBaseFrontend(AbstractUserFrontend):
         )
         if len(rs.ambience['event'].parts) == 1:
             part_id = unwrap(rs.ambience['event'].parts.keys())  # type: ignore[assignment]
-        data['part_id'] = part_id
-        data['list_consent'] = list_consent
-        data['last_sortkey'] = sortkey
-        data['last_reverse'] = reverse
-        return self.render(rs, "base/participant_list", data)
+        return self.render(
+            rs,
+            "base/participant_list",
+            {
+                'part_id': part_id,
+                'list_consent': list_consent,
+                'last_sortkey': sortkey,
+                'last_reverse': reverse,
+                **data,
+            },
+        )
 
     def _get_participant_list_data(
         self,
@@ -453,7 +493,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         include_total_count: bool = False,
         sortkey: str = "persona",
         reverse: bool = False,
-    ) -> CdEDBObject:
+    ) -> ParticipantListData:
         """This provides data for download and online participant list.
 
         It filters out the participants which have not given list_consent.
@@ -559,9 +599,8 @@ class EventBaseFrontend(AbstractUserFrontend):
 
     def _get_user_lodgement_wishes(
         self, rs: RequestState, event_id: int
-    ) -> CdEDBObject:
+    ) -> UserLodgementWish:
         assert rs.user.persona_id is not None
-        wish_data: dict[str, Any] = {}
         if (
             rs.ambience['event'].is_participant_list_visible
             and rs.ambience['event'].lodge_field
@@ -579,7 +618,6 @@ class EventBaseFrontend(AbstractUserFrontend):
             )
             registration = self.eventproxy.get_registration(rs, registration_id)
             data = self._get_participant_list_data(rs, event_id)
-            wish_data['field'] = rs.ambience['event'].lodge_field
             wishes, problems = detect_lodgement_wishes(
                 data['registrations'],
                 data['personas'],
@@ -590,19 +628,21 @@ class EventBaseFrontend(AbstractUserFrontend):
             )
             if registration['list_consent']:
                 # Ordered list of wished personas
-                wish_reg = lambda wish: data['registrations'][wish.wished]
-                wish_data['wished_personas'] = xsorted(
-                    (data['personas'][wish_reg(wish)['persona_id']] for wish in wishes),
-                    key=EntitySorter.persona,
-                )
-                wish_data['problems'] = problems
+                wished_personas = xsorted([
+                    data['personas'][data['registrations'][wish.wished]['persona_id']]
+                    for wish in wishes
+                ])
             else:
                 msg = n_(
                     "You can not access the Participant List as you have not agreed to"
                     " have your own data sent to other participants before the event."
                 )
-                wish_data['problems'] = [("error", msg, {})]
-        return wish_data
+                problems = [("error", msg, {})]
+        return UserLodgementWish(
+            field=rs.ambience['event'].lodge_field,
+            wished_personas=wished_personas,
+            problems=problems,
+        )
 
     @access("event")
     def participant_info(self, rs: RequestState, event_id: int) -> Response:
@@ -738,7 +778,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         registration_id: int | None = -1,
         course_id: int | None = -1,
         lodgement_id: int | None = -1,
-    ) -> CdEDBObject:
+    ) -> ConstraintViolationsData:
         """
         Check for violations.
 
@@ -817,19 +857,19 @@ class EventBaseFrontend(AbstractUserFrontend):
             inhabitants_data=inhabitants,
         ).evaluate_all()
 
-        return {
-            'violations': violations,
-            'all_registrations': all_registrations,
-            'registrations': registrations,
-            'personas': personas,
-            'all_courses': all_courses,
-            'courses': courses,
-            'choice_stats': choice_stats,
-            'attendee_stats': attendee_stats,
-            'all_lodgements': all_lodgements,
-            'lodgements': lodgements,
-            'inhabitants': inhabitants,
-        }
+        return ConstraintViolationsData(
+            violations=violations,
+            all_registrations=all_registrations,
+            registrations=registrations,
+            personas=personas,
+            all_courses=all_courses,
+            courses=courses,
+            choice_stats=choice_stats,
+            attendee_stats=attendee_stats,
+            all_lodgements=all_lodgements,
+            lodgements=lodgements,
+            inhabitants=inhabitants,
+        )
 
     @access("event")
     # TODO Be more thoughtful here, considering the constraint violations rework
@@ -843,19 +883,21 @@ class EventBaseFrontend(AbstractUserFrontend):
         violation_kind: models_cv.ViolationKind | None = None,
     ) -> Response:
         rs.ignore_validation_errors()
-
-        params = self.get_constraint_violations(
+        return self.render(
             rs,
-            rs.ambience['event'],
-            registration_id=None,
-            course_id=None,
-            lodgement_id=None,
+            "base/constraint_violations",
+            {
+                'min_severity': min_severity or models_cv.ViolationSeverity.INFO,  # type: ignore[unreachable]
+                'violation_kind': violation_kind,
+                **self.get_constraint_violations(
+                    rs,
+                    rs.ambience['event'],
+                    registration_id=None,
+                    course_id=None,
+                    lodgement_id=None,
+                ),
+            },
         )
-
-        params['min_severity'] = min_severity or models_cv.ViolationSeverity.INFO  # type: ignore[unreachable]
-        params['violation_kind'] = violation_kind
-
-        return self.render(rs, "base/constraint_violations", params)
 
     @access("event.event_helper", "event_admin", "finance_admin")
     @REQUESTdata(

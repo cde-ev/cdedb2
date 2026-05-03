@@ -183,7 +183,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         add_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[
             const.QuestionnaireUsages.additional
         ]
-        wish_data = {}
+        wish_data = {}  # type: ignore[var-annotated]
         if not preview:
             registration_id = self.eventproxy.list_registrations(
                 rs, event_id, persona_id=rs.user.persona_id
@@ -204,7 +204,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             merge_dicts(rs.values, values)
             if field := rs.ambience['event'].lodge_field:
                 if any(row.field_id == field.id for row in add_questionnaire):
-                    wish_data = self._get_user_lodgement_wishes(rs, event_id)
+                    wish_data = self._get_user_lodgement_wishes(rs, event_id)  # type: ignore[assignment]
         else:
             if not self.is_privileged(rs, EventPrivileges.basic_read):
                 raise werkzeug.exceptions.Forbidden(n_("Must be orga to use preview."))

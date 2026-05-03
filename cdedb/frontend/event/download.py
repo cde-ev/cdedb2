@@ -434,9 +434,16 @@ class EventDownloadMixin(EventBaseFrontend):
         if runs and not data['registrations']:
             rs.notify("info", n_("Empty PDF."))
             return self.redirect(rs, "event/downloads")
-        data['orientation'] = "landscape" if landscape else "portrait"
-        data['orgas_only'] = orgas_only
-        tex = self.fill_template(rs, "tex", "participant_list", data)
+        tex = self.fill_template(
+            rs,
+            "tex",
+            "participant_list",
+            {
+                'orientation': "landscape" if landscape else "portrait",
+                'orgas_only': orgas_only,
+                **data,
+            },
+        )
         file = self.serve_latex_document(
             rs, tex, f"{rs.ambience['event'].shortname}_participant_list", runs
         )
