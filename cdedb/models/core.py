@@ -7,6 +7,7 @@ import dataclasses
 import datetime
 import decimal
 import functools
+import logging
 import re
 from enum import auto
 from secrets import token_urlsafe
@@ -20,11 +21,16 @@ from cdedb.common.exceptions import CryptographyError
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
 from cdedb.common.sorting import Sortkey
+from cdedb.config import Config
 from cdedb.filter import cdedbid_filter
 from cdedb.models.common import AbstractFlag, CdEDataclass, MetaFlag as Meta
 
 if TYPE_CHECKING:
     from typing import Self
+
+
+_LOGGER = logging.getLogger(__name__)
+CONFIG = Config()
 
 
 @dataclasses.dataclass
@@ -497,6 +503,40 @@ class CdEPersona(EventAssemblyPersona):
             fn=asciificator(self.family_name),
             cdedbid=cdedbid_filter(self.id),
         )
+
+    def calculate_ejection_deadline(self, period: CdEDBObject) -> datetime.date:
+        """Helper to calculate when a membership will end."""
+        if not CONFIG["PERIODS_PER_YEAR"] == 2:
+            msg = f"{CONFIG['PERIODS_PER_YEAR']} periods per year not supported."
+            _LOGGER.error(msg)
+            return now().date()
+        periods_left = self.balance // CONFIG["MEMBERSHIP_FEE"]
+        if self.trial_member:
+            periods_left += 1
+        if period['balance_done']:
+            periods_left += 1
+        deadline = (period.get("semester_start") or now()).date().replace(day=1)
+        # With our buffer zones around the expected semester start dates there
+        # are 3 possible semesters within a year with different deadlines.
+        if deadline.month in range(5, 11):
+            # Start was two months before or 4 months after expected start for
+            # summer semester, so we assume that we are in the summer semester.
+            if periods_left % 2:
+                deadline = deadline.replace(year=deadline.year + 1, month=2)
+            else:
+                deadline = deadline.replace(month=8)
+        else:
+            # Start was two months before or 4 months after expected start for
+            # winter semester, so we assume that we are in a winter semester.
+            if deadline.month in range(1, 5):
+                # We are in the first semester of the year.
+                deadline = deadline.replace(month=2)
+            else:
+                # We are in the last semester of the year.
+                deadline = deadline.replace(year=deadline.year + 1, month=2)
+            if periods_left % 2:
+                deadline = deadline.replace(month=8)
+        return deadline.replace(year=int(deadline.year + periods_left // 2))
 
 
 @dataclasses.dataclass(kw_only=True)

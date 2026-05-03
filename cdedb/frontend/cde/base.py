@@ -9,7 +9,6 @@ The more involved batch admission and the finance log require the "cde_admin" ro
 import collections
 import copy
 import csv
-import datetime
 import decimal
 import itertools
 import operator
@@ -94,42 +93,6 @@ class CdEBaseFrontend(AbstractUserFrontend):
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
-    def _calculate_ejection_deadline(
-        self, persona_data: CdEDBObject, period: CdEDBObject
-    ) -> datetime.date:
-        """Helper to calculate when a membership will end."""
-        if not self.conf["PERIODS_PER_YEAR"] == 2:
-            msg = f"{self.conf['PERIODS_PER_YEAR']} periods per year not supported."
-            self.logger.error(msg)
-            return now().date()
-        periods_left = persona_data['balance'] // self.conf["MEMBERSHIP_FEE"]
-        if persona_data['trial_member']:
-            periods_left += 1
-        if period['balance_done']:
-            periods_left += 1
-        deadline = (period.get("semester_start") or now()).date().replace(day=1)
-        # With our buffer zones around the expected semester start dates there
-        # are 3 possible semesters within a year with different deadlines.
-        if deadline.month in range(5, 11):
-            # Start was two months before or 4 months after expected start for
-            # summer semester, so we assume that we are in the summer semester.
-            if periods_left % 2:
-                deadline = deadline.replace(year=deadline.year + 1, month=2)
-            else:
-                deadline = deadline.replace(month=8)
-        else:
-            # Start was two months before or 4 months after expected start for
-            # winter semester, so we assume that we are in a winter semester.
-            if deadline.month in range(1, 5):
-                # We are in the first semester of the year.
-                deadline = deadline.replace(month=2)
-            else:
-                # We are in the last semester of the year.
-                deadline = deadline.replace(year=deadline.year + 1, month=2)
-            if periods_left % 2:
-                deadline = deadline.replace(month=8)
-        return deadline.replace(year=int(deadline.year + periods_left // 2))
-
     @access("cde")
     def index(self, rs: RequestState) -> Response:
         """Render start page."""
@@ -147,7 +110,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
                 )
             )
             period = self.cdeproxy.get_period(rs, self.cdeproxy.current_period(rs))
-            deadline = self._calculate_ejection_deadline(data, period)
+            deadline = user.calculate_ejection_deadline(period)
         return self.render(
             rs,
             "index",

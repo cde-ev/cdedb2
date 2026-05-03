@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import copy
 import datetime
 import decimal
 import itertools
@@ -11,6 +12,7 @@ from typing import cast
 import webtest
 
 import cdedb.database.constants as const
+import cdedb.models.core as models
 from cdedb.common import (
     IGNORE_WARNINGS_NAME,
     CdEDBObject,
@@ -75,51 +77,30 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Mitglieder'})
 
     def test_ejection_date(self) -> None:
-        def _calculate_ejection_deadline(
-            persona_data: CdEDBObject, period: CdEDBObject
-        ) -> datetime.datetime:
-            """Clone of `CdEFrontend._calculate_ejection_deadline`."""
-            periods_left = int(persona_data['balance'] // decimal.Decimal("2.50"))
-            if persona_data['trial_member']:
-                periods_left += 1
-            if period['balance_done']:
-                periods_left += 1
-            deadline = period["semester_start"].date().replace(day=1)
-            # There are 3 semesters within any year with different deadlines.
-            if deadline.month in range(5, 11):
-                # We are in the summer semester.
-                if periods_left % 2:
-                    deadline = deadline.replace(year=deadline.year + 1, month=2)
-                else:
-                    deadline = deadline.replace(month=8)
-            else:
-                # We are in a winter semester.
-                if deadline.month in range(1, 5):
-                    # We are in the first semester of the year.
-                    deadline = deadline.replace(month=2)
-                else:
-                    # We are in the last semester of the year.
-                    deadline = deadline.replace(year=deadline.year + 1, month=2)
-                if periods_left % 2:
-                    deadline = deadline.replace(month=8)
-            return deadline.replace(year=deadline.year + periods_left // 2)
-
         def _assert_ejection_deadline(
-            date_str: str, persona: CdEDBObject, period: CdEDBObject
+            date_str: str, persona: models.CdEPersona, period: CdEDBObject
         ) -> None:
             self.assertEqual(
                 datetime.date.fromisoformat(date_str),
-                _calculate_ejection_deadline(persona, period),
+                persona.calculate_ejection_deadline(period),
             )
 
-        member = {
-            'balance': 0,
-            'trial_member': False,
-        }
-        trial_member = {
-            'balance': 0,
-            'trial_member': True,
-        }
+        member = models.CdEPersona(
+            id=-1,
+            given_names="",
+            family_name="",
+            username="",
+            gender=const.Genders.not_specified,
+            birthday=datetime.datetime.fromisoformat("2000-01-01"),
+            is_ml_realm=True,
+            is_assembly_realm=True,
+            is_event_realm=True,
+            is_cde_realm=True,
+            balance=0,
+            trial_member=False,
+        )
+        trial_member = copy.deepcopy(member)
+        trial_member.trial_member = True
 
         period = {
             "semester_start": datetime.datetime.fromisoformat("2020-01-01"),
