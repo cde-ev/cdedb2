@@ -76,7 +76,7 @@ class CourseChoiceParams(typing.TypedDict):
     courses_per_track_group: dict[int, set[int]]
     all_courses_per_track_group: dict[int, set[int]]
     simple_tracks: set[int]
-    choice_objects: list[models.TrackGroup | models.CourseTrack]
+    choice_objects: list[models.CourseChoiceObject]
     sync_track_groups: dict[int, models.SyncTrackGroup]
     track_group_map: dict[int, int | None]
     ccos_per_part: dict[int, list[str]]
@@ -309,9 +309,9 @@ class EventRegistrationMixin(EventBaseFrontend):
                 ccos_per_part[track.part_id].append(f"group-{track_group_id}")
         for track_id in simple_tracks:
             ccos_per_part[tracks[track_id].part_id].append(f"{track_id}")
-        choice_objects = [t for t_id, t in tracks.items() if t_id in simple_tracks] + [
-            tg for tg in track_groups.values() if tg.constraint_type.is_sync()
-        ]
+        choice_objects: list[models.CourseChoiceObject] = [  # type: ignore[assignment]
+            t for t_id, t in tracks.items() if t_id in simple_tracks
+        ] + [tg for tg in track_groups.values() if tg.constraint_type.is_sync()]  # type: ignore[misc]
         choice_objects = xsorted(choice_objects)
 
         # For every course and track, determine all tracks that allow you to choose
