@@ -47,7 +47,7 @@ from cdedb.frontend.event.base import (
     event_guard,
 )
 from cdedb.models.common import CdEDataclassMap
-from cdedb.models.event_constraint_violations import ViolationList
+from cdedb.models.event.constraint_violations import ViolationList
 
 _HIDDEN_COURSES_QUERY = Query(
     scope=QueryScope.event_course,

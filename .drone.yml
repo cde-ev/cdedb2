@@ -81,7 +81,7 @@ steps:
   image: cdedb
   pull: never # do not try to pull image from docker hub
   depends_on:
-    - evolution-trial # wait for all git operations to be done
+    - mypy
   when:
     status:
     - failure
@@ -211,7 +211,7 @@ steps:
   - python3 -m coverage report --include 'tests/common.py' --show-missing
   - python3 -m coverage report --include 'tests/*/*.py' --show-missing
   # temporary:
-  - python3 -m coverage report --include 'cdedb/models/event_constraint_violations.py' --show-missing
+  - python3 -m coverage report --include 'cdedb/models/event/constraint_violations.py' --show-missing
   # ... fail-under later.
   - python3 -m coverage report --include 'cdedb/*' --fail-under=92
   - python3 -m coverage report --include 'tests/*/*.py' --fail-under=100

@@ -730,7 +730,9 @@ class EventEventMixin(EventBaseFrontend):
             return self.redirect(rs, "event/group_summary")
         return self.redirect(rs, "event/show_event")
 
-    def _deletion_blocked_parts(self, rs: RequestState, event_id: int) -> set[int]:
+    def _deletion_blocked_parts(
+        self, rs: RequestState, event: models.Event
+    ) -> set[int]:
         """Returns all part_ids from parts of a given event which must not be deleted.
 
         Extracts all parts of the given event from the database and checks if there are
@@ -741,13 +743,13 @@ class EventEventMixin(EventBaseFrontend):
         blocked_parts: set[int] = set()
         if len(rs.ambience['event'].parts) == 1:
             blocked_parts.add(unwrap(rs.ambience['event'].parts.keys()))
-        course_ids = self.eventproxy.list_courses(rs, event_id)
+        course_ids = self.eventproxy.list_courses(rs, event.id)
         courses = self.eventproxy.get_courses(rs, course_ids.keys())
         # referenced tracks block part deletion
         for course in courses.values():
             for track_id in course.segments:
                 blocked_parts.add(rs.ambience['event'].tracks[track_id].part_id)
-        part_fees = self.eventproxy.get_event_fees_per_entity(rs, event_id).parts
+        part_fees = models.EventFee.get_fees_per_entity(event).parts
         for part_id, fees in part_fees.items():
             if fees:
                 blocked_parts.add(part_id)
@@ -774,7 +776,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_read)
     def part_summary(self, rs: RequestState, event_id: int) -> Response:
         """Display a comprehensive overview of all parts of a given event."""
-        referenced_parts = self._deletion_blocked_parts(rs, event_id)
+        referenced_parts = self._deletion_blocked_parts(rs, rs.ambience["event"])
         may_change_part_ids = self.is_privileged(
             rs, EventPrivileges.basic_write
         ) and not self.eventproxy.has_registrations(rs, event_id)
@@ -805,7 +807,7 @@ class EventEventMixin(EventBaseFrontend):
         if self.eventproxy.has_registrations(rs, event_id):
             rs.notify("error", n_("Registrations exist, cannot delete event parts."))
             return self.part_summary(rs, event_id)
-        if part_id in self._deletion_blocked_parts(rs, event_id):
+        if part_id in self._deletion_blocked_parts(rs, rs.ambience["event"]):
             rs.notify("error", n_("This part can not be deleted."))
             return self.part_summary(rs, event_id)
 
@@ -1206,13 +1208,12 @@ class EventEventMixin(EventBaseFrontend):
                 "error", n_("Event is balanced. May not change fee configuration.")
             )
             return self.redirect(rs, "event/fee_summary")
-        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)
         fee_data = check(
             rs,
             models.EventFee,
             data,
             event=rs.ambience['event'],
-            questionnaire=questionnaire,
+            all_questionnaires=self.eventproxy.get_all_questionnaires(rs, event_id),
             current=rs.ambience['event'].fees.get(fee_id or -1),
             personalized=personalized,
         )
@@ -1818,10 +1819,10 @@ class EventEventMixin(EventBaseFrontend):
 
         # Lock all questionnaire entries
         aq = const.QuestionnaireUsages.additional
-        questionnaire = self.eventproxy.get_questionnaire(rs, event_id, [aq])[aq]
+        questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[aq]
         for entry in questionnaire:
-            entry['readonly'] = True
-        self.eventproxy.set_questionnaire(rs, event_id, {aq: questionnaire})
+            entry.readonly = True
+        self.eventproxy.set_questionnaire(rs, event_id, aq, questionnaire.as_dicts())
 
         # Delete non-pseudonymized event keeper only after internal work has been
         # concluded successfully

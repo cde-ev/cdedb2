@@ -3156,6 +3156,7 @@ def process_dynamic_input(
     additional_validation: CdEDBObject | None = None,
     creation_spec: Mapping[str, Literal["str", "[str]"]] | None = None,
     prefix: str = "",
+    skip_validation: bool = False,
 ) -> CdEDBOptionalMap: ...
 
 
@@ -3170,6 +3171,7 @@ def process_dynamic_input(
     additional_validation: CdEDBObject | None = None,
     creation_spec: vtypes.TypeMapping | None = None,
     prefix: str = "",
+    skip_validation: bool = False,
 ) -> CdEDBOptionalMap: ...
 
 
@@ -3186,6 +3188,7 @@ def process_dynamic_input(
         vtypes.TypeMapping | Mapping[str, Literal["str", "[str]"]] | None
     ) = None,
     prefix: str = "",
+    skip_validation: bool = False,
 ) -> CdEDBOptionalMap:
     """Retrieve data from rs provided by 'dynamic_row_meta' macros.
 
@@ -3253,9 +3256,12 @@ def process_dynamic_input(
                 models_event.EventField,
                 models_event.CourseTrack,
                 models_event.LodgementGroup,
+                models_event.QuestionnaireRow,
             }:
                 entry["id"] = anid
             entry.update(additional)
+            if skip_validation:
+                continue
             # apply the promised validation
             ret[anid] = check_validation(
                 rs,
@@ -3283,6 +3289,10 @@ def process_dynamic_input(
                 key: data[drow_name(key, -marker, prefix)] for key in creation_spec
             }
             entry.update(additional)
+            if skip_validation:
+                ret[-marker] = entry
+                marker += 1
+                continue
             ret[-marker] = check_validation(
                 rs,
                 type_,

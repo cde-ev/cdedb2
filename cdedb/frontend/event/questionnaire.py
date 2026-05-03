@@ -6,10 +6,6 @@ for configuring and filling in the different kinds of questionnaires offered for
 event.
 """
 
-import itertools
-from collections.abc import Callable, Collection
-from typing import Optional
-
 import werkzeug.exceptions
 from werkzeug import Response
 
@@ -17,9 +13,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
-    CdEDBObject,
     DefaultReturnCode,
-    Error,
     RequestState,
     get_hash,
     json_serialize,
@@ -28,13 +22,11 @@ from cdedb.common import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import EventPrivileges, is_event_access_limited
-from cdedb.common.sorting import mixed_existence_sorter
-from cdedb.common.validation.validate import QUESTIONNAIRE_ROW_MANDATORY_FIELDS
 from cdedb.frontend.common import (
-    RequestConstraint,
     REQUESTdata,
     access,
     check_validation as check,
+    process_dynamic_input,
     request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend, event_guard
@@ -65,34 +57,26 @@ class EventQuestionnaireMixin(EventBaseFrontend):
 
     def _prepare_questionnaire_form(
         self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages
-    ) -> tuple[
-        list[CdEDBObject], str, models.CdEDataclassMap[models.RegistrationField]
-    ]:
+    ) -> tuple[models.QuestionnaireContainer, models.Questionnaire, str]:
         """Helper to retrieve some data for questionnaire configuration."""
-        questionnaire = self.eventproxy.get_questionnaire(rs, event_id)[kind]
-        fees_by_field = self.eventproxy.get_event_fees_per_entity(rs, event_id).fields
+        full_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)
+        questionnaire = full_questionnaire[kind]
         current = {
             f"{key}_{i}": value
             for i, entry in enumerate(questionnaire)
-            for key, value in entry.items()
+            for key, value in entry.as_dict().items()
         }
         merge_dicts(rs.values, current)
-        registration_fields = {
-            k: v
-            for k, v in rs.ambience["event"].registration_fields.items()
-            if kind.allow_fee_condition() or not fees_by_field[k]
-        }
+
         checksum = get_hash(json_serialize(questionnaire).encode())
 
-        return questionnaire, checksum, registration_fields
+        return (full_questionnaire, questionnaire, checksum)
 
     def configure_questionnaire_form(
         self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages
     ) -> Response:
-        questionnaire, checksum, reg_fields = self._prepare_questionnaire_form(
-            rs,
-            event_id,
-            kind,
+        full_questionnaire, questionnaire, checksum = self._prepare_questionnaire_form(
+            rs, event_id, kind
         )
         return self.render(
             rs,
@@ -100,7 +84,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             {
                 "questionnaire": questionnaire,
                 "checksum": checksum,
-                "registration_fields": reg_fields,
+                "registration_fields": full_questionnaire.get_available_fields(kind),
                 "kind": kind,
             },
         )
@@ -141,26 +125,31 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages
     ) -> DefaultReturnCode:
         """Deduplicated code to set questionnaire rows of one kind."""
-        other_kinds = set(const.QuestionnaireUsages) - {kind}
-        other_questionnaire = self.eventproxy.get_questionnaire(
-            rs, event_id, kinds=other_kinds
-        )
-        other_used_fields = {
-            e['field_id']
-            for v in other_questionnaire.values()
-            for e in v
-            if e['field_id']
-        }
-
         checksum = request_extractor(rs, {"checksum": str | None})["checksum"]
-        old_questionnaire, old_checksum, registration_fields = (
+        all_questionnaires, questionnaire, old_checksum = (
             self._prepare_questionnaire_form(rs, event_id, kind)
         )
 
-        new_questionnaire = self.process_questionnaire_input(
-            rs, len(old_questionnaire), registration_fields, kind, other_used_fields
+        new_questionnaire = process_dynamic_input(
+            rs,
+            models.QuestionnaireRow,
+            existing=list(range(len(questionnaire))),
+            spec=dict(models.QuestionnaireRow.requestdict_fields(creation=False)),
+            creation_spec=dict(
+                models.QuestionnaireRow.requestdict_fields(creation=True)
+            ),
+            skip_validation=True,
         )
-        if rs.has_validation_errors():
+        new_questionnaire = check(
+            rs,
+            vtypes.Questionnaire,
+            list(filter(None, new_questionnaire.values())),
+            kind=kind,
+            event=rs.ambience["event"],
+            all_questionnaires=all_questionnaires,
+        )
+
+        if rs.has_validation_errors() or new_questionnaire is None:
             return 0
 
         if checksum != old_checksum:
@@ -173,7 +162,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             )
             return -1
 
-        return self.eventproxy.set_questionnaire(rs, event_id, new_questionnaire)
+        return self.eventproxy.set_questionnaire(rs, event_id, kind, new_questionnaire)
 
     @access("event")
     @REQUESTdata("preview")
@@ -191,11 +180,9 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         """
         if rs.has_validation_errors() and not internal:
             return self.redirect(rs, "event/show_event")
-        add_questionnaire = unwrap(
-            self.eventproxy.get_questionnaire(
-                rs, event_id, kinds=(const.QuestionnaireUsages.additional,)
-            )
-        )
+        add_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[
+            const.QuestionnaireUsages.additional
+        ]
         wish_data = {}
         if not preview:
             registration_id = self.eventproxy.list_registrations(
@@ -216,7 +203,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             }
             merge_dicts(rs.values, values)
             if field := rs.ambience['event'].lodge_field:
-                if any(row['field_id'] == field.id for row in add_questionnaire):
+                if any(row.field_id == field.id for row in add_questionnaire):
                     wish_data = self._get_user_lodgement_wishes(rs, event_id)
         else:
             if not self.is_privileged(rs, EventPrivileges.basic_read):
@@ -268,119 +255,6 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/additional_questionnaire_form")
 
-    @staticmethod
-    def process_questionnaire_input(
-        rs: RequestState,
-        num: int,
-        reg_fields: models.CdEDataclassMap[models.RegistrationField],
-        kind: const.QuestionnaireUsages,
-        other_used_fields: Collection[int],
-    ) -> dict[const.QuestionnaireUsages, list[CdEDBObject]]:
-        """This handles input to configure questionnaires.
-
-        Since this covers a variable number of rows, we cannot do this
-        statically. This takes care of validation too.
-
-        :param num: number of rows to expect
-        :param reg_fields: Available fields
-        :param kind: For which kind of questionnaire are these rows?
-        """
-        del_flags = request_extractor(rs, {f"delete_{i}": bool for i in range(num)})
-        deletes = {i for i in range(num) if del_flags[f'delete_{i}']}
-        spec: vtypes.TypeMapping = dict(
-            QUESTIONNAIRE_ROW_MANDATORY_FIELDS,
-            field_id=Optional[vtypes.ID],
-        )
-        marker = 1
-        while marker < 2**10:
-            if not unwrap(request_extractor(rs, {f"create_-{marker}": bool})):
-                break
-            marker += 1
-        rs.values['create_last_index'] = marker - 1
-        indices = (set(range(num)) | {-i for i in range(1, marker)}) - deletes
-
-        field_key = lambda anid: f"field_id_{anid}"
-        readonly_key = lambda anid: f"readonly_{anid}"
-        default_value_key = lambda anid: f"default_value_{anid}"
-
-        def duplicate_constraint(idx1: int, idx2: int) -> Optional[RequestConstraint]:
-            if idx1 == idx2:
-                return None
-            key1 = field_key(idx1)
-            key2 = field_key(idx2)
-            msg = n_("Must not duplicate field.")
-            return (
-                lambda d: not d[key1] or d[key1] != d[key2],
-                (key1, ValueError(msg)),
-            )
-
-        def valid_field_constraint(idx: int) -> RequestConstraint:
-            key = field_key(idx)
-            return (
-                lambda d: not d[key] or d[key] in reg_fields,
-                (key, ValueError(n_("Invalid field."))),
-            )
-
-        def readonly_kind_constraint(idx: int) -> RequestConstraint:
-            key = readonly_key(idx)
-            msg = n_("Registration questionnaire rows may not be readonly.")
-            return (
-                lambda d: not d[key] or kind.allow_readonly(),
-                (key, ValueError(msg)),
-            )
-
-        def duplicate_kind_constraint(idx: int) -> RequestConstraint:
-            key = field_key(idx)
-            msg = n_("This field is already in use in another questionnaire.")
-            return (lambda d: d[key] not in other_used_fields, (key, ValueError(msg)))
-
-        constraints: list[tuple[Callable[[CdEDBObject], bool], Error]]
-        constraints = list(
-            filter(
-                None,
-                (
-                    duplicate_constraint(idx1, idx2)
-                    for idx1 in indices
-                    for idx2 in indices
-                ),
-            )
-        )
-        constraints += list(
-            itertools.chain.from_iterable(
-                (
-                    valid_field_constraint(idx),
-                    readonly_kind_constraint(idx),
-                    duplicate_kind_constraint(idx),
-                )
-                for idx in indices
-            )
-        )
-
-        params: vtypes.TypeMapping = {
-            f"{key}_{i}": value for i in indices for key, value in spec.items()
-        }
-        data = request_extractor(rs, params, constraints)
-        for idx in indices:
-            dv_key = default_value_key(idx)
-            field_id = data[field_key(idx)]
-            if data[dv_key] is None or field_id is None:
-                data[dv_key] = None
-                continue
-            data[dv_key] = check(
-                rs,
-                vtypes.ByFieldDatatype | None,
-                data[dv_key],
-                dv_key,
-                kind=reg_fields[field_id].kind,
-            )
-        questionnaire = {
-            kind: list(
-                {key: data[f"{key}_{i}"] for key in spec}
-                for i in mixed_existence_sorter(indices)
-            )
-        }
-        return questionnaire
-
     @access("event")
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("kind")
@@ -396,9 +270,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
                 # we want to render the errors from reorder_questionnaire on this page,
                 # so we only redirect to another page if 'kind' does not pass validation
                 pass
-        questionnaire = unwrap(
-            self.eventproxy.get_questionnaire(rs, event_id, kinds=(kind,))
-        )
+        questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[kind]
         redirects = {
             const.QuestionnaireUsages.registration: "event/configure_registration",
             const.QuestionnaireUsages.additional: "event/configure_additional_questionnaire",
@@ -430,9 +302,9 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.reorder_questionnaire_form(rs, event_id, kind=kind)
 
-        questionnaire = unwrap(
-            self.eventproxy.get_questionnaire(rs, event_id, kinds=(kind,))
-        )
+        questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[
+            kind
+        ].as_dicts()
 
         if not set(order) == set(range(len(questionnaire))):
             rs.append_validation_error((
@@ -443,8 +315,6 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             return self.reorder_questionnaire_form(rs, event_id, kind=kind)
 
         new_questionnaire = [questionnaire[i] for i in order]
-        code = self.eventproxy.set_questionnaire(
-            rs, event_id, {kind: new_questionnaire}
-        )
+        code = self.eventproxy.set_questionnaire(rs, event_id, kind, new_questionnaire)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/reorder_questionnaire_form", {'kind': kind})

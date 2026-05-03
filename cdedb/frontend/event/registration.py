@@ -377,11 +377,9 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         course_choice_params = self.get_course_choice_params(rs, event_id, orga=False)
 
-        reg_questionnaire = unwrap(
-            self.eventproxy.get_questionnaire(
-                rs, event_id, kinds=(const.QuestionnaireUsages.registration,)
-            )
-        )
+        reg_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[
+            const.QuestionnaireUsages.registration
+        ]
         return self.render(
             rs,
             "registration/register",
@@ -992,11 +990,9 @@ class EventRegistrationMixin(EventBaseFrontend):
             for part in xsorted(rs.ambience['event'].parts.values())
             if part.id in registration['parts']
         )
-        reg_questionnaire = unwrap(
-            self.eventproxy.get_questionnaire(
-                rs, event_id, (const.QuestionnaireUsages.registration,)
-            )
-        )
+        reg_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[
+            const.QuestionnaireUsages.registration
+        ]
         waitlist_position = self.eventproxy.get_waitlist_position(
             rs, event_id, persona_id=rs.user.persona_id
         )
@@ -1115,11 +1111,9 @@ class EventRegistrationMixin(EventBaseFrontend):
             if reg_part['status'].has_to_pay()
         }
 
-        reg_questionnaire = unwrap(
-            self.eventproxy.get_questionnaire(
-                rs, event_id, kinds=(const.QuestionnaireUsages.registration,)
-            )
-        )
+        reg_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[
+            const.QuestionnaireUsages.registration
+        ]
         course_choice_params = self.get_course_choice_params(rs, event_id, orga=False)
         return self.render(
             rs,
@@ -1290,7 +1284,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             data,
             current=None,
             event=rs.ambience['event'],
-            questionnaire={},
+            all_questionnaires={},
             personalized=True,
         )
         if rs.has_validation_errors() or not fee_data:

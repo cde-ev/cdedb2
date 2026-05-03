@@ -144,6 +144,9 @@ EOF
 sudo -u cdedb touch /home/cdedb/.bash_profile
 cat >> /home/cdedb/.bash_profile << EOF
 
+if [ -f ~/.bashrc ]; then
+  . ~/.bashrc
+fi
 cd /cdedb2
 EOF
 sudo -u cdedb touch /home/cdedb/.bash_aliases

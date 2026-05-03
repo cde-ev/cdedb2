@@ -28,7 +28,7 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
-import cdedb.models.event_constraint_violations as models_cv
+import cdedb.models.event.constraint_violations as models_cv
 from cdedb.common import (
     EVENT_SCHEMA_VERSION,
     CdEDBObject,
@@ -623,13 +623,13 @@ class EventBaseFrontend(AbstractUserFrontend):
         self, rs: RequestState, kind: const.QuestionnaireUsages
     ) -> CdEDBObject:
         """Extract questionnaire inputs."""
-        questionnaire = unwrap(
-            self.eventproxy.get_questionnaire(rs, rs.ambience["event"].id, kinds=[kind])
-        )
+        questionnaire = self.eventproxy.get_all_questionnaires(
+            rs, rs.ambience["event"].id
+        )[kind]
         field_ids = {
-            entry["field_id"]
+            entry.field_id
             for entry in questionnaire
-            if entry["field_id"] and not entry["readonly"]
+            if entry.field_id and not entry.readonly
         }
         return event_associated_fields_extractor(
             rs, rs.ambience["event"], const.FieldAssociations.registration, field_ids
