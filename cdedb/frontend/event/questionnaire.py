@@ -204,7 +204,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             merge_dicts(rs.values, values)
             if field := rs.ambience['event'].lodge_field:
                 if any(row.field_id == field.id for row in add_questionnaire):
-                    wish_data = self._get_user_lodgement_wishes(rs, event_id)  # type: ignore[assignment]
+                    wish_data = self._get_user_lodgement_wishes(rs, event_id) or {}  # type: ignore[assignment]
         else:
             if not self.is_privileged(rs, EventPrivileges.basic_read):
                 raise werkzeug.exceptions.Forbidden(n_("Must be orga to use preview."))
