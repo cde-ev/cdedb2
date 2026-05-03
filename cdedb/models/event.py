@@ -38,6 +38,7 @@ from typing import (
     Any,
     ClassVar,
     ForwardRef,
+    Literal,
     Optional,
     Self,
     cast,
@@ -745,6 +746,7 @@ class EventField(EventDataclass):
     association: const.FieldAssociations = dataclasses.field(
         metadata=Meta.input_update_exclude.as_dict
     )
+    _association: ClassVar[const.FieldAssociations]
 
     # Userfacing metadata. Purely for UI.
     title: str  # Userfacing label.
@@ -763,21 +765,25 @@ class EventField(EventDataclass):
     )
 
     def __post_init__(self) -> None:
-        if isinstance(self, FIELD_ASSOCIATION_TO_CLASS[self.association]):
-            pass
-        elif self.__class__ in FIELD_ASSOCIATION_TO_CLASS.values():
+        if self.association != self._association:
             raise RuntimeError("Inconsistent field association")
 
     @property
     def request_name(self) -> str:
         return f"fields.{self.field_name}"
 
+    @staticmethod
+    def get_class(association: const.FieldAssociations) -> type["EventField"]:
+        for cls in EventField.__subclasses__():
+            if cls._association == association:
+                return cls
+        raise KeyError
+
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "EventField":
         data['entries'] = cast_field_entries(data['entries'], data['kind'])
-        return super(
-            cls, FIELD_ASSOCIATION_TO_CLASS[data['association']]
-        ).from_database(data)
+        association = const.FieldAssociations(data['association'])
+        return cls.get_class(association).from_database(data)
 
     def to_database(self) -> CdEDBObject:
         ret = super().to_database()
@@ -826,24 +832,32 @@ class EventField(EventDataclass):
 
 @dataclasses.dataclass
 class RegistrationField(EventField):
-    pass
+    _association = const.FieldAssociations.registration
+    association: Literal[const.FieldAssociations.registration]
+
+    @classmethod
+    def from_database(cls, data: CdEDBObject) -> "Self":
+        return super(EventField, cls).from_database(data)
 
 
 @dataclasses.dataclass
 class CourseField(EventField):
-    pass
+    _association = const.FieldAssociations.course
+    association: Literal[const.FieldAssociations.course]
+
+    @classmethod
+    def from_database(cls, data: CdEDBObject) -> "Self":
+        return super(EventField, cls).from_database(data)
 
 
 @dataclasses.dataclass
 class LodgementField(EventField):
-    pass
+    _association = const.FieldAssociations.lodgement
+    association: Literal[const.FieldAssociations.lodgement]
 
-
-FIELD_ASSOCIATION_TO_CLASS: dict[const.FieldAssociations, type[EventField]] = {
-    const.FieldAssociations.registration: RegistrationField,
-    const.FieldAssociations.course: CourseField,
-    const.FieldAssociations.lodgement: LodgementField,
-}
+    @classmethod
+    def from_database(cls, data: CdEDBObject) -> "Self":
+        return super(EventField, cls).from_database(data)
 
 
 @dataclasses.dataclass

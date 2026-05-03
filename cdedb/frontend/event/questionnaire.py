@@ -65,7 +65,9 @@ class EventQuestionnaireMixin(EventBaseFrontend):
 
     def _prepare_questionnaire_form(
         self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages
-    ) -> tuple[list[CdEDBObject], str, models.CdEDataclassMap[models.RegistrationField]]:
+    ) -> tuple[
+        list[CdEDBObject], str, models.CdEDataclassMap[models.RegistrationField]
+    ]:
         """Helper to retrieve some data for questionnaire configuration."""
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)[kind]
         fees_by_field = self.eventproxy.get_event_fees_per_entity(rs, event_id).fields
@@ -270,7 +272,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
     def process_questionnaire_input(
         rs: RequestState,
         num: int,
-        reg_fields: models.CdEDataclassMap[models.EventField],
+        reg_fields: models.CdEDataclassMap[models.RegistrationField],
         kind: const.QuestionnaireUsages,
         other_used_fields: Collection[int],
     ) -> dict[const.QuestionnaireUsages, list[CdEDBObject]]:
