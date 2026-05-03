@@ -2218,9 +2218,8 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         datetime_registration_fields = {
             field.id: field.title
-            for field in xsorted(rs.ambience['event'].fields.values())
-            if field.association == const.FieldAssociations.registration
-            and field.kind == const.FieldDatatypes.datetime
+            for field in xsorted(rs.ambience['event'].registration_fields.values())
+            if field.kind == const.FieldDatatypes.datetime
         }
         if field_id:
             field_preview_values = {

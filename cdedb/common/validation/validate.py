@@ -2906,9 +2906,8 @@ def _event_fee_condition(
     }
     field_names = {
         f.field_name
-        for f in event.fields.values()
-        if f.association == const.FieldAssociations.registration
-        and f.kind == const.FieldDatatypes.bool
+        for f in event.registration_fields.values()
+        if f.kind == const.FieldDatatypes.bool
         and f.id not in additional_questionnaire_fields
     }
     part_names = {p.shortname for p in event.parts.values()}

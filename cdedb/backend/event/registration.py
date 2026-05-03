@@ -1771,9 +1771,8 @@ class EventRegistrationBackend(EventBaseBackend):
         }
         reg_bool_fields = {
             str(f.field_name): reg['fields'].get(f.field_name, False)
-            for f in event.fields.values()
-            if f.association == const.FieldAssociations.registration
-            and f.kind == const.FieldDatatypes.bool
+            for f in event.registration_fields.values()
+            if f.kind == const.FieldDatatypes.bool
         }
         # Other bools can be added here, but also require adjustment to the parser.
         other_bools = {

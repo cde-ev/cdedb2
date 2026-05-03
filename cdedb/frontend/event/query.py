@@ -625,8 +625,7 @@ class EventQueryMixin(EventBaseFrontend):
         parts = rs.ambience['event'].parts
         selection_default = ["lodgement.title"] + [
             f"lodgement_fields.xfield_{field.field_name}"
-            for field in rs.ambience['event'].fields.values()
-            if field.association == const.FieldAssociations.lodgement
+            for field in rs.ambience['event'].lodgement_fields.values()
         ]
         for col in ("regular_inhabitants",):
             selection_default += list(f"part{p_id}_{col}" for p_id in parts)

@@ -65,7 +65,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
 
     def _prepare_questionnaire_form(
         self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages
-    ) -> tuple[list[CdEDBObject], str, models.CdEDataclassMap[models.EventField]]:
+    ) -> tuple[list[CdEDBObject], str, models.CdEDataclassMap[models.RegistrationField]]:
         """Helper to retrieve some data for questionnaire configuration."""
         questionnaire = self.eventproxy.get_questionnaire(rs, event_id)[kind]
         fees_by_field = self.eventproxy.get_event_fees_per_entity(rs, event_id).fields
@@ -77,9 +77,8 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         merge_dicts(rs.values, current)
         registration_fields = {
             k: v
-            for k, v in rs.ambience["event"].fields.items()
-            if v.association == const.FieldAssociations.registration
-            and (kind.allow_fee_condition() or not fees_by_field[k])
+            for k, v in rs.ambience["event"].registration_fields.items()
+            if kind.allow_fee_condition() or not fees_by_field[k]
         }
         checksum = get_hash(json_serialize(questionnaire).encode())
 

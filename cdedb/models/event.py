@@ -427,6 +427,14 @@ class Event(EventDataclass, _EventConfigurationMixin, _EventFreetextMixin):
         }
 
     @functools.cached_property
+    def course_fields(self) -> dict[int, "CourseField"]:
+        return {k: v for k, v in self.fields.items() if isinstance(v, CourseField)}
+
+    @functools.cached_property
+    def lodgement_fields(self) -> dict[int, "LodgementField"]:
+        return {k: v for k, v in self.fields.items() if isinstance(v, LodgementField)}
+
+    @functools.cached_property
     def lodge_field(self) -> Optional["EventField"]:
         if self.lodge_field_id is None:
             return None
