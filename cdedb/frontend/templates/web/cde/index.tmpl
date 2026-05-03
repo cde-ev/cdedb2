@@ -92,17 +92,17 @@
         {% call util.bootstrap_panel(title=gettext("Membership-Fee"), icon='euro-sign') %}
             {% if "member" in user.roles %}
                 <p>
-                    {% if user.honorary_member %}
+                    {% if persona.honorary_member %}
                         {% trans %}
                             You are an honorary member, therefore your membership will not automatically expire.
                         {% endtrans %}
-                        {% if user.balance %}
-                            {% trans amount=user.balance|money(lang=lang) %}
+                        {% if persona.balance %}
+                            {% trans amount=persona.balance|money(lang=lang) %}
                                 Regardless, your current balance is {{ amount }}.
                             {% endtrans %}
                         {% endif %}
                     {% else %}
-                        {% trans amount=user.balance|money(lang=lang) %}
+                        {% trans amount=persona.balance|money(lang=lang) %}
                             Your current Balance is {{ amount }}.
                         {% endtrans %}
                         {% if deadline <= now().date() %}
@@ -124,7 +124,7 @@
                     {% endtrans %}
                 </p>
             {% endif %}
-            {% if not user.honorary_member %}
+            {% if not persona.honorary_member %}
                 <div class="row">
                     <div class="col-md-8">
                         <p>
@@ -155,7 +155,7 @@
                                 </tr>
                                 <tr>
                                     <td>{% trans %}Payment reference{% endtrans %}</td>
-                                    <td>{{ user.membership_fee_reference }}</td>
+                                    <td>{{ persona.membership_fee_reference }}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -168,7 +168,7 @@
                         </p>
                     </div>
                     <div class="col-md-4">
-                        <img src="{{ cdedblink("cde/membership_qr") }}" alt="{{ user.membership_fee_reference }}" width="80%" class="center-block">
+                        <img src="{{ cdedblink("cde/membership_qr") }}" alt="{{ persona.membership_fee_reference }}" width="80%" class="center-block">
                     </div>
                 </div>
             {% endif %}

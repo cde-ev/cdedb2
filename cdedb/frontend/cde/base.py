@@ -96,7 +96,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
     def index(self, rs: RequestState) -> Response:
         """Render start page."""
         meta_info = self.coreproxy.get_meta_info(rs)
-        user = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+        persona = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         deadline = None
         annual_fee = self.cdeproxy.annual_membership_fee(rs)
         has_lastschrift = False
@@ -108,13 +108,13 @@ class CdEBaseFrontend(AbstractUserFrontend):
                 )
             )
             period = self.cdeproxy.get_period(rs, self.cdeproxy.current_period(rs))
-            deadline = user.calculate_ejection_deadline(period)
+            deadline = persona.calculate_ejection_deadline(period)
         return self.render(
             rs,
             "index",
             {
                 'has_lastschrift': has_lastschrift,
-                'user': user,
+                'persona': persona,
                 'meta_info': meta_info,
                 'deadline': deadline,
                 'annual_fee': annual_fee,
