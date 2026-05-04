@@ -169,7 +169,7 @@ class CdEBaseBackend(AbstractBackend):
                         if transfer["persona_id"] not in cde_personas:
                             raise ValueError(n_("Persona is not in CdE realm."))
                         cde_persona = cde_personas[transfer["persona_id"]]
-                        new_balance = cde_persona['balance'] + amount
+                        new_balance = cde_persona.balance + amount
                         change_note = changelog_note_template.format(
                             amount=money_filter(amount),
                             new_balance=money_filter(new_balance),
@@ -179,7 +179,7 @@ class CdEBaseBackend(AbstractBackend):
                         # Increase balance.
                         self.core.change_persona_balance(
                             rs,
-                            cde_persona['id'],
+                            cde_persona.id,
                             new_balance,
                             const.FinanceLogCodes.increase_balance,
                             change_note=change_note,
@@ -189,24 +189,24 @@ class CdEBaseBackend(AbstractBackend):
                         # Grant membership if necessary.
                         if (
                             new_balance >= self.conf["MEMBERSHIP_FEE"]
-                            and not cde_persona['is_member']
+                            and not cde_persona.is_member
                         ):
                             code = self.core.change_membership_easy_mode(
-                                rs, cde_persona['id'], is_member=True
+                                rs, cde_persona.id, is_member=True
                             )
                             result.new_members += bool(code)
-                            cde_persona['is_member'] = bool(code)
-                            event_personas[cde_persona["id"]]["is_member"] = bool(code)
+                            cde_persona.is_member = bool(code)
+                            event_personas[cde_persona.id]["is_member"] = bool(code)
 
                         # Add to tally.
                         result.membership_fees.append(
                             models_finance.MoneyTransfer(
-                                persona=cde_persona, amount=amount, date=date
+                                persona=cde_persona.as_dict(), amount=amount, date=date
                             )
                         )
 
                         # Remember the changed balance in case of multiple transfers.
-                        cde_persona['balance'] = new_balance
+                        cde_persona.balance = new_balance
                     else:
                         event_persona = event_personas[transfer['persona_id']]
                         registration = self.event.book_registration_payment(

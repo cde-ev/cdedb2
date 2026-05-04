@@ -320,8 +320,8 @@ class CoreBaseFrontend(AbstractFrontend):
         if wants:
             response = basic_redirect(rs, wants)
         elif "member" in rs.user.roles:
-            data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
-            if not data['decided_search']:
+            user = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+            if not user.decided_search:
                 response = self.redirect(rs, "cde/consent_decision_form")
             else:
                 response = self.redirect(rs, "core/index")
@@ -472,7 +472,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.serve_qrcode(rs, vcard)
 
     def _make_vcard_data(
-        self, rs: RequestState, persona: CdEDBObject, include_foto: bool
+        self, rs: RequestState, persona: models.CdEPersona, include_foto: bool
     ) -> str:
         """Creates a string encoding the contact information as vCard 3.0.
 
@@ -484,38 +484,38 @@ class CoreBaseFrontend(AbstractFrontend):
         escape = segno.helpers._escape_vcard  # type: ignore[attr-defined]
 
         name = [
-            persona['family_name'],
-            persona['given_names'],
+            persona.family_name,
+            persona.given_names,
             "",
-            persona['title'],
-            persona['name_supplement'],
+            persona.title,
+            persona.name_supplement,
         ]
         data = [
             'BEGIN:VCARD',
             'VERSION:3.0',
             f'N:{";".join(escape(e or "") for e in name)}',
-            f'FN:{escape(make_persona_name(persona))}',
-            f'EMAIL:{escape(persona["username"])}',
+            f'FN:{escape(persona.get_name())}',
+            f'EMAIL:{escape(persona.username)}',
         ]
-        if persona["mobile"]:
-            data.append(f'TEL;TYPE=CELL:{persona["mobile"]}')
-        if persona["telephone"]:
-            data.append(f'TEL;TYPE=HOME:{persona["telephone"]}')
-        if persona['nickname']:
-            data.append(f'NICKNAME:{escape(persona["nickname"])}')
+        if persona.mobile:
+            data.append(f'TEL;TYPE=CELL:{persona.mobile}')
+        if persona.telephone:
+            data.append(f'TEL;TYPE=HOME:{persona.telephone}')
+        if persona.nickname:
+            data.append(f'NICKNAME:{escape(persona.nickname)}')
         for sub in ["", "2"]:
-            if persona[f'show_address{sub}']:
+            if getattr(persona, f'show_address{sub}'):
                 address = [
-                    persona[f'address_supplement{sub}'],
-                    persona[f'address{sub}'],
+                    getattr(persona, f'address_supplement{sub}'),
+                    getattr(persona, f'address{sub}'),
                 ]
             else:
                 address = ["", ""]
             address += [
-                persona[f'location{sub}'],
+                getattr(persona, f'location{sub}'),
                 "",
-                persona[f'postal_code{sub}'],
-                rs.gettext(format_country_code(persona[f'country{sub}'])),
+                getattr(persona, f'postal_code{sub}'),
+                rs.gettext(format_country_code(getattr(persona, f'country{sub}'))),
             ]
             if any(address):
                 if not sub:
@@ -523,11 +523,11 @@ class CoreBaseFrontend(AbstractFrontend):
                 else:
                     prefix = 'ADR;TYPE=intl,home,postal:;'
                 data.append(prefix + ";".join(escape(e or "") for e in address))
-        if persona['birthday'] != datetime.date.min:
-            data.append(f"BDAY:{persona['birthday'].strftime('%Y-%m-%d')}")
-        if persona['foto'] and include_foto:
-            mime_type = self.coreproxy.get_foto_store(rs).get_mime_type(persona['foto'])
-            foto_data = self.coreproxy.get_foto_store(rs).get(persona['foto'])
+        if persona.birthday != datetime.date.min:
+            data.append(f"BDAY:{persona.birthday.strftime('%Y-%m-%d')}")
+        if persona.foto and include_foto:
+            mime_type = self.coreproxy.get_foto_store(rs).get_mime_type(persona.foto)
+            foto_data = self.coreproxy.get_foto_store(rs).get(persona.foto)
             if mime_type and foto_data:
                 data.append(
                     f'PHOTO;ENCODING=b;TYPE={mime_type.removeprefix("image/").upper()}:{base64.b64encode(foto_data).decode()}'
@@ -739,7 +739,7 @@ class CoreBaseFrontend(AbstractFrontend):
         target_roles = extract_roles(rs.ambience['persona'], introspection_only=True)
         persona: models.Persona
         if self.AccessRealm.cde in access_realms and "cde" in target_roles:
-            persona = self.coreproxy.new_get_cde_user(rs, persona_id)
+            persona = self.coreproxy.get_cde_user(rs, persona_id)
         # event and assembly are independent realms, users may have both at the same time
         elif (self.AccessRealm.event in access_realms and "event" in target_roles
                 and self.AccessRealm.assembly in access_realms and "assembly" in target_roles):
@@ -1467,7 +1467,7 @@ class CoreBaseFrontend(AbstractFrontend):
             # value. However, admins may change this to arbitrary values, so we allow
             # to surpass the check if the user didn't change the donation's amount.
             if (
-                current["donation"] != data["donation"]
+                current.donation != data["donation"]
                 and not min_donation <= data["donation"] <= max_donation
             ):
                 rs.append_validation_error((
@@ -1485,7 +1485,7 @@ class CoreBaseFrontend(AbstractFrontend):
             )
             # "Enforce" consent of the account holder if the user changed his donation.
             if (
-                current["donation"] != data["donation"]
+                current.donation != data["donation"]
                 and lastschrift["account_owner"]
                 and not rs.ignore_warnings
             ):
@@ -2532,8 +2532,8 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
         persona = self.coreproxy.get_cde_user(rs, persona_id)
-        old_balance = persona['balance']
-        trial_member = persona['trial_member']
+        old_balance = persona.balance
+        trial_member = persona.trial_member
         return self.render(
             rs,
             "modify_balance",
@@ -2554,7 +2554,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.has_validation_errors():
             return self.modify_balance_form(rs, persona_id)
         persona = self.coreproxy.get_cde_user(rs, persona_id)
-        if persona['balance'] == new_balance:
+        if persona.balance == new_balance:
             rs.notify("info", n_("Nothing changed."))
             return self.redirect(rs, "core/modify_balance_form")
         if rs.ambience['persona']['is_archived']:
@@ -2588,7 +2588,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.ambience['persona']['is_archived']:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
-        foto = self.coreproxy.get_cde_user(rs, persona_id)['foto']
+        foto = self.coreproxy.get_cde_user(rs, persona_id).foto
         return self.render(rs, "set_foto", {'foto': foto})
 
     @access("cde", modi={"POST"})
