@@ -27,6 +27,7 @@ from cdedb.common import (
     now,
     unwrap,
 )
+from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
@@ -2039,6 +2040,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 amount=decimal.Decimal("466.49"),
             ),
         )
+        self.get("/event/event/1/registration/2/fee/qr")
+        with self.assertRaises(PrivilegeError):
+            self.get("/event/event/1/registration/1/fee/qr", status=403)
 
     @as_users("anton")
     def test_registration_status(self) -> None:
