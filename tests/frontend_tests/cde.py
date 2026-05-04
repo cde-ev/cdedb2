@@ -92,7 +92,7 @@ class TestCdEFrontend(FrontendTest):
             family_name="",
             username=vtypes.Email(""),
             gender=const.Genders.not_specified,
-            birthday=datetime.datetime.fromisoformat("2000-01-01"),  # type: ignore[arg-type]
+            birthday=vtypes.Birthday(datetime.date.fromisoformat("2000-01-01")),
             is_ml_realm=True,
             is_assembly_realm=True,
             is_event_realm=True,
