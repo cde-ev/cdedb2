@@ -12,7 +12,7 @@ import itertools
 import typing
 from collections import OrderedDict
 from collections.abc import Collection
-from typing import Optional, cast
+from typing import Optional, cast, overload
 
 import segno.helpers
 import werkzeug.datastructures
@@ -309,10 +309,10 @@ class EventRegistrationMixin(EventBaseFrontend):
                 ccos_per_part[track.part_id].append(f"group-{track_group_id}")
         for track_id in simple_tracks:
             ccos_per_part[tracks[track_id].part_id].append(f"{track_id}")
-        choice_objects: list[models.CourseChoiceObject] = [  # type: ignore[assignment]
-            t for t_id, t in tracks.items() if t_id in simple_tracks
-        ] + [tg for tg in track_groups.values() if tg.constraint_type.is_sync()]  # type: ignore[misc]
-        choice_objects = xsorted(choice_objects)
+        choice_objects: list[models.CourseChoiceObject] = xsorted(
+            [t for t_id, t in tracks.items() if t_id in simple_tracks]
+            + [tg for tg in sync_track_groups.values()]
+        )
 
         # For every course and track, determine all tracks that allow you to choose
         #  this course in this track.
@@ -865,7 +865,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         registration['mixed_lodging'] = registration['mixed_lodging'] and age.may_mix()
         new_id = self.eventproxy.create_registration(rs, registration, orga_input=False)
 
-        payment_data = self._get_payment_data(rs, event_id) or {}  # type: ignore[var-annotated]
+        payment_data = self._get_payment_data(rs, event_id, new_id)
 
         subject = f"Anmeldung für {rs.ambience['event'].title}"
         reply_to = rs.ambience['event'].orga_address or self.conf["EVENT_ADMIN_ADDRESS"]
@@ -1254,7 +1254,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         self, rs: RequestState, event_id: int, registration_id: int
     ) -> Response:
         """Display detailed information about amount owed and individual fees."""
-        payment_data = self._get_payment_data(rs, event_id, registration_id) or {}  # type: ignore[var-annotated]
+        payment_data = self._get_payment_data(rs, event_id, registration_id)
         violation_data = self.get_constraint_violations(
             rs, rs.ambience['event'], registration_id=registration_id
         )
@@ -2534,8 +2534,18 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
         return self.redirect(rs, 'event/registration_query', query.serialize_to_url())
 
+    @overload
     def _get_payment_data(
-        self, rs: RequestState, event_id: int, registration_id: Optional[int] = None
+        self, rs: RequestState, event_id: int, registration_id: None = None
+    ) -> PaymentData | None: ...
+
+    @overload
+    def _get_payment_data(
+        self, rs: RequestState, event_id: int, registration_id: int
+    ) -> PaymentData: ...
+
+    def _get_payment_data(
+        self, rs: RequestState, event_id: int, registration_id: int | None = None
     ) -> PaymentData | None:
         if not registration_id:
             reg_list = self.eventproxy.list_registrations(
