@@ -596,7 +596,6 @@ rules = [
                     post("/add", endpoint="add_registration"),
                     get_("/query", endpoint="registration_query"),
                     get_("/status", endpoint="registration_status"),
-                    get_("/qr", endpoint="registration_fee_qr"),
                     get_("/amend", endpoint="amend_registration_form"),
                     post("/amend", endpoint="amend_registration"),
                     get_("/questionnaire", endpoint="additional_questionnaire_form"),
@@ -627,6 +626,7 @@ rules = [
                         sub(
                             "/fee",
                             get_("/summary", endpoint="show_registration_fee"),
+                            get_("/qr", endpoint="registration_fee_qr"),
                             get_("/add", endpoint="add_new_personalized_fee_form"),
                             post("/add", endpoint="add_new_personalized_fee"),
                             sub(
