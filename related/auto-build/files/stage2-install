@@ -86,7 +86,7 @@ apt-get install --yes --no-install-recommends                       \
     \
     libsystemd-dev
 
-python3 -m pip install --break-system-packages "uv>=0.11.0"
+python3 -m pip install "uv>=0.11.8" --break-system-packages
 
 echo "Setting up uv shell-completion and python directory for root"
 cat /media/cdrom0/root-bashrc >> /root/.bashrc
