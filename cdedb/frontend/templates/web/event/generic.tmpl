@@ -737,10 +737,14 @@
 {%- endmacro %}
 
 
-{% macro registration_fee_qr(registration=none) %}
-    {% set registration = registration or ambience['registration'] %}
-    {{ util.href(cdedblink('event/registration_fee_qr'), label=gettext("QR"), icon='qrcode',
-                 aclass="btn btn-xs btn-default pull-right", anid="show-registration-fee-qr",
+{# If no registration id is given, it will be filled in from the ambience. #}
+{% macro registration_fee_qr(registration_id=None) %}
+    {% set params = {} %}
+    {% if registration_id %}
+        {% do params.update(registration_id=registration_id) %}
+    {% endif %}
+    {{ util.href(cdedblink('event/registration_fee_qr', params), label=gettext("QR"),
+                 icon='qrcode', aclass="btn btn-xs btn-default pull-right", anid="show-registration-fee-qr",
                  title=gettext("Bank transfer data as QR code")) }}
     <script nonce="{{ csp_nonce }}">
         $("#show-registration-fee-qr").cdedbQRCodeModal(

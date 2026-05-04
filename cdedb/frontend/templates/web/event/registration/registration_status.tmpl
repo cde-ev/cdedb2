@@ -132,7 +132,7 @@
             </p>
         {% endif %}
         {% if ambience['event']['iban'] and to_pay > 0 %}
-            {{ generic_event.registration_fee_qr(registration) }}
+            {{ generic_event.registration_fee_qr(registration['id']) }}
             {{ util.h(n_("Bank Transfer"), underline=true, level=4) }}
 
             <p>
