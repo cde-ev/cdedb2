@@ -76,8 +76,7 @@ module-root = ""
 
 [tool.uv]
 # Reduce for now, because of uv and renovate interaction.
-#exclude-newer = "14 days"
-exclude-newer = "1 day"
+exclude-newer = "14 days"
 
 [tool.uv.exclude-newer-package]
 # Critical infrastructure packages we want to allow timely security updates for.
