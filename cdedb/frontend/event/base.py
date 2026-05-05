@@ -77,7 +77,7 @@ class ParticipantListData(typing.TypedDict):
     parts: CdEDataclassMap[models.EventPart]
 
 
-class UserLodgementWish(typing.TypedDict):
+class UserLodgementWishes(typing.TypedDict):
     field: models.EventField | None
     wished_personas: list[CdEDBObject]
     problems: list[Notification]
@@ -462,14 +462,6 @@ class EventBaseFrontend(AbstractUserFrontend):
         else:
             part_ids = rs.ambience['event'].parts.keys()
 
-        data = self._get_participant_list_data(
-            rs,
-            event_id,
-            part_ids,
-            include_total_count=True,
-            sortkey=sortkey or "persona",
-            reverse=reverse,
-        )
         if len(rs.ambience['event'].parts) == 1:
             part_id = unwrap(rs.ambience['event'].parts.keys())  # type: ignore[assignment]
         return self.render(
@@ -480,7 +472,14 @@ class EventBaseFrontend(AbstractUserFrontend):
                 'list_consent': list_consent,
                 'last_sortkey': sortkey,
                 'last_reverse': reverse,
-                **data,
+                **self._get_participant_list_data(
+                    rs,
+                    event_id,
+                    part_ids,
+                    include_total_count=True,
+                    sortkey=sortkey or "persona",
+                    reverse=reverse,
+                ),
             },
         )
 
@@ -599,7 +598,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
     def _get_user_lodgement_wishes(
         self, rs: RequestState, event_id: int
-    ) -> UserLodgementWish | None:
+    ) -> UserLodgementWishes | None:
         assert rs.user.persona_id is not None
         if not (
             rs.ambience['event'].is_participant_list_visible
@@ -638,7 +637,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                 " have your own data sent to other participants before the event."
             )
             problems = [("error", msg, {})]
-        return UserLodgementWish(
+        return UserLodgementWishes(
             field=rs.ambience['event'].lodge_field,
             wished_personas=wished_personas,
             problems=problems,
