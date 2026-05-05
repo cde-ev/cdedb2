@@ -115,7 +115,7 @@
         </div>
         {{ util.output_errors('persona_ids', wrapper=True) }}
     </form>
-    {% for list in ambience['case'].involved.items()|batch(2) %}
+    {% for list in ambience['case'].involved_by_type.items()|batch(2) %}
         <div class="row">
         {% for type, involved_ids in list %}
             <div id="involved_{{ type.name }}" class="col-sm-6">
@@ -125,10 +125,10 @@
                     {% for involved_id in involved_ids %}
                         {% set involved = ambience["case"].involved[involved_id] %}
                         <div class="hide-hover-container">
-                            {{ util.persona_anchor(personas[involved_id]) }}
+                            {{ util.persona_anchor(personas[involved.persona_id]) }}
                             {# assembly and ml users are missing here #}
-                            {% if age_classes.get(involved_id, enums['AgeClasses'].full) != enums['AgeClasses'].full %}
-                                <strong>({{ gettext(age_classes[involved_id]|string) }})</strong>
+                            {% if age_classes.get(involved.persona_id, enums['AgeClasses'].full) != enums['AgeClasses'].full %}
+                                <strong>({{ gettext(age_classes[involved.persona_id]|string) }})</strong>
                             {% endif %}
                             {% if involved.is_informed %}
                                 <small class="text-muted">

@@ -15,22 +15,22 @@
 ---
 
 # {% trans %}Relevant Individuals{% endtrans %}
-{%- for type, involved_ids in case.involved.items() if type != enums['ComplaintInvolvementType'].withheld %}
+{%- for type, involved_ids in case.involved_by_type.items() if type != enums['ComplaintInvolvementType'].withheld and involved_ids %}
 - {{ gettext(type|string) }}:
     {#- Be cautionary and hide people not marked as informed. #}
     {%- for involved_id in involved_ids if case.involved[involved_id].is_informed %}
-    - {{ personas[involved_id]|persona_name }}
+    - {{ personas[case.involved[involved_id].persona_id]|persona_name }}
         {%- if age_classes.get(involved_id, enums['AgeClasses'].full) != enums['AgeClasses'].full -%}
             {# #} ({{ gettext(age_classes[involved_id]|string) -}})
         {%- endif %}
         {%- if case.involved[involved_id].is_informed -%}
             {# #} ({% trans %}is informed{% endtrans %})
         {%- endif %}
-        {%- if case.companions_by_involved[involved_id] %}
+        {%- if case.involved[involved_id].companions(is_active=None) %}
         - Fallbegleitungen:
-            {%- for companion_id in case.companions_by_involved[involved_id] %}
+            {%- for companion_id, is_active in case.involved[involved_id]._companions.items() %}
             - {{ personas[companion_id]|persona_name }}
-                {%- if involved_id in case.withdrawn_companions -%}
+                {%- if not is_active -%}
                 {# #} ({% trans %}has withdrawn{% endtrans %})
                 {%- endif %}
             {%- endfor %}
