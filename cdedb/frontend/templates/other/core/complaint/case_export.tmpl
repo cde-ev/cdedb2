@@ -28,7 +28,7 @@
         {%- endif %}
         {%- if case.involved[involved_id].companions(is_active=None) %}
         - Fallbegleitungen:
-            {%- for companion_id, is_active in case.involved[involved_id]._companions.items() %}
+            {%- for companion_id, is_active in case.involved[involved_id].companions(is_active=None).items() %}
             - {{ personas[companion_id]|persona_name }}
                 {%- if not is_active -%}
                 {# #} ({% trans %}has withdrawn{% endtrans %})

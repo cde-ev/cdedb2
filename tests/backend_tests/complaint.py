@@ -328,21 +328,21 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual({1, 2, 3, 4, 7, 42}, reality.get_persona_ids(tuple()))
         self.assertEqual({2, 4}, reality.involved_persona_ids)
         self.assertEqual(
-            {2: {3}, 4: {7}},
+            {2: {3: False}, 4: {7: True}},
             {
                 involved.persona_id: involved.companions(is_active=None)
                 for involved in reality.properly_involved.values()
             },
         )
         self.assertEqual(
-            {2: {3}, 4: set()},
+            {2: {3: False}, 4: {}},
             {
                 involved.persona_id: involved.companions(is_active=False)
                 for involved in reality.properly_involved.values()
             },
         )
         self.assertEqual(
-            {2: set(), 4: {7}},
+            {2: {}, 4: {7: True}},
             {
                 involved.persona_id: involved.companions(is_active=True)
                 for involved in reality.properly_involved.values()

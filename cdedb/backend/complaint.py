@@ -836,9 +836,9 @@ class ComplaintBackend(AbstractBackend):
                     )
 
             # Add back any companions we removed previously.
-            new_case = self.get_case(rs, case_id)
+            updated_case = self.get_case(rs, case_id)
             for persona_id in mixed_existence_sorter(other_involved_persona_ids):
-                new_involved = new_case.involved_by_persona_id[persona_id]
+                new_involved = updated_case.involved_by_persona_id[persona_id]
                 old_involved = case.involved_by_persona_id[persona_id]
                 with Silencer(rs):
                     self.add_companions(
@@ -882,14 +882,8 @@ class ComplaintBackend(AbstractBackend):
             removed = involved_ids & case.involved.keys()
             if not removed:
                 return -1
-            query = f"""
-                DELETE FROM {models.ComplaintInvolved.database_table}
-                WHERE id = ANY(%(involved_ids)s)
-            """
-            ret = self.query_exec(
-                rs,
-                query,
-                {"involved_ids": involved_ids},
+            ret = self.sql_delete(
+                rs, models.ComplaintInvolved.database_table, involved_ids
             )
             for involved_id in mixed_existence_sorter(removed):
                 involved = case.involved[involved_id]
@@ -970,7 +964,7 @@ class ComplaintBackend(AbstractBackend):
             if involved_id not in case.involved:
                 raise ValueError(n_("Uninvolved user."))
             involved = case.involved[involved_id]
-            companion_ids -= involved.companions(is_active=None)
+            companion_ids -= involved.companions(is_active=None).keys()
             if not companion_ids:
                 return -1
 
@@ -1021,7 +1015,7 @@ class ComplaintBackend(AbstractBackend):
             if involved_id not in case.involved:
                 raise ValueError(n_("Uninvolved user."))
             involved = case.involved[involved_id]
-            companion_ids &= involved.companions(is_active=None)
+            companion_ids &= involved.companions(is_active=None).keys()
             if not companion_ids:
                 return -1
 
@@ -1055,7 +1049,7 @@ class ComplaintBackend(AbstractBackend):
         companion_id: int,
         is_withdrawn: bool,
     ) -> DefaultReturnCode:
-        """Set the informed status of an involved person."""
+        """Set the withdrawn status of a companion."""
         case_id = affirm(vtypes.ID, case_id)
         involved_id = affirm(vtypes.ID, involved_id)
         companion_id = affirm(vtypes.ID, companion_id)

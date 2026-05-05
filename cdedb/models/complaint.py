@@ -263,7 +263,6 @@ class Case(CdEDataclass):
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:
-        # TODO Fix companions
         data["involved"] = {
             involved_datum[0]: ComplaintInvolved(
                 id=involved_datum[0],
@@ -559,12 +558,12 @@ class ComplaintInvolved:
     is_informed: bool
     _companions: dict[int, bool]
 
-    def companions(self, is_active: bool | None) -> set[int]:
+    def companions(self, is_active: bool | None) -> dict[int, bool]:
         if is_active is None:
-            return set(self._companions.keys())
+            return dict(self._companions)
         else:
             return {
-                companion
+                companion: is_active_
                 for companion, is_active_ in self._companions.items()
                 if is_active == is_active_
             }
