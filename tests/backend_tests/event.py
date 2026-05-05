@@ -105,6 +105,7 @@ class TestEventBackend(BackendTest):
             'field_definition_notes': "No fields plz",
             'orgas': {2, 7},
             'caretakers': {3},
+            'checkin_helpers': set(),
             'parts': {
                 -1: {
                     'tracks': {
@@ -555,26 +556,17 @@ class TestEventBackend(BackendTest):
             ['reg.notes'],
             [('reg.notes', QueryOperators.nonempty, None)],
             [('reg.notes', True)],
-            name="test_query",
         )
-        self.assertTrue(self.event.store_event_query(self.key, new_id, query))
-        self.assertEqual(
-            self.event.get_event_queries(self.key, new_id)[
-                "test_query"
-            ].serialize_to_url(),
-            query.serialize_to_url(),
+        query_id = self.event.store_event_query(
+            self.key,
+            new_id,
+            scope,
+            {"query_name": "test_query", "serialized_query": query.serialize()},
         )
+        self.assertTrue(query_id)
         self.assertEqual(
-            self.event.get_event_queries(
-                self.key,
-                new_id,
-                scopes={QueryScope.registration},
-            )["test_query"].serialize_to_url(),
-            query.serialize_to_url(),
-        )
-        self.assertEqual(
-            self.event.get_event_queries(self.key, new_id, scopes={QueryScope.persona}),
-            {},
+            self.event.get_event_queries(self.key, new_id)[query_id].serialize_to_url(),
+            query.serialize_to_url() | {"query_name": "test_query"},
         )
 
         with self.switch_user("annika"):
@@ -598,6 +590,7 @@ class TestEventBackend(BackendTest):
                         "mailinglists",
                         "event_fees",
                         "caretakers",
+                        "checkin_helpers",
                     ),
                 ),
             )
@@ -2132,7 +2125,7 @@ class TestEventBackend(BackendTest):
         )
 
     @as_users("berta", "emilia", maintain_data=True)
-    def test_get_questionnaire(self) -> None:
+    def test_get_all_questionnaires(self) -> None:
         event_id = 1
         expectation = {
             const.QuestionnaireUsages.registration: [
@@ -2142,7 +2135,6 @@ class TestEventBackend(BackendTest):
                     'info': None,
                     'pos': 0,
                     'readonly': False,
-                    'input_size': None,
                     'title': 'Ich bin unter 13 Jahre alt.',
                     'kind': const.QuestionnaireUsages.registration,
                 },
@@ -2153,8 +2145,7 @@ class TestEventBackend(BackendTest):
                     'default_value': None,
                     'info': 'mit Text darunter',
                     'pos': 0,
-                    'readonly': None,
-                    'input_size': None,
+                    'readonly': False,
                     'title': 'Unterüberschrift',
                     'kind': const.QuestionnaireUsages.additional,
                 },
@@ -2165,7 +2156,6 @@ class TestEventBackend(BackendTest):
                     ' abzuwerfen.',
                     'pos': 1,
                     'readonly': False,
-                    'input_size': None,
                     'title': 'Bälle',
                     'kind': const.QuestionnaireUsages.additional,
                 },
@@ -2174,8 +2164,7 @@ class TestEventBackend(BackendTest):
                     'default_value': None,
                     'info': 'nur etwas Text',
                     'pos': 2,
-                    'readonly': None,
-                    'input_size': None,
+                    'readonly': False,
                     'title': None,
                     'kind': const.QuestionnaireUsages.additional,
                 },
@@ -2184,8 +2173,7 @@ class TestEventBackend(BackendTest):
                     'default_value': None,
                     'info': None,
                     'pos': 3,
-                    'readonly': None,
-                    'input_size': None,
+                    'readonly': False,
                     'title': 'Weitere Überschrift',
                     'kind': const.QuestionnaireUsages.additional,
                 },
@@ -2195,7 +2183,6 @@ class TestEventBackend(BackendTest):
                     'info': None,
                     'pos': 4,
                     'readonly': False,
-                    'input_size': None,
                     'title': 'Vehikel',
                     'kind': const.QuestionnaireUsages.additional,
                 },
@@ -2205,13 +2192,14 @@ class TestEventBackend(BackendTest):
                     'info': None,
                     'pos': 5,
                     'readonly': False,
-                    'input_size': 3,
                     'title': 'Hauswunsch',
                     'kind': const.QuestionnaireUsages.additional,
                 },
             ],
         }
-        self.assertEqual(expectation, self.event.get_questionnaire(self.key, event_id))
+        self.assertEqual(
+            expectation, self.event.get_all_questionnaires(self.key, event_id).as_dict()
+        )
 
     @as_users("annika", "garcia")
     def test_set_questionnaire(self) -> None:
@@ -2227,68 +2215,77 @@ class TestEventBackend(BackendTest):
             },
         }
         self.event.set_event(self.key, event_id, edata)
-        qdata: dict[const.QuestionnaireUsages, list[CdEDBObject]] = {
-            const.QuestionnaireUsages.additional: [
-                {
-                    'field_id': None,
-                    'default_value': None,
-                    'info': None,
-                    'readonly': None,
-                    'input_size': None,
-                    'title': 'Weitere bla Überschrift',
-                },
-                {
-                    'field_id': 2,
-                    'default_value': 'etc',
-                    'info': None,
-                    'readonly': True,
-                    'input_size': None,
-                    'title': 'Vehikel',
-                },
-                {
-                    'field_id': None,
-                    'default_value': None,
-                    'info': 'mit Text darunter und so',
-                    'readonly': None,
-                    'input_size': None,
-                    'title': 'Unterüberschrift',
-                },
-                {
-                    'field_id': 3,
-                    'default_value': None,
-                    'info': None,
-                    'readonly': True,
-                    'input_size': 5,
-                    'title': 'Vehikel',
-                },
-                {
-                    'field_id': None,
-                    'default_value': None,
-                    'info': 'nur etwas mehr Text',
-                    'readonly': None,
-                    'input_size': None,
-                    'title': None,
-                },
-            ],
-            const.QuestionnaireUsages.registration: [
-                {
-                    'field_id': 1001,
-                    'default_value': None,
-                    'info': "Du kannst freiwillig etwas mehr bezahlen um zukünftige"
-                    " Akademien zu unterstützen.",
-                    'readonly': False,
-                    'input_size': None,
-                    'title': "Ich möchte den Solidaritätszuschlag bezahlen.",
-                },
-            ],
+        aq_data: list[CdEDBObject] = [
+            {
+                'field_id': None,
+                'default_value': None,
+                'info': None,
+                'readonly': False,
+                'title': 'Weitere bla Überschrift',
+            },
+            {
+                'field_id': 2,
+                'default_value': 'etc',
+                'info': None,
+                'readonly': True,
+                'title': 'Vehikel',
+            },
+            {
+                'field_id': None,
+                'default_value': None,
+                'info': 'mit Text darunter und so',
+                'readonly': False,
+                'title': 'Unterüberschrift',
+            },
+            {
+                'field_id': 3,
+                'default_value': None,
+                'info': None,
+                'readonly': True,
+                'title': 'Vehikel',
+            },
+            {
+                'field_id': None,
+                'default_value': None,
+                'info': 'nur etwas mehr Text',
+                'readonly': False,
+                'title': None,
+            },
+        ]
+        rq_data: list[CdEDBObject] = [
+            {
+                'field_id': 1001,
+                'default_value': None,
+                'info': "Du kannst freiwillig etwas mehr bezahlen um zukünftige"
+                " Akademien zu unterstützen.",
+                'readonly': False,
+                'title': "Ich möchte den Solidaritätszuschlag bezahlen.",
+            },
+        ]
+        self.assertLess(
+            0,
+            self.event.set_questionnaire(
+                self.key, event_id, const.QuestionnaireUsages.additional, aq_data
+            ),
+        )
+        self.assertLess(
+            0,
+            self.event.set_questionnaire(
+                self.key, event_id, const.QuestionnaireUsages.registration, rq_data
+            ),
+        )
+        for pos, row in enumerate(aq_data):
+            row['pos'] = pos
+            row['kind'] = const.QuestionnaireUsages.additional
+        for pos, row in enumerate(rq_data):
+            row['pos'] = pos
+            row['kind'] = const.QuestionnaireUsages.registration
+        result = self.event.get_all_questionnaires(self.key, event_id)
+        expectation = {
+            const.QuestionnaireUsages.additional: aq_data,
+            const.QuestionnaireUsages.registration: rq_data,
         }
-        self.assertLess(0, self.event.set_questionnaire(self.key, event_id, qdata))
-        for k, v in qdata.items():
-            for pos, row in enumerate(v):
-                row['pos'] = pos
-                row['kind'] = k
-        result = self.event.get_questionnaire(self.key, event_id)
-        self.assertEqual(qdata, result)
+        self.assertEqual(expectation, result.as_dict())
 
     @as_users("annika", "garcia")
     def test_registration_query(self) -> None:
@@ -2690,6 +2687,16 @@ class TestEventBackend(BackendTest):
     def test_store_event_query(self) -> None:
         event_id = 1
         event = self.event.get_event(self.key, event_id)
+
+        def store(query: Query, name: str) -> int:
+            query.query_id = self.event.store_event_query(
+                self.key,
+                event_id,
+                query.scope,
+                {"query_name": name, "serialized_query": query.serialize()},
+            )
+            return query.query_id
+
         # Try storing valid queries.
         expectation = {}
         query = Query(
@@ -2706,10 +2713,10 @@ class TestEventBackend(BackendTest):
             ],
             constraints=[],
             order=[],
-            name="My registration query :)",
         )
-        query.query_id = self.event.store_event_query(self.key, event_id, query)
-        expectation[query.name] = query
+        name = "My registration query :)"
+        store(query, name)
+        expectation[name] = query
         query = Query(
             QueryScope.lodgement,
             QueryScope.lodgement.get_spec(event=event),
@@ -2721,10 +2728,10 @@ class TestEventBackend(BackendTest):
             ],
             constraints=[],
             order=[],
-            name="Lodgement Query with funny symbol: 🏠",
         )
-        query.query_id = self.event.store_event_query(self.key, event_id, query)
-        expectation[query.name] = query
+        name = "Lodgement Query with funny symbol: 🏠"
+        store(query, name)
+        expectation[name] = query
         query = Query(
             QueryScope.event_course,
             QueryScope.event_course.get_spec(event=event),
@@ -2735,13 +2742,14 @@ class TestEventBackend(BackendTest):
             ],
             constraints=[],
             order=[],
-            name="custom_course_query",
         )
-        query.query_id = self.event.store_event_query(self.key, event_id, query)
-        expectation[query.name] = query
+        name = "custom_course_query"
+        store(query, name)
+        expectation[name] = query
 
-        result = self.event.get_event_queries(self.key, event_id)
-        for name, query in result.items():
+        queries = self.event.get_event_queries(self.key, event_id)
+        for stored_query in queries.values():
+            name, query = stored_query.query_name, stored_query.query
             if name != "Test-Query":
                 self.assertIn(name, expectation)
                 q = expectation[name]
@@ -2762,25 +2770,33 @@ class TestEventBackend(BackendTest):
             fields_of_interest=[],
             constraints=[],
             order=[],
-            name="",
         )
+        name = ""
         with self.assertRaises(ValueError) as cm:
-            self.event.store_event_query(self.key, event_id, query)
+            store(query, name)
         self.assertIn(
             "Invalid input for the enumeration %(enum)s (scope)", cm.exception.args
         )
+
         query.scope = QueryScope.persona
         with self.assertRaises(ValueError) as cm:
-            self.event.store_event_query(self.key, event_id, query)
-        self.assertIn("Must not be empty. (fields_of_interest)", cm.exception.args)
-        query.fields_of_interest = ["persona.id"]
-        with self.assertRaises(ValueError) as cm:
-            self.event.store_event_query(self.key, event_id, query)
+            store(query, name)
         self.assertIn("Cannot store this kind of query.", cm.exception.args)
+
         query.scope = QueryScope.registration
-        self.assertFalse(self.event.store_event_query(self.key, event_id, query))
-        query.name = "test"
-        self.assertTrue(self.event.store_event_query(self.key, event_id, query))
+        with self.assertRaises(ValueError) as cm:
+            store(query, name)
+        self.assertIn("Must not be empty. (query_name)", cm.exception.args)
+
+        name = "test"
+        with self.assertRaises(ValueError) as cm:
+            store(query, name)
+        self.assertIn(
+            "Selection may not be empty. (serialized_query)", cm.exception.args
+        )
+
+        query.fields_of_interest = ["persona.id"]
+        self.assertTrue(store(query, name))
 
         # Store a query using a custom datafield using a datatype specific comparison.
         field_data = {
@@ -2802,10 +2818,10 @@ class TestEventBackend(BackendTest):
             ["reg_fields.xfield_foo"],
             [("reg_fields.xfield_foo", QueryOperators.equal, "foo")],
             [],
-            name="foo_string",
         )
-        self.assertTrue(self.event.store_event_query(self.key, event_id, query))
-        self.assertIn(query.name, self.event.get_event_queries(self.key, event_id))
+        name = "foo_string"
+        query_id = store(query, name)
+        self.assertIn(query.query_id, self.event.get_event_queries(self.key, event_id))
 
         # Now change the datatype of that field.
         field_data["kind"] = const.FieldDatatypes.date
@@ -2815,14 +2831,18 @@ class TestEventBackend(BackendTest):
         self.event.set_event(self.key, event_id, event_data)
 
         # The query can no longer be retrieved.
-        self.assertNotIn(query.name, self.event.get_event_queries(self.key, event_id))
+        stored_query = self.event.get_event_queries(self.key, event_id)[query_id]
+        self.assertIsNone(stored_query.query)
+        self.assertTrue(stored_query.errors)
 
         # Change the field back.
         field_data["kind"] = const.FieldDatatypes.str
         self.event.set_event(self.key, event_id, event_data)
 
         # The query is valid again.
-        self.assertIn(query.name, self.event.get_event_queries(self.key, event_id))
+        self.assertIsNotNone(
+            self.event.get_event_queries(self.key, event_id)[query_id].query
+        )
 
     @event_keeper
     @as_users("annika", "garcia")
@@ -2915,6 +2935,9 @@ class TestEventBackend(BackendTest):
             expectation = self.cleanup_event_export(json.load(f))
         expectation['timestamp'] = nearly_now()
         expectation['event']['caretakers'] = set(expectation['event']['caretakers'])
+        expectation['event']['checkin_helpers'] = set(
+            expectation['event']['checkin_helpers']
+        )
         for reg in expectation['registrations'].values():
             reg['ctime'] = nearly_now()
             reg['mtime'] = None
@@ -3275,7 +3298,9 @@ class TestEventBackend(BackendTest):
                 'code': const.EventLogCodes.event_partial_import,
             },
         ]
-        self.assertLogEqual(log_expectation, event_id=1, realm="event", offset=11)
+        self.assertLogEqual(
+            log_expectation, event_id=1, realm="event", offset=self.EVENT_LOG_OFFSET
+        )
 
     @storage
     @event_keeper
@@ -3817,24 +3842,24 @@ class TestEventBackend(BackendTest):
     def test_set_event_orgas(self) -> None:
         event_id = 1
         self.assertEqual({7}, self.event.get_event(self.key, event_id).orgas)
-        self.assertLess(0, self.event.add_event_orgas(self.key, event_id, {1}))
+        self.assertLess(0, self.event.add_event_roles(self.key, event_id, {1}, 'orga'))
         self.assertEqual({1, 7}, self.event.get_event(self.key, event_id).orgas)
-        self.assertLess(0, self.event.remove_event_orga(self.key, event_id, 1))
-        self.assertLess(0, self.event.add_event_orgas(self.key, event_id, {1}))
+        self.assertLess(0, self.event.remove_event_role(self.key, event_id, 1, 'orga'))
+        self.assertLess(0, self.event.add_event_roles(self.key, event_id, {1}, 'orga'))
         self.assertEqual({1, 7}, self.event.get_event(self.key, event_id).orgas)
 
         with self.assertRaises(ValueError) as cm:
-            self.event.add_event_orgas(self.key, event_id, {8})
+            self.event.add_event_roles(self.key, event_id, {8}, 'orga')
         self.assertIn(
             "Some of these personas do not exist or are archived.", cm.exception.args
         )
         with self.assertRaises(ValueError) as cm:
-            self.event.add_event_orgas(self.key, event_id, {1000})
+            self.event.add_event_roles(self.key, event_id, {1000}, 'orga')
         self.assertIn(
             "Some of these personas do not exist or are archived.", cm.exception.args
         )
         with self.assertRaises(ValueError) as cm:
-            self.event.add_event_orgas(self.key, event_id, {11})
+            self.event.add_event_roles(self.key, event_id, {11}, 'orga')
         self.assertIn("Some of these personas are not event users.", cm.exception.args)
 
     @event_keeper
@@ -3912,6 +3937,13 @@ class TestEventBackend(BackendTest):
                 "persona_id": 2,
                 "submitted_by": 1,
                 "change_note": "23.02.2022, 10:00:00",
+            },
+            {
+                'code': const.EventLogCodes.checkin_helper_added,
+                'event_id': 1,
+                'persona_id': 38,
+                'submitted_by': 7,
+                'change_note': None,
             },
         )
 
@@ -4074,8 +4106,8 @@ class TestEventBackend(BackendTest):
             ],
             'checkin': True,
         }
-        self.event.add_event_orgas(self.key, new_id, {2, 1})
-        self.event.remove_event_orga(self.key, new_id, 2)
+        self.event.add_event_roles(self.key, new_id, {2, 1}, 'orga')
+        self.event.remove_event_role(self.key, new_id, 2, 'orga')
         self.event.set_event(
             self.key,
             new_id,
@@ -4207,56 +4239,51 @@ class TestEventBackend(BackendTest):
         }
         self.event.set_lodgement(self.key, new_id, update)
         self.event.delete_lodgement(self.key, new_id)
-        data: dict[const.QuestionnaireUsages, list[CdEDBObject]] = {
-            const.QuestionnaireUsages.additional: [
-                {
-                    'field_id': None,
-                    'default_value': None,
-                    'info': None,
-                    'readonly': None,
-                    'input_size': None,
-                    'title': 'Weitere bla Überschrift',
-                    'kind': const.QuestionnaireUsages.additional,
-                },
-                {
-                    'field_id': 2,
-                    'default_value': 'etc',
-                    'info': None,
-                    'readonly': True,
-                    'input_size': None,
-                    'title': 'Vehikel',
-                    'kind': const.QuestionnaireUsages.additional,
-                },
-                {
-                    'field_id': None,
-                    'default_value': None,
-                    'info': 'mit Text darunter und so',
-                    'readonly': None,
-                    'input_size': None,
-                    'title': 'Unterüberschrift',
-                    'kind': const.QuestionnaireUsages.additional,
-                },
-                {
-                    'field_id': 3,
-                    'default_value': None,
-                    'info': None,
-                    'readonly': True,
-                    'input_size': 5,
-                    'title': 'Vehikel',
-                    'kind': const.QuestionnaireUsages.additional,
-                },
-                {
-                    'field_id': None,
-                    'default_value': None,
-                    'info': 'nur etwas mehr Text',
-                    'readonly': None,
-                    'input_size': None,
-                    'title': None,
-                    'kind': const.QuestionnaireUsages.additional,
-                },
-            ],
-        }
-        self.event.set_questionnaire(self.key, 1, data)
+        data: list[CdEDBObject] = [
+            {
+                'field_id': None,
+                'default_value': None,
+                'info': None,
+                'readonly': False,
+                'title': 'Weitere bla Überschrift',
+                'kind': const.QuestionnaireUsages.additional,
+            },
+            {
+                'field_id': 2,
+                'default_value': 'etc',
+                'info': None,
+                'readonly': True,
+                'title': 'Vehikel',
+                'kind': const.QuestionnaireUsages.additional,
+            },
+            {
+                'field_id': None,
+                'default_value': None,
+                'info': 'mit Text darunter und so',
+                'readonly': False,
+                'title': 'Unterüberschrift',
+                'kind': const.QuestionnaireUsages.additional,
+            },
+            {
+                'field_id': 3,
+                'default_value': None,
+                'info': None,
+                'readonly': True,
+                'title': 'Vehikel',
+                'kind': const.QuestionnaireUsages.additional,
+            },
+            {
+                'field_id': None,
+                'default_value': None,
+                'info': 'nur etwas mehr Text',
+                'readonly': False,
+                'title': None,
+                'kind': const.QuestionnaireUsages.additional,
+            },
+        ]
+        self.event.set_questionnaire(
+            self.key, 1, const.QuestionnaireUsages.additional, data
+        )
 
         # now check it
         expectation = (

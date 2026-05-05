@@ -18,7 +18,7 @@ with script:
         event_ids = event.list_events(rs, archived=True)
         for event_id in event_ids:
             aq = const.QuestionnaireUsages.additional
-            questionnaire = event.get_questionnaire(rs, event_id, [aq])[aq]
-            for entry in questionnaire:
-                entry['readonly'] = True
-            event.set_questionnaire(rs, event_id, {aq: questionnaire})
+            questionnaire = event.get_all_questionnaires(rs, event_id)[aq]
+            for entry in questionnaire.field_rows:
+                entry.readonly = True
+            event.set_questionnaire(rs, event_id, aq, questionnaire.as_dicts())

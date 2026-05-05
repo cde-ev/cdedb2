@@ -589,7 +589,7 @@ CREATE TABLE complaint.entry_versions (
         -- indicated that the entry version was purged.
         marked_for_purge        timestamp WITH TIME ZONE DEFAULT NULL,
         purged_by               integer REFERENCES core.personas(id),
-        CONSTRAINT complaint_entry_marked_for_purge_by
+        CONSTRAINT complaint_entry_version_marked_for_purge_by
             CHECK ((marked_for_purge IS NULL) = (purged_by IS NULL)),
         is_purged               boolean NOT NULL DEFAULT False,
         CONSTRAINT complaint_entry_purged
@@ -1193,6 +1193,17 @@ GRANT INSERT, DELETE ON event.caretakers TO cdb_admin;
 GRANT SELECT, UPDATE ON event.caretakers_id_seq TO cdb_admin;
 GRANT SELECT ON event.caretakers TO cdb_anonymous, cdb_ldap;
 
+CREATE TABLE event.checkin_helpers (
+        id                      serial PRIMARY KEY,
+        persona_id              integer NOT NULL REFERENCES core.personas(id),
+        event_id                integer NOT NULL REFERENCES event.events(id),
+        UNIQUE (persona_id, event_id)
+);
+CREATE INDEX checkin_helpers_id_idx ON event.checkin_helpers(event_id);
+GRANT INSERT, DELETE ON event.checkin_helpers TO cdb_persona;
+GRANT SELECT, UPDATE ON event.checkin_helpers_id_seq TO cdb_persona;
+GRANT SELECT ON event.checkin_helpers TO cdb_anonymous, cdb_ldap;
+
 CREATE TABLE event.helpers (
         id                      serial PRIMARY KEY,
         persona_id              integer UNIQUE NOT NULL REFERENCES core.personas(id)
@@ -1365,11 +1376,8 @@ CREATE TABLE event.questionnaire_rows (
         pos                     integer NOT NULL,
         title                   varchar,
         info                    varchar,
-        input_size              integer,
         -- This must be NULL exactly for text-only entries.
-        readonly                boolean,
-        CONSTRAINT questionnaire_row_readonly_field
-            CHECK ((field_id IS NULL) = (readonly IS NULL)),
+        readonly                boolean NOT NULL,
         default_value           varchar,
         -- Where the row will be used (registration, questionnaire). See cdedb.constants.QuestionnaireUsages.
         kind                    integer NOT NULL
@@ -1585,6 +1593,7 @@ CREATE TABLE assembly.attachment_versions (
         title                   varchar,
         authors                 varchar,
         filename                varchar,
+        changenotes             varchar,
         ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
         dtime                   timestamp WITH TIME ZONE DEFAULT NULL,
         -- Store the hash of the file for comparison and proof.
@@ -1592,7 +1601,7 @@ CREATE TABLE assembly.attachment_versions (
         UNIQUE (attachment_id, version_nr)
 );
 GRANT SELECT, INSERT, DELETE ON assembly.attachment_versions TO cdb_member;
-GRANT UPDATE (title, authors, filename, dtime) ON assembly.attachment_versions TO cdb_member;
+GRANT UPDATE (title, authors, filename, changenotes, dtime) ON assembly.attachment_versions TO cdb_member;
 GRANT SELECT, UPDATE on assembly.attachment_versions_id_seq TO cdb_member;
 
 CREATE TABLE assembly.attachment_ballot_links (
@@ -1679,7 +1688,7 @@ CREATE TABLE ml.mailinglists (
         -- assembly_id is not NULL if associated to an assembly
         assembly_id             integer REFERENCES assembly.assemblies(id)
 );
-GRANT SELECT (id, address, title) ON ml.mailinglists TO cdb_ldap;
+GRANT SELECT (id, address, title, ml_type, is_active) ON ml.mailinglists TO cdb_ldap;
 GRANT INSERT, SELECT, UPDATE ON ml.mailinglists TO cdb_persona;
 GRANT DELETE ON ml.mailinglists TO cdb_admin;
 GRANT SELECT, UPDATE ON ml.mailinglists_id_seq TO cdb_persona;

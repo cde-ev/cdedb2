@@ -208,11 +208,13 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
                 self.assemblyproxy.get_ballots(rs, (source_id,)) or None
             )
             if source_ballot:
-                merge_dicts(rs.values, source_ballot)
-                # Multiselects work differently from multiple checkboxes, so
-                #  merge_dicts does the wrong thing here (setlist).
-                rs.values['linked_attachments'] = self.assemblyproxy.list_attachments(
+                source_attachments = self.assemblyproxy.list_attachments(
                     rs, ballot_id=source_id
+                )
+                merge_dicts(
+                    rs.values,
+                    source_ballot,
+                    {"linked_attachments": list(source_attachments)},
                 )
             # If the ballot does not exist or is not accessible, show a warning instead.
             else:
@@ -778,7 +780,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         latest_attachments = self.assemblyproxy.list_attachments(
             rs, ballot_id=ballot_id
         )
-        rs.values["linked_attachments"] = list(latest_attachments)
+        rs.values.setlist("linked_attachments", list(latest_attachments))
         merge_dicts(rs.values, rs.ambience['ballot'])
 
         return self.render(

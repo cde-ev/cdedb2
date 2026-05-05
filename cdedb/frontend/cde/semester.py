@@ -131,7 +131,7 @@ class CdESemesterMixin(CdEBaseFrontend):
                 # Send mail only if transaction completed successfully.
                 if persona:
                     lastschrift_list = self.cdeproxy.list_lastschrift(
-                        rrs, persona_ids=(persona['id'],)
+                        rrs, persona_ids=(persona.id,)
                     )
                     lastschrift = None
                     if lastschrift_list:
@@ -139,15 +139,14 @@ class CdESemesterMixin(CdEBaseFrontend):
                             rrs, unwrap(lastschrift_list.keys())
                         )
                         lastschrift['reference'] = lastschrift_reference(
-                            persona['id'], lastschrift['id']
+                            persona.id, lastschrift['id']
                         )
 
-                    address = make_postal_address(rrs, persona)
-                    transaction_subject = make_membership_fee_reference(persona)
+                    address = make_postal_address(rrs, persona.as_dict())
                     endangered = (
-                        persona['balance'] < self.conf["MEMBERSHIP_FEE"]
-                        and not persona['trial_member']
-                        and not persona['honorary_member']
+                        persona.balance < self.conf["MEMBERSHIP_FEE"]
+                        and not persona.trial_member
+                        and not persona.honorary_member
                         and not lastschrift
                     )
                     if endangered:
@@ -158,7 +157,7 @@ class CdESemesterMixin(CdEBaseFrontend):
                     self.do_mail(
                         rrs,
                         "semester/billing",
-                        {'To': (persona['username'],), 'Subject': subject},
+                        {'To': (persona.username,), 'Subject': subject},
                         {
                             'persona': persona,
                             'fee': self.conf["MEMBERSHIP_FEE"],
@@ -166,7 +165,6 @@ class CdESemesterMixin(CdEBaseFrontend):
                             'lastschrift': lastschrift,
                             'open_lastschrift': open_lastschrift,
                             'address': address,
-                            'transaction_subject': transaction_subject,
                             'addresscheck': addresscheck,
                             'meta_info': meta_info,
                         },
@@ -247,19 +245,17 @@ class CdESemesterMixin(CdEBaseFrontend):
                 )
 
                 if persona:
-                    transaction_subject = make_membership_fee_reference(persona)
                     meta_info = self.coreproxy.get_meta_info(rrs)
                     self.do_mail(
                         rrs,
                         "semester/ejection",
                         {
-                            'To': (persona['username'],),
+                            'To': (persona.username,),
                             'Subject': "Austritt aus dem CdE e.V.",
                         },
                         {
                             'persona': persona,
                             'fee': self.conf["MEMBERSHIP_FEE"],
-                            'transaction_subject': transaction_subject,
                             'meta_info': meta_info,
                         },
                     )
@@ -358,12 +354,12 @@ class CdESemesterMixin(CdEBaseFrontend):
                     rrs, expuls_id, testrun
                 )
                 if persona:
-                    address = make_postal_address(rrs, persona)
+                    address = make_postal_address(rrs, persona.as_dict())
                     self.do_mail(
                         rrs,
                         "semester/addresscheck",
                         {
-                            'To': (persona['username'],),
+                            'To': (persona.username,),
                             'Subject': "Adressabfrage für den exPuls",
                         },
                         {'persona': persona, 'address': address},

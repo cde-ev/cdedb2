@@ -8,7 +8,6 @@ for managing registrations both by orgas and participants.
 import csv
 import datetime
 import decimal
-import io
 import itertools
 from collections import OrderedDict
 from collections.abc import Collection
@@ -40,7 +39,6 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import EventIsBalancedError
 from cdedb.common.n_ import n_
-from cdedb.common.parse.util import Accounts
 from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
@@ -54,6 +52,7 @@ from cdedb.frontend.common import (
     access,
     cdedbid_filter,
     check_validation as check,
+    make_epc_qr,
     make_event_fee_reference,
     periodic,
     request_extractor,
@@ -378,11 +377,9 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         course_choice_params = self.get_course_choice_params(rs, event_id, orga=False)
 
-        reg_questionnaire = unwrap(
-            self.eventproxy.get_questionnaire(
-                rs, event_id, kinds=(const.QuestionnaireUsages.registration,)
-            )
-        )
+        reg_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[
+            const.QuestionnaireUsages.registration
+        ]
         return self.render(
             rs,
             "registration/register",
@@ -530,7 +527,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         parts: Optional[CdEDBObjectMap] = None,
         check_enabled: bool = False,
     ) -> CdEDBObject:
-        """Helper to retrieve input data for e registration and convert it into a
+        """Helper to retrieve input data for a registration and convert it into a
         registration dict that can be used for `create_registration` or
         `set_registration`.
 
@@ -758,10 +755,18 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         # Custom data field data:
         if orga_input:
+            # Prefilter based on privileges, otherwise fields not shown in template
+            # are deleted.
+            field_ids = None
+            if not self.is_privileged(rs, EventPrivileges.registrations_read):
+                field_ids = {
+                    field.id for field in event.fields.values() if field.checkin
+                }
             registration["fields"] = event_associated_fields_extractor(
                 rs,
                 rs.ambience["event"],
                 const.FieldAssociations.registration,
+                field_ids,
                 filter_params=filter_params,
             )
         else:
@@ -777,7 +782,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 if field.kind == const.FieldDatatypes.bool and not field.entries:
                     # Skip checkboxes
                     continue
-                if field.kind == const.FieldDatatypes.str and not field.entries:
+                if field.kind.is_str and not field.entries:
                     # Skip text inputs with no choices.
                     continue
                 # questionnaire_fields contains validated values.
@@ -985,11 +990,9 @@ class EventRegistrationMixin(EventBaseFrontend):
             for part in xsorted(rs.ambience['event'].parts.values())
             if part.id in registration['parts']
         )
-        reg_questionnaire = unwrap(
-            self.eventproxy.get_questionnaire(
-                rs, event_id, (const.QuestionnaireUsages.registration,)
-            )
-        )
+        reg_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[
+            const.QuestionnaireUsages.registration
+        ]
         waitlist_position = self.eventproxy.get_waitlist_position(
             rs, event_id, persona_id=rs.user.persona_id
         )
@@ -1108,11 +1111,9 @@ class EventRegistrationMixin(EventBaseFrontend):
             if reg_part['status'].has_to_pay()
         }
 
-        reg_questionnaire = unwrap(
-            self.eventproxy.get_questionnaire(
-                rs, event_id, kinds=(const.QuestionnaireUsages.registration,)
-            )
-        )
+        reg_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[
+            const.QuestionnaireUsages.registration
+        ]
         course_choice_params = self.get_course_choice_params(rs, event_id, orga=False)
         return self.render(
             rs,
@@ -1177,27 +1178,33 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.redirect(rs, "event/registration_status")
 
     @access("event")
-    @event_guard(EventPrivileges.registrations_read)
+    @event_guard(EventPrivileges.registrations_read, EventPrivileges.checkin)
     def show_registration(
         self, rs: RequestState, event_id: int, registration_id: int
     ) -> Response:
         """Display all information pertaining to one registration."""
+        is_restricted = not self.is_privileged(rs, EventPrivileges.registrations_read)
         payment_data = self._get_payment_data(rs, event_id, registration_id)
         persona = payment_data.pop('persona')
         age = determine_age_class(persona['birthday'], rs.ambience['event'].begin)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
-        waitlist_position = self.eventproxy.get_waitlist_position(
-            rs, event_id, persona_id=persona['id']
-        )
-        constraint_violations = self.get_constraint_violations(
-            rs, rs.ambience['event'], registration_id=registration_id, course_id=-1
-        )
+
+        waitlist_position = None
+        constraint_violations = None
+        if not is_restricted:
+            waitlist_position = self.eventproxy.get_waitlist_position(
+                rs, event_id, persona_id=persona['id']
+            )
+            constraint_violations = self.get_constraint_violations(
+                rs, rs.ambience['event'], registration_id=registration_id, course_id=-1
+            )
         course_choice_parameters = self.get_course_choice_params(rs, event_id)
         return self.render(
             rs,
             "registration/show_registration",
             {
+                'is_restricted': is_restricted,
                 'persona': persona,
                 'age': age,
                 'lodgements': lodgements,
@@ -1277,7 +1284,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             data,
             current=None,
             event=rs.ambience['event'],
-            questionnaire={},
+            all_questionnaires={},
             personalized=True,
         )
         if rs.has_validation_errors() or not fee_data:
@@ -1486,7 +1493,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.redirect(rs, "event/fee_summary")
 
     @access("event")
-    @event_guard(EventPrivileges.registrations_write)
+    @event_guard(EventPrivileges.registrations_write, EventPrivileges.checkin)
     @REQUESTdata("change_note")
     def change_registration_form(
         self,
@@ -1503,6 +1510,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         """
         if rs.has_validation_errors() and not internal:
             return self.redirect(rs, 'event/show_registration')
+        is_restricted = not self.is_privileged(rs, EventPrivileges.registrations_read)
         registration = rs.ambience['registration']
         persona = self.coreproxy.get_event_user(
             rs, registration['persona_id'], event_id
@@ -1519,6 +1527,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs,
             "registration/change_registration",
             {
+                'is_restricted': is_restricted,
                 'persona': persona,
                 'lodgements': lodgements,
                 'change_note': change_note,
@@ -1527,7 +1536,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write)
+    @event_guard(EventPrivileges.registrations_write, EventPrivileges.checkin)
     @REQUESTdata("change_note")
     def change_registration(
         self,
@@ -1839,7 +1848,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         return self.redirect(rs, scope.get_target(), query.serialize_to_url())
 
     @access("event")
-    @event_guard(EventPrivileges.registrations_write)
+    @event_guard(EventPrivileges.checkin)
     @REQUESTdata("part_ids", "checkout")
     def checkin_form(
         self,
@@ -1909,7 +1918,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write)
+    @event_guard(EventPrivileges.checkin)
     @REQUESTdata("from_checkin_page", "part_ids")
     def add_checkin(
         self,
@@ -1943,7 +1952,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write)
+    @event_guard(EventPrivileges.checkin)
     @REQUESTdata("from_checkin_page", "part_ids")
     def add_checkout(
         self,
@@ -1976,7 +1985,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
 
     @access('event', modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write)
+    @event_guard(EventPrivileges.checkin)
     @REQUESTdata("checkin_time", "checkout_time")
     def add_backdated_checkin_period(
         self,
@@ -2059,7 +2068,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
 
     @access('event', modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write)
+    @event_guard(EventPrivileges.checkin)
     @REQUESTdata("period_id")
     def change_checkin_period(
         self,
@@ -2131,7 +2140,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
 
     @access('event', modi={"POST"})
-    @event_guard(EventPrivileges.registrations_write)
+    @event_guard(EventPrivileges.checkin)
     @REQUESTdata("period_id")
     def delete_checkin_period(
         self,
@@ -2531,36 +2540,60 @@ class EventRegistrationMixin(EventBaseFrontend):
         }
 
     @access("event")
-    def registration_fee_qr(self, rs: RequestState, event_id: int) -> Response:
-        payment_data = self._get_payment_data(rs, event_id)
-        if not payment_data:
-            return self.redirect(rs, "event/show_event")
+    def registration_fee_qr(
+        self, rs: RequestState, event_id: int, registration_id: int
+    ) -> Response:
+        # Attempting to access a registration one isn't allowed to will have already
+        #  raised a PrivilegeError.
+        payment_data = self._get_payment_data(rs, event_id, registration_id)
+        if not payment_data["account"]:
+            raise werkzeug.exceptions.BadRequest(n_("No IBAN set."))
+
         qrcode = self._registration_fee_qr(payment_data)
-        if not qrcode:
-            return self.redirect(rs, "event/show_event")
+        return self.serve_qrcode(rs, qrcode)
 
-        buffer = io.BytesIO()
-        qrcode.save(buffer, kind='svg', scale=4)
+    def _registration_fee_qr(self, payment_data: CdEDBObject) -> segno.QRCode:
+        account = payment_data["account"]
+        if not account:
+            raise RuntimeError(n_("No IBAN set."))
+        return make_epc_qr(
+            account=account,
+            reference=payment_data["reference"],
+            amount=payment_data["to_pay"],
+        )
 
-        return self.send_file(rs, afile=buffer, mimetype="image/svg+xml")
+    @access("event")
+    @event_guard(EventPrivileges.basic_read)
+    @REQUESTdata("reference", "amount")
+    def event_payment_qrcode(
+        self,
+        rs: RequestState,
+        event_id: int,
+        reference: str,
+        amount: decimal.Decimal | None,
+    ) -> Response:
+        account = rs.ambience["event"].iban
+        if not account:
+            raise werkzeug.exceptions.BadRequest(n_("No IBAN set."))
+        if not reference:
+            reference = rs.ambience["event"].title
+        rs.ignore_validation_errors()
 
-    @staticmethod
-    def _registration_fee_qr_data(payment_data: CdEDBObject) -> Optional[CdEDBObject]:
-        if not payment_data['account']:
-            return None
-        # Ensure that the "free-"text parts are not too long. The exact size is limited
-        # by third parties.
-        account: Accounts = payment_data['account']
-        return {
-            'name': account.get_account_holder()[:70],
-            'text': payment_data['reference'][:140],
-            'amount': payment_data['to_pay'],
-            'iban': account.get_iban(),
-            'bic': account.get_bic(),
-        }
+        qrcode = make_epc_qr(account, reference, amount=amount)
+        return self.serve_qrcode(rs, qrcode)
 
-    def _registration_fee_qr(self, payment_data: CdEDBObject) -> Optional[segno.QRCode]:
-        data = self._registration_fee_qr_data(payment_data)
-        if not data:
-            return None
-        return segno.helpers.make_epc_qr(**data)
+    @access("event")
+    @event_guard(EventPrivileges.basic_read)
+    @REQUESTdata("reference", "amount")
+    def event_payment(
+        self,
+        rs: RequestState,
+        event_id: int,
+        reference: str | None,
+        amount: decimal.Decimal | None,
+    ) -> Response:
+        rs.ignore_validation_errors()
+        if not rs.ambience["event"].iban:
+            rs.notify("error", n_("No IBAN set."))
+            return self.redirect(rs, 'event/show_event')
+        return self.render(rs, "registration/payment")

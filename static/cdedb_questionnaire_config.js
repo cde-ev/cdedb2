@@ -98,8 +98,6 @@ var inputTypes = {
         $(this).each(function(){
             var $container = $(this);
             var $input_field = $(this).find('.input-field');
-            var $input_size = $(this).find('.input-inputsize');
-            var $input_group_size = $input_size.closest('.form-group');
             var $input_group_readonly = $(this).find('.input-readonly').closest('.checkbox');
             var $input_group_defaultvalue = $(this).find('.input-defaultvalue').closest('.form-group');
             var $input_helpblock_info = $(this).find('.input-info').closest('.form-group').find('.help-block');
@@ -109,7 +107,6 @@ var inputTypes = {
                 var val = $(this).val();
                 /* Text-only questionnaire part */
                 if (val === '') {
-                    $input_group_size.hide();
                     $input_group_readonly.hide();
                     $input_group_defaultvalue.hide();
                     $input_helpblock_info.show();
@@ -122,19 +119,11 @@ var inputTypes = {
                     $input_helpblock_info.hide();
                     $container.removeClass('shaded-info');
 
-                    // Show input_size field only for string fields without entries
-                    if (field_list[val] &&
-                           (field_list[val]['kind'] !== FieldDatatypes.str || field_list[val]['entries'])) {
-                        $input_group_size.hide();
-                    } else {
-                        $input_group_size.show();
-                    }
-
                     // Change default_value input field's type and attributes according to selected field's type
                     var field_spec = field_list[val];
                     if (field_spec) {
                         var $input_defaultvalue = $container.find('.input-defaultvalue');
-                        replace_defaultvalue_input(field_spec, $input_defaultvalue, translations, $input_size.val());
+                        replace_defaultvalue_input(field_spec, $input_defaultvalue, translations);
                     }
                 }
             };
@@ -142,15 +131,6 @@ var inputTypes = {
             /* Call input_field_handler() on change of field-input and once for intialization */
             $input_field.on("change", input_field_handler);
             $input_field.trigger("change");
-
-            /* Additionally, call replace_defaultvalue_input when size-field is changed */
-            $input_size.on("change", function(){
-                var field_spec = field_list[$input_field.val()];
-                if (field_spec) {
-                    var $input_defaultvalue = $container.find('.input-defaultvalue');
-                    replace_defaultvalue_input(field_spec, $input_defaultvalue, translations, $(this).val());
-                }
-            });
         });
 
         return this;

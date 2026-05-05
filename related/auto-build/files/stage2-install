@@ -11,7 +11,7 @@ echo "--------------------------------------------"
 # dPROD different ssh keys
 mkdir -p /etc/ssh
 chmod 755 /etc/ssh
-cp /media/cdrom0/ssh_host* /etc/ssh
+cp /media/cdrom0/ssh_host/* /etc/ssh/
 chmod 600 /etc/ssh/ssh_host*
 chmod 644 /etc/ssh/ssh_host*.pub
 
@@ -57,7 +57,11 @@ echo "--------------------------------------------"
 # this is categorized into
 # - devtools
 # - runtime dependencies (app, postgres, latex)
-# - playwright dependencies
+# - python package dependencies:
+#   - building/running pyicu: g++ pkg-config python3-dev libicu-dev
+#   - building/running graphviz: graphviz
+#   - building/running python-magic: libmagic1
+#   - building/running python-systemd: libsystemd-dev
 apt-get install --yes --no-install-recommends                       \
     openssh-server sudo git file mc emacs-nox vim htop make gettext \
     \
@@ -74,26 +78,39 @@ apt-get install --yes --no-install-recommends                       \
     \
     python3-pip                                                     \
     \
-    g++ pkg-config graphviz libmagic1                               \
-    python3-dev libicu-dev libsystemd-dev libjpeg-dev libxml2-dev   \
-    libxslt1-dev libpq-dev
+    g++ pkg-config python3-dev libicu-dev                           \
+    \
+    graphviz                                                        \
+    \
+    libmagic1                                                       \
+    \
+    libsystemd-dev
 
-python3 -m pip install --break-system-packages uv
-cat >> ~/.bashrc << EOF
+python3 -m pip install "uv>=0.11.8" --break-system-packages
 
-eval "$(uv generate-shell-completion bash)"
-eval "$(uvx --generate-shell-completion bash)"
-EOF
+echo "Setting up uv shell-completion and python directory for root"
+cat /media/cdrom0/root-bashrc >> /root/.bashrc
+
+echo "Setting up uv shell-completion and python directory for root"
+cat /media/cdrom0/root-bashrc >> /root/.bashrc
+
+echo "Creating global uv config"
+mkdir -p /etc/uv
+cp /media/cdrom0/etc-uv.toml /etc/uv/uv.toml
+
+echo "Creating root uv config"
+mkdir -p /root/.config/uv
+cp /media/cdrom0/root-uv.toml /root/.config/uv/uv.toml
 
 for file in /var/cache/apt/archives/*.deb
 do
-  shred --iteration=0 --zero --remove $file
+  shred --iteration=0 --zero --remove "$file"
 done
 
 echo ""
 echo "We do not initialize playwright as this consumes lots of space."
 echo "To do so later run the following command as user cdedb:"
-echo "uv playwright install --with-deps"
+echo "sudo uv run playwright install --with-deps"
 echo "This matters only when executing the test suite and in that case"
 echo "will fail with a helpful error message."
 
@@ -115,10 +132,10 @@ groupadd --system www-cde
 useradd --system -g www-cde --create-home www-cde
 
 # dPROD allow empty passwords
-echo "PermitEmptyPasswords yes" >> /etc/ssh/sshd_config
+echo -e "\nPermitEmptyPasswords yes" >> /etc/ssh/sshd_config
 
 sudo -u cdedb touch /home/cdedb/.bashrc
-cat >> /home/cdedb/.bashrc << EOF
+cat >> /home/cdedb/.bashrc << 'EOF'
 
 eval "$(uv generate-shell-completion bash)"
 eval "$(uvx --generate-shell-completion bash)"
@@ -127,6 +144,9 @@ EOF
 sudo -u cdedb touch /home/cdedb/.bash_profile
 cat >> /home/cdedb/.bash_profile << EOF
 
+if [ -f ~/.bashrc ]; then
+  . ~/.bashrc
+fi
 cd /cdedb2
 EOF
 sudo -u cdedb touch /home/cdedb/.bash_aliases
@@ -157,11 +177,9 @@ echo "--------------------------"
 mkdir -p /home/cdedb/.ssh
 chmod 755 /home/cdedb/.ssh
 # dPROD different ssh keys
-cp /media/cdrom0/ssh_user_key /home/cdedb/.ssh/id_deploy
-cp /media/cdrom0/ssh_user_key.pub /home/cdedb/.ssh/id_deploy.pub
-cp /media/cdrom0/ssh_user_known_hosts /home/cdedb/.ssh/known_hosts
-chmod 600 /home/cdedb/.ssh/id_deploy
-chmod 644 /home/cdedb/.ssh/id_deploy.pub
+cp /media/cdrom0/ssh_user/* /home/cdedb/.ssh/
+chmod 600 /home/cdedb/.ssh/id_*
+chmod 644 /home/cdedb/.ssh/id_*.pub
 chown -R cdedb:cdedb /home/cdedb/.ssh/
 
 echo ""

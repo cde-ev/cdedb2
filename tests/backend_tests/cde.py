@@ -28,13 +28,13 @@ class TestCdEBackend(BackendTest):
 
     @as_users("berta", "vera", maintain_data=True)
     def test_basics(self) -> None:
-        data = self.core.get_cde_user(self.key, self.user['id'])
+        data = self.core.get_cde_user(self.key, self.user['id']).as_dict()
         data['nickname'] = "Zelda"
         setter = {k: v for k, v in data.items() if k in {'id', 'nickname', 'telephone'}}
         generation = self.core.changelog_get_generation(self.key, self.user['id'])
         num = self.core.change_persona(self.key, setter, generation, change_note='note')
         self.assertEqual(1, num)
-        new_data = self.core.get_cde_user(self.key, self.user['id'])
+        new_data = self.core.get_cde_user(self.key, self.user['id']).as_dict()
         self.assertEqual(data, new_data)
 
     @as_users("berta")
@@ -86,12 +86,12 @@ class TestCdEBackend(BackendTest):
         self.login(newuser)
         self.assertTrue(self.user_in(newuser))
         data = self.core.get_cde_user(self.key, newuser['id'])
-        self.assertEqual(self.user['family_name'], data['family_name'])
+        self.assertEqual(self.user['family_name'], data.family_name)
         self.logout()
         self.login("vera")
         self.core.changelog_resolve_change(self.key, newuser['id'], 4, ack=True)
         data = self.core.get_cde_user(self.key, newuser['id'])
-        self.assertEqual("Link", data['family_name'])
+        self.assertEqual("Link", data.family_name)
 
     @as_users("berta")
     def test_nack_change(self) -> None:
@@ -114,17 +114,19 @@ class TestCdEBackend(BackendTest):
         expectation = self.get_sample_data(
             'core.personas', (1, 2), models_core.CdEPersona.database_fields()
         )
-
-        self.assertEqual(expectation, data)
+        tmp = {
+            key: models_core.CdEPersona(**value) for key, value in expectation.items()
+        }
+        self.assertEqual(tmp, data)
         if self.user_in(22):
-            data = self.core.get_event_users(self.key, (1, 2))
+            event_data = self.core.get_event_users(self.key, (1, 2))
             expectation = self.get_sample_data(
                 'core.personas', (1, 2), models_core.EventPersona.database_fields()
             )
-            self.assertEqual(expectation, data)
-        data = self.core.get_personas(self.key, (1, 2))
+            self.assertEqual(expectation, event_data)
+        core_data = self.core.get_personas(self.key, (1, 2))
         expectation = self.get_sample_data('core.personas', (1, 2), PERSONA_CORE_FIELDS)
-        self.assertEqual(expectation, data)
+        self.assertEqual(expectation, core_data)
 
     @as_users("berta")
     def test_member_search(self) -> None:
@@ -253,7 +255,7 @@ class TestCdEBackend(BackendTest):
         self.assertEqual({4: 42, new_id: 3}, self.cde.list_lastschrift(self.key))
         # the donation is tracked in core.personas
         user = self.core.get_cde_user(self.key, persona_id=3)
-        self.assertEqual(donation, user["donation"])
+        self.assertEqual(donation, user.donation)
         newdata.update({
             'id': new_id,
             'revoked_at': None,
@@ -292,7 +294,7 @@ class TestCdEBackend(BackendTest):
         self.assertLess(0, self.cde.delete_lastschrift(self.key, 1, ["transactions"]))
         # check that the donation survives the lastschrift deletion
         user = self.core.get_cde_user(self.key, persona_id=3)
-        self.assertEqual(donation, user["donation"])
+        self.assertEqual(donation, user.donation)
 
     @as_users("farin")
     def test_lastschrift_multiple_active(self) -> None:
@@ -375,7 +377,7 @@ class TestCdEBackend(BackendTest):
                 # retrieve it in each subtest
                 old_balance = self.core.get_cde_user(
                     self.key, USER_DICT["berta"]["id"]
-                )["balance"]
+                ).balance
                 # issuing a lastschrift transaction if there is already a pending or
                 #  successful one is forbidden, so we need to delete it via sql first
                 if status == ltstati.cancelled:
@@ -417,7 +419,7 @@ class TestCdEBackend(BackendTest):
                 data = data[new_id]
                 new_balance = self.core.get_cde_user(
                     self.key, USER_DICT["berta"]["id"]
-                )["balance"]
+                ).balance
                 self.assertEqual(status, data['status'])
                 if status == ltstati.success:
                     self.assertEqual(decimal.Decimal('50.23'), data['tally'])

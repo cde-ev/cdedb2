@@ -3,6 +3,9 @@
 from enum import Flag, auto
 
 from cdedb.common import RequestState, User
+from cdedb.config import Config
+
+_CONF = Config()
 
 
 class EventPrivileges(Flag):
@@ -50,6 +53,12 @@ class EventPrivileges(Flag):
     token = auto()
     log_read = auto()
 
+    # This privilege allows reading all registration data except for custom fields not
+    # visible on the checkin page, as well as editing these registrations and their
+    # checkin data.
+    # Most of this is only enforced on template level, i.e. exploitable on write.
+    checkin = auto()
+
     # create = auto()
     conclude = auto()
     balance = auto()
@@ -77,6 +86,10 @@ class EventPrivileges(Flag):
     )
 
 
+def is_event_access_limited(event_id: int) -> bool:
+    return event_id <= _CONF["EVENT_LIMITED_ACCESS_CUTOFF_ID"]
+
+
 def is_privileged_event(
     rs: RequestState, required_privilege: EventPrivileges, event_id: int
 ) -> bool:
@@ -93,11 +106,18 @@ def is_privileged_event_user(
     from templates.
     """
     EP = EventPrivileges
+
+    # Limit access to really old events as configured based on id.
+    # Any action requiring _any_ of these privileges will be disallowed.
+    limited_access_disallow = EP._registrations_read_dummy | EP.registrations_write
+
+    if (
+        is_event_access_limited(event_id)
+        and required_privilege & limited_access_disallow
+    ):
+        return False
+
     admin_privileges = ~(EP.conclude | EP.balance)
-    orga_privileges = ~(
-        EP.conclude | EP.balance | EP.delete | EP.orgas_change | EP.caretakers_change
-    )
-    caretaker_privileges = orga_privileges | EP.orgas_change | EP.approve_registration
     event_helper_privileges = (
         EP.basic_read
         | EP.courses_read
@@ -106,6 +126,20 @@ def is_privileged_event_user(
         | EP.registrations_read_internal
         | EP.participant_list
     )
+    orga_privileges = (
+        event_helper_privileges
+        | EP.registrations_read
+        | EP.log_read
+        | EP.checkin
+        | EP.entities_write
+        | EP.basic_write
+        | EP.free_texts_write
+        | EP.payment_write
+        | EP.lock
+        | EP.token
+    )
+    caretaker_privileges = orga_privileges | EP.orgas_change | EP.approve_registration
+    checkin_helper_privileges = event_helper_privileges | EP.checkin
     auditor_privileges = EP.basic_read | EP.log_read
     finance_admin_privileges = (
         EP.basic_read
@@ -126,6 +160,10 @@ def is_privileged_event_user(
         or ("event_admin" in user.roles and required_privilege in admin_privileges)
         or (event_id in user.orga and required_privilege in orga_privileges)
         or (event_id in user.caretaker and required_privilege in caretaker_privileges)
+        or (
+            event_id in user.checkin_helper
+            and required_privilege in checkin_helper_privileges
+        )
         # Due to use in ml realm, users without event realm might come across this
         or (
             "event_helper" in user.realm_roles.get('event', {})

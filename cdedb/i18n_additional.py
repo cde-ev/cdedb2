@@ -15,7 +15,7 @@ from typing import cast
 import cdedb.enums
 from cdedb.common.n_ import n_
 from cdedb.common.validation.data import COUNTRY_CODES
-from cdedb.models.event_constraint_violations import ConstraintViolation
+from cdedb.models.event.constraint_violations import ConstraintViolation
 from cdedb.uncommon.intenum import CdEEnumMeta
 
 

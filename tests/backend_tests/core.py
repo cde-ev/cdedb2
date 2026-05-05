@@ -250,12 +250,13 @@ class TestCoreBackend(BackendTest):
         new_hash = self.core.get_foto_store(self.key).store(new_foto)
         self.assertLess(0, self.core.change_foto(self.key, persona_id, new_hash))
         cde_user = self.core.get_cde_user(self.key, persona_id)
-        self.assertEqual(get_hash(new_foto), cde_user['foto'])
+        self.assertEqual(get_hash(new_foto), cde_user.foto)
+        assert cde_user.foto is not None
         self.assertEqual(
-            new_foto, self.core.get_foto_store(self.key).get(cde_user['foto'])
+            new_foto, self.core.get_foto_store(self.key).get(cde_user.foto)
         )
         self.assertGreater(0, self.core.change_foto(self.key, persona_id, None))
-        self.assertIsNone(self.core.get_cde_user(self.key, persona_id)['foto'])
+        self.assertIsNone(self.core.get_cde_user(self.key, persona_id).foto)
 
     def test_verify_existence(self) -> None:
         self.assertTrue(self.core.verify_existence(self.key, "anton@example.cde"))
@@ -1041,7 +1042,7 @@ class TestCoreBackend(BackendTest):
         expectation.reviewer = self.user['id']
         new_id = self.core.genesis(self.key, case_id)
         self.assertLess(0, new_id)
-        value = self.core.get_cde_user(self.key, new_id)
+        value = self.core.get_cde_user(self.key, new_id).as_dict()
         persona_expectation = expectation.persona.as_dict()
         persona_expectation.update({
             "id": new_id,
@@ -1202,7 +1203,10 @@ class TestCoreBackend(BackendTest):
             'username': 'berta@example.cde',
             'weblink': '<https://www.bundestag.cde>',
         })
-        self.assertEqual(expectation, self.core.get_cde_user(self.key, 2))
+        self.assertEqual(
+            models.CdEPersona(**expectation),  # type: ignore[arg-type]
+            self.core.get_cde_user(self.key, 2),
+        )
         expectation['notes'] = 'Beispielhaft, Besser, Baum.'
         self.assertEqual(expectation, self.core.get_total_persona(self.key, 2))
         # self.fail("Reminder to check get_personas")

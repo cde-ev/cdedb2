@@ -1,0 +1,4 @@
+eval "$(uv generate-shell-completion bash)"
+eval "$(uvx --generate-shell-completion bash)"
+
+export UV_PYTHON_INSTALL_DIR="/var/cache/uv-python/"

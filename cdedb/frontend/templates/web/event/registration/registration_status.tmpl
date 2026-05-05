@@ -132,17 +132,8 @@
             </p>
         {% endif %}
         {% if ambience['event']['iban'] and to_pay > 0 %}
-            {{ util.href(cdedblink('event/registration_fee_qr'), label=gettext("QR"), icon='qrcode',
-                         aclass="btn btn-xs btn-default pull-right", anid="show-registration-fee-qr",
-                         title=gettext("Bank transfer data as QR code")) }}
+            {{ generic_event.registration_fee_qr(registration['id']) }}
             {{ util.h(n_("Bank Transfer"), underline=true, level=4) }}
-            <script nonce="{{ csp_nonce }}">
-                $("#show-registration-fee-qr").cdedbQRCodeModal(
-                    {{ {'title': ambience['event']['title'],
-                        'loading': gettext("Loading..."),
-                        'note': "",
-                        'close': gettext("Close") }|tojson }})
-            </script>
 
             <p>
                 {% trans to_pay=to_pay|money(lang=lang) %}

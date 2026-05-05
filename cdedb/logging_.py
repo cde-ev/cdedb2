@@ -5,9 +5,11 @@ import os
 import pathlib
 import sys
 
-from systemd.journal import JournalHandler
+from cysystemd.journal import JournaldLogHandler
 
-from cdedb.config import DEFAULT_LOG_LEVEL, Config
+from cdedb.config import Config
+
+_CONFIG = Config()
 
 
 def setup_root_logger(*, test: bool = False, replace: bool = False) -> None:
@@ -19,11 +21,7 @@ def setup_root_logger(*, test: bool = False, replace: bool = False) -> None:
         for h in logger.handlers:
             logger.removeHandler(h)
 
-    # we can not rely on the config at this point, since this code will be executed
-    # while importing the cdedb module. Therefore, we apply the default log level
-    # specified in the config, and reapply the custom log level of the config
-    # at first config access.
-    loglevel = DEFAULT_LOG_LEVEL
+    loglevel = _CONFIG["LOG_LEVEL"]
     logger.setLevel(loglevel)
 
     # ignore errors inside the logging system on prod
@@ -32,7 +30,7 @@ def setup_root_logger(*, test: bool = False, replace: bool = False) -> None:
 
     # setup handler
     identifier = "cdedb" if not test else "cdedb-test"
-    handler: logging.Handler = JournalHandler(SYSLOG_IDENTIFIER=identifier)
+    handler: logging.Handler = JournaldLogHandler(identifier=identifier)
     if is_container := pathlib.Path("/CONTAINER").is_file():
         # do not log anything in the CI
         if os.environ.get("CI"):
@@ -54,13 +52,17 @@ def setup_root_logger(*, test: bool = False, replace: bool = False) -> None:
 
 
 class MyFormatter(logging.Formatter):
-    _config = Config()
     default_time_format = '%Y-%m-%d %H:%M:%S %z'
     default_msec_format = None
 
     def format(self, record: logging.LogRecord) -> str:
+        # Getting a key from the config may cause a log entry.
+        #  Therefore we access the '_configchain' directly to avoid recursion.
+
         # to distinguish between tests
-        if self._config["CDEDB_TEST"]:
-            record.name += "-" + self._config["CDB_DATABASE_NAME"].split("_")[-1]
-        setattr(record, "CDB_DATABASE_NAME", self._config["CDB_DATABASE_NAME"])
+        if _CONFIG._configchain["CDEDB_TEST"]:
+            record.name += (
+                "-" + _CONFIG._configchain["CDB_DATABASE_NAME"].split("_")[-1]
+            )
+        setattr(record, "CDB_DATABASE_NAME", _CONFIG._configchain["CDB_DATABASE_NAME"])
         return super().format(record)

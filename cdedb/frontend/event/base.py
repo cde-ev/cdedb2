@@ -28,7 +28,7 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
-import cdedb.models.event_constraint_violations as models_cv
+import cdedb.models.event.constraint_violations as models_cv
 from cdedb.common import (
     EVENT_SCHEMA_VERSION,
     CdEDBObject,
@@ -40,7 +40,11 @@ from cdedb.common import (
 )
 from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
-from cdedb.common.privileges import EventPrivileges, is_privileged_event
+from cdedb.common.privileges import (
+    EventPrivileges,
+    is_event_access_limited,
+    is_privileged_event,
+)
 from cdedb.common.query import QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import EntitySorter, KeyFunction, Sortkey, xsorted
@@ -97,7 +101,7 @@ def event_associated_fields_extractor(
     rs: RequestState,
     event: models.Event,
     association: const.FieldAssociations,
-    field_ids: set[int] | None = None,
+    field_ids: Collection[int] | None = None,
     *,
     filter_params: Callable[[vtypes.TypeMapping], vtypes.TypeMapping] | None = None,
     suffix: str = "",
@@ -218,7 +222,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
             is_privileged = self.is_privileged(rs, *privileges, event_id=event_id)
             if (
-                event_id in rs.user.orga | rs.user.caretaker
+                event_id in rs.user.orga | rs.user.caretaker | rs.user.checkin_helper
                 or admin_view_to_consider is None
                 or admin_view_to_consider not in rs.user.available_admin_views
             ):
@@ -226,12 +230,15 @@ class EventBaseFrontend(AbstractUserFrontend):
             return is_privileged and admin_view_to_consider in rs.user.admin_views
 
         if 'event' in rs.ambience:
+            event_id = rs.ambience['event'].id
             orga_view = (
-                rs.ambience['event'].id in rs.user.orga | rs.user.caretaker
+                event_id in rs.user.orga | rs.user.caretaker | rs.user.checkin_helper
                 or 'event_orga' in rs.user.admin_views
             )
+            access_is_limited = orga_view and is_event_access_limited(event_id)
         else:
             orga_view = None
+            access_is_limited = None
 
         params = params or {}
         if 'event' in rs.ambience:
@@ -271,6 +278,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         params['is_privileged'] = is_privileged
         params['is_privileged_for'] = is_privileged_for
         params['orga_view'] = orga_view
+        params['access_is_limited'] = access_is_limited
 
         params['ViolationFormat'] = models_cv.ViolationFormat
         params["EVENT_ADMIN_ADDRESS"] = self.conf["EVENT_ADMIN_ADDRESS"]
@@ -409,7 +417,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             list_consent = registration['list_consent']
         else:
             list_consent = True
-        if not self.is_privileged(rs, EventPrivileges.registrations_read):
+        EP = EventPrivileges
+        if not self.is_privileged(rs, EP.registrations_read, EP.checkin):
             if not rs.ambience['event'].is_participant_list_visible:
                 rs.notify("error", n_("Participant list not published yet."))
                 return self.redirect(rs, "event/show_event")
@@ -614,13 +623,13 @@ class EventBaseFrontend(AbstractUserFrontend):
         self, rs: RequestState, kind: const.QuestionnaireUsages
     ) -> CdEDBObject:
         """Extract questionnaire inputs."""
-        questionnaire = unwrap(
-            self.eventproxy.get_questionnaire(rs, rs.ambience["event"].id, kinds=[kind])
-        )
+        questionnaire = self.eventproxy.get_all_questionnaires(
+            rs, rs.ambience["event"].id
+        )[kind]
         field_ids = {
-            entry["field_id"]
+            entry.field_id
             for entry in questionnaire
-            if entry["field_id"] and not entry["readonly"]
+            if entry.field_id and not entry.readonly
         }
         return event_associated_fields_extractor(
             rs, rs.ambience["event"], const.FieldAssociations.registration, field_ids

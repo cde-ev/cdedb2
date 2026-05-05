@@ -90,9 +90,11 @@
 
         {{ generic_event.select_all_course_choices() }}
 
-        {{ generic_event.print_field_inputs(enums['FieldAssociations'].registration) }}
+        {{ generic_event.print_field_inputs(enums['FieldAssociations'].registration, is_restricted=is_restricted) }}
 
-        {{ generic_event.fee_preview_panel(show_composition=True, hideable=True) }}
+        {% if not is_restricted %}
+            {{ generic_event.fee_preview_panel(show_composition=True, hideable=True) }}
+        {% endif %}
 
         <div class="panel panel-primary">
             <div class="panel-body">

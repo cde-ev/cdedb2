@@ -38,7 +38,7 @@ from cdedb.cli.storage import (
     populate_storage,
 )
 from cdedb.cli.util import is_docker
-from cdedb.config import SecretsConfig, TestConfig, set_configpath
+from cdedb.config import SecretsConfig, Config
 from cdedb.logging_ import setup_root_logger
 from tests.common import BasicTest
 
@@ -103,7 +103,7 @@ class CdEDBTestLock:
     def __enter__(self) -> "CdEDBTestLock":
         self.acquire()
         print(f"Using thread {self.thread}", file=sys.stderr)
-        set_configpath(self.configpath)
+        Config.set_config_paths(self.configpath)
         return self
 
     def __exit__(
@@ -147,8 +147,10 @@ def run_application_tests(
         print("No tests to run.")
         return 1
 
+    print(f"Running {test_suite.countTestCases()} tests.")
+
     with CdEDBTestLock():
-        conf = TestConfig()
+        conf = Config()
         secrets = SecretsConfig()
 
         # prepare the translations
@@ -170,7 +172,7 @@ def run_application_tests(
 
 def run_xss_tests(*, verbose: bool = False) -> int:
     with CdEDBTestLock("xss"):
-        conf = TestConfig()
+        conf = Config()
         secrets = SecretsConfig()
         # prepare the translations
         subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
@@ -201,7 +203,7 @@ def run_ldap_tests(
         return 1
 
     with CdEDBTestLock("ldap"):
-        conf = TestConfig()
+        conf = Config()
         secrets = SecretsConfig()
         # prepare the translations
         subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
@@ -319,9 +321,9 @@ if __name__ == '__main__':
 
     # Set args for presets.
     if args.first:
-        args.testpatterns.append('tests.frontend_tests.[abcd]*')
+        args.testpatterns.append('tests.frontend_tests.[e]*')
     if args.second:
-        args.testpatterns.append('tests.frontend_tests.[!abcd]*')
+        args.testpatterns.append('tests.frontend_tests.[!e]*')
     if args.third:
         args.testpatterns.append('tests.backend_tests.*')
         args.testpatterns.append('tests.other_tests.*')

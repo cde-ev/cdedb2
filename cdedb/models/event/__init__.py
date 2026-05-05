@@ -32,7 +32,7 @@ import decimal
 import functools
 import logging
 import sys
-from collections.abc import Callable, Collection
+from collections.abc import Callable, Collection, Mapping
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -56,6 +56,7 @@ from cdedb.common import (
     CdEDBObject,
     User,
     cast_field_entries,
+    cast_field_value,
     cast_fields,
     n_,
     normalize_field_entries,
@@ -71,15 +72,19 @@ from cdedb.common.query import (
     make_registration_query_spec,
 )
 from cdedb.common.sorting import Sortkey, xsorted
+from cdedb.config import Config
+from cdedb.fee_condition_parser.evaluation import get_referenced_names
 from cdedb.filter import datetime_filter
 from cdedb.models.common import (
     AbstractMetaData,
     CdEDataclass,
     CdEDataclassMap,
     MetaFlag as Meta,
+    StoredQuery as _StoredQuery,
 )
 
 _LOGGER = logging.getLogger(__name__)
+CONF = Config()
 
 if TYPE_CHECKING:
     from cdedb.database.query import (
@@ -199,7 +204,7 @@ class _EventConfigurationMixin(CdEDataclass):
         default=None,
         metadata=EventFieldSpec(
             legal_associations={const.FieldAssociations.registration},
-            legal_kinds={const.FieldDatatypes.str},
+            legal_kinds={const.FieldDatatypes.str, const.FieldDatatypes.str_multiline},
         ).as_dict,
     )
     reimbursement_iban_field_id: vtypes.ID | None = dataclasses.field(
@@ -293,11 +298,15 @@ class Event(EventDataclass, _EventConfigurationMixin, _EventFreetextMixin):
     caretakers: set[vtypes.ID] = dataclasses.field(
         default_factory=set, metadata=Meta.io_exclude.as_dict
     )
+    checkin_helpers: set[vtypes.ID] = dataclasses.field(
+        default_factory=set, metadata=Meta.io_exclude.as_dict
+    )
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
         data['orgas'] = set(data['orgas'])
         data['caretakers'] = set(data['caretakers'])
+        data['checkin_helpers'] = set(data['checkin_helpers'])
         data['parts'] = EventPart.many_from_database(data['parts'])
         data['tracks'] = CourseTrack.many_from_database(data['tracks'])
         data['fields'] = EventField.many_from_database(data['fields'])
@@ -363,7 +372,12 @@ class Event(EventDataclass, _EventConfigurationMixin, _EventFreetextMixin):
                     SELECT persona_id
                     FROM event.caretakers
                     WHERE event_id = events.id
-                ) AS caretakers
+                ) AS caretakers,
+                array(
+                    SELECT persona_id
+                    FROM event.checkin_helpers
+                    WHERE event_id = events.id
+                ) AS checkin_helpers
             FROM {cls.database_table}
             WHERE {entity_key or cls.entity_key} = ANY(%s)
             """
@@ -593,7 +607,7 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
     course_room_field_id: Optional[vtypes.ID] = dataclasses.field(
         metadata=EventFieldSpec(
             legal_associations={const.FieldAssociations.course},
-            legal_kinds={const.FieldDatatypes.str},
+            legal_kinds={const.FieldDatatypes.str, const.FieldDatatypes.str_multiline},
         ).as_dict
     )
 
@@ -654,7 +668,7 @@ class EventFee(EventDataclass):
     title: str
     notes: Optional[str]
 
-    condition: Optional[vtypes.EventFeeCondition]
+    condition: vtypes.EventFeeCondition | None
     amount: Optional[decimal.Decimal]
     amount_min: Optional[decimal.Decimal] = dataclasses.field(
         default=None, metadata=Meta.exclude.as_dict
@@ -699,6 +713,39 @@ class EventFee(EventDataclass):
 
     def get_sortkey(self) -> Sortkey:
         return self.kind, self.title, self.amount or decimal.Decimal(0)
+
+    @staticmethod
+    def get_fees_per_entity(event: Event) -> "EventFeesPerEntity":
+        field_names_to_id: dict[str, int] = {
+            e.field_name: e.id for e in event.fields.values()
+        }
+        part_names_to_id: dict[str, int] = {
+            e.shortname: e.id for e in event.parts.values()
+        }
+
+        event_fee_references = {
+            e.id: get_referenced_names(
+                fcp_parsing.parse(e.condition) if e.condition else None
+            )
+            for e in event.fees.values()
+        }
+
+        fields: dict[int, set[int]] = {
+            field_id: set() for field_id in field_names_to_id.values()
+        }
+        parts: dict[int, set[int]] = {
+            part_id: set() for part_id in part_names_to_id.values()
+        }
+        for fee_id, rn in event_fee_references.items():
+            for fn in rn.field_names:
+                fields[field_names_to_id[fn]].add(fee_id)
+            for pn in rn.part_names:
+                parts[part_names_to_id[pn]].add(fee_id)
+
+        return EventFeesPerEntity(
+            fields=fields,
+            parts=parts,
+        )
 
 
 @dataclasses.dataclass
@@ -760,6 +807,7 @@ class EventField(EventDataclass):
     def _get_validator(cls, kind: const.FieldDatatypes) -> TypeForm[Any]:
         type_ = {
             const.FieldDatatypes.str: str,
+            const.FieldDatatypes.str_multiline: str,
             const.FieldDatatypes.bool: bool,
             const.FieldDatatypes.int: int,
             const.FieldDatatypes.float: float,
@@ -1002,20 +1050,142 @@ class SyncTrackGroup(TrackGroup, CourseChoiceObject):  # type: ignore[misc]
 
 
 @dataclasses.dataclass
-class Questionnaire:
-    registration: list["QuestionnaireRow"]
-    additional: list["QuestionnaireRow"]
-
-
-@dataclasses.dataclass
 class QuestionnaireRow(EventDataclass):
     database_table = "event.questionnaire_rows"
 
-    event: Event
-    field: Optional[EventField]
+    id: vtypes.ID = dataclasses.field(
+        compare=False,
+        repr=False,
+        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict,
+    )
+
+    event_id: vtypes.ID = dataclasses.field(
+        metadata=(Meta.request_exclude | Meta.asdict_exclude).as_dict,
+    )
+    field_id: vtypes.ID | None
+    field: EventField | None = dataclasses.field(
+        init=False, default=None, metadata=(Meta.exclude | Meta.asdict_exclude).as_dict
+    )
+    pos: int
+    title: str | None
+    info: str | None
+    readonly: bool
+    default_value: Any  # TODO: ByDatafieldKind maybe some union?
+    kind: const.QuestionnaireUsages
+
+    @classmethod
+    def from_database(cls, data: "CdEDBObject") -> "Self":
+        event: Event = data.pop("event")
+        ret = super().from_database(data)
+        if ret.field_id:
+            ret.field = event.fields[ret.field_id]
+            # Deserialize the stored string into the datatype of the field if able.
+            ret.default_value = cast_field_value(ret.default_value, ret.field.kind)
+            # Special case for datetimes: Convert them to the default timezone so
+            #  they can be submitted again even without the timezone.
+            #  This is required for use with 'datetime-local' inputs.
+            if ret.field.kind == const.FieldDatatypes.datetime:
+                if ret.default_value:
+                    ret.default_value = ret.default_value.astimezone(
+                        CONF["DEFAULT_TIMEZONE"]
+                    )
+        return ret
 
     def get_sortkey(self) -> Sortkey:
-        return (0,)
+        return (
+            self.kind,
+            self.pos,
+        )
+
+
+class Questionnaire(list[QuestionnaireRow]):
+    def as_dicts(self) -> list[CdEDBObject]:
+        return [row.as_dict() for row in self]
+
+    def get_field_ids(self) -> set[int]:
+        return {row.field_id for row in self if row.field_id is not None}
+
+    @classmethod
+    def allows(
+        cls, kind: const.QuestionnaireUsages, field: EventField, has_fees: bool
+    ) -> bool:
+        """
+        Determines whether the given field is allowed for the given questionnaire kind.
+
+        :param has_fees: True if the given field is used in a conditional fee, which
+            is incompatible with some questionnaire kinds.
+        """
+        if not field.association == const.FieldAssociations.registration:
+            return False
+        if not kind.allow_fee_condition() and has_fees:
+            return False
+        return True
+
+
+class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
+    event: Event
+
+    @classmethod
+    def from_database(cls, data: Collection["CdEDBObject"], event: Event) -> "Self":
+        rows: dict[const.QuestionnaireUsages, Questionnaire] = collections.defaultdict(
+            Questionnaire
+        )
+        for row in QuestionnaireRow.many_from_database(data).values():
+            rows[row.kind].append(row)
+        ret = cls(rows)
+        ret.event = event
+        return ret
+
+    def __missing__(self, key: const.QuestionnaireUsages) -> Questionnaire:
+        """Allows accessing empty kinds, which are not initialized in this dict."""
+        return Questionnaire()
+
+    def as_dict(self) -> dict[const.QuestionnaireUsages, list[CdEDBObject]]:
+        return {kind: questionnaire.as_dicts() for kind, questionnaire in self.items()}
+
+    def field_usage(self) -> Mapping[int, const.QuestionnaireUsages]:
+        """Map field ids to the questionnaire kind they are used in."""
+        # These dicts are disjunct therfore the chainmap is just a big union.
+        return collections.ChainMap(
+            *(
+                {field_id: kind}
+                for kind, q in self.items()
+                for field_id in q.get_field_ids()
+            )
+        )
+
+    def get_available_fields(
+        self, kind: const.QuestionnaireUsages
+    ) -> CdEDataclassMap[EventField]:
+        """Return all fields available for use in a questionnaire of the given kind."""
+        field_usage = self.field_usage()
+        fees_by_field = EventFee.get_fees_per_entity(self.event).fields
+        return {
+            field.id: field
+            for field in self.event.fields.values()
+            if Questionnaire.allows(
+                kind=kind, field=field, has_fees=bool(fees_by_field[field.id])
+            )
+            and field_usage.get(field.id, kind) == kind
+        }
+
+
+@dataclasses.dataclass
+class StoredEventQuery(EventDataclass, _StoredQuery):
+    database_table = "event.stored_queries"
+
+    event_id: vtypes.ID = dataclasses.field(
+        default=vtypes.ID(-1), metadata=Meta.request_exclude.as_dict
+    )
+    event: Event = dataclasses.field(
+        compare=False,
+        repr=False,
+        default=cast(Event, None),
+        metadata=Meta.input_exclude.as_dict,
+    )
+
+    def _get_spec(self) -> QuerySpec:
+        return self.scope.get_spec(event=self.event)
 
 
 #
@@ -1485,3 +1655,14 @@ class AttendeeStats:
 
     involved: Attendees
     uninvolved: Attendees
+
+
+@dataclasses.dataclass
+class EventFeesPerEntity:
+    """Simple container for data on event fee references.
+
+    Each member is a map of entities to a set of fees that reference that entity.
+    """
+
+    fields: dict[int, set[int]]
+    parts: dict[int, set[int]]

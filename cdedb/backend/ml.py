@@ -701,6 +701,16 @@ class MlBackend(AbstractBackend):
             update.update({"id": mailinglist_id, "ml_type": ml_type})
             ret *= self.sql_update(rs, Mailinglist.database_table, update)
 
+            # Log change
+            old_type_str = rs.log_gettext(str(ml.ml_type))
+            new_type_str = rs.log_gettext(str(ml_type))
+            self.ml_log(
+                rs,
+                const.MlLogCodes.list_changed,
+                mailinglist_id,
+                change_note=f"Typ geändert: {old_type_str} -> {new_type_str}",
+            )
+
         # update the subscription states
         ret *= self.write_subscription_states(rs, (mailinglist_id,))
         return ret
@@ -780,10 +790,12 @@ class MlBackend(AbstractBackend):
             ml_class.is_relevant_admin(rs.user)
             or (
                 issubclass(ml_class, EventAssociatedMetaMailinglist)
+                and data["event_id"]
                 and is_privileged_event(rs, EP.basic_write, data["event_id"])
             )
             or (
                 issubclass(ml_class, AssemblyAssociatedMailinglist)
+                and data["assembly_id"]
                 and data["assembly_id"] in rs.user.presider
             )
         ):

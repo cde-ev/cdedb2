@@ -1,6 +1,6 @@
 #!/bin/bash
 
-EXENAME=$(basename $0)
+EXENAME=$(basename "$0")
 
 if [[ "$EXENAME" == isolated-test.sh ]]; then
     ARGSPEC=(portprefix branch)
@@ -12,7 +12,7 @@ else
 fi
 
 if [[ $# -ne ${#ARGSPEC[@]} ]]; then
-    echo "Usage: $(basename $0) ${ARGSPEC[@]}"
+    echo "Usage: $(basename "$0")" "${ARGSPEC[@]}"
     echo "       portprefix should be a number between 10 and 64"
     echo "       git names can generally be any reference acceptable to git"
     exit
@@ -25,7 +25,7 @@ if [[ -f "$CONTAINER" ]]; then
     exit
 fi
 
-REPOPATH=$(pwd)/$(dirname $0)/..
+REPOPATH=$(pwd)/$(dirname "$0")/..
 BASEIMAGE=${BASEIMAGE:-${REPOPATH}/related/auto-build/images/anautobuild.qcow2}
 # The base image has to be a recent autobuild. It should never be modified
 # (i.e. never be used as direct source for a VM). Instead it's just the

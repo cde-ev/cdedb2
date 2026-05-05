@@ -86,6 +86,7 @@ rules = [
             get_("/changelog/view", endpoint="view_changelog_meta"),
             get_("/foto/<filename:foto>", endpoint="get_foto"),
             get_("/debugemail/<token>", endpoint="debug_email"),
+            get_("/query/share", endpoint="query_by_name"),
             sub(
                 "/self",
                 get_("/show", endpoint="mydata"),
@@ -254,6 +255,7 @@ rules = [
         sub(
             "/cde",
             get_("/", endpoint="index"),
+            get_("/qr", endpoint="membership_qr"),
             get_("/stats", endpoint="member_stats"),
             get_("/log", endpoint="view_cde_log"),
             get_("/misc", endpoint="view_misc"),
@@ -397,6 +399,11 @@ rules = [
                 post("/delete", endpoint="delete_event"),
                 post("/balance", endpoint="balance_event"),
                 post("/unbalance", endpoint="unbalance_event"),
+                sub(
+                    "/payment",
+                    get_("/", endpoint="event_payment"),
+                    get_("/qr", endpoint="event_payment_qrcode"),
+                ),
                 get_("/change", endpoint="change_event_form"),
                 post("/change", endpoint="change_event"),
                 get_("/freetexts", endpoint="show_free_texts"),
@@ -424,9 +431,9 @@ rules = [
                     get_("/get", endpoint="get_minor_form"),
                     post("/change", endpoint="change_minor_form"),
                 ),
+                get_("/roles/manage", endpoint="manage_roles"),
                 sub(
                     "/orga",
-                    get_("/manage", endpoint="manage_orgas"),
                     post("/add", endpoint="add_orgas"),
                     post("/remove", endpoint="remove_orga"),
                 ),
@@ -434,6 +441,11 @@ rules = [
                     "/caretaker",
                     post("/add", endpoint="add_caretakers"),
                     post("/remove", endpoint="remove_caretaker"),
+                ),
+                sub(
+                    "/checkin_helper",
+                    post("/add", endpoint="add_checkin_helpers"),
+                    post("/remove", endpoint="remove_checkin_helper"),
                 ),
                 sub(
                     "/query",
@@ -458,6 +470,7 @@ rules = [
                     ),
                     post("/store", endpoint="store_event_query"),
                     post("/delete", endpoint="delete_event_query"),
+                    get_("/share", endpoint="event_query_by_name"),
                 ),
                 get_("/register", endpoint="register_form"),
                 post("/register", endpoint="register"),
@@ -583,7 +596,6 @@ rules = [
                     post("/add", endpoint="add_registration"),
                     get_("/query", endpoint="registration_query"),
                     get_("/status", endpoint="registration_status"),
-                    get_("/qr", endpoint="registration_fee_qr"),
                     get_("/amend", endpoint="amend_registration_form"),
                     post("/amend", endpoint="amend_registration"),
                     get_("/questionnaire", endpoint="additional_questionnaire_form"),
@@ -614,6 +626,7 @@ rules = [
                         sub(
                             "/fee",
                             get_("/summary", endpoint="show_registration_fee"),
+                            get_("/qr", endpoint="registration_fee_qr"),
                             get_("/add", endpoint="add_new_personalized_fee_form"),
                             post("/add", endpoint="add_new_personalized_fee"),
                             sub(

@@ -79,6 +79,7 @@ class EventBackend(
         * track_group_tracks: A link between a course track and a track group.
         * orgas: An orga of the event.
         * caretakers: A caretaker of the event.
+        * checkin_helper: A checkin helper of the event
         * lodgement_groups: A lodgement group associated with the event.
                             This can have it's own blockers.
         * lodgements: A lodgement associated with the event. This can have
@@ -98,6 +99,7 @@ class EventBackend(
         event_id = affirm(vtypes.ID, event_id)
         blockers = {}
 
+        # TODO Reduce code duplication
         orga_tokens = self.sql_select(
             rs, OrgaToken.database_table, ("id",), (event_id,), entity_key="event_id"
         )
@@ -212,6 +214,12 @@ class EventBackend(
         )
         if caretakers:
             blockers["caretakers"] = [e["id"] for e in caretakers]
+
+        checkin_helpers = self.sql_select(
+            rs, "event.checkin_helpers", ("id",), (event_id,), entity_key="event_id"
+        )
+        if checkin_helpers:
+            blockers["checkin_helpers"] = [e["id"] for e in checkin_helpers]
 
         lodgement_groups = self.sql_select(
             rs,
@@ -393,6 +401,10 @@ class EventBackend(
                 if "caretakers" in cascade:
                     ret *= self.sql_delete(
                         rs, "event.caretakers", blockers["caretakers"]
+                    )
+                if "checkin_helpers" in cascade:
+                    ret *= self.sql_delete(
+                        rs, "event.checkin_helpers", blockers["checkin_helpers"]
                     )
                 if "orga_tokens" in cascade:
                     orga_token_cascade = ("atime", "log")

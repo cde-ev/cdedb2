@@ -342,9 +342,13 @@ class Application(BaseApp):
                 # Insert orga and moderator status context
                 orga: set[int] = set()
                 caretaker: set[int] = set()
+                checkin_helper: set[int] = set()
                 if "event" in user.roles:
                     orga = self.eventproxy.orga_info(rs, user.persona_id)
                     caretaker = self.eventproxy.caretaker_info(rs, user.persona_id)
+                    checkin_helper = self.eventproxy.checkin_helper_info(
+                        rs, user.persona_id
+                    )
                 moderator: set[int] = set()
                 if "ml" in user.roles:
                     moderator = self.mlproxy.moderator_info(rs, user.persona_id)
@@ -353,6 +357,7 @@ class Application(BaseApp):
                     presider = self.assemblyproxy.presider_info(rs, user.persona_id)
                 user.orga = orga
                 user.caretaker = caretaker
+                user.checkin_helper = checkin_helper
                 user.moderator = moderator
                 user.presider = presider
                 user.init_admin_views_from_cookie(

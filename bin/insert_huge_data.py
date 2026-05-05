@@ -186,7 +186,7 @@ def event(context: Context) -> int:
                 'field_name': make_counter(context, 'VeranstaltungsfeldIntern'),
                 'title': make_counter(context, 'Veranstaltungsfeld'),
                 'sortkey': 0,
-                'kind': const.FieldDatatypes.str,
+                'kind': const.FieldDatatypes.str_multiline,
                 'entries': None,
                 'checkin': False,
             },
@@ -300,29 +300,26 @@ def event(context: Context) -> int:
         for t in tracks
     }
     fields = event.get_event(rs, ret).fields
-    questionnaire = {
-        const.QuestionnaireUsages.additional: [
-            {
-                'field_id': None,
-                'default_value': None,
-                'info': make_counter(context, 'FragebogenText'),
-                'readonly': None,
-                'input_size': None,
-                'title': make_counter(context, 'FragebogenÜberschrift'),
-            }
-        ],
-        const.QuestionnaireUsages.registration: [
-            {
-                'field_id': None,
-                'default_value': None,
-                'info': make_counter(context, 'FragebogenText'),
-                'readonly': None,
-                'input_size': None,
-                'title': make_counter(context, 'FragebogenÜberschrift'),
-            }
-        ],
-    }
-    event.set_questionnaire(rs, ret, questionnaire)
+    additional_questionnaire = [
+        {
+            'field_id': None,
+            'default_value': None,
+            'info': make_counter(context, 'FragebogenText'),
+            'readonly': False,
+            'title': make_counter(context, 'FragebogenÜberschrift'),
+        }
+    ]
+    registration_questionnaire = [
+        {
+            'field_id': None,
+            'default_value': None,
+            'info': make_counter(context, 'FragebogenText'),
+            'readonly': False,
+            'title': make_counter(context, 'FragebogenÜberschrift'),
+        }
+    ]
+    event.set_questionnaire(rs, ret, const.QuestionnaireUsages.additional, additional_questionnaire)
+    event.set_questionnaire(rs, ret, const.QuestionnaireUsages.registration, registration_questionnaire)
     parts = event.get_event(rs, ret).parts
     for _ in range(1 if context.quick else 100):
         event.create_registration(

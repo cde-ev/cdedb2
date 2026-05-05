@@ -204,7 +204,7 @@
 {% macro persona_anchor(persona, use_legal_name=False, include_nickname=False, with_family_name=True, with_titles=False,
                         quote_me=False, event_id=none, ml_id=none, aclass='', readonly=False, title=none, icon=none) %}
     {{- href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id),
-             persona|persona_name(use_legal_name, include_nickname, with_family_name),
+             persona|persona_name(use_legal_name=use_legal_name, include_nickname=include_nickname, with_family_name=with_family_name),
              aclass=aclass, readonly=readonly, title=title, icon=icon) -}}
 {% endmacro %}
 
@@ -279,15 +279,15 @@
  # Macros to add additional information (infotext, validation errors, ...) around input fields #
  # ########################################################################################### #}
 
-{% macro format_error(error) %}
+{% macro format_error(error, newline="<br />"|s) %}
     {%- if error.args|length == 1 %}
-        {{- gettext(error.args[0]|string) }}<br />
+        {{- gettext(error.args[0]|string) }}{{ newline }}
     {%- elif error.args|length == 2 %}
-        {{- gettext(error.args[0]|string)|format(**error.args[1]) }}<br />
+        {{- gettext(error.args[0]|string)|format(**error.args[1]) }}{{ newline }}
     {%- elif error.args|length == 0 %}
         {#- Display nothing if no message was supplied. #}
     {%- else %}
-        {% trans %}Malformed error.{% endtrans %}<br />
+        {% trans %}Malformed error.{% endtrans %}{{ newline }}
     {%- endif %}
 {%- endmacro %}
 
@@ -735,13 +735,23 @@
     {%- endcall %}
 {%- endmacro%}
 
+{% macro _multi_select_options(options, current_values) %}
+    {% for value, label in options %}
+        <option value="{{ value }}" {%- if value|string in current_values %} selected="selected"{% endif %}>
+            {{- label -}}
+        </option>
+    {% endfor %}
+{% endmacro %}
+
 {% macro input_multi_select(name, entries, selectize=False, readonly=False, actualreadonly=False, anid=none,
-        aclass='form-control', nulloption=none, arialabel=none, attributes="", sort=False, enforce_required=True) %}
+        aclass='form-control', nulloption=none, arialabel=none, attributes="", sort=False, enforce_required=True,
+        size=none) %}
     {% set anid = anid or 'inputmultiselect-' + name %}
     <select multiple {{ dict(
         name=name if not actualreadonly else ("readonly" + name),
         id=anid,
         class=aclass,
+        size=size,
         disabled="disabled" if readonly or actualreadonly,
         required="required" if name in mandatory_fields and enforce_required,
         **{ 'aria-label': arialabel }
@@ -754,14 +764,23 @@
         {% set entries = entries|sort(attribute=1) if sort else entries %}
         {# This is necessary to convert the values to strings so we can check if they are currently selected #}
         {% set current_values = [] %}
-        {% for value in values.get(name, []) %}
+        {% for value in values.getlist(name) %}
             {% do current_values.append(value|string) %}
         {% endfor %}
-        {%- for value, label in entries %}
-            <option value="{{ value }}"{%- if value|string in current_values %} selected="selected"{% endif %}>
-                {{- label -}}
-            </option>
-        {%- endfor %}
+        {%- if entries is mapping %}
+            {%- for group_label, options in entries.items() %}
+                {% if group_label %}
+                    <optgroup label="{{ group_label }}">
+                        {{ _multi_select_options(options, current_values) }}
+                    </optgroup>
+                {% else %}
+                    {{ _multi_select_options(options, current_values) }}
+                {% endif %}
+            {%- endfor %}
+        {%- else -%}
+            {% set entries = entries|sort(attribute=1) if sort else entries %}
+            {{ _multi_select_options(entries, current_values) }}
+        {% endif %}
     </select>
     {# select tags do not support the readonly attribute, so we emulate it with a disabled select and a hidden input. #}
     {% if actualreadonly %}
@@ -770,18 +789,24 @@
     {% if selectize %}
         {% if not jshint %}{{ raise_for_test("jshint not set for multiselect selectize.") }}{% endif %}
         <script nonce="{{ csp_nonce }}">
-            $("#{{ anid }}").cdedbMultiSelect({{ entries|multiselect_selectize|tojson }});
+            {% if selectize == "new" %}
+                $("#{{ anid }}").cdedbSelectize();
+            {% else %}
+                $("#{{ anid }}").cdedbMultiSelect({{ entries|multiselect_selectize|tojson }});
+            {% endif %}
         </script>
     {% endif %}
 {%- endmacro %}
 
 {% macro form_input_multi_select(name, entries, selectize=False, label="", info='', displayerrors=True, readonly=False,
        actualreadonly=False, defaultvalue=none, nulloption=none, anid=none, small=False, horizontal=True, aclass="",
-       attributes="", sort=False, outerclass='', enforce_required=True) %}
+       attributes="", sort=False, outerclass='', enforce_required=True, size=none) %}
     {%- set anid = anid or "input-multi-select-{}".format(name) %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, aclass=outerclass) %}
-        {{- input_multi_select(name, entries, selectize, readonly, actualreadonly, anid, nulloption=nulloption,
-                aclass="form-control " + aclass, attributes=attributes, sort=sort, enforce_required=enforce_required) }}
+        {{- input_multi_select(
+                name, entries, selectize, readonly, actualreadonly, anid, nulloption=nulloption, size=size,
+                aclass="form-control " + aclass, attributes=attributes, sort=sort, enforce_required=enforce_required
+            ) }}
     {%- endcall %}
 {%- endmacro%}
 

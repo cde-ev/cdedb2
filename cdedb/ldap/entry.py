@@ -745,7 +745,7 @@ class StatusGroupsEntry(CdEPreLeafEntry):
         *,
         attributes: Optional[AttributeDescriptionList] = None,
     ) -> LDAPObjectMap:
-        return await self.backend.get_status_groups(dns)
+        return await self.backend.get_status_groups(dns, attributes=attributes)
 
     def is_children_dn(self, dn: DistinguishedName) -> bool:
         return self.backend.is_status_group_dn(dn)

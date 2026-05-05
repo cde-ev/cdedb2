@@ -49,14 +49,14 @@
 
 {% macro select_all_course_choices(involved_tracks=None) %}
     {% for cco in choice_objects %}
-        {% if cco.num_choices and (involved_tracks is none or involved_tracks.intersection(cco.tracks)) %}
-            {% if cco.is_complex() %}
-                {% set course_choices = courses_per_track_group[cco.id] %}
-                {% set all_course_choices = all_courses_per_track_group[cco.id] %}
-            {% else %}
-                {% set course_choices = courses_per_track[cco.id] %}
-                {% set all_course_choices = all_courses_per_track[cco.id] %}
-            {% endif %}
+        {% if cco.is_complex() %}
+            {% set course_choices = courses_per_track_group[cco.id] %}
+            {% set all_course_choices = all_courses_per_track_group[cco.id] %}
+        {% else %}
+            {% set course_choices = courses_per_track[cco.id] %}
+            {% set all_course_choices = all_courses_per_track[cco.id] %}
+        {% endif %}
+        {% if involved_tracks is none or involved_tracks.intersection(cco.tracks) %}
             {{ select_course_choice(cco, courses, course_choices, all_course_choices,
                                     show_track_title=choice_objects|length > 1) }}
         {% endif %}
@@ -155,10 +155,9 @@
 
     field       A dict containing all information of a custom event field.
     name        The name of the field, defaults to 'fields.field_name'
-    text_rows   Passed to the 'rows' attribute of input_textarea
     bool_label  Special label for the field_input (not the form*!) if the field is of type bool
 #}
-{% macro field_input(field, name=none, readonly=False, defaultvalue='', anid=none, text_rows=3, bool_label=none) %}
+{% macro field_input(field, name=none, readonly=False, defaultvalue='', anid=none, bool_label=none) %}
     {%- set name = name or "fields." + field['field_name'] %}
     {%- set bool_label = bool_label or field['title'] %}
     {# Wrapping is necessary to identify the data field for the fee preview. #}
@@ -169,7 +168,9 @@
     {%- else %}
         {% set datatypes = enums['FieldDatatypes'] %}
         {% set to_input_type = {
+            datatypes.bool: 'bool',
             datatypes.str: 'text',
+            datatypes.str_multiline: 'textarea',
             datatypes.int: 'number',
             datatypes.float: 'number',
             datatypes.date: 'date',
@@ -179,16 +180,16 @@
             datatypes.phone: 'tel',
             datatypes.iban: 'iban',
         } %}
-        {%- if field['kind'] == datatypes.bool %}
+        {% set type = to_input_type.get(field.kind, 'text') %}
+        {%- if type == 'bool' %}
             <div class="checkbox{% if readonly %} disabled{% endif %}">
                 {{- util.input_checkbox(name=name, readonly=readonly, defaultvalue=defaultvalue,
                                         anid=anid, label=bool_label) -}}
             </div>
-        {%- elif field['kind'] == datatypes.str and text_rows %}
+        {%- elif type == 'textarea' %}
             {{- util.input_textarea(name=name, readonly=readonly, defaultvalue=defaultvalue,
-                                    anid=anid, rows=text_rows) }}
+                                    anid=anid, rows=field.kind.text_rows) }}
         {%- else %}
-            {% set type = to_input_type.get(field['kind'], 'text') %}
             {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type=type,
                 attributes='placeholder=0.00' if type in (datatypes.float, datatypes.non_negative_float) else '') }}
         {%- endif %}
@@ -205,8 +206,7 @@
     force_label Enforce the presentation of the label in the surrounding form_* even if the field is of type bool
 #}
 {% macro form_field_input(field, name=none, label=none, info='', displayerrors=True, readonly=False,
-                          defaultvalue='', anid=none, force_label=False, text_rows=3, bool_label=none,
-                          outerclass='') %}
+                          defaultvalue='', anid=none, force_label=False, bool_label=none, outerclass='') %}
     {%- set name = name or "fields." + field['field_name'] %}
     {%- set label = (none if (field['kind'] == enums['FieldDatatypes'].bool
                               and not force_label and not field['entries'])
@@ -214,22 +214,34 @@
     {%- set anid = anid or "event-input-{}".format(name) %}
     {%- call util.form_input_general(name=name, label=label, anid=anid, small=False, info=info,
                                      displayerrors=displayerrors, horizontal=True, aclass=outerclass) %}
-        {{- field_input(field, name, readonly, defaultvalue, anid, text_rows, bool_label) }}
+        {{- field_input(field, name, readonly, defaultvalue, anid, bool_label) }}
     {%- endcall %}
 {%- endmacro %}
 
 
-{% macro print_field_inputs(association) %}
+{% macro print_field_inputs(association, is_restricted=False) %}
     {% if ambience['event'].grouped_fields[association]|length > 0 %}
         <h3 class="heading-underline">{% trans %}Custom Fields{% endtrans %}</h3>
+        {% if is_restricted %}
+            <p class="text-info">
+                {{ util.make_icon("info-circle") }}{{ nbsp -}}
+                {% trans %}
+                    Checkin helpers may only access a subset of custom fields.
+                {% endtrans %}
+            <p>
+        {% endif %}
         {% for title, fields in ambience['event'].grouped_fields[association].items() %}
             {% if ambience['event'].grouped_fields[association]|length > 1 %}
                 <h4 class="heading-underline">
                     {{ title or gettext("Other Fields") }}
                 </h4>
             {% endif %}
-            {% for field in fields %}
+            {% for field in fields if field.checkin or not is_restricted %}
                 {{ form_field_input(field, info=field.description) }}
+            {% else %}
+                <p class="text-muted">
+                    {% trans %}No custom fields in this group available to you.{% endtrans %}
+                </p>
             {% endfor %}
         {% else %}
             <p class="text-muted">
@@ -253,7 +265,7 @@
             {{ form_field_input(
                     FIELD, label=entry['title'], info=entry['info'],
                     readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "",
-                    text_rows=2*(entry['input_size'] or 0), bool_label=entry['title']) }}
+                    bool_label=entry['title']) }}
         {% endwith %}
     {# Text-only entry #}
     {% else %}
@@ -261,7 +273,7 @@
             {{ util.h(entry['title'], level=(3 if entry['kind'] == enums['QuestionnaireUsages'].additional else 4),
                             underline=True, translate=False) }}
         {% endif %}
-        {{ entry.get('info', '')|md }}
+        {{ entry.info|md }}
     {% endif %}
 {% endmacro %}
 
@@ -293,12 +305,6 @@
                                               nulloption=gettext("— Only Text —"),
                                               attributes=('data-basename="field_id_"'|s if newrow else ''),
                                               aclass='input-field drow-input', horizontal=False) }}
-                    {{ util.form_input_select(
-                        "input_size_{}".format(part_id), label=gettext("Input Size"), entries=(
-                            (0, gettext("singleline")), (1, gettext("multiline")),
-                            (2, gettext("multiline") + "+"), (3, gettext("multiline") + "++")),
-                        attributes=('data-basename="input_size_"'|s if newrow else ''),
-                        aclass='input-inputsize drow-input', horizontal=False) }}
                     {{ util.form_input_textarea(
                         "default_value_{}".format(part_id), label=gettext("Default Value"), rows=2,
                         attributes=('data-basename="default_value_"'|s if newrow else ''),
@@ -729,6 +735,26 @@
         </tfoot>
     </table>
 {%- endmacro %}
+
+
+{# If no registration id is given, it will be filled in from the ambience. #}
+{% macro registration_fee_qr(registration_id=None) %}
+    {% set params = {} %}
+    {% if registration_id %}
+        {% do params.update(registration_id=registration_id) %}
+    {% endif %}
+    {{ util.href(cdedblink('event/registration_fee_qr', params), label=gettext("QR"),
+                 icon='qrcode', aclass="btn btn-xs btn-default pull-right", anid="show-registration-fee-qr",
+                 title=gettext("Bank transfer data as QR code")) }}
+    <script nonce="{{ csp_nonce }}">
+        $("#show-registration-fee-qr").cdedbQRCodeModal(
+            {{ {'title': ambience['event']['title'],
+                'loading': gettext("Loading..."),
+                'note': "",
+                'close': gettext("Close") }|tojson }})
+    </script>
+{% endmacro %}
+
 
 {% macro edit_free_text_button(key, label=gettext("Edit"), display=True, small=True, pull_right=True) %}
     {% if is_privileged_for("change_free_text") %}

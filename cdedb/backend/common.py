@@ -182,9 +182,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         # initialize logging
         # logger are thread-safe!
         self.logger = logging.getLogger(f"cdedb.backend.{self.realm}")
-        self.logger.debug(
-            f"Instantiated {self} with configpath {self.conf._configpath}."
-        )
+        self.logger.debug(f"Instantiated {self} with config {self.conf}.")
         # make the logger available to the query mixin
         super().__init__(self.logger)
         # Everybody needs access to the core backend
@@ -705,6 +703,7 @@ PYTHON_TO_SQL_MAP = {
     FieldDatatypes.int: "integer",
     FieldDatatypes.non_negative_int: "integer",
     FieldDatatypes.str: "varchar",
+    FieldDatatypes.str_multiline: "varchar",
     FieldDatatypes.phone: "varchar",
     FieldDatatypes.iban: "varchar",
     FieldDatatypes.float: "double precision",

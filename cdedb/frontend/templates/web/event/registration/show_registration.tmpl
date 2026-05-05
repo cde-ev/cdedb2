@@ -28,11 +28,13 @@
                      readonly=not is_privileged_for("change_registration"),
                      aclass="btn btn-warning btn-sm", icon="pen") }}
         {{ util.href(cdedblink("event/show_registration_fee"), gettext("Fee Details"),
+                     readonly=not is_privileged_for("show_registration_fee"),
                      aclass="btn btn-info btn-sm", icon="coins") }}
         {{ util.href(cdedblink("event/view_event_log",
                                {'event_id': ambience['event']['id'],
                                 'persona_id': ambience['registration']['persona_id']|cdedbid}),
-                     gettext("Log"), aclass="btn btn-default", icon="list-alt") }}
+                     gettext("Log"), readonly=not is_privileged_for("view_event_log"),
+                     aclass="btn btn-default", icon="list-alt") }}
     </div>
     <h3 class="heading-underline">{% trans %}Personal Information{% endtrans %}</h3>
     <dl class="dl-horizontal">
@@ -101,12 +103,14 @@
         {% endcall %}
     {% endif %}
 
-    {% set min_severity = enums['ViolationSeverity'].INFO %}
-    {% set violations = constraint_violations['violations'].get(registration_id=ambience['registration']['id']) %}
-    {% if violations.max_severity >= min_severity %}
-        {% call generic_event.constraint_violations_panel(violations.max_severity) %}
-            {{ generic_event.list_violations("constraint-violations", violations, entity_page="registration", min_severity=min_severity) }}
-        {% endcall %}
+    {% if constraint_violations %}
+        {% set min_severity = enums['ViolationSeverity'].INFO %}
+        {% set violations = constraint_violations['violations'].get(registration_id=ambience['registration']['id']) %}
+        {% if violations.max_severity >= min_severity %}
+            {% call generic_event.constraint_violations_panel(violations.max_severity) %}
+                {{ generic_event.list_violations("constraint-violations", violations, entity_page="registration", min_severity=min_severity) }}
+            {% endcall %}
+        {% endif %}
     {% endif %}
 
     <h3 class="heading-underline">{% trans %}Status{% endtrans %}</h3>
@@ -124,7 +128,11 @@
         </dd>
         <dt title="{% trans %}Amount Owed{% endtrans %}">{% trans %}Amount Owed{% endtrans %}</dt>
         <dd id="amount-owed">
-            {{ util.href(cdedblink("event/show_registration_fee"), ambience['registration']['amount_owed']|money(lang=lang)) }}
+            {{ util.href(
+                cdedblink("event/show_registration_fee"),
+                ambience['registration']['amount_owed']|money(lang=lang),
+                readonly=not is_privileged_for("event/show_registration_fee")
+            ) }}
         </dd>
         <dt title="{% trans %}Already Paid{% endtrans %}">{% trans %}Already Paid{% endtrans %}</dt>
         <dd id="amount-paid">
@@ -462,6 +470,14 @@
 
     {% if ambience['event']['fields']|length > 0 %}
         <h3 class="heading-underline">{% trans %}Custom Fields{% endtrans %}</h3>
+        {% if is_restricted %}
+            <p class="text-info">
+                {{ util.make_icon("info-circle") }}{{ nbsp -}}
+                {% trans %}
+                    Checkin helpers may only access a subset of custom fields.
+                {% endtrans %}
+            <p>
+        {% endif %}
         <dl class="dl-horizontal">
         {% for title, fields in ambience['event'].grouped_fields[enums['FieldAssociations'].registration].items() %}
             {% if ambience['event'].grouped_fields[enums['FieldAssociations'].registration]|length > 1 %}
@@ -469,18 +485,23 @@
                     {{ title or gettext("Other Fields") }}
                 </h4>
             {% endif %}
-            {% for field in fields %}
+            {% for field in fields if field.checkin or not is_restricted %}
                 <dt title="{{ field.title }}">{{ field['title'] }}</dt>
                 <dd>
                     {{ generic_event.display_field(field, ambience['registration']['fields'].get(field['field_name'])) }}
                     {{ util.output_info(field.description) }}
                 </dd>
+            {% else %}
+                <p class="text-muted">
+                    {% trans %}No custom fields in this group available to you.{% endtrans %}
+                </p>
             {% endfor %}
         {% endfor %}
         </dl>
     {% endif %}
 
     {% if ambience['event']['iban'] %}
+    {{ generic_event.registration_fee_qr() }}
     <h3 class="heading-underline">{% trans %}Copy-Paste Template{% endtrans %}</h3>
     <pre>
 Beachte bitte, dass Deine Anmeldung erst mit Überweisung des Teilnahmebeitrags gültig wird.

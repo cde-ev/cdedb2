@@ -9,7 +9,6 @@ The more involved batch admission and the finance log require the "cde_admin" ro
 import collections
 import copy
 import csv
-import datetime
 import decimal
 import itertools
 import operator
@@ -58,7 +57,7 @@ from cdedb.frontend.common import (
     access,
     check_validation as check,
     inspect_validation as inspect,
-    make_membership_fee_reference,
+    make_epc_qr,
     request_extractor,
 )
 
@@ -93,49 +92,13 @@ class CdEBaseFrontend(AbstractUserFrontend):
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
-    def _calculate_ejection_deadline(
-        self, persona_data: CdEDBObject, period: CdEDBObject
-    ) -> datetime.date:
-        """Helper to calculate when a membership will end."""
-        if not self.conf["PERIODS_PER_YEAR"] == 2:
-            msg = f"{self.conf['PERIODS_PER_YEAR']} periods per year not supported."
-            self.logger.error(msg)
-            return now().date()
-        periods_left = persona_data['balance'] // self.conf["MEMBERSHIP_FEE"]
-        if persona_data['trial_member']:
-            periods_left += 1
-        if period['balance_done']:
-            periods_left += 1
-        deadline = (period.get("semester_start") or now()).date().replace(day=1)
-        # With our buffer zones around the expected semester start dates there
-        # are 3 possible semesters within a year with different deadlines.
-        if deadline.month in range(5, 11):
-            # Start was two months before or 4 months after expected start for
-            # summer semester, so we assume that we are in the summer semester.
-            if periods_left % 2:
-                deadline = deadline.replace(year=deadline.year + 1, month=2)
-            else:
-                deadline = deadline.replace(month=8)
-        else:
-            # Start was two months before or 4 months after expected start for
-            # winter semester, so we assume that we are in a winter semester.
-            if deadline.month in range(1, 5):
-                # We are in the first semester of the year.
-                deadline = deadline.replace(month=2)
-            else:
-                # We are in the last semester of the year.
-                deadline = deadline.replace(year=deadline.year + 1, month=2)
-            if periods_left % 2:
-                deadline = deadline.replace(month=8)
-        return deadline.replace(year=int(deadline.year + periods_left // 2))
-
     @access("cde")
     def index(self, rs: RequestState) -> Response:
         """Render start page."""
         meta_info = self.coreproxy.get_meta_info(rs)
-        data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+        persona = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         deadline = None
-        reference = make_membership_fee_reference(data)
+        annual_fee = self.cdeproxy.annual_membership_fee(rs)
         has_lastschrift = False
         if "member" in rs.user.roles:
             assert rs.user.persona_id is not None
@@ -145,18 +108,27 @@ class CdEBaseFrontend(AbstractUserFrontend):
                 )
             )
             period = self.cdeproxy.get_period(rs, self.cdeproxy.current_period(rs))
-            deadline = self._calculate_ejection_deadline(data, period)
+            deadline = persona.calculate_ejection_deadline(period)
         return self.render(
             rs,
             "index",
             {
                 'has_lastschrift': has_lastschrift,
-                'data': data,
+                'persona': persona,
                 'meta_info': meta_info,
                 'deadline': deadline,
-                'reference': reference,
+                'annual_fee': annual_fee,
             },
         )
+
+    @access("cde")
+    def membership_qr(self, rs: RequestState) -> Response:
+        meta_info = self.coreproxy.get_meta_info(rs)
+        user = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+        qr = make_epc_qr(
+            meta_info.membership_fee_account, user.membership_fee_reference, amount=None
+        )
+        return self.serve_qrcode(rs, qr)
 
     @access("member")
     def consent_decision_form(self, rs: RequestState) -> Response:
@@ -166,9 +138,9 @@ class CdEBaseFrontend(AbstractUserFrontend):
         This is the default page after login, but most users will instantly
         be redirected.
         """
-        data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+        user = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         return self.render(
-            rs, "consent_decision", {'decided_search': data['decided_search']}
+            rs, "consent_decision", {'decided_search': user.decided_search}
         )
 
     @access("member", modi={"POST"})
@@ -177,7 +149,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         """Record decision."""
         if rs.has_validation_errors():
             return self.consent_decision_form(rs)
-        data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+        user = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         new = {
             'id': rs.user.persona_id,
             'decided_search': True,
@@ -193,14 +165,16 @@ class CdEBaseFrontend(AbstractUserFrontend):
         rs.notify_return_code(code, success=message)
         if not code:
             return self.consent_decision_form(rs)
-        if not data['decided_search']:
+        if not user.decided_search:
             return self.redirect(rs, "core/index")
         return self.redirect(rs, "cde/index")
 
     @access("cde_admin", "member")
     def member_stats(self, rs: RequestState) -> Response:
         """Display stats about our members."""
-        simple_stats, other_stats, year_stats = self.cdeproxy.get_member_stats(rs)
+        simple_stats, other_stats, year_stats, institution_stats = (
+            self.cdeproxy.get_member_stats(rs)
+        )
         all_years = list(collections.ChainMap(*year_stats.values()))
         return self.render(
             rs,
@@ -210,6 +184,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
                 'other_stats': other_stats,
                 'year_stats': year_stats,
                 'all_years': all_years,
+                'institution_stats': institution_stats,
             },
         )
 

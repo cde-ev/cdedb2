@@ -86,6 +86,7 @@ from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import Atomizer, connection_pool_factory
 from cdedb.database.query import ParamDict
+from cdedb.models.common import CdEDataclassMap
 from cdedb.models.core import EmailAddressReport
 
 
@@ -1597,11 +1598,11 @@ class CoreBaseBackend(AbstractBackend):
 
             # Determine target state.
             if is_member is None:
-                is_member = current['is_member']
+                is_member = current.is_member
             if trial_member is None:
-                trial_member = current['trial_member']
+                trial_member = current.trial_member
             if honorary_member is None:
-                honorary_member = current['honorary_member']
+                honorary_member = current.honorary_member
 
             # Do some sanity checks
             if trial_member and not is_member:
@@ -1623,9 +1624,9 @@ class CoreBaseBackend(AbstractBackend):
 
             # check if nothing changed at all
             if (
-                is_member == current['is_member']
-                and trial_member == current['trial_member']
-                and honorary_member == current['honorary_member']
+                is_member == current.is_member
+                and trial_member == current.trial_member
+                and honorary_member == current.honorary_member
             ):
                 rs.notify('info', n_("Nothing changed."))
                 return 1
@@ -1645,19 +1646,19 @@ class CoreBaseBackend(AbstractBackend):
             )
 
             # Perform logging
-            if is_member != current['is_member']:
+            if is_member != current.is_member:
                 if is_member:
                     code = const.FinanceLogCodes.gain_membership
                 else:
                     code = const.FinanceLogCodes.lose_membership
                 self.finance_log(rs, code, persona_id, delta=None, new_balance=None)
-            if trial_member != current['trial_member']:
+            if trial_member != current.trial_member:
                 if trial_member:
                     code = const.FinanceLogCodes.start_trial_membership
                 else:
                     code = const.FinanceLogCodes.end_trial_membership
                 self.finance_log(rs, code, persona_id, delta=None, new_balance=None)
-            if honorary_member != current['honorary_member']:
+            if honorary_member != current.honorary_member:
                 if honorary_member:
                     code = const.FinanceLogCodes.honorary_membership_granted
                 else:
@@ -2473,13 +2474,32 @@ class CoreBaseBackend(AbstractBackend):
         get_personas, "persona_ids", "persona_id"
     )
 
+    @access("ml")
+    def new_get_personas(
+        self, rs: RequestState, persona_ids: Collection[int]
+    ) -> CdEDataclassMap[models.Persona]:
+        """Get a core view on some data sets."""
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
+        persona_data = self.query_all(rs, *models.Persona.get_select_query(persona_ids))
+        return models.Persona.many_from_database(persona_data)
+
+    class _NewGetPersonaProtocol(Protocol):
+        # TODO: `persona_id` is actually not optional, but it produces a lot of errors.
+        def __call__(
+            self, rs: RequestState, persona_id: Optional[int]
+        ) -> models.Persona: ...
+
+    new_get_persona: _NewGetPersonaProtocol = singularize(
+        new_get_personas, "persona_ids", "persona_id"
+    )
+
     @access("event", "droid_quick_partial_export", "droid_orga")
-    def get_event_users(
+    def new_get_event_users(
         self,
         rs: RequestState,
         persona_ids: Collection[int],
         event_id: Optional[int] = None,
-    ) -> CdEDBObjectMap:
+    ) -> CdEDataclassMap[models.EventPersona]:
         """Get an event view on some data sets.
 
         This is allowed for admins and for yourself in any case. Orgas and participants
@@ -2493,8 +2513,7 @@ class CoreBaseBackend(AbstractBackend):
         persona_data = self.query_all(
             rs, *models.EventPersona.get_select_query(persona_ids)
         )
-        data_ = models.EventPersona.many_from_database(persona_data)
-        ret = {k: v.as_dict() for k, v in data_.items()}
+        ret = models.EventPersona.many_from_database(persona_data)
         if persona_ids != {rs.user.persona_id} and not (
             rs.user.roles
             & {"event_admin", "cde_admin", "complaint_admin", "core_admin"}
@@ -2529,6 +2548,31 @@ class CoreBaseBackend(AbstractBackend):
             ):
                 raise PrivilegeError(n_("Access to persona data inhibited."))
         return ret
+
+    class _NewGetEventUserProtocol(Protocol):
+        # `persona_id` is actually not optional, but it produces a lot of errors.
+        def __call__(
+            self,
+            rs: RequestState,
+            persona_id: Optional[int],
+            event_id: Optional[int] = None,
+        ) -> models.EventPersona: ...
+
+    new_get_event_user: _NewGetEventUserProtocol = singularize(
+        new_get_event_users, "persona_ids", "persona_id"
+    )
+
+    @access("event", "droid_quick_partial_export", "droid_orga")
+    def get_event_users(
+        self,
+        rs: RequestState,
+        persona_ids: Collection[int],
+        event_id: Optional[int] = None,
+    ) -> CdEDBObjectMap:
+        return {
+            k: v.as_dict()
+            for k, v in self.new_get_event_users(rs, persona_ids, event_id).items()
+        }
 
     class _GetEventUserProtocol(Protocol):
         # `persona_id` is actually not optional, but it produces a lot of errors.
@@ -2664,7 +2708,7 @@ class CoreBaseBackend(AbstractBackend):
     @access("cde")
     def get_cde_users(
         self, rs: RequestState, persona_ids: Collection[int]
-    ) -> CdEDBObjectMap:
+    ) -> CdEDataclassMap[models.CdEPersona]:
         """Get an cde view on some data sets."""
         persona_ids = affirm(set[vtypes.ID], persona_ids)
         with Atomizer(rs):
@@ -2673,49 +2717,89 @@ class CoreBaseBackend(AbstractBackend):
             persona_data = self.query_all(
                 rs, *models.CdEPersona.get_select_query(persona_ids)
             )
-            data = models.CdEPersona.many_from_database(persona_data)
-            ret = {k: v.as_dict() for k, v in data.items()}
+            ret = models.CdEPersona.many_from_database(persona_data)
             if not {"cde_admin", "core_admin"} & rs.user.roles and (
                 "searchable" not in rs.user.roles
                 and any(
-                    (e['id'] != rs.user.persona_id and not e['is_searchable'])
+                    (e.id != rs.user.persona_id and not e.is_searchable)
                     for e in ret.values()
                 )
             ):
                 raise RuntimeError(n_("Improper access to member data."))
         return ret
 
-    get_cde_user: _GetPersonaProtocol = singularize(
+    class _GetCdEUserProtocol(Protocol):
+        # TODO: `persona_id` is actually not optional, but it produces a lot of errors.
+        def __call__(
+            self, rs: RequestState, persona_id: Optional[int]
+        ) -> models.CdEPersona: ...
+
+    get_cde_user: _GetCdEUserProtocol = singularize(
         get_cde_users, "persona_ids", "persona_id"
+    )
+
+    @access("ml")
+    def new_get_ml_users(
+        self, rs: RequestState, persona_ids: Collection[int]
+    ) -> CdEDataclassMap[models.MlPersona]:
+        """Get an ml view on some data sets."""
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
+        persona_data = self.query_all(
+            rs, *models.MlPersona.get_select_query(persona_ids)
+        )
+        return models.MlPersona.many_from_database(persona_data)
+
+    class _GetMlUserProtocol(Protocol):
+        # TODO: `persona_id` is actually not optional, but it produces a lot of errors.
+        def __call__(
+            self, rs: RequestState, persona_id: Optional[int]
+        ) -> models.MlPersona: ...
+
+    new_get_ml_user: _GetMlUserProtocol = singularize(
+        new_get_ml_users, "persona_ids", "persona_id"
     )
 
     @access("ml")
     def get_ml_users(
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> CdEDBObjectMap:
-        """Get an ml view on some data sets."""
-        persona_ids = affirm(set[vtypes.ID], persona_ids)
-        persona_data = self.query_all(
-            rs, *models.MlPersona.get_select_query(persona_ids)
-        )
-        data = models.MlPersona.many_from_database(persona_data)
-        return {k: v.as_dict() for k, v in data.items()}
+        return {
+            k: v.as_dict() for k, v in self.new_get_ml_users(rs, persona_ids).items()
+        }
 
     get_ml_user: _GetPersonaProtocol = singularize(
         get_ml_users, "persona_ids", "persona_id"
     )
 
     @access("assembly")
-    def get_assembly_users(
+    def new_get_assembly_users(
         self, rs: RequestState, persona_ids: Collection[int]
-    ) -> CdEDBObjectMap:
+    ) -> CdEDataclassMap[models.AssemblyPersona]:
         """Get an assembly view on some data sets."""
         persona_ids = affirm(set[vtypes.ID], persona_ids)
         persona_data = self.query_all(
             rs, *models.AssemblyPersona.get_select_query(persona_ids)
         )
-        data = models.AssemblyPersona.many_from_database(persona_data)
-        return {k: v.as_dict() for k, v in data.items()}
+        return models.AssemblyPersona.many_from_database(persona_data)
+
+    class _GetAssemblyUserProtocol(Protocol):
+        # TODO: `persona_id` is actually not optional, but it produces a lot of errors.
+        def __call__(
+            self, rs: RequestState, persona_id: Optional[int]
+        ) -> models.AssemblyPersona: ...
+
+    new_get_assembly_user: _GetAssemblyUserProtocol = singularize(
+        new_get_assembly_users, "persona_ids", "persona_id"
+    )
+
+    @access("assembly")
+    def get_assembly_users(
+        self, rs: RequestState, persona_ids: Collection[int]
+    ) -> CdEDBObjectMap:
+        return {
+            k: v.as_dict()
+            for k, v in self.new_get_assembly_users(rs, persona_ids).items()
+        }
 
     get_assembly_user: _GetPersonaProtocol = singularize(
         get_assembly_users, "persona_ids", "persona_id"
@@ -2727,8 +2811,7 @@ class CoreBaseBackend(AbstractBackend):
     ) -> CdEDBObjectMap:
         """Acquire data sets for specified ids.
 
-        This includes all attributes regardless of which realm they
-        pertain to.
+        This includes all attributes regardless of which realm they pertain to.
         """
         persona_ids = affirm(set[vtypes.ID], persona_ids)
         if (
@@ -3636,7 +3719,7 @@ class CoreBaseBackend(AbstractBackend):
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query, aggregate=aggregate)
 
-    submit_general_query = access("core_admin")(_submit_general_query)
+    submit_general_query = access("core_admin", "meta_admin")(_submit_general_query)
 
     @access("persona")
     def submit_select_persona_query(

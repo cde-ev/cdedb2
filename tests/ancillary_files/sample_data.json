@@ -4647,6 +4647,22 @@
             "parent_id": null,
             "concerned_id": null,
             "is_revoked": false
+        },
+        {
+            "id": 11,
+            "case_id": 1,
+            "entry_type": 401,
+            "parent_id": null,
+            "concerned_id": null,
+            "is_revoked": false
+        },
+        {
+            "id": 12,
+            "case_id": 1,
+            "entry_type": 411,
+            "parent_id": 11,
+            "concerned_id": 4,
+            "is_revoked": false
         }
     ],
     "complaint.entry_versions": [
@@ -4858,6 +4874,44 @@
             "marked_for_purge": "---now---",
             "purged_by": 1,
             "is_purged": true
+        },
+        {
+            "id": 12,
+            "entry_id": 11,
+            "submitted_by": 1,
+            "description": "Umquartierung für eine Nacht.",
+            "length": 29,
+            "ctime": "---now---",
+            "timestamp": "2025-05-28T15:30:00+00:00",
+            "etime": null,
+            "attachment_hash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
+            "dtime": null,
+            "dreason": null,
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
+        },
+        {
+            "id": 13,
+            "entry_id": 12,
+            "submitted_by": 1,
+            "description": "Erholungsurlaub.",
+            "length": 16,
+            "ctime": "---now---",
+            "timestamp": "2025-05-28T15:45:00+00:00",
+            "etime": "2025-05-29T07:00:00+00:00",
+            "attachment_hash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
+            "dtime": null,
+            "dreason": null,
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
         }
     ],
     "complaint.authors": [
@@ -4910,6 +4964,16 @@
             "id": 10,
             "entry_version_id": 10,
             "persona_id": 3
+        },
+        {
+            "id": 11,
+            "entry_version_id": 12,
+            "persona_id": 7
+        },
+        {
+            "id": 12,
+            "entry_version_id": 13,
+            "persona_id": 7
         }
     ],
     "complaint.involved": [
@@ -6273,7 +6337,7 @@
             "id": 3,
             "event_id": 1,
             "field_name": "lodge",
-            "kind": 1,
+            "kind": 50,
             "association": 1,
             "title": "Zimmerwünsche",
             "description": null,
@@ -6842,6 +6906,13 @@
         }
     ],
     "event.caretakers": [],
+    "event.checkin_helpers": [
+        {
+            "id": 1,
+            "persona_id": 38,
+            "event_id": 1
+        }
+    ],
     "event.helpers": [
         {
             "id": 1,
@@ -7917,7 +7988,6 @@
             "pos": 0,
             "title": "Ich bin unter 13 Jahre alt.",
             "info": null,
-            "input_size": null,
             "readonly": false,
             "default_value": null,
             "kind": 1
@@ -7929,8 +7999,7 @@
             "pos": 0,
             "title": "Unterüberschrift",
             "info": "mit Text darunter",
-            "input_size": null,
-            "readonly": null,
+            "readonly": false,
             "default_value": null,
             "kind": 2
         },
@@ -7941,7 +8010,6 @@
             "pos": 1,
             "title": "Bälle",
             "info": "Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.",
-            "input_size": null,
             "readonly": false,
             "default_value": "True",
             "kind": 2
@@ -7953,8 +8021,7 @@
             "pos": 2,
             "title": null,
             "info": "nur etwas Text",
-            "input_size": null,
-            "readonly": null,
+            "readonly": false,
             "default_value": null,
             "kind": 2
         },
@@ -7965,8 +8032,7 @@
             "pos": 3,
             "title": "Weitere Überschrift",
             "info": null,
-            "input_size": null,
-            "readonly": null,
+            "readonly": false,
             "default_value": null,
             "kind": 2
         },
@@ -7977,7 +8043,6 @@
             "pos": 4,
             "title": "Vehikel",
             "info": null,
-            "input_size": null,
             "readonly": false,
             "default_value": "etc",
             "kind": 2
@@ -7989,7 +8054,6 @@
             "pos": 5,
             "title": "Hauswunsch",
             "info": null,
-            "input_size": 3,
             "readonly": false,
             "default_value": null,
             "kind": 2
@@ -8151,6 +8215,15 @@
             "event_id": 1,
             "persona_id": 2,
             "change_note": "23.02.2022, 10:00:00"
+        },
+        {
+            "ctime": "---now---",
+            "code": 800,
+            "submitted_by": 7,
+            "droid_id": null,
+            "event_id": 1,
+            "persona_id": 38,
+            "change_note": null
         }
     ],
     "assembly.assemblies": [
@@ -9543,6 +9616,7 @@
             "title": "Rechenschaftsbericht",
             "authors": "Farin",
             "filename": "rechen.pdf",
+            "changenotes": null,
             "ctime": "---now---",
             "dtime": null,
             "file_hash": "72a0e2bdc75fd5a95cae07120e4034ad364786e04b6a9fffeb9c168f3dba11e49d6f422322899a9de6d0a03a2ae81f81e22d2751a405160e6bea06748a91e3d6"
@@ -9554,6 +9628,7 @@
             "title": "Kassenprüferbericht",
             "authors": "Berta",
             "filename": "kassen.pdf",
+            "changenotes": null,
             "ctime": "---now---",
             "dtime": null,
             "file_hash": "68c602823ad8538ee0bedea06ad9d962a608b55f2a1bd62bacee414d3f3c1bfb3486f1fcc9274d2ff4245ece18b69a9182a7bdcc5329b49ce9ccd04edb7de58e"
@@ -9565,6 +9640,7 @@
             "title": null,
             "authors": null,
             "filename": null,
+            "changenotes": null,
             "ctime": "---now---",
             "dtime": "---now---",
             "file_hash": "del"
@@ -9576,6 +9652,7 @@
             "title": "Kassenprüferbericht 2",
             "authors": "Garcia",
             "filename": "kasse.pdf",
+            "changenotes": null,
             "ctime": "---now---",
             "dtime": null,
             "file_hash": "2007baadffb25f5fb1756a8cb3f69f833318d3d28a517df2c51350200ec4ece3d4b1d11202fb154d3dc6ce630068c22d2a71658b4ad2be3879d73e05937c5aa1"
@@ -9587,6 +9664,7 @@
             "title": "Liste der Kandidaten",
             "authors": "Wahlleitung",
             "filename": "kandidaten.pdf",
+            "changenotes": null,
             "ctime": "1990-01-01T00:00:00+00:00",
             "dtime": null,
             "file_hash": "c093aa42d1dd7117fbbbc46e027b35b651400b03e5969f9c6ee875c7b0715d5bf02ad0b3e49d43a97afb49a8f6ca3f0d501fffc35417085c51507dc9d372a425"

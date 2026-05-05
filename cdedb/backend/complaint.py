@@ -1100,8 +1100,7 @@ class ComplaintBackend(AbstractBackend):
         rs: RequestState,
         *,
         case_id: int | None = None,
-        entry_id: int | None = None,
-        version_ids: Collection[int] | None = None,
+        entry_ids: Collection[int] | None = None,
         visible: bool | None,
         deleted: bool | None = False,
     ) -> dict[int, str]:
@@ -1119,13 +1118,9 @@ class ComplaintBackend(AbstractBackend):
             conditions.append("entries.case_id = %(case_id)s")
             params["case_id"] = case_id
 
-        if entry_id is not None:
-            conditions.append("entry_id = %(entry_id)s")
-            params['entry_id'] = entry_id
-
-        if version_ids is not None:
-            conditions.append("versions.id = ANY(%(version_ids)s)")
-            params['version_ids'] = version_ids
+        if entry_ids is not None:
+            conditions.append("entries.id = ANY(%(entry_ids)s)")
+            params['entry_ids'] = entry_ids
 
         if visible is not None:
             conditions.append("entries.entry_type = ANY(%(entry_types)s)")
@@ -1153,7 +1148,7 @@ class ComplaintBackend(AbstractBackend):
         self,
         rs: RequestState,
         case_id: int,
-        entry_id: int | None = None,
+        entry_ids: Collection[int] | None = None,
         deleted: bool | None = False,
     ) -> dict[int, str]:
         """List all descriptions that are visible without unlock.
@@ -1161,10 +1156,10 @@ class ComplaintBackend(AbstractBackend):
         :returns: Mapping of entry *version* ids to descriptions.
         """
         case_id = affirm(int, case_id)
-        entry_id = affirm(int | None, entry_id)
+        entry_ids = affirm(set[vtypes.ID] | None, entry_ids)
         deleted = affirm(bool | None, deleted)
         return self._get_descriptions(
-            rs, case_id=case_id, entry_id=entry_id, visible=True, deleted=deleted
+            rs, case_id=case_id, entry_ids=entry_ids, visible=True, deleted=deleted
         )
 
     def _log_unlock(
@@ -1346,9 +1341,17 @@ class ComplaintBackend(AbstractBackend):
         return self.general_query(rs, query, view=view)
 
     @access("persona")
-    def list_user_measures(
+    def get_user_measures(
         self, rs: RequestState, concerned_id: int, is_active: bool | None = True
-    ) -> set[vtypes.ID]:
+    ) -> tuple[models.CdEDataclassMap[models.ComplaintEntry], dict[int, str]]:
+        """Get all measures against a specific user.
+
+        This includes active measures, future measures and expired measures,
+        but not deleted, revoked or purged measures.
+
+        Additionally it does not include expired provisional measures.
+        """
+
         concerned_id = affirm(vtypes.ID, concerned_id)
         is_active = affirm(bool | None, is_active)
         if not (
@@ -1356,8 +1359,9 @@ class ComplaintBackend(AbstractBackend):
             or concerned_id == rs.user.persona_id
         ):
             raise PrivilegeError
+
         query = f"""
-            SELECT versions.id
+            SELECT entries.id AS entry_id, versions.id AS version_id
             FROM {models.ComplaintEntryVersion.database_table} AS versions
                 LEFT JOIN {models.ComplaintEntry.database_table} AS entries
                     ON entries.id = versions.entry_id
@@ -1365,6 +1369,7 @@ class ComplaintBackend(AbstractBackend):
                 entries.concerned_id = %(concerned_id)s
                 AND entries.entry_type = ANY(%(entry_types)s)
                 AND versions.dtime IS NULL
+                AND NOT versions.is_purged
                 AND NOT entries.is_revoked
         """
         params: dict[str, DatabaseValue_s] = {
@@ -1372,95 +1377,79 @@ class ComplaintBackend(AbstractBackend):
             "entry_types": const.ComplaintEntryType.measure_types(),
         }
 
-        if is_active is not None:
-            query += """
-                AND (
-                    (versions.etime > now() OR versions.etime IS NULL)
-                    AND now() > versions.timestamp
-                ) = %(is_active)s
-            """
-            params["is_active"] = is_active
+        data = self.query_all(rs, query, params)
+        entry_ids_to_version_ids = {e['entry_id']: e['version_id'] for e in data}
+        entries = self._get_measures(rs, entry_ids_to_version_ids)
 
-        return {e['id'] for e in self.query_all(rs, query, params)}
+        entries = {
+            e_id: e
+            for e_id, e in entries.items()
+            if not (e.is_provisional and e.is_expired_measure)
+        }
+        descriptions = self._get_descriptions(
+            rs, entry_ids=entries.keys(), visible=True
+        )
+        return entries, descriptions
 
     @access("complaint_admin", "complaint.enforcer")
-    def list_measures(
-        self,
-        rs: RequestState,
-        entry_types: set[const.ComplaintEntryType] | None = None,
-        is_active: bool | None = True,
-    ) -> dict[int, int]:
-        is_active = affirm(bool | None, is_active)
-        if entry_types is None:
-            entry_types = const.ComplaintEntryType.measure_types()
-        else:
-            entry_types = affirm(set[const.ComplaintEntryType], entry_types)
-            if not entry_types <= const.ComplaintEntryType.measure_types():
-                raise ValueError(n_("Can only list measures."))
+    def get_measures(
+        self, rs: RequestState
+    ) -> tuple[models.CdEDataclassMap[models.ComplaintEntry], dict[int, str]]:
+        """Get all active measures against all users.
 
+        This includes neither future nor expired measures regardless of their type.
+        It also does not include deleted, revoked or purged measures.
+        """
         query = f"""
-            SELECT versions.id, entries.case_id
+            SELECT entries.id AS entry_id, versions.id AS version_id
             FROM {models.ComplaintEntryVersion.database_table} AS versions
-                JOIN {models.ComplaintEntry.database_table} AS entries
+                LEFT JOIN {models.ComplaintEntry.database_table} AS entries
                     ON entries.id = versions.entry_id
             WHERE
                 entries.entry_type = ANY(%(entry_types)s)
                 AND versions.dtime IS NULL
+                AND NOT versions.is_purged
                 AND NOT entries.is_revoked
         """
         params: dict[str, DatabaseValue_s] = {
-            "entry_types": entry_types,
+            "entry_types": const.ComplaintEntryType.measure_types(),
         }
 
-        if is_active is not None:
-            query += """
-                AND (
-                    (versions.etime > now() OR versions.etime IS NULL)
-                    AND now() > versions.timestamp
-                ) = %(is_active)s
-            """
-            params["is_active"] = is_active
+        data = self.query_all(rs, query, params)
+        entry_ids_to_version_ids = {e['entry_id']: e['version_id'] for e in data}
+        entries = self._get_measures(rs, entry_ids_to_version_ids)
 
-        return {e['id']: e['case_id'] for e in self.query_all(rs, query, params)}
+        entries = {e_id: e for e_id, e in entries.items() if e.is_active_measure}
+        descriptions = self._get_descriptions(
+            rs, entry_ids=entries.keys(), visible=True
+        )
+        return entries, descriptions
 
-    @access("persona")
-    def get_measures(
-        self, rs: RequestState, measure_ids: Collection[int]
-    ) -> tuple[
-        models.CdEDataclassMap[models.ComplaintEntryVersion],
-        dict[int, str],
-        dict[int, CdEDBObject],
-    ]:
+    def _get_measures(
+        self, rs: RequestState, entry_ids_to_version_ids: dict[int, int]
+    ) -> models.CdEDataclassMap[models.ComplaintEntry]:
         """Get relevant information on specified measures
 
         :returns: the associated entry versions, their descriptions, and
             some keys on the respective entries.
         """
-        measure_ids = affirm(set[vtypes.ID], measure_ids)
+        entry_data = {
+            e["id"]: e
+            for e in self.query_all(
+                rs,
+                *models.ComplaintEntry.get_select_query(
+                    entry_ids_to_version_ids.keys(), entity_key="id"
+                ),
+            )
+        }
         version_data = self.query_all(
             rs,
             *models.ComplaintEntryVersion.get_select_query(
-                measure_ids, entity_key="id"
+                entry_ids_to_version_ids.values(), entity_key="id"
             ),
         )
-        versions = models.ComplaintEntryVersion.many_from_database(version_data)
-        descriptions = self._get_descriptions(rs, version_ids=measure_ids, visible=True)
-        entry_ids = {e.entry_id for e in versions.values()}
-        entry_data = self.sql_select(
-            rs,
-            models.ComplaintEntry.database_table,
-            ['id', 'concerned_id', 'entry_type', 'case_id', 'is_revoked'],
-            entry_ids,
-        )
-        if not {
-            "complaint_admin",
-            "complaint.enforcer",
-        } & rs.user.all_roles and not all(
-            entry['concerned_id'] == rs.user.persona_id for entry in entry_data
-        ):
-            raise PrivilegeError
-        for e in entry_data:
-            e['entry_type'] = const.ComplaintEntryType(e['entry_type'])
-        entries = {e['id']: e for e in entry_data}
+        for v in version_data:
+            entry_data[v["entry_id"]]["all_versions"] = [v]
 
-        return versions, descriptions, entries
+        entries = models.ComplaintEntry.many_from_database(entry_data.values())
+        return entries

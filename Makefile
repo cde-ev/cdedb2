@@ -19,6 +19,7 @@ help:
 	@echo "format              -- automatically sort imports and reformat code"
 	@echo "autoformat          -- automatically sort imports, reformat code and lint"
 	@echo "format-diff         -- show the changes 'format' would make but do not apply them"
+	@echo "shellcheck		   -- run shellcheck over all shell scripts"
 	@echo ""
 	@echo "Code testing:"
 	@echo "check               -- run (parts of the) test suite"
@@ -61,14 +62,15 @@ I18NOUTDIR = ./i18n-output
 I18N_LANGUAGES = $(patsubst $(I18NDIR)/%/LC_MESSAGES, %, $(wildcard $(I18NDIR)/*/LC_MESSAGES))
 
 UV_PROJECT_ENVIRONMENT ?= .venv
+UV_PYTHON_INSTALL_DIR ?= /var/cache/uv-python/
 
 ###########
 # General #
 ###########
 
 .PHONY: cron
-cron:
-	sudo -u www-cde -g www-data /cdedb2/bin/cron_execute.py
+cron: www-cde-venv
+	sudo -u www-cde -g www-data UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv $(UV) run --no-sync /cdedb2/bin/cron_execute.py
 
 .PHONY: doc
 doc:
@@ -127,11 +129,20 @@ $(I18NOUTDIR)/%/LC_MESSAGES/cdedb.mo: $(I18NDIR)/%/LC_MESSAGES/cdedb.po
 # Code formatting #
 ###################
 
-$(UV_PROJECT_ENVIRONMENT)/bin/python:
-	$(UV) venv
-
 .PHONY: venv
-venv: $(UV_PROJECT_ENVIRONMENT)/bin/python
+venv:
+	if [ -d "/cdedb2" ]; then \
+		sudo UV_PYTHON_INSTALL_DIR=$(UV_PYTHON_INSTALL_DIR) \
+			$(UV) sync --all-groups; \
+	fi
+
+.PHONY: www-cde-venv
+www-cde-venv:
+	if [ -d "/cdedb2" ]; then \
+		sudo UV_PYTHON_INSTALL_DIR=$(UV_PYTHON_INSTALL_DIR) \
+			UV_PROJECT_ENVIRONMENT=/home/www-cde/.venv/ \
+			$(UV) sync --no-dev --group ldap; \
+	fi
 
 .PHONY: format
 format: venv
@@ -183,6 +194,18 @@ endif
 .PHONY: ruff-fix
 ruff-fix: venv
 	$(RUFF) check --fix
+
+.PHONY: shellcheck
+shellcheck:
+	@echo $(BANNERLINE)
+	@echo "All of shellcheck"
+	@echo $(BANNERLINE)
+	shellcheck $$( \
+		find bin/ i18n/ related/ \
+			-type f \
+			\( -name '*.sh' -or \( -executable -not -name '*.py' \) \) \
+			-not \( -path bin/archive/'*' -or -path related/deploy/archive/'*' -or -path related/auto-build/bin/'*' \) \
+	)
 
 .PHONY: template-line-length
 template-line-length:
@@ -260,5 +283,4 @@ sample-data-dump: venv
 
 .PHONY: sample-data
 sample-data: venv
-	$(UV) sync --all-groups
 	sudo $(PYTHONBIN) -m cdedb dev apply-sample-data --owner www-cde --group www-data
