@@ -1097,6 +1097,18 @@ class QuestionnaireRow(EventDataclass):
             self.pos,
         )
 
+    @classmethod
+    def validation_fields(
+        cls, *, creation: bool
+    ) -> tuple[vtypes.MutableTypeMapping, vtypes.MutableTypeMapping]:
+        mandatory, optional = super().validation_fields(creation=creation)
+        # During questionnaire import the field id can be negative and the field can
+        #  instead be identified by name. The validation still ensures that the field
+        #  "exists", even if the id is negative during validation.
+        optional["field_id"] = vtypes.PartialImportID | None
+        optional["field_name"] = vtypes.RestrictiveIdentifier | None
+        return mandatory, optional
+
 
 class Questionnaire(list[QuestionnaireRow]):
     def as_dicts(self) -> list[CdEDBObject]:
@@ -1140,8 +1152,11 @@ class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
         """Allows accessing empty kinds, which are not initialized in this dict."""
         return Questionnaire()
 
-    def as_dict(self) -> dict[const.QuestionnaireUsages, list[CdEDBObject]]:
-        return {kind: questionnaire.as_dicts() for kind, questionnaire in self.items()}
+    def as_dict(
+        self, full: bool = False
+    ) -> dict[const.QuestionnaireUsages, list[CdEDBObject]]:
+        kinds = const.QuestionnaireUsages if full else self.keys()
+        return {kind: self[kind].as_dicts() for kind in kinds}
 
     def field_usage(self) -> Mapping[int, const.QuestionnaireUsages]:
         """Map field ids to the questionnaire kind they are used in."""

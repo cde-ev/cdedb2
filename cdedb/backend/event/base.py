@@ -1363,12 +1363,10 @@ class EventBaseBackend(EventLowLevelBackend):
         """Replace the current questionnaire of the given kind for the given event."""
         event_id = affirm(vtypes.ID, event_id)
         kind = affirm(const.QuestionnaireUsages, kind)
-        event = self.get_event(rs, event_id)
         data = affirm(
             vtypes.Questionnaire,
             data,
             kind=kind,
-            event=event,
             all_questionnaires=self.get_all_questionnaires(rs, event_id),
         )
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
@@ -1387,6 +1385,9 @@ class EventBaseBackend(EventLowLevelBackend):
             for pos, row in enumerate(data):
                 new_row = copy.deepcopy(row)
                 new_row['event_id'] = event_id
+                # The questionnaire import allows specifying fields by name.
+                #  We cannot remove this before, due to validation idempotency.
+                new_row.pop("field_name", None)
                 ret *= self.sql_insert(
                     rs, models.QuestionnaireRow.database_table, new_row
                 )
@@ -1733,7 +1734,7 @@ class EventBaseBackend(EventLowLevelBackend):
                     entity_key="event_id",
                 )
             )
-            questionnaire = self.get_all_questionnaires(rs, event_id).as_dict()
+            questionnaire = self.get_all_questionnaires(rs, event_id).as_dict(full=True)
             persona_ids = tuple(reg['persona_id'] for reg in registrations.values())
             personas = self.core.get_event_users(rs, persona_ids, event_id)
 
@@ -1942,7 +1943,7 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id: int,
         fields: CdEDBObjectMap,
         questionnaires: dict[const.QuestionnaireUsages, vtypes.Questionnaire],
-    ) -> DefaultReturnCode:  # pragma: no cover
+    ) -> DefaultReturnCode:
         """Special import for custom datafields and questionnaire rows."""
         event_id = affirm(vtypes.ID, event_id)
         # validation of input is delegated to the setters, because it is rather
