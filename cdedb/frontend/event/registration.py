@@ -2580,10 +2580,12 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
 
     @access("event")
-    def registration_fee_qr(self, rs: RequestState, event_id: int) -> Response:
-        payment_data = self._get_payment_data(rs, event_id)
-        if payment_data is None:
-            raise werkzeug.exceptions.BadRequest()
+    def registration_fee_qr(
+        self, rs: RequestState, event_id: int, registration_id: int
+    ) -> Response:
+        # Attempting to access a registration one isn't allowed to will have already
+        #  raised a PrivilegeError.
+        payment_data = self._get_payment_data(rs, event_id, registration_id)
         if not payment_data["account"]:
             raise werkzeug.exceptions.BadRequest(n_("No IBAN set."))
 

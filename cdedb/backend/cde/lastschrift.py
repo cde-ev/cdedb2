@@ -387,8 +387,8 @@ class CdELastschriftBackend(CdEBaseBackend):
         """The amount of a lastschrift transaction."""
         persona_id = affirm(vtypes.ID, persona_id)
         user = self.core.get_cde_user(rs, persona_id)
-        ret = user["donation"]
-        if not user['honorary_member']:
+        ret = user.donation
+        if not user.honorary_member:
             ret += self.annual_membership_fee(rs)
         return ret
 
@@ -501,28 +501,28 @@ class CdELastschriftBackend(CdEBaseBackend):
             if status == const.LastschriftTransactionStati.success:
                 code = const.FinanceLogCodes.lastschrift_transaction_success
                 user = self.core.get_cde_user(rs, persona_id)
-                if user['honorary_member']:
+                if user.honorary_member:
                     self.core.finance_log(
                         rs,
                         code,
                         persona_id,
                         delta=None,
-                        new_balance=user['balance'],
+                        new_balance=user.balance,
                         change_note="Ehrenmitglied",
                         transaction_date=transaction['payment_date'],
                     )
                 else:
-                    user['balance'] += self.annual_membership_fee(rs)
+                    user.balance += self.annual_membership_fee(rs)
                     ret *= self.core.change_persona_balance(
                         rs,
                         persona_id,
-                        user['balance'],
+                        user.balance,
                         code,
                         change_note="Erfolgreicher Lastschrifteinzug.",
                         transaction_date=transaction['payment_date'],
                     )
                     # We provide membership directly after the successful transaction.
-                    if not user['is_member']:
+                    if not user.is_member:
                         self.core.change_membership_easy_mode(
                             rs, persona_id, is_member=True
                         )
@@ -597,7 +597,7 @@ class CdELastschriftBackend(CdEBaseBackend):
             #  changed between finalization and rollback or membership fee was deducted
             #  from balance as part of the semester management.
             new_balance = max(
-                decimal.Decimal(0), current['balance'] - self.annual_membership_fee(rs)
+                decimal.Decimal(0), current.balance - self.annual_membership_fee(rs)
             )
             self.core.change_persona_balance(
                 rs,

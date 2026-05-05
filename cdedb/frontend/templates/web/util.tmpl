@@ -204,7 +204,7 @@
 {% macro persona_anchor(persona, use_legal_name=False, include_nickname=False, with_family_name=True, with_titles=False,
                         quote_me=False, event_id=none, ml_id=none, aclass='', readonly=False, title=none, icon=none) %}
     {{- href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id),
-             persona|persona_name(use_legal_name, include_nickname, with_family_name),
+             persona|persona_name(use_legal_name=use_legal_name, include_nickname=include_nickname, with_family_name=with_family_name),
              aclass=aclass, readonly=readonly, title=title, icon=icon) -}}
 {% endmacro %}
 

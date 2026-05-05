@@ -63,7 +63,7 @@ Kontoinhaber:     {{ meta_info.membership_fee_account.get_account_holder() }}
 IBAN:             {{ meta_info.membership_fee_account.get_iban()|iban }}
 BIC:              {{ meta_info.membership_fee_account.get_bic() }}
 Kreditinstitut:   {{ meta_info.membership_fee_account.get_bank() }}
-Verwendungszweck: {{ transaction_subject }}
+Verwendungszweck: {{ persona.membership_fee_reference }}
 
 Alternativ würden wir uns sehr darüber freuen, wenn Du dem CdE die
 Erlaubnis erteilst, jährlich *per Lastschrift* von Deinem Konto den
@@ -96,7 +96,7 @@ Kontoinhaber:     {{ meta_info.membership_fee_account.get_account_holder() }}
 IBAN:             {{ meta_info.membership_fee_account.get_iban()|iban }}
 BIC:              {{ meta_info.membership_fee_account.get_bic() }}
 Kreditinstitut:   {{ meta_info.membership_fee_account.get_bank() }}
-Verwendungszweck: {{ transaction_subject }}
+Verwendungszweck: {{ persona.membership_fee_reference }}
 
 (Falls Du erst kürzlich noch Geld auf das CdE-Konto überwiesen hast,
 so ist dies hier möglicherweise noch nicht berücksichtigt.)
@@ -140,7 +140,7 @@ Kontoinhaber:     {{ meta_info.membership_fee_account.get_account_holder() }}
 IBAN:             {{ meta_info.membership_fee_account.get_iban()|iban }}
 BIC:              {{ meta_info.membership_fee_account.get_bic() }}
 Kreditinstitut:   {{ meta_info.membership_fee_account.get_bank() }}
-Verwendungszweck: {{ transaction_subject }}
+Verwendungszweck: {{ persona.membership_fee_reference }}
 
 (Falls Du erst kürzlich noch Geld auf das CdE-Konto überwiesen hast,
 so ist dies hier möglicherweise noch nicht berücksichtigt.)
