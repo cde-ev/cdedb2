@@ -932,7 +932,7 @@ class ComplaintBackend(AbstractBackend):
                 WHERE id = %(involved_id)s
             """
             params = {
-                "id": involved_id,
+                "involved_id": involved_id,
                 "is_informed": is_informed,
             }
             ret = self.query_exec(rs, query, params)

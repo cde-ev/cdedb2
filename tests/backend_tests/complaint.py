@@ -33,23 +33,18 @@ class TestComplaintBackend(BackendTest):
             involved={
                 1: models.ComplaintInvolved(
                     id=1,
-                    persona_id=4,
-                    type_=const.ComplaintInvolvementType.affected,
-                    is_informed=True,
-                ),
-                2: models.ComplaintInvolved(
-                    id=2,
                     persona_id=2,
                     type_=const.ComplaintInvolvementType.target,
                     is_informed=False,
+                    _companions={3: False},
                 ),
-            },
-            companions={
-                3: {2},
-                7: {4},
-            },
-            withdrawn_companions={
-                3: {2},
+                2: models.ComplaintInvolved(
+                    id=2,
+                    persona_id=4,
+                    type_=const.ComplaintInvolvementType.affected,
+                    is_informed=True,
+                    _companions={7: True},
+                ),
             },
             entries={
                 1: models.ComplaintEntry(
@@ -291,9 +286,27 @@ class TestComplaintBackend(BackendTest):
 
         self.assertEqual({1, 2, 3, 4, 7, 42}, reality.get_persona_ids(tuple()))
         self.assertEqual({2, 4}, reality.involved_persona_ids)
-        self.assertEqual({2: {3}, 4: {7}}, reality.companions_by_involved)
-        self.assertEqual({2: {3}}, reality.withdrawn_companions_by_involved)
-        self.assertEqual({7: {4}}, reality.active_companions)
+        self.assertEqual(
+            {2: {3}, 4: {7}},
+            {
+                involved.persona_id: involved.companions(is_active=None)
+                for involved in reality.properly_involved.values()
+            },
+        )
+        self.assertEqual(
+            {2: {3}, 4: set()},
+            {
+                involved.persona_id: involved.companions(is_active=False)
+                for involved in reality.properly_involved.values()
+            },
+        )
+        self.assertEqual(
+            {2: set(), 4: {7}},
+            {
+                involved.persona_id: involved.companions(is_active=True)
+                for involved in reality.properly_involved.values()
+            },
+        )
 
     @as_users("simon")
     def test_set_case(self) -> None:
@@ -352,8 +365,6 @@ class TestComplaintBackend(BackendTest):
             **new_case_data,
             entries={},
             involved={},
-            companions={},
-            withdrawn_companions={},
         )
         self.assertEqual(expectation.as_dict(), new_case.as_dict())
         self.assertEqual(expectation, new_case)
@@ -464,9 +475,13 @@ class TestComplaintBackend(BackendTest):
         new_involved = 1
         _case = self.complaint.get_case(self.key, case_id)
         original_involved = sorted(
-            _case.involved_persona_ids_by_type(const.ComplaintInvolvementType.target)
+            _case.involved_by_type[const.ComplaintInvolvementType.target]
         )[0]
-        original_companions = sorted(_case.companions_by_involved[original_involved])
+        original_involved_persona_id = _case.involved[original_involved].persona_id
+
+        original_companions = sorted(
+            _case.involved[original_involved].companions(is_active=None)
+        )
         self.assertNotIn(
             new_involved,
             _case.involved_persona_ids,
@@ -506,11 +521,13 @@ class TestComplaintBackend(BackendTest):
 
         # Check that new target shows up in the case.
         case = self.complaint.get_case(self.key, case_id)
-        expectation.involved[1001] = models.ComplaintInvolved(
-            id=1001,
+        new_involved_id = case.involved_by_persona_id[new_involved].id
+        expectation.involved[new_involved_id] = models.ComplaintInvolved(
+            id=new_involved_id,
             persona_id=new_involved,
             type_=const.ComplaintInvolvementType.target,
             is_informed=False,
+            _companions={},
         )
 
         self.assertEqual(expectation.as_dict(), case.as_dict())
@@ -518,13 +535,15 @@ class TestComplaintBackend(BackendTest):
 
         self.assertLessEqual(
             1,
-            self.complaint.set_involved_informed(self.key, case_id, new_involved, True),
+            self.complaint.set_involved_informed(
+                self.key, case_id, new_involved_id, True
+            ),
         )
         # Set them as uninformed.
         self.assertLessEqual(
             1,
             self.complaint.set_involved_informed(
-                self.key, case_id, new_involved, False
+                self.key, case_id, new_involved_id, False
             ),
         )
 
@@ -532,11 +551,11 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(0, self.complaint.remove_involved(self.key, case_id, []))
         # Removing the new involved works.
         self.assertLessEqual(
-            1, self.complaint.remove_involved(self.key, case_id, [new_involved])
+            1, self.complaint.remove_involved(self.key, case_id, [new_involved_id])
         )
         # But doing it again is a noop.
         self.assertEqual(
-            -1, self.complaint.remove_involved(self.key, case_id, [new_involved])
+            -1, self.complaint.remove_involved(self.key, case_id, [new_involved_id])
         )
 
         case = self.complaint.get_case(self.key, case_id)
@@ -556,21 +575,24 @@ class TestComplaintBackend(BackendTest):
                 self.key,
                 case_id,
                 const.ComplaintInvolvementType.other,
-                [original_involved],
+                [original_involved_persona_id],
             ),
         )
 
         # Removing the original involved also removes their companions.
+        case = self.complaint.get_case(self.key, case_id)
         self.assertLessEqual(
-            1, self.complaint.remove_involved(self.key, case_id, [original_involved])
+            1,
+            self.complaint.remove_involved(
+                self.key,
+                case_id,
+                [case.involved_by_persona_id[original_involved_persona_id].id],
+            ),
         )
 
-        original_case.involved.pop(const.ComplaintInvolvementType.target)
-        for companion_id in original_companions:
-            original_case.companions[companion_id].remove(original_involved)
-            if not original_case.companions[companion_id]:
-                del original_case.companions[companion_id]  # pragma: no cover
-            original_case.withdrawn_companions.pop(companion_id, None)
+        original_case.involved.pop(
+            original_case.involved_by_persona_id[original_involved_persona_id].id
+        )
         case = self.complaint.get_case(self.key, case_id)
         self.assertEqual(original_case.as_dict(), case.as_dict())
         self.assertEqual(original_case, case)
@@ -596,31 +618,31 @@ class TestComplaintBackend(BackendTest):
             },
             {
                 "code": const.ComplaintLogCodes.involved_informed,
-                "persona_id": original_involved,
+                "persona_id": original_involved_persona_id,
             },
             {
                 "code": const.ComplaintLogCodes.involved_removed,
                 "change_note": "Zielpersonen",
-                "persona_id": original_involved,
+                "persona_id": original_involved_persona_id,
             },
             {
                 "code": const.ComplaintLogCodes.involved_uninformed,
-                "persona_id": original_involved,
+                "persona_id": original_involved_persona_id,
             },
             {
                 "code": const.ComplaintLogCodes.involved_added,
                 "change_note": "Sonstige",
-                "persona_id": original_involved,
+                "persona_id": original_involved_persona_id,
             },
             {
                 "code": const.ComplaintLogCodes.involved_removed,
                 "change_note": "Sonstige",
-                "persona_id": original_involved,
+                "persona_id": original_involved_persona_id,
             },
             *[
                 {
                     "code": const.ComplaintLogCodes.companion_removed,
-                    "persona_id": original_involved,
+                    "persona_id": original_involved_persona_id,
                     "companion_id": companion_id,
                 }
                 for companion_id in original_companions
@@ -635,31 +657,38 @@ class TestComplaintBackend(BackendTest):
         case_id = 1
         _case = self.complaint.get_case(self.key, case_id)
         persona_id = 2
-        old_companion = list(_case.companions_by_involved[persona_id])[0]
+        involved_id = list(
+            involved.id
+            for involved in _case.involved.values()
+            if involved.persona_id == persona_id
+        )[0]
+        old_companion = list(_case.involved[involved_id].companions(is_active=None))[0]
         new_companion = 5
         self.assertNotIn(
-            new_companion, _case.companions, "Sample data changed, review test setup."
+            new_companion,
+            _case.companions(is_active=None),
+            "Sample data changed, review test setup.",
         )
 
         original_case = self.complaint.get_case(self.key, case_id)
 
         self.assertEqual(
-            0, self.complaint.add_companions(self.key, case_id, persona_id, [])
+            0, self.complaint.add_companions(self.key, case_id, involved_id, [])
         )
         self.assertEqual(
             -1,
             self.complaint.add_companions(
-                self.key, case_id, persona_id, [old_companion]
+                self.key, case_id, involved_id, [old_companion]
             ),
         )
         self.assertLessEqual(
             1,
             self.complaint.add_companions(
-                self.key, case_id, persona_id, [new_companion]
+                self.key, case_id, involved_id, [new_companion]
             ),
         )
 
-        original_case.companions[5] = {2}
+        original_case.involved[involved_id]._companions.update({5: True})
         case = self.complaint.get_case(self.key, case_id)
         self.assertEqual(original_case.as_dict(), case.as_dict())
         self.assertEqual(original_case, case)
@@ -667,19 +696,17 @@ class TestComplaintBackend(BackendTest):
         self.assertLessEqual(
             1,
             self.complaint.set_companion_withdrawn(
-                self.key, case_id, persona_id, new_companion, True
+                self.key, case_id, involved_id, new_companion, True
             ),
         )
         self.assertEqual(
             -1,
             self.complaint.set_companion_withdrawn(
-                self.key, case_id, persona_id, new_companion, True
+                self.key, case_id, involved_id, new_companion, True
             ),
         )
 
-        original_case.withdrawn_companions.setdefault(new_companion, set()).add(
-            persona_id
-        )
+        original_case.involved[involved_id]._companions[new_companion] = False
         case = self.complaint.get_case(self.key, case_id)
         self.assertEqual(original_case.as_dict(), case.as_dict())
         self.assertEqual(original_case, case)
@@ -687,23 +714,23 @@ class TestComplaintBackend(BackendTest):
         self.assertLessEqual(
             1,
             self.complaint.set_companion_withdrawn(
-                self.key, case_id, persona_id, new_companion, False
+                self.key, case_id, involved_id, new_companion, False
             ),
         )
 
         self.assertEqual(
-            0, self.complaint.remove_companions(self.key, case_id, persona_id, [])
+            0, self.complaint.remove_companions(self.key, case_id, involved_id, [])
         )
         self.assertLessEqual(
             1,
             self.complaint.remove_companions(
-                self.key, case_id, persona_id, [new_companion]
+                self.key, case_id, involved_id, [new_companion]
             ),
         )
         self.assertEqual(
             -1,
             self.complaint.remove_companions(
-                self.key, case_id, persona_id, [new_companion]
+                self.key, case_id, involved_id, [new_companion]
             ),
         )
 
@@ -801,7 +828,10 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(1, len(result))
         self.assertEqual(case_id, result[0]["cases.id"])
 
-        self.complaint.set_companion_withdrawn(self.key, case_id, 2, 3, False)
+        case = self.complaint.get_case(self.key, case_id)
+        self.complaint.set_companion_withdrawn(
+            self.key, case_id, case.involved_by_persona_id[2].id, 3, False
+        )
         result = self.complaint.submit_general_query(self.key, query)
         self.assertEqual(0, len(result))
 
@@ -920,11 +950,15 @@ class TestComplaintBackend(BackendTest):
         target_id = list(
             case.involved_persona_ids_by_type(const.ComplaintInvolvementType.target)
         )[0]
-        target_companion_id = list(case.companions_by_involved[target_id])[0]
+        target_companion_id = list(
+            case.involved_by_persona_id[target_id].companions(is_active=None)
+        )[0]
         affected_id = list(
             case.involved_persona_ids_by_type(const.ComplaintInvolvementType.affected)
         )[0]
-        affected_companion_id = list(case.companions_by_involved[affected_id])[0]
+        affected_companion_id = list(
+            case.involved_by_persona_id[affected_id].companions(is_active=None)
+        )[0]
         appellant_id = 5
         appellant_companion_id = 6
 
@@ -948,41 +982,64 @@ class TestComplaintBackend(BackendTest):
                 [appellant_id],
             ),
         )
+        case = self.complaint.get_case(self.key, case_id)
         self.assertLessEqual(
             1,
             self.complaint.add_companions(
-                self.key, case_id, appellant_id, [appellant_companion_id]
+                self.key,
+                case_id,
+                case.involved_by_persona_id[appellant_id].id,
+                [appellant_companion_id],
             ),
         )
         self.assertLessEqual(
             1,
             self.complaint.set_companion_withdrawn(
-                self.key, case_id, target_id, target_companion_id, False
+                self.key,
+                case_id,
+                case.involved_by_persona_id[target_id].id,
+                target_companion_id,
+                False,
             ),
         )
 
         with self.assertRaises(AdverseCompanionError):
             self.complaint.add_companions(
-                self.key, case_id, target_id, [affected_companion_id]
+                self.key,
+                case_id,
+                case.involved_by_persona_id[target_id].id,
+                [affected_companion_id],
             )
         with self.assertRaises(AdverseCompanionError):
             self.complaint.add_companions(
-                self.key, case_id, target_id, [appellant_companion_id]
+                self.key,
+                case_id,
+                case.involved_by_persona_id[target_id].id,
+                [appellant_companion_id],
             )
         with self.assertRaises(AdverseCompanionError):
             self.complaint.add_companions(
-                self.key, case_id, affected_id, [target_companion_id]
+                self.key,
+                case_id,
+                case.involved_by_persona_id[affected_id].id,
+                [target_companion_id],
             )
         with self.assertRaises(AdverseCompanionError):
             self.complaint.add_companions(
-                self.key, case_id, appellant_id, [target_companion_id]
+                self.key,
+                case_id,
+                case.involved_by_persona_id[appellant_id].id,
+                [target_companion_id],
             )
 
         # Adding an involved persona as another type migrates their companions so it also doesn't work.
         self.assertLessEqual(
             1,
             self.complaint.add_companions(
-                self.key, case_id, appellant_id, [affected_companion_id]
+                self.key,
+                case_id,
+                case.involved_by_persona_id[appellant_id].id,
+                [affected_companion_id],
             ),
         )
         with self.assertRaises(AdverseCompanionError):
@@ -992,17 +1049,33 @@ class TestComplaintBackend(BackendTest):
         self.assertLessEqual(
             1,
             self.complaint.remove_companions(
-                self.key, case_id, appellant_id, [affected_companion_id]
+                self.key,
+                case_id,
+                case.involved_by_persona_id[appellant_id].id,
+                [affected_companion_id],
             ),
         )
 
         with self.assertRaisesRegex(ValueError, "Involved companion."):
-            self.complaint.add_companions(self.key, case_id, target_id, [target_id])
-        with self.assertRaisesRegex(ValueError, "Involved companion."):
-            self.complaint.add_companions(self.key, case_id, affected_id, [affected_id])
+            self.complaint.add_companions(
+                self.key,
+                case_id,
+                case.involved_by_persona_id[target_id].id,
+                [target_id],
+            )
         with self.assertRaisesRegex(ValueError, "Involved companion."):
             self.complaint.add_companions(
-                self.key, case_id, appellant_id, [appellant_id]
+                self.key,
+                case_id,
+                case.involved_by_persona_id[affected_id].id,
+                [affected_id],
+            )
+        with self.assertRaisesRegex(ValueError, "Involved companion."):
+            self.complaint.add_companions(
+                self.key,
+                case_id,
+                case.involved_by_persona_id[appellant_id].id,
+                [appellant_id],
             )
 
         with self.assertRaisesRegex(ValueError, "Already active companions."):
@@ -1030,7 +1103,11 @@ class TestComplaintBackend(BackendTest):
         self.assertLessEqual(
             1,
             self.complaint.set_companion_withdrawn(
-                self.key, case_id, target_id, target_companion_id, True
+                self.key,
+                case_id,
+                case.involved_by_persona_id[target_id].id,
+                target_companion_id,
+                True,
             ),
         )
         self.assertLessEqual(
@@ -1045,7 +1122,11 @@ class TestComplaintBackend(BackendTest):
         self.assertLessEqual(
             1,
             self.complaint.set_companion_withdrawn(
-                self.key, case_id, affected_id, affected_companion_id, True
+                self.key,
+                case_id,
+                case.involved_by_persona_id[affected_id].id,
+                affected_companion_id,
+                True,
             ),
         )
         self.assertLessEqual(
@@ -1060,7 +1141,11 @@ class TestComplaintBackend(BackendTest):
         self.assertLessEqual(
             1,
             self.complaint.set_companion_withdrawn(
-                self.key, case_id, appellant_id, appellant_companion_id, True
+                self.key,
+                case_id,
+                case.involved_by_persona_id[appellant_id].id,
+                appellant_companion_id,
+                True,
             ),
         )
         self.assertLessEqual(
