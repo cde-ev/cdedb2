@@ -62,6 +62,22 @@ class Case(CdEDataclass):
             if involved.persona_id is not None
         }
 
+    @functools.cached_property
+    def involved_by_type(self) -> dict[const.ComplaintInvolvementType, list[int]]:
+        # TODO: return involved class instead.
+        ret = {it: [] for it in const.ComplaintInvolvementType}
+        for involved in self.involved.values():
+            ret[involved.type_].append(involved.id)
+        return ret
+
+    @functools.cached_property
+    def involved_by_persona_id(self) -> CdEDataclassMap["ComplaintInvolved"]:
+        return {
+            involved.persona_id: involved
+            for involved in self.involved.values()
+            if involved.persona_id
+        }
+
     def involved_persona_ids_by_type(
         self, it: const.ComplaintInvolvementType
     ) -> set[int]:
@@ -75,7 +91,8 @@ class Case(CdEDataclass):
         """Maps all companions to a set of involved_ids."""
         ret: dict[int, set[int]] = {}
         for involved_id, involved in self.involved.items():
-            ret.setdefault(involved.type_, set()).update(involved.companions(is_active))
+            for companion_id in involved.companions(is_active):
+                ret.setdefault(companion_id, set()).add(involved_id)
         return ret
 
     def companions_by_involved_type(
@@ -119,7 +136,7 @@ class Case(CdEDataclass):
         return user.persona_id not in self.involved_persona_ids
 
     def get_persona_ids(self, log_entries: tuple[CdEDBObject, ...]) -> set[int]:
-        ret: set[int] = self.involved_persona_ids
+        ret: set[int] = set(self.involved_persona_ids)
         ret.update(self.companions(is_active=None).keys())
         if log_entries:
             ret.update(e['submitted_by'] for e in log_entries if e['submitted_by'])
