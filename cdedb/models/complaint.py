@@ -205,19 +205,13 @@ class Case(CdEDataclass):
                 persona_id=involved_datum[1],
                 type_=const.ComplaintInvolvementType(involved_datum[2]),
                 is_informed=bool(involved_datum[3]),
-                _companions={0: True},
+                _companions={},
             )
             for involved_datum in data["involved"]
         }
 
-        new_companions: dict[int, set[int]] = {}
-        withdrawn_companions: dict[int, set[int]] = {}
-        for companion in data["companions"]:
-            new_companions.setdefault(companion[1], set()).add(companion[0])
-            if companion[2]:
-                withdrawn_companions.setdefault(companion[1], set()).add(companion[0])
-        data["companions"] = new_companions
-        data["withdrawn_companions"] = withdrawn_companions
+        for companion in data.pop("companions"):
+            data["involved"][companion[0]]._companions[companion[1]] = not companion[2]
 
         data["entries"] = ComplaintEntry.many_from_database(data["entries"])
         ret = super().from_database(data)
