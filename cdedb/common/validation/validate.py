@@ -3235,7 +3235,6 @@ def _questionnaire_field_row(
     val: CdEDBObject,
     argname: str = "",
     *,
-    event: models_event.Event,
     available_fields: CdEDataclassMap[models_event.EventField],
     **kwargs: Any,
 ) -> CdEDBObject:
@@ -3298,7 +3297,6 @@ def _questionnaire_magic_row(
     val: CdEDBObject,
     argname: str = "",
     *,
-    event: models_event.Event,
     available_magic_roles: set[const.QuestionnaireRowMagicRole],
     **kwargs: Any,
 ) -> CdEDBObject:
@@ -3326,6 +3324,7 @@ def _questionnaire(
 ) -> Questionnaire:
     val = _ALL_TYPED[list[dict[str, Any]]](val, argname, **kwargs)
 
+    event = all_questionnaires.event
     available_fields = all_questionnaires.get_available_fields(kind)
     available_magic_roles = all_questionnaires.get_available_magic_roles(kind)
 
@@ -3335,7 +3334,7 @@ def _questionnaire(
     errs = ValidationSummary()
     ret: list[CdEDBObject] = []
     for i, row in enumerate(val):
-        with errs.append_to_argname(f"_{row.get('id', i)}"):
+        with errs.modify_argname(suffix=f"_{row.get('id', i)}"):
             tmp = _examine_dictionary_fields(
                 row,
                 {"role": const.QuestionnaireRowMagicRole},
@@ -3352,7 +3351,6 @@ def _questionnaire(
             row["pos"] = i
             row = _ALL_TYPED[cls](
                 row,
-                event=event,
                 available_fields=available_fields,
                 available_magic_roles=available_magic_roles,
             )
@@ -3980,12 +3978,15 @@ def _serialized_event_questionnaire(
                     all_questionnaires=all_questionnaires,
                 )
                 all_questionnaires[kind] = models_event.Questionnaire(
-                    models_event.QuestionnaireRow(
-                        id=ID(-1),
-                        event_id=all_questionnaires.event.id,
-                        **{k: v for k, v in row.items() if k != "field_name"},
-                    )
-                    for row in new_questionnaires[kind]
+                    (
+                        models_event.QuestionnaireRow.get_class(row["role"])(
+                            id=ID(-1),
+                            event_id=all_questionnaires.event.id,
+                            **{k: v for k, v in row.items() if k != "field_name"},
+                        )
+                        for row in new_questionnaires[kind]
+                    ),
+                    kind=kind,
                 )
         val['questionnaire'] = new_questionnaires
     else:
