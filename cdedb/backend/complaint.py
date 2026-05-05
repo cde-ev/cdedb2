@@ -274,7 +274,7 @@ class ComplaintBackend(AbstractBackend):
             return models.Case.many_from_database(case_data)
 
     class _GetCaseProtocol(Protocol):
-        def __call__(self, rs: RequestState, case_id: int) -> CdEDBObject: ...
+        def __call__(self, rs: RequestState, case_id: int) -> models.Case: ...
 
     get_case = singularize(get_cases, 'case_ids', 'case_id')
 

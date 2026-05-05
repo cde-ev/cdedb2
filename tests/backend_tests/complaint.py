@@ -519,6 +519,7 @@ class TestComplaintBackend(BackendTest):
             _case.involved_by_type[const.ComplaintInvolvementType.target]
         )[0]
         original_involved_persona_id = _case.involved[original_involved].persona_id
+        assert original_involved_persona_id is not None
 
         original_companions = sorted(
             _case.involved[original_involved].companions(is_active=None)

@@ -128,7 +128,9 @@ class Case(CdEDataclass):
     @functools.cached_property
     def involved_by_type(self) -> dict[const.ComplaintInvolvementType, list[int]]:
         # TODO: return involved class instead.
-        ret = {it: [] for it in const.ComplaintInvolvementType}
+        ret: dict[const.ComplaintInvolvementType, list[int]] = {
+            it: [] for it in const.ComplaintInvolvementType
+        }
         for involved in self.involved.values():
             ret[involved.type_].append(involved.id)
         return ret
