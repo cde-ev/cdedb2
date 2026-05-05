@@ -836,18 +836,24 @@ class ComplaintBackend(AbstractBackend):
                     )
 
             # Add back any companions we removed previously.
-            for involved_id in mixed_existence_sorter(other_involved_ids):
-                involved = case.involved[involved_id]
+            new_case = self.get_case(rs, case_id)
+            for persona_id in mixed_existence_sorter(other_involved_persona_ids):
+                new_involved = new_case.involved_by_persona_id[persona_id]
+                old_involved = case.involved_by_persona_id[persona_id]
                 with Silencer(rs):
                     self.add_companions(
                         rs,
                         case_id,
-                        involved_id,
-                        involved.companions(is_active=None),
+                        new_involved.id,
+                        old_involved.companions(is_active=None),
                     )
-                    for companion_id in involved.companions(is_active=False):
+                    for companion_id in old_involved.companions(is_active=False):
                         self.set_companion_withdrawn(
-                            rs, case_id, persona_id, companion_id, is_withdrawn=True
+                            rs,
+                            case_id,
+                            new_involved.id,
+                            companion_id,
+                            is_withdrawn=True,
                         )
         return ret
 
