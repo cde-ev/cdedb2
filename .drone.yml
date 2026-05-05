@@ -69,6 +69,10 @@ steps:
 - name: uv-lock
   image: cdedb
   pull: never # do not try to pull image from docker hub
+  when:
+    status:
+    - failure
+    - success
   depends_on:
     - evolution-trial # wait for all git operations to be done
   commands:
