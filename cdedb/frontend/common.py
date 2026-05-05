@@ -3119,7 +3119,12 @@ def make_event_fee_reference(
 
     This is the "Verwendungszweck".
     """
-    return f"Teilnahmebeitrag {asciificator(event.title)}, {asciificator(persona.given_names)} {asciificator(persona.family_name)}, {cdedbid_filter(persona.id)}"
+    return "Teilnahmebeitrag {event}, {gn} {fn}, {cdedbid}".format(  # noqa: UP032
+        event=asciificator(event.title),
+        gn=asciificator(persona.given_names),
+        fn=asciificator(persona.family_name),
+        cdedbid=cdedbid_filter(persona.id),
+    )
 
 
 def drow_name(field_name: str, entity_id: int, prefix: str = "") -> str:

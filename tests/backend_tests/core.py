@@ -1166,7 +1166,7 @@ class TestCoreBackend(BackendTest):
             'title': 'Dr.',
         })
         self.assertEqual(
-            models.EventPersona(**expectation),  # type: ignore[arg-type]
+            models.EventPersona(**expectation_event),  # type: ignore[arg-type]
             self.core.get_event_user(self.key, 2),
         )
         expectation.update({**expectation_event, **expectation_assembly})

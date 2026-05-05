@@ -596,7 +596,8 @@ class RegistrationConstraintViolation(ConstraintViolation, abc.ABC):
 
         for registration_ in aux.registrations.values():
             persona = aux.personas[registration_['persona_id']]
-            registration_['persona'] = persona
+            # TODO use dataclass after converting regestrations to dataclass
+            registration_['persona'] = persona.as_dict()
             registration_['age'] = determine_age_class(
                 persona.birthday, aux.event.begin
             )
