@@ -9,9 +9,10 @@ import csv
 import datetime
 import decimal
 import itertools
+import typing
 from collections import OrderedDict
 from collections.abc import Collection
-from typing import Optional, cast
+from typing import Optional, cast, overload
 
 import segno.helpers
 import werkzeug.datastructures
@@ -22,6 +23,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.frontend.cde.parse_statement as parse
 import cdedb.models.event as models
+from cdedb.backend.event.registration import ComplexRegistrationFee
 from cdedb.common import (
     CdEDBObject,
     CdEDBObjectMap,
@@ -39,6 +41,7 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import EventIsBalancedError
 from cdedb.common.n_ import n_
+from cdedb.common.parse.util import Accounts
 from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from cdedb.common.sorting import EntitySorter, xsorted
@@ -62,6 +65,34 @@ from cdedb.frontend.event.base import (
     event_associated_fields_extractor,
     event_guard,
 )
+from cdedb.models.common import CdEDataclassMap
+from cdedb.models.core import MetaInfo
+
+
+class CourseChoiceParams(typing.TypedDict):
+    courses: CdEDataclassMap[models.Course]
+    courses_per_track: dict[int, set[int]]
+    all_courses_per_track: dict[int, set[int]]
+    courses_per_track_group: dict[int, set[int]]
+    all_courses_per_track_group: dict[int, set[int]]
+    simple_tracks: set[int]
+    choice_objects: list[models.CourseChoiceObject]
+    sync_track_groups: dict[int, models.SyncTrackGroup]
+    track_group_map: dict[int, int | None]
+    ccos_per_part: dict[int, list[str]]
+    parts_per_track_group_per_course: dict[int, dict[int, set[vtypes.ID]]]
+
+
+class PaymentData(typing.TypedDict):
+    registration: CdEDBObject
+    persona: CdEDBObject
+    meta_info: MetaInfo
+    reference: str
+    to_pay: decimal.Decimal
+    account: Accounts | None
+    fee: decimal.Decimal
+    complex_fee: ComplexRegistrationFee
+    semester_fee: decimal.Decimal
 
 
 class EventRegistrationMixin(EventBaseFrontend):
@@ -220,7 +251,7 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     def get_course_choice_params(
         self, rs: RequestState, event_id: int, orga: bool = True
-    ) -> CdEDBObject:
+    ) -> CourseChoiceParams:
         """Helper to gather all info needed for course choice forms.
 
         The return can be unpacked and passed to the template directly.
@@ -278,10 +309,10 @@ class EventRegistrationMixin(EventBaseFrontend):
                 ccos_per_part[track.part_id].append(f"group-{track_group_id}")
         for track_id in simple_tracks:
             ccos_per_part[tracks[track_id].part_id].append(f"{track_id}")
-        choice_objects = [t for t_id, t in tracks.items() if t_id in simple_tracks] + [
-            tg for tg in track_groups.values() if tg.constraint_type.is_sync()
-        ]
-        choice_objects = xsorted(choice_objects)
+        choice_objects: list[models.CourseChoiceObject] = xsorted(
+            [t for t_id, t in tracks.items() if t_id in simple_tracks]
+            + [tg for tg in sync_track_groups.values()]
+        )
 
         # For every course and track, determine all tracks that allow you to choose
         #  this course in this track.
@@ -297,19 +328,19 @@ class EventRegistrationMixin(EventBaseFrontend):
             for course_id, course in courses.items()
         }
 
-        return {
-            'courses': courses,
-            'courses_per_track': courses_per_track,
-            'all_courses_per_track': all_courses_per_track,
-            'courses_per_track_group': courses_per_track_group,
-            'all_courses_per_track_group': all_courses_per_track_group,
-            'simple_tracks': simple_tracks,
-            'choice_objects': choice_objects,
-            'sync_track_groups': sync_track_groups,
-            'track_group_map': track_group_map,
-            'ccos_per_part': ccos_per_part,
-            'parts_per_track_group_per_course': parts_per_track_group_per_course,
-        }
+        return CourseChoiceParams(
+            courses=courses,
+            courses_per_track=courses_per_track,
+            all_courses_per_track=all_courses_per_track,
+            courses_per_track_group=courses_per_track_group,
+            all_courses_per_track_group=all_courses_per_track_group,
+            simple_tracks=simple_tracks,
+            choice_objects=choice_objects,
+            sync_track_groups=sync_track_groups,
+            track_group_map=track_group_map,
+            ccos_per_part=ccos_per_part,
+            parts_per_track_group_per_course=parts_per_track_group_per_course,
+        )
 
     @access("event")
     @REQUESTdata("preview")
@@ -834,7 +865,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         registration['mixed_lodging'] = registration['mixed_lodging'] and age.may_mix()
         new_id = self.eventproxy.create_registration(rs, registration, orga_input=False)
 
-        payment_data = self._get_payment_data(rs, event_id)
+        payment_data = self._get_payment_data(rs, event_id, new_id)
 
         subject = f"Anmeldung für {rs.ambience['event'].title}"
         reply_to = rs.ambience['event'].orga_address or self.conf["EVENT_ADMIN_ADDRESS"]
@@ -978,11 +1009,11 @@ class EventRegistrationMixin(EventBaseFrontend):
     def registration_status(self, rs: RequestState, event_id: int) -> Response:
         """Present current state of own registration."""
         payment_data = self._get_payment_data(rs, event_id)
-        if not payment_data:
+        if payment_data is None:
             rs.notify("warning", n_("Not registered for event."))
             return self.redirect(rs, "event/show_event")
-        persona = payment_data.pop('persona')
-        registration = payment_data.pop('registration')
+        persona = payment_data['persona']
+        registration = payment_data['registration']
 
         age = determine_age_class(persona['birthday'], rs.ambience['event'].begin)
         registration['parts'] = OrderedDict(
@@ -1021,8 +1052,6 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs,
             "registration/registration_status",
             {
-                'registration': registration,
-                'persona': persona,
                 'age': age,
                 'reg_questionnaire': reg_questionnaire,
                 'waitlist_position': waitlist_position,
@@ -1185,7 +1214,9 @@ class EventRegistrationMixin(EventBaseFrontend):
         """Display all information pertaining to one registration."""
         is_restricted = not self.is_privileged(rs, EventPrivileges.registrations_read)
         payment_data = self._get_payment_data(rs, event_id, registration_id)
-        persona = payment_data.pop('persona')
+        if payment_data is None:
+            raise werkzeug.exceptions.BadRequest()
+        persona = payment_data['persona']
         age = determine_age_class(persona['birthday'], rs.ambience['event'].begin)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
@@ -1205,7 +1236,6 @@ class EventRegistrationMixin(EventBaseFrontend):
             "registration/show_registration",
             {
                 'is_restricted': is_restricted,
-                'persona': persona,
                 'age': age,
                 'lodgements': lodgements,
                 'waitlist_position': waitlist_position,
@@ -2504,15 +2534,25 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
         return self.redirect(rs, 'event/registration_query', query.serialize_to_url())
 
+    @overload
     def _get_payment_data(
-        self, rs: RequestState, event_id: int, registration_id: Optional[int] = None
-    ) -> CdEDBObject:
+        self, rs: RequestState, event_id: int, registration_id: None = None
+    ) -> PaymentData | None: ...
+
+    @overload
+    def _get_payment_data(
+        self, rs: RequestState, event_id: int, registration_id: int
+    ) -> PaymentData: ...
+
+    def _get_payment_data(
+        self, rs: RequestState, event_id: int, registration_id: int | None = None
+    ) -> PaymentData | None:
         if not registration_id:
             reg_list = self.eventproxy.list_registrations(
                 rs, event_id, persona_id=rs.user.persona_id
             )
             if not reg_list:
-                return {}
+                return None
             registration_id = unwrap(reg_list.keys())
         registration = self.eventproxy.get_registration(rs, registration_id)
         persona = self.coreproxy.get_event_user(
@@ -2527,17 +2567,17 @@ class EventRegistrationMixin(EventBaseFrontend):
         to_pay = fee - registration['amount_paid']
         reference = make_event_fee_reference(persona, rs.ambience['event'])
 
-        return {
-            'registration': registration,
-            'persona': persona,
-            'meta_info': meta_info,
-            'reference': reference,
-            'to_pay': to_pay,
-            'account': rs.ambience['event'].iban,
-            'fee': fee,
-            'complex_fee': complex_fee,
-            'semester_fee': self.conf['MEMBERSHIP_FEE'],
-        }
+        return PaymentData(
+            registration=registration,
+            persona=persona,
+            meta_info=meta_info,
+            reference=reference,
+            to_pay=to_pay,
+            account=rs.ambience['event'].iban,
+            fee=fee,
+            complex_fee=complex_fee,
+            semester_fee=self.conf['MEMBERSHIP_FEE'],
+        )
 
     @access("event")
     def registration_fee_qr(
@@ -2552,7 +2592,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         qrcode = self._registration_fee_qr(payment_data)
         return self.serve_qrcode(rs, qrcode)
 
-    def _registration_fee_qr(self, payment_data: CdEDBObject) -> segno.QRCode:
+    def _registration_fee_qr(self, payment_data: PaymentData) -> segno.QRCode:
         account = payment_data["account"]
         if not account:
             raise RuntimeError(n_("No IBAN set."))
