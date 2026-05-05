@@ -83,12 +83,12 @@ steps:
   depends_on:
     - uv-lock
   commands:
-    - uv sync --all-groups
+    - make venv
 - name: mypy
   image: cdedb
   pull: never # do not try to pull image from docker hub
   depends_on:
-    - uv-lock
+    - uv-sync
   when:
     status:
     - failure
@@ -99,7 +99,7 @@ steps:
   image: cdedb
   pull: never # do not try to pull image from docker hub
   depends_on:
-    - uv-lock
+    - uv-sync
   when:
     status:
     - failure
