@@ -472,7 +472,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.orgas_change)
     @REQUESTdata("orga_ids")
     def add_orgas(
-        self, rs: RequestState, event_id: int, orga_ids: vtypes.CdedbIDList
+        self, rs: RequestState, event_id: int, orga_ids: list[int]
     ) -> Response:
         return self._add_event_roles(rs, event_id, orga_ids, role='orga')
 
@@ -480,7 +480,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.caretakers_change)
     @REQUESTdata("caretaker_ids")
     def add_caretakers(
-        self, rs: RequestState, event_id: int, caretaker_ids: vtypes.CdedbIDList
+        self, rs: RequestState, event_id: int, caretaker_ids: list[int]
     ) -> Response:
         return self._add_event_roles(rs, event_id, caretaker_ids, role='caretaker')
 
@@ -488,7 +488,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("checkin_helper_ids")
     def add_checkin_helpers(
-        self, rs: RequestState, event_id: int, checkin_helper_ids: vtypes.CdedbIDList
+        self, rs: RequestState, event_id: int, checkin_helper_ids: list[int]
     ) -> Response:
         return self._add_event_roles(
             rs, event_id, checkin_helper_ids, role='checkin_helper'
@@ -498,7 +498,7 @@ class EventEventMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: int,
-        persona_ids: vtypes.CdedbIDList,
+        persona_ids: list[int],
         role: Literal["orga", "caretaker", "checkin_helper"],
     ) -> Response:
         # Check privileges
@@ -1593,8 +1593,8 @@ class EventEventMixin(EventBaseFrontend):
         rs: RequestState,
         part_begin: datetime.date,
         part_end: datetime.date,
-        orga_ids: vtypes.CdedbIDList,
-        caretaker_ids: vtypes.CdedbIDList,
+        orga_ids: list[int],
+        caretaker_ids: list[int],
         fee: vtypes.NonNegativeDecimal,
         nonmember_surcharge: vtypes.NonNegativeDecimal,
         create_track: bool,

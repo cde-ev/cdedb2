@@ -335,7 +335,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         info: str,
     ) -> Response:
         involved_params = {
-            f"{involvement_type.name}_ids": vtypes.CdedbIDList
+            f"{involvement_type.name}_ids": list[int]
             for involvement_type in const.ComplaintInvolvementType
         }
         involved_data = request_extractor(rs, involved_params)
@@ -386,7 +386,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs: RequestState,
         case_id: int,
         involvement_type: const.ComplaintInvolvementType,
-        persona_ids: vtypes.CdedbIDList,
+        persona_ids: list[models.PersonaID],
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
@@ -409,7 +409,6 @@ class CoreComplaintMixin(CoreBaseFrontend):
             ))
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
-        persona_ids = cast(list[models.PersonaID], persona_ids)
 
         active_companions = rs.ambience['case'].get_companions(is_active=True)
         ex_companions_ids = set(persona_ids) & active_companions.keys()
@@ -514,17 +513,18 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs: RequestState,
         case_id: int,
         involved_id: models.InvolvedID,
-        companion_ids: vtypes.CdedbIDList,
+        companion_ids: list[models.PersonaID],
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
+        companion_ids = set(companion_ids)
         if companion_ids:
-            if set(companion_ids) & rs.ambience['case'].involved_persona_ids:
+            if companion_ids & rs.ambience['case'].involved_persona_ids:
                 rs.append_validation_error((
                     "companion_ids",
                     ValueError(n_("Companion may not be involved.")),
                 ))
-            if set(companion_ids) & rs.ambience['case'].adverse_companions(
+            if companion_ids & rs.ambience['case'].adverse_companions(
                 rs.ambience['case'].involved[involved_id].involvement_type
             ):
                 rs.append_validation_error((
@@ -543,7 +543,6 @@ class CoreComplaintMixin(CoreBaseFrontend):
             ))
         if rs.has_validation_errors():
             return self.manage_companions_form(rs, case_id, involved_id)
-        companion_ids = cast(list[models.PersonaID], companion_ids)
         ret = self.complaintproxy.add_companions(
             rs, case_id, involved_id, companion_ids
         )

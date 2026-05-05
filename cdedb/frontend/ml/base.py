@@ -303,7 +303,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         rs: RequestState,
         data: dict[str, Any],
         ml_type: const.MailinglistTypes,
-        moderators: vtypes.CdedbIDList,
+        moderators: list[int],
     ) -> Response:
         """Make a new list."""
         data["moderators"] = moderators
@@ -930,7 +930,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @mailinglist_guard()
     @REQUESTdata("moderators")
     def add_moderators(
-        self, rs: RequestState, mailinglist_id: int, moderators: vtypes.CdedbIDList
+        self, rs: RequestState, mailinglist_id: int, moderators: list[int]
     ) -> Response:
         """Promote personas to moderator."""
         if rs.has_validation_errors():
@@ -1107,7 +1107,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @mailinglist_guard(requires_privilege=True)
     @REQUESTdata("subscriber_ids")
     def add_subscribers(
-        self, rs: RequestState, mailinglist_id: int, subscriber_ids: vtypes.CdedbIDList
+        self, rs: RequestState, mailinglist_id: int, subscriber_ids: list[int]
     ) -> Response:
         """Administratively subscribe somebody."""
         if rs.has_validation_errors():
@@ -1210,7 +1210,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         self,
         rs: RequestState,
         mailinglist_id: int,
-        modsubscriber_ids: vtypes.CdedbIDList,
+        modsubscriber_ids: list[int],
     ) -> Response:
         """Administratively subscribe somebody with moderator override."""
         if rs.has_validation_errors():
@@ -1254,7 +1254,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         self,
         rs: RequestState,
         mailinglist_id: int,
-        modunsubscriber_ids: vtypes.CdedbIDList,
+        modunsubscriber_ids: list[int],
     ) -> Response:
         """Administratively block somebody."""
         if rs.has_validation_errors():

@@ -59,9 +59,6 @@ Vote = _NewType("Vote", str)
 Regex = _NewType("Regex", str)
 NonRegex = _NewType("NonRegex", str)
 
-IntCSVList = _NewType("IntCSVList", list[int])
-CdedbIDList = _NewType("CdedbIDList", list[CdedbID])
-
 APITokenString = _NewType("APITokenString", tuple[str, str])
 
 Birthday = _NewType("Birthday", _datetime.date)

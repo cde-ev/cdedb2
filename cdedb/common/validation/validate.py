@@ -1072,7 +1072,6 @@ def _list_of(
     atype: type[T],
     argname: Optional[str] = None,
     *,
-    _parse_csv: bool = False,
     _allow_empty: bool = True,
     **kwargs: Any,
 ) -> list[T]:
@@ -1081,12 +1080,11 @@ def _list_of(
 
     The input may be a comma-separated string.
     """
-    if isinstance(val, str) and _parse_csv:
+    if isinstance(val, str):
         # TODO use default separator from config here?
         # TODO use escaped_split?
-        # Skip emtpy entries which can be produced by JavaScript.
+        # Skip empty entries which can be produced by JavaScript.
         val = [v for v in val.split(",") if v]
-    # TODO raise ValueError if val is string and _parse_csv is False?
     val = _iterable(val, argname, **kwargs)
     vals: list[T] = []
     errs = ValidationSummary()
@@ -1177,9 +1175,8 @@ def make_dict_validator(type_: type[T]) -> DictValidator[T]:
 def _set_of(
     val: Any, atype: type[T], argname: Optional[str] = None, **kwargs: Any
 ) -> set[T]:
-    # TODO maybe disallow strings here (see also _list_of)
-    val = _iterable(val, argname=argname, **kwargs)
-    return {_ALL_TYPED[atype](v, argname, **kwargs) for v in val}
+    list_type = list[atype]  # type: ignore[valid-type]
+    return {v for v in _ALL_TYPED[list_type](val, argname, **kwargs)}
 
 
 class SetValidator(Protocol[T]):
@@ -1194,21 +1191,6 @@ def make_set_validator(type_: type[T]) -> SetValidator[T]:
         return _set_of(val, type_, argname, **kwargs)
 
     return set_validator
-
-
-@_add_typed_validator
-def _int_csv_list(val: Any, argname: Optional[str] = None, **kwargs: Any) -> IntCSVList:
-    return IntCSVList(_list_of(val, int, argname, _parse_csv=True, **kwargs))
-
-
-@_add_typed_validator
-def _cdedbid_csv_list(
-    val: Any, argname: Optional[str] = None, **kwargs: Any
-) -> CdedbIDList:
-    """This deals with strings containing multiple cdedbids,
-    like when they are returned from cdedbSearchPerson.
-    """
-    return CdedbIDList(_list_of(val, CdedbID, argname, _parse_csv=True, **kwargs))
 
 
 @_add_typed_validator  # TODO split into Password and AdminPassword?
