@@ -6999,7 +6999,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['json_file'] = create_upload({'questionnaire': data['questionnaire']})
         self.submit(f, check_notification=False)
         self.assertPresence(
-            "Unknown field name: 'KleidungAnmerkungen'",
+            "Unbekannter Datenfeldname: 'KleidungAnmerkungen'",
             div="importerrorsummary",
         )
 
@@ -7011,7 +7011,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertEqual(f['skip_existing_fields'].checked, False)
         self.submit(f, check_notification=False)
         self.assertPresence(
-            "fields[KleidungAnmerkungen]: A field with this name already exists.",
+            "fields[KleidungAnmerkungen]: Es existiert bereits ein Datenfeld mit diesem Namen.",
             div="importerrorsummary",
         )
         f['skip_existing_fields'].checked = True
@@ -7040,7 +7040,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['json_file'] = create_upload(data)
         self.submit(f, check_notification=False)
         self.assertPresence(
-            "fields[KleidungAnmerkungen]: A field with this name already exists.",
+            "fields[KleidungAnmerkungen]: Es existiert bereits ein Datenfeld mit diesem Namen.",
             div="importerrorsummary",
         )
         self.assertPresence(
