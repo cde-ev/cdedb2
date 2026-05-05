@@ -1,6 +1,6 @@
 kind: pipeline
 type: docker
-name: default
+name: push
 
 workspace:
   base: /cdedb2
@@ -69,6 +69,10 @@ steps:
 - name: uv-lock
   image: cdedb
   pull: never # do not try to pull image from docker hub
+  when:
+    status:
+    - failure
+    - success
   depends_on:
     - evolution-trial # wait for all git operations to be done
   commands:
@@ -83,12 +87,12 @@ steps:
   depends_on:
     - uv-lock
   commands:
-    - uv sync --all-groups
+    - make venv
 - name: mypy
   image: cdedb
   pull: never # do not try to pull image from docker hub
   depends_on:
-    - uv-lock
+    - uv-sync
   when:
     status:
     - failure
@@ -99,7 +103,7 @@ steps:
   image: cdedb
   pull: never # do not try to pull image from docker hub
   depends_on:
-    - uv-lock
+    - uv-sync
   when:
     status:
     - failure
@@ -296,9 +300,319 @@ volumes:
 - name: coverage
   temp: {}
 
-
 trigger:
+  event:
+    - push
   branch:
     - master
     - stable
     - ci/**
+
+---
+
+kind: pipeline
+type: docker
+name: pull
+
+workspace:
+  base: /cdedb2
+  path: .
+
+clone:
+  disable: true
+
+steps:
+- name: clone
+  image: docker:20.10-git
+  commands:
+  - git clone $DRONE_GIT_HTTP_URL .
+  # make use of our custom po file merge driver
+  - apk add --no-cache gettext
+  - |
+    echo '''[merge "pomerge"]
+        name = Gettext merge driver
+        driver = i18n/git-merge-po.sh %O %A %B
+    ''' >> ./.git/config
+  - git fetch origin $DRONE_TARGET_BRANCH
+  - git checkout $DRONE_TARGET_BRANCH
+  - git fetch origin $DRONE_COMMIT
+  - git merge $DRONE_COMMIT || (git merge --abort && git checkout $DRONE_COMMIT)
+  - git tag --force --message "Git state upon which all ci steps work." ci/workdir
+- name: build images
+  image: docker:20.10
+  volumes:
+  - name: dockersock
+    path: /var/run/docker.sock
+  depends_on:
+  - clone
+  commands:
+  # we do not tag a version as this would create many images
+  # which would not be cleared from docker cache
+  - docker build --file related/docker/Dockerfile-postgres --tag cdepostgres .
+  - docker build --file related/docker/Dockerfile-cdedb --tag cdedb .
+  - docker build --file related/docker/Dockerfile-ldaptor --tag ldaptor .
+- name: cdb # is used as the hostname for the container
+  image: cdepostgres
+  pull: never # do not try to pull image from docker hub
+  detach: true # detach to keep running for the following steps
+  environment:
+    POSTGRES_PASSWORD: passwd
+  volumes:
+  - name: database
+    path: /var/lib/postgresql/data
+  depends_on:
+  - build images
+- name: evolution-trial
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+    - cdb
+  environment:
+    CDEDB_CONFIGPATH: tests/config/test_1.py
+    CDEDB_CONFIGPATHS: tests/config/test_1.py
+    POSTGRES_PASSWORD: passwd
+  commands:
+    - make i18n-compile # needed for sample-data creation in evolution-trial.sh
+    - sleep 3 # wait for posgres container to start up
+    - pg_isready --host=cdb --timeout=15 # wait for database to come online
+    - python3 -m cdedb db create-users # basic setup of the database for all following tests
+    - bin/evolution-trial.sh origin/$DRONE_TARGET_BRANCH ci/workdir || (git checkout ci/workdir && exit 1)
+    - git checkout ci/workdir
+- name: uv-lock
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  when:
+    status:
+    - failure
+    - success
+  depends_on:
+    - evolution-trial # wait for all git operations to be done
+  commands:
+    - uv lock --check
+- name: uv-sync
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  when:
+    status:
+    - failure
+    - success
+  depends_on:
+    - uv-lock
+  commands:
+    - make venv
+- name: mypy
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+    - uv-sync
+  when:
+    status:
+    - failure
+    - success
+  commands:
+    - make mypy
+- name: lint
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+    - uv-sync
+  when:
+    status:
+    - failure
+    - success
+  commands:
+    - make --keep-going lint
+- name: testsuite-setup
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+    - evolution-trial # wait for all git operations to be done
+  when:
+    status:
+      - failure
+      - success
+  environment:
+    CDEDB_CONFIGPATHS: tests/config/test_ldap.py
+  commands:
+  - make i18n-compile # required for sample-data target
+  - pg_isready --host=cdb --timeout=15 # wait for database to come online
+  - python3 -m cdedb db create # create the test database for ldap ...
+  - python3 -m cdedb dev compile-sample-data-sql --outfile - > tests/ancillary_files/sample_data.sql
+  - python3 -m cdedb db populate # ... and populates it
+  - python3 -m pip list
+- name: ldap # is used as the hostname for the container
+  image: ldaptor
+  pull: never # do not try to pull image from docker hub
+  detach: true # detach to keep running for the following steps
+  depends_on:
+  - testsuite-setup
+  when:
+    status:
+      - failure
+      - success
+  volumes:
+  - name: ldap
+    path: /etc/ssl/ldap
+  environment:
+    CDEDB_CONFIGPATHS: tests/config/test_ldap.py
+- name: frontend tests event
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+  - testsuite-setup
+  when:
+    status:
+      - failure
+      - success
+  volumes:
+  - name: tmp_dir
+    path: /tmp
+  - name: coverage
+    path: /coverage
+  commands:
+  - COVERAGE_FILE=/coverage/.coverage.1 python3 -m coverage run -p bin/check.py --verbose --first # everything before event
+- name: frontend tests other
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+  - testsuite-setup
+  when:
+    status:
+      - failure
+      - success
+  volumes:
+  - name: tmp_dir
+    path: /tmp
+  - name: coverage
+    path: /coverage
+  commands:
+  - COVERAGE_FILE=/coverage/.coverage.2 python3 -m coverage run -p bin/check.py --verbose --second # event and following
+- name: non-frontend tests
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+  - testsuite-setup
+  when:
+    status:
+      - failure
+      - success
+  volumes:
+  - name: tmp_dir
+    path: /tmp
+  - name: coverage
+    path: /coverage
+  commands:
+  - COVERAGE_FILE=/coverage/.coverage.3 python3 -m coverage run -p bin/check.py --verbose --third
+- name: ldap tests
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+  - testsuite-setup
+  - ldap
+  when:
+    status:
+      - failure
+      - success
+  volumes:
+  - name: ldap
+    path: /etc/ssl/ldap
+  - name: tmp_dir
+    path: /tmp
+  - name: coverage
+    path: /coverage
+  commands:
+  - sleep 10 # wait until the ldap server comes online
+  - COVERAGE_FILE=/coverage/.coverage.4 python3 -m coverage run -p bin/check.py --verbose --all-ldap
+- name: coverage
+  image: cdedb
+  pull: never
+  depends_on:
+  - frontend tests event
+  - frontend tests other
+  - non-frontend tests
+  - ldap tests
+  when:
+    status:
+      - failure
+      - success
+  volumes:
+  - name: coverage
+    path: /coverage
+  commands:
+  - python3 -m coverage combine /coverage/
+  # Show coverage first, ...
+  - python3 -m coverage report --include 'cdedb/*' --show-missing
+  - python3 -m coverage report --include 'tests/common.py' --show-missing
+  - python3 -m coverage report --include 'tests/*/*.py' --show-missing
+  # temporary:
+  - python3 -m coverage report --include 'cdedb/models/event/constraint_violations.py' --show-missing
+  # ... fail-under later.
+  - python3 -m coverage report --include 'cdedb/*' --fail-under=92
+  - python3 -m coverage report --include 'tests/*/*.py' --fail-under=100
+- name: xss
+  image: cdedb
+  pull: never
+  depends_on:
+    - testsuite-setup
+  when:
+    status:
+      - failure
+      - success
+  volumes:
+  - name: tmp_dir
+    path: /tmp
+  commands:
+    - bin/check.py --verbose --parts xss
+- name: check sample data consistency
+  image: cdedb
+  pull: never
+  depends_on:
+    - ldap tests
+  when:
+    status:
+      - failure
+      - success
+  volumes:
+    - name: tmp_dir
+      path: /tmp
+  environment:
+    CDEDB_CONFIGPATHS: tests/config/test_ldap.py
+  commands:
+    - python3 -m cdedb dev check-sample-data-consistency
+- name: check for merge conflicts
+  image: docker:20.10-git
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+  - frontend tests event
+  - frontend tests other
+  - non-frontend tests
+  - ldap tests
+  - xss
+  when:
+    status:
+    - failure
+    - success
+  commands:
+  # let the pipeline fail if merge caused conflicts
+  - apk add --no-cache gettext
+  - git checkout $DRONE_TARGET_BRANCH
+  - git merge $DRONE_COMMIT
+
+volumes:
+- name: dockersock
+  host:
+    path: /var/run/docker.sock
+- name: database
+  temp:
+    medium: memory
+- name: ldap
+  temp: {}
+- name: tmp_dir
+  temp: {}
+- name: coverage
+  temp: {}
+
+trigger:
+  event:
+    - pull_request
+    - custom
