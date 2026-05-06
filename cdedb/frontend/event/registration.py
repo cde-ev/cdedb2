@@ -25,6 +25,7 @@ import cdedb.frontend.cde.parse_statement as parse
 import cdedb.models.event as models
 from cdedb.backend.event.registration import ComplexRegistrationFee
 from cdedb.common import (
+    AgeClasses,
     CdEDBObject,
     CdEDBObjectMap,
     RequestState,
@@ -81,6 +82,15 @@ class CourseChoiceParams(typing.TypedDict):
     track_group_map: dict[int, int | None]
     ccos_per_part: dict[int, list[str]]
     parts_per_track_group_per_course: dict[int, dict[int, set[vtypes.ID]]]
+
+
+class RegisterParams(typing.TypedDict):
+    registration: CdEDBObject | None
+    persona: CdEDBObject
+    persona_age: int
+    age_class: AgeClasses
+    involved_tracks: Collection[int] | None
+    payment_parts: Collection[int] | None
 
 
 class PaymentData(typing.TypedDict):
@@ -342,7 +352,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             parts_per_track_group_per_course=parts_per_track_group_per_course,
         )
 
-    def get_register_params(self, rs: RequestState) -> CdEDBObject:
+    def get_register_params(self, rs: RequestState) -> RegisterParams:
         registration_ids = self.eventproxy.list_registrations(
             rs, rs.ambience['event'].id, persona_id=rs.user.persona_id
         )
