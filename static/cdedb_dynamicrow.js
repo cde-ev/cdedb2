@@ -45,7 +45,7 @@
             if (newrow) {
                 $deleteButton.click(function() {
                     $row.detach();
-                    obj.refreshInputNames();
+                    refresh();
                 });
             } else {
                 var $indicator = $row.find('.drow-indicator');
@@ -75,8 +75,14 @@
             $row.find('.drow-buttonspace').after($deleteButton);
         };
 
-        var setUpRow = function($row) {
-            newrow = $row.hasClass("drow-new");
+        var setUpRow = function($row, newrow = false) {
+            if (newrow) {
+                $row.addClass('drow-new')
+                    .removeClass('drow-prototype');
+                // Mark the creation indicator checkbox.
+                $row.find('.drow-indicator').prop("checked", true);
+                $row.find('.drow-input').first().focus();
+            }
             addDeleteButton($row, newrow);
             // Add input handler for inline add button if it exists.
             $row.find('.drow-inline-add-button')
@@ -119,27 +125,40 @@
          */
         this.addRow = function($before) {
             // Create a new row from the prototype.
-            var $prototype = $element.find('.drow-prototype');
-            var $row = $prototype.clone(false);
-            $row.addClass('drow-new')
-                .removeClass('drow-prototype');
-            // Mark the creation indicator checkbox.
-            $row.find('.drow-indicator').prop("checked", true);
+            let $prototype = $element.find('.drow-prototype');
+            let $row = $prototype.clone(false);
+            setUpRow($row, true);
 
-            // Set up the new row.
-            setUpRow($row);
-            // If an element was given (by clicking an inline add button), insert the new row sbove an existing
+            // If an element was given (by clicking an inline add button), insert the new row sbove an existing one.
             if ($before !== undefined)
                 $before.before($row);
             else
                 $prototype.before($row);
-            $row.find('.drow-input').first().focus();
 
-            // If there is an inline add button, add the inline handler.
-            $row
-                .find('.drow-inline-add-button')
-                .on('click', function() {obj.addRow($row);})
+            // Update the drow id of the prototype for the next created row.
+            let new_drow_id = $prototype.data('drow-id') - 1;
+            setDRowID($prototype, new_drow_id)
 
+            // Call refresh and any given callback.
+            refresh();
+            settings.callback.call($row);
+        };
+
+        var moveRow = function($row, up) {
+            let $other = up ? $row.prev() : $row.next();
+            $row.detach;
+            up ? $other.before($row) : $other.after($row);
+            refresh();
+        }
+
+        var setDRowID = function ($row, new_drow_id) {
+            // Only adjusting the data does not affect the DOM and therefore further prototype rows.
+            // Only adjusting the attrs does not affect the jQuery object for further usage.
+            $row.data('drow-id', new_drow_id);
+            $row.attr('data-drow-id', new_drow_id);
+        }
+
+        var adjustRowInputNames = function ($row) {
             // Update the names and ids of all inputs and their labels from the basename and the current drow id.
             $row.find('.drow-input,.drow-indicator').each(function() {
                 var name = $(this).attr('data-basename');
@@ -153,24 +172,6 @@
                     $row.find('label[for="' + id + '"]').attr('for', new_id);
                 }
             });
-
-            // Update the drow id of the prototype for the next created row.
-            // Only adjusting the data does not affect the DOM and therefore further prototype rows.
-            // Only adjusting the attrs does not affect the jQuery object for further usage.
-            let new_drow_id = $prototype.data('drow-id') - 1;
-            $prototype.data('drow-id', new_drow_id);
-            $prototype.attr('data-drow-id', new_drow_id);
-
-            // Call refresh and any given callback.
-            refresh();
-            settings.callback.call($row);
-        };
-
-        var moveRow = function($row, up) {
-            let $other = up ? $row.prev() : $row.next();
-            $row.detach;
-            up ? $other.before($row) : $other.after($row);
-            refresh();
         }
 
         /**
@@ -188,6 +189,17 @@
             let rows = $element.find('.drow-row,.drow-new');
             rows.find('.drow-move-row-up-button').show().first().hide();
             rows.find('.drow-move-row-down-button').show().last().hide();
+
+            // Iterate over all new rows to ensure there are no gaps in the drow ids.
+            //  This changes the input names, and thus the extraction order, but the
+            //  final order can determined by position anyway.
+            i = -1;
+            $element.find('.drow-new').each(function() {
+                setDRowID($(this), i);
+                adjustRowInputNames($(this))
+                i--;
+            });
+            setDRowID($element.find('.drow-prototype'), i);
         };
     };
 
