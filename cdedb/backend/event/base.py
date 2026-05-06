@@ -1604,7 +1604,9 @@ class EventBaseBackend(EventLowLevelBackend):
                     ('id', 'registration_id', 'track_id', 'course_id', 'rank'),
                 ),
                 models.PersonalizedFee.full_export_spec(),
-                ('event.questionnaire_rows', "event_id", QUESTIONNAIRE_ROW_FIELDS),
+                models.QuestionnaireTextRow.full_export_spec(),
+                models.QuestionnaireFieldRow.full_export_spec(),
+                models.QuestionnaireMagicRow.full_export_spec(),
                 models.StoredEventQuery.full_export_spec(),
                 (
                     'event.log',

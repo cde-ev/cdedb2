@@ -130,6 +130,48 @@
             "title": "Dr.",
             "username": "berta@example.cde"
         },
+        "38": {
+            "address": null,
+            "address_supplement": null,
+            "birthday": "1990-09-19",
+            "country": "DE",
+            "family_name": "Lokus",
+            "gender": 2,
+            "given_names": "Ludwig",
+            "id": 38,
+            "is_active": true,
+            "is_archived": false,
+            "is_assembly_admin": false,
+            "is_assembly_realm": true,
+            "is_auditor": false,
+            "is_cde_admin": false,
+            "is_cde_realm": true,
+            "is_cdelokal_admin": true,
+            "is_complaint_admin": false,
+            "is_core_admin": false,
+            "is_event_admin": false,
+            "is_event_realm": true,
+            "is_finance_admin": false,
+            "is_member": false,
+            "is_meta_admin": false,
+            "is_ml_admin": false,
+            "is_ml_realm": true,
+            "is_purged": false,
+            "is_searchable": true,
+            "legal_given_names": null,
+            "location": null,
+            "mobile": null,
+            "name_supplement": null,
+            "nickname": null,
+            "postal_code": null,
+            "pronouns": null,
+            "pronouns_nametag": false,
+            "pronouns_profile": false,
+            "show_legal_given_names": false,
+            "telephone": null,
+            "title": null,
+            "username": "ludwig@example.cde"
+        },
         "5": {
             "address": "Hohle Gasse 13",
             "address_supplement": null,
@@ -255,48 +297,14 @@
             "telephone": null,
             "title": null,
             "username": "inga@example.cde"
-        },
-        "38": {
-            "is_active": true,
-            "is_meta_admin": false,
-            "is_core_admin": false,
-            "is_cde_admin": false,
-            "is_finance_admin": false,
-            "is_event_admin": false,
-            "is_ml_admin": false,
-            "is_assembly_admin": false,
-            "is_complaint_admin": false,
-            "is_cde_realm": true,
-            "is_event_realm": true,
-            "is_ml_realm": true,
-            "is_assembly_realm": true,
-            "is_cdelokal_admin": true,
-            "is_auditor": false,
-            "is_member": false,
-            "is_searchable": true,
-            "is_archived": false,
-            "is_purged": false,
-            "id": 38,
-            "username": "ludwig@example.cde",
-            "family_name": "Lokus",
-            "given_names": "Ludwig",
-            "nickname": null,
-            "legal_given_names": null,
-            "title": null,
-            "name_supplement": null,
-            "show_legal_given_names": false,
-            "gender": 2,
-            "birthday": "1990-09-19",
-            "telephone": null,
-            "mobile": null,
-            "address_supplement": null,
-            "address": null,
-            "postal_code": null,
-            "location": null,
-            "country": "DE",
-            "pronouns": null,
-            "pronouns_nametag": false,
-            "pronouns_profile": false
+        }
+    },
+    "event.caretakers": {},
+    "event.checkin_helpers": {
+        "1": {
+            "event_id": 1,
+            "id": 1,
+            "persona_id": 38
         }
     },
     "event.checkin_periods": {
@@ -305,14 +313,6 @@
             "checkout_time": "2022-02-23T09:00:00+00:00",
             "id": 1,
             "registration_id": 6
-        }
-    },
-    "event.caretakers": {},
-    "event.checkin_helpers": {
-        "1": {
-            "id": 1,
-            "persona_id": 38,
-            "event_id": 1
         }
     },
     "event.course_choices": {
@@ -954,6 +954,32 @@
             "sortkey": 0,
             "title": "Bringt B\u00e4lle mit"
         },
+        "10": {
+            "association": 1,
+            "checkin": false,
+            "description": null,
+            "entries": [
+                [
+                    "",
+                    "gar nicht"
+                ],
+                [
+                    "2025-12-31",
+                    "Sylvester"
+                ],
+                [
+                    "2026-01-01",
+                    "Neujahr"
+                ]
+            ],
+            "event_id": 1,
+            "field_name": "arrival_date",
+            "id": 10,
+            "kind": 5,
+            "sort_group": null,
+            "sortkey": 0,
+            "title": "Anreisetag"
+        },
         "2": {
             "association": 1,
             "checkin": false,
@@ -1087,32 +1113,6 @@
             "sort_group": null,
             "sortkey": 0,
             "title": "Anreise um"
-        },
-        "10": {
-            "association": 1,
-            "checkin": false,
-            "description": null,
-            "entries": [
-                [
-                    "",
-                    "gar nicht"
-                ],
-                [
-                    "2025-12-31",
-                    "Sylvester"
-                ],
-                [
-                    "2026-01-01",
-                    "Neujahr"
-                ]
-            ],
-            "event_id": 1,
-            "field_name": "arrival_date",
-            "id": 10,
-            "kind": 5,
-            "sort_group": null,
-            "sortkey": 0,
-            "title": "Anreisetag"
         }
     },
     "event.lodgement_groups": {
@@ -1186,7 +1186,7 @@
         "1": {
             "change_note": null,
             "code": 50,
-            "ctime": "2014-01-01T02:00:00+00:00",
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
             "event_id": 1,
             "id": 1,
             "persona_id": 1,
@@ -1195,7 +1195,7 @@
         "10": {
             "change_note": "22.02.2022, 18:00:00",
             "code": 500,
-            "ctime": "2014-01-01T09:00:00+00:00",
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
             "event_id": 1,
             "id": 10,
             "persona_id": 2,
@@ -1204,25 +1204,25 @@
         "11": {
             "change_note": "23.02.2022, 10:00:00",
             "code": 505,
-            "ctime": "2014-01-01T09:00:00+00:00",
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
             "event_id": 1,
             "id": 11,
             "persona_id": 2,
             "submitted_by": 1
         },
         "12": {
-            "id": 12,
-            "ctime": "2026-04-24T15:34:27.593566+00:00",
+            "change_note": null,
             "code": 800,
-            "submitted_by": 7,
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
             "event_id": 1,
+            "id": 12,
             "persona_id": 38,
-            "change_note": null
+            "submitted_by": 7
         },
         "2": {
             "change_note": null,
             "code": 50,
-            "ctime": "2014-01-01T01:00:00+00:00",
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
             "event_id": 1,
             "id": 2,
             "persona_id": 5,
@@ -1231,7 +1231,7 @@
         "3": {
             "change_note": null,
             "code": 50,
-            "ctime": "2014-01-01T03:00:00+00:00",
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
             "event_id": 1,
             "id": 3,
             "persona_id": 7,
@@ -1240,7 +1240,7 @@
         "4": {
             "change_note": null,
             "code": 50,
-            "ctime": "2014-01-01T04:00:08+00:00",
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
             "event_id": 1,
             "id": 4,
             "persona_id": 9,
@@ -1249,7 +1249,7 @@
         "5": {
             "change_note": null,
             "code": 50,
-            "ctime": "2014-01-01T05:00:00+00:00",
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
             "event_id": 1,
             "id": 5,
             "persona_id": 100,
@@ -1258,7 +1258,7 @@
         "6": {
             "change_note": null,
             "code": 50,
-            "ctime": "2014-01-01T06:00:00+00:00",
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
             "event_id": 1,
             "id": 6,
             "persona_id": 2,
@@ -1267,7 +1267,7 @@
         "7": {
             "change_note": "200,00 \u20ac am 01.01.2014 gezahlt.",
             "code": 55,
-            "ctime": "2014-01-01T07:00:00+00:00",
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
             "event_id": 1,
             "id": 7,
             "persona_id": 1,
@@ -1276,7 +1276,7 @@
         "8": {
             "change_note": "548,48 \u20ac am 04.04.2014 gezahlt.",
             "code": 55,
-            "ctime": "2014-01-01T08:00:00+00:00",
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
             "event_id": 1,
             "id": 8,
             "persona_id": 9,
@@ -1285,7 +1285,7 @@
         "9": {
             "change_note": "10,50 \u20ac am 06.06.2014 gezahlt.",
             "code": 55,
-            "ctime": "2014-01-01T09:00:00+00:00",
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
             "event_id": 1,
             "id": 9,
             "persona_id": 2,
@@ -1295,7 +1295,7 @@
     "event.orga_apitokens": {
         "1": {
             "atime": null,
-            "ctime": "2023-04-30T00:00:00+00:00",
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
             "etime": "2222-12-31T23:59:59+00:00",
             "event_id": 1,
             "id": 1,
@@ -1327,83 +1327,152 @@
             "registration_id": 3
         }
     },
-    "event.questionnaire_rows": {
+    "event.questionnaire_field_rows": {
         "1": {
-            "default_value": null,
-            "event_id": 1,
-            "field_id": 7,
-            "id": 1,
-            "info": null,
-            "kind": 1,
-            "pos": 0,
-            "readonly": false,
-            "title": "Ich bin unter 13 Jahre alt."
-        },
-        "2": {
-            "default_value": null,
-            "event_id": 1,
-            "field_id": null,
-            "id": 2,
-            "info": "mit Text darunter",
-            "kind": 2,
-            "pos": 0,
-            "readonly": false,
-            "title": "Unter\u00fcberschrift"
-        },
-        "3": {
             "default_value": "True",
             "event_id": 1,
             "field_id": 1,
-            "id": 3,
+            "id": 1,
             "info": "Du bringst genug B\u00e4lle mit um einen ganzen Kurs abzuwerfen.",
             "kind": 2,
+            "label": "B\u00e4lle",
             "pos": 1,
             "readonly": false,
-            "title": "B\u00e4lle"
+            "role": 5
         },
-        "4": {
-            "default_value": null,
-            "event_id": 1,
-            "field_id": null,
-            "id": 4,
-            "info": "nur etwas Text",
-            "kind": 2,
-            "pos": 2,
-            "readonly": false,
-            "title": null
-        },
-        "5": {
-            "default_value": null,
-            "event_id": 1,
-            "field_id": null,
-            "id": 5,
-            "info": null,
-            "kind": 2,
-            "pos": 3,
-            "readonly": false,
-            "title": "Weitere \u00dcberschrift"
-        },
-        "6": {
+        "2": {
             "default_value": "etc",
             "event_id": 1,
             "field_id": 2,
-            "id": 6,
+            "id": 2,
             "info": null,
             "kind": 2,
+            "label": "Vehikel",
             "pos": 4,
             "readonly": false,
-            "title": "Vehikel"
+            "role": 5
         },
-        "7": {
+        "3": {
             "default_value": null,
             "event_id": 1,
             "field_id": 3,
-            "id": 7,
+            "id": 3,
             "info": null,
             "kind": 2,
+            "label": "Hauswunsch",
             "pos": 5,
             "readonly": false,
-            "title": "Hauswunsch"
+            "role": 5
+        },
+        "4": {
+            "default_value": "",
+            "event_id": 1,
+            "field_id": 7,
+            "id": 4,
+            "info": "Denk daran, deine Eltern mitzubringen!",
+            "kind": 1,
+            "label": "Ich bin unter 13 Jahre alt.",
+            "pos": 5,
+            "readonly": false,
+            "role": 5
+        }
+    },
+    "event.questionnaire_magic_rows": {
+        "1": {
+            "event_id": 1,
+            "id": 1,
+            "kind": 1,
+            "pos": 0,
+            "role": 30
+        },
+        "2": {
+            "event_id": 1,
+            "id": 2,
+            "kind": 1,
+            "pos": 2,
+            "role": 10
+        },
+        "3": {
+            "event_id": 1,
+            "id": 3,
+            "kind": 1,
+            "pos": 4,
+            "role": 40
+        },
+        "4": {
+            "event_id": 1,
+            "id": 4,
+            "kind": 1,
+            "pos": 6,
+            "role": 50
+        },
+        "5": {
+            "event_id": 1,
+            "id": 5,
+            "kind": 1,
+            "pos": 7,
+            "role": 60
+        },
+        "6": {
+            "event_id": 1,
+            "id": 6,
+            "kind": 1,
+            "pos": 8,
+            "role": 70
+        },
+        "7": {
+            "event_id": 1,
+            "id": 7,
+            "kind": 1,
+            "pos": 9,
+            "role": 30
+        }
+    },
+    "event.questionnaire_text_rows": {
+        "1": {
+            "event_id": 1,
+            "id": 1,
+            "kind": 2,
+            "pos": 0,
+            "role": 1,
+            "text": "mit Text darunter",
+            "title": "Unter\u00fcberschrift"
+        },
+        "2": {
+            "event_id": 1,
+            "id": 2,
+            "kind": 2,
+            "pos": 2,
+            "role": 1,
+            "text": "nur etwas Text",
+            "title": null
+        },
+        "3": {
+            "event_id": 1,
+            "id": 3,
+            "kind": 2,
+            "pos": 3,
+            "role": 1,
+            "text": null,
+            "title": "Weitere \u00dcberschrift"
+        },
+        "4": {
+            "event_id": 1,
+            "id": 4,
+            "kind": 1,
+            "pos": 1,
+            "role": 1,
+            "text": null,
+            "title": "Kurswahlen"
+        },
+        "5": {
+            "event_id": 1,
+            "id": 5,
+            "kind": 1,
+            "pos": 3,
+            "role": 1,
+            "text": null,
+            "title": "Weitere Angaben"
         }
     },
     "event.registration_parts": {
