@@ -385,55 +385,84 @@
         "questionnaire": {
             "QuestionnaireUsages.additional": [
                 {
-                    "default_value": null,
-                    "field_name": null,
-                    "info": "mit Text darunter",
-                    "readonly": false,
+                    "role": 1,
+                    "text": "mit Text darunter",
                     "title": "Unter\u00fcberschrift"
                 },
                 {
                     "default_value": true,
                     "field_name": "brings_balls",
                     "info": "Du bringst genug B\u00e4lle mit um einen ganzen Kurs abzuwerfen.",
+                    "label": "B\u00e4lle",
                     "readonly": false,
-                    "title": "B\u00e4lle"
+                    "role": 5
                 },
                 {
-                    "default_value": null,
-                    "field_name": null,
-                    "info": "nur etwas Text",
-                    "readonly": false,
+                    "role": 1,
+                    "text": "nur etwas Text",
                     "title": null
                 },
                 {
-                    "default_value": null,
-                    "field_name": null,
-                    "info": null,
-                    "readonly": false,
+                    "role": 1,
+                    "text": null,
                     "title": "Weitere \u00dcberschrift"
                 },
                 {
                     "default_value": "etc",
                     "field_name": "transportation",
                     "info": null,
+                    "label": "Vehikel",
                     "readonly": false,
-                    "title": "Vehikel"
+                    "role": 5
                 },
                 {
                     "default_value": null,
                     "field_name": "lodge",
                     "info": null,
+                    "label": "Hauswunsch",
                     "readonly": false,
-                    "title": "Hauswunsch"
+                    "role": 5
                 }
             ],
             "QuestionnaireUsages.registration": [
                 {
+                    "role": 30
+                },
+                {
+                    "role": 1,
+                    "text": null,
+                    "title": "Kurswahlen"
+                },
+                {
+                    "role": 10
+                },
+                {
+                    "role": 1,
+                    "text": null,
+                    "title": "Weitere Angaben"
+                },
+                {
+                    "role": 40
+                },
+                {
                     "default_value": null,
                     "field_name": "is_child",
-                    "info": null,
+                    "info": "Denk daran, deine Eltern mitzubringen!",
+                    "label": "Ich bin unter 13 Jahre alt.",
                     "readonly": false,
-                    "title": "Ich bin unter 13 Jahre alt."
+                    "role": 5
+                },
+                {
+                    "role": 50
+                },
+                {
+                    "role": 60
+                },
+                {
+                    "role": 70
+                },
+                {
+                    "role": 30
                 }
             ]
         },
