@@ -79,8 +79,7 @@ class EventQueryMixin(EventBaseFrontend):
         )
         # Precompute age classes of participants for all registration parts.
         for reg in registrations.values():
-            persona = personas[reg['persona_id']]
-            reg['birthday'] = persona['birthday']
+            reg['birthday'] = personas[reg['persona_id']].birthday
             for part_id, reg_part in reg['parts'].items():
                 reg_part['age_class'] = determine_age_class(
                     reg['birthday'], event_parts[part_id].part_begin

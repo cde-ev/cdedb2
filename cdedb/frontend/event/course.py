@@ -165,7 +165,7 @@ class EventCourseMixin(EventBaseFrontend):
                     )
                 )
                 params['instructor_emails'] = [
-                    violation_data['personas'][instructor_id]['username']
+                    violation_data['personas'][instructor_id].username
                     for instructor_id in instructor_ids
                 ]
                 params['violations'] = violations
@@ -614,7 +614,7 @@ class EventCourseMixin(EventBaseFrontend):
                                 else n_("%(name)s has no %(rank)i. choice.")
                             ),
                             {
-                                'name': make_persona_name(persona),
+                                'name': persona.get_name(),
                                 'rank': assign_action.int + 1,
                                 'track_name': tracks[atrack_id].title,
                             },
@@ -643,20 +643,16 @@ class EventCourseMixin(EventBaseFrontend):
                             tmp['tracks'][atrack_id] = {'course_id': choice}
                             break
                     else:
-                        rs.notify(
-                            "warning",
-                            (
-                                n_(
-                                    "No choice available for %(name)s in %(track_name)s."
-                                )
-                                if len(tracks) > 1
-                                else n_("No choice available for %(name)s.")
-                            ),
-                            {
-                                'name': make_persona_name(persona),
-                                'track_name': tracks[atrack_id].title,
-                            },
-                        )
+                        msg = n_("No choice available for %(name)s.")
+                        if len(tracks) > 1:
+                            msg = n_(
+                                "No choice available for %(name)s in %(track_name)s."
+                            )
+                        params = {
+                            'name': persona.get_name(),
+                            'track_name': tracks[atrack_id].title,
+                        }
+                        rs.notify("warning", msg, params)
             if tmp['tracks']:
                 res = self.eventproxy.set_registration(rs, tmp, change_note)
                 if res:
@@ -665,7 +661,7 @@ class EventCourseMixin(EventBaseFrontend):
                     rs.notify(
                         "warning",
                         n_("Error committing changes for %(name)s."),
-                        {'name': make_persona_name(persona)},
+                        {'name': persona.get_name()},
                     )
         rs.notify(
             "success" if num_committed > 0 else "warning",

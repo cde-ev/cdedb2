@@ -298,7 +298,7 @@ class EventLodgementMixin(EventBaseFrontend):
                 rs, tuple(reg['persona_id'] for reg in registrations.values()), event_id
             )
 
-            _wishes, problems = detect_lodgement_wishes(
+            _, problems = detect_lodgement_wishes(
                 registrations, personas, event, restrict_part_id=None
             )
         else:
@@ -378,9 +378,7 @@ class EventLodgementMixin(EventBaseFrontend):
             rs.ambience['event']
         )
 
-        wishes, _problems = detect_lodgement_wishes(
-            registrations, personas, event, part_id
-        )
+        wishes, _ = detect_lodgement_wishes(registrations, personas, event, part_id)
         graph = create_lodgement_wishes_graph(
             rs,
             registrations,

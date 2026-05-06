@@ -2018,7 +2018,7 @@ etc;anything else""",
         self.response = save
 
         event = self.event.get_event(self.key, 1)
-        persona = self.core.get_persona(self.key, self.user['id'])
+        persona = self.core.get_event_user(self.key, self.user['id'])
 
         qr_expectation = b"""\
 BCD
