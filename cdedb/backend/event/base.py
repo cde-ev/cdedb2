@@ -1353,7 +1353,7 @@ class EventBaseBackend(EventLowLevelBackend):
             )
         )
         data.extend(
-            self.query_all(
+            field_rows := self.query_all(
                 rs, *models.QuestionnaireFieldRow.get_select_query([event_id])
             )
         )
@@ -1363,7 +1363,7 @@ class EventBaseBackend(EventLowLevelBackend):
             )
         )
 
-        for row in data:
+        for row in field_rows:
             row["event"] = event
         return models.QuestionnaireContainer.from_database(data, event)
 

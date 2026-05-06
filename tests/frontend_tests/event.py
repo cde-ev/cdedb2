@@ -2325,52 +2325,43 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                     "role": const.QuestionnaireRowMagicRole.course_choices,
                 },
                 {
+                    "role": const.QuestionnaireRowMagicRole.list_consent,
+                },
+                {
+                    "role": const.QuestionnaireRowMagicRole.foto_notice,
+                },
+                {
+                    "role": const.QuestionnaireRowMagicRole.mixed_lodging,
+                },
+                {
                     "role": const.QuestionnaireRowMagicRole.event_field,
-                    "title": "Ich bin unter 13 Jahre alt.",
                     "field_id": 1001,
-                    "default_value": None,
-                    "info": None,
-                    "readonly": False,
+                    "label": "Ich bin unter 13 Jahre alt.",
                 },
                 {
                     "role": const.QuestionnaireRowMagicRole.event_field,
-                    "title": "Ich bringe noch jemanden mit.",
                     "field_id": 1002,
-                    "default_value": None,
-                    "info": None,
-                    "readonly": False,
+                    "label": "Ich bringe noch jemanden mit.",
                 },
                 {
                     "role": const.QuestionnaireRowMagicRole.event_field,
-                    "title": "Name des Partners.",
                     "field_id": 1003,
-                    "default_value": None,
-                    "info": None,
-                    "readonly": False,
+                    "label": "Name des Partners.",
                 },
                 {
                     "role": const.QuestionnaireRowMagicRole.event_field,
-                    "title": "Anzahl an Kissen",
                     "field_id": 1004,
-                    "default_value": None,
-                    "info": None,
-                    "readonly": False,
+                    "label": "Anzahl an Kissen",
                 },
                 {
                     "role": const.QuestionnaireRowMagicRole.event_field,
-                    "title": "Essgewohnheiten.",
                     "field_id": 1005,
-                    "default_value": None,
-                    "info": None,
-                    "readonly": False,
+                    "label": "Essgewohnheiten.",
                 },
                 {
                     "role": const.QuestionnaireRowMagicRole.event_field,
-                    "title": "Dein Lieblingstag",
                     "field_id": 1006,
-                    "default_value": None,
-                    "info": None,
-                    "readonly": False,
+                    "label": "Dein Lieblingstag",
                 },
             ],
         )
@@ -5482,48 +5473,50 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
     @as_users("garcia")
     def test_questionnaire_manipulation(self) -> None:
-        self.traverse(
-            {'href': '/event/$'},
-            {'href': '/event/event/1/show'},
-            {'href': '/event/event/1/change'},
-        )
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Konfiguration")
         self.assertTitle("Große Testakademie 2222 – Konfiguration")
         f = self.response.forms['changeeventform']
         f['use_additional_questionnaire'].checked = True
         self.submit(f)
-        self.traverse({'href': '/event/event/1/registration/questionnaire'})
+        self.traverse("Fragebogen")
         self.assertTitle("Fragebogen (Große Testakademie 2222)")
         f = self.response.forms['questionnaireform']
         self.assertNotIn("may_reserve", f.fields)
-        self.traverse({'href': '/event/event/1/questionnaire/config'})
+        self.traverse("Fragebogen konfigurieren")
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
+
         f = self.response.forms['configurequestionnaireform']
         self.assertEqual("3", f['field_id_5'].value)
         self.assertEqual("2", f['field_id_4'].value)
         self.assertEqual("Weitere Überschrift", f['title_3'].value)
+        self.assertEqual("mit Text darunter", f['text_0'].value)
+
         f['title_3'] = "Immernoch Überschrift"
-        self.assertEqual("mit Text darunter", f['info_0'].value)
-        f['info_0'] = "mehr Text darunter\nviel mehr"
+        f['text_0'] = "mehr Text darunter\nviel mehr"
         self.submit(f)
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
+
         f = self.response.forms['configurequestionnaireform']
         self.assertEqual("3", f['field_id_5'].value)
-        self.assertEqual("Hauswunsch", f['title_5'].value)
+        self.assertEqual("Hauswunsch", f['label_5'].value)
         self.assertEqual("Immernoch Überschrift", f['title_3'].value)
-        self.assertEqual("mehr Text darunter\nviel mehr", f['info_0'].value)
+        self.assertEqual("mehr Text darunter\nviel mehr", f['text_0'].value)
+
         f['delete_4'].checked = True
         self.submit(f)
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
+
         f = self.response.forms['configurequestionnaireform']
         self.assertNotIn("field_id_5", f.fields)
         self.assertEqual("Unterüberschrift", f['title_0'].value)
-        self.assertEqual("nur etwas Text", f['info_2'].value)
+        self.assertEqual("nur etwas Text", f['text_2'].value)
         self.assertEqual("3", f['field_id_4'].value)
-        self.assertEqual("Hauswunsch", f['title_4'].value)
+        self.assertEqual("Hauswunsch", f['label_4'].value)
+
         f['create_-1'].checked = True
         f['role_-1'] = const.QuestionnaireRowMagicRole.event_field
         f['field_id_-1'] = 4
-        f['title_-1'] = "Input"
+        f['label_-1'] = "Input"
         f['readonly_-1'].checked = True
         self.submit(f)
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
@@ -5538,7 +5531,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f = self.response.forms['configurequestionnaireform']
         self.assertIn("field_id_5", f.fields)
         self.assertEqual("4", f['field_id_5'].value)
-        self.assertEqual("Input", f['title_5'].value)
+        self.assertEqual("Input", f['label_5'].value)
 
         # Add a row with a datetime field and check that the default value works.
         f['create_-1'] = True
@@ -7041,7 +7034,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertEqual(f['extend_questionnaire'].checked, True)
         self.submit(f, check_notification=False)
         self.assertPresence(
-            "Felder dürfen nicht doppelt auftreten ('KleidungAnmerkungen').",
+            "Felder dürfen nicht doppelt auftreten: 'KleidungAnmerkungen'.",
             div="importerrorsummary",
         )
         f['extend_questionnaire'].checked = False
@@ -7060,16 +7053,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             div="importerrorsummary",
         )
         self.assertPresence(
-            "Felder dürfen nicht doppelt auftreten ('KleidungAnmerkungen').",
+            "Felder dürfen nicht doppelt auftreten: 'KleidungAnmerkungen'.",
             div="importerrorsummary",
         )
 
         # Fifth: Reset Questionnaire and fields and try the full import again:
         self.event.set_questionnaire(
             self.key, 1, const.QuestionnaireUsages.additional, []
-        )
-        self.event.set_questionnaire(
-            self.key, 1, const.QuestionnaireUsages.registration, []
         )
         event = self.event.get_event(self.key, 1)
         self.event.set_event(
@@ -7095,6 +7085,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.submit(f)
             self.traverse("Downloads & Import", {"href": "/download/questionnaire"})
             export = json.loads(self.response.text)
+            data["questionnaire"][str(const.QuestionnaireUsages.registration)] = []
             self.assertEqual(data, export)
             self.get("/")
 

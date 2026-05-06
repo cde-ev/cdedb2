@@ -339,17 +339,14 @@
 
     {% if reg_questionnaire %}
         <dl class="dl-horizontal" id="questionnaire_results">
-        {% for entry in reg_questionnaire %}
-            {% if entry['field_id'] %}
-                {% with FIELD = ambience['event']['fields'][entry['field_id']] %}
-                    <div id="questionnaire_field_result_{{ FIELD['field_name'] }}">
-                        <dt title="{{ entry['title'] }}">{{ entry['title'] }}</dt>
-                        <dd>
-                            {{ generic_event.display_field(FIELD, registration['fields'].get(FIELD['field_name'])) }}
-                        </dd>
-                    </div>
-                {% endwith %}
-            {% endif %}
+        {% for entry in reg_questionnaire if entry.field %}
+            <div id="questionnaire_field_result_{{ entry.field.field_name }}">
+                <dt title="{{ entry.get_label() }}">{{ entry.get_label() }}</dt>
+                <dd>
+                    {{ generic_event.display_field(entry.field, registration['fields'].get(entry.field.field_name)) }}
+                    {{ util.output_info(entry.info) }}
+                </dd>
+            </div>
         {% endfor %}
         </dl>
     {% endif %}

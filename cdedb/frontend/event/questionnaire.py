@@ -182,9 +182,9 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             if unwrap(request_extractor(rs, {drow_name("role", marker): bool})):
                 if row := self._extract_questionnaire_row(rs, marker):
                     new_questionnaire.append(row)
-                marker += 1
             elif marker >= len(questionnaire):
                 break
+            marker += 1
 
         marker = 1
         while marker < 2**10:

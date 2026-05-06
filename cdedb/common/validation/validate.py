@@ -3262,7 +3262,7 @@ def _questionnaire_field_row(
     if field_id := val.get("field_id"):
         if not (field := available_fields.get(field_id)):
             errs.append(KeyError('field_id', n_("Invalid field.")))
-        if val['default_value'] and field:
+        if val.get('default_value') and field:
             val['default_value'] = _by_field_datatype(
                 val['default_value'],
                 "default_value",
@@ -3271,10 +3271,10 @@ def _questionnaire_field_row(
             )
             # TODO: check field entries.
     # remove default value without a linked field
-    elif val['default_value']:
+    elif val.get('default_value'):
         val['default_value'] = None
 
-    if val['readonly'] and val['field_id'] is not None and not kind.allow_readonly():
+    if val.get('readonly') and not kind.allow_readonly():
         # TODO: more generic error message?
         msg = n_("Registration questionnaire rows may not be readonly.")
         errs.append(ValueError('readonly', msg))
@@ -3980,7 +3980,6 @@ def _serialized_event_questionnaire(
                 all_questionnaires[kind] = models_event.Questionnaire(
                     (
                         models_event.QuestionnaireRow.get_class(row["role"])(
-                            id=ID(-1),
                             event_id=all_questionnaires.event.id,
                             **{k: v for k, v in row.items() if k != "field_name"},
                         )
@@ -3988,6 +3987,9 @@ def _serialized_event_questionnaire(
                     ),
                     kind=kind,
                 )
+        for kind, existing in all_questionnaires.items():
+            if kind not in new_questionnaires:
+                new_questionnaires[kind] = existing.as_dicts()
         val['questionnaire'] = new_questionnaires
     else:
         val['questionnaire'] = {}

@@ -1069,14 +1069,17 @@ class QuestionnaireFrequency(enum.Enum):
 @dataclasses.dataclass
 class QuestionnaireRow(EventDataclass, abc.ABC):
     id: vtypes.ID = dataclasses.field(
+        init=False,
+        default=vtypes.ID(-1),
         compare=False,
         repr=False,
-        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict,
+        metadata=(
+            Meta.input_exclude | Meta.database_exclude | Meta.asdict_exclude
+        ).as_dict,
     )
     event_id: vtypes.ID = dataclasses.field(
         metadata=(Meta.request_exclude | Meta.asdict_exclude).as_dict,
     )
-    event: dataclasses.InitVar[Event]
     kind: const.QuestionnaireUsages
     pos: int
 
@@ -1170,15 +1173,18 @@ class QuestionnaireFieldRow(QuestionnaireRow):
         compare=False,
         metadata=(Meta.exclude | Meta.asdict_exclude).as_dict,
     )
-    readonly: bool
-    default_value: Any  # TODO: ByDatafieldKind maybe some union?
-
     label: str | None
     info: str | None
 
+    readonly: bool = False
+    default_value: Any = None  # TODO: ByDatafieldKind maybe some union?
+
+    def get_label(self) -> str:
+        return self.label or self.field.title
+
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "Self":
-        event: Event = data["event"]
+        event: Event = data.pop("event")
         ret = super(QuestionnaireRow, cls).from_database(data)
         ret.field = event.fields[ret.field_id]
 
