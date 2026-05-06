@@ -1365,8 +1365,7 @@ etc;anything else""",
         f['create_-1'].checked = True
         f['field_name_-1'] = "notevil"
         f['association_-1'] = const.FieldAssociations.registration
-        f['entries_-1'] = """True;definitely
-        False;no way!"""
+        f['entries_-1'] = "True;definitely\nFalse;no way!"
         self.submit(f)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
         self.traverse("Konfiguration")
@@ -1376,7 +1375,8 @@ etc;anything else""",
         self.traverse("Fragebogen konfigurieren")
         f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
-        f['title_-1'] = "foobar"
+        f['role_-1'] = const.QuestionnaireRowMagicRole.event_field
+        f['label_-1'] = "foobar"
         f['info_-1'] = "blaster master"
         f['field_id_-1'] = "1001"
         self.submit(f)
@@ -1408,7 +1408,8 @@ etc;anything else""",
         self.traverse("Fragebogen konfigurieren")
         f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
-        f['title_-1'] = "foobar"
+        f['role_-1'] = const.QuestionnaireRowMagicRole.event_field
+        f['label_-1'] = "foobar"
         f['info_-1'] = "blaster master"
         f['field_id_-1'] = "1001"
         self.submit(f)
@@ -1887,16 +1888,20 @@ etc;anything else""",
         if self.user_in('charly'):
             self.assertNonPresence(surcharge)
             self.assertPresence("13.05.1984")
+            self.assertNonPresence("Gemischte Unterbringung nicht möglich")
+            self.assertDivNotExists("#minor-with-guardian")
         elif self.user_in('daniel'):
             self.assertPresence(surcharge)
             self.assertPresence("19.02.2220")
             self.assertNonPresence("Gemischte Unterbringung nicht möglich")
-            self.assertNonPresence("Eltern")
+            self.assertPresence(
+                "gemeinsam mit einem Erziehungsberechtigten", div="minor-with-guardian"
+            )
         elif self.user_in('rowena'):
             self.assertPresence(surcharge)
             self.assertPresence("26.08.932")
             self.assertNonPresence("Gemischte Unterbringung nicht möglich")
-            self.assertNonPresence("Eltern")
+            self.assertDivNotExists("#minor-with-guardian")
         else:
             self.fail("Please reconfigure the users for the above checks.")
 
@@ -8349,14 +8354,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse("Veranstaltungen", "CdE-Party", "Anmeldung konfigurieren")
         f = self.response.forms['configurequestionnaireform']
         f['create_-1'] = True
+        f['role_-1'] = const.QuestionnaireRowMagicRole.event_field
         f['field_id_-1'] = 1001
         self.submit(f)
         f = self.response.forms['configurequestionnaireform']
         f['create_-1'] = True
+        f['role_-1'] = const.QuestionnaireRowMagicRole.event_field
         f['field_id_-1'] = 1002
         self.submit(f)
         f = self.response.forms['configurequestionnaireform']
         f['create_-1'] = True
+        f['role_-1'] = const.QuestionnaireRowMagicRole.event_field
         f['field_id_-1'] = 1003
         self.submit(f)
         self.traverse("Anmelden")
