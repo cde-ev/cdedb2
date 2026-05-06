@@ -86,7 +86,7 @@ class CourseChoiceParams(typing.TypedDict):
 
 class RegisterParams(typing.TypedDict):
     registration: CdEDBObject | None
-    persona: CdEDBObject
+    persona: EventPersona
     persona_age: int
     age_class: AgeClasses
     involved_tracks: Collection[int] | None

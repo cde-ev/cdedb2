@@ -7,6 +7,7 @@ event.
 """
 
 import abc
+from typing import TYPE_CHECKING
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -37,6 +38,9 @@ from cdedb.frontend.common import (
     request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend, event_guard
+
+if TYPE_CHECKING:
+    from cdedb.frontend.event.registration import RegisterParams
 
 
 class EventQuestionnaireMixin(EventBaseFrontend):
@@ -223,7 +227,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         return self.eventproxy.set_questionnaire(rs, event_id, kind, new_questionnaire)
 
     @abc.abstractmethod
-    def get_register_params(self, rs: RequestState) -> CdEDBObject: ...
+    def get_register_params(self, rs: RequestState) -> "RegisterParams": ...
 
     @access("event")
     @REQUESTdata("preview")

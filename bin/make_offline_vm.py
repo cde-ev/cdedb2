@@ -276,8 +276,9 @@ def work(
             for name, cls in vars(models).items()
             if not name.startswith("__")
                 and isinstance(cls, type)
+                and issubclass(cls, models.EventDataclass)
+                and cls is not models.Event
                 and hasattr(cls, "database_table")
-                and not cls is models.Event
                 and not (cls is not models.QuestionnaireMagicRow and issubclass(cls, models.QuestionnaireMagicRow))
         ),
         *(
