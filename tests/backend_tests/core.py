@@ -126,11 +126,11 @@ class TestCoreBackend(BackendTest):
                 break
 
             # Validate ml data
-            persona = self.core.get_ml_user(self.key, persona_id)
-            affirm(vtypes.Persona, persona)
+            ml_persona = self.core.get_ml_user(self.key, persona_id)
+            affirm(vtypes.Persona, ml_persona.as_dict())
 
             # Validate event data if applicable
-            if not persona['is_event_realm']:
+            if not ml_persona.is_event_realm:
                 continue
 
             persona = self.core.get_event_user(self.key, persona_id)
@@ -949,8 +949,8 @@ class TestCoreBackend(BackendTest):
         new_id = self.core.genesis(self.key, case_id)
         self.assertLess(0, new_id)
         value = self.core.get_ml_user(self.key, new_id)
-        persona_expectation = expectation.persona.as_dict()
-        persona_expectation["id"] = new_id
+        persona_expectation = expectation.persona
+        persona_expectation.id = vtypes.ID(new_id)
         self.assertEqual(persona_expectation, value)
         # make sure the notes attribute is carried over
         notes = self.core.get_total_persona(self.key, new_id)["notes"]
@@ -1140,7 +1140,10 @@ class TestCoreBackend(BackendTest):
             'is_ml_admin': False,
             'is_cdelokal_admin': False,
         })
-        self.assertEqual(expectation, self.core.get_ml_user(self.key, 2))
+        self.assertEqual(
+            models.MlPersona(**expectation),  # type: ignore[arg-type]
+            self.core.get_ml_user(self.key, 2),
+        )
         expectation_assembly = expectation.copy()
         expectation_assembly.update({
             'is_assembly_admin': False,

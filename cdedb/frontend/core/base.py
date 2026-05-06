@@ -752,7 +752,7 @@ class CoreBaseFrontend(AbstractFrontend):
         elif self.AccessRealm.assembly in access_realms and "assembly" in target_roles:
             persona = self.coreproxy.new_get_assembly_user(rs, persona_id)
         elif self.AccessRealm.ml in access_realms and "ml" in target_roles:
-            persona = self.coreproxy.new_get_ml_user(rs, persona_id)
+            persona = self.coreproxy.get_ml_user(rs, persona_id)
         elif self.AccessRealm.persona in access_realms:
             persona = self.coreproxy.new_get_persona(rs, persona_id)
             # The base version of the data set should only contain the name,
@@ -937,7 +937,7 @@ class CoreBaseFrontend(AbstractFrontend):
             is_receiving = (
                 addr not in defect_addresses
                 if (addr := addresses.get(mailinglist_id))
-                else persona['username'] not in defect_addresses
+                else persona.username not in defect_addresses
             )
             grouped[ml.sortkey][mailinglist_id] = {
                 'title': ml.title,
