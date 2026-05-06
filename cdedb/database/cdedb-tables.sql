@@ -1400,7 +1400,7 @@ CREATE TABLE event.questionnaire_field_rows (
         -- If field id is set, display input for the linked field.
         field_id                integer REFERENCES event.field_definitions(id),
         -- If set, the value for the linked field can no longer be changed.
-        readonly                boolean NOT NULL,
+        readonly                boolean NOT NULL DEFAULT FALSE,
         -- If set, a value that is prefilled into the form if there is no stored value.
         default_value           varchar
 );
@@ -1416,7 +1416,7 @@ CREATE TABLE event.questionnaire_magic_rows (
         -- The position at which this element is shown in the questionnaire.
         pos                     integer NOT NULL,
         -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowMagicRole.
-        role                    integer
+        role                    integer NOT NULL
 );
 CREATE INDEX questionnaire_magic_rows_event_id_kind_idx ON event.questionnaire_magic_rows(event_id, kind);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_magic_rows TO cdb_persona;
