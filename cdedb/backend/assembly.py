@@ -79,6 +79,8 @@ from cdedb.common.roles import implying_realms
 from cdedb.common.sorting import EntitySorter, mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import DatabaseValue_s, Params
+from cdedb.models.common import CdEDataclassMap
+from cdedb.models.core import AssemblyPersona
 
 
 class BallotConfiguration(NamedTuple):
@@ -90,11 +92,11 @@ class BallotConfiguration(NamedTuple):
 
 
 @dataclasses.dataclass
-class AssembyAttendees:
-    all: CdEDBObjectMap
-    early: CdEDBObjectMap
-    late: CdEDBObjectMap
-    undetermined: CdEDBObjectMap
+class AssemblyAttendees:
+    all: CdEDataclassMap[AssemblyPersona]
+    early: CdEDataclassMap[AssemblyPersona]
+    late: CdEDataclassMap[AssemblyPersona]
+    undetermined: CdEDataclassMap[AssemblyPersona]
     cutoff: datetime.datetime
 
 
@@ -555,14 +557,14 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly")
     def get_attendees(
         self, rs: RequestState, assembly_id: int, cutoff: datetime.datetime
-    ) -> AssembyAttendees:
+    ) -> AssemblyAttendees:
         assembly_id = affirm(vtypes.ID, assembly_id)
         cutoff = affirm(datetime.datetime, cutoff)
 
         if not self.may_access(rs, assembly_id=assembly_id):
             raise PrivilegeError()
 
-        all_attendees = {
+        all_attendees_ids = {
             e['persona_id']
             for e in self.sql_select(
                 rs,
@@ -572,13 +574,7 @@ class AssemblyBackend(AbstractBackend):
                 entity_key="assembly_id",
             )
         }
-        attendee_data = {
-            e['id']: e
-            for e in xsorted(
-                self.core.get_assembly_users(rs, all_attendees).values(),
-                key=EntitySorter.persona,
-            )
-        }
+        all_attendees = self.core.get_assembly_users(rs, all_attendees_ids)
 
         q = """
             SELECT persona_id FROM assembly.log
@@ -589,36 +585,32 @@ class AssemblyBackend(AbstractBackend):
             "code": const.AssemblyLogCodes.new_attendee,
             "ctime": cutoff,
         }
-        early_list = [
-            attendee_data[e['persona_id']] for e in self.query_all(rs, q, params)
-        ]
-        early_attendees = {
-            e['id']: e for e in xsorted(early_list, key=EntitySorter.persona)
+        early_attendees_ids = {e['persona_id'] for e in self.query_all(rs, q, params)}
+        early_attendees: CdEDataclassMap[AssemblyPersona] = {
+            e.id: e for e in all_attendees.values() if e.id in early_attendees_ids
         }
+
         q = """
             SELECT persona_id FROM assembly.log
             WHERE assembly_id = %(assembly_id)s AND code = %(code)s AND ctime >= %(ctime)s
         """
-        late_list = [
-            attendee_data[e['persona_id']] for e in self.query_all(rs, q, params)
-        ]
-        late_attendees = {
-            e['id']: e for e in xsorted(late_list, key=EntitySorter.persona)
+        late_attendees_ids = {
+            all_attendees[e['persona_id']] for e in self.query_all(rs, q, params)
         }
-        if early_attendees.keys() & late_attendees.keys():  # pragma: no cover
-            raise ValueError("Unexpected overlap in early and late attendees.")
-        undetermined_list = [
-            attendee_data[persona_id]
-            for persona_id in (
-                all_attendees - early_attendees.keys() - late_attendees.keys()
-            )
-        ]
-        undetermined_attendees = {
-            e['id']: e for e in xsorted(undetermined_list, key=EntitySorter.persona)
+        late_attendees: CdEDataclassMap[AssemblyPersona] = {
+            e.id: e for e in all_attendees.values() if e.id in late_attendees_ids
         }
 
-        return AssembyAttendees(
-            all=attendee_data,
+        if early_attendees_ids & late_attendees_ids:  # pragma: no cover
+            raise ValueError("Unexpected overlap in early and late attendees.")
+        undetermined_attendees: CdEDataclassMap[AssemblyPersona] = {
+            e.id: e
+            for e in all_attendees.values()
+            if e.id in all_attendees_ids - early_attendees_ids - late_attendees_ids
+        }
+
+        return AssemblyAttendees(
+            all=all_attendees,
             early=early_attendees,
             late=late_attendees,
             undetermined=undetermined_attendees,
