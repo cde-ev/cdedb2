@@ -1690,7 +1690,7 @@ class EventRegistrationBackend(EventBaseBackend):
             event_id=event.id,
         )
         for reg in registrations.values():
-            reg['persona'] = personas[reg['persona_id']]
+            reg['birthday'] = personas[reg['persona_id']].birthday
 
         fees = {
             registration_id: self._calculate_complex_fee(rs, registration, event=event)
@@ -1759,12 +1759,12 @@ class EventRegistrationBackend(EventBaseBackend):
         :param visual_debug: If True, create a html representation of the
             evaluated condition.
         """
-        if not reg.get('persona'):
-            reg['persona'] = self.core.get_event_user(
+        if not reg.get('birthday'):
+            reg['birthday'] = self.core.get_event_user(
                 rs,
                 reg['persona_id'],
                 event_id=event.id,
-            )
+            ).birthday
         reg_part_involvement: dict[str, bool] = {
             event.parts[part_id].shortname: rp['status'].has_to_pay()
             for part_id, rp in reg['parts'].items()
@@ -1793,7 +1793,7 @@ class EventRegistrationBackend(EventBaseBackend):
                     'part_values': reg_part_involvement,
                     'other_values': other_bools,
                     'reference_date': event.begin,
-                    'birthday': reg['persona']['birthday'],
+                    'birthday': reg['birthday'],
                 }
                 if fcp_evaluation.evaluate(parse_result, data=data):
                     fee_amounts.append((fee, fee.amount))
@@ -1887,10 +1887,11 @@ class EventRegistrationBackend(EventBaseBackend):
         if registration_id:
             reg = self.get_registration(rs, registration_id)
 
+        birthday = deduct_years(event.begin, age)
         if persona_id:
-            persona = self.core.get_event_user(rs, persona_id, event_id=event_id)
-        else:
-            persona = {'birthday': deduct_years(event.begin, age)}
+            birthday = self.core.get_event_user(
+                rs, persona_id, event_id=event_id
+            ).birthday
 
         fields = {}
         for field_id, field in event.fields.items():
@@ -1901,7 +1902,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
         fake_registration = {
             'persona_id': persona_id,
-            'persona': persona,
+            'birthday': birthday,
             'parts': {
                 part_id: {
                     'status': const.RegistrationPartStati.applied
@@ -1943,7 +1944,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
         personas = self.core.get_event_users(rs, reg_ids.values(), event_id=event_id)
         for reg in self.get_registrations(rs, reg_ids.keys()).values():
-            reg['persona'] = personas[reg['persona_id']]
+            reg['birthday'] = personas[reg['persona_id']].birthday
             complex_fee = self._calculate_complex_fee(rs, reg, event=event)
 
             if reg['amount_owed'] > reg['amount_paid']:

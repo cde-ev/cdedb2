@@ -20,13 +20,14 @@ from cdedb.common import (
     Notification,
     RequestState,
     inverse_diacritic_patterns,
-    make_persona_name,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import xsorted
 from cdedb.database.constants import Genders, RegistrationPartStati
 from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import cdedburl
+from cdedb.models.common import CdEDataclassMap
+from cdedb.models.core import EventPersona
 
 
 @dataclass
@@ -54,7 +55,7 @@ class LodgementWish:
 
 def detect_lodgement_wishes(
     registrations: CdEDBObjectMap,
-    personas: CdEDBObjectMap,
+    personas: CdEDataclassMap[EventPersona],
     event: models.Event,
     restrict_part_id: Optional[int],
     restrict_registration_id: Optional[int] = None,
@@ -129,114 +130,90 @@ def detect_lodgement_wishes(
             # Self-wishes are not allowed
             if other_registration_id == registration_id:
                 continue
+            other_registration = registrations[other_registration_id]
 
             wishes_raw = registration['fields'].get(wish_field_name, '')
             match = pattern.search(wishes_raw)
-            if match:
-                other_registration = registrations[other_registration_id]
+            if not match:
+                continue
 
-                # Report ambiguous matches
-                ambiguous_match_ids = [
-                    reg_id
-                    for other_span, reg_id in match_positions
-                    if (match.start() < other_span[1] and other_span[0] < match.end())
-                ]
-                if ambiguous_match_ids:
-                    problems.append((
-                        'warning',
-                        n_(
-                            "Wish \"%(wish_text)s\" of %(from_name)s is "
-                            "ambiguous: It may refer to %(other_name)s as well "
-                            "as %(more_names)s."
-                        ),
-                        {
-                            'wish_text': match.group(),
-                            'from_name': make_persona_name(
-                                personas[registration['persona_id']]
-                            ),
-                            'other_name': make_persona_name(
-                                personas[other_registration['persona_id']]
-                            ),
-                            'more_names': ", ".join(
-                                make_persona_name(
-                                    personas[registrations[reg_id]['persona_id']]
-                                )
-                                for reg_id in ambiguous_match_ids
-                            ),
-                        },
-                    ))
-                match_positions.append((match.span(), other_registration_id))
+            # Report ambiguous matches
+            ambiguous_match_ids = [
+                reg_id
+                for other_span, reg_id in match_positions
+                if (match.start() < other_span[1] and other_span[0] < match.end())
+            ]
+            msg = n_(
+                "Wish \"%(wish_text)s\" of %(from_name)s is ambiguous: It may refer "
+                "to %(other_name)s as well as %(more_names)s."
+            )
+            params = {
+                'wish_text': match.group(),
+                'from_name': personas[registration['persona_id']].get_name(),
+                'other_name': personas[other_registration['persona_id']].get_name(),
+                'more_names': ", ".join(
+                    personas[registrations[reg_id]['persona_id']].get_name()
+                    for reg_id in ambiguous_match_ids
+                ),
+            }
+            if ambiguous_match_ids:
+                problems.append(('warning', msg, params))
+            match_positions.append((match.span(), other_registration_id))
 
-                # TODO detect negated edges
-                # Check if wish graph edge is already present in the reverse
-                # direction
-                reverse_edge = wishes.get((other_registration_id, registration_id))
-                if reverse_edge:
-                    reverse_edge.bidirectional = True
-                    continue
-                elif check_edges:
-                    # if not, create the new wish object
-                    # but first check, if the wish is allowed (considering
-                    # genders) and
-                    if not _combination_allowed(
-                        registration, other_registration, personas
-                    ):
-                        problems.append((
-                            'info',
-                            n_(
-                                "Suppressing unpermitted wish edge from "
-                                "%(from_name)s to %(to_name)s."
-                            ),
-                            {
-                                'from_name': make_persona_name(
-                                    personas[registration['persona_id']]
-                                ),
-                                'to_name': make_persona_name(
-                                    personas[other_registration['persona_id']]
-                                ),
-                            },
-                        ))
-                        continue
-
-                    # Skip whishes of people that don't (potentially) meet at
-                    # the event
-                    common_active_parts = _parts_with_status(
-                        registration, ACTIVE_STATI
-                    ) & _parts_with_status(other_registration, ACTIVE_STATI)
-                    msg = n_(
-                        "Suppressing wish edge from %(from_name)s to %(to_name)s since"
-                        " they will not be present together (even when considering the"
-                        " waitlist)."
-                    )
-                    if not common_active_parts or (
-                        restrict_part_id and restrict_part_id not in common_active_parts
-                    ):
-                        problems.append((
-                            'info',
-                            msg,
-                            {
-                                'from_name': make_persona_name(
-                                    personas[registration['persona_id']]
-                                ),
-                                'to_name': make_persona_name(
-                                    personas[other_registration['persona_id']]
-                                ),
-                            },
-                        ))
-                        continue
-
-                common_presence_parts = _parts_with_status(
-                    registration, PRESENT_STATI
-                ) & _parts_with_status(other_registration, PRESENT_STATI)
-                wishes[(registration_id, other_registration_id)] = LodgementWish(
-                    registration_id,
-                    other_registration_id,
-                    (
-                        bool(common_presence_parts)
-                        if restrict_part_id is None
-                        else restrict_part_id in common_presence_parts
-                    ),
+            # TODO detect negated edges
+            # Check if wish graph edge is already present in the reverse
+            # direction
+            reverse_edge = wishes.get((other_registration_id, registration_id))
+            if reverse_edge:
+                reverse_edge.bidirectional = True
+                continue
+            elif check_edges:
+                # if not, create the new wish object
+                # but first check, if the wish is allowed (considering genders) and
+                msg = n_(
+                    "Suppressing unpermitted wish edge from %(from_name)s to "
+                    "%(to_name)s."
                 )
+                params = {
+                    'from_name': personas[registration['persona_id']].get_name(),
+                    'to_name': personas[other_registration['persona_id']].get_name(),
+                }
+                if not _combination_allowed(registration, other_registration, personas):
+                    problems.append(('info', msg, params))
+                    continue
+
+                # Skip whishes of people that don't (potentially) meet at
+                # the event
+                common_active_parts = _parts_with_status(
+                    registration, ACTIVE_STATI
+                ) & _parts_with_status(other_registration, ACTIVE_STATI)
+                msg = n_(
+                    "Suppressing wish edge from %(from_name)s to %(to_name)s since"
+                    " they will not be present together (even when considering the"
+                    " waitlist)."
+                )
+                params = {
+                    'from_name': personas[registration['persona_id']].get_name(),
+                    'to_name': personas[other_registration['persona_id']].get_name(),
+                }
+                if not common_active_parts or (
+                    restrict_part_id and restrict_part_id not in common_active_parts
+                ):
+                    problems.append(('info', msg, params))
+                    continue
+
+            common_presence_parts = _parts_with_status(
+                registration, PRESENT_STATI
+            ) & _parts_with_status(other_registration, PRESENT_STATI)
+            wishes[(registration_id, other_registration_id)] = LodgementWish(
+                registration_id,
+                other_registration_id,
+                (
+                    bool(common_presence_parts)
+                    if restrict_part_id is None
+                    else restrict_part_id in common_presence_parts
+                ),
+            )
 
     return list(wishes.values()), problems
 
@@ -245,29 +222,27 @@ def escape(s: str) -> str:
     return inverse_diacritic_patterns(re.escape(s.strip()))
 
 
-def make_identifying_regex(persona: CdEDBObject) -> Pattern[str]:
+def make_identifying_regex(persona: EventPersona) -> Pattern[str]:
     """
     Create a Regex for finding different references to the given persona in
     other participant's rooming preferences text.
     """
     patterns = [
-        rf"{escape(given_name)}\s+{escape(persona['family_name'])}"
-        for given_name in persona['given_names'].split()
+        rf"{escape(given_name)}\s+{escape(persona.family_name)}"
+        for given_name in persona.given_names.split()
     ]
-    if persona['nickname']:
+    if persona.nickname:
         patterns.append(
-            rf"{escape(persona['nickname'])}\s+{escape(persona['family_name'])}",
+            rf"{escape(persona.nickname)}\s+{escape(persona.family_name)}",
         )
-    if persona['legal_given_names'] and persona['show_legal_given_names']:
+    if persona.legal_given_names and persona.show_legal_given_names:
         patterns.extend(
-            rf"{escape(lgn)}\s+{escape(persona['family_name'])}"
-            for lgn in persona['legal_given_names'].split()
+            rf"{escape(lgn)}\s+{escape(persona.family_name)}"
+            for lgn in persona.legal_given_names.split()
         )
-    persona_id = persona['id']
-    assert isinstance(persona_id, int)
-    patterns.append(re.escape(cdedbid_filter(persona_id)))
-    if persona['username']:
-        patterns.append(re.escape(persona['username']))
+    patterns.append(re.escape(cdedbid_filter(persona.id)))
+    if persona.username:
+        patterns.append(re.escape(persona.username))
     return re.compile('|'.join(rf"\b{p.strip()}\b" for p in patterns), flags=re.I)
 
 
@@ -294,13 +269,15 @@ def _sort_parts(part_ids: set[int], event: models.Event) -> list[int]:
 
 
 def _combination_allowed(
-    registration1: CdEDBObject, registration2: CdEDBObject, personas: CdEDBObjectMap
+    registration1: CdEDBObject,
+    registration2: CdEDBObject,
+    personas: CdEDataclassMap[EventPersona],
 ) -> bool:
     """Check if two participants are allowed to be assigned to the same
     lodgement based on their gender and gender preferences."""
     return _gender_equality(
-        personas[registration1['persona_id']]['gender'],
-        personas[registration2['persona_id']]['gender'],
+        personas[registration1['persona_id']].gender,
+        personas[registration2['persona_id']].gender,
     ) or (registration1['mixed_lodging'] and registration2['mixed_lodging'])
 
 
@@ -323,7 +300,7 @@ def create_lodgement_wishes_graph(
     lodgements: models.CdEDataclassMap[models.Lodgement],
     lodgement_groups: models.CdEDataclassMap[models.LodgementGroup],
     event: models.Event,
-    personas: CdEDBObjectMap,
+    personas: CdEDataclassMap[EventPersona],
     camping_mat_field_names: Mapping[int, Optional[str]],
     filter_part_id: Optional[int],
     show_all: bool,
@@ -557,7 +534,7 @@ def _camping_mat_icon(may_camp: bool, is_camping: bool) -> str:
 def _make_node_label(
     rs: RequestState,
     registration: CdEDBObject,
-    personas: CdEDBObjectMap,
+    personas: CdEDataclassMap[EventPersona],
     event: models.Event,
     camping_mat_field_names: Mapping[int, Optional[str]],
 ) -> str:
@@ -579,13 +556,13 @@ def _make_node_label(
         parts = f"{rs.gettext(str(RegistrationPartStati.guest))}{icons[p.pop()]}"
     persona = personas[registration['persona_id']]
     linebreak = "\n" if parts else ""
-    return f"{make_persona_name(persona)}{linebreak}{parts}"
+    return f"{persona.get_name()}{linebreak}{parts}"
 
 
 def _make_node_tooltip(
     rs: RequestState,
     registration: CdEDBObject,
-    personas: CdEDBObjectMap,
+    personas: CdEDataclassMap[EventPersona],
     event: models.Event,
 ) -> str:
     parts_string = ""
@@ -630,26 +607,25 @@ def _make_node_tooltip(
     wishes = ""
     if raw_wishes := registration['fields'].get(lodge_field_name):
         wishes = f"\n\n{raw_wishes}"
-    return "{name}\n{email}{parts}{wishes}".format(
-        name=make_persona_name(persona, include_nickname=True),
-        email=persona['username'],
-        parts=parts_string,
-        wishes=wishes,
-    )
+    return f"{persona.get_name(include_nickname=True)}\n{persona.username}{parts_string}{wishes}"
 
 
 def _make_edge_tooltip(
-    edge: LodgementWish, registrations: CdEDBObjectMap, personas: CdEDBObjectMap
+    edge: LodgementWish,
+    registrations: CdEDBObjectMap,
+    personas: CdEDataclassMap[EventPersona],
 ) -> str:
     return "{name1} {sign} {name2}".format(
-        name1=make_persona_name(personas[registrations[edge.wishing]['persona_id']]),
-        name2=make_persona_name(personas[registrations[edge.wished]['persona_id']]),
+        name1=personas[registrations[edge.wishing]['persona_id']].get_name(),
+        name2=personas[registrations[edge.wished]['persona_id']].get_name(),
         sign="↔" if edge.bidirectional else "→",
     )
 
 
 def _make_node_color(
-    registration: CdEDBObject, personas: CdEDBObjectMap, event: models.Event
+    registration: CdEDBObject,
+    personas: CdEDataclassMap[EventPersona],
+    event: models.Event,
 ) -> str:
     # This color code is documented for the user in the
     # `web/event/ldogement_wishes_graph_form.tmpl` template.
@@ -674,7 +650,7 @@ def _make_node_color(
         return "#87d0ff"
 
 
-def _get_age(persona: CdEDBObject, event: models.Event) -> float:
+def _get_age(persona: EventPersona, event: models.Event) -> float:
     """
     Roughly calculate the age of a persona at the begin of a given event in
     years as a fractional number.
@@ -683,4 +659,4 @@ def _get_age(persona: CdEDBObject, event: models.Event) -> float:
     does not consider leapyaers correctly. For other purposes, consider using
     :func:`cdedb.common.deduct_years` instead.
     """
-    return float((event.begin - persona['birthday']).days) / 365
+    return float((event.begin - persona.birthday).days) / 365

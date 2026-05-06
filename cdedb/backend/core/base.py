@@ -2494,7 +2494,7 @@ class CoreBaseBackend(AbstractBackend):
     )
 
     @access("event", "droid_quick_partial_export", "droid_orga")
-    def new_get_event_users(
+    def get_event_users(
         self,
         rs: RequestState,
         persona_ids: Collection[int],
@@ -2549,31 +2549,6 @@ class CoreBaseBackend(AbstractBackend):
                 raise PrivilegeError(n_("Access to persona data inhibited."))
         return ret
 
-    class _NewGetEventUserProtocol(Protocol):
-        # `persona_id` is actually not optional, but it produces a lot of errors.
-        def __call__(
-            self,
-            rs: RequestState,
-            persona_id: Optional[int],
-            event_id: Optional[int] = None,
-        ) -> models.EventPersona: ...
-
-    new_get_event_user: _NewGetEventUserProtocol = singularize(
-        new_get_event_users, "persona_ids", "persona_id"
-    )
-
-    @access("event", "droid_quick_partial_export", "droid_orga")
-    def get_event_users(
-        self,
-        rs: RequestState,
-        persona_ids: Collection[int],
-        event_id: Optional[int] = None,
-    ) -> CdEDBObjectMap:
-        return {
-            k: v.as_dict()
-            for k, v in self.new_get_event_users(rs, persona_ids, event_id).items()
-        }
-
     class _GetEventUserProtocol(Protocol):
         # `persona_id` is actually not optional, but it produces a lot of errors.
         def __call__(
@@ -2581,7 +2556,7 @@ class CoreBaseBackend(AbstractBackend):
             rs: RequestState,
             persona_id: Optional[int],
             event_id: Optional[int] = None,
-        ) -> CdEDBObject: ...
+        ) -> models.EventPersona: ...
 
     get_event_user: _GetEventUserProtocol = singularize(
         get_event_users, "persona_ids", "persona_id"

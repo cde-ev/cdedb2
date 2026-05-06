@@ -25,7 +25,6 @@ from cdedb.common import (
     asciificator,
     determine_age_class,
     json_serialize,
-    make_persona_name,
     unwrap,
 )
 from cdedb.common.n_ import n_
@@ -70,13 +69,13 @@ class EventDownloadMixin(EventBaseFrontend):
         )
         for registration in registrations.values():
             registration['age'] = determine_age_class(
-                personas[registration['persona_id']]['birthday'],
+                personas[registration['persona_id']].birthday,
                 rs.ambience['event'].begin,
             )
         reg_order = xsorted(
             registrations.keys(),
             key=lambda anid: EntitySorter.persona(
-                personas[registrations[anid]['persona_id']]
+                personas[registrations[anid]['persona_id']].as_dict()
             ),
         )
         registrations = OrderedDict(
@@ -216,9 +215,9 @@ class EventDownloadMixin(EventBaseFrontend):
         )
         for registration in registrations.values():
             registration['age'] = determine_age_class(
-                personas[registration['persona_id']]['birthday'], event.begin
+                personas[registration['persona_id']].birthday, event.begin
             )
-        key = lambda reg_id: personas[registrations[reg_id]['persona_id']]['birthday']
+        key = lambda reg_id: personas[registrations[reg_id]['persona_id']].birthday
         registrations = OrderedDict(
             (reg_id, registrations[reg_id])
             for reg_id in xsorted(registrations, key=key)
@@ -241,7 +240,7 @@ class EventDownloadMixin(EventBaseFrontend):
             problems = []
         reverse_wish = {
             reg_id: ", ".join(
-                make_persona_name(personas[registrations[wishing_id]['persona_id']])
+                personas[registrations[wishing_id]['persona_id']].get_name()
                 for wishing_id in rwish[reg_id]
             )
             for reg_id in registrations
@@ -285,14 +284,16 @@ class EventDownloadMixin(EventBaseFrontend):
         personas = self.coreproxy.get_event_users(
             rs, tuple(e['persona_id'] for e in registrations.values()), event_id
         )
-        for p_id, p in personas.items():
-            p['age'] = determine_age_class(p['birthday'], rs.ambience['event'].begin)
+        personas_age = {
+            p.id: determine_age_class(p.birthday, rs.ambience['event'].begin)
+            for p in personas.values()
+        }
         attendees = self.calculate_groups(
             courses,
             rs.ambience['event'],
             registrations,
             key="course_id",
-            personas=personas,
+            personas={p.id: p.as_dict() for p in personas.values()},
         )
         instructors = {}
         # Look for the field name of the course_room_fields.
@@ -312,7 +313,7 @@ class EventDownloadMixin(EventBaseFrontend):
         reg_order = xsorted(
             registrations.keys(),
             key=lambda anid: EntitySorter.persona(
-                personas[registrations[anid]['persona_id']]
+                personas[registrations[anid]['persona_id']].as_dict()
             ),
         )
         registrations = OrderedDict(
@@ -326,6 +327,7 @@ class EventDownloadMixin(EventBaseFrontend):
                 'courses': courses,
                 'registrations': registrations,
                 'personas': personas,
+                'personas_age': personas_age,
                 'attendees': attendees,
                 'instructors': instructors,
                 'course_room_fields': cr_field_names,
