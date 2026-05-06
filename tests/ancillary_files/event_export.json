@@ -1,7 +1,7 @@
 {
     "EVENT_SCHEMA_VERSION": [
-        19,
-        4
+        20,
+        0
     ],
     "core.personas": {
         "1": {
@@ -780,6 +780,48 @@
             "nr": "\u03b6",
             "shortname": "Extra",
             "title": "Extra-Kurs"
+        }
+    },
+    "event.custom_query_filters": {
+        "1": {
+            "event_id": 1,
+            "fields": "reg_fields.xfield_brings_balls,reg_fields.xfield_is_child",
+            "id": 1,
+            "notes": null,
+            "scope": 30,
+            "title": "B\u00e4lle oder Kind?"
+        },
+        "2": {
+            "event_id": 1,
+            "fields": "reg_fields.xfield_is_child,reg_fields.xfield_brings_balls",
+            "id": 2,
+            "notes": null,
+            "scope": 30,
+            "title": "Kind oder B\u00e4lle?"
+        },
+        "3": {
+            "event_id": 1,
+            "fields": "reg.notes,reg.orga_notes",
+            "id": 3,
+            "notes": null,
+            "scope": 30,
+            "title": "Alle Notizen"
+        },
+        "4": {
+            "event_id": 1,
+            "fields": "reg.amount_paid,persona.birthday",
+            "id": 4,
+            "notes": null,
+            "scope": 30,
+            "title": "Bad Combo!"
+        },
+        "5": {
+            "event_id": 1,
+            "fields": "reg_fields.xfield_anzahl_GROSSBUCHSTABEN,reg_fields.xfield_deleted_field",
+            "id": 5,
+            "notes": "Ups, h\u00e4tte ich das Feld nicht l\u00f6schen sollen?",
+            "scope": 30,
+            "title": "Extrem wichtig!"
         }
     },
     "event.event_fees": {
