@@ -594,9 +594,7 @@ class AssemblyBackend(AbstractBackend):
             SELECT persona_id FROM assembly.log
             WHERE assembly_id = %(assembly_id)s AND code = %(code)s AND ctime >= %(ctime)s
         """
-        late_attendees_ids = {
-            all_attendees[e['persona_id']] for e in self.query_all(rs, q, params)
-        }
+        late_attendees_ids = {e['persona_id'] for e in self.query_all(rs, q, params)}
         late_attendees: CdEDataclassMap[AssemblyPersona] = {
             e.id: e for e in all_attendees.values() if e.id in late_attendees_ids
         }
