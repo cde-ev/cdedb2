@@ -340,6 +340,41 @@ class Persona(CdEDataclass):
 
 
 @dataclasses.dataclass(kw_only=True)
+class PersonaStatus(Persona):
+    # core
+    is_active: bool = True
+    is_archived: bool = False
+    is_purged: bool = False
+
+    # ml
+    is_ml_realm: bool = False
+    is_ml_admin: bool = False
+    is_cdelokal_admin: bool = False
+
+    # assembly
+    is_assembly_realm: bool = False
+    is_assembly_admin: bool = False
+
+    # event
+    is_event_realm: bool = False
+    is_event_admin: bool = False
+    is_complaint_admin: bool = False
+
+    # cde
+    is_cde_realm: bool = False
+    is_member: bool = False
+    is_searchable: bool = False
+    is_cde_admin: bool = False
+    is_core_admin: bool = False
+    is_meta_admin: bool = False
+    is_finance_admin: bool = False
+    is_auditor: bool = False
+
+    def get_sortkey(self) -> Sortkey:
+        return (self.id,)
+
+
+@dataclasses.dataclass(kw_only=True)
 class CorePersona(Persona, PersonaName):
     username: vtypes.Email = dataclasses.field(
         metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict
@@ -540,6 +575,10 @@ class CdEPersona(EventAssemblyPersona):
             if periods_left % 2:
                 deadline = deadline.replace(month=8)
         return deadline.replace(year=int(deadline.year + periods_left // 2))
+
+
+if PersonaStatus.get_status_bits() != CdEPersona.get_status_bits():
+    raise RuntimeError("Persona status bits got out of sync, adjust the dataclasses.")
 
 
 @dataclasses.dataclass(kw_only=True)
