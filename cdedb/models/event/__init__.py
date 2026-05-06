@@ -1,29 +1,3 @@
-"""
-event realm tables:
-  - event.events
-  - event.event_fees
-  - event.event_parts
-  - event.part_groups
-  * event.part_group_parts
-  - event.course_tracks
-  - event.track_groups
-  * event.track_group_tracks
-  - event.field_definitions
-  - event.courses
-  * event.course_segments
-  * event.orgas
-  + event.orga_apitokens
-  - event.lodgement_groups
-  - event.lodgements
-  - event.registrations
-  - event.registration_parts
-  - event.registration_tracks
-  * event.course_choices
-  - event.questionnaire_rows
-  + event.stored_queries
-  * event.log
-"""
-
 import abc
 import collections
 import dataclasses
@@ -174,6 +148,7 @@ class DatabaseTables:
     checkin_helpers = "event.checkin_helpers"
     part_group_parts = "event.part_group_parts"
     track_group_tracks = "event.track_group_tracks"
+    course_choices = "event.course_choices"
 
 
 #
@@ -1536,9 +1511,9 @@ class CourseSegment(EventDataclass):
         return ret
 
 
-@dataclasses.dataclass
-class CourseInstructors:
-    database_table = "event.course_instructors"
+# @dataclasses.dataclass
+# class CourseInstructors:
+#     database_table = "event.course_instructors"
 
 
 #

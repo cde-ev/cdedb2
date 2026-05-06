@@ -323,7 +323,7 @@
                     "pos_" ~ part_id, defaultvalue=part_id, aclass="input-pos drow-input",
                     attributes={"data-basename": "pos_"}|xmlattr) }}
             {% if newrow %}
-                <div style="width: 90%;">
+                <div style="width: 75%;">
                     {{ util.form_input_select(
                             "role_" ~ part_id, label=gettext("Role"),
                             entries=available_magic_roles|enum_entries(processing=gettext),

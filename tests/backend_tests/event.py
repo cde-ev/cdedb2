@@ -4317,44 +4317,30 @@ class TestEventBackend(BackendTest):
         self.event.delete_lodgement(self.key, new_id)
         data: list[CdEDBObject] = [
             {
-                'field_id': None,
-                'default_value': None,
-                'info': None,
-                'readonly': False,
+                'role': const.QuestionnaireRowMagicRole.text_only,
                 'title': 'Weitere bla Überschrift',
-                'kind': const.QuestionnaireUsages.additional,
             },
             {
+                'role': const.QuestionnaireRowMagicRole.event_field,
                 'field_id': 2,
+                'label': 'Vehikel',
                 'default_value': 'etc',
-                'info': None,
                 'readonly': True,
-                'title': 'Vehikel',
-                'kind': const.QuestionnaireUsages.additional,
             },
             {
-                'field_id': None,
-                'default_value': None,
-                'info': 'mit Text darunter und so',
-                'readonly': False,
+                'role': const.QuestionnaireRowMagicRole.text_only,
                 'title': 'Unterüberschrift',
-                'kind': const.QuestionnaireUsages.additional,
+                'text': 'mit Text darunter und so',
             },
             {
+                'role': const.QuestionnaireRowMagicRole.event_field,
                 'field_id': 3,
-                'default_value': None,
-                'info': None,
+                'label': 'Hauswunsch',
                 'readonly': True,
-                'title': 'Vehikel',
-                'kind': const.QuestionnaireUsages.additional,
             },
             {
-                'field_id': None,
-                'default_value': None,
-                'info': 'nur etwas mehr Text',
-                'readonly': False,
-                'title': None,
-                'kind': const.QuestionnaireUsages.additional,
+                'role': const.QuestionnaireRowMagicRole.text_only,
+                'text': 'nur etwas mehr Text',
             },
         ]
         self.event.set_questionnaire(
@@ -5083,6 +5069,8 @@ class TestEventBackend(BackendTest):
                     "lodgement_groups",
                     "event_fees",
                     "mailinglists",
+                    "questionnaire_text_rows",
+                    "questionnaire_magic_rows",
                 },
                 set(blockers),
             )

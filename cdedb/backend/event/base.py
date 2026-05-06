@@ -1607,6 +1607,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 models.QuestionnaireFieldRow.full_export_spec(),
                 models.QuestionnaireMagicRow.full_export_spec(),
                 models.StoredEventQuery.full_export_spec(),
+                models.CustomQueryFilter.full_export_spec(),
                 (
                     'event.log',
                     "event_id",

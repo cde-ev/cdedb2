@@ -281,7 +281,7 @@ class EventBackend(
             (event_id,),
             entity_key=models.QuestionnaireFieldRow.entity_key,
         )
-        if questionnaire_text_rows:
+        if questionnaire_field_rows:
             blockers["questionnaire_field_rows"] = [
                 e["id"] for e in questionnaire_field_rows
             ]
@@ -293,7 +293,7 @@ class EventBackend(
             (event_id,),
             entity_key=models.QuestionnaireMagicRow.entity_key,
         )
-        if questionnaire_text_rows:
+        if questionnaire_magic_rows:
             blockers["questionnaire_magic_rows"] = [
                 e["id"] for e in questionnaire_magic_rows
             ]
