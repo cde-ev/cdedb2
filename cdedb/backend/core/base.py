@@ -2477,17 +2477,19 @@ class CoreBaseBackend(AbstractBackend):
     @access("ml")
     def new_get_personas(
         self, rs: RequestState, persona_ids: Collection[int]
-    ) -> CdEDataclassMap[models.Persona]:
+    ) -> CdEDataclassMap[models.CorePersona]:
         """Get a core view on some data sets."""
         persona_ids = affirm(set[vtypes.ID], persona_ids)
-        persona_data = self.query_all(rs, *models.Persona.get_select_query(persona_ids))
-        return models.Persona.many_from_database(persona_data)
+        persona_data = self.query_all(
+            rs, *models.CorePersona.get_select_query(persona_ids)
+        )
+        return models.CorePersona.many_from_database(persona_data)
 
     class _NewGetPersonaProtocol(Protocol):
         # TODO: `persona_id` is actually not optional, but it produces a lot of errors.
         def __call__(
             self, rs: RequestState, persona_id: Optional[int]
-        ) -> models.Persona: ...
+        ) -> models.CorePersona: ...
 
     new_get_persona: _NewGetPersonaProtocol = singularize(
         new_get_personas, "persona_ids", "persona_id"

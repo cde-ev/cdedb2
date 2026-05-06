@@ -300,26 +300,8 @@ class PersonaName:
 
 
 @dataclasses.dataclass(kw_only=True)
-class Persona(CdEDataclass, PersonaName):
+class Persona(CdEDataclass):
     database_table: ClassVar[str] = "core.personas"
-
-    username: vtypes.Email = dataclasses.field(
-        metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict
-    )
-    # This does not include the ``password_hash`` for security reasons.
-
-    # status flags
-    is_active: bool = True
-    is_archived: bool = False
-    is_purged: bool = False
-
-    # retrieve all realm bits to enable the dataclass to know if its pure
-    is_ml_realm: bool = False
-    is_assembly_realm: bool = False
-    is_event_realm: bool = False
-    is_cde_realm: bool = False
-
-    # Do not include admin notes, get this via its own getter.
 
     def __post_init__(self) -> None:
         for field in dataclasses.fields(self):
@@ -356,11 +338,32 @@ class Persona(CdEDataclass, PersonaName):
                 ret.add(field.name)
         return ret
 
+
+@dataclasses.dataclass(kw_only=True)
+class CorePersona(Persona, PersonaName):
+    username: vtypes.Email = dataclasses.field(
+        metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict
+    )
+    # This does not include the ``password_hash`` for security reasons.
+
+    # status flags
+    is_active: bool = True
+    is_archived: bool = False
+    is_purged: bool = False
+
+    # retrieve all realm bits to enable the dataclass to know if it is pure
+    is_ml_realm: bool = False
+    is_assembly_realm: bool = False
+    is_event_realm: bool = False
+    is_cde_realm: bool = False
+
+    # Do not include admin notes, get this via its own getter.
+
     @property
     def is_pure(self) -> bool:
+        """Persona has no higher realm than the one associated to this class."""
         return False
 
-    # TODO implement this properly
     def get_sortkey(self) -> Sortkey:
         return (self.family_name, self.given_names)
 
@@ -372,7 +375,7 @@ class Persona(CdEDataclass, PersonaName):
 
 
 @dataclasses.dataclass(kw_only=True)
-class MlPersona(Persona):
+class MlPersona(CorePersona):
     is_ml_realm: bool = dataclasses.field(
         default=False, metadata=PersonaFlag.mandatory_true_flag.as_dict
     )
@@ -555,7 +558,7 @@ class GenesisCase(CdEDataclass):
         default=None, metadata=Meta.input_exclude.as_dict
     )
 
-    persona: Persona
+    persona: CorePersona
 
     # further information tied to the genesis case but not to persona dataclass
     attachment_hash: str | None = dataclasses.field(
@@ -565,7 +568,7 @@ class GenesisCase(CdEDataclass):
     pcourse_id: int | None
 
     @classmethod
-    def get_persona_class(cls) -> type[Persona]:
+    def get_persona_class(cls) -> type[CorePersona]:
         # extracts the persona class from its type annotation,
         # since this is static information
         return {
@@ -687,7 +690,7 @@ class GenesisCase(CdEDataclass):
         return ret
 
     @abc.abstractmethod
-    def get_persona_creation(self) -> Persona:
+    def get_persona_creation(self) -> CorePersona:
         """Dataclass to create a new persona as the final stage of a genesis case."""
         ...
 

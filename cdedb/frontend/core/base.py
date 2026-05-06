@@ -660,7 +660,7 @@ class CoreBaseFrontend(AbstractFrontend):
         access_realms = self.AccessRealm(0)
         access_levels = self.AccessLevel(0)
         access_mode = self.AccessMode(0)
-        REDACTED = models.Persona.REDACTED
+        REDACTED = models.CorePersona.REDACTED
 
         # Let users see themselves
         if persona_id == rs.user.persona_id:
@@ -737,7 +737,7 @@ class CoreBaseFrontend(AbstractFrontend):
         # This is the basic mechanism for restricting access, since we only
         # add attributes for which an access level is provided.
         target_roles = extract_roles(rs.ambience['persona'], introspection_only=True)
-        persona: models.Persona
+        persona: models.CorePersona
         if self.AccessRealm.cde in access_realms and "cde" in target_roles:
             persona = self.coreproxy.get_cde_user(rs, persona_id)
         # event and assembly are independent realms, users may have both at the same time

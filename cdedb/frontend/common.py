@@ -3113,7 +3113,7 @@ def make_membership_fee_reference(persona: CdEDBObject) -> str:
 
 
 def make_event_fee_reference(
-    persona: models_core.Persona, event: models_event.Event
+    persona: models_core.CorePersona, event: models_event.Event
 ) -> str:
     """Generate the desired reference for event fee payment.
 
