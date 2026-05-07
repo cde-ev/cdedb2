@@ -2107,7 +2107,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 )
                 if data.get(required) is False:
                     rs.append_validation_error(err)
-                if not getattr(persona, required) and not data.get(required):
+                if not persona[required] and not data.get(required):
                     rs.append_validation_error(err)
 
         if "is_meta_admin" in data and data["persona_id"] == rs.user.persona_id:
