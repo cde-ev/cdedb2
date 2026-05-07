@@ -426,17 +426,17 @@ class Event(EventDataclass, _EventConfigurationMixin, _EventFreetextMixin):
         return self.begin > (now().date() - datetime.timedelta(days=365 * 2))
 
     @functools.cached_property
-    def registration_fields(self) -> dict[int, "RegistrationField"]:
+    def registration_fields(self) -> CdEDataclassMap["RegistrationField"]:
         return {
             k: v for k, v in self.fields.items() if isinstance(v, RegistrationField)
         }
 
     @functools.cached_property
-    def course_fields(self) -> dict[int, "CourseField"]:
+    def course_fields(self) -> CdEDataclassMap["CourseField"]:
         return {k: v for k, v in self.fields.items() if isinstance(v, CourseField)}
 
     @functools.cached_property
-    def lodgement_fields(self) -> dict[int, "LodgementField"]:
+    def lodgement_fields(self) -> CdEDataclassMap["LodgementField"]:
         return {k: v for k, v in self.fields.items() if isinstance(v, LodgementField)}
 
     @functools.cached_property
