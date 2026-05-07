@@ -492,7 +492,8 @@ class CdEBaseBackend(AbstractBackend):
             )
         elif datum['resolution'].is_modification():
             persona_id = datum['doppelganger_id']
-            current = self.core.get_persona(rs, persona_id)
+            # TODO migrate upgrade logik to dataclass
+            current = self.core.get_core_user(rs, persona_id).as_dict()
             if current['is_archived']:
                 if current['is_purged']:
                     raise RuntimeError(n_("Cannot restore purged account."))
@@ -566,7 +567,7 @@ class CdEBaseBackend(AbstractBackend):
                     rs, promotion, change_note="Datenübernahme nach Massenaufnahme"
                 )
             if datum['resolution'].do_trial():
-                if current['is_member']:
+                if self.core.get_persona_status(rs, persona_id).is_member:
                     raise RuntimeError(n_("May not grant trial membership to member."))
                 self.core.change_membership_easy_mode(
                     rs, datum['doppelganger_id'], is_member=True, trial_member=True

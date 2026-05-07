@@ -2443,8 +2443,12 @@ class CoreBaseFrontend(AbstractFrontend):
                 self.pasteventproxy.set_course_assignments(
                     rs, pcourse_id, persona_id, instructor_status=instructor_status
                 )
-            persona = self.coreproxy.get_total_persona(rs, persona_id)
-            self.send_welcome_mail(rs, persona)
+            self.send_welcome_mail(
+                rs,
+                self.coreproxy.get_core_user(rs, persona_id),
+                self.coreproxy.get_persona_status(rs, persona_id),
+                is_trial_member=data.get("trial_member", False),
+            )
         return self.redirect_show_user(rs, persona_id)
 
     @access("cde_admin")

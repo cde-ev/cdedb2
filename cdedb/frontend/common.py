@@ -1134,7 +1134,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             force_external=True,
         )
 
-    def send_welcome_mail(self, rs: RequestState, persona: CdEDBObject) -> None:
+    def send_welcome_mail(
+        self,
+        rs: RequestState,
+        persona: models_core.CorePersona,
+        status: models_core.PersonaStatus,
+        is_trial_member: bool = False,
+    ) -> None:
         """Send a welcome mail to new personas.
 
         This informs new personas in general that an account with this email was
@@ -1143,14 +1149,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         Therefore, we send this mail again if a persona was granted the cde realm.
         """
-        reset_link = self._password_reset_link(
-            rs,
-            persona["id"],
-        )
-        transaction_subject = make_membership_fee_reference(persona)
-        if persona['is_member']:
+        reset_link = self._password_reset_link(rs, persona.id)
+        transaction_subject = make_membership_fee_reference(persona.as_dict())
+        if status.is_member:
             subject = "Aufnahme in den CdE"
-        elif persona['is_cde_realm']:
+        elif persona.is_cde_realm:
             subject = "Aufnahmeangebot in den CdE"
         else:
             subject = "CdEDB-Account erstellt"
@@ -1159,11 +1162,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             rs,
             "welcome",
             {
-                'To': (persona['username'],),
+                'To': (persona.username,),
                 'Subject': subject,
             },
             {
-                'data': persona,
+                'persona': persona,
+                'persona_status': status,
+                'is_trial_member': is_trial_member,
                 'fee': self.conf["MEMBERSHIP_FEE"],
                 'reset_link': reset_link,
                 'meta_info': meta_info,
@@ -1870,8 +1875,9 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             return self.create_user_form(rs)
         new_id = self.coreproxy.create_persona(rs, data)
         if new_id:
-            data["id"] = new_id
-            self.send_welcome_mail(rs, data)
+            persona = self.coreproxy.get_core_user(rs, new_id)
+            status = self.coreproxy.get_persona_status(rs, new_id)
+            self.send_welcome_mail(rs, persona, status, data.get("trial_member", False))
             rs.notify_return_code(new_id, success=n_("User created."))
             return self.redirect_show_user(rs, new_id)
         else:
