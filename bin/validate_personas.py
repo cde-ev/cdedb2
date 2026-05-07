@@ -28,7 +28,7 @@ with script:
             break
 
         # Validate ml data
-        persona = core.get_ml_user(rs, persona_id)
+        persona = core.get_ml_user(rs, persona_id).as_dict()
 
         _, errs = check(vtypes.Persona, persona, ignore_warnings=True)
         errors.extend(errs)

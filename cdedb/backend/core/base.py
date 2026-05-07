@@ -2714,7 +2714,7 @@ class CoreBaseBackend(AbstractBackend):
     )
 
     @access("ml")
-    def new_get_ml_users(
+    def get_ml_users(
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> CdEDataclassMap[models.MlPersona]:
         """Get an ml view on some data sets."""
@@ -2730,19 +2730,7 @@ class CoreBaseBackend(AbstractBackend):
             self, rs: RequestState, persona_id: Optional[int]
         ) -> models.MlPersona: ...
 
-    new_get_ml_user: _GetMlUserProtocol = singularize(
-        new_get_ml_users, "persona_ids", "persona_id"
-    )
-
-    @access("ml")
-    def get_ml_users(
-        self, rs: RequestState, persona_ids: Collection[int]
-    ) -> CdEDBObjectMap:
-        return {
-            k: v.as_dict() for k, v in self.new_get_ml_users(rs, persona_ids).items()
-        }
-
-    get_ml_user: _GetPersonaProtocol = singularize(
+    get_ml_user: _GetMlUserProtocol = singularize(
         get_ml_users, "persona_ids", "persona_id"
     )
 
