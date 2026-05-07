@@ -1147,7 +1147,10 @@ class TestCoreBackend(BackendTest):
         expectation_assembly.update({
             'is_assembly_admin': False,
         })
-        self.assertEqual(expectation_assembly, self.core.get_assembly_user(self.key, 2))
+        self.assertEqual(
+            models.AssemblyPersona(**expectation_assembly),  # type: ignore[arg-type]
+            self.core.get_assembly_user(self.key, 2),
+        )
         expectation_event = expectation.copy()
         expectation_event.update({
             'is_event_admin': False,
