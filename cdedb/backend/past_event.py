@@ -763,9 +763,11 @@ class PastEventBackend(AbstractBackend):
         )
         total_participants_num = len(data)
         personas = self.core.get_core_users(rs, {e['persona_id'] for e in data})
+        personas_status = self.core.get_personas_status(rs, personas.keys())
         pevent = self.get_past_event(rs, pevent_id)
         for datum in data:
             datum["persona"] = personas[datum["persona_id"]]
+            datum["persona_status"] = personas_status[datum["persona_id"]]
             datum["pevent"] = pevent
         ret = models.PastEventParticipant.many_from_database(data)
         ret = {participant.persona_id: participant for participant in ret.values()}
@@ -790,7 +792,7 @@ class PastEventBackend(AbstractBackend):
         ret = self.filter_participants(
             rs,
             participants=ret,  # type: ignore[arg-type]
-            personas=self.core.get_personas_status(rs, personas.keys()),
+            personas=personas_status,
             honor_admins=honor_admins,
             pevent_id=pevent_id,
         )
@@ -872,8 +874,11 @@ class PastEventBackend(AbstractBackend):
             entity_key="persona_id",
         )
         pevents = self.get_past_events(rs, {datum["pevent_id"] for datum in data})
+        persona = self.core.get_core_user(rs, persona_id)
+        persona_status = self.core.get_persona_status(rs, persona_id)
         for datum in data:
-            datum["persona"] = self.core.get_core_user(rs, persona_id)
+            datum["persona"] = persona
+            datum["persona_status"] = persona_status
             datum["pevent"] = pevents[datum["pevent_id"]]
         ret = models.PastEventParticipant.many_from_database(data)
         ret = {p.pevent_id: p for p in ret.values()}

@@ -136,6 +136,7 @@ class TestPastEventBackend(BackendTest):
     @as_users("vera")
     def test_entity_participant(self) -> None:
         personas = self.core.get_core_users(self.key, [2, 3, 4, 5, 6, 100])
+        personas_status = self.core.get_personas_status(self.key, [2, 3, 4, 5, 6, 100])
         pevent = self.pastevent.get_past_event(self.key, 1)
         pcourses = self.pastevent.get_past_courses(self.key, [1, 2])
         expectation = {
@@ -146,6 +147,7 @@ class TestPastEventBackend(BackendTest):
                 orga_status=const.PastOrgaKind.none,
                 music_status=const.PastMusicKind.none,
                 persona=personas[vtypes.ID(2)],
+                persona_status=personas_status[vtypes.ID(2)],
                 pevent=pevent,
             ),
             vtypes.ID(3): models.PastEventParticipant(
@@ -155,6 +157,7 @@ class TestPastEventBackend(BackendTest):
                 orga_status=const.PastOrgaKind.none,
                 music_status=const.PastMusicKind.ensemble,
                 persona=personas[vtypes.ID(3)],
+                persona_status=personas_status[vtypes.ID(3)],
                 pevent=pevent,
             ),
             vtypes.ID(4): models.PastEventParticipant(
@@ -164,6 +167,7 @@ class TestPastEventBackend(BackendTest):
                 orga_status=const.PastOrgaKind.none,
                 music_status=const.PastMusicKind.none,
                 persona=personas[vtypes.ID(4)],
+                persona_status=personas_status[vtypes.ID(4)],
                 pevent=pevent,
             ),
             vtypes.ID(5): models.PastEventParticipant(
@@ -173,6 +177,7 @@ class TestPastEventBackend(BackendTest):
                 orga_status=const.PastOrgaKind.none,
                 music_status=const.PastMusicKind.kuemu,
                 persona=personas[vtypes.ID(5)],
+                persona_status=personas_status[vtypes.ID(5)],
                 pevent=pevent,
             ),
             vtypes.ID(6): models.PastEventParticipant(
@@ -182,6 +187,7 @@ class TestPastEventBackend(BackendTest):
                 orga_status=const.PastOrgaKind.orga,
                 music_status=const.PastMusicKind.none,
                 persona=personas[vtypes.ID(6)],
+                persona_status=personas_status[vtypes.ID(6)],
                 pevent=pevent,
             ),
             vtypes.ID(100): models.PastEventParticipant(
@@ -191,6 +197,7 @@ class TestPastEventBackend(BackendTest):
                 orga_status=const.PastOrgaKind.none,
                 music_status=const.PastMusicKind.none,
                 persona=personas[vtypes.ID(100)],
+                persona_status=personas_status[vtypes.ID(100)],
                 pevent=pevent,
             ),
         }
