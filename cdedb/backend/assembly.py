@@ -601,10 +601,11 @@ class AssemblyBackend(AbstractBackend):
 
         if early_attendees_ids & late_attendees_ids:  # pragma: no cover
             raise ValueError("Unexpected overlap in early and late attendees.")
+        undetermined_attendee_ids = (
+            all_attendees_ids - early_attendees_ids - late_attendees_ids
+        )
         undetermined_attendees: CdEDataclassMap[AssemblyPersona] = {
-            e.id: e
-            for e in all_attendees.values()
-            if e.id in all_attendees_ids - early_attendees_ids - late_attendees_ids
+            e.id: e for e in all_attendees.values() if e.id in undetermined_attendee_ids
         }
 
         return AssemblyAttendees(
