@@ -2121,7 +2121,7 @@ class Worker(threading.Thread):
 
 
 class AmbienceDict(typing.TypedDict):
-    persona: NotRequired[CdEDBObject]
+    persona: NotRequired[models_core.CorePersona]
     privilege_change: NotRequired[CdEDBObject]
     genesis_case: NotRequired[models_core.GenesisCase]
     lastschrift: NotRequired[CdEDBObject]
@@ -2166,7 +2166,7 @@ def reconnoitre_ambience(obj: AbstractFrontend, rs: RequestState) -> AmbienceDic
 
     scouts = (
         Scout(
-            lambda anid: obj.coreproxy.get_persona(rs, anid),
+            lambda anid: obj.coreproxy.get_core_user(rs, anid),
             'persona_id',
             'persona',
             (),

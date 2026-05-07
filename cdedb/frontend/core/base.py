@@ -643,7 +643,7 @@ class CoreBaseFrontend(AbstractFrontend):
         is_relative_or_meta_admin = self.coreproxy.is_relative_admin(
             rs, persona_id, allow_meta_admin=True)
 
-        if (rs.ambience['persona']['is_archived'] and not is_relative_admin):
+        if (rs.ambience['persona'].is_archived and not is_relative_admin):
             raise werkzeug.exceptions.Forbidden(
                 n_("Only admins may view archived datasets."))
 
@@ -653,9 +653,10 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, persona_id, allow_meta_admin=True)
 
         # Check whether profile is currently searchable to viewer
+        viewer_status = self.coreproxy.get_persona_status(rs, rs.ambience['persona'].id)
         is_searchable_to_you = ("searchable" in rs.user.roles
-                                and rs.ambience['persona']['is_member']
-                                and rs.ambience['persona']['is_searchable'])
+                                and viewer_status.is_member
+                                and viewer_status.is_searchable)
 
         access_realms = self.AccessRealm(0)
         access_levels = self.AccessLevel(0)
@@ -736,7 +737,7 @@ class CoreBaseFrontend(AbstractFrontend):
         #
         # This is the basic mechanism for restricting access, since we only
         # add attributes for which an access level is provided.
-        target_roles = extract_roles(rs.ambience['persona'], introspection_only=True)
+        target_roles = extract_roles(viewer_status.as_dict(), introspection_only=True)
         persona: models.CorePersona
         if self.AccessRealm.cde in access_realms and "cde" in target_roles:
             persona = self.coreproxy.get_cde_user(rs, persona_id)
@@ -1588,7 +1589,7 @@ class CoreBaseFrontend(AbstractFrontend):
         """Render form."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
-        if rs.ambience['persona']['is_archived']:
+        if rs.ambience['persona'].is_archived:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
 
@@ -1601,7 +1602,8 @@ class CoreBaseFrontend(AbstractFrontend):
 
         if data['code'] == const.PersonaChangeStati.pending:
             rs.notify("info", n_("Change pending."))
-        roles = extract_roles(rs.ambience['persona'], introspection_only=True)
+        status = self.coreproxy.get_persona_status(rs, rs.ambience['persona'].id)
+        roles = extract_roles(status.as_dict(), introspection_only=True)
         user = User(persona_id=persona_id, roles=roles)
         shown_fields = self._changeable_persona_fields(rs, user, restricted=False)
         return self.render(
@@ -1630,7 +1632,8 @@ class CoreBaseFrontend(AbstractFrontend):
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
         # Assure we don't accidently change the original.
-        roles = extract_roles(rs.ambience['persona'], introspection_only=True)
+        status = self.coreproxy.get_persona_status(rs, rs.ambience['persona'].id)
+        roles = extract_roles(status.as_dict(), introspection_only=True)
         user = User(persona_id=persona_id, roles=roles)
         attributes = self._changeable_persona_fields(rs, user, restricted=False)
         data = request_dict_extractor(rs, attributes)
@@ -2024,7 +2027,7 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("meta_admin")
     def change_privileges_form(self, rs: RequestState, persona_id: int) -> Response:
         """Render form."""
-        if rs.ambience['persona']['is_archived']:
+        if rs.ambience['persona'].is_archived:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
 
@@ -2041,7 +2044,8 @@ class CoreBaseFrontend(AbstractFrontend):
                 {"privilege_change_id": privilege_change_id},
             )
 
-        merge_dicts(rs.values, rs.ambience['persona'])
+        status = self.coreproxy.get_persona_status(rs, rs.ambience['persona'].id)
+        merge_dicts(rs.values, status.as_dict())
         return self.render(
             rs,
             "change_privileges",
@@ -2103,7 +2107,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 )
                 if data.get(required) is False:
                     rs.append_validation_error(err)
-                if not rs.ambience["persona"][required] and not data.get(required):
+                if not getattr(persona, required) and not data.get(required):
                     rs.append_validation_error(err)
 
         if "is_meta_admin" in data and data["persona_id"] == rs.user.persona_id:
@@ -2327,11 +2331,11 @@ class CoreBaseFrontend(AbstractFrontend):
         """
         if rs.has_validation_errors() and not internal:
             return self.redirect_show_user(rs, persona_id)
-        if rs.ambience['persona']['is_archived']:
+        if rs.ambience['persona'].is_archived:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
-        merge_dicts(rs.values, rs.ambience['persona'])
-        if target_realm and rs.ambience['persona'][f'is_{target_realm}_realm']:
+        merge_dicts(rs.values, rs.ambience['persona'].as_dict())
+        if target_realm and getattr(rs.ambience['persona'], f'is_{target_realm}_realm'):
             rs.notify("warning", n_("No promotion necessary."))
             return self.redirect_show_user(rs, persona_id)
         pevent_ids = self.pasteventproxy.list_past_events(rs)
@@ -2454,7 +2458,7 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("cde_admin")
     def modify_membership_form(self, rs: RequestState, persona_id: int) -> Response:
         """Render form."""
-        if rs.ambience['persona']['is_archived']:
+        if rs.ambience['persona'].is_archived:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
         persona = self.coreproxy.get_cde_user(rs, persona_id)
@@ -2514,7 +2518,7 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("finance_admin")
     def modify_balance_form(self, rs: RequestState, persona_id: int) -> Response:
         """Serve form to manually modify a personas balance."""
-        if rs.ambience['persona']['is_archived']:
+        if rs.ambience['persona'].is_archived:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
         persona = self.coreproxy.get_cde_user(rs, persona_id)
@@ -2543,7 +2547,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if persona.balance == new_balance:
             rs.notify("info", n_("Nothing changed."))
             return self.redirect(rs, "core/modify_balance_form")
-        if rs.ambience['persona']['is_archived']:
+        if rs.ambience['persona'].is_archived:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
         code = self.coreproxy.change_persona_balance(
@@ -2571,7 +2575,7 @@ class CoreBaseFrontend(AbstractFrontend):
         """Render form."""
         if rs.user.persona_id != persona_id and not self.is_admin(rs):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if rs.ambience['persona']['is_archived']:
+        if rs.ambience['persona'].is_archived:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
         foto = self.coreproxy.get_cde_user(rs, persona_id).foto
@@ -2614,7 +2618,7 @@ class CoreBaseFrontend(AbstractFrontend):
         self, rs: RequestState, persona_id: int, confirm_username: str
     ) -> Response:
         """Delete a users current password to force them to set a new one."""
-        if confirm_username != rs.ambience['persona']['username']:
+        if confirm_username != rs.ambience['persona'].username:
             rs.append_validation_error((
                 'confirm_username',
                 ValueError(n_("Please provide the user's email address.")),
@@ -2791,7 +2795,7 @@ class CoreBaseFrontend(AbstractFrontend):
         except AdminPasswordResetError as e:
             raise PrivilegeError(n_("Not a relative admin.")) from e
 
-        email = rs.ambience["persona"]["username"]
+        email = rs.ambience["persona"].username
         self.do_mail(
             rs,
             "admin_reset_password",
@@ -2987,7 +2991,7 @@ class CoreBaseFrontend(AbstractFrontend):
         """Render form."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
-        if rs.ambience['persona']['is_archived']:
+        if rs.ambience['persona'].is_archived:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
         return self.render(
@@ -3015,8 +3019,8 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.redirect(rs, "core/admin_username_change_form")
         else:
             # Warn management of possible privilege escalation
-            persona = rs.ambience['persona']
-            if extract_roles(persona, introspection_only=True) & ALL_ADMINS:
+            status = self.coreproxy.get_persona_status(rs, rs.ambience['persona'].id)
+            if extract_roles(status.as_dict(), introspection_only=True) & ALL_ADMINS:
                 to = (
                     self.conf["MANAGEMENT_ADDRESS"],
                     self.conf["TROUBLESHOOTING_ADDRESS"],
@@ -3025,7 +3029,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     rs,
                     "admin_username_change_info",
                     {'To': to, 'Subject': "E-Mail-Adresse von Admin wurde geändert"},
-                    {'new_username': new_username, 'persona': persona},
+                    {'new_username': new_username, 'persona': rs.ambience['persona']},
                 )
             return self.redirect_show_user(rs, persona_id)
 
@@ -3040,7 +3044,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.has_validation_errors():
             # Redirect for encoded parameter
             return self.redirect_show_user(rs, persona_id)
-        if rs.ambience['persona']['is_archived']:
+        if rs.ambience['persona'].is_archived:
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
         data = {
