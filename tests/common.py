@@ -77,7 +77,6 @@ from cdedb.common import (
     NearlyNow,
     PathLike,
     RequestState,
-    make_persona_name,
     merge_dicts,
     nearly_now,
     now,
@@ -2058,7 +2057,7 @@ class FrontendTest(BackendTest):
         super().assertLogEqual(log_expectation, realm=realm, **kwargs)
 
         persona_ids = [p_id for e in log_expectation if (p_id := e['persona_id'])]
-        personas = self.core.get_personas(self.key, persona_ids)
+        personas = self.core.get_core_users(self.key, persona_ids)
 
         if realm == "ml":
             entity_key = "mailinglist_id"
@@ -2125,11 +2124,8 @@ class FrontendTest(BackendTest):
             self.assertPresence(entry['change_note'] or "", div=f"{i}-{log_id}")
             self.assertPresence(self.gettext(str(entry['code'])), div=f"{i}-{log_id}")
             if entry['persona_id']:
-                name1 = make_persona_name(personas[entry['persona_id']])
-                name2 = make_persona_name(
-                    personas[entry['persona_id']],
-                    include_nickname=True,
-                )
+                name1 = personas[entry['persona_id']].get_name()
+                name2 = personas[entry['persona_id']].get_name(include_nickname=True)
                 self.assertPresence(
                     f'({re.escape(name1)}|{re.escape(name2)})',
                     regex=True,

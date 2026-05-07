@@ -10,7 +10,7 @@ import mailmanclient as mmc
 
 import cdedb.database.constants as const
 from cdedb.backend.common import DatabaseLock
-from cdedb.common import RequestState, make_persona_name
+from cdedb.common import RequestState
 from cdedb.database.constants import EmailStatus, LockType
 from cdedb.frontend.common import cdedburl
 from cdedb.frontend.ml.base import MlBaseFrontend
@@ -293,7 +293,7 @@ The original message as received by Mailman is attached.
         defect_addresses = self.coreproxy.list_email_states(
             rs, EmailStatus.defect_states()
         )
-        personas = self.coreproxy.get_personas(rs, persona_ids)
+        personas = self.coreproxy.get_core_users(rs, persona_ids)
 
         # Before updating subscribers, delete spurious (un)subscription requests
         # submitted via mailman.
@@ -312,7 +312,7 @@ The original message as received by Mailman is attached.
             )
 
         db_subscribers = {
-            address: make_persona_name(personas[pid])
+            address: personas[pid].get_name()
             for pid, address in db_addresses.items()
             if address
         }
@@ -340,11 +340,11 @@ The original message as received by Mailman is attached.
         db_list: Mailinglist,
         mm_list: mmc.MailingList,
     ) -> None:
-        personas = self.coreproxy.get_personas(rs, db_list.moderators)
+        personas = self.coreproxy.get_core_users(rs, db_list.moderators)
         db_moderators = {
-            persona['username']: make_persona_name(persona)
+            persona.username: persona.get_name()
             for persona in personas.values()
-            if persona['username']
+            if persona.username
         }
         mm_moderators = {m.email: m for m in mm_list.moderators}
 

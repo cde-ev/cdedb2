@@ -137,9 +137,9 @@ class CdEParseMixin(CdEBaseFrontend):
                 params["has_none"].append(t.t_id)
             if t.event and t.persona:
                 reg_id = self.eventproxy.get_registration_id(
-                    rs, persona_id=t.persona['id'], event_id=t.event.id
+                    rs, persona_id=t.persona.id, event_id=t.event.id
                 )
-                params["registration_ids"][(t.persona['id'], t.event.id)] = reg_id
+                params["registration_ids"][(t.persona.id, t.event.id)] = reg_id
             params["accounts"][t.account] += 1
             if t.event and t.type == TransactionType.EventFee:
                 params["events"][t.event.id] += 1

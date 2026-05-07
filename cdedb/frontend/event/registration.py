@@ -34,7 +34,6 @@ from cdedb.common import (
     get_hash,
     get_mandatory_form_fields,
     json_serialize,
-    make_persona_name,
     merge_dicts,
     now,
     unwrap,
@@ -455,10 +454,11 @@ class EventRegistrationMixin(EventBaseFrontend):
             # Creating a new registration. 'parts' and 'fields' should be present.
             if not persona_id:
                 raise ValueError
+            is_member = self.coreproxy.get_persona_status(rs, persona_id).is_member
             registration = {
                 **reg,
                 'persona_id': persona_id,
-                'is_member': self.coreproxy.get_persona(rs, persona_id)['is_member'],
+                'is_member': is_member,
                 'personalized_fees': {},
             }
         return self.eventproxy.calculate_fee_for_partial_registration(
@@ -1283,7 +1283,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 "error", n_("Event is balanced. May not change fee configuration.")
             )
             return self.redirect(rs, "event/show_registration_fee")
-        persona = self.coreproxy.get_persona(
+        persona = self.coreproxy.get_core_user(
             rs, rs.ambience['registration']['persona_id']
         )
         mandatory_fields = models.EventFee.mandatory_form_fields(
@@ -1428,12 +1428,12 @@ class EventRegistrationMixin(EventBaseFrontend):
         if not registrations:
             rs.notify("info", n_("No registrations selected."))
             return self.redirect(rs, "event/fee_summary")
-        personas = self.coreproxy.get_personas(
+        personas = self.coreproxy.get_core_users(
             rs, [reg['persona_id'] for reg in registrations.values()]
         )
         sorted_registrations = xsorted(
             registrations.values(),
-            key=lambda reg: EntitySorter.persona(personas[reg['persona_id']]),
+            key=lambda reg: EntitySorter.persona(personas[reg['persona_id']].as_dict()),
         )
         if fee_id:
             values = {
@@ -2217,18 +2217,20 @@ class EventRegistrationMixin(EventBaseFrontend):
                 list(self.eventproxy.list_registrations(rs, event_id)),
             )
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
-        personas = self.coreproxy.get_personas(
+        personas = self.coreproxy.get_core_users(
             rs, tuple(reg['persona_id'] for reg in registrations.values())
         )
         registrations = {
             reg['id']: reg
             for reg in xsorted(
                 registrations.values(),
-                key=lambda reg: EntitySorter.persona(personas[reg['persona_id']]),
+                key=lambda reg: EntitySorter.persona(
+                    personas[reg['persona_id']].as_dict()
+                ),
             )
         }
         names = {
-            reg_id: make_persona_name(personas[reg['persona_id']])
+            reg_id: personas[reg['persona_id']].get_name()
             for reg_id, reg in registrations.items()
         }
         present = {

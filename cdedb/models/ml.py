@@ -345,17 +345,17 @@ class Mailinglist(CdEDataclass):
         methods of the MailinglistBackend.
         """
         # TODO check for access to the ml? Needs ml_backend.
-        personas = bc.core.get_personas(rs, persona_ids)
+        personas = bc.core.get_core_users(rs, persona_ids)
 
-        ret = {}
-        for persona_id, persona in personas.items():
-            roles = extract_roles(persona, introspection_only=True)
+        ret: SubscriptionPolicyMap = {}
+        for persona in personas.values():
+            roles = extract_roles(persona.as_dict(), introspection_only=True)
             for role, pol in self.role_map.items():
                 if role in roles:
-                    ret[persona_id] = pol
+                    ret[persona.id] = pol
                     break
             else:
-                ret[persona_id] = SubscriptionPolicy.none
+                ret[persona.id] = SubscriptionPolicy.none
         return ret
 
     def get_implicit_subscribers(

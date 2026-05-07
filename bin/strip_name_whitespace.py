@@ -19,13 +19,13 @@ with s:
         is_member=None,
         is_archived=False,
     ):
-        persona = core.get_persona(rs, persona_id)
+        persona = core.get_core_user(rs, persona_id)
 
         update: CdEDBObject = {}
         for k in ('given_names', 'family_name', 'legal_given_names', 'nickname'):
-            old = persona[k]
+            old = getattr(persona, k)
             if old is not None and old != (new := " ".join(old.split()).strip()):
-                update[k] = persona[k] = new
+                update[k] = new
                 print(f"({persona_id})[{k[0]}]: {old!r} -> {new!r}")
 
         if update:

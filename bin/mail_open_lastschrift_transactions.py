@@ -35,19 +35,19 @@ with s:
     lastschrifts = cde_backend.get_lastschrifts(
         s.rs(), [t["lastschrift_id"] for t in transactions.values()]
     )
-    personas = core_backend.get_personas(
+    personas = core_backend.get_core_users(
         s.rs(), [l["persona_id"] for l in lastschrifts.values()]
     )
     for i, persona in enumerate(personas.values()):
-        print(f"Notifying {persona['given_names']}... ", end="", flush=True)
+        print(f"Notifying {persona.given_names}... ", end="", flush=True)
         msg = cde_frontend._create_mail(
             mail_text.format(
-                given_names=persona["given_names"],
+                given_names=persona.given_names,
                 glaeubiger_id=s.config["SEPA_GLAEUBIGERID"],
                 original_glaeubiger_id=s.config["SEPA_ORIGINAL_GLAEUBIGERID"],
             ),
             {
-                "To": [persona["username"]],
+                "To": [persona.username],
                 "Reply-To": s.config["FINANCE_ADMIN_ADDRESS"],
                 "Subject": "Korrektur Gläubiger-ID Lastschritinitiative",
             },

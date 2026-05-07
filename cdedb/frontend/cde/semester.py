@@ -179,12 +179,14 @@ class CdESemesterMixin(CdEBaseFrontend):
                 )
 
                 if persona:
-                    transaction_subject = make_membership_fee_reference(persona)
+                    transaction_subject = make_membership_fee_reference(
+                        persona.as_dict()
+                    )
                     self.do_mail(
                         rrs,
                         "semester/imminent_archival",
                         {
-                            'To': (persona['username'],),
+                            'To': (persona.username,),
                             'Subject': "Bevorstehende Löschung Deines"
                             " CdE-Datenbank-Accounts",
                         },

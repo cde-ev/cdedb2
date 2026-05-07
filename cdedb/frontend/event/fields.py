@@ -21,7 +21,6 @@ from cdedb.common import (
     RequestState,
     build_msg,
     get_mandatory_form_fields,
-    make_persona_name,
     merge_dicts,
 )
 from cdedb.common.n_ import n_
@@ -182,17 +181,17 @@ class EventFieldMixin(EventBaseFrontend):
             if not ids:
                 ids = self.eventproxy.list_registrations(rs, event_id)
             entities = self.eventproxy.get_registrations(rs, ids)
-            personas = self.coreproxy.get_personas(
+            personas = self.coreproxy.get_core_users(
                 rs, tuple(e['persona_id'] for e in entities.values())
             )
             labels = {
-                reg_id: make_persona_name(personas[entity['persona_id']])
+                reg_id: personas[entity['persona_id']].get_name()
                 for reg_id, entity in entities.items()
             }
             ordered_ids = xsorted(
                 entities.keys(),
                 key=lambda anid: EntitySorter.persona(
-                    personas[entities[anid]['persona_id']]
+                    personas[entities[anid]['persona_id']].as_dict()
                 ),
             )
         elif kind == const.FieldAssociations.course:

@@ -24,7 +24,6 @@ from cdedb.common import (
     CourseFilterPositions,
     InfiniteEnum,
     RequestState,
-    make_persona_name,
     merge_dicts,
     unwrap,
 )
@@ -422,7 +421,7 @@ class EventCourseMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             registration_ids = all_reg_ids
             registrations = all_regs
-            personas = self.coreproxy.get_personas(
+            personas = self.coreproxy.get_core_users(
                 rs, tuple(r['persona_id'] for r in registrations.values())
             )
         else:
@@ -440,7 +439,7 @@ class EventCourseMixin(EventBaseFrontend):
             registrations = self.eventproxy.get_registrations(
                 rs, registration_ids.keys()
             )
-            personas = self.coreproxy.get_personas(rs, registration_ids.values())
+            personas = self.coreproxy.get_core_users(rs, registration_ids.values())
 
         course_infos = {}
         reg_part = lambda registration, track_id: registration['parts'][
@@ -503,7 +502,7 @@ class EventCourseMixin(EventBaseFrontend):
                     xsorted(
                         registrations.items(),
                         key=lambda reg: EntitySorter.persona(
-                            personas[reg[1]['persona_id']]
+                            personas[reg[1]['persona_id']].as_dict()
                         ),
                     )
                 ),
@@ -816,7 +815,7 @@ class EventCourseMixin(EventBaseFrontend):
         tracks = rs.ambience['event'].tracks
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
-        personas = self.coreproxy.get_personas(
+        personas = self.coreproxy.get_core_users(
             rs, tuple(reg['persona_id'] for reg in registrations.values())
         )
         attendees = self.calculate_groups(
@@ -824,7 +823,7 @@ class EventCourseMixin(EventBaseFrontend):
             rs.ambience['event'],
             registrations,
             key="course_id",
-            personas=personas,
+            personas={p.id: p.as_dict() for p in personas.values()},
             only_involved=False,
             only_present=False,
         )
@@ -853,16 +852,15 @@ class EventCourseMixin(EventBaseFrontend):
                 (
                     (
                         registration_id,
-                        make_persona_name(
-                            personas[registrations[registration_id]['persona_id']],
-                            include_nickname=True,
+                        personas[registrations[registration_id]['persona_id']].get_name(
+                            include_nickname=True
                         ),
                     )
                     for registration_id in registrations
                     if _check_without_course(registration_id, track_id)
                 ),
                 key=lambda tpl: EntitySorter.persona(
-                    personas[registrations[tpl[0]]['persona_id']]
+                    personas[registrations[tpl[0]]['persona_id']].as_dict()
                 ),
             )
             for track_id in tracks
@@ -884,8 +882,8 @@ class EventCourseMixin(EventBaseFrontend):
             track_id: xsorted(
                 (
                     {
-                        'name': make_persona_name(
-                            personas[registration['persona_id']], include_nickname=True
+                        'name': personas[registration['persona_id']].get_name(
+                            include_nickname=True
                         ),
                         'group_id': registration['tracks'][track_id]['course_id'],
                         'id': registration_id,
@@ -896,7 +894,7 @@ class EventCourseMixin(EventBaseFrontend):
                 key=lambda x: (
                     x['group_id'] is not None,
                     EntitySorter.persona(
-                        personas[registrations[x['id']]['persona_id']]
+                        personas[registrations[x['id']]['persona_id']].as_dict()
                     ),
                 ),
             )

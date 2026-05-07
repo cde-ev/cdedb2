@@ -19,7 +19,6 @@ from cdedb.common import (
     LodgementsSortkeys,
     RequestState,
     get_mandatory_form_fields,
-    make_persona_name,
     merge_dicts,
     unwrap,
 )
@@ -554,7 +553,7 @@ class EventLodgementMixin(EventBaseFrontend):
         """Render form."""
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
-        personas = self.coreproxy.get_personas(
+        personas = self.coreproxy.get_core_users(
             rs, tuple(reg['persona_id'] for reg in registrations.values())
         )
         inhabitants = self.calculate_groups(
@@ -562,7 +561,7 @@ class EventLodgementMixin(EventBaseFrontend):
             rs.ambience['event'],
             registrations,
             key="lodgement_id",
-            personas=personas,
+            personas={p.id: p.as_dict() for p in personas.values()},
             only_present=False,
             only_involved=False,
         )
@@ -596,16 +595,15 @@ class EventLodgementMixin(EventBaseFrontend):
                 (
                     (
                         registration_id,
-                        make_persona_name(
-                            personas[registrations[registration_id]['persona_id']],
-                            include_nickname=True,
+                        personas[registrations[registration_id]['persona_id']].get_name(
+                            include_nickname=True
                         ),
                     )
                     for registration_id in registrations
                     if _check_without_lodgement(registration_id, part_id)
                 ),
                 key=lambda tpl: EntitySorter.persona(
-                    personas[registrations[tpl[0]]['persona_id']]
+                    personas[registrations[tpl[0]]['persona_id']].as_dict()
                 ),
             )
             for part_id in rs.ambience['event'].parts
@@ -625,8 +623,8 @@ class EventLodgementMixin(EventBaseFrontend):
             part_id: xsorted(
                 [
                     {
-                        'name': make_persona_name(
-                            personas[registration['persona_id']], include_nickname=True
+                        'name': personas[registration['persona_id']].get_name(
+                            include_nickname=True
                         ),
                         'group_id': registration['parts'][part_id]['lodgement_id'],
                         'id': registration_id,
@@ -637,7 +635,7 @@ class EventLodgementMixin(EventBaseFrontend):
                 key=lambda x: (
                     x['group_id'] is not None,
                     EntitySorter.persona(
-                        personas[registrations[x['id']]['persona_id']]
+                        personas[registrations[x['id']]['persona_id']].as_dict()
                     ),
                 ),
             )

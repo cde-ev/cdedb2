@@ -1366,6 +1366,7 @@ class EventRegistrationBackend(EventBaseBackend):
         to a default value.
         """
         data = affirm(vtypes.Registration, data, creation=True)
+        persona_id = data['persona_id']
         event = self.get_event(rs, data['event_id'])
         fdata = data.get('fields') or {}
         fdata = affirm(
@@ -1374,21 +1375,20 @@ class EventRegistrationBackend(EventBaseBackend):
             event=event,
             association=const.FieldAssociations.registration,
         )
-        if data['persona_id'] != rs.user.persona_id and not is_privileged(
+        if persona_id != rs.user.persona_id and not is_privileged(
             rs, EventPrivileges.registrations_write, event_id=data['event_id']
         ):
             raise PrivilegeError(n_("Not privileged."))
         with Atomizer(rs):
-            if not self.core.verify_id(rs, data['persona_id'], is_archived=False):
+            if not self.core.verify_id(rs, persona_id, is_archived=False):
                 raise ValueError(n_("This user does not exist or is archived."))
-            if not self.core.verify_persona(rs, data['persona_id'], {"event"}):
+            if not self.core.verify_persona(rs, persona_id, {"event"}):
                 raise ValueError(n_("This user is not an event user."))
-            if self.list_registrations(rs, data['event_id'], data['persona_id']):
+            if self.list_registrations(rs, data['event_id'], persona_id):
                 raise ValueError(n_("Already registered."))
             self.assert_lock(rs, event_id=data['event_id'])
-            persona = self.core.get_persona(rs, data['persona_id'])
             data['fields'] = fdata
-            data['is_member'] = persona['is_member']
+            data['is_member'] = self.core.get_persona_status(rs, persona_id).is_member
             data['personalized_fees'] = {}
             # Calulate amount owed at the end due to privilege issues.
             data['fields'] = PsycoJson(fdata)
@@ -1453,7 +1453,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 rs,
                 const.EventLogCodes.registration_created,
                 data['event_id'],
-                persona_id=data['persona_id'],
+                persona_id=persona_id,
             )
         return new_id
 

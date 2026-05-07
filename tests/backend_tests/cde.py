@@ -128,9 +128,12 @@ class TestCdEBackend(BackendTest):
                 for key, value in expectation.items()
             }
             self.assertEqual(event_tmp, event_data)
-        core_data = self.core.get_personas(self.key, (1, 2))
+        core_data = self.core.get_core_users(self.key, (1, 2))
         expectation = self.get_sample_data('core.personas', (1, 2), PERSONA_CORE_FIELDS)
-        self.assertEqual(expectation, core_data)
+        tmp = {
+            key: models_core.CorePersona(**value) for key, value in expectation.items()
+        }
+        self.assertEqual(tmp, core_data)
 
     @as_users("berta")
     def test_member_search(self) -> None:

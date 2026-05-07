@@ -28,7 +28,6 @@ from cdedb.common import (
     determine_age_class,
     get_mandatory_form_fields,
     lastschrift_reference,
-    make_persona_name,
     merge_dicts,
     now,
     unwrap,
@@ -157,7 +156,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         persona_ids = {x['submitted_by'] for x in lastschrifts.values()}.union({
             x['submitted_by'] for x in transactions.values()
         })
-        personas = self.coreproxy.get_personas(rs, persona_ids)
+        personas = self.coreproxy.get_core_users(rs, persona_ids)
         # we need to access the donation property of the associated user
         main_persona = self.coreproxy.get_cde_user(rs, persona_id)
         active_permit = None
@@ -476,7 +475,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             )
 
         lastschrifts = self.cdeproxy.get_lastschrifts(rs, lastschrift_ids)
-        personas = self.coreproxy.get_personas(
+        personas = self.coreproxy.get_core_users(
             rs, tuple(e['persona_id'] for e in lastschrifts.values())
         )
 
@@ -488,9 +487,9 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 'lastschrift_id': lastschrift['id'],
                 'period_id': period,
                 'mandate_reference': lastschrift_reference(
-                    persona['id'], lastschrift['id']
+                    persona.id, lastschrift['id']
                 ),
-                'amount': self.cdeproxy.transaction_amount(rs, persona['id']),
+                'amount': self.cdeproxy.transaction_amount(rs, persona.id),
                 'iban': lastschrift['iban'],
                 'type': "RCUR",  # TODO remove this, hardcode it in template
             }
@@ -504,17 +503,15 @@ class CdELastschriftMixin(CdEBaseFrontend):
             if lastschrift['account_owner']:
                 transaction['account_owner'] = lastschrift['account_owner']
             else:
-                transaction['account_owner'] = make_persona_name(
-                    persona, use_legal_name=True
-                )
+                transaction['account_owner'] = persona.get_name(use_legal_name=True)
             timestamp = f"{now().timestamp():.6f}"
             transaction['unique_id'] = "{}-{}".format(
                 transaction['mandate_reference'], timestamp[-9:]
             )
             # cut off bc of limit
             transaction['subject'] = asciificator(
-                f"{cdedbid_filter(persona['id'])}, {persona['family_name']},"
-                f" {persona['given_names']} LSI Mitgliedsbeitrag u. Spende CdE e.V."
+                f"{cdedbid_filter(persona.id)}, {persona.family_name},"
+                f" {persona.given_names} LSI Mitgliedsbeitrag u. Spende CdE e.V."
                 " z. Foerderung der Volks- u. Berufsbildung u. Studentenhilfe"
             )[:140]
 
@@ -562,7 +559,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
 
         lastschrifts = self.cdeproxy.get_lastschrifts(rs, lastschrift_ids)
         transactions = self.cdeproxy.get_lastschrift_transactions(rs, transaction_ids)
-        personas = self.coreproxy.get_personas(
+        personas = self.coreproxy.get_core_users(
             rs, tuple(e['persona_id'] for e in lastschrifts.values())
         )
         for transaction in transactions.values():
@@ -584,7 +581,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             self.do_mail(
                 rs,
                 "lastschrift/sepa_pre-notification",
-                {'To': (persona['username'],), 'Subject': subject},
+                {'To': (persona.username,), 'Subject': subject},
                 {'data': data},
             )
         rs.notify(

@@ -20,10 +20,10 @@ from cdedb.backend.common import inspect_validation as inspect
 from cdedb.common import User, n_, now
 from cdedb.common.crypt import verify_password
 from cdedb.common.exceptions import APITokenError
-from cdedb.common.fields import PERSONA_STATUS_FIELDS
 from cdedb.common.roles import extract_roles
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import connection_pool_factory
+from cdedb.models.core import CorePersona, PersonaStatus
 from cdedb.models.droid import (
     DynamicAPIToken,
     StaticAPIToken,
@@ -136,31 +136,39 @@ class SessionBackend:
             return User()
 
         query = "UPDATE core.sessions SET atime = now() WHERE sessionkey = %s"
-        query2 = f"""
-            SELECT
-                id AS persona_id, given_names, nickname, family_name, username,
-                {', '.join(PERSONA_STATUS_FIELDS)}
-            FROM core.personas
-            WHERE id = %s
-        """
         with self.connpool["cdb_persona"] as conn:
             with conn.cursor() as cur:
                 cur.execute(query, (sessionkey,))
-                cur.execute(query2, (persona_id,))
+
+                # retrieve the persona
+                cur.execute(*CorePersona.get_select_query([persona_id]))
                 data = cur.fetchone()
                 assert data is not None
+                persona = CorePersona.from_database(data)
+
+                # retrieve its status bits
+                cur.execute(*PersonaStatus.get_select_query([persona_id]))
+                data = cur.fetchone()
+                assert data is not None
+                status = PersonaStatus.from_database(data)
+
         if self._is_locked_down() and not (
-            data['is_meta_admin'] or data['is_core_admin']
+            status.is_meta_admin or status.is_core_admin
         ):
             # Short circuit in case of lockdown
             return User()
-        if not data["is_active"]:
+        if not status.is_active:
             self.logger.warning(f"Found inactive user {persona_id}")
             return User()
 
-        pkeys = ('persona_id', 'username', 'given_names', 'nickname', 'family_name')
-        vals = {k: data[k] for k in pkeys}
-        return User(roles=extract_roles(data), **vals)
+        return User(
+            roles=extract_roles(status.as_dict()),
+            persona_id=persona.id,
+            username=persona.username,
+            given_names=persona.given_names,
+            nickname=persona.nickname or "",
+            family_name=persona.family_name,
+        )
 
     def lookuptoken(self, apitoken: Optional[str], ip: Optional[str]) -> User:
         """Raison d'etre deux.

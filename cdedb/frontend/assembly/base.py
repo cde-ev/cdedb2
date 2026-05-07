@@ -185,7 +185,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             rs, attachment_ids
         )
         attends = self.assemblyproxy.does_attend(rs, assembly_id=assembly_id)
-        presiders = self.coreproxy.get_personas(
+        presiders = self.coreproxy.get_assembly_users(
             rs, rs.ambience['assembly']['presiders']
         )
 
@@ -550,7 +550,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         else:
             persona_id = rs.user.persona_id
             secret = self.assemblyproxy.signup(rs, assembly_id)
-        persona = self.coreproxy.get_persona(rs, persona_id)
+        persona = self.coreproxy.get_core_user(rs, persona_id)
         if secret:
             rs.notify("success", n_("Signed up."))
             subject = f"Teilnahme an {rs.ambience['assembly']['title']}"
@@ -564,7 +564,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
                 "signup",
                 {
                     'From': self.conf["NOREPLY_SENDER"],
-                    'To': (persona['username'],),
+                    'To': (persona.username,),
                     'Subject': subject,
                 },
                 {

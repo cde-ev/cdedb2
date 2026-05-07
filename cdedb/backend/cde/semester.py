@@ -484,7 +484,7 @@ class CdESemesterBackend(CdELastschriftBackend):
     @access("finance_admin")
     def process_for_semester_prearchival(
         self, rs: RequestState, period_id: int, testrun: bool
-    ) -> tuple[bool, Optional[CdEDBObject]]:
+    ) -> tuple[bool, models.CorePersona | None]:
         """Atomized call to warn one persona prior to archival.
 
         :returns: A tuple consisting of a boolean signalling whether there
@@ -517,7 +517,7 @@ class CdESemesterBackend(CdELastschriftBackend):
             )
             persona = None
             if is_archivable or testrun:
-                persona = self.core.get_persona(rs, persona_id)
+                persona = self.core.get_core_user(rs, persona_id)
                 period_update['archival_notification_count'] = (
                     period['archival_notification_count'] + 1
                 )

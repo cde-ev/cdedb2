@@ -1862,12 +1862,12 @@ class AssemblyBackend(AbstractBackend):
                 SELECT persona_id FROM assembly.voter_register
                 WHERE ballot_id = %(ballot_id)s and has_voted = True
             """
-            voter_ids = self.query_all(rs, query, {"ballot_id": ballot_id})
-            voters = self.core.get_personas(rs, tuple(unwrap(e) for e in voter_ids))
-            voter_names = list(
-                f"{e['given_names']} {e['family_name']}"
-                for e in xsorted(voters.values(), key=EntitySorter.persona)
-            )
+            voter_ids = [
+                e['id'] for e in self.query_all(rs, query, {"ballot_id": ballot_id})
+            ]
+            voters = [
+                v.get_name() for v in self.core.get_core_users(rs, voter_ids).values()
+            ]
             vote_list = xsorted(votes, key=json_serialize)
             result = {
                 "assembly": assembly['title'],
@@ -1875,7 +1875,7 @@ class AssemblyBackend(AbstractBackend):
                 "result": vote_result,
                 "candidates": candidates,
                 "use_bar": ballot['use_bar'],
-                "voters": voter_names,
+                "voters": voters,
                 "votes": vote_list,
             }
             path = self.get_ballot_file_path(rs, ballot_id)

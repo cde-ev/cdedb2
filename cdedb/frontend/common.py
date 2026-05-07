@@ -1594,7 +1594,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         # Retrieve linked personas.
         persona_ids = log_filter.get_persona_ids(log)
-        personas = self.coreproxy.get_personas(rs, persona_ids)
+        personas = self.coreproxy.get_core_users(rs, persona_ids)
 
         if download:
             # Postprocess persona information: Add names and cdedb id.
@@ -1618,8 +1618,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             for entry in log:
                 for k in persona_fields:
                     if entry.get(k):
-                        entry[f"{k}_given_names"] = personas[entry[k]]['given_names']
-                        entry[f"{k}_family_name"] = personas[entry[k]]['family_name']
+                        entry[f"{k}_given_names"] = personas[entry[k]].given_names
+                        entry[f"{k}_family_name"] = personas[entry[k]].family_name
                     else:
                         entry[f"{k}_given_names"] = entry[f"{k}_family_name"] = None
 
@@ -1721,7 +1721,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         if persona_id:
             try:
-                persona = self.coreproxy.get_persona(rs, persona_id)
+                persona = self.coreproxy.get_core_user(rs, persona_id)
             except KeyError:
                 problems.append((
                     'persona_id',
@@ -1730,19 +1730,19 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     ),
                 ))
             else:
-                if persona['is_archived']:
+                if persona.is_archived:
                     problems.append((
                         'persona_id',
                         ValueError(n_("Persona is archived.")),
                     ))
                 if type_ == TransactionType.MembershipFee:
-                    if not persona['is_cde_realm']:
+                    if not persona.is_cde_realm:
                         problems.append((
                             'persona_id',
                             ValueError(n_("Persona is not in CdE realm.")),
                         ))
                 elif type_ == TransactionType.EventFee:
-                    if not persona['is_event_realm']:
+                    if not persona.is_event_realm:
                         problems.append((
                             'persona_id',
                             ValueError(n_("Persona is not in event realm.")),
@@ -1799,13 +1799,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                             ))
                         amounts_paid[registration['id']] = total
 
-                if family_name != persona['family_name']:
+                if family_name != persona.family_name:
                     problems.append((
                         'family_name',
                         ValueError(n_("Family name doesn’t match.")),
                     ))
 
-                if given_names != persona['given_names']:
+                if given_names != persona.given_names:
                     problems.append((
                         'given_names',
                         ValueError(n_("Given names don’t match.")),
@@ -1814,7 +1814,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         datum.update({
             'category': category,
             'persona': persona,
-            'persona_id': persona['id'] if persona else None,
+            'persona_id': persona.id if persona else None,
             'event': event,
             'event_id': event.id if event else None,
             'registration_id': registration['id'] if registration else None,

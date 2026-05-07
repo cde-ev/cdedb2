@@ -140,7 +140,7 @@ class EventDownloadMixin(EventBaseFrontend):
         tracks = event.tracks
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
-        personas = self.coreproxy.get_personas(
+        personas = self.coreproxy.get_core_users(
             rs, tuple(reg['persona_id'] for reg in registrations.values())
         )
         course_ids = self.eventproxy.list_courses(rs, event_id)
@@ -167,7 +167,7 @@ class EventDownloadMixin(EventBaseFrontend):
         reg_order = xsorted(
             registrations.keys(),
             key=lambda anid: EntitySorter.persona(
-                personas[registrations[anid]['persona_id']]
+                personas[registrations[anid]['persona_id']].as_dict()
             ),
         )
         registrations = OrderedDict(
@@ -375,7 +375,7 @@ class EventDownloadMixin(EventBaseFrontend):
         lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
-        personas = self.coreproxy.get_personas(
+        personas = self.coreproxy.get_core_users(
             rs, tuple(e['persona_id'] for e in registrations.values())
         )
         inhabitants = self.calculate_groups(
@@ -383,7 +383,7 @@ class EventDownloadMixin(EventBaseFrontend):
             rs.ambience['event'],
             registrations,
             key="lodgement_id",
-            personas=personas,
+            personas={p.id: p.as_dict() for p in personas.values()},
         )
         tex = self.fill_template(
             rs,

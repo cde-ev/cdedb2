@@ -145,7 +145,7 @@ class TestParseFrontend(FrontendTest):
             'event': None,
         })
         transaction = parse.Transaction(data)
-        transaction.persona = {'id': 1}
+        transaction.persona = self.core.get_core_user(self.key, 1)
         event_backend = self.initialize_backend(EventBackend)
         event_backend.list_amounts_owed = unittest.mock.MagicMock(  # type: ignore[method-assign]
             return_value={2: amount}

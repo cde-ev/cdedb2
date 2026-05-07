@@ -440,8 +440,9 @@ class TestCdEFrontend(FrontendTest):
     def test_consent_decline(self) -> None:
 
         def _roles(user: UserIdentifier) -> set[Role]:
-            user = get_user(user)
-            return extract_roles(self.core.get_persona(self.key, user['id']))
+            return extract_roles(
+                self.core.get_persona_status(self.key, get_user(user)['id']).as_dict()
+            )
 
         # First, do not change anything
         self.assertTitle("Einwilligung zur Mitgliedersuche")
@@ -2003,9 +2004,9 @@ class TestCdEFrontend(FrontendTest):
         generation = self.core.changelog_get_generation(self.key, persona_id)
         self.core.changelog_resolve_change(self.key, persona_id, generation, ack=True)
         # Check that both legal_given_names and given_names have changed.
-        persona = self.core.get_persona(self.key, persona_id)
-        self.assertEqual("Berta B.", persona["legal_given_names"])
-        self.assertEqual("Bertie", persona["given_names"])
+        persona = self.core.get_core_user(self.key, persona_id)
+        self.assertEqual("Berta B.", persona.legal_given_names)
+        self.assertEqual("Bertie", persona.given_names)
 
     @as_users("vera")
     def test_batch_admission_review(self) -> None:

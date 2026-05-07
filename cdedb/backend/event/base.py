@@ -2057,7 +2057,7 @@ class EventBaseBackend(EventLowLevelBackend):
             persona_ids = {
                 entry['submitted_by'] for entry in entries if entry['submitted_by']
             } | {entry['persona_id'] for entry in entries if entry['persona_id']}
-            personas = self.core.get_personas(rs, persona_ids)
+            personas = self.core.get_core_users(rs, persona_ids)
 
         # the name of the fields which will show up in the log are defined
         # during instantiation of the entity keeper.
@@ -2069,10 +2069,8 @@ class EventBaseBackend(EventLowLevelBackend):
             # of our longest log code.
             entry["Code"] = str(const.EventLogCodes(entry["code"]).name).ljust(31)
             if entry["submitted_by"]:
-                submitter = personas[entry["submitted_by"]]
-                entry["Verantwortlich"] = make_persona_name(submitter)
+                entry["Verantwortlich"] = personas[entry["submitted_by"]].get_name()
             if entry["persona_id"]:
-                affected = personas[entry["persona_id"]]
-                entry["Betroffen"] = make_persona_name(affected)
+                entry["Betroffen"] = personas[entry["persona_id"]].get_name()
             entry["Erläuterung"] = entry["change_note"]
         return entries

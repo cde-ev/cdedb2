@@ -10,6 +10,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 import cdedb.common.validation.types as vtypes
+import cdedb.models.core as models_core
 import cdedb.models.event as models_event
 from cdedb.common import (
     PARSE_OUTPUT_DATEFORMAT,
@@ -227,7 +228,7 @@ class Transaction:
         self._event_id = data.get("event_id")
         self.event: models_event.Event | None = None
         self._persona_id = data.get("cdedbid")
-        self.persona: CdEDBObject | None = None
+        self.persona: models_core.CorePersona | None = None
 
         # We can be confident in our data if it was manually confirmed.
         cl = ConfidenceLevel
@@ -425,7 +426,7 @@ class Transaction:
         """Try retrieving the persona and event belonging to this transaction."""
         if self._persona_id and not self.persona:
             try:
-                self.persona = core.get_persona(rs, self._persona_id)
+                self.persona = core.get_core_user(rs, self._persona_id)
             except KeyError:
                 self._persona_id = None
                 self.persona = None
@@ -438,14 +439,13 @@ class Transaction:
 
     def _match_persona(self, rs: RequestState, core: "CoreBackend") -> None:
         """Try to match a persona to this transaction."""
+        persona_matches: dict[int, ConfidenceLevel]
         if self.persona:
-            persona_matches = {
-                self.persona['id']: self.persona_confidence,
-            }
+            persona_matches = {self.persona.id: self.persona_confidence}
         else:
             persona_matches = self._find_cdedbids()
 
-        personas = core.get_personas(rs, persona_matches)
+        personas = core.get_core_users(rs, persona_matches)
 
         for persona_id, confidence in persona_matches.items():
             # Check that the persona exists.
@@ -470,13 +470,13 @@ class Transaction:
                         self.reference,
                         flags=re.I,
                     )
-                    for gn in persona['given_names'].split()
+                    for gn in persona.given_names.split()
                 ):
                     self.warnings.append((
                         'given_names',
                         KeyError(
                             n_("%(text)s not found in reference."),
-                            {'text': persona['given_names']},
+                            {'text': persona.given_names},
                         ),
                     ))
                     confidence = confidence.decrease()
@@ -485,7 +485,7 @@ class Transaction:
                     'given_names',
                     TypeError(
                         n_("(%(p)s) is not a valid regEx (%(e)s)."),
-                        {'p': d_p(re.escape(persona['given_names'])), 'e': e},
+                        {'p': d_p(re.escape(persona.given_names)), 'e': e},
                     ),
                 ))
                 confidence = confidence.decrease()
@@ -498,13 +498,13 @@ class Transaction:
                         self.reference,
                         flags=re.I,
                     )
-                    for fn in persona['family_name'].split()
+                    for fn in persona.family_name.split()
                 ):
                     self.warnings.append((
                         'family_name',
                         KeyError(
                             n_("%(text)s not found in reference."),
-                            {'text': persona['family_name']},
+                            {'text': persona.family_name},
                         ),
                     ))
                     confidence = confidence.decrease()
@@ -513,7 +513,7 @@ class Transaction:
                     'family_name',
                     TypeError(
                         n_("(%(p)s) is not a valid regEx (%(e)s)."),
-                        {'p': d_p(re.escape(persona['given_names'])), 'e': e},
+                        {'p': d_p(re.escape(persona.given_names)), 'e': e},
                     ),
                 ))
                 confidence = confidence.decrease()
@@ -540,7 +540,7 @@ class Transaction:
         if not self.persona:
             amounts_owed = {}
         else:
-            amounts_owed = event_backend.list_amounts_owed(rs, self.persona['id'])
+            amounts_owed = event_backend.list_amounts_owed(rs, self.persona.id)
 
         event_matches = [
             match
@@ -769,7 +769,7 @@ class Transaction:
             if self.type == TransactionType.EventFee:
                 if self.event and self.persona:
                     amount_owed = event.get_amount_owed(
-                        rs, self.persona['id'], self.event.id
+                        rs, self.persona.id, self.event.id
                     )
                     if amount_owed is None:
                         self.warnings.append((
@@ -809,7 +809,7 @@ class Transaction:
                         "event",
                         ValueError(n_("Mustn't have event match.")),
                     ))
-                if self.persona and not self.persona['is_cde_realm']:
+                if self.persona and not self.persona.is_cde_realm:
                     self.errors.append((
                         "persona",
                         ValueError(n_("Not a CdE-Account.")),
@@ -869,10 +869,10 @@ class Transaction:
             "type": self.type,
             "type_confidence": self.type_confidence,
             "category": self.event.shortname if self.event else self.type.category(),
-            "cdedbid": cdedbid_filter(self.persona['id']) if self.persona else None,
+            "cdedbid": cdedbid_filter(self.persona.id) if self.persona else None,
             "persona_confidence": self.persona_confidence,
-            "given_names": self.persona['given_names'] if self.persona else "",
-            "family_name": self.persona['family_name'] if self.persona else "",
+            "given_names": self.persona.given_names if self.persona else "",
+            "family_name": self.persona.family_name if self.persona else "",
             "event_id": self.event.id if self.event else None,
             "event_confidence": self.event_confidence,
             "event_name": self.event.shortname if self.event else None,
@@ -889,7 +889,9 @@ class Transaction:
             "t_id": self.t_id,
         }
         ret["summary"] = json.dumps(ret)
-        ret["persona"] = self.persona
+        ret["persona"] = None
+        if self.persona:
+            ret["persona"] = self.persona.as_dict()
         ret["event"] = self.event
         ret["errors"] = self.errors
         ret["warnings"] = self.warnings
