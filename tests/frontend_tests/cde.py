@@ -3546,7 +3546,7 @@ class TestCdEFrontend(FrontendTest):
         fake_rs = cast(RequestState, types.SimpleNamespace())
         fake_rs.translations = self.translations
         persona_id = None
-        t = lambda g, p: g(format_country_code(p['country']))
+        t = lambda g, p: g(format_country_code(p.country))
         while persona_id := self.core.next_persona(
             self.key, persona_id, is_member=None, is_archived=False
         ):
