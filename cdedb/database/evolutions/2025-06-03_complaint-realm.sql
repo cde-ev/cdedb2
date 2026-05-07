@@ -82,7 +82,7 @@ BEGIN;
     CREATE TABLE complaint.involved (
         id            serial PRIMARY KEY,
         case_id       int NOT NULL REFERENCES complaint.cases(id),
-        persona_id    int REFERENCES core.personas(id),
+        persona_id    int NOT NULL REFERENCES core.personas(id),
         UNIQUE(case_id, persona_id),
         involved_type integer NOT NULL, -- database.constants.ComplaintInvolvementType
         is_informed   boolean NOT NULL DEFAULT FALSE
@@ -96,7 +96,7 @@ BEGIN;
         id                      serial PRIMARY KEY,
         -- Who is being accompanied in which case.
         case_id                 int NOT NULL REFERENCES complaint.cases(id),
-        involved_persona_id     int REFERENCES core.personas(id),
+        involved_persona_id     int NOT NULL REFERENCES core.personas(id),
         -- This is duplicating the info from above, but this ensures integrity to the other table.
         involved_id             int NOT NULL REFERENCES complaint.involved(id) ON DELETE CASCADE,
         -- Who is doing the accompanying.
