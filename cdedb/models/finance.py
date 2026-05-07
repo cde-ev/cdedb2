@@ -56,7 +56,7 @@ class MoneyTransfersResult:
         events: models_event.CdEDataclassMap[models_event.Event],
     ) -> None:
         # Import here to avoid cyclic imports.
-        from cdedb.frontend.common import Headers, make_postal_address  # noqa: PLC0415
+        from cdedb.frontend.common import Headers  # noqa: PLC0415
 
         if send_individual_notifications:
             for member_transfer in self.membership_fees:
@@ -72,9 +72,7 @@ class MoneyTransfersResult:
                     headers,
                     {
                         'persona': member_transfer.persona,
-                        'address': make_postal_address(
-                            rs, member_transfer.persona.as_dict()
-                        ),
+                        'address': member_transfer.persona.get_postal_address(rs),
                         'transfer': member_transfer,
                         'fee': _CONF['MEMBERSHIP_FEE'],
                     },

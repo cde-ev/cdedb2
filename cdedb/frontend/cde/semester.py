@@ -20,7 +20,6 @@ from cdedb.frontend.common import (
     Worker,
     access,
     make_membership_fee_reference,
-    make_postal_address,
 )
 
 
@@ -142,7 +141,6 @@ class CdESemesterMixin(CdEBaseFrontend):
                             persona.id, lastschrift['id']
                         )
 
-                    address = make_postal_address(rrs, persona.as_dict())
                     endangered = (
                         persona.balance < self.conf["MEMBERSHIP_FEE"]
                         and not persona.trial_member
@@ -164,7 +162,7 @@ class CdESemesterMixin(CdEBaseFrontend):
                             'annual_fee': annual_fee,
                             'lastschrift': lastschrift,
                             'open_lastschrift': open_lastschrift,
-                            'address': address,
+                            'address': persona.get_postal_address(rrs),
                             'addresscheck': addresscheck,
                             'meta_info': meta_info,
                         },
@@ -356,7 +354,6 @@ class CdESemesterMixin(CdEBaseFrontend):
                     rrs, expuls_id, testrun
                 )
                 if persona:
-                    address = make_postal_address(rrs, persona.as_dict())
                     self.do_mail(
                         rrs,
                         "semester/addresscheck",
@@ -364,7 +361,10 @@ class CdESemesterMixin(CdEBaseFrontend):
                             'To': (persona.username,),
                             'Subject': "Adressabfrage für den exPuls",
                         },
-                        {'persona': persona, 'address': address},
+                        {
+                            'persona': persona,
+                            'address': persona.get_postal_address(rrs),
+                        },
                     )
             return proceed and not testrun
 

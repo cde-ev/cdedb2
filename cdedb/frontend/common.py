@@ -131,7 +131,7 @@ from cdedb.common.exceptions import (
     ValidationWarning,
 )
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
-from cdedb.common.i18n import format_country_code, get_localized_country_codes
+from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts, TransactionType
 from cdedb.common.query import Query
@@ -3064,39 +3064,6 @@ def construct_redirect(request: werkzeug.Request, url: str) -> werkzeug.Response
     else:
         ret = werkzeug.utils.redirect(url, 303)
         ret.delete_cookie("displaynote")
-        return ret
-
-
-def make_postal_address(rs: RequestState, persona: CdEDBObject) -> Optional[list[str]]:
-    """Prepare address info for formatting.
-
-    Addresses have some specific formatting wishes, so we are flexible
-    in that we represent an address to be printed as a list of strings
-    each containing one line. The final formatting is now basically join
-    on line breaks.
-
-    Returning None signals that we do not know the address of this persona.
-    """
-    p = persona
-    name = "{} {}".format(p['given_names'], p['family_name'])
-    if p['title']:
-        name = f"{p['title']} {name}"
-    if p['name_supplement']:
-        name = f"{name} {p['name_supplement']}"
-    ret = [name]
-    if p['address_supplement']:
-        ret.append(p['address_supplement'])
-    if p['address']:
-        ret.append(p['address'])
-    if p['postal_code'] or p['location']:
-        ret.append(f"{p['postal_code'] or ''} {p['location'] or ''}".strip())
-    country = rs.translations["de"].gettext(format_country_code(p['country']))
-    ret.append(country)
-    # Each persona has always a name and a country. However, during realm upgrades, it
-    # may happen that some personas do not have an address even if its mandatory.
-    if ret == [name, country]:
-        return None
-    else:
         return ret
 
 

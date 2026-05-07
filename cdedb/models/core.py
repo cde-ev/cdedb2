@@ -15,9 +15,10 @@ from typing import TYPE_CHECKING, Any, ClassVar, Optional, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, asciificator, now
+from cdedb.common import CdEDBObject, RequestState, asciificator, now
 from cdedb.common.crypt import generate_encrytion_key, get_decrypt, get_encrypt
 from cdedb.common.exceptions import CryptographyError
+from cdedb.common.i18n import format_country_code
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
 from cdedb.common.sorting import Sortkey
@@ -484,6 +485,32 @@ class EventPersona(MlPersona):
     @property
     def is_pure(self) -> bool:
         return not (self.is_assembly_realm or self.is_cde_realm)
+
+    def get_postal_address(self, rs: RequestState) -> list[str] | None:
+        """Prepare address info for formatting.
+
+        Addresses have some specific formatting wishes, so we are flexible
+        in that we represent an address to be printed as a list of strings
+        each containing one line. The final formatting is now basically join
+        on line breaks.
+
+        Returning None signals that we do not know the address of this persona.
+        """
+        name = self.get_name()
+        ret = [name]
+        if self.address_supplement:
+            ret.append(self.address_supplement)
+        if self.address:
+            ret.append(self.address)
+        if self.postal_code or self.location:
+            ret.append(f"{self.postal_code or ''} {self.location or ''}".strip())
+        country = rs.translations["de"].gettext(format_country_code(self.country or ""))
+        ret.append(country)
+        # Each persona has always a name and a country. However, during realm upgrades, it
+        # may happen that some personas do not have an address even if its mandatory.
+        if ret == [name, country]:
+            return None
+        return ret
 
 
 @dataclasses.dataclass(kw_only=True)

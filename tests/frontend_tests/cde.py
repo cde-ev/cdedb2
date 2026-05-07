@@ -29,7 +29,7 @@ from cdedb.common.i18n import (
 )
 from cdedb.common.query import QueryOperators
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, extract_roles
-from cdedb.frontend.common import Worker, make_postal_address
+from cdedb.frontend.common import Worker
 from tests.common import (
     USER_DICT,
     FrontendTest,
@@ -3550,13 +3550,13 @@ class TestCdEFrontend(FrontendTest):
         while persona_id := self.core.next_persona(
             self.key, persona_id, is_member=None, is_archived=False
         ):
-            p = self.core.get_total_persona(self.key, persona_id)
-            if p['country']:
-                address = make_postal_address(fake_rs, p)
+            if self.core.get_total_persona(self.key, persona_id)['country']:
+                p = self.core.get_event_user(self.key, persona_id)
+                address = p.get_postal_address(fake_rs)
                 if address is None:
                     self.assertIn(persona_id, personas_without_address)
                 else:
-                    self.assertNotIn(p['country'], address)
+                    self.assertNotIn(p.country, address)
                     self.assertIn(t(self.translations["de"].gettext, p), address)
 
     def test_country_code_from_country(self) -> None:
