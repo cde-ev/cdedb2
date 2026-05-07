@@ -639,11 +639,7 @@ GRANT SELECT, UPDATE ON complaint.involved_id_seq TO cdb_admin;
 CREATE TABLE complaint.companions (
         id                      serial PRIMARY KEY,
         -- Who is being accompanied in which case.
-        -- TODO Drop this?
         case_id                 int NOT NULL REFERENCES complaint.cases(id),
-        -- TODO Drop this?
-        involved_persona_id     int REFERENCES core.personas(id),
-        -- This is duplicating the info from above, but this ensures integrity to the other table.
         involved_id             int NOT NULL REFERENCES complaint.involved(id) ON DELETE CASCADE,
         -- Who is doing the accompanying.
         companion_persona_id    int NOT NULL REFERENCES core.personas(id),

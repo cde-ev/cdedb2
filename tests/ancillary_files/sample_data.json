@@ -4996,7 +4996,6 @@
         {
             "id": 1,
             "case_id": 1,
-            "involved_persona_id": 2,
             "involved_id": 1,
             "companion_persona_id": 3,
             "is_withdrawn": true
@@ -5004,7 +5003,6 @@
         {
             "id": 2,
             "case_id": 1,
-            "involved_persona_id": 4,
             "involved_id": 2,
             "companion_persona_id": 7,
             "is_withdrawn": false

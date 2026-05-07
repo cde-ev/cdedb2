@@ -974,10 +974,8 @@ class ComplaintBackend(AbstractBackend):
                 raise ValueError(n_("Involved companion."))
 
             values = [
-                # TODO Check needs for duplication
                 {
                     "case_id": case_id,
-                    "involved_persona_id": involved.persona_id,
                     "involved_id": involved_id,
                     "companion_persona_id": companion_id,
                 }
