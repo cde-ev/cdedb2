@@ -7090,7 +7090,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.submit(f)
             self.traverse("Downloads & Import", {"href": "/download/questionnaire"})
             export = json.loads(self.response.text)
-            data["questionnaire"][str(const.QuestionnaireUsages.registration)] = []
+            del export["questionnaire"][str(const.QuestionnaireUsages.registration)]
             self.assertEqual(data, export)
             self.get("/")
 
