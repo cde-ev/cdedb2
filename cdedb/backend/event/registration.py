@@ -2166,7 +2166,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 if event_ids[0]['event_id'] != event_id:
                     raise ValueError(n_("Event mismatch."))
                 persona_ids = {t['persona_id'] for t in transfers}
-                personas = self.core.get_personas(rs, persona_ids)
+                personas = self.core.get_event_users(rs, persona_ids)
 
                 for index, transfer in enumerate(transfers):
                     registration = self.book_registration_payment(
@@ -2176,7 +2176,7 @@ class EventRegistrationBackend(EventBaseBackend):
                         date=transfer['date'],
                         by_orga=True,
                     )
-                    ret = models_finance.MoneyTransfer(
+                    ret = models_finance.MoneyTransferEvent(
                         persona=personas[transfer['persona_id']],
                         registration=registration,
                         amount=transfer['amount'],

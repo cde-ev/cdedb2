@@ -200,8 +200,8 @@ class CdEBaseBackend(AbstractBackend):
 
                         # Add to tally.
                         result.membership_fees.append(
-                            models_finance.MoneyTransfer(
-                                persona=cde_persona.as_dict(), amount=amount, date=date
+                            models_finance.MoneyTransferMember(
+                                persona=cde_persona, amount=amount, date=date
                             )
                         )
 
@@ -218,8 +218,8 @@ class CdEBaseBackend(AbstractBackend):
                             is_member=event_persona.is_member,
                         )
                         event_id = registration['event_id']
-                        ret = models_finance.MoneyTransfer(
-                            persona=event_persona.as_dict(),
+                        ret = models_finance.MoneyTransferEvent(
+                            persona=event_persona,
                             amount=amount,
                             date=date,
                             registration=registration,
