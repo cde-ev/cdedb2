@@ -126,7 +126,7 @@ class TestEventModels(BackendTest):
                 ),
             },
             fields={
-                1: models.EventField(
+                1: models.RegistrationField(
                     id=1,  # type: ignore[arg-type]
                     event_id=1,  # type: ignore[arg-type]
                     field_name="brings_balls",  # type: ignore[arg-type]
@@ -139,7 +139,7 @@ class TestEventModels(BackendTest):
                     checkin=True,
                     entries=None,
                 ),
-                2: models.EventField(
+                2: models.RegistrationField(
                     id=2,  # type: ignore[arg-type]
                     event_id=1,  # type: ignore[arg-type]
                     field_name="transportation",  # type: ignore[arg-type]
@@ -156,7 +156,7 @@ class TestEventModels(BackendTest):
                         ["etc", "anything else"],
                     ]),
                 ),
-                3: models.EventField(
+                3: models.RegistrationField(
                     id=3,  # type: ignore[arg-type]
                     event_id=1,  # type: ignore[arg-type]
                     field_name="lodge",  # type: ignore[arg-type]
@@ -169,7 +169,7 @@ class TestEventModels(BackendTest):
                     checkin=False,
                     entries=None,
                 ),
-                4: models.EventField(
+                4: models.RegistrationField(
                     id=4,  # type: ignore[arg-type]
                     event_id=1,  # type: ignore[arg-type]
                     field_name="may_reserve",  # type: ignore[arg-type]
@@ -182,7 +182,7 @@ class TestEventModels(BackendTest):
                     checkin=False,
                     entries=None,
                 ),
-                5: models.EventField(
+                5: models.CourseField(
                     id=5,  # type: ignore[arg-type]
                     event_id=1,  # type: ignore[arg-type]
                     field_name="room",  # type: ignore[arg-type]
@@ -192,10 +192,9 @@ class TestEventModels(BackendTest):
                     sort_group=None,
                     sortkey=0,
                     description=None,
-                    checkin=False,
                     entries=None,
                 ),
-                6: models.EventField(
+                6: models.LodgementField(
                     id=6,  # type: ignore[arg-type]
                     event_id=1,  # type: ignore[arg-type]
                     field_name="contamination",  # type: ignore[arg-type]
@@ -205,7 +204,6 @@ class TestEventModels(BackendTest):
                     sort_group=None,
                     sortkey=0,
                     description=None,
-                    checkin=False,
                     entries=dict([
                         ["high", "lots of radiation"],
                         ["medium", "elevated level of radiation"],
@@ -213,7 +211,7 @@ class TestEventModels(BackendTest):
                         ["none", "no radiation"],
                     ]),
                 ),
-                7: models.EventField(
+                7: models.RegistrationField(
                     id=7,  # type: ignore[arg-type]
                     event_id=1,  # type: ignore[arg-type]
                     field_name="is_child",  # type: ignore[arg-type]
@@ -226,7 +224,7 @@ class TestEventModels(BackendTest):
                     checkin=False,
                     entries=None,
                 ),
-                8: models.EventField(
+                8: models.RegistrationField(
                     id=8,  # type: ignore[arg-type]
                     event_id=1,  # type: ignore[arg-type]
                     field_name="anzahl_GROSSBUCHSTABEN",  # type: ignore[arg-type]
@@ -239,7 +237,7 @@ class TestEventModels(BackendTest):
                     checkin=True,
                     entries=None,
                 ),
-                9: models.EventField(
+                9: models.RegistrationField(
                     id=9,  # type: ignore[arg-type]
                     event_id=1,  # type: ignore[arg-type]
                     field_name="arrival_at",  # type: ignore[arg-type]
@@ -252,7 +250,7 @@ class TestEventModels(BackendTest):
                     checkin=False,
                     entries=None,
                 ),
-                10: models.EventField(
+                10: models.RegistrationField(
                     id=10,  # type: ignore[arg-type]
                     event_id=1,  # type: ignore[arg-type]
                     field_name="arrival_date",  # type: ignore[arg-type]

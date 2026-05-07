@@ -2918,9 +2918,8 @@ def _event_fee_condition(
     field_usage = all_questionnaires.field_usage()
     field_names = {
         f.field_name
-        for f in event.fields.values()
-        if f.association == const.FieldAssociations.registration
-        and f.kind == const.FieldDatatypes.bool
+        for f in event.registration_fields.values()
+        if f.kind == const.FieldDatatypes.bool
         and field_usage.get(
             f.id, const.QuestionnaireUsages.registration
         ).allow_fee_condition()
