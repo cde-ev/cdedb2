@@ -461,7 +461,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 rs, case_id, persona_id, True
             )
             rs.notify_return_code(
-                ret, info=n_("This user was already marked as uninformed.")
+                ret, info=n_("This user was already marked as informed.")
             )
         return self.redirect(rs, "core/show_case")
 

@@ -8855,6 +8855,9 @@ msgstr "Dieser Nutzer war nicht beteiligt."
 msgid "This user is not involved."
 msgstr "Dieser Nutzer ist nicht beteiligt."
 
+msgid "This user was already marked as informed."
+msgstr "Dieser Nutzer war bereits informiert."
+
 #: cdedb/frontend/core/complaint.py:464 cdedb/frontend/core/complaint.py:482
 msgid "This user was already marked as uninformed."
 msgstr "Dieser Nutzer war bereits uninformiert."
