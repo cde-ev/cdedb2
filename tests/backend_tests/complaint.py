@@ -330,21 +330,21 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(
             {2: {3: False}, 4: {7: True}},
             {
-                involved.persona_id: involved.companions(is_active=None)
+                involved.persona_id: involved.get_companions(is_active=None)
                 for involved in reality.properly_involved.values()
             },
         )
         self.assertEqual(
             {2: {3: False}, 4: {}},
             {
-                involved.persona_id: involved.companions(is_active=False)
+                involved.persona_id: involved.get_companions(is_active=False)
                 for involved in reality.properly_involved.values()
             },
         )
         self.assertEqual(
             {2: {}, 4: {7: True}},
             {
-                involved.persona_id: involved.companions(is_active=True)
+                involved.persona_id: involved.get_companions(is_active=True)
                 for involved in reality.properly_involved.values()
             },
         )
@@ -522,7 +522,7 @@ class TestComplaintBackend(BackendTest):
         assert original_involved_persona_id is not None
 
         original_companions = sorted(
-            _case.involved[original_involved].companions(is_active=None)
+            _case.involved[original_involved].get_companions(is_active=None)
         )
         self.assertNotIn(
             new_involved,
@@ -704,11 +704,13 @@ class TestComplaintBackend(BackendTest):
             for involved in _case.involved.values()
             if involved.persona_id == persona_id
         )[0]
-        old_companion = list(_case.involved[involved_id].companions(is_active=None))[0]
+        old_companion = list(
+            _case.involved[involved_id].get_companions(is_active=None)
+        )[0]
         new_companion = 5
         self.assertNotIn(
             new_companion,
-            _case.companions(is_active=None),
+            _case.get_companions(is_active=None),
             "Sample data changed, review test setup.",
         )
 
@@ -993,13 +995,13 @@ class TestComplaintBackend(BackendTest):
             case.involved_persona_ids_by_type(const.ComplaintInvolvementType.target)
         )[0]
         target_companion_id = list(
-            case.involved_by_persona_id[target_id].companions(is_active=None)
+            case.involved_by_persona_id[target_id].get_companions(is_active=None)
         )[0]
         affected_id = list(
             case.involved_persona_ids_by_type(const.ComplaintInvolvementType.affected)
         )[0]
         affected_companion_id = list(
-            case.involved_by_persona_id[affected_id].companions(is_active=None)
+            case.involved_by_persona_id[affected_id].get_companions(is_active=None)
         )[0]
         appellant_id = 5
         appellant_companion_id = 6

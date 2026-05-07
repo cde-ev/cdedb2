@@ -410,7 +410,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
 
-        active_companions = rs.ambience['case'].companions(is_active=True)
+        active_companions = rs.ambience['case'].get_companions(is_active=True)
         ex_companions_ids = set(persona_ids) & active_companions.keys()
         ex_companions = self.coreproxy.get_personas(rs, ex_companions_ids)
         for companion_id, companion in ex_companions.items():
@@ -490,7 +490,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
         involved = rs.ambience['case'].involved[involved_id]
-        companion_ids = involved.companions(is_active=None)
+        companion_ids = involved.get_companions(is_active=None)
         companions = (
             self.coreproxy.get_personas(rs, companion_ids) if companion_ids else {}
         )
@@ -570,7 +570,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        if companion_id not in rs.ambience['case'].companions(is_active=True):
+        if companion_id not in rs.ambience['case'].get_companions(is_active=True):
             rs.notify("error", n_("This user is no companion."))
         else:
             ret = self.complaintproxy.set_companion_withdrawn(
@@ -592,7 +592,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
         involved = rs.ambience['case'].involved[involved_id]
-        if companion_id not in involved.companions(is_active=False):
+        if companion_id not in involved.get_companions(is_active=False):
             rs.notify("error", n_("This user is no withdrawn companion."))
         elif companion_id in rs.ambience['case'].involved_persona_ids:
             rs.notify("error", n_("Active companion may not be involved."))

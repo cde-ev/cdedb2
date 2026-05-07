@@ -26,9 +26,9 @@
         {%- if case.involved[involved_id].is_informed -%}
             {# #} ({% trans %}is informed{% endtrans %})
         {%- endif %}
-        {%- if case.involved[involved_id].companions(is_active=None) %}
+        {%- if case.involved[involved_id].get_companions(is_active=None) %}
         - Fallbegleitungen:
-            {%- for companion_id, is_active in case.involved[involved_id].companions(is_active=None).items() %}
+            {%- for companion_id, is_active in case.involved[involved_id].get_companions(is_active=None).items() %}
             - {{ personas[companion_id]|persona_name }}
                 {%- if not is_active -%}
                 {# #} ({% trans %}has withdrawn{% endtrans %})

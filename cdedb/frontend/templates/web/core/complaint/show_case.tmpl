@@ -184,22 +184,22 @@
                                                          icon="minus") }}
                                 </form>
                             </div>
-                            {% if involved.companions(is_active=None) %}
+                            {% if involved.get_companions(is_active=None) %}
                                 <br />
                                 <span class="hide-hover">
                                     {{ gettext("Companions") }}:
-                                    {% if involved.companions(is_active=None)|length == 1 %}
-                                        {% set companion_id = (involved.companions(is_active=None)|list)[0] %}
+                                    {% if involved.get_companions(is_active=None)|length == 1 %}
+                                        {% set companion_id = (involved.get_companions(is_active=None)|list)[0] %}
                                         {{ util.strike(util.persona_anchor(personas[companion_id]),
-                                                       companion_id not in involved.companions(is_active=False),
+                                                       companion_id not in involved.get_companions(is_active=False),
                                                        gettext("has withdrawn")) }}
                                     {% else %}
                                         <ul class="slim">
-                                        {% for companion_id in involved.companions(is_active=None) %}
+                                        {% for companion_id in involved.get_companions(is_active=None) %}
                                             <li>
                                                 {{ util.strike(
                                                     util.persona_anchor(personas[companion_id]),
-                                                    companion_id not in involved.companions(is_active=False),
+                                                    companion_id not in involved.get_companions(is_active=False),
                                                     gettext("has withdrawn")
                                                 ) }}
                                             </li>

@@ -152,11 +152,11 @@ class Case(CdEDataclass):
             if involved.persona_id is not None and involved.type_ == it
         }
 
-    def companions(self, is_active: bool | None) -> dict[int, set[int]]:
+    def get_companions(self, is_active: bool | None) -> dict[int, set[int]]:
         """Maps all companions to a set of involved_ids."""
         ret: dict[int, set[int]] = {}
         for involved_id, involved in self.involved.items():
-            for companion_id in involved.companions(is_active):
+            for companion_id in involved.get_companions(is_active):
                 ret.setdefault(companion_id, set()).add(involved_id)
         return ret
 
@@ -165,7 +165,9 @@ class Case(CdEDataclass):
     ) -> dict[const.ComplaintInvolvementType, set[int]]:
         ret: dict[const.ComplaintInvolvementType, set[int]] = {}
         for involved_id, involved in self.involved.items():
-            ret.setdefault(involved.type_, set()).update(involved.companions(is_active))
+            ret.setdefault(involved.type_, set()).update(
+                involved.get_companions(is_active)
+            )
         return ret
 
     def adverse_companions(
@@ -202,7 +204,7 @@ class Case(CdEDataclass):
 
     def get_persona_ids(self, log_entries: tuple[CdEDBObject, ...]) -> set[int]:
         ret: set[int] = set(self.involved_persona_ids)
-        ret.update(self.companions(is_active=None).keys())
+        ret.update(self.get_companions(is_active=None).keys())
         if log_entries:
             ret.update(e['submitted_by'] for e in log_entries if e['submitted_by'])
             ret.update(e['persona_id'] for e in log_entries if e['persona_id'])
@@ -558,7 +560,7 @@ class ComplaintInvolved:
     is_informed: bool
     _companions: dict[int, bool]
 
-    def companions(self, is_active: bool | None) -> dict[int, bool]:
+    def get_companions(self, is_active: bool | None) -> dict[int, bool]:
         if is_active is None:
             return dict(self._companions)
         else:

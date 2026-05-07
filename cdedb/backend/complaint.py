@@ -798,7 +798,7 @@ class ComplaintBackend(AbstractBackend):
                         {"num": num_uninformed},
                     )
 
-            if persona_ids & case.companions(is_active=True).keys():
+            if persona_ids & case.get_companions(is_active=True).keys():
                 raise ValueError(n_("Already active companions."))
 
             newly_involved = set(persona_ids)
@@ -845,9 +845,9 @@ class ComplaintBackend(AbstractBackend):
                         rs,
                         case_id,
                         new_involved.id,
-                        old_involved.companions(is_active=None),
+                        old_involved.get_companions(is_active=None),
                     )
-                    for companion_id in old_involved.companions(is_active=False):
+                    for companion_id in old_involved.get_companions(is_active=False):
                         self.set_companion_withdrawn(
                             rs,
                             case_id,
@@ -887,7 +887,7 @@ class ComplaintBackend(AbstractBackend):
             )
             for involved_id in mixed_existence_sorter(removed):
                 involved = case.involved[involved_id]
-                companions = involved.companions(is_active=None)
+                companions = involved.get_companions(is_active=None)
                 ret *= self.complaint_log(
                     rs=rs,
                     code=const.ComplaintLogCodes.involved_removed,
@@ -964,7 +964,7 @@ class ComplaintBackend(AbstractBackend):
             if involved_id not in case.involved:
                 raise ValueError(n_("Uninvolved user."))
             involved = case.involved[involved_id]
-            companion_ids -= involved.companions(is_active=None).keys()
+            companion_ids -= involved.get_companions(is_active=None).keys()
             if not companion_ids:
                 return -1
 
@@ -1015,7 +1015,7 @@ class ComplaintBackend(AbstractBackend):
             if involved_id not in case.involved:
                 raise ValueError(n_("Uninvolved user."))
             involved = case.involved[involved_id]
-            companion_ids &= involved.companions(is_active=None).keys()
+            companion_ids &= involved.get_companions(is_active=None).keys()
             if not companion_ids:
                 return -1
 
@@ -1060,9 +1060,11 @@ class ComplaintBackend(AbstractBackend):
             if involved_id not in case.involved:
                 raise ValueError(n_("Uninvolved user."))
             involved = case.involved[involved_id]
-            if companion_id not in involved.companions(is_active=None):
+            if companion_id not in involved.get_companions(is_active=None):
                 raise ValueError(n_("Not a companion."))
-            if is_withdrawn == (companion_id in involved.companions(is_active=False)):
+            if is_withdrawn == (
+                companion_id in involved.get_companions(is_active=False)
+            ):
                 return -1
             query = f"""
                 UPDATE {models.ComplaintCompanion.database_table}

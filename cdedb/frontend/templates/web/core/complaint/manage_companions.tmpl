@@ -47,7 +47,7 @@
             <script nonce="{{ csp_nonce }}">
                 $('#input-add-involved').cdedbSearchPerson(
                     '{{ cdedblink('core/select_persona') }}', {'kind': 'admin_all_users'},
-                    {{ (involved.companions(is_active=None)|list
+                    {{ (involved.get_companions(is_active=None)|list
                         + ambience['case'].adverse_companions(involved.type_)|list
                         + ambience['case'].involved_persona_ids)|list)|tojson }},
                     false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
@@ -66,9 +66,9 @@
             <ul class="slim">
             {% for companion in list %}
                 <li class="hide-hover-container clearfix-after">
-                    {{ util.strike(util.persona_anchor(companion), companion['id'] not in involved.companions(is_active=False)) }}
+                    {{ util.strike(util.persona_anchor(companion), companion['id'] not in involved.get_companions(is_active=False)) }}
                     <div class="list-button-float hide-hover">
-                        {% if companion['id'] not in involved.companions(is_active=False) %}
+                        {% if companion['id'] not in involved.get_companions(is_active=False) %}
                         <form action="{{ cdedblink('core/withdraw_companion', {'involved_id': involved_id, 'companion_id': companion['id']}) }}"
                               method="POST"
                               id="withdrawcompanionform{{ companion.id }}"
