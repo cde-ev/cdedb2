@@ -345,7 +345,7 @@ class Mailinglist(CdEDataclass):
         methods of the MailinglistBackend.
         """
         # TODO check for access to the ml? Needs ml_backend.
-        personas = bc.core.get_core_users(rs, persona_ids)
+        personas = bc.core.get_personas_status(rs, persona_ids)
 
         ret: SubscriptionPolicyMap = {}
         for persona in personas.values():

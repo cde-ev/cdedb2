@@ -371,7 +371,6 @@ class PersonaStatus(Persona):
     is_finance_admin: bool = False
     is_auditor: bool = False
 
-    @property
     @functools.cached_property
     def is_admin(self) -> bool:
         "Persona has any admin privilege."

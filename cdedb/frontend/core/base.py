@@ -1700,7 +1700,7 @@ class CoreBaseFrontend(AbstractFrontend):
             for role, users in admin_ids.items()
         }
 
-        return self.render(rs, "view_admins", {"admins": admins, 'personas': personas})
+        return self.render(rs, "view_admins", {"admins": admins})
 
     @access("core_admin", "ml_admin")
     @REQUESTdata("address", "notes")

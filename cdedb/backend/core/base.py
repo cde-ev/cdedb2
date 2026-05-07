@@ -2470,7 +2470,7 @@ class CoreBaseBackend(AbstractBackend):
         get_personas, "persona_ids", "persona_id"
     )
 
-    @access("ml")
+    @access("persona")
     def get_core_users(
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> CdEDataclassMap[models.CorePersona]:

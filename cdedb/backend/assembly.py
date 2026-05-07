@@ -1863,7 +1863,8 @@ class AssemblyBackend(AbstractBackend):
                 WHERE ballot_id = %(ballot_id)s and has_voted = True
             """
             voter_ids = [
-                e['id'] for e in self.query_all(rs, query, {"ballot_id": ballot_id})
+                e['persona_id']
+                for e in self.query_all(rs, query, {"ballot_id": ballot_id})
             ]
             voters = [
                 v.get_name() for v in self.core.get_core_users(rs, voter_ids).values()

@@ -8,9 +8,6 @@ import cdedb.models.core as models_core
 from cdedb.backend.cde.semester import AllowedSemesterSteps
 from cdedb.common import now
 from cdedb.common.exceptions import QuotaException
-from cdedb.common.fields import (
-    PERSONA_CORE_FIELDS,
-)
 from cdedb.common.query import Query, QueryOperators, QueryScope
 from tests.common import (
     USER_DICT,
@@ -129,7 +126,9 @@ class TestCdEBackend(BackendTest):
             }
             self.assertEqual(event_tmp, event_data)
         core_data = self.core.get_core_users(self.key, (1, 2))
-        expectation = self.get_sample_data('core.personas', (1, 2), PERSONA_CORE_FIELDS)
+        expectation = self.get_sample_data(
+            'core.personas', (1, 2), models_core.CorePersona.database_fields()
+        )
         tmp = {
             key: models_core.CorePersona(**value) for key, value in expectation.items()
         }
