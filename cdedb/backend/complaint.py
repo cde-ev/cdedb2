@@ -8,7 +8,6 @@ import cdedb.database.constants as const
 import cdedb.models.complaint as models
 from cdedb.backend.common import (
     AbstractBackend,
-    Silencer,
     access,
     affirm_validation as affirm,
     singularize,
@@ -750,63 +749,47 @@ class ComplaintBackend(AbstractBackend):
         else:
             is_informed = False
 
+        if not self.core.verify_ids(rs, persona_ids):
+            raise ValueError(n_("Unknown users."))
+
+        ret = 1
         with Atomizer(rs):
-            if not self.core.verify_ids(rs, persona_ids):
-                raise ValueError(n_("Unknown users."))
-
             case = self.get_case(rs, case_id)
-
-            # If some of these users are involved already, remove their involvement first.
-            #  This also removes their companions.
-            other_involved_persona_ids = (
-                persona_ids
-                & case.involved_persona_ids
-                - case.involved_persona_ids_by_type(involved_type)
-            )
-            other_involved_ids = {
-                involved_id
-                for involved_id, involved in case.involved.items()
-                if involved.persona_id in other_involved_persona_ids
-            }
-            if other_involved_ids:
-                # Silence logging of companion removal, explicitly redo the logging
-                #  of involved removed.
-                num_uninformed = 0
-                with Silencer(rs):
-                    self.remove_involved(rs, case_id, other_involved_ids)
-                for involved_id in mixed_existence_sorter(other_involved_ids):
-                    involved = case.involved[involved_id]
-                    self.complaint_log(
-                        rs=rs,
-                        code=const.ComplaintLogCodes.involved_removed,
-                        case_id=case_id,
-                        persona_id=involved.persona_id,
-                        change_note=rs.log_gettext(str(involved.type_)),
-                    )
-                    if not is_informed and case.involved[involved_id].is_informed:
-                        num_uninformed += 1
-                        self.complaint_log(
-                            rs=rs,
-                            code=const.ComplaintLogCodes.involved_uninformed,
-                            case_id=case_id,
-                            persona_id=involved.persona_id,
-                        )
-                if num_uninformed:
-                    rs.notify(
-                        "info",
-                        n_("%(num)s involved lost their informed status."),
-                        {"num": num_uninformed},
-                    )
 
             if persona_ids & case.get_companions(is_active=True).keys():
                 raise ValueError(n_("Already active companions."))
+
+            # If some of these users are involved already, update them instead.
+            # We will log this as remove + add.
+            already_involved_ids = {
+                involved_id
+                for involved_id, involved in case.involved.items()
+                if involved.persona_id in case.involved_persona_ids
+            }
+
+            # If they are updated to a state requiring is_informed, log this later
+            newly_informed = set()  # of persona_ids
+            for involved_id in mixed_existence_sorter(already_involved_ids):
+                involved = case.involved[involved_id]
+                data = {"id": involved_id, "type": involved_type}
+                if is_informed and not involved.is_informed:
+                    data['is_informed'] = True
+                    newly_informed.add(involved.persona_id)
+                ret = self.sql_update(rs, models.ComplaintInvolved.database_table, data)
+                self.complaint_log(
+                    rs=rs,
+                    code=const.ComplaintLogCodes.involved_removed,
+                    case_id=case_id,
+                    persona_id=involved.persona_id,
+                    change_note=rs.log_gettext(str(involved.type_)),
+                )
 
             newly_involved = set(persona_ids)
             newly_involved -= case.involved_persona_ids_by_type(involved_type)
             if not newly_involved:
                 ret = -1
             else:
-                ret = self.sql_insert_many(
+                ret *= self.sql_insert_many(
                     rs,
                     models.ComplaintInvolved.database_table,
                     [
@@ -819,42 +802,24 @@ class ComplaintBackend(AbstractBackend):
                         for persona_id in newly_involved
                     ],
                 )
-            for persona_id in mixed_existence_sorter(newly_involved):
-                ret *= self.complaint_log(
+
+            for persona_id in sorted(persona_ids):
+                self.complaint_log(
                     rs=rs,
                     code=const.ComplaintLogCodes.involved_added,
                     case_id=case_id,
                     persona_id=persona_id,
                     change_note=rs.log_gettext(str(involved_type)),
                 )
-                if is_informed:
-                    ret *= self.complaint_log(
+
+            if is_informed:
+                for persona_id in sorted(newly_involved & newly_informed):
+                    self.complaint_log(
                         rs=rs,
                         code=const.ComplaintLogCodes.involved_informed,
                         case_id=case_id,
                         persona_id=persona_id,
                     )
-
-            # Add back any companions we removed previously.
-            updated_case = self.get_case(rs, case_id)
-            for persona_id in mixed_existence_sorter(other_involved_persona_ids):
-                new_involved = updated_case.involved_by_persona_id[persona_id]
-                old_involved = case.involved_by_persona_id[persona_id]
-                with Silencer(rs):
-                    self.add_companions(
-                        rs,
-                        case_id,
-                        new_involved.id,
-                        old_involved.get_companions(is_active=None),
-                    )
-                    for companion_id in old_involved.get_companions(is_active=False):
-                        self.set_companion_withdrawn(
-                            rs,
-                            case_id,
-                            new_involved.id,
-                            companion_id,
-                            is_withdrawn=True,
-                        )
         return ret
 
     @access("complaint_admin")
