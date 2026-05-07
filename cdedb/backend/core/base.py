@@ -2451,24 +2451,11 @@ class CoreBaseBackend(AbstractBackend):
         query = "SELECT COUNT(*) AS num FROM core.personas WHERE foto = %s"
         return unwrap(self.query_one(rs, query, [foto])) or 0
 
-    @access("persona")
-    def get_personas(
-        self, rs: RequestState, persona_ids: Collection[int]
-    ) -> CdEDBObjectMap:
-        """Acquire data sets for specified ids."""
-        persona_ids = affirm(set[vtypes.ID], persona_ids)
-        # TODO split this function in get_core_users and get_persona_status?
-        return self.retrieve_personas(rs, persona_ids, columns=PERSONA_CORE_FIELDS)
-
     class _GetPersonaProtocol(Protocol):
         # TODO: `persona_id` is actually not optional, but it produces a lot of errors.
         def __call__(
             self, rs: RequestState, persona_id: Optional[int]
         ) -> CdEDBObject: ...
-
-    get_persona: _GetPersonaProtocol = singularize(
-        get_personas, "persona_ids", "persona_id"
-    )
 
     @access("persona")
     def get_core_users(
