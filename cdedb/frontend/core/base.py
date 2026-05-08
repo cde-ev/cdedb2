@@ -29,7 +29,6 @@ from cdedb.common import (
     DefaultReturnCode,
     Realm,
     RequestState,
-    User,
     get_mandatory_form_fields,
     make_persona_name,
     merge_dicts,
@@ -45,14 +44,6 @@ from cdedb.common.exceptions import (
     IncorrectPasswordError,
     PrivilegeError,
     ValidationWarning,
-)
-from cdedb.common.fields import (
-    PERSONA_ASSEMBLY_FIELDS,
-    PERSONA_CDE_FIELDS,
-    PERSONA_CORE_FIELDS,
-    PERSONA_EVENT_FIELDS,
-    PERSONA_ML_FIELDS,
-    PERSONA_STATUS_FIELDS,
 )
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
@@ -73,7 +64,6 @@ from cdedb.common.roles import (
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
-    PERSONA_COMMON_FIELDS,
     PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
 )
 from cdedb.filter import (
@@ -1399,57 +1389,6 @@ class CoreBaseFrontend(AbstractFrontend):
             setattr(persona, bit, persona.REDACTED)
 
         return persona
-
-    def _changeable_persona_fields(
-        self, rs: RequestState, user: User, restricted: bool = True
-    ) -> set[str]:
-        """Helper to retrieve the appropriate fields for (admin_)change_user.
-
-        :param restricted: If True, only return fields the user may change
-            themselves, i.e. remove the restricted fields.
-        """
-        assert user.persona_id is not None
-        ret: set[str] = set()
-        # some fields are of no interest here.
-        hidden_fields = set(PERSONA_STATUS_FIELDS) | {"id", "username"}
-        hidden_cde_fields = (
-            hidden_fields
-            | {
-                "balance",
-                "bub_search",
-                "decided_search",
-                "foto",
-                "trial_member",
-                "honorary_member",
-            }
-        ) - {"is_searchable"}
-        roles_to_fields = {
-            "persona": (set(PERSONA_CORE_FIELDS) | {"notes"}) - hidden_fields,
-            "ml": set(PERSONA_ML_FIELDS) - hidden_fields,
-            "assembly": set(PERSONA_ASSEMBLY_FIELDS) - hidden_fields,
-            "event": set(PERSONA_EVENT_FIELDS) - hidden_fields,
-            "cde": (set(PERSONA_CDE_FIELDS) - hidden_cde_fields),
-        }
-        for role, fields in roles_to_fields.items():
-            if role in user.roles:
-                ret |= fields
-
-        # hide the donation property if no active lastschrift exists, to avoid confusion
-        if "donation" in ret and not self.cdeproxy.list_lastschrift(
-            rs, [user.persona_id], active=True
-        ):
-            ret.remove("donation")
-
-        # hide the member search toggles if no cde realm
-        for key in ret & {"show_legal_given_names", "show_address", "show_address2"}:
-            if "cde" not in user.roles:
-                ret.remove(key)
-
-        restricted_fields = {"notes", "birthday", "is_searchable"}
-        if restricted:
-            ret -= restricted_fields
-
-        return ret
 
     @access("persona")
     def change_user_form(self, rs: RequestState) -> Response:
