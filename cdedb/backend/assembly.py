@@ -1867,7 +1867,7 @@ class AssemblyBackend(AbstractBackend):
                 for e in self.query_all(rs, query, {"ballot_id": ballot_id})
             ]
             voters = [
-                v.get_name() for v in self.core.get_core_users(rs, voter_ids).values()
+                v.get_name() for v in self.core.get_personas(rs, voter_ids).values()
             ]
             vote_list = xsorted(votes, key=json_serialize)
             result = {

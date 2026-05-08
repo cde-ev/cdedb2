@@ -77,7 +77,7 @@ class TestBackendCommon(unittest.TestCase):
     def test_make_proxy(self) -> None:
         backend = CoreBackend()
         proxy = make_proxy(backend)
-        self.assertTrue(callable(proxy.get_core_user))
+        self.assertTrue(callable(proxy.get_persona))
         self.assertTrue(callable(proxy.login))
         self.assertTrue(callable(proxy.verify_personas))
         with self.assertRaises(PrivilegeError):

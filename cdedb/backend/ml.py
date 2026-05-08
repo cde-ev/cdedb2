@@ -1499,7 +1499,7 @@ class MlBackend(AbstractBackend):
 
             # Get usernames for subscribers without explicit address.
             if not explicits_only:
-                personas = self.core.get_core_users(rs, defaults)
+                personas = self.core.get_personas(rs, defaults)
                 ret.update({p.id: p.username for p in personas.values()})
             else:
                 ret.update({p_id: None for p_id in defaults})

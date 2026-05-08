@@ -2057,7 +2057,7 @@ class EventBaseBackend(EventLowLevelBackend):
             persona_ids = {
                 entry['submitted_by'] for entry in entries if entry['submitted_by']
             } | {entry['persona_id'] for entry in entries if entry['persona_id']}
-            personas = self.core.get_core_users(rs, persona_ids)
+            personas = self.core.get_personas(rs, persona_ids)
 
         # the name of the fields which will show up in the log are defined
         # during instantiation of the entity keeper.

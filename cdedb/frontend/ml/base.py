@@ -488,7 +488,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         subscription_policy = self.mlproxy.get_subscription_policy(
             rs, rs.user.persona_id, mailinglist=ml
         )
-        moderators = self.coreproxy.get_core_users(rs, ml.moderators)
+        moderators = self.coreproxy.get_personas(rs, ml.moderators)
 
         email_report = None
         if state and state.is_subscribed():
@@ -722,7 +722,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             raise werkzeug.exceptions.Forbidden
 
         roster_ids = self.mlproxy.get_roster(rs, mailinglist_id)
-        roster = self.coreproxy.get_core_users(rs, roster_ids)
+        roster = self.coreproxy.get_personas(rs, roster_ids)
 
         return self.render(rs, "roster", {'roster': roster})
 
@@ -746,7 +746,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs, mailinglist_id, states=(const.SubscriptionState.pending,)
         )
         persona_ids = set(ml.moderators) | set(subscriber_ids) | set(request_ids)
-        personas = self.coreproxy.get_core_users(rs, persona_ids)
+        personas = self.coreproxy.get_personas(rs, persona_ids)
         # determine which subscribers use a defect address for this mailinglist
         defects = {
             id_
@@ -800,7 +800,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             | set(unsubscription_override_ids)
             | set(all_unsubscription_ids)
         )
-        personas = self.coreproxy.get_core_users(rs, persona_ids)
+        personas = self.coreproxy.get_personas(rs, persona_ids)
         subscription_overrides = {
             p.id: p for p in personas.values() if p.id in subscription_override_ids
         }
@@ -849,7 +849,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if not personas_state:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "ml/management")
-        personas = self.coreproxy.get_core_users(rs, personas_state.keys())
+        personas = self.coreproxy.get_personas(rs, personas_state.keys())
         addresses = self.mlproxy.get_subscription_addresses(
             rs, mailinglist_id, explicits_only=True
         )

@@ -2057,7 +2057,7 @@ class FrontendTest(BackendTest):
         super().assertLogEqual(log_expectation, realm=realm, **kwargs)
 
         persona_ids = [p_id for e in log_expectation if (p_id := e['persona_id'])]
-        personas = self.core.get_core_users(self.key, persona_ids)
+        personas = self.core.get_personas(self.key, persona_ids)
 
         if realm == "ml":
             entity_key = "mailinglist_id"

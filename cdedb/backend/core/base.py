@@ -2458,7 +2458,7 @@ class CoreBaseBackend(AbstractBackend):
         ) -> CdEDBObject: ...
 
     @access("persona")
-    def get_core_users(
+    def get_personas(
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> CdEDataclassMap[models.CorePersona]:
         """Get a core view on some data sets."""
@@ -2474,8 +2474,8 @@ class CoreBaseBackend(AbstractBackend):
             self, rs: RequestState, persona_id: Optional[int]
         ) -> models.CorePersona: ...
 
-    get_core_user: _GetCoreUsersProtocol = singularize(
-        get_core_users, "persona_ids", "persona_id"
+    get_persona: _GetCoreUsersProtocol = singularize(
+        get_personas, "persona_ids", "persona_id"
     )
 
     @access("ml")

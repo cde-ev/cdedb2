@@ -173,7 +173,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 persona_ids: set[int] = set()
                 for case in cases.values():
                     persona_ids.update(case.all_involved.keys())
-                personas = self.coreproxy.get_core_users(rs, persona_ids)
+                personas = self.coreproxy.get_personas(rs, persona_ids)
 
         return self.render(
             rs,
@@ -214,7 +214,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
         # Collect all persona data which may be displayed.
         persona_ids = case.get_persona_ids(log_entries)
-        personas = self.coreproxy.get_core_users(rs, persona_ids)
+        personas = self.coreproxy.get_personas(rs, persona_ids)
         age_classes = {}
         for persona_id, persona in personas.items():
             if persona.is_event_realm and rs.ambience['case'].start_date:
@@ -412,7 +412,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
         active_companions = rs.ambience['case'].active_companions
         ex_companions_ids = set(persona_ids) & active_companions.keys()
-        ex_companions = self.coreproxy.get_core_users(rs, ex_companions_ids)
+        ex_companions = self.coreproxy.get_personas(rs, ex_companions_ids)
         for companion_id, companion in ex_companions.items():
             rs.notify(
                 'warning',
@@ -490,8 +490,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
         companion_ids = rs.ambience['case'].companions_by_involved.get(persona_id)
-        companions = self.coreproxy.get_core_users(rs, companion_ids or {})
-        involved = self.coreproxy.get_core_user(rs, persona_id)
+        companions = self.coreproxy.get_personas(rs, companion_ids or {})
+        involved = self.coreproxy.get_persona(rs, persona_id)
         return self.render(
             rs,
             "complaint/manage_companions",
@@ -657,7 +657,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             persona_ids.add(entry.active_version.submitted_by)
         if entry.concerned_id:
             persona_ids.add(entry.concerned_id)
-        return self.coreproxy.get_core_users(rs, persona_ids)
+        return self.coreproxy.get_personas(rs, persona_ids)
 
     @access("complaint_admin")
     @REQUESTdata("entry_type")
@@ -834,7 +834,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
         personas = {}
         if concerned_id := rs.ambience['entry'].concerned_id:
-            personas = self.coreproxy.get_core_users(rs, (concerned_id,))
+            personas = self.coreproxy.get_personas(rs, (concerned_id,))
 
         return self.render(
             rs,
@@ -1027,9 +1027,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
         concerned = None
         if concerned_id := rs.ambience['entry'].concerned_id:
-            concerned = self.coreproxy.get_core_user(rs, concerned_id)
+            concerned = self.coreproxy.get_persona(rs, concerned_id)
 
-        authors = self.coreproxy.get_core_users(
+        authors = self.coreproxy.get_personas(
             rs, rs.ambience['entry'].active_version.authors
         ).values()
         return self.render(
@@ -1211,7 +1211,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             )
         )
         concerned_ids = {e.concerned_id for e in entries.values() if e.concerned_id}
-        personas = self.coreproxy.get_core_users(rs, author_ids | concerned_ids)
+        personas = self.coreproxy.get_personas(rs, author_ids | concerned_ids)
         params = {
             'entries': entries,
             'descriptions': descriptions,
@@ -1244,7 +1244,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 if e.active_version
             )
         )
-        authors = self.coreproxy.get_core_users(rs, author_ids)
+        authors = self.coreproxy.get_personas(rs, author_ids)
         params = {
             'entries': entries,
             'descriptions': descriptions,
@@ -1256,7 +1256,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
     def list_complaint_helpers(self, rs: RequestState) -> Response:
         """View list of enforcers and monitors."""
         enforcer_ids = self.complaintproxy.list_enforcers(rs)
-        enforcers = self.coreproxy.get_core_users(rs, enforcer_ids)
+        enforcers = self.coreproxy.get_personas(rs, enforcer_ids)
         return self.render(
             rs,
             "complaint/list_complaint_helpers",

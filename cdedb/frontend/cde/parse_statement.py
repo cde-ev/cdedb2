@@ -426,7 +426,7 @@ class Transaction:
         """Try retrieving the persona and event belonging to this transaction."""
         if self._persona_id and not self.persona:
             try:
-                self.persona = core.get_core_user(rs, self._persona_id)
+                self.persona = core.get_persona(rs, self._persona_id)
             except KeyError:
                 self._persona_id = None
                 self.persona = None
@@ -445,7 +445,7 @@ class Transaction:
         else:
             persona_matches = self._find_cdedbids()
 
-        personas = core.get_core_users(rs, persona_matches)
+        personas = core.get_personas(rs, persona_matches)
 
         for persona_id, confidence in persona_matches.items():
             # Check that the persona exists.

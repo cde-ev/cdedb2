@@ -517,7 +517,7 @@ class CdESemesterBackend(CdELastschriftBackend):
             )
             persona = None
             if is_archivable or testrun:
-                persona = self.core.get_core_user(rs, persona_id)
+                persona = self.core.get_persona(rs, persona_id)
                 period_update['archival_notification_count'] = (
                     period['archival_notification_count'] + 1
                 )

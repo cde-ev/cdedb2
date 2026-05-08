@@ -493,7 +493,7 @@ class CdEBaseBackend(AbstractBackend):
         elif datum['resolution'].is_modification():
             persona_id = datum['doppelganger_id']
             # TODO migrate upgrade logik to dataclass
-            current = self.core.get_core_user(rs, persona_id).as_dict()
+            current = self.core.get_persona(rs, persona_id).as_dict()
             if current['is_archived']:
                 if current['is_purged']:
                     raise RuntimeError(n_("Cannot restore purged account."))

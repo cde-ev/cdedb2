@@ -2004,7 +2004,7 @@ class TestCdEFrontend(FrontendTest):
         generation = self.core.changelog_get_generation(self.key, persona_id)
         self.core.changelog_resolve_change(self.key, persona_id, generation, ack=True)
         # Check that both legal_given_names and given_names have changed.
-        persona = self.core.get_core_user(self.key, persona_id)
+        persona = self.core.get_persona(self.key, persona_id)
         self.assertEqual("Berta B.", persona.legal_given_names)
         self.assertEqual("Bertie", persona.given_names)
 

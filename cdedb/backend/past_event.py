@@ -762,7 +762,7 @@ class PastEventBackend(AbstractBackend):
             entity_key="pevent_id",
         )
         total_participants_num = len(data)
-        personas = self.core.get_core_users(rs, {e['persona_id'] for e in data})
+        personas = self.core.get_personas(rs, {e['persona_id'] for e in data})
         personas_status = self.core.get_personas_status(rs, personas.keys())
         pevent = self.get_past_event(rs, pevent_id)
         for datum in data:
@@ -823,7 +823,7 @@ class PastEventBackend(AbstractBackend):
         """
         params: ParamDict = {"pcourse_id": pcourse_id}
         data = self.query_all(rs, query, params)
-        personas = self.core.get_core_users(rs, {e['persona_id'] for e in data})
+        personas = self.core.get_personas(rs, {e['persona_id'] for e in data})
         pcourse = self.get_past_course(rs, pcourse_id)
         for datum in data:
             datum["pcourse"] = pcourse
@@ -874,7 +874,7 @@ class PastEventBackend(AbstractBackend):
             entity_key="persona_id",
         )
         pevents = self.get_past_events(rs, {datum["pevent_id"] for datum in data})
-        persona = self.core.get_core_user(rs, persona_id)
+        persona = self.core.get_persona(rs, persona_id)
         persona_status = self.core.get_persona_status(rs, persona_id)
         for datum in data:
             datum["persona"] = persona

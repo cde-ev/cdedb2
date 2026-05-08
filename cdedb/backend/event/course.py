@@ -522,7 +522,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
                     instructors_by_track[e["track_id"]].add(e["persona_id"])
                 else:
                     attendees_by_track[e["track_id"]].add(e["persona_id"])
-            personas = self.core.get_core_users(rs, persona_ids)
+            personas = self.core.get_personas(rs, persona_ids)
             return models.CourseAttendees({
                 track_id: models.CourseSegmentAttendees(
                     learners=[

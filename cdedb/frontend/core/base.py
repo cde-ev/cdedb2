@@ -456,7 +456,7 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.index(rs)
 
         vcard = self._create_vcard(rs, persona_id, include_foto=True)
-        persona = self.coreproxy.get_core_user(rs, persona_id)
+        persona = self.coreproxy.get_persona(rs, persona_id)
         filename = sanitize_filename(persona.get_name())
 
         return self.send_file(
@@ -756,7 +756,7 @@ class CoreBaseFrontend(AbstractFrontend):
         elif self.AccessRealm.ml in access_realms and "ml" in target_roles:
             persona = self.coreproxy.new_get_ml_user(rs, persona_id)
         elif self.AccessRealm.persona in access_realms:
-            persona = self.coreproxy.get_core_user(rs, persona_id)
+            persona = self.coreproxy.get_persona(rs, persona_id)
             # The base version of the data set should only contain the name,
             # so we take care to not expose the username.
             persona.username = REDACTED
@@ -1043,7 +1043,7 @@ class CoreBaseFrontend(AbstractFrontend):
                         eventual_status[f][anchor] = stati.pending
         persona_ids = {e['submitted_by'] for e in history.values()}
         persona_ids |= {e['reviewed_by'] for e in history.values() if e['reviewed_by']}
-        personas = self.coreproxy.get_core_users(rs, persona_ids)
+        personas = self.coreproxy.get_personas(rs, persona_ids)
         return self.render(
             rs,
             "show_history",
@@ -1269,14 +1269,14 @@ class CoreBaseFrontend(AbstractFrontend):
             anid, errs = inspect(vtypes.CdedbID, phrase, argname="phrase")
             if not errs:
                 assert anid is not None
-                tmp = self.coreproxy.get_core_user(rs, anid)
+                tmp = self.coreproxy.get_persona(rs, anid)
                 if tmp:
                     data = (tmp.as_dict(),)
             else:
                 anid, errs = inspect(vtypes.ID, phrase, argname="phrase")
                 if not errs:
                     assert anid is not None
-                    tmp = self.coreproxy.get_core_user(rs, anid)
+                    tmp = self.coreproxy.get_persona(rs, anid)
                     if tmp:
                         data = (tmp.as_dict(),)
 
@@ -1697,7 +1697,7 @@ class CoreBaseFrontend(AbstractFrontend):
             admin_ids[realm] = self.coreproxy.list_admins(rs, realm)
 
         persona_ids = set(itertools.chain.from_iterable(admin_ids.values()))
-        personas = self.coreproxy.get_core_users(rs, persona_ids)
+        personas = self.coreproxy.get_personas(rs, persona_ids)
 
         admins = {
             role: [user for user in personas.values() if user.id in set(users)]
@@ -1723,7 +1723,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.values['notes'] = None
         email_reports = self.coreproxy.get_email_reports(rs)
         persona_ids = set().union(*(e.persona_ids for e in email_reports.values()))
-        personas = self.coreproxy.get_core_users(rs, persona_ids)
+        personas = self.coreproxy.get_personas(rs, persona_ids)
         ml_ids = set().union(*(e.ml_ids for e in email_reports.values()))
         mls = self.mlproxy.get_mailinglists(rs, ml_ids)
         grouped_reports: dict[const.EmailStatus, dict[str, Any]] = (
@@ -1917,7 +1917,7 @@ class CoreBaseFrontend(AbstractFrontend):
             # Can't have validation errors in the else branch.
             rs.ignore_validation_errors()
             assert message.persona_id and message.username and message.subject
-            persona = self.coreproxy.get_core_user(rs, message.persona_id)
+            persona = self.coreproxy.get_persona(rs, message.persona_id)
             original_subject = message.subject
 
             self.do_mail(
@@ -2144,7 +2144,7 @@ class CoreBaseFrontend(AbstractFrontend):
         cases = self.coreproxy.get_privilege_changes(rs, case_ids)
         cases = {e["persona_id"]: e for e in cases.values()}
 
-        personas = self.coreproxy.get_core_users(rs, cases.keys())
+        personas = self.coreproxy.get_personas(rs, cases.keys())
         sorted_cases = {persona.id: cases[persona.id] for persona in personas.values()}
 
         return self.render(
@@ -2183,7 +2183,7 @@ class CoreBaseFrontend(AbstractFrontend):
         persona_ids = {case["persona_id"], case["submitted_by"]}
         if reviewer_id := case["reviewer"]:
             persona_ids.add(reviewer_id)
-        personas = self.coreproxy.get_core_users(rs, persona_ids)
+        personas = self.coreproxy.get_personas(rs, persona_ids)
 
         return self.render(
             rs,
@@ -2235,7 +2235,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if not code:
             return self.show_privilege_change(rs, privilege_change_id)
         else:
-            persona = self.coreproxy.get_core_user(rs, case['persona_id'])
+            persona = self.coreproxy.get_persona(rs, case['persona_id'])
             params = {}
             if code < 0:
                 # The code is negative, the user's password needs to be changed.
@@ -2248,7 +2248,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     "Subject": "Admin-Privilegien geändert",
                 }
                 self.do_mail(rs, "privilege_change_finalized", headers, params)
-                submitter = self.coreproxy.get_core_user(rs, case["submitted_by"])
+                submitter = self.coreproxy.get_persona(rs, case["submitted_by"])
                 to = {"vorstand@cde-ev.de", self.conf["META_ADMIN_ADDRESS"]}
                 gained_privileges = [
                     privilege
@@ -2450,7 +2450,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 )
             self.send_welcome_mail(
                 rs,
-                self.coreproxy.get_core_user(rs, persona_id),
+                self.coreproxy.get_persona(rs, persona_id),
                 self.coreproxy.get_persona_status(rs, persona_id),
                 is_trial_member=data.get("trial_member", False),
             )
@@ -2998,7 +2998,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.render(
             rs,
             "admin_username_change",
-            {'data': self.coreproxy.get_core_user(rs, persona_id)},
+            {'data': self.coreproxy.get_persona(rs, persona_id)},
             get_mandatory_form_fields(self.admin_username_change),
         )
 
@@ -3195,7 +3195,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.render(
             rs,
             "dearchive_user",
-            {'data': self.coreproxy.get_core_user(rs, persona_id)},
+            {'data': self.coreproxy.get_persona(rs, persona_id)},
             get_mandatory_form_fields(self.dearchive_persona),
         )
 

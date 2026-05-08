@@ -550,7 +550,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         else:
             persona_id = rs.user.persona_id
             secret = self.assemblyproxy.signup(rs, assembly_id)
-        persona = self.coreproxy.get_core_user(rs, persona_id)
+        persona = self.coreproxy.get_persona(rs, persona_id)
         if secret:
             rs.notify("success", n_("Signed up."))
             subject = f"Teilnahme an {rs.ambience['assembly']['title']}"

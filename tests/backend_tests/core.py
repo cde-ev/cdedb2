@@ -1135,7 +1135,7 @@ class TestCoreBackend(BackendTest):
         }
         self.assertEqual(
             models.CorePersona(**expectation),  # type: ignore[arg-type]
-            self.core.get_core_user(self.key, 2),
+            self.core.get_persona(self.key, 2),
         )
         expectation.update({
             'is_ml_admin': False,

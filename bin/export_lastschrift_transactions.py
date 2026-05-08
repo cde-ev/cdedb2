@@ -29,7 +29,7 @@ with s:
     lastschrift_ids = cde.list_lastschrift(rs, active=None)
     lastschrifts = cde.get_lastschrifts(rs, lastschrift_ids)
     persona_ids = {lastschrift["persona_id"] for lastschrift in lastschrifts.values()}
-    personas = core.get_core_users(rs, persona_ids)
+    personas = core.get_personas(rs, persona_ids)
     transaction_ids = cde.list_lastschrift_transactions(
         rs,
         lastschrift_ids,

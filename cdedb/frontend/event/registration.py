@@ -1283,7 +1283,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 "error", n_("Event is balanced. May not change fee configuration.")
             )
             return self.redirect(rs, "event/show_registration_fee")
-        persona = self.coreproxy.get_core_user(
+        persona = self.coreproxy.get_persona(
             rs, rs.ambience['registration']['persona_id']
         )
         mandatory_fields = models.EventFee.mandatory_form_fields(
@@ -1428,7 +1428,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         if not registrations:
             rs.notify("info", n_("No registrations selected."))
             return self.redirect(rs, "event/fee_summary")
-        personas = self.coreproxy.get_core_users(
+        personas = self.coreproxy.get_personas(
             rs, [reg['persona_id'] for reg in registrations.values()]
         )
         sorted_registrations = xsorted(
@@ -2217,7 +2217,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 list(self.eventproxy.list_registrations(rs, event_id)),
             )
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
-        personas = self.coreproxy.get_core_users(
+        personas = self.coreproxy.get_personas(
             rs, tuple(reg['persona_id'] for reg in registrations.values())
         )
         registrations = {

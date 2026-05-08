@@ -181,7 +181,7 @@ class EventFieldMixin(EventBaseFrontend):
             if not ids:
                 ids = self.eventproxy.list_registrations(rs, event_id)
             entities = self.eventproxy.get_registrations(rs, ids)
-            personas = self.coreproxy.get_core_users(
+            personas = self.coreproxy.get_personas(
                 rs, tuple(e['persona_id'] for e in entities.values())
             )
             labels = {

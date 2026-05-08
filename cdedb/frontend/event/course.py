@@ -421,7 +421,7 @@ class EventCourseMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             registration_ids = all_reg_ids
             registrations = all_regs
-            personas = self.coreproxy.get_core_users(
+            personas = self.coreproxy.get_personas(
                 rs, tuple(r['persona_id'] for r in registrations.values())
             )
         else:
@@ -439,7 +439,7 @@ class EventCourseMixin(EventBaseFrontend):
             registrations = self.eventproxy.get_registrations(
                 rs, registration_ids.keys()
             )
-            personas = self.coreproxy.get_core_users(rs, registration_ids.values())
+            personas = self.coreproxy.get_personas(rs, registration_ids.values())
 
         course_infos = {}
         reg_part = lambda registration, track_id: registration['parts'][
@@ -815,7 +815,7 @@ class EventCourseMixin(EventBaseFrontend):
         tracks = rs.ambience['event'].tracks
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
-        personas = self.coreproxy.get_core_users(
+        personas = self.coreproxy.get_personas(
             rs, tuple(reg['persona_id'] for reg in registrations.values())
         )
         attendees = self.calculate_groups(

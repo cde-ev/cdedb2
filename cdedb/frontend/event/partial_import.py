@@ -166,7 +166,7 @@ class EventImportMixin(EventBaseFrontend):
             {e['persona_id'] for e in registrations.values()}
             | {e.get('persona_id') for e in data.get('registrations', {}).values() if e}
         ) - {None}
-        personas = self.coreproxy.get_core_users(rs, persona_ids)
+        personas = self.coreproxy.get_personas(rs, persona_ids)
 
         # Second invoke partial import
         try:

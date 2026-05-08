@@ -19,7 +19,7 @@ with s:
         is_member=None,
         is_archived=False,
     ):
-        persona = core.get_core_user(rs, persona_id)
+        persona = core.get_persona(rs, persona_id)
 
         update: CdEDBObject = {}
         for k in ('given_names', 'family_name', 'legal_given_names', 'nickname'):

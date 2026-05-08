@@ -125,7 +125,7 @@ class TestCdEBackend(BackendTest):
                 for key, value in expectation.items()
             }
             self.assertEqual(event_tmp, event_data)
-        core_data = self.core.get_core_users(self.key, (1, 2))
+        core_data = self.core.get_personas(self.key, (1, 2))
         expectation = self.get_sample_data(
             'core.personas', (1, 2), models_core.CorePersona.database_fields()
         )

@@ -35,7 +35,7 @@ with s:
     lastschrifts = cde_backend.get_lastschrifts(
         s.rs(), [t["lastschrift_id"] for t in transactions.values()]
     )
-    personas = core_backend.get_core_users(
+    personas = core_backend.get_personas(
         s.rs(), [l["persona_id"] for l in lastschrifts.values()]
     )
     for i, persona in enumerate(personas.values()):

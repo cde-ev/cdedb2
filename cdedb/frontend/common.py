@@ -1599,7 +1599,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         # Retrieve linked personas.
         persona_ids = log_filter.get_persona_ids(log)
-        personas = self.coreproxy.get_core_users(rs, persona_ids)
+        personas = self.coreproxy.get_personas(rs, persona_ids)
 
         if download:
             # Postprocess persona information: Add names and cdedb id.
@@ -1726,7 +1726,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         if persona_id:
             try:
-                persona = self.coreproxy.get_core_user(rs, persona_id)
+                persona = self.coreproxy.get_persona(rs, persona_id)
             except KeyError:
                 problems.append((
                     'persona_id',
@@ -1876,7 +1876,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             return self.create_user_form(rs)
         new_id = self.coreproxy.create_persona(rs, data)
         if new_id:
-            persona = self.coreproxy.get_core_user(rs, new_id)
+            persona = self.coreproxy.get_persona(rs, new_id)
             status = self.coreproxy.get_persona_status(rs, new_id)
             self.send_welcome_mail(rs, persona, status, data.get("trial_member", False))
             rs.notify_return_code(new_id, success=n_("User created."))
@@ -2167,7 +2167,7 @@ def reconnoitre_ambience(obj: AbstractFrontend, rs: RequestState) -> AmbienceDic
 
     scouts = (
         Scout(
-            lambda anid: obj.coreproxy.get_core_user(rs, anid),
+            lambda anid: obj.coreproxy.get_persona(rs, anid),
             'persona_id',
             'persona',
             (),

@@ -517,7 +517,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
             registrations = _registrations
 
         # Add personas to allow for simple display and sorting later
-        personas = self.core.get_core_users(
+        personas = self.core.get_personas(
             rs, [reg['persona_id'] for reg in registrations.values()]
         )
         for reg in registrations.values():

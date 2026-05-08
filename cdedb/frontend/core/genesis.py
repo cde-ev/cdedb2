@@ -350,7 +350,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         created_account_ids = [
             case.persona_id for case in concluded_cases.values() if case.persona_id
         ]
-        personas = self.coreproxy.get_core_users(rs, created_account_ids)
+        personas = self.coreproxy.get_personas(rs, created_account_ids)
         return self.render(
             rs,
             "genesis/genesis_list_cases",
@@ -370,9 +370,9 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
         persona = reviewer = pevent = pcourse = None
         if case.persona_id:
-            persona = self.coreproxy.get_core_user(rs, case.persona_id)
+            persona = self.coreproxy.get_persona(rs, case.persona_id)
         if case.reviewer:
-            reviewer = self.coreproxy.get_core_user(rs, case.reviewer)
+            reviewer = self.coreproxy.get_persona(rs, case.reviewer)
         if "event" in rs.user.roles:
             # e.g. for ml-only ml admins
             if case.pevent_id:
@@ -590,7 +590,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
         # Send notification to the user, depending on decision.
         if decision.is_create():
-            persona = self.coreproxy.get_core_user(rs, persona_id)
+            persona = self.coreproxy.get_persona(rs, persona_id)
             status = self.coreproxy.get_persona_status(rs, persona_id)
             is_trial_member = False
             if case.realm == "cde":
@@ -600,7 +600,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             self.send_welcome_mail(rs, persona, status, is_trial_member=is_trial_member)
             rs.notify("success", n_("Case approved."))
         elif decision.is_update():
-            persona = self.coreproxy.get_core_user(rs, persona_id)
+            persona = self.coreproxy.get_persona(rs, persona_id)
             reset_link = self._password_reset_link(rs, persona_id)
             self.do_mail(
                 rs,

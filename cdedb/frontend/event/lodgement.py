@@ -553,7 +553,7 @@ class EventLodgementMixin(EventBaseFrontend):
         """Render form."""
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
-        personas = self.coreproxy.get_core_users(
+        personas = self.coreproxy.get_personas(
             rs, tuple(reg['persona_id'] for reg in registrations.values())
         )
         inhabitants = self.calculate_groups(

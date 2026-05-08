@@ -156,7 +156,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         persona_ids = {x['submitted_by'] for x in lastschrifts.values()}.union({
             x['submitted_by'] for x in transactions.values()
         })
-        personas = self.coreproxy.get_core_users(rs, persona_ids)
+        personas = self.coreproxy.get_personas(rs, persona_ids)
         # we need to access the donation property of the associated user
         main_persona = self.coreproxy.get_cde_user(rs, persona_id)
         active_permit = None
@@ -475,7 +475,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             )
 
         lastschrifts = self.cdeproxy.get_lastschrifts(rs, lastschrift_ids)
-        personas = self.coreproxy.get_core_users(
+        personas = self.coreproxy.get_personas(
             rs, tuple(e['persona_id'] for e in lastschrifts.values())
         )
 
@@ -559,7 +559,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
 
         lastschrifts = self.cdeproxy.get_lastschrifts(rs, lastschrift_ids)
         transactions = self.cdeproxy.get_lastschrift_transactions(rs, transaction_ids)
-        personas = self.coreproxy.get_core_users(
+        personas = self.coreproxy.get_personas(
             rs, tuple(e['persona_id'] for e in lastschrifts.values())
         )
         for transaction in transactions.values():

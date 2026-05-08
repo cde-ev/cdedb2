@@ -447,7 +447,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                 return self.genesis(rs, case_id)
             elif decision.is_update():
                 assert case.persona_id is not None
-                persona = self.get_core_user(rs, case.persona_id)
+                persona = self.get_persona(rs, case.persona_id)
                 persona_status = self.get_persona_status(rs, case.persona_id)
                 if not self._is_relative_admin(rs, persona_status):
                     raise PrivilegeError(n_("Not privileged."))
