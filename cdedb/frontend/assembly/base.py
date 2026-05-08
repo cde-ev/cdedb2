@@ -185,7 +185,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             rs, attachment_ids
         )
         attends = self.assemblyproxy.does_attend(rs, assembly_id=assembly_id)
-        presiders = self.coreproxy.get_assembly_users(
+        presiders = self.coreproxy.get_personas(
             rs, rs.ambience['assembly']['presiders']
         )
 
