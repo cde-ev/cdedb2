@@ -18,6 +18,7 @@ CdEDBObject = dict[str, Any]
 AdminView = str
 
 
+# TODO move to PersonaStatus datclass
 def extract_roles(session: CdEDBObject, introspection_only: bool = False) -> set[Role]:
     """Associate some roles to a data set.
 
@@ -96,6 +97,7 @@ def droid_roles(identity: str) -> set[Role]:
 #
 # This dict is not evaluated recursively, so recursively implied realms must
 # be added manually to make the implication transitive.
+# TODO move to Persona dataclass
 REALM_INHERITANCE: dict[Realm, set[Role]] = {
     'cde': {'event', 'assembly', 'ml'},
     'event': {'ml'},
@@ -118,6 +120,7 @@ def extract_realms(roles: set[Role]) -> set[Realm]:
     return roles & REALM_INHERITANCE.keys()
 
 
+# TODO move to Persona dataclass
 def implied_realms(realm: Realm) -> set[Realm]:
     """Get additional realms implied by membership in one realm
 
@@ -127,6 +130,7 @@ def implied_realms(realm: Realm) -> set[Realm]:
     return REALM_INHERITANCE.get(realm, set())
 
 
+# TODO move to Persona dataclass
 def implying_realms(realm: Realm) -> set[Realm]:
     """Get all realms where membership implies the given realm.
 
@@ -139,6 +143,7 @@ def implying_realms(realm: Realm) -> set[Realm]:
     return set(r for r, implied in REALM_INHERITANCE.items() if realm in implied)
 
 
+# TODO move to PersonaStatus dataclass
 def privilege_tier(roles: set[Role], conjunctive: bool = False) -> list[set[Role]]:
     """Required admin privilege relative to a persona (signified by its roles)
 
@@ -177,6 +182,7 @@ def privilege_tier(roles: set[Role], conjunctive: bool = False) -> list[set[Role
 #: although in some realms they are meaningless. Here we provide a base skeleton
 #: which can be used, so that these realms do not need to have any knowledge of
 #: these fields.
+# TODO move to Persona dataclass
 PERSONA_DEFAULTS = {
     'is_cde_realm': False,
     'is_event_realm': False,
@@ -238,6 +244,7 @@ else:
 #: List of all roles we consider admin roles. Changes in these roles must be
 #: approved by two meta admins in total. Values are required roles.
 #: Translation of keys is needed for the privilege change page.
+# TODO move to PersonaStatus dataclass
 ADMIN_KEYS = {
     n_("is_meta_admin"): "is_cde_realm",
     n_("is_core_admin"): "is_cde_realm",
@@ -252,9 +259,11 @@ ADMIN_KEYS = {
 }
 
 #: List of all admin roles who actually have a corresponding realm with a user role.
+# TODO move to PersonaStatus dataclass
 REALM_ADMINS = {"core_admin", "cde_admin", "event_admin", "ml_admin", "assembly_admin"}
 
 #: All admin roles. Have privileged access to user data.
+# TODO move to PersonaStatus dataclass
 ALL_ADMINS = {
     *REALM_ADMINS,
     "meta_admin",
@@ -264,6 +273,7 @@ ALL_ADMINS = {
     "auditor",
 }
 
+# TODO move to PersonaStatus dataclass
 DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
     # admin
     ("meta_admin", "cdb_admin"),
@@ -293,9 +303,11 @@ DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
 
 # All roles available to non-driod users. Can be used to create dummy users
 # with all roles, like for `cdedb.script` or `cdedb.frontend.cron`.
+# TODO move to PersonaStatus dataclass
 ALL_ROLES: set[Role] = set(DB_ROLE_MAPPING) - {"droid"}
 
 
+# TODO move to PersonaStatus dataclass
 def roles_to_db_role(roles: set[Role]) -> str:
     """Convert a set of application level roles into a database level role."""
     for role in DB_ROLE_MAPPING:
@@ -308,6 +320,7 @@ def roles_to_db_role(roles: set[Role]) -> str:
 ADMIN_VIEWS_COOKIE_NAME = "enabled_admin_views"
 
 #: every admin view with one admin role per row (except of genesis)
+# TODO move to PersonaStatus dataclass
 ALL_ADMIN_VIEWS: set[AdminView] = {
     "meta_admin",
     "core_user", "core", "user_review", "ml_mgmt_core", "ml_mod_core",
@@ -324,6 +337,7 @@ ALL_ADMIN_VIEWS: set[AdminView] = {
     "genesis",
 }  # fmt: skip
 
+# TODO move to PersonaStatus dataclass
 ALL_MOD_ADMIN_VIEWS: set[AdminView] = {
     "ml_mod",
     "ml_mod_core",
@@ -333,6 +347,7 @@ ALL_MOD_ADMIN_VIEWS: set[AdminView] = {
     "ml_mod_assembly",
 }
 
+# TODO move to PersonaStatus dataclass
 ALL_MGMT_ADMIN_VIEWS: set[AdminView] = {
     "ml_mgmt",
     "ml_mgmt_core",
@@ -343,6 +358,7 @@ ALL_MGMT_ADMIN_VIEWS: set[AdminView] = {
 }
 
 
+# TODO move to PersonaStatus dataclass
 def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
     """Get the set of available admin views for a user with given roles."""
     result: set[Role] = set()

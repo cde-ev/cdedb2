@@ -1569,6 +1569,8 @@ PERSONA_COMMON_FIELDS: Mapping[str, Any] = {
 }
 
 
+# TODO refactor to use the dataclass
+# TODO get rid of all the persona dicts above
 @_add_typed_validator
 def _persona(
     val: Any,

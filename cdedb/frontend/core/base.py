@@ -100,6 +100,7 @@ from cdedb.models.ml import MailinglistGroup
 from cdedb.uncommon.submanshim import SubscriptionPolicy
 
 # Name of each realm
+# TODO move to Persona dataclass?
 USER_REALM_NAMES = {
     "cde": n_("CdE user / Member"),
     "event": n_("Event user"),

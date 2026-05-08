@@ -1840,6 +1840,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return self.send_file(rs, afile=buffer, mimetype="image/svg+xml")
 
 
+# TODO does this boilerplate is actually more usefull than annoying?
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     """Base class for all frontends which have their own user realm.
 
@@ -3073,6 +3074,7 @@ def construct_redirect(request: werkzeug.Request, url: str) -> werkzeug.Response
         return ret
 
 
+# TODO refactor last callsides to use CdEPersona
 def make_membership_fee_reference(persona: CdEDBObject) -> str:
     """Generate the desired reference for membership fee payment.
 
@@ -3085,6 +3087,7 @@ def make_membership_fee_reference(persona: CdEDBObject) -> str:
     )
 
 
+# TODO move to EventPersona
 def make_event_fee_reference(
     persona: models_core.CorePersona, event: models_event.Event
 ) -> str:
