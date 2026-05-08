@@ -61,7 +61,7 @@
                         <div class="row">
                             <div class="col-md-10 col-md-offset-2">
                             <hr class="nosp" />
-                                {% for involvement_type, involved_ids in case.involved.items() %}
+                                {% for involvement_type, involved_ids in case.involved_by_type.items() %}
                                     {% if not involvement_type == enums["ComplaintInvolvementType"].withheld %}
                                         {% if not loop.first %}
                                             <br />
@@ -70,7 +70,8 @@
                                         {{ util.make_icon(involvement_type.get_icon(), title=gettext(involvement_type|string)) }}
                                         <span aria-hidden="true">{{ gettext(involvement_type.shortname) }}</span>:
                                         </span>
-                                        {% for persona_id in involved_ids %}
+                                        {% for involved_id in involved_ids %}
+                                            {% set persona_id = case.involved[involved_id].persona_id %}
                                             {{ util.persona_anchor(personas[persona_id]) -}}
                                             {%- if not loop.last %}, {% endif %}
                                         {% endfor %}
@@ -167,8 +168,8 @@
                             );
                         </script>
                         {{ util.form_input_multi_select(
-                                 name="qval_involved.involved_type", label=gettext("Involvement"),
-                                 anid="input-involved_type", aclass="input-sm", selectize=true,
+                                 name="qval_involved.type_", label=gettext("Involvement"),
+                                 anid="input-type_", aclass="input-sm", selectize=true,
                                  entries=enums["ComplaintInvolvementType"]|enum_entries(processing=gettext, intval=True),
                                  nulloption=nbsp, attributes="size=" + (enums["ComplaintInvolvementType"]|length + 1)|string) }}
                         {{ util.form_input_select(name="qval_involved.is_informed",

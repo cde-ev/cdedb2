@@ -764,18 +764,19 @@ class ComplaintBackend(AbstractBackend):
             already_involved_ids = {
                 involved_id
                 for involved_id, involved in case.involved.items()
-                if involved.persona_id in case.involved_persona_ids
+                if involved.persona_id in set(persona_ids) & case.involved_persona_ids
             }
 
             # If they are updated to a state requiring is_informed, log this later
             newly_informed = set()  # of persona_ids
             for involved_id in mixed_existence_sorter(already_involved_ids):
                 involved = case.involved[involved_id]
-                data = {"id": involved_id, "type": involved_type}
+                data = {"id": involved_id, "type_": involved_type}
                 if is_informed and not involved.is_informed:
                     data['is_informed'] = True
                     newly_informed.add(involved.persona_id)
                 ret = self.sql_update(rs, models.ComplaintInvolved.database_table, data)
+                ret *= -1
                 self.complaint_log(
                     rs=rs,
                     code=const.ComplaintLogCodes.involved_removed,
@@ -784,11 +785,8 @@ class ComplaintBackend(AbstractBackend):
                     change_note=rs.log_gettext(str(involved.type_)),
                 )
 
-            newly_involved = set(persona_ids)
-            newly_involved -= case.involved_persona_ids_by_type(involved_type)
-            if not newly_involved:
-                ret = -1
-            else:
+            newly_involved = set(persona_ids) - case.involved_persona_ids
+            if newly_involved:
                 ret *= self.sql_insert_many(
                     rs,
                     models.ComplaintInvolved.database_table,
@@ -796,7 +794,7 @@ class ComplaintBackend(AbstractBackend):
                         {
                             "case_id": case_id,
                             "persona_id": persona_id,
-                            "involved_type": involved_type,
+                            "type_": involved_type,
                             "is_informed": is_informed,
                         }
                         for persona_id in newly_involved

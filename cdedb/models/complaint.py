@@ -1,5 +1,5 @@
 """Dataclass definitions for the complaint realm."""
-
+import collections
 import dataclasses
 import datetime
 import enum
@@ -133,6 +133,9 @@ class Case(CdEDataclass):
         }
         for involved in self.involved.values():
             ret[involved.type_].append(involved.id)
+        for type_ in const.ComplaintInvolvementType:
+            if not ret[type_]:
+                del ret[type_]
         return ret
 
     @functools.cached_property
@@ -297,7 +300,7 @@ class Case(CdEDataclass):
                         ARRAY[
                             involved.id,
                             involved.persona_id,
-                            involved.involved_type,
+                            involved.type_,
                             involved.is_informed::int
                         ]
                     FROM {ComplaintInvolved.database_table} AS involved

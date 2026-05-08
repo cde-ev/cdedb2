@@ -54,7 +54,7 @@ CASE_SEARCH_DEFAULTS = {
     # transpired before
     'qop_cases.start_date': QueryOperators.lessornull,
     'qop_involved.persona_id': QueryOperators.equal,
-    'qop_involved.involved_type': QueryOperators.oneof,
+    'qop_involved.type_': QueryOperators.oneof,
     'qop_involved.is_informed': QueryOperators.equal,
     'qop_companion.companion_persona_id': QueryOperators.equal,
     'qop_companion.is_withdrawn': QueryOperators.equal,
@@ -499,6 +499,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs,
             "complaint/manage_companions",
             {
+                'involved_id': involved_id,
                 'involved_persona': involved_persona,
                 'companions': companions,
             },
@@ -706,13 +707,13 @@ class CoreComplaintMixin(CoreBaseFrontend):
         )
 
     def _append_author_validation_warning(
-        self, rs: RequestState, authors: set[int]
+        self, rs: RequestState, authors: Collection[int]
     ) -> None:
         """Warn to not misuse author field.
 
         This check is intentionally omitted on replacement, to not be too annoying"""
         if (
-            authors & rs.ambience['case'].involved_persona_ids
+            set(authors) & rs.ambience['case'].involved_persona_ids
             and not rs.ignore_warnings
         ):
             msg = n_("Should not include involved people.")

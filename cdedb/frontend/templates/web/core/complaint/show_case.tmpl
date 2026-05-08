@@ -214,17 +214,18 @@
                         </div>
                     {% endfor %}
                     {% endcall %}
-                {% else %}
-                    <span class="text-muted">
-                        {% trans %}
-                            There are no involved individuals yet.
-                        {% endtrans %}
-                    </span>
                 {% endif %}
             </div>
         {% endfor %}
         </div>
     {% endfor %}
+    {% if not ambience["case"].involved %}
+        <span class="text-muted">
+            {% trans %}
+                There are no involved individuals yet.
+            {% endtrans %}
+        </span>
+    {% endif %}
 
     {{ util.h(n_("Related Cases")) }}
     {% if related_cases %}
@@ -420,11 +421,14 @@
     {{ case.summary }}
     <br />
     {{ gettext("Intersecting involved") }}:
-    {% for involved_id, involvement_type in case.all_involved.items() if involved_id in ambience['case'].all_properly_involved %}
-        {{ util.persona_anchor(personas[involved_id]) }}
+    {% for involved_id, involved in case.involved.items()
+        if involved.persona_id in ambience['case'].properly_involved_persona_ids
+    %}
+        {# TODO Fix sorting #}
+        {{ util.persona_anchor(personas[involved.persona_id]) }}
         <span class="text-muted">(
-            {{- util.make_icon(involvement_type.get_icon(), title=gettext(involvement_type|string)) }}
-            <span aria-hidden="true">{{ gettext(involvement_type.shortname) -}}</span></span>)
+            {{- util.make_icon(involved.type_.get_icon(), title=gettext(involved.type_|string)) }}
+            <span aria-hidden="true">{{ gettext(involved.type_.shortname) -}}</span></span>)
         {%- if not loop.last %}, {% endif %}
     {% endfor %}
 

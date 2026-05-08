@@ -16,7 +16,7 @@
 {% block heading %}
     {{ util.context_heading(
         gettext("Manage Companions"),
-        involved|persona_name, ambience['case'].involved[involved_id].type_.get_icon(), "",
+        involved_persona|persona_name, ambience['case'].involved[involved_id].type_.get_icon(), "",
         gettext("Case %s")|format(ambience['case'].id), 'gavel', "",
     ) }}
 {% endblock %}
@@ -49,7 +49,7 @@
                     '{{ cdedblink('core/select_persona') }}', {'kind': 'admin_all_users'},
                     {{ (involved.get_companions(is_active=None)|list
                         + ambience['case'].adverse_companions(involved.type_)|list
-                        + ambience['case'].involved_persona_ids)|list)|tojson }},
+                        + ambience['case'].involved_persona_ids|list)|tojson }},
                     false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                 );
             </script>
