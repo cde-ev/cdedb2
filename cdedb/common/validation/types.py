@@ -95,7 +95,7 @@ Registration = _NewType("Registration", _CdEDBObject)
 RegistrationPart = _NewType("RegistrationPart", _CdEDBObject)
 RegistrationTrack = _NewType("RegistrationTrack", _CdEDBObject)
 EventAssociatedFields = _NewType("EventAssociatedFields", _CdEDBObject)
-QuestionnaireRow = _NewType("QuestionnaireRow", _CdEDBObject)
+# TODO why is this still in usage?
 Questionnaire = _NewType("Questionnaire", list[_CdEDBObject])
 
 SerializedEvent = _NewType("SerializedEvent", _CdEDBObject)

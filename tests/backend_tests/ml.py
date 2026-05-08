@@ -27,12 +27,13 @@ class TestMlBackend(BackendTest):
     @as_users("janis")
     def test_basics(self) -> None:
         data = self.core.get_ml_user(self.key, self.user['id'])
-        data['given_names'] = "Zelda"
-        data['family_name'] = "Lord von und zu Hylia"
+        data.given_names = "Zelda"
+        data.family_name = "Lord von und zu Hylia"
         setter = {
-            k: v
-            for k, v in data.items()
-            if k in {'id', 'legal_given_names', 'given_names', 'family_name'}
+            "id": data.id,
+            "legal_given_names": data.legal_given_names,
+            "given_names": data.given_names,
+            "family_name": data.family_name,
         }
         self.core.change_persona(self.key, setter)
         new_data = self.core.get_ml_user(self.key, self.user['id'])
@@ -2122,7 +2123,7 @@ class TestMlBackend(BackendTest):
         self, mailinglist_id: int, persona_ids: Collection[int]
     ) -> None:
         expectation = {
-            persona['username']
+            persona.username
             for persona in self.core.get_ml_users(self.key, persona_ids).values()
         }
         result = self.ml.get_implicit_whitelist(self.key, mailinglist_id)

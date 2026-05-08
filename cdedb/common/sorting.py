@@ -147,19 +147,6 @@ class EntitySorter:
         return EntitySorter.persona(registration['persona'])
 
     @staticmethod
-    def lodgement(lodgement: CdEDBObject) -> Sortkey:
-        return (lodgement['title'], lodgement['id'])
-
-    @staticmethod
-    def lodgement_by_group(lodgement: CdEDBObject) -> Sortkey:
-        return (
-            lodgement['group_title'],
-            lodgement['group_id'],
-            lodgement['title'],
-            lodgement['id'],
-        )
-
-    @staticmethod
     def candidates(candidates: CdEDBObject) -> Sortkey:
         return (candidates['shortname'], candidates['id'])
 
@@ -183,10 +170,6 @@ class EntitySorter:
     @staticmethod
     def transaction(transaction: CdEDBObject) -> Sortkey:
         return (transaction['issued_at'], transaction['id'])
-
-    @staticmethod
-    def genesis_case(genesis_case: CdEDBObject) -> Sortkey:
-        return (genesis_case['ctime'], genesis_case['id'])
 
     @staticmethod
     def changelog(changelog_entry: CdEDBObject) -> Sortkey:

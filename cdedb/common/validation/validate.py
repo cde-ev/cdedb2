@@ -563,62 +563,6 @@ def _examine_dictionary_fields(
     return retval
 
 
-def _augment_dict_validator(
-    validator: Callable[..., Any], augmentation: TypeMapping, strict: bool = True
-) -> Callable[..., Any]:
-    """Beef up a dict validator.
-
-    This is for the case where you have two similar specs for a data set
-    in form of a dict and already a validator for one of them, but some
-    additional fields in the second spec.
-
-    This can also be used as a decorator.
-
-    :param augmentation: Syntax is the same as for
-        :py:meth:`_examine_dictionary_fields`.
-    :param strict: if ``True`` the additional arguments are mandatory
-        otherwise they are optional.
-    """
-
-    @functools.wraps(validator)
-    def new_validator(
-        val: Any, argname: Optional[str] = None, **kwargs: Any
-    ) -> dict[str, Any]:
-        mandatory_fields = augmentation if strict else {}
-        optional_fields = {} if strict else augmentation
-
-        errs = ValidationSummary()
-        ret: dict[str, Any] = {}
-        try:
-            ret = _examine_dictionary_fields(
-                val,
-                mandatory_fields,
-                optional_fields,
-                **{"allow_superfluous": True, **kwargs},
-            )
-        except ValidationSummary as e:
-            errs.extend(e)
-
-        tmp = copy.deepcopy(val)
-        for field in augmentation:
-            if field in tmp:
-                del tmp[field]
-
-        v = None
-        with errs:
-            v = validator(tmp, argname=argname, **kwargs)
-
-        if v is not None:
-            ret.update(v)
-
-        if errs:
-            raise errs
-
-        return ret
-
-    return new_validator
-
-
 def escaped_split(string: str, delim: str, escape: str = '\\') -> list[str]:
     """Helper function for advanced list splitting.
 
@@ -2399,16 +2343,6 @@ def _past_event(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
     return val
 
 
-EVENT_FREETEXT_FIELDS: Mapping[str, Any] = {
-    'description': Optional[str],
-    'notes': Optional[str],
-    'field_definition_notes': Optional[str],
-    'mail_text': Optional[str],
-    'registration_text': Optional[str],
-    'participant_info': Optional[str],
-}
-
-
 def _optional_object_mapping_helper(
     val_dict: Mapping[Any, Any],
     atype: TypeForm[T],
@@ -2920,9 +2854,8 @@ def _event_fee_condition(
     field_usage = all_questionnaires.field_usage()
     field_names = {
         f.field_name
-        for f in event.fields.values()
-        if f.association == const.FieldAssociations.registration
-        and f.kind == const.FieldDatatypes.bool
+        for f in event.registration_fields.values()
+        if f.kind == const.FieldDatatypes.bool
         and field_usage.get(
             f.id, const.QuestionnaireUsages.registration
         ).allow_fee_condition()
@@ -2936,13 +2869,6 @@ def _event_fee_condition(
         raise ValidationSummary(ValueError(argname, e.args[-1])) from e
 
     return EventFeeCondition(fcp_roundtrip.serialize(parse_result))
-
-
-PAST_COURSE_COMMON_FIELDS: Mapping[str, Any] = {
-    'nr': str,
-    'title': str,
-    'description': Optional[str],
-}
 
 
 @_create_dataclass_validator(models_past_event.PastCourse)
@@ -3215,14 +3141,6 @@ def _by_field_datatype(
     )
 
     return ByFieldDatatype(val)
-
-
-QUESTIONNAIRE_ROW_MANDATORY_FIELDS: TypeMapping = {
-    'title': Optional[str],
-    'info': Optional[str],
-    'readonly': Optional[bool],
-    'default_value': Optional[str],
-}
 
 
 @_create_dataclass_validator(models_event.QuestionnaireRow)
@@ -3869,7 +3787,7 @@ def _serialized_event_questionnaire(
         val['fields'] = newfields
 
         all_questionnaires.event.fields |= {
-            f_id: models_event.EventField(
+            f_id: models_event.EventField.get_class(f["association"])(
                 id=ID(f_id), event_id=all_questionnaires.event.id, **f
             )
             for f_id, f in newfields.items()

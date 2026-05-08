@@ -157,19 +157,6 @@ PRIVILEGE_CHANGE_FIELDS = (
 #: Fields of an event-specific role
 EVENT_ROLE_FIELDS = ('id', 'persona_id', 'event_id')
 
-#: Fields of an extended attribute associated to an event entity
-FIELD_DEFINITION_FIELDS = (
-    "id",
-    "event_id",
-    "field_name",
-    "title",
-    "sortkey",
-    "kind",
-    "association",
-    "checkin",
-    "entries",
-)
-
 #: Fields of a registration to an event organized via the CdEDB
 REGISTRATION_FIELDS = (
     "id",
@@ -206,28 +193,6 @@ REGISTRATION_TRACK_FIELDS = (
     "track_id",
     "course_id",
     "course_instructor",
-)
-
-# Fields of a row in a questionnaire.
-# (This can be displayed in different places according to `kind`).
-QUESTIONNAIRE_ROW_FIELDS = (
-    "event_id",
-    "field_id",
-    "pos",
-    "title",
-    "info",
-    "readonly",
-    "default_value",
-    "kind",
-)
-
-#: Fields for a stored event query.
-STORED_EVENT_QUERY_FIELDS = (
-    "id",
-    "event_id",
-    "query_name",
-    "scope",
-    "serialized_query",
 )
 
 #: Fields of an assembly

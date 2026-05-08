@@ -55,7 +55,6 @@ from cdedb.common.exceptions import EventIsBalancedError, PrivilegeError
 from cdedb.common.fields import (
     EVENT_ROLE_FIELDS,
     PERSONA_EVENT_FIELDS,
-    QUESTIONNAIRE_ROW_FIELDS,
     REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS,
     REGISTRATION_TRACK_FIELDS,
@@ -1589,7 +1588,7 @@ class EventBaseBackend(EventLowLevelBackend):
                     ('id', 'registration_id', 'track_id', 'course_id', 'rank'),
                 ),
                 models.PersonalizedFee.full_export_spec(),
-                ('event.questionnaire_rows', "event_id", QUESTIONNAIRE_ROW_FIELDS),
+                models.QuestionnaireRow.full_export_spec(),
                 models.StoredEventQuery.full_export_spec(),
                 (
                     'event.log',
