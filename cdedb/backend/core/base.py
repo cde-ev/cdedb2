@@ -85,6 +85,8 @@ from cdedb.database.query import ParamDict
 from cdedb.models.common import CdEDataclassMap
 from cdedb.models.core import EmailAddressReport
 
+PERSONA_ALL_FIELDS = models.CdEPersona.database_fields() + ["notes"]
+
 
 class CoreBaseBackend(AbstractBackend):
     """Access to this is probably necessary from everywhere, so we need
@@ -527,7 +529,7 @@ class CoreBaseBackend(AbstractBackend):
                 if not may_wait:
                     diff = {
                         key: current_state[key]
-                        for key in (set(models.PERSONA_ALL_FIELDS) - {"id"})
+                        for key in (set(PERSONA_ALL_FIELDS) - {"id"})
                         if committed_state[key] != current_state[key]
                     }
                     current_state.update(committed_state)
@@ -743,7 +745,7 @@ class CoreBaseBackend(AbstractBackend):
             # determine changed fields
             relevant_keys = tuple(
                 key
-                for key in (set(models.PERSONA_ALL_FIELDS) - {"id"})
+                for key in (set(PERSONA_ALL_FIELDS) - {"id"})
                 if data[key] != committed_state[key]
             )
             relevant_keys += ('id',)
@@ -844,7 +846,7 @@ class CoreBaseBackend(AbstractBackend):
         ):
             raise PrivilegeError(n_("Not privileged."))
         generations = affirm(set[int], generations or set())
-        fields = list(models.PERSONA_ALL_FIELDS)
+        fields = list(PERSONA_ALL_FIELDS)
         fields.remove('id')
         fields.append("persona_id AS id")
         fields.extend((
@@ -2777,9 +2779,7 @@ class CoreBaseBackend(AbstractBackend):
             )
         ):
             raise PrivilegeError(n_("Must be privileged."))
-        return self.retrieve_personas(
-            rs, persona_ids, columns=models.PERSONA_ALL_FIELDS
-        )
+        return self.retrieve_personas(rs, persona_ids, columns=PERSONA_ALL_FIELDS)
 
     get_total_persona: _GetPersonaProtocol = singularize(
         get_total_personas, "persona_ids", "persona_id"

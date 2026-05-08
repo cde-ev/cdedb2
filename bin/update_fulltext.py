@@ -5,7 +5,7 @@ Should not be archived after use.
 """
 
 from cdedb.script import Script
-from cdedb.models.core import PERSONA_ALL_FIELDS
+from cdedb.backend.core.base import PERSONA_ALL_FIELDS
 
 # config
 CHECK = True
