@@ -1355,6 +1355,50 @@ class CoreBaseFrontend(AbstractFrontend):
             ret.append(result)
         return self.send_json(rs, {'personas': ret})
 
+    def _get_redacted_persona(
+        self, rs: RequestState, persona_id: int, admin_access: bool = False
+    ) -> models.CorePersona:
+        """Helper to retrieve the persona for (admin_)change_user.
+
+        Since some persona attributes are not meant to be changed there, we use
+        the REDACT mechanic to remove them from the dataset.
+        """
+        status = self.coreproxy.get_persona_status(rs, persona_id)
+        status_bits = status.get_status_bits()
+
+        if status.is_cde_realm:
+            persona = self.coreproxy.get_cde_user(rs, persona_id)
+            persona.balance = persona.REDACTED
+            persona.bub_search = persona.REDACTED
+            persona.decided_search = persona.REDACTED
+            persona.foto = persona.REDACTED
+            persona.trial_member = persona.REDACTED
+            persona.honorary_member = persona.REDACTED
+            # hide the donation property if no active lastschrift exists, to avoid confusion
+            if not self.cdeproxy.list_lastschrift(rs, [persona_id], active=True):
+                persona.donation = persona.REDACTED
+            if admin_access:
+                status_bits.remove("is_searchable")
+            if not admin_access:
+                persona.birthday = persona.REDACTED
+        elif status.is_event_realm:
+            persona = self.coreproxy.get_event_user(rs, persona_id)
+            if not admin_access:
+                persona.birthday = persona.REDACTED
+        elif status.is_assembly_realm:
+            persona = self.coreproxy.get_assembly_user(rs, persona_id)
+        elif status.is_ml_realm:
+            persona = self.coreproxy.get_ml_user(rs, persona_id)
+        else:
+            persona = self.coreproxy.get_persona(rs, persona_id)
+
+        persona.id = persona.REDACTED
+        persona.username = persona.REDACTED
+        for bit in status_bits:
+            setattr(persona, bit, persona.REDACTED)
+
+        return persona
+
     def _changeable_persona_fields(
         self, rs: RequestState, user: User, restricted: bool = True
     ) -> set[str]:
@@ -1411,32 +1455,38 @@ class CoreBaseFrontend(AbstractFrontend):
         """Render form."""
         assert rs.user.persona_id is not None
         generation = self.coreproxy.changelog_get_generation(rs, rs.user.persona_id)
-        data = unwrap(
+        history = unwrap(
             self.coreproxy.changelog_get_history(rs, rs.user.persona_id, (generation,))
         )
-        if data['code'] == const.PersonaChangeStati.pending:
+        if history['code'] == const.PersonaChangeStati.pending:
             rs.notify("info", n_("Change pending."))
-        del data['change_note']
-        shown_fields = self._changeable_persona_fields(rs, rs.user, restricted=True)
+        persona = self._get_redacted_persona(rs, rs.user.persona_id)
+        # The url does not contain the users id, so the ambience dict doesn't contain
+        #  the unchanged persona.
+        ambience_persona = self.coreproxy.get_persona(rs, rs.user.persona_id)
 
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
         max_donation = self.conf["MAXIMAL_LASTSCHRIFT_DONATION"]
-        has_special_donation = (
-            "donation" in shown_fields
-            and not min_donation <= data["donation"] <= max_donation
+        has_special_donation = persona.has("donation") and not (
+            min_donation <= getattr(persona, "donation") <= max_donation
         )
 
-        merge_dicts(rs.values, data)
-        mandatory_fields = (
-            get_mandatory_form_fields(PERSONA_COMMON_FIELDS)
-            | {'address', 'location'}  # we enforce this by hand in change_user
-        )
+        merge_dicts(rs.values, persona.as_dict())
+
+        mandatory_fields = persona.mandatory_form_fields(creation=False)
+        # we enforce this by hand in change_user
+        if persona.hasattr("address"):
+            mandatory_fields.add("address")
+        if persona.hasattr("location"):
+            mandatory_fields.add("location")
+
         return self.render(
             rs,
             "change_user",
             {
-                'username': data['username'],
-                'shown_fields': shown_fields,
+                'persona': persona,
+                'ambience_persona': ambience_persona,
+                'generation': generation,
                 'min_donation': min_donation,
                 'max_donation': max_donation,
                 'has_special_donation': has_special_donation,
@@ -1449,13 +1499,19 @@ class CoreBaseFrontend(AbstractFrontend):
     def change_user(self, rs: RequestState, generation: int) -> Response:
         """Change own data set."""
         assert rs.user.persona_id is not None
-        attributes = self._changeable_persona_fields(rs, rs.user, restricted=True)
-        data = request_dict_extractor(rs, attributes)
+        persona = self._get_redacted_persona(rs, rs.user.persona_id)
+        fields = {
+            k: v
+            for k, v in persona.requestdict_fields(creation=False)
+            if getattr(persona, k) != persona.REDACTED
+        }
+        data = request_dict_extractor(rs, fields)
         data['id'] = rs.user.persona_id
         data = check(rs, vtypes.Persona, data, "persona")
         if not data:
             rs.ignore_validation_errors()
             return self.change_user_form(rs)
+
         # take special care for annual donations in combination with lastschrift
         if "donation" in data and (
             lastschrift_ids := self.cdeproxy.list_lastschrift(
@@ -1496,6 +1552,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     " the owner agreed to the change before submitting it here."
                 )
                 rs.append_validation_error(("donation", ValidationWarning(msg)))
+
         # Gender and primary address may not be unset
         if data.get('gender') == const.Genders.not_specified:
             rs.append_validation_error(('gender', ValueError(n_("Must not be empty."))))
@@ -1504,11 +1561,12 @@ class CoreBaseFrontend(AbstractFrontend):
             if address_row in data.keys():
                 if not data[address_row]:
                     rs.append_validation_error((address_row, e))
+
         if rs.has_validation_errors():
             return self.change_user_form(rs)
-        change_note = "Normale Änderung."
+
         code = self.coreproxy.change_persona(
-            rs, data, generation=generation, change_note=change_note
+            rs, data, generation=generation, change_note="Normale Änderung."
         )
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, rs.user.persona_id)

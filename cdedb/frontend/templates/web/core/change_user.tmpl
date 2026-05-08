@@ -10,8 +10,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(show_user_link(user, values['id']), values|persona_name,
-            icon="user") }}
+    {{ util.breadcrumb_link(show_user_link(user, ambience_persona.id), ambience_persona.get_name(), icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/change_user_form"), gettext("Edit Your Data"), active=True) }}
 {% endblock %}
 {% block content %}
@@ -22,7 +21,7 @@
     </script>
     <form action="{{ cdedblink('core/change_user') }}" method="POST" id="changedataform" class="form-horizontal">
         {{ util.anti_csrf_token('core/change_user') }}
-        {{ util.input_hidden(name="generation") }}
+        {{ util.input_hidden(name="generation", value=generation) }}
 
         {{ util.h(n_("Personal Information"), level=4, underline=True) }}
         {{ util.form_input_text(name="title", label=gettext("Title_[[of a persona]]"),
@@ -32,35 +31,35 @@
         {{ util.form_input_text(name="legal_given_names", label=gettext("Legal Given Names"),
             info=gettext("(If different from given names) For direct debits and donation receipts. Only visible to %(orgas_and_admins)s.")|format(
                     orgas_and_admins=util.href(docurl("Realm_Core_Privacy"), gettext("Orgas and Admins")))|s) }}
-        {% if 'show_legal_given_names' in shown_fields %}
+        {% if persona.hasattr('show_legal_given_names') %}
             {{ util.form_input_checkbox(name="show_legal_given_names", label=gettext("Show legal given names for member search")) }}
         {% endif %}
         {{ util.form_input_text(name="nickname", label=gettext("Nickname"),
             info=gettext("For nametags and event notices.")) }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
-        {% if "birth_name" in shown_fields %}
+        {% if persona.hasattr("birth_name") %}
             {{ util.form_input_text(name="birth_name", label=gettext("Birth Name"),
                 info=gettext("Original family name after the current family name has changed, for example through marriage.")) }}
         {% endif %}
         {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix"),
                 info=gettext("Suffixed academic degree or similar.")) }}
 
-        {% if 'gender' in shown_fields %}
+        {% if persona.hasattr('gender') %}
             {{ util.form_input_select(
                 name="gender", entries=enums['Genders']|enum_entries(processing=gettext), label=gettext("Gender"),
                 info=gettext("For lodgement assignment at events. Only visible to %(orgas_and_admins)s.")|format(
                     orgas_and_admins=util.href(docurl("Realm_Core_Privacy"), gettext("Orgas and Admins")))|s) }}
         {% endif %}
-        {% if "pronouns" in shown_fields %}
+        {% if persona.hasattr("pronouns") %}
             {{ util.form_input_text(name="pronouns", label=gettext("Pronouns"), placeholder=gettext("he/him, she/her, they/them, …")) }}
             {{ util.form_input_checkbox(name="pronouns_nametag", label=gettext("Show pronouns on nametags")) }}
             {{ util.form_input_checkbox(name="pronouns_profile", label=gettext("Show pronouns on profile")) }}
         {% endif %}
 
-        {% if "paper_expuls" in shown_fields or "donation" in shown_fields %}
+        {% if persona.hasattr("paper_expuls") or persona.hasattr("donation") %}
             {{ util.h(n_("Membership"), level=4, underline=True) }}
         {% endif %}
-        {% if "donation" in shown_fields %}
+        {% if persona.hasattr("donation") %}
             {% if has_special_donation %}
                 {{ util.form_input_static(label=gettext("Annual Donation"), value=values["donation"]|money(lang=lang),
                                           info=gettext("You allow the CdE to withdraw this amount annually"
@@ -76,7 +75,7 @@
                                                      " via direct debit authorization, in addition to the annual membership fee.")) }}
             {% endif %}
         {% endif %}
-        {% if "paper_expuls" in shown_fields %}
+        {% if persona.hasattr("paper_expuls") %}
             {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls"),
                                         info=gettext("The exPuls is published semi-anually printed and online. "
                                                      "You can find further information about the online version at %(link)s.")|format(
@@ -86,19 +85,19 @@
         {% endif %}
 
         {{ util.h(n_("Contact Information"), level=4, underline=True) }}
-        {{ util.form_input_static(label=gettext("E-Mail"), value=username,
+        {{ util.form_input_static(label=gettext("E-Mail"), value=ambience_persona.username,
                 info=gettext("To Change Your email address, use the button on Your Profile Page.")) }}
-        {% if "telephone" in shown_fields or "mobile" in shown_fields %}
+        {% if persona.hasattr("telephone") or persona.hasattr("mobile") %}
             {{ util.form_input_text(name="telephone", label=gettext("Phone"), type="tel") }}
             {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel") }}
         {% endif %}
-        {% if "weblink" in shown_fields %}
+        {% if persona.hasattr("weblink") %}
             {{ util.form_input_text(name="weblink", label=gettext("WWW"), markdown=True) }}
         {% endif %}
 
-        {% if "address" in shown_fields %}
+        {% if persona.hasattr("address") %}
             {{ util.h(n_("Address"), level=4, underline=True) }}
-            {% if "paper_expuls" in shown_fields %}
+            {% if persona.hasattr("paper_expuls") %}
                 <p>
                 {% trans %}
                     This should be your primary address. The exPuls will be sent here.
@@ -107,7 +106,7 @@
             {% endif %}
             {{ util.form_input_text(name="address", label=gettext("Street and House Number")) }}
             {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
-            {% if 'show_address' in shown_fields %}
+            {% if persona.hasattr('show_address') %}
                 {{ util.form_input_checkbox(name="show_address", label=gettext("Show precise address for member search")) }}
             {% endif %}
             {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}
@@ -115,7 +114,7 @@
             {{ util.form_input_select(name="country", label=gettext("Country"), entries=COUNTRY_CODES,
                                       defaultvalue=DEFAULT_COUNTRY) }}
         {% endif %}
-        {% if "address2" in shown_fields %}
+        {% if persona.hasattr("address2") %}
             {{ util.h(n_("Second Address"), level=4, underline=True) }}
             <p>
             {% trans %}
@@ -125,7 +124,7 @@
             </p>
             {{ util.form_input_text(name="address2", label=gettext("Street and House Number")) }}
             {{ util.form_input_text(name="address_supplement2", label=gettext("Address Supplement")) }}
-            {% if 'show_address' in shown_fields %}
+            {% if persona.hasattr('show_address') %}
                 {{ util.form_input_checkbox(name="show_address2", label=gettext("Show precise address for member search")) }}
             {% endif %}
             {{ util.form_input_text(name="postal_code2", label=gettext("Zipcode")) }}
@@ -133,7 +132,7 @@
             {{ util.form_input_select(name="country2", label=gettext("Country"), entries=COUNTRY_CODES,
                                       defaultvalue=DEFAULT_COUNTRY) }}
         {% endif %}
-        {% if "specialisation" in shown_fields %}
+        {% if persona.hasattr("specialisation") %}
             {{ util.h(n_("Miscellaneous"), level=4, underline=True) }}
             {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation"), markdown=True) }}
             {{ util.form_input_textarea(name="affiliation", label=gettext("School, University, …"), markdown=True) }}

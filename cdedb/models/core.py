@@ -411,6 +411,10 @@ class CorePersona(Persona, PersonaName):
             raise RuntimeError
         return ret
 
+    def as_dict(self) -> dict[str, Any]:
+        data = super().as_dict()
+        return {k: v for k, v in data.items() if v != self.REDACTED}
+
 
 @dataclasses.dataclass(kw_only=True)
 class MlPersona(CorePersona):
