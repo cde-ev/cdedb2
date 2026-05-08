@@ -311,7 +311,6 @@ class Persona(CdEDataclass):
                     raise RuntimeError("User misses a mandatory realm.")
 
     @classmethod
-    @functools.cache
     def get_status_bits(cls) -> set[str]:
         ret = set()
         for field in dataclasses.fields(cls):
@@ -320,7 +319,6 @@ class Persona(CdEDataclass):
         return ret
 
     @classmethod
-    @functools.cache
     def get_realm_bits(cls) -> set[str]:
         ret = set()
         for field in dataclasses.fields(cls):
@@ -329,7 +327,6 @@ class Persona(CdEDataclass):
         return ret
 
     @classmethod
-    @functools.cache
     def get_admin_bits(cls) -> set[str]:
         ret = set()
         for field in dataclasses.fields(cls):
