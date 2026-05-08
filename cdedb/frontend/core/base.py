@@ -654,10 +654,10 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, persona_id, allow_meta_admin=True)
 
         # Check whether profile is currently searchable to viewer
-        viewer_status = self.coreproxy.get_persona_status(rs, rs.ambience['persona'].id)
+        status = self.coreproxy.get_persona_status(rs, rs.ambience['persona'].id)
         is_searchable_to_you = ("searchable" in rs.user.roles
-                                and viewer_status.is_member
-                                and viewer_status.is_searchable)
+                                and status.is_member
+                                and status.is_searchable)
 
         access_realms = self.AccessRealm(0)
         access_levels = self.AccessLevel(0)
@@ -738,7 +738,7 @@ class CoreBaseFrontend(AbstractFrontend):
         #
         # This is the basic mechanism for restricting access, since we only
         # add attributes for which an access level is provided.
-        target_roles = extract_roles(viewer_status.as_dict(), introspection_only=True)
+        target_roles = extract_roles(status.as_dict(), introspection_only=True)
         persona: models.CorePersona
         if self.AccessRealm.cde in access_realms and "cde" in target_roles:
             persona = self.coreproxy.get_cde_user(rs, persona_id)
