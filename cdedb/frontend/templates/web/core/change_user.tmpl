@@ -1,26 +1,44 @@
-{% set sidenav_active='core_mydata'%}
+{% if not is_admin_variant %}
+    {% set sidenav_active='core_mydata'%}
+{% endif %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/generic.tmpl" as generic with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% trans %}
-    	Edit Your Data
-    {% endtrans %}
+    {% if is_admin_variant %}
+        {% trans name=ambience_persona.get_name() %}
+            Edit {{ name }}
+        {% endtrans %}
+    {% else %}
+        {% trans %}Edit Your Data{%endtrans%}
+    {% endif %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(show_user_link(user, ambience_persona.id), ambience_persona.get_name(), icon="user") }}
-    {{ util.breadcrumb_link(cdedblink("core/change_user_form"), gettext("Edit Your Data"), active=True) }}
+    {% if is_admin_variant %}
+        {{ util.breadcrumb_link(cdedblink("core/admin_change_user_form"), gettext("Edit Userdata"), active=True) }}
+    {% else %}
+        {{ util.breadcrumb_link(cdedblink("core/change_user_form"), gettext("Edit Your Data"), active=True) }}
+    {% endif %}
 {% endblock %}
+
+{% if is_admin_variant %}
+    {% block heading %}
+        {{ util.context_heading(gettext("Edit Userdata"), ambience_persona|persona_name, 'user', gettext("User")) }}
+    {% endblock %}
+{% endif %}
+
 {% block content %}
     <script nonce="{{ csp_nonce }}">
         $(function() {
             $('#changedataform').cdedbProtectChanges();
         });
     </script>
-    <form action="{{ cdedblink('core/change_user') }}" method="POST" id="changedataform" class="form-horizontal">
-        {{ util.anti_csrf_token('core/change_user') }}
+    <form action="{{ cdedblink('core/admin_change_user' if is_admin_variant else 'core/change_user') }}" method="POST" id="changedataform" class="form-horizontal">
+        {{ util.anti_csrf_token('core/admin_change_user' if is_admin_variant else 'core/change_user') }}
         {{ util.input_hidden(name="generation", value=generation) }}
 
         {{ util.h(n_("Personal Information"), level=4, underline=True) }}
@@ -55,11 +73,17 @@
             {{ util.form_input_checkbox(name="pronouns_nametag", label=gettext("Show pronouns on nametags")) }}
             {{ util.form_input_checkbox(name="pronouns_profile", label=gettext("Show pronouns on profile")) }}
         {% endif %}
+        {% if persona.hasattr("birthday") %}
+            {{ util.form_input_text(name="birthday", label=gettext("Birthday"), type="date") }}
+        {% endif %}
 
-        {% if persona.hasattr("paper_expuls") or persona.hasattr("donation") %}
+        {% if (persona.hasattr("paper_expuls") or persona.hasattr("donation")) and not is_admin_variant %}
             {{ util.h(n_("Membership"), level=4, underline=True) }}
         {% endif %}
-        {% if persona.hasattr("donation") %}
+        {% if is_admin_variant %}
+            {{ util.h(n_("Account & Membership"), level=4, underline=True)}}
+        {% endif %}
+        {% if persona.hasattr("donation") and not is_admin_variant%}
             {% if has_special_donation %}
                 {{ util.form_input_static(label=gettext("Annual Donation"), value=values["donation"]|money(lang=lang),
                                           info=gettext("You allow the CdE to withdraw this amount annually"
@@ -75,6 +99,12 @@
                                                      " via direct debit authorization, in addition to the annual membership fee.")) }}
             {% endif %}
         {% endif %}
+        {% if persona.hasattr("donation") and is_admin_variant%}
+            {{ util.form_input_text(name="donation", label=gettext("Annual Donation"), type="number", attributes='min="0" step="0.01"'|s, addon="€") }}
+        {% endif %}
+        {% if persona.hasattr("is_searchable") %}
+            {{ util.form_input_checkbox(name="is_searchable", label=gettext("Searchable")) }}
+        {% endif %}
         {% if persona.hasattr("paper_expuls") %}
             {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls"),
                                         info=gettext("The exPuls is published semi-anually printed and online. "
@@ -82,6 +112,9 @@
                                                      link=util.href(cdedblink('cde/view_misc'),
                                                                     (gettext("Members") + " / " +
                                                                      gettext("Miscellaneous"))))|s) }}
+        {% endif %}
+        {% if is_admin_variant %}
+            {{ util.form_input_textarea(name="notes", label=gettext("Admin Notes"), rows="7", markdown=True, info=gettext("Visible to all Admins.")) }}
         {% endif %}
 
         {{ util.h(n_("Contact Information"), level=4, underline=True) }}
@@ -140,6 +173,18 @@
             {{ util.form_input_textarea(name="interests", label=gettext("Interests"), markdown=True) }}
             {{ util.form_input_textarea(name="free_form", label=gettext("Miscellaneous"), rows="5", markdown=True) }}
         {% endif %}
-        {{ util.form_input_submit(label=gettext("Save"), cancellink=show_user_link(user, user.persona_id)) }}
+
+        {% if is_admin_variant %}
+            {% call util.bootstrap_panel(aclass="panel-primary") %}
+                {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes")) }}
+            {% endcall %}
+            {% if code == enums['PersonaChangeStati'].pending %}
+                {{ util.form_input_submit(label=gettext("Save (including pending changes)"), cancellink=show_user_link(user, ambience_persona.id)) }}
+            {% else %}
+                {{ util.form_input_submit(label=gettext("Save"), cancellink=show_user_link(user, ambience_persona.id)) }}
+            {% endif %}
+        {% else %}
+            {{ util.form_input_submit(label=gettext("Save"), cancellink=show_user_link(user, user.persona_id)) }}
+        {% endif %}
     </form>
 {% endblock %}

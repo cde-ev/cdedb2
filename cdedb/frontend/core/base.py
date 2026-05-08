@@ -1366,6 +1366,7 @@ class CoreBaseFrontend(AbstractFrontend):
         status = self.coreproxy.get_persona_status(rs, persona_id)
         status_bits = status.get_status_bits()
 
+        persona: models.CorePersona
         if status.is_cde_realm:
             persona = self.coreproxy.get_cde_user(rs, persona_id)
             persona.balance = persona.REDACTED
@@ -1490,6 +1491,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 'min_donation': min_donation,
                 'max_donation': max_donation,
                 'has_special_donation': has_special_donation,
+                'is_admin_variant': False,
             },
             mandatory_fields,
         )
@@ -1653,29 +1655,32 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.redirect_show_user(rs, persona_id)
 
         generation = self.coreproxy.changelog_get_generation(rs, persona_id)
-        data = unwrap(
+        history = unwrap(
             self.coreproxy.changelog_get_history(rs, persona_id, (generation,))
         )
-        del data['change_note']
-        merge_dicts(rs.values, data)
-
-        if data['code'] == const.PersonaChangeStati.pending:
+        if history['code'] == const.PersonaChangeStati.pending:
             rs.notify("info", n_("Change pending."))
-        status = self.coreproxy.get_persona_status(rs, rs.ambience['persona'].id)
-        roles = extract_roles(status.as_dict(), introspection_only=True)
-        user = User(persona_id=persona_id, roles=roles)
-        shown_fields = self._changeable_persona_fields(rs, user, restricted=False)
+
+        persona = self._get_redacted_persona(rs, persona_id, admin_access=True)
+        merge_dicts(rs.values, persona.as_dict())
+
+        mandatory_fields = persona.mandatory_form_fields(creation=False)
+        # We have users with an unknown birthday (this shouldn't
+        # be a blocker for admins to edit those users at all) and want to
+        # be able to correct wrong birthdays into missing ones.
+        mandatory_fields -= {"birthday"}
+
         return self.render(
             rs,
-            "admin_change_user",
+            "change_user",
             {
-                'admin_bits': self.admin_bits(rs),
-                'shown_fields': shown_fields,
-                # We have users with an unknown birthday (this shouldn't
-                # be a blocker for admins to edit those users at all) and want to
-                # be able to correct wrong birthdays into missing ones.
+                'persona': persona,
+                'ambience_persona': rs.ambience['persona'],
+                'generation': generation,
+                'code': history['code'],
+                'is_admin_variant': True,
             },
-            get_mandatory_form_fields(PERSONA_COMMON_FIELDS) - {'birthday'},
+            mandatory_fields,
         )
 
     @access(*REALM_ADMINS, modi={"POST"})
@@ -1690,12 +1695,18 @@ class CoreBaseFrontend(AbstractFrontend):
         """Privileged edit of data set."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
+        if rs.ambience['persona'].is_archived:
+            rs.notify("error", n_("Persona is archived."))
+            return self.redirect_show_user(rs, persona_id)
+
         # Assure we don't accidently change the original.
-        status = self.coreproxy.get_persona_status(rs, rs.ambience['persona'].id)
-        roles = extract_roles(status.as_dict(), introspection_only=True)
-        user = User(persona_id=persona_id, roles=roles)
-        attributes = self._changeable_persona_fields(rs, user, restricted=False)
-        data = request_dict_extractor(rs, attributes)
+        persona = self._get_redacted_persona(rs, persona_id, admin_access=True)
+        fields = {
+            k: v
+            for k, v in persona.requestdict_fields(creation=False)
+            if getattr(persona, k) != persona.REDACTED
+        }
+        data = request_dict_extractor(rs, fields)
         data['id'] = persona_id
         data = check(rs, vtypes.Persona, data)
         # take special care for annual donations in combination with lastschrift
