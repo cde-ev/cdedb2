@@ -610,6 +610,8 @@ class CdEPersona(EventAssemblyPersona):
         return deadline.replace(year=int(deadline.year + periods_left // 2))
 
 
+PERSONA_ALL_FIELDS = CdEPersona.database_fields() + ["notes"]
+
 if PersonaStatus.get_status_bits() != CdEPersona.get_status_bits():
     raise RuntimeError("Persona status bits got out of sync, adjust the dataclasses.")
 

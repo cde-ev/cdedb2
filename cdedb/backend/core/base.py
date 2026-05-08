@@ -59,10 +59,6 @@ from cdedb.common.exceptions import (
     QuotaException,
 )
 from cdedb.common.fields import (
-    PERSONA_ALL_FIELDS,
-    PERSONA_CDE_FIELDS,
-    PERSONA_CORE_FIELDS,
-    PERSONA_STATUS_FIELDS,
     PRIVILEGE_CHANGE_FIELDS,
 )
 from cdedb.common.n_ import n_
@@ -531,7 +527,7 @@ class CoreBaseBackend(AbstractBackend):
                 if not may_wait:
                     diff = {
                         key: current_state[key]
-                        for key in (set(PERSONA_ALL_FIELDS) - {"id"})
+                        for key in (set(models.PERSONA_ALL_FIELDS) - {"id"})
                         if committed_state[key] != current_state[key]
                     }
                     current_state.update(committed_state)
@@ -747,7 +743,7 @@ class CoreBaseBackend(AbstractBackend):
             # determine changed fields
             relevant_keys = tuple(
                 key
-                for key in (set(PERSONA_ALL_FIELDS) - {"id"})
+                for key in (set(models.PERSONA_ALL_FIELDS) - {"id"})
                 if data[key] != committed_state[key]
             )
             relevant_keys += ('id',)
@@ -848,7 +844,7 @@ class CoreBaseBackend(AbstractBackend):
         ):
             raise PrivilegeError(n_("Not privileged."))
         generations = affirm(set[int], generations or set())
-        fields = list(PERSONA_ALL_FIELDS)
+        fields = list(models.PERSONA_ALL_FIELDS)
         fields.remove('id')
         fields.append("persona_id AS id")
         fields.extend((
@@ -885,7 +881,7 @@ class CoreBaseBackend(AbstractBackend):
         self,
         rs: RequestState,
         persona_ids: Collection[int],
-        columns: tuple[str, ...] = PERSONA_CORE_FIELDS,
+        columns: list[str],
     ) -> CdEDBObjectMap:
         """Helper to access a persona dataset.
 
@@ -893,7 +889,7 @@ class CoreBaseBackend(AbstractBackend):
         :py:meth:`get_personas` should be used.
         """
         if "id" not in columns:
-            columns += ("id",)
+            columns += ["id"]
         data = self.sql_select(rs, "core.personas", columns, persona_ids)
         ret = {}
         for d in data:
@@ -907,7 +903,7 @@ class CoreBaseBackend(AbstractBackend):
             self,
             rs: RequestState,
             persona_id: int,
-            columns: tuple[str, ...] = PERSONA_CORE_FIELDS,
+            columns: list[str],
         ) -> CdEDBObject: ...
 
     retrieve_persona: _RetrievePersonaProtocol = singularize(
@@ -1025,7 +1021,9 @@ class CoreBaseBackend(AbstractBackend):
             num = self.sql_update(rs, "core.personas", data)
             if not num:
                 raise ValueError(n_("Nonexistent user."))
-            current = self.retrieve_persona(rs, data['id'], columns=PERSONA_CDE_FIELDS)
+            current = self.retrieve_persona(
+                rs, data['id'], columns=models.CdEPersona.database_fields()
+            )
             fulltext = self.create_fulltext(current)
             fulltext_update = {
                 'id': data['id'],
@@ -1537,7 +1535,7 @@ class CoreBaseBackend(AbstractBackend):
         }
         with Atomizer(rs):
             current = self.retrieve_persona(
-                rs, persona_id, ("balance", "is_cde_realm", "trial_member")
+                rs, persona_id, ["balance", "is_cde_realm", "trial_member"]
             )
             if not current['is_cde_realm']:
                 raise RuntimeError(n_("Tried to credit balance to non-cde person."))
@@ -2779,7 +2777,9 @@ class CoreBaseBackend(AbstractBackend):
             )
         ):
             raise PrivilegeError(n_("Must be privileged."))
-        return self.retrieve_personas(rs, persona_ids, columns=PERSONA_ALL_FIELDS)
+        return self.retrieve_personas(
+            rs, persona_ids, columns=models.PERSONA_ALL_FIELDS
+        )
 
     get_total_persona: _GetPersonaProtocol = singularize(
         get_total_personas, "persona_ids", "persona_id"
@@ -2954,14 +2954,20 @@ class CoreBaseBackend(AbstractBackend):
         rs._conn = rs.conn
 
         # Get more information about user (for immediate use in frontend)
-        data = self.sql_select_one(rs, "core.personas", PERSONA_CORE_FIELDS, data["id"])
-        if data is None:
-            raise RuntimeError(n_("Impossible."))
-        vals = {
-            k: data[k] for k in ('username', 'given_names', 'nickname', 'family_name')
-        }
-        vals['persona_id'] = data['id']
-        rs.user = User(roles=extract_roles(data), **vals)
+        data = self.query_one(rs, *models.CorePersona.get_select_query([data["id"]]))
+        assert data is not None
+        persona = models.CorePersona.from_database(data)
+        data = self.query_one(rs, *models.PersonaStatus.get_select_query([persona.id]))
+        assert data is not None
+        status = models.PersonaStatus.from_database(data)
+        rs.user = User(
+            roles=extract_roles(status.as_dict()),
+            persona_id=persona.id,
+            username=persona.username,
+            given_names=persona.given_names,
+            nickname=persona.nickname or "",
+            family_name=persona.family_name,
+        )
 
         return sessionkey
 
@@ -3078,8 +3084,7 @@ class CoreBaseBackend(AbstractBackend):
         Returns an empty role set for inactive users."""
         if set(persona_ids) == {rs.user.persona_id}:
             return {rs.user.persona_id: rs.user.roles}
-        bits = PERSONA_STATUS_FIELDS + ("id",)
-        data = self.sql_select(rs, "core.personas", bits, persona_ids)
+        data = self.query_all(rs, *models.PersonaStatus.get_select_query(persona_ids))
         return {d['id']: extract_roles(d, introspection_only) for d in data}
 
     class _GetRolesSingleProtocol(Protocol):
@@ -3518,7 +3523,7 @@ class CoreBaseBackend(AbstractBackend):
         persona_ids = persona_ids[:max_entries]
         # Circumvent privilege check, since this is a rather special case.
         ret = self.retrieve_personas(
-            rs, persona_ids, PERSONA_CORE_FIELDS + ("birthday",)
+            rs, persona_ids, models.CorePersona.database_fields() + ["birthday"]
         )
         for persona_ in ret.values():
             # TODO refactor this whole function

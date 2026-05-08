@@ -54,7 +54,6 @@ from cdedb.common.crypt import encrypt_password
 from cdedb.common.exceptions import EventIsBalancedError, PrivilegeError
 from cdedb.common.fields import (
     EVENT_ROLE_FIELDS,
-    PERSONA_EVENT_FIELDS,
     REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS,
     REGISTRATION_TRACK_FIELDS,
@@ -1634,7 +1633,9 @@ class EventBaseBackend(EventLowLevelBackend):
                     entries = normalize_field_entries(entries, kind, coalesce="") or {}
                     e["entries"] = list(map(list, entries.items()))
             ret['core.personas'] = list_to_dict(
-                self.sql_select(rs, "core.personas", PERSONA_EVENT_FIELDS, personas)
+                self.sql_select(
+                    rs, "core.personas", EventPersona.database_fields(), personas
+                )
             )
         return ret
 

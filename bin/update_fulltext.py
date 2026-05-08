@@ -4,8 +4,8 @@
 Should not be archived after use.
 """
 
-from cdedb.common.fields import PERSONA_ALL_FIELDS
 from cdedb.script import Script
+from cdedb.models.core import PERSONA_ALL_FIELDS
 
 # config
 CHECK = True
@@ -18,7 +18,7 @@ core = script.make_core_backend(proxy=False)
 
 # work
 
-ALL_FIELDS = PERSONA_ALL_FIELDS + ("fulltext",)
+ALL_FIELDS = PERSONA_ALL_FIELDS + ["fulltext"]
 count = 0
 
 with script:
