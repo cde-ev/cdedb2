@@ -3866,7 +3866,7 @@ def _serialized_event_questionnaire(
         val['fields'] = newfields
 
         all_questionnaires.event.fields |= {
-            f_id: models_event.EventField(
+            f_id: models_event.EventField.get_class(f["association"])(
                 id=ID(f_id), event_id=all_questionnaires.event.id, **f
             )
             for f_id, f in newfields.items()
