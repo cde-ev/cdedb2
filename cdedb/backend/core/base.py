@@ -3527,10 +3527,13 @@ class CoreBaseBackend(AbstractBackend):
         persona_ids = tuple(k for k, v in scores.items() if v > cutoff)
         persona_ids = xsorted(persona_ids, key=lambda k: -scores.get(k, 0))
         persona_ids = persona_ids[:max_entries]
-        # Circumvent privilege check, since this is a rather special case.
-        ret = self.retrieve_personas(
-            rs, persona_ids, models.CorePersona.database_fields() + ["birthday"]
+        columns = xsorted(
+            set(models.CorePersona.database_fields())
+            | set(models.PersonaStatus.database_fields())
+            | {"birthday"}
         )
+        # Circumvent privilege check, since this is a rather special case.
+        ret = self.retrieve_personas(rs, persona_ids, columns)
         for persona_ in ret.values():
             # TODO refactor this whole function
             status = models.PersonaStatus(**{

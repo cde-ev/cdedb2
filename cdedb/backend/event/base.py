@@ -25,6 +25,7 @@ from typing import TYPE_CHECKING, Literal, Optional, Protocol, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.core as models_core
 import cdedb.models.event as models
 from cdedb.backend.common import (
     access,
@@ -1632,10 +1633,12 @@ class EventBaseBackend(EventLowLevelBackend):
                     entries = cast_field_entries(entries, kind)
                     entries = normalize_field_entries(entries, kind, coalesce="") or {}
                     e["entries"] = list(map(list, entries.items()))
+            columns = xsorted(
+                set(models_core.PersonaStatus.database_fields())
+                | set(EventPersona.database_fields())
+            )
             ret['core.personas'] = list_to_dict(
-                self.sql_select(
-                    rs, "core.personas", EventPersona.database_fields(), personas
-                )
+                self.sql_select(rs, "core.personas", columns, personas)
             )
         return ret
 
