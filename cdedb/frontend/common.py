@@ -2174,7 +2174,7 @@ def reconnoitre_ambience(obj: AbstractFrontend, rs: RequestState) -> AmbienceDic
         ),
         Scout(
             lambda anid: obj.coreproxy.get_privilege_change(rs, anid),
-            'privilege_change_id',
+            'change_id',
             'privilege_change',
             (),
         ),

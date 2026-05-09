@@ -2033,16 +2033,12 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.redirect_show_user(rs, persona_id)
 
         stati = (const.PrivilegeChangeStati.pending,)
-        privilege_change_ids = self.coreproxy.list_privilege_changes(
-            rs, persona_id, stati
-        )
-        if privilege_change_ids:
+        change_ids = self.coreproxy.list_privilege_changes(rs, persona_id, stati)
+        if change_ids:
             rs.notify("error", n_("Resolve pending privilege change first."))
-            privilege_change_id = unwrap(privilege_change_ids.keys())
+            change_id = unwrap(change_ids.keys())
             return self.redirect(
-                rs,
-                "core/show_privilege_change",
-                {"privilege_change_id": privilege_change_id},
+                rs, "core/show_privilege_change", {"change_id": change_id}
             )
 
         status = self.coreproxy.get_persona_status(rs, rs.ambience['persona'].id)
@@ -2077,11 +2073,13 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.change_privileges_form(rs, persona_id)
 
         stati = (const.PrivilegeChangeStati.pending,)
-        case_ids = self.coreproxy.list_privilege_changes(rs, persona_id, stati)
-        if case_ids:
+        change_ids = self.coreproxy.list_privilege_changes(rs, persona_id, stati)
+        if change_ids:
             rs.notify("error", n_("Resolve pending privilege change first."))
-            case_id = unwrap(case_ids.keys())
-            return self.redirect(rs, "core/show_privilege_change", {"case_id": case_id})
+            change_id = unwrap(change_ids.keys())
+            return self.redirect(
+                rs, "core/show_privilege_change", {"change_id": change_id}
+            )
 
         reason_map = {
             "is_cde_realm": rs.gettext("non-cde user"),
@@ -2137,31 +2135,33 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("meta_admin")
     def list_privilege_changes(self, rs: RequestState) -> Response:
         """Show list of privilege changes pending review."""
-        case_ids = self.coreproxy.list_privilege_changes(
+        change_ids = self.coreproxy.list_privilege_changes(
             rs, stati=(const.PrivilegeChangeStati.pending,)
         )
 
-        cases = self.coreproxy.get_privilege_changes(rs, case_ids)
-        cases = {e["persona_id"]: e for e in cases.values()}
+        changes = self.coreproxy.get_privilege_changes(rs, change_ids)
+        changes = {e["persona_id"]: e for e in changes.values()}
 
-        personas = self.coreproxy.get_personas(rs, cases.keys())
-        sorted_cases = {persona.id: cases[persona.id] for persona in personas.values()}
+        personas = self.coreproxy.get_personas(rs, changes.keys())
+        sorted_changes = {
+            persona.id: changes[persona.id] for persona in personas.values()
+        }
 
         return self.render(
-            rs, "list_privilege_changes", {"cases": sorted_cases, "personas": personas}
+            rs,
+            "list_privilege_changes",
+            {"changes": sorted_changes, "personas": personas},
         )
 
     @access("meta_admin")
-    def show_privilege_change(
-        self, rs: RequestState, privilege_change_id: int
-    ) -> Response:
+    def show_privilege_change(self, rs: RequestState, change_id: int) -> Response:
         """Show detailed infromation about pending privilege change."""
-        case = rs.ambience['privilege_change']
-        if case["status"] != const.PrivilegeChangeStati.pending:
+        change = rs.ambience['privilege_change']
+        if change["status"] != const.PrivilegeChangeStati.pending:
             rs.notify("info", n_("Privilege change not pending."))
         elif (
-            case["is_meta_admin"] is not None
-            and case["persona_id"] == rs.user.persona_id
+            change["is_meta_admin"] is not None
+            and change["persona_id"] == rs.user.persona_id
         ):
             rs.notify(
                 "info",
@@ -2171,7 +2171,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     " meta admin."
                 ),
             )
-        elif case["submitted_by"] == rs.user.persona_id:
+        elif change["submitted_by"] == rs.user.persona_id:
             rs.notify(
                 "info",
                 n_(
@@ -2180,8 +2180,8 @@ class CoreBaseFrontend(AbstractFrontend):
                 ),
             )
 
-        persona_ids = {case["persona_id"], case["submitted_by"]}
-        if reviewer_id := case["reviewer"]:
+        persona_ids = {change["persona_id"], change["submitted_by"]}
+        if reviewer_id := change["reviewer"]:
             persona_ids.add(reviewer_id)
         personas = self.coreproxy.get_personas(rs, persona_ids)
 
@@ -2189,8 +2189,8 @@ class CoreBaseFrontend(AbstractFrontend):
             rs,
             "show_privilege_change",
             {
-                "persona": personas[case["persona_id"]],
-                "submitter": personas[case["submitted_by"]],
+                "persona": personas[change["persona_id"]],
+                "submitter": personas[change["submitted_by"]],
                 "reviewer": personas[reviewer_id] if reviewer_id else None,
                 "admin_keys": ADMIN_KEYS,
             },
@@ -2199,56 +2199,56 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("meta_admin", modi={"POST"})
     @REQUESTdata("ack")
     def decide_privilege_change(
-        self, rs: RequestState, privilege_change_id: int, ack: bool
+        self, rs: RequestState, change_id: int, ack: bool
     ) -> Response:
         """Approve or reject a privilege change."""
         if rs.has_validation_errors():
             return self.redirect(rs, 'core/show_privilege_change')
-        case = rs.ambience['privilege_change']
-        if case["status"] != const.PrivilegeChangeStati.pending:
+        change = rs.ambience['privilege_change']
+        if change["status"] != const.PrivilegeChangeStati.pending:
             rs.notify("error", n_("Privilege change not pending."))
             return self.redirect(rs, "core/list_privilege_changes")
         if not ack:
-            case_status = const.PrivilegeChangeStati.rejected
+            change_status = const.PrivilegeChangeStati.rejected
         else:
-            case_status = const.PrivilegeChangeStati.approved
+            change_status = const.PrivilegeChangeStati.approved
             if (
-                case["is_meta_admin"] is not None
-                and case['persona_id'] == rs.user.persona_id
+                change["is_meta_admin"] is not None
+                and change['persona_id'] == rs.user.persona_id
             ):
                 raise werkzeug.exceptions.Forbidden(
                     n_("Cannot modify own meta admin privileges.")
                 )
-            if rs.user.persona_id == case["submitted_by"]:
+            if rs.user.persona_id == change["submitted_by"]:
                 raise werkzeug.exceptions.Forbidden(
                     n_(
                         "Only a different admin than the submitter"
                         " may approve a privilege change."
                     )
                 )
-        code = self.coreproxy.finalize_privilege_change(
-            rs, privilege_change_id, case_status
-        )
+        code = self.coreproxy.finalize_privilege_change(rs, change_id, change_status)
         success = n_("Change committed.") if ack else n_("Change rejected.")
         info = n_("Password reset issued for new admin.")
         rs.notify_return_code(code, success=success, info=info)
         if not code:
-            return self.show_privilege_change(rs, privilege_change_id)
+            return self.show_privilege_change(rs, change_id)
         else:
-            persona = self.coreproxy.get_persona(rs, case['persona_id'])
+            persona = self.coreproxy.get_persona(rs, change['persona_id'])
             params = {}
             if code < 0:
                 # The code is negative, the user's password needs to be changed.
                 # We didn't actually issue the success message above.
                 rs.notify("success", success)
-                params["reset_link"] = self._password_reset_link(rs, case["persona_id"])
-            if case_status == const.PrivilegeChangeStati.approved:
+                params["reset_link"] = self._password_reset_link(
+                    rs, change["persona_id"]
+                )
+            if change_status == const.PrivilegeChangeStati.approved:
                 headers: Headers = {
                     "To": {persona.username},
                     "Subject": "Admin-Privilegien geändert",
                 }
                 self.do_mail(rs, "privilege_change_finalized", headers, params)
-                submitter = self.coreproxy.get_persona(rs, case["submitted_by"])
+                submitter = self.coreproxy.get_persona(rs, change["submitted_by"])
                 to = {"vorstand@cde-ev.de", self.conf["META_ADMIN_ADDRESS"]}
                 gained_privileges = [
                     privilege

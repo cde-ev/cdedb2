@@ -1379,8 +1379,8 @@ class TestCoreBackend(BackendTest):
             "is_finance_admin": True,
         }
 
-        case_id = self.core.initialize_privilege_change(self.key, data)
-        self.assertLess(0, case_id)
+        change_id = self.core.initialize_privilege_change(self.key, data)
+        self.assertLess(0, change_id)
 
         persona = self.core.get_persona_status(self.key, new_admin["id"])
         self.assertFalse(persona.is_cde_admin)
@@ -1388,7 +1388,7 @@ class TestCoreBackend(BackendTest):
 
         self.login(admin2)
         self.core.finalize_privilege_change(
-            self.key, case_id, const.PrivilegeChangeStati.approved
+            self.key, change_id, const.PrivilegeChangeStati.approved
         )
 
         persona = self.core.get_persona_status(self.key, new_admin["id"])

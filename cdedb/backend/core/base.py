@@ -1334,8 +1334,8 @@ class CoreBaseBackend(AbstractBackend):
     def finalize_privilege_change(
         self,
         rs: RequestState,
-        privilege_change_id: int,
-        case_status: const.PrivilegeChangeStati,
+        change_id: int,
+        change_status: const.PrivilegeChangeStati,
     ) -> DefaultReturnCode:
         """Finalize a pending change to a users admin bits.
 
@@ -1347,30 +1347,30 @@ class CoreBaseBackend(AbstractBackend):
         :returns: default return code. A negative return indicates, that the
             users password was invalidated and will need to be changed.
         """
-        privilege_change_id = affirm(vtypes.ID, privilege_change_id)
-        case_status = affirm(const.PrivilegeChangeStati, case_status)
+        change_id = affirm(vtypes.ID, change_id)
+        change_status = affirm(const.PrivilegeChangeStati, change_status)
 
         data = {
-            "id": privilege_change_id,
+            "id": change_id,
             "ftime": "now()",
             "reviewer": rs.user.persona_id,
-            "status": case_status,
+            "status": change_status,
         }
         with Atomizer(rs):
-            case = self.get_privilege_change(rs, privilege_change_id)
-            note = case["notes"] or "Admin-Privilegien geändert."
-            if case['status'] != const.PrivilegeChangeStati.pending:
+            change = self.get_privilege_change(rs, change_id)
+            note = change["notes"] or "Admin-Privilegien geändert."
+            if change['status'] != const.PrivilegeChangeStati.pending:
                 raise ValueError(
                     n_("Invalid privilege change state: %(status)s."),
-                    {"status": case["status"]},
+                    {"status": change["status"]},
                 )
-            if case_status == const.PrivilegeChangeStati.approved:
+            if change_status == const.PrivilegeChangeStati.approved:
                 if (
-                    case["is_meta_admin"] is not None
-                    and case['persona_id'] == rs.user.persona_id
+                    change["is_meta_admin"] is not None
+                    and change['persona_id'] == rs.user.persona_id
                 ):
                     raise PrivilegeError(n_("Cannot modify own meta admin privileges."))
-                if case['submitted_by'] == rs.user.persona_id:
+                if change['submitted_by'] == rs.user.persona_id:
                     msg = n_(
                         "Only a different admin than the submitter may approve a privilege change."
                     )
@@ -1381,17 +1381,17 @@ class CoreBaseBackend(AbstractBackend):
                 self.core_log(
                     rs,
                     const.CoreLogCodes.privilege_change_approved,
-                    persona_id=case['persona_id'],
+                    persona_id=change['persona_id'],
                     change_note=note,
                 )
 
-                old_status = self.get_persona_status(rs, case["persona_id"])
+                old_status = self.get_persona_status(rs, change["persona_id"])
                 persona_change = {
-                    "id": case["persona_id"],
+                    "id": change["persona_id"],
                 }
                 for key in models.PersonaStatus.get_admin_bits():
-                    if case[key] is not None:
-                        persona_change[key] = case[key]
+                    if change[key] is not None:
+                        persona_change[key] = change[key]
 
                 persona_change = affirm(vtypes.Persona, persona_change)
                 ret *= self.set_persona(
@@ -1403,25 +1403,25 @@ class CoreBaseBackend(AbstractBackend):
                 )
 
                 # Force password reset if non-admin has gained admin privileges.
-                new_status = self.get_persona_status(rs, case["persona_id"])
+                new_status = self.get_persona_status(rs, change["persona_id"])
                 if not old_status.is_any_admin and new_status.is_any_admin:
-                    ret *= self.invalidate_password(rs, case["persona_id"])
+                    ret *= self.invalidate_password(rs, change["persona_id"])
                     ret *= -1
 
-                # Mark case as successful
-                case_update = {
-                    "id": privilege_change_id,
+                # Mark change as successful
+                update = {
+                    "id": change_id,
                     "status": const.PrivilegeChangeStati.successful,
                 }
-                ret *= self.sql_update(rs, "core.privilege_changes", case_update)
+                ret *= self.sql_update(rs, "core.privilege_changes", update)
 
-            elif case_status == const.PrivilegeChangeStati.rejected:
+            elif change_status == const.PrivilegeChangeStati.rejected:
                 ret = self.sql_update(rs, "core.privilege_changes", data)
 
                 self.core_log(
                     rs,
                     const.CoreLogCodes.privilege_change_rejected,
-                    persona_id=case['persona_id'],
+                    persona_id=change['persona_id'],
                     change_note=note,
                 )
             else:
@@ -1441,7 +1441,7 @@ class CoreBaseBackend(AbstractBackend):
         Can be restricted to certain stati.
 
         :param persona_id: limit to this persona id.
-        :returns: dict mapping case ids to dicts containing information about
+        :returns: dict mapping change ids to dicts containing information about
             the change
         """
         persona_id = affirm(vtypes.ID | None, persona_id)
@@ -1465,12 +1465,12 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("meta_admin")
     def get_privilege_changes(
-        self, rs: RequestState, privilege_change_ids: Collection[int]
+        self, rs: RequestState, change_ids: Collection[int]
     ) -> CdEDBObjectMap:
         """Retrieve datasets for priviledge changes."""
-        privilege_change_ids = affirm(set[vtypes.ID], privilege_change_ids)
+        change_ids = affirm(set[vtypes.ID], change_ids)
         data = self.sql_select(
-            rs, "core.privilege_changes", PRIVILEGE_CHANGE_FIELDS, privilege_change_ids
+            rs, "core.privilege_changes", PRIVILEGE_CHANGE_FIELDS, change_ids
         )
         ret = {}
         for e in data:
@@ -1479,12 +1479,10 @@ class CoreBaseBackend(AbstractBackend):
         return ret
 
     class _GetPrivilegeChangeProtocol(Protocol):
-        def __call__(
-            self, rs: RequestState, privilege_change_id: int
-        ) -> CdEDBObject: ...
+        def __call__(self, rs: RequestState, change_id: int) -> CdEDBObject: ...
 
     get_privilege_change: _GetPrivilegeChangeProtocol = singularize(
-        get_privilege_changes, "privilege_change_ids", "privilege_change_id"
+        get_privilege_changes, "change_ids", "change_id"
     )
 
     @access("persona")
