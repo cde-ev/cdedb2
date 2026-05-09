@@ -1346,19 +1346,25 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.send_json(rs, {'personas': ret})
 
     def _get_redacted_persona(
-        self, rs: RequestState, persona_id: int, admin_access: bool = False
+        self,
+        rs: RequestState,
+        persona_id: int,
+        data: CdEDBObject,
+        admin_access: bool = False,
     ) -> models.CorePersona:
         """Helper to retrieve the persona for (admin_)change_user.
 
         Since some persona attributes are not meant to be changed there, we use
         the REDACT mechanic to remove them from the dataset.
+
+        :param data: The latest changelog version of the user.
         """
         status = self.coreproxy.get_persona_status(rs, persona_id)
         status_bits = status.get_status_bits()
 
         persona: models.CorePersona
         if status.is_cde_realm:
-            persona = self.coreproxy.get_cde_user(rs, persona_id)
+            persona = models.CdEPersona.from_database(data, filter_fields=True)
             persona.balance = persona.REDACTED
             persona.bub_search = persona.REDACTED
             persona.decided_search = persona.REDACTED
@@ -1373,16 +1379,17 @@ class CoreBaseFrontend(AbstractFrontend):
             if not admin_access:
                 persona.birthday = persona.REDACTED
         elif status.is_event_realm:
-            persona = self.coreproxy.get_event_user(rs, persona_id)
+            persona = models.EventPersona.from_database(data, filter_fields=True)
             if not admin_access:
                 persona.birthday = persona.REDACTED
         elif status.is_assembly_realm:
-            persona = self.coreproxy.get_assembly_user(rs, persona_id)
+            persona = models.AssemblyPersona.from_database(data, filter_fields=True)
         elif status.is_ml_realm:
-            persona = self.coreproxy.get_ml_user(rs, persona_id)
+            persona = models.MlPersona.from_database(data, filter_fields=True)
         else:
-            persona = self.coreproxy.get_persona(rs, persona_id)
+            persona = models.CorePersona.from_database(data, filter_fields=True)
 
+        # Ignore that we initialized the persona with the id of the changelog.
         persona.id = persona.REDACTED
         persona.username = persona.REDACTED
         for bit in status_bits:
@@ -1394,16 +1401,15 @@ class CoreBaseFrontend(AbstractFrontend):
     def change_user_form(self, rs: RequestState) -> Response:
         """Render form."""
         assert rs.user.persona_id is not None
-        generation = self.coreproxy.changelog_get_generation(rs, rs.user.persona_id)
-        history = unwrap(
-            self.coreproxy.changelog_get_history(rs, rs.user.persona_id, (generation,))
-        )
-        if history['code'] == const.PersonaChangeStati.pending:
+        persona_id = rs.user.persona_id
+        generation = self.coreproxy.changelog_get_generation(rs, persona_id)
+        data = self.coreproxy.changelog_get_one_history(rs, persona_id, generation)
+        if data['code'] == const.PersonaChangeStati.pending:
             rs.notify("info", n_("Change pending."))
-        persona = self._get_redacted_persona(rs, rs.user.persona_id)
+        persona = self._get_redacted_persona(rs, persona_id, data)
         # The url does not contain the users id, so the ambience dict doesn't contain
         #  the unchanged persona.
-        ambience_persona = self.coreproxy.get_persona(rs, rs.user.persona_id)
+        ambience_persona = self.coreproxy.get_persona(rs, persona_id)
 
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
         max_donation = self.conf["MAXIMAL_LASTSCHRIFT_DONATION"]
@@ -1440,14 +1446,17 @@ class CoreBaseFrontend(AbstractFrontend):
     def change_user(self, rs: RequestState, generation: int) -> Response:
         """Change own data set."""
         assert rs.user.persona_id is not None
-        persona = self._get_redacted_persona(rs, rs.user.persona_id)
+        persona_id = rs.user.persona_id
+        generation = self.coreproxy.changelog_get_generation(rs, persona_id)
+        data = self.coreproxy.changelog_get_one_history(rs, persona_id, generation)
+        persona = self._get_redacted_persona(rs, persona_id, data)
         fields = {
             k: v
             for k, v in persona.requestdict_fields(creation=False)
             if getattr(persona, k) != persona.REDACTED
         }
         data = request_dict_extractor(rs, fields)
-        data['id'] = rs.user.persona_id
+        data['id'] = persona_id
         data = check(rs, vtypes.Persona, data, "persona")
         if not data:
             rs.ignore_validation_errors()
@@ -1455,11 +1464,9 @@ class CoreBaseFrontend(AbstractFrontend):
 
         # take special care for annual donations in combination with lastschrift
         if "donation" in data and (
-            lastschrift_ids := self.cdeproxy.list_lastschrift(
-                rs, [rs.user.persona_id], active=True
-            )
+            l_ids := self.cdeproxy.list_lastschrift(rs, [persona_id], active=True)
         ):
-            current = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+            current = self.coreproxy.get_cde_user(rs, persona_id)
             min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
             max_donation = self.conf["MAXIMAL_LASTSCHRIFT_DONATION"]
             # The user may specify only donations between a specific minimal and maximal
@@ -1479,9 +1486,7 @@ class CoreBaseFrontend(AbstractFrontend):
                         },
                     ),
                 ))
-            lastschrift = self.cdeproxy.get_lastschrift(
-                rs, unwrap(lastschrift_ids.keys())
-            )
+            lastschrift = self.cdeproxy.get_lastschrift(rs, unwrap(l_ids.keys()))
             # "Enforce" consent of the account holder if the user changed his donation.
             if (
                 current.donation != data["donation"]
@@ -1510,7 +1515,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, data, generation=generation, change_note="Normale Änderung."
         )
         rs.notify_return_code(code)
-        return self.redirect_show_user(rs, rs.user.persona_id)
+        return self.redirect_show_user(rs, persona_id)
 
     @access("core_admin")
     @REQUESTdata("download", "is_search")
@@ -1594,13 +1599,11 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.redirect_show_user(rs, persona_id)
 
         generation = self.coreproxy.changelog_get_generation(rs, persona_id)
-        history = unwrap(
-            self.coreproxy.changelog_get_history(rs, persona_id, (generation,))
-        )
-        if history['code'] == const.PersonaChangeStati.pending:
+        data = self.coreproxy.changelog_get_one_history(rs, persona_id, generation)
+        if data['code'] == const.PersonaChangeStati.pending:
             rs.notify("info", n_("Change pending."))
 
-        persona = self._get_redacted_persona(rs, persona_id, admin_access=True)
+        persona = self._get_redacted_persona(rs, persona_id, data, admin_access=True)
         merge_dicts(rs.values, persona.as_dict())
 
         mandatory_fields = persona.mandatory_form_fields(creation=False)
@@ -1616,7 +1619,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 'persona': persona,
                 'ambience_persona': rs.ambience['persona'],
                 'generation': generation,
-                'code': history['code'],
+                'code': data['code'],
                 'is_admin_variant': True,
             },
             mandatory_fields,
@@ -1639,7 +1642,9 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.redirect_show_user(rs, persona_id)
 
         # Assure we don't accidently change the original.
-        persona = self._get_redacted_persona(rs, persona_id, admin_access=True)
+        generation = self.coreproxy.changelog_get_generation(rs, persona_id)
+        data = self.coreproxy.changelog_get_one_history(rs, persona_id, generation)
+        persona = self._get_redacted_persona(rs, persona_id, data, admin_access=True)
         fields = {
             k: v
             for k, v in persona.requestdict_fields(creation=False)

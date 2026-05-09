@@ -877,6 +877,12 @@ class CoreBaseBackend(AbstractBackend):
             ret[d['generation']] = d
         return ret
 
+    @access("persona")
+    def changelog_get_one_history(
+        self, rs: RequestState, persona_id: int, generation: int
+    ) -> CdEDBObject:
+        return unwrap(self.changelog_get_history(rs, persona_id, [generation]))
+
     @internal
     @access("persona", "droid")
     def retrieve_personas(
