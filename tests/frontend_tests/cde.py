@@ -414,7 +414,7 @@ class TestCdEFrontend(FrontendTest):
         f['given_names'] = "Zelda"
         f['birthday'] = "garbage"
         self.submit(f, check_notification=False)
-        self.assertTitle("Zelda Beispiel bearbeiten")
+        self.assertTitle("Bertå Beispiel bearbeiten")
         self.assertValidationError("birthday", "Ungültige Eingabe für ein Datum")
         f = self.response.forms['changedataform']
         self.assertEqual("Zelda", f['given_names'].value)

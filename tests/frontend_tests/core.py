@@ -1958,7 +1958,9 @@ class TestCoreFrontend(FrontendTest):
             self.traverse(
                 {'description': 'Ganondorf'}, {'description': 'Änderungen bearbeiten'}
             )
-            self.assertTitle("Bertå Ganondorf bearbeiten")
+            self.assertTitle("Bertå Beispiel bearbeiten")
+            f = self.response.forms["changedataform"]
+            self.assertEqual("Ganondorf", f["family_name"].value)
             self.traverse(
                 {'description': 'Änderungen prüfen'}, {'description': 'Ganondorf'}
             )
@@ -2019,7 +2021,7 @@ class TestCoreFrontend(FrontendTest):
             self.traverse(
                 {'description': 'Ganondorf'}, {'description': 'Änderungen bearbeiten'}
             )
-            self.assertTitle("Bertå Ganondorf bearbeiten")
+            self.assertTitle("Bertå Beispiel bearbeiten")
             self.assertPresence("Speichern (inklusive zu prüfender Änderungen)")
             f = self.response.forms['changedataform']
             f['family_name'] = family_name
