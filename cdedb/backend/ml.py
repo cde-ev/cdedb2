@@ -1615,7 +1615,7 @@ class MlBackend(AbstractBackend):
             if address
         }
         return {
-            persona['username']
+            persona.username
             for persona in self.core.get_ml_users(rs, persona_ids).values()
         }
 
@@ -1813,7 +1813,7 @@ class MlBackend(AbstractBackend):
                 rs, source_persona_id, allowed_roles={'ml'}
             ):
                 raise ValueError(n_("Source persona must be a ml-only user."))
-            if source['is_archived']:
+            if source.is_archived:
                 raise ValueError(n_("Source User is not accessible."))
 
             # check the target user is a valid persona and not archived
@@ -1822,7 +1822,7 @@ class MlBackend(AbstractBackend):
                 rs, target_persona_id, required_roles={'ml'}
             ):
                 raise ValueError(n_("Target User is no valid ml user."))
-            if target['is_archived']:
+            if target.is_archived:
                 # Otherwise, we will have a lot of redundant explicit addresses. This
                 # should meet expectations no matter whether the checkbox was checked.
                 clone_addresses = False
@@ -1886,7 +1886,7 @@ class MlBackend(AbstractBackend):
                         rs,
                         ml_id,
                         persona_id=target_persona_id,
-                        email=explicit_address or source['username'],
+                        email=explicit_address or source.username,
                     )
 
             for ml_id in source_moderates:
@@ -1903,9 +1903,9 @@ class MlBackend(AbstractBackend):
             code *= self.core.archive_persona(
                 rs, persona_id=source_persona_id, note=msg
             )
-            if target['is_archived']:
+            if target.is_archived:
                 code *= self.core.dearchive_persona(
-                    rs, persona_id=target_persona_id, new_username=source['username']
+                    rs, persona_id=target_persona_id, new_username=source.username
                 )
 
         return code

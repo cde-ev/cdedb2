@@ -168,7 +168,7 @@ with s:
                 "address": persona.address,
                 "postal_code": persona.postal_code,
                 "location": persona.location,
-                "country": g(persona.country),
+                "country": g(persona.country),  # type: ignore[arg-type]
             }
         }
 

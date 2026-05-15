@@ -104,20 +104,6 @@ REALM_INHERITANCE: dict[Realm, set[Role]] = {
 }
 
 
-def extract_realms(roles: set[Role]) -> set[Realm]:
-    """Get the set of realms from a set of user roles.
-
-    When checking admin privileges, we must often check, if the user's realms
-    are a subset of some other set of realms. To help with this, this function
-    helps with this task, by extracting only the actual realms from a user's
-    set of roles.
-
-    :param roles: All roles of a user
-    :return: The realms the user is member of
-    """
-    return roles & REALM_INHERITANCE.keys()
-
-
 def implied_realms(realm: Realm) -> set[Realm]:
     """Get additional realms implied by membership in one realm
 

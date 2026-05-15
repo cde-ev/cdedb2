@@ -266,6 +266,11 @@ class CdEDataclass:
                     if data.get(name) is not None:
                         data[name] = type_(data[name])
 
+            # Convert literal types.
+            if get_origin(type_) == Literal:
+                if len(set(get_args(type_))) == 1:
+                    data[name] = get_args(type_)[0]
+
             # Convert array types.
             for array_type in {list, tuple, set}:
                 if get_origin(type_) is array_type:

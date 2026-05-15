@@ -13,6 +13,7 @@ from typing import (
     Any,
     ClassVar,
     ForwardRef,
+    Literal,
     Optional,
     Self,
     cast,
@@ -409,6 +410,20 @@ class Event(EventDataclass, _EventConfigurationMixin, _EventFreetextMixin):
         return self.begin > (now().date() - datetime.timedelta(days=365 * 2))
 
     @functools.cached_property
+    def registration_fields(self) -> CdEDataclassMap["RegistrationField"]:
+        return {
+            k: v for k, v in self.fields.items() if isinstance(v, RegistrationField)
+        }
+
+    @functools.cached_property
+    def course_fields(self) -> CdEDataclassMap["CourseField"]:
+        return {k: v for k, v in self.fields.items() if isinstance(v, CourseField)}
+
+    @functools.cached_property
+    def lodgement_fields(self) -> CdEDataclassMap["LodgementField"]:
+        return {k: v for k, v in self.fields.items() if isinstance(v, LodgementField)}
+
+    @functools.cached_property
     def lodge_field(self) -> Optional["EventField"]:
         if self.lodge_field_id is None:
             return None
@@ -752,6 +767,7 @@ class EventField(EventDataclass):
     association: const.FieldAssociations = dataclasses.field(
         metadata=Meta.input_update_exclude.as_dict
     )
+    _association: ClassVar[const.FieldAssociations]
 
     # Userfacing metadata. Purely for UI.
     title: str  # Userfacing label.
@@ -760,6 +776,7 @@ class EventField(EventDataclass):
     description: str | None = None  # Shown as hovertext of the label.
 
     # Usage configuration, i.e. where is this field used.
+    # TODO Shift this to RegistrationField
     checkin: bool = False
 
     # Need to postpone validation of entries until kind is known.
@@ -768,14 +785,26 @@ class EventField(EventDataclass):
         default=None, metadata=Meta.validate_skip.as_dict
     )
 
+    def __post_init__(self) -> None:
+        if self.association != self._association:
+            raise RuntimeError("Inconsistent field association")
+
     @property
     def request_name(self) -> str:
         return f"fields.{self.field_name}"
 
+    @staticmethod
+    def get_class(association: const.FieldAssociations) -> type["EventField"]:
+        for cls in EventField.__subclasses__():
+            if cls._association == association:
+                return cls
+        raise KeyError
+
     @classmethod
-    def from_database(cls, data: "CdEDBObject") -> "Self":
+    def from_database(cls, data: "CdEDBObject") -> "EventField":
         data['entries'] = cast_field_entries(data['entries'], data['kind'])
-        return super().from_database(data)
+        association = const.FieldAssociations(data['association'])
+        return cls.get_class(association).from_database(data)
 
     def to_database(self) -> CdEDBObject:
         ret = super().to_database()
@@ -814,6 +843,42 @@ class EventField(EventDataclass):
             self.title,
             self.field_name,
         )
+
+    def __lt__(self, other: "CdEDataclass") -> bool:
+        # enable sorting of all event field sub classes
+        if not isinstance(other, EventField):
+            return NotImplemented
+        return self._lt_inner(other)
+
+
+@dataclasses.dataclass
+class RegistrationField(EventField):
+    _association = const.FieldAssociations.registration
+    association: Literal[const.FieldAssociations.registration]
+
+    @classmethod
+    def from_database(cls, data: CdEDBObject) -> "Self":
+        return super(EventField, cls).from_database(data)
+
+
+@dataclasses.dataclass
+class CourseField(EventField):
+    _association = const.FieldAssociations.course
+    association: Literal[const.FieldAssociations.course]
+
+    @classmethod
+    def from_database(cls, data: CdEDBObject) -> "Self":
+        return super(EventField, cls).from_database(data)
+
+
+@dataclasses.dataclass
+class LodgementField(EventField):
+    _association = const.FieldAssociations.lodgement
+    association: Literal[const.FieldAssociations.lodgement]
+
+    @classmethod
+    def from_database(cls, data: CdEDBObject) -> "Self":
+        return super(EventField, cls).from_database(data)
 
 
 @dataclasses.dataclass

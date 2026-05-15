@@ -400,7 +400,8 @@
                                         {{ util.anti_csrf_token('event/delete_event_query') }}
                                         {{ util.input_hidden("query_id", value=stored_query.id) }}
                                         {{ util.input_hidden("query_scope", value=scope) }}
-                                        {{ util.input_submit(label="", aclass='btn btn-xs btn-danger', icon="trash-alt", title=gettext('Delete query')) }}
+                                        {{ util.input_submit(label="", aclass='btn btn-xs btn-danger', icon="trash-alt", title=gettext('Delete query'),
+                                                             readonly=not is_privileged_for('event/delete_event_query')) }}
                                     </form>
                                 {% endif %}
                             </li>
