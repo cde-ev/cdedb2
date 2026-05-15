@@ -1436,6 +1436,34 @@ class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
         ]
 
 
+def create_default_questionnaire(
+    event: Event,
+) -> dict[const.QuestionnaireUsages, list[CdEDBObject]]:
+    reg = [
+        const.QuestionnaireRowMagicRole.fee_preview,
+    ]
+    if event.tracks:
+        reg.append("Kurswahlen")
+    reg.extend([
+        const.QuestionnaireRowMagicRole.course_choices,
+        "Weitere Angaben",
+        const.QuestionnaireRowMagicRole.list_consent,
+        const.QuestionnaireRowMagicRole.mixed_lodging,
+        const.QuestionnaireRowMagicRole.foto_notice,
+        const.QuestionnaireRowMagicRole.registration_notes,
+        const.QuestionnaireRowMagicRole.fee_preview,
+    ])
+
+    return {
+        const.QuestionnaireUsages.registration: [
+            {"role": const.QuestionnaireRowMagicRole.text_only, "title": x}
+            if isinstance(x, str)
+            else {"role": x}
+            for x in reg
+        ],
+    }
+
+
 @dataclasses.dataclass
 class StoredEventQuery(EventDataclass, _StoredQuery):
     database_table = "event.stored_queries"

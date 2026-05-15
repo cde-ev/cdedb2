@@ -1,4 +1,14 @@
-BEGIN;
+#! /usr/bin/env python3
+
+import cdedb.models.event as models
+from cdedb.script import Script, const
+
+s = Script(dbuser='cdb')
+rs = s.rs()
+
+event_backend = s.make_event_backend(proxy=False)
+
+table_query = """
     CREATE TABLE event.questionnaire_text_rows (
             id                      bigserial PRIMARY KEY,
             event_id                integer NOT NULL REFERENCES event.events(id),
@@ -15,15 +25,6 @@ BEGIN;
     CREATE INDEX questionnaire_text_rows_event_id_kind_idx ON event.questionnaire_text_rows(event_id, kind);
     GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_text_rows TO cdb_persona;
     GRANT SELECT, UPDATE ON event.questionnaire_text_rows_id_seq TO cdb_persona;
-
-    INSERT INTO event.questionnaire_text_rows (event_id, kind, pos, role, title, text) (
-        SELECT
-            event_id, kind, pos, 1, title, info
-        FROM
-            event.questionnaire_rows
-        WHERE
-            field_id IS NULL
-    );
 
     CREATE TABLE event.questionnaire_field_rows (
             id                      bigserial PRIMARY KEY,
@@ -50,15 +51,6 @@ BEGIN;
     GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_field_rows TO cdb_persona;
     GRANT SELECT, UPDATE ON event.questionnaire_field_rows_id_seq TO cdb_persona;
 
-    INSERT INTO event.questionnaire_field_rows (event_id, kind, pos, role, field_id, label, info) (
-        SELECT
-            event_id, kind, pos, 5, field_id, title, info
-        FROM
-            event.questionnaire_rows
-        WHERE
-            field_id IS NOT NULL
-    );
-
     CREATE TABLE event.questionnaire_magic_rows (
             id                      bigserial PRIMARY KEY,
             event_id                integer NOT NULL REFERENCES event.events(id),
@@ -72,6 +64,64 @@ BEGIN;
     CREATE INDEX questionnaire_magic_rows_event_id_kind_idx ON event.questionnaire_magic_rows(event_id, kind);
     GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_magic_rows TO cdb_persona;
     GRANT SELECT, UPDATE ON event.questionnaire_magic_rows_id_seq TO cdb_persona;
+"""
 
-    DROP TABLE event.questionnaire_rows;
-COMMIT;
+migration_query_text = """
+    INSERT INTO event.questionnaire_text_rows (event_id, kind, pos, role, title, text) (
+        SELECT
+            event_id, kind, pos, 1, title, info
+        FROM
+            event.questionnaire_rows
+        WHERE
+            field_id IS NULL
+    );
+"""
+
+migration_query_fields = """
+    INSERT INTO event.questionnaire_field_rows (event_id, kind, pos, role, field_id, label, info) (
+        SELECT
+            event_id, kind, pos, 5, field_id, title, info
+        FROM
+            event.questionnaire_rows
+        WHERE
+            field_id IS NOT NULL
+    );
+"""
+
+
+with s:
+    print("Creating tables...")
+
+    event_backend.query_exec(rs, table_query, ())
+
+    print("Migrating existing text and field rows...")
+
+    num = event_backend.query_exec(rs, migration_query_text, ())
+    print(f"Migrated {num} text rows.")
+
+    num = event_backend.query_exec(rs, migration_query_fields, ())
+    print(f"Migrated {num} field rows.")
+
+    print("Inserting default magic rows for every event...")
+    print()
+
+    for event in event_backend.get_events(rs, event_backend.list_events(rs)).values():
+        print(f"{event.title}", end=" ", flush=True)
+        if not event.tracks:
+            print("(no courses)", end=" ", flush=True)
+
+        all_questionnaires = event_backend.get_all_questionnaires(rs, event.id)
+
+        default_questionnaire = models.create_default_questionnaire(event)[
+            const.QuestionnaireUsages.registration
+        ]
+        new_reg_questionnaire = (
+            default_questionnaire[:-1]
+            + all_questionnaires[const.QuestionnaireUsages.registration].as_dicts()
+            + default_questionnaire[-1:]
+        )
+
+        event_backend.set_questionnaire(
+            rs, event.id, const.QuestionnaireUsages.registration, new_reg_questionnaire
+        )
+        print("done")
