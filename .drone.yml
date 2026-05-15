@@ -58,7 +58,7 @@ steps:
     - failure
     - success
   depends_on:
-    - evolution-trial # wait for all git operations to be done
+    - build images
   commands:
     - uv lock --check
 - name: uv-sync
@@ -374,7 +374,7 @@ steps:
     - failure
     - success
   depends_on:
-    - evolution-trial # wait for all git operations to be done
+    - build images
   commands:
     - uv lock --check
 - name: uv-sync
