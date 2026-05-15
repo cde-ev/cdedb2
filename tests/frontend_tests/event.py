@@ -1563,6 +1563,10 @@ etc;anything else""",
                 'code': const.EventLogCodes.event_fee_created,
                 'event_id': 1001,
             },
+            {
+                'code': const.EventLogCodes.questionnaire_changed,
+                'event_id': 1001,
+            },
         ]
 
         # Create another event with course track and orga mailinglist
@@ -1642,6 +1646,10 @@ etc;anything else""",
             {
                 'change_note': "Externenzusatzbeitrag",
                 'code': const.EventLogCodes.event_fee_created,
+                'event_id': 1002,
+            },
+            {
+                'code': const.EventLogCodes.questionnaire_changed,
                 'event_id': 1002,
             },
             {
