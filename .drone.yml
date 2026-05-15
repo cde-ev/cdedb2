@@ -50,22 +50,6 @@ steps:
     path: /var/lib/postgresql/data
   depends_on:
   - build images
-- name: evolution-trial
-  image: cdedb
-  pull: never # do not try to pull image from docker hub
-  depends_on:
-    - cdb
-  environment:
-    CDEDB_CONFIGPATH: tests/config/test_1.py
-    CDEDB_CONFIGPATHS: tests/config/test_1.py
-    POSTGRES_PASSWORD: passwd
-  commands:
-    - make i18n-compile # needed for sample-data creation in evolution-trial.sh
-    - sleep 3 # wait for posgres container to start up
-    - pg_isready --host=cdb --timeout=15 # wait for database to come online
-    - python3 -m cdedb db create-users # basic setup of the database for all following tests
-    - bin/evolution-trial.sh origin/$DRONE_TARGET_BRANCH ci/workdir || (git checkout ci/workdir && exit 1)
-    - git checkout ci/workdir
 - name: uv-lock
   image: cdedb
   pull: never # do not try to pull image from docker hub
@@ -74,7 +58,7 @@ steps:
     - failure
     - success
   depends_on:
-    - evolution-trial # wait for all git operations to be done
+    - build images
   commands:
     - uv lock --check
 - name: uv-sync
@@ -88,11 +72,31 @@ steps:
     - uv-lock
   commands:
     - make venv
-- name: mypy
+- name: evolution-trial
   image: cdedb
   pull: never # do not try to pull image from docker hub
   depends_on:
     - uv-sync
+  when:
+    status:
+    - failure
+    - success
+  environment:
+    CDEDB_CONFIGPATH: tests/config/test_1.py
+    CDEDB_CONFIGPATHS: tests/config/test_1.py
+    POSTGRES_PASSWORD: passwd
+  commands:
+    - make i18n-compile # needed for sample-data creation in evolution-trial.sh
+    - sleep 3 # wait for posgres container to start up
+    - pg_isready --host=cdb --timeout=15 # wait for database to come online
+    - python3 -m cdedb db create-users # basic setup of the database for all following tests
+    - bin/evolution-trial.sh origin/$DRONE_TARGET_BRANCH ci/workdir || (git checkout ci/workdir && exit 1)
+    - git checkout ci/workdir
+- name: mypy
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+    - evolution-trial # wait for all git operations to be done
   when:
     status:
     - failure
@@ -103,7 +107,7 @@ steps:
   image: cdedb
   pull: never # do not try to pull image from docker hub
   depends_on:
-    - uv-sync
+    - evolution-trial # wait for all git operations to be done
   when:
     status:
     - failure
@@ -362,22 +366,6 @@ steps:
     path: /var/lib/postgresql/data
   depends_on:
   - build images
-- name: evolution-trial
-  image: cdedb
-  pull: never # do not try to pull image from docker hub
-  depends_on:
-    - cdb
-  environment:
-    CDEDB_CONFIGPATH: tests/config/test_1.py
-    CDEDB_CONFIGPATHS: tests/config/test_1.py
-    POSTGRES_PASSWORD: passwd
-  commands:
-    - make i18n-compile # needed for sample-data creation in evolution-trial.sh
-    - sleep 3 # wait for posgres container to start up
-    - pg_isready --host=cdb --timeout=15 # wait for database to come online
-    - python3 -m cdedb db create-users # basic setup of the database for all following tests
-    - bin/evolution-trial.sh origin/$DRONE_TARGET_BRANCH ci/workdir || (git checkout ci/workdir && exit 1)
-    - git checkout ci/workdir
 - name: uv-lock
   image: cdedb
   pull: never # do not try to pull image from docker hub
@@ -386,7 +374,7 @@ steps:
     - failure
     - success
   depends_on:
-    - evolution-trial # wait for all git operations to be done
+    - build images
   commands:
     - uv lock --check
 - name: uv-sync
@@ -400,11 +388,31 @@ steps:
     - uv-lock
   commands:
     - make venv
-- name: mypy
+- name: evolution-trial
   image: cdedb
   pull: never # do not try to pull image from docker hub
   depends_on:
     - uv-sync
+  when:
+    status:
+    - failure
+    - success
+  environment:
+    CDEDB_CONFIGPATH: tests/config/test_1.py
+    CDEDB_CONFIGPATHS: tests/config/test_1.py
+    POSTGRES_PASSWORD: passwd
+  commands:
+    - make i18n-compile # needed for sample-data creation in evolution-trial.sh
+    - sleep 3 # wait for posgres container to start up
+    - pg_isready --host=cdb --timeout=15 # wait for database to come online
+    - python3 -m cdedb db create-users # basic setup of the database for all following tests
+    - bin/evolution-trial.sh origin/$DRONE_TARGET_BRANCH ci/workdir || (git checkout ci/workdir && exit 1)
+    - git checkout ci/workdir
+- name: mypy
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+    - evolution-trial # wait for all git operations to be done
   when:
     status:
     - failure
@@ -415,7 +423,7 @@ steps:
   image: cdedb
   pull: never # do not try to pull image from docker hub
   depends_on:
-    - uv-sync
+    - evolution-trial # wait for all git operations to be done
   when:
     status:
     - failure

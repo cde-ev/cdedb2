@@ -73,8 +73,7 @@ while read -r evolution; do
         echo ""
         echo "Run migration script $evolution" | tee -a /tmp/output-evolution.txt
         # we use a testconfig for the ci call, so we need to make the test module accessible
-        PYTHONPATH="$(python3 -m cdedb config get REPOSITORY_PATH)"
-        sudo -E -u www-cde -g www-data \
+        sudo -E -u www-cde -g www-data env PATH="${PATH}" \
             EVOLUTION_TRIAL_OVERRIDE_DRY_RUN='' \
             EVOLUTION_TRIAL_OVERRIDE_PERSONA_ID=1 \
             EVOLUTION_TRIAL_OVERRIDE_OUTFILE=$evolution_output \
