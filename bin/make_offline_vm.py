@@ -271,16 +271,17 @@ def work(
         models.Event.database_table,
         OrgaToken.database_table,
         EventLogFilter.log_table,
-        *(
-            cls.database_table
+        # Gather all tables in order of class definition.
+        # Use a dict to remove duplicates while preserving order.
+        *{
+            cls.database_table: None
             for name, cls in vars(models).items()
             if not name.startswith("__")
                 and isinstance(cls, type)
                 and issubclass(cls, models.EventDataclass)
                 and cls is not models.Event
                 and hasattr(cls, "database_table")
-                and not (cls is not models.QuestionnaireMagicRow and issubclass(cls, models.QuestionnaireMagicRow))
-        ),
+        }.keys(),
         *(
             member
             for name, member in vars(models.DatabaseTables).items()
