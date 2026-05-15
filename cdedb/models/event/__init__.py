@@ -1439,7 +1439,7 @@ class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
 def create_default_questionnaire(
     event: Event,
 ) -> dict[const.QuestionnaireUsages, list[CdEDBObject]]:
-    reg = [
+    reg: list[const.QuestionnaireRowMagicRole | str] = [
         const.QuestionnaireRowMagicRole.fee_preview,
     ]
     if event.tracks:
