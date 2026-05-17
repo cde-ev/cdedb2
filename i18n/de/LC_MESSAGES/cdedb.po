@@ -4768,41 +4768,36 @@ msgstr "Mailadressen dürfen \"%(subaddress)s\" nicht enthalten."
 
 #: cdedb/backend/ml.py:1182 cdedb/frontend/ml/base.py:1418
 msgid "Address already taken by another user."
-msgstr "Adresse wird bereits von einem anderen Nutzer verwendet."
+msgstr "Adresse wird bereits von einem anderen Account verwendet."
 
 #: cdedb/backend/ml.py:1666
 msgid "Moderator access has been restricted."
-msgstr "Moderatorzugriff ist eingeschränkt."
+msgstr "Moderationszugriff ist eingeschränkt."
 
 #: cdedb/backend/ml.py:1811
 msgid "Source User is admin and can not be merged."
-msgstr "Der Quellnutzer ist Admin und kann daher nicht verschmolzen werden."
+msgstr "Der Quellaccount ist Admin und kann daher nicht verschmolzen werden."
 
 #: cdedb/backend/ml.py:1815
 msgid "Source persona must be a ml-only user."
-msgstr "Der Quellnutzer muss ein reiner Mailinglistennutzer sein."
+msgstr "Der Quellaccount muss ein reiner Mailinglistenaccount sein."
 
 #: cdedb/backend/ml.py:1817
 msgid "Source User is not accessible."
-msgstr "Quellnutzer ist nicht aufrufbar."
+msgstr "Quellaccount ist nicht aufrufbar."
 
 #: cdedb/backend/ml.py:1824
 msgid "Target User is no valid ml user."
-msgstr "Der Zielnutzer ist kein Mailinglisten Nutzer."
+msgstr "Der Zielaccount ist kein Mailinglistenaccount."
 
 #: cdedb/backend/ml.py:1830 cdedb/frontend/ml/base.py:417
 msgid "Can not merge user into himself."
-msgstr "Nutzer kann nicht mit sich selbst verschmolzen werden."
+msgstr "Ein Account kann nicht mit sich selbst verschmolzen werden."
 
 #: cdedb/backend/ml.py:1846
 #, python-format
 msgid "Both users are related to the same mailinglists: %(mls)s"
 msgstr "Beide Benutzer haben einen Bezug zu gleichen Mailinglisten: %(mls)s"
-
-#: cdedb/backend/past_event.py:520 cdedb/backend/past_event.py:583
-msgid "This past event participant is no event user."
-msgstr ""
-"Dieser Vergangene-Veranstaltungs-Teilnehmer ist kein Veranstaltungsnutzer."
 
 #: cdedb/backend/past_event.py:591
 msgid "This user does not participate at this event."
