@@ -220,7 +220,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
     @access("assembly_admin", modi={"POST"})
     @REQUESTdata("presider_ids")
     def add_presiders(
-        self, rs: RequestState, assembly_id: int, presider_ids: list[int]
+        self, rs: RequestState, assembly_id: int, presider_ids: list[vtypes.PersonaID]
     ) -> Response:
         if not rs.ambience['assembly']['is_active']:
             rs.ignore_validation_errors()
@@ -429,7 +429,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
     def create_assembly(
         self,
         rs: RequestState,
-        presider_ids: list[int],
+        presider_ids: list[vtypes.PersonaID],
         create_attendee_list: bool,
         create_presider_list: bool,
         presider_address: Optional[Email],

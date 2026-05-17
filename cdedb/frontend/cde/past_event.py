@@ -350,7 +350,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         self,
         rs: RequestState,
         pevent_id: int,
-        persona_ids: list[int],
+        persona_ids: list[vtypes.PersonaID],
         orga_status: const.PastOrgaKind,
         music_status: const.PastMusicKind,
     ) -> Response:
@@ -387,7 +387,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         rs: RequestState,
         pevent_id: int,
         pcourse_id: vtypes.ID,
-        persona_ids: list[int],
+        persona_ids: list[vtypes.PersonaID],
         instructor_status: const.PastInstructorKind,
     ) -> Response:
         """Mark a persona as participant of a concluded course."""
