@@ -728,7 +728,7 @@ class ComplaintBackend(AbstractBackend):
         rs: RequestState,
         case_id: int,
         involvement_type: const.ComplaintInvolvementType,
-        persona_ids: Collection[int],
+        persona_ids: Collection[models.PersonaID],
     ) -> DefaultReturnCode:
         """Add the given personas as involved people of the given type to a case.
 
@@ -739,7 +739,7 @@ class ComplaintBackend(AbstractBackend):
         """
         case_id = affirm(vtypes.ID, case_id)
         involvement_type = affirm(const.ComplaintInvolvementType, involvement_type)
-        persona_ids = affirm(set[vtypes.ID], persona_ids)
+        persona_ids = affirm(set[models.PersonaID], persona_ids, passthrough=True)
 
         if not persona_ids:
             return 0
@@ -836,7 +836,7 @@ class ComplaintBackend(AbstractBackend):
         self,
         rs: RequestState,
         case_id: int,
-        involved_ids: Collection[int],
+        involved_ids: Collection[models.InvolvedID],
     ) -> DefaultReturnCode:
         """Remove some users as involved with a case.
 
@@ -846,7 +846,7 @@ class ComplaintBackend(AbstractBackend):
             The number of removed personas otherwise.
         """
         case_id = affirm(vtypes.ID, case_id)
-        involved_ids = affirm(set[vtypes.ID], involved_ids)
+        involved_ids = affirm(set[models.InvolvedID], involved_ids)
 
         if not involved_ids:
             return 0
@@ -881,11 +881,15 @@ class ComplaintBackend(AbstractBackend):
 
     @access("complaint_admin")
     def set_involved_informed(
-        self, rs: RequestState, case_id: int, involved_id: int, is_informed: bool
+        self,
+        rs: RequestState,
+        case_id: int,
+        involved_id: models.InvolvedID,
+        is_informed: bool,
     ) -> DefaultReturnCode:
         """Set the informed status of an involved person."""
         case_id = affirm(vtypes.ID, case_id)
-        involved_id = affirm(vtypes.ID, involved_id)
+        involved_id = affirm(models.InvolvedID, involved_id)
         is_informed = affirm(bool, is_informed)
 
         with Atomizer(rs):
@@ -919,13 +923,13 @@ class ComplaintBackend(AbstractBackend):
         self,
         rs: RequestState,
         case_id: int,
-        involved_id: int,
-        companion_ids: Collection[int],
+        involved_id: models.InvolvedID,
+        companion_ids: Collection[models.PersonaID],
     ) -> DefaultReturnCode:
         """Add companions to a person involved in a case."""
         case_id = affirm(vtypes.ID, case_id)
-        involved_id = affirm(vtypes.ID, involved_id)
-        companion_ids = affirm(set[vtypes.ID], companion_ids)
+        involved_id = affirm(models.InvolvedID, involved_id)
+        companion_ids = affirm(set[models.PersonaID], companion_ids, passthrough=True)
 
         if not companion_ids:
             return 0
@@ -973,13 +977,13 @@ class ComplaintBackend(AbstractBackend):
         self,
         rs: RequestState,
         case_id: int,
-        involved_id: int,
-        companion_ids: Collection[int],
+        involved_id: models.InvolvedID,
+        companion_ids: Collection[models.PersonaID],
     ) -> DefaultReturnCode:
         """Remove companions from a person involved in a case."""
         case_id = affirm(vtypes.ID, case_id)
-        involved_id = affirm(vtypes.ID, involved_id)
-        companion_ids = affirm(set[vtypes.ID], companion_ids)
+        involved_id = affirm(models.InvolvedID, involved_id)
+        companion_ids = affirm(set[models.PersonaID], companion_ids, passthrough=True)
         if not companion_ids:
             return 0
         with Atomizer(rs):
@@ -1017,14 +1021,14 @@ class ComplaintBackend(AbstractBackend):
         self,
         rs: RequestState,
         case_id: int,
-        involved_id: int,
-        companion_id: int,
+        involved_id: models.InvolvedID,
+        companion_id: models.PersonaID,
         is_withdrawn: bool,
     ) -> DefaultReturnCode:
         """Set the withdrawn status of a companion."""
         case_id = affirm(vtypes.ID, case_id)
-        involved_id = affirm(vtypes.ID, involved_id)
-        companion_id = affirm(vtypes.ID, companion_id)
+        involved_id = affirm(models.InvolvedID, involved_id)
+        companion_id = affirm(models.PersonaID, companion_id, passthrough=True)
         is_withdrawn = affirm(bool, is_withdrawn)
 
         with Atomizer(rs):
