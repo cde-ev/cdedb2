@@ -1032,7 +1032,7 @@ class EventRegistrationBackend(EventBaseBackend):
             if not is_privileged_ and all(
                 reg['persona_id'] != rs.user.persona_id for reg in ret.values()
             ):
-                raise PrivilegeError(n_("No participant of event."))
+                raise PrivilegeError(n_("You do not participate at this event."))
 
             tdata = self.sql_select(
                 rs,

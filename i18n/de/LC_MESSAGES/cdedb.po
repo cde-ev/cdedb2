@@ -4571,8 +4571,8 @@ msgstr "Nur Anmeldungen einer Veranstaltung werden unterstützt."
 
 #: cdedb/backend/event/registration.py:1035 cdedb/frontend/event/base.py:446
 #: cdedb/frontend/event/base.py:639
-msgid "No participant of event."
-msgstr "Kein Teilnehmer der Veranstaltung."
+msgid "You do not participate at this event."
+msgstr "Du nimmst nicht an dieser Veranstaltung teil."
 
 #: cdedb/backend/event/registration.py:1225
 msgid "Cannot alter `amount_paid` via `set_registration`."

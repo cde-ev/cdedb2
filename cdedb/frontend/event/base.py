@@ -443,7 +443,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                 event_id,
                 {const.RegistrationPartStati.participant},
             ):
-                rs.notify('warning', n_("No participant of event."))
+                rs.notify('warning', n_("You do not participate at this event."))
                 return self.redirect(rs, "event/show_event")
             reg_list = self.eventproxy.list_registrations(
                 rs, event_id, rs.user.persona_id
@@ -636,7 +636,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                 event_id,
                 {const.RegistrationPartStati.participant},
             ):
-                rs.notify('warning', n_("No participant of event."))
+                rs.notify('warning', n_("You do not participate at this event."))
                 return self.redirect(rs, "event/show_event")
         return self.render(rs, "base/participant_info")
 
