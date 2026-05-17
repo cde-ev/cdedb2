@@ -512,7 +512,7 @@ class EventEventMixin(EventBaseFrontend):
             if not self.is_privileged(rs, EventPrivileges.basic_write):
                 raise werkzeug.exceptions.Forbidden()
         else:
-            raise RuntimeError(n_("Impossible"))
+            raise RuntimeError(n_("Impossible."))
 
         if rs.has_validation_errors():
             # Shortcircuit if we have got no workable ids.

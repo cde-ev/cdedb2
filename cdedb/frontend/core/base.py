@@ -760,7 +760,7 @@ class CoreBaseFrontend(AbstractFrontend):
             persona.username = REDACTED
             persona.legal_given_names = REDACTED
         else:
-            raise RuntimeError("Impossible")
+            raise RuntimeError("Impossible.")
 
         has_lastschrift = REDACTED
         if isinstance(persona, models.CdEPersona):

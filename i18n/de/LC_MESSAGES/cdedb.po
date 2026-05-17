@@ -3679,12 +3679,6 @@ msgstr ""
 msgid "Impossible."
 msgstr "Unmöglich."
 
-#: cdedb/backend/cde/base.py:76 cdedb/backend/cde/lastschrift.py:491
-#: cdedb/frontend/event/event.py:515 cdedb/frontend/event/registration.py:2471
-#: cdedb/frontend/event/registration.py:2483
-msgid "Impossible"
-msgstr "Unmöglich."
-
 #: cdedb/backend/cde/base.py:170 cdedb/frontend/common.py:1742
 msgid "Persona is not in CdE realm."
 msgstr "Account ist kein CdE-Account"
