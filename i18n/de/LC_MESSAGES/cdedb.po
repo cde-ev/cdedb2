@@ -4109,9 +4109,9 @@ msgstr "Ungültiger Status für Änderung der Admin-Privilegien: %(status)s."
 
 #: cdedb/backend/core/base.py:1378 cdedb/frontend/core/base.py:2232
 msgid ""
-"Only a different admin than the submitter may approve a privilege change."
+"Only a different admin may approve a privilege change which you submitted."
 msgstr ""
-"Nur ein anderer Admin als der Antragsteller kann eine Änderung bestätigen."
+"Nur ein anderer Admin kann eine Änderung bestätigen die du gestellt hast."
 
 #: cdedb/backend/core/base.py:1432
 msgid "Invalid new privilege change status."

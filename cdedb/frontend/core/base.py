@@ -2229,8 +2229,8 @@ class CoreBaseFrontend(AbstractFrontend):
             if rs.user.persona_id == privilege_change["submitted_by"]:
                 raise werkzeug.exceptions.Forbidden(
                     n_(
-                        "Only a different admin than the submitter"
-                        " may approve a privilege change."
+                        "Only a different admin may approve a privilege "
+                        "change which you submitted."
                     )
                 )
         code = self.coreproxy.finalize_privilege_change(
