@@ -1697,7 +1697,7 @@ class AssemblyBackend(AbstractBackend):
         ballot_id = affirm(vtypes.ID, ballot_id)
 
         if not self.check_attendance(rs, ballot_id=ballot_id):
-            raise PrivilegeError(n_("Must attend the ballot."))
+            raise PrivilegeError(n_("You are no attendee of this assembly."))
 
         query = """
             SELECT has_voted FROM assembly.voter_register
@@ -1738,7 +1738,7 @@ class AssemblyBackend(AbstractBackend):
         secret = affirm(vtypes.PrintableASCII | None, secret)
 
         if not self.check_attendance(rs, ballot_id=ballot_id):
-            raise PrivilegeError(n_("Must attend the ballot."))
+            raise PrivilegeError(n_("You are no attendee of this assembly."))
 
         with Atomizer(rs):
             has_voted = self.has_voted(rs, ballot_id)

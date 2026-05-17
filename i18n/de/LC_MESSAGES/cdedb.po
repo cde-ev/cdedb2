@@ -3512,8 +3512,8 @@ msgid "Could not determine secret."
 msgstr "Geheimnis konnte nicht bestimmt werden."
 
 #: cdedb/backend/assembly.py:1700 cdedb/backend/assembly.py:1741
-msgid "Must attend the ballot."
-msgstr "Kein Teilnehmer der Versammlung."
+msgid "You are no attendee of this assembly."
+msgstr "Du nimmst nicht an dieser Versammlung teil."
 
 #: cdedb/backend/assembly.py:1771
 msgid "May not access result for this ballot."
