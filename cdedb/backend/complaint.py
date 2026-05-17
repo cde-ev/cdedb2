@@ -728,7 +728,7 @@ class ComplaintBackend(AbstractBackend):
         rs: RequestState,
         case_id: int,
         involvement_type: const.ComplaintInvolvementType,
-        persona_ids: Collection[models.PersonaID],
+        persona_ids: Collection[vtypes.PersonaID],
     ) -> DefaultReturnCode:
         """Add the given personas as involved people of the given type to a case.
 
@@ -739,7 +739,7 @@ class ComplaintBackend(AbstractBackend):
         """
         case_id = affirm(vtypes.ID, case_id)
         involvement_type = affirm(const.ComplaintInvolvementType, involvement_type)
-        persona_ids = affirm(set[models.PersonaID], persona_ids, passthrough=True)
+        persona_ids = affirm(set[vtypes.PersonaID], persona_ids, passthrough=True)
 
         if not persona_ids:
             return 0
@@ -924,12 +924,12 @@ class ComplaintBackend(AbstractBackend):
         rs: RequestState,
         case_id: int,
         involved_id: models.InvolvedID,
-        companion_ids: Collection[models.PersonaID],
+        companion_ids: Collection[vtypes.PersonaID],
     ) -> DefaultReturnCode:
         """Add companions to a person involved in a case."""
         case_id = affirm(vtypes.ID, case_id)
         involved_id = affirm(models.InvolvedID, involved_id)
-        companion_ids = affirm(set[models.PersonaID], companion_ids, passthrough=True)
+        companion_ids = affirm(set[vtypes.PersonaID], companion_ids, passthrough=True)
 
         if not companion_ids:
             return 0
@@ -978,12 +978,12 @@ class ComplaintBackend(AbstractBackend):
         rs: RequestState,
         case_id: int,
         involved_id: models.InvolvedID,
-        companion_ids: Collection[models.PersonaID],
+        companion_ids: Collection[vtypes.PersonaID],
     ) -> DefaultReturnCode:
         """Remove companions from a person involved in a case."""
         case_id = affirm(vtypes.ID, case_id)
         involved_id = affirm(models.InvolvedID, involved_id)
-        companion_ids = affirm(set[models.PersonaID], companion_ids, passthrough=True)
+        companion_ids = affirm(set[vtypes.PersonaID], companion_ids, passthrough=True)
         if not companion_ids:
             return 0
         with Atomizer(rs):
@@ -1022,13 +1022,13 @@ class ComplaintBackend(AbstractBackend):
         rs: RequestState,
         case_id: int,
         involved_id: models.InvolvedID,
-        companion_id: models.PersonaID,
+        companion_id: vtypes.PersonaID,
         is_withdrawn: bool,
     ) -> DefaultReturnCode:
         """Set the withdrawn status of a companion."""
         case_id = affirm(vtypes.ID, case_id)
         involved_id = affirm(models.InvolvedID, involved_id)
-        companion_id = affirm(models.PersonaID, companion_id, passthrough=True)
+        companion_id = affirm(vtypes.PersonaID, companion_id, passthrough=True)
         is_withdrawn = affirm(bool, is_withdrawn)
 
         with Atomizer(rs):

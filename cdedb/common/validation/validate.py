@@ -689,6 +689,9 @@ def _id(val: Any, argname: Optional[str] = None, **kwargs: Any) -> ID:
     return ID(val)
 
 
+_add_typed_validator(_id, PersonaID)
+
+
 @_add_typed_validator
 def _partial_import_id(
     val: Any, argname: Optional[str] = None, **kwargs: Any
@@ -955,7 +958,7 @@ def _cdedbid(
     value = _id(match["value"], argname, **kwargs)
     if compute_checkdigit(value) != match["checkdigit"]:
         raise ValidationSummary(ValueError(argname, n_("Checksum failure.")))
-    return CdedbID(value)
+    return CdedbID(PersonaID(ID(value)))
 
 
 @_add_typed_validator

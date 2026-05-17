@@ -386,7 +386,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs: RequestState,
         case_id: int,
         involvement_type: const.ComplaintInvolvementType,
-        persona_ids: list[models.PersonaID],
+        persona_ids: list[vtypes.CdedbID],
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
@@ -414,7 +414,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         ex_companions_ids = set(persona_ids) & active_companions.keys()
         ex_companions = self.coreproxy.get_personas(rs, ex_companions_ids)
         for companion_id, companion in ex_companions.items():
-            companion_id = cast(models.PersonaID, companion_id)
+            companion_id = cast(vtypes.CdedbID, companion_id)
             rs.notify(
                 'warning',
                 n_("%(companion)s was a companion and is now marked as withdrawn."),
@@ -513,18 +513,17 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs: RequestState,
         case_id: int,
         involved_id: models.InvolvedID,
-        companion_ids: list[models.PersonaID],
+        companion_ids: list[vtypes.CdedbID],
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        companion_ids = set(companion_ids)
         if companion_ids:
-            if companion_ids & rs.ambience['case'].involved_persona_ids:
+            if set(companion_ids) & rs.ambience['case'].involved_persona_ids:
                 rs.append_validation_error((
                     "companion_ids",
                     ValueError(n_("Companion may not be involved.")),
                 ))
-            if companion_ids & rs.ambience['case'].adverse_companions(
+            if set(companion_ids) & rs.ambience['case'].adverse_companions(
                 rs.ambience['case'].involved[involved_id].involvement_type
             ):
                 rs.append_validation_error((
@@ -557,7 +556,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs: RequestState,
         case_id: int,
         involved_id: models.InvolvedID,
-        companion_id: models.PersonaID,
+        companion_id: vtypes.CdedbID,
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
@@ -573,7 +572,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs: RequestState,
         case_id: int,
         involved_id: models.InvolvedID,
-        companion_id: models.PersonaID,
+        companion_id: vtypes.CdedbID,
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
@@ -594,7 +593,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs: RequestState,
         case_id: int,
         involved_id: models.InvolvedID,
-        companion_id: models.PersonaID,
+        companion_id: vtypes.CdedbID,
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
@@ -664,7 +663,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         self, rs: RequestState, entry: models.ComplaintEntry
     ) -> CdEDBObjectMap:
         """Get any personas associated to a given entry."""
-        persona_ids: set[models.PersonaID] = set()
+        persona_ids: set[vtypes.PersonaID] = set()
         if entry.active_version:
             persona_ids.update(entry.active_version.authors)
             persona_ids.add(entry.active_version.submitted_by)
