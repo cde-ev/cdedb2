@@ -689,9 +689,6 @@ def _id(val: Any, argname: Optional[str] = None, **kwargs: Any) -> ID:
     return ID(val)
 
 
-_add_typed_validator(_id, PersonaID)
-
-
 @_add_typed_validator
 def _partial_import_id(
     val: Any, argname: Optional[str] = None, **kwargs: Any
@@ -940,17 +937,10 @@ def _realm(
 
 
 @_add_typed_validator
-def _cdedbid(
-    val: Any, argname: Optional[str] = None, passthrough: bool = False, **kwargs: Any
-) -> CdedbID:
-    if passthrough:
-        try:
-            val = _id(val, argname, **kwargs)
-        except ValidationSummary:
-            pass
-        else:
-            return CdedbID(val)
-    val = _str(val, argname, **kwargs).strip()  # TODO is strip necessary here?
+def _persona_id(val: Any, argname: Optional[str] = None, **kwargs: Any) -> PersonaID:
+    if isinstance(val, int):
+        return _ALL_TYPED[ID](val, argname, **kwargs)
+    val = _str(val, argname, **kwargs).strip()
     match = re.search('^DB-(?P<value>[0-9]*)-(?P<checkdigit>[0-9X])$', val)
     if not match:
         raise ValidationSummary(ValueError(argname, n_("Wrong formatting.")))
@@ -958,7 +948,7 @@ def _cdedbid(
     value = _id(match["value"], argname, **kwargs)
     if compute_checkdigit(value) != match["checkdigit"]:
         raise ValidationSummary(ValueError(argname, n_("Checksum failure.")))
-    return CdedbID(PersonaID(ID(value)))
+    return PersonaID(ID(value))
 
 
 @_add_typed_validator

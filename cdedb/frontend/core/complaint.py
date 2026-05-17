@@ -335,7 +335,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         info: str,
     ) -> Response:
         involved_params = {
-            f"{involvement_type.name}_ids": list[int]
+            f"{involvement_type.name}_ids": list[vtypes.PersonaID]
             for involvement_type in const.ComplaintInvolvementType
         }
         involved_data = request_extractor(rs, involved_params)

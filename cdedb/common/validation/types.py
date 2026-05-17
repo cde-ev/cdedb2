@@ -30,7 +30,7 @@ PositiveInt = _NewType("PositiveInt", int)
 NegativeInt = _NewType("NegativeInt", int)
 ID = _NewType("ID", int)
 PersonaID = _NewType("PersonaID", ID)
-CdedbID = _NewType("CdedbID", PersonaID)
+CdedbID = PersonaID
 PartialImportID = _NewType("PartialImportID", int)
 SingleDigitInt = _NewType("SingleDigitInt", int)
 
