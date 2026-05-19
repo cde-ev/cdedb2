@@ -1369,10 +1369,12 @@ GRANT SELECT ON event.personalized_fees TO cdb_anonymous;
 CREATE TABLE event.questionnaire_text_rows (
         id                      bigserial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
-        -- The specific qeustionnaire variant where this row will be used. See cdedb.constants.QuestionnaireUsages.
+        -- The specific questionnaire variant where this row will be used. See cdedb.constants.QuestionnaireUsages.
         kind                    integer NOT NULL,
         -- The position at which this element is shown in the questionnaire.
         pos                     integer NOT NULL,
+        -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowMagicRole.
+        -- For entries in this table this will always be 'text_only'.
         role                    integer NOT NULL,
         -- A customized heading for this element.
         title                   varchar,
@@ -1386,18 +1388,17 @@ GRANT SELECT, UPDATE ON event.questionnaire_text_rows_id_seq TO cdb_persona;
 CREATE TABLE event.questionnaire_field_rows (
         id                      bigserial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
-        -- The specific qeustionnaire variant where this row will be used. See cdedb.constants.QuestionnaireUsages.
+        -- The specific questionnaire variant where this row will be used. See cdedb.constants.QuestionnaireUsages.
         kind                    integer NOT NULL,
         -- The position at which this element is shown in the questionnaire.
         pos                     integer NOT NULL,
+        -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowMagicRole.
+        -- For entries in this table this will always be 'event_field'.
         role                    integer NOT NULL,
         -- A customized label for this element.
         label                   varchar,
         -- Additional information that is displayed below the field input.
         info                    varchar,
-        -- These fields determine what variant of content is rendered via this row.
-        -- Only one of these may be set. If none are set this row simply displays a heading and some text.
-        -- If field id is set, display input for the linked field.
         field_id                integer REFERENCES event.field_definitions(id),
         -- If set, the value for the linked field can no longer be changed.
         readonly                boolean NOT NULL DEFAULT FALSE,
@@ -1411,7 +1412,7 @@ GRANT SELECT, UPDATE ON event.questionnaire_field_rows_id_seq TO cdb_persona;
 CREATE TABLE event.questionnaire_magic_rows (
         id                      bigserial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
-        -- The specific qeustionnaire variant where this row will be used. See cdedb.constants.QuestionnaireUsages.
+        -- The specific questionnaire variant where this row will be used. See cdedb.constants.QuestionnaireUsages.
         kind                    integer NOT NULL,
         -- The position at which this element is shown in the questionnaire.
         pos                     integer NOT NULL,
