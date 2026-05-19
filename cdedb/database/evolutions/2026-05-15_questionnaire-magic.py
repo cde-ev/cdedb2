@@ -113,7 +113,7 @@ with s:
 
         all_questionnaires = event_backend.get_all_questionnaires(rs, event.id)
 
-        default_questionnaire = models.create_default_questionnaire(event)[
+        default_questionnaire = models.make_default_questionnaire(event)[
             const.QuestionnaireUsages.registration
         ]
         new_reg_questionnaire = (

@@ -1435,15 +1435,15 @@ class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
         ]
 
 
-def create_default_questionnaire(
+def make_default_questionnaire(
     event: Event,
 ) -> dict[const.QuestionnaireUsages, list[CdEDBObject]]:
-    reg: list[const.QuestionnaireRowMagicRole | str] = [
+    reg_quest: list[const.QuestionnaireRowMagicRole | str] = [
         const.QuestionnaireRowMagicRole.fee_preview,
     ]
     if event.tracks:
-        reg.append("Kurswahlen")
-    reg.extend([
+        reg_quest.append("Kurswahlen")
+    reg_quest.extend([
         const.QuestionnaireRowMagicRole.course_choices,
         "Weitere Angaben",
         const.QuestionnaireRowMagicRole.list_consent,
@@ -1458,7 +1458,7 @@ def create_default_questionnaire(
             {"role": const.QuestionnaireRowMagicRole.text_only, "title": x}
             if isinstance(x, str)
             else {"role": x}
-            for x in reg
+            for x in reg_quest
         ],
     }
 

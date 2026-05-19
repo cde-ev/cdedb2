@@ -1696,7 +1696,7 @@ class EventEventMixin(EventBaseFrontend):
             for fee_ in fee_data:
                 self.eventproxy.create_event_fee(rs, new_id, fee_)
 
-            for kind, qst in models.create_default_questionnaire(event).items():
+            for kind, qst in models.make_default_questionnaire(event).items():
                 self.eventproxy.set_questionnaire(rs, event.id, kind, qst)
 
             if create_orga_list:
