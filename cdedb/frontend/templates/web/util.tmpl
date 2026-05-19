@@ -465,7 +465,7 @@
             placeholder="0"
         {%- elif type == 'tel' %}
             placeholder="+49 1234 5678910"
-            pattern="\+?[0-9 \(\)]+"
+            pattern="\+?[0-9 \(\)-]+"
             title="{{ gettext("Phone number in the format +49 1234 5678910") }}"
         {%- elif type == 'date' %}
             placeholder="YYYY-MM-DD"
