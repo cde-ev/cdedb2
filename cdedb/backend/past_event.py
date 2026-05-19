@@ -115,7 +115,7 @@ class PastEventBackend(AbstractBackend):
         data = self.query_all(rs, query, tuple())
         return {e['id']: e['title'] for e in data}
 
-    @access("cde", "event")
+    @access("event")
     def past_event_stats(self, rs: RequestState) -> CdEDBObjectMap:
         """Returns the number of courses and participants for each past event."""
         query = """

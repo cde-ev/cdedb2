@@ -99,7 +99,7 @@ class PastEventMixin(EventBaseFrontend):
             {'spec': spec, 'result': result, 'count': count},
         )
 
-    @access("member", "event", "cde_admin")
+    @access("event")
     def show_past_event(self, rs: RequestState, pevent_id: int) -> Response:
         """Display concluded event."""
         # if user is not member or cde_admin bt event user, check if they were a participant, otherwise block the request
@@ -129,7 +129,7 @@ class PastEventMixin(EventBaseFrontend):
             },
         )
 
-    @access("member", "event", "cde_admin")
+    @access("event")
     def show_past_course(
         self, rs: RequestState, pevent_id: int, pcourse_id: int
     ) -> Response:
@@ -157,7 +157,7 @@ class PastEventMixin(EventBaseFrontend):
             },
         )
 
-    @access("member", "event", "cde_admin")
+    @access("event")
     @REQUESTdata("institution")
     def list_past_events(
         self, rs: RequestState, institution: const.PastInstitutions | None = None
@@ -172,9 +172,9 @@ class PastEventMixin(EventBaseFrontend):
         # Get an iterator of the past events the user has visited
         # (currently used for hiding links from event realm users without membership)
         assert rs.user.persona_id is not None
-        participated_eventIDs = list(
-            self.pasteventproxy.list_persona_events(rs, rs.user.persona_id).keys()
-        )
+        participated_pevent_ids = self.pasteventproxy.list_persona_events(
+            rs, rs.user.persona_id
+        ).keys()
 
         stats = self.pasteventproxy.past_event_stats(rs)
 
@@ -199,7 +199,7 @@ class PastEventMixin(EventBaseFrontend):
                 'stats': stats,
                 'institution': institution,
                 'used_institutions': used_institutions,
-                'participated_eventIDs': participated_eventIDs,
+                'participated_pevent_ids': participated_pevent_ids,
             },
         )
 

@@ -393,22 +393,20 @@ This will result in:
         {% if 'event_list' in user.admin_views %}
             {{ event_quicksearch() }}
         {% endif %}
-        {% if 'event' in user.roles or user.admin_views.intersection(('past_event', 'auditor')) %}
-            <div class="list-group tear-down">
-                {% if "event" in user.roles or "past_event" in user.admin_views %}
-                    {{ util.href(cdedblink("event/list_past_events"), gettext("Past Events"), icon="calendar-alt",
-                            aclass="list-group-item", active=(sidenav_active=='event_past_events')) }}
-                {% endif %}
-                {% if "member" in user.roles or "past_event" in user.admin_views %}
-                    {{ util.href(cdedblink("event/past_course_search"), gettext("Course Search"), icon="search",
-                                 aclass="list-group-item", active=(sidenav_active=='event_past_course_search')) }}
-                {% endif %}
-                {% if user.admin_views.intersection(('past_event', 'auditor')) %}
-                    {{ util.href(cdedblink("event/view_past_log"), gettext("Past Events Log"), icon="far fa-list-alt",
-                            aclass="list-group-item", active=(sidenav_active=='event_past_events_log')) }}
-                {% endif %}
-            </div>
-        {% endif %}
+        <div class="list-group tear-down">
+            {% if "event" in user.roles or "past_event" in user.admin_views %}
+                {{ util.href(cdedblink("event/list_past_events"), gettext("Past Events"), icon="calendar-alt",
+                        aclass="list-group-item", active=(sidenav_active=='event_past_events')) }}
+            {% endif %}
+            {% if "member" in user.roles or "past_event" in user.admin_views %}
+                {{ util.href(cdedblink("event/past_course_search"), gettext("Course Search"), icon="search",
+                             aclass="list-group-item", active=(sidenav_active=='event_past_course_search')) }}
+            {% endif %}
+            {% if user.admin_views.intersection(('past_event', 'auditor')) %}
+                {{ util.href(cdedblink("event/view_past_log"), gettext("Past Events Log"), icon="far fa-list-alt",
+                        aclass="list-group-item", active=(sidenav_active=='event_past_events_log')) }}
+            {% endif %}
+        </div>
         {% if user.admin_views.intersection(('event_mgmt', 'event_user', 'auditor')) %}
             <div class="list-group tear-down">
                 {% if 'event_user' in user.admin_views %}
