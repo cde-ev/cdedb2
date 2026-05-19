@@ -1405,7 +1405,12 @@ class EventBaseBackend(EventLowLevelBackend):
                 new_row.pop("field_name", None)
                 cls = models.QuestionnaireRow.get_class(new_row["role"])
                 ret *= self.sql_insert(rs, cls.database_table, new_row)
-            self.event_log(rs, const.EventLogCodes.questionnaire_changed, event_id)
+            self.event_log(
+                rs,
+                const.EventLogCodes.questionnaire_changed,
+                event_id,
+                change_note=rs.log_gettext(str(kind)),
+            )
         return ret
 
     @access("event")
