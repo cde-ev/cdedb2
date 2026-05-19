@@ -39,7 +39,7 @@
         {% if 'show_legal_given_names' in shown_fields %}
             {{ util.form_input_checkbox(name="show_legal_given_names", label=gettext("Show legal given names for member search")) }}
         {% endif %}
-        {{ util.form_input_text(name="nickname", label=gettext("Nickname"), info=gettext("For nametags and event notices.")) }}
+        {{ util.form_input_text(type="search", name="nickname", label=gettext("Nickname"), info=gettext("For nametags and event notices.")) }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
         {% if "birth_name" in shown_fields and 'cde' in admin_bits %}
             {{ util.form_input_text(name="birth_name", label=gettext("Birth Name"),
