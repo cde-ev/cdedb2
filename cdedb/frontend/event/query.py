@@ -309,7 +309,7 @@ class EventQueryMixin(EventBaseFrontend):
         if not rs.has_validation_errors():
             stored_query = self.eventproxy.get_event_queries(rs, event_id).get(query_id)
             if stored_query and stored_query.query:
-                query_input = stored_query.query.serialize_to_url()
+                query_input = stored_query.serialize_to_url()
             code = self.eventproxy.delete_event_query(rs, query_id)
             rs.notify_return_code(code)
         if query_scope and query_scope.get_target():
