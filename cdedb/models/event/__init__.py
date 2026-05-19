@@ -1283,7 +1283,6 @@ class FeePreview(QuestionnaireMagicRow):
     _role = const.QuestionnaireRowMagicRole.fee_preview
     valid_kinds = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.min_once,
-        const.QuestionnaireUsages.additional: QuestionnaireFrequency.any,
     }
     allow_multiple_kinds = True
 
@@ -1308,7 +1307,7 @@ class MixedLodging(QuestionnaireMagicRow):
 class FotoNotice(QuestionnaireMagicRow):
     _role = const.QuestionnaireRowMagicRole.foto_notice
     valid_kinds = {
-        const.QuestionnaireUsages.registration: QuestionnaireFrequency.once,
+        const.QuestionnaireUsages.registration: QuestionnaireFrequency.min_once,
     }
 
 
