@@ -268,9 +268,6 @@ def work(
     # Order matters here:
     tables = (
         models_core.Persona.database_table,
-        models.Event.database_table,
-        OrgaToken.database_table,
-        EventLogFilter.log_table,
         # Gather all tables in order of class definition.
         # Use a dict to remove duplicates while preserving order.
         *{
@@ -279,7 +276,6 @@ def work(
             if not name.startswith("__")
                 and isinstance(cls, type)
                 and issubclass(cls, models.EventDataclass)
-                and cls is not models.Event
                 and hasattr(cls, "database_table")
         }.keys(),
         *(
@@ -287,6 +283,8 @@ def work(
             for name, member in vars(models.DatabaseTables).items()
             if not name.startswith("__")
         ),
+        OrgaToken.database_table,
+        EventLogFilter.log_table,
     )
 
     print("Connect to database")
