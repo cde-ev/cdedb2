@@ -463,14 +463,12 @@ class ComplaintBackend(AbstractBackend):
                 models.ComplaintEntry,
                 entry_data,
                 creation=True,
-                passthrough=True,
                 entries=case.entries,
             )
             version_data = affirm(
                 models.ComplaintEntryVersion,
                 version_data,
                 creation=True,
-                passthrough=True,
                 entry_type=entry_data['entry_type'],
             )
 
@@ -496,7 +494,6 @@ class ComplaintBackend(AbstractBackend):
             models.ComplaintEntryVersion,
             data,
             creation=False,
-            passthrough=True,
             entry_type=entry.entry_type,
         )
         dreason = affirm(str | None, dreason)
@@ -548,7 +545,6 @@ class ComplaintBackend(AbstractBackend):
             models.ComplaintEntryVersion,
             version_data,
             creation=True,
-            passthrough=True,
             entry_type=revocation_type,
         )
         with Atomizer(rs):
@@ -739,7 +735,7 @@ class ComplaintBackend(AbstractBackend):
         """
         case_id = affirm(vtypes.ID, case_id)
         involvement_type = affirm(const.ComplaintInvolvementType, involvement_type)
-        persona_ids = affirm(set[vtypes.PersonaID], persona_ids, passthrough=True)
+        persona_ids = affirm(set[vtypes.PersonaID], persona_ids)
 
         if not persona_ids:
             return 0
@@ -929,7 +925,7 @@ class ComplaintBackend(AbstractBackend):
         """Add companions to a person involved in a case."""
         case_id = affirm(vtypes.ID, case_id)
         involved_id = affirm(models.InvolvedID, involved_id)
-        companion_ids = affirm(set[vtypes.PersonaID], companion_ids, passthrough=True)
+        companion_ids = affirm(set[vtypes.PersonaID], companion_ids)
 
         if not companion_ids:
             return 0
@@ -983,7 +979,7 @@ class ComplaintBackend(AbstractBackend):
         """Remove companions from a person involved in a case."""
         case_id = affirm(vtypes.ID, case_id)
         involved_id = affirm(models.InvolvedID, involved_id)
-        companion_ids = affirm(set[vtypes.PersonaID], companion_ids, passthrough=True)
+        companion_ids = affirm(set[vtypes.PersonaID], companion_ids)
         if not companion_ids:
             return 0
         with Atomizer(rs):
@@ -1028,7 +1024,7 @@ class ComplaintBackend(AbstractBackend):
         """Set the withdrawn status of a companion."""
         case_id = affirm(vtypes.ID, case_id)
         involved_id = affirm(models.InvolvedID, involved_id)
-        companion_id = affirm(vtypes.PersonaID, companion_id, passthrough=True)
+        companion_id = affirm(vtypes.PersonaID, companion_id)
         is_withdrawn = affirm(bool, is_withdrawn)
 
         with Atomizer(rs):

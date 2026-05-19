@@ -158,7 +158,6 @@ class CoreComplaintMixin(CoreBaseFrontend):
                         rs,
                         vtypes.CdedbID,
                         query_input['qval_involved.persona_id'],
-                        passthrough=True,
                     )
                     rs.ignore_validation_errors()
                     if persona_id:
@@ -758,7 +757,6 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 additional_data={'parent_id': parent_id},
                 creation=True,
                 entries=rs.ambience['case'].entries,
-                passthrough=True,
             )
             or {}
         )

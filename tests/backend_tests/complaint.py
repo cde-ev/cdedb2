@@ -1792,7 +1792,7 @@ class TestComplaintValidation(TestValidationBase):
                     None,
                 ),
             ],
-            {"creation": True, "passthrough": True, "entries": entries},
+            {"creation": True, "entries": entries},
         )
         # Test unsuccessful creations.
         self.do_validator_test(
@@ -1852,7 +1852,7 @@ class TestComplaintValidation(TestValidationBase):
                     ValueError("Invalid parent type. (parent_id)"),
                 ),
             ],
-            {"creation": True, "passthrough": True, "entries": entries},
+            {"creation": True, "entries": entries},
         )
 
     def test_entry_version(self) -> None:
@@ -1916,7 +1916,6 @@ class TestComplaintValidation(TestValidationBase):
             ],
             {
                 "creation": True,
-                "passthrough": True,
                 "entry_type": const.ComplaintEntryType.statement_signed,
             },
         )
@@ -1949,7 +1948,6 @@ class TestComplaintValidation(TestValidationBase):
             ],
             {
                 "creation": True,
-                "passthrough": True,
                 "entry_type": const.ComplaintEntryType.definite_measure,
             },
         )
@@ -1973,7 +1971,6 @@ class TestComplaintValidation(TestValidationBase):
             ],
             {
                 "creation": True,
-                "passthrough": True,
                 "entry_type": const.ComplaintEntryType.generic_information,
             },
         )
@@ -1997,7 +1994,6 @@ class TestComplaintValidation(TestValidationBase):
             ],
             {
                 "creation": True,
-                "passthrough": True,
                 "entry_type": const.ComplaintEntryType.provisional_statement_given,
             },
         )
@@ -2020,7 +2016,6 @@ class TestComplaintValidation(TestValidationBase):
             ],
             {
                 "creation": True,
-                "passthrough": True,
                 "entry_type": const.ComplaintEntryType.generic_information,
             },
         )
@@ -2044,7 +2039,6 @@ class TestComplaintValidation(TestValidationBase):
             ],
             {
                 "creation": True,
-                "passthrough": True,
                 "entry_type": const.ComplaintEntryType.synthesis,
             },
         )
@@ -2094,7 +2088,6 @@ class TestComplaintValidation(TestValidationBase):
             ],
             {
                 "creation": True,
-                "passthrough": True,
                 "entry_type": const.ComplaintEntryType.provisional_statement_given,
             },
         )
