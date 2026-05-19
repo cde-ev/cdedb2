@@ -23,7 +23,6 @@ import psycopg2
 import psycopg2.extensions
 import psycopg2.extras
 
-import cdedb.database.constants as const
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.complaint import ComplaintBackend
@@ -48,7 +47,7 @@ from cdedb.frontend.paths import CDEDB_PATHS
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
-__all__ = ['DryRunError', 'Script', 'ScriptAtomizer', 'const']
+__all__ = ['DryRunError', 'Script', 'ScriptAtomizer']
 
 
 B = TypeVar("B", bound=AbstractBackend)

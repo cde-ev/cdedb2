@@ -1,7 +1,8 @@
 #! /usr/bin/env python3
 
+import cdedb.database.constants as const
 import cdedb.models.event as models
-from cdedb.script import Script, const
+from cdedb.script import Script
 
 s = Script(dbuser='cdb')
 rs = s.rs()
