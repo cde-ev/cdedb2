@@ -447,7 +447,7 @@
 {%- endmacro %}
 
 {% macro input_text(name, readonly=False, actualreadonly=False, defaultvalue='', anid=none, aclass='form-control',
-        maxlength=256000, type='text', placeholder=none, arialabel=none, attributes='', enforce_required=True) %}
+        maxlength=256000, type='text', placeholder=none, arialabel=none, attributes='', enforce_required=True, autocomplete="off") %}
     <input{{ dict(
         type=type if type != 'iban' else 'text',
         name=name,
@@ -458,6 +458,7 @@
         disabled="disabled" if readonly,
         readonly="readonly" if actualreadonly,
         required="required" if name in mandatory_fields and enforce_required,
+        autocomplete=autocomplete,
         **{ 'aria-label': arialabel }
     )|xmlattr }}
         {%- if type == 'number' %}
@@ -495,14 +496,14 @@
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, actualreadonly=False,
         defaultvalue='', anid=none, maxlength=256000, type='text', placeholder=none, small=False, horizontal=True,
         aclass="", attributes='', addon='', markdown=False, errorname=none, wide=False, outerclass='',
-        enforce_required=True) %}
+        enforce_required=True, autocomplete="off") %}
     {%- set anid = anid or "input-text-{}".format(name) %}
     {%- set caller_ = caller %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, addon=addon,
                                 markdown=markdown, errorname=errorname, wide=wide, aclass=outerclass) %}
         {{- input_text(name, readonly, actualreadonly, defaultvalue, anid, maxlength=maxlength, type=type,
                 placeholder=placeholder, aclass="form-control " + aclass, attributes=attributes,
-                enforce_required=enforce_required) }}
+                enforce_required=enforce_required, autocomplete=autocomplete) }}
         {%- if caller_ %}
             {{- caller_() }}
         {%- endif -%}
