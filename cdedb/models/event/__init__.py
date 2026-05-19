@@ -143,7 +143,7 @@ class EventFieldSpec(AbstractMetaData):
         )  # fmt: skip
 
 
-class DatabaseTables:
+class OtherDatabaseTables:
     orgas = "event.orgas"
     caretakers = "event.caretakers"
     checkin_helpers = "event.checkin_helpers"
@@ -350,17 +350,17 @@ class Event(EventDataclass, _EventConfigurationMixin, _EventFreetextMixin):
                 {', '.join(cls.database_fields())},
                 array(
                     SELECT persona_id
-                    FROM {DatabaseTables.orgas}
+                    FROM {OtherDatabaseTables.orgas}
                     WHERE event_id = events.id
                 ) AS orgas,
                 array(
                     SELECT persona_id
-                    FROM {DatabaseTables.caretakers}
+                    FROM {OtherDatabaseTables.caretakers}
                     WHERE event_id = events.id
                 ) AS caretakers,
                 array(
                     SELECT persona_id
-                    FROM {DatabaseTables.checkin_helpers}
+                    FROM {OtherDatabaseTables.checkin_helpers}
                     WHERE event_id = events.id
                 ) AS checkin_helpers
             FROM {cls.database_table}
@@ -985,7 +985,7 @@ class PartGroup(EventDataclass):
                 {', '.join(cls.database_fields())},
                 array(
                     SELECT part_id
-                    FROM {DatabaseTables.part_group_parts}
+                    FROM {OtherDatabaseTables.part_group_parts}
                     WHERE part_group_id = part_groups.id
                 ) AS part_ids
             FROM
@@ -1042,7 +1042,7 @@ class TrackGroup(EventDataclass):
                 {', '.join(cls.database_fields())},
                 array(
                     SELECT track_id
-                    FROM {DatabaseTables.track_group_tracks}
+                    FROM {OtherDatabaseTables.track_group_tracks}
                     WHERE track_group_id = track_groups.id
                 ) AS track_ids
             FROM

@@ -179,7 +179,7 @@ class EventBackend(
             blockers["part_groups"] = [e["id"] for e in part_groups]
             part_group_parts = self.sql_select(
                 rs,
-                models.DatabaseTables.part_group_parts,
+                models.OtherDatabaseTables.part_group_parts,
                 ("id",),
                 blockers["part_groups"],
                 entity_key="part_group_id",
@@ -198,7 +198,7 @@ class EventBackend(
             blockers["track_groups"] = [e["id"] for e in track_groups]
             track_group_tracks = self.sql_select(
                 rs,
-                models.DatabaseTables.track_group_tracks,
+                models.OtherDatabaseTables.track_group_tracks,
                 ("id",),
                 blockers["track_groups"],
                 entity_key="track_group_id",
@@ -207,14 +207,18 @@ class EventBackend(
                 blockers["track_group_tracks"] = [e["id"] for e in track_group_tracks]
 
         orgas = self.sql_select(
-            rs, models.DatabaseTables.orgas, ("id",), (event_id,), entity_key="event_id"
+            rs,
+            models.OtherDatabaseTables.orgas,
+            ("id",),
+            (event_id,),
+            entity_key="event_id",
         )
         if orgas:
             blockers["orgas"] = [e["id"] for e in orgas]
 
         caretakers = self.sql_select(
             rs,
-            models.DatabaseTables.caretakers,
+            models.OtherDatabaseTables.caretakers,
             ("id",),
             (event_id,),
             entity_key="event_id",
@@ -224,7 +228,7 @@ class EventBackend(
 
         checkin_helpers = self.sql_select(
             rs,
-            models.DatabaseTables.checkin_helpers,
+            models.OtherDatabaseTables.checkin_helpers,
             ("id",),
             (event_id,),
             entity_key="event_id",

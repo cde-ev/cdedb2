@@ -280,7 +280,7 @@ def work(
         }.keys(),
         *(
             member
-            for name, member in vars(models.DatabaseTables).items()
+            for name, member in vars(models.OtherDatabaseTables).items()
             if not name.startswith("__")
         ),
         OrgaToken.database_table,
