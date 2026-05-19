@@ -1388,6 +1388,7 @@ CREATE TABLE event.stored_queries (
         id                      bigserial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events,
         query_name              varchar NOT NULL,
+        query_group             varchar,
         -- See cdedb.common.query.QueryScope:
         scope                   integer NOT NULL,
         serialized_query        jsonb NOT NULL DEFAULT '{}'::jsonb,

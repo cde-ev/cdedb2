@@ -247,7 +247,7 @@ class EventQueryMixin(EventBaseFrontend):
             'spec': spec,
             'query': query,
             'choices_lists': choices_lists,
-            'default_queries': default_queries,
+            'default_queries': models.StoredEventQuery.group_queries(default_queries),
             'has_registrations': has_registrations,
         }
         # Tricky logic: In case of no validation errors we perform a query
@@ -578,7 +578,7 @@ class EventQueryMixin(EventBaseFrontend):
             'spec': spec,
             'query': query,
             'choices_lists': choices_lists,
-            'default_queries': default_queries,
+            'default_queries': models.StoredEventQuery.group_queries(default_queries),
             'selection_default': selection_default,
         }
 
@@ -642,7 +642,7 @@ class EventQueryMixin(EventBaseFrontend):
             'spec': spec,
             'query': query,
             'choices_lists': choices_lists,
-            'default_queries': stored_queries,
+            'default_queries': models.StoredEventQuery.group_queries(stored_queries),
             'selection_default': selection_default,
         }
 

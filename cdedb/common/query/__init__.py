@@ -446,8 +446,9 @@ class QueryScope(CdEIntEnum):
         defaults = defaults or {}
         params = {"scope": str(self)}
         if "query_name" in rs.request.values:
-            rs.values["query_name"] = rs.request.values["query_name"]
-            params["query_name"] = rs.values["query_name"]
+            params["query_name"] = rs.values["query_name"] = rs.request.values["query_name"]
+        if "query_group" in rs.request.values:
+            params["query_group"] = rs.values["query_group"] = rs.request.values["query_group"]
         spec = self.get_spec(event=rs.ambience.get("event"))
         for field in spec:
             for prefix in ("qval_", "qsel_", "qop_"):
