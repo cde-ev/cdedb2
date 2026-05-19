@@ -1370,7 +1370,7 @@ class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
         return ret
 
     def __missing__(self, kind: const.QuestionnaireUsages) -> Questionnaire:
-        """Allows accessing empty kinds, which are not initialized in this dict."""
+        """Ensures that all kinds can be accessed, even if they are empty."""
         self[kind] = Questionnaire(kind=kind)
         return self[kind]
 
