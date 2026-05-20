@@ -2421,6 +2421,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertEqual("", f['fields.lodge'].value)
         f['fields.lodge'] = "Bitte in ruhiger Lage.\nEcht."
         self.submit(f)
+        with self.conf.with_overrides(EVENT_LIMITED_ACCESS_CUTOFF_ID=1):
+            self.submit(f, check_notification=False)
+            self.assertNotification("Veranstaltungssperre aktiviert.")
         self.traverse("Fragebogen")
         self.assertTitle("Fragebogen (Große Testakademie 2222)")
         f = self.response.forms['questionnaireform']
