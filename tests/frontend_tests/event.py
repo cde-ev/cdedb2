@@ -9149,7 +9149,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.assertPresence("2 + 0", div='inhabitants-3')
             self.assertPresence(
                 "Gemischte Unterkunft mit konfligierenden Teilnehmern.",
-                div='inhabitants-3'
+                div='inhabitants-3',
             )
             if not self.user_in("ludwig"):
                 self.assertNonPresence("Akira")
