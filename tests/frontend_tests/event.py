@@ -1565,6 +1565,7 @@ etc;anything else""",
             },
             {
                 'code': const.EventLogCodes.questionnaire_changed,
+                'change_note': "Anmeldungs-Fragebogen",
                 'event_id': 1001,
             },
         ]
@@ -1650,6 +1651,7 @@ etc;anything else""",
             },
             {
                 'code': const.EventLogCodes.questionnaire_changed,
+                'change_note': "Anmeldungs-Fragebogen",
                 'event_id': 1002,
             },
             {

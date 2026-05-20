@@ -4557,6 +4557,7 @@ class TestEventBackend(BackendTest):
             },
             {
                 'code': const.EventLogCodes.questionnaire_changed,
+                'change_note': "Zusätzlicher Fragebogen",
                 'event_id': 1,
             },
         )
