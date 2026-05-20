@@ -359,6 +359,10 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Orgas")
         self.assertPresence("Anmeldungen")
 
+        with self.conf.with_overrides(EVENT_LIMITED_ACCESS_CUTOFF_ID=1):
+            self.assertNoLink('/event/event/1/registration/query')
+            self.traverse({'href': '/event/event/2/registration/query'})
+
     @as_users("anonymous", "garcia", maintain_data=True)
     def test_list_events_unprivileged(self) -> None:
         self.traverse({'description': 'Veranstaltungen'}, {'href': '/event/event/list'})
