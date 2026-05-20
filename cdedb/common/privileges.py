@@ -109,7 +109,7 @@ def is_privileged_event_user(
 
     # Limit access to really old events as configured based on id.
     # Any action requiring _any_ of these privileges will be disallowed.
-    limited_access_disallow = EP._registrations_read_dummy | EP.registrations_write
+    limited_access_disallow = EP._registrations_read_dummy | EP.registrations_write | EP.checkin
 
     if (
         is_event_access_limited(event_id)
