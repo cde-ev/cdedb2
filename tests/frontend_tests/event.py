@@ -349,9 +349,7 @@ class TestEventFrontend(FrontendTest):
 
     @as_users("annika")
     def test_list_events(self) -> None:
-        self.traverse(
-            {'description': 'Veranstaltungen'}, {'description': 'Alle Veranstaltungen'}
-        )
+        self.traverse('Veranstaltungen', 'Alle Veranstaltungen')
         self.assertTitle("Alle Veranstaltungen")
         self.assertPresence("Große Testakademie 2222", div='current-events')
         self.assertPresence("CdE-Party 2050", div='current-events')
@@ -360,6 +358,7 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Anmeldungen")
 
         with self.conf.with_overrides(EVENT_LIMITED_ACCESS_CUTOFF_ID=1):
+            self.traverse('Alle Veranstaltungen')
             self.assertNoLink('/event/event/1/registration/query')
             self.traverse({'href': '/event/event/2/registration/query'})
 
