@@ -567,7 +567,8 @@ class TestEventBackend(BackendTest):
         self.assertTrue(query_id)
         self.assertEqual(
             self.event.get_event_queries(self.key, new_id)[query_id].serialize_to_url(),
-            query.serialize_to_url() | {"query_name": "test_query"},
+            query.serialize_to_url()
+            | {"query_name": "test_query", "query_group": None},
         )
 
         with self.switch_user("annika"):
