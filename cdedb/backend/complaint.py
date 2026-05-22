@@ -727,7 +727,7 @@ class ComplaintBackend(AbstractBackend):
         self,
         rs: RequestState,
         case_id: int,
-        involved_type: const.ComplaintInvolvementType,
+        involvement_type: const.ComplaintInvolvementType,
         persona_ids: Collection[int],
     ) -> DefaultReturnCode:
         """Add the given personas as involved people of the given type to a case.
@@ -738,13 +738,13 @@ class ComplaintBackend(AbstractBackend):
             The number of newly added personas otherwise.
         """
         case_id = affirm(vtypes.ID, case_id)
-        involved_type = affirm(const.ComplaintInvolvementType, involved_type)
+        involvement_type = affirm(const.ComplaintInvolvementType, involvement_type)
         persona_ids = affirm(set[vtypes.ID], persona_ids)
 
         if not persona_ids:
             return 0
 
-        if involved_type == const.ComplaintInvolvementType.appellant:
+        if involvement_type == const.ComplaintInvolvementType.appellant:
             is_informed = True
         else:
             is_informed = False
@@ -771,7 +771,7 @@ class ComplaintBackend(AbstractBackend):
             newly_informed = set()  # of persona_ids
             for involved_id in mixed_existence_sorter(already_involved_ids):
                 involved = case.involved[involved_id]
-                data = {"id": involved_id, "type_": involved_type}
+                data = {"id": involved_id, "involvement_type": involvement_type}
                 if is_informed and not involved.is_informed:
                     data['is_informed'] = True
                     newly_informed.add(involved.persona_id)
@@ -782,7 +782,7 @@ class ComplaintBackend(AbstractBackend):
                     code=const.ComplaintLogCodes.involved_removed,
                     case_id=case_id,
                     persona_id=involved.persona_id,
-                    change_note=rs.log_gettext(str(involved.type_)),
+                    change_note=rs.log_gettext(str(involved.involvement_type)),
                 )
 
             newly_involved = set(persona_ids) - case.involved_persona_ids
@@ -794,7 +794,7 @@ class ComplaintBackend(AbstractBackend):
                         {
                             "case_id": case_id,
                             "persona_id": persona_id,
-                            "type_": involved_type,
+                            "involvement_type": involvement_type,
                             "is_informed": is_informed,
                         }
                         for persona_id in newly_involved
@@ -807,7 +807,7 @@ class ComplaintBackend(AbstractBackend):
                     code=const.ComplaintLogCodes.involved_added,
                     case_id=case_id,
                     persona_id=persona_id,
-                    change_note=rs.log_gettext(str(involved_type)),
+                    change_note=rs.log_gettext(str(involvement_type)),
                 )
 
             if is_informed:
@@ -856,7 +856,7 @@ class ComplaintBackend(AbstractBackend):
                     code=const.ComplaintLogCodes.involved_removed,
                     case_id=case_id,
                     persona_id=involved.persona_id,
-                    change_note=rs.log_gettext(str(involved.type_)),
+                    change_note=rs.log_gettext(str(involved.involvement_type)),
                 )
                 for companion_id in mixed_existence_sorter(companions):
                     ret *= self.complaint_log(
@@ -931,7 +931,7 @@ class ComplaintBackend(AbstractBackend):
             if not companion_ids:
                 return -1
 
-            if companion_ids & case.adverse_companions(involved.type_):
+            if companion_ids & case.adverse_companions(involved.involvement_type):
                 raise AdverseCompanionError
             if companion_ids & case.involved_persona_ids:
                 raise ValueError(n_("Involved companion."))

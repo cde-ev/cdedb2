@@ -168,8 +168,8 @@
                             );
                         </script>
                         {{ util.form_input_multi_select(
-                                 name="qval_involved.type_", label=gettext("Involvement"),
-                                 anid="input-type_", aclass="input-sm", selectize=true,
+                                 name="qval_involved.involvement_type", label=gettext("Involvement"),
+                                 anid="input-involvement_type", aclass="input-sm", selectize=true,
                                  entries=enums["ComplaintInvolvementType"]|enum_entries(processing=gettext, intval=True),
                                  nulloption=nbsp, attributes="size=" + (enums["ComplaintInvolvementType"]|length + 1)|string) }}
                         {{ util.form_input_select(name="qval_involved.is_informed",

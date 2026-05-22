@@ -628,11 +628,11 @@ CREATE TABLE complaint.involved (
         case_id                 int NOT NULL REFERENCES complaint.cases(id),
         persona_id              int REFERENCES core.personas(id),
         UNIQUE(case_id, persona_id),
-        type_           integer NOT NULL, -- database.constants.ComplaintInvolvementType
+        involvement_type        integer NOT NULL, -- database.constants.ComplaintInvolvementType
         is_informed             boolean NOT NULL DEFAULT FALSE
 );
 GRANT SELECT ON complaint.involved TO cdb_persona;
-GRANT INSERT, UPDATE (persona_id, type_, is_informed), DELETE ON complaint.involved TO cdb_admin;
+GRANT INSERT, UPDATE (persona_id, involvement_type, is_informed), DELETE ON complaint.involved TO cdb_admin;
 GRANT SELECT, UPDATE ON complaint.involved_id_seq TO cdb_admin;
 
 -- very limited access per case and persona

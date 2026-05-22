@@ -4981,14 +4981,14 @@
             "id": 1,
             "case_id": 1,
             "persona_id": 2,
-            "type_": 21,
+            "involvement_type": 21,
             "is_informed": false
         },
         {
             "id": 2,
             "case_id": 1,
             "persona_id": 4,
-            "type_": 1,
+            "involvement_type": 1,
             "is_informed": true
         }
     ],

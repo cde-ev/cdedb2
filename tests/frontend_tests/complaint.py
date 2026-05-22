@@ -573,9 +573,9 @@ class TestComplaintFrontend(FrontendTest):
             f['qval_involved.persona_id'] = "DB-10-8"
             self.submit(f)
             self.assertNotification("1 Fälle nicht angezeigt.", 'warning')
-            f['qval_involved.type_'] = (
-                const.ComplaintInvolvementType.target.value,
-            )
+            f['qval_involved.involvement_type'] = [
+                const.ComplaintInvolvementType.target.value
+            ]
             self.submit(f)
             self.assertNonPresence("nnicht angezeigt", div='notifications')
 

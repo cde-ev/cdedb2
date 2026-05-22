@@ -427,8 +427,8 @@
         {# TODO Fix sorting #}
         {{ util.persona_anchor(personas[involved.persona_id]) }}
         <span class="text-muted">(
-            {{- util.make_icon(involved.type_.get_icon(), title=gettext(involved.type_|string)) }}
-            <span aria-hidden="true">{{ gettext(involved.type_.shortname) -}}</span></span>)
+            {{- util.make_icon(involved.involvement_type.get_icon(), title=gettext(involved.involvement_type|string)) }}
+            <span aria-hidden="true">{{ gettext(involved.involvement_type.shortname) -}}</span></span>)
         {%- if not loop.last %}, {% endif %}
     {% endfor %}
 

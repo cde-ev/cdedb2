@@ -16,7 +16,7 @@
 {% block heading %}
     {{ util.context_heading(
         gettext("Manage Companions"),
-        involved_persona|persona_name, ambience['case'].involved[involved_id].type_.get_icon(), "",
+        involved_persona|persona_name, ambience['case'].involved[involved_id].involvement_type.get_icon(), "",
         gettext("Case %s")|format(ambience['case'].id), 'gavel', "",
     ) }}
 {% endblock %}
@@ -29,7 +29,7 @@
     {{ util.breadcrumb_link(
         "",
         involved_persona|persona_name,
-        icon=ambience['case'].involved[involved_id].type_.get_icon(),
+        icon=ambience['case'].involved[involved_id].involvement_type.get_icon(),
         active=True) }}
     {{ util.breadcrumb_link("", gettext("Manage Companions"), active=True) }}
 {% endblock %}
@@ -48,7 +48,7 @@
                 $('#input-add-involved').cdedbSearchPerson(
                     '{{ cdedblink('core/select_persona') }}', {'kind': 'admin_all_users'},
                     {{ (involved.get_companions(is_active=None)|list
-                        + ambience['case'].adverse_companions(involved.type_)|list
+                        + ambience['case'].adverse_companions(involved.involvement_type)|list
                         + ambience['case'].involved_persona_ids|list)|tojson }},
                     false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                 );

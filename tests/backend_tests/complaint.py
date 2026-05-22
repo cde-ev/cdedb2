@@ -34,14 +34,14 @@ class TestComplaintBackend(BackendTest):
                 1: models.ComplaintInvolved(
                     id=1,
                     persona_id=2,
-                    type_=const.ComplaintInvolvementType.target,
+                    involvement_type=const.ComplaintInvolvementType.target,
                     is_informed=False,
                     _companions={3: False},
                 ),
                 2: models.ComplaintInvolved(
                     id=2,
                     persona_id=4,
-                    type_=const.ComplaintInvolvementType.affected,
+                    involvement_type=const.ComplaintInvolvementType.affected,
                     is_informed=True,
                     _companions={7: True},
                 ),
@@ -546,7 +546,7 @@ class TestComplaintBackend(BackendTest):
             self.complaint.add_involved(
                 self.key,
                 case_id=case_id,
-                involved_type=const.ComplaintInvolvementType.target,
+                involvement_type=const.ComplaintInvolvementType.target,
                 persona_ids=[new_involved],
             ),
         )
@@ -556,7 +556,7 @@ class TestComplaintBackend(BackendTest):
             self.complaint.add_involved(
                 self.key,
                 case_id=case_id,
-                involved_type=const.ComplaintInvolvementType.target,
+                involvement_type=const.ComplaintInvolvementType.target,
                 persona_ids=[new_involved],
             ),
         )
@@ -567,7 +567,7 @@ class TestComplaintBackend(BackendTest):
         expectation.involved[new_involved_id] = models.ComplaintInvolved(
             id=new_involved_id,
             persona_id=new_involved,
-            type_=const.ComplaintInvolvementType.target,
+            involvement_type=const.ComplaintInvolvementType.target,
             is_informed=False,
             _companions={},
         )

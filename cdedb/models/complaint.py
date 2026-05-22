@@ -106,7 +106,7 @@ class Case(CdEDataclass):
         return {
             involved_id: involved
             for involved_id, involved in self.involved.items()
-            if involved.type_ != const.ComplaintInvolvementType.withheld
+            if involved.involvement_type != const.ComplaintInvolvementType.withheld
         }
 
     @functools.cached_property
@@ -132,10 +132,10 @@ class Case(CdEDataclass):
             it: [] for it in const.ComplaintInvolvementType
         }
         for involved in self.involved.values():
-            ret[involved.type_].append(involved.id)
-        for type_ in const.ComplaintInvolvementType:
-            if not ret[type_]:
-                del ret[type_]
+            ret[involved.involvement_type].append(involved.id)
+        for involvement_type in const.ComplaintInvolvementType:
+            if not ret[involvement_type]:
+                del ret[involvement_type]
         return ret
 
     @functools.cached_property
@@ -152,7 +152,7 @@ class Case(CdEDataclass):
         return {
             involved.persona_id
             for involved in self.involved.values()
-            if involved.persona_id is not None and involved.type_ == it
+            if involved.persona_id is not None and involved.involvement_type == it
         }
 
     def get_companions(self, is_active: bool | None) -> dict[int, set[int]]:
@@ -168,18 +168,20 @@ class Case(CdEDataclass):
     ) -> dict[const.ComplaintInvolvementType, set[int]]:
         ret: dict[const.ComplaintInvolvementType, set[int]] = {}
         for involved_id, involved in self.involved.items():
-            ret.setdefault(involved.type_, set()).update(
+            ret.setdefault(involved.involvement_type, set()).update(
                 involved.get_companions(is_active)
             )
         return ret
 
     def adverse_companions(
-        self, involved_type: const.ComplaintInvolvementType
+        self, involvement_type: const.ComplaintInvolvementType
     ) -> set[int]:
         return set(
             chain.from_iterable(
-                self.companions_by_involved_type(is_active=True).get(type_, set())
-                for type_ in involved_type.adverse()
+                self.companions_by_involved_type(is_active=True).get(
+                    involvement_type_, set()
+                )
+                for involvement_type_ in involvement_type.adverse()
             )
         )
 
@@ -272,7 +274,7 @@ class Case(CdEDataclass):
             involved_datum[0]: ComplaintInvolved(
                 id=involved_datum[0],
                 persona_id=involved_datum[1],
-                type_=const.ComplaintInvolvementType(involved_datum[2]),
+                involvement_type=const.ComplaintInvolvementType(involved_datum[2]),
                 is_informed=bool(involved_datum[3]),
                 _companions={},
             )
@@ -300,7 +302,7 @@ class Case(CdEDataclass):
                         ARRAY[
                             involved.id,
                             involved.persona_id,
-                            involved.type_,
+                            involved.involvement_type,
                             involved.is_informed::int
                         ]
                     FROM {ComplaintInvolved.database_table} AS involved
@@ -559,7 +561,7 @@ class ComplaintInvolved:
 
     id: int
     persona_id: int | None
-    type_: const.ComplaintInvolvementType
+    involvement_type: const.ComplaintInvolvementType
     is_informed: bool
     _companions: dict[int, bool]
 

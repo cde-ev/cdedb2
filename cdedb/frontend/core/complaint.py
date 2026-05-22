@@ -54,7 +54,7 @@ CASE_SEARCH_DEFAULTS = {
     # transpired before
     'qop_cases.start_date': QueryOperators.lessornull,
     'qop_involved.persona_id': QueryOperators.equal,
-    'qop_involved.type_': QueryOperators.oneof,
+    'qop_involved.involvement_type': QueryOperators.oneof,
     'qop_involved.is_informed': QueryOperators.equal,
     'qop_companion.companion_persona_id': QueryOperators.equal,
     'qop_companion.is_withdrawn': QueryOperators.equal,
@@ -523,7 +523,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                     ValueError(n_("Companion may not be involved.")),
                 ))
             if set(companion_ids) & rs.ambience['case'].adverse_companions(
-                rs.ambience['case'].involved[involved_id].type_
+                rs.ambience['case'].involved[involved_id].involvement_type
             ):
                 rs.append_validation_error((
                     "companion_ids",
