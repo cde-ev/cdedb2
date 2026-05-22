@@ -87,7 +87,7 @@ class TestCdEFrontend(FrontendTest):
             )
 
         member = models.CdEPersona(
-            id=vtypes.ID(-1),
+            id=vtypes.PersonaID(vtypes.ID(-1)),
             given_names="",
             family_name="",
             username=vtypes.Email(""),

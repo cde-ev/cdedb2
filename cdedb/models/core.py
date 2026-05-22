@@ -303,6 +303,8 @@ class PersonaName:
 class Persona(CdEDataclass, PersonaName):
     database_table: ClassVar[str] = "core.personas"
 
+    id: vtypes.PersonaID
+
     username: vtypes.Email = dataclasses.field(
         metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict
     )
