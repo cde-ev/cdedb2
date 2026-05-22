@@ -560,7 +560,7 @@ class CdESemesterBackend(CdELastschriftBackend):
                 self.change_membership(rs, persona_id, is_member=False)
                 period_update['ejection_count'] = period['ejection_count'] + 1
             else:
-                persona = None  # type: ignore[assignment]
+                persona = None
             self.set_period(rs, period_update)
             return True, persona
 

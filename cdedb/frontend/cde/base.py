@@ -14,7 +14,7 @@ import itertools
 import operator
 from collections import OrderedDict
 from collections.abc import Collection, Sequence
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 from werkzeug import Response
 from werkzeug.datastructures import FileStorage
@@ -505,11 +505,13 @@ class CdEBaseFrontend(AbstractUserFrontend):
             rs.values[f"resolution{datum['lineno']}"] = LineResolutions.none
             warnings.append((None, ValueError(n_("Entry changed."))))
 
-        persona: CdEDBObject = copy.deepcopy(datum['raw'])
-        persona = {
-            key: val.strip() if isinstance(val, str) else val
-            for key, val in persona.items()
-        }
+        persona = cast(
+            CdEDBObject,
+            {
+                key: val.strip() if isinstance(val, str) else val
+                for key, val in copy.deepcopy(datum['raw']).items()
+            },
+        )
         # Adapt input of gender from old convention (this is the format
         # used by external processes, i.e. BuB)
         gender_convert = {
