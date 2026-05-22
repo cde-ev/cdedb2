@@ -1635,7 +1635,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         singnal legal consent which is not provided this way.
         """
         persona_id = unwrap(
-            request_extractor(rs, {"persona.persona_id": vtypes.CdedbID})
+            request_extractor(rs, {"persona.persona_id": vtypes.PersonaID})
         )
         if persona_id is not None:
             if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):

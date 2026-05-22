@@ -359,7 +359,7 @@ class Transaction:
                 **{
                     f"type{suffix}": TransactionType,
                     f"type_confirm{suffix}": bool,
-                    f"cdedbid{suffix}": vtypes.CdedbID | None,
+                    f"cdedbid{suffix}": vtypes.PersonaID | None,
                     f"persona_confirm{suffix}": bool,
                     f"event_id{suffix}": vtypes.ID | None,
                     f"event_confirm{suffix}": bool,
@@ -381,7 +381,7 @@ class Transaction:
             if result := re.findall(pattern, self.reference):
                 for persona_id_str, checkdigit in result:
                     persona_id, problems = inspect(
-                        vtypes.CdedbID, f"DB-{persona_id_str}-{checkdigit}"
+                        vtypes.PersonaID, f"DB-{persona_id_str}-{checkdigit}"
                     )
                     if persona_id and not problems and persona_id not in ret:
                         ret[persona_id] = confidence

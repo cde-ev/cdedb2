@@ -28,7 +28,6 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.query.log_filter import AssemblyLogFilter
-from cdedb.common.validation.types import CdedbID, Email
 from cdedb.common.validation.validate import (
     ASSEMBLY_COMMON_FIELDS,
     PERSONA_COMMON_FIELDS,
@@ -432,7 +431,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         presider_ids: list[vtypes.PersonaID],
         create_attendee_list: bool,
         create_presider_list: bool,
-        presider_address: Optional[Email],
+        presider_address: vtypes.Email | None,
         data: dict[str, Any],
     ) -> Response:
         """Make a new assembly."""
@@ -591,7 +590,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
     @assembly_guard
     @REQUESTdata("persona_id")
     def external_signup(
-        self, rs: RequestState, assembly_id: int, persona_id: CdedbID
+        self, rs: RequestState, assembly_id: int, persona_id: vtypes.PersonaID
     ) -> Response:
         """Add an external participant to an assembly."""
         if rs.has_validation_errors():

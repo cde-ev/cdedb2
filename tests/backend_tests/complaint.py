@@ -15,7 +15,7 @@ from tests.common import CRON, USER_DICT, BackendTest, as_users, execsql, storag
 from tests.other_tests.test_validation import INVAL, TestValidationBase
 
 InvolvedID = lambda x: vtypes.InvolvedID(vtypes.ID(x))
-PersonaID = lambda x: vtypes.CdedbID(vtypes.PersonaID(vtypes.ID(x)))
+PersonaID = lambda x: vtypes.PersonaID(vtypes.ID(x))
 
 
 class TestComplaintBackend(BackendTest):

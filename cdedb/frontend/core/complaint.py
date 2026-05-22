@@ -156,7 +156,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                     )
                     persona_id = check(
                         rs,
-                        vtypes.CdedbID,
+                        vtypes.PersonaID,
                         query_input['qval_involved.persona_id'],
                     )
                     rs.ignore_validation_errors()
@@ -385,7 +385,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs: RequestState,
         case_id: int,
         involvement_type: const.ComplaintInvolvementType,
-        persona_ids: list[vtypes.CdedbID],
+        persona_ids: list[vtypes.PersonaID],
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
@@ -413,7 +413,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         ex_companions_ids = set(persona_ids) & active_companions.keys()
         ex_companions = self.coreproxy.get_personas(rs, ex_companions_ids)
         for companion_id, companion in ex_companions.items():
-            companion_id = cast(vtypes.CdedbID, companion_id)
+            companion_id = cast(vtypes.PersonaID, companion_id)
             rs.notify(
                 'warning',
                 n_("%(companion)s was a companion and is now marked as withdrawn."),
@@ -512,7 +512,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs: RequestState,
         case_id: int,
         involved_id: vtypes.InvolvedID,
-        companion_ids: list[vtypes.CdedbID],
+        companion_ids: list[vtypes.PersonaID],
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
@@ -555,7 +555,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs: RequestState,
         case_id: int,
         involved_id: vtypes.InvolvedID,
-        companion_id: vtypes.CdedbID,
+        companion_id: vtypes.PersonaID,
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
@@ -571,7 +571,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs: RequestState,
         case_id: int,
         involved_id: vtypes.InvolvedID,
-        companion_id: vtypes.CdedbID,
+        companion_id: vtypes.PersonaID,
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
@@ -592,7 +592,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs: RequestState,
         case_id: int,
         involved_id: vtypes.InvolvedID,
-        companion_id: vtypes.CdedbID,
+        companion_id: vtypes.PersonaID,
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
@@ -1282,7 +1282,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("complaint_admin", modi={"POST"})
     @REQUESTdata("persona_id")
-    def add_enforcer(self, rs: RequestState, persona_id: vtypes.CdedbID) -> Response:
+    def add_enforcer(self, rs: RequestState, persona_id: vtypes.PersonaID) -> Response:
         """Grant enforcer privileges to a persona."""
         if rs.has_validation_errors():
             return self.list_complaint_helpers(rs)

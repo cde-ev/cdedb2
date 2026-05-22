@@ -4767,7 +4767,7 @@ def _complaint_entry(
     entry_type: const.ComplaintEntryType = val['entry_type']
 
     # Validate concerned_id dependent on entry_type
-    type_ = CdedbID if entry_type.has_concerned else NoneType
+    type_ = PersonaID if entry_type.has_concerned else NoneType
     with errs:
         val['concerned_id'] = _ALL_TYPED[type_](
             val.get('concerned_id'), 'concerned_id', **kwargs

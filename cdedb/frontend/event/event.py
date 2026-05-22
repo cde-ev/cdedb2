@@ -419,7 +419,7 @@ class EventEventMixin(EventBaseFrontend):
     @access("event_admin", modi={"POST"})
     @REQUESTdata("persona_id")
     def add_event_helper(
-        self, rs: RequestState, persona_id: vtypes.CdedbID
+        self, rs: RequestState, persona_id: vtypes.PersonaID
     ) -> Response:
         """Make an additional persona become event helper."""
         if rs.has_validation_errors():
@@ -1962,7 +1962,7 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
 
-        anid, errs = inspect(vtypes.CdedbID, phrase, argname="phrase")
+        anid, errs = inspect(vtypes.PersonaID, phrase, argname="phrase")
         if not errs:
             reg_ids = self.eventproxy.list_registrations(rs, event_id, persona_id=anid)
             if reg_ids:

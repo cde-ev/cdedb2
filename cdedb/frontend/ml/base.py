@@ -374,8 +374,8 @@ class MlBaseFrontend(AbstractUserFrontend):
     def merge_accounts(
         self,
         rs: RequestState,
-        source_persona_id: vtypes.CdedbID,
-        target_persona_id: vtypes.CdedbID,
+        source_persona_id: vtypes.PersonaID,
+        target_persona_id: vtypes.PersonaID,
         clone_addresses: bool,
     ) -> Response:
         """Merge a ml only user (source) into an other user (target).
