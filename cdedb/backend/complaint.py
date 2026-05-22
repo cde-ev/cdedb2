@@ -818,6 +818,17 @@ class ComplaintBackend(AbstractBackend):
                         case_id=case_id,
                         persona_id=persona_id,
                     )
+
+            # Finally check, if any companions are now adverse.
+            new_case = self.get_case(rs, case_id)
+            for involvement_type in const.ComplaintInvolvementType:
+                companions = new_case.companions_by_involved_type(is_active=True).get(
+                    involvement_type, set()
+                )
+                adverse_companions = new_case.adverse_companions(involvement_type)
+                if companions & adverse_companions:
+                    raise AdverseCompanionError
+
         return ret
 
     @access("complaint_admin")
