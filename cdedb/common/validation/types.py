@@ -29,8 +29,13 @@ NonNegativeInt = _NewType("NonNegativeInt", int)
 PositiveInt = _NewType("PositiveInt", int)
 NegativeInt = _NewType("NegativeInt", int)
 ID = _NewType("ID", int)
+# PersonaID is special and will validate strings as "DB-X-Y" format.
 PersonaID = _NewType("PersonaID", ID)
 CdedbID = PersonaID
+# Other IDs that are only differentiated by the type checker.
+InvolvedID = _NewType("InvolvedID", ID)
+
+
 PartialImportID = _NewType("PartialImportID", int)
 SingleDigitInt = _NewType("SingleDigitInt", int)
 

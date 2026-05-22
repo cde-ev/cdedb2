@@ -7,7 +7,7 @@ import functools
 import itertools
 from collections.abc import Collection
 from itertools import chain
-from typing import TYPE_CHECKING, NewType, Self, Union
+from typing import Self
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -16,11 +16,6 @@ from cdedb.common.n_ import n_
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.database.query import DatabaseValue_s
 from cdedb.models.common import CdEDataclass, CdEDataclassMap, MetaFlag as Meta
-
-if TYPE_CHECKING:
-    InvolvedID = NewType("InvolvedID", vtypes.ID)
-else:
-    InvolvedID = vtypes.ID
 
 
 class ComplaintEntryStatus(enum.Enum):
@@ -101,12 +96,12 @@ class Case(CdEDataclass):
     entries: CdEDataclassMap["ComplaintEntry"] = dataclasses.field(
         metadata=Meta.asdict_include.as_dict
     )
-    involved: dict[InvolvedID, "ComplaintInvolved"] = dataclasses.field(
+    involved: dict[vtypes.InvolvedID, "ComplaintInvolved"] = dataclasses.field(
         metadata=Meta.exclude.as_dict,
     )
 
     @functools.cached_property
-    def properly_involved(self) -> dict[InvolvedID, "ComplaintInvolved"]:
+    def properly_involved(self) -> dict[vtypes.InvolvedID, "ComplaintInvolved"]:
         """This ignores the withheld type."""
         return {
             involved_id: involved
@@ -158,9 +153,9 @@ class Case(CdEDataclass):
 
     def get_companions(
         self, is_active: bool | None
-    ) -> dict[vtypes.CdedbID, set[InvolvedID]]:
+    ) -> dict[vtypes.CdedbID, set[vtypes.InvolvedID]]:
         """Maps all companions to a set of involved_ids."""
-        ret: dict[vtypes.CdedbID, set[InvolvedID]] = {}
+        ret: dict[vtypes.CdedbID, set[vtypes.InvolvedID]] = {}
         for involved_id, involved in self.involved.items():
             for companion_id in involved.get_companions(is_active):
                 ret.setdefault(companion_id, set()).add(involved_id)
@@ -248,7 +243,7 @@ class Case(CdEDataclass):
 
     def list_entries(
         self, log_entries: tuple[CdEDBObject, ...], include_deleted: bool = False
-    ) -> list[Union[CdEDBObject, "ComplaintEntry"]]:
+    ) -> list["CdEDBObject | ComplaintEntry"]:
         mutable_entries = [
             e for e in self.entries.values() if e.active_version or include_deleted
         ]
@@ -275,7 +270,7 @@ class Case(CdEDataclass):
     def from_database(cls, data: CdEDBObject) -> Self:
         data["involved"] = {
             involved_datum[0]: ComplaintInvolved(
-                id=InvolvedID(involved_datum[0]),
+                id=vtypes.InvolvedID(involved_datum[0]),
                 persona_id=vtypes.CdedbID(involved_datum[1]),
                 involvement_type=const.ComplaintInvolvementType(involved_datum[2]),
                 is_informed=bool(involved_datum[3]),
@@ -285,7 +280,7 @@ class Case(CdEDataclass):
         }
 
         for companion in data.pop("companions"):
-            data["involved"][InvolvedID(companion[0])]._companions.update({
+            data["involved"][vtypes.InvolvedID(companion[0])]._companions.update({
                 vtypes.CdedbID(companion[1]): not companion[2]
             })
 
@@ -566,7 +561,7 @@ class ComplaintInvolved(CdEDataclass):
     database_table = "complaint.involved"
     entity_key = "case_id"
 
-    id: InvolvedID
+    id: vtypes.InvolvedID
     persona_id: vtypes.CdedbID | None
     involvement_type: const.ComplaintInvolvementType
     is_informed: bool

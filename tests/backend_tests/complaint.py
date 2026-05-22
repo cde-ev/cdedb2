@@ -14,7 +14,7 @@ from cdedb.common.query import Query, QueryOperators, QueryScope
 from tests.common import CRON, USER_DICT, BackendTest, as_users, execsql, storage
 from tests.other_tests.test_validation import INVAL, TestValidationBase
 
-InvolvedID = lambda x: models.InvolvedID(vtypes.ID(x))
+InvolvedID = lambda x: vtypes.InvolvedID(vtypes.ID(x))
 PersonaID = lambda x: vtypes.CdedbID(vtypes.PersonaID(vtypes.ID(x)))
 
 

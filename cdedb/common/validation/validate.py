@@ -689,6 +689,9 @@ def _id(val: Any, argname: Optional[str] = None, **kwargs: Any) -> ID:
     return ID(val)
 
 
+_add_typed_validator(_id, InvolvedID)
+
+
 @_add_typed_validator
 def _partial_import_id(
     val: Any, argname: Optional[str] = None, **kwargs: Any

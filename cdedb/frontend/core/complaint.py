@@ -440,7 +440,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("complaint_admin", modi={"POST"})
     def remove_involved(
-        self, rs: RequestState, case_id: int, involved_id: models.InvolvedID
+        self, rs: RequestState, case_id: int, involved_id: vtypes.InvolvedID
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
@@ -450,7 +450,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("complaint_admin", modi={"POST"})
     def inform_involved(
-        self, rs: RequestState, case_id: int, involved_id: models.InvolvedID
+        self, rs: RequestState, case_id: int, involved_id: vtypes.InvolvedID
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
@@ -467,7 +467,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("complaint_admin", modi={"POST"})
     def uninform_involved(
-        self, rs: RequestState, case_id: int, involved_id: models.InvolvedID
+        self, rs: RequestState, case_id: int, involved_id: vtypes.InvolvedID
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
@@ -485,7 +485,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("complaint_admin")
     def manage_companions_form(
-        self, rs: RequestState, case_id: int, involved_id: models.InvolvedID
+        self, rs: RequestState, case_id: int, involved_id: vtypes.InvolvedID
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
@@ -511,7 +511,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         self,
         rs: RequestState,
         case_id: int,
-        involved_id: models.InvolvedID,
+        involved_id: vtypes.InvolvedID,
         companion_ids: list[vtypes.CdedbID],
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
@@ -554,7 +554,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         self,
         rs: RequestState,
         case_id: int,
-        involved_id: models.InvolvedID,
+        involved_id: vtypes.InvolvedID,
         companion_id: vtypes.CdedbID,
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
@@ -570,7 +570,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         self,
         rs: RequestState,
         case_id: int,
-        involved_id: models.InvolvedID,
+        involved_id: vtypes.InvolvedID,
         companion_id: vtypes.CdedbID,
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
@@ -591,7 +591,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         self,
         rs: RequestState,
         case_id: int,
-        involved_id: models.InvolvedID,
+        involved_id: vtypes.InvolvedID,
         companion_id: vtypes.CdedbID,
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
