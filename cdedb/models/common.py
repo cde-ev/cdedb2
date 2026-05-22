@@ -48,6 +48,8 @@ def requestdict_field_spec(field: dataclasses.Field[Any]) -> Literal["str", "[st
     """The spec of this field, expected by the REQUESTdatadict extractor."""
     if get_origin(field.type) in {list, tuple, set}:
         if get_args(field.type) == (vtypes.CdedbID,):
+            # For fields annotated as `list[vtypes.CdedbID]` we want to extract them
+            #  as a CSV-string, rather than as a list from the multi dict.
             return "str"
         return "[str]"
     else:
