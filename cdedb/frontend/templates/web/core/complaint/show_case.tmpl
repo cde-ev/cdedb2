@@ -117,13 +117,12 @@
     </form>
     {% for list in ambience['case'].involved_by_type.items()|batch(2) %}
         <div class="row">
-        {% for type, involved_ids in list %}
-            <div id="involved_{{ type.name }}" class="col-sm-6">
-                {% if involved_ids %}
-                    {% call util.bootstrap_panel(
-                        title=gettext(type|string), aclass="panel-info", icon=type.get_icon(), level=4) %}
-                    {% for involved_id in involved_ids %}
-                        {% set involved = ambience["case"].involved[involved_id] %}
+        {% for involvement_type, involveds in list %}
+            <div id="involved_{{ involvement_type.name }}" class="col-sm-6">
+                {% call util.bootstrap_panel(
+                        title=gettext(involvement_type|string), aclass="panel-info",
+                        icon=involvement_type.get_icon(), level=4) %}
+                    {% for involved in involveds %}
                         <div class="hide-hover-container">
                             {{ util.persona_anchor(personas[involved.persona_id]) }}
                             {# assembly and ml users are missing here #}
@@ -136,18 +135,18 @@
                                 </small>
                             {% endif %}
                             <div class="list-button-float hide-hover">
-                                {{ util.href(cdedblink('core/manage_companions_form', {'involved_id': involved_id}),
+                                {{ util.href(cdedblink('core/manage_companions_form', {'involved_id': involved.id}),
                                      label="",
                                      title=gettext("Manage Companions"),
                                      aclass="btn btn-xs btn-warning",
                                      icon="people-group")
                                 }}
-                                {% if not type == enums['ComplaintInvolvementType'].appellant %}
+                                {% if not involvement_type == enums['ComplaintInvolvementType'].appellant %}
                                     {% if involved.is_informed %}
                                         <form
-                                                action="{{ cdedblink("core/uninform_involved", {'involved_id': involved_id}) }}"
+                                                action="{{ cdedblink("core/uninform_involved", {'involved_id': involved.id}) }}"
                                                 method="POST"
-                                                id="uninforminvolvedform{{ involved_id }}"
+                                                id="uninforminvolvedform{{ involved.id }}"
                                                 class="display-inline"
                                             >
                                                 {{ util.anti_csrf_token('core/uninform_involved') }}
@@ -158,9 +157,9 @@
                                         </form>
                                     {% else %}
                                         <form
-                                            action="{{ cdedblink("core/inform_involved", {'involved_id': involved_id}) }}"
+                                            action="{{ cdedblink("core/inform_involved", {'involved_id': involved.id}) }}"
                                             method="POST"
-                                            id="informinvolvedform{{ involved_id }}"
+                                            id="informinvolvedform{{ involved.id }}"
                                             class="display-inline"
                                         >
                                             {{ util.anti_csrf_token('core/inform_involved') }}
@@ -172,9 +171,9 @@
                                     {% endif %}
                                 {% endif %}
                                 <form
-                                    action="{{ cdedblink("core/remove_involved", {'involved_id': involved_id}) }}"
+                                    action="{{ cdedblink("core/remove_involved", {'involved_id': involved.id}) }}"
                                     method="POST"
-                                    id="removeinvolvedform{{ involved_id }}"
+                                    id="removeinvolvedform{{ involved.id }}"
                                     class="display-inline"
                                 >
                                     {{ util.anti_csrf_token('core/remove_involved') }}
@@ -213,8 +212,7 @@
                             {% endif %}
                         </div>
                     {% endfor %}
-                    {% endcall %}
-                {% endif %}
+                {% endcall %}
             </div>
         {% endfor %}
         </div>
@@ -421,9 +419,7 @@
     {{ case.summary }}
     <br />
     {{ gettext("Intersecting involved") }}:
-    {% for involved_id, involved in case.involved.items()
-        if involved.persona_id in ambience['case'].properly_involved_persona_ids
-    %}
+    {% for involved in case.properly_involved.values() if involved.persona_id in ambience['case'].properly_involved_persona_ids %}
         {# TODO Fix sorting #}
         {{ util.persona_anchor(personas[involved.persona_id]) }}
         <span class="text-muted">(

@@ -126,16 +126,12 @@ class Case(CdEDataclass):
         }
 
     @functools.cached_property
-    def involved_by_type(self) -> dict[const.ComplaintInvolvementType, list[int]]:
-        # TODO: return involved class instead.
-        ret: dict[const.ComplaintInvolvementType, list[int]] = {
-            it: [] for it in const.ComplaintInvolvementType
-        }
-        for involved in self.involved.values():
-            ret[involved.involvement_type].append(involved.id)
-        for involvement_type in const.ComplaintInvolvementType:
-            if not ret[involvement_type]:
-                del ret[involvement_type]
+    def involved_by_type(
+        self,
+    ) -> dict[const.ComplaintInvolvementType, list["ComplaintInvolved"]]:
+        ret: dict[const.ComplaintInvolvementType, list[ComplaintInvolved]] = {}
+        for involved in xsorted(self.involved.values()):
+            ret.setdefault(involved.involvement_type, []).append(involved)
         return ret
 
     @functools.cached_property
@@ -555,11 +551,10 @@ class ComplaintAuthors:
 
 
 @dataclasses.dataclass()
-class ComplaintInvolved:
+class ComplaintInvolved(CdEDataclass):
     database_table = "complaint.involved"
     entity_key = "case_id"
 
-    id: int
     persona_id: int | None
     involvement_type: const.ComplaintInvolvementType
     is_informed: bool
@@ -574,6 +569,12 @@ class ComplaintInvolved:
                 for companion, is_active_ in self._companions.items()
                 if is_active == is_active_
             }
+
+    def get_sortkey(self) -> Sortkey:
+        return (
+            self.involvement_type,
+            self.persona_id or -1,
+        )
 
 
 class ComplaintCompanion:

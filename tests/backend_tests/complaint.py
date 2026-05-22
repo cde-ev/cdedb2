@@ -32,14 +32,14 @@ class TestComplaintBackend(BackendTest):
             end_date=None,
             involved={
                 1: models.ComplaintInvolved(
-                    id=1,
+                    id=vtypes.ID(1),
                     persona_id=2,
                     involvement_type=const.ComplaintInvolvementType.target,
                     is_informed=False,
                     _companions={3: False},
                 ),
                 2: models.ComplaintInvolved(
-                    id=2,
+                    id=vtypes.ID(2),
                     persona_id=4,
                     involvement_type=const.ComplaintInvolvementType.affected,
                     is_informed=True,
@@ -517,7 +517,7 @@ class TestComplaintBackend(BackendTest):
         _case = self.complaint.get_case(self.key, case_id)
         original_involved = sorted(
             _case.involved_by_type[const.ComplaintInvolvementType.target]
-        )[0]
+        )[0].id
         original_involved_persona_id = _case.involved[original_involved].persona_id
         assert original_involved_persona_id is not None
 
