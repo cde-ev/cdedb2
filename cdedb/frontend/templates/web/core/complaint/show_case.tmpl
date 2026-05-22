@@ -124,7 +124,7 @@
                         icon=involvement_type.get_icon(), level=4) %}
                     {% for involved in involveds %}
                         <div class="hide-hover-container">
-                            {{ util.persona_anchor(personas[involved.persona_id]) }}
+                            {{ util.persona_anchor(involved.persona) }}
                             {# assembly and ml users are missing here #}
                             {% if age_classes.get(involved.persona_id, enums['AgeClasses'].full) != enums['AgeClasses'].full %}
                                 <strong>({{ gettext(age_classes[involved.persona_id]|string) }})</strong>
@@ -189,7 +189,7 @@
                                     {{ gettext("Companions") }}:
                                     {% if involved.get_companions(is_active=None)|length == 1 %}
                                         {% set companion_id = (involved.get_companions(is_active=None)|list)[0] %}
-                                        {{ util.strike(util.persona_anchor(personas[companion_id]),
+                                        {{ util.strike(util.persona_anchor(ambience['case'].personas[companion_id]),
                                                        companion_id not in involved.get_companions(is_active=False),
                                                        gettext("has withdrawn")) }}
                                     {% else %}
@@ -197,7 +197,7 @@
                                         {% for companion_id in involved.get_companions(is_active=None) %}
                                             <li>
                                                 {{ util.strike(
-                                                    util.persona_anchor(personas[companion_id]),
+                                                    util.persona_anchor(ambience['case'].personas[companion_id]),
                                                     companion_id not in involved.get_companions(is_active=False),
                                                     gettext("has withdrawn")
                                                 ) }}
@@ -378,16 +378,16 @@
                     {{ gettext(entry['code']|string) -}}
                 </strong>
                 {%- if entry['companion_id'] -%}
-                    : {{ util.persona_anchor(personas[entry['companion_id']]) }}
-                    {% trans involved=util.persona_anchor(personas[entry['persona_id']], icon='user') %}
+                    : {{ util.persona_anchor(ambience['case'].personas[entry['companion_id']]) }}
+                    {% trans involved=util.persona_anchor(ambience['case'].personas[entry['persona_id']], icon='user') %}
                          (for {{ involved }})
                     {% endtrans %}
                 {%- elif entry['persona_id'] -%}
-                    : {{ util.persona_anchor(personas[entry['persona_id']]) }}
+                    : {{ util.persona_anchor(ambience['case'].personas[entry['persona_id']]) }}
                 {% endif %}
                 <br />
                 {{ gettext("by") }}
-                {{ util.persona_anchor(personas[entry['submitted_by']]) -}}
+                {{ util.persona_anchor(ambience['case'].personas[entry['submitted_by']]) -}}
                 {%- if entry['change_note'] -%}
                     <span class="text-muted">
                         {%- trans change_note=entry['change_note'] %}
@@ -420,8 +420,7 @@
     <br />
     {{ gettext("Intersecting involved") }}:
     {% for involved in case.properly_involved.values() if involved.persona_id in ambience['case'].properly_involved_persona_ids %}
-        {# TODO Fix sorting #}
-        {{ util.persona_anchor(personas[involved.persona_id]) }}
+        {{ util.persona_anchor(involved.persona) }}
         <span class="text-muted">(
             {{- util.make_icon(involved.involvement_type.get_icon(), title=gettext(involved.involvement_type|string)) }}
             <span aria-hidden="true">{{ gettext(involved.involvement_type.shortname) -}}</span></span>)

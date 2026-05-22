@@ -39,7 +39,7 @@
         {% endif %}
     </strong>
     {% if entry.concerned_id and (not ambience['persona'] or ambience['persona']['id'] != entry.concerned_id) %}
-        {% trans concerned=util.persona_anchor(personas[entry.concerned_id], icon='user') %}
+        {% trans concerned=util.persona_anchor((entry.case.personas if entry.case else personas)[entry.concerned_id], icon='user') %}
              (for {{ concerned }})
         {% endtrans %}
     {% endif %}
@@ -58,9 +58,9 @@
     {{ pretty_entry_heading(entry) }}
     <br />
     {{ gettext("by") }}
-    {% for author_id in entry.active_version.authors -%}
+    {% for author in entry.active_version.author_personas -%}
         {%- if not loop.first -%}, {% endif -%}
-        {{ util.persona_anchor(personas[author_id]) -}}
+        {{ util.persona_anchor(author) -}}
     {% endfor %}
     <br />
     <span class="text-muted">
@@ -77,15 +77,15 @@
         ) }}
         <br />
         {% trans mtime=entry.active_version.ctime|datetime(lang=lang),
-                 submitted_by=util.persona_anchor(personas[entry.active_version.submitted_by]),
+                 submitted_by=util.persona_anchor(entry.case.personas[entry.active_version.submitted_by]),
                  ctime=entry.all_versions[0].ctime|datetime(lang=lang),
-                 first_submitted_by=util.persona_anchor(personas[entry.all_versions[0].submitted_by]) %}
+                 first_submitted_by=util.persona_anchor(entry.case.personas[entry.all_versions[0].submitted_by]) %}
             Created at {{ ctime }} by {{ first_submitted_by }};
             last changed at {{ mtime }} by {{ submitted_by }}.
         {% endtrans %}
     {% else %}
         {% trans ctime=entry.active_version.ctime|datetime(lang=lang),
-                 submitted_by=util.persona_anchor(personas[entry.active_version.submitted_by]) %}
+                 submitted_by=util.persona_anchor(entry.case.personas[entry.active_version.submitted_by]) %}
             Created at {{ ctime }} by {{ submitted_by }}.
         {% endtrans %}
     {% endif %}

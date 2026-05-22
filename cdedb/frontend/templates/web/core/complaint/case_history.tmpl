@@ -102,8 +102,8 @@
                             {% if version.is_purged %}({% trans %}purged{% endtrans %}){% endif %}
                             {% if version.authors %}
                                 {{ gettext("by") }}
-                                {% for author_id in version.authors %}
-                                    {{ util.persona_anchor(personas[author_id]) -}}
+                                {% for author in version.author_personas %}
+                                    {{ util.persona_anchor(author) -}}
                                     {%- if not loop.last -%}, {% else %}.{% endif %}
                                 {% endfor %}
                             {% endif %}
@@ -115,20 +115,20 @@
                             {% endif %}
                             <br />
                             {% trans ctime=version.ctime|datetime(lang=lang),
-                                     submitted_by=util.persona_anchor(personas[version.submitted_by]) %}
+                                     submitted_by=util.persona_anchor(entry.case.personas[version.submitted_by]) %}
                                 Created at {{ ctime }} by {{ submitted_by }}.
                             {% endtrans %}
                             <br />
                             {% if version.dtime %}
                                 {% if loop.last %}
                                     {% trans dtime=version.dtime|datetime(lang=lang),
-                                             deleted_by=util.persona_anchor(personas[version.submitted_by])
+                                             deleted_by=util.persona_anchor(entry.case.personas[version.submitted_by])
                                     %}
                                         Deleted at {{ dtime }} by {{ deleted_by }}.
                                     {% endtrans %}
                                 {% else %}
                                     {% trans dtime=version.dtime|datetime(lang=lang),
-                                             deleted_by=util.persona_anchor(personas[version.deleted_by])
+                                             deleted_by=util.persona_anchor(entry.case.personas[version.deleted_by])
                                     %}
                                         Replaced at {{ dtime }} by {{ deleted_by }}.
                                     {% endtrans %}
@@ -138,7 +138,7 @@
                             {% endif %}
                             {% if version.marked_for_purge %}
                                 {% trans ptime=version.marked_for_purge|datetime(lang=lang),
-                                         purged_by=util.persona_anchor(personas[version.purged_by])
+                                         purged_by=util.persona_anchor(entry.case.personas[version.purged_by])
                                 %}
                                     Marked for purge at {{ ptime }} by {{ purged_by }}.
                                 {% endtrans %}
@@ -167,16 +167,16 @@
                     {{ gettext(entry['code']|string) -}}
                 </strong>
                 {%- if entry['companion_id'] -%}
-                    : {{ util.persona_anchor(personas[entry['companion_id']]) }}
-                    {% trans involved=util.persona_anchor(personas[entry['persona_id']], icon='user') %}
+                    : {{ util.persona_anchor(ambience['case'].personas[entry['companion_id']]) }}
+                    {% trans involved=util.persona_anchor(ambience['case'].personas[entry['persona_id']], icon='user') %}
                          (for {{ involved }})
                     {% endtrans %}
                 {%- elif entry['persona_id'] -%}
-                    : {{ util.persona_anchor(personas[entry['persona_id']]) }}
+                    : {{ util.persona_anchor(ambience['case'].personas[entry['persona_id']]) }}
                 {% endif %}
                 <br />
                 {{ gettext("by") }}
-                {{ util.persona_anchor(personas[entry['submitted_by']]) -}}
+                {{ util.persona_anchor(ambience['case'].personas[entry['submitted_by']]) -}}
                 {%- if entry['change_note'] -%}
                     <span class="text-muted">
                         {%- trans change_note=entry['change_note'] %}

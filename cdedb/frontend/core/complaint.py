@@ -4,7 +4,7 @@ import datetime
 import itertools
 from collections.abc import Collection
 from itertools import chain
-from typing import Any, TypeVar, cast
+from typing import Any, TypeVar
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -14,11 +14,9 @@ import cdedb.database.constants as const
 import cdedb.models.complaint as models
 from cdedb.common import (
     CdEDBObject,
-    CdEDBObjectMap,
     RequestState,
     ValidationWarning,
     determine_age_class,
-    make_persona_name,
     merge_dicts,
     now,
 )
@@ -84,7 +82,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
         if not is_search:
             count = 0
-            cases = personas = unlocked_cases = None
+            cases = unlocked_cases = None
         else:
             query_input: dict[str, Any] = scope.mangle_query_input(rs, defaults)
             # Manually mangle the last changed information
@@ -147,32 +145,26 @@ class CoreComplaintMixin(CoreBaseFrontend):
             if count == len(cases) == 1:
                 case_id = result[0][query.scope.get_primary_key()]
                 return self.redirect(rs, "core/show_case", {'case_id': case_id})
-            else:
-                if count > len(cases):
-                    rs.notify(
-                        "warning",
-                        n_("%(count)s cases not shown."),
-                        {"count": count - len(cases)},
-                    )
-                    persona_id = check(
-                        rs,
-                        vtypes.PersonaID,
-                        query_input['qval_involved.persona_id'],
-                    )
-                    rs.ignore_validation_errors()
-                    if persona_id:
-                        # This is a compromise between alertness and not spamming
-                        # the log too much: We log only if the requestee has identified
-                        # some involved people in their cases.
-                        for concealed_case_id in _cases.keys() - cases.keys():
-                            self.complaintproxy.complaint_log_case_detected(
-                                rs, case_id=concealed_case_id, persona_id=persona_id
-                            )
-
-                persona_ids: set[int] = set()
-                for case in cases.values():
-                    persona_ids.update(case.involved_persona_ids)
-                personas = self.coreproxy.get_personas(rs, persona_ids)
+            elif count > len(cases):
+                rs.notify(
+                    "warning",
+                    n_("%(count)s cases not shown."),
+                    {"count": count - len(cases)},
+                )
+                persona_id = check(
+                    rs,
+                    vtypes.PersonaID,
+                    query_input['qval_involved.persona_id'],
+                )
+                rs.ignore_validation_errors()
+                if persona_id:
+                    # This is a compromise between alertness and not spamming
+                    # the log too much: We log only if the requestee has identified
+                    # some involved people in their cases.
+                    for concealed_case_id in _cases.keys() - cases.keys():
+                        self.complaintproxy.complaint_log_case_detected(
+                            rs, case_id=concealed_case_id, persona_id=persona_id
+                        )
 
         return self.render(
             rs,
@@ -181,7 +173,6 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 'spec': spec,
                 'cases': cases,
                 'count': count,
-                'personas': personas,
                 'unlocked_cases': unlocked_cases,
             },
         )
@@ -211,12 +202,9 @@ class CoreComplaintMixin(CoreBaseFrontend):
             log_entries, include_deleted=include_deleted
         )
 
-        # Collect all persona data which may be displayed.
-        persona_ids = case.get_persona_ids(log_entries)
-        personas = self.coreproxy.get_personas(rs, persona_ids)
         age_classes = {}
-        for persona_id, persona in personas.items():
-            if persona['is_event_realm'] and rs.ambience['case'].start_date:
+        for persona_id, persona in case.personas.items():
+            if persona.is_event_realm and rs.ambience['case'].start_date:
                 age_classes[persona_id] = determine_age_class(
                     self.coreproxy.get_event_user(rs, persona_id).birthday,
                     rs.ambience['case'].start_date,
@@ -234,7 +222,6 @@ class CoreComplaintMixin(CoreBaseFrontend):
         return {
             'all_entries': all_entries,
             'descriptions': descriptions,
-            'personas': personas,
             'age_classes': age_classes,
         }
 
@@ -411,17 +398,19 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
         active_companions = rs.ambience['case'].get_companions(is_active=True)
         ex_companions_ids = set(persona_ids) & active_companions.keys()
-        ex_companions = self.coreproxy.get_personas(rs, ex_companions_ids)
-        for companion_id, companion in ex_companions.items():
-            companion_id = cast(vtypes.PersonaID, companion_id)
+        ex_companions = xsorted(
+            rs.ambience['case'].personas[companion_id]
+            for companion_id in ex_companions_ids
+        )
+        for companion in ex_companions:
             rs.notify(
                 'warning',
                 n_("%(companion)s was a companion and is now marked as withdrawn."),
-                {'companion': make_persona_name(companion)},
+                {'companion': companion.get_name()},
             )
-            for persona_id in active_companions[companion_id]:
+            for persona_id in active_companions[companion.id]:
                 self.complaintproxy.set_companion_withdrawn(
-                    rs, case_id, persona_id, companion_id, is_withdrawn=True
+                    rs, case_id, persona_id, companion.id, is_withdrawn=True
                 )
 
         # Preventing companions from becoming adverse is hard, so just try-except.
@@ -490,20 +479,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
         involved = rs.ambience['case'].involved[involved_id]
-        companion_ids = involved.get_companions(is_active=None)
-        companions = (
-            self.coreproxy.get_personas(rs, companion_ids) if companion_ids else {}
-        )
-        involved_persona = self.coreproxy.get_persona(rs, involved.persona_id)
-        return self.render(
-            rs,
-            "complaint/manage_companions",
-            {
-                'involved_id': involved_id,
-                'involved_persona': involved_persona,
-                'companions': companions,
-            },
-        )
+        return self.render(rs, "complaint/manage_companions", {"involved": involved})
 
     @access("complaint_admin", modi={"POST"})
     @REQUESTdata("companion_ids")
@@ -658,18 +634,6 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs, "core/show_case", {"show_log_entries": show_log_entries}
         )
 
-    def _get_entry_personas(
-        self, rs: RequestState, entry: models.ComplaintEntry
-    ) -> CdEDBObjectMap:
-        """Get any personas associated to a given entry."""
-        persona_ids: set[vtypes.PersonaID] = set()
-        if entry.active_version:
-            persona_ids.update(entry.active_version.authors)
-            persona_ids.add(entry.active_version.submitted_by)
-        if entry.concerned_id:
-            persona_ids.add(entry.concerned_id)
-        return self.coreproxy.get_personas(rs, persona_ids)
-
     @access("complaint_admin")
     @REQUESTdata("entry_type")
     def add_entry_form(
@@ -694,10 +658,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
             available_types = parent.entry_type.possible_children - {
                 et.revocation_explanation
             }
-            personas = self._get_entry_personas(rs, parent)
         else:
             available_types = set(et) - et.all_children()
-            personas = {}
         return self.render(
             rs,
             "complaint/configure_entry",
@@ -705,7 +667,6 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 'entry_type': entry_type,
                 'parent_id': parent_id,
                 'available_types': available_types,
-                'personas': personas,
             },
             models.ComplaintEntry.mandatory_form_fields(creation=True),
         )
@@ -845,16 +806,10 @@ class CoreComplaintMixin(CoreBaseFrontend):
         )
         rs.values['authors'] = ", ".join(authors)
 
-        personas = {}
-        if rs.ambience['entry'].concerned_id:
-            personas = self.coreproxy.get_personas(
-                rs, {rs.ambience['entry'].concerned_id}
-            )
-
         return self.render(
             rs,
             "complaint/configure_entry",
-            {'entry_type': rs.ambience['entry'].entry_type, 'personas': personas},
+            {'entry_type': rs.ambience['entry'].entry_type},
             models.ComplaintEntry.mandatory_form_fields(creation=False),
         )
 
@@ -949,7 +904,6 @@ class CoreComplaintMixin(CoreBaseFrontend):
             {
                 'entry_type': const.ComplaintEntryType.revocation_explanation,
                 'is_revocation': True,
-                'personas': self._get_entry_personas(rs, entry),
             },
             models.ComplaintEntry.mandatory_form_fields(creation=False),
         )
@@ -1040,17 +994,10 @@ class CoreComplaintMixin(CoreBaseFrontend):
                     version_id
                 ]
 
-        concerned = None
-        if concerned_id := rs.ambience['entry'].concerned_id:
-            concerned = self.coreproxy.get_persona(rs, concerned_id)
-
-        authors = self.coreproxy.get_personas(
-            rs, rs.ambience['entry'].active_version.authors
-        ).values()
         return self.render(
             rs,
             "complaint/remove_entry",
-            {'authors': authors, 'concerned': concerned, 'description': description},
+            {'description': description},
             {"dreason"},
         )
 

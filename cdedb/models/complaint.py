@@ -7,10 +7,11 @@ import functools
 import itertools
 from collections.abc import Collection
 from itertools import chain
-from typing import Self
+from typing import Any, Self
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.core as models_core
 from cdedb.common import CdEDBObject, User, now
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import Sortkey, xsorted
@@ -97,6 +98,14 @@ class Case(CdEDataclass):
         metadata=Meta.asdict_include.as_dict
     )
     involved: dict[vtypes.InvolvedID, "ComplaintInvolved"] = dataclasses.field(
+        metadata=Meta.exclude.as_dict,
+    )
+
+    personas: CdEDataclassMap[models_core.Persona] = dataclasses.field(
+        init=False,
+        compare=False,
+        repr=False,
+        default_factory=dict,
         metadata=Meta.exclude.as_dict,
     )
 
@@ -285,10 +294,13 @@ class Case(CdEDataclass):
             })
 
         data["entries"] = ComplaintEntry.many_from_database(data["entries"])
-        ret = super().from_database(data)
-        for entry in data["entries"].values():
-            entry.case = ret
-        return ret
+        return super().from_database(data)
+
+    def __post_init__(self) -> None:
+        for entry in self.entries.values():
+            entry.case = self
+        for involved in self.involved.values():
+            involved.case = self
 
     @classmethod
     def get_select_query(
@@ -399,10 +411,11 @@ class ComplaintEntry(CdEDataclass):
         data["all_versions"] = list(
             ComplaintEntryVersion.many_from_database(data["all_versions"]).values()
         )
-        ret = super().from_database(data)
-        for version in data["all_versions"]:
-            version.entry = ret
-        return ret
+        return super().from_database(data)
+
+    def __post_init__(self) -> None:
+        for version in self.all_versions:
+            version.entry = self
 
     @classmethod
     def mandatory_form_fields(cls, *, creation: bool) -> set[str]:
@@ -517,6 +530,10 @@ class ComplaintEntryVersion(CdEDataclass):
         metadata=Meta.database_exclude.as_dict,
     )
 
+    @functools.cached_property
+    def author_personas(self) -> list[models_core.Persona]:
+        return xsorted(self.entry.case.personas[author] for author in self.authors)
+
     def get_sortkey(self) -> Sortkey:
         return (self.entry_id, self.ctime)
 
@@ -546,6 +563,11 @@ class ComplaintEntryVersion(CdEDataclass):
         params = (entities,)
         return query, params
 
+    def as_dict(self) -> dict[str, Any]:
+        ret = super().as_dict()
+        ret["authors"] = [author.id for author in self.author_personas]
+        return ret
+
 
 class AccessLog:
     database_table = "complaint.access_log"
@@ -563,9 +585,17 @@ class ComplaintInvolved(CdEDataclass):
 
     id: vtypes.InvolvedID
     persona_id: vtypes.PersonaID | None
+    case: Case = dataclasses.field(init=False, compare=False, repr=False)
+
     involvement_type: const.ComplaintInvolvementType
     is_informed: bool
     _companions: dict[vtypes.PersonaID, bool]
+
+    @property
+    def persona(self) -> models_core.Persona | None:
+        if self.case and self.persona_id:
+            return self.case.personas[self.persona_id]
+        return None
 
     def get_companions(self, is_active: bool | None) -> dict[vtypes.PersonaID, bool]:
         if is_active is None:
@@ -580,6 +610,11 @@ class ComplaintInvolved(CdEDataclass):
     def get_sortkey(self) -> Sortkey:
         return (
             self.involvement_type,
+            (
+                self.case.personas[self.persona_id]
+                if self.case and self.persona_id
+                else ()
+            ),
             self.persona_id or -1,
         )
 
