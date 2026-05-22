@@ -122,7 +122,7 @@
                             {% if version.dtime %}
                                 {% if loop.last %}
                                     {% trans dtime=version.dtime|datetime(lang=lang),
-                                             deleted_by=util.persona_anchor(entry.case.personas[version.submitted_by])
+                                             deleted_by=util.persona_anchor(entry.case.personas[version.deleted_by])
                                     %}
                                         Deleted at {{ dtime }} by {{ deleted_by }}.
                                     {% endtrans %}
