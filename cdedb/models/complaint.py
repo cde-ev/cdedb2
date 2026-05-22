@@ -1,5 +1,5 @@
 """Dataclass definitions for the complaint realm."""
-import collections
+
 import dataclasses
 import datetime
 import enum

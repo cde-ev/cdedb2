@@ -611,7 +611,7 @@ class TestComplaintBackend(BackendTest):
                 self.key, case_id, original_involved, True
             ),
         )
-        self.assertLessEqual(
+        self.assertEqual(
             -1,
             self.complaint.add_involved(
                 self.key,
@@ -1215,10 +1215,6 @@ class TestComplaintBackend(BackendTest):
                 "change_note": "Beschwerdeführer",
             },
             {
-                "code": const.ComplaintLogCodes.involved_informed,
-                "persona_id": appellant_id,
-            },
-            {
                 "code": const.ComplaintLogCodes.companion_added,
                 "persona_id": appellant_id,
                 "companion_id": appellant_companion_id,
@@ -1267,10 +1263,6 @@ class TestComplaintBackend(BackendTest):
                 "code": const.ComplaintLogCodes.involved_added,
                 "persona_id": appellant_companion_id,
                 "change_note": "Beschwerdeführer",
-            },
-            {
-                "code": const.ComplaintLogCodes.involved_informed,
-                "persona_id": appellant_companion_id,
             },
         ]
         self.assertLogEqual(

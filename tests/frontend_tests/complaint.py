@@ -628,18 +628,8 @@ class TestComplaintFrontend(FrontendTest):
             },
             {
                 'case_id': 1,
-                'code': const.ComplaintLogCodes.involved_informed,
-                'persona_id': 4,
-            },
-            {
-                'case_id': 1,
                 'change_note': 'Beschwerdeführer',
                 'code': const.ComplaintLogCodes.involved_removed,
-                'persona_id': 4,
-            },
-            {
-                'case_id': 1,
-                'code': const.ComplaintLogCodes.involved_uninformed,
                 'persona_id': 4,
             },
             {
@@ -652,11 +642,6 @@ class TestComplaintFrontend(FrontendTest):
                 'case_id': 1,
                 'change_note': 'Beschwerdeführer',
                 'code': const.ComplaintLogCodes.involved_added,
-                'persona_id': 1,
-            },
-            {
-                'case_id': 1,
-                'code': const.ComplaintLogCodes.involved_informed,
                 'persona_id': 1,
             },
             {
@@ -774,7 +759,7 @@ class TestComplaintFrontend(FrontendTest):
             },
         )
 
-        # self.assertLogEqual(log_expectation, realm='complaint', offset=6)
+        self.assertLogEqual(log_expectation, realm='complaint', offset=6)
 
         # ##
         # ## 8. Test related cases
