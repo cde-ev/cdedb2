@@ -2494,7 +2494,7 @@ class CoreBaseBackend(AbstractBackend):
     )
 
     @access("event", "droid_quick_partial_export", "droid_orga")
-    def new_get_event_users(
+    def get_event_users(
         self,
         rs: RequestState,
         persona_ids: Collection[int],
@@ -2549,31 +2549,6 @@ class CoreBaseBackend(AbstractBackend):
                 raise PrivilegeError(n_("Access to persona data inhibited."))
         return ret
 
-    class _NewGetEventUserProtocol(Protocol):
-        # `persona_id` is actually not optional, but it produces a lot of errors.
-        def __call__(
-            self,
-            rs: RequestState,
-            persona_id: Optional[int],
-            event_id: Optional[int] = None,
-        ) -> models.EventPersona: ...
-
-    new_get_event_user: _NewGetEventUserProtocol = singularize(
-        new_get_event_users, "persona_ids", "persona_id"
-    )
-
-    @access("event", "droid_quick_partial_export", "droid_orga")
-    def get_event_users(
-        self,
-        rs: RequestState,
-        persona_ids: Collection[int],
-        event_id: Optional[int] = None,
-    ) -> CdEDBObjectMap:
-        return {
-            k: v.as_dict()
-            for k, v in self.new_get_event_users(rs, persona_ids, event_id).items()
-        }
-
     class _GetEventUserProtocol(Protocol):
         # `persona_id` is actually not optional, but it produces a lot of errors.
         def __call__(
@@ -2581,7 +2556,7 @@ class CoreBaseBackend(AbstractBackend):
             rs: RequestState,
             persona_id: Optional[int],
             event_id: Optional[int] = None,
-        ) -> CdEDBObject: ...
+        ) -> models.EventPersona: ...
 
     get_event_user: _GetEventUserProtocol = singularize(
         get_event_users, "persona_ids", "persona_id"
@@ -2739,7 +2714,7 @@ class CoreBaseBackend(AbstractBackend):
     )
 
     @access("ml")
-    def new_get_ml_users(
+    def get_ml_users(
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> CdEDataclassMap[models.MlPersona]:
         """Get an ml view on some data sets."""
@@ -2755,24 +2730,12 @@ class CoreBaseBackend(AbstractBackend):
             self, rs: RequestState, persona_id: Optional[int]
         ) -> models.MlPersona: ...
 
-    new_get_ml_user: _GetMlUserProtocol = singularize(
-        new_get_ml_users, "persona_ids", "persona_id"
-    )
-
-    @access("ml")
-    def get_ml_users(
-        self, rs: RequestState, persona_ids: Collection[int]
-    ) -> CdEDBObjectMap:
-        return {
-            k: v.as_dict() for k, v in self.new_get_ml_users(rs, persona_ids).items()
-        }
-
-    get_ml_user: _GetPersonaProtocol = singularize(
+    get_ml_user: _GetMlUserProtocol = singularize(
         get_ml_users, "persona_ids", "persona_id"
     )
 
     @access("assembly")
-    def new_get_assembly_users(
+    def get_assembly_users(
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> CdEDataclassMap[models.AssemblyPersona]:
         """Get an assembly view on some data sets."""
@@ -2788,20 +2751,7 @@ class CoreBaseBackend(AbstractBackend):
             self, rs: RequestState, persona_id: Optional[int]
         ) -> models.AssemblyPersona: ...
 
-    new_get_assembly_user: _GetAssemblyUserProtocol = singularize(
-        new_get_assembly_users, "persona_ids", "persona_id"
-    )
-
-    @access("assembly")
-    def get_assembly_users(
-        self, rs: RequestState, persona_ids: Collection[int]
-    ) -> CdEDBObjectMap:
-        return {
-            k: v.as_dict()
-            for k, v in self.new_get_assembly_users(rs, persona_ids).items()
-        }
-
-    get_assembly_user: _GetPersonaProtocol = singularize(
+    get_assembly_user: _GetAssemblyUserProtocol = singularize(
         get_assembly_users, "persona_ids", "persona_id"
     )
 

@@ -145,7 +145,6 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             vtypes.Questionnaire,
             list(filter(None, new_questionnaire.values())),
             kind=kind,
-            event=rs.ambience["event"],
             all_questionnaires=all_questionnaires,
         )
 
@@ -183,7 +182,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         add_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[
             const.QuestionnaireUsages.additional
         ]
-        wish_data = {}
+        wish_data = None
         if not preview:
             registration_id = self.eventproxy.list_registrations(
                 rs, event_id, persona_id=rs.user.persona_id
@@ -203,7 +202,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             }
             merge_dicts(rs.values, values)
             if field := rs.ambience['event'].lodge_field:
-                if any(row.field_id == field.id for row in add_questionnaire):
+                if field.id in add_questionnaire.get_field_ids():
                     wish_data = self._get_user_lodgement_wishes(rs, event_id)
         else:
             if not self.is_privileged(rs, EventPrivileges.basic_read):
@@ -216,7 +215,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             {
                 'add_questionnaire': add_questionnaire,
                 'preview': preview,
-                'lodgement_wishes': wish_data,
+                'lodgement_wishes': wish_data or {},
             },
         )
 

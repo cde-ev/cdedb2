@@ -219,7 +219,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         for persona_id, persona in personas.items():
             if persona['is_event_realm'] and rs.ambience['case'].start_date:
                 age_classes[persona_id] = determine_age_class(
-                    self.coreproxy.get_event_user(rs, persona_id)['birthday'],
+                    self.coreproxy.get_event_user(rs, persona_id).birthday,
                     rs.ambience['case'].start_date,
                 )
 
@@ -461,7 +461,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 rs, case_id, involved_id, True
             )
             rs.notify_return_code(
-                ret, info=n_("This user was already marked as uninformed.")
+                ret, info=n_("This user was already marked as informed.")
             )
         return self.redirect(rs, "core/show_case")
 

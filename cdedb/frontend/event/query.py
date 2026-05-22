@@ -79,8 +79,7 @@ class EventQueryMixin(EventBaseFrontend):
         )
         # Precompute age classes of participants for all registration parts.
         for reg in registrations.values():
-            persona = personas[reg['persona_id']]
-            reg['birthday'] = persona['birthday']
+            reg['birthday'] = personas[reg['persona_id']].birthday
             for part_id, reg_part in reg['parts'].items():
                 reg_part['age_class'] = determine_age_class(
                     reg['birthday'], event_parts[part_id].part_begin
@@ -300,7 +299,7 @@ class EventQueryMixin(EventBaseFrontend):
         return self.redirect(rs, query_scope.get_target(), query_input)
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.basic_read)
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("query_id", "query_scope")
     def delete_event_query(
         self, rs: RequestState, event_id: int, query_id: int, query_scope: QueryScope
@@ -625,8 +624,7 @@ class EventQueryMixin(EventBaseFrontend):
         parts = rs.ambience['event'].parts
         selection_default = ["lodgement.title"] + [
             f"lodgement_fields.xfield_{field.field_name}"
-            for field in rs.ambience['event'].fields.values()
-            if field.association == const.FieldAssociations.lodgement
+            for field in rs.ambience['event'].lodgement_fields.values()
         ]
         for col in ("regular_inhabitants",):
             selection_default += list(f"part{p_id}_{col}" for p_id in parts)

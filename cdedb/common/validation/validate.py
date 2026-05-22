@@ -216,10 +216,13 @@ class ValidationSummary(ValueError, Sequence[Exception]):
             yield self
 
     @contextlib.contextmanager
-    def append_to_argname(self, suffix: str) -> Iterator[Self]:
+    def modify_argname(self, *, prefix: str = "", suffix: str = "") -> Iterator[Self]:
 
         def callback(errors: Iterable[Exception]) -> list[Exception]:
-            ret = [exc.__class__(exc.args[0] + suffix, *exc.args[1:]) for exc in errors]
+            ret = [
+                exc.__class__(prefix + exc.args[0] + suffix, *exc.args[1:])
+                for exc in errors
+            ]
             return ret
 
         with self.callback(callback):
@@ -558,62 +561,6 @@ def _examine_dictionary_fields(
         raise errs
 
     return retval
-
-
-def _augment_dict_validator(
-    validator: Callable[..., Any], augmentation: TypeMapping, strict: bool = True
-) -> Callable[..., Any]:
-    """Beef up a dict validator.
-
-    This is for the case where you have two similar specs for a data set
-    in form of a dict and already a validator for one of them, but some
-    additional fields in the second spec.
-
-    This can also be used as a decorator.
-
-    :param augmentation: Syntax is the same as for
-        :py:meth:`_examine_dictionary_fields`.
-    :param strict: if ``True`` the additional arguments are mandatory
-        otherwise they are optional.
-    """
-
-    @functools.wraps(validator)
-    def new_validator(
-        val: Any, argname: Optional[str] = None, **kwargs: Any
-    ) -> dict[str, Any]:
-        mandatory_fields = augmentation if strict else {}
-        optional_fields = {} if strict else augmentation
-
-        errs = ValidationSummary()
-        ret: dict[str, Any] = {}
-        try:
-            ret = _examine_dictionary_fields(
-                val,
-                mandatory_fields,
-                optional_fields,
-                **{"allow_superfluous": True, **kwargs},
-            )
-        except ValidationSummary as e:
-            errs.extend(e)
-
-        tmp = copy.deepcopy(val)
-        for field in augmentation:
-            if field in tmp:
-                del tmp[field]
-
-        v = None
-        with errs:
-            v = validator(tmp, argname=argname, **kwargs)
-
-        if v is not None:
-            ret.update(v)
-
-        if errs:
-            raise errs
-
-        return ret
-
-    return new_validator
 
 
 def escaped_split(string: str, delim: str, escape: str = '\\') -> list[str]:
@@ -2394,16 +2341,6 @@ def _past_event(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
     return val
 
 
-EVENT_FREETEXT_FIELDS: Mapping[str, Any] = {
-    'description': Optional[str],
-    'notes': Optional[str],
-    'field_definition_notes': Optional[str],
-    'mail_text': Optional[str],
-    'registration_text': Optional[str],
-    'participant_info': Optional[str],
-}
-
-
 def _optional_object_mapping_helper(
     val_dict: Mapping[Any, Any],
     atype: TypeForm[T],
@@ -2915,9 +2852,8 @@ def _event_fee_condition(
     field_usage = all_questionnaires.field_usage()
     field_names = {
         f.field_name
-        for f in event.fields.values()
-        if f.association == const.FieldAssociations.registration
-        and f.kind == const.FieldDatatypes.bool
+        for f in event.registration_fields.values()
+        if f.kind == const.FieldDatatypes.bool
         and field_usage.get(
             f.id, const.QuestionnaireUsages.registration
         ).allow_fee_condition()
@@ -2931,13 +2867,6 @@ def _event_fee_condition(
         raise ValidationSummary(ValueError(argname, e.args[-1])) from e
 
     return EventFeeCondition(fcp_roundtrip.serialize(parse_result))
-
-
-PAST_COURSE_COMMON_FIELDS: Mapping[str, Any] = {
-    'nr': str,
-    'title': str,
-    'description': Optional[str],
-}
 
 
 @_create_dataclass_validator(models_past_event.PastCourse)
@@ -3212,14 +3141,6 @@ def _by_field_datatype(
     return ByFieldDatatype(val)
 
 
-QUESTIONNAIRE_ROW_MANDATORY_FIELDS: TypeMapping = {
-    'title': Optional[str],
-    'info': Optional[str],
-    'readonly': Optional[bool],
-    'default_value': Optional[str],
-}
-
-
 @_create_dataclass_validator(models_event.QuestionnaireRow)
 def _questionnaire_row(
     val: CdEDBObject,
@@ -3229,12 +3150,27 @@ def _questionnaire_row(
     **kwargs: Any,
 ) -> CdEDBObject:
 
-    # TODO allow selection by field_name for questionnaire import
-
     errs = ValidationSummary()
     kind = const.QuestionnaireUsages(val["kind"])
 
-    if field_id := val["field_id"]:
+    # The questionnaire import allows specifying fields by name instead of id.
+    #  This method is not used elsewhere.
+    fields_by_name = {f.field_name: f.id for f in available_fields.values()}
+
+    if field_name := val.get("field_name"):
+        val["field_id"] = fields_by_name.get(field_name)
+        if not val["field_id"]:
+            errs.append(
+                KeyError(
+                    'field_name',
+                    n_("Unknown field name: '%(field_name)s'."),
+                    {"field_name": field_name},
+                )
+            )
+    if "field_id" not in val:
+        val["field_id"] = None
+
+    if field_id := val.get("field_id"):
         if not (field := available_fields.get(field_id)):
             errs.append(KeyError('field_id', n_("Invalid field.")))
         if val['default_value'] and field:
@@ -3265,7 +3201,6 @@ def _questionnaire(
     val: Any,
     argname: str = "questionnaire",
     *,
-    event: models_event.Event,
     kind: const.QuestionnaireUsages,
     all_questionnaires: models_event.QuestionnaireContainer,
     **kwargs: Any,
@@ -3278,7 +3213,7 @@ def _questionnaire(
     for i, row in enumerate(val):
         row["kind"] = kind
         row["pos"] = i
-        with errs.append_to_argname(f"_{i}"):
+        with errs.modify_argname(suffix=f"_{i}"):
             row = _ALL_TYPED[models_event.QuestionnaireRow](
                 row,
                 available_fields=available_fields,
@@ -3286,12 +3221,13 @@ def _questionnaire(
             ret.append(row)
 
     for e1, e2 in itertools.combinations(ret, 2):
-        if e1['field_id'] is not None and e1['field_id'] == e2['field_id']:
+        if e1.get('field_id') is not None and e1.get('field_id') == e2.get('field_id'):
+            field = all_questionnaires.event.fields[e1['field_id']]
             errs.append(
                 ValueError(
                     'field_id',
                     n_("Must not duplicate field ('%(field_name)s')."),
-                    {'field_name': event.fields[e1['field_id']].field_name},
+                    {'field_name': field.field_name},
                 )
             )
 
@@ -3806,92 +3742,82 @@ def _serialized_event_questionnaire(
     val: Any,
     argname: str = "serialized_event_questionnaire",
     *,
-    field_definitions: CdEDBObjectMap,
-    fees_by_field: dict[int, set[int]],
-    questionnaire: dict[const.QuestionnaireUsages, list[QuestionnaireRow]],
+    all_questionnaires: models_event.QuestionnaireContainer,
     extend_questionnaire: bool,
     skip_existing_fields: bool,
     **kwargs: Any,
 ) -> SerializedEventQuestionnaire:  # pragma: no cover
     val = _mapping(val, argname, **kwargs)
 
-    optional_fields: TypeMapping = {'fields': Mapping, 'questionnaire': Mapping}
+    optional_fields: TypeMapping = {
+        'fields': dict[str, dict[str, Any]],
+        'questionnaire': dict[const.QuestionnaireUsages, list[dict[str, Any]]],
+    }
     val = _examine_dictionary_fields(val, {}, optional_fields, **kwargs)
 
+    all_questionnaires = copy.deepcopy(all_questionnaires)
+    fields_by_name = {f.field_name: f for f in all_questionnaires.event.fields.values()}
+
     errs = ValidationSummary()
-    field_definitions = copy.deepcopy(field_definitions)
-    fields_by_name = {f['field_name']: f for f in field_definitions.values()}
     if 'fields' in val:
         newfields: CdEDBObjectMap = {}
-        for i, (field_name, field) in enumerate(val['fields'].items()):
-            field_argname = f"fields[{i + 1}]"
-            try:
-                field_name = _str(field_name, field_argname, **kwargs)
-            except ValidationSummary as e:
-                errs.extend(e)
-            else:
-                if field_name in fields_by_name:
-                    if not skip_existing_fields:
-                        errs.append(
-                            KeyError(
-                                field_argname,
-                                n_(
-                                    "A field with this name already exists"
-                                    " ('%(field_name)s')."
-                                ),
-                                {'field_name': field_name},
-                            )
+        for i, (field_name, field_data) in enumerate(val['fields'].items()):
+            field_argname = f"fields[{field_name}]"
+            field_data["field_name"] = field_name
+            if field_name in fields_by_name:
+                if not skip_existing_fields:
+                    errs.append(
+                        KeyError(
+                            field_argname, n_("A field with this name already exists.")
                         )
-                    continue
-                try:
-                    field = cast(
-                        CdEDBObject,
-                        _ALL_TYPED[models_event.EventField](
-                            field,
-                            field_argname,
-                            creation=True,
-                            event=None,
-                            id_=-(i + 1),
-                            field_name=field_name,
-                            **kwargs,
-                        ),
                     )
-                except ValidationSummary as e:
-                    errs.extend(e)
-                else:
-                    newfields[-(i + 1)] = field
+                continue
+            with errs:
+                field_data = _ALL_TYPED[models_event.EventField](
+                    field_data,
+                    field_argname,
+                    creation=True,
+                    event=all_questionnaires.event,
+                    id_=-(i + 1),
+                    **kwargs,
+                )
+                newfields[-(i + 1)] = field_data
         val['fields'] = newfields
-        field_definitions.update(newfields)
+
+        all_questionnaires.event.fields |= {
+            f_id: models_event.EventField.get_class(f["association"])(
+                id=ID(f_id), event_id=all_questionnaires.event.id, **f
+            )
+            for f_id, f in newfields.items()
+        }
+        fields_by_name = {
+            f.field_name: f for f in all_questionnaires.event.fields.values()
+        }
     else:
         val['fields'] = {}
 
     if 'questionnaire' in val:
-        try:
-            new_questionnaire = _ALL_TYPED[Questionnaire](
-                val['questionnaire'],
-                field_definitions=field_definitions,
-                fees_by_field=fees_by_field,
-                **kwargs,
-            )
-        except ValidationSummary as e:
-            errs.extend(e)
-        else:
+        new_questionnaires = {}
+        for kind, rows in val['questionnaire'].items():
             if extend_questionnaire:
-                tmp = {
-                    kind: questionnaire.get(kind, []) + new_questionnaire.get(kind, [])
-                    for kind in const.QuestionnaireUsages
-                }
-                try:
-                    new_questionnaire = _ALL_TYPED[Questionnaire](
-                        tmp,
-                        field_definitions=field_definitions,
-                        fees_by_field=fees_by_field,
-                        **kwargs,
+                new_questionnaires[kind] = all_questionnaires[kind].as_dicts() + rows
+            else:
+                new_questionnaires[kind] = rows
+            with errs.modify_argname(prefix=f"questionnaire[{kind.name}]."):
+                new_questionnaires[kind] = _ALL_TYPED[Questionnaire](
+                    new_questionnaires[kind],
+                    kind=kind,
+                    all_questionnaires=all_questionnaires,
+                )
+                all_questionnaires[kind] = models_event.Questionnaire(
+                    models_event.QuestionnaireRow(
+                        id=ID(-1),
+                        event_id=all_questionnaires.event.id,
+                        **{k: v for k, v in row.items() if k != "field_name"},
                     )
-                except ValidationSummary as e:
-                    errs.extend(e)
-
-            val['questionnaire'] = new_questionnaire
+                    for row in new_questionnaires[kind]
+                )
+        val['questionnaire'] = new_questionnaires
     else:
         val['questionnaire'] = {}
 

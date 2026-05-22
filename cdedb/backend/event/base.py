@@ -55,7 +55,6 @@ from cdedb.common.exceptions import EventIsBalancedError, PrivilegeError
 from cdedb.common.fields import (
     EVENT_ROLE_FIELDS,
     PERSONA_EVENT_FIELDS,
-    QUESTIONNAIRE_ROW_FIELDS,
     REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS,
     REGISTRATION_TRACK_FIELDS,
@@ -1363,12 +1362,10 @@ class EventBaseBackend(EventLowLevelBackend):
         """Replace the current questionnaire of the given kind for the given event."""
         event_id = affirm(vtypes.ID, event_id)
         kind = affirm(const.QuestionnaireUsages, kind)
-        event = self.get_event(rs, event_id)
         data = affirm(
             vtypes.Questionnaire,
             data,
             kind=kind,
-            event=event,
             all_questionnaires=self.get_all_questionnaires(rs, event_id),
         )
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
@@ -1387,6 +1384,9 @@ class EventBaseBackend(EventLowLevelBackend):
             for pos, row in enumerate(data):
                 new_row = copy.deepcopy(row)
                 new_row['event_id'] = event_id
+                # The questionnaire import allows specifying fields by name.
+                #  We cannot remove this before, due to validation idempotency.
+                new_row.pop("field_name", None)
                 ret *= self.sql_insert(
                     rs, models.QuestionnaireRow.database_table, new_row
                 )
@@ -1588,7 +1588,7 @@ class EventBaseBackend(EventLowLevelBackend):
                     ('id', 'registration_id', 'track_id', 'course_id', 'rank'),
                 ),
                 models.PersonalizedFee.full_export_spec(),
-                ('event.questionnaire_rows', "event_id", QUESTIONNAIRE_ROW_FIELDS),
+                models.QuestionnaireRow.full_export_spec(),
                 models.StoredEventQuery.full_export_spec(),
                 (
                     'event.log',
@@ -1733,9 +1733,12 @@ class EventBaseBackend(EventLowLevelBackend):
                     entity_key="event_id",
                 )
             )
-            questionnaire = self.get_all_questionnaires(rs, event_id).as_dict()
+            questionnaire = self.get_all_questionnaires(rs, event_id).as_dict(full=True)
             persona_ids = tuple(reg['persona_id'] for reg in registrations.values())
-            personas = self.core.get_event_users(rs, persona_ids, event_id)
+            personas = {
+                p.id: p.as_dict()
+                for p in self.core.get_event_users(rs, persona_ids, event_id).values()
+            }
 
         # Now process all the data.
         # basics
@@ -1942,7 +1945,7 @@ class EventBaseBackend(EventLowLevelBackend):
         event_id: int,
         fields: CdEDBObjectMap,
         questionnaires: dict[const.QuestionnaireUsages, vtypes.Questionnaire],
-    ) -> DefaultReturnCode:  # pragma: no cover
+    ) -> DefaultReturnCode:
         """Special import for custom datafields and questionnaire rows."""
         event_id = affirm(vtypes.ID, event_id)
         # validation of input is delegated to the setters, because it is rather

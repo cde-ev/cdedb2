@@ -2018,7 +2018,7 @@ etc;anything else""",
         self.response = save
 
         event = self.event.get_event(self.key, 1)
-        persona = self.core.get_persona(self.key, self.user['id'])
+        persona = self.core.get_event_user(self.key, self.user['id'])
 
         qr_expectation = b"""\
 BCD
@@ -6980,8 +6980,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
     @storage
     @as_users("garcia")
-    @unittest.expectedFailure
-    def test_questionnaire_import(self) -> None:  # pragma: no cover
+    def test_questionnaire_import(self) -> None:
         self.traverse(
             "Veranstaltungen",
             "Große Testakademie 2222",
@@ -7004,7 +7003,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['json_file'] = create_upload({'questionnaire': data['questionnaire']})
         self.submit(f, check_notification=False)
         self.assertPresence(
-            "Es gibt kein Feld mit dem Namen 'KleidungAnmerkungen'.",
+            "Unbekannter Datenfeldname: 'KleidungAnmerkungen'",
             div="importerrorsummary",
         )
 
@@ -7016,7 +7015,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertEqual(f['skip_existing_fields'].checked, False)
         self.submit(f, check_notification=False)
         self.assertPresence(
-            "Es gibt bereits ein Feld mit diesem Namen ('KleidungAnmerkungen').",
+            "fields[KleidungAnmerkungen]: Es existiert bereits ein Datenfeld mit diesem Namen.",
             div="importerrorsummary",
         )
         f['skip_existing_fields'].checked = True
@@ -7045,7 +7044,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['json_file'] = create_upload(data)
         self.submit(f, check_notification=False)
         self.assertPresence(
-            "Es gibt bereits ein Feld mit diesem Namen ('KleidungAnmerkungen').",
+            "fields[KleidungAnmerkungen]: Es existiert bereits ein Datenfeld mit diesem Namen.",
             div="importerrorsummary",
         )
         self.assertPresence(

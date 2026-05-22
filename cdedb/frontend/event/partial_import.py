@@ -62,7 +62,7 @@ class EventImportMixin(EventBaseFrontend):
         extend_questionnaire: bool,
         skip_existing_fields: bool,
         token: Optional[str],
-    ) -> Response:  # pragma: no cover
+    ) -> Response:
         """Import questionnaire rows and custom datafields.
 
         :param extend_questionnaire: If True, append the imported questionnaire rows to
@@ -74,7 +74,6 @@ class EventImportMixin(EventBaseFrontend):
         kwargs: CdEDBObject = {
             'extend_questionnaire': extend_questionnaire,
             'skip_existing_fields': skip_existing_fields,
-            'event': rs.ambience['event'],
             'all_questionnaires': self.eventproxy.get_all_questionnaires(rs, event_id),
         }
         data = check(rs, vtypes.SerializedEventQuestionnaireUpload, json_file, **kwargs)
@@ -83,7 +82,7 @@ class EventImportMixin(EventBaseFrontend):
         assert data is not None
 
         code = self.eventproxy.questionnaire_import(
-            rs, event_id, fields=data['fields'], questionnaires=data['questionnaires']
+            rs, event_id, fields=data['fields'], questionnaires=data['questionnaire']
         )
 
         rs.notify_return_code(code)
