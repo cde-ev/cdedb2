@@ -129,7 +129,7 @@
                                                                 aclass='drow-indicator') }}
                                 {% else %}
                                     {{ util.form_input_checkbox(drow_delete(field_id), label=gettext("Remove"),
-                                                                readonly=not deletable, aclass='drow-indicator') }}
+                                                                readonly=not deletable or not changeable, aclass='drow-indicator') }}
                                 {% endif %}
                             </span>
                         </div>
