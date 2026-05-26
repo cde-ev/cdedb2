@@ -304,6 +304,17 @@ class PersonaName:
 class Persona(CdEDataclass):
     database_table: ClassVar[str] = "core.personas"
 
+    # core
+    is_active: bool = True
+    is_archived: bool = False
+    is_purged: bool = False
+
+    # Retrieve realm bits to enable the dataclass to know if it is pure.
+    is_ml_realm: bool = False
+    is_assembly_realm: bool = False
+    is_event_realm: bool = False
+    is_cde_realm: bool = False
+
     def __post_init__(self) -> None:
         for field in dataclasses.fields(self):
             if PersonaFlag.mandatory_true_flag.in_field(field):
@@ -339,27 +350,18 @@ class Persona(CdEDataclass):
 
 @dataclasses.dataclass(kw_only=True)
 class PersonaStatus(Persona):
-    # core
-    is_active: bool = True
-    is_archived: bool = False
-    is_purged: bool = False
-
     # ml
-    is_ml_realm: bool = False
     is_ml_admin: bool = False
     is_cdelokal_admin: bool = False
 
     # assembly
-    is_assembly_realm: bool = False
     is_assembly_admin: bool = False
 
     # event
-    is_event_realm: bool = False
     is_event_admin: bool = False
     is_complaint_admin: bool = False
 
     # cde
-    is_cde_realm: bool = False
     is_member: bool = False
     is_searchable: bool = False
     is_cde_admin: bool = False
@@ -383,18 +385,6 @@ class CorePersona(Persona, PersonaName):
         metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict
     )
     # This does not include the ``password_hash`` for security reasons.
-
-    # status flags
-    is_active: bool = True
-    is_archived: bool = False
-    is_purged: bool = False
-
-    # retrieve all realm bits to enable the dataclass to know if it is pure
-    is_ml_realm: bool = False
-    is_assembly_realm: bool = False
-    is_event_realm: bool = False
-    is_cde_realm: bool = False
-
     # Do not include admin notes, get this via its own getter.
 
     @property
