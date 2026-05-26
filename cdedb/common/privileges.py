@@ -56,7 +56,8 @@ class EventPrivileges(Flag):
     # This privilege allows reading all registration data except for custom fields not
     # visible on the checkin page, as well as editing these registrations and their
     # checkin data.
-    # Most of this is only enforced on template level, i.e. exploitable on write.
+    # TODO This granting partial registrations_read/write access is confusing and
+    # should be refactored.
     checkin = auto()
 
     # create = auto()
@@ -109,6 +110,7 @@ def is_privileged_event_user(
 
     # Limit access to really old events as configured based on id.
     # Any action requiring _any_ of these privileges will be disallowed.
+    # TODO checkin is granting partial registrations_read/write access: not great.
     limited_access_disallow = (
         EP._registrations_read_dummy | EP.registrations_write | EP.checkin
     )
