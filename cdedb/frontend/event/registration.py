@@ -454,7 +454,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             # Creating a new registration. 'parts' and 'fields' should be present.
             if not persona_id:
                 raise ValueError
-            is_member = self.coreproxy.get_persona_status(rs, persona_id).is_member
+            is_member = self.coreproxy.get_event_user(rs, persona_id).is_member
             registration = {
                 **reg,
                 'persona_id': persona_id,

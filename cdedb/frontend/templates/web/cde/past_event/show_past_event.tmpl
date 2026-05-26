@@ -48,7 +48,7 @@
         </dt>
         <dd id="orgas">
             {% for orga in orgas %} {# This is already sorted. #}
-                {{ generic.print_persona(orga.persona, orga.persona_status) }}
+                {{ generic.print_persona(orga.persona) }}
                 {%- if not loop.last %}, {% endif %}
             {% endfor %}
             {% if participants|length != total_participant_number %}
@@ -142,7 +142,7 @@
         <ul id="list-participants" class="flex-width">
             {% for participant in participants.values() %} {# This dict is already sorted. #}
                 <li class="hide-hover-container clearfix-after">
-                    {{ generic.print_persona(participant.persona, participant.persona_status) }}
+                    {{ generic.print_persona(participant.persona) }}
                     {% if participant.course_assignments %}
                         (
                         {%- for assignment in participant.course_assignments -%}{# already sorted #}

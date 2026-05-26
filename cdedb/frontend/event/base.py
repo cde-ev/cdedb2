@@ -73,7 +73,6 @@ class ParticipantListData(typing.TypedDict):
     ordered: list[int]
     reg_counts: dict[int | None, int]
     personas: CdEDataclassMap[models_core.EventPersona]
-    personas_stati: CdEDataclassMap[models_core.PersonaStatus]
     courses: CdEDataclassMap[models.Course]
     parts: CdEDataclassMap[models.EventPart]
 
@@ -532,7 +531,6 @@ class EventBaseFrontend(AbstractUserFrontend):
         }
         persona_ids = tuple(e['persona_id'] for e in registrations.values())
         personas = self.coreproxy.get_event_users(rs, persona_ids, event_id)
-        personas_stati = self.coreproxy.get_personas_status(rs, persona_ids)
 
         all_sorters: dict[str, KeyFunction] = {
             "given_names": EntitySorter.make_persona_sorter(family_name_first=False),
@@ -575,7 +573,6 @@ class EventBaseFrontend(AbstractUserFrontend):
             ordered=ordered,
             parts=parts,
             reg_counts=reg_counts,
-            personas_stati=personas_stati,
         )
 
     def _get_user_lodgement_wishes(

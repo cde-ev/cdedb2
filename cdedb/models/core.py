@@ -444,8 +444,10 @@ class EventPersona(MlPersona):
     )
     is_event_admin: bool = False
     is_complaint_admin: bool = False
-    # TODO this is currently exposed via partial export, should make a single effort to remove this
+
+    # Can only be True for CdEPersona, but are used heavily to determine visibility.
     is_member: bool = False
+    is_searchable: bool = False
 
     gender: const.Genders = dataclasses.field(
         metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict
