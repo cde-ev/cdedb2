@@ -1404,7 +1404,7 @@ class CoreBaseBackend(AbstractBackend):
 
                 # Force password reset if non-admin has gained admin privileges.
                 new_status = self.get_persona_status(rs, case["persona_id"])
-                if not old_status.is_admin and new_status.is_admin:
+                if not old_status.is_any_admin and new_status.is_any_admin:
                     ret *= self.invalidate_password(rs, case["persona_id"])
                     ret *= -1
 
@@ -1758,7 +1758,7 @@ class CoreBaseBackend(AbstractBackend):
             persona = self.get_persona_status(rs, persona_id)
 
             # Do some basic sanity checks.
-            if persona.is_admin:
+            if persona.is_any_admin:
                 return False
 
             # Disallow archival of realm helpers.

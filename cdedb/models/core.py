@@ -369,7 +369,7 @@ class PersonaStatus(Persona):
     is_auditor: bool = False
 
     @functools.cached_property
-    def is_admin(self) -> bool:
+    def is_any_admin(self) -> bool:
         "Persona has any admin privilege."
         return any(getattr(self, bit) for bit in self.get_admin_bits())
 
