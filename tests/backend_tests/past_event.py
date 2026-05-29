@@ -135,7 +135,7 @@ class TestPastEventBackend(BackendTest):
 
     @as_users("vera")
     def test_entity_participant(self) -> None:
-        personas = self.core.get_event_users(self.key, [2, 3, 4, 5, 6, 100])
+        personas = self.core.get_past_event_users(self.key, [2, 3, 4, 5, 6, 100])
         pevent = self.pastevent.get_past_event(self.key, 1)
         pcourses = self.pastevent.get_past_courses(self.key, [1, 2])
         expectation = {

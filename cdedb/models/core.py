@@ -428,6 +428,23 @@ class AssemblyPersona(MlPersona):
 
 
 @dataclasses.dataclass(kw_only=True)
+class PastEventPersona(MlPersona):
+    is_event_realm: bool = dataclasses.field(
+        default=False, metadata=PersonaFlag.mandatory_true_flag.as_dict
+    )
+    is_event_admin: bool = False
+    is_complaint_admin: bool = False
+
+    # Can only be True for CdEPersona, but are used heavily to determine visibility.
+    is_member: bool = False
+    is_searchable: bool = False
+
+    @property
+    def is_pure(self) -> bool:
+        return not (self.is_assembly_realm or self.is_cde_realm)
+
+
+@dataclasses.dataclass(kw_only=True)
 class EventPersona(MlPersona):
     is_event_realm: bool = dataclasses.field(
         default=False, metadata=PersonaFlag.mandatory_true_flag.as_dict

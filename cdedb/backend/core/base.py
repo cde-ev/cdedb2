@@ -2568,6 +2568,32 @@ class CoreBaseBackend(AbstractBackend):
         get_event_users, "persona_ids", "persona_id"
     )
 
+    @access("event")
+    def get_past_event_users(
+        self,
+        rs: RequestState,
+        persona_ids: Collection[int],
+    ) -> CdEDataclassMap[models.PastEventPersona]:
+        """Get a past event view on some data sets."""
+        persona_ids = affirm(set[vtypes.ID], persona_ids)
+        persona_data = self.query_all(
+            rs, *models.PastEventPersona.get_select_query(persona_ids)
+        )
+        ret = models.PastEventPersona.many_from_database(persona_data)
+        return ret
+
+    class _GetPastEventUserProtocol(Protocol):
+        # `persona_id` is actually not optional, but it produces a lot of errors.
+        def __call__(
+            self,
+            rs: RequestState,
+            persona_id: Optional[int],
+        ) -> models.PastEventPersona: ...
+
+    get_past_event_user: _GetPastEventUserProtocol = singularize(
+        get_past_event_users, "persona_ids", "persona_id"
+    )
+
     @overload
     def quota(self, rs: RequestState, *, ids: Collection[int]) -> int: ...
 

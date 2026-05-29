@@ -696,7 +696,7 @@ class PastEventBackend(AbstractBackend):
         self,
         rs: RequestState,
         participants: CdEDataclassMap[T],
-        personas: CdEDataclassMap[models_core.EventPersona],
+        personas: CdEDataclassMap[models_core.PastEventPersona],
         honor_admins: bool,
         pevent_id: int | None = None,
         pcourse_id: int | None = None,
@@ -762,7 +762,7 @@ class PastEventBackend(AbstractBackend):
             entity_key="pevent_id",
         )
         total_participants_num = len(data)
-        personas = self.core.get_event_users(rs, {e['persona_id'] for e in data})
+        personas = self.core.get_past_event_users(rs, {e['persona_id'] for e in data})
         pevent = self.get_past_event(rs, pevent_id)
         for datum in data:
             datum["persona"] = personas[datum["persona_id"]]
@@ -821,7 +821,7 @@ class PastEventBackend(AbstractBackend):
         """
         params: ParamDict = {"pcourse_id": pcourse_id}
         data = self.query_all(rs, query, params)
-        personas = self.core.get_event_users(rs, {e['persona_id'] for e in data})
+        personas = self.core.get_past_event_users(rs, {e['persona_id'] for e in data})
         pcourse = self.get_past_course(rs, pcourse_id)
         for datum in data:
             datum["pcourse"] = pcourse
@@ -850,7 +850,7 @@ class PastEventBackend(AbstractBackend):
     ) -> CdEDataclassMap[models.PastEventParticipant]:
         """List all past events of the given persona."""
         persona_id = affirm(vtypes.ID, persona_id)
-        persona = self.core.get_event_user(rs, persona_id)
+        persona = self.core.get_past_event_user(rs, persona_id)
         if not (
             self.is_admin(rs)
             or "core_admin" in rs.user.roles

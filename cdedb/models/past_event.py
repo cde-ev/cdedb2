@@ -116,7 +116,7 @@ class PastEventParticipant(CdEDataclass):
     database_table = "past_event.participants"
 
     persona_id: vtypes.ID
-    persona: models_core.EventPersona = dataclasses.field(
+    persona: models_core.PastEventPersona = dataclasses.field(
         compare=False, repr=False, metadata=Meta.exclude.as_dict
     )
 
