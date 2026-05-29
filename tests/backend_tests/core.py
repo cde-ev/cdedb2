@@ -1158,6 +1158,7 @@ class TestCoreBackend(BackendTest):
             'is_event_admin': False,
             'is_complaint_admin': False,
             'is_member': True,
+            'is_searchable': True,
             'address': 'Im Garten 77',
             'address_supplement': 'bei Spielmanns',
             'birthday': datetime.date(1981, 2, 11),

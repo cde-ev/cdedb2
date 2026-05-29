@@ -1388,7 +1388,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 raise ValueError(n_("Already registered."))
             self.assert_lock(rs, event_id=data['event_id'])
             data['fields'] = fdata
-            data['is_member'] = self.core.get_event_user(rs, persona_id).is_member
+            data['is_member'] = self.core.get_persona_status(rs, persona_id).is_member
             data['personalized_fees'] = {}
             # Calulate amount owed at the end due to privilege issues.
             data['fields'] = PsycoJson(fdata)

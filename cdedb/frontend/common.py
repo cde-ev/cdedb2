@@ -3074,7 +3074,7 @@ def construct_redirect(request: werkzeug.Request, url: str) -> werkzeug.Response
         return ret
 
 
-# TODO refactor last callsides to use CdEPersona
+# TODO refactor last callsites to use CdEPersona
 def make_membership_fee_reference(persona: CdEDBObject) -> str:
     """Generate the desired reference for membership fee payment.
 

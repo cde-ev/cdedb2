@@ -22,7 +22,7 @@ class MoneyTransferMember:
 
 @dataclasses.dataclass
 class MoneyTransferEvent:
-    persona: models_core.EventPersona
+    persona: models_core.CorePersona
     amount: decimal.Decimal
     date: datetime.date
     registration: CdEDBObject
