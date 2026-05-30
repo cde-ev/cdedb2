@@ -2286,25 +2286,11 @@ class TestCdEFrontend(FrontendTest):
         lines = f['transfers'].value.split('\n')
         inputdata = (
             '\n'
-            .join(
-                lines[5:],
-            )
-            .replace(
-                '-12.34',
-                '12.34',
-            )
-            .replace(
-                'Party50',
-                'Mitgliedsbeitrag',
-            )
-            .replace(
-                'Charles',
-                'Charly',
-            )
-            .replace(
-                'Daniel D.',
-                'Daniel',
-            )
+            .join(lines[5:])
+            .replace('-12.34', '12.34')
+            .replace('Party50', 'Mitgliedsbeitrag')
+            .replace('Charles', 'Charly')
+            .replace('Daniel D.', 'Daniel')
         )
         f['transfers'] = inputdata
         self.submit(f, check_notification=False)

@@ -54,10 +54,12 @@ class MoneyTransfersResult:
         if send_individual_notifications:
             for transfer in self.membership_fees:
                 p = transfer.persona
+                if p['balance'] < _CONF["MEMBERSHIP_FEE"]:
+                    subject = "Überweisung eingegangen – Guthaben zu gering!"
+                else:
+                    subject = "Mitgliedsbeitrag eingegangen"
                 headers: Headers = {
-                    'Subject': "Überweisung eingegangen – Guthaben zu gering!"
-                    if p['balance'] < _CONF["MEMBERSHIP_FEE"]
-                    else "Mitgliedsbeitrag eingegangen",
+                    'Subject': subject,
                     'To': [transfer.persona['username']],
                 }
                 do_mail(
@@ -163,7 +165,7 @@ class MoneyTransfersResult:
                 headers = {
                     'To': to,
                     'Reply-To': reply_to,
-                    'Subject': "Erstattungen für Eure Veranstaltung durchgeführt.",
+                    'Subject': "Erstattungen für Eure Veranstaltung durchgeführt",
                     'Prefix': "",
                 }
                 do_mail(
