@@ -2316,6 +2316,19 @@ class TestCdEFrontend(FrontendTest):
             div="notifications",
         )
 
+        mails = self._fetch_mail()
+        self.assertEqual(
+            [
+                "[CdE] Mitgliedsbeitrag eingegangen",
+                "[CdE] Mitgliedsbeitrag eingegangen",
+                "[CdE] Überweisung für Große Testakademie 2222 eingetroffen",
+                "Neue Überweisungen für Eure Veranstaltung",
+                "[CdE] Erstattung für Große Testakademie 2222 ausgeführt",
+                "Erstattungen für Eure Veranstaltung durchgeführt",
+                "Überweisungen eingetragen",
+            ],
+            [mail.get("Subject") for mail in mails],
+        )
         finance_admin_mail = self.fetch_mail_content(-1)
         self.assertIn(
             "4 Überweisungen eingetragen. Insgesamt 486,33\xa0€:",
@@ -2479,6 +2492,15 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         f = self.response.forms["transfersform"]
         self.submit(f, verbose=True)
+        notification_mail = self._fetch_mail()[0]
+        self.assertEqual(
+            "[CdE] Überweisung eingegangen – Guthaben zu gering!",
+            notification_mail.get("Subject"),
+        )
+        self.assertIn(
+            "Leider reicht dein Guthaben nicht aus",
+            self._get_mail_content(notification_mail),
+        )
         self.admin_view_profile("daniel")
         self.assertNonPresence("CdE-Mitglied", div='membership')
 
