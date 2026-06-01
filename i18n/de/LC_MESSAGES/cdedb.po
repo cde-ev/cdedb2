@@ -15251,10 +15251,6 @@ msgstr ""
 "Dies stellt den archivierten Account wieder her. Er kann anschließend wieder "
 "normal genutzt werden."
 
-#: cdedb/frontend/templates/web/core/dearchive_user.tmpl:27
-msgid "Dearchive user"
-msgstr "Nutzer wiederherstellen"
-
 #: cdedb/frontend/templates/web/core/debug_email.tmpl:4
 msgid "View E-Mail"
 msgstr "Emailbetrachter"
