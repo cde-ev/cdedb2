@@ -9916,8 +9916,8 @@ msgstr ""
 "Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin sein."
 
 #: cdedb/frontend/ml/base.py:967
-msgid "User is no moderator."
-msgstr "Person ist kein Moderator."
+msgid "Not a moderator."
+msgstr "Kein:e Moderator:in."
 
 #: cdedb/frontend/ml/base.py:974
 msgid "Not allowed to remove yourself as moderator."
