@@ -76,7 +76,7 @@ msgstr "Offen"
 
 #: cdedb/.i18n_additional.py:17
 msgid "RegistrationPartStati.participant"
-msgstr "Teilnehmer"
+msgstr "Teilnehmend"
 
 #: cdedb/.i18n_additional.py:18
 msgid "RegistrationPartStati.waitlist"
@@ -336,7 +336,7 @@ msgstr "Mitglieder (Moderiertes Opt-in)"
 
 #: cdedb/.i18n_additional.py:82
 msgid "MailinglistTypes.member_invitation_only"
-msgstr "Mitglieder (Nur durch Moderatoren)"
+msgstr "Mitglieder (Nur durch Moderation)"
 
 #: cdedb/.i18n_additional.py:83
 msgid "MailinglistTypes.team"
@@ -344,11 +344,11 @@ msgstr "Team (Moderiertes Opt-In)"
 
 #: cdedb/.i18n_additional.py:84
 msgid "MailinglistTypes.restricted_team"
-msgstr "Team (Nur durch Moderatoren)"
+msgstr "Team (Nur durch Moderation)"
 
 #: cdedb/.i18n_additional.py:85
 msgid "MailinglistTypes.event_associated"
-msgstr "Teilnehmer/Anmeldungen (Opt-out)"
+msgstr "Teilnehmende/Anmeldungen (Opt-out)"
 
 #: cdedb/.i18n_additional.py:86
 msgid "MailinglistTypes.event_orga"
@@ -356,7 +356,7 @@ msgstr "Orga (Opt-out)"
 
 #: cdedb/.i18n_additional.py:87
 msgid "MailinglistTypes.event_associated_exclusive"
-msgstr "Teilnehmer/Anmeldungen (Opt-out, exklusiv)"
+msgstr "Teilnehmende/Anmeldungen (Opt-out, exklusiv)"
 
 #: cdedb/.i18n_additional.py:88
 msgid "MailinglistTypes.assembly_associated"
@@ -364,7 +364,7 @@ msgstr "Versammlung (Opt-out)"
 
 #: cdedb/.i18n_additional.py:89
 msgid "MailinglistTypes.assembly_opt_in"
-msgstr "Versammlungsnutzer (Opt-in)"
+msgstr "Versammlungsaccounts (Opt-in)"
 
 #: cdedb/.i18n_additional.py:90
 msgid "MailinglistTypes.assembly_presider"
@@ -384,15 +384,15 @@ msgstr "Öffentlich (Moderiertes Opt-in)"
 
 #: cdedb/.i18n_additional.py:94
 msgid "MailinglistTypes.general_invitation_only"
-msgstr "Öffentlich (Nur durch Moderatoren)"
+msgstr "Öffentlich (Nur durch Moderation)"
 
 #: cdedb/.i18n_additional.py:95
 msgid "MailinglistTypes.general_moderators"
-msgstr "Alle Moderatoren"
+msgstr "Alle Moderationen"
 
 #: cdedb/.i18n_additional.py:96
 msgid "MailinglistTypes.cdelokal_moderators"
-msgstr "Alle CdElokal-Moderatoren"
+msgstr "Alle CdElokal-Moderationen"
 
 #: cdedb/.i18n_additional.py:97
 msgid "MailinglistTypes.semi_public"
@@ -412,7 +412,7 @@ msgstr "Alle Fallarchiv-Admins"
 
 #: cdedb/.i18n_additional.py:101
 msgid "MailinglistTypes.complaint_enforcer_implicit"
-msgstr "Alle Maßnahmen-Manager"
+msgstr "Alle Maßnahmen-Manager:innen"
 
 #: cdedb/.i18n_additional.py:102
 msgid "MailinglistRosterVisibility.none"
@@ -432,7 +432,7 @@ msgstr "Alle dürfen schreiben"
 
 #: cdedb/.i18n_additional.py:106
 msgid "ModerationPolicy.non_subscribers"
-msgstr "Abonnenten dürfen schreiben"
+msgstr "Abonnent:innen dürfen schreiben"
 
 #: cdedb/.i18n_additional.py:107
 msgid "ModerationPolicy.fully_moderated"
@@ -600,7 +600,7 @@ msgstr "Betroffene"
 
 #: cdedb/.i18n_additional.py:148
 msgid "ComplaintInvolvementType.appellant"
-msgstr "Beschwerdeführer"
+msgstr "Beschwerdeführer:in"
 
 #: cdedb/.i18n_additional.py:149
 msgid "ComplaintInvolvementType.target"
@@ -848,11 +848,11 @@ msgstr "Fallbegleitung entfernt"
 
 #: cdedb/.i18n_additional.py:210
 msgid "ComplaintLogCodes.enforcer_added"
-msgstr "Maßnahmenmanager hinzugefügt"
+msgstr "Maßnahmenmanager:in hinzugefügt"
 
 #: cdedb/.i18n_additional.py:211
 msgid "ComplaintLogCodes.enforcer_removed"
-msgstr "Maßnahmenmanager entfernt"
+msgstr "Maßnahmenmanager:in entfernt"
 
 #: cdedb/.i18n_additional.py:212
 msgid "ComplaintLogCodes.case_unlocked"
@@ -1260,11 +1260,11 @@ msgstr "Orga-Token gelöscht"
 
 #: cdedb/.i18n_additional.py:313
 msgid "EventLogCodes.helper_added"
-msgstr "Veranstaltungshelfer hinzugefügt"
+msgstr "Veranstaltungshelfer:in hinzugefügt"
 
 #: cdedb/.i18n_additional.py:314
 msgid "EventLogCodes.helper_removed"
-msgstr "Veranstaltungshelfer entfernt"
+msgstr "Veranstaltungshelfer:in entfernt"
 
 #: cdedb/.i18n_additional.py:315
 msgid "EventLogCodes.orga_added"
@@ -1276,11 +1276,11 @@ msgstr "Orga entfernt"
 
 #: cdedb/.i18n_additional.py:317
 msgid "EventLogCodes.caretaker_added"
-msgstr "Betreuer hinzugefügt"
+msgstr "Betreuer:in hinzugefügt"
 
 #: cdedb/.i18n_additional.py:318
 msgid "EventLogCodes.caretaker_removed"
-msgstr "Betreuer entfernt"
+msgstr "Betreuer:in entfernt"
 
 #: cdedb/.i18n_additional.py:319
 msgid "EventLogCodes.event_partial_import"
@@ -1312,11 +1312,11 @@ msgstr "Anmeldung gesperrt"
 
 #: cdedb/.i18n_additional.py:326
 msgid "EventLogCodes.checkin_helper_added"
-msgstr "Checkin-Helfer hinzugefügt"
+msgstr "Checkin-Helfer:in hinzugefügt"
 
 #: cdedb/.i18n_additional.py:327
 msgid "EventLogCodes.checkin_helper_removed"
-msgstr "Checkin-Helfer entfernt"
+msgstr "Checkin-Helfer:in entfernt"
 
 #: cdedb/.i18n_additional.py:328
 msgid "PastEventLogCodes.event_created"
@@ -1344,11 +1344,11 @@ msgstr "Verg. Kurs gelöscht"
 
 #: cdedb/.i18n_additional.py:334
 msgid "PastEventLogCodes.participant_set"
-msgstr "Teilnehmer gesetzt"
+msgstr "Teilnehmende gesetzt"
 
 #: cdedb/.i18n_additional.py:335
 msgid "PastEventLogCodes.participant_removed"
-msgstr "Teilnehmer entfernt"
+msgstr "Teilnehmende entfernt"
 
 #: cdedb/.i18n_additional.py:336
 msgid "PastEventLogCodes.course_assignment_set"
@@ -1376,11 +1376,11 @@ msgstr "Versammlung gelöscht"
 
 #: cdedb/.i18n_additional.py:342
 msgid "AssemblyLogCodes.assembly_presider_added"
-msgstr "Versammlungsleiter hinzugefügt"
+msgstr "Versammlungsleitung hinzugefügt"
 
 #: cdedb/.i18n_additional.py:343
 msgid "AssemblyLogCodes.assembly_presider_removed"
-msgstr "Versammlungsleiter entfernt"
+msgstr "Versammlungsleitung entfernt"
 
 #: cdedb/.i18n_additional.py:344
 msgid "AssemblyLogCodes.ballot_created"
@@ -1448,7 +1448,7 @@ msgstr "Anhang von Abstimmung getrennt"
 
 #: cdedb/.i18n_additional.py:360
 msgid "AssemblyLogCodes.new_attendee"
-msgstr "Neuer Teilnehmer"
+msgstr "Neue Teilnehmende"
 
 #: cdedb/.i18n_additional.py:361
 msgid "MlLogCodes.list_created"
@@ -1464,11 +1464,11 @@ msgstr "Mailingliste gelöscht"
 
 #: cdedb/.i18n_additional.py:364
 msgid "MlLogCodes.moderator_added"
-msgstr "Moderator hinzugefügt"
+msgstr "Moderation hinzugefügt"
 
 #: cdedb/.i18n_additional.py:365
 msgid "MlLogCodes.moderator_removed"
-msgstr "Moderator entfernt"
+msgstr "Moderation entfernt"
 
 #: cdedb/.i18n_additional.py:366
 msgid "MlLogCodes.subscribed"
@@ -1888,7 +1888,7 @@ msgstr "Verstöße gegen Kursausschließlichkeit"
 
 #: cdedb/.i18n_additional.py:470
 msgid "IncorrectNumInhabitantsCV"
-msgstr "Unterkünfte mit inkorrekter Bewohnerzahl"
+msgstr "Unterkünfte mit inkorrekter Bewohner:innenzahl"
 
 #: cdedb/.i18n_additional.py:471
 msgid "IllegalMixedLodgementCV"
@@ -1976,7 +1976,7 @@ msgstr "Konto für Lastschriften"
 
 #: cdedb/.i18n_additional.py:492 cdedb/i18n_additional.py:77
 msgid "banner_before_login"
-msgstr "Banner bevor Login"
+msgstr "Banner vor Login"
 
 #: cdedb/.i18n_additional.py:493 cdedb/i18n_additional.py:78
 msgid "banner_after_login"
@@ -2114,75 +2114,75 @@ msgstr "Vorhersehbare Ersetzungen wie „@“ statt „a“ helfen nicht wirklic
 
 #: cdedb/.i18n_additional.py:525 cdedb/i18n_additional.py:117
 msgid "subman_managing_not-pending"
-msgstr "Der Nutzer hat keine Abonnement-Anfrage gestellt."
+msgstr "Es gibt keine Abonnement-Anfrage für diesen Account."
 
 #: cdedb/.i18n_additional.py:526 cdedb/i18n_additional.py:118
 msgid "subman_managing_is-subscribed"
-msgstr "Der Nutzer ist aktuell Abonnent."
+msgstr "Dieser Account hat die Mailingliste bereits abonniert."
 
 #: cdedb/.i18n_additional.py:527 cdedb/i18n_additional.py:119
 msgid "subman_managing_is-unsubscribed"
-msgstr "Der Nutzer hat die Liste aktuell deabonniert."
+msgstr "Dieser Account hat die Mailingliste bereits deabonniert."
 
 #: cdedb/.i18n_additional.py:528 cdedb/i18n_additional.py:120
 msgid "subman_managing_is-subscription-overridden"
 msgstr ""
-"Der Nutzer ist aktuell fixierter Abonnent. Um dies zu ändern, kannst du die "
+"Dieser Account ist für diese Mailingliste aktuell fixiert abonniert. Um dies zu ändern, kannst du die "
 "Seite 'Erweiterte Verwaltung' nutzen."
 
 #: cdedb/.i18n_additional.py:529 cdedb/i18n_additional.py:121
 msgid "subman_managing_is-unsubscription-overridden"
 msgstr ""
-"Der Nutzer ist aktuell blockiert. Um dies zu ändern, kannst du die Seite "
+"Dieser Account ist für diese Mailingliste aktuell blockiert. Um dies zu ändern, kannst du die Seite "
 "'Erweiterte Verwaltung' nutzen."
 
 #: cdedb/.i18n_additional.py:530 cdedb/i18n_additional.py:122
 msgid "subman_managing_is-pending"
-msgstr "Der Nutzer hat aktuell eine Abonnement-Anfrage gestellt."
+msgstr "Es gibt eine Abonnement-Anfrage für diesen Account."
 
 #: cdedb/.i18n_additional.py:531 cdedb/i18n_additional.py:123
 msgid "subman_managing_not-subscription-overridden"
-msgstr "Der Nutzer ist kein fixierter Abonnent."
+msgstr "Dieser Account ist für diese Mailingliste nicht fixiert abonniert."
 
 #: cdedb/.i18n_additional.py:532 cdedb/i18n_additional.py:124
 msgid "subman_managing_not-unsubscription-overridden"
-msgstr "Der Nutzer ist nicht blockiert."
+msgstr "Dieser Account ist für diese Mailingliste nicht blockiert."
 
 #: cdedb/.i18n_additional.py:533 cdedb/i18n_additional.py:125
 msgid "subman_self_is-subscribed"
-msgstr "Du bist aktuell Abonnent."
+msgstr "Du hast diese Mailingliste aktuell abonniert."
 
 #: cdedb/.i18n_additional.py:534 cdedb/i18n_additional.py:126
 msgid "subman_self_is-unsubscribed"
-msgstr "Du hast die Liste aktuell deabonniert."
+msgstr "Du hast diese Mailingliste aktuell deabonniert."
 
 #: cdedb/.i18n_additional.py:535 cdedb/i18n_additional.py:127
 msgid "subman_self_is-unsubscription-overridden"
-msgstr "Du bist aktuell blockiert."
+msgstr "Du bist aktuell für diese Mailingliste blockiert."
 
 #: cdedb/.i18n_additional.py:536 cdedb/i18n_additional.py:128
 msgid "subman_self_is-pending"
-msgstr "Du hast aktuell eine Abonnement-Anfrage gestellt."
+msgstr "Du hast aktuell eine Abonnement-Anfrage für diese Mailingliste gestellt."
 
 #: cdedb/.i18n_additional.py:537 cdedb/i18n_additional.py:129
 msgid "subman_self_not-pending"
-msgstr "Du hast keine Abonnement-Anfrage gestellt."
+msgstr "Du hast keine Abonnement-Anfrage für diese Mailingliste gestellt."
 
 #: cdedb/.i18n_additional.py:538 cdedb/i18n_additional.py:130
 msgid "subman_managing_not-subscribable"
-msgstr "Der Nutzer hat keine Berechtigung auf dieser Liste zu stehen."
+msgstr "Dieser Account ist nicht berechtigt auf dieser Mailingliste zu stehen."
 
 #: cdedb/.i18n_additional.py:539 cdedb/i18n_additional.py:131
 msgid "subman_self_not-self-subscribable"
-msgstr "Du kannst diese Liste nicht abonnieren."
+msgstr "Du kannst diese Mailingliste nicht abonnieren."
 
 #: cdedb/.i18n_additional.py:540 cdedb/i18n_additional.py:132
 msgid "subman_self_not-requestable"
-msgstr "Du kannst keine Abonnement-Anfrage stellen."
+msgstr "Du kannst keine Abonnement-Anfrage für diese Mailingliste stellen."
 
 #: cdedb/.i18n_additional.py:541 cdedb/i18n_additional.py:133
 msgid "subman_managing_no-unsubscribe-possible"
-msgstr "Abbestellung nicht möglich."
+msgstr "Diese Mailingliste kann nicht deabonnieren werden."
 
 #: cdedb/.i18n_additional.py:542 cdedb/i18n_additional.py:134
 msgid "subman_managing_not-privileged"
@@ -2194,19 +2194,19 @@ msgstr "Keine Säuberung erforderlich."
 
 #: cdedb/.i18n_additional.py:544 cdedb/i18n_additional.py:139
 msgid "A candidate contains a forbidden character."
-msgstr "Ein Kandidat enthält ein verbotenes Zeichen."
+msgstr "Eine Option enthält ein verbotenes Zeichen."
 
 #: cdedb/.i18n_additional.py:545 cdedb/i18n_additional.py:140
 msgid "Superfluous candidate in vote string."
-msgstr "Unerwarteten Kandidaten gefunden."
+msgstr "Unerwartete Option gefunden."
 
 #: cdedb/.i18n_additional.py:546 cdedb/i18n_additional.py:141
 msgid "Missing candidate in vote string."
-msgstr "Nicht alle Kandidaten vorhanden."
+msgstr "Nicht alle Optionen vorhanden."
 
 #: cdedb/.i18n_additional.py:547 cdedb/i18n_additional.py:142
 msgid "Every candidate must occur exactly once in each vote."
-msgstr "Jeder Kandidat muss genau einmal vorhanden sein."
+msgstr "Jede Option muss genau einmal vorhanden sein."
 
 #: cdedb/.i18n_additional.py:548
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:37
@@ -3350,7 +3350,7 @@ msgstr "Keine Eingabe gemacht."
 
 #: cdedb/backend/assembly.py:463
 msgid "Can only retrieve id for exactly one assembly."
-msgstr "Kann nur die ID von exact einer Versammlung bestimmen."
+msgstr "Kann nur die ID von exakt einer Versammlung bestimmen."
 
 #: cdedb/backend/assembly.py:491 cdedb/backend/assembly.py:2637
 msgid "Too many inputs specified."
@@ -3379,12 +3379,12 @@ msgstr ""
 #: cdedb/frontend/ml/base.py:342 cdedb/frontend/ml/base.py:942
 #: cdedb/frontend/ml/base.py:1044
 msgid "Some of these users do not exist or are archived."
-msgstr "Einige dieser Nutzer existieren nicht oder sind archiviert."
+msgstr "Einige dieser Accounts existieren nicht oder sind archiviert."
 
 #: cdedb/backend/assembly.py:742 cdedb/frontend/assembly/base.py:239
 #: cdedb/frontend/assembly/base.py:458
 msgid "Some of these users are not assembly users."
-msgstr "Einige dieser Nutzer sind keine Versammlungsnutzer."
+msgstr "Einige dieser Accounts sind keine Versammlungsaccounts."
 
 #: cdedb/backend/assembly.py:923
 msgid "Cannot delete assembly with locked ballots."
@@ -3489,7 +3489,7 @@ msgstr "Der Anmeldezeitraum ist vorbei."
 #: cdedb/backend/assembly.py:1600
 msgid "Must have privileged access to add an external assembly participant."
 msgstr ""
-"Fehlende Zugriffsrechte für das Hinzufügen externer Versammlungsnutzer."
+"Fehlende Zugriffsrechte für das Hinzufügen externer Versammlungsaccounts."
 
 #: cdedb/backend/assembly.py:1606
 msgid "Not allowed for members."
@@ -3497,11 +3497,11 @@ msgstr "Ungültige Operation für Mitglieder."
 
 #: cdedb/backend/assembly.py:1608
 msgid "Only allowed for assembly users."
-msgstr "Nur für Versammlungsnutzer zulässig."
+msgstr "Nur für Versammlungsaccounts zulässig."
 
 #: cdedb/backend/assembly.py:1645
 msgid "Must attend to vote."
-msgstr "Nur Teilnehmer der Versammlung können abstimmen."
+msgstr "Du musst an der Versammlung teilnehmen um abstimmen zu können."
 
 #: cdedb/backend/assembly.py:1647
 msgid "Ballot is not open for voting."
@@ -3737,7 +3737,7 @@ msgstr "Accounts nach erster Veranstaltung"
 
 #: cdedb/backend/cde/base.py:417
 msgid "unique_participants_per_year"
-msgstr "Verschiedene CdE-Akademie-Teilnehmer"
+msgstr "Verschiedene CdE-Akademie-Teilnehmende"
 
 #: cdedb/backend/cde/base.py:498
 msgid "Cannot restore purged account."
@@ -3769,7 +3769,7 @@ msgstr "Mehrere aktive Einzugsermächtigungen sind unzulässig."
 
 #: cdedb/backend/cde/lastschrift.py:197
 msgid "Invalid persona."
-msgstr "Ungültiger Benutzer."
+msgstr "Ungültiger Account."
 
 #: cdedb/backend/cde/lastschrift.py:271 cdedb/backend/cde/lastschrift.py:301
 #: cdedb/backend/core/genesis.py:137 cdedb/backend/core/genesis.py:167
@@ -3873,7 +3873,7 @@ msgstr "Der aktuelle exPuls ist noch nicht abgeschlossen."
 
 #: cdedb/backend/cde/semester.py:420
 msgid "Addresscheck already done for this expuls."
-msgstr "Adressabfrage für diesen ExPuls bereits durchgeführt."
+msgstr "Adressabfrage für diesen exPuls bereits durchgeführt."
 
 #: cdedb/backend/cde/semester.py:649
 msgid "Balance too low."
@@ -3905,15 +3905,15 @@ msgstr "Operation nur für Checkin-Zeitpunkt möglich."
 #: cdedb/frontend/core/complaint.py:1281
 #: cdedb/frontend/event/registration.py:1644
 msgid "This user does not exist or is archived."
-msgstr "Dieser Benutzer existiert nicht oder ist archiviert."
+msgstr "Dieser Account existiert nicht oder ist archiviert."
 
 #: cdedb/backend/complaint.py:395
 msgid "No authors specified."
-msgstr "Keine Autoren angegeben."
+msgstr "Keine Autor:innen angegeben."
 
 #: cdedb/backend/complaint.py:397
 msgid "Unknown authors."
-msgstr "Unbekannte Autoren."
+msgstr "Unbekannte Autor:innen."
 
 #: cdedb/backend/complaint.py:431
 msgid "Deletion reason given, but entry has no active version."
@@ -3959,7 +3959,7 @@ msgstr "Löschung noch nicht möglich."
 
 #: cdedb/backend/complaint.py:758 cdedb/backend/complaint.py:870
 msgid "Unknown users."
-msgstr "Unbekannte Nutzer."
+msgstr "Unbekannte Personen."
 
 #: cdedb/backend/complaint.py:790
 #, python-format
@@ -3973,7 +3973,7 @@ msgstr "Bereits aktive Fallbegleitung."
 #: cdedb/backend/complaint.py:920 cdedb/backend/complaint.py:976
 #: cdedb/backend/complaint.py:1068
 msgid "Uninvolved user."
-msgstr "Unbeteiligter Nutzer."
+msgstr "Unbeteiligte Person."
 
 #: cdedb/backend/complaint.py:961
 msgid "Unknown companions."
@@ -3997,7 +3997,7 @@ msgstr "Keine bestätigte Version gefunden."
 
 #: cdedb/backend/core/base.py:527
 msgid "Persona and Changelog are inconsistent."
-msgstr "Nutzer und Änderungshistorie sind inkonsistent."
+msgstr "Account und Änderungshistorie sind inkonsistent."
 
 #: cdedb/backend/core/base.py:587 cdedb/backend/core/base.py:1631
 #: cdedb/frontend/core/base.py:2558 cdedb/frontend/core/complaint.py:1287
@@ -4033,7 +4033,7 @@ msgstr "Nicht genug Adminprivilegien für diesen Account."
 
 #: cdedb/backend/core/base.py:1029 cdedb/frontend/core/base.py:2753
 msgid "Nonexistent user."
-msgstr "Nutzer existiert nicht."
+msgstr "Account existiert nicht."
 
 #: cdedb/backend/core/base.py:1081 cdedb/backend/core/base.py:3182
 #: cdedb/backend/core/base.py:3215 cdedb/backend/core/base.py:3355
@@ -4100,7 +4100,7 @@ msgstr "Ausstehende Änderung der Admin-Privilegien."
 #: cdedb/backend/core/base.py:1317
 msgid "User does not fit the requirements for this admin privilege."
 msgstr ""
-"Nutzer hat nicht die notwendigen Voraussetzungen für diese Adminprivilegien."
+"Der Account hat nicht die notwendigen Voraussetzungen für diese Adminprivilegien."
 
 #: cdedb/backend/core/base.py:1367
 #, python-format
@@ -4123,7 +4123,7 @@ msgstr "Kein Realm angegeben."
 
 #: cdedb/backend/core/base.py:1547
 msgid "Tried to credit balance to non-cde person."
-msgstr "Guthabenänderung für Nicht-CdE-Person."
+msgstr "Guthabenänderung für Nicht-CdE-Account."
 
 #: cdedb/backend/core/base.py:1609 cdedb/common/validation/validate.py:1597
 msgid "Trial membership requires membership."
@@ -4139,7 +4139,7 @@ msgstr "Eine aktive Lastschrift existiert."
 
 #: cdedb/backend/core/base.py:1954
 msgid "You are not allowed to archive this user."
-msgstr "Du darfst diesen Benutzer nicht archivieren."
+msgstr "Du darfst diesen Account nicht archivieren."
 
 #: cdedb/backend/core/base.py:1962
 msgid "Cannot archive admins."
@@ -4148,7 +4148,7 @@ msgstr "Admins können nicht archiviert werden."
 #: cdedb/backend/core/base.py:1973
 msgid "Cannot archive complaint and event helpers."
 msgstr ""
-"Fall-Unterstützer und Veranstaltungshelfer können nicht archiviert werden."
+"Fall-Unterstützer:innen und Veranstaltungshelfer:innen können nicht archiviert werden."
 
 #: cdedb/backend/core/base.py:1986
 msgid "Active lastschrift exists."
@@ -4176,16 +4176,16 @@ msgstr "Ist Orga einer nicht-abgeschlossenen Veranstaltung."
 
 #: cdedb/backend/core/base.py:2167
 msgid "Attendee of unfinished assembly."
-msgstr "Ist Teilnehmer einer nicht-abgeschlossenen Versammlung."
+msgstr "Nimmt an einer nicht-abgeschlossenen Versammlung teil."
 
 #: cdedb/backend/core/base.py:2178
 msgid "Presider of unfinished assembly."
-msgstr "Ist Versammlungsleitung einer nicht-abgeschlossenen Versammlung."
+msgstr "Leitet eine nicht-abgeschlossenen Versammlung."
 
 #: cdedb/backend/core/base.py:2212
 #, python-format
 msgid "Sole moderator of a mailinglist %(ml_ids)s."
-msgstr "Einziger Moderator der Mailinglisten %(ml_ids)s."
+msgstr "Moderiert alleine die Mailinglisten %(ml_ids)s."
 
 #: cdedb/backend/core/base.py:2254
 msgid "Cannot archive silently."
@@ -4194,15 +4194,15 @@ msgstr "Kann nicht still archiviert werden."
 #: cdedb/backend/core/base.py:2283 cdedb/frontend/common.py:1867
 #: cdedb/frontend/core/base.py:3224
 msgid "User with this E-Mail exists already."
-msgstr "Ein Benutzer mit dieser E-Mail-Adresse existiert bereits."
+msgstr "Ein Account mit dieser E-Mail-Adresse existiert bereits."
 
 #: cdedb/backend/core/base.py:2316
 msgid "Persona is not archived."
-msgstr "Benutzer ist nicht archiviert."
+msgstr "Account ist nicht archiviert."
 
 #: cdedb/backend/core/base.py:2324
 msgid "Persona may not be purged."
-msgstr "Benutzer kann nicht geleert werden."
+msgstr "Account kann nicht geleert werden."
 
 #: cdedb/backend/core/base.py:2384
 msgid "Cannot purge silently."
@@ -4372,7 +4372,7 @@ msgstr "Einige dieser Accounts existieren nicht oder sind archiviert."
 
 #: cdedb/backend/event/base.py:375
 msgid "Some of these personas are not event users."
-msgstr "Einige dieser Accounts sind keine Veranstaltungsnutzer."
+msgstr "Einige dieser Accounts sind keine Veranstaltungsaccounts."
 
 #: cdedb/backend/event/base.py:571
 msgid "Only orga tokens from one event allowed."
@@ -4465,7 +4465,7 @@ msgstr "Nicht-existente Kursschiene angegeben."
 
 #: cdedb/backend/event/course.py:493
 msgid "Only available for instructors of this course."
-msgstr "Nur für Kursleiter dieses Kurses verfügbar."
+msgstr "Nur für die Leitung dieses Kurses verfügbar."
 
 #: cdedb/backend/event/lodgement.py:221 cdedb/frontend/event/lodgement.py:833
 msgid "Invalid lodgement group."
@@ -4514,7 +4514,7 @@ msgid ""
 "Cannot change association or kind of a field referenced by an event fee."
 msgstr ""
 "Die Zugehörigkeit und der Datentyp eines Feldes können nicht geändert "
-"werden, falls es in einem Teilnahmbebeitrag referenziert wird."
+"werden, falls es in einem Teilnahmebeitrag referenziert wird."
 
 #: cdedb/backend/event/query.py:783
 msgid "Must be orga to retrieve stored queries."
@@ -4530,7 +4530,7 @@ msgstr "Du musst Orga sein, um Suchabfragen zu speichern."
 
 #: cdedb/backend/event/query.py:834
 msgid "Cannot store this kind of query."
-msgstr "Diese Art von Suchabfrage kann nciht gespeichert werden."
+msgstr "Diese Art von Suchabfrage kann nicht gespeichert werden."
 
 #: cdedb/backend/event/query.py:852
 #, python-format
@@ -4580,7 +4580,7 @@ msgstr "Kann `amount_paid` nicht mittels `set_registration` ändern."
 
 #: cdedb/backend/event/registration.py:1256
 msgid "Non-existing parts specified."
-msgstr "Angegebene Teile existieren Nicht."
+msgstr "Angegebene Teile existieren nicht."
 
 #: cdedb/backend/event/registration.py:1291
 #: cdedb/backend/event/registration.py:1326
@@ -4590,7 +4590,7 @@ msgstr "Dies ist nicht unterstützt."
 #: cdedb/backend/event/registration.py:1385
 #: cdedb/frontend/event/registration.py:1649
 msgid "This user is not an event user."
-msgstr "Dieser Nutzer ist kein Veranstaltungsnutzer."
+msgstr "Dieser Account ist kein Veranstaltungsaccount."
 
 #: cdedb/backend/event/registration.py:1387
 #: cdedb/frontend/event/registration.py:367
@@ -4639,7 +4639,7 @@ msgstr "Überweisung konnte nicht verbucht werden, da der Betrag Null ist."
 msgid "Event is balanced. May not book payments."
 msgstr ""
 "Veranstaltung ist abgeschlossen. Es dürfen keine Überweisungen mehr "
-"eingegtragen werden."
+"eingetragen werden."
 
 #: cdedb/backend/event/registration.py:2163
 msgid "All registrations must belong to the same event."
@@ -4666,7 +4666,7 @@ msgstr "Checkout muss nach Checkin liegen."
 #: cdedb/backend/event/registration.py:2429
 #: cdedb/frontend/event/registration.py:2089
 msgid "Cannot check in checked-in users."
-msgstr "Kann eingecheckte Nutzer nicht einchecken."
+msgstr "Kann eingecheckte Personen nicht einchecken."
 
 #: cdedb/backend/event/registration.py:2431
 #: cdedb/backend/event/registration.py:2437
@@ -4722,16 +4722,16 @@ msgstr "Unterschiedliche Mailinglisten angegeben."
 #: cdedb/frontend/cde/past_event.py:401 cdedb/frontend/core/complaint.py:403
 #: cdedb/frontend/core/complaint.py:533
 msgid "Some of these users do not exist."
-msgstr "Einige dieser Nutzer existieren nicht."
+msgstr "Einige dieser Accounts existieren nicht."
 
 #: cdedb/backend/ml.py:493 cdedb/frontend/ml/base.py:347
 #: cdedb/frontend/ml/base.py:947
 msgid "Some of these users are not ml users."
-msgstr "Einige dieser Nutzer sind keine Mailinglistenutzer."
+msgstr "Einige dieser Accounts sind keine Mailinglistenaccounts."
 
 #: cdedb/backend/ml.py:548
 msgid "Cannot remove all moderators."
-msgstr "Es können nicht sämtliche Moderatoren entfernt werden."
+msgstr "Es kann nicht die ganze Moderation entfernt werden."
 
 #: cdedb/backend/ml.py:652
 msgid "Not privileged to change to this mailinglist type for this mailinglist."
@@ -4741,21 +4741,21 @@ msgstr ""
 
 #: cdedb/backend/ml.py:751
 msgid "Need to be moderator or admin to change mailinglist."
-msgstr "Um eine Mailingliste zu ändern muss man Moderator oder Admin sein."
+msgstr "Um eine Mailingliste zu ändern muss man sie moderieren oder Admin sein."
 
 #: cdedb/backend/ml.py:754
 msgid "Need to be admin to change this."
-msgstr "Um das zu ändern muss man Admin sein.Nur Admins dürfen das ändern."
+msgstr "Um das zu ändern muss man Admin sein."
 
 #: cdedb/backend/ml.py:758
 msgid "Restricted moderators are not allowed to change this."
-msgstr "Eingeschränkte Moderatoren können dies nicht ändern."
+msgstr "Eingeschränkte Moderator:innen können dies nicht ändern."
 
 #: cdedb/backend/ml.py:803
 msgid "Not privileged to create mailinglist of this type."
 msgstr ""
 "Du hast nicht die nötigen Zugriffsberechtigungen, um eine Mailingliste "
-"dieses Typs zu erstellen."
+"diesen Typs zu erstellen."
 
 #: cdedb/backend/ml.py:834
 msgid "Non-unique mailinglist address"
@@ -4797,11 +4797,11 @@ msgstr "Ein Account kann nicht mit sich selbst verschmolzen werden."
 #: cdedb/backend/ml.py:1846
 #, python-format
 msgid "Both users are related to the same mailinglists: %(mls)s"
-msgstr "Beide Benutzer haben einen Bezug zu gleichen Mailinglisten: %(mls)s"
+msgstr "Beide Accounts haben einen Bezug zur gleichen Mailinglisten: %(mls)s"
 
 #: cdedb/backend/past_event.py:591
 msgid "This user does not participate at this event."
-msgstr "Dieser Nutzer hat an dieser Veranstaltung nicht teilgenommen."
+msgstr "Dieser Account hat an dieser Veranstaltung nicht teilgenommen."
 
 #: cdedb/backend/past_event.py:910 cdedb/backend/past_event.py:954
 msgid "No input supplied."
@@ -5771,7 +5771,7 @@ msgstr "Löschgrund"
 
 #: cdedb/common/query/__init__.py:763
 msgid "Author"
-msgstr "Autor"
+msgstr "Autor:in"
 
 #: cdedb/common/query/__init__.py:764 cdedb/common/query/__init__.py:765
 #: cdedb/common/query/__init__.py:766 cdedb/database/constants.py:1019
@@ -5869,7 +5869,7 @@ msgstr "CdEDB-ID"
 #: cdedb/frontend/templates/web/core/show_user_events.tmpl:15
 #: cdedb/frontend/templates/web/core/show_user_mailinglists.tmpl:17
 msgid "User"
-msgstr "Benutzer"
+msgstr "Account"
 
 #: cdedb/common/query/__init__.py:1152
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:59
@@ -5952,7 +5952,7 @@ msgstr "Gemischte Unterbringung"
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:329
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:415
 msgid "Participant List Consent"
-msgstr "Teilnehmerlisten-Zustimmung"
+msgstr "Zustimmung zur Teilnehmendenlisten"
 
 #: cdedb/common/query/__init__.py:1176
 #: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:10
@@ -6128,7 +6128,7 @@ msgstr "Kurschiene"
 
 #: cdedb/common/query/__init__.py:1263
 msgid "instructs their course"
-msgstr "Hält seinen/ihren Kurs"
+msgstr "Hält den eigenen Kurs"
 
 #: cdedb/common/query/__init__.py:1270
 msgid "instructed course"
@@ -6277,7 +6277,7 @@ msgstr "wurde abgesagt"
 
 #: cdedb/common/query/__init__.py:1477
 msgid "attendee count"
-msgstr "Anzahl Teilnehmer"
+msgstr "Anzahl Teilnehmende"
 
 #: cdedb/common/query/__init__.py:1479
 msgid "remaining capacity"
@@ -6285,7 +6285,7 @@ msgstr "Freie Plätze"
 
 #: cdedb/common/query/__init__.py:1481
 msgid "attendee count (incl. guests)"
-msgstr "Anzahl Teilnehmer (inkl. Gäste)"
+msgstr "Anzahl Teilnehmende (inkl. Gäste)"
 
 #: cdedb/common/query/__init__.py:1483
 msgid "instructor count"
@@ -6369,15 +6369,15 @@ msgstr "Unterkunftsgruppe: Bezeichner"
 
 #: cdedb/common/query/__init__.py:1615
 msgid "Regular Inhabitants"
-msgstr "Reguläre Bewohner"
+msgstr "Reguläre Bewohner:innen"
 
 #: cdedb/common/query/__init__.py:1618
 msgid "Camping Mat Inhabitants"
-msgstr "Isomattenschläfer"
+msgstr "Isomattenschläfer:innen"
 
 #: cdedb/common/query/__init__.py:1621
 msgid "Total Inhabitants"
-msgstr "Gesamtbewohner"
+msgstr "Gesamtbewohner:innen"
 
 #: cdedb/common/query/__init__.py:1624
 msgid "Regular Remaining"
@@ -6393,15 +6393,15 @@ msgstr "Freie Gesamtkapazitäten"
 
 #: cdedb/common/query/__init__.py:1633
 msgid "Group Regular Inhabitants"
-msgstr "Unterkunftsgruppe: Reguläre Bewohner"
+msgstr "Unterkunftsgruppe: Reguläre Bewohner:innen"
 
 #: cdedb/common/query/__init__.py:1636
 msgid "Group Camping Mat Inhabitants"
-msgstr "Unterkunftsgruppe: Isomattenschläfer"
+msgstr "Unterkunftsgruppe: Isomattenschläfer:innen"
 
 #: cdedb/common/query/__init__.py:1639
 msgid "Group Total Inhabitants"
-msgstr "Unterkunftsgruppe: Gesamtbewohner"
+msgstr "Unterkunftsgruppe: Gesamtbewohner:innen"
 
 #: cdedb/common/query/defaults.py:133
 msgid "00_query_event_registration_all"
@@ -6437,7 +6437,7 @@ msgstr "Dokuteam Kursliste"
 
 #: cdedb/common/query/defaults.py:238
 msgid "00_query_cde_user_all"
-msgstr "Alle (nicht-archivierten) Nutzer"
+msgstr "Alle (nicht-archivierten) Accounts"
 
 #: cdedb/common/query/defaults.py:245
 msgid "02_query_cde_members"
@@ -6453,11 +6453,11 @@ msgstr "Adressexport exPuls"
 
 #: cdedb/common/query/defaults.py:288
 msgid "00_query_event_user_all"
-msgstr "Alle (nicht-archivierten) Nutzer"
+msgstr "Alle (nicht-archivierten) Accounts"
 
 #: cdedb/common/query/defaults.py:297
 msgid "00_query_core_user_all"
-msgstr "Alle (nicht-archivierten) Nutzer"
+msgstr "Alle (nicht-archivierten) Accounts"
 
 #: cdedb/common/query/defaults.py:304
 msgid "10_query_core_any_admin"
@@ -6465,11 +6465,11 @@ msgstr "Alle Admins"
 
 #: cdedb/common/query/defaults.py:316
 msgid "00_query_assembly_user_all"
-msgstr "Alle (nicht-archivierten) Nutzer"
+msgstr "Alle (nicht-archivierten) Accounts"
 
 #: cdedb/common/query/defaults.py:325
 msgid "00_query_ml_user_all"
-msgstr "Alle (nicht-archivierten) Nutzer"
+msgstr "Alle (nicht-archivierten) Accounts"
 
 #: cdedb/common/roles.py:228
 msgid "is_meta_admin"
@@ -6509,7 +6509,7 @@ msgstr "Fallarchiv-Admin"
 
 #: cdedb/common/roles.py:237
 msgid "is_auditor"
-msgstr "Kassenprüfer"
+msgstr "Kassenprüfer:in"
 
 #: cdedb/common/roles.py:291
 msgid "Could not determine any db role."
@@ -6863,7 +6863,7 @@ msgstr "Unbekannter oder nicht unterstützter Ländercode."
 msgid ""
 "Invalid length %(len)s for Country Code %(code)s. Expexted length %(exp)s."
 msgstr ""
-"Ungültige Länge  %(len)s für Ländercode %(code)s. Erwartete Länge: %(exp)s."
+"Ungültige Länge %(len)s für Ländercode %(code)s. Erwartete Länge: %(exp)s."
 
 #: cdedb/common/validation/validate.py:2193
 msgid "Invalid checksum."
@@ -6910,15 +6910,15 @@ msgstr "Wartelistenfeld muss vom Typ 'Zahl' sein."
 
 #: cdedb/common/validation/validate.py:2504
 msgid "Unknown camping mat field."
-msgstr "Unbekanntes Isomattenschläferfeld."
+msgstr "Unbekanntes Isomattenschläfer:innen-Feld."
 
 #: cdedb/common/validation/validate.py:2514
 msgid "Camping mat field must be a registration field."
-msgstr "Isomattenschläferfeld muss ein Anmeldungsfeld sein."
+msgstr "Isomattenschläfer:innen-Feld muss ein Anmeldungsfeld sein."
 
 #: cdedb/common/validation/validate.py:2523
 msgid "Camping mat field must have type 'Yes/No'."
-msgstr "Isomattenschläferfeld muss vom Typ 'Ja/Nein' sein."
+msgstr "Isomattenschläfer:innen-Feld muss vom Typ 'Ja/Nein' sein."
 
 #: cdedb/common/validation/validate.py:2544
 msgid "Unknown part."
@@ -7379,7 +7379,7 @@ msgstr "Fall"
 
 #: cdedb/database/constants.py:1023
 msgid "Enforcer"
-msgstr "Maßnahmenmanager"
+msgstr "Maßnahmenmanager:in"
 
 #: cdedb/database/constants.py:1086 cdedb/database/constants.py:1087
 #: cdedb/database/constants.py:1088 cdedb/database/constants.py:1089
@@ -7668,7 +7668,7 @@ msgstr "Mailingliste"
 #: cdedb/database/constants.py:1450 cdedb/database/constants.py:1451
 #: cdedb/frontend/templates/web/ml/management.tmpl:140
 msgid "Subscribers"
-msgstr "Abonnenten"
+msgstr "Abonnent:innen"
 
 #: cdedb/database/constants.py:1452 cdedb/database/constants.py:1453
 #: cdedb/database/constants.py:1454 cdedb/database/constants.py:1455
@@ -7751,7 +7751,7 @@ msgstr ""
 
 #: cdedb/frontend/assembly/attachment.py:49
 msgid "May not access attachments for this assembly."
-msgstr "Keine Berechtigung auf die Dateien dieser Versammlung zuzugreifen."
+msgstr "Keine Berechtigung um auf die Dateien dieser Versammlung zuzugreifen."
 
 #: cdedb/frontend/assembly/attachment.py:123
 msgid "File not found."
@@ -7836,7 +7836,7 @@ msgstr "Abstimmung wurde noch nicht ausgezählt."
 #: cdedb/frontend/assembly/ballot.py:449
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:28
 msgid "Against all Candidates"
-msgstr "Gegen alle Kandidaten"
+msgstr "Gegen alle Optionen"
 
 #: cdedb/frontend/assembly/ballot.py:452
 msgid "Rejection limit"
@@ -7889,13 +7889,13 @@ msgstr "Aktion hatte keinen Effekt."
 
 #: cdedb/frontend/assembly/base.py:268
 msgid "This user is not a presider for this assembly."
-msgstr "Dieser Nutzer ist kein Versammlungsleiter für diese Versammlung."
+msgstr "Dieser Account ist nicht Teil der Versammlungsleitung von dieser Versammlung."
 
 #: cdedb/frontend/assembly/base.py:395
 #: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:163
 #: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:190
 msgid "Must have presiders in order to create a mailinglist."
-msgstr "Mailingliste kann nur mit Versammlungsleitern erstellt werden."
+msgstr "Mailingliste kann nur angelegt werden, wenn es eine Versammlungsleitung gibt."
 
 #: cdedb/frontend/assembly/base.py:405 cdedb/frontend/assembly/base.py:491
 msgid "Presider mailinglist created."
@@ -7903,7 +7903,7 @@ msgstr "Versammlungsleitungs-Mailingliste angelegt."
 
 #: cdedb/frontend/assembly/base.py:407 cdedb/frontend/assembly/base.py:502
 msgid "Attendee mailinglist created."
-msgstr "Versammlungsteilnehmer-Mailingliste angelegt."
+msgstr "Versammlungsteilnehmenden-Mailingliste angelegt."
 
 #: cdedb/frontend/assembly/base.py:416 cdedb/frontend/assembly/base.py:486
 #: cdedb/frontend/assembly/base.py:506 cdedb/frontend/event/event.py:726
@@ -7940,7 +7940,7 @@ msgstr "Bereits angemeldet."
 
 #: cdedb/frontend/assembly/base.py:611
 msgid "This user is not an assembly user."
-msgstr "Dieser Nutzer ist kein Versammlungsnutzer."
+msgstr "Dieser Account ist kein Versammlungsaccount."
 
 #: cdedb/frontend/assembly/base.py:616
 msgid "Members must sign up themselves."
@@ -8102,7 +8102,7 @@ msgstr "Account ist kein CdE-Account"
 #, python-format
 msgid "User already set a different donation of %(donation)s."
 msgstr ""
-"Der Nutzer hat bereits eine abweichende Spende von %(donation)s hinterlegt."
+"Diese Person hat bereits eine abweichende Spende von %(donation)s hinterlegt."
 
 #: cdedb/frontend/cde/lastschrift.py:280
 #, python-format
@@ -8218,7 +8218,7 @@ msgstr "Braucht Veranstaltungszuordnung."
 
 #: cdedb/frontend/cde/parse_statement.py:777
 msgid "User is not registered for this event."
-msgstr "Benutzer ist nicht für diese Veranstaltung angemeldet."
+msgstr "Person ist nicht für diese Veranstaltung angemeldet."
 
 #: cdedb/frontend/cde/parse_statement.py:782
 msgid "Amount does not match amount owed."
@@ -8279,7 +8279,7 @@ msgstr "Kurs erstellt"
 
 #: cdedb/frontend/cde/past_event.py:370 cdedb/frontend/cde/past_event.py:406
 msgid "Some of these users are not event users."
-msgstr "Einige dieser Nutzer sind keine Veranstaltungsnutzer."
+msgstr "Einige dieser Accounts sind keine Veranstaltungsaccounts."
 
 #: cdedb/frontend/cde/semester.py:113
 msgid "Billing already done."
@@ -8349,7 +8349,7 @@ msgstr "Standardwerte können nicht überschrieben werden: %(keys)s"
 #: cdedb/frontend/common.py:679
 #, python-format
 msgid "Requested modus does not exists: %(modus)s"
-msgstr "Angefordeter modus existiert nicht: %(modus)s"
+msgstr "Angefordeter Modus existiert nicht: %(modus)s"
 
 #: cdedb/frontend/common.py:684
 #, python-format
@@ -8459,7 +8459,7 @@ msgstr "Account ist kein Veranstaltungs-Account"
 
 #: cdedb/frontend/common.py:1757
 msgid "Persona is not registerd for this event."
-msgstr "Benutzer ist nicht für diese Veranstaltung angemeldet."
+msgstr "Person ist nicht für diese Veranstaltung angemeldet."
 
 #: cdedb/frontend/common.py:1777
 msgid "Payment date before registration."
@@ -8516,42 +8516,42 @@ msgstr "Ungültiger Argumenttyp {t}."
 
 #: cdedb/frontend/common.py:2904
 msgid "This page can only be accessed by the mailinglist’s moderators."
-msgstr "Auf diese Seite können nur Moderatoren der Mailingliste zugreifen."
+msgstr "Auf diese Seite kann nur die Mailinglisten-Moderation zugreifen."
 
 #: cdedb/frontend/common.py:2911
 msgid ""
 "You only have restricted moderator access and may not change subscriptions."
 msgstr ""
-"Du hast nur eingeschränkten Moderator-Zugriff und darfst keine Abbonements "
+"Du hast nur eingeschränkten Moderations-Zugriff und darfst keine Abbonements "
 "ändern."
 
 #: cdedb/frontend/common.py:2916
 msgid "This page can only be accessed by appropriate admins."
-msgstr "Auf diese Seite können nur Administratoren zugreifen."
+msgstr "Auf diese Seite können nur Admins zugreifen."
 
 #: cdedb/frontend/common.py:2938
 msgid ""
 "This page may only be accessed by the assembly's presiders or assembly "
 "admins."
 msgstr ""
-"Diese Seite ist nur für die Versammlungsleitung und Administratoren "
+"Diese Seite ist nur für die Versammlungsleitung und Admins "
 "zugänglich."
 
 #: cdedb/frontend/core/base.py:104
 msgid "CdE user / Member"
-msgstr "CdE-Nutzer / Mitglied"
+msgstr "CdE-Account / Mitglied"
 
 #: cdedb/frontend/core/base.py:105
 msgid "Event user"
-msgstr "Veranstaltungsnutzer"
+msgstr "Veranstaltungsaccount"
 
 #: cdedb/frontend/core/base.py:106
 msgid "Assembly user"
-msgstr "Versammlungsnutzer"
+msgstr "Versammlungsaccount"
 
 #: cdedb/frontend/core/base.py:107
 msgid "Mailinglist user"
-msgstr "Mailinglistennutzer"
+msgstr "Mailinglistenaccount"
 
 #: cdedb/frontend/core/base.py:312
 msgid "Login failure."
@@ -8602,8 +8602,8 @@ msgid ""
 "You are not the owner of the linked bank account. Make sure the owner agreed "
 "to the change before submitting it here."
 msgstr ""
-"Du bist nicht der Eigentümer des verlinkten Bankaccounts. Stelle sicher, "
-"dass der Eigentümer dieser Änderung zustimmt, bevor du sie vornimmst."
+"Der von dir hinterlegte Bankaccount läuft nicht auf deinen Namen. Stelle sicher, "
+"dass die Eigentümer:in dieser Änderung zustimmt, bevor du sie vornimmst."
 
 #: cdedb/frontend/core/base.py:1500
 msgid "Specifying an address is mandatory."
@@ -8619,7 +8619,7 @@ msgid ""
 "Lastschrift donation is outside of %(min)s and %(max)s. The user will not be "
 "able to change this amount by himself."
 msgstr ""
-"Die Spende der Lastschrift ist außerhalb von %(min)s und %(max)s. Der Nutzer "
+"Die Spende der Lastschrift ist außerhalb von %(min)s und %(max)s. Die Person "
 "wird nicht in der Lage sein, den Betrag selbstständig zu ändern."
 
 #: cdedb/frontend/core/base.py:1873
@@ -8649,19 +8649,19 @@ msgstr "Schließe erst die ausstehende Änderung der Admin-Privlilegien ab."
 
 #: cdedb/frontend/core/base.py:2087
 msgid "non-cde user"
-msgstr "nicht-CdE-Nutzer."
+msgstr "nicht-CdE-Account."
 
 #: cdedb/frontend/core/base.py:2088
 msgid "non-event user"
-msgstr "nicht-Veranstaltungs-Nutzer."
+msgstr "nicht-Veranstaltungs-Account."
 
 #: cdedb/frontend/core/base.py:2089
 msgid "non-ml user"
-msgstr "nicht-Mailinglisten-Nutzer."
+msgstr "nicht-Mailinglisten-Account."
 
 #: cdedb/frontend/core/base.py:2090
 msgid "non-assembly user"
-msgstr "nicht-Versammlungs-Nutzer"
+msgstr "nicht-Versammlungs-Account"
 
 #: cdedb/frontend/core/base.py:2091
 msgid "non-cde admin"
@@ -8674,7 +8674,7 @@ msgstr "Diese Rolle kann nicht an %(reason)s vergeben werden."
 
 #: cdedb/frontend/core/base.py:2106
 msgid "this user"
-msgstr "diesen Nutzer"
+msgstr "diesen Account"
 
 #: cdedb/frontend/core/base.py:2128
 msgid "Privilege change waiting for approval by another meta admin."
@@ -8732,7 +8732,7 @@ msgstr "Bild aktualisiert."
 
 #: cdedb/frontend/core/base.py:2634
 msgid "Please provide the user's email address."
-msgstr "Bitte gib die Emailadresse des Nutzers an."
+msgstr "Bitte gib die Emailadresse des Account an."
 
 #: cdedb/frontend/core/base.py:2647
 msgid "Password invalidated."
@@ -8834,23 +8834,23 @@ msgstr "Einige Fallbegleitungen würden sich selbst entgegenstehen."
 
 #: cdedb/frontend/core/complaint.py:437
 msgid "Some of these users were already involved."
-msgstr "Einige dieser Nutzer waren bereits beteiligt."
+msgstr "Einige dieser Personen waren bereits beteiligt."
 
 #: cdedb/frontend/core/complaint.py:448
 msgid "This user was not involved."
-msgstr "Dieser Nutzer war nicht beteiligt."
+msgstr "Diese Person war nicht beteiligt."
 
 #: cdedb/frontend/core/complaint.py:458 cdedb/frontend/core/complaint.py:475
 msgid "This user is not involved."
-msgstr "Dieser Nutzer ist nicht beteiligt."
+msgstr "Diese Person ist nicht beteiligt."
 
 #: cdedb/frontend/core/complaint.py:464
 msgid "This user was already marked as informed."
-msgstr "Dieser Nutzer war bereits informiert."
+msgstr "Diese Person war bereits informiert."
 
 #: cdedb/frontend/core/complaint.py:482
 msgid "This user was already marked as uninformed."
-msgstr "Dieser Nutzer war bereits uninformiert."
+msgstr "Diese Person war bereits uninformiert."
 
 #: cdedb/frontend/core/complaint.py:521
 msgid "Companion may not be involved."
@@ -8862,15 +8862,15 @@ msgstr "Fallbegleitung auf Gegenseite."
 
 #: cdedb/frontend/core/complaint.py:544
 msgid "Some of these users were already companions."
-msgstr "Einige dieser Nutzer waren bereits Fallbegleitung."
+msgstr "Einige diese Personen waren bereits Fallbegleitung."
 
 #: cdedb/frontend/core/complaint.py:561
 msgid "This user was no companion."
-msgstr "Dieser Nutzer war keine Fallbegleitung."
+msgstr "Diese Person war keine Fallbegleitung."
 
 #: cdedb/frontend/core/complaint.py:571 cdedb/frontend/core/complaint.py:592
 msgid "This user is no companion."
-msgstr "Dieser Nutzer ist keine Fallbegleitung."
+msgstr "Diese Person ist keine Fallbegleitung."
 
 #: cdedb/frontend/core/complaint.py:577
 msgid "This companion was already marked as withdrawn."
@@ -8954,7 +8954,7 @@ msgstr "Fall muss entsperrt sein um auf Anhang zuzugreifen."
 
 #: cdedb/frontend/core/complaint.py:1297
 msgid "This user does not exist or is no enforcer."
-msgstr "Dieser Benutzer existiert nicht oder ist kein Maßnahmenmanager."
+msgstr "Dieser Account existiert nicht oder ist kein:e Maßnahmenmanager:in."
 
 #: cdedb/frontend/core/genesis.py:116
 msgid "Attachment missing."
@@ -9016,7 +9016,7 @@ msgstr ""
 #, python-format
 msgid "Invalid persona for update. Add additional realm first: %(realm)s."
 msgstr ""
-"Ungültiger Benutzer für Aktualisierung. Füge zunächst folgenden Bereich "
+"Account kann nicht aktualisiert werden. Füge zunächst folgenden Bereich "
 "hinzu: %(realm)s."
 
 #: cdedb/frontend/core/genesis.py:560
@@ -9034,7 +9034,7 @@ msgstr "Antrag genehmigt."
 
 #: cdedb/frontend/core/genesis.py:605
 msgid "User updated."
-msgstr "Benutzer aktualisiert."
+msgstr "Account aktualisiert."
 
 #: cdedb/frontend/core/genesis.py:615
 msgid "Case rejected."
@@ -9050,7 +9050,7 @@ msgstr "Kein Veranstaltungs-Kontext gegeben"
 
 #: cdedb/frontend/event/base.py:458
 msgid "Participant list not published yet."
-msgstr "Die Teilnehmerliste ist noch nicht veröffentlicht."
+msgstr "Die Teilnehmendenliste ist noch nicht veröffentlicht."
 
 #: cdedb/frontend/event/base.py:517 cdedb/frontend/event/lodgement.py:117
 msgid "Invalid part id."
@@ -9066,8 +9066,8 @@ msgid ""
 "You can not access the Participant List as you have not agreed to have your "
 "own data sent to other participants before the event."
 msgstr ""
-"Du kannst die Teilnehmerliste nicht sehen, da du nicht zugestimmt hast, "
-"deine Daten auf der Teilnehmerliste zur Verfügung zu stellen."
+"Du kannst die Teilnehmendenliste nicht sehen, da du nicht zugestimmt hast, "
+"deine Daten auf der Teilnehmendenliste zur Verfügung zu stellen."
 
 #: cdedb/frontend/event/base.py:691
 msgid "Invalid key. Expected 'course_id' or 'lodgement_id"
@@ -9171,7 +9171,7 @@ msgstr "Leeres PDF."
 
 #: cdedb/frontend/event/download.py:721
 msgid "User is not a valid orga droid."
-msgstr "Benutzer ist kein gültiger Orga-Droide."
+msgstr "Account ist kein gültiger Orga-Droide."
 
 #: cdedb/frontend/event/droid.py:118
 msgid "Cannot delete orga token after it has been used."
@@ -9218,7 +9218,7 @@ msgstr "Orga-Mailingliste erstellt."
 
 #: cdedb/frontend/event/event.py:716 cdedb/frontend/event/event.py:1722
 msgid "Participant mailinglist created."
-msgstr "Teilnehmermailingliste erstellt."
+msgstr "Teilnehmendenmailingliste erstellt."
 
 #: cdedb/frontend/event/event.py:811
 msgid "This part can not be deleted."
@@ -9341,7 +9341,7 @@ msgid ""
 "Edges between participants who are both assigned to a lodgement can only be "
 "hidden if the graph is restricted to a specific part."
 msgstr ""
-"Kanten zwischen Teilnehmern, die beide einer Unterkunft zugeordnet sind, "
+"Kanten zwischen Teilnehmenden, die beide einer Unterkunft zugeordnet sind, "
 "können nur ausgeblendet werden, wenn der Graph auf einen einzelnen "
 "Veranstaltungsteil eingeschränkt wird."
 
@@ -9514,7 +9514,7 @@ msgstr "Bezahlt"
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:40
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:100
 msgid "Participants"
-msgstr "Teilnehmer"
+msgstr "Teilnehmende"
 
 #: cdedb/frontend/event/query_stats.py:400
 msgid "All minors"
@@ -9666,7 +9666,7 @@ msgstr "Du musst Orga sein, um die Fragebogen-Vorschau zu nutzen."
 
 #: cdedb/frontend/event/questionnaire.py:211
 msgid "Questionnaire is not enabled yet."
-msgstr "Der Fragebogen ist noch nicht für die Teilnehmer freigeschaltet."
+msgstr "Der Fragebogen ist noch nicht für die Teilnehmenden freigeschaltet."
 
 #: cdedb/frontend/event/questionnaire.py:266
 msgid "Unknown questionnaire kind."
@@ -9789,7 +9789,7 @@ msgstr "Limit erreicht."
 
 #: cdedb/frontend/event/registration.py:1731
 msgid "No participants found to edit."
-msgstr "Keine Teilnehmer zur Bearbeitung ausgewählt."
+msgstr "Keine Teilnehmenden zur Bearbeitung ausgewählt."
 
 #: cdedb/frontend/event/registration.py:1973
 msgid "Already checked in."
@@ -9900,20 +9900,20 @@ msgstr "Ungültige Veranstaltungsteilgruppe."
 #: cdedb/frontend/ml/base.py:1196 cdedb/frontend/ml/base.py:1240
 #: cdedb/frontend/ml/base.py:1284
 msgid "User does not exist or is archived."
-msgstr "Dieser Benutzer existiert nicht oder ist archiviert."
+msgstr "Dieser Account existiert nicht oder ist archiviert."
 
 #: cdedb/frontend/ml/base.py:399
 msgid "User does not exist."
-msgstr "Dieser Benutzer existiert nicht."
+msgstr "Dieser Account existiert nicht."
 
 #: cdedb/frontend/ml/base.py:405
 msgid "May not dearchive user."
-msgstr "Du darfst diesen Benutzer nicht aus dem Archiv wiederherstellen."
+msgstr "Du darfst diesen Account nicht aus dem Archiv wiederherstellen."
 
 #: cdedb/frontend/ml/base.py:412
 msgid "Source persona must be a ml-only user and no admin."
 msgstr ""
-"Der Quellnutzer muss ein reiner Mailinglistennutzer und darf kein Admin sein."
+"Der Quellaccount muss ein reiner Mailinglistenaccount und darf kein Admin sein."
 
 #: cdedb/frontend/ml/base.py:967
 msgid "Not a moderator."
@@ -9921,11 +9921,11 @@ msgstr "Kein:e Moderator:in."
 
 #: cdedb/frontend/ml/base.py:974
 msgid "Not allowed to remove yourself as moderator."
-msgstr "Du kannst Dich nicht selbst als Moderator entfernen."
+msgstr "Du kannst Dich nicht selbst als Moderator:in entfernen."
 
 #: cdedb/frontend/ml/base.py:978
 msgid "Cannot remove last moderator."
-msgstr "Der letzte Moderator kann nicht entfernt werden."
+msgstr "Die letzte Moderator:in kann nicht entfernt werden."
 
 #: cdedb/frontend/ml/base.py:1021 cdedb/frontend/ml/base.py:1075
 msgid "Not privileged to change subscriptions."
@@ -10180,7 +10180,7 @@ msgstr "Seiten"
 
 #: cdedb/frontend/templates/tex/event/nametags.tmpl:80
 msgid "No Participants"
-msgstr "Keine Teilnehmer"
+msgstr "Keine Teilnehmenden"
 
 #: cdedb/frontend/templates/tex/event/nametags.tmpl:115
 #: cdedb/frontend/templates/tex/event/participant_list.tmpl:102
@@ -10192,7 +10192,7 @@ msgstr "Orga"
 #: cdedb/frontend/templates/tex/event/participant_list.tmpl:22
 #, python-format
 msgid "Participant list %(title)s"
-msgstr "Teilnehmerliste %(title)s"
+msgstr "Teilnehmendenliste %(title)s"
 
 #: cdedb/frontend/templates/tex/event/participant_list.tmpl:25
 #, python-format
@@ -10246,7 +10246,7 @@ msgstr "Bezeichnung"
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:103
 #: cdedb/frontend/templates/web/core/complaint/remove_entry.tmpl:39
 msgid "Authors"
-msgstr "Autoren"
+msgstr "Autor:innen"
 
 #: cdedb/frontend/templates/web/assembly/attachment/add_attachment.tmpl:27
 #: cdedb/frontend/templates/web/assembly/attachment/configure_attachment_version.tmpl:57
@@ -10446,7 +10446,7 @@ msgid ""
 "All CdE-Members and external assembly participants can already see this "
 "ballot and all associated information."
 msgstr ""
-"Alle CdE-Mitglieder und externe Teilnehmer der Versammlung können die "
+"Alle CdE-Mitglieder und externe Teilnehmende der Versammlung können die "
 "Abstimmung und alle Details jedoch bereits jetzt sehen, um sich zu "
 "informieren."
 
@@ -10510,7 +10510,7 @@ msgstr "%(count)s Personen haben ihre Stimme abgegeben."
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_meta.tmpl:185
 #, python-format
 msgid "Until now, %(count)s attendees had given their vote for this ballot."
-msgstr "Bis jetzt haben %(count)s Teilnehmer über diesen Punkt abgestimmt."
+msgstr "Bis jetzt haben %(count)s Teilnehmende über diesen Punkt abgestimmt."
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_meta.tmpl:204
 #: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:124
@@ -10563,7 +10563,7 @@ msgstr "Ablehnungsgrenze."
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_tallied.tmpl:182
 #, python-format
 msgid "%(abstentions)s voters had abstained."
-msgstr "%(abstentions)s Wähler haben sich enthalten."
+msgstr "%(abstentions)s Wähler:innen haben sich enthalten."
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_tallied.tmpl:192
 msgid "Help for tallying"
@@ -10655,7 +10655,7 @@ msgid ""
 msgstr ""
 "Diese Abstimmung findet als Präferenzwahl statt. Du kannst in das obige Feld "
 "eine Präferenzliste eintragen, um die Kandidaten in eine persönliche "
-"Rangfolge zu bringen. Später werden die Präferenzlisten aller Teilnehmer mit "
+"Rangfolge zu bringen. Später werden die Präferenzlisten aller Wähler:innen mit "
 "der %(link)s ausgewertet, um den Kandidaten mit den meisten Stimmen zu "
 "ermitteln."
 
@@ -10837,7 +10837,7 @@ msgid ""
 "This is the interactive voting form. It is inconvenient to used with a "
 "keyboard only. Use the link above to switch to the text-based form."
 msgstr ""
-"Hier folgt das interaktive Abstimmungs- Formular. Dieses ist mit der\n"
+"Hier folgt das interaktive Abstimmungs-Formular. Dieses ist mit der\n"
 "Tastatur nur mäßig gut zu bedienen. Verwende den obigen Link, um zum\n"
 "textbasierten Formular zu wechseln."
 
@@ -11099,7 +11099,7 @@ msgid ""
 "Assembly-Participants."
 msgstr ""
 "Achtung: Die Änderungen sind sofort für alle CdE-Mitglieder und "
-"Versammlungsteilnehmer sichtbar."
+"die Teilnehmenden der Versammlung sichtbar."
 
 #: cdedb/frontend/templates/web/assembly/ballot/list_ballots.tmpl:5
 #, python-format
@@ -11208,7 +11208,7 @@ msgid ""
 "member can view this page."
 msgstr ""
 "Auf dieser Seite erhälst du nähere Details über die oben erwähnte "
-"ausgezählte Abstimmung. Jeder Teilnehmer dieser Versammlung und jedes aktive "
+"ausgezählte Abstimmung. Alle Teilnehmende dieser Versammlung und jedes aktive "
 "Mitglied hat Zugriff auf diese Seite."
 
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot_result.tmpl:59
@@ -11223,7 +11223,7 @@ msgid ""
 "preference list of all participants:"
 msgstr ""
 "Nach dem Auszählen aller abgegebenen Stimmen wurde die folgende "
-"Präferenzliste aller Teilnehmer ermittelt:"
+"Präferenzliste aller Wähler:innen ermittelt:"
 
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot_result.tmpl:81
 #, python-format
@@ -11291,7 +11291,7 @@ msgid ""
 "the personal secret they received per mail when registering for this "
 "assembly."
 msgstr ""
-"Teilnehmer, die in dieser Abstimmung gewählt haben, können ihre Stimme "
+"Teilnehmende, die in dieser Abstimmung gewählt haben, können ihre Stimme "
 "mittels des Skript zum %(name)s und ihrem persönlichen Geheimnis, welches "
 "sie nach ihrer Anmeldung für diese Versammlung per Mail erhalten haben, "
 "verifizieren."
@@ -11369,7 +11369,7 @@ msgid ""
 "the candidate of the xth row is preferred by y voters over the candidate of "
 "the zth column."
 msgstr ""
-"der Kandidat der xten Zeile wird von y Wählern gegenüber dem Kandidat der "
+"der Kandidat der xten Zeile wird von y Wähler:innen gegenüber dem Kandidat der "
 "zten Spalte präferiert."
 
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot_result.tmpl:196
@@ -11420,7 +11420,7 @@ msgid ""
 "The assembly concluded. The votes of specific users can no longer be "
 "extracted from the database in any way."
 msgstr ""
-"Die Versammlung wurde beendet. Das Abstimmungsverhalten einzelner Nutzer ist "
+"Die Versammlung wurde beendet. Das Abstimmungsverhalten einzelner Personen ist "
 "nicht mehr aus der Datenbank auslesbar."
 
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot_result.tmpl:250
@@ -11442,7 +11442,7 @@ msgstr "Stimme anzeigen"
 
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot_result.tmpl:270
 msgid "Voters"
-msgstr "Wähler"
+msgstr "Wähler:in"
 
 #: cdedb/frontend/templates/web/assembly/ballot/summary_ballots.tmpl:40
 msgid "Comment:"
@@ -11509,7 +11509,7 @@ msgstr "Versammlungs-Übersicht"
 #: cdedb/frontend/templates/web/ml/create_user.tmpl:12
 #: cdedb/frontend/templates/web/ml/user_search.tmpl:12
 msgid "Manage Users"
-msgstr "Nutzer verwalten"
+msgstr "Accounts verwalten"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:75
 #: cdedb/frontend/templates/web/assembly/base.tmpl:79
@@ -11528,7 +11528,7 @@ msgstr "Versammlungsleitung-Schaltflächen"
 #: cdedb/frontend/templates/web/event/base.tmpl:429
 #: cdedb/frontend/templates/web/ml/base.tmpl:118
 msgid "User Administration"
-msgstr "Benutzer-Administration"
+msgstr "Account-Administration"
 
 #: cdedb/frontend/templates/web/assembly/base.tmpl:87
 #: cdedb/frontend/templates/web/cde/base.tmpl:83
@@ -11538,7 +11538,7 @@ msgstr "Benutzer-Administration"
 #: cdedb/frontend/templates/web/ml/base.tmpl:120
 #: cdedb/frontend/templates/web/util.tmpl:1160
 msgid "Auditor"
-msgstr "Kassenprüfer"
+msgstr "Kassenprüfer:in"
 
 #: cdedb/frontend/templates/web/assembly/base/configure_assembly.tmpl:17
 #, python-format
@@ -11591,7 +11591,7 @@ msgstr "ID, Name, E-Mail"
 
 #: cdedb/frontend/templates/web/assembly/base/configure_assembly.tmpl:71
 msgid "Create Attendee Mailinglist"
-msgstr "Versammlungsteilnehmer-Mailingliste anlegen"
+msgstr "Versammlungsteilnehmenden-Mailingliste anlegen"
 
 #: cdedb/frontend/templates/web/assembly/base/configure_assembly.tmpl:72
 msgid "Create Presider Mailinglist"
@@ -11618,11 +11618,11 @@ msgstr "Anlegen"
 
 #: cdedb/frontend/templates/web/assembly/base/create_user.tmpl:7
 msgid "Create new Assembly-User"
-msgstr "Neuen Versammlungsnutzer anlegen"
+msgstr "Neuen Versammlungsaccount anlegen"
 
 #: cdedb/frontend/templates/web/assembly/base/create_user.tmpl:10
 msgid "Manage Assembly-Users"
-msgstr "Versammlungsnutzer verwalten"
+msgstr "Versammlungsaccounts verwalten"
 
 #: cdedb/frontend/templates/web/assembly/base/create_user.tmpl:11
 #: cdedb/frontend/templates/web/cde/create_user.tmpl:11
@@ -11632,7 +11632,7 @@ msgstr "Versammlungsnutzer verwalten"
 #: cdedb/frontend/templates/web/generic.tmpl:90
 #: cdedb/frontend/templates/web/ml/create_user.tmpl:13
 msgid "Create User"
-msgstr "Nutzer anlegen"
+msgstr "Account anlegen"
 
 #: cdedb/frontend/templates/web/assembly/base/index.tmpl:15
 #, python-format
@@ -11677,7 +11677,7 @@ msgstr "Geleitete Versammlungen"
 #: cdedb/frontend/templates/web/assembly/base/index.tmpl:55
 #, python-format
 msgid "%(count)s participants"
-msgstr "%(count)s Teilnehmer"
+msgstr "%(count)s Teilnehmende"
 
 #: cdedb/frontend/templates/web/assembly/base/index.tmpl:73
 msgid "Inactive Assemblies"
@@ -11694,7 +11694,7 @@ msgstr "Anwesenheitsliste"
 
 #: cdedb/frontend/templates/web/assembly/base/list_attendees.tmpl:22
 msgid "Add external participants"
-msgstr "Externe Teilnehmer hinzufügen"
+msgstr "Externe Teilnehmende hinzufügen"
 
 #: cdedb/frontend/templates/web/assembly/base/list_attendees.tmpl:26
 msgid ""
@@ -11703,17 +11703,17 @@ msgid ""
 "application deadline."
 msgstr ""
 "Derzeitige CdE-Mitglieder müssen sich selbst zur Versammlung anmelden. Über "
-"dieses Formular können externe Teilnehmer von Admins hinzugefügt werden. "
+"dieses Formular können externe Teilnehmende von Admins hinzugefügt werden. "
 "Dies ist ebenfalls nur innerhalb der Anmeldefrist möglich."
 
 #: cdedb/frontend/templates/web/assembly/base/list_attendees.tmpl:36
 msgid "User-ID of the new participant"
-msgstr "Benutzer-ID des neuen Teilnehmers"
+msgstr "Account-ID der neuen Teilnehmenden"
 
 #: cdedb/frontend/templates/web/assembly/base/list_attendees.tmpl:46
 msgid "The user will be added as a participant. This cannot be undone."
 msgstr ""
-"Der Benutzer wird als Teilnehmer hinzugefügt. Das kann nicht rückgängig "
+"Der Account wird als Teilnehmende hinzugefügt. Das kann nicht rückgängig "
 "gemacht werden."
 
 #: cdedb/frontend/templates/web/assembly/base/list_attendees.tmpl:49
@@ -11755,7 +11755,7 @@ msgstr "Download"
 
 #: cdedb/frontend/templates/web/assembly/base/list_attendees.tmpl:74
 msgid "A download TeX-Snipped to generate a participant list in the protocol."
-msgstr "Die Teilnehmerliste als TeX-Schnipsel für das Protokoll."
+msgstr "Die Teilnehmendenliste als TeX-Schnipsel für das Protokoll."
 
 #: cdedb/frontend/templates/web/assembly/base/list_attendees.tmpl:79
 msgid "Cutoff"
@@ -11794,15 +11794,15 @@ msgstr "Diese Versammlungsleitung wird von der Versammlung entfernt."
 
 #: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:83
 msgid "Remove Presider"
-msgstr "Versammlungsleiter entfernen"
+msgstr "Versammlungsleitung entfernen"
 
 #: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:93
 msgid "Add Presiders"
-msgstr "Versammlungsleiter hinzufügen"
+msgstr "Versammlungsleitung hinzufügen"
 
 #: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:95
 msgid "IDs of the new Presiders."
-msgstr "IDs der neuen Versammlungsleiter"
+msgstr "IDs der neuen Versammlungsleitung"
 
 #: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:159
 msgid "Create presider mailinglist"
@@ -11815,13 +11815,13 @@ msgstr "Legt eine Standard-Versammlungsleitungs-Mailingliste an."
 
 #: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:186
 msgid "Create attendee mailinglist"
-msgstr "Versammlungsteilnehmer-Mailingliste anlegen"
+msgstr "Versammlungsteilnehmenden-Mailingliste anlegen"
 
 #: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:197
 msgid ""
 "Create an attendee mailinglist for this assembly with a default "
 "configuration."
-msgstr "Legt eine Standard-Versammlugnsteilnehmer-Mailingliste an."
+msgstr "Legt eine Standard-Versammlungsteilnehmenden-Mailingliste an."
 
 #: cdedb/frontend/templates/web/assembly/base/show_assembly.tmpl:209
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:376
@@ -11858,17 +11858,17 @@ msgid ""
 "Permanently deletes the assembly including all ballots and attendee "
 "information. This is only possible while no ballots have begun voting."
 msgstr ""
-"Löscht die Verrsammlung inklusive aller Abstimmungen und Teilnehmer\n"
+"Löscht die Verrsammlung inklusive aller Abstimmungen und Teilnehmenden\n"
 "irreversibel. Das ist nur möglich, solange noch keine Abstimmung begonnen\n"
 "hat."
 
 #: cdedb/frontend/templates/web/assembly/base/user_search.tmpl:7
 msgid "Assembly-User Management"
-msgstr "Versammlungsnutzerverwaltung"
+msgstr "Versammlungsaccountverwaltung"
 
 #: cdedb/frontend/templates/web/assembly/base/user_search.tmpl:13
 msgid "This search will only show pure assembly users."
-msgstr "Diese Suche findet nur reine Versammlungsnutzer."
+msgstr "Diese Suche findet nur reine Versammlungsaccounts."
 
 #: cdedb/frontend/templates/web/assembly/base/view_assembly_log.tmpl:11
 #: cdedb/frontend/templates/web/event/base/view_event_log.tmpl:12
@@ -12410,7 +12410,7 @@ msgstr ""
 msgid "I accept that my data may be mailed to other CdE-Members by post."
 msgstr ""
 "Ich erkläre mich damit einverstanden, dass meine Daten per Post an andere "
-"CdEler verschickt werden können."
+"CdEler:innen verschickt werden können."
 
 #: cdedb/frontend/templates/web/cde/consent_decision.tmpl:88
 msgid ""
@@ -12420,7 +12420,7 @@ msgid ""
 "you about outstanding fees, if you consent to the storage of your data.)"
 msgstr ""
 "Ich erkläre mich damit einverstanden, dass meine persönlichen Daten auch im "
-"Internet von anderen CdElern eingesehen werden können. (Die Daten sind "
+"Internet von anderen CdEler:innen eingesehen werden können. (Die Daten sind "
 "passwortgeschützt und werden verschlüsselt übertragen. Nur bei "
 "Einverständnis mit der Speicherung kann Dir der CdE Mails mit wichtigen "
 "Informationen und Erinnerungen an zu zahlende Beiträge schicken.)"
@@ -12431,7 +12431,7 @@ msgid ""
 "parties and that I will will not use it for any purpose, that is not in the "
 "sense and purpose of the CdE."
 msgstr ""
-"Ich erkläre, dass ich Daten anderer CdEler nicht an Dritte weitergeben oder "
+"Ich erkläre, dass ich Daten anderer CdEler:innen nicht an Dritte weitergeben oder "
 "zu Zwecken benutzen werde, die nicht Sinn und Aufgabe des CdE sind."
 
 #: cdedb/frontend/templates/web/cde/consent_decision.tmpl:107
@@ -12633,7 +12633,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/payment.tmpl:42
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:150
 msgid "Account holder"
-msgstr "Kontoinhaber"
+msgstr "Kontoinhaber:in"
 
 #: cdedb/frontend/templates/web/cde/index.tmpl:145
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:39
@@ -12726,7 +12726,7 @@ msgid ""
 msgstr ""
 "Die Pfingst-, Sommer-, Winter- und Multinationale Akademie werden durch "
 "Spenden bezuschusst. Dadurch sinken ihre Teilnahmebeiträge, was allen "
-"Teilnehmern zugute kommt. Seit 2013 unterstützen wir auch einige kleinere "
+"Teilnehmenden zugute kommt. Seit 2013 unterstützen wir auch einige kleinere "
 "Veranstaltungen mit einem Teil der eingegangenen Spenden, etwa das CdE-"
 "Seminar, die FamilienAkademie und das Studieninformationswochenende."
 
@@ -12758,7 +12758,7 @@ msgid ""
 "Mail)."
 msgstr ""
 "Aus rechtlichen Gründen benötigen wir die Lastschriftermächtigung in "
-"Schriftform. Fülle dazu bitte das unten verlinkte Forumla aus und schicke es "
+"Schriftform. Fülle dazu bitte das unten verlinkte Formular aus und schicke es "
 "uns per Post zu."
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:6
@@ -12792,18 +12792,18 @@ msgstr "Spende"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:38
 msgid "Taken from the profile of the user."
-msgstr "Dem Profil des Benutzers entnommen."
+msgstr "Dem Profil des Accounts entnommen."
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:40
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_create.tmpl:58
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_subscription_form_fill.tmpl:57
 msgid "Account holder (if different)"
-msgstr "Kontoinhaber (falls abweichend)"
+msgstr "Kontoinhaber:in (falls abweichend)"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_change.tmpl:41
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_create.tmpl:59
 msgid "Account holder’s address (if different)"
-msgstr "Anschrift Kontoinhaber (falls abweichend)"
+msgstr "Anschrift Kontoinhaber:in (falls abweichend)"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_create.tmpl:9
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_create.tmpl:18
@@ -12929,7 +12929,7 @@ msgstr ""
 "Folgende Einzüge befinden sich derzeit in der Schwebe. Sobald die ausgeführt "
 "wurden, bitte hier eintragen, ob diese erfolgreich ausgeführt wurden, gar "
 "nicht ausgeführt wurden oder geplatzt sind. Im letzteren Falle wird die "
-"Ermächtigung ans Widerrufen angesehen."
+"Ermächtigung als Widerrufen angesehen."
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:131
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:153
@@ -13051,7 +13051,7 @@ msgstr "Alle inaktiven Einzugsermächtigungen"
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_index.tmpl:269
 msgid "Only authorizations of users without an active authorization are shown."
 msgstr ""
-"Es werden nur Einzugsermächtigungen von Nutzern gezeigt, die aktuell keine "
+"Es werden nur Einzugsermächtigungen von Personen gezeigt, die aktuell keine "
 "aktive Einzugsermächtigung haben."
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:14
@@ -13068,11 +13068,11 @@ msgstr "Erteilt durch"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:84
 msgid "The account is owned by the member."
-msgstr "Das Mitglied ist der Kontoinhaber."
+msgstr "Das Mitglied ist Kontoinhaber:in."
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:89
 msgid "Acc. holder’s address"
-msgstr "Anschrift Kontoinhaber"
+msgstr "Anschrift Kontoinhaber:in"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:95
 msgid "Granted"
@@ -13113,7 +13113,7 @@ msgstr "Buchung"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:182
 msgid "Creator"
-msgstr "Ersteller"
+msgstr "Ersteller:in"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_show.tmpl:249
 msgid "Reverse"
@@ -13155,7 +13155,7 @@ msgstr "Person"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_subscription_form_fill.tmpl:28
 msgid "Address (of account holder)"
-msgstr "Anschrift (des Kontoinhabers)"
+msgstr "Anschrift (der Kontoinhaber:in)"
 
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_subscription_form_fill.tmpl:33
 #: cdedb/frontend/templates/web/cde/lastschrift/lastschrift_subscription_form_fill.tmpl:47
@@ -13232,7 +13232,7 @@ msgid ""
 "This search only finds searchable and active members. For all CdE users use "
 "the “%(link)s” page."
 msgstr ""
-"Diese Suche findet nur suchbare, aktive Mitglieder. Um alle CdE-Benutzer zu "
+"Diese Suche findet nur suchbare, aktive Mitglieder. Um alle CdE-Accounts zu "
 "finden, nutze die „%(link)s“."
 
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:121
@@ -13244,7 +13244,7 @@ msgid ""
 "The search will only find those, who are currently members and set their "
 "account to be visible."
 msgstr ""
-"Es werden nur CdEler gefunden, die ihre Einwilligung zur Suchbarkeit erteilt "
+"Es werden nur CdEler:innen gefunden, die ihre Einwilligung zur Suchbarkeit erteilt "
 "haben und aktuell Mitglied sind."
 
 #: cdedb/frontend/templates/web/cde/member_search.tmpl:130
@@ -13346,7 +13346,7 @@ msgstr "%(amount)s für %(name)s"
 #: cdedb/frontend/templates/web/event/registration/batch_fees.tmpl:78
 #, python-format
 msgid "%(amount)s for unknown user."
-msgstr "%(amount)s für unbekannten Benutzer."
+msgstr "%(amount)s für unbekannten Account."
 
 #: cdedb/frontend/templates/web/cde/parse/money_transfers.tmpl:100
 #: cdedb/frontend/templates/web/event/event/fee/fee_stats.tmpl:81
@@ -13390,7 +13390,7 @@ msgstr "Transaktionstyp"
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:61
 msgid "Matched User"
-msgstr "Zugeordneter Benutzer"
+msgstr "Zugeordneter Account"
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:67
 msgid "Matched Event"
@@ -13575,8 +13575,8 @@ msgstr[1] "%(count)s Kurse"
 #, python-format
 msgid "%(count)s Participant"
 msgid_plural "%(count)s Participants"
-msgstr[0] "%(count)s Teilnehmer"
-msgstr[1] "%(count)s Teilnehmer"
+msgstr[0] "%(count)s Teilnehmende"
+msgstr[1] "%(count)s Teilnehmende"
 
 #: cdedb/frontend/templates/web/cde/past_event/past_course_search.tmpl:5
 msgid "CdE Course Search"
@@ -13617,16 +13617,16 @@ msgstr "Um nach Kursleitenden zu suchen, nutze bitte die %(membersearch)s."
 
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:44
 msgid "Add Participant to this Course"
-msgstr "Teilnehmer zu diesem Kurs hinzufügen"
+msgstr "Teilnehmenden zu diesem Kurs hinzufügen"
 
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:54
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:116
 msgid "ID of the new Participant"
-msgstr "ID des neuen Teilnehmers"
+msgstr "ID des neuen Teilnehmenden"
 
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:95
 msgid "The Participant will be removed from this Course."
-msgstr "Der Teilnehmer wird aus diesem Kurs entfernt."
+msgstr "Der Teilnehmende wird aus diesem Kurs entfernt."
 
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:96
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:181
@@ -13649,7 +13649,7 @@ msgstr[1] "und %(count)s weitere"
 
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:124
 msgid "This Course had no Participants."
-msgstr "Keine Teilnehmer eingetragen."
+msgstr "Dieser Kurs hat keine Teilnehmenden."
 
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:137
 msgid "Delete Course"
@@ -13663,7 +13663,7 @@ msgstr "Dieser Kurs wird mit allen Daten irreversibel gelöscht."
 msgid "Deletes the Course, including Description and Participant information"
 msgstr ""
 "Löscht den Kurs inkl. Beschreibung und der Information über die "
-"Zugehörigkeit der Teilnehmer."
+"Zugehörigkeit der Teilnehmenden."
 
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:55
 msgid "(and maybe others)"
@@ -13674,20 +13674,20 @@ msgid ""
 "As you are no participant of this past event, you can only see this link "
 "because you are admin."
 msgstr ""
-"Du bist kein Teilnehmer dieser vergangenen Veranstaltung und kannst diesen "
+"Du hast an dieser vergangenen Veranstaltung nicht teilgenommen und kannst diesen "
 "Link nur in Deiner Eigenschaft als Admin sehen."
 
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:106
 msgid "Add Participant <u>without</u> Course"
-msgstr "Teilnehmer <u>ohne</u> Kurs hinzufügen"
+msgstr "Teilnehmenden <u>ohne</u> Kurs hinzufügen"
 
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:180
 msgid "The Participant will be removed from the Event."
-msgstr "Der Teilnehmer wird aus der Veranstaltung entfernt."
+msgstr "Der Teilnehmende wird aus der Veranstaltung entfernt."
 
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:208
 msgid "This Event had no Participants."
-msgstr "Keine Teilnehmer eingetragen."
+msgstr "Diese Veranstaltung hat keine Teilnehmenden."
 
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:219
 msgid "Delete Event"
@@ -13703,7 +13703,7 @@ msgid ""
 "Deletes the event, including description, courses and participant "
 "information."
 msgstr ""
-"Löscht die Veranstaltung inklusive Beschreibung, Kursen und Teilnehmern."
+"Löscht die Veranstaltung inklusive Beschreibung, Kursen und Teilnehmenden."
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:16
 msgid ""
@@ -13774,8 +13774,8 @@ msgid ""
 "The archival notification is sent to all users which will be automatically "
 "archived. Those are all users which were not active for the last two years."
 msgstr ""
-"Die Archivierungsbenachrichtigung wird an alle Benutzer gesendet, die "
-"automatisch archiviert werden (Nutzer, die in den letzten zwei Jahren nicht "
+"Die Archivierungsbenachrichtigung wird an alle Accounts gesendet, die "
+"automatisch archiviert werden (solche, die in den letzten zwei Jahren nicht "
 "aktiv waren)."
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:81
@@ -13855,7 +13855,7 @@ msgid ""
 "Archive all users who received an archival notification in the previous step "
 "and took no measurements against this."
 msgstr ""
-"Archiviert alle Benutzer, die im vorigen Schritt eine "
+"Archiviert alle Accounts, die im vorigen Schritt eine "
 "Archivierungsbenachrichtigung erhalten und keine Maßnahmen gegen die "
 "Archivierung ergriffen haben."
 
@@ -13887,7 +13887,7 @@ msgstr "Archivierung erledigt bis %(state)s."
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:193
 #, python-format
 msgid "%(count)s accounts have been archived so far."
-msgstr "%(count)s Benutzer wurden bisher archiviert."
+msgstr "%(count)s Accounts wurden bisher archiviert."
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:199
 #, python-format
@@ -13911,7 +13911,7 @@ msgstr "Sowie %(honorary_count)s Ehrenmitglieder."
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:219
 msgid "Process Accounts"
-msgstr "Nutzer verarbeiten"
+msgstr "Accounts verarbeiten"
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:223
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:261
@@ -13927,7 +13927,7 @@ msgstr "%(count)s Mitgliedschaften beendet."
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:234
 #, python-format
 msgid "%(count)s accounts were archived."
-msgstr "%(count)s Benutzer archiviert."
+msgstr "%(count)s Accounts archiviert."
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:248
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:296
@@ -14023,7 +14023,7 @@ msgstr "Streichung inaktiver Mitglieder erledigt"
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:325
 msgid "Accounts Archived"
-msgstr "Archivierte Benutzer"
+msgstr "Archivierte Accounts"
 
 #: cdedb/frontend/templates/web/cde/semester/show_semester.tmpl:326
 msgid "Automated Archival Done"
@@ -14091,7 +14091,7 @@ msgstr "Adressabfragen"
 
 #: cdedb/frontend/templates/web/cde/user_search.tmpl:7
 msgid "CdE-User Management"
-msgstr "CdE-Nutzerverwaltung"
+msgstr "CdE-Accountverwaltung"
 
 #: cdedb/frontend/templates/web/cde/user_search.tmpl:13
 msgid "This search will only show members and former members."
@@ -14136,7 +14136,7 @@ msgstr "%(name)s bearbeiten"
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:15
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:19
 msgid "Edit Userdata"
-msgstr "Nutzerdaten bearbeiten"
+msgstr "Account bearbeiten"
 
 #: cdedb/frontend/templates/web/core/admin_change_user.tmpl:33
 #: cdedb/frontend/templates/web/core/change_user.tmpl:29
@@ -14303,7 +14303,7 @@ msgstr "Neue E-Mail-Adresse"
 #: cdedb/frontend/templates/web/core/base.tmpl:20
 #: cdedb/frontend/templates/web/core/index.tmpl:31
 msgid "Search for Users by ID or Name"
-msgstr "Benutzer nach ID oder Namen suchen"
+msgstr "Account nach ID oder Namen suchen"
 
 #: cdedb/frontend/templates/web/core/base.tmpl:61
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:99
@@ -14314,7 +14314,7 @@ msgstr "Meine Daten"
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:5
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:11
 msgid "Admin Overview"
-msgstr "Administratorenübersicht"
+msgstr "Admin-Übersicht"
 
 #: cdedb/frontend/templates/web/core/base.tmpl:65
 #: cdedb/frontend/templates/web/core/contact.tmpl:13
@@ -14372,7 +14372,7 @@ msgstr "Maßnahmenübersicht"
 #: cdedb/frontend/templates/web/core/complaint/list_complaint_helpers.tmpl:10
 #: cdedb/frontend/templates/web/core/complaint/list_complaint_helpers.tmpl:14
 msgid "Complaint Helpers"
-msgstr "Fall-Unterstützer"
+msgstr "Fall-Unterstützer:innen"
 
 #: cdedb/frontend/templates/web/core/base.tmpl:114
 msgid "Complaint Log"
@@ -14387,7 +14387,7 @@ msgstr "Metadaten"
 
 #: cdedb/frontend/templates/web/core/base.tmpl:132
 msgid "User Review"
-msgstr "Benutzer-Review"
+msgstr "Account-Review"
 
 #: cdedb/frontend/templates/web/core/base.tmpl:133
 #: cdedb/frontend/templates/web/core/show_user.tmpl:26
@@ -14740,7 +14740,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:58
 msgid "Enter affected appellants as affected and mark them as informed."
 msgstr ""
-"Trag betroffene Beschwerdeführer als Betroffene ein und markiere sie als "
+"Trag betroffene Beschwerdeführer:innen als Betroffene ein und markiere sie als "
 "informiert."
 
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:61
@@ -14757,7 +14757,7 @@ msgstr "DB-XXXX-X,DB-XXXX-X,…"
 
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:73
 msgid "Appellants"
-msgstr "Beschwerdeführer"
+msgstr "Beschwerdeführer:innen"
 
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:81
 msgid "Targets"
@@ -14832,7 +14832,7 @@ msgid ""
 "a later update, the may get access to this entry. Do not specify involved "
 "people here."
 msgstr ""
-"Die Fallbegleitungen, Schiedsrichter, Koordinatoren, die für diesen Eintrag "
+"Die Fallbegleitungen, Schiedsrichter:innen, Koordinator:innen, die für diesen Eintrag "
 "verantwortlich sind. Zu einem späteren Zeitpunkt erhalten diese Personen "
 "möglicherweise Zugang zu diesem Eintrag. Trage hier keine Beteiligten ein."
 
@@ -14846,8 +14846,8 @@ msgid ""
 "themselves. Pseudonymize other involved people here, and defer details to "
 "other entries."
 msgstr ""
-"Achtung: Dieser Eintrag wird für alle Maßnahmenmanager und für den "
-"Betroffenen Nutzer selbst sichtbar sein. Andere beteiligte Personen sollten "
+"Achtung: Dieser Eintrag wird für alle Maßnahmenmanager:innen und für die "
+"Betroffene Person selbst sichtbar sein. Andere beteiligte Personen sollten "
 "hier nur pseudonymisiert erwähnt und weitere Details in anderen Einträgen "
 "festgehalten werden."
 
@@ -14945,24 +14945,24 @@ msgstr "hat sich zurückgezogen"
 
 #: cdedb/frontend/templates/web/core/complaint/list_complaint_helpers.tmpl:17
 msgid "Enforcers"
-msgstr "Maßnahmenmanager"
+msgstr "Maßnahmenmanager:innen"
 
 #: cdedb/frontend/templates/web/core/complaint/list_complaint_helpers.tmpl:19
 msgid ""
 "Enforcers have access to all, active and past, measures from the case "
 "archive."
 msgstr ""
-"Maßnahmenmanager haben Zugriff auf alle, aktiven und vergangenen, Maßnahmen "
+"Maßnahmenmanager:innen haben Zugriff auf alle, aktiven und vergangenen, Maßnahmen "
 "aus dem Fallarchiv."
 
 #: cdedb/frontend/templates/web/core/complaint/list_complaint_helpers.tmpl:30
 msgid "ID of the new enforcer"
-msgstr "ID des neuen Maßnahmenmanagers"
+msgstr "ID der neuen Maßnahmenmanager:in"
 
 #: cdedb/frontend/templates/web/core/complaint/list_complaint_helpers.tmpl:62
 #, python-format
 msgid "Remove %(name)s as enforcer"
-msgstr "%(name)s als Maßnahmenmanager entfernen"
+msgstr "%(name)s als Maßnahmenmanager:in entfernen"
 
 #: cdedb/frontend/templates/web/core/complaint/manage_companions.tmpl:11
 #, python-format
@@ -15183,7 +15183,7 @@ msgstr "Nachricht anonym verschicken."
 
 #: cdedb/frontend/templates/web/core/contact.tmpl:45
 msgid "Tell them it was me."
-msgstr "Mich als Absender anzeigen."
+msgstr "Mich als Absender:in anzeigen."
 
 #: cdedb/frontend/templates/web/core/contact.tmpl:47
 msgid "Subject"
@@ -15222,7 +15222,7 @@ msgstr "Gib das Geheimnis genau so ein, wie in der ursprünglichen Nachricht."
 #: cdedb/frontend/templates/web/core/contact_reply.tmpl:24
 msgid "A copy of the reply will be sent to the original recipient."
 msgstr ""
-"Eine Kopie der Antwort wird an den ursprünglichen Addressaten geschickt."
+"Eine Kopie der Antwort wird an die ursprüngliche Addressat:in geschickt."
 
 #: cdedb/frontend/templates/web/core/contact_reply.tmpl:24
 msgid "Reply"
@@ -15230,7 +15230,7 @@ msgstr "Antworten"
 
 #: cdedb/frontend/templates/web/core/create_user.tmpl:12
 msgid "Create New Account"
-msgstr "Nutzer anlegen"
+msgstr "Account anlegen"
 
 #: cdedb/frontend/templates/web/core/dearchive_user.tmpl:4
 #, python-format
@@ -15253,7 +15253,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/debug_email.tmpl:4
 msgid "View E-Mail"
-msgstr "Emailbetrachter"
+msgstr "Email ansehen"
 
 #: cdedb/frontend/templates/web/core/do_password_reset.tmpl:4
 msgid "Set New Password"
@@ -15314,11 +15314,11 @@ msgstr "Aktuelle Accountanfragen"
 
 #: cdedb/frontend/templates/web/core/genesis/genesis_list_cases.tmpl:26
 msgid "Event Account Requests"
-msgstr "Veranstaltungs-Account-Anfragen"
+msgstr "Veranstaltungs-Accountanfragen"
 
 #: cdedb/frontend/templates/web/core/genesis/genesis_list_cases.tmpl:27
 msgid "CdE Account Requests"
-msgstr "CdE-Mitglieds-Account-Anfragen"
+msgstr "CdE-Mitglieds-Accountanfragen"
 
 #: cdedb/frontend/templates/web/core/genesis/genesis_list_cases.tmpl:28
 msgid "Assembly Account Requests"
@@ -15326,7 +15326,7 @@ msgstr "Versammlungs-Accountanfragen"
 
 #: cdedb/frontend/templates/web/core/genesis/genesis_list_cases.tmpl:29
 msgid "Mailinglist Account Requests"
-msgstr "Mailinglisten-Account-Anfragen"
+msgstr "Mailinglisten-Accountanfragen"
 
 #: cdedb/frontend/templates/web/core/genesis/genesis_list_cases.tmpl:56
 #, python-format
@@ -15457,7 +15457,7 @@ msgstr "Erstellungsdatum"
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:66
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:67
 msgid "Reviewer"
-msgstr "Gutachter"
+msgstr "Gutachter:in"
 
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:76
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:77
@@ -15502,7 +15502,7 @@ msgstr ""
 #, python-format
 msgid "The CdEDB will automatically send a %(welcome_mail)s to the new user."
 msgstr ""
-"Die CdEDB wird eine automatische %(welcome_mail)s an den neuen Nutzer "
+"Die CdEDB wird eine automatische %(welcome_mail)s an den neuen Account "
 "schicken."
 
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:224
@@ -15533,7 +15533,7 @@ msgstr "Dies ist eine Offline-Instanz der CdE-Datenbank"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:39
 msgid "Include Archived Users"
-msgstr "Archivierte Nutzer miteinbeziehen"
+msgstr "Archivierte Accounts miteinbeziehen"
 
 #: cdedb/frontend/templates/web/core/index.tmpl:63
 msgid "Account Management"
@@ -15940,9 +15940,9 @@ msgid ""
 "gain access to the respective Sites and they may gain additional User-"
 "Attributes."
 msgstr ""
-"Mit diesem Formular kann der Benutzer zu weiteren Bereichen der CdE-"
+"Mit diesem Formular kann der Account zu weiteren Bereichen der CdE-"
 "Datenbank hinzugefügt werden. Damit erhält er Zugriff auf die entsprechenden "
-"Seiten und erhält ggf. neue Nutzer-Attribute."
+"Seiten und erhält ggf. neue Account-Attribute."
 
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:55
 msgid "Target Realm"
@@ -15966,8 +15966,8 @@ msgid ""
 "The CdEDB will automatically send a %(welcome_mail)s to the user. If the "
 "user receives no trial membership, this also includes payment instructions."
 msgstr ""
-"Die CdEDB wird eine automatische %(welcome_mail)s an den Nutzer schicken. "
-"Wenn der Nutzer keine Probemitgliedschaft erhält, beinhaltet diese auch die "
+"Die CdEDB wird eine automatische %(welcome_mail)s an den Account schicken. "
+"Wenn der Account keine Probemitgliedschaft erhält, beinhaltet diese auch die "
 "Zahlungsinformationen."
 
 #: cdedb/frontend/templates/web/core/reset_password.tmpl:10
@@ -15989,7 +15989,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/reset_password.tmpl:23
 msgid "Attention: This does not work for admins!"
-msgstr "Achtung: Dies funktioniert nicht für Administrator-Accounts!"
+msgstr "Achtung: Dies funktioniert nicht für Admin-Accounts!"
 
 #: cdedb/frontend/templates/web/core/reset_password.tmpl:32
 msgid "Request Reset Link"
@@ -16060,12 +16060,12 @@ msgstr "Inkonsistente Historie. Kontaktiere umgehend %(mailto)s."
 #: cdedb/frontend/templates/web/core/show_user.tmpl:48
 #: cdedb/frontend/templates/web/core/show_user_events.tmpl:21
 msgid "The user is archived."
-msgstr "Der Benutzer ist archiviert."
+msgstr "Der Account ist archiviert."
 
 #: cdedb/frontend/templates/web/core/show_history.tmpl:35
 #: cdedb/frontend/templates/web/core/show_user.tmpl:52
 msgid "The user is deactivated."
-msgstr "Der Benutzer ist deaktiviert."
+msgstr "Der Account ist deaktiviert."
 
 #: cdedb/frontend/templates/web/core/show_history.tmpl:40
 #: cdedb/frontend/templates/web/util.tmpl:182
@@ -16233,7 +16233,7 @@ msgstr "Diese Änderung wurde von %(reviewer)s um %(ftime)s abgelehnt."
 #: cdedb/frontend/templates/web/core/show_user.tmpl:31
 #: cdedb/frontend/templates/web/ml/base.tmpl:112
 msgid "Moderator Controls"
-msgstr "Moderator-Schaltflächen"
+msgstr "Moderations-Schaltflächen"
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:34
 #: cdedb/frontend/templates/web/event/base.tmpl:424
@@ -16243,7 +16243,7 @@ msgstr "Orga-Schaltflächen"
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:44
 msgid "This user has been purged."
-msgstr "Der Benutzer wurde geleert."
+msgstr "Der Account wurde geleert."
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:65
 msgid "Edit (normal)"
@@ -16421,8 +16421,8 @@ msgid ""
 "basically the same as any non-admin user can achieve using the “Reset "
 "Password” form on the login page."
 msgstr ""
-"Sendet eine E-Mail mit einem Passwort-Rücksetz-Link an den Benutzer. Das "
-"kommt aufs Gleiche hinaus, wie wenn der Benutzer das „Passwort zurücksetzen“-"
+"Sendet eine E-Mail mit einem Passwort-Rücksetz-Link an den Account. Das "
+"kommt aufs Gleiche hinaus, wie wenn die Person das „Passwort zurücksetzen“-"
 "Formular auf der Login-Seite nutzt."
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:723
@@ -16439,7 +16439,7 @@ msgid ""
 "for exceptional circumstances, e.g. if the account was compromised. This can "
 "be reversed at any time."
 msgstr ""
-"Deaktiviert den Account, sodass der Benutzer sich nicht mehr anmelden kann. "
+"Deaktiviert den Account, sodass die Person sich nicht mehr anmelden kann. "
 "Dies ist als Notfallmaßnahme gedacht, beispielsweise falls ein Account "
 "kompromitiert wurde. Dies kann jederzeit rückgängig gemacht werden."
 
@@ -16448,7 +16448,7 @@ msgid ""
 "Reactivates the account, so the user can log in again. Make sure that the "
 "cause of the deactivation was removed."
 msgstr ""
-"Reaktiviere den Account, sodass der Benutzer sich wieder anmelden kann. "
+"Reaktiviere den Account, sodass die Person sich wieder anmelden kann. "
 "Stelle sicher, dass die Ursache der Deaktivierung beseitigt wurde."
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:762
@@ -16477,7 +16477,7 @@ msgstr ""
 "Archiviert den Account. Dabei wird der Account bis auf Weiteres unbenutzbar "
 "und die meisten Informationen werden gelöscht. Nur Informationen, die für "
 "eine Wiederaufnahme der CdE-Mitgliedschaft von Bedeutung sind (z. B. Name "
-"und Akademieteilnahme), bleiben bestehen. Andere Benutzer können den Account "
+"und Akademieteilnahme), bleiben bestehen. Andere Personen können den Account "
 "nicht mehr finden."
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:791
@@ -16486,27 +16486,27 @@ msgstr "Passwort ungültig machen"
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:795
 msgid "Provide the user's email address for confirmation."
-msgstr "Zur Bestätigung E-Mail-Adresse des Nutzers eingeben."
+msgstr "Zur Bestätigung E-Mail-Adresse des Accounts eingeben."
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:801
 msgid ""
 "Invalidates the users password and terminates their sessions. They will have "
 "to set a new password."
 msgstr ""
-"Macht das Passwort des Nutzers ungültig und beendet alle offenen Sitzungen. "
-"Der Nutzer muss das Passwort im Anschluss neu setzen."
+"Macht das Passwort des Accounts ungültig und beendet alle offenen Sitzungen. "
+"Die Person muss das Passwort im Anschluss neu setzen."
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:805
 msgid ""
 "If the user is an admin, you will need to send them a reset link to do that."
 msgstr ""
-"Falls der Nutzer ein Administrator ist, musst Du dafür eine Email mit einem "
+"Falls der Account ein Admin ist, musst Du dafür eine Email mit einem "
 "Rücksetz-Link schicken."
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:808
 msgid "Please enter the user's email address to confirm this action."
 msgstr ""
-"Um die Aktion zu bestätigen, gib bitte die E-Mail-Adresse des Nutzers ein."
+"Um die Aktion zu bestätigen, gib bitte die E-Mail-Adresse des Accounts ein."
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:825
 msgid "Delete Account"
@@ -16540,11 +16540,11 @@ msgid ""
 "registration for."
 msgstr ""
 "Diese Liste enthält alle Veranstaltungen, die noch nicht gelöscht wurden und "
-"für die dieser Nutzer eine Anmeldung hat."
+"für die dieser Account angemeldet ist."
 
 #: cdedb/frontend/templates/web/core/show_user_events.tmpl:54
 msgid "This user has no registrations."
-msgstr "Dieser Nutzer hat keine Anmeldungen."
+msgstr "Dieser Account hat keine Anmeldungen."
 
 #: cdedb/frontend/templates/web/core/show_user_mailinglists.tmpl:4
 #, python-format
@@ -16565,7 +16565,7 @@ msgid ""
 "includes lists they are or have recently been subscribed to, as well as "
 "pending subscriptions and blocks."
 msgstr ""
-"Diese Liste enthält alle Mailinglisten, die mit dem Nutzer verknüpft sind. "
+"Diese Liste enthält alle Mailinglisten, die mit dem Account verknüpft sind. "
 "Konkret sind dies alle Listen mit aktuellen oder ehemaligen Abonnehments. "
 "Darüber hinaus finden sich hier alle Listen mit offenen Abonnehment-Anfragen "
 "oder Sperren."
@@ -16590,12 +16590,12 @@ msgstr "E-Mail:"
 
 #: cdedb/frontend/templates/web/core/user_search.tmpl:12
 msgid "General User Management"
-msgstr "Allgemeine Nutzerverwaltung"
+msgstr "Allgemeine Accountverwaltung"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:15
 msgid "On this page you can see all admins who have access to your data."
 msgstr ""
-"Auf dieser Seite kannst Du alle Administratoren sehen, die Zugriff auf Deine "
+"Auf dieser Seite kannst Du alle Admins sehen, die Zugriff auf Deine "
 "Daten haben."
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:21
@@ -16608,7 +16608,7 @@ msgid ""
 "principle. One meta admin may initiate a change, another has to approve that "
 "change."
 msgstr ""
-"Meta-Admins können Adminprivilegien anderer Nutzer nach einem Vier-Augen-"
+"Meta-Admins können Adminprivilegien anderer Accounts nach einem Vier-Augen-"
 "Prinzip bearbeiten. Ein Meta-Admin kann eine Änderung anstoßen, ein anderer "
 "muss sie bestätigen."
 
@@ -16622,7 +16622,7 @@ msgid ""
 "account requests for all realms and they may approve pending changes of data "
 "fields needing review (address, birthday and name)."
 msgstr ""
-"Core-Admins können alle anderen Nutzer einsehen und bearbeiten. Sie können "
+"Core-Admins können alle anderen Accounts einsehen und bearbeiten. Sie können "
 "Accountanfragen für alle Arten von Accounts bearbeiten und sie können "
 "ausstehende Änderungen von Daten, die eine Prüfung benötigen (Addresse, "
 "Geburtsdatum und Name), bestätigen."
@@ -16639,7 +16639,7 @@ msgid ""
 "to involved individuals. Their privileges are restricted such that they may "
 "not access any complaints concerning themselves."
 msgstr ""
-"Fallarchiv-Administratoren verwalten ein Archiv für personenbezogene "
+"Fallarchiv-Admins verwalten ein Archiv für personenbezogene "
 "Beschwerden und ähnliche Krisenereignisse. Als Fallkoordination bilden sie "
 "die Schaltzentrale unseres Beschwerdeverfahrens. Darüber hinaus geben sie "
 "Ratschläge und ordnen Beteiligten Fallbegleitungen zu. Ihre Rechte sind "
@@ -16655,8 +16655,8 @@ msgid ""
 "CdE admins may create, view and edit CdE-Users. They may also manage past "
 "events that are displayed on profiles."
 msgstr ""
-"CdE-Admins können CdE-Nutzer einsehen, anlegen und verwalten. Außerdem "
-"verwalten sie die vergangenen Veranstaltungen, die auf den Nutzerprofilen "
+"CdE-Admins können CdE-Accounts einsehen, anlegen und verwalten. Außerdem "
+"verwalten sie die vergangenen Veranstaltungen, die auf den Account-Profilen "
 "angezeigt werden."
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:74
@@ -16690,8 +16690,8 @@ msgid ""
 msgstr ""
 "Veranstaltungs-Admins legen Veranstaltungen in der Datenbank an und können "
 "Orgas zu diesen hinzufügen, bzw. entfernen. Sie haben außerdem Zugriff auf "
-"alle Konfigurations- und Teilnehmerdaten von diesen Veranstaltungen. "
-"Veranstaltungs-Admins erstellen und verwalten reine Veranstaltungsnutzer und "
+"alle Konfigurations- und Teilnehmendendaten von diesen Veranstaltungen. "
+"Veranstaltungs-Admins erstellen und verwalten reine Veranstaltungsaccounts und "
 "können entsprechende Accountanfragen bearbeiten. Sie können "
 "Veranstaltungsbezogene Mailinglisten anlegen und verwalten."
 
@@ -16706,7 +16706,7 @@ msgid ""
 "may only access mailinglists."
 msgstr ""
 "Mailinglisten-Admins können alle Arten von Mailinglisten anlegen und "
-"bearbeiten. Außerdem können sie reine Mailinglistennutzer anlegen und "
+"bearbeiten. Außerdem können sie reine Mailinglistenaccounts anlegen und "
 "verwalten, sowie entsprechende Accountanfragen bearbeiten."
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:115
@@ -16720,7 +16720,7 @@ msgid ""
 "accounts."
 msgstr ""
 "CdElokal-Admins können CdElokal-Mailinglisten anlegen und bearbeiten. Sie "
-"haben selbst keinen Zugang zur Nutzerverwaltung, wie das Anlegen und "
+"haben selbst keinen Zugang zur Accountverwalung, wie das Anlegen und "
 "Bearbeiten von Accounts."
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:128
@@ -16735,19 +16735,19 @@ msgid ""
 "assemblies."
 msgstr ""
 "Versammlungs-Admins können Versammlungen und Abstimmungen anlegen und "
-"bearbeiten. Sie können reine Versammlungsnutzer anlegen und bearbeiten, "
+"bearbeiten. Sie können reine Versammlungsaccounts anlegen und bearbeiten, "
 "sowie diese zu Versammlungen hinzufügen."
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:142
 msgid "Auditors"
-msgstr "Kassenprüfer"
+msgstr "Kassenprüfer:innen"
 
 #: cdedb/frontend/templates/web/core/view_admins.tmpl:144
 msgid ""
 "Auditors may view all logs, in particular those related to finance "
 "administration, i.e. the documentation of membership fees."
 msgstr ""
-"Kassenprüfer dürfen alle Logs einsehen, insbesondere diejenigen, die mit der "
+"Kassenprüfer:innen dürfen alle Logs einsehen, insbesondere diejenigen, die mit der "
 "Finanzverwaltung zusammenhängen, z.B. die Dokumentation der "
 "Mitgliedsbeiträge."
 
@@ -16905,11 +16905,11 @@ msgstr "Anmeldungsvorschau"
 #: cdedb/frontend/templates/web/event/base/participant_info.tmpl:6
 #: cdedb/frontend/templates/web/event/base/participant_info.tmpl:11
 msgid "Participant info"
-msgstr "Teilnehmer-Infos"
+msgstr "Teilnehmenden-Infos"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:207
 msgid "Participant list"
-msgstr "Teilnehmerliste"
+msgstr "Teilnehmendenliste"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:242
 #: cdedb/frontend/templates/web/event/base.tmpl:385
@@ -16992,8 +16992,8 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/base.tmpl:342
 msgid "You should discuss this with your assigned caretakers."
 msgstr ""
-"Besprecht die Freischaltung der Anmeldung mit den euch zugeteilten "
-"Veranstaltungsbetreuern."
+"Besprecht die Freischaltung der Anmeldung mit der euch zugeteilten "
+"Veranstaltungsbetreuung."
 
 #: cdedb/frontend/templates/web/event/base.tmpl:346
 #, python-format
@@ -17015,7 +17015,7 @@ msgstr "Alle Veranstaltungen"
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:9
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:14
 msgid "Event Helpers"
-msgstr "Veranstaltungshelfer"
+msgstr "Veranstaltungshelfer:innen"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:419
 #: cdedb/frontend/templates/web/event/base.tmpl:423
@@ -17066,25 +17066,25 @@ msgstr "Keine zum Filter passenden Veranstaltungen gefunden."
 
 #: cdedb/frontend/templates/web/event/base/participant_info.tmpl:14
 msgid "Additional information for participants"
-msgstr "Zusätzliche Informationen für Teilnehmer"
+msgstr "Zusätzliche Informationen für Teilnehmende"
 
 #: cdedb/frontend/templates/web/event/base/participant_info.tmpl:21
 msgid ""
 "This page is currently not visible to participants. To change that, orgas "
 "can create something here via the configuration page."
 msgstr ""
-"Diese Seite ist momentan für Teilnehmer nicht sichtbar. Um das zu ändern, "
+"Diese Seite ist momentan für Teilnehmende nicht sichtbar. Um das zu ändern, "
 "können Orgas über die Konfigurations-Seite hier etwas hinzufügen."
 
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:5
 #, python-format
 msgid "Participant List %(title)s"
-msgstr "Teilnehmerliste %(title)s"
+msgstr "Teilnehmendenliste %(title)s"
 
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:12
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:15
 msgid "Participant List"
-msgstr "Teilnehmerliste"
+msgstr "Teilnehmendenliste"
 
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:44
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:50
@@ -17100,7 +17100,7 @@ msgstr "Absteigend sortieren."
 
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:64
 msgid "The Participant List is currently only visible to Orgas and Admins."
-msgstr "Die Teilnehmerliste ist aktuell nur für Orgas und Admins sichtbar."
+msgstr "Die Teilnehmendenliste ist aktuell nur für Orgas und Admins sichtbar."
 
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:146
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:43
@@ -17125,11 +17125,11 @@ msgstr "Veranstaltungsteile"
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:193
 #, python-format
 msgid "There are %(count)s participants in total."
-msgstr "Es gibt in Summe %(count)s Teilnehmer."
+msgstr "Es gibt in Summe %(count)s Teilnehmende."
 
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:208
 msgid "There are no participants yet."
-msgstr "Bisher gibt es keine Teilnehmer."
+msgstr "Bisher gibt es keine Teilnehmenden."
 
 #: cdedb/frontend/templates/web/event/base/view_log.tmpl:12
 msgid "Event Log"
@@ -17166,7 +17166,7 @@ msgid ""
 "Instructors will only be visible to logged in users."
 msgstr ""
 "Wenn dieser Haken gesetzt ist, wird die Beschreibung öffentlich sichtbar "
-"sein. Die Kursleitenden sind sichtbar für Veranstaltungsnutzer."
+"sein. Die Kursleitenden sind nur für eingeloggte Veranstaltungaccounts sichtbar."
 
 #: cdedb/frontend/templates/web/event/course/configure_course.tmpl:55
 msgid ""
@@ -17176,14 +17176,14 @@ msgid ""
 msgstr ""
 "Wenn dieser Haken gesetzt ist, wird die Beschreibung öffentlich sichtbar "
 "sein, sobald die Kursliste in der Konfiguration sichtbar geschaltet wird. "
-"Die Kursleitenden sind nur für eingeloggte Veranstaltungsnutzer sichtbar."
+"Die Kursleitenden sind nur für eingeloggte Veranstaltungaccounts sichtbar."
 
 #: cdedb/frontend/templates/web/event/course/configure_course.tmpl:62
 msgid ""
 "Cancelled courses are no longer choosable by participants and are marked in "
 "the courselist and the course assignment view."
 msgstr ""
-"Ausfallende Kurse sind nicht mehr von den Teilnehmern wählbar und werden in "
+"Ausfallende Kurse sind nicht mehr von den Teilnehmenden wählbar und werden in "
 "der Kursliste und bei der Kurseinteilung markiert."
 
 #: cdedb/frontend/templates/web/event/course/configure_course.tmpl:67
@@ -17276,7 +17276,7 @@ msgstr "Filter: Kursschiene"
 #, python-format
 msgid ""
 "Show only participants who %(select3)s the course %(select2)s %(select1)s"
-msgstr "Nur Teilnehmer anzeigen, die %(select1)s %(select2)s %(select3)s."
+msgstr "Nur Teilnehmende anzeigen, die %(select1)s %(select2)s %(select3)s."
 
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:75
 msgid "— no Course —"
@@ -17309,7 +17309,7 @@ msgstr "zeige offene Anmeldungen"
 
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:93
 msgid "Show all participants"
-msgstr "Zeige alle Teilnehmer an"
+msgstr "Zeige alle Teilnehmenden an"
 
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:100
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:107
@@ -17336,7 +17336,7 @@ msgstr "einteilen."
 
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:119
 msgid "selected participants"
-msgstr "Die ausgewählten Teilnehmer"
+msgstr "Die ausgewählten Teilnehmenden"
 
 #: cdedb/frontend/templates/web/event/course/course_choices.tmpl:122
 msgid "Assignment Method"
@@ -17418,7 +17418,7 @@ msgstr "Die Kursliste ist derzeit nur für Orgas und Admins sichtbar."
 msgid ""
 "The instructors for each course are only visible to logged in event users."
 msgstr ""
-"Die Kursleitenden sind nur für eingeloggte Veranstaltungsnutzer sichtbar."
+"Die Kursleitenden sind nur für eingeloggte Veranstaltungsaccounts sichtbar."
 
 #: cdedb/frontend/templates/web/event/course/course_list.tmpl:35
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:26
@@ -17497,7 +17497,7 @@ msgstr "Kurssuche"
 msgid "The course statistics, shown below, include only approved participants."
 msgstr ""
 "Die untenstehenden Kursstatistiken enthalten nur Anmeldungen mit Status "
-"“Teilnehmer”."
+"“Teilnehmend”."
 
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:64
 msgid ""
@@ -17505,11 +17505,11 @@ msgid ""
 "(registration status “Participant”, “Guest”, “Waitlist” and “Applied”)."
 msgstr ""
 "Die Kursteilnehmenden- und Kurswahl-Statistiken enthalten alle aktiven "
-"Anmeldungen (Anmeldestatus “Teilnehmer”, “Gast”, “Warteliste” und “Offen”)."
+"Anmeldungen (Anmeldestatus “Teilnehmend”, “Gast”, “Warteliste” und “Offen”)."
 
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:71
 msgid "Only show participants"
-msgstr "Nur Teilnehmer anzeigen"
+msgstr "Nur Teilnehmende anzeigen"
 
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:78
 msgid ""
@@ -17664,7 +17664,7 @@ msgid ""
 "This page is currently not visible to participants. To change that, activate "
 "the \"%(visibility)s\" option on the \"%(configuration)s\" page."
 msgstr ""
-"Diese Seite ist momentan für Teilnehmer nicht sichtbar. Um das zu ändern, "
+"Diese Seite ist momentan für Teilnehmende nicht sichtbar. Um das zu ändern, "
 "aktiviere die \"%(visibility)s\"-Option auf der \"%(configuration)s\"-Seite."
 
 #: cdedb/frontend/templates/web/event/course/show_instructed_courses.tmpl:27
@@ -17751,7 +17751,7 @@ msgstr "Kursteilnehmendenlisten"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:47
 msgid "Lodgement Inhabitant Lists"
-msgstr "Unterkunftbewohnerlisten"
+msgstr "Unterkunftsbewohnendenlisten"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:57
 msgid "Course Puzzle"
@@ -17771,16 +17771,16 @@ msgstr "zum Ausschneiden und Zusammenpuzzeln"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:81
 msgid "Participant Lists"
-msgstr "Teilnehmerlisten"
+msgstr "Teilnehmendenlisten"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:82
 msgid ""
 "The public lists only contain those who gave their consent to be on the "
 "list. Only these may be sent to the participants beforehand."
 msgstr ""
-"Die öffentlichen Listen enthalten nur diejenigen Teilnehmer, die bei der "
+"Die öffentlichen Listen enthalten nur diejenigen Teilnehmenden, die bei der "
 "Anmeldung zugestimmt haben, dass ihre Daten weitergegeben werden dürfen. Nur "
-"diese Listen dürfen im Vorfeld der Veranstaltung an die Teilnehmer "
+"diese Listen dürfen im Vorfeld der Veranstaltung an die Teilnehmenden "
 "weitergegeben werden."
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:85
@@ -17788,7 +17788,7 @@ msgid ""
 "The orga lists contain all participants and are for orgas only. They may "
 "however be displayed publicly at the event iteself."
 msgstr ""
-"Die Orga-Listen enthalten alle Teilnehmer und sind nur für die Orgas "
+"Die Orga-Listen enthalten alle Teilnehmenden und sind nur für die Orgas "
 "gedacht. Sie dürfen allerdings bei der Veranstaltung selbst öffentlich "
 "aufgehangen werden."
 
@@ -17878,7 +17878,7 @@ msgstr "Shell-Schnipsel"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:209
 msgid "Dokuteam participant list"
-msgstr "Dokuteam-Teilnehmerliste"
+msgstr "Dokuteam-Teilnehmendenliste"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:210
 msgid "ZIP-Archive"
@@ -17960,7 +17960,7 @@ msgid ""
 "pages. Fieldtype: Yes/No"
 msgstr ""
 "Das Datenfeld, in dem die Bereitschaft, auf einer Isomatte zu schlafen, "
-"abgefragt wird. Es wird auf Unterkunfts- und Bewohner-Seiten angezeigt. "
+"abgefragt wird. Es wird auf Unterkunfts- und Bewohnenden-Seiten angezeigt. "
 "Datentyp: Ja/Nein"
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:10
@@ -18050,9 +18050,9 @@ msgid ""
 "link can access it. If this is unchecked, event users can still register "
 "within the registration period by accessing the registration link directly."
 msgstr ""
-"Wenn dies ausgewählt ist, können alle Veranstaltungsnutzer die Veranstaltung "
+"Wenn dies ausgewählt ist, können alle Veranstaltungsaccounts die Veranstaltung "
 "sehen und die Veranstaltung ist über den Link öffentlich erreichbar. Wenn "
-"dies nicht ausgewählt ist, können Veranstaltungsnutzer sich innerhalb des "
+"dies nicht ausgewählt ist, können Veranstaltungsaccounts sich innerhalb des "
 "Anmeldezeitraums trotzdem anmelden, indem sie den Anmeldelink aufrufen."
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:62
@@ -18087,12 +18087,12 @@ msgid ""
 "their registration."
 msgstr ""
 " Achtung: Wird dies vor dem Anmeldungschluss aktiviert, werden potentielle "
-"Teilnehmer beim Aktualisieren ihrer Anmeldung gezwungen, ihre Kurswahl für "
+"Teilnehmende beim Aktualisieren ihrer Anmeldung gezwungen, ihre Kurswahl für "
 "ausfallende Kurse zu ändern."
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:76
 msgid "Visibility of the Participant List"
-msgstr "Sichtbarkeit der Teilnehmerliste"
+msgstr "Sichtbarkeit der Teilnehmendenliste"
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:77
 msgid ""
@@ -18101,8 +18101,8 @@ msgid ""
 "part of the Questionnaire, people will be shown a list of successfully "
 "detected lodgement wishes."
 msgstr ""
-"Wenn dies ausgewählt ist, wird eine Teilnehmerliste mit Name, E-Mail, "
-"Postleitzahl und Stadt für alle Teilnehmer sichtbar. Außerdem wird, falls "
+"Wenn dies ausgewählt ist, wird eine Teilnehmendenliste mit Name, E-Mail, "
+"Postleitzahl und Stadt für alle Teilnehmenden sichtbar. Außerdem wird, falls "
 "ein Feld für Hauswünsche (siehe weiter unten) festgelegt ist und im "
 "Fragebogen abgefragt wird, auf der Seite des Fragebogens eine Liste "
 "erfolgreich erkannter Hauswünsche angezeigt."
@@ -18114,10 +18114,10 @@ msgid ""
 "on the Participant List. Additionally, instructors will be able to see their "
 "assigned attendees, even if the participant list isn't visible."
 msgstr ""
-"Wenn dies ausgewählt ist, wird die Kurseinteilung den Teilnehmern angezeigt. "
-"Konkret wird der Kurs jedem Teilnehmer im Anmeldestatus und auf der "
-"Teilnehmerliste angezeigt. Außerdem können Kursleiter ihre Kursteilnehmer "
-"sehen, selbst, wenn die Teilnehmerliste nicht sichtbar ist."
+"Wenn dies ausgewählt ist, wird die Kurseinteilung den Teilnehmenden angezeigt. "
+"Konkret wird der Kurs im eigenen Anmeldestatus und auf der "
+"Teilnehmendenliste angezeigt. Außerdem können Kursleitende ihre Kursteilnehmenden "
+"sehen, selbst, wenn die Teilnehmendenliste nicht sichtbar ist."
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:87
 msgid "Cancellation of the event"
@@ -18180,7 +18180,7 @@ msgid ""
 "You can configure every part of the questionnaire individually in the "
 "questionnaire configuration."
 msgstr ""
-"Wenn dies ausgewählt ist, können alle angemeldeten Benutzer den Fragebogen "
+"Wenn dies ausgewählt ist, können alle angemeldeten Personen den Fragebogen "
 "ausfüllen. Jeder Teil des Fragebogens kann in der Fragenbogen-Konfiguration "
 "einzeln konfiguriert werden."
 
@@ -18215,7 +18215,7 @@ msgid ""
 "saved. It is used for the automatic detection of lodgement wishes and the "
 "lodgement graph. Fieldtype: Text"
 msgstr ""
-"Das Feld, in das die Hauswünsche der Teilnehmer eingetragen werden. Es wird "
+"Das Feld, in das die Hauswünsche der Teilnehmenden eingetragen werden. Es wird "
 "für die automatische Erkennung von Hauswünschen und den Hauswünsche-Graphen "
 "verwendet. Datentyp: Text"
 
@@ -18294,7 +18294,7 @@ msgid ""
 "nametags. Fieldtype: Text"
 msgstr ""
 "Das Kursraumfeld ist das Feld, in dem der dem Kurs zugewiesene Raum "
-"gespeichert wird. Es wird für PDF-Teilnehmerlisten und -Namensschilder "
+"gespeichert wird. Es wird für PDF-Teilnehmendenlisten und -Namensschilder "
 "verwendet. Datentyp: Text"
 
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:166
@@ -18427,14 +18427,14 @@ msgstr "Finanzielles"
 
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:39
 msgid "Additional Fee for External Participants."
-msgstr "Zusatzbeitrag für externe Teilnehmer."
+msgstr "Zusatzbeitrag für externe Teilnehmende."
 
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:41
 msgid ""
 "Participants who are not currently members will have to pay this additional "
 "fee."
 msgstr ""
-"Teilnehmer die derzeit keine CdE-Mitglieder sind müssen diesen zusätzlichen "
+"Teilnehmende die derzeit keine CdE-Mitglieder sind müssen diesen zusätzlichen "
 "Beitrag bezahlen."
 
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:47
@@ -18443,7 +18443,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:137
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:138
 msgid "Caretakers"
-msgstr "Betreuer"
+msgstr "Betreuer:innen"
 
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:60
 msgid "Create Orga Mailinglist"
@@ -18451,7 +18451,7 @@ msgstr "Orga-Mailingliste erstellen"
 
 #: cdedb/frontend/templates/web/event/event/create_event.tmpl:61
 msgid "Create Participant Mailinglist"
-msgstr "Teilnehmermailingliste erstellen"
+msgstr "Teilnehmendenmailingliste erstellen"
 
 #: cdedb/frontend/templates/web/event/event/droid/configure.tmpl:7
 #, python-format
@@ -18886,7 +18886,7 @@ msgid ""
 "at %(link)s – together with Junior- and SchülerAkademien. Furthermore, there "
 "is a %(list)s of all events which have not been cleansed yet."
 msgstr ""
-"Die früheren CdE-Veranstaltungen mit ihren Teilnehmern und Kursen findest Du "
+"Die früheren CdE-Veranstaltungen mit ihren Teilnehmenden und Kursen findest Du "
 "gemeinsam mit den Schüler- und JuniorAkademien unter %(link)s. Darüber "
 "hinaus gibt es eine %(list)s aller Veranstaltungen, die noch nicht von "
 "persönlichen Daten bereinigt und gelöscht wurden."
@@ -18918,26 +18918,26 @@ msgid ""
 "full access to all event data. Caretakers have the same access as orgas, for "
 "specific events."
 msgstr ""
-"Veranstaltungshelfer haben umfangreichen Lesezugriff auf solche "
+"Veranstaltungshelfer:innen haben umfangreichen Lesezugriff auf solche "
 "Veranstaltungsinformationen, die nicht datenschutzkritisch sind. "
 "Insbesondere haben sie nur statistischen Zugriff auf Anmeldedaten. Darüber "
 "hinaus dürfen sie Informationen sehen, die die Datenbank auch allen "
-"Teilnehmern einer Veranstaltung anzeigt, %(event_admins)s haben hingegen wie "
-"Orgas Vollzugriff auf die Veranstaltungsdaten. Betreuer haben den gleichen "
+"Teilnehmenden einer Veranstaltung anzeigt, %(event_admins)s haben hingegen wie "
+"Orgas Vollzugriff auf die Veranstaltungsdaten. Betreuer:innen haben den gleichen "
 "Zugriff wie Orgas, aber nur für spezifische Veranstaltungen."
 
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:18
 msgid "event admins"
-msgstr "Veranstaltungs-Admininstratoren"
+msgstr "Veranstaltungs-Admins"
 
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:33
 msgid "ID of the new event helper"
-msgstr "ID des neuen Veranstaltungshelfer"
+msgstr "ID der neuen Veranstaltungshelfer:in"
 
 #: cdedb/frontend/templates/web/event/event/list_event_helpers.tmpl:65
 #, python-format
 msgid "Remove %(name)s as event helper"
-msgstr "%(name)s als Veranstaltungshelfer entfernen"
+msgstr "%(name)s als Veranstaltungshelfer:in entfernen"
 
 #: cdedb/frontend/templates/web/event/event/list_events.tmpl:23
 #, python-format
@@ -18963,7 +18963,7 @@ msgstr "Archivierte Veranstaltungen"
 #: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:11
 #, python-format
 msgid "Manage Orgas & Caretakers (%(title)s)"
-msgstr "Orgas & Betreuer verwalten (%(title)s)"
+msgstr "Orgas & Betreuer:innen verwalten (%(title)s)"
 
 #: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:36
 msgid "IDs of the new orgas"
@@ -18981,7 +18981,7 @@ msgstr "Orga entfernen"
 
 #: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:100
 msgid "IDs of the new caretakers"
-msgstr "IDs der neuen Betreuer"
+msgstr "IDs der neuen Betreuer:innen"
 
 #: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:121
 msgid ""
@@ -18989,20 +18989,20 @@ msgid ""
 "to do anything an orga can do. Additionally they are able to manage orgas, "
 "i.e. remove or add orgas."
 msgstr ""
-"Betreuer haben die gleichen Zugriffsrechte wie Orgas und können alles tun, "
+"Betreuer:innen haben die gleichen Zugriffsrechte wie Orgas und können alles tun, "
 "was Orgas tun können. Sie können außerdem Orgas hinzufügen oder entfernen."
 
 #: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:135
 msgid "Remove Caretaker"
-msgstr "Betreuer entfernen"
+msgstr "Betreuer:in entfernen"
 
 #: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:146
 msgid "Checkin Helpers"
-msgstr "Checkin-Helfer"
+msgstr "Checkin-Helfer:innen"
 
 #: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:156
 msgid "IDs of the new checkin helpers"
-msgstr "IDs der neuen Checkin-Helfer"
+msgstr "IDs der neuen Checkin-Helfer:innen"
 
 #: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:177
 msgid ""
@@ -19011,15 +19011,15 @@ msgid ""
 "of detailed fee information and custom fields not shown at checkin. Checkin "
 "helpers are removed automatically 24 hours after they have been added."
 msgstr ""
-"Checkin-Helfer haben Lesezugriff auf alle nicht personenbezogenen Daten in "
+"Checkin-Helfer:innen haben Lesezugriff auf alle nicht personenbezogenen Daten in "
 "der Veranstaltung. Darüber hinaus haben sie Vollzugriff auf die "
 "Anmeldedaten, mit Ausnahme von detaillierten Beitragsinformationen und "
-"Datenfeldern, die beim Checkin nicht angezeigt werden. Checkin-Helfer werden "
+"Datenfeldern, die beim Checkin nicht angezeigt werden. Checkin-Helfer:innen werden "
 "24 Stunden, nachdem sie hinzugefügt wurden, automatisch wieder entfernt."
 
 #: cdedb/frontend/templates/web/event/event/manage_roles.tmpl:193
 msgid "Remove Checkin Helper"
-msgstr "Checkin-Helfer entfernen"
+msgstr "Checkin-Helfer:in entfernen"
 
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:10
 #, python-format
@@ -19050,7 +19050,7 @@ msgstr "Teil bearbeiten"
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:94
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:95
 msgid "Camping mat field"
-msgstr "Isomattenschläferfeld"
+msgstr "Isomattenschläfer:innen-Feld"
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:26
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:60
@@ -19067,7 +19067,7 @@ msgid ""
 "users."
 msgstr ""
 "Detailliertere Informationen über die Veranstaltung sind für eingeloggte "
-"Veranstaltungsnutzer sichtbar."
+"Veranstaltungsaccounts sichtbar."
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:40
 msgid "Edit description"
@@ -19108,7 +19108,7 @@ msgstr "Orgas verwalten"
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:149
 msgid "Manage Caretakers"
-msgstr "Betreuer verwalten"
+msgstr "Betreuer:innen verwalten"
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:161
 msgid "CdE-Account"
@@ -19184,13 +19184,13 @@ msgstr "Erstellt eine Standard-Orga-Mailingliste zu dieser Veranstaltung-"
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:316
 msgid "Create participant mailinglist"
-msgstr "Teilnehmermailingliste erstellen"
+msgstr "Teilnehmendenmailingliste erstellen"
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:325
 msgid ""
 "Create a participant mailinglist for this event with a default configuration."
 msgstr ""
-"Erstellt eine Standard-Teilnehmer-Mailingliste zu dieser Veranstaltung."
+"Erstellt eine Standard-Teilnehmenden-Mailingliste zu dieser Veranstaltung."
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:340
 msgid "Approve Registration"
@@ -19224,7 +19224,7 @@ msgid ""
 "transfers course and participant information there."
 msgstr ""
 "Archiviert die Veranstaltung. Dabei wird eine neue „Vergangene "
-"Veranstaltung“ im CdE-Bereich erstellt und die Kurse und Teilnehmer dieser "
+"Veranstaltung“ im CdE-Bereich erstellt und die Kurse und Teilnehmende dieser "
 "Veranstaltung dorthin übertragen."
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:416
@@ -19233,8 +19233,8 @@ msgid ""
 "should usually not be done before the event has been archived and fully "
 "concluded."
 msgstr ""
-"Löscht die Veranstaltung inklusive aller Kurse und Teilnehmer "
-"irreversibel.Das sollte nicht geschehen, bevor die Veranstaltung nicht "
+"Löscht die Veranstaltung inklusive aller Kurse und Teilnehmenden "
+"irreversibel. Das sollte nicht geschehen, bevor die Veranstaltung nicht "
 "archiviert wurde und vollständig abgeschlossen ist."
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:432
@@ -19272,7 +19272,7 @@ msgstr "Änderungen an diesem Freitext wurden noch nicht gespeichert."
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:89
 msgid "Shown on the event overview to logged in users."
 msgstr ""
-"Wird auf der Veranstaltungsübersicht für eingeloggte Veranstaltungsnutzer "
+"Wird auf der Veranstaltungsübersicht für eingeloggte Veranstaltungsaccounts "
 "angezeigt."
 
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:90
@@ -19293,11 +19293,11 @@ msgstr "Anmeldungs-Email"
 
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:94
 msgid "Participant Info"
-msgstr "Teilnehmer-Infos"
+msgstr "Teilnehmenden-Infos"
 
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:94
 msgid "Shown on the \"Participant Info\" page only to participants."
-msgstr "Wird auf der \"Teilnehmer-Infos\"-Seite für Teilnehmer angezeigt."
+msgstr "Wird auf der \"Teilnehmenden-Infos\"-Seite für Teilnehmende angezeigt."
 
 #: cdedb/frontend/templates/web/event/event/show_free_texts.tmpl:95
 msgid "Custom Field Notes"
@@ -19384,7 +19384,7 @@ msgstr "Feld"
 
 #: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:55
 msgid "Participants/Registrations to be changed"
-msgstr "Zu ändernde Teilnehmer/Anmeldungen"
+msgstr "Zu ändernde Teilnehmende/Anmeldungen"
 
 #: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:57
 msgid "Courses to be changed"
@@ -19521,7 +19521,7 @@ msgid ""
 "to other participants of this event beforehand."
 msgstr ""
 "Ich stimme zu, dass meine Daten, insbesondere mein Name, meine Adresse und "
-"meine E-Mail, im Vorfeld der Veranstaltung an andere Teilnehmer "
+"meine E-Mail, im Vorfeld der Veranstaltung an andere Teilnehmende "
 "weitergegeben werden dürfen."
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:78
@@ -19576,7 +19576,7 @@ msgstr "Anmerkungen für Orgas"
 #: cdedb/frontend/templates/web/event/generic.tmpl:228
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:476
 msgid "Checkin helpers may only access a subset of custom fields."
-msgstr "Checkin-Helfer dürfen nur auf einen Teil der Datenfelder zugreifen."
+msgstr "Checkin-Helfer:innen dürfen nur auf einen Teil der Datenfelder zugreifen."
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:243
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:496
@@ -19991,7 +19991,7 @@ msgid ""
 "nickname plus family name, email address or CdEDB id (\"DB-0000\")."
 msgstr ""
 "Der Hauswünsche-Graph zeigt eine graphische Darstellung der Hauswünsche, die "
-"von den Teilnehmern eingegeben wurden. Er erkennt die gewünschten Teilnehmer "
+"von den Teilnehmenden eingegeben wurden. Er erkennt die gewünschten Teilnehmenden "
 "im eingegebenen Text anhand ihrer vollständigen Namen (irgendein Rufname "
 "plus Familienname), Spitzname plus Nachnamen, E-Mail-Adressen oder CdEDB-ID "
 "(\"DB-0000\")."
@@ -20029,12 +20029,12 @@ msgid ""
 "the mouse-over tooltip of the nodes. The nodes are hyperlinked to the "
 "details page of the participant."
 msgstr ""
-"Jeder Knoten repräsentiert einen Teilnehmer. Teilnehmer auf der Warteliste "
+"Jeder Knoten repräsentiert einen Teilnehmenden. Teilnehmende auf der Warteliste "
 "sind ebenfalls im Graph enthalten, werden jedoch mit einer gestrichelten "
 "Umrandung dargestellt. Die Hintergrundfarbe der Knoten entspricht grob dem "
-"Alter der Teilnehmer. Weitere Informationen über einen Teilnehmer werden im "
-"Mouse-over Tooltip der Knoten angezeigt (insb. ihre eingetragenen Wünsche). "
-"Die Knoten sind Hyperlinks auf die Detail-Ansichts-Seite der Teilnehmer."
+"Alter der Teilnehmenden. Weitere Informationen über einen Teilnehmenden werden im "
+"Mouse-over Tooltip der Knoten angezeigt (insb. seine eingetragenen Wünsche). "
+"Die Knoten sind Hyperlinks auf die Detail-Ansichts-Seite der Teilnehmenden."
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_wishes_graph_form.tmpl:65
 msgid ""
@@ -20055,7 +20055,7 @@ msgid ""
 "events that requires the part to be filtered. The clusters' labels are "
 "hyperlinked to the respective lodgement management page."
 msgstr ""
-"Die angezeigten Teilnehmer können nach Veranstaltungsteil gefiltert werden. "
+"Die angezeigten Teilnehmenden können nach Veranstaltungsteil gefiltert werden. "
 "Optional können die Knoten auch nach den bereits zugewiesenen Unterkünften "
 "geclustert werden. Bei mehrteiligen Veranstaltungen muss dazu nach einem "
 "Veranstaltungsteil gefiltert werden. Die Label der Cluster sind Hyperlinks "
@@ -20067,11 +20067,11 @@ msgstr "— Alle Teile —"
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_wishes_graph_form.tmpl:86
 msgid "All Participants"
-msgstr "Alle Teilnehmer"
+msgstr "Alle Teilnehmenden"
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_wishes_graph_form.tmpl:87
 msgid "Include participants without wishes and not being wished"
-msgstr "Schließe Teilnehmer ein, die nicht wünschen oder gewünscht wurden"
+msgstr "Schließe Teilnehmende ein, die nicht wünschen oder gewünscht wurden"
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_wishes_graph_form.tmpl:88
 msgid "Show Lodgements"
@@ -20097,14 +20097,14 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_wishes_graph_form.tmpl:96
 msgid "Show edges between assigned Participants"
-msgstr "Zeige Kanten zwischen bereits zugewiesenen Teilnehmern"
+msgstr "Zeige Kanten zwischen bereits zugewiesenen Teilnehmenden"
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_wishes_graph_form.tmpl:97
 msgid ""
 "Display an edge between two particpants even if both are already assigned to "
 "a lodgement."
 msgstr ""
-"Zeige auch dann eine Kante zwischen zwei Teilnehmern, wenn beide bereits "
+"Zeige auch dann eine Kante zwischen zwei Teilnehmenden, wenn beide bereits "
 "einer Unterkunft zugewiesen sind."
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_wishes_graph_form.tmpl:115
@@ -20125,7 +20125,7 @@ msgstr "Unterkunft anlegen"
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:73
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:85
 msgid "Inhabitants"
-msgstr "Bewohner"
+msgstr "Bewohner:innen"
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:70
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:80
@@ -20140,7 +20140,7 @@ msgstr "Bewege oder lösche Unterkünfte aus dieser Gruppe"
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:19
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:31
 msgid "Manage Inhabitants"
-msgstr "Bewohner verwalten"
+msgstr "Bewohner:innen verwalten"
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:199
 msgid "Underfull (but not empty)"
@@ -20196,32 +20196,32 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:10
 #, python-format
 msgid "Manage Inhabitants of Lodgement %(lodgement)s (%(title)s)"
-msgstr "Bewohner der Unterkunft %(lodgement)s verwalten (%(title)s)"
+msgstr "Bewohner:innen der Unterkunft %(lodgement)s verwalten (%(title)s)"
 
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:22
 #, python-format
 msgid "Inhabitants of %(lodgement)s"
-msgstr "Bewohner von %(lodgement)s"
+msgstr "Bewohner:innen von %(lodgement)s"
 
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:33
 msgid "Assigned Inhabitants"
-msgstr "Eingeteilte Bewohner"
+msgstr "Eingeteilte Bewohner:innen"
 
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:58
 msgid "The are currently no inhabitants assigned."
-msgstr "Zur Zeit keine Bewohner eingeteilt."
+msgstr "Zur Zeit keine Bewohner:innen eingeteilt."
 
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:65
 msgid "Add Inhabitant"
-msgstr "Bewohner hinzufügen"
+msgstr "Bewohner:in hinzufügen"
 
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:79
 msgid "Remove Inhabitant"
-msgstr "Bewohner entfernen"
+msgstr "Bewohner:in entfernen"
 
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:88
 msgid "Swap inhabitants with"
-msgstr "Tausche Bewohner mit"
+msgstr "Tausche Bewohner:innen mit"
 
 #: cdedb/frontend/templates/web/event/lodgement/move_lodgements.tmpl:10
 #, python-format
@@ -20264,11 +20264,11 @@ msgstr "Unterkunft %(lodgement)s (%(title)s)"
 
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:131
 msgid "Inhabitants not available."
-msgstr "Bewohner nicht verfügbar."
+msgstr "Bewohner:innen nicht verfügbar."
 
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:134
 msgid "No inhabitants."
-msgstr "Keine Bewohner."
+msgstr "Keine Bewohner:innen."
 
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:163
 msgid "The Lodgement will be permanently deleted."
@@ -20280,7 +20280,7 @@ msgid ""
 "inhabitants without lodgement."
 msgstr ""
 "Löscht die Unterkunft mit allen Informationen und lässt die aktuellen "
-"Bewohner ohne Unterkunft zurück."
+"Bewohner:innen ohne Unterkunft zurück."
 
 #: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:18
 #, python-format
@@ -20452,7 +20452,7 @@ msgstr "Statistik (%(title)s)"
 
 #: cdedb/frontend/templates/web/event/query/stats.tmpl:26
 msgid "Participant Statistics"
-msgstr "Teilnehmer-Statistik"
+msgstr "Teilnehmenden-Statistik"
 
 #: cdedb/frontend/templates/web/event/query/stats.tmpl:80
 msgid "Course Statistics"
@@ -20460,7 +20460,7 @@ msgstr "Kursstatistik"
 
 #: cdedb/frontend/templates/web/event/query/stats.tmpl:81
 msgid "Only includes participants."
-msgstr "Beinhaltet nur Teilnehmer."
+msgstr "Beinhaltet nur Teilnehmende."
 
 #: cdedb/frontend/templates/web/event/query/stats.tmpl:110
 #, python-format
@@ -20487,7 +20487,7 @@ msgstr "Fragebogen-Vorschau"
 
 #: cdedb/frontend/templates/web/event/questionnaire/additional_questionnaire.tmpl:34
 msgid "Participant Questionnaire"
-msgstr "Teilnehmer-Fragebogen"
+msgstr "Teilnehmenden-Fragebogen"
 
 #: cdedb/frontend/templates/web/event/questionnaire/additional_questionnaire.tmpl:66
 msgid "Submit"
@@ -20529,7 +20529,7 @@ msgid ""
 "correctly and that both you and they appear on the participant list."
 msgstr ""
 "Falls ein Wunsch fehlen sollte, prüfe bitte ob Du den Namen richtig "
-"geschrieben hast und sowohl Du, als auch die Person auf der Teilnehmerliste "
+"geschrieben hast und sowohl Du, als auch die Person auf der Teilnehmendenliste "
 "sichtbar sind."
 
 #: cdedb/frontend/templates/web/event/questionnaire/additional_questionnaire.tmpl:108
@@ -20718,7 +20718,7 @@ msgid ""
 "payment status and – for minors – the status of the parental consent at "
 "“%(my_registration)s”."
 msgstr ""
-"Die Teilnehmer und Angemeldeten können unter „%(my_registration)s“ ihren "
+"Die Teilnehmenden und Angemeldeten können unter „%(my_registration)s“ ihren "
 "aktuellen Teilnahme-Status, den Status des Teilnahmebeitrags und – bei "
 "Minderjährigen – den Status der Einverständniserklärung einsehen."
 
@@ -20809,15 +20809,15 @@ msgstr "Namen suchen"
 
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:43
 msgid "Show only participants in parts:"
-msgstr "Zeige nur Teilnehmer in Veranstaltungsteilen:"
+msgstr "Zeige nur Teilnehmende in Veranstaltungsteilen:"
 
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:214
 msgid "The participant will be checked out"
-msgstr "Der Teilnehmer wird ausgecheckt."
+msgstr "Der Teilnehmende wird ausgecheckt."
 
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:215
 msgid "The participant will be checked in."
-msgstr "Der Teilnehmer wird eingecheckt."
+msgstr "Der Teilnehmende wird eingecheckt."
 
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:12
 #, python-format
@@ -21191,7 +21191,7 @@ msgid ""
 "Please make sure, the recipient does not have to pay any fees, especially "
 "when paying internationally."
 msgstr ""
-"Achte bitte bei internationalen Überweisungen darauf, dass der Empfänger "
+"Achte bitte bei internationalen Überweisungen darauf, dass die Empfänger:in "
 "keine Gebühren zahlen muss."
 
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:177
@@ -21260,7 +21260,7 @@ msgid ""
 "may be sent to other participants of this event beforehand."
 msgstr ""
 "Ich stimme %(consent)s zu, dass meine Daten, insbesondere mein Name, meine "
-"Adresse und meine E-Mail, im Vorfeld der Veranstaltung an andere Teilnehmer "
+"Adresse und meine E-Mail, im Vorfeld der Veranstaltung an andere Teilnehmende "
 "weitergegeben werden dürfen."
 
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:332
@@ -21344,15 +21344,15 @@ msgstr "Löscht die Anmeldung inklusive aller hier angezeigten Informationen."
 
 #: cdedb/frontend/templates/web/event/user/create_user.tmpl:11
 msgid "Create New Event-User"
-msgstr "Neuen Veranstaltungsnutzer anlegen"
+msgstr "Neuen Veranstaltungsaccount anlegen"
 
 #: cdedb/frontend/templates/web/event/user/user_search.tmpl:12
 msgid "Event-User Management"
-msgstr "Veranstaltungsnutzerverwaltung"
+msgstr "Veranstaltungsaccountverwaltung"
 
 #: cdedb/frontend/templates/web/event/user/user_search.tmpl:19
 msgid "This search will only show pure event users."
-msgstr "Diese Suche findet nur reine Veranstaltungsnutzer."
+msgstr "Diese Suche findet nur reine Veranstaltungsaccounts."
 
 #: cdedb/frontend/templates/web/generic.tmpl:132
 msgid "Tabular"
@@ -21714,7 +21714,7 @@ msgstr "Du hast nur %(link)s und darfst keine Abonnements ändern."
 #: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:48
 #: cdedb/frontend/templates/web/ml/management.tmpl:29
 msgid "restricted moderator access"
-msgstr "eingeschränkten Moderator-Zugriff"
+msgstr "eingeschränkten Moderations-Zugriff"
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:42
 #: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:64
@@ -21726,45 +21726,45 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:48
 msgid "Forced Subscribers"
-msgstr "Fixierte Abonnenten"
+msgstr "Fixierte Abonnent:innen"
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:51
 msgid ""
 "Subscribed users who are protected from automatic unsubscription when "
 "loosing their means to acces the list."
 msgstr ""
-"Abonnenten, die vor automatischer Deabonnierung nach dem Verlieren ihrer "
+"Abonnent:innen, die vor automatischer Deabonnierung nach dem Verlieren ihrer "
 "Zugangsberechtigung geschützt sind."
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:62
 msgid "ID of the new forced subscriber"
-msgstr "ID des neuen fixierten Abonnenten"
+msgstr "ID der neuen fixierten Abonnent:in"
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:97
 #, python-format
 msgid "Remove %(name)s as forced subscriber"
-msgstr "%(name)s als fixierten Abonnent entfernen"
+msgstr "%(name)s als fixierte Abonnent:in entfernen"
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:107
 msgid "Blocked Users"
-msgstr "Geblockte Nutzer"
+msgstr "Geblockte Accounts"
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:110
 msgid ""
 "Users who are blocked from subscribing and requesting subscription. They can "
 "see that they are blocked."
 msgstr ""
-"Nutzer, die nicht abonnieren oder Abonnement-Anfragen stellen dürfen. Nutzer "
+"Accounts, die nicht abonnieren oder Abonnement-Anfragen stellen dürfen. Die Personen "
 "können sehen, dass sie geblockt sind."
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:121
 msgid "ID of the new blocked subscriber"
-msgstr "ID des neuen geblockten Nutzers"
+msgstr "ID des neuen geblockten Accounts"
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:149
 #, python-format
 msgid "Remove %(name)s as blocked subscriber"
-msgstr "%(name)s als geblockten Nutzer entfernen"
+msgstr "%(name)s als geblockten Account entfernen"
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:159
 msgid "Whitelist"
@@ -21772,7 +21772,7 @@ msgstr "Whitelist"
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:162
 msgid "Sender addresses that are not moderated."
-msgstr "Absender Adressen, die nicht moderiert werden."
+msgstr "Adressen von Absender:innen, die nicht moderiert werden."
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:172
 msgid "Email Address to whitelist"
@@ -21785,7 +21785,7 @@ msgstr "%s von der Whitelist entfernen."
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:203
 msgid "Unsubscribers"
-msgstr "Abbesteller"
+msgstr "Abbesteller:innen"
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:206
 msgid "Explicity Unsubscribed State"
@@ -21798,7 +21798,7 @@ msgid ""
 "automatically, but may be able to subscribe manually. Consult the %(link)s "
 "for more details."
 msgstr ""
-"Nutzer, die diese Liste abbestellt haben. Sie werden nicht wieder "
+"Personen, die diese Liste abbestellt haben. Sie werden nicht wieder "
 "automatisch hinzugefügt, können die Liste aber eventuell manuell abonnieren. "
 "In der %(link)s findest du weitere Details."
 
@@ -21819,12 +21819,12 @@ msgstr ""
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:239
 #, python-format
 msgid "Reset %(name)s explicit unsubscription"
-msgstr "%(name)s als expliziten Abbesteller entfernen"
+msgstr "%(name)s als explizite Abbesteller:in entfernen"
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:250
 #, python-format
 msgid "Subscribe %(name)s"
-msgstr "%(name)s als Abonnent hinzufügen"
+msgstr "%(name)s als Abonnent:in hinzufügen"
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:256
 msgid "Explicit unsubscribition has currently no effect."
@@ -21832,7 +21832,7 @@ msgstr "Explizites Deabonnement hat aktuell keinen Effekt."
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:258
 msgid "User would be implicit subscribed otherwise."
-msgstr "Benutzer wäre impliziter Abonnent der Liste."
+msgstr "Account wäre implizite Abonnent:in der Liste."
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:268
 msgid "Downloads"
@@ -21844,7 +21844,7 @@ msgid ""
 "A download csv file of all users associated with this mailinglist (including "
 "name, email address and %(link)s)."
 msgstr ""
-"Eine CSV-Tabelle mit allen mit dieser Mailingliste assozierten Nutzern "
+"Eine CSV-Tabelle mit allen mit dieser Mailingliste assozierten Accounts "
 "(inklusive Name, E-Mail und %(link)s)."
 
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:277
@@ -21859,7 +21859,7 @@ msgstr "Subscription State"
 #: cdedb/frontend/templates/web/ml/roster.tmpl:15
 #: cdedb/frontend/templates/web/ml/roster.tmpl:18
 msgid "Roster"
-msgstr "Abonnenten"
+msgstr "Abonnent:innen"
 
 #: cdedb/frontend/templates/web/ml/base.tmpl:15
 #: cdedb/frontend/templates/web/ml/management.tmpl:19
@@ -21935,12 +21935,12 @@ msgid ""
 "The participants of this event will be subscribers of this mailinglist. (Opt-"
 "Out)"
 msgstr ""
-"Die Teilnehmer dieser Veranstaltung werden der Liste hinzugefügt. (Opt-Out)"
+"Die Teilnehmenden dieser Veranstaltung werden der Liste hinzugefügt. (Opt-Out)"
 
 #: cdedb/frontend/templates/web/ml/change_ml_type.tmpl:54
 #: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:150
 msgid "Event Audience"
-msgstr "Veranstaltungsempfänger"
+msgstr "Veranstaltungs Publikum"
 
 #: cdedb/frontend/templates/web/ml/change_ml_type.tmpl:59
 #: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:175
@@ -21948,7 +21948,7 @@ msgid ""
 "The participants of this assembly will be subscribers of this mailinglist. "
 "(Opt-Out)"
 msgstr ""
-"Die Teilnehmer dieser Versammlung werden der Liste hinzugefügt. (Opt-Out)"
+"Die Teilnehmenden dieser Versammlung werden der Liste hinzugefügt. (Opt-Out)"
 
 #: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:20
 #: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:32
@@ -21971,7 +21971,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:113
 msgid "Moderation & Subscribers"
-msgstr "Moderation & Abonnenten"
+msgstr "Moderation & Abonnements"
 
 #: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:114
 msgid "Moderation"
@@ -21979,7 +21979,7 @@ msgstr "Moderation"
 
 #: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:136
 msgid "Roster Visibility"
-msgstr "Abonnentensichtbarkeit"
+msgstr "Sichtbarkeit für Abonnent:innen"
 
 #: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:161
 msgid "Only subscribe participants of this part group automatically."
@@ -21995,7 +21995,7 @@ msgstr "Nach dem Anlegen verfügbar."
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:51
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:52
 msgid "Moderators"
-msgstr "Moderatoren"
+msgstr "Moderator:innen"
 
 #: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:196
 msgid "Mails"
@@ -22013,7 +22013,7 @@ msgid ""
 msgstr ""
 "Beispiel: Wenn das Präfix auf \"info\" gesetzt ist und jemand eine Mail mit "
 "dem Betreff \"Einladung zur PfingstAka\" schickt, wird diese bei allen "
-"Abonnenten als \"[info] Einladung zur PfingstAka\" ankommen."
+"Abonnent:innen als \"[info] Einladung zur PfingstAka\" ankommen."
 
 #: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:202
 msgid "MIME filter / Attachments"
@@ -22029,7 +22029,7 @@ msgid ""
 "emails) as there are actors causing problems with malformed emails."
 msgstr ""
 "Bei Listen, über die externe Kommunikation abläuft (bspw. Business-E-Mails) "
-"sollte dieses Feature deaktiviert werden, da manche Absender fehlerhafte "
+"sollte dieses Feature deaktiviert werden, da manche Absender:innen fehlerhafte "
 "Mails versenden."
 
 #: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:209
@@ -22051,7 +22051,7 @@ msgstr "Vorschau: %(preview)sHierBetreffDerMail"
 
 #: cdedb/frontend/templates/web/ml/create_user.tmpl:8
 msgid "Create New Mailinglist-Account"
-msgstr "Neuen Mailinglistennutzer anlegen"
+msgstr "Neuen Mailinglistenaccount anlegen"
 
 #: cdedb/frontend/templates/web/ml/generic.tmpl:24
 msgid "inactive"
@@ -22072,14 +22072,14 @@ msgstr "Mails in der Moderation"
 msgid "%(count)s subscriber."
 msgid_plural "%(count)s subscribers."
 msgstr[0] "%(count)s Abonnent."
-msgstr[1] "%(count)s Abonnenten."
+msgstr[1] "%(count)s Abonnent:innen."
 
 #: cdedb/frontend/templates/web/ml/generic.tmpl:71
 #, python-format
 msgid "%(count)s moderator."
 msgid_plural "%(count)s moderators."
 msgstr[0] "%(count)s Moderator."
-msgstr[1] "%(count)s Moderatoren."
+msgstr[1] "%(count)s Moderator:innen."
 
 #: cdedb/frontend/templates/web/ml/generic.tmpl:88
 msgid "Write Subscription States"
@@ -22127,16 +22127,16 @@ msgstr "Mailingliste Verwalten"
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:48
 msgid "Only users can be moderators."
-msgstr "Nur Nutzer können Moderatoren sein."
+msgstr "Nur Accounts können Moderator:innen sein."
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:59
 msgid "IDs of the new moderators"
-msgstr "IDs der neuen Moderatoren"
+msgstr "IDs der neuen Moderator:innen"
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:86
 #, python-format
 msgid "Remove %(name)s as moderator"
-msgstr "%(name)s als Moderator entfernen"
+msgstr "%(name)s als Moderator:in entfernen"
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:101
 msgid "Subscription Requests of other users to this mailinglist."
@@ -22162,8 +22162,8 @@ msgid ""
 "subscribed here. Use the %(link)s site instead. People who are already "
 "subscribed are not proposed for adding."
 msgstr ""
-"Fixierte Abonnenten können hier nicht entfernt, geblockte Nutzer nicht "
-"hinzugefügt werden. Nutze dafür die %(link)s. Nutzer, die bereits auf der "
+"Fixierte Abonnent:innen können hier nicht entfernt, geblockte Accounts nicht "
+"hinzugefügt werden. Nutze dafür die %(link)s. Accounts, die bereits auf der "
 "Liste stehen, werden nicht zum Hinzufügen vorgeschlagen."
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:143
@@ -22172,12 +22172,12 @@ msgstr "Erweiterte Verwaltung"
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:155
 msgid "ID of the new subscribers"
-msgstr "ID der neuen Abonnenten"
+msgstr "ID der neuen Abonnent:in"
 
 #: cdedb/frontend/templates/web/ml/management.tmpl:195
 #, python-format
 msgid "Remove %(name)s as subscriber"
-msgstr "%(name)s als Abonnent entfernen"
+msgstr "%(name)s als Abonnent:in entfernen"
 
 #: cdedb/frontend/templates/web/ml/merge_accounts.tmpl:22
 msgid ""
@@ -22185,9 +22185,9 @@ msgid ""
 "into another user (\"Target User\"). After the merging was successfully, the "
 "source user will be archived."
 msgstr ""
-"Verschmelze einen reinen Mailinglisten Nutzer (\"Quellnutzer\") mit einem "
-"anderen Nutzer (\"Zielnutzer\"). Nach dem erfolgreichen verschmelzen wird "
-"der Quellnuzter archiviert."
+"Verschmelze einen reinen Mailinglisten Account (\"Quellaccount\") mit einem "
+"anderen Account (\"Zielaccount\"). Nach dem erfolgreichen verschmelzen wird "
+"der Quellaccount archiviert."
 
 #: cdedb/frontend/templates/web/ml/merge_accounts.tmpl:28
 msgid ""
@@ -22195,25 +22195,25 @@ msgid ""
 "same mailinglist. You may be able to fix this by removing one of them "
 "manually."
 msgstr ""
-"Beachte, das nicht beide Nutzer einen expliziten Bezug zur gleichen "
+"Beachte, das nicht beide Accounts einen expliziten Bezug zur gleichen "
 "Mailingliste besitzen dürfen. Du kannst das möglicherweise beheben, indem du "
 "einen von ihnen manuell entfernst."
 
 #: cdedb/frontend/templates/web/ml/merge_accounts.tmpl:36
 msgid "Source User"
-msgstr "Quellnutzer"
+msgstr "Quellaccount"
 
 #: cdedb/frontend/templates/web/ml/merge_accounts.tmpl:44
 msgid "Target User"
-msgstr "Zielnutzer"
+msgstr "Zielaccount"
 
 #: cdedb/frontend/templates/web/ml/merge_accounts.tmpl:52
 msgid "Use sources email address"
-msgstr "Übernehme die E-Mail-Adresse des Quellnutzers"
+msgstr "Übernehme die E-Mail-Adresse des Quellaccounts"
 
 #: cdedb/frontend/templates/web/ml/merge_accounts.tmpl:54
 msgid "Merge"
-msgstr "Verschmelze"
+msgstr "Verschmelzen"
 
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:5
 #, python-format
@@ -22231,10 +22231,10 @@ msgid ""
 "preferred for spam messages. If you whitelist a message, it is not only "
 "accepted, but its author can write emails without moderation in the future."
 msgstr ""
-"Wenn du eine Nachricht ablehnst, erhält ihr Autor eine Benachrichtigung. "
+"Wenn du eine Nachricht ablehnst, erhält die Autor:in eine Benachrichtigung. "
 "Wenn du eine Nachricht verwirfst, wird hingegen keine Nachricht versendet. "
 "Letzteres wird für Spam empfohlen. Wenn du eine Nachricht whitelistest, wird "
-"sie nicht nur genehmigt, sondern Nachrichten desselben Autors müssen in "
+"sie nicht nur genehmigt, sondern Nachrichten derselben Autor:in müssen in "
 "Zukunft nicht mehr moderiert werden."
 
 #: cdedb/frontend/templates/web/ml/message_moderation.tmpl:46
@@ -22276,15 +22276,15 @@ msgstr "Ablehnungsgrund"
 #: cdedb/frontend/templates/web/ml/roster.tmpl:5
 #, python-format
 msgid "%(title)s – Roster"
-msgstr "%(title)s – Abonnenten"
+msgstr "%(title)s – Abonnent:innen"
 
 #: cdedb/frontend/templates/web/ml/roster.tmpl:26
 msgid "The Roster is currently only visible to Moderators and Admins."
-msgstr "Die Abonnenten sind aktuell nur für Moderatoren und Admins sichtbar."
+msgstr "Die Abonnent:innen sind aktuell nur für die Moderation und für Admins sichtbar."
 
 #: cdedb/frontend/templates/web/ml/roster.tmpl:33
 msgid "Currently, these people are subscribed to this mailinglist:"
-msgstr "Aktuell sind diese Personen Abonnenten dieser Mailingliste:"
+msgstr "Aktuell sind diese Personen Abonnent:innen dieser Mailingliste:"
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:27
 #, python-format
@@ -22304,7 +22304,7 @@ msgstr "Listen-Adresse"
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:59
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:60
 msgid "Moderator Contact"
-msgstr "Moderatoren-Kontakt"
+msgstr "Moderations-Kontakt"
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:82
 msgid "This mailinglist is inactive."
@@ -22375,8 +22375,7 @@ msgstr "entsprechende Seite"
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:161
 msgid "Your subscription request is currently pending review by a moderator."
 msgstr ""
-"Deine Anfrage für diese Mailingliste wartet auf Bestätigung durch einen "
-"Moderator."
+"Deine Anfrage für diese Mailingliste wartet auf Bestätigung durch die Moderation."
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:168
 msgid "Cancel request"
@@ -22384,7 +22383,7 @@ msgstr "Abonnementantrag zurückziehen"
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:173
 msgid "You are not currently subscribed to this mailinglist."
-msgstr "Du bist zurzeit kein Abonnent dieser Mailingliste."
+msgstr "Du bist zurzeit keine Abonnent:in dieser Mailingliste."
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:179
 msgid "Request subscription"
@@ -22399,7 +22398,7 @@ msgid ""
 "You cannot subscribe to this mailinglist, because you have been blocked by "
 "the moderators."
 msgstr ""
-"Du kannst diese Mailingliste nicht abonnieren, da Du von ihren Moderatoren "
+"Du kannst diese Mailingliste nicht abonnieren, da Du von ihrer Moderation "
 "blockiert wurdest."
 
 #: cdedb/frontend/templates/web/ml/show_mailinglist.tmpl:211
@@ -22416,11 +22415,11 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/ml/user_search.tmpl:8
 msgid "Mailinglist-User Management"
-msgstr "Mailinglistennutzerverwaltung"
+msgstr "Mailinglistenaccountverwaltung"
 
 #: cdedb/frontend/templates/web/ml/user_search.tmpl:15
 msgid "This search will only show pure mailinglist users."
-msgstr "Diese Suche findet nur reine Mailinglistennutzer."
+msgstr "Diese Suche findet nur reine Mailinglistenaccounts."
 
 #: cdedb/frontend/templates/web/ml/view_log.tmpl:11
 msgid "Mailinglists Log"
@@ -22878,7 +22877,7 @@ msgstr ""
 #: cdedb/models/event/constraint_violations.py:1659
 msgid "An inhabitant is assigned to, but may not sleep on a camping mat."
 msgstr ""
-"Ein Bewohner ist auf eine Isomatte eingeteilt, hat dem aber nicht zugestimmt."
+"Eine Bewohner:in ist auf eine Isomatte eingeteilt, hat dem aber nicht zugestimmt."
 
 #: cdedb/models/event/constraint_violations.py:1712
 #, python-format
@@ -23021,12 +23020,12 @@ msgstr "Zu wenige Isomattenplätze genutzt."
 #: cdedb/models/event/constraint_violations.py:2242
 #: cdedb/models/event/constraint_violations.py:2256
 msgid "Mixed with non-mixing inhabitants."
-msgstr "Gemischte Unterkunft mit konfligierenden Teilnehmern."
+msgstr "Gemischte Unterkunft mit konfligierenden Teilnehmenden."
 
 #: cdedb/models/event/constraint_violations.py:2244
 #, python-format
 msgid "%(lodgement)s is mixed with non-mixing inhabitants in %(part)s."
-msgstr "%(lodgement)s ist gemischt mit konfligierenden Bewohnern auf %(part)s."
+msgstr "%(lodgement)s ist gemischt mit konfligierenden Bewohner:innen auf %(part)s."
 
 #: cdedb/models/event/constraint_violations.py:2276
 msgid "Event fees should be collected at the Skatbank account."
