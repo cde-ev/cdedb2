@@ -1516,6 +1516,9 @@ class FrontendTest(BackendTest):
 
     def fetch_mail_content(self, index: int = 0) -> str:
         mail = self._fetch_mail()[index]
+        return self._get_mail_content(mail)
+
+    def _get_mail_content(self, mail: email.message.EmailMessage) -> str:
         body = mail.get_body()
         assert isinstance(body, email.message.EmailMessage)
         return body.get_content()
