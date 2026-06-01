@@ -198,15 +198,15 @@ class CdEBaseBackend(AbstractBackend):
                             cde_persona.is_member = bool(code)
                             event_personas[cde_persona.id].is_member = bool(code)
 
+                        # Adjust balance for further steps (multiple payments, emails).
+                        cde_persona.balance = new_balance
+
                         # Add to tally.
                         result.membership_fees.append(
                             models_finance.MoneyTransfer(
                                 persona=cde_persona.as_dict(), amount=amount, date=date
                             )
                         )
-
-                        # Remember the changed balance in case of multiple transfers.
-                        cde_persona.balance = new_balance
                     else:
                         event_persona = event_personas[transfer['persona_id']]
                         registration = self.event.book_registration_payment(
