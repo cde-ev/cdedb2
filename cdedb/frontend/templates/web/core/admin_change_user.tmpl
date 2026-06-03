@@ -25,7 +25,7 @@
             $('#changedataform').cdedbProtectChanges();
         });
     </script>
-    <form action="{{ cdedblink('core/admin_change_user') }}" method="POST" id="changedataform"
+    <form action="{{ cdedblink('core/admin_change_user') }}" method="POST" id="changedataform" autocomplete="off"
         class="form-horizontal">
         {{ util.anti_csrf_token('core/admin_change_user') }}
         {{ util.input_hidden(name="generation") }}

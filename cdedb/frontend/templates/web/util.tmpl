@@ -447,7 +447,7 @@
 {%- endmacro %}
 
 {% macro input_text(name, readonly=False, actualreadonly=False, defaultvalue='', anid=none, aclass='form-control',
-        maxlength=256000, type='text', placeholder=none, arialabel=none, attributes='', enforce_required=True, autocomplete="off") %}
+        maxlength=256000, type='text', placeholder=none, arialabel=none, attributes='', enforce_required=True, autocomplete=none) %}
     <input{{ dict(
         type=type if type != 'iban' else 'text',
         name=name,
@@ -496,7 +496,7 @@
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, actualreadonly=False,
         defaultvalue='', anid=none, maxlength=256000, type='text', placeholder=none, small=False, horizontal=True,
         aclass="", attributes='', addon='', markdown=False, errorname=none, wide=False, outerclass='',
-        enforce_required=True, autocomplete="off") %}
+        enforce_required=True, autocomplete=none) %}
     {%- set anid = anid or "input-text-{}".format(name) %}
     {%- set caller_ = caller %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, addon=addon,

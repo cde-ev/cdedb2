@@ -35,7 +35,7 @@
 {% endblock %}
 
 {% block content %}
-    <form action="{{ cdedblink('event/change_registration') }}" method="POST" id="changeregistrationform"
+    <form action="{{ cdedblink('event/change_registration') }}" method="POST" id="changeregistrationform" autocomplete="off"
           class="form-horizontal">
         {{ util.anti_csrf_token('event/change_registration') }}
 
