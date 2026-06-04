@@ -744,6 +744,7 @@ class ComplaintBackend(AbstractBackend):
         case_id = affirm(vtypes.ID, case_id)
         involved_type = affirm(const.ComplaintInvolvementType, involved_type)
         persona_ids = affirm(set[vtypes.ID], persona_ids)
+        persona_ids = cast(set[vtypes.ID], persona_ids)  # mypy bug
 
         if not persona_ids:
             return 0
@@ -952,6 +953,7 @@ class ComplaintBackend(AbstractBackend):
         case_id = affirm(vtypes.ID, case_id)
         persona_id = affirm(vtypes.ID, persona_id)
         companion_ids = affirm(set[vtypes.ID], companion_ids)
+        companion_ids = cast(set[vtypes.ID], companion_ids)  # mypy bug
 
         if not companion_ids:
             return 0
@@ -1016,6 +1018,8 @@ class ComplaintBackend(AbstractBackend):
         case_id = affirm(vtypes.ID, case_id)
         persona_id = affirm(vtypes.ID, persona_id)
         companion_ids = affirm(set[vtypes.ID], companion_ids)
+        companion_ids = cast(set[vtypes.ID], companion_ids)  # mypy bug
+
         if not companion_ids:
             return 0
         with Atomizer(rs):

@@ -708,7 +708,7 @@ class CoreBaseBackend(AbstractBackend):
                 WHERE persona_id = %(persona_id)s AND code = %(old_code)s
                 AND generation = %(generation)s
             """
-            params = {
+            params: ParamDict = {
                 "reviewed_by": rs.user.persona_id,
                 "new_code": const.PersonaChangeStati.nacked,
                 "persona_id": persona_id,
@@ -1770,7 +1770,7 @@ class CoreBaseBackend(AbstractBackend):
                 "SELECT COUNT(*) FROM complaint.enforcers WHERE persona_id = %(persona_id)s",
                 "SELECT COUNT(*) FROM event.helpers WHERE persona_id = %(persona_id)s",
             )
-            params = {"persona_id": persona_id}
+            params: ParamDict = {"persona_id": persona_id}
             if any(
                 unwrap(self.query_one(rs, query, params)) for query in helper_queries
             ):
@@ -1885,7 +1885,7 @@ class CoreBaseBackend(AbstractBackend):
                     persona_id = %(persona_id)s AND subscription_state = ANY(%(states)s)
                     AND mailinglists.is_active = True
             """
-            params: ParamDict = {
+            params = {
                 "persona_id": persona_id,
                 "states": {
                     const.SubscriptionState.subscribed,
@@ -1989,7 +1989,7 @@ class CoreBaseBackend(AbstractBackend):
                 SET (iban, account_owner, account_address) = ('', NULL, NULL)
                 WHERE persona_id = %(persona_id)s AND revoked_at < now() - interval '14 month'
             """
-            params: ParamDict = {
+            params = {
                 "persona_id": persona_id,
             }
             if lastschrift:
@@ -2020,7 +2020,7 @@ class CoreBaseBackend(AbstractBackend):
             query = """
                 UPDATE core.personas SET password_hash = %(password_hash)s WHERE id = %(id)s
             """
-            params: ParamDict = {
+            params = {
                 "password_hash": password_hash,
                 "id": persona_id,
             }
@@ -2128,7 +2128,7 @@ class CoreBaseBackend(AbstractBackend):
                         OR events.is_archived = False
                     )
             """
-            params: ParamDict = {
+            params = {
                 "persona_id": persona_id,
                 "event_id_cutoff": self.conf['EVENT_ARCHIVAL_BALANCE_CUTOFF'],
             }
@@ -2191,7 +2191,7 @@ class CoreBaseBackend(AbstractBackend):
                 WHERE persona_id = %(persona_id)s
                 GROUP BY persona_id
             """
-            params: ParamDict = {"persona_id": persona_id}
+            params = {"persona_id": persona_id}
             moderated_mailinglists = set(
                 unwrap(self.query_one(rs, query, params)) or []
             )
@@ -3499,7 +3499,7 @@ class CoreBaseBackend(AbstractBackend):
             (21, "username = %s", (persona['username'],)),
         ]
         # Omit queries where some parameters are None
-        queries = tuple(e for e in queries if all(x is not None for x in e[2]))
+        queries = [e for e in queries if all(x is not None for x in e[2])]
         for score, condition, params in queries:
             query = f"SELECT id FROM core.personas WHERE {condition}"
             result = self.query_all(rs, query, params)
@@ -3788,7 +3788,7 @@ class CoreBaseBackend(AbstractBackend):
                 LEFT JOIN ml.subscription_addresses AS sa ON estat.address = sa.address
             WHERE estat.status = ANY(%(stati)s)
         """
-        params: ParamDict = {
+        params = {
             "stati": stati,
         }
         if persona_ids:

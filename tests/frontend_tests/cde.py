@@ -1813,7 +1813,7 @@ class TestCdEFrontend(FrontendTest):
             output.append(head)
         head, _ = content.split("Erneut validieren")
         output.append(head)
-        expectation: tuple[tuple[str, ...], ...] = (
+        expectation = (
             tuple(),
             tuple(),
             tuple(),
@@ -1898,7 +1898,7 @@ class TestCdEFrontend(FrontendTest):
             output.append(head)
         head, _ = content.split("Erneut validieren")
         output.append(head)
-        expectation: tuple[tuple[str, ...], ...] = (
+        expectation = (
             tuple(),
             tuple(),
             tuple(),
@@ -1920,7 +1920,7 @@ class TestCdEFrontend(FrontendTest):
                 self.assertTrue(
                     re.search(piece, out), msg=f"{piece} not found in {out}"
                 )
-        nonexpectation: tuple[tuple[str, ...], ...] = (
+        nonexpectation = (
             tuple(),
             tuple(),
             tuple(),

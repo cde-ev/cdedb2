@@ -346,7 +346,7 @@ class TestLDAP(BasicTest):
         )
 
         user_id = 2
-        expectation: dict[str, list[str] | list[NearlyNow]] = {
+        expectation = {
             'uid': ['2'],
             'mail': ['berta@example.cde'],
             'ipaUniqueID': ['personas/2'],
@@ -617,7 +617,7 @@ class TestLDAP(BasicTest):
             'cn=kongress-leitung-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=kongress-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
         }
-        expectation_orga: set[str] = set()
+        expectation_orga = set()
         expectation_presider = {
             'cn=presiders-1,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',
             'cn=presiders-3,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',

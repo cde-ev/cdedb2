@@ -177,7 +177,7 @@ def _read_sample_data(
         data: CdEDBObjectMap = {}
         _id = 1
         for e in table_data:
-            _id = e.get('id', _id)
+            _id = cast(int, e.get('id', _id))
             assert _id not in data
             e['id'] = _id
             data[_id] = e
@@ -1367,7 +1367,7 @@ class FrontendTest(BackendTest):
         """
         for link in links:
             if isinstance(link, str):
-                link = {'description': html.escape(link)}
+                link = cast(CdEDBObject, {'description': html.escape(link)})
             if 'index' not in link:
                 link['index'] = 0
             try:

@@ -1072,16 +1072,16 @@ class CoreBaseFrontend(AbstractFrontend):
         """
         if rs.has_validation_errors():
             return self.index(rs)
-        anid, errs = inspect(vtypes.CdedbID, phrase, argname="phrase")
+        db_id, errs = inspect(vtypes.CdedbID, phrase, argname="phrase")
         if not errs:
-            assert anid is not None
-            if self.coreproxy.verify_id(rs, anid, is_archived=None):
-                return self.redirect_show_user(rs, anid)
-        anid, errs = inspect(vtypes.ID, phrase, argname="phrase")
+            assert db_id is not None
+            if self.coreproxy.verify_id(rs, db_id, is_archived=None):
+                return self.redirect_show_user(rs, db_id)
+        persona_id, errs = inspect(vtypes.ID, phrase, argname="phrase")
         if not errs:
-            assert anid is not None
-            if self.coreproxy.verify_id(rs, anid, is_archived=None):
-                return self.redirect_show_user(rs, anid)
+            assert persona_id is not None
+            if self.coreproxy.verify_id(rs, persona_id, is_archived=None):
+                return self.redirect_show_user(rs, persona_id)
 
         scope = QueryScope.all_core_users if include_archived else QueryScope.core_user
         terms = tuple(t.strip() for t in phrase.split(' ') if t)

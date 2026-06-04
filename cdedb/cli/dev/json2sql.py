@@ -114,7 +114,7 @@ def format_inserts(
     # Create len(data) many row placeholders for len(keys) many values.
     value_list = ",\n".join((f"({', '.join(('%s',) * len(keys))})",) * len(table_data))
     query = f"INSERT INTO {table_name} ({', '.join(keys)}) VALUES {value_list}"
-    params: list[DatabaseValue_s] = [to_db_input(p) for p in params]
+    params = [to_db_input(p) for p in params]
 
     return query, params
 
