@@ -1220,7 +1220,7 @@ class AssemblyBackend(AbstractBackend):
                 existing = set(current['candidates'].keys())
                 if not (existing >= {x for x in data['candidates'] if x > 0}):
                     raise ValueError(
-                        n_("Non-existing candidates specified.")
+                        n_("Non-existing option specified.")
                     )  # TODO: coverage
                 new = {x for x in data['candidates'] if x < 0}
                 updated = {

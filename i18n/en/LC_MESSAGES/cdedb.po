@@ -2191,19 +2191,19 @@ msgstr "No cleanup necessary."
 
 #: cdedb/.i18n_additional.py:544 cdedb/i18n_additional.py:139
 msgid "A candidate contains a forbidden character."
-msgstr ""
+msgstr "An option contains a forbidden character."
 
 #: cdedb/.i18n_additional.py:545 cdedb/i18n_additional.py:140
 msgid "Superfluous candidate in vote string."
-msgstr ""
+msgstr "Superfluous option in vote string."
 
 #: cdedb/.i18n_additional.py:546 cdedb/i18n_additional.py:141
 msgid "Missing candidate in vote string."
-msgstr ""
+msgstr "Missing option in the vote string."
 
 #: cdedb/.i18n_additional.py:547 cdedb/i18n_additional.py:142
 msgid "Every candidate must occur exactly once in each vote."
-msgstr ""
+msgstr "Every option must occur exactly once in each vote."
 
 #: cdedb/.i18n_additional.py:548
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:37

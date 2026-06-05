@@ -3424,7 +3424,7 @@ msgid "Unable to modify active ballot."
 msgstr "Eine aktive Abstimmung kann nicht mehr verändert werden."
 
 #: cdedb/backend/assembly.py:1223
-msgid "Non-existing candidates specified."
+msgid "Non-existing option specified."
 msgstr "Nicht-existente Option angegeben."
 
 #: cdedb/backend/assembly.py:1294
@@ -7833,11 +7833,6 @@ msgstr "Unbekannte Abstimmung."
 msgid "Ballot has not been tallied."
 msgstr "Abstimmung wurde noch nicht ausgezählt."
 
-#: cdedb/frontend/assembly/ballot.py:449
-#: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:28
-msgid "Against all Candidates"
-msgstr "Gegen alle Optionen"
-
 #: cdedb/frontend/assembly/ballot.py:452
 msgid "Rejection limit"
 msgstr "Ablehnungsgrenze"
@@ -10366,9 +10361,9 @@ msgid "This ballot and all its data will be permanently deleted."
 msgstr "Diese Abstimmung wird irreversibel mit allen Daten gelöscht."
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_meta.tmpl:18
-msgid "Deletes the ballot and all associated settings and candidates."
+msgid "Deletes the ballot and all associated settings and options."
 msgstr ""
-"Löscht die Abstimmung und alle dazugehörigen Einstellungen und Kandidaten."
+"Löscht die Abstimmung und alle dazugehörigen Einstellungen und Optionen."
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_meta.tmpl:31
 msgid "Quorum"
@@ -10402,7 +10397,7 @@ msgstr "Keine Verlängerung notwendig, da %(quorum)s Stimmen erreicht wurden."
 #, python-format
 msgid "Classical voting with %(votes)s vote and \"Against all\" option."
 msgstr ""
-"Klassische Abstimmung mit %(votes)s Stimme und \"Gegen alle Kanididaten\"-"
+"Klassische Abstimmung mit %(votes)s Stimme und \"Gegen alle\"-"
 "Option."
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_meta.tmpl:92
@@ -10414,7 +10409,7 @@ msgstr "Klassische Abstimmung mit %(votes)s Stimme."
 #, python-format
 msgid "Classical voting with %(votes)s votes and \"Against all\" option."
 msgstr ""
-"Klassische Abstimmung mit %(votes)s Stimmen und \"Gegen alle Kandidaten\"-"
+"Klassische Abstimmung mit %(votes)s Stimmen und \"Gegen alle\"-"
 "Option."
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_meta.tmpl:102
@@ -10436,10 +10431,10 @@ msgid "Period"
 msgstr "Zeitraum"
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_meta.tmpl:134
-msgid "Admins can still make changes to description, files and candidates."
+msgid "Admins can still make changes to description, files and options."
 msgstr ""
 "Admins können noch Veränderungen an der Beschreibung, den angehängten "
-"Dateien und den Kandidaten vornehmen."
+"Dateien und den Optionen vornehmen."
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_meta.tmpl:136
 msgid ""
@@ -10529,14 +10524,6 @@ msgstr "Zu dieser Abstimmung gibt es noch keine Dateien."
 msgid "Ranking"
 msgstr "Platzierung"
 
-#: cdedb/frontend/templates/web/assembly/ballot/_ballot_tallied.tmpl:10
-#: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:5
-#: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:22
-#: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:64
-#: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:321
-msgid "Candidates"
-msgstr "Kandidaten"
-
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_tallied.tmpl:13
 msgid "Pro-Votes"
 msgstr "Pro-Stimmen"
@@ -10553,8 +10540,8 @@ msgid "and"
 msgstr "und"
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_tallied.tmpl:99
-msgid "Against all Candidates."
-msgstr "Gegen alle Kandidaten."
+msgid "\"Against all\" option"
+msgstr "\"Gegen alle\"-Option"
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_tallied.tmpl:103
 msgid "Rejection limit."
@@ -10575,21 +10562,21 @@ msgstr "Klassische Wahl"
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_tallied.tmpl:200
 msgid ""
-"Pro votes are the sum of all votes in favor of this candidate. Votes against "
-"single candidates are not possible in this voting system."
+"Pro votes are the sum of all votes in favor of this option. Votes against "
+"single options are not possible in this voting system."
 msgstr ""
-"Die Pro-Stimmen sind die Summe aller Stimmen für diesen Kandidaten. Aufgrund "
+"Die Pro-Stimmen sind die Summe aller Stimmen für diese Option. Aufgrund "
 "des Wahlsystems kann es intrinsisch keine Kontra-Stimmen gegen einzelne "
-"Kandidaten geben."
+"Optionen geben."
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_tallied.tmpl:207
 msgid ""
-"Using the \"Against all candidates\" option it is possible to vote against "
-"all candidates. This option can only be exclusively chosen, potential other "
+"By using the \"Against all\" option it is possible to vote against "
+"all options. This option can only be exclusively chosen, potential other "
 "votes expire."
 msgstr ""
-"Mit der \"Gegen alle Kandidaten\"-Option ist es möglich, sich gegen alle "
-"Kandidaten auszusprechen. Diese Option konnte nur allein gewählt werden, "
+"Mit der \"Gegen alle\"-Option ist es möglich, sich gegen alle "
+"Optionen auszusprechen. Diese Option konnte nur allein gewählt werden, "
 "eventuell weitere abgegebene Stimmen verfielen."
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_tallied.tmpl:216
@@ -10599,17 +10586,17 @@ msgstr "Präferenzwahl"
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_tallied.tmpl:221
 msgid ""
 "Pro votes and Contra votes are valid for the given position and are relative "
-"to the next lower position. Multiple candidates can share the same position "
+"to the next lower position. Multiple options can share the same position "
 "in the ranking."
 msgstr ""
 "Die Pro-Stimmen und Kontra-Stimmen gelten für die jeweilige Platzierung und "
 "beziehen sich relativ auf die darunter liegende Platzierung. Dabei können "
-"mehrere Kandidaten gleich platziert sein."
+"mehrere Optionen gleich platziert sein."
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:30
-msgid "With this option you reject all candidates."
+msgid "Choose this option to reject all other options."
 msgstr ""
-"Mit dieser Option kannst Du Deine Ablehnung aller Kandidaten ausdrücken."
+"Mit dieser Option kannst du deine Ablehnung von allen anderen Optionen ausdrücken."
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:34
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:249
@@ -10648,46 +10635,46 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:176
 #, python-format
 msgid ""
-"This vote is a preferential vote. You can arrange the candidates in the "
+"This vote is a preferential vote. You can arrange the options in the "
 "field above according to your personal preference. The preferences of all "
 "participants will be evaluated using the %(link)s, to determine the option "
 "with the most votes."
 msgstr ""
 "Diese Abstimmung findet als Präferenzwahl statt. Du kannst in das obige Feld "
-"eine Präferenzliste eintragen, um die Kandidaten in eine persönliche "
+"eine Präferenzliste eintragen, um die Optionen in eine persönliche "
 "Rangfolge zu bringen. Später werden die Präferenzlisten aller Wähler:innen mit "
-"der %(link)s ausgewertet, um den Kandidaten mit den meisten Stimmen zu "
+"der %(link)s ausgewertet, um die Option mit den meisten Stimmen zu "
 "ermitteln."
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:92
 #, python-format
 msgid ""
 "To enter your preferencelist, use the shortnames given in the list of "
-"candidates and the %(gt)s and %(eq)s characters. Use the greater-than "
-"character %(gt)s to give the candidates left of the character higher "
+"options and the %(gt)s and %(eq)s characters. Use the greater-than "
+"character %(gt)s to give the options left of the character higher "
 "preference than those on the right. Use the equals character to give two "
-"candidates the same preference. You need to have all candidates in your "
+"options the same preference. You need to have all options in your "
 "preferencelist."
 msgstr ""
-"Um die Präferenzliste einzugeben, verwende bitte die in der Kandidatenliste "
-"angegebenen Kurzbezeichnungen der Kandidaten und die Zeichen %(gt)s und "
-"%(eq)s. Mit dem Größer-als-Zeichen %(gt)s bevorzugst Du die Kandidaten links "
+"Um die Präferenzliste einzugeben, verwende bitte die in der Liste der Optionen "
+"angegebenen Kurzbezeichnungen und die Zeichen %(gt)s und "
+"%(eq)s. Mit dem Größer-als-Zeichen %(gt)s bevorzugst Du die Optionen links "
 "des Zeichens gegenüber denen auf der rechten Seite. Mit dem "
-"Gleichheitszeichen %(eq)s bewertest Du zwei Kandidaten gleich. In der "
-"Präferenzliste müssen alle Kandidaten genannt werden."
+"Gleichheitszeichen %(eq)s bewertest Du zwei Optionen gleich. In der "
+"Präferenzliste müssen alle Optionen genannt werden."
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:102
 #, python-format
 msgid ""
 "Additionally you need to use the rejection bar %(abm)s in your "
-"preferencelist. Use it in your preferencelist like you would a candidate. "
-"Put all candidates you deem suitable higher than %(abm)s and all candidates "
+"preferencelist. Use it in your preferencelist like you would use an option. "
+"Put all options you deem suitable higher than %(abm)s and all options "
 "you reject lower, i. e. to the right of %(abm)s."
 msgstr ""
 "Zusätzlich musst Du die Ablehnungsgrenze %(abm)s in der Präferenzliste "
-"verwenden. Diese wird wie ein Kandidat in der Liste aufgeführt und gibt an, "
-"welche Kandidaten Du ablehnst. Kandidaten, die Du für geeignet hältst, "
-"solltest Du höher als %(abm)s bewerten, Kandidaten, die Du ablehnst, "
+"verwenden. Diese wird wie eine Option in der Liste aufgeführt und gibt an, "
+"welche Optionen Du ablehnst. Optionen, die Du für geeignet hältst, "
+"solltest Du höher als %(abm)s bewerten, Optionen, die Du ablehnst, "
 "niedriger, d. h. rechts von %(abm)s."
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:111
@@ -10695,8 +10682,8 @@ msgid "Examples"
 msgstr "Beispiele"
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:112
-msgid "Take the following examplatory candidate list:"
-msgstr "Wir nehmen folgende beispielhafte Kandidatenliste an:"
+msgid "Take the following examplatory list of options:"
+msgstr "Wir nehmen folgende beispielhafte Liste von Optionen an:"
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:117
 msgid "Luke Skywalker, short: [Luke]"
@@ -10720,11 +10707,11 @@ msgstr "Deine Wahl könnte dann z. B. so aussehen:"
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:127
 msgid ""
-"You deem all candidates suitable, but you like Leia the best, with no "
-"difference between the other candidates."
+"You deem all options suitable, but you like Leia the best, with no "
+"difference between the other options."
 msgstr ""
-"Du hältst alle Kandidaten für geeignet, aber Leia für die Beste, die anderen "
-"Kandidaten für gleichwertig."
+"Du hältst alle Optionen für geeignet, aber Leia für die Beste, die anderen "
+"Optionen für gleichwertig."
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:132
 msgid ""
@@ -10763,15 +10750,15 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:183
 msgid ""
-"To arrange the candidates, place them into one of the shaded boxes. The "
-"higher up the box, the higher your preference for that candidate. Candidates "
-"within the same box will be evaluated with the same preference. Place a "
-"candidate in the space between two boxes to create a new box there."
+"To arrange the options, place them into one of the shaded boxes. The "
+"higher up the box, the higher your preference for that option. Options "
+"within the same box will be evaluated with the same preference. Place an "
+"option in the space between two boxes to create a new box there."
 msgstr ""
-"Um die Kandidaten anzuordnen, positioniere sie in eine der schattierten "
+"Um die Optionen anzuordnen, positioniere sie in eine der schattierten "
 "Boxen. Eine Einordnung in einer höheren Box drückt eine höhere Präferenz "
-"dieses Kandidaten aus. Kandidaten, die sich in der gleichen Box befinden, "
-"werden mit gleicher Präferenz gewertet. Bewegst Du einen Kandidaten in den "
+"dieser Option aus. Optionen, die sich in der gleichen Box befinden, "
+"werden mit gleicher Präferenz gewertet. Bewegst Du eine Option in den "
 "Zwischenraum ober- und unterhalb der Boxen, entsteht dort eine neue Box."
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:191
@@ -10781,14 +10768,14 @@ msgstr "TAB"
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:191
 #, python-format
 msgid ""
-"There are three ways of placing candidates: Drag’n’Drop them into a "
-"different box or click on a candidate and then on a box. Or you can select a "
-"candidate with %(tab)s, confirm it with %(enter)s or %(space)s, then select "
+"There are three ways of placing options: Drag’n’Drop them into a "
+"different box or click on an option and then on a box. Or you can select an "
+"option with %(tab)s, confirm it with %(enter)s or %(space)s, then select "
 "a box with %(tab)s and confirm the selection with %(enter)s or %(space)s."
 msgstr ""
-"Es gibt drei Möglichkeiten die Kandidaten zu positionieren: Die Kandidaten "
-"per Drag’n’Drop verschieben, erst einen Kandidaten und dann eine Box "
-"anklicken oder mit %(tab)s einen Kandidaten auswählen, die Auswahl mit "
+"Es gibt drei Möglichkeiten die Optionen zu positionieren: Die Optionen "
+"per Drag’n’Drop verschieben, erst eine Option und dann eine Box "
+"anklicken oder mit %(tab)s eine Option auswählen, die Auswahl mit "
 "%(space)s oder %(enter)s bestätigen und anschließend mit %(tab)s eine Box "
 "auswählen und wiederum mit %(space)s oder %(enter)s bestätigen."
 
@@ -10802,23 +10789,23 @@ msgstr "Leertaste"
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:202
 msgid ""
-"One of the boxes is marked as “Neutral”. Please place candidates cou deem "
-"suitable above this box (they will be highlighted in green) and candidates "
+"One of the boxes is marked as “Neutral”. Please place options you deem "
+"suitable above this box (they will be highlighted in green) and options "
 "you want to reject below this box (they will be highlighted in red)."
 msgstr ""
 "Eine der Boxen ist stets als „Neutral“ gekennzeichnet. Bitte ordne "
-"Kandidaten, die Du für geeignet hältst, oberhalb dieser Box an (Boxen werden "
-"grün hinterlegt) und Kandidaten die Du ablehnst unterhalb (Boxen werden rot "
+"Optionen, die Du für geeignet hältst, oberhalb dieser Box an (Boxen werden "
+"grün hinterlegt) und Optionen die Du ablehnst unterhalb (Boxen werden rot "
 "hinterlegt)."
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:209
-msgid "To abstain, place all candidates in the neutral box."
+msgid "To abstain, place all options in the neutral box."
 msgstr ""
-"Um Dich zu enthalten, positioniere alle Kandidaten in der „Neutral“-Box."
+"Um Dich zu enthalten, positioniere alle Optionen in der „Neutral“-Box."
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:213
-msgid "To abstain, place all candidates in the same box."
-msgstr "Um Dich zu enthalten, positioniere alle Kandidaten in einer Box."
+msgid "To abstain, place all options in the same box."
+msgstr "Um Dich zu enthalten, positioniere alle Optionen in einer Box."
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:230
 msgid "Text-based Voting"
@@ -10954,8 +10941,8 @@ msgid "Add"
 msgstr "Hinzufügen"
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:366
-msgid "Add Candidate"
-msgstr "Kandidaten hinzufügen"
+msgid "Add Option"
+msgstr "Option hinzufügen"
 
 #: cdedb/frontend/templates/web/assembly/ballot/_ballot_voting.tmpl:376
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:179
@@ -11213,9 +11200,9 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot_result.tmpl:59
 msgid ""
-"For the whole page, the candidates are addressed with the following "
+"For the whole page, the options are addressed with the following "
 "abbreviations."
-msgstr "Auf dieser Seite werden die Kandidaten wie folgt abgekürzt."
+msgstr "Auf dieser Seite werden die Optionen wie folgt abgekürzt."
 
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot_result.tmpl:71
 msgid ""
@@ -11228,15 +11215,15 @@ msgstr ""
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot_result.tmpl:81
 #, python-format
 msgid ""
-"The greater-than character %(gt)s means that the candidate, represented by "
+"The greater-than character %(gt)s means that the option, represented by "
 "their shortname, on the left has higher overall preference than the one on "
-"the right. The equals character %(eq)s means that two or more candidates "
+"the right. The equals character %(eq)s means that two or more options "
 "have the same overall preference across all participants."
 msgstr ""
-"Das Größer-als-Zeichen %(gt)s gibt an, dass der Kandidat auf der linken "
-"Seite des Zeichens insgesamt mit höherer Präferenz eingestuft wurde als der "
-"Kandidate auf der rechten Seite. Das Gleichheits-Zeichen %(eq)s gibt an, "
-"dass zwei oder mehr Kandidaten die gleiche gesamte Präferenz haben."
+"Das Größer-als-Zeichen %(gt)s gibt an, dass die Option auf der linken "
+"Seite des Zeichens insgesamt mit höherer Präferenz eingestuft wurde als die "
+"Option auf der rechten Seite. Das Gleichheits-Zeichen %(eq)s gibt an, "
+"dass zwei oder mehr Optionen die gleiche gesamte Präferenz haben."
 
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot_result.tmpl:90
 msgid "Verify the result"
@@ -11358,18 +11345,18 @@ msgstr "Paarweise-Präferenz-Tabelle"
 
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot_result.tmpl:156
 msgid ""
-"The following table contains the pairwise preferences over all candidates. "
+"The following table contains the pairwise preferences over all option. "
 "It can be read as"
 msgstr ""
-"Die folgende Tabelle enthält die paarweise Präferenz aller Kandidaten. Sie "
+"Die folgende Tabelle enthält die paarweise Präferenz aller Optionen. Sie "
 "kann gelesen werden als"
 
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot_result.tmpl:160
 msgid ""
-"the candidate of the xth row is preferred by y voters over the candidate of "
+"the option of the xth row is preferred by y voters over the option of "
 "the zth column."
 msgstr ""
-"der Kandidat der xten Zeile wird von y Wähler:innen gegenüber dem Kandidat der "
+"die Option der xten Zeile wird von y Wähler:innen gegenüber der Option der "
 "zten Spalte präferiert."
 
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot_result.tmpl:196
@@ -11404,12 +11391,12 @@ msgid "You abstained."
 msgstr "Du hast Dich enthalten."
 
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot_result.tmpl:238
-msgid "You voted against all candidates."
-msgstr "Du hast Dich gegen alle Kandidaten entschieden."
+msgid "You voted against all option."
+msgstr "Du hast Dich gegen alle Optionen ausgesprochen."
 
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot_result.tmpl:241
-msgid "You voted for the following candidates:"
-msgstr "Du hast für die folgenden Kandidaten gestimmt:"
+msgid "You voted for the following option:"
+msgstr "Du hast für die folgenden Optionen gestimmt:"
 
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot_result.tmpl:243
 msgid "You voted in the following preference:"
