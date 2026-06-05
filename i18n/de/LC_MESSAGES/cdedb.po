@@ -14354,8 +14354,8 @@ msgstr "Account-Log"
 #: cdedb/frontend/templates/web/core/base.tmpl:96
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:9
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:14
-msgid "Userdata Log"
-msgstr "Nutzerdaten-Log"
+msgid "Change Log"
+msgstr "Änderungs-Log"
 
 #: cdedb/frontend/templates/web/core/base.tmpl:104
 #: cdedb/frontend/templates/web/core/complaint/index.tmpl:11

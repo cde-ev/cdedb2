@@ -14608,7 +14608,7 @@ msgstr "vestigium novum crea"
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:9
 #: cdedb/frontend/templates/web/core/view_changelog_meta.tmpl:14
 #, fuzzy
-msgid "Userdata Log"
+msgid "Change Log"
 msgstr "data utentis tracta"
 
 #: cdedb/frontend/templates/web/core/base.tmpl:104
