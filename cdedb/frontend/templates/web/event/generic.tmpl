@@ -335,7 +335,7 @@
                 </div>
             {% else %}
                 <h3 class="panel-title">
-                    {{ util.make_icon("heading") }}
+                    {{ util.make_icon(values["role_" ~ part_id].get_class().get_icon()) }}
                     {{ gettext(values["role_" ~ part_id]|string) }}
                 </h3>
                 {{ util.input_hidden("role_" ~ part_id, aclass="input-role") }}

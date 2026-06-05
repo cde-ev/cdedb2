@@ -101,6 +101,7 @@
                     {% else %}
                         <div class="miniature-heading alert alert-info {{ entry.get_drow_html_classes()|join(" ") }}">
                             {% trans %}Magic Role{% endtrans %}:
+                            {{ util.make_icon(entry.get_icon()) }}
                             {{ gettext(entry.role|string) }}
                         </div>
                     {% endif %}

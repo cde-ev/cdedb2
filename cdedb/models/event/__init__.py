@@ -1144,6 +1144,10 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
     @abc.abstractmethod
     def get_drow_html_classes(cls) -> list[str]: ...
 
+    @classmethod
+    @abc.abstractmethod
+    def get_icon(cls) -> str: ...
+
     @staticmethod
     def get_class(
         role: const.QuestionnaireRowMagicRole,
@@ -1197,6 +1201,10 @@ class QuestionnaireTextRow(QuestionnaireRow):
     text: str | None
 
     @classmethod
+    def get_icon(self) -> str:
+        return "align-left"
+
+    @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
         return super(QuestionnaireRow, cls).from_database(data)
 
@@ -1226,6 +1234,10 @@ class QuestionnaireFieldRow(QuestionnaireRow):
 
     readonly: bool = False
     default_value: Any = None  # TODO: ByDatafieldKind maybe some union?
+
+    @classmethod
+    def get_icon(self) -> str:
+        return "pen-to-square"
 
     def get_label(self) -> str:
         return self.label or self.field.title
@@ -1260,6 +1272,10 @@ class QuestionnaireMagicRow(QuestionnaireRow):
     allow_multiple_kinds = False
 
     @classmethod
+    def get_icon(cls) -> str:
+        return "wand-magic-sparkles"
+
+    @classmethod
     def from_database(cls, data: "CdEDBObject") -> "QuestionnaireMagicRow":
         role = const.QuestionnaireRowMagicRole(data["role"])
         return cast(
@@ -1277,6 +1293,10 @@ class CourseChoices(QuestionnaireMagicRow):
     _role = const.QuestionnaireRowMagicRole.course_choices
     valid_kinds = {const.QuestionnaireUsages.registration: QuestionnaireFrequency.once}
 
+    @classmethod
+    def get_icon(cls) -> str:
+        return "book"
+
 
 @dataclasses.dataclass
 class FeePreview(QuestionnaireMagicRow):
@@ -1286,6 +1306,10 @@ class FeePreview(QuestionnaireMagicRow):
     }
     allow_multiple_kinds = True
 
+    @classmethod
+    def get_icon(cls) -> str:
+        return "coins"
+
 
 @dataclasses.dataclass
 class ListConsent(QuestionnaireMagicRow):
@@ -1293,6 +1317,10 @@ class ListConsent(QuestionnaireMagicRow):
     valid_kinds = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.once,
     }
+
+    @classmethod
+    def get_icon(cls) -> str:
+        return "address-card"
 
 
 @dataclasses.dataclass
@@ -1302,6 +1330,10 @@ class MixedLodging(QuestionnaireMagicRow):
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.once,
     }
 
+    @classmethod
+    def get_icon(cls) -> str:
+        return "venus-mars"
+
 
 @dataclasses.dataclass
 class FotoNotice(QuestionnaireMagicRow):
@@ -1309,6 +1341,10 @@ class FotoNotice(QuestionnaireMagicRow):
     valid_kinds = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.min_once,
     }
+
+    @classmethod
+    def get_icon(cls) -> str:
+        return "images"
 
 
 @dataclasses.dataclass
