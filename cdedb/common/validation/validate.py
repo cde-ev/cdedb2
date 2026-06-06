@@ -694,6 +694,8 @@ def _partial_import_id(
     val: Any, argname: Optional[str] = None, **kwargs: Any
 ) -> PartialImportID:
     """A numeric id or a negative int as a placeholder."""
+    if val is None or isinstance(val, str) and not val:
+        raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
     val = _int(val, argname, **kwargs)
     if val == 0:
         raise ValidationSummary(ValueError(argname, n_("Must not be zero.")))
