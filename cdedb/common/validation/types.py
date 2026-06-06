@@ -29,7 +29,12 @@ NonNegativeInt = _NewType("NonNegativeInt", int)
 PositiveInt = _NewType("PositiveInt", int)
 NegativeInt = _NewType("NegativeInt", int)
 ID = _NewType("ID", int)
-CdedbID = _NewType("CdedbID", ID)  # subtype of ID as it also uses that validator
+# PersonaID is special and will validate strings as "DB-X-Y" format.
+PersonaID = _NewType("PersonaID", ID)
+# Other IDs that are only differentiated by the type checker.
+InvolvedID = _NewType("InvolvedID", ID)
+
+
 PartialImportID = _NewType("PartialImportID", int)
 SingleDigitInt = _NewType("SingleDigitInt", int)
 
@@ -58,9 +63,6 @@ IBAN = _NewType("IBAN", str)
 Vote = _NewType("Vote", str)
 Regex = _NewType("Regex", str)
 NonRegex = _NewType("NonRegex", str)
-
-IntCSVList = _NewType("IntCSVList", list[int])
-CdedbIDList = _NewType("CdedbIDList", list[CdedbID])
 
 APITokenString = _NewType("APITokenString", tuple[str, str])
 
@@ -149,5 +151,5 @@ QUERY_INPUT_VALIDATORS: dict[str, type[_Any]] = {
     "enum_int": int,
     "enum_str": str,
     "money": float,
-    "cdedbid": CdedbID,
+    "cdedbid": PersonaID,
 }

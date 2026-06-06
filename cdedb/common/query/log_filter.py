@@ -176,10 +176,10 @@ class GenericLogFilter:
             field.name: cast(type[Any], field.type) for field in dataclasses.fields(cls)
         }
         # allow empty strings to be validated as None and replaced by the default length
-        optional['length'] = Optional[int]
+        optional['length'] = int | None
         optional['codes'] = list[cls.log_code_class]  # type: ignore[name-defined]
         for k in cls.get_persona_columns():
-            optional[k] = Optional[vtypes.CdedbID]
+            optional[k] = vtypes.PersonaID | None
         return mandatory, optional
 
     @classmethod

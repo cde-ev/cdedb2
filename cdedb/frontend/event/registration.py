@@ -472,8 +472,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         persona_id: Optional[int],
-        part_ids: vtypes.IntCSVList,
-        field_ids: vtypes.IntCSVList,
+        part_ids: list[int],
+        field_ids: list[int],
         is_member: Optional[bool] = None,
         is_orga: Optional[bool] = None,
         age: Optional[int] = None,
@@ -1381,7 +1381,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         fee_id: int | None = None,
-        registration_ids: vtypes.IntCSVList | None = None,
+        registration_ids: list[int] | None = None,
     ) -> Response:
         """
         Render a form for setting an individual personalized fee for multiple
@@ -1416,9 +1416,9 @@ class EventRegistrationMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             if registration_ids is None:
                 rs.notify("warning", n_("Invalid registrations."))
-                registration_ids = vtypes.IntCSVList([])
+                registration_ids = list[int]([])
         if not registration_ids:
-            registration_ids = vtypes.IntCSVList(
+            registration_ids = list[int](
                 list(self.eventproxy.list_registrations(rs, event_id))
             )
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
@@ -1463,12 +1463,12 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         fee_id: int,
-        registration_ids: vtypes.IntCSVList,
+        registration_ids: list[int],
     ) -> Response:
         """Set multiple personalized fees at once."""
         if rs.has_validation_errors():
             rs.notify("warning", n_("Invalid registrations."))
-            registration_ids = []  # type: ignore[assignment]
+            registration_ids = []
         registrations = {}
         if registration_ids:
             registrations = self.eventproxy.get_registrations(rs, registration_ids)
@@ -1635,7 +1635,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         singnal legal consent which is not provided this way.
         """
         persona_id = unwrap(
-            request_extractor(rs, {"persona.persona_id": vtypes.CdedbID})
+            request_extractor(rs, {"persona.persona_id": vtypes.PersonaID})
         )
         if persona_id is not None:
             if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
@@ -1710,7 +1710,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: int,
-        reg_ids: vtypes.IntCSVList,
+        reg_ids: list[int],
         change_note: Optional[str],
     ) -> Response:
         """Render form for changing multiple registrations."""
@@ -1825,7 +1825,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: int,
-        reg_ids: vtypes.IntCSVList,
+        reg_ids: list[int],
         change_note: Optional[str],
     ) -> Response:
         """Make privileged changes to any information pertaining to multiple
@@ -2198,7 +2198,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: int,
-        registration_ids: Optional[vtypes.IntCSVList] = None,
+        registration_ids: Optional[list[int]] = None,
         field_id: Optional[vtypes.ID] = None,
         internal: bool = False,
     ) -> Response:
@@ -2213,7 +2213,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             return self.redirect(rs, 'event/registration_query', {'event_id': event_id})
         if not registration_ids:
             registration_ids = cast(
-                vtypes.IntCSVList,
+                list[int],
                 list(self.eventproxy.list_registrations(rs, event_id)),
             )
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
@@ -2283,7 +2283,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: int,
-        registration_ids: vtypes.IntCSVList,
+        registration_ids: list[int],
         action: str,
         field_id: Optional[vtypes.ID],
         confirm_field_id: Optional[vtypes.ID],

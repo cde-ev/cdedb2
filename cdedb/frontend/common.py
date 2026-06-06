@@ -1685,7 +1685,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         problems.extend(p)
 
         persona_id, p = inspect_validation(
-            vtypes.CdedbID,
+            vtypes.PersonaID,
             (raw['cdedbid'] or "").strip(),
             argname="persona_id",
         )

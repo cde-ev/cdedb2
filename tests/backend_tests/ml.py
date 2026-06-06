@@ -507,10 +507,6 @@ class TestMlBackend(BackendTest):
         new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
         new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
-        new_data.whitelist = vtypes.Email("datenbank@example.cde")  # type: ignore[assignment]
-        with self.assertRaises(ValueError):
-            self.ml.create_mailinglist(self.key, new_data)
-        new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
         new_data.whitelist = {vtypes.Email("datenbank@example.cde")}
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
         new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")

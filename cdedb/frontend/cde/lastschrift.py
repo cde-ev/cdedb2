@@ -249,7 +249,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
     def lastschrift_create(
         self,
         rs: RequestState,
-        persona_id: vtypes.CdedbID,
+        persona_id: vtypes.PersonaID,
         data: CdEDBObject,
         donation: vtypes.PositiveDecimal,
     ) -> Response:
@@ -755,7 +755,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         self,
         rs: RequestState,
         full_name: Optional[str],
-        db_id: Optional[vtypes.CdedbID],
+        db_id: vtypes.PersonaID | None,
         username: Optional[vtypes.Email],
         address_supplement: Optional[str],
         address: Optional[str],

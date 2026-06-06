@@ -419,7 +419,7 @@ class EventEventMixin(EventBaseFrontend):
     @access("event_admin", modi={"POST"})
     @REQUESTdata("persona_id")
     def add_event_helper(
-        self, rs: RequestState, persona_id: vtypes.CdedbID
+        self, rs: RequestState, persona_id: vtypes.PersonaID
     ) -> Response:
         """Make an additional persona become event helper."""
         if rs.has_validation_errors():
@@ -472,7 +472,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.orgas_change)
     @REQUESTdata("orga_ids")
     def add_orgas(
-        self, rs: RequestState, event_id: int, orga_ids: vtypes.CdedbIDList
+        self, rs: RequestState, event_id: int, orga_ids: list[vtypes.PersonaID]
     ) -> Response:
         return self._add_event_roles(rs, event_id, orga_ids, role='orga')
 
@@ -480,7 +480,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.caretakers_change)
     @REQUESTdata("caretaker_ids")
     def add_caretakers(
-        self, rs: RequestState, event_id: int, caretaker_ids: vtypes.CdedbIDList
+        self, rs: RequestState, event_id: int, caretaker_ids: list[vtypes.PersonaID]
     ) -> Response:
         return self._add_event_roles(rs, event_id, caretaker_ids, role='caretaker')
 
@@ -488,7 +488,10 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("checkin_helper_ids")
     def add_checkin_helpers(
-        self, rs: RequestState, event_id: int, checkin_helper_ids: vtypes.CdedbIDList
+        self,
+        rs: RequestState,
+        event_id: int,
+        checkin_helper_ids: list[vtypes.PersonaID],
     ) -> Response:
         return self._add_event_roles(
             rs, event_id, checkin_helper_ids, role='checkin_helper'
@@ -498,7 +501,7 @@ class EventEventMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: int,
-        persona_ids: vtypes.CdedbIDList,
+        persona_ids: list[vtypes.PersonaID],
         role: Literal["orga", "caretaker", "checkin_helper"],
     ) -> Response:
         # Check privileges
@@ -1593,8 +1596,8 @@ class EventEventMixin(EventBaseFrontend):
         rs: RequestState,
         part_begin: datetime.date,
         part_end: datetime.date,
-        orga_ids: vtypes.CdedbIDList,
-        caretaker_ids: vtypes.CdedbIDList,
+        orga_ids: list[vtypes.PersonaID],
+        caretaker_ids: list[vtypes.PersonaID],
         fee: vtypes.NonNegativeDecimal,
         nonmember_surcharge: vtypes.NonNegativeDecimal,
         create_track: bool,
@@ -1959,7 +1962,7 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
 
-        anid, errs = inspect(vtypes.CdedbID, phrase, argname="phrase")
+        anid, errs = inspect(vtypes.PersonaID, phrase, argname="phrase")
         if not errs:
             reg_ids = self.eventproxy.list_registrations(rs, event_id, persona_id=anid)
             if reg_ids:
