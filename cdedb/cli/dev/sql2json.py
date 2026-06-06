@@ -54,7 +54,6 @@ implicit_columns = {
     "past_event.course_participants": {"id"},
     "past_event.log": {"id"},
     "event.course_segments": {"id"},
-    "event.questionnaire_rows": {"id"},
     "event.questionnaire_text_rows": {"id"},
     "event.questionnaire_field_rows": {"id"},
     "event.questionnaire_magic_rows": {"id"},
