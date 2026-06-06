@@ -2033,7 +2033,7 @@ def _pdffile(
 def _pair_of_int(val: Any, argname: str = "pair", **kwargs: Any) -> tuple[int, int]:
     """Validate a pair of integers."""
 
-    val: list[int] = _list_of(val, int, argname, **kwargs)
+    val = _list_of(val, int, argname, **kwargs)
 
     try:
         a, b = val
@@ -3135,8 +3135,7 @@ def _by_field_datatype(
         return ByFieldDatatype(None)
 
     kind = FieldDatatypes(kind)
-    # using Any seems fine, otherwise this would need a big Union
-    val: Any = _ALL_TYPED[models_event.EventField._get_validator(kind)](
+    val = _ALL_TYPED[models_event.EventField._get_validator(kind)](
         val, argname, **kwargs
     )
 

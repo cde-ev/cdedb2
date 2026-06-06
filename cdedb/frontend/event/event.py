@@ -1938,19 +1938,21 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
 
-        anid, errs = inspect(vtypes.CdedbID, phrase, argname="phrase")
+        persona_id, errs = inspect(vtypes.CdedbID, phrase, argname="phrase")
         if not errs:
-            reg_ids = self.eventproxy.list_registrations(rs, event_id, persona_id=anid)
+            reg_ids = self.eventproxy.list_registrations(
+                rs, event_id, persona_id=persona_id
+            )
             if reg_ids:
                 reg_id = unwrap(reg_ids.keys())
                 return self.redirect(
                     rs, "event/show_registration", {'registration_id': reg_id}
                 )
 
-        anid, errs = inspect(vtypes.ID, phrase, argname="phrase")
+        reg_id, errs = inspect(vtypes.ID, phrase, argname="phrase")
         if not errs:
-            assert anid is not None
-            regs = self.eventproxy.get_registrations(rs, (anid,))
+            assert reg_id is not None
+            regs = self.eventproxy.get_registration(rs, reg_id)
             if regs:
                 reg = unwrap(regs)
                 if reg['event_id'] == event_id:

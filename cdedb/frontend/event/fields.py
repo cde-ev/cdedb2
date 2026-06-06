@@ -177,6 +177,8 @@ class EventFieldMixin(EventBaseFrontend):
             * field: the event field which will be changed, None if no field_id was
                 given
         """
+        entities: CdEDBObjectMap
+        labels: dict[int, str]
         if kind == const.FieldAssociations.registration:
             if not ids:
                 ids = self.eventproxy.list_registrations(rs, event_id)

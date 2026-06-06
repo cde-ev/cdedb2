@@ -1384,7 +1384,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             )
             requests = list(requests)  # convert from dict which breaks JSON
 
-            ml_store = store.get(str(ml_id))
+            ml_store: CdEDBObject | None = store.get(str(ml_id))
             if ml_store is None:
                 ml_store = {
                     'persona_ids': requests,

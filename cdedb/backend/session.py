@@ -179,11 +179,11 @@ class SessionBackend:
         A malformed token or a valid token for an unknown droid or
         with an invalid secret will raise an error.
         """
-        apitoken, errs = inspect(vtypes.APITokenString, apitoken)
-        if not apitoken or errs:
+        token, errs = inspect(vtypes.APITokenString, apitoken)
+        if not token or errs:
             raise APITokenError(n_("Malformed API token."))
 
-        droid_name, secret = apitoken
+        droid_name, secret = token
 
         try:
             droid_class, token_id = resolve_droid_name(droid_name)

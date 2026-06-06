@@ -572,7 +572,9 @@ class EventRegistrationMixin(EventBaseFrontend):
             corresponding enable checkbox is selected. Only relevant for the multiedit.
         """
 
-        def filter_params(params: vtypes.TypeMapping) -> vtypes.TypeMapping:
+        def filter_params(
+            params: vtypes.MutableTypeMapping,
+        ) -> vtypes.MutableTypeMapping:
             """Helper to filter out params that are skipped or not enabled."""
             if not check_enabled:
                 return params
@@ -1468,7 +1470,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         """Set multiple personalized fees at once."""
         if rs.has_validation_errors():
             rs.notify("warning", n_("Invalid registrations."))
-            registration_ids = []  # type: ignore[assignment]
+            registration_ids = cast(vtypes.IntCSVList, [])
         registrations = {}
         if registration_ids:
             registrations = self.eventproxy.get_registrations(rs, registration_ids)

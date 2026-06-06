@@ -299,7 +299,7 @@ class EventQueryMixin(EventBaseFrontend):
         return self.redirect(rs, query_scope.get_target(), query_input)
 
     @access("event", modi={"POST"})
-    @event_guard(EventPrivileges.basic_read)
+    @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("query_id", "query_scope")
     def delete_event_query(
         self, rs: RequestState, event_id: int, query_id: int, query_scope: QueryScope

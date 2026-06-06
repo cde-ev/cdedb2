@@ -181,9 +181,9 @@ Headers = typing.TypedDict(
         "Return-Path": str,
         "domain": str,
         "Subject": str,
-        "Cc": Collection[str],
-        "Bcc": Collection[str],
-        "To": Collection[str],
+        "Cc": Collection[str | None],
+        "Bcc": Collection[str | None],
+        "To": Collection[str | None],
     },
     total=False,
 )
@@ -1672,7 +1672,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         :returns: The processed input datum.
         """
         raw = {k: (v.strip() if v else v) for k, v in datum['raw'].items()}
-        problems, infos = [], []
+        problems: list[Error] = []
+        infos: list[Error] = []
 
         if category is None:
             category, p = inspect_validation(
@@ -1681,7 +1682,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             problems.extend(p)
         persona = None
         registration = None
-        event = None
+        event: models_event.Event | None = None
 
         date, p = inspect_validation(datetime.date, raw['date'], argname="date")
         problems.extend(p)
@@ -3200,7 +3201,7 @@ def process_dynamic_input(
     """
     additional = additional or dict()
     additional_validation = additional_validation or dict()
-    creation_spec: vtypes.TypeMapping = creation_spec or spec  # type: ignore[assignment]
+    creation_spec = cast(vtypes.TypeMapping, creation_spec or spec)
     # this is the used prefix for the validation
     field_prefix = f"{prefix}_" if prefix else ""
 

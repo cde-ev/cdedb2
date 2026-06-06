@@ -137,7 +137,9 @@ def event_associated_fields_extractor(
     association: const.FieldAssociations,
     field_ids: Collection[int] | None = None,
     *,
-    filter_params: Callable[[vtypes.TypeMapping], vtypes.TypeMapping] | None = None,
+    filter_params: (
+        Callable[[vtypes.MutableTypeMapping], vtypes.MutableTypeMapping] | None
+    ) = None,
     suffix: str = "",
 ) -> CdEDBObject:
     """
@@ -155,7 +157,7 @@ def event_associated_fields_extractor(
         if field.association == association
         and (field_ids is None or field.id in field_ids)
     ]
-    field_params: vtypes.TypeMapping = {
+    field_params = {
         f"{field.request_name}{suffix}": field.get_validator() for field in fields
     }
     if filter_params:
@@ -463,7 +465,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             part_ids = rs.ambience['event'].parts.keys()
 
         if len(rs.ambience['event'].parts) == 1:
-            part_id = unwrap(rs.ambience['event'].parts.keys())  # type: ignore[assignment]
+            part_id = unwrap(rs.ambience['event'].parts.keys())
         return self.render(
             rs,
             "base/participant_list",

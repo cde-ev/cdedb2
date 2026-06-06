@@ -1077,7 +1077,7 @@ class PastEventBackend(AbstractBackend):
             if not event.is_cancelled and event.end >= now().date():
                 raise ValueError(n_("Event is not concluded yet."))
             self.event.set_event_archived(rs, event_id)
-            new_ids = None
+            new_ids: list[int] | None = None
             if create_past_event:
                 new_ids = []
                 for part_id in xsorted(event.parts):
