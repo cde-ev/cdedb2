@@ -30,10 +30,8 @@
          * Also corrects the visual delete state of the row.
          *
          * @param $row jQuery object of row.
-         * @param newrow boolean, indicating if this is a new row. In this case the delete button will detach the row
-         *               instead of toggling the indicator.
          */
-        var addDeleteButton = function($row, newrow) {
+        var addDeleteButton = function($row) {
             var $deleteButton = $('<button />', {'type': 'button',
                                                  'title': settings.delButtonTitle,
                                                  'aria-label': settings.delButtonTitle,
@@ -42,7 +40,7 @@
                                                  'id': 'dynamicrow-delete-button-' + $row.data("drow-id"),})
                     .append($('<span></span>', {'class': 'far fa-trash-alt'}));
 
-            if (newrow) {
+            if ($row.hasClass("drow-new")) {
                 $deleteButton.click(function() {
                     $row.detach();
                     refresh();
@@ -83,7 +81,7 @@
                 $row.find('.drow-indicator').prop("checked", true);
                 $row.find('.drow-input').first().focus();
             }
-            addDeleteButton($row, newrow);
+            addDeleteButton($row);
             // Add input handler for inline add button if it exists.
             $row.find('.drow-inline-add-button')
                 .on('click', function() {obj.addRow($row);})
