@@ -4991,7 +4991,7 @@ def _enum_validator_maker(
       name is inferred from the name of the enum.
     :param internal: If True the validator is not added to the module.
     """
-    error_msg = n_("Invalid input for the enumeration %(enum)s")
+    error_msg = n_("Invalid input for the enumeration '%(enum)s'.")
 
     def the_validator(val: Any, argname: Optional[str] = None, **kwargs: Any) -> E:
         if isinstance(val, anenum):
@@ -5018,7 +5018,7 @@ def _enum_validator_maker(
             return anenum(val)
         except (ValidationSummary, ValueError) as e:
             raise ValidationSummary(
-                ValueError(argname, error_msg, {'enum': anenum})
+                ValueError(argname, error_msg, {'enum': anenum.__name__})
             ) from e
 
     the_validator.__name__ = name or f"_enum_{anenum.__name__.lower()}"
