@@ -9,6 +9,7 @@ from cdedb.common import NearlyNow, nearly_now
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query import QueryScope
 from tests.common import BackendTest, as_users
+from tests.other_tests.test_validation import TestValidationBase
 
 
 class TestEventModels(BackendTest):
@@ -956,4 +957,61 @@ class TestEventModels(BackendTest):
         self.assertEqual(
             expectation,
             reality,
+        )
+
+
+class TestEventValidation(BackendTest, TestValidationBase):
+    @as_users("garcia")
+    def test_questionnaire_validation(self) -> None:
+        event = self.event.get_event(self.key, 1)
+        self.do_validator_test(
+            models.QuestionnaireFieldRow,
+            [
+                (
+                    {
+                        "kind": const.QuestionnaireUsages.additional,
+                        "role": const.QuestionnaireRowMagicRole.event_field,
+                        "field_id": None,
+                    },
+                    None,
+                    ValueError("Must not be empty. (field_id)"),
+                )
+            ],
+            extraparams={"available_fields": event.fields},
+        )
+        self.do_validator_test(
+            models.QuestionnaireRow,
+            [
+                (
+                    {
+                        "kind": const.QuestionnaireUsages.additional,
+                        "role": const.QuestionnaireRowMagicRole.event_field,
+                        "field_id": None,
+                    },
+                    None,
+                    ValueError("Must not be empty. (field_id)"),
+                )
+            ],
+            extraparams={"available_fields": event.fields},
+        )
+        self.do_validator_test(
+            vtypes.Questionnaire,
+            [
+                (
+                    [
+                        {
+                            "role": const.QuestionnaireRowMagicRole.event_field,
+                            "field_id": None,
+                        },
+                    ],
+                    None,
+                    ValueError("Must not be empty. (field_id_0)"),
+                ),
+            ],
+            extraparams={
+                "kind": const.QuestionnaireUsages.additional,
+                "all_questionnaires": self.event.get_all_questionnaires(
+                    self.key, event.id
+                ),
+            },
         )
