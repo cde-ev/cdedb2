@@ -339,7 +339,9 @@
                     {% if role is string %}
                         {% set role = enums["QuestionnaireRowMagicRole"][role.split(".", 1)[1]] %}
                     {% endif %}
-                    {{ util.make_icon(role.get_class().get_icon()) }}
+                    {% if role %}
+                        {{ util.make_icon(role.get_class().get_icon()) }}
+                    {% endif %}
                     {{ gettext(values["role_" ~ part_id]|string) }}
                 </h3>
                 {{ util.input_hidden("role_" ~ part_id, aclass="input-role") }}
