@@ -3190,9 +3190,11 @@ def _questionnaire_field_row(
                 **kwargs,
             )
             # TODO: check field entries.
-    # remove default value without a linked field
-    elif val.get('default_value'):
-        val['default_value'] = None
+    else:
+        errs.append(ValueError("field_id", "Must not be empty."))
+        # remove default value without a linked field
+        if val.get('default_value'):
+            val['default_value'] = None
 
     if val.get('readonly') and not kind.allow_readonly():
         # TODO: more generic error message?
