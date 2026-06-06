@@ -23,7 +23,7 @@ QEMUCACHING ?= writethrough
 # depending whether we are on stable or oldstable...
 DEBSERVER = https://cdimage.debian.org/cdimage/release
 # DEBSERVER = https://meetings-archive.debian.net/cdimage/archive
-DEBVERSION = 13.3.0
+DEBVERSION = 13.5.0
 NETINSTISO = debian-${DEBVERSION}-amd64-netinst.iso
 
 DISTINFO_DATA?= ${AWK} -v alg=$$algo -v file=$${file} \

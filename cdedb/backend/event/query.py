@@ -774,7 +774,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
             raise RuntimeError(n_("Bad scope."), query.scope)
         return self.general_query(rs, query, view=view, aggregate=aggregate)
 
-    @access("event")
+    @access("event", "droid_quick_partial_export", "droid_orga")
     def get_event_queries(
         self, rs: RequestState, event_id: int
     ) -> models.CdEDataclassMap[models.StoredEventQuery]:

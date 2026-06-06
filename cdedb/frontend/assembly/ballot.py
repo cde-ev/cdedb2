@@ -271,8 +271,8 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         We filter None from the id list, so that users are able to unset all attachments
         by selecting only the None option in the form.
         """
-        attachment_ids = set(filter(None, attachment_ids))
-        return self.assemblyproxy.set_ballot_attachments(rs, ballot_id, attachment_ids)
+        attachment_ids_ = set(filter(None, attachment_ids))
+        return self.assemblyproxy.set_ballot_attachments(rs, ballot_id, attachment_ids_)
 
     @access("assembly", modi={"POST"})
     @REQUESTdata("secret")

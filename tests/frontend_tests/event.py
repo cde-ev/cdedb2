@@ -349,15 +349,18 @@ class TestEventFrontend(FrontendTest):
 
     @as_users("annika")
     def test_list_events(self) -> None:
-        self.traverse(
-            {'description': 'Veranstaltungen'}, {'description': 'Alle Veranstaltungen'}
-        )
+        self.traverse('Veranstaltungen', 'Alle Veranstaltungen')
         self.assertTitle("Alle Veranstaltungen")
         self.assertPresence("Große Testakademie 2222", div='current-events')
         self.assertPresence("CdE-Party 2050", div='current-events')
         self.assertNonPresence("PfingstAkademie 2014")
         self.assertPresence("Orgas")
         self.assertPresence("Anmeldungen")
+
+        with self.conf.with_overrides(EVENT_LIMITED_ACCESS_CUTOFF_ID=1):
+            self.traverse('Alle Veranstaltungen')
+            self.assertNoLink('/event/event/1/registration/query')
+            self.traverse({'href': '/event/event/2/registration/query'})
 
     @as_users("anonymous", "garcia", maintain_data=True)
     def test_list_events_unprivileged(self) -> None:
@@ -586,6 +589,18 @@ class TestEventFrontend(FrontendTest):
             self.fail("Please adjust users for this tests.")
 
         self.check_sidebar(ins, out)
+
+        with self.conf.with_overrides(EVENT_LIMITED_ACCESS_CUTOFF_ID=1):
+            self.get('/event/event/1/show')
+            ins_both = everyone | registered_or_privileged | privileged | {"Log"}
+            if self.user_in('annika'):
+                ins = ins_both | not_registered
+                out = registered | orga - {"Log"}
+                self.check_sidebar(ins, out)
+            if self.user_in('garcia'):
+                ins = ins_both | registered
+                out = not_registered | orga - {"Log"}
+                self.check_sidebar(ins, out)
 
     @as_users("anton", "berta")
     def test_no_soft_limit(self) -> None:
@@ -2423,6 +2438,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertEqual("", f['fields.lodge'].value)
         f['fields.lodge'] = "Bitte in ruhiger Lage.\nEcht."
         self.submit(f)
+        with self.conf.with_overrides(EVENT_LIMITED_ACCESS_CUTOFF_ID=1):
+            self.submit(f, check_notification=False)
+            self.assertNotification("Veranstaltungssperre aktiviert.")
         self.traverse("Fragebogen")
         self.assertTitle("Fragebogen (Große Testakademie 2222)")
         f = self.response.forms['questionnaireform']
@@ -9097,72 +9115,85 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Inga", div="result-container")
         self.assertPresence(iban, div="result-container")
 
-    @as_users("ludwig", "petra")
+    @event_keeper
+    @as_users("garcia", "ludwig", "petra")
     def test_helper(self) -> None:
         # Sidebar buttons are basic_validated in test_sidebar(_one_event)
-        self.traverse("Veranstaltungen", "Veranstaltungshelfer")
-        self.assertTitle("Veranstaltungshelfer [1]")
-        self.assertNotIn('addeventhelperform', self.response.forms)
-        self.assertNotIn('removeeventhelperform42', self.response.forms)
-        self.assertPresence("Petra Philanthrop")
+        if self.user_in("garcia"):
+            cutoff_id = 1
+        else:
+            cutoff_id = 0
+        with self.conf.with_overrides(EVENT_LIMITED_ACCESS_CUTOFF_ID=cutoff_id):
+            self.traverse("Veranstaltungen", "Veranstaltungshelfer")
+            self.assertTitle("Veranstaltungshelfer [1]")
+            self.assertNotIn('addeventhelperform', self.response.forms)
+            self.assertNotIn('removeeventhelperform42', self.response.forms)
+            self.assertPresence("Petra Philanthrop")
 
-        if self.user_in("petra"):
-            self.traverse("Alle Veranstaltungen")
-            self.assertPresence("CdE-Party 2050")
-            self.assertPresence("6 Anmeldungen, 1 Orga")
-            self.assertNoLink("Anmeldungen")
-        else:
-            self.traverse("Veranstaltungen")
-        self.traverse("Große Testakademie 2222")
-        saved_response = self.response
-        self.get('/event/event/2/registration/query', status=403)
-        if self.user_in("petra"):
-            self.get('/event/event/1/registration/3/show', status=403)
-        self.response = saved_response
-        self.traverse("Statistik")
-        self.assertNoLink('/event/event/1/registration/query')
-        self.traverse(
-            {'href': '/event/event/1/course/query', 'description': "2"},
-            {'href': "/event/event/1/course/stats"},
-        )
-        self.assertPresence("2 + 0")
-        self.traverse("Heldentum")
-        self.assertPresence("2 + 1")
-        if self.user_in("petra"):
-            self.assertNonPresence("Akira")
-            self.assertNotIn('emilia', self.response.text)
-        else:
-            self.assertPresence("Akira")
-            self.assertIn('emilia', self.response.text)
-        self.traverse(
-            {'href': "/event/event/1/course/stats"},
-            {'href': "/event/event/1/course/query"},
-            "Unterkünfte",
-        )
-        saved_response = self.response
-        self.assertNoLink('/event/event/1/lodgement/graph/form')
-        self.traverse("Warme Stube")
-        self.assertPresence("2 + 0", div='inhabitants-3')
-        self.assertPresence(
-            "Gemischte Unterkunft mit konfligierenden Teilnehmern.", div='inhabitants-3'
-        )
-        if self.user_in("petra"):
-            self.assertNonPresence("Akira")
-        else:
-            self.assertPresence("Akira")
-        self.get('/event/event/1/lodgement/graph/show', status=403)
-        self.response = saved_response
-        self.traverse("Unterkunftssuche")
-        f = self.response.forms['queryform']
-        self.submit(f)
-        self.traverse("Konfiguration")
-        f = self.response.forms['changeeventform']
-        with self.assertRaises(webtest.app.AppError):
+            if self.user_in("petra"):
+                self.traverse("Alle Veranstaltungen")
+                self.assertPresence("CdE-Party 2050")
+                self.assertPresence("6 Anmeldungen, 1 Orga")
+                self.assertNoLink("Anmeldungen")
+            else:
+                self.traverse("Veranstaltungen")
+            self.traverse("Große Testakademie 2222")
+            saved_response = self.response
+            self.get('/event/event/2/registration/query', status=403)
+            if self.user_in("petra"):
+                self.get('/event/event/1/registration/3/show', status=403)
+            self.response = saved_response
+            self.traverse("Statistik")
+            self.assertNoLink('/event/event/1/registration/query')
+            self.traverse(
+                {'href': '/event/event/1/course/query', 'description': "2"},
+                {'href': "/event/event/1/course/stats"},
+            )
+            self.assertPresence("2 + 0")
+            self.traverse("Heldentum")
+            self.assertPresence("2 + 1")
+            if not self.user_in("ludwig"):
+                self.assertNonPresence("Akira")
+                self.assertNotIn('emilia', self.response.text)
+            else:
+                self.assertPresence("Akira")
+                self.assertIn('emilia', self.response.text)
+            self.traverse(
+                {'href': "/event/event/1/course/stats"},
+                {'href': "/event/event/1/course/query"},
+                "Unterkünfte",
+            )
+            saved_response = self.response
+            self.assertNoLink('/event/event/1/lodgement/graph/form')
+            self.traverse("Warme Stube")
+            self.assertPresence("2 + 0", div='inhabitants-3')
+            self.assertPresence(
+                "Gemischte Unterkunft mit konfligierenden Teilnehmern.",
+                div='inhabitants-3',
+            )
+            if not self.user_in("ludwig"):
+                self.assertNonPresence("Akira")
+            else:
+                self.assertPresence("Akira")
+            self.get('/event/event/1/lodgement/graph/show', status=403)
+            self.response = saved_response
+            self.traverse("Unterkunftssuche")
+            f = self.response.forms['queryform']
             self.submit(f)
-        self.traverse("Datenfelder konfigurieren")
-        f = self.response.forms['fieldsummaryform']
-        with self.assertRaises(webtest.app.AppError):
-            self.submit(f)
+            self.traverse("Konfiguration")
+            f = self.response.forms['changeeventform']
+            if self.user_in("garcia"):
+                self.submit(f)
+            else:
+                with self.assertRaises(webtest.app.AppError):
+                    self.submit(f)
+            self.traverse("Datenfelder konfigurieren")
+            f = self.response.forms['fieldsummaryform']
+            if self.user_in("garcia"):
+                self.submit(f)
+            else:
+                with self.assertRaises(webtest.app.AppError):
+                    self.submit(f)
 
     @event_keeper
     @as_users("anton")

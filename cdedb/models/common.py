@@ -1,10 +1,12 @@
 """Base definition of CdEDB models using dataclasses."""
 
 import abc
+import collections
 import copy
 import dataclasses
 import functools
 import inspect
+import sys
 import typing
 from collections.abc import Collection
 from dataclasses import dataclass
@@ -542,6 +544,7 @@ class StoredQuery(CdEDataclass):
     id: vtypes.ID = dataclasses.field(metadata=MetaFlag.input_creation_exclude.as_dict)
 
     query_name: str
+
     scope: QueryScope = dataclasses.field(metadata=MetaFlag.request_exclude.as_dict)
     serialized_query: vtypes.QueryInput = dataclasses.field(
         metadata=MetaFlag.request_exclude.as_dict
@@ -552,6 +555,8 @@ class StoredQuery(CdEDataclass):
         repr=False,
         metadata=MetaFlag.exclude.as_dict,
     )
+
+    query_group: str | None = None
 
     @property
     def user_created(self) -> bool:
@@ -583,7 +588,7 @@ class StoredQuery(CdEDataclass):
         if self.query:
             ret |= self.query.serialize_to_url()
         if self.user_created:
-            ret |= {"query_name": self.query_name}
+            ret |= {"query_name": self.query_name, "query_group": self.query_group}
         return ret
 
     def query_by_name(self) -> tuple[str, CdEDBObject]:
@@ -605,4 +610,14 @@ class StoredQuery(CdEDataclass):
         return ret
 
     def get_sortkey(self) -> Sortkey:
-        return (self.query_name,)
+        return (
+            self.query_group or chr(sys.maxunicode),  # Sort empty group last.
+            self.query_name,
+        )
+
+    @classmethod
+    def group_queries(cls, queries: list[Self]) -> dict[str, list[Self]]:
+        ret = collections.defaultdict(list)
+        for q in xsorted(queries):
+            ret[q.query_group or ""].append(q)
+        return ret

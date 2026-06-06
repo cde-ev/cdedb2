@@ -1757,6 +1757,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 )
             )
             questionnaire = self.get_all_questionnaires(rs, event_id).as_dict(full=True)
+            stored_queries = self.get_event_queries(rs, event_id)  # type: ignore[attr-defined]
             persona_ids = tuple(reg['persona_id'] for reg in registrations.values())
             personas = {
                 p.id: p.as_dict()
@@ -1944,6 +1945,14 @@ class EventBaseBackend(EventLowLevelBackend):
             field["entries"] = normalize_field_entries(
                 field["entries"], field["kind"], coalesce=""
             )
+        ret["event"]["stored_queries"] = {
+            query.query_name: {
+                "scope": query.scope,
+                "query_group": query.query_group,
+                "serialized_query": query.serialized_query,
+            }
+            for query in stored_queries.values()
+        }
         # personas
         for reg_id, registration in ret['registrations'].items():
             persona = personas[registration['persona_id']]
