@@ -335,7 +335,11 @@
                 </div>
             {% else %}
                 <h3 class="panel-title" style="margin: 5px 0 0">
-                    {{ util.make_icon(values["role_" ~ part_id].get_class().get_icon()) }}
+                    {% set role = values["role_" ~ part_id] %}
+                    {% if role is string %}
+                        {% set role = enums["QuestionnaireRowMagicRole"][role.split(".", 1)[1]] %}
+                    {% endif %}
+                    {{ util.make_icon(role.get_class().get_icon()) }}
                     {{ gettext(values["role_" ~ part_id]|string) }}
                 </h3>
                 {{ util.input_hidden("role_" ~ part_id, aclass="input-role") }}
