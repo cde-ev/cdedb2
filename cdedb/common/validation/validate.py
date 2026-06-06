@@ -3233,6 +3233,24 @@ def _questionnaire_magic_row(
     return val
 
 
+@_create_dataclass_validator(models_event.QuestionnaireRow, allow_superfluous=True)  # type: ignore[type-abstract]
+def _questionnaire_row(
+    val: CdEDBObject,
+    argname: str = "",
+    *,
+    allow_superfluous: bool,
+    **kwargs: Any,
+) -> CdEDBObject:
+    tmp = _examine_dictionary_fields(
+        val,
+        {"role": const.QuestionnaireRowMagicRole},
+        allow_superfluous=True,
+        **kwargs,
+    )
+    cls = models_event.QuestionnaireRow.get_class(tmp["role"])
+    return _ALL_TYPED[cls](val, **kwargs)
+
+
 @_add_typed_validator
 def _questionnaire(
     val: Any,
@@ -3255,21 +3273,13 @@ def _questionnaire(
     ret: list[CdEDBObject] = []
     for i, row in enumerate(val):
         with errs.modify_argname(suffix=f"_{row.get('id', i)}"):
-            tmp = _examine_dictionary_fields(
-                row,
-                {"role": const.QuestionnaireRowMagicRole},
-                allow_superfluous=True,
-                **kwargs,
-            )
-            cls = models_event.QuestionnaireRow.get_class(tmp["role"])
-
             # See 'pos_to_id' above.
             if "id" in row:
                 pos_to_id[i] = row.pop("id")
 
             row["kind"] = kind
             row["pos"] = i
-            row = _ALL_TYPED[cls](
+            row = _ALL_TYPED[models_event.QuestionnaireRow](
                 row,
                 available_fields=available_fields,
                 available_magic_roles=available_magic_roles,
