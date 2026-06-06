@@ -142,6 +142,7 @@ ignore = [
     "TRY003",  # Exception message not defined in exception class.
     "PLW2901",  # redefining for loop variable.
     "PLW1641",  # non hashable child class.
+    "PLW0717",  # Too many statements in try clause.
     "PLR09",  # Too many things in classes.
     "PLR1702",  # Too many nested blocks.
     "PLR6301",  # Method could be static.
