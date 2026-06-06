@@ -1099,19 +1099,16 @@ class SyncTrackGroup(TrackGroup, CourseChoiceObject):  # type: ignore[misc]
 
 
 class QuestionnaireFrequency(enum.Enum):
-    never = 0, 0
-    once = 1, 1
-    min_once = 1, None
-    max_once = 0, 1
-    any = 0, None
+    disallowed = enum.auto()
+    optional = enum.auto()
+    mandatory = enum.auto()
 
-    @property
-    def min(self) -> int:
-        return self.value[0]
-
-    @property
-    def max(self) -> int | None:
-        return self.value[1]
+    def allows(self, num: int = 1) -> bool:
+        if self == self.disallowed:
+            return num == 0
+        if self == self.mandatory:
+            return num > 0
+        return True
 
 
 @dataclasses.dataclass
@@ -1133,12 +1130,22 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
 
     role: const.QuestionnaireRowMagicRole
     _role: ClassVar[const.QuestionnaireRowMagicRole]
-    valid_kinds: ClassVar[dict[const.QuestionnaireUsages, QuestionnaireFrequency]]
-    allow_multiple_kinds: ClassVar[bool] = True
+    _frequency: ClassVar[
+        QuestionnaireFrequency | dict[const.QuestionnaireUsages, QuestionnaireFrequency]
+    ]
+    static: ClassVar[bool] = False
 
     @property
     def name(self) -> str:
         return self.__class__.__qualname__
+
+    @classmethod
+    def allowed_frequency(
+        cls, kind: const.QuestionnaireUsages
+    ) -> QuestionnaireFrequency:
+        if isinstance(cls._frequency, QuestionnaireFrequency):
+            return cls._frequency
+        return cls._frequency.get(kind, QuestionnaireFrequency.disallowed)
 
     @classmethod
     @abc.abstractmethod
@@ -1194,14 +1201,14 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
 class QuestionnaireTextRow(QuestionnaireRow):
     database_table = "event.questionnaire_text_rows"
     _role = const.QuestionnaireRowMagicRole.text_only
-    valid_kinds = {
-        kind: QuestionnaireFrequency.any for kind in const.QuestionnaireUsages
-    }
+    _frequency = QuestionnaireFrequency.optional
+    static = True
+
     title: str | None
     text: str | None
 
     @classmethod
-    def get_icon(self) -> str:
+    def get_icon(cls) -> str:
         return "align-left"
 
     @classmethod
@@ -1217,9 +1224,8 @@ class QuestionnaireTextRow(QuestionnaireRow):
 class QuestionnaireFieldRow(QuestionnaireRow):
     database_table = "event.questionnaire_field_rows"
     _role = const.QuestionnaireRowMagicRole.event_field
-    valid_kinds = {
-        kind: QuestionnaireFrequency.any for kind in const.QuestionnaireUsages
-    }
+    _frequency = QuestionnaireFrequency.optional
+    static = True
 
     field_id: vtypes.ID
     field: EventField = dataclasses.field(
@@ -1236,7 +1242,7 @@ class QuestionnaireFieldRow(QuestionnaireRow):
     default_value: Any = None  # TODO: ByDatafieldKind maybe some union?
 
     @classmethod
-    def get_icon(self) -> str:
+    def get_icon(cls) -> str:
         return "pen-to-square"
 
     def get_label(self) -> str:
@@ -1269,7 +1275,6 @@ class QuestionnaireFieldRow(QuestionnaireRow):
 @dataclasses.dataclass
 class QuestionnaireMagicRow(QuestionnaireRow):
     database_table = "event.questionnaire_magic_rows"
-    allow_multiple_kinds = False
 
     @classmethod
     def get_icon(cls) -> str:
@@ -1291,7 +1296,9 @@ class QuestionnaireMagicRow(QuestionnaireRow):
 @dataclasses.dataclass
 class CourseChoices(QuestionnaireMagicRow):
     _role = const.QuestionnaireRowMagicRole.course_choices
-    valid_kinds = {const.QuestionnaireUsages.registration: QuestionnaireFrequency.once}
+    _frequency = {
+        const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory
+    }
 
     @classmethod
     def get_icon(cls) -> str:
@@ -1301,10 +1308,10 @@ class CourseChoices(QuestionnaireMagicRow):
 @dataclasses.dataclass
 class FeePreview(QuestionnaireMagicRow):
     _role = const.QuestionnaireRowMagicRole.fee_preview
-    valid_kinds = {
-        const.QuestionnaireUsages.registration: QuestionnaireFrequency.min_once,
+    _frequency = {
+        const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory,
     }
-    allow_multiple_kinds = True
+    static = True
 
     @classmethod
     def get_icon(cls) -> str:
@@ -1314,8 +1321,8 @@ class FeePreview(QuestionnaireMagicRow):
 @dataclasses.dataclass
 class ListConsent(QuestionnaireMagicRow):
     _role = const.QuestionnaireRowMagicRole.list_consent
-    valid_kinds = {
-        const.QuestionnaireUsages.registration: QuestionnaireFrequency.once,
+    _frequency = {
+        const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory,
     }
 
     @classmethod
@@ -1326,8 +1333,8 @@ class ListConsent(QuestionnaireMagicRow):
 @dataclasses.dataclass
 class MixedLodging(QuestionnaireMagicRow):
     _role = const.QuestionnaireRowMagicRole.mixed_lodging
-    valid_kinds = {
-        const.QuestionnaireUsages.registration: QuestionnaireFrequency.once,
+    _frequency = {
+        const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory,
     }
 
     @classmethod
@@ -1338,9 +1345,10 @@ class MixedLodging(QuestionnaireMagicRow):
 @dataclasses.dataclass
 class FotoNotice(QuestionnaireMagicRow):
     _role = const.QuestionnaireRowMagicRole.foto_notice
-    valid_kinds = {
-        const.QuestionnaireUsages.registration: QuestionnaireFrequency.min_once,
+    _frequency = {
+        const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory,
     }
+    static = True
 
     @classmethod
     def get_icon(cls) -> str:
@@ -1350,8 +1358,8 @@ class FotoNotice(QuestionnaireMagicRow):
 @dataclasses.dataclass
 class RegistrationNotes(QuestionnaireMagicRow):
     _role = const.QuestionnaireRowMagicRole.registration_notes
-    valid_kinds = {
-        const.QuestionnaireUsages.registration: QuestionnaireFrequency.max_once,
+    _frequency = {
+        const.QuestionnaireUsages.registration: QuestionnaireFrequency.optional,
     }
 
 
@@ -1385,13 +1393,13 @@ class Questionnaire(list[QuestionnaireRow]):
             return False
         return True
 
-    def get_magic_roles(self) -> set[const.QuestionnaireRowMagicRole]:
-        return {row.role for row in self if isinstance(row, QuestionnaireMagicRow)}
+    def get_role_counts(self) -> collections.Counter[const.QuestionnaireRowMagicRole]:
+        return collections.Counter(row.role for row in self)
 
     def allows_magic_role(self, magic_role: const.QuestionnaireRowMagicRole) -> bool:
         magic_role_class = magic_role.get_class()
-        never = QuestionnaireFrequency.never
-        return magic_role_class.valid_kinds.get(self.kind, never) != never
+        frequency = magic_role_class.allowed_frequency(self.kind)
+        return frequency.allows()
 
 
 class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
@@ -1442,32 +1450,14 @@ class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
             and field_usage.get(field.id, kind) == kind
         }
 
-    def magic_role_usage(
-        self,
-    ) -> Mapping[const.QuestionnaireRowMagicRole, const.QuestionnaireUsages]:
-        """Map magic roles to the questionnaire kind they are used in.
-
-        Does not include the 'text_only' and 'event_field' roles.
-        """
-        # These dicts are disjunct therfore the chainmap is just a big union.
-        #  TODO: is it?
-        return collections.ChainMap(
-            *({role: kind} for kind, q in self.items() for role in q.get_magic_roles())
-        )
-
     def get_available_magic_roles(
         self, kind: const.QuestionnaireUsages
     ) -> list[const.QuestionnaireRowMagicRole]:
         """Return all builtins available for use in a questionnaire of the given kind."""
-        magic_role_usage = self.magic_role_usage()
         return [
             magic_role
             for magic_role in const.QuestionnaireRowMagicRole
             if self[kind].allows_magic_role(magic_role)
-            and (
-                magic_role_usage.get(magic_role, kind) == kind
-                or magic_role.get_class().allow_multiple_kinds
-            )
         ]
 
 

@@ -3313,19 +3313,17 @@ def _questionnaire(
     for magic_role in const.QuestionnaireRowMagicRole:
         count = magic_role_counts[magic_role]
         role_class = magic_role.get_class()
-        allowed_frequency = role_class.valid_kinds.get(kind)
-        if allowed_frequency is None:
-            # Error already processed.
-            pass
-        elif count < allowed_frequency.min:
+        allowed_frequency = role_class.allowed_frequency(kind)
+        if count == 0 and not allowed_frequency.allows(count):
+            # count > 0 already checked.
             errs.append(
                 ValueError(
                     argname,
                     n_("Missing role: '%(magic_role)s'."),
-                    {"magic_role": magic_role},
+                    {"magic_role": role_class.__name__},
                 ),
             )
-        elif allowed_frequency.max is not None and count > allowed_frequency.max:
+        if count > 1 and not role_class.static:
             for pos, row in enumerate(ret):
                 if row["role"] == magic_role:
                     # If we have ids, adjust the error argname.
@@ -3333,8 +3331,8 @@ def _questionnaire(
                     errs.append(
                         ValueError(
                             f"role_{idx}",
-                            n_("Must not duplicate this role: '%(magic_role)s'"),
-                            {"magic_role": magic_role},
+                            n_("Must not duplicate this role: '%(magic_role)s'."),
+                            {"magic_role": role_class.__name__},
                         ),
                     )
 
