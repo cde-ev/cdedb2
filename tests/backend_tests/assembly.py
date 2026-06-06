@@ -233,7 +233,7 @@ class TestAssemblyBackend(BackendTest):
         })
         expectation.update(data)
         self.assertEqual(expectation, self.assembly.get_assembly(self.key, 1))
-        new_assembly = {
+        new_assembly: CdEDBObject = {
             'description': 'Beschluss über die Anzahl anzuschaffender Schachsets',
             'notes': None,
             'signup_end': now(),
@@ -248,18 +248,20 @@ class TestAssemblyBackend(BackendTest):
             "submitted_by": self.user['id'],
             "assembly_id": new_id,
         })
-        for p_id in new_assembly['presiders']:  # type: ignore[union-attr]
+        for p_id in new_assembly['presiders']:
             log.append({
                 "code": const.AssemblyLogCodes.assembly_presider_added,
                 "submitted_by": self.user['id'],
                 "assembly_id": new_id,
                 "persona_id": p_id,
             })
-        expectation: CdEDBObject = new_assembly
-        expectation['id'] = new_id
-        expectation['presider_address'] = None
-        expectation['is_active'] = True
-        self.assertEqual(expectation, self.assembly.get_assembly(self.key, new_id))
+        assembly_expectation = new_assembly
+        assembly_expectation['id'] = new_id
+        assembly_expectation['presider_address'] = None
+        assembly_expectation['is_active'] = True
+        self.assertEqual(
+            assembly_expectation, self.assembly.get_assembly(self.key, new_id)
+        )
         self.assertTrue(
             self.assembly.remove_assembly_presider(self.key, new_id, presider_id)
         )
@@ -282,8 +284,10 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(
             0, self.assembly.add_assembly_presiders(self.key, new_id, {presider_id})
         )
-        expectation['presiders'] = {1, presider_id}
-        self.assertEqual(expectation, self.assembly.get_assembly(self.key, new_id))
+        assembly_expectation['presiders'] = {1, presider_id}
+        self.assertEqual(
+            assembly_expectation, self.assembly.get_assembly(self.key, new_id)
+        )
         attachment_data = {
             "assembly_id": new_id,
             "title": "Rechenschaftsbericht",
@@ -317,7 +321,7 @@ class TestAssemblyBackend(BackendTest):
                 "assembly_id": None,
                 "code": const.AssemblyLogCodes.assembly_deleted,
                 "submitted_by": self.user['id'],
-                "change_note": expectation["title"],
+                "change_note": assembly_expectation["title"],
             }
         ]
         self.assertLogEqual(log, realm="assembly", offset=log_offset)
@@ -462,14 +466,14 @@ class TestAssemblyBackend(BackendTest):
             },
         }
         self.assertEqual(expectation, self.assembly.get_ballots(self.key, (1, 4)))
-        data = {
+        update = {
             'id': 4,
             'notes': "Won't work",
         }
         with self.assertRaises(ValueError):
-            self.assembly.set_ballot(self.key, data)
+            self.assembly.set_ballot(self.key, update)
         ballot_id = 2
-        expectation: CdEDBObject = {
+        ballot_expectation: CdEDBObject = {
             'assembly_id': assembly_id,
             'use_bar': False,
             'candidates': {
@@ -519,7 +523,9 @@ class TestAssemblyBackend(BackendTest):
             ),
             'votes': None,
         }
-        self.assertEqual(expectation, self.assembly.get_ballot(self.key, ballot_id))
+        self.assertEqual(
+            ballot_expectation, self.assembly.get_ballot(self.key, ballot_id)
+        )
         data: CdEDBObject = {
             'id': ballot_id,
             'use_bar': True,
@@ -554,31 +560,33 @@ class TestAssemblyBackend(BackendTest):
                 "code": const.AssemblyLogCodes.candidate_updated,
                 "assembly_id": assembly_id,
                 "ballot_id": ballot_id,
-                "change_note": expectation['candidates'][6]['shortname'],
+                "change_note": ballot_expectation['candidates'][6]['shortname'],
             },
             {
                 "code": const.AssemblyLogCodes.candidate_removed,
                 "assembly_id": assembly_id,
                 "ballot_id": ballot_id,
-                "change_note": expectation['candidates'][7]['shortname'],
+                "change_note": ballot_expectation['candidates'][7]['shortname'],
             },
         ))
         for key in ('use_bar', 'notes', 'vote_extension_end', 'rel_quorum'):
-            expectation[key] = data[key]
-        expectation['abs_quorum'] = 0
-        expectation['quorum'] = self._get_sample_quorum(assembly_id)
-        expectation['candidates'][6]['title'] = data['candidates'][6]['title']
-        expectation['candidates'][6]['shortname'] = data['candidates'][6]['shortname']
-        del expectation['candidates'][7]
-        expectation['candidates'][1001] = {
+            ballot_expectation[key] = data[key]
+        ballot_expectation['abs_quorum'] = 0
+        ballot_expectation['quorum'] = self._get_sample_quorum(assembly_id)
+        ballot_expectation['candidates'][6]['title'] = data['candidates'][6]['title']
+        ballot_expectation['candidates'][6]['shortname'] = data['candidates'][6][
+            'shortname'
+        ]
+        del ballot_expectation['candidates'][7]
+        ballot_expectation['candidates'][1001] = {
             'id': 1001,
             'ballot_id': 2,
             'title': 'Aquamarin',
             'shortname': 'aqua',
         }
-        self.assertEqual(expectation, self.assembly.get_ballot(self.key, 2))
+        self.assertEqual(ballot_expectation, self.assembly.get_ballot(self.key, 2))
 
-        data: CdEDBObject = {
+        data = {
             'assembly_id': assembly_id,
             'use_bar': False,
             'candidates': {
@@ -1226,7 +1234,7 @@ class TestAssemblyBackend(BackendTest):
         )
 
         # Check version data.
-        expectation = {
+        version_expectation = {
             1: {
                 "attachment_id": new_id,
                 "version_nr": 1,
@@ -1240,7 +1248,7 @@ class TestAssemblyBackend(BackendTest):
             },
         }
         self.assertEqual(
-            expectation, self.assembly.get_attachment_versions(self.key, new_id)
+            version_expectation, self.assembly.get_attachment_versions(self.key, new_id)
         )
         with self.assertRaises(ValueError) as e:
             self.assembly.remove_attachment_version(self.key, new_id, version_nr=1)
@@ -1405,7 +1413,7 @@ class TestAssemblyBackend(BackendTest):
         )
 
         # Create more attachments and check the histories of all attachments.
-        history_expectation = {
+        history_expectations = {
             new_id: history_expectation,
         }
         data = {
@@ -1430,7 +1438,7 @@ class TestAssemblyBackend(BackendTest):
             "dtime": None,
             "file_hash": self._get_hash("form.pdf"),
         })
-        history_expectation[new_id] = {1: data}
+        history_expectations[new_id] = {1: data}
 
         data = {
             "assembly_id": assembly_id,
@@ -1463,7 +1471,7 @@ class TestAssemblyBackend(BackendTest):
             "dtime": None,
             "file_hash": self._get_hash("dsa.pdf"),
         })
-        history_expectation[new_id] = {1: data}
+        history_expectations[new_id] = {1: data}
 
         self.assertEqual(
             set(attachment_ids),
@@ -1473,7 +1481,7 @@ class TestAssemblyBackend(BackendTest):
             {new_id}, self.assembly.list_attachments(self.key, ballot_id=ballot_id)
         )
 
-        expectation = {
+        attachments_expectation = {
             attachment_ids[0]: {
                 'assembly_id': assembly_id,
                 'ballot_ids': [],
@@ -1497,13 +1505,14 @@ class TestAssemblyBackend(BackendTest):
             },
         }
         self.assertEqual(
-            expectation, self.assembly.get_attachments(self.key, attachment_ids)
+            attachments_expectation,
+            self.assembly.get_attachments(self.key, attachment_ids),
         )
         self.assertEqual(
-            history_expectation,
+            history_expectations,
             self.assembly.get_attachments_versions(self.key, attachment_ids),
         )
-        history_expectation = {
+        history_expectations = {
             attachment_ids[0]: {
                 1: {
                     'attachment_id': attachment_ids[0],
@@ -1578,7 +1587,7 @@ class TestAssemblyBackend(BackendTest):
             },
         }
         self.assertEqual(
-            history_expectation,
+            history_expectations,
             self.assembly.get_attachments_versions(self.key, attachment_ids),
         )
         cascade = {"versions", "ballots"}
@@ -1591,9 +1600,10 @@ class TestAssemblyBackend(BackendTest):
             "assembly_id": assembly_id,
             "change_note": data['title'],
         })
-        del expectation[new_id]
+        del attachments_expectation[new_id]
         self.assertEqual(
-            expectation, self.assembly.get_attachments(self.key, attachment_ids)
+            attachments_expectation,
+            self.assembly.get_attachments(self.key, attachment_ids),
         )
         self.assertLogEqual(
             log, realm="assembly", offset=log_offset, assembly_id=assembly_id

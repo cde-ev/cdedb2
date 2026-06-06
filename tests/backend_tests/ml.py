@@ -2077,7 +2077,7 @@ class TestMlBackend(BackendTest):
             self.assertEqual(
                 expectation, self.ml.get_subscription_addresses(self.key, 3)
             )
-            expectation = {k: None for k in expectation}  # type: ignore[misc]
+            expectation = {k: None for k in expectation}
             self.assertEqual(
                 expectation,
                 self.ml.get_subscription_addresses(self.key, 3, explicits_only=True),

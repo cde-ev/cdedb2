@@ -1876,6 +1876,7 @@
         "1": {
             "event_id": 1,
             "id": 1,
+            "query_group": "Test",
             "query_name": "Test-Query",
             "scope": 30,
             "serialized_query": {

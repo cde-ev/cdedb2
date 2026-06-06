@@ -567,7 +567,8 @@ class TestEventBackend(BackendTest):
         self.assertTrue(query_id)
         self.assertEqual(
             self.event.get_event_queries(self.key, new_id)[query_id].serialize_to_url(),
-            query.serialize_to_url() | {"query_name": "test_query"},
+            query.serialize_to_url()
+            | {"query_name": "test_query", "query_group": None},
         )
 
         with self.switch_user("annika"):
@@ -1738,8 +1739,8 @@ class TestEventBackend(BackendTest):
         for key, value in expectation[4]['tracks'].items():
             if key in data['tracks']:
                 value.update(data['tracks'][key])
-        data = self.event.get_registrations(self.key, (1, 2, 4))
-        self.assertEqual(expectation, data)
+        regs = self.event.get_registrations(self.key, (1, 2, 4))
+        self.assertEqual(expectation, regs)
         new_reg: CdEDBObject = {
             'event_id': event_id,
             'list_consent': True,
@@ -4240,7 +4241,7 @@ class TestEventBackend(BackendTest):
         }
         self.event.set_lodgement(self.key, new_id, update)
         self.event.delete_lodgement(self.key, new_id)
-        data: list[CdEDBObject] = [
+        q_data: list[CdEDBObject] = [
             {
                 'field_id': None,
                 'default_value': None,
@@ -4283,7 +4284,7 @@ class TestEventBackend(BackendTest):
             },
         ]
         self.event.set_questionnaire(
-            self.key, 1, const.QuestionnaireUsages.additional, data
+            self.key, 1, const.QuestionnaireUsages.additional, q_data
         )
 
         # now check it
@@ -5600,7 +5601,7 @@ class TestEventBackend(BackendTest):
             self.event.get_registration(self.key, registration_id)['checkin_periods'],
         )
 
-        log_expectation: list[CdEDBObject] = [
+        log_expectation = [
             {
                 'code': const.EventLogCodes.checkin_period_deleted,
                 'persona_id': 1,
@@ -5651,7 +5652,7 @@ class TestEventBackend(BackendTest):
             self.event.get_registration(self.key, registration_id)['checkin_periods'],
         )
 
-        log_expectation: list[CdEDBObject] = [
+        log_expectation = [
             {
                 'code': const.EventLogCodes.checkout_changed,
                 'persona_id': 1,
@@ -5707,7 +5708,7 @@ class TestEventBackend(BackendTest):
             self.event.get_registration(self.key, registration_id)['checkin_periods'],
         )
 
-        log_expectation: list[CdEDBObject] = [
+        log_expectation = [
             {
                 'code': const.EventLogCodes.checkin_period_deleted,
                 'persona_id': 1,
@@ -5783,7 +5784,7 @@ class TestEventBackend(BackendTest):
             self.event.get_registration(self.key, registration_id)['checkin_periods'],
         )
 
-        log_expectation: list[CdEDBObject] = [
+        log_expectation = [
             {
                 'code': const.EventLogCodes.checkin_added,
                 'persona_id': 1,
@@ -5833,7 +5834,7 @@ class TestEventBackend(BackendTest):
             self.event.get_registration(self.key, registration_id)['checkin_periods'],
         )
 
-        log_expectation: list[CdEDBObject] = [
+        log_expectation = [
             {
                 'code': const.EventLogCodes.checkin_period_deleted,
                 'persona_id': 1,

@@ -91,7 +91,7 @@ class CronFrontend(BaseApp):
         base_state = self.core.get_cron_store(rs, "_base")
         if not base_state:
             base_state = {
-                'tstamp': 0,
+                'tstamp': 0.0,
                 'period': -1,
             }
         if (

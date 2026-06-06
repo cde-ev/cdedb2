@@ -34,7 +34,7 @@ import math
 from collections.abc import Collection, Iterator
 from pathlib import Path
 from secrets import token_urlsafe
-from typing import NamedTuple, Optional, Protocol
+from typing import NamedTuple, Optional, Protocol, cast
 
 from schulze_condorcet import schulze_evaluate
 
@@ -2252,6 +2252,8 @@ class AssemblyBackend(AbstractBackend):
         """
         ballot_id = affirm(vtypes.ID, ballot_id)
         attachment_ids = affirm(set[vtypes.ID], attachment_ids)
+        attachment_ids = cast(set[vtypes.ID], attachment_ids)  # mypy bug.
+
         with Atomizer(rs):
             ret = 1
             current_attachments = self.list_attachments(rs, ballot_id=ballot_id)

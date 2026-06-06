@@ -443,6 +443,24 @@
         "registration_text": null,
         "reimbursement_iban_field": null,
         "shortname": "TestAka",
+        "stored_queries": {
+            "Test-Query": {
+                "query_group": "Test",
+                "scope": 30,
+                "serialized_query": {
+                    "is_search": true,
+                    "qop_persona.birthday": 20,
+                    "qord_0": "persona.birthday",
+                    "qord_0_ascending": true,
+                    "qsel_persona.birthday": true,
+                    "qsel_persona.id": true,
+                    "qsel_reg.id": true,
+                    "query_name": "Test-Query",
+                    "qval_persona.birthday": "2000-01-01",
+                    "scope": 30
+                }
+            }
+        },
         "title": "Gro\u00dfe Testakademie 2222",
         "track_groups": {},
         "use_additional_questionnaire": false,

@@ -42,9 +42,9 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "mypy==1.20.2",
+    "mypy==2.1.0",
     "lxml-stubs",
-    "ruff==0.15.12",
+    "ruff==0.15.14",
     "types-bleach",
     "types-ldap3",
     "types-Markdown",
@@ -142,6 +142,7 @@ ignore = [
     "TRY003",  # Exception message not defined in exception class.
     "PLW2901",  # redefining for loop variable.
     "PLW1641",  # non hashable child class.
+    "PLW0717",  # Too many statements in try clause.
     "PLR09",  # Too many things in classes.
     "PLR1702",  # Too many nested blocks.
     "PLR6301",  # Method could be static.
@@ -172,7 +173,7 @@ show_error_codes = true
 #show_error_context = true
 enable_error_code = "ignore-without-code"
 
-allow_redefinition = true
+allow_redefinition_new = true
 check_untyped_defs = true
 disallow_any_generics = true
 disallow_incomplete_defs = true

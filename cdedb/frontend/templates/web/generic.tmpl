@@ -311,6 +311,9 @@
                         {% if scope.supports_storing() %}
                             <h4 class="filter-title">
                                 {{ util.make_icon('far fa-bookmark') }} {% trans %}Store query{% endtrans %}</h4>
+                            <div style="margin-bottom: 4px">
+                                {{ util.input_text("query_group", placeholder=gettext("query group"), anid="query_group_input") }}
+                            </div>
                             <div class="input-group">
                                 {{ util.input_text("query_name", placeholder=gettext("query name"), anid="query_name_input") }}
                                 {{ util.input_hidden("query_scope", scope) }}
@@ -373,8 +376,15 @@
 {% macro place_default_queries(scope, queries, num_columns) %}
     {% if queries %}
         {% call util.bootstrap_panel(title=gettext("Default Queries"), anid="default_queries_container") %}
+            {% set grouped_queries = queries if queries is mapping else {"": queries} %}
+            {% for title, group_list in grouped_queries.items() %}
             <div class="row">
-                {% for list in queries | sort | slice(num_columns) %}
+                {% if grouped_queries|length > 1 %}
+                    <h5 style="padding-left: 15px; {% if loop.first %}margin-top: 0; {% endif %}">
+                        {{ title or gettext("Other") }}
+                    </h5>
+                {% endif %}
+                {% for list in group_list | slice(num_columns) %}
                 <div class="col-sm-{{ 12 // num_columns }}">
                     <ul class="slim {% if not loop.last %}nosp{% endif %}">
                         {% for stored_query in list %}
@@ -410,6 +420,7 @@
                 </div>
                 {% endfor %}
             </div>
+            {% endfor %}
         {% endcall %}
         <script nonce="{{ csp_nonce }}">
             $('.default-query').each(function(){

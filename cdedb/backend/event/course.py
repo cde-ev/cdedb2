@@ -509,7 +509,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
                     rt.course_id = %(course_id)s
                     AND rp.status = ANY(%(stati)s)
             """
-            params: ParamDict = {
+            params = {
                 "course_id": course_id,
                 "stati": const.RegistrationPartStati.involved_states(),
             }

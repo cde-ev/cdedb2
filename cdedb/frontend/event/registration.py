@@ -572,7 +572,9 @@ class EventRegistrationMixin(EventBaseFrontend):
             corresponding enable checkbox is selected. Only relevant for the multiedit.
         """
 
-        def filter_params(params: vtypes.TypeMapping) -> vtypes.TypeMapping:
+        def filter_params(
+            params: vtypes.MutableTypeMapping,
+        ) -> vtypes.MutableTypeMapping:
             """Helper to filter out params that are skipped or not enabled."""
             if not check_enabled:
                 return params

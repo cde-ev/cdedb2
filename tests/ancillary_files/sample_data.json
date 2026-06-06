@@ -8062,6 +8062,7 @@
             "id": 1,
             "event_id": 1,
             "query_name": "Test-Query",
+            "query_group": "Test",
             "scope": 30,
             "serialized_query": {
                 "is_search": true,
