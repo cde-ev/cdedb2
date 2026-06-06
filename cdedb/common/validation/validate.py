@@ -3240,8 +3240,10 @@ def _questionnaire_magic_row(
 
 
 @_create_dataclass_validator(
-    models_event.QuestionnaireRow, allow_superfluous=True, pass_superfluous=True
-)  # type: ignore[type-abstract]
+    models_event.QuestionnaireRow,  # type: ignore[type-abstract]
+    allow_superfluous=True,
+    pass_superfluous=True,
+)
 def _questionnaire_row(
     val: CdEDBObject,
     argname: str = "",
