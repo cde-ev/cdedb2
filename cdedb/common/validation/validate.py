@@ -510,6 +510,7 @@ def _examine_dictionary_fields(
     *,
     argname: str = "",
     allow_superfluous: bool = False,
+    pass_superfluous: bool = False,
     **kwargs: Any,
 ) -> dict[str, Any]:
     """Check more complex dictionaries.
@@ -523,6 +524,7 @@ def _examine_dictionary_fields(
         This is useful, if you want to examine multiple dicts and tell the errors apart.
     :param allow_superfluous: If ``False`` keys which are neither in
       :py:obj:`mandatory_fields` nor in :py:obj:`optional_fields` are errors.
+    :params pass_superfluous: If True, superfluous key are returned as is.
     """
     optional_fields = optional_fields or {}
     errs = ValidationSummary()
@@ -550,6 +552,8 @@ def _examine_dictionary_fields(
                 raise
         elif not allow_superfluous:
             errs.append(KeyError(sub_argname, n_("Superfluous key found.")))
+        elif pass_superfluous:
+            retval[key] = value
 
     missing_mandatory = set(mandatory_fields).difference(adict)
     if missing_mandatory:
@@ -3235,12 +3239,15 @@ def _questionnaire_magic_row(
     return val
 
 
-@_create_dataclass_validator(models_event.QuestionnaireRow, allow_superfluous=True)  # type: ignore[type-abstract]
+@_create_dataclass_validator(
+    models_event.QuestionnaireRow, allow_superfluous=True, pass_superfluous=True
+)  # type: ignore[type-abstract]
 def _questionnaire_row(
     val: CdEDBObject,
     argname: str = "",
     *,
     allow_superfluous: bool,
+    pass_superfluous: bool,
     **kwargs: Any,
 ) -> CdEDBObject:
     tmp = _examine_dictionary_fields(
