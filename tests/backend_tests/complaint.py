@@ -1595,8 +1595,7 @@ class TestComplaintValidation(TestValidationBase):
                     },
                     None,
                     ValueError(
-                        "Invalid input for the enumeration %(enum)s (kind)",
-                        {'enum': const.ComplaintKind},
+                        "Invalid input for the enumeration 'ComplaintKind'. (kind)"
                     ),
                 ),
                 (
@@ -1690,8 +1689,7 @@ class TestComplaintValidation(TestValidationBase):
                     },
                     None,
                     ValueError(
-                        "Invalid input for the enumeration %(enum)s (entry_type)",
-                        {'enum': const.ComplaintEntryType},
+                        "Invalid input for the enumeration 'ComplaintEntryType'. (entry_type)"
                     ),
                 ),
                 (
@@ -1700,8 +1698,7 @@ class TestComplaintValidation(TestValidationBase):
                     },
                     None,
                     ValueError(
-                        "Invalid input for the enumeration %(enum)s (entry_type)",
-                        {'enum': const.ComplaintEntryType},
+                        "Invalid input for the enumeration 'ComplaintEntryType'. (entry_type)"
                     ),
                 ),
                 (
