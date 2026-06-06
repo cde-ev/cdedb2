@@ -8,8 +8,9 @@ import cdedb.models.event as models
 from cdedb.common import NearlyNow, nearly_now
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query import QueryScope
+from cdedb.models.event import make_default_questionnaire
 from tests.common import BackendTest, as_users
-from tests.other_tests.test_validation import TestValidationBase
+from tests.other_tests.test_validation import NO_COMPARE, TestValidationBase
 
 
 class TestEventModels(BackendTest):
@@ -964,6 +965,8 @@ class TestEventValidation(BackendTest, TestValidationBase):
     @as_users("garcia")
     def test_questionnaire_validation(self) -> None:
         event = self.event.get_event(self.key, 1)
+
+        # Check that field id is required for FieldRow.
         self.do_validator_test(
             models.QuestionnaireFieldRow,
             [
@@ -979,6 +982,7 @@ class TestEventValidation(BackendTest, TestValidationBase):
             ],
             extraparams={"available_fields": event.fields},
         )
+        # Check again using QuestionnaireRow, which delegates.
         self.do_validator_test(
             models.QuestionnaireRow,
             [
@@ -994,6 +998,9 @@ class TestEventValidation(BackendTest, TestValidationBase):
             ],
             extraparams={"available_fields": event.fields},
         )
+
+        all_questionnaires = self.event.get_all_questionnaires(self.key, event.id)
+        # Check required field id for full questionnaire validation.
         self.do_validator_test(
             vtypes.Questionnaire,
             [
@@ -1010,8 +1017,54 @@ class TestEventValidation(BackendTest, TestValidationBase):
             ],
             extraparams={
                 "kind": const.QuestionnaireUsages.additional,
-                "all_questionnaires": self.event.get_all_questionnaires(
-                    self.key, event.id
+                "all_questionnaires": all_questionnaires,
+            },
+        )
+
+        self.do_validator_test(
+            vtypes.Questionnaire,
+            [
+                # Check that course choices may not be duplicated.
+                (
+                    [
+                        *make_default_questionnaire(event)[
+                            const.QuestionnaireUsages.registration
+                        ],
+                        {
+                            "kind": const.QuestionnaireUsages.registration,
+                            "role": const.QuestionnaireRowMagicRole.course_choices,
+                        },
+                    ],
+                    None,
+                    ValueError(
+                        "Must not duplicate this role: 'CourseChoices'. (role_2)"
+                    ),
                 ),
+                # Check that foto notice must not be missing.
+                (
+                    make_default_questionnaire(event)[
+                        const.QuestionnaireUsages.registration
+                    ][:-3],
+                    None,
+                    ValueError("Missing role: 'FotoNotice'. (questionnaire)"),
+                ),
+                # Check that fee preview may be present multiple times.
+                (
+                    [
+                        *make_default_questionnaire(event)[
+                            const.QuestionnaireUsages.registration
+                        ],
+                        {
+                            "kind": const.QuestionnaireUsages.registration,
+                            "role": const.QuestionnaireRowMagicRole.fee_preview,
+                        },
+                    ],
+                    NO_COMPARE,
+                    None,
+                ),
+            ],
+            extraparams={
+                "kind": const.QuestionnaireUsages.registration,
+                "all_questionnaires": all_questionnaires,
             },
         )
