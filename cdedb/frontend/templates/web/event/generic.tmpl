@@ -334,7 +334,7 @@
                         ) }}
                 </div>
             {% else %}
-                <h3 class="panel-title">
+                <h3 class="panel-title" style="margin: 5px 0 0">
                     {{ util.make_icon(values["role_" ~ part_id].get_class().get_icon()) }}
                     {{ gettext(values["role_" ~ part_id]|string) }}
                 </h3>
@@ -342,7 +342,7 @@
             {% endif %}
             <div style="clear:both;"></div>
         </div>
-        <div class="panel-body">
+        <div class="panel-body" style="padding: 10px 10px 10px 15px;">
             <div class="row">
                 <div class="col-md-6">
                     {{ util.form_input_select(
