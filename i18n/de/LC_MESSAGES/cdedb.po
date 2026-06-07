@@ -5952,7 +5952,7 @@ msgstr "Gemischte Unterbringung"
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:329
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:415
 msgid "Participant List Consent"
-msgstr "Zustimmung zur Teilnehmendenliste"
+msgstr "Zustimmung zur Teilnahmeliste"
 
 #: cdedb/common/query/__init__.py:1176
 #: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:10
@@ -9045,7 +9045,7 @@ msgstr "Kein Veranstaltungs-Kontext gegeben"
 
 #: cdedb/frontend/event/base.py:458
 msgid "Participant list not published yet."
-msgstr "Die Teilnehmendenliste ist noch nicht veröffentlicht."
+msgstr "Die Teilnahmeliste ist noch nicht veröffentlicht."
 
 #: cdedb/frontend/event/base.py:517 cdedb/frontend/event/lodgement.py:117
 msgid "Invalid part id."
@@ -9061,8 +9061,8 @@ msgid ""
 "You can not access the Participant List as you have not agreed to have your "
 "own data sent to other participants before the event."
 msgstr ""
-"Du kannst die Teilnehmendenliste nicht sehen, da du nicht zugestimmt hast, "
-"deine Daten auf der Teilnehmendenliste zur Verfügung zu stellen."
+"Du kannst die Teilnahmeliste nicht sehen, da du nicht zugestimmt hast, "
+"deine Daten auf der Teilnahmeliste zur Verfügung zu stellen."
 
 #: cdedb/frontend/event/base.py:691
 msgid "Invalid key. Expected 'course_id' or 'lodgement_id"
@@ -10187,7 +10187,7 @@ msgstr "Orga"
 #: cdedb/frontend/templates/tex/event/participant_list.tmpl:22
 #, python-format
 msgid "Participant list %(title)s"
-msgstr "Teilnehmendenliste %(title)s"
+msgstr "Teilnahmeliste %(title)s"
 
 #: cdedb/frontend/templates/tex/event/participant_list.tmpl:25
 #, python-format
@@ -11742,7 +11742,7 @@ msgstr "Download"
 
 #: cdedb/frontend/templates/web/assembly/base/list_attendees.tmpl:74
 msgid "A download TeX-Snipped to generate a participant list in the protocol."
-msgstr "Die Teilnehmendenliste als TeX-Schnipsel für das Protokoll."
+msgstr "Die Teilnahmeliste als TeX-Schnipsel für das Protokoll."
 
 #: cdedb/frontend/templates/web/assembly/base/list_attendees.tmpl:79
 msgid "Cutoff"
@@ -16896,7 +16896,7 @@ msgstr "Teilnehmenden-Infos"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:207
 msgid "Participant list"
-msgstr "Teilnehmendenliste"
+msgstr "Teilnahmeliste"
 
 #: cdedb/frontend/templates/web/event/base.tmpl:242
 #: cdedb/frontend/templates/web/event/base.tmpl:385
@@ -17066,12 +17066,12 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:5
 #, python-format
 msgid "Participant List %(title)s"
-msgstr "Teilnehmendenliste %(title)s"
+msgstr "Teilnahmeliste %(title)s"
 
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:12
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:15
 msgid "Participant List"
-msgstr "Teilnehmendenliste"
+msgstr "Teilnahmeliste"
 
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:44
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:50
@@ -17087,7 +17087,7 @@ msgstr "Absteigend sortieren."
 
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:64
 msgid "The Participant List is currently only visible to Orgas and Admins."
-msgstr "Die Teilnehmendenliste ist aktuell nur für Orgas und Admins sichtbar."
+msgstr "Die Teilnahmeliste ist aktuell nur für Orgas und Admins sichtbar."
 
 #: cdedb/frontend/templates/web/event/base/participant_list.tmpl:146
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:43
@@ -17734,7 +17734,7 @@ msgstr "PDF"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:38
 msgid "Course Attendee Lists"
-msgstr "Kursteilnehmendenlisten"
+msgstr "Kursteilnahmelisten"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:47
 msgid "Lodgement Inhabitant Lists"
@@ -17758,7 +17758,7 @@ msgstr "zum Ausschneiden und Zusammenpuzzeln"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:81
 msgid "Participant Lists"
-msgstr "Teilnehmendenlisten"
+msgstr "Teilnahmelisten"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:82
 msgid ""
@@ -17865,7 +17865,7 @@ msgstr "Shell-Schnipsel"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:209
 msgid "Dokuteam participant list"
-msgstr "Dokuteam-Teilnehmendenliste"
+msgstr "Dokuteam-Teilnahmeliste"
 
 #: cdedb/frontend/templates/web/event/downloads.tmpl:210
 msgid "ZIP-Archive"
@@ -18079,7 +18079,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:76
 msgid "Visibility of the Participant List"
-msgstr "Sichtbarkeit der Teilnehmendenliste"
+msgstr "Sichtbarkeit der Teilnahmeliste"
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:77
 msgid ""
@@ -18088,7 +18088,7 @@ msgid ""
 "part of the Questionnaire, people will be shown a list of successfully "
 "detected lodgement wishes."
 msgstr ""
-"Wenn dies ausgewählt ist, wird eine Teilnehmendenliste mit Name, E-Mail, "
+"Wenn dies ausgewählt ist, wird eine Teilnahmeliste mit Name, E-Mail, "
 "Postleitzahl und Stadt für alle Teilnehmenden sichtbar. Außerdem wird, falls "
 "ein Feld für Hauswünsche (siehe weiter unten) festgelegt ist und im "
 "Fragebogen abgefragt wird, auf der Seite des Fragebogens eine Liste "
@@ -18103,8 +18103,8 @@ msgid ""
 msgstr ""
 "Wenn dies ausgewählt ist, wird die Kurseinteilung den Teilnehmenden angezeigt. "
 "Konkret wird der Kurs im eigenen Anmeldestatus und auf der "
-"Teilnehmendenliste angezeigt. Außerdem können Kursleitende ihre Kursteilnehmenden "
-"sehen, selbst, wenn die Teilnehmendenliste nicht sichtbar ist."
+"Teilnahmeliste angezeigt. Außerdem können Kursleitende ihre Kursteilnehmenden "
+"sehen, selbst, wenn die Teilnahmeliste nicht sichtbar ist."
 
 #: cdedb/frontend/templates/web/event/event/change_event.tmpl:87
 msgid "Cancellation of the event"
@@ -18281,7 +18281,7 @@ msgid ""
 "nametags. Fieldtype: Text"
 msgstr ""
 "Das Kursraumfeld ist das Feld, in dem der dem Kurs zugewiesene Raum "
-"gespeichert wird. Es wird für PDF-Teilnehmendenlisten und -Namensschilder "
+"gespeichert wird. Es wird für PDF-Teilnahmelisten und -Namensschilder "
 "verwendet. Datentyp: Text"
 
 #: cdedb/frontend/templates/web/event/event/change_part.tmpl:166
@@ -20516,7 +20516,7 @@ msgid ""
 "correctly and that both you and they appear on the participant list."
 msgstr ""
 "Falls ein Wunsch fehlen sollte, prüfe bitte ob Du den Namen richtig "
-"geschrieben hast und sowohl Du, als auch die Person auf der Teilnehmendenliste "
+"geschrieben hast und sowohl Du, als auch die Person auf der Teilnahmeliste "
 "sichtbar sind."
 
 #: cdedb/frontend/templates/web/event/questionnaire/additional_questionnaire.tmpl:108
