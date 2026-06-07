@@ -600,7 +600,7 @@ msgstr "Betroffene"
 
 #: cdedb/.i18n_additional.py:148
 msgid "ComplaintInvolvementType.appellant"
-msgstr "Beschwerdeführer:in"
+msgstr "Beschwerdeführende"
 
 #: cdedb/.i18n_additional.py:149
 msgid "ComplaintInvolvementType.target"
@@ -14727,7 +14727,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:58
 msgid "Enter affected appellants as affected and mark them as informed."
 msgstr ""
-"Trag betroffene Beschwerdeführer:innen als Betroffene ein und markiere sie als "
+"Trag betroffene Beschwerdeführende als Betroffene ein und markiere sie als "
 "informiert."
 
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:61
@@ -14744,7 +14744,7 @@ msgstr "DB-XXXX-X,DB-XXXX-X,…"
 
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:73
 msgid "Appellants"
-msgstr "Beschwerdeführer:innen"
+msgstr "Beschwerdeführende"
 
 #: cdedb/frontend/templates/web/core/complaint/configure_case.tmpl:81
 msgid "Targets"
