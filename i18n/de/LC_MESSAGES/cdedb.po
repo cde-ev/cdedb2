@@ -1888,7 +1888,7 @@ msgstr "Verstöße gegen Kursausschließlichkeit"
 
 #: cdedb/.i18n_additional.py:470
 msgid "IncorrectNumInhabitantsCV"
-msgstr "Unterkünfte mit inkorrekter Bewohner:innenzahl"
+msgstr "Unterkünfte mit inkorrekter Bewohnendenzahl"
 
 #: cdedb/.i18n_additional.py:471
 msgid "IllegalMixedLodgementCV"
@@ -6369,7 +6369,7 @@ msgstr "Unterkunftsgruppe: Bezeichner"
 
 #: cdedb/common/query/__init__.py:1615
 msgid "Regular Inhabitants"
-msgstr "Reguläre Bewohner:innen"
+msgstr "Reguläre Bewohnende"
 
 #: cdedb/common/query/__init__.py:1618
 msgid "Camping Mat Inhabitants"
@@ -6377,7 +6377,7 @@ msgstr "Isomattenschläfer:innen"
 
 #: cdedb/common/query/__init__.py:1621
 msgid "Total Inhabitants"
-msgstr "Gesamtbewohner:innen"
+msgstr "Gesamtbewohnende"
 
 #: cdedb/common/query/__init__.py:1624
 msgid "Regular Remaining"
@@ -6393,7 +6393,7 @@ msgstr "Freie Gesamtkapazitäten"
 
 #: cdedb/common/query/__init__.py:1633
 msgid "Group Regular Inhabitants"
-msgstr "Unterkunftsgruppe: Reguläre Bewohner:innen"
+msgstr "Unterkunftsgruppe: Reguläre Bewohnende"
 
 #: cdedb/common/query/__init__.py:1636
 msgid "Group Camping Mat Inhabitants"
@@ -6401,7 +6401,7 @@ msgstr "Unterkunftsgruppe: Isomattenschläfer:innen"
 
 #: cdedb/common/query/__init__.py:1639
 msgid "Group Total Inhabitants"
-msgstr "Unterkunftsgruppe: Gesamtbewohner:innen"
+msgstr "Unterkunftsgruppe: Gesamtbewohnende"
 
 #: cdedb/common/query/defaults.py:133
 msgid "00_query_event_registration_all"
@@ -20112,7 +20112,7 @@ msgstr "Unterkunft anlegen"
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:73
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:85
 msgid "Inhabitants"
-msgstr "Bewohner:innen"
+msgstr "Bewohnende"
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:70
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:80
@@ -20127,7 +20127,7 @@ msgstr "Bewege oder lösche Unterkünfte aus dieser Gruppe"
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:19
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:31
 msgid "Manage Inhabitants"
-msgstr "Bewohner:innen verwalten"
+msgstr "Bewohnende verwalten"
 
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:199
 msgid "Underfull (but not empty)"
@@ -20183,20 +20183,20 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:10
 #, python-format
 msgid "Manage Inhabitants of Lodgement %(lodgement)s (%(title)s)"
-msgstr "Bewohner:innen der Unterkunft %(lodgement)s verwalten (%(title)s)"
+msgstr "Bewohnende der Unterkunft %(lodgement)s verwalten (%(title)s)"
 
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:22
 #, python-format
 msgid "Inhabitants of %(lodgement)s"
-msgstr "Bewohner:innen von %(lodgement)s"
+msgstr "Bewohnende von %(lodgement)s"
 
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:33
 msgid "Assigned Inhabitants"
-msgstr "Eingeteilte Bewohner:innen"
+msgstr "Eingeteilte Bewohnende"
 
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:58
 msgid "The are currently no inhabitants assigned."
-msgstr "Zur Zeit keine Bewohner:innen eingeteilt."
+msgstr "Zur Zeit keine Bewohnenden eingeteilt."
 
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:65
 msgid "Add Inhabitant"
@@ -20208,7 +20208,7 @@ msgstr "Bewohner:in entfernen"
 
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:88
 msgid "Swap inhabitants with"
-msgstr "Tausche Bewohner:innen mit"
+msgstr "Tausche Bewohnende mit"
 
 #: cdedb/frontend/templates/web/event/lodgement/move_lodgements.tmpl:10
 #, python-format
@@ -20251,11 +20251,11 @@ msgstr "Unterkunft %(lodgement)s (%(title)s)"
 
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:131
 msgid "Inhabitants not available."
-msgstr "Bewohner:innen nicht verfügbar."
+msgstr "Bewohnende nicht verfügbar."
 
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:134
 msgid "No inhabitants."
-msgstr "Keine Bewohner:innen."
+msgstr "Keine Bewohnenden."
 
 #: cdedb/frontend/templates/web/event/lodgement/show_lodgement.tmpl:163
 msgid "The Lodgement will be permanently deleted."
@@ -20267,7 +20267,7 @@ msgid ""
 "inhabitants without lodgement."
 msgstr ""
 "Löscht die Unterkunft mit allen Informationen und lässt die aktuellen "
-"Bewohner:innen ohne Unterkunft zurück."
+"Bewohnenden ohne Unterkunft zurück."
 
 #: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:18
 #, python-format
@@ -23012,7 +23012,7 @@ msgstr "Gemischte Unterkunft mit konfligierenden Teilnehmenden."
 #: cdedb/models/event/constraint_violations.py:2244
 #, python-format
 msgid "%(lodgement)s is mixed with non-mixing inhabitants in %(part)s."
-msgstr "%(lodgement)s ist gemischt mit konfligierenden Bewohner:innen auf %(part)s."
+msgstr "%(lodgement)s ist gemischt mit konfligierenden Bewohnenden auf %(part)s."
 
 #: cdedb/models/event/constraint_violations.py:2276
 msgid "Event fees should be collected at the Skatbank account."
