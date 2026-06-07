@@ -4465,7 +4465,7 @@ msgstr "Nicht-existente Kursschiene angegeben."
 
 #: cdedb/backend/event/course.py:493
 msgid "Only available for instructors of this course."
-msgstr "Nur für die Leitung dieses Kurses verfügbar."
+msgstr "Nur für die Kursleitenden dieses Kurses verfügbar."
 
 #: cdedb/backend/event/lodgement.py:221 cdedb/frontend/event/lodgement.py:833
 msgid "Invalid lodgement group."
@@ -4797,7 +4797,7 @@ msgstr "Ein Account kann nicht mit sich selbst verschmolzen werden."
 #: cdedb/backend/ml.py:1846
 #, python-format
 msgid "Both users are related to the same mailinglists: %(mls)s"
-msgstr "Beide Accounts haben einen Bezug zur gleichen Mailinglisten: %(mls)s"
+msgstr "Beide Accounts haben einen Bezug zu gleichen Mailinglisten: %(mls)s"
 
 #: cdedb/backend/past_event.py:591
 msgid "This user does not participate at this event."
@@ -5952,7 +5952,7 @@ msgstr "Gemischte Unterbringung"
 #: cdedb/frontend/templates/web/event/registration/registration_status.tmpl:329
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:415
 msgid "Participant List Consent"
-msgstr "Zustimmung zur Teilnehmendenlisten"
+msgstr "Zustimmung zur Teilnehmendenliste"
 
 #: cdedb/common/query/__init__.py:1176
 #: cdedb/frontend/templates/other/core/complaint/case_export.tmpl:10
@@ -6128,7 +6128,7 @@ msgstr "Kurschiene"
 
 #: cdedb/common/query/__init__.py:1263
 msgid "instructs their course"
-msgstr "Hält den eigenen Kurs"
+msgstr "Hält eigenen Kurs"
 
 #: cdedb/common/query/__init__.py:1270
 msgid "instructed course"
@@ -11195,8 +11195,8 @@ msgid ""
 "member can view this page."
 msgstr ""
 "Auf dieser Seite erhälst du nähere Details über die oben erwähnte "
-"ausgezählte Abstimmung. Alle Teilnehmende dieser Versammlung und jedes aktive "
-"Mitglied hat Zugriff auf diese Seite."
+"ausgezählte Abstimmung. Alle Teilnehmende dieser Versammlung und alle aktiven "
+"Mitglieder haben Zugriff auf diese Seite."
 
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot_result.tmpl:59
 msgid ""
