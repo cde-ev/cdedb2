@@ -2851,8 +2851,9 @@ class TestEventBackend(BackendTest):
         name = ""
         with self.assertRaises(ValueError) as cm:
             store(query, name)
-        self.assertIn(
-            "Invalid input for the enumeration %(enum)s (scope)", cm.exception.args
+        self.assertEqual(
+            "Invalid input for the enumeration 'QueryScope'. (scope)",
+            cm.exception.args[0] % cm.exception.args[1],
         )
 
         query.scope = QueryScope.persona

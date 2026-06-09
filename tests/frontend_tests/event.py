@@ -1294,7 +1294,7 @@ etc;anything else""",
         self.submit(f, check_notification=False)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
         self.assertValidationError(
-            "kind_-1", "Ungültige Eingabe für Enumeration <enum 'FieldDatatypes'>."
+            "kind_-1", "Ungültige Eingabe für Enumeration 'FieldDatatypes'."
         )
         f['create_-1'].checked = True
         f['field_name_-1'] = "invalid"
@@ -1303,7 +1303,7 @@ etc;anything else""",
         self.submit(f, check_notification=False)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
         self.assertValidationError(
-            "kind_-1", "Ungültige Eingabe für Enumeration <enum 'FieldDatatypes'>."
+            "kind_-1", "Ungültige Eingabe für Enumeration 'FieldDatatypes'."
         )
 
     @event_keeper
