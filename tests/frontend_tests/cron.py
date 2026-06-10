@@ -716,14 +716,14 @@ class TestCron(CronTest):
                 length=None,
                 timestamp=None,
                 ctime=ctime,
-                submitted_by=vtypes.ID(1),
+                submitted_by=cast(vtypes.PersonaID, 1),
                 dtime=ctime,
-                deleted_by=vtypes.ID(1),
+                deleted_by=cast(vtypes.PersonaID, 1),
                 dreason=None,
                 marked_for_purge=marked_for_purge,
-                purged_by=cast(vtypes.ID, user_id),
+                purged_by=cast(vtypes.PersonaID, user_id),
                 is_purged=True,
-                authors=cast(vtypes.CdedbIDList, set()),
+                authors=set(),
             )
 
             case = self.complaint.get_case(RS, case_id)

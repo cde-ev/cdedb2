@@ -203,7 +203,7 @@ rules = [
                     ),
                     post("/involved/add", endpoint="add_involved"),
                     sub(
-                        "/involved/<int:persona_id>",
+                        "/involved/<int:involved_id>",
                         get_("/companions/change", endpoint="manage_companions_form"),
                         post("/companions/add", endpoint="add_companions"),
                         sub(

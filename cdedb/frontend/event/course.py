@@ -402,7 +402,7 @@ class EventCourseMixin(EventBaseFrontend):
         course_id: Optional[vtypes.ID],
         track_id: Optional[vtypes.ID],
         position: Optional[InfiniteEnum[CourseFilterPositions]],
-        ids: Optional[vtypes.IntCSVList],
+        ids: Optional[list[int]],
         include_active: Optional[bool],
     ) -> Response:
         """Provide an overview of course choices.
@@ -534,7 +534,7 @@ class EventCourseMixin(EventBaseFrontend):
         course_id: Optional[vtypes.ID],
         track_id: Optional[vtypes.ID],
         position: Optional[InfiniteEnum[CourseFilterPositions]],
-        ids: Optional[vtypes.IntCSVList],
+        ids: Optional[list[int]],
         include_active: Optional[bool],
         registration_ids: Collection[int],
         assign_track_ids: Collection[int],
@@ -562,7 +562,7 @@ class EventCourseMixin(EventBaseFrontend):
                 include_active=include_active,
             )
         if ids is None:
-            ids = cast(vtypes.IntCSVList, [])
+            ids = cast(list[int], [])
 
         tracks = rs.ambience['event'].tracks
         # Orchestrate change_note

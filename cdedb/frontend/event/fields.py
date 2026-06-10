@@ -240,7 +240,7 @@ class EventFieldMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         field_id: Optional[vtypes.ID],
-        ids: Optional[vtypes.IntCSVList],
+        ids: Optional[list[int]],
         kind: const.FieldAssociations,
     ) -> Response:
         """Select a field for manipulation across multiple entities."""
@@ -249,7 +249,7 @@ class EventFieldMixin(EventBaseFrontend):
             # This should never happen without HTML manipulation, anyway.
             return self.redirect(rs, "event/show_event")
         if ids is None:
-            ids = cast(vtypes.IntCSVList, [])
+            ids = cast(list[int], [])
 
         if field_id:
             return self.redirect(
@@ -290,7 +290,7 @@ class EventFieldMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         field_id: vtypes.ID,
-        ids: Optional[vtypes.IntCSVList],
+        ids: Optional[list[int]],
         kind: const.FieldAssociations,
         change_note: Optional[str] = None,
         internal: bool = False,
@@ -304,7 +304,7 @@ class EventFieldMixin(EventBaseFrontend):
             redirect = self.FIELD_REDIRECT.get(kind, "event/show_event")
             return self.redirect(rs, redirect)
         if ids is None:
-            ids = cast(vtypes.IntCSVList, [])
+            ids = cast(list[int], [])
 
         entities, ordered_ids, labels, field = self.field_multiset_aux(
             rs, event_id, field_id, ids, kind
@@ -339,7 +339,7 @@ class EventFieldMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         field_id: vtypes.ID,
-        ids: Optional[vtypes.IntCSVList],
+        ids: Optional[list[int]],
         kind: const.FieldAssociations,
         change_note: Optional[str] = None,
     ) -> Response:
@@ -355,7 +355,7 @@ class EventFieldMixin(EventBaseFrontend):
                 internal=True,
             )
         if ids is None:
-            ids = cast(vtypes.IntCSVList, [])
+            ids = cast(list[int], [])
 
         entities, _, _, field = self.field_multiset_aux(
             rs, event_id, field_id, ids, kind

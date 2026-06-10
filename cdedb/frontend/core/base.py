@@ -1072,7 +1072,7 @@ class CoreBaseFrontend(AbstractFrontend):
         """
         if rs.has_validation_errors():
             return self.index(rs)
-        db_id, errs = inspect(vtypes.CdedbID, phrase, argname="phrase")
+        db_id, errs = inspect(vtypes.PersonaID, phrase, argname="phrase")
         if not errs:
             assert db_id is not None
             if self.coreproxy.verify_id(rs, db_id, is_archived=None):
@@ -1264,7 +1264,7 @@ class CoreBaseFrontend(AbstractFrontend):
         # Allow admins to search by (CdEDB)ID
         if ALL_ADMINS & rs.user.roles:
             anid: Optional[vtypes.ID]
-            anid, errs = inspect(vtypes.CdedbID, phrase, argname="phrase")
+            anid, errs = inspect(vtypes.PersonaID, phrase, argname="phrase")
             if not errs:
                 assert anid is not None
                 tmp = self.coreproxy.get_personas(rs, (anid,))
