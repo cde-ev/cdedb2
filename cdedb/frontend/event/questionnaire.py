@@ -359,7 +359,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         kind: const.QuestionnaireUsages,
-        order: vtypes.IntCSVList,
+        order: list[int],
     ) -> Response:
         """Shuffle rows of the orga designed form.
 

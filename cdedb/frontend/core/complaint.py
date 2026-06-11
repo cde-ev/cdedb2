@@ -4,7 +4,7 @@ import datetime
 import itertools
 from collections.abc import Collection
 from itertools import chain
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -54,7 +54,7 @@ CASE_SEARCH_DEFAULTS = {
     # transpired before
     'qop_cases.start_date': QueryOperators.lessornull,
     'qop_involved.persona_id': QueryOperators.equal,
-    'qop_involved.involved_type': QueryOperators.oneof,
+    'qop_involved.involvement_type': QueryOperators.oneof,
     'qop_involved.is_informed': QueryOperators.equal,
     'qop_companion.companion_persona_id': QueryOperators.equal,
     'qop_companion.is_withdrawn': QueryOperators.equal,
@@ -156,9 +156,8 @@ class CoreComplaintMixin(CoreBaseFrontend):
                     )
                     persona_id = check(
                         rs,
-                        vtypes.CdedbID,
+                        vtypes.PersonaID,
                         query_input['qval_involved.persona_id'],
-                        passthrough=True,
                     )
                     rs.ignore_validation_errors()
                     if persona_id:
@@ -172,7 +171,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
                 persona_ids: set[int] = set()
                 for case in cases.values():
-                    persona_ids.update(case.all_involved.keys())
+                    persona_ids.update(case.involved_persona_ids)
                 personas = self.coreproxy.get_personas(rs, persona_ids)
 
         return self.render(
@@ -335,7 +334,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         info: str,
     ) -> Response:
         involved_params = {
-            f"{involvement_type.name}_ids": vtypes.CdedbIDList
+            f"{involvement_type.name}_ids": list[vtypes.PersonaID]
             for involvement_type in const.ComplaintInvolvementType
         }
         involved_data = request_extractor(rs, involved_params)
@@ -386,7 +385,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs: RequestState,
         case_id: int,
         involvement_type: const.ComplaintInvolvementType,
-        persona_ids: vtypes.CdedbIDList,
+        persona_ids: list[vtypes.PersonaID],
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
@@ -410,10 +409,11 @@ class CoreComplaintMixin(CoreBaseFrontend):
         if rs.has_validation_errors():
             return self.show_case(rs, case_id)
 
-        active_companions = rs.ambience['case'].active_companions
+        active_companions = rs.ambience['case'].get_companions(is_active=True)
         ex_companions_ids = set(persona_ids) & active_companions.keys()
         ex_companions = self.coreproxy.get_personas(rs, ex_companions_ids)
         for companion_id, companion in ex_companions.items():
+            companion_id = cast(vtypes.PersonaID, companion_id)
             rs.notify(
                 'warning',
                 n_("%(companion)s was a companion and is now marked as withdrawn."),
@@ -440,25 +440,25 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("complaint_admin", modi={"POST"})
     def remove_involved(
-        self, rs: RequestState, case_id: int, persona_id: int
+        self, rs: RequestState, case_id: int, involved_id: vtypes.InvolvedID
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        ret = self.complaintproxy.remove_involved(rs, case_id, [persona_id])
+        ret = self.complaintproxy.remove_involved(rs, case_id, [involved_id])
         rs.notify_return_code(ret, info=n_("This user was not involved."))
         return self.redirect(rs, "core/show_case")
 
     @access("complaint_admin", modi={"POST"})
     def inform_involved(
-        self, rs: RequestState, case_id: int, persona_id: int
+        self, rs: RequestState, case_id: int, involved_id: vtypes.InvolvedID
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        if persona_id not in rs.ambience['case'].all_involved:
+        if involved_id not in rs.ambience['case'].involved:
             rs.notify("error", n_("This user is not involved."))
         else:
             ret = self.complaintproxy.set_involved_informed(
-                rs, case_id, persona_id, True
+                rs, case_id, involved_id, True
             )
             rs.notify_return_code(
                 ret, info=n_("This user was already marked as informed.")
@@ -467,16 +467,16 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("complaint_admin", modi={"POST"})
     def uninform_involved(
-        self, rs: RequestState, case_id: int, persona_id: int
+        self, rs: RequestState, case_id: int, involved_id: vtypes.InvolvedID
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        if persona_id not in rs.ambience['case'].all_involved:
+        if involved_id not in rs.ambience['case'].involved:
             rs.notify("error", n_("This user is not involved."))
         # elif check informed state
         else:
             ret = self.complaintproxy.set_involved_informed(
-                rs, case_id, persona_id, False
+                rs, case_id, involved_id, False
             )
             rs.notify_return_code(
                 ret, info=n_("This user was already marked as uninformed.")
@@ -485,20 +485,22 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("complaint_admin")
     def manage_companions_form(
-        self, rs: RequestState, case_id: int, persona_id: int
+        self, rs: RequestState, case_id: int, involved_id: vtypes.InvolvedID
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        companion_ids = rs.ambience['case'].companions_by_involved.get(persona_id)
+        involved = rs.ambience['case'].involved[involved_id]
+        companion_ids = involved.get_companions(is_active=None)
         companions = (
             self.coreproxy.get_personas(rs, companion_ids) if companion_ids else {}
         )
-        involved = self.coreproxy.get_persona(rs, persona_id)
+        involved_persona = self.coreproxy.get_persona(rs, involved.persona_id)
         return self.render(
             rs,
             "complaint/manage_companions",
             {
-                'involved': involved,
+                'involved_id': involved_id,
+                'involved_persona': involved_persona,
                 'companions': companions,
             },
         )
@@ -509,19 +511,19 @@ class CoreComplaintMixin(CoreBaseFrontend):
         self,
         rs: RequestState,
         case_id: int,
-        persona_id: int,
-        companion_ids: vtypes.CdedbIDList,
+        involved_id: vtypes.InvolvedID,
+        companion_ids: list[vtypes.PersonaID],
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
         if companion_ids:
-            if companion_ids & rs.ambience['case'].all_involved.keys():
+            if set(companion_ids) & rs.ambience['case'].involved_persona_ids:
                 rs.append_validation_error((
                     "companion_ids",
                     ValueError(n_("Companion may not be involved.")),
                 ))
             if set(companion_ids) & rs.ambience['case'].adverse_companions(
-                rs.ambience['case'].all_involved[persona_id]
+                rs.ambience['case'].involved[involved_id].involvement_type
             ):
                 rs.append_validation_error((
                     "companion_ids",
@@ -538,8 +540,10 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 ValueError(n_("Must not be empty.")),
             ))
         if rs.has_validation_errors():
-            return self.manage_companions_form(rs, case_id, persona_id)
-        ret = self.complaintproxy.add_companions(rs, case_id, persona_id, companion_ids)
+            return self.manage_companions_form(rs, case_id, involved_id)
+        ret = self.complaintproxy.add_companions(
+            rs, case_id, involved_id, companion_ids
+        )
         rs.notify_return_code(
             ret, info=n_("Some of these users were already companions.")
         )
@@ -550,28 +554,32 @@ class CoreComplaintMixin(CoreBaseFrontend):
         self,
         rs: RequestState,
         case_id: int,
-        persona_id: int,
-        companion_id: int,
+        involved_id: vtypes.InvolvedID,
+        companion_id: vtypes.PersonaID,
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
         ret = self.complaintproxy.remove_companions(
-            rs, case_id, persona_id, [companion_id]
+            rs, case_id, involved_id, [companion_id]
         )
         rs.notify_return_code(ret, info=n_("This user was no companion."))
         return self.redirect(rs, "core/manage_companions_form")
 
     @access("complaint_admin", modi={"POST"})
     def withdraw_companion(
-        self, rs: RequestState, case_id: int, persona_id: int, companion_id: int
+        self,
+        rs: RequestState,
+        case_id: int,
+        involved_id: vtypes.InvolvedID,
+        companion_id: vtypes.PersonaID,
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        if companion_id not in rs.ambience['case'].companions:
+        if companion_id not in rs.ambience['case'].get_companions(is_active=True):
             rs.notify("error", n_("This user is no companion."))
         else:
             ret = self.complaintproxy.set_companion_withdrawn(
-                rs, case_id, persona_id, companion_id, True
+                rs, case_id, involved_id, companion_id, True
             )
             rs.notify_return_code(
                 ret, info=n_("This companion was already marked as withdrawn.")
@@ -583,18 +591,19 @@ class CoreComplaintMixin(CoreBaseFrontend):
         self,
         rs: RequestState,
         case_id: int,
-        persona_id: int,
-        companion_id: int,
+        involved_id: vtypes.InvolvedID,
+        companion_id: vtypes.PersonaID,
     ) -> Response:
         if not rs.ambience['case'].is_visible_for(rs.user):
             raise werkzeug.exceptions.Forbidden()
-        if companion_id not in rs.ambience['case'].companions:
-            rs.notify("error", n_("This user is no companion."))
-        elif companion_id in rs.ambience['case'].all_involved.keys():
+        involved = rs.ambience['case'].involved[involved_id]
+        if companion_id not in involved.get_companions(is_active=False):
+            rs.notify("error", n_("This user is no withdrawn companion."))
+        elif companion_id in rs.ambience['case'].involved_persona_ids:
             rs.notify("error", n_("Active companion may not be involved."))
         else:
             ret = self.complaintproxy.set_companion_withdrawn(
-                rs, case_id, persona_id, companion_id, False
+                rs, case_id, involved_id, companion_id, False
             )
             rs.notify_return_code(
                 ret, info=n_("This companion was already marked as active.")
@@ -653,7 +662,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         self, rs: RequestState, entry: models.ComplaintEntry
     ) -> CdEDBObjectMap:
         """Get any personas associated to a given entry."""
-        persona_ids: set[int] = set()
+        persona_ids: set[vtypes.PersonaID] = set()
         if entry.active_version:
             persona_ids.update(entry.active_version.authors)
             persona_ids.add(entry.active_version.submitted_by)
@@ -702,12 +711,15 @@ class CoreComplaintMixin(CoreBaseFrontend):
         )
 
     def _append_author_validation_warning(
-        self, rs: RequestState, authors: set[int]
+        self, rs: RequestState, authors: Collection[int]
     ) -> None:
         """Warn to not misuse author field.
 
         This check is intentionally omitted on replacement, to not be too annoying"""
-        if authors & rs.ambience['case'].all_involved.keys() and not rs.ignore_warnings:
+        if (
+            set(authors) & rs.ambience['case'].involved_persona_ids
+            and not rs.ignore_warnings
+        ):
             msg = n_("Should not include involved people.")
             rs.append_validation_error(('authors', ValidationWarning(msg)))
 
@@ -745,7 +757,6 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 additional_data={'parent_id': parent_id},
                 creation=True,
                 entries=rs.ambience['case'].entries,
-                passthrough=True,
             )
             or {}
         )
@@ -1271,7 +1282,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @access("complaint_admin", modi={"POST"})
     @REQUESTdata("persona_id")
-    def add_enforcer(self, rs: RequestState, persona_id: vtypes.CdedbID) -> Response:
+    def add_enforcer(self, rs: RequestState, persona_id: vtypes.PersonaID) -> Response:
         """Grant enforcer privileges to a persona."""
         if rs.has_validation_errors():
             return self.list_complaint_helpers(rs)

@@ -1878,11 +1878,11 @@ class FrontendTest(BackendTest):
                     for node in other_notifications
                 )
                 if errors := self.get_content("debug-data-errors", check_exists=False):
-                    msg += " I found these errors in the debug data: " + errors
+                    msg += "\nI found these errors in the debug data: " + errors
             else:
                 msg += " (There were no notifications)."
-            if errors := self.get_content("debug-data-errors", check_exists=False):
-                msg += "\nI found these errors in the debug data:\n\t" + errors
+                if errors := self.get_content("debug-data-errors", check_exists=False):
+                    msg += "\nI found these errors in the debug data:\n\t" + errors
             self.fail(msg)
         if ntext is not None:
             # joining them this way is useful for meaningful failure message

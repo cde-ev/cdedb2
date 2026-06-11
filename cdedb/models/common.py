@@ -37,8 +37,6 @@ from cdedb.common.sorting import Sortkey, collate, xsorted
 from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
 
 if TYPE_CHECKING:
-    from typing import Self
-
     from cdedb.database.query import DatabaseValue_s
 
 T = TypeVar("T")
@@ -49,6 +47,10 @@ CdEDataclassMap = dict[int, T]
 def requestdict_field_spec(field: dataclasses.Field[Any]) -> Literal["str", "[str]"]:
     """The spec of this field, expected by the REQUESTdatadict extractor."""
     if get_origin(field.type) in {list, tuple, set}:
+        if get_args(field.type) == (vtypes.PersonaID,):
+            # For fields annotated as `list[vtypes.PersonaId]` we want to extract them
+            #  as a CSV-string, rather than as a list from the multi dict.
+            return "str"
         return "[str]"
     else:
         return "str"

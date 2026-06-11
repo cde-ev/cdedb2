@@ -303,7 +303,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         rs: RequestState,
         data: dict[str, Any],
         ml_type: const.MailinglistTypes,
-        moderators: vtypes.CdedbIDList,
+        moderators: list[vtypes.PersonaID],
     ) -> Response:
         """Make a new list."""
         data["moderators"] = moderators
@@ -374,8 +374,8 @@ class MlBaseFrontend(AbstractUserFrontend):
     def merge_accounts(
         self,
         rs: RequestState,
-        source_persona_id: vtypes.CdedbID,
-        target_persona_id: vtypes.CdedbID,
+        source_persona_id: vtypes.PersonaID,
+        target_persona_id: vtypes.PersonaID,
         clone_addresses: bool,
     ) -> Response:
         """Merge a ml only user (source) into an other user (target).
@@ -930,7 +930,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @mailinglist_guard()
     @REQUESTdata("moderators")
     def add_moderators(
-        self, rs: RequestState, mailinglist_id: int, moderators: vtypes.CdedbIDList
+        self, rs: RequestState, mailinglist_id: int, moderators: list[vtypes.PersonaID]
     ) -> Response:
         """Promote personas to moderator."""
         if rs.has_validation_errors():
@@ -1107,7 +1107,10 @@ class MlBaseFrontend(AbstractUserFrontend):
     @mailinglist_guard(requires_privilege=True)
     @REQUESTdata("subscriber_ids")
     def add_subscribers(
-        self, rs: RequestState, mailinglist_id: int, subscriber_ids: vtypes.CdedbIDList
+        self,
+        rs: RequestState,
+        mailinglist_id: int,
+        subscriber_ids: list[vtypes.PersonaID],
     ) -> Response:
         """Administratively subscribe somebody."""
         if rs.has_validation_errors():
@@ -1210,7 +1213,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         self,
         rs: RequestState,
         mailinglist_id: int,
-        modsubscriber_ids: vtypes.CdedbIDList,
+        modsubscriber_ids: list[vtypes.PersonaID],
     ) -> Response:
         """Administratively subscribe somebody with moderator override."""
         if rs.has_validation_errors():
@@ -1254,7 +1257,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         self,
         rs: RequestState,
         mailinglist_id: int,
-        modunsubscriber_ids: vtypes.CdedbIDList,
+        modunsubscriber_ids: list[vtypes.PersonaID],
     ) -> Response:
         """Administratively block somebody."""
         if rs.has_validation_errors():
