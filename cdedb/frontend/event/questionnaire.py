@@ -7,6 +7,8 @@ event.
 """
 
 import abc
+import decimal
+from types import SimpleNamespace as sn
 from typing import TYPE_CHECKING
 
 import werkzeug.exceptions
@@ -15,6 +17,7 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
+from cdedb.backend.event.registration import ComplexRegistrationFee
 from cdedb.common import (
     CdEDBObject,
     DefaultReturnCode,
@@ -349,10 +352,26 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         if not questionnaire:
             rs.notify("info", n_("No questionnaire rows of this kind found."))
             return self.redirect(rs, redirects[kind])
+        fake_complex_fee = ComplexRegistrationFee(
+            fees=[
+                (sn(id=-1, kind=const.EventFeeType.common), decimal.Decimal(200)),
+                (
+                    sn(id=-2, kind=const.EventFeeType.solidary_reduction),
+                    decimal.Decimal(-50),
+                ),
+            ],
+            visual_debug={},
+        )
         return self.render(
             rs,
             "questionnaire/reorder_questionnaire",
-            {'questionnaire': questionnaire, 'kind': kind, 'redirect': redirects[kind]},
+            {
+                'questionnaire': questionnaire,
+                'kind': kind,
+                'redirect': redirects[kind],
+                'fake_complex_fee': fake_complex_fee,
+                **self.get_course_choice_params(rs, event_id),
+            },
         )
 
     @access("event", modi={"POST"})

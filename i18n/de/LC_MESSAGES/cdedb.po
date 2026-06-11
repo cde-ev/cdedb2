@@ -20555,7 +20555,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/generic.tmpl:686
 #: cdedb/frontend/templates/web/event/generic.tmpl:767
 msgid "Fee Preview"
-msgstr "Teilnahmebeitragsvorschau"
+msgstr "Teilnahmebeitrags&shy;vorschau"
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:748
 #: cdedb/frontend/templates/web/event/generic.tmpl:829

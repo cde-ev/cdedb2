@@ -577,7 +577,7 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         fee_breakdown_template = """
 {%- import "web/event/generic.tmpl" as generic_event with context -%}
-{{- generic_event.fee_breakdown_by_kind() -}}
+{{- generic_event.fee_breakdown_by_kind(complex_fee) -}}
 """
         fee_breakdown_html = self.jinja_env.from_string(fee_breakdown_template).render(
             complex_fee=complex_fee, gettext=rs.gettext, lang=rs.lang
