@@ -352,9 +352,11 @@
             <div class="row">
                 <div class="col-md-6">
                     {{ util.form_input_select(
-                            "field_id_" ~ part_id, label=gettext("Query"),
-                            entries=available_fields|entries('id', 'field_name'),
-                            nulloption=gettext("— None —"),
+                            "field_id_" ~ part_id, label=gettext("Custom Field"),
+                            entries=available_fields|entries(
+                                'id', 'field_name', group="sort_group", default_group=gettext("Other Fields")
+                            ),
+                            nulloption=gettext("— select a field —"),
                             aclass='input-field drow-input', horizontal=False,
                             attributes={
                                 "data-basename": "field_id_",

@@ -19701,8 +19701,8 @@ msgid "Query"
 msgstr "Abfrage"
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:357
-msgid "— None —"
-msgstr "— keine —"
+msgid "— select a field —"
+msgstr "— wähle ein Datenfeld —"
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:365
 msgid "Default Value"
