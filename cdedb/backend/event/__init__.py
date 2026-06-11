@@ -268,10 +268,10 @@ class EventBackend(
 
         questionnaire_text_rows = self.sql_select(
             rs,
-            models.QuestionnaireTextRow.database_table,
+            models.questionnaire.QuestionnaireTextRow.database_table,
             ("id",),
             (event_id,),
-            entity_key=models.QuestionnaireTextRow.entity_key,
+            entity_key=models.questionnaire.QuestionnaireTextRow.entity_key,
         )
         if questionnaire_text_rows:
             blockers["questionnaire_text_rows"] = [
@@ -280,10 +280,10 @@ class EventBackend(
 
         questionnaire_field_rows = self.sql_select(
             rs,
-            models.QuestionnaireFieldRow.database_table,
+            models.questionnaire.QuestionnaireFieldRow.database_table,
             ("id",),
             (event_id,),
-            entity_key=models.QuestionnaireFieldRow.entity_key,
+            entity_key=models.questionnaire.QuestionnaireFieldRow.entity_key,
         )
         if questionnaire_field_rows:
             blockers["questionnaire_field_rows"] = [
@@ -292,10 +292,10 @@ class EventBackend(
 
         questionnaire_magic_rows = self.sql_select(
             rs,
-            models.QuestionnaireMagicRow.database_table,
+            models.questionnaire.QuestionnaireMagicRow.database_table,
             ("id",),
             (event_id,),
-            entity_key=models.QuestionnaireMagicRow.entity_key,
+            entity_key=models.questionnaire.QuestionnaireMagicRow.entity_key,
         )
         if questionnaire_magic_rows:
             blockers["questionnaire_magic_rows"] = [
@@ -424,19 +424,19 @@ class EventBackend(
                 if "questionnaire_text_rows" in cascade:
                     ret *= self.sql_delete(
                         rs,
-                        models.QuestionnaireTextRow.database_table,
+                        models.questionnaire.QuestionnaireTextRow.database_table,
                         blockers["questionnaire_text_rows"],
                     )
                 if "questionnaire_field_rows" in cascade:
                     ret *= self.sql_delete(
                         rs,
-                        models.QuestionnaireFieldRow.database_table,
+                        models.questionnaire.QuestionnaireFieldRow.database_table,
                         blockers["questionnaire_field_rows"],
                     )
                 if "questionnaire_magic_rows" in cascade:
                     ret *= self.sql_delete(
                         rs,
-                        models.QuestionnaireMagicRow.database_table,
+                        models.questionnaire.QuestionnaireMagicRow.database_table,
                         blockers["questionnaire_magic_rows"],
                     )
                 if "field_definitions" in cascade:

@@ -21,6 +21,6 @@ with script:
             aq = const.QuestionnaireUsages.additional
             questionnaire = event.get_all_questionnaires(rs, event_id)[aq]
             for entry in questionnaire:
-                if isinstance(entry, models.QuestionnaireFieldRow):
+                if isinstance(entry, models.questionnaire.QuestionnaireFieldRow):
                     entry.readonly = True
             event.set_questionnaire(rs, event_id, aq, questionnaire.as_dicts())

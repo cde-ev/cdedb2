@@ -2129,16 +2129,16 @@ class TestEventBackend(BackendTest):
     @as_users("berta", "emilia", maintain_data=True)
     def test_get_all_questionnaires(self) -> None:
         event_id = 1
-        expectation = models.QuestionnaireContainer({
-            const.QuestionnaireUsages.registration: models.Questionnaire(
+        expectation = models.questionnaire.QuestionnaireContainer({
+            const.QuestionnaireUsages.registration: models.questionnaire.Questionnaire(
                 [
-                    models.FeePreview(
+                    models.questionnaire.FeePreview(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
                         pos=0,
                         role=const.QuestionnaireRowMagicRole.fee_preview,
                     ),
-                    models.QuestionnaireTextRow(
+                    models.questionnaire.QuestionnaireTextRow(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
                         pos=1,
@@ -2146,13 +2146,13 @@ class TestEventBackend(BackendTest):
                         title="Kurswahlen",
                         text=None,
                     ),
-                    models.CourseChoices(
+                    models.questionnaire.CourseChoices(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
                         pos=2,
                         role=const.QuestionnaireRowMagicRole.course_choices,
                     ),
-                    models.QuestionnaireTextRow(
+                    models.questionnaire.QuestionnaireTextRow(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
                         pos=3,
@@ -2160,13 +2160,13 @@ class TestEventBackend(BackendTest):
                         title="Weitere Angaben",
                         text=None,
                     ),
-                    models.ListConsent(
+                    models.questionnaire.ListConsent(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
                         pos=4,
                         role=const.QuestionnaireRowMagicRole.list_consent,
                     ),
-                    models.QuestionnaireFieldRow(
+                    models.questionnaire.QuestionnaireFieldRow(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
                         pos=5,
@@ -2175,25 +2175,25 @@ class TestEventBackend(BackendTest):
                         label="Ich bin unter 13 Jahre alt.",
                         info="Denk daran, deine Eltern mitzubringen!",
                     ),
-                    models.MixedLodging(
+                    models.questionnaire.MixedLodging(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
                         pos=6,
                         role=const.QuestionnaireRowMagicRole.mixed_lodging,
                     ),
-                    models.FotoNotice(
+                    models.questionnaire.FotoNotice(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
                         pos=7,
                         role=const.QuestionnaireRowMagicRole.foto_notice,
                     ),
-                    models.RegistrationNotes(
+                    models.questionnaire.RegistrationNotes(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
                         pos=8,
                         role=const.QuestionnaireRowMagicRole.registration_notes,
                     ),
-                    models.FeePreview(
+                    models.questionnaire.FeePreview(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
                         pos=9,
@@ -2202,9 +2202,9 @@ class TestEventBackend(BackendTest):
                 ],
                 kind=const.QuestionnaireUsages.registration,
             ),
-            const.QuestionnaireUsages.additional: models.Questionnaire(
+            const.QuestionnaireUsages.additional: models.questionnaire.Questionnaire(
                 [
-                    models.QuestionnaireTextRow(
+                    models.questionnaire.QuestionnaireTextRow(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.additional,
                         pos=0,
@@ -2212,7 +2212,7 @@ class TestEventBackend(BackendTest):
                         title="Unterüberschrift",
                         text="mit Text darunter",
                     ),
-                    models.QuestionnaireFieldRow(
+                    models.questionnaire.QuestionnaireFieldRow(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.additional,
                         pos=1,
@@ -2222,7 +2222,7 @@ class TestEventBackend(BackendTest):
                         info="Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.",
                         default_value=True,
                     ),
-                    models.QuestionnaireTextRow(
+                    models.questionnaire.QuestionnaireTextRow(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.additional,
                         pos=2,
@@ -2230,7 +2230,7 @@ class TestEventBackend(BackendTest):
                         title=None,
                         text="nur etwas Text",
                     ),
-                    models.QuestionnaireTextRow(
+                    models.questionnaire.QuestionnaireTextRow(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.additional,
                         pos=3,
@@ -2238,7 +2238,7 @@ class TestEventBackend(BackendTest):
                         title="Weitere Überschrift",
                         text=None,
                     ),
-                    models.QuestionnaireFieldRow(
+                    models.questionnaire.QuestionnaireFieldRow(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.additional,
                         pos=4,
@@ -2248,7 +2248,7 @@ class TestEventBackend(BackendTest):
                         info=None,
                         default_value="etc",
                     ),
-                    models.QuestionnaireFieldRow(
+                    models.questionnaire.QuestionnaireFieldRow(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.additional,
                         pos=5,

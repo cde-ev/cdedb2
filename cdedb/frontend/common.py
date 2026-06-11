@@ -3259,7 +3259,6 @@ def process_dynamic_input(
                 models_event.EventField,
                 models_event.CourseTrack,
                 models_event.LodgementGroup,
-                models_event.QuestionnaireRow,
             }:
                 entry["id"] = anid
             entry.update(additional)

@@ -22,7 +22,7 @@ from cdedb.uncommon.submanshim import (  # noqa: F401
 )
 
 if TYPE_CHECKING:
-    from cdedb.models.event import QuestionnaireRow
+    from cdedb.models.event.questionnaire import QuestionnaireRow
 
 
 def n_(x: str) -> str:  # pragma: no cover
@@ -214,7 +214,7 @@ class QuestionnaireRowMagicRole(CdEIntEnum):
     registration_notes = 70
 
     def get_class(self) -> type["QuestionnaireRow"]:
-        from cdedb.models.event import (  # noqa: PLC0415
+        from cdedb.models.event.questionnaire import (  # noqa: PLC0415
             QuestionnaireRow,
         )
 

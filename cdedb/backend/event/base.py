@@ -253,7 +253,7 @@ class EventBaseBackend(EventLowLevelBackend):
         self,
         rs: RequestState,
         event_ids: Collection[int],
-    ) -> models.CdEDataclassMap[models.Event]:
+    ) -> models.EventDataclassMap:
         event_ids = affirm(set[vtypes.ID], event_ids)
         with Atomizer(rs):
             event_data = {
@@ -1341,30 +1341,37 @@ class EventBaseBackend(EventLowLevelBackend):
         self,
         rs: RequestState,
         event_id: int,
-    ) -> models.QuestionnaireContainer:
+    ) -> models.questionnaire.QuestionnaireContainer:
         """Retrieve the questionnaire rows for a specific event."""
         event_id = affirm(vtypes.ID, event_id)
         event = self.get_event(rs, event_id)
         data: list[CdEDBObject] = []
         data.extend(
             self.query_all(
-                rs, *models.QuestionnaireTextRow.get_select_query([event_id])
+                rs,
+                *models.questionnaire.QuestionnaireTextRow.get_select_query([event_id]),
             )
         )
         data.extend(
             field_rows := self.query_all(
-                rs, *models.QuestionnaireFieldRow.get_select_query([event_id])
+                rs,
+                *models.questionnaire.QuestionnaireFieldRow.get_select_query([
+                    event_id
+                ]),
             )
         )
         data.extend(
             self.query_all(
-                rs, *models.QuestionnaireMagicRow.get_select_query([event_id])
+                rs,
+                *models.questionnaire.QuestionnaireMagicRow.get_select_query([
+                    event_id
+                ]),
             )
         )
 
         for row in field_rows:
             row["event"] = event
-        return models.QuestionnaireContainer.from_database(data, event)
+        return models.questionnaire.QuestionnaireContainer.from_database(data, event)
 
     @access("event")
     def set_questionnaire(
@@ -1388,7 +1395,7 @@ class EventBaseBackend(EventLowLevelBackend):
         self.assert_lock(rs, event_id=event_id)
         with Atomizer(rs):
             # Always delete everything then recreate.
-            for cls in models.QuestionnaireRow.__subclasses__():
+            for cls in models.questionnaire.QuestionnaireRow.__subclasses__():
                 query = f"""
                     DELETE FROM {cls.database_table}
                     WHERE event_id = %(event_id)s and kind = %(kind)s
@@ -1403,7 +1410,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 # The questionnaire import allows specifying fields by name.
                 #  We cannot remove this before, due to validation idempotency.
                 new_row.pop("field_name", None)
-                cls = models.QuestionnaireRow.get_class(new_row["role"])
+                cls = models.questionnaire.QuestionnaireRow.get_class(new_row["role"])
                 ret *= self.sql_insert(rs, cls.database_table, new_row)
             self.event_log(
                 rs,
@@ -1608,9 +1615,9 @@ class EventBaseBackend(EventLowLevelBackend):
                     ('id', 'registration_id', 'track_id', 'course_id', 'rank'),
                 ),
                 models.PersonalizedFee.full_export_spec(),
-                models.QuestionnaireTextRow.full_export_spec(),
-                models.QuestionnaireFieldRow.full_export_spec(),
-                models.QuestionnaireMagicRow.full_export_spec(),
+                models.questionnaire.QuestionnaireTextRow.full_export_spec(),
+                models.questionnaire.QuestionnaireFieldRow.full_export_spec(),
+                models.questionnaire.QuestionnaireMagicRow.full_export_spec(),
                 models.StoredEventQuery.full_export_spec(),
                 models.CustomQueryFilter.full_export_spec(),
                 (

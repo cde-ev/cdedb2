@@ -982,7 +982,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         questionnaire_rows = self.sql_select(
             rs,
-            models.QuestionnaireFieldRow.database_table,
+            models.questionnaire.QuestionnaireFieldRow.database_table,
             ("id",),
             (field_id,),
             entity_key="field_id",
@@ -1075,7 +1075,7 @@ class EventLowLevelBackend(AbstractBackend):
             if "questionnaire_rows" in cascade:
                 ret *= self.sql_delete(
                     rs,
-                    models.QuestionnaireFieldRow.database_table,
+                    models.questionnaire.QuestionnaireFieldRow.database_table,
                     blockers["questionnaire_rows"],
                 )
             if "lodge_fields" in cascade:

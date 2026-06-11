@@ -2828,7 +2828,7 @@ def _event_fee_condition(
     argname: str = "event_fee_condition",
     *,
     event: models_event.Event,
-    all_questionnaires: models_event.QuestionnaireContainer,
+    all_questionnaires: models_event.questionnaire.QuestionnaireContainer,
     **kwargs: Any,
 ) -> EventFeeCondition:
     val = _str(val, argname, **kwargs)
@@ -3124,14 +3124,14 @@ def _by_field_datatype(
     return ByFieldDatatype(val)
 
 
-@_create_dataclass_validator(models_event.QuestionnaireTextRow)
+@_create_dataclass_validator(models_event.questionnaire.QuestionnaireTextRow)
 def _questionnaire_text_row(
     val: CdEDBObject, argname: str = "", **kwargs: Any
 ) -> CdEDBObject:
     return val
 
 
-@_create_dataclass_validator(models_event.QuestionnaireFieldRow)
+@_create_dataclass_validator(models_event.questionnaire.QuestionnaireFieldRow)
 def _questionnaire_field_row(
     val: CdEDBObject,
     argname: str = "",
@@ -3189,12 +3189,12 @@ def _questionnaire_field_row(
 
 
 @_create_dataclass_validator(
-    models_event.CourseChoices,
-    models_event.FeePreview,
-    models_event.ListConsent,
-    models_event.MixedLodging,
-    models_event.FotoNotice,
-    models_event.RegistrationNotes,
+    models_event.questionnaire.CourseChoices,
+    models_event.questionnaire.FeePreview,
+    models_event.questionnaire.ListConsent,
+    models_event.questionnaire.MixedLodging,
+    models_event.questionnaire.FotoNotice,
+    models_event.questionnaire.RegistrationNotes,
 )
 def _questionnaire_magic_row(
     val: CdEDBObject,
@@ -3217,7 +3217,7 @@ def _questionnaire_magic_row(
 
 
 @_create_dataclass_validator(
-    models_event.QuestionnaireRow,  # type: ignore[type-abstract]
+    models_event.questionnaire.QuestionnaireRow,  # type: ignore[type-abstract]
     allow_superfluous=True,
     pass_superfluous=True,
 )
@@ -3235,7 +3235,7 @@ def _questionnaire_row(
         allow_superfluous=True,
         **kwargs,
     )
-    cls = models_event.QuestionnaireRow.get_class(tmp["role"])
+    cls = models_event.questionnaire.QuestionnaireRow.get_class(tmp["role"])
     return _ALL_TYPED[cls](val, **kwargs)
 
 
@@ -3245,7 +3245,7 @@ def _questionnaire(
     argname: str = "questionnaire",
     *,
     kind: const.QuestionnaireUsages,
-    all_questionnaires: models_event.QuestionnaireContainer,
+    all_questionnaires: models_event.questionnaire.QuestionnaireContainer,
     **kwargs: Any,
 ) -> Questionnaire:
     val = _ALL_TYPED[list[dict[str, Any]]](val, argname, **kwargs)
@@ -3267,7 +3267,7 @@ def _questionnaire(
 
             row["kind"] = kind
             row["pos"] = i
-            row = _ALL_TYPED[models_event.QuestionnaireRow](
+            row = _ALL_TYPED[models_event.questionnaire.QuestionnaireRow](
                 row,
                 available_fields=available_fields,
                 available_magic_roles=available_magic_roles,
@@ -3826,7 +3826,7 @@ def _serialized_event_questionnaire(
     val: Any,
     argname: str = "serialized_event_questionnaire",
     *,
-    all_questionnaires: models_event.QuestionnaireContainer,
+    all_questionnaires: models_event.questionnaire.QuestionnaireContainer,
     extend_questionnaire: bool,
     skip_existing_fields: bool,
     **kwargs: Any,
@@ -3893,9 +3893,11 @@ def _serialized_event_questionnaire(
                     kind=kind,
                     all_questionnaires=all_questionnaires,
                 )
-                all_questionnaires[kind] = models_event.Questionnaire(
+                all_questionnaires[kind] = models_event.questionnaire.Questionnaire(
                     (
-                        models_event.QuestionnaireRow.get_class(row["role"])(
+                        models_event.questionnaire.QuestionnaireRow.get_class(
+                            row["role"]
+                        )(
                             event_id=all_questionnaires.event.id,
                             **{k: v for k, v in row.items() if k != "field_name"},
                         )

@@ -8,7 +8,7 @@ import cdedb.models.event as models
 from cdedb.common import NearlyNow, nearly_now
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query import QueryScope
-from cdedb.models.event import make_default_questionnaire
+from cdedb.models.event.questionnaire import make_default_questionnaire
 from tests.common import BackendTest, as_users
 from tests.other_tests.test_validation import NO_COMPARE, TestValidationBase
 
@@ -968,7 +968,7 @@ class TestEventValidation(BackendTest, TestValidationBase):
 
         # Check that field id is required for FieldRow.
         self.do_validator_test(
-            models.QuestionnaireFieldRow,
+            models.questionnaire.QuestionnaireFieldRow,
             [
                 (
                     {
@@ -984,7 +984,7 @@ class TestEventValidation(BackendTest, TestValidationBase):
         )
         # Check again using QuestionnaireRow, which delegates.
         self.do_validator_test(
-            models.QuestionnaireRow,
+            models.questionnaire.QuestionnaireRow,
             [
                 (
                     {

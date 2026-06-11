@@ -68,7 +68,11 @@ class EventQuestionnaireMixin(EventBaseFrontend):
 
     def _prepare_questionnaire_form(
         self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages
-    ) -> tuple[models.QuestionnaireContainer, models.Questionnaire, str]:
+    ) -> tuple[
+        models.questionnaire.QuestionnaireContainer,
+        models.questionnaire.Questionnaire,
+        str,
+    ]:
         """Helper to retrieve some data for questionnaire configuration."""
         full_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)
         questionnaire = full_questionnaire[kind]
