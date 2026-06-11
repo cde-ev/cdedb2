@@ -785,15 +785,17 @@ def dict_entries_filter(
 def entries_filter(
     entities: Mapping[Any, "CdEDataclass"] | Iterable["CdEDataclass"],
     *args: str,
+    group: str = "",
+    default_group: str = "",
     include: Container[int] | None = None,
-) -> list[tuple[Any, ...]]:
+) -> list[tuple[Any, ...]] | dict[Any, list[tuple[Any, ...]]]:
     """Transform a dict of dataclasses into a list of tuples of specified fields.
 
     Example::
 
         >>> entities = {1: Dataclass(id=1, name=a, active=True),
                         2: Dataclass(id=2, name=b, active=False)}
-        >>> entries_filter(items, 'name', 'active')
+        >>> entries_filter(entities, 'name', 'active')
         [('a', True), ('b', False)]
 
     :param entities: A dict of CdEDataclasses.
@@ -806,11 +808,15 @@ def entries_filter(
     """
     if isinstance(entities, dict):
         entities = entities.values()
-    return [
-        tuple(getattr(entity, key) for key in args)
-        for entity in entities
-        if (include is None or entity.id in include)
-    ]
+    ret = collections.defaultdict(list)
+    for entity in entities:
+        if include is None or entity.id in include:
+            ret[getattr(entity, group, None) or default_group].append(
+                tuple(getattr(entity, key) for key in args)
+            )
+    if len(ret) == 1:
+        return list(ret.values())[0]
+    return ret
 
 
 def hasattr_filter(entity: object, attr: Any) -> bool:
