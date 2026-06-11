@@ -1,34 +1,9 @@
-"""
-event realm tables:
-  - event.events
-  - event.event_fees
-  - event.event_parts
-  - event.part_groups
-  * event.part_group_parts
-  - event.course_tracks
-  - event.track_groups
-  * event.track_group_tracks
-  - event.field_definitions
-  - event.courses
-  * event.course_segments
-  * event.orgas
-  + event.orga_apitokens
-  - event.lodgement_groups
-  - event.lodgements
-  - event.registrations
-  - event.registration_parts
-  - event.registration_tracks
-  * event.course_choices
-  - event.questionnaire_rows
-  + event.stored_queries
-  * event.log
-"""
-
 import abc
 import collections
 import dataclasses
 import datetime
 import decimal
+import enum
 import functools
 import logging
 import sys
@@ -166,6 +141,15 @@ class EventFieldSpec(AbstractMetaData):
             self._accepts_association(event_field.association)
             and self._accepts_kind(event_field.kind)
         )  # fmt: skip
+
+
+class OtherDatabaseTables:
+    orgas = "event.orgas"
+    caretakers = "event.caretakers"
+    checkin_helpers = "event.checkin_helpers"
+    part_group_parts = "event.part_group_parts"
+    track_group_tracks = "event.track_group_tracks"
+    course_choices = "event.course_choices"
 
 
 #
@@ -366,17 +350,17 @@ class Event(EventDataclass, _EventConfigurationMixin, _EventFreetextMixin):
                 {', '.join(cls.database_fields())},
                 array(
                     SELECT persona_id
-                    FROM event.orgas
+                    FROM {OtherDatabaseTables.orgas}
                     WHERE event_id = events.id
                 ) AS orgas,
                 array(
                     SELECT persona_id
-                    FROM event.caretakers
+                    FROM {OtherDatabaseTables.caretakers}
                     WHERE event_id = events.id
                 ) AS caretakers,
                 array(
                     SELECT persona_id
-                    FROM event.checkin_helpers
+                    FROM {OtherDatabaseTables.checkin_helpers}
                     WHERE event_id = events.id
                 ) AS checkin_helpers
             FROM {cls.database_table}
@@ -1001,7 +985,7 @@ class PartGroup(EventDataclass):
                 {', '.join(cls.database_fields())},
                 array(
                     SELECT part_id
-                    FROM event.part_group_parts
+                    FROM {OtherDatabaseTables.part_group_parts}
                     WHERE part_group_id = part_groups.id
                 ) AS part_ids
             FROM
@@ -1058,7 +1042,7 @@ class TrackGroup(EventDataclass):
                 {', '.join(cls.database_fields())},
                 array(
                     SELECT track_id
-                    FROM event.track_group_tracks
+                    FROM {OtherDatabaseTables.track_group_tracks}
                     WHERE track_group_id = track_groups.id
                 ) AS track_ids
             FROM
@@ -1114,47 +1098,80 @@ class SyncTrackGroup(TrackGroup, CourseChoiceObject):  # type: ignore[misc]
 #
 
 
-@dataclasses.dataclass
-class QuestionnaireRow(EventDataclass):
-    database_table = "event.questionnaire_rows"
+class QuestionnaireFrequency(enum.Enum):
+    disallowed = enum.auto()
+    optional = enum.auto()
+    mandatory = enum.auto()
 
+    def allows(self, num: int = 1) -> bool:
+        if self == self.disallowed:
+            return num == 0
+        if self == self.mandatory:
+            return num > 0
+        return True
+
+
+@dataclasses.dataclass
+class QuestionnaireRow(EventDataclass, abc.ABC):
     id: vtypes.ID = dataclasses.field(
+        init=False,
+        default=vtypes.ID(-1),
         compare=False,
         repr=False,
-        metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict,
+        metadata=(
+            Meta.input_exclude | Meta.database_exclude | Meta.asdict_exclude
+        ).as_dict,
     )
-
     event_id: vtypes.ID = dataclasses.field(
         metadata=(Meta.request_exclude | Meta.asdict_exclude).as_dict,
     )
-    field_id: vtypes.ID | None
-    field: RegistrationField | None = dataclasses.field(
-        init=False, default=None, metadata=(Meta.exclude | Meta.asdict_exclude).as_dict
-    )
-    pos: int
-    title: str | None
-    info: str | None
-    readonly: bool
-    default_value: Any  # TODO: ByDatafieldKind maybe some union?
     kind: const.QuestionnaireUsages
+    pos: int
+
+    role: const.QuestionnaireRowMagicRole
+    _role: ClassVar[const.QuestionnaireRowMagicRole]
+    _frequency: ClassVar[
+        QuestionnaireFrequency | dict[const.QuestionnaireUsages, QuestionnaireFrequency]
+    ]
+    static: ClassVar[bool] = False
+
+    @property
+    def name(self) -> str:
+        return self.__class__.__qualname__
 
     @classmethod
-    def from_database(cls, data: "CdEDBObject") -> "Self":
-        event: Event = data.pop("event")
-        ret = super().from_database(data)
-        if ret.field_id:
-            ret.field = event.registration_fields[ret.field_id]
-            # Deserialize the stored string into the datatype of the field if able.
-            ret.default_value = cast_field_value(ret.default_value, ret.field.kind)
-            # Special case for datetimes: Convert them to the default timezone so
-            #  they can be submitted again even without the timezone.
-            #  This is required for use with 'datetime-local' inputs.
-            if ret.field.kind == const.FieldDatatypes.datetime:
-                if ret.default_value:
-                    ret.default_value = ret.default_value.astimezone(
-                        CONF["DEFAULT_TIMEZONE"]
-                    )
-        return ret
+    def allowed_frequency(
+        cls, kind: const.QuestionnaireUsages
+    ) -> QuestionnaireFrequency:
+        if isinstance(cls._frequency, QuestionnaireFrequency):
+            return cls._frequency
+        return cls._frequency.get(kind, QuestionnaireFrequency.disallowed)
+
+    @classmethod
+    @abc.abstractmethod
+    def get_drow_html_classes(cls) -> list[str]: ...
+
+    @classmethod
+    @abc.abstractmethod
+    def get_icon(cls) -> str: ...
+
+    @staticmethod
+    def get_class(
+        role: const.QuestionnaireRowMagicRole,
+    ) -> type["QuestionnaireRow"]:
+        for cls in (
+            QuestionnaireRow.__subclasses__() + QuestionnaireMagicRow.__subclasses__()
+        ):
+            if cls is QuestionnaireMagicRow:
+                continue
+            if cls._role == role:
+                return cls
+        raise KeyError
+
+    @classmethod
+    def from_database(cls, data: CdEDBObject) -> "QuestionnaireRow":
+        role = const.QuestionnaireRowMagicRole(data["role"])
+        return cls.get_class(role).from_database(data)
 
     def get_sortkey(self) -> Sortkey:
         return (
@@ -1174,29 +1191,215 @@ class QuestionnaireRow(EventDataclass):
         optional["field_name"] = vtypes.RestrictiveIdentifier | None
         return mandatory, optional
 
+    def __lt__(self, other: Any) -> bool:
+        if not isinstance(other, QuestionnaireRow):
+            return NotImplemented
+        return self._lt_inner(other)
+
+
+@dataclasses.dataclass
+class QuestionnaireTextRow(QuestionnaireRow):
+    database_table = "event.questionnaire_text_rows"
+    _role = const.QuestionnaireRowMagicRole.text_only
+    _frequency = QuestionnaireFrequency.optional
+    static = True
+
+    title: str | None
+    text: str | None
+
+    @classmethod
+    def get_icon(cls) -> str:
+        return "align-left"
+
+    @classmethod
+    def from_database(cls, data: CdEDBObject) -> "Self":
+        return super(QuestionnaireRow, cls).from_database(data)
+
+    @classmethod
+    def get_drow_html_classes(cls) -> list[str]:
+        return ["shaded-info"]
+
+
+@dataclasses.dataclass
+class QuestionnaireFieldRow(QuestionnaireRow):
+    database_table = "event.questionnaire_field_rows"
+    _role = const.QuestionnaireRowMagicRole.event_field
+    _frequency = QuestionnaireFrequency.optional
+    static = True
+
+    field_id: vtypes.ID
+    field: EventField = dataclasses.field(
+        init=False,
+        default=cast(EventField, None),
+        repr=False,
+        compare=False,
+        metadata=(Meta.exclude | Meta.asdict_exclude).as_dict,
+    )
+    label: str | None
+    info: str | None
+
+    readonly: bool = False
+    default_value: Any = None  # TODO: ByDatafieldKind maybe some union?
+
+    @classmethod
+    def get_icon(cls) -> str:
+        return "pen-to-square"
+
+    def get_label(self) -> str:
+        return self.label or self.field.title
+
+    @classmethod
+    def from_database(cls, data: "CdEDBObject") -> "Self":
+        event: Event = data.pop("event")
+        ret = super(QuestionnaireRow, cls).from_database(data)
+        ret.field = event.fields[ret.field_id]
+
+        # Deserialize the stored string into the datatype of the field if able.
+        ret.default_value = cast_field_value(ret.default_value, ret.field.kind)
+        # Special case for datetimes: Convert them to the default timezone so
+        #  they can be submitted again even without the timezone.
+        #  This is required for use with 'datetime-local' inputs.
+        if ret.field.kind == const.FieldDatatypes.datetime:
+            if ret.default_value:
+                ret.default_value = ret.default_value.astimezone(
+                    CONF["DEFAULT_TIMEZONE"]
+                )
+
+        return ret
+
+    @classmethod
+    def get_drow_html_classes(cls) -> list[str]:
+        return []
+
+
+@dataclasses.dataclass
+class QuestionnaireMagicRow(QuestionnaireRow):
+    database_table = "event.questionnaire_magic_rows"
+
+    @classmethod
+    def get_icon(cls) -> str:
+        return "wand-magic-sparkles"
+
+    @classmethod
+    def from_database(cls, data: "CdEDBObject") -> "QuestionnaireMagicRow":
+        role = const.QuestionnaireRowMagicRole(data["role"])
+        return cast(
+            QuestionnaireMagicRow,
+            super(QuestionnaireRow, role.get_class()).from_database(data),
+        )
+
+    @classmethod
+    def get_drow_html_classes(cls) -> list[str]:
+        return ["shaded-magic"]
+
+
+@dataclasses.dataclass
+class CourseChoices(QuestionnaireMagicRow):
+    _role = const.QuestionnaireRowMagicRole.course_choices
+    _frequency = {
+        const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory
+    }
+
+    @classmethod
+    def get_icon(cls) -> str:
+        return "book"
+
+
+@dataclasses.dataclass
+class FeePreview(QuestionnaireMagicRow):
+    _role = const.QuestionnaireRowMagicRole.fee_preview
+    _frequency = {
+        const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory,
+    }
+    static = True
+
+    @classmethod
+    def get_icon(cls) -> str:
+        return "coins"
+
+
+@dataclasses.dataclass
+class ListConsent(QuestionnaireMagicRow):
+    _role = const.QuestionnaireRowMagicRole.list_consent
+    _frequency = {
+        const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory,
+    }
+
+    @classmethod
+    def get_icon(cls) -> str:
+        return "address-card"
+
+
+@dataclasses.dataclass
+class MixedLodging(QuestionnaireMagicRow):
+    _role = const.QuestionnaireRowMagicRole.mixed_lodging
+    _frequency = {
+        const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory,
+    }
+
+    @classmethod
+    def get_icon(cls) -> str:
+        return "venus-mars"
+
+
+@dataclasses.dataclass
+class FotoNotice(QuestionnaireMagicRow):
+    _role = const.QuestionnaireRowMagicRole.foto_notice
+    _frequency = {
+        const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory,
+    }
+    static = True
+
+    @classmethod
+    def get_icon(cls) -> str:
+        return "images"
+
+
+@dataclasses.dataclass
+class RegistrationNotes(QuestionnaireMagicRow):
+    _role = const.QuestionnaireRowMagicRole.registration_notes
+    _frequency = {
+        const.QuestionnaireUsages.registration: QuestionnaireFrequency.optional,
+    }
+
 
 class Questionnaire(list[QuestionnaireRow]):
+    kind: const.QuestionnaireUsages
+
+    def __init__(self, *args: Any, kind: const.QuestionnaireUsages) -> None:
+        super().__init__(*args)
+        self.kind = kind
+
     def as_dicts(self) -> list[CdEDBObject]:
         return [row.as_dict() for row in self]
 
-    def get_field_ids(self) -> set[int]:
-        return {row.field_id for row in self if row.field_id is not None}
+    @functools.cached_property
+    def field_rows(self) -> list[QuestionnaireFieldRow]:
+        return [row for row in self if isinstance(row, QuestionnaireFieldRow)]
 
-    @classmethod
-    def allows(
-        cls, kind: const.QuestionnaireUsages, field: EventField, has_fees: bool
-    ) -> bool:
+    def get_field_ids(self) -> set[int]:
+        return {row.field_id for row in self if isinstance(row, QuestionnaireFieldRow)}
+
+    def allows_field(self, field: EventField, has_fees: bool) -> bool:
         """
-        Determines whether the given field is allowed for the given questionnaire kind.
+        Determines whether the given field is allowed for this questionnaire kind.
 
         :param has_fees: True if the given field is used in a conditional fee, which
             is incompatible with some questionnaire kinds.
         """
         if not field.association == const.FieldAssociations.registration:
             return False
-        if not kind.allow_fee_condition() and has_fees:
+        if not self.kind.allow_fee_condition() and has_fees:
             return False
         return True
+
+    def get_role_counts(self) -> collections.Counter[const.QuestionnaireRowMagicRole]:
+        return collections.Counter(row.role for row in self)
+
+    def allows_magic_role(self, magic_role: const.QuestionnaireRowMagicRole) -> bool:
+        magic_role_class = magic_role.get_class()
+        frequency = magic_role_class.allowed_frequency(self.kind)
+        return frequency.allows()
 
 
 class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
@@ -1204,18 +1407,16 @@ class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
 
     @classmethod
     def from_database(cls, data: Collection["CdEDBObject"], event: Event) -> "Self":
-        rows: dict[const.QuestionnaireUsages, Questionnaire] = collections.defaultdict(
-            Questionnaire
-        )
-        for row in QuestionnaireRow.many_from_database(data).values():
-            rows[row.kind].append(row)
-        ret = cls(rows)
+        ret = cls()
         ret.event = event
+        for row in QuestionnaireRow.many_from_database_list(data):
+            ret[row.kind].append(row)
         return ret
 
-    def __missing__(self, key: const.QuestionnaireUsages) -> Questionnaire:
-        """Allows accessing empty kinds, which are not initialized in this dict."""
-        return Questionnaire()
+    def __missing__(self, kind: const.QuestionnaireUsages) -> Questionnaire:
+        """Ensures that all kinds can be accessed, even if they are empty."""
+        self[kind] = Questionnaire(kind=kind)
+        return self[kind]
 
     def as_dict(
         self, full: bool = False
@@ -1243,11 +1444,49 @@ class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
         return {
             field.id: field
             for field in self.event.fields.values()
-            if Questionnaire.allows(
-                kind=kind, field=field, has_fees=bool(fees_by_field[field.id])
+            if self[kind].allows_field(
+                field=field, has_fees=bool(fees_by_field[field.id])
             )
             and field_usage.get(field.id, kind) == kind
         }
+
+    def get_available_magic_roles(
+        self, kind: const.QuestionnaireUsages
+    ) -> list[const.QuestionnaireRowMagicRole]:
+        """Return all builtins available for use in a questionnaire of the given kind."""
+        return [
+            magic_role
+            for magic_role in const.QuestionnaireRowMagicRole
+            if self[kind].allows_magic_role(magic_role)
+        ]
+
+
+def make_default_questionnaire(
+    event: Event,
+) -> dict[const.QuestionnaireUsages, list[CdEDBObject]]:
+    reg_quest: list[const.QuestionnaireRowMagicRole | str] = [
+        const.QuestionnaireRowMagicRole.fee_preview,
+    ]
+    if event.tracks:
+        reg_quest.append("Kurswahlen")
+    reg_quest.extend([
+        const.QuestionnaireRowMagicRole.course_choices,
+        "Weitere Angaben",
+        const.QuestionnaireRowMagicRole.list_consent,
+        const.QuestionnaireRowMagicRole.mixed_lodging,
+        const.QuestionnaireRowMagicRole.foto_notice,
+        const.QuestionnaireRowMagicRole.registration_notes,
+        const.QuestionnaireRowMagicRole.fee_preview,
+    ])
+
+    return {
+        const.QuestionnaireUsages.registration: [
+            {"role": const.QuestionnaireRowMagicRole.text_only, "title": x}
+            if isinstance(x, str)
+            else {"role": x}
+            for x in reg_quest
+        ],
+    }
 
 
 @dataclasses.dataclass
@@ -1390,9 +1629,9 @@ class CourseSegment(EventDataclass):
         return ret
 
 
-@dataclasses.dataclass
-class CourseInstructors:
-    database_table = "event.course_instructors"
+# @dataclasses.dataclass
+# class CourseInstructors:
+#     database_table = "event.course_instructors"
 
 
 #

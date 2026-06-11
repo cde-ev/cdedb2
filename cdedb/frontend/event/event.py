@@ -1647,7 +1647,7 @@ class EventEventMixin(EventBaseFrontend):
             {
                 'kind': const.EventFeeType.external,
                 'title': "Externenzusatzbeitrag",
-                'notes': "Automatisch erstellt",
+                'notes': "Automatisch erstellt.",
                 'amount': nonmember_surcharge,
                 'condition': "any_part and not is_member and not age.U12",
             },
@@ -1698,6 +1698,9 @@ class EventEventMixin(EventBaseFrontend):
             event = self.eventproxy.get_event(rs, new_id)
             for fee_ in fee_data:
                 self.eventproxy.create_event_fee(rs, new_id, fee_)
+
+            for kind, qst in models.make_default_questionnaire(event).items():
+                self.eventproxy.set_questionnaire(rs, event.id, kind, qst)
 
             if create_orga_list:
                 orga_ml_data = self._get_mailinglist_setter(rs, event, orgalist=True)
@@ -1823,7 +1826,7 @@ class EventEventMixin(EventBaseFrontend):
         # Lock all questionnaire entries
         aq = const.QuestionnaireUsages.additional
         questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[aq]
-        for entry in questionnaire:
+        for entry in questionnaire.field_rows:
             entry.readonly = True
         self.eventproxy.set_questionnaire(rs, event_id, aq, questionnaire.as_dicts())
 
@@ -1868,9 +1871,9 @@ class EventEventMixin(EventBaseFrontend):
         cascade = {
             "registrations", "courses", "lodgement_groups", "lodgements",
             "field_definitions", "course_tracks", "event_parts", "event_fees",
-            "orgas", "caretakers", "checkin_helpers", "questionnaire",
-            "stored_queries", "log", "mailinglists", "part_groups", "orga_tokens",
-            "custom_query_filters",
+            "orgas", "caretakers", "checkin_helpers", "questionnaire_text_rows",
+            "questionnaire_field_rows", "questionnaire_magic_rows", "stored_queries",
+            "log", "mailinglists", "part_groups", "orga_tokens", "custom_query_filters",
         }  # fmt: skip
 
         code = self.eventproxy.delete_event(rs, event_id, cascade & blockers.keys())

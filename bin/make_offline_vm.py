@@ -15,9 +15,11 @@ import subprocess
 import sys
 from typing import Collection
 
+from cdedb.common.query.log_filter import EventLogFilter
 from psycopg2.extras import Json, RealDictCursor
 
 import cdedb.models.event as models
+import cdedb.models.core as models_core
 from cdedb.cli.__main__ import apply_sample_data, populate_event_keeper_cmd
 from cdedb.cli.storage import populate_event_keeper
 from cdedb.cli.util import switch_user
@@ -265,31 +267,24 @@ def work(
 
     # Order matters here:
     tables = (
-        'core.personas',
-        'event.events',
-        'event.event_parts',
-        models.PartGroup.database_table,
-        'event.part_group_parts',
-        'event.courses',
-        'event.course_tracks',
-        'event.course_segments',
-        'event.orgas',
-        'event.field_definitions',
-        'event.event_fees',
-        'event.lodgement_groups',
-        'event.lodgements',
-        'event.registrations',
-        models.CheckinPeriod.database_table,
-        'event.registration_parts',
-        'event.registration_tracks',
-        'event.course_choices',
-        'event.questionnaire_rows',
-        'event.log',
-        'event.stored_queries',
-        models.TrackGroup.database_table,
-        'event.track_group_tracks',
-        models.PersonalizedFee.database_table,
+        models_core.Persona.database_table,
+        # Gather all tables in order of class definition.
+        # Use a dict to remove duplicates while preserving order.
+        *{
+            cls.database_table: None
+            for name, cls in vars(models).items()
+            if not name.startswith("__")
+                and isinstance(cls, type)
+                and issubclass(cls, models.EventDataclass)
+                and hasattr(cls, "database_table")
+        }.keys(),
+        *(
+            member
+            for name, member in vars(models.OtherDatabaseTables).items()
+            if not name.startswith("__")
+        ),
         OrgaToken.database_table,
+        EventLogFilter.log_table,
     )
 
     print("Connect to database")

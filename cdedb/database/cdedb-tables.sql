@@ -1364,23 +1364,62 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON event.personalized_fees TO cdb_persona;
 GRANT SELECT, UPDATE ON event.personalized_fees_id_seq TO cdb_persona;
 GRANT SELECT ON event.personalized_fees TO cdb_anonymous;
 
-CREATE TABLE event.questionnaire_rows (
+CREATE TABLE event.questionnaire_text_rows (
         id                      bigserial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
-        -- This is NULL for text-only entries.
-        field_id                integer REFERENCES event.field_definitions(id),
+        -- The specific questionnaire variant where this row will be used. See cdedb.constants.QuestionnaireUsages.
+        kind                    integer NOT NULL,
+        -- The position at which this element is shown in the questionnaire.
         pos                     integer NOT NULL,
+        -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowMagicRole.
+        -- For entries in this table this will always be 'text_only'.
+        role                    integer NOT NULL,
+        -- A customized heading for this element.
         title                   varchar,
-        info                    varchar,
-        -- This must be NULL exactly for text-only entries.
-        readonly                boolean NOT NULL,
-        default_value           varchar,
-        -- Where the row will be used (registration, questionnaire). See cdedb.constants.QuestionnaireUsages.
-        kind                    integer NOT NULL
+        -- Additional formatted text that is displayed below the heading if any.
+        text                    varchar
 );
-CREATE INDEX questionnaire_rows_event_id_idx ON event.questionnaire_rows(event_id);
-GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_rows TO cdb_persona;
-GRANT SELECT, UPDATE ON event.questionnaire_rows_id_seq TO cdb_persona;
+CREATE INDEX questionnaire_text_rows_event_id_kind_idx ON event.questionnaire_text_rows(event_id, kind);
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_text_rows TO cdb_persona;
+GRANT SELECT, UPDATE ON event.questionnaire_text_rows_id_seq TO cdb_persona;
+
+CREATE TABLE event.questionnaire_field_rows (
+        id                      bigserial PRIMARY KEY,
+        event_id                integer NOT NULL REFERENCES event.events(id),
+        -- The specific questionnaire variant where this row will be used. See cdedb.constants.QuestionnaireUsages.
+        kind                    integer NOT NULL,
+        -- The position at which this element is shown in the questionnaire.
+        pos                     integer NOT NULL,
+        -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowMagicRole.
+        -- For entries in this table this will always be 'event_field'.
+        role                    integer NOT NULL,
+        -- A customized label for this element.
+        label                   varchar,
+        -- Additional information that is displayed below the field input.
+        info                    varchar,
+        field_id                integer REFERENCES event.field_definitions(id),
+        -- If set, the value for the linked field can no longer be changed.
+        readonly                boolean NOT NULL DEFAULT FALSE,
+        -- If set, a value that is prefilled into the form if there is no stored value.
+        default_value           varchar
+);
+CREATE INDEX questionnaire_field_rows_event_id_kind_idx ON event.questionnaire_field_rows(event_id, kind);
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_field_rows TO cdb_persona;
+GRANT SELECT, UPDATE ON event.questionnaire_field_rows_id_seq TO cdb_persona;
+
+CREATE TABLE event.questionnaire_magic_rows (
+        id                      bigserial PRIMARY KEY,
+        event_id                integer NOT NULL REFERENCES event.events(id),
+        -- The specific questionnaire variant where this row will be used. See cdedb.constants.QuestionnaireUsages.
+        kind                    integer NOT NULL,
+        -- The position at which this element is shown in the questionnaire.
+        pos                     integer NOT NULL,
+        -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowMagicRole.
+        role                    integer NOT NULL
+);
+CREATE INDEX questionnaire_magic_rows_event_id_kind_idx ON event.questionnaire_magic_rows(event_id, kind);
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_magic_rows TO cdb_persona;
+GRANT SELECT, UPDATE ON event.questionnaire_magic_rows_id_seq TO cdb_persona;
 
 CREATE TABLE event.stored_queries (
         id                      bigserial PRIMARY KEY,

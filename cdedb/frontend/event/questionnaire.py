@@ -6,6 +6,9 @@ for configuring and filling in the different kinds of questionnaires offered for
 event.
 """
 
+import abc
+from typing import TYPE_CHECKING
+
 import werkzeug.exceptions
 from werkzeug import Response
 
@@ -13,6 +16,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
+    CdEDBObject,
     DefaultReturnCode,
     RequestState,
     get_hash,
@@ -22,14 +26,21 @@ from cdedb.common import (
 )
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import EventPrivileges, is_event_access_limited
+from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.frontend.common import (
     REQUESTdata,
     access,
     check_validation as check,
-    process_dynamic_input,
+    drow_create,
+    drow_delete,
+    drow_last_index,
+    drow_name,
     request_extractor,
 )
 from cdedb.frontend.event.base import EventBaseFrontend, event_guard
+
+if TYPE_CHECKING:
+    from cdedb.frontend.event.registration import RegisterParams
 
 
 class EventQuestionnaireMixin(EventBaseFrontend):
@@ -78,13 +89,30 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         full_questionnaire, questionnaire, checksum = self._prepare_questionnaire_form(
             rs, event_id, kind
         )
+        spec_per_role = {
+            role: dict(role.get_class().requestdict_fields(creation=True))
+            for role in const.QuestionnaireRowMagicRole
+        }
+        get_roles_with_field = lambda key: [
+            role for role, spec in spec_per_role.items() if key in spec
+        ]
+        drow_classes_by_role = {
+            str(kind): kind.get_class().get_drow_html_classes()
+            for kind in const.QuestionnaireRowMagicRole
+        }
         return self.render(
             rs,
             "questionnaire/configure_questionnaire",
             {
                 "questionnaire": questionnaire,
                 "checksum": checksum,
-                "registration_fields": full_questionnaire.get_available_fields(kind),
+                "available_fields": full_questionnaire.get_available_fields(kind),
+                "available_magic_roles": full_questionnaire.get_available_magic_roles(
+                    kind
+                ),
+                "drow_classes_by_role": drow_classes_by_role,
+                "all_drow_classes": set().union(*drow_classes_by_role.values()),
+                "get_roles_with_field": get_roles_with_field,
                 "kind": kind,
             },
         )
@@ -121,6 +149,28 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/configure_additional_questionnaire_form")
 
+    def _extract_questionnaire_row(
+        self, rs: RequestState, drow_id: int
+    ) -> CdEDBObject | None:
+        if unwrap(request_extractor(rs, {drow_delete(drow_id): bool})):
+            return None
+        role: const.QuestionnaireRowMagicRole | None = unwrap(
+            request_extractor(
+                rs, {drow_name("role", drow_id): const.QuestionnaireRowMagicRole | None}
+            )
+        )
+        if not role:
+            return None
+        cls = role.get_class()
+        spec = cls.requestdict_fields(creation=True)
+        data = request_extractor(
+            rs,
+            {drow_name(key, drow_id): val for key, val in spec},  # type: ignore[misc]
+            postpone_validation=True,
+        )
+        # Pass 'drow_id' as 'id' to correctly map validation errors.
+        return {key: data[drow_name(key, drow_id)] for key, _ in spec} | {"id": drow_id}
+
     def _set_questionnaire(
         self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages
     ) -> DefaultReturnCode:
@@ -130,20 +180,33 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             self._prepare_questionnaire_form(rs, event_id, kind)
         )
 
-        new_questionnaire = process_dynamic_input(
-            rs,
-            models.QuestionnaireRow,
-            existing=list(range(len(questionnaire))),
-            spec=dict(models.QuestionnaireRow.requestdict_fields(creation=False)),
-            creation_spec=dict(
-                models.QuestionnaireRow.requestdict_fields(creation=True)
-            ),
-            skip_validation=True,
-        )
+        new_questionnaire = []
+        marker = 0
+        while True:
+            if unwrap(request_extractor(rs, {drow_name("role", marker): bool})):
+                if row := self._extract_questionnaire_row(rs, marker):
+                    new_questionnaire.append(row)
+            elif marker >= len(questionnaire):
+                break
+            marker += 1
+
+        marker = 1
+        while marker < 2**10:
+            if unwrap(request_extractor(rs, {drow_create(-marker): bool})):
+                if row := self._extract_questionnaire_row(rs, -marker):
+                    new_questionnaire.append(row)
+                marker += 1
+            else:
+                break
+        rs.values[drow_last_index()] = marker - 1
+
+        tmp = {int(row["pos"]): row for row in new_questionnaire}
+        new_questionnaire = [tmp[pos] for pos in mixed_existence_sorter(tmp)]
+
         new_questionnaire = check(
             rs,
             vtypes.Questionnaire,
-            list(filter(None, new_questionnaire.values())),
+            new_questionnaire,
             kind=kind,
             all_questionnaires=all_questionnaires,
         )
@@ -162,6 +225,9 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             return -1
 
         return self.eventproxy.set_questionnaire(rs, event_id, kind, new_questionnaire)
+
+    @abc.abstractmethod
+    def get_register_params(self, rs: RequestState) -> "RegisterParams": ...
 
     @access("event")
     @REQUESTdata("preview")
@@ -183,6 +249,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             const.QuestionnaireUsages.additional
         ]
         wish_data = None
+        reg_params = self.get_register_params(rs)
         if not preview:
             registration_id = self.eventproxy.list_registrations(
                 rs, event_id, persona_id=rs.user.persona_id
@@ -216,6 +283,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
                 'add_questionnaire': add_questionnaire,
                 'preview': preview,
                 'lodgement_wishes': wish_data or {},
+                **reg_params,
             },
         )
 

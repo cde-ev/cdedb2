@@ -510,6 +510,7 @@ def _examine_dictionary_fields(
     *,
     argname: str = "",
     allow_superfluous: bool = False,
+    pass_superfluous: bool = False,
     **kwargs: Any,
 ) -> dict[str, Any]:
     """Check more complex dictionaries.
@@ -523,6 +524,7 @@ def _examine_dictionary_fields(
         This is useful, if you want to examine multiple dicts and tell the errors apart.
     :param allow_superfluous: If ``False`` keys which are neither in
       :py:obj:`mandatory_fields` nor in :py:obj:`optional_fields` are errors.
+    :params pass_superfluous: If True, superfluous key are returned as is.
     """
     optional_fields = optional_fields or {}
     errs = ValidationSummary()
@@ -550,6 +552,8 @@ def _examine_dictionary_fields(
                 raise
         elif not allow_superfluous:
             errs.append(KeyError(sub_argname, n_("Superfluous key found.")))
+        elif pass_superfluous:
+            retval[key] = value
 
     missing_mandatory = set(mandatory_fields).difference(adict)
     if missing_mandatory:
@@ -697,6 +701,8 @@ def _partial_import_id(
     val: Any, argname: Optional[str] = None, **kwargs: Any
 ) -> PartialImportID:
     """A numeric id or a negative int as a placeholder."""
+    if val is None or isinstance(val, str) and not val:
+        raise ValidationSummary(ValueError(argname, n_("Must not be empty.")))
     val = _int(val, argname, **kwargs)
     if val == 0:
         raise ValidationSummary(ValueError(argname, n_("Must not be zero.")))
@@ -3118,8 +3124,15 @@ def _by_field_datatype(
     return ByFieldDatatype(val)
 
 
-@_create_dataclass_validator(models_event.QuestionnaireRow)
-def _questionnaire_row(
+@_create_dataclass_validator(models_event.QuestionnaireTextRow)
+def _questionnaire_text_row(
+    val: CdEDBObject, argname: str = "", **kwargs: Any
+) -> CdEDBObject:
+    return val
+
+
+@_create_dataclass_validator(models_event.QuestionnaireFieldRow)
+def _questionnaire_field_row(
     val: CdEDBObject,
     argname: str = "",
     *,
@@ -3150,7 +3163,7 @@ def _questionnaire_row(
     if field_id := val.get("field_id"):
         if not (field := available_fields.get(field_id)):
             errs.append(KeyError('field_id', n_("Invalid field.")))
-        if val['default_value'] and field:
+        if val.get('default_value') and field:
             val['default_value'] = _by_field_datatype(
                 val['default_value'],
                 "default_value",
@@ -3158,11 +3171,13 @@ def _questionnaire_row(
                 **kwargs,
             )
             # TODO: check field entries.
-    # remove default value without a linked field
-    elif val['default_value']:
-        val['default_value'] = None
+    else:
+        errs.append(ValueError("field_id", "Must not be empty."))
+        # remove default value without a linked field
+        if val.get('default_value'):
+            val['default_value'] = None
 
-    if val['readonly'] and val['field_id'] is not None and not kind.allow_readonly():
+    if val.get('readonly') and not kind.allow_readonly():
         # TODO: more generic error message?
         msg = n_("Registration questionnaire rows may not be readonly.")
         errs.append(ValueError('readonly', msg))
@@ -3171,6 +3186,57 @@ def _questionnaire_row(
         raise errs
 
     return val
+
+
+@_create_dataclass_validator(
+    models_event.CourseChoices,
+    models_event.FeePreview,
+    models_event.ListConsent,
+    models_event.MixedLodging,
+    models_event.FotoNotice,
+    models_event.RegistrationNotes,
+)
+def _questionnaire_magic_row(
+    val: CdEDBObject,
+    argname: str = "",
+    *,
+    available_magic_roles: set[const.QuestionnaireRowMagicRole],
+    **kwargs: Any,
+) -> CdEDBObject:
+
+    errs = ValidationSummary()
+    role: const.QuestionnaireRowMagicRole = val["role"]
+
+    if role not in available_magic_roles:
+        errs.append(KeyError("role", n_("Invalid magic role.")))
+
+    if errs:
+        raise errs
+
+    return val
+
+
+@_create_dataclass_validator(
+    models_event.QuestionnaireRow,  # type: ignore[type-abstract]
+    allow_superfluous=True,
+    pass_superfluous=True,
+)
+def _questionnaire_row(
+    val: CdEDBObject,
+    argname: str = "",
+    *,
+    allow_superfluous: bool,
+    pass_superfluous: bool,
+    **kwargs: Any,
+) -> CdEDBObject:
+    tmp = _examine_dictionary_fields(
+        val,
+        {"role": const.QuestionnaireRowMagicRole},
+        allow_superfluous=True,
+        **kwargs,
+    )
+    cls = models_event.QuestionnaireRow.get_class(tmp["role"])
+    return _ALL_TYPED[cls](val, **kwargs)
 
 
 @_add_typed_validator
@@ -3182,31 +3248,72 @@ def _questionnaire(
     all_questionnaires: models_event.QuestionnaireContainer,
     **kwargs: Any,
 ) -> Questionnaire:
-    val = _iterable(val, argname, **kwargs)
+    val = _ALL_TYPED[list[dict[str, Any]]](val, argname, **kwargs)
+
+    event = all_questionnaires.event
     available_fields = all_questionnaires.get_available_fields(kind)
+    available_magic_roles = all_questionnaires.get_available_magic_roles(kind)
+
+    # Map list position to "id" to display errors at the correct place in the frontend.
+    pos_to_id = {}
 
     errs = ValidationSummary()
     ret: list[CdEDBObject] = []
     for i, row in enumerate(val):
-        row["kind"] = kind
-        row["pos"] = i
-        with errs.modify_argname(suffix=f"_{i}"):
+        with errs.modify_argname(suffix=f"_{row.get('id', i)}"):
+            # See 'pos_to_id' above.
+            if "id" in row:
+                pos_to_id[i] = row.pop("id")
+
+            row["kind"] = kind
+            row["pos"] = i
             row = _ALL_TYPED[models_event.QuestionnaireRow](
                 row,
                 available_fields=available_fields,
+                available_magic_roles=available_magic_roles,
             )
             ret.append(row)
 
     for e1, e2 in itertools.combinations(ret, 2):
         if e1.get('field_id') is not None and e1.get('field_id') == e2.get('field_id'):
-            field = all_questionnaires.event.fields[e1['field_id']]
+            msg = n_("Must not duplicate field: '%(field_name)s'")
+            params = {'field_name': event.fields[e1['field_id']].field_name}
+            errs.extend([
+                ValueError(
+                    f'field_id_{pos_to_id.get(e1["pos"], e1["pos"])}', msg, params
+                ),
+                ValueError(
+                    f'field_id_{pos_to_id.get(e2["pos"], e2["pos"])}', msg, params
+                ),
+            ])
+
+    magic_role_counts = collections.Counter(row["role"] for row in ret if "role" in row)
+
+    for magic_role in const.QuestionnaireRowMagicRole:
+        count = magic_role_counts[magic_role]
+        role_class = magic_role.get_class()
+        allowed_frequency = role_class.allowed_frequency(kind)
+        if count == 0 and not allowed_frequency.allows(count):
+            # count > 0 already checked.
             errs.append(
                 ValueError(
-                    'field_id',
-                    n_("Must not duplicate field ('%(field_name)s')."),
-                    {'field_name': field.field_name},
-                )
+                    argname,
+                    n_("Missing role: '%(magic_role)s'."),
+                    {"magic_role": role_class.__name__},
+                ),
             )
+        if count > 1 and not role_class.static:
+            for pos, row in enumerate(ret):
+                if row["role"] == magic_role:
+                    # If we have ids, adjust the error argname.
+                    idx = pos_to_id.get(pos, pos)
+                    errs.append(
+                        ValueError(
+                            f"role_{idx}",
+                            n_("Must not duplicate this role: '%(magic_role)s'."),
+                            {"magic_role": role_class.__name__},
+                        ),
+                    )
 
     if errs:
         raise errs
@@ -3787,13 +3894,18 @@ def _serialized_event_questionnaire(
                     all_questionnaires=all_questionnaires,
                 )
                 all_questionnaires[kind] = models_event.Questionnaire(
-                    models_event.QuestionnaireRow(
-                        id=ID(-1),
-                        event_id=all_questionnaires.event.id,
-                        **{k: v for k, v in row.items() if k != "field_name"},
-                    )
-                    for row in new_questionnaires[kind]
+                    (
+                        models_event.QuestionnaireRow.get_class(row["role"])(
+                            event_id=all_questionnaires.event.id,
+                            **{k: v for k, v in row.items() if k != "field_name"},
+                        )
+                        for row in new_questionnaires[kind]
+                    ),
+                    kind=kind,
                 )
+        for kind, existing in all_questionnaires.items():
+            if kind not in new_questionnaires:
+                new_questionnaires[kind] = existing.as_dicts()
         val['questionnaire'] = new_questionnaires
     else:
         val['questionnaire'] = {}
@@ -4856,7 +4968,7 @@ def _enum_validator_maker(
       name is inferred from the name of the enum.
     :param internal: If True the validator is not added to the module.
     """
-    error_msg = n_("Invalid input for the enumeration %(enum)s")
+    error_msg = n_("Invalid input for the enumeration '%(enum)s'.")
 
     def the_validator(val: Any, argname: Optional[str] = None, **kwargs: Any) -> E:
         if isinstance(val, anenum):
@@ -4883,7 +4995,7 @@ def _enum_validator_maker(
             return anenum(val)
         except (ValidationSummary, ValueError) as e:
             raise ValidationSummary(
-                ValueError(argname, error_msg, {'enum': anenum})
+                ValueError(argname, error_msg, {'enum': anenum.__name__})
             ) from e
 
     the_validator.__name__ = name or f"_enum_{anenum.__name__.lower()}"

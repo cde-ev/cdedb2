@@ -41,6 +41,7 @@ from cdedb.models.core import GenesisCaseEvent
 T = TypeVar('T')
 
 INVAL = object()
+NO_COMPARE = object()
 
 
 class TestValidationBase(unittest.TestCase):
@@ -68,29 +69,35 @@ class TestValidationBase(unittest.TestCase):
                 if retval is INVAL:
                     retval = inval
                 if not exception:
-                    self.assertEqual(
-                        validate.validate_check(
-                            type_, inval, ignore_warnings, **extraparams
-                        ),
-                        (retval, []),
+                    if retval is not NO_COMPARE:
+                        self.assertEqual(
+                            (retval, []),
+                            validate.validate_check(
+                                type_, inval, ignore_warnings, **extraparams
+                            ),
+                        )
+                    validated_inval = validate.validate_assert(
+                        type_, inval, ignore_warnings, **extraparams
                     )
-                    self.assertEqual(
-                        validate.validate_assert(
-                            type_, inval, ignore_warnings, **extraparams
-                        ),
-                        retval,
-                    )
+                    if retval is not NO_COMPARE:
+                        self.assertEqual(retval, validated_inval)
                 else:
-                    exception_args = None
+                    expected_exception_args = None
                     if isinstance(exception, Exception):
-                        exception_args = exception.args
+                        expected_exception_args = exception.args
                         exception = type(exception)
                     with self.assertRaises(exception) as cm:
                         validate.validate_assert(
                             type_, inval, ignore_warnings, **extraparams
                         )
-                    if exception_args:
-                        self.assertEqual(cm.exception.args, exception_args)
+                    if expected_exception_args:
+                        real_exception_args = cm.exception.args
+                        if len(real_exception_args) > 1:
+                            real_exception_args = (
+                                real_exception_args[0] % real_exception_args[1],
+                                *real_exception_args[2:],
+                            )
+                        self.assertEqual(expected_exception_args, real_exception_args)
                     self.assertEqual(
                         retval,
                         validate.validate_check(

@@ -1345,9 +1345,24 @@ class EventBaseBackend(EventLowLevelBackend):
         """Retrieve the questionnaire rows for a specific event."""
         event_id = affirm(vtypes.ID, event_id)
         event = self.get_event(rs, event_id)
-        query = models.QuestionnaireRow.get_select_query([event_id])
-        data = self.query_all(rs, *query)
-        for row in data:
+        data: list[CdEDBObject] = []
+        data.extend(
+            self.query_all(
+                rs, *models.QuestionnaireTextRow.get_select_query([event_id])
+            )
+        )
+        data.extend(
+            field_rows := self.query_all(
+                rs, *models.QuestionnaireFieldRow.get_select_query([event_id])
+            )
+        )
+        data.extend(
+            self.query_all(
+                rs, *models.QuestionnaireMagicRow.get_select_query([event_id])
+            )
+        )
+
+        for row in field_rows:
             row["event"] = event
         return models.QuestionnaireContainer.from_database(data, event)
 
@@ -1373,13 +1388,14 @@ class EventBaseBackend(EventLowLevelBackend):
         self.assert_lock(rs, event_id=event_id)
         with Atomizer(rs):
             # Always delete everything then recreate.
-            query = f"""
-                DELETE FROM {models.QuestionnaireRow.database_table}
-                WHERE event_id = %(event_id)s and kind = %(kind)s
-            """
-            params = {"event_id": event_id, "kind": kind}
-            self.query_exec(rs, query, params)
-            # Otherwise replace rows for all given kinds.
+            for cls in models.QuestionnaireRow.__subclasses__():
+                query = f"""
+                    DELETE FROM {cls.database_table}
+                    WHERE event_id = %(event_id)s and kind = %(kind)s
+                """
+                params = {"event_id": event_id, "kind": kind}
+                self.query_exec(rs, query, params)
+
             ret = 1
             for pos, row in enumerate(data):
                 new_row = copy.deepcopy(row)
@@ -1387,10 +1403,14 @@ class EventBaseBackend(EventLowLevelBackend):
                 # The questionnaire import allows specifying fields by name.
                 #  We cannot remove this before, due to validation idempotency.
                 new_row.pop("field_name", None)
-                ret *= self.sql_insert(
-                    rs, models.QuestionnaireRow.database_table, new_row
-                )
-            self.event_log(rs, const.EventLogCodes.questionnaire_changed, event_id)
+                cls = models.QuestionnaireRow.get_class(new_row["role"])
+                ret *= self.sql_insert(rs, cls.database_table, new_row)
+            self.event_log(
+                rs,
+                const.EventLogCodes.questionnaire_changed,
+                event_id,
+                change_note=rs.log_gettext(str(kind)),
+            )
         return ret
 
     @access("event")
@@ -1588,8 +1608,11 @@ class EventBaseBackend(EventLowLevelBackend):
                     ('id', 'registration_id', 'track_id', 'course_id', 'rank'),
                 ),
                 models.PersonalizedFee.full_export_spec(),
-                models.QuestionnaireRow.full_export_spec(),
+                models.QuestionnaireTextRow.full_export_spec(),
+                models.QuestionnaireFieldRow.full_export_spec(),
+                models.QuestionnaireMagicRow.full_export_spec(),
                 models.StoredEventQuery.full_export_spec(),
+                models.CustomQueryFilter.full_export_spec(),
                 (
                     'event.log',
                     "event_id",
@@ -1910,13 +1933,11 @@ class EventBaseBackend(EventLowLevelBackend):
         new_questionnaire = {str(usage): rows for usage, rows in questionnaire.items()}
         for usage, rows in new_questionnaire.items():
             for q in rows:
-                if q['field_id']:
+                if 'field_id' in q:
                     q['field_name'] = event.fields[q['field_id']].field_name
-                else:
-                    q['field_name'] = None
+                    del q['field_id']
                 del q['pos']
                 del q['kind']
-                del q['field_id']
         for field in new_fields.values():
             del field['field_name']
             del field['event_id']

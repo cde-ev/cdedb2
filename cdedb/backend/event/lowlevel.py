@@ -981,20 +981,28 @@ class EventLowLevelBackend(AbstractBackend):
             blockers["event_fees"] = list(fee_ids)
 
         questionnaire_rows = self.sql_select(
-            rs, "event.questionnaire_rows", ("id",), (field_id,), entity_key="field_id"
+            rs,
+            models.QuestionnaireFieldRow.database_table,
+            ("id",),
+            (field_id,),
+            entity_key="field_id",
         )
         if questionnaire_rows:
             blockers["questionnaire_rows"] = [e["id"] for e in questionnaire_rows]
 
         lodge_fields = self.sql_select(
-            rs, "event.events", ("id",), (field_id,), entity_key="lodge_field_id"
+            rs,
+            models.Event.database_table,
+            ("id",),
+            (field_id,),
+            entity_key="lodge_field_id",
         )
         if lodge_fields:
             blockers["lodge_fields"] = [e["id"] for e in lodge_fields]
 
         camping_mat_fields = self.sql_select(
             rs,
-            "event.event_parts",
+            models.EventPart.database_table,
             ("id",),
             (field_id,),
             entity_key="camping_mat_field_id",
@@ -1004,7 +1012,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         course_room_fields = self.sql_select(
             rs,
-            "event.course_tracks",
+            models.CourseTrack.database_table,
             ("id",),
             (field_id,),
             entity_key="course_room_field_id",
@@ -1014,7 +1022,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         waitlist_fields = self.sql_select(
             rs,
-            "event.event_parts",
+            models.EventPart.database_table,
             ("id",),
             (field_id,),
             entity_key="waitlist_field_id",
@@ -1066,7 +1074,9 @@ class EventLowLevelBackend(AbstractBackend):
         if cascade:
             if "questionnaire_rows" in cascade:
                 ret *= self.sql_delete(
-                    rs, "event.questionnaire_rows", blockers["questionnaire_rows"]
+                    rs,
+                    models.QuestionnaireFieldRow.database_table,
+                    blockers["questionnaire_rows"],
                 )
             if "lodge_fields" in cascade:
                 for anid in blockers["lodge_fields"]:

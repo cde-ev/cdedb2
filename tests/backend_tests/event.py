@@ -2129,79 +2129,141 @@ class TestEventBackend(BackendTest):
     @as_users("berta", "emilia", maintain_data=True)
     def test_get_all_questionnaires(self) -> None:
         event_id = 1
-        expectation = {
-            const.QuestionnaireUsages.registration: [
-                {
-                    'field_id': 7,
-                    'default_value': None,
-                    'info': None,
-                    'pos': 0,
-                    'readonly': False,
-                    'title': 'Ich bin unter 13 Jahre alt.',
-                    'kind': const.QuestionnaireUsages.registration,
-                },
-            ],
-            const.QuestionnaireUsages.additional: [
-                {
-                    'field_id': None,
-                    'default_value': None,
-                    'info': 'mit Text darunter',
-                    'pos': 0,
-                    'readonly': False,
-                    'title': 'Unterüberschrift',
-                    'kind': const.QuestionnaireUsages.additional,
-                },
-                {
-                    'field_id': 1,
-                    'default_value': True,
-                    'info': 'Du bringst genug Bälle mit um einen ganzen Kurs'
-                    ' abzuwerfen.',
-                    'pos': 1,
-                    'readonly': False,
-                    'title': 'Bälle',
-                    'kind': const.QuestionnaireUsages.additional,
-                },
-                {
-                    'field_id': None,
-                    'default_value': None,
-                    'info': 'nur etwas Text',
-                    'pos': 2,
-                    'readonly': False,
-                    'title': None,
-                    'kind': const.QuestionnaireUsages.additional,
-                },
-                {
-                    'field_id': None,
-                    'default_value': None,
-                    'info': None,
-                    'pos': 3,
-                    'readonly': False,
-                    'title': 'Weitere Überschrift',
-                    'kind': const.QuestionnaireUsages.additional,
-                },
-                {
-                    'field_id': 2,
-                    'default_value': 'etc',
-                    'info': None,
-                    'pos': 4,
-                    'readonly': False,
-                    'title': 'Vehikel',
-                    'kind': const.QuestionnaireUsages.additional,
-                },
-                {
-                    'field_id': 3,
-                    'default_value': None,
-                    'info': None,
-                    'pos': 5,
-                    'readonly': False,
-                    'title': 'Hauswunsch',
-                    'kind': const.QuestionnaireUsages.additional,
-                },
-            ],
-        }
-        self.assertEqual(
-            expectation, self.event.get_all_questionnaires(self.key, event_id).as_dict()
-        )
+        expectation = models.QuestionnaireContainer({
+            const.QuestionnaireUsages.registration: models.Questionnaire(
+                [
+                    models.FeePreview(
+                        event_id=vtypes.ID(1),
+                        kind=const.QuestionnaireUsages.registration,
+                        pos=0,
+                        role=const.QuestionnaireRowMagicRole.fee_preview,
+                    ),
+                    models.QuestionnaireTextRow(
+                        event_id=vtypes.ID(1),
+                        kind=const.QuestionnaireUsages.registration,
+                        pos=1,
+                        role=const.QuestionnaireRowMagicRole.text_only,
+                        title="Kurswahlen",
+                        text=None,
+                    ),
+                    models.CourseChoices(
+                        event_id=vtypes.ID(1),
+                        kind=const.QuestionnaireUsages.registration,
+                        pos=2,
+                        role=const.QuestionnaireRowMagicRole.course_choices,
+                    ),
+                    models.QuestionnaireTextRow(
+                        event_id=vtypes.ID(1),
+                        kind=const.QuestionnaireUsages.registration,
+                        pos=3,
+                        role=const.QuestionnaireRowMagicRole.text_only,
+                        title="Weitere Angaben",
+                        text=None,
+                    ),
+                    models.ListConsent(
+                        event_id=vtypes.ID(1),
+                        kind=const.QuestionnaireUsages.registration,
+                        pos=4,
+                        role=const.QuestionnaireRowMagicRole.list_consent,
+                    ),
+                    models.QuestionnaireFieldRow(
+                        event_id=vtypes.ID(1),
+                        kind=const.QuestionnaireUsages.registration,
+                        pos=5,
+                        role=const.QuestionnaireRowMagicRole.event_field,
+                        field_id=vtypes.ID(7),
+                        label="Ich bin unter 13 Jahre alt.",
+                        info="Denk daran, deine Eltern mitzubringen!",
+                    ),
+                    models.MixedLodging(
+                        event_id=vtypes.ID(1),
+                        kind=const.QuestionnaireUsages.registration,
+                        pos=6,
+                        role=const.QuestionnaireRowMagicRole.mixed_lodging,
+                    ),
+                    models.FotoNotice(
+                        event_id=vtypes.ID(1),
+                        kind=const.QuestionnaireUsages.registration,
+                        pos=7,
+                        role=const.QuestionnaireRowMagicRole.foto_notice,
+                    ),
+                    models.RegistrationNotes(
+                        event_id=vtypes.ID(1),
+                        kind=const.QuestionnaireUsages.registration,
+                        pos=8,
+                        role=const.QuestionnaireRowMagicRole.registration_notes,
+                    ),
+                    models.FeePreview(
+                        event_id=vtypes.ID(1),
+                        kind=const.QuestionnaireUsages.registration,
+                        pos=9,
+                        role=const.QuestionnaireRowMagicRole.fee_preview,
+                    ),
+                ],
+                kind=const.QuestionnaireUsages.registration,
+            ),
+            const.QuestionnaireUsages.additional: models.Questionnaire(
+                [
+                    models.QuestionnaireTextRow(
+                        event_id=vtypes.ID(1),
+                        kind=const.QuestionnaireUsages.additional,
+                        pos=0,
+                        role=const.QuestionnaireRowMagicRole.text_only,
+                        title="Unterüberschrift",
+                        text="mit Text darunter",
+                    ),
+                    models.QuestionnaireFieldRow(
+                        event_id=vtypes.ID(1),
+                        kind=const.QuestionnaireUsages.additional,
+                        pos=1,
+                        role=const.QuestionnaireRowMagicRole.event_field,
+                        field_id=vtypes.ID(1),
+                        label="Bälle",
+                        info="Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.",
+                        default_value=True,
+                    ),
+                    models.QuestionnaireTextRow(
+                        event_id=vtypes.ID(1),
+                        kind=const.QuestionnaireUsages.additional,
+                        pos=2,
+                        role=const.QuestionnaireRowMagicRole.text_only,
+                        title=None,
+                        text="nur etwas Text",
+                    ),
+                    models.QuestionnaireTextRow(
+                        event_id=vtypes.ID(1),
+                        kind=const.QuestionnaireUsages.additional,
+                        pos=3,
+                        role=const.QuestionnaireRowMagicRole.text_only,
+                        title="Weitere Überschrift",
+                        text=None,
+                    ),
+                    models.QuestionnaireFieldRow(
+                        event_id=vtypes.ID(1),
+                        kind=const.QuestionnaireUsages.additional,
+                        pos=4,
+                        role=const.QuestionnaireRowMagicRole.event_field,
+                        field_id=vtypes.ID(2),
+                        label="Vehikel",
+                        info=None,
+                        default_value="etc",
+                    ),
+                    models.QuestionnaireFieldRow(
+                        event_id=vtypes.ID(1),
+                        kind=const.QuestionnaireUsages.additional,
+                        pos=5,
+                        role=const.QuestionnaireRowMagicRole.event_field,
+                        field_id=vtypes.ID(3),
+                        label="Hauswunsch",
+                        info=None,
+                    ),
+                ],
+                kind=const.QuestionnaireUsages.additional,
+            ),
+        })
+        reality = self.event.get_all_questionnaires(self.key, event_id)
+        self.assertEqual(expectation.as_dict(), reality.as_dict())
+        self.assertEqual(expectation, reality)
 
     @as_users("annika", "garcia")
     def test_set_questionnaire(self) -> None:
@@ -2219,49 +2281,35 @@ class TestEventBackend(BackendTest):
         self.event.set_event(self.key, event_id, edata)
         aq_data: list[CdEDBObject] = [
             {
-                'field_id': None,
-                'default_value': None,
-                'info': None,
-                'readonly': False,
+                'role': const.QuestionnaireRowMagicRole.text_only,
                 'title': 'Weitere bla Überschrift',
+                'text': None,
             },
             {
+                'role': const.QuestionnaireRowMagicRole.event_field,
+                'label': 'Vehikel',
+                'info': None,
                 'field_id': 2,
+                'readonly': True,
                 'default_value': 'etc',
-                'info': None,
-                'readonly': True,
-                'title': 'Vehikel',
             },
             {
-                'field_id': None,
-                'default_value': None,
-                'info': 'mit Text darunter und so',
-                'readonly': False,
+                'role': const.QuestionnaireRowMagicRole.text_only,
                 'title': 'Unterüberschrift',
+                'text': 'mit Text darunter und so',
             },
             {
-                'field_id': 3,
-                'default_value': None,
+                'role': const.QuestionnaireRowMagicRole.event_field,
+                'label': 'Vehikel',
                 'info': None,
+                'field_id': 3,
                 'readonly': True,
-                'title': 'Vehikel',
+                'default_value': None,
             },
             {
-                'field_id': None,
-                'default_value': None,
-                'info': 'nur etwas mehr Text',
-                'readonly': False,
+                'role': const.QuestionnaireRowMagicRole.text_only,
                 'title': None,
-            },
-        ]
-        rq_data: list[CdEDBObject] = [
-            {
-                'field_id': 1001,
-                'default_value': None,
-                'info': "Du kannst freiwillig etwas mehr bezahlen um zukünftige"
-                " Akademien zu unterstützen.",
-                'readonly': False,
-                'title': "Ich möchte den Solidaritätszuschlag bezahlen.",
+                'text': 'nur etwas mehr Text',
             },
         ]
         self.assertLess(
@@ -2270,6 +2318,33 @@ class TestEventBackend(BackendTest):
                 self.key, event_id, const.QuestionnaireUsages.additional, aq_data
             ),
         )
+        rq_data: list[CdEDBObject] = [
+            {
+                'role': const.QuestionnaireRowMagicRole.course_choices,
+            },
+            {
+                'role': const.QuestionnaireRowMagicRole.event_field,
+                'label': "Ich möchte den Solidaritätszuschlag bezahlen.",
+                'info': "Du kannst freiwillig etwas mehr bezahlen um zukünftige Akademien zu unterstützen.",
+                'field_id': 1001,
+                'readonly': False,
+                'default_value': None,
+            },
+            {
+                'role': const.QuestionnaireRowMagicRole.fee_preview,
+            },
+            {
+                'role': const.QuestionnaireRowMagicRole.list_consent,
+            },
+            {
+                'role': const.QuestionnaireRowMagicRole.mixed_lodging,
+            },
+        ]
+        with self.assertRaisesRegex(ValueError, "Missing role:"):
+            self.event.set_questionnaire(
+                self.key, event_id, const.QuestionnaireUsages.registration, rq_data
+            )
+        rq_data.append({'role': const.QuestionnaireRowMagicRole.foto_notice})
         self.assertLess(
             0,
             self.event.set_questionnaire(
@@ -2776,8 +2851,9 @@ class TestEventBackend(BackendTest):
         name = ""
         with self.assertRaises(ValueError) as cm:
             store(query, name)
-        self.assertIn(
-            "Invalid input for the enumeration %(enum)s (scope)", cm.exception.args
+        self.assertEqual(
+            "Invalid input for the enumeration 'QueryScope'. (scope)",
+            cm.exception.args[0] % cm.exception.args[1],
         )
 
         query.scope = QueryScope.persona
@@ -4243,44 +4319,30 @@ class TestEventBackend(BackendTest):
         self.event.delete_lodgement(self.key, new_id)
         q_data: list[CdEDBObject] = [
             {
-                'field_id': None,
-                'default_value': None,
-                'info': None,
-                'readonly': False,
+                'role': const.QuestionnaireRowMagicRole.text_only,
                 'title': 'Weitere bla Überschrift',
-                'kind': const.QuestionnaireUsages.additional,
             },
             {
+                'role': const.QuestionnaireRowMagicRole.event_field,
                 'field_id': 2,
+                'label': 'Vehikel',
                 'default_value': 'etc',
-                'info': None,
                 'readonly': True,
-                'title': 'Vehikel',
-                'kind': const.QuestionnaireUsages.additional,
             },
             {
-                'field_id': None,
-                'default_value': None,
-                'info': 'mit Text darunter und so',
-                'readonly': False,
+                'role': const.QuestionnaireRowMagicRole.text_only,
                 'title': 'Unterüberschrift',
-                'kind': const.QuestionnaireUsages.additional,
+                'text': 'mit Text darunter und so',
             },
             {
+                'role': const.QuestionnaireRowMagicRole.event_field,
                 'field_id': 3,
-                'default_value': None,
-                'info': None,
+                'label': 'Hauswunsch',
                 'readonly': True,
-                'title': 'Vehikel',
-                'kind': const.QuestionnaireUsages.additional,
             },
             {
-                'field_id': None,
-                'default_value': None,
-                'info': 'nur etwas mehr Text',
-                'readonly': False,
-                'title': None,
-                'kind': const.QuestionnaireUsages.additional,
+                'role': const.QuestionnaireRowMagicRole.text_only,
+                'text': 'nur etwas mehr Text',
             },
         ]
         self.event.set_questionnaire(
@@ -4497,6 +4559,7 @@ class TestEventBackend(BackendTest):
             },
             {
                 'code': const.EventLogCodes.questionnaire_changed,
+                'change_note': "Zusätzlicher Fragebogen",
                 'event_id': 1,
             },
         )
@@ -5009,6 +5072,8 @@ class TestEventBackend(BackendTest):
                     "lodgement_groups",
                     "event_fees",
                     "mailinglists",
+                    "questionnaire_text_rows",
+                    "questionnaire_magic_rows",
                 },
                 set(blockers),
             )

@@ -1889,6 +1889,10 @@ class FrontendTest(BackendTest):
             all_texts = " | ".join(
                 self._normalize_whitespace(n.text_content()) for n in notifications
             )
+            if errors := self.get_content("debug-data-errors", check_exists=False):
+                if msg is None:
+                    msg = ""
+                msg += "\nI found these errors in the debug data:\n\t" + errors
             self.assertIn(ntext, all_texts, msg=msg)
 
     def assertLogin(self, name: str) -> None:
