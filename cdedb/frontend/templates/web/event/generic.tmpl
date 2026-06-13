@@ -200,6 +200,13 @@
     {% endif %}
 {% endmacro %}
 
+{% macro print_foto_notice() %}
+    {% trans %}
+        In the context of this event, photos and recordings will be made to be used for the
+        event-documentation and a CdE-internal, password protected media collection. Individual photos and
+        recordings can be excluded from this by request.
+    {% endtrans %}
+{% endmacro %}
 
 {% macro print_questionnaire_entry(row) %}
     <div id="questionnaire_row_{{ row.pos }}">
@@ -234,7 +241,7 @@
         {% endif %}
     {% elif row.name == "ListConsent" %}
         {{ util.form_input_checkbox(
-                name="reg.list_consent", defaultvalue='True', label=gettext("Privacy consent"),
+                name="reg.list_consent", defaultvalue='True', label=gettext("Participant List Consent"),
                 info=gettext(
                     "I agree that my data, including my name, address and my email, may be sent"
                     " to other participants of this event beforehand."
@@ -262,11 +269,7 @@
     {% elif row.name == "FotoNotice" %}
         {% call util.form_input_general(label=gettext("Photo consent"), displayerrors=False) %}
             <p class="nosp">
-                {% trans %}
-                    In the context of this event, photos and recordings will be made to be used for the
-                    event-documentation and a CdE-internal, password protected media collection. Individual photos and
-                    recordings can be excluded from this by request.
-                {% endtrans %}
+                {{ print_foto_notice() }}
             </p>
         {% endcall %}
     {% elif row.name == "RegistrationNotes" %}
@@ -791,7 +794,7 @@
 
     Skip fee kinds that sum to zero, unless `show_all=True`.
 #}
-{% macro fee_breakdown_by_kind(show_all=False) -%}
+{% macro fee_breakdown_by_kind(complex_fee, show_all=False) -%}
     <table id="fee-breakdown" class="table-slim table-condensed bg-info" style="color: #333">
         <tbody>
             {# Already sorted automatically. #}

@@ -65,6 +65,21 @@ from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 from cdedb.models.common import CdEDataclassMap
 from cdedb.models.core import EventPersona
 
+
+class CourseChoiceParams(typing.TypedDict):
+    courses: CdEDataclassMap[models.Course]
+    courses_per_track: dict[int, set[int]]
+    all_courses_per_track: dict[int, set[int]]
+    courses_per_track_group: dict[int, set[int]]
+    all_courses_per_track_group: dict[int, set[int]]
+    simple_tracks: set[int]
+    choice_objects: list[models.CourseChoiceObject]
+    sync_track_groups: dict[int, models.SyncTrackGroup]
+    track_group_map: dict[int, int | None]
+    ccos_per_part: dict[int, list[str]]
+    parts_per_track_group_per_course: dict[int, dict[int, set[vtypes.ID]]]
+
+
 F = TypeVar("F", bound=Callable[..., Any])
 
 
@@ -740,6 +755,11 @@ class EventBaseFrontend(AbstractUserFrontend):
             for entity_id in entity_ids
             for sub_id in sub_ids
         }
+
+    @abc.abstractmethod
+    def get_course_choice_params(
+        self, rs: RequestState, event_id: int, orga: bool = True
+    ) -> CourseChoiceParams: ...
 
     @abc.abstractmethod
     def get_course_stats(

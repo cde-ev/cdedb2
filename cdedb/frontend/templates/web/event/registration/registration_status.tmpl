@@ -99,7 +99,7 @@
                 {% trans %}
                     Your fee consists of:
                 {% endtrans %}
-            {{ generic_event.fee_breakdown_by_kind() }}
+            {{ generic_event.fee_breakdown_by_kind(complex_fee) }}
             </p>
         {% else %}
             <p>
