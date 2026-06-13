@@ -62,26 +62,12 @@ from cdedb.frontend.common import (
     request_extractor,
 )
 from cdedb.frontend.event.base import (
+    CourseChoiceParams,
     EventBaseFrontend,
     event_associated_fields_extractor,
     event_guard,
 )
-from cdedb.models.common import CdEDataclassMap
 from cdedb.models.core import EventPersona, MetaInfo
-
-
-class CourseChoiceParams(typing.TypedDict):
-    courses: CdEDataclassMap[models.Course]
-    courses_per_track: dict[int, set[int]]
-    all_courses_per_track: dict[int, set[int]]
-    courses_per_track_group: dict[int, set[int]]
-    all_courses_per_track_group: dict[int, set[int]]
-    simple_tracks: set[int]
-    choice_objects: list[models.CourseChoiceObject]
-    sync_track_groups: dict[int, models.SyncTrackGroup]
-    track_group_map: dict[int, int | None]
-    ccos_per_part: dict[int, list[str]]
-    parts_per_track_group_per_course: dict[int, dict[int, set[vtypes.ID]]]
 
 
 class RegisterParams(typing.TypedDict):

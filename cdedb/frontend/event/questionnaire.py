@@ -9,7 +9,7 @@ event.
 import abc
 import decimal
 from types import SimpleNamespace as sn
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -354,9 +354,18 @@ class EventQuestionnaireMixin(EventBaseFrontend):
             return self.redirect(rs, redirects[kind])
         fake_complex_fee = ComplexRegistrationFee(
             fees=[
-                (sn(id=-1, kind=const.EventFeeType.common), decimal.Decimal(200)),
                 (
-                    sn(id=-2, kind=const.EventFeeType.solidary_reduction),
+                    cast(
+                        models.EventFee,
+                        sn(id=-1, kind=const.EventFeeType.common),
+                    ),
+                    decimal.Decimal(200),
+                ),
+                (
+                    cast(
+                        models.EventFee,
+                        sn(id=-2, kind=const.EventFeeType.solidary_reduction),
+                    ),
                     decimal.Decimal(-50),
                 ),
             ],
