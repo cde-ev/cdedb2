@@ -7,7 +7,7 @@ import functools
 import itertools
 from collections.abc import Collection
 from itertools import chain
-from typing import Any, Self
+from typing import Self
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -563,11 +563,6 @@ class ComplaintEntryVersion(CdEDataclass):
         params = (entities,)
         return query, params
 
-    def as_dict(self) -> dict[str, Any]:
-        ret = super().as_dict()
-        ret["authors"] = [author.id for author in self.author_personas]
-        return ret
-
 
 class AccessLog:
     database_table = "complaint.access_log"
@@ -593,7 +588,7 @@ class ComplaintInvolved(CdEDataclass):
 
     @property
     def persona(self) -> models_core.Persona | None:
-        if self.case and self.persona_id:
+        if self.persona_id:
             return self.case.personas[self.persona_id]
         return None
 
@@ -610,12 +605,7 @@ class ComplaintInvolved(CdEDataclass):
     def get_sortkey(self) -> Sortkey:
         return (
             self.involvement_type,
-            (
-                self.case.personas[self.persona_id]
-                if self.case and self.persona_id
-                else ()
-            ),
-            self.persona_id or -1,
+            self.persona.get_sortkey() if self.persona else (),
         )
 
 
