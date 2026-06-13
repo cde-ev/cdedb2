@@ -77,6 +77,7 @@ class RegisterParams(typing.TypedDict):
     age_class: AgeClasses
     involved_tracks: Collection[int] | None
     payment_parts: Collection[int] | None
+    part_options: list[tuple[vtypes.ID, str]] | None
 
 
 class PaymentData(typing.TypedDict):
@@ -371,6 +372,21 @@ class EventRegistrationMixin(EventBaseFrontend):
                 for part_id, reg_part in registration['parts'].items()
                 if reg_part['status'].has_to_pay()
             }
+
+        # display the date for part choices
+        part_options = None
+        if len(rs.ambience['event'].parts) > 1:
+            part_options = [
+                # narrow non-breaking space below, the string is purely user-facing
+                (
+                    part.id,
+                    f"{part.title}"
+                    f" ({date_filter(part.part_begin, lang=rs.lang)}\u202f–\u202f"
+                    f"{date_filter(part.part_end, lang=rs.lang)})",
+                )
+                for part in xsorted(rs.ambience['event'].parts.values())
+            ]
+
         return {
             "registration": registration,
             "persona": persona,
@@ -378,6 +394,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             "age_class": age_class,
             "involved_tracks": involved_tracks,
             "payment_parts": payment_parts,
+            "part_options": part_options,
         }
 
     @access("event")
@@ -421,19 +438,6 @@ class EventRegistrationMixin(EventBaseFrontend):
         # by default select all parts
         if 'parts' not in rs.values:
             rs.values.setlist('parts', event.parts)
-        # display the date for part choices
-        part_options = None
-        if len(event.parts) > 1:
-            part_options = [
-                # narrow non-breaking space below, the string is purely user-facing
-                (
-                    part.id,
-                    f"{part.title}"
-                    f" ({date_filter(part.part_begin, lang=rs.lang)}\u202f–\u202f"
-                    f"{date_filter(part.part_end, lang=rs.lang)})",
-                )
-                for part in xsorted(event.parts.values())
-            ]
 
         course_choice_params = self.get_course_choice_params(rs, event_id, orga=False)
 
@@ -447,7 +451,6 @@ class EventRegistrationMixin(EventBaseFrontend):
                 'semester_fee': semester_fee,
                 'reg_questionnaire': reg_questionnaire,
                 'preview': preview,
-                'part_options': part_options,
                 **reg_params,
                 **course_choice_params,
             },
@@ -1153,7 +1156,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs.notify("warning", n_("Event locked."))
             return self.redirect(rs, "event/registration_status")
         values = self._prepare_registration_values(event, reg_params['registration'])
-        merge_dicts(rs.values, values)
+        merge_dicts(rs.values, values, {'parts': reg_params['payment_parts']})
 
         reg_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[
             const.QuestionnaireUsages.registration

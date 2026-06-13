@@ -2349,6 +2349,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             const.QuestionnaireUsages.registration,
             [
                 {
+                    "role": const.QuestionnaireRowMagicRole.part_selection,
+                },
+                {
                     "role": const.QuestionnaireRowMagicRole.fee_preview,
                 },
                 {

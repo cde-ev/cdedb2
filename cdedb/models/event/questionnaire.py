@@ -225,6 +225,18 @@ class CourseChoices(QuestionnaireMagicRow):
 
 
 @dataclasses.dataclass
+class PartSelection(QuestionnaireMagicRow):
+    _role = const.QuestionnaireRowMagicRole.part_selection
+    _frequency = {
+        const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory
+    }
+
+    @classmethod
+    def get_icon(cls) -> str:
+        return "clock"
+
+
+@dataclasses.dataclass
 class FeePreview(QuestionnaireMagicRow):
     _role = const.QuestionnaireRowMagicRole.fee_preview
     _frequency = {
@@ -384,6 +396,8 @@ def make_default_questionnaire(
     event: Event,
 ) -> dict[const.QuestionnaireUsages, list[CdEDBObject]]:
     reg_quest: list[const.QuestionnaireRowMagicRole | str] = [
+        "Anmeldung",
+        const.QuestionnaireRowMagicRole.part_selection,
         const.QuestionnaireRowMagicRole.fee_preview,
     ]
     if event.tracks:

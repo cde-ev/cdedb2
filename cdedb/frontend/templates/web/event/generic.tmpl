@@ -239,6 +239,15 @@
         {% if choice_objects %}
             {{ select_all_course_choices(involved_tracks=involved_tracks) }}
         {% endif %}
+    {% elif row.name == "PartSelection" %}
+        {% if ambience['event'].parts|length > 1 %}
+            {{ util.form_input_checkboxes(
+                    name="parts", label=gettext("Event Parts"), entries=part_options, readonly=(registration and not preview),
+                    defaultvalue=payment_parts, info=gettext("In order to change the parts you are registered for, contact the orgas.")
+                ) }}
+        {% elif ambience['event'].parts|length == 1 %}
+            {{ util.input_hidden(name="parts", value=(ambience['event'].parts|list)[0]) }}
+        {% endif %}
     {% elif row.name == "ListConsent" %}
         {{ util.form_input_checkbox(
                 name="reg.list_consent", defaultvalue='True', label=gettext("Participant List Consent"),

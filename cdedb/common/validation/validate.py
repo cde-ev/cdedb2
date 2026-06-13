@@ -3190,6 +3190,7 @@ def _questionnaire_field_row(
 
 @_create_dataclass_validator(
     models_event.questionnaire.CourseChoices,
+    models_event.questionnaire.PartSelection,
     models_event.questionnaire.FeePreview,
     models_event.questionnaire.ListConsent,
     models_event.questionnaire.MixedLodging,

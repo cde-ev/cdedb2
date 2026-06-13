@@ -146,6 +146,17 @@
                                 &lt;{% trans %}Course{% endtrans %}&gt;
                             </div>
                         {% endfor %}
+                    {% elif entry.name == "PartSelection" %}
+                        <div class="miniature-label">
+                            {{ gettext("Event Parts") }}
+                        </div>
+                        {% for part in ambience["event"].parts.values() %}
+                            <div class="miniature-checkbox">
+                                {{ util.make_icon('check-square') }}
+                                <strong>{{ part.title }}</strong>
+                                {{ save_to(gettext("Event Parts")) }}
+                            </div>
+                        {% endfor %}
                     {% elif entry.name == "ListConsent" %}
                         <div class="miniature-label">
                             {% trans %}Participant List Consent{% endtrans %}
