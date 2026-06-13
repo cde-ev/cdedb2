@@ -1167,6 +1167,7 @@ tr.drow-delete>td, tr.drow-delete1>td {
     font-size: 0.8em;
     max-height: 8em;
     overflow: scroll;
+    padding: 1px 6px;
 
     & pre {
         font-size: inherit;
