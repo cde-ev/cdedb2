@@ -200,6 +200,13 @@
     {% endif %}
 {% endmacro %}
 
+{% macro print_foto_notice() %}
+    {% trans %}
+        In the context of this event, photos and recordings will be made to be used for the
+        event-documentation and a CdE-internal, password protected media collection. Individual photos and
+        recordings can be excluded from this by request.
+    {% endtrans %}
+{% endmacro %}
 
 {% macro print_questionnaire_entry(row) %}
     <div id="questionnaire_row_{{ row.pos }}">
@@ -262,11 +269,7 @@
     {% elif row.name == "FotoNotice" %}
         {% call util.form_input_general(label=gettext("Photo consent"), displayerrors=False) %}
             <p class="nosp">
-                {% trans %}
-                    In the context of this event, photos and recordings will be made to be used for the
-                    event-documentation and a CdE-internal, password protected media collection. Individual photos and
-                    recordings can be excluded from this by request.
-                {% endtrans %}
+                {{ print_foto_notice() }}
             </p>
         {% endcall %}
     {% elif row.name == "RegistrationNotes" %}

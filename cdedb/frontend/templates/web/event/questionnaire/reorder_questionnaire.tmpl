@@ -167,11 +167,7 @@
                             {% trans %}Photo consent{% endtrans %}
                         </div>
                         <div class="miniature-md">
-                            {% trans %}
-                                In the context of this event, photos and recordings will be made to be used for the
-                                event-documentation and a CdE-internal, password protected media collection. Individual photos and
-                                recordings can be excluded from this by request.
-                            {% endtrans %}
+                            {{ generic_event.print_foto_notice() }}
                         </div>
                     {% elif entry.name == "RegistrationNotes" %}
                         <div class="miniature-label">
