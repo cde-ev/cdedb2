@@ -159,39 +159,39 @@ msgid "QuestionnaireUsages.additional"
 msgstr "Additional Questionnaire"
 
 #: cdedb/.i18n_additional.py:38
-msgid "QuestionnaireRowMagicRole.text_only"
+msgid "QuestionnaireRowRole.text_only"
 msgstr "Text/Heading"
 
 #: cdedb/.i18n_additional.py:39
-msgid "QuestionnaireRowMagicRole.event_field"
+msgid "QuestionnaireRowRole.event_field"
 msgstr "Custom Field"
 
 #: cdedb/.i18n_additional.py:40
-msgid "QuestionnaireRowMagicRole.course_choices"
+msgid "QuestionnaireRowRole.course_choices"
 msgstr "Course Choices"
 
 #: cdedb/.i18n_additional.py:41
-msgid "QuestionnaireRowMagicRole.part_selection"
+msgid "QuestionnaireRowRole.part_selection"
 msgstr "Event Part Selection"
 
 #: cdedb/.i18n_additional.py:42
-msgid "QuestionnaireRowMagicRole.fee_preview"
+msgid "QuestionnaireRowRole.fee_preview"
 msgstr "Fee Preview"
 
 #: cdedb/.i18n_additional.py:43
-msgid "QuestionnaireRowMagicRole.list_consent"
+msgid "QuestionnaireRowRole.list_consent"
 msgstr "Participantlist Consent"
 
 #: cdedb/.i18n_additional.py:44
-msgid "QuestionnaireRowMagicRole.mixed_lodging"
+msgid "QuestionnaireRowRole.mixed_lodging"
 msgstr "Mixed Lodging"
 
 #: cdedb/.i18n_additional.py:45
-msgid "QuestionnaireRowMagicRole.foto_notice"
+msgid "QuestionnaireRowRole.foto_notice"
 msgstr "Foto Notice"
 
 #: cdedb/.i18n_additional.py:46
-msgid "QuestionnaireRowMagicRole.registration_notes"
+msgid "QuestionnaireRowRole.registration_notes"
 msgstr "Registration Notes"
 
 #: cdedb/.i18n_additional.py:47

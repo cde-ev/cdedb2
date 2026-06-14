@@ -349,7 +349,7 @@
                 <h3 class="panel-title" style="margin: 5px 0 0">
                     {% set role = values["role_" ~ part_id] %}
                     {% if role is string %}
-                        {% set role = enums["QuestionnaireRowMagicRole"][role.split(".", 1)[1]] %}
+                        {% set role = enums["QuestionnaireRowRole"][role.split(".", 1)[1]] %}
                     {% endif %}
                     {% if role %}
                         {{ util.make_icon(role.get_class().get_icon()) }}

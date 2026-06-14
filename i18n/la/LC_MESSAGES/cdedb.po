@@ -168,46 +168,46 @@ msgstr "Interrogatio"
 
 #: cdedb/.i18n_additional.py:38
 #, fuzzy
-msgid "QuestionnaireRowMagicRole.text_only"
+msgid "QuestionnaireRowRole.text_only"
 msgstr "Interrogatio"
 
 #: cdedb/.i18n_additional.py:39
 #, fuzzy
-msgid "QuestionnaireRowMagicRole.event_field"
+msgid "QuestionnaireRowRole.event_field"
 msgstr "Interrogatio"
 
 #: cdedb/.i18n_additional.py:40
-msgid "QuestionnaireRowMagicRole.course_choices"
+msgid "QuestionnaireRowRole.course_choices"
 msgstr ""
 
 #: cdedb/.i18n_additional.py:41
 #, fuzzy
-msgid "QuestionnaireRowMagicRole.part_selection"
+msgid "QuestionnaireRowRole.part_selection"
 msgstr "Interrogatio"
 
 #: cdedb/.i18n_additional.py:42
 #, fuzzy
-msgid "QuestionnaireRowMagicRole.fee_preview"
+msgid "QuestionnaireRowRole.fee_preview"
 msgstr "Interrogatio"
 
 #: cdedb/.i18n_additional.py:43
 #, fuzzy
-msgid "QuestionnaireRowMagicRole.list_consent"
+msgid "QuestionnaireRowRole.list_consent"
 msgstr "Annuntiationes"
 
 #: cdedb/.i18n_additional.py:44
 #, fuzzy
-msgid "QuestionnaireRowMagicRole.mixed_lodging"
+msgid "QuestionnaireRowRole.mixed_lodging"
 msgstr "Interrogatio"
 
 #: cdedb/.i18n_additional.py:45
 #, fuzzy
-msgid "QuestionnaireRowMagicRole.foto_notice"
+msgid "QuestionnaireRowRole.foto_notice"
 msgstr "Interrogatio"
 
 #: cdedb/.i18n_additional.py:46
 #, fuzzy
-msgid "QuestionnaireRowMagicRole.registration_notes"
+msgid "QuestionnaireRowRole.registration_notes"
 msgstr "Annuntiationes"
 
 #: cdedb/.i18n_additional.py:47

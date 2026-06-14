@@ -1371,7 +1371,7 @@ CREATE TABLE event.questionnaire_text_rows (
         kind                    integer NOT NULL,
         -- The position at which this element is shown in the questionnaire.
         pos                     integer NOT NULL,
-        -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowMagicRole.
+        -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowRole.
         -- For entries in this table this will always be 'text_only'.
         role                    integer NOT NULL,
         -- A customized heading for this element.
@@ -1390,7 +1390,7 @@ CREATE TABLE event.questionnaire_field_rows (
         kind                    integer NOT NULL,
         -- The position at which this element is shown in the questionnaire.
         pos                     integer NOT NULL,
-        -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowMagicRole.
+        -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowRole.
         -- For entries in this table this will always be 'event_field'.
         role                    integer NOT NULL,
         -- A customized label for this element.
@@ -1414,7 +1414,7 @@ CREATE TABLE event.questionnaire_magic_rows (
         kind                    integer NOT NULL,
         -- The position at which this element is shown in the questionnaire.
         pos                     integer NOT NULL,
-        -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowMagicRole.
+        -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowRole.
         role                    integer NOT NULL
 );
 CREATE INDEX questionnaire_magic_rows_event_id_kind_idx ON event.questionnaire_magic_rows(event_id, kind);

@@ -59,7 +59,7 @@ table_query = """
             kind                    integer NOT NULL,
             -- The position at which this element is shown in the questionnaire.
             pos                     integer NOT NULL,
-            -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowMagicRole.
+            -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowRole.
             role                    integer NOT NULL
     );
     CREATE INDEX questionnaire_magic_rows_event_id_kind_idx ON event.questionnaire_magic_rows(event_id, kind);
