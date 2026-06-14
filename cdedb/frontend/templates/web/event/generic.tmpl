@@ -288,6 +288,14 @@
             {%- set noteslabel = gettext("Notes for Orgas") %}
         {%- endif %}
         {{ util.form_input_textarea(name="reg.notes", label=noteslabel, rows="5") }}
+    {% elif row.name == "TableOfContents" %}
+        <div class="toc">
+            <ul>
+                {% for other_row in row.questionnaire.text_rows if other_row.title %}
+                    <li>{{ util.href("#" + "_".join(other_row.title.split()), other_row.title) }}</li>
+                {% endfor %}
+            </ul>
+        </div>
     {% else %}
         {{ row.name }}
     {% endif %}

@@ -194,6 +194,9 @@ msgstr "Foto Notice"
 msgid "QuestionnaireRowRole.registration_notes"
 msgstr "Registration Notes"
 
+msgid "QuestionnaireRowRole.table_of_contents"
+msgstr "TableOfContents"
+
 #: cdedb/.i18n_additional.py:47
 msgid "EventPartGroupType.mutually_exclusive_participants"
 msgstr "Mutually Exclusive Participation"

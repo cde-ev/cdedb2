@@ -3196,6 +3196,7 @@ def _questionnaire_field_row(
     models_event.questionnaire.MixedLodging,
     models_event.questionnaire.FotoNotice,
     models_event.questionnaire.RegistrationNotes,
+    models_event.questionnaire.TableOfContents,
 )
 def _questionnaire_magic_row(
     val: CdEDBObject,

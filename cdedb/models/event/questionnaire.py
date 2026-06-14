@@ -2,7 +2,6 @@ import abc
 import collections
 import dataclasses
 import enum
-import functools
 from collections.abc import Collection, Mapping
 from typing import Any, ClassVar, Self, cast
 
@@ -37,15 +36,20 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
         default=vtypes.ID(-1),
         compare=False,
         repr=False,
-        metadata=(
-            Meta.input_exclude | Meta.database_exclude | Meta.asdict_exclude
-        ).as_dict,
+        metadata=(Meta.exclude | Meta.asdict_exclude).as_dict,
     )
     event_id: vtypes.ID = dataclasses.field(
         metadata=(Meta.request_exclude | Meta.asdict_exclude).as_dict,
     )
     kind: const.QuestionnaireUsages
     pos: int
+
+    questionnaire: "Questionnaire" = dataclasses.field(
+        init=False,
+        compare=False,
+        repr=False,
+        metadata=(Meta.exclude | Meta.asdict_exclude).as_dict,
+    )
 
     role: const.QuestionnaireRowRole
     _role: ClassVar[const.QuestionnaireRowRole]
@@ -294,8 +298,20 @@ class RegistrationNotes(QuestionnaireMagicRow):
     }
 
 
+@dataclasses.dataclass
+class TableOfContents(QuestionnaireMagicRow):
+    _role = const.QuestionnaireRowRole.table_of_contents
+    _frequency = QuestionnaireFrequency.optional
+    static = True
+
+    @classmethod
+    def get_icon(cls) -> str:
+        return "list"
+
+
 class Questionnaire(list[QuestionnaireRow]):
     kind: const.QuestionnaireUsages
+    all_questionnaires: "QuestionnaireContainer"
 
     def __init__(self, *args: Any, kind: const.QuestionnaireUsages) -> None:
         super().__init__(*args)
@@ -304,9 +320,13 @@ class Questionnaire(list[QuestionnaireRow]):
     def as_dicts(self) -> list[CdEDBObject]:
         return [row.as_dict() for row in self]
 
-    @functools.cached_property
+    @property
     def field_rows(self) -> list[QuestionnaireFieldRow]:
         return [row for row in self if isinstance(row, QuestionnaireFieldRow)]
+
+    @property
+    def text_rows(self) -> list[QuestionnaireTextRow]:
+        return [row for row in self if isinstance(row, QuestionnaireTextRow)]
 
     def get_field_ids(self) -> set[int]:
         return {row.field_id for row in self if isinstance(row, QuestionnaireFieldRow)}
@@ -342,6 +362,8 @@ class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
         ret.event = event
         for row in QuestionnaireRow.many_from_database_list(data):
             ret[row.kind].append(row)
+            ret[row.kind].all_questionnaires = ret
+            row.questionnaire = ret[row.kind]
         return ret
 
     def __missing__(self, kind: const.QuestionnaireUsages) -> Questionnaire:
