@@ -2132,16 +2132,30 @@ class TestEventBackend(BackendTest):
         expectation = models.questionnaire.QuestionnaireContainer({
             const.QuestionnaireUsages.registration: models.questionnaire.Questionnaire(
                 [
-                    models.questionnaire.FeePreview(
+                    models.questionnaire.QuestionnaireTextRow(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
                         pos=0,
+                        role=const.QuestionnaireRowRole.text_only,
+                        title="Anmeldung",
+                        text=None,
+                    ),
+                    models.questionnaire.PartSelection(
+                        event_id=vtypes.ID(1),
+                        kind=const.QuestionnaireUsages.registration,
+                        pos=1,
+                        role=const.QuestionnaireRowRole.part_selection,
+                    ),
+                    models.questionnaire.FeePreview(
+                        event_id=vtypes.ID(1),
+                        kind=const.QuestionnaireUsages.registration,
+                        pos=2,
                         role=const.QuestionnaireRowRole.fee_preview,
                     ),
                     models.questionnaire.QuestionnaireTextRow(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
-                        pos=1,
+                        pos=3,
                         role=const.QuestionnaireRowRole.text_only,
                         title="Kurswahlen",
                         text=None,
@@ -2149,13 +2163,13 @@ class TestEventBackend(BackendTest):
                     models.questionnaire.CourseChoices(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
-                        pos=2,
+                        pos=4,
                         role=const.QuestionnaireRowRole.course_choices,
                     ),
                     models.questionnaire.QuestionnaireTextRow(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
-                        pos=3,
+                        pos=5,
                         role=const.QuestionnaireRowRole.text_only,
                         title="Weitere Angaben",
                         text=None,
@@ -2163,13 +2177,13 @@ class TestEventBackend(BackendTest):
                     models.questionnaire.ListConsent(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
-                        pos=4,
+                        pos=6,
                         role=const.QuestionnaireRowRole.list_consent,
                     ),
                     models.questionnaire.QuestionnaireFieldRow(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
-                        pos=5,
+                        pos=7,
                         role=const.QuestionnaireRowRole.event_field,
                         field_id=vtypes.ID(7),
                         label="Ich bin unter 13 Jahre alt.",
@@ -2178,25 +2192,25 @@ class TestEventBackend(BackendTest):
                     models.questionnaire.MixedLodging(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
-                        pos=6,
+                        pos=8,
                         role=const.QuestionnaireRowRole.mixed_lodging,
                     ),
                     models.questionnaire.FotoNotice(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
-                        pos=7,
+                        pos=9,
                         role=const.QuestionnaireRowRole.foto_notice,
                     ),
                     models.questionnaire.RegistrationNotes(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
-                        pos=8,
+                        pos=10,
                         role=const.QuestionnaireRowRole.registration_notes,
                     ),
                     models.questionnaire.FeePreview(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
-                        pos=9,
+                        pos=11,
                         role=const.QuestionnaireRowRole.fee_preview,
                     ),
                 ],
@@ -2319,6 +2333,9 @@ class TestEventBackend(BackendTest):
             ),
         )
         rq_data: list[CdEDBObject] = [
+            {
+                'role': const.QuestionnaireRowRole.part_selection,
+            },
             {
                 'role': const.QuestionnaireRowRole.course_choices,
             },

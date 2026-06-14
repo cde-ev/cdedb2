@@ -310,6 +310,9 @@ def event(context: Context) -> int:
     ]
     registration_questionnaire: list[dict[str, Any]] = [
         {
+            'role': const.QuestionnaireRowRole.part_selection,
+        },
+        {
             'role': const.QuestionnaireRowRole.fee_preview,
         },
         {

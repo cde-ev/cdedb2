@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-06-13 04:51+0200\n"
+"POT-Creation-Date: 2026-06-14 02:18+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -5853,7 +5853,6 @@ msgstr "Beliebige Beteiligung"
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:82
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:83
 #: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:61
-#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:150
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:37
 #: cdedb/frontend/templates/web/event/registration/registration_fee_summary.tmpl:13
 msgid "Registration"
@@ -5978,8 +5977,8 @@ msgstr "Einverständniserklärung"
 #: cdedb/frontend/templates/web/event/generic.tmpl:262
 #: cdedb/frontend/templates/web/event/generic.tmpl:275
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:64
-#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:171
-#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:175
+#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:170
+#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:174
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:78
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:87
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:193
@@ -5992,8 +5991,8 @@ msgstr "Gemischte Unterbringung"
 #: cdedb/common/query/__init__.py:1176
 #: cdedb/frontend/templates/web/event/generic.tmpl:253
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:66
-#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:163
-#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:167
+#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:162
+#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:166
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:79
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:88
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:200
@@ -6031,7 +6030,7 @@ msgstr "Teilnehmerlisten-Zustimmung"
 #: cdedb/frontend/templates/web/event/lodgement/create_lodgement.tmpl:45
 #: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:84
 #: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:95
-#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:193
+#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:192
 #: cdedb/frontend/templates/web/event/registration/add_registration.tmpl:80
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:89
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:203
@@ -17214,8 +17213,8 @@ msgstr "Die Teilnehmerliste ist aktuell nur für Orgas und Admins sichtbar."
 #: cdedb/frontend/templates/web/event/lodgement/lodgement_wishes_graph_form.tmpl:82
 #: cdedb/frontend/templates/web/event/lodgement/lodgements.tmpl:49
 #: cdedb/frontend/templates/web/event/query/stats.tmpl:23
-#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:152
-#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:158
+#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:151
+#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:157
 msgid "Event Parts"
 msgstr "Veranstaltungsteile"
 
@@ -19659,7 +19658,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:246
 msgid "In order to change the parts you are registered for, contact the orgas."
-msgstr ""
+msgstr "Um die ausgewählten Veranstaltungsteile zu ändern, melde dich bei den Orgas."
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:254
 msgid ""
@@ -19692,17 +19691,17 @@ msgid "I want to be lodged separated by gender."
 msgstr "Ich möchte geschlechtergetrennt untergebracht werden."
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:279
-#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:179
+#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:178
 msgid "Photo consent"
 msgstr "Film- und Fotohinweis"
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:286
-#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:187
+#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:186
 msgid "Notes for Orgas and Instructors"
 msgstr "Anmerkungen für Orgas und Kursleitende"
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:288
-#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:189
+#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:188
 msgid "Notes for Orgas"
 msgstr "Anmerkungen für Orgas"
 
@@ -20723,19 +20722,19 @@ msgstr "Fragebogen umordnen (%(title)s)"
 msgid "Preview"
 msgstr "Vorschau"
 
-#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:197
+#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:196
 msgid "Magic Role"
 msgstr "Spezialfunktion"
 
-#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:207
+#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:206
 msgid "Nr,Nr,Nr,…"
 msgstr "Nr,Nr,Nr,…"
 
-#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:207
+#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:206
 msgid "Order"
 msgstr "Reihenfolge"
 
-#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:209
+#: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:208
 msgid "Reorder"
 msgstr "Umordnen"
 
