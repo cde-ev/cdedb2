@@ -20,12 +20,7 @@
         {% set measure = entry.active_version %}
         <div class="list-group list-group-hover nosp">
             <div id="entry{{ entry.id }}-{{ measure.id }}" class="list-group-item {{ entry.status.list_group_item_styles() }}">
-                <div class="float-right text-right">
-                    {{ measure.timestamp|datetime(lang=lang) -}}
-                    {% if measure.etime %}
-                        – {{ measure.etime|datetime(lang=lang) }}
-                    {% endif %}
-                </div>
+                {{ generic_complaint.entry_version_timespan(measure) }}
                 {{ generic_complaint.pretty_entry_heading(entry) }}
                 <br />
                 <span class="text-muted">

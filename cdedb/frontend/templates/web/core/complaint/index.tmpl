@@ -71,7 +71,7 @@
                                         <span aria-hidden="true">{{ gettext(involvement_type.shortname) }}</span>:
                                         </span>
                                         {% for involved in involveds %}
-                                            {{ util.persona_anchor(personas[involved.persona_id]) -}}
+                                            {{ util.persona_anchor(involved.persona) -}}
                                             {%- if not loop.last %}, {% endif %}
                                         {% endfor %}
                                     {% endif %}

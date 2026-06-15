@@ -26,7 +26,7 @@ from cdedb.common.exceptions import AdverseCompanionError, PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import ComplaintLogFilter
-from cdedb.common.sorting import mixed_existence_sorter
+from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import ComplaintLogCodes
@@ -270,7 +270,19 @@ class ComplaintBackend(AbstractBackend):
                     entry_version
                 )
 
-            return models.Case.many_from_database(case_data)
+            ret = models.Case.many_from_database(case_data)
+            for case in ret.values():
+                _, log_entries = self.generic_retrieve_log(
+                    rs, ComplaintLogFilter(case_id=case.id)
+                )
+                case.personas = self.core.new_get_personas(
+                    rs, case.get_persona_ids(log_entries)
+                )
+                case.involved = {
+                    involved.id: involved
+                    for involved in xsorted(case.involved.values())
+                }
+            return ret
 
     class _GetCaseProtocol(Protocol):
         def __call__(self, rs: RequestState, case_id: int) -> models.Case: ...

@@ -19,7 +19,7 @@
 - {{ gettext(involvement_type|string) }}:
     {#- Be cautionary and hide people not marked as informed. #}
     {%- for involved in involveds if involved.is_informed %}
-    - {{ personas[involved.persona_id]|persona_name }}
+    - {{ involved.persona|persona_name }}
         {%- if age_classes.get(involved.id, enums['AgeClasses'].full) != enums['AgeClasses'].full -%}
             {# #} ({{ gettext(age_classes[involved.id]|string) -}})
         {%- endif %}
@@ -29,7 +29,7 @@
         {%- if involved.get_companions(is_active=None) %}
         - Fallbegleitungen:
             {%- for companion_id, is_active in involved.get_companions(is_active=None).items() %}
-            - {{ personas[companion_id]|persona_name }}
+            - {{ case.personas[companion_id]|persona_name }}
                 {%- if not is_active -%}
                 {# #} ({% trans %}has withdrawn{% endtrans %})
                 {%- endif %}
@@ -54,19 +54,19 @@
     {{- entry.parent.active_version.timestamp|datetime(lang=lang) }}
 {%- endif %}
 {%- if entry.concerned_id %}
-- {% trans %}Concerning{% endtrans %}: {{ personas[entry.concerned_id]|persona_name }}
+- {% trans %}Concerning{% endtrans %}: {{ case.personas[entry.concerned_id]|persona_name }}
 {%- endif %}
 - {% trans %}by{% endtrans %}:
     {%- for author_id in entry.active_version.authors %}
-    - {{ personas[author_id]|persona_name }}
+    - {{ case.personas[author_id]|persona_name }}
     {%- endfor %}
 - {% trans %}Timestamp{% endtrans %}: {{ entry.active_version.timestamp|datetime(lang=lang) }}
 {#- Not relevant: #}
 {#- - {% trans %}Created at{% endtrans %}: {{ entry.all_versions[0].ctime|datetime(lang=lang) }} #}
-{#- - {% trans %}Created by{% endtrans %}: {{ personas[entry.all_versions[0].submitted_by]|persona_name }} #}
+{#- - {% trans %}Created by{% endtrans %}: {{ case.personas[entry.all_versions[0].submitted_by]|persona_name }} #}
 {#- {%- if entry.all_versions|length > 1 %} #}
 {#- - {% trans %}Last Changed at{% endtrans %}: {{ entry.active_version.ctime|datetime(lang=lang) }} #}
-{#- - {% trans %}Last Changed by{% endtrans %}: {{ personas[entry.active_version.submitted_by]|persona_name }} #}
+{#- - {% trans %}Last Changed by{% endtrans %}: {{ case.personas[entry.active_version.submitted_by]|persona_name }} #}
 {#- {%- endif %} #}
 {%- if entry.active_children %}
 - {% trans %}Children{% endtrans %}:
@@ -88,15 +88,15 @@
 {% elif entry['code'].is_historic %}
 ## {% trans %}Log{% endtrans %}: {{ gettext(entry['code']|string) }}
 {%- if entry['companion_id'] %}
-- {{ personas[entry['companion_id']]|persona_name }} {# #}
-    {%- trans involved=personas[entry['persona_id']]|persona_name -%}
+- {{ case.personas[entry['companion_id']]|persona_name }} {# #}
+    {%- trans involved=case.personas[entry['persona_id']]|persona_name -%}
         for {{ involved }}
     {%- endtrans %}
 {%- elif entry['persona_id'] %}
-- {{ personas[entry['persona_id']]|persona_name }}
+- {{ case.personas[entry['persona_id']]|persona_name }}
 {%- endif %}
 {#- Not relevant: #}
-{#- - {% trans %}by{% endtrans %}: {{ personas[entry['submitted_by']]|persona_name }} #}
+{#- - {% trans %}by{% endtrans %}: {{ case.personas[entry['submitted_by']]|persona_name }} #}
 - {% trans %}at{% endtrans %}: {{ entry['ctime']|datetime(lang=lang) }}
 {%- if entry['change_note'] %}
 - {% trans %}Annotation{% endtrans %}: {{ entry['change_note'] }}

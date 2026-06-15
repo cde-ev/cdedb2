@@ -33,10 +33,10 @@
             {{ gettext(entry_type|string) }}
         {% endcall %}
         {% if entry_type.has_concerned %}
-            {{ util.form_input_static(label=gettext("Concerns"), value=util.persona_anchor(concerned, icon='user')) }}
+            {{ util.form_input_static(label=gettext("Concerns"), value=util.persona_anchor(ambience['case'].personas[ambience['entry'].concerned_id], icon='user')) }}
         {% endif %}
         {{ util.form_input_static(label=gettext("Timestamp"), value=ambience['entry'].active_version.timestamp|datetime(lang=lang)) }}
-        {{ util.form_input_static(label=gettext("Authors"), value=util.persona_anchors(authors)) }}
+        {{ util.form_input_static(label=gettext("Authors"), value=util.persona_anchors(ambience['entry'].active_version.author_personas)) }}
         {% if entry_type.has_description %}
             {{ util.form_input_static(name="description", label=gettext("Description"), value=description|md, info=infotext) }}
         {% endif %}

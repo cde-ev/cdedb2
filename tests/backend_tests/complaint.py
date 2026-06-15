@@ -1,6 +1,8 @@
 import copy
 import datetime
 import functools
+from types import SimpleNamespace
+from typing import cast
 
 import freezegun
 
@@ -11,6 +13,7 @@ from cdedb.common import CdEDBObject, PrivilegeError, get_hash, nearly_now, now
 from cdedb.common.crypt import get_decrypt
 from cdedb.common.exceptions import AdverseCompanionError
 from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.query.log_filter import ComplaintLogFilter
 from tests.common import CRON, USER_DICT, BackendTest, as_users, execsql, storage
 from tests.other_tests.test_validation import INVAL, TestValidationBase
 
@@ -313,6 +316,15 @@ class TestComplaintBackend(BackendTest):
                 ),
             },
         )
+        expectation.personas = self.core.new_get_personas(
+            self.key,
+            expectation.get_persona_ids(
+                self.complaint.retrieve_log(
+                    self.key, ComplaintLogFilter(case_id=expectation.id)
+                )[1]
+            ),
+        )
+
         reality = self.complaint.get_case(self.key, 1)
         for expected_entry, real_entry in zip(
             sorted(expectation.entries.values()), reality.entries.values()
@@ -1495,6 +1507,14 @@ class TestComplaintBackend(BackendTest):
             purged_by=None,
             is_purged=False,
             authors={PersonaID(3)},
+        )
+        expectation.entry = cast(
+            models.ComplaintEntry,
+            SimpleNamespace(
+                case=SimpleNamespace(
+                    personas=self.core.new_get_personas(self.key, [1, 3])
+                )
+            ),
         )
 
         case = self.complaint.get_case(self.key, case_id)

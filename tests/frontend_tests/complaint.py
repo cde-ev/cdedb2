@@ -797,7 +797,7 @@ class TestComplaintFrontend(FrontendTest):
             "Fall 1 eng zusammenhängend ist bestätigt ist schwerwiegend"
             " (28.05.2025–04.01.2222): Jemand schnarcht ganz furchtbar. Wirklich!"
             " Überlappende Beteiligte:"
-            " Bertå Beispiel (Zielpersonen Zp), Daniel Dino (Betroffene Bt)",
+            " Daniel Dino (Betroffene Bt), Bertå Beispiel (Zielpersonen Zp)",
             div='related-cases',
             exact=True,
         )
