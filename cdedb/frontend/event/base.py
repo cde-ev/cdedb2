@@ -621,7 +621,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             problems = [("error", msg, {})]
         return UserLodgementWishes(
             field=rs.ambience['event'].lodge_field,
-            wished_personas=wished_personas,
+            wished_personas=wished_personas if registration['list_consent'] else [],
             problems=problems,
         )
 
