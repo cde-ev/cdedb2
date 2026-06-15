@@ -3190,6 +3190,7 @@ def _questionnaire_field_row(
 
 @_create_dataclass_validator(
     models_event.questionnaire.CourseChoices,
+    models_event.questionnaire.PartSelection,
     models_event.questionnaire.FeePreview,
     models_event.questionnaire.ListConsent,
     models_event.questionnaire.MixedLodging,
@@ -3200,12 +3201,12 @@ def _questionnaire_magic_row(
     val: CdEDBObject,
     argname: str = "",
     *,
-    available_magic_roles: set[const.QuestionnaireRowMagicRole],
+    available_magic_roles: set[const.QuestionnaireRowRole],
     **kwargs: Any,
 ) -> CdEDBObject:
 
     errs = ValidationSummary()
-    role: const.QuestionnaireRowMagicRole = val["role"]
+    role: const.QuestionnaireRowRole = val["role"]
 
     if role not in available_magic_roles:
         errs.append(KeyError("role", n_("Invalid magic role.")))
@@ -3231,7 +3232,7 @@ def _questionnaire_row(
 ) -> CdEDBObject:
     tmp = _examine_dictionary_fields(
         val,
-        {"role": const.QuestionnaireRowMagicRole},
+        {"role": const.QuestionnaireRowRole},
         allow_superfluous=True,
         **kwargs,
     )
@@ -3289,7 +3290,7 @@ def _questionnaire(
 
     magic_role_counts = collections.Counter(row["role"] for row in ret if "role" in row)
 
-    for magic_role in const.QuestionnaireRowMagicRole:
+    for magic_role in const.QuestionnaireRowRole:
         count = magic_role_counts[magic_role]
         role_class = magic_role.get_class()
         allowed_frequency = role_class.allowed_frequency(kind)

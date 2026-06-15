@@ -98,14 +98,14 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         )
         spec_per_role = {
             role: dict(role.get_class().requestdict_fields(creation=True))
-            for role in const.QuestionnaireRowMagicRole
+            for role in const.QuestionnaireRowRole
         }
         get_roles_with_field = lambda key: [
             role for role, spec in spec_per_role.items() if key in spec
         ]
         drow_classes_by_role = {
             str(kind): kind.get_class().get_drow_html_classes()
-            for kind in const.QuestionnaireRowMagicRole
+            for kind in const.QuestionnaireRowRole
         }
         return self.render(
             rs,
@@ -161,9 +161,9 @@ class EventQuestionnaireMixin(EventBaseFrontend):
     ) -> CdEDBObject | None:
         if unwrap(request_extractor(rs, {drow_delete(drow_id): bool})):
             return None
-        role: const.QuestionnaireRowMagicRole | None = unwrap(
+        role: const.QuestionnaireRowRole | None = unwrap(
             request_extractor(
-                rs, {drow_name("role", drow_id): const.QuestionnaireRowMagicRole | None}
+                rs, {drow_name("role", drow_id): const.QuestionnaireRowRole | None}
             )
         )
         if not role:

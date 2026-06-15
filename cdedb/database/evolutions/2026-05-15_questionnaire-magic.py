@@ -59,7 +59,7 @@ table_query = """
             kind                    integer NOT NULL,
             -- The position at which this element is shown in the questionnaire.
             pos                     integer NOT NULL,
-            -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowMagicRole.
+            -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowRole.
             role                    integer NOT NULL
     );
     CREATE INDEX questionnaire_magic_rows_event_id_kind_idx ON event.questionnaire_magic_rows(event_id, kind);
@@ -106,7 +106,9 @@ with s:
     print("Inserting default magic rows for every event...")
     print()
 
-    for event in event_backend.get_events(rs, event_backend.list_events(rs)).values():
+    for event_id, event in sorted(
+        event_backend.get_events(rs, event_backend.list_events(rs)).items()
+    ):
         print(f"{event.title}", end=" ", flush=True)
         if not event.tracks:
             print("(no courses)", end=" ", flush=True)

@@ -303,32 +303,35 @@ def event(context: Context) -> int:
     fields = event.get_event(rs, ret).fields
     additional_questionnaire = [
         {
-            'role': const.QuestionnaireRowMagicRole.text_only,
+            'role': const.QuestionnaireRowRole.text_only,
             'title': make_counter(context, 'FragebogenÜberschrift'),
             'text': make_counter(context, 'FragebogenText'),
         }
     ]
     registration_questionnaire: list[dict[str, Any]] = [
         {
-            'role': const.QuestionnaireRowMagicRole.fee_preview,
+            'role': const.QuestionnaireRowRole.part_selection,
         },
         {
-            'role': const.QuestionnaireRowMagicRole.course_choices,
+            'role': const.QuestionnaireRowRole.fee_preview,
         },
         {
-            'role': const.QuestionnaireRowMagicRole.list_consent,
+            'role': const.QuestionnaireRowRole.course_choices,
         },
         {
-            'role': const.QuestionnaireRowMagicRole.mixed_lodging,
+            'role': const.QuestionnaireRowRole.list_consent,
         },
         {
-            'role': const.QuestionnaireRowMagicRole.foto_notice,
+            'role': const.QuestionnaireRowRole.mixed_lodging,
         },
         {
-            'role': const.QuestionnaireRowMagicRole.registration_notes,
+            'role': const.QuestionnaireRowRole.foto_notice,
         },
         {
-            'role': const.QuestionnaireRowMagicRole.text_only,
+            'role': const.QuestionnaireRowRole.registration_notes,
+        },
+        {
+            'role': const.QuestionnaireRowRole.text_only,
             'title': make_counter(context, 'FragebogenÜberschrift'),
             'text': make_counter(context, 'FragebogenText'),
         }

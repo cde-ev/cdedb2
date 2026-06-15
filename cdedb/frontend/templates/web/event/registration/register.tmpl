@@ -132,16 +132,6 @@
             {% endtrans %}
         </p>
 
-        {% if ambience['event'].parts|length > 1 %}
-            {{ util.h(n_("Registration"), underline=true) }}
-        {% endif %}
-
-        {% if ambience['event'].parts|length > 1 %}
-            {{ util.form_input_checkboxes(name="parts", label=gettext("Event Parts"), entries=part_options) }}
-        {% elif ambience['event'].parts|length == 1 %}
-            {{ util.input_hidden(name="parts", value=(ambience['event'].parts|list)[0]) }}
-        {% endif %}
-
         <div id="registrationquestionnaire">
             {% for entry in reg_questionnaire %}
                 {{ generic_event.print_questionnaire_entry(entry) }}

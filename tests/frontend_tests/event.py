@@ -1390,7 +1390,7 @@ etc;anything else""",
         self.traverse("Fragebogen konfigurieren")
         f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
-        f['role_-1'] = const.QuestionnaireRowMagicRole.event_field
+        f['role_-1'] = const.QuestionnaireRowRole.event_field
         f['label_-1'] = "foobar"
         f['info_-1'] = "blaster master"
         f['field_id_-1'] = "1001"
@@ -1423,7 +1423,7 @@ etc;anything else""",
         self.traverse("Fragebogen konfigurieren")
         f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
-        f['role_-1'] = const.QuestionnaireRowMagicRole.event_field
+        f['role_-1'] = const.QuestionnaireRowRole.event_field
         f['label_-1'] = "foobar"
         f['info_-1'] = "blaster master"
         f['field_id_-1'] = "1001"
@@ -2349,47 +2349,50 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             const.QuestionnaireUsages.registration,
             [
                 {
-                    "role": const.QuestionnaireRowMagicRole.fee_preview,
+                    "role": const.QuestionnaireRowRole.part_selection,
                 },
                 {
-                    "role": const.QuestionnaireRowMagicRole.course_choices,
+                    "role": const.QuestionnaireRowRole.fee_preview,
                 },
                 {
-                    "role": const.QuestionnaireRowMagicRole.list_consent,
+                    "role": const.QuestionnaireRowRole.course_choices,
                 },
                 {
-                    "role": const.QuestionnaireRowMagicRole.foto_notice,
+                    "role": const.QuestionnaireRowRole.list_consent,
                 },
                 {
-                    "role": const.QuestionnaireRowMagicRole.mixed_lodging,
+                    "role": const.QuestionnaireRowRole.foto_notice,
                 },
                 {
-                    "role": const.QuestionnaireRowMagicRole.event_field,
+                    "role": const.QuestionnaireRowRole.mixed_lodging,
+                },
+                {
+                    "role": const.QuestionnaireRowRole.event_field,
                     "field_id": 1001,
                     "label": "Ich bin unter 13 Jahre alt.",
                 },
                 {
-                    "role": const.QuestionnaireRowMagicRole.event_field,
+                    "role": const.QuestionnaireRowRole.event_field,
                     "field_id": 1002,
                     "label": "Ich bringe noch jemanden mit.",
                 },
                 {
-                    "role": const.QuestionnaireRowMagicRole.event_field,
+                    "role": const.QuestionnaireRowRole.event_field,
                     "field_id": 1003,
                     "label": "Name des Partners.",
                 },
                 {
-                    "role": const.QuestionnaireRowMagicRole.event_field,
+                    "role": const.QuestionnaireRowRole.event_field,
                     "field_id": 1004,
                     "label": "Anzahl an Kissen",
                 },
                 {
-                    "role": const.QuestionnaireRowMagicRole.event_field,
+                    "role": const.QuestionnaireRowRole.event_field,
                     "field_id": 1005,
                     "label": "Essgewohnheiten.",
                 },
                 {
-                    "role": const.QuestionnaireRowMagicRole.event_field,
+                    "role": const.QuestionnaireRowRole.event_field,
                     "field_id": 1006,
                     "label": "Dein Lieblingstag",
                 },
@@ -5547,7 +5550,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertEqual("Hauswunsch", f['label_4'].value)
 
         f['create_-1'].checked = True
-        f['role_-1'] = const.QuestionnaireRowMagicRole.event_field
+        f['role_-1'] = const.QuestionnaireRowRole.event_field
         f['field_id_-1'] = 4
         f['label_-1'] = "Input"
         f['readonly_-1'].checked = True
@@ -5568,7 +5571,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         # Add a row with a datetime field and check that the default value works.
         f['create_-1'] = True
-        f['role_-1'] = const.QuestionnaireRowMagicRole.event_field
+        f['role_-1'] = const.QuestionnaireRowRole.event_field
         f['field_id_-1'] = 9  # 'arrival_at'
         f['default_value_-1'] = expectation = "2025-05-24 23:47:32"
         self.submit(f)
@@ -8382,17 +8385,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse("Veranstaltungen", "CdE-Party", "Anmeldung konfigurieren")
         f = self.response.forms['configurequestionnaireform']
         f['create_-1'] = True
-        f['role_-1'] = const.QuestionnaireRowMagicRole.event_field
+        f['role_-1'] = const.QuestionnaireRowRole.event_field
         f['field_id_-1'] = 1001
         self.submit(f)
         f = self.response.forms['configurequestionnaireform']
         f['create_-1'] = True
-        f['role_-1'] = const.QuestionnaireRowMagicRole.event_field
+        f['role_-1'] = const.QuestionnaireRowRole.event_field
         f['field_id_-1'] = 1002
         self.submit(f)
         f = self.response.forms['configurequestionnaireform']
         f['create_-1'] = True
-        f['role_-1'] = const.QuestionnaireRowMagicRole.event_field
+        f['role_-1'] = const.QuestionnaireRowRole.event_field
         f['field_id_-1'] = 1003
         self.submit(f)
         self.traverse("Anmelden")

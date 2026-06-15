@@ -1414,7 +1414,7 @@
             "info": "Denk daran, deine Eltern mitzubringen!",
             "kind": 1,
             "label": "Ich bin unter 13 Jahre alt.",
-            "pos": 5,
+            "pos": 7,
             "readonly": false,
             "role": 5
         }
@@ -1424,49 +1424,56 @@
             "event_id": 1,
             "id": 1,
             "kind": 1,
-            "pos": 0,
-            "role": 30
+            "pos": 1,
+            "role": 20
         },
         "2": {
             "event_id": 1,
             "id": 2,
             "kind": 1,
             "pos": 2,
-            "role": 10
+            "role": 30
         },
         "3": {
             "event_id": 1,
             "id": 3,
             "kind": 1,
             "pos": 4,
-            "role": 40
+            "role": 10
         },
         "4": {
             "event_id": 1,
             "id": 4,
             "kind": 1,
             "pos": 6,
-            "role": 50
+            "role": 40
         },
         "5": {
             "event_id": 1,
             "id": 5,
             "kind": 1,
-            "pos": 7,
-            "role": 60
+            "pos": 8,
+            "role": 50
         },
         "6": {
             "event_id": 1,
             "id": 6,
             "kind": 1,
-            "pos": 8,
-            "role": 70
+            "pos": 9,
+            "role": 60
         },
         "7": {
             "event_id": 1,
             "id": 7,
             "kind": 1,
-            "pos": 9,
+            "pos": 10,
+            "role": 70
+        },
+        "8": {
+            "event_id": 1,
+            "id": 8,
+            "kind": 1,
+            "pos": 11,
             "role": 30
         }
     },
@@ -1502,16 +1509,25 @@
             "event_id": 1,
             "id": 4,
             "kind": 1,
-            "pos": 1,
+            "pos": 0,
             "role": 1,
             "text": null,
-            "title": "Kurswahlen"
+            "title": "Anmeldung"
         },
         "5": {
             "event_id": 1,
             "id": 5,
             "kind": 1,
             "pos": 3,
+            "role": 1,
+            "text": null,
+            "title": "Kurswahlen"
+        },
+        "6": {
+            "event_id": 1,
+            "id": 6,
+            "kind": 1,
+            "pos": 5,
             "role": 1,
             "text": null,
             "title": "Weitere Angaben"

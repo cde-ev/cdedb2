@@ -47,8 +47,8 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
     kind: const.QuestionnaireUsages
     pos: int
 
-    role: const.QuestionnaireRowMagicRole
-    _role: ClassVar[const.QuestionnaireRowMagicRole]
+    role: const.QuestionnaireRowRole
+    _role: ClassVar[const.QuestionnaireRowRole]
     _frequency: ClassVar[
         QuestionnaireFrequency | dict[const.QuestionnaireUsages, QuestionnaireFrequency]
     ]
@@ -76,7 +76,7 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
 
     @staticmethod
     def get_class(
-        role: const.QuestionnaireRowMagicRole,
+        role: const.QuestionnaireRowRole,
     ) -> type["QuestionnaireRow"]:
         for cls in (
             QuestionnaireRow.__subclasses__() + QuestionnaireMagicRow.__subclasses__()
@@ -89,7 +89,7 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "QuestionnaireRow":
-        role = const.QuestionnaireRowMagicRole(data["role"])
+        role = const.QuestionnaireRowRole(data["role"])
         return cls.get_class(role).from_database(data)
 
     def get_sortkey(self) -> Sortkey:
@@ -119,7 +119,7 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
 @dataclasses.dataclass
 class QuestionnaireTextRow(QuestionnaireRow):
     database_table = "event.questionnaire_text_rows"
-    _role = const.QuestionnaireRowMagicRole.text_only
+    _role = const.QuestionnaireRowRole.text_only
     _frequency = QuestionnaireFrequency.optional
     static = True
 
@@ -142,7 +142,7 @@ class QuestionnaireTextRow(QuestionnaireRow):
 @dataclasses.dataclass
 class QuestionnaireFieldRow(QuestionnaireRow):
     database_table = "event.questionnaire_field_rows"
-    _role = const.QuestionnaireRowMagicRole.event_field
+    _role = const.QuestionnaireRowRole.event_field
     _frequency = QuestionnaireFrequency.optional
     static = True
 
@@ -201,7 +201,7 @@ class QuestionnaireMagicRow(QuestionnaireRow):
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "QuestionnaireMagicRow":
-        role = const.QuestionnaireRowMagicRole(data["role"])
+        role = const.QuestionnaireRowRole(data["role"])
         return cast(
             QuestionnaireMagicRow,
             super(QuestionnaireRow, role.get_class()).from_database(data),
@@ -214,7 +214,7 @@ class QuestionnaireMagicRow(QuestionnaireRow):
 
 @dataclasses.dataclass
 class CourseChoices(QuestionnaireMagicRow):
-    _role = const.QuestionnaireRowMagicRole.course_choices
+    _role = const.QuestionnaireRowRole.course_choices
     _frequency = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory
     }
@@ -225,8 +225,20 @@ class CourseChoices(QuestionnaireMagicRow):
 
 
 @dataclasses.dataclass
+class PartSelection(QuestionnaireMagicRow):
+    _role = const.QuestionnaireRowRole.part_selection
+    _frequency = {
+        const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory
+    }
+
+    @classmethod
+    def get_icon(cls) -> str:
+        return "clock"
+
+
+@dataclasses.dataclass
 class FeePreview(QuestionnaireMagicRow):
-    _role = const.QuestionnaireRowMagicRole.fee_preview
+    _role = const.QuestionnaireRowRole.fee_preview
     _frequency = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory,
     }
@@ -239,7 +251,7 @@ class FeePreview(QuestionnaireMagicRow):
 
 @dataclasses.dataclass
 class ListConsent(QuestionnaireMagicRow):
-    _role = const.QuestionnaireRowMagicRole.list_consent
+    _role = const.QuestionnaireRowRole.list_consent
     _frequency = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory,
     }
@@ -251,7 +263,7 @@ class ListConsent(QuestionnaireMagicRow):
 
 @dataclasses.dataclass
 class MixedLodging(QuestionnaireMagicRow):
-    _role = const.QuestionnaireRowMagicRole.mixed_lodging
+    _role = const.QuestionnaireRowRole.mixed_lodging
     _frequency = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory,
     }
@@ -263,7 +275,7 @@ class MixedLodging(QuestionnaireMagicRow):
 
 @dataclasses.dataclass
 class FotoNotice(QuestionnaireMagicRow):
-    _role = const.QuestionnaireRowMagicRole.foto_notice
+    _role = const.QuestionnaireRowRole.foto_notice
     _frequency = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory,
     }
@@ -276,7 +288,7 @@ class FotoNotice(QuestionnaireMagicRow):
 
 @dataclasses.dataclass
 class RegistrationNotes(QuestionnaireMagicRow):
-    _role = const.QuestionnaireRowMagicRole.registration_notes
+    _role = const.QuestionnaireRowRole.registration_notes
     _frequency = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.optional,
     }
@@ -312,10 +324,10 @@ class Questionnaire(list[QuestionnaireRow]):
             return False
         return True
 
-    def get_role_counts(self) -> collections.Counter[const.QuestionnaireRowMagicRole]:
+    def get_role_counts(self) -> collections.Counter[const.QuestionnaireRowRole]:
         return collections.Counter(row.role for row in self)
 
-    def allows_magic_role(self, magic_role: const.QuestionnaireRowMagicRole) -> bool:
+    def allows_magic_role(self, magic_role: const.QuestionnaireRowRole) -> bool:
         magic_role_class = magic_role.get_class()
         frequency = magic_role_class.allowed_frequency(self.kind)
         return frequency.allows()
@@ -371,11 +383,11 @@ class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
 
     def get_available_magic_roles(
         self, kind: const.QuestionnaireUsages
-    ) -> list[const.QuestionnaireRowMagicRole]:
+    ) -> list[const.QuestionnaireRowRole]:
         """Return all builtins available for use in a questionnaire of the given kind."""
         return [
             magic_role
-            for magic_role in const.QuestionnaireRowMagicRole
+            for magic_role in const.QuestionnaireRowRole
             if self[kind].allows_magic_role(magic_role)
         ]
 
@@ -383,24 +395,26 @@ class QuestionnaireContainer(dict[const.QuestionnaireUsages, Questionnaire]):
 def make_default_questionnaire(
     event: Event,
 ) -> dict[const.QuestionnaireUsages, list[CdEDBObject]]:
-    reg_quest: list[const.QuestionnaireRowMagicRole | str] = [
-        const.QuestionnaireRowMagicRole.fee_preview,
+    reg_quest: list[const.QuestionnaireRowRole | str] = [
+        "Anmeldung",
+        const.QuestionnaireRowRole.part_selection,
+        const.QuestionnaireRowRole.fee_preview,
     ]
     if event.tracks:
         reg_quest.append("Kurswahlen")
     reg_quest.extend([
-        const.QuestionnaireRowMagicRole.course_choices,
+        const.QuestionnaireRowRole.course_choices,
         "Weitere Angaben",
-        const.QuestionnaireRowMagicRole.list_consent,
-        const.QuestionnaireRowMagicRole.mixed_lodging,
-        const.QuestionnaireRowMagicRole.foto_notice,
-        const.QuestionnaireRowMagicRole.registration_notes,
-        const.QuestionnaireRowMagicRole.fee_preview,
+        const.QuestionnaireRowRole.list_consent,
+        const.QuestionnaireRowRole.mixed_lodging,
+        const.QuestionnaireRowRole.foto_notice,
+        const.QuestionnaireRowRole.registration_notes,
+        const.QuestionnaireRowRole.fee_preview,
     ])
 
     return {
         const.QuestionnaireUsages.registration: [
-            {"role": const.QuestionnaireRowMagicRole.text_only, "title": x}
+            {"role": const.QuestionnaireRowRole.text_only, "title": x}
             if isinstance(x, str)
             else {"role": x}
             for x in reg_quest

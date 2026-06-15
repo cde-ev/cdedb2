@@ -426,6 +426,14 @@
             ],
             "QuestionnaireUsages.registration": [
                 {
+                    "role": 1,
+                    "text": null,
+                    "title": "Anmeldung"
+                },
+                {
+                    "role": 20
+                },
+                {
                     "role": 30
                 },
                 {

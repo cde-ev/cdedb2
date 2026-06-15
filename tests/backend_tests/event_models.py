@@ -973,7 +973,7 @@ class TestEventValidation(BackendTest, TestValidationBase):
                 (
                     {
                         "kind": const.QuestionnaireUsages.additional,
-                        "role": const.QuestionnaireRowMagicRole.event_field,
+                        "role": const.QuestionnaireRowRole.event_field,
                         "field_id": None,
                     },
                     None,
@@ -989,7 +989,7 @@ class TestEventValidation(BackendTest, TestValidationBase):
                 (
                     {
                         "kind": const.QuestionnaireUsages.additional,
-                        "role": const.QuestionnaireRowMagicRole.event_field,
+                        "role": const.QuestionnaireRowRole.event_field,
                         "field_id": None,
                     },
                     None,
@@ -1007,7 +1007,7 @@ class TestEventValidation(BackendTest, TestValidationBase):
                 (
                     [
                         {
-                            "role": const.QuestionnaireRowMagicRole.event_field,
+                            "role": const.QuestionnaireRowRole.event_field,
                             "field_id": None,
                         },
                     ],
@@ -1032,12 +1032,12 @@ class TestEventValidation(BackendTest, TestValidationBase):
                         ],
                         {
                             "kind": const.QuestionnaireUsages.registration,
-                            "role": const.QuestionnaireRowMagicRole.course_choices,
+                            "role": const.QuestionnaireRowRole.course_choices,
                         },
                     ],
                     None,
                     ValueError(
-                        "Must not duplicate this role: 'CourseChoices'. (role_2)"
+                        "Must not duplicate this role: 'CourseChoices'. (role_4)"
                     ),
                 ),
                 # Check that foto notice must not be missing.
@@ -1056,7 +1056,7 @@ class TestEventValidation(BackendTest, TestValidationBase):
                         ],
                         {
                             "kind": const.QuestionnaireUsages.registration,
-                            "role": const.QuestionnaireRowMagicRole.fee_preview,
+                            "role": const.QuestionnaireRowRole.fee_preview,
                         },
                     ],
                     NO_COMPARE,

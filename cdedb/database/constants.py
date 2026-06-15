@@ -202,11 +202,11 @@ class QuestionnaireUsages(CdEIntEnum):
 
 
 @enum.unique
-class QuestionnaireRowMagicRole(CdEIntEnum):
+class QuestionnaireRowRole(CdEIntEnum):
     text_only = 1
     event_field = 5
     course_choices = 10
-    # part_selection = 20
+    part_selection = 20
     fee_preview = 30
     list_consent = 40
     mixed_lodging = 50
