@@ -1981,9 +1981,8 @@ class EventEventMixin(EventBaseFrontend):
         reg_id, errs = inspect(vtypes.ID, phrase, argname="phrase")
         if not errs:
             assert reg_id is not None
-            regs = self.eventproxy.get_registration(rs, reg_id)
-            if regs:
-                reg = unwrap(regs)
+            reg = self.eventproxy.get_registration(rs, reg_id)
+            if reg:
                 if reg['event_id'] == event_id:
                     return self.redirect(
                         rs, "event/show_registration", {'registration_id': reg['id']}
