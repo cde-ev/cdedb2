@@ -747,7 +747,9 @@ class EventRegistrationBackend(EventBaseBackend):
                             ON reg.id = rparts.registration_id
                     WHERE rparts.part_id = %(part_id)s AND rparts.status = %(reg_status)s
                     ORDER BY
-                        COALESCE((reg.fields->>'{field_name}')::int, 2^31), reg.id
+                        COALESCE((reg.fields->>'{field_name or " "}')::int, 2^31),
+                        reg.payment,
+                        reg.id
                 """
                 params = {
                     "part_id": part_id,
