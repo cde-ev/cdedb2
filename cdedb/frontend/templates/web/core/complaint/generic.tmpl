@@ -39,7 +39,9 @@
         {% endif %}
     </strong>
     {% if entry.concerned_id and (not ambience['persona'] or ambience['persona']['id'] != entry.concerned_id) %}
-        {% trans concerned=util.persona_anchor((entry.case.personas if entry.case else personas)[entry.concerned_id], icon='user') %}
+        {# On measure pages, the case (and thus its personas) is not available, thus they are supplied separately to the template. #}
+        {% set personas = entry.case.personas if entry.case else personas %}
+        {% trans concerned=util.persona_anchor(personas[entry.concerned_id], icon='user') %}
              (for {{ concerned }})
         {% endtrans %}
     {% endif %}
