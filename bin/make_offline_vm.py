@@ -9,6 +9,7 @@ provided exported event. The VM is then put into offline mode.
 import argparse
 import collections.abc
 import copy
+import itertools
 import json
 import pathlib
 import subprocess
@@ -272,7 +273,10 @@ def work(
         # Use a dict to remove duplicates while preserving order.
         *{
             cls.database_table: None
-            for name, cls in vars(models).items()
+            for name, cls in itertools.chain(
+                vars(models).items(),
+                vars(models.questionnaire).items()
+            )
             if not name.startswith("__")
                 and isinstance(cls, type)
                 and issubclass(cls, models.EventDataclass)
