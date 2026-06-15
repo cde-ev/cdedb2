@@ -70,9 +70,7 @@ class EntityKeeper:
             args, cwd=cwd, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
         msg = completed.stdout or ""
-        if check == "raise":
-            completed.check_returncode()
-        elif check == "log":
+        if check in {"log", "raise"}:
             if completed.returncode != 0:
                 self.logger.error(
                     "Git error performing command %s in directory %s: %s",
@@ -80,6 +78,8 @@ class EntityKeeper:
                     cwd,
                     msg,
                 )
+            if check == "raise":
+                completed.check_returncode()
         elif check == "ignore":
             if completed.returncode != 0:
                 self.logger.debug(
