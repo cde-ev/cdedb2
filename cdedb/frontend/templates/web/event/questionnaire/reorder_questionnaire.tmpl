@@ -201,6 +201,39 @@
                                 </ul>
                             </div>
                         </div>
+                    {% elif entry.name == "MyData" %}
+                        <div class="miniature-content">
+                            <div class="miniature-label">
+                                {% trans %}Full Name{% endtrans %}
+                            </div>
+                            <div class="miniature-text">
+                                {{ save_to(gettext("Full Name")) }}
+                            </div>
+                            <div class="miniature-label">
+                                {% trans %}Birthday{% endtrans %}
+                            </div>
+                            <div class="miniature-text">
+                                {{ save_to(gettext("Birthday")) }}
+                            </div>
+                            <div class="miniature-label">
+                                {% trans %}Gender{% endtrans %}
+                            </div>
+                            <div class="miniature-text">
+                                {{ save_to(gettext("Gender")) }}
+                            </div>
+                            <div class="miniature-label">
+                                {% trans %}Pronouns{% endtrans %}
+                            </div>
+                            <div class="miniature-text">
+                                {{ save_to(gettext("Pronouns")) }}
+                            </div>
+                            <div class="miniature-label">
+                                ...
+                            </div>
+                            <div class="miniature-text">
+                                {{ save_to("...") }}
+                            </div>
+                        </div>
                     {% else %}
                         <div class="miniature-heading alert alert-info {{ entry.get_drow_html_classes()|join(" ") }}">
                             {% trans %}Magic Role{% endtrans %}:

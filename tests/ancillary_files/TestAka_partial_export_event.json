@@ -428,6 +428,14 @@
                 {
                     "role": 1,
                     "text": null,
+                    "title": "Meine Daten"
+                },
+                {
+                    "role": 90
+                },
+                {
+                    "role": 1,
+                    "text": null,
                     "title": "Anmeldung"
                 },
                 {

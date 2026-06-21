@@ -309,6 +309,20 @@ class TableOfContents(QuestionnaireMagicRow):
         return "list"
 
 
+@dataclasses.dataclass
+class MyData(QuestionnaireMagicRow):
+    _role = const.QuestionnaireRowRole.my_data
+    _frequency = {
+        const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory,
+        const.QuestionnaireUsages.additional: QuestionnaireFrequency.optional,
+    }
+    static = True
+
+    @classmethod
+    def get_icon(cls) -> str:
+        return "user"
+
+
 class Questionnaire(list[QuestionnaireRow]):
     kind: const.QuestionnaireUsages
     all_questionnaires: "QuestionnaireContainer"
@@ -418,6 +432,8 @@ def make_default_questionnaire(
     event: Event,
 ) -> dict[const.QuestionnaireUsages, list[CdEDBObject]]:
     reg_quest: list[const.QuestionnaireRowRole | str] = [
+        "Meine Daten",
+        const.QuestionnaireRowRole.my_data,
         "Anmeldung",
         const.QuestionnaireRowRole.part_selection,
         const.QuestionnaireRowRole.fee_preview,

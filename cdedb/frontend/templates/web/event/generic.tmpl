@@ -296,6 +296,41 @@
                 {% endfor %}
             </ul>
         </div>
+    {% elif row.name == "MyData" %}
+        <dl class="dl-horizontal">
+            <dt title="{% trans %}Full Name{% endtrans %}">{% trans %}Full Name{% endtrans %}</dt>
+            <dd>
+                {{ persona|persona_name(include_nickname=True, with_titles=True) }}
+            </dd>
+
+            <dt title="{% trans %}Birthday{% endtrans %}">{% trans %}Birthday{% endtrans %}</dt>
+            <dd>{{ persona['birthday']|date(lang=lang) }}</dd>
+            <dt title="{% trans %}Gender{% endtrans %}">{% trans %}Gender{% endtrans %}</dt>
+            <dd>{{ gettext(enums['Genders'](persona['gender'])|string) }}</dd>
+            <dt title="{% trans %}Pronouns{% endtrans %}">{% trans %}Pronouns{% endtrans %}</dt>
+            <dd>{{ persona['pronouns'] }}</dd>
+            <dt title="{% trans %}Show pronouns on nametags{% endtrans %}">{% trans %}Pronouns on nametags{% endtrans %}</dt>
+            <dd>{{ util.deko_checkbox(persona['pronouns_nametag']) }}</dd>
+            <dt title="{% trans %}E-Mail{% endtrans %}">{% trans %}E-Mail{% endtrans %}</dt>
+            <dd> {{ persona['username'] }} </dd>
+            <dt title="{% trans %}Phone{% endtrans %}">{% trans %}Phone{% endtrans %}</dt>
+            <dd>{{ persona['telephone']|phone }}</dd>
+            <dt title="{% trans %}Mobile Phone{% endtrans %}">{% trans %}Mobile Phone{% endtrans %}</dt>
+            <dd>{{ persona['mobile']|phone }}</dd>
+            <dt title="{% trans %}Address{% endtrans %}">{% trans %}Address{% endtrans %}</dt>
+            <dd>{{ persona['address'] }}</dd>
+            <dt title="{% trans %}Address Supplement{% endtrans %}">{% trans %}Address Supplement{% endtrans %}</dt>
+            <dd>{{ persona['address_supplement'] }}</dd>
+            <dt title="{% trans %}City{% endtrans %}">{% trans %}City{% endtrans %}</dt>
+            <dd>{{ persona['postal_code'] }} {{ persona['location'] }}</dd>
+            <dt title="{% trans %}Country{% endtrans %}">{% trans %}Country{% endtrans %}</dt>
+            <dd>{{ util.gettext_country(persona['country']) }}</dd>
+        </dl>
+        <p>
+            {% trans link=util.href(cdedblink('core/change_user'), gettext("form to edit your profile")) %}
+                This data is taken from your personal profile. To change it, use this {{ link }}.
+            {% endtrans %}
+        </p>
     {% else %}
         {{ row.name }}
     {% endif %}

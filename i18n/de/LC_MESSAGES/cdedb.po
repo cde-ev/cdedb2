@@ -197,6 +197,9 @@ msgstr "Anmeldungs-Notizen"
 msgid "QuestionnaireRowRole.table_of_contents"
 msgstr "Inhaltsverzeichnis"
 
+msgid "QuestionnaireRowRole.my_data"
+msgstr "Eigene Daten"
+
 #: cdedb/.i18n_additional.py:47
 msgid "EventPartGroupType.mutually_exclusive_participants"
 msgstr "Teilnahmeausschließlichkeit"
