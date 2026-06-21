@@ -18,6 +18,15 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
 
+msgid "EventFeeType.followup_donation"
+msgstr "Sonstige Spende"
+
+msgid "FieldDatatypes.str_monospace"
+msgstr "Text (mehrzeilig, monospace)"
+
+msgid "QuestionnaireRowRole.table_of_contents"
+msgstr "Inhaltsverzeichnis"
+
 #: bin/archive/migrate_execute.py:392
 msgid "Initial import."
 msgstr "Ursprünglicher Import."
@@ -114,9 +123,6 @@ msgstr "Text"
 msgid "FieldDatatypes.str_multiline"
 msgstr "Text (mehrzeilig)"
 
-msgid "FieldDatatypes.str_monospace"
-msgstr "Text (mehrzeilig, monospace)"
-
 #: cdedb/.i18n_additional.py:27
 msgid "FieldDatatypes.bool"
 msgstr "Ja/Nein"
@@ -196,9 +202,6 @@ msgstr "Fotohinweis"
 #: cdedb/.i18n_additional.py:46
 msgid "QuestionnaireRowRole.registration_notes"
 msgstr "Anmeldungs-Notizen"
-
-msgid "QuestionnaireRowRole.table_of_contents"
-msgstr "Inhaltsverzeichnis"
 
 #: cdedb/.i18n_additional.py:47
 msgid "EventPartGroupType.mutually_exclusive_participants"
@@ -19664,7 +19667,8 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:246
 msgid "In order to change the parts you are registered for, contact the orgas."
-msgstr "Um die ausgewählten Veranstaltungsteile zu ändern, melde dich bei den Orgas."
+msgstr ""
+"Um die ausgewählten Veranstaltungsteile zu ändern, melde dich bei den Orgas."
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:254
 msgid ""
