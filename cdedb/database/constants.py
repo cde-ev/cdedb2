@@ -212,6 +212,7 @@ class QuestionnaireRowRole(CdEIntEnum):
     mixed_lodging = 50
     foto_notice = 60
     registration_notes = 70
+    table_of_contents = 80
 
     def get_class(self) -> type["QuestionnaireRow"]:
         from cdedb.models.event.questionnaire import (  # noqa: PLC0415

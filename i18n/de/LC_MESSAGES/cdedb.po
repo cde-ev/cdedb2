@@ -194,6 +194,9 @@ msgstr "Fotohinweis"
 msgid "QuestionnaireRowRole.registration_notes"
 msgstr "Anmeldungs-Notizen"
 
+msgid "QuestionnaireRowRole.table_of_contents"
+msgstr "Inhaltsverzeichnis"
+
 #: cdedb/.i18n_additional.py:47
 msgid "EventPartGroupType.mutually_exclusive_participants"
 msgstr "Teilnahmeausschließlichkeit"

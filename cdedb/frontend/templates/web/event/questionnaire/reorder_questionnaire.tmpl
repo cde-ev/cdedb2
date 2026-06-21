@@ -191,6 +191,16 @@
                         <div class="miniature-textarea">
                             {{ save_to(gettext("Notes")) }}
                         </div>
+                    {% elif entry.name == "TableOfContents" %}
+                        <div class="miniature-md">
+                            <div class="toc">
+                                <ul class="nosp">
+                                    {% for row in entry.questionnaire.text_rows if row.title %}
+                                        <li>{{ util.href("#" + "_".join(row.title.split()), row.title) }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
                     {% else %}
                         <div class="miniature-heading alert alert-info {{ entry.get_drow_html_classes()|join(" ") }}">
                             {% trans %}Magic Role{% endtrans %}:
