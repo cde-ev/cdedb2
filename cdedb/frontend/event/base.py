@@ -598,16 +598,16 @@ class EventBaseFrontend(AbstractUserFrontend):
             self.eventproxy.list_registrations(rs, event_id, rs.user.persona_id).keys()
         )
         registration = self.eventproxy.get_registration(rs, registration_id)
-        data = self._get_participant_list_data(rs, event_id)
-        wishes, problems = detect_lodgement_wishes(
-            data['registrations'],
-            data['personas'],
-            rs.ambience['event'],
-            restrict_part_id=None,
-            restrict_registration_id=registration_id,
-            check_edges=False,
-        )
         if registration['list_consent']:
+            data = self._get_participant_list_data(rs, event_id)
+            wishes, problems = detect_lodgement_wishes(
+                data['registrations'],
+                data['personas'],
+                rs.ambience['event'],
+                restrict_part_id=None,
+                restrict_registration_id=registration_id,
+                check_edges=False,
+            )
             # Ordered list of wished personas
             wished_personas = xsorted([
                 data['personas'][data['registrations'][wish.wished]['persona_id']]
@@ -618,10 +618,11 @@ class EventBaseFrontend(AbstractUserFrontend):
                 "You can not access the Participant List as you have not agreed to"
                 " have your own data sent to other participants before the event."
             )
+            wished_personas = []
             problems = [("error", msg, {})]
         return UserLodgementWishes(
             field=rs.ambience['event'].lodge_field,
-            wished_personas=wished_personas if registration['list_consent'] else [],
+            wished_personas=wished_personas,
             problems=problems,
         )
 
