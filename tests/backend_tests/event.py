@@ -2132,11 +2132,11 @@ class TestEventBackend(BackendTest):
         expectation = models.questionnaire.QuestionnaireContainer({
             const.QuestionnaireUsages.registration: models.questionnaire.Questionnaire(
                 [
-                    models.questionnaire.QuestionnaireTextRow(
+                    models.questionnaire.QuestionnaireHeadingRow(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
                         pos=0,
-                        role=const.QuestionnaireRowRole.text_only,
+                        role=const.QuestionnaireRowRole.heading,
                         title="Meine Daten",
                         text=None,
                     ),
@@ -2146,11 +2146,11 @@ class TestEventBackend(BackendTest):
                         pos=1,
                         role=const.QuestionnaireRowRole.my_data,
                     ),
-                    models.questionnaire.QuestionnaireTextRow(
+                    models.questionnaire.QuestionnaireHeadingRow(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
                         pos=2,
-                        role=const.QuestionnaireRowRole.text_only,
+                        role=const.QuestionnaireRowRole.heading,
                         title="Anmeldung",
                         text=None,
                     ),
@@ -2166,11 +2166,11 @@ class TestEventBackend(BackendTest):
                         pos=4,
                         role=const.QuestionnaireRowRole.fee_preview,
                     ),
-                    models.questionnaire.QuestionnaireTextRow(
+                    models.questionnaire.QuestionnaireHeadingRow(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
                         pos=5,
-                        role=const.QuestionnaireRowRole.text_only,
+                        role=const.QuestionnaireRowRole.heading,
                         title="Kurswahlen",
                         text=None,
                     ),
@@ -2180,11 +2180,11 @@ class TestEventBackend(BackendTest):
                         pos=6,
                         role=const.QuestionnaireRowRole.course_choices,
                     ),
-                    models.questionnaire.QuestionnaireTextRow(
+                    models.questionnaire.QuestionnaireHeadingRow(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.registration,
                         pos=7,
-                        role=const.QuestionnaireRowRole.text_only,
+                        role=const.QuestionnaireRowRole.heading,
                         title="Weitere Angaben",
                         text=None,
                     ),
@@ -2232,18 +2232,26 @@ class TestEventBackend(BackendTest):
             ),
             const.QuestionnaireUsages.additional: models.questionnaire.Questionnaire(
                 [
-                    models.questionnaire.QuestionnaireTextRow(
+                    models.questionnaire.QuestionnaireHeadingRow(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.additional,
                         pos=0,
-                        role=const.QuestionnaireRowRole.text_only,
+                        role=const.QuestionnaireRowRole.heading,
                         title="Unterüberschrift",
+                        text=None,
+                    ),
+                    models.questionnaire.QuestionnaireTextRow(
+                        event_id=vtypes.ID(1),
+                        kind=const.QuestionnaireUsages.additional,
+                        pos=1,
+                        role=const.QuestionnaireRowRole.text,
+                        title=None,
                         text="mit Text darunter",
                     ),
                     models.questionnaire.QuestionnaireFieldRow(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.additional,
-                        pos=1,
+                        pos=2,
                         role=const.QuestionnaireRowRole.event_field,
                         field_id=vtypes.ID(1),
                         label="Bälle",
@@ -2253,23 +2261,23 @@ class TestEventBackend(BackendTest):
                     models.questionnaire.QuestionnaireTextRow(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.additional,
-                        pos=2,
-                        role=const.QuestionnaireRowRole.text_only,
+                        pos=3,
+                        role=const.QuestionnaireRowRole.text,
                         title=None,
                         text="nur etwas Text",
                     ),
-                    models.questionnaire.QuestionnaireTextRow(
+                    models.questionnaire.QuestionnaireHeadingRow(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.additional,
-                        pos=3,
-                        role=const.QuestionnaireRowRole.text_only,
+                        pos=4,
+                        role=const.QuestionnaireRowRole.heading,
                         title="Weitere Überschrift",
                         text=None,
                     ),
                     models.questionnaire.QuestionnaireFieldRow(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.additional,
-                        pos=4,
+                        pos=5,
                         role=const.QuestionnaireRowRole.event_field,
                         field_id=vtypes.ID(2),
                         label="Vehikel",
@@ -2279,7 +2287,7 @@ class TestEventBackend(BackendTest):
                     models.questionnaire.QuestionnaireFieldRow(
                         event_id=vtypes.ID(1),
                         kind=const.QuestionnaireUsages.additional,
-                        pos=5,
+                        pos=6,
                         role=const.QuestionnaireRowRole.event_field,
                         field_id=vtypes.ID(3),
                         label="Hauswunsch",
@@ -2309,9 +2317,9 @@ class TestEventBackend(BackendTest):
         self.event.set_event(self.key, event_id, edata)
         aq_data: list[CdEDBObject] = [
             {
-                'role': const.QuestionnaireRowRole.text_only,
-                'title': 'Weitere bla Überschrift',
+                'role': const.QuestionnaireRowRole.heading,
                 'text': None,
+                'title': 'Weitere bla Überschrift',
             },
             {
                 'role': const.QuestionnaireRowRole.event_field,
@@ -2322,9 +2330,14 @@ class TestEventBackend(BackendTest):
                 'default_value': 'etc',
             },
             {
-                'role': const.QuestionnaireRowRole.text_only,
+                'role': const.QuestionnaireRowRole.heading,
+                'text': None,
                 'title': 'Unterüberschrift',
+            },
+            {
+                'role': const.QuestionnaireRowRole.text,
                 'text': 'mit Text darunter und so',
+                'title': None,
             },
             {
                 'role': const.QuestionnaireRowRole.event_field,
@@ -2335,9 +2348,9 @@ class TestEventBackend(BackendTest):
                 'default_value': None,
             },
             {
-                'role': const.QuestionnaireRowRole.text_only,
-                'title': None,
+                'role': const.QuestionnaireRowRole.text,
                 'text': 'nur etwas mehr Text',
+                'title': None,
             },
         ]
         self.assertLess(
@@ -4353,7 +4366,7 @@ class TestEventBackend(BackendTest):
         self.event.delete_lodgement(self.key, new_id)
         q_data: list[CdEDBObject] = [
             {
-                'role': const.QuestionnaireRowRole.text_only,
+                'role': const.QuestionnaireRowRole.heading,
                 'title': 'Weitere bla Überschrift',
             },
             {
@@ -4364,8 +4377,11 @@ class TestEventBackend(BackendTest):
                 'readonly': True,
             },
             {
-                'role': const.QuestionnaireRowRole.text_only,
+                'role': const.QuestionnaireRowRole.heading,
                 'title': 'Unterüberschrift',
+            },
+            {
+                'role': const.QuestionnaireRowRole.text,
                 'text': 'mit Text darunter und so',
             },
             {
@@ -4375,7 +4391,7 @@ class TestEventBackend(BackendTest):
                 'readonly': True,
             },
             {
-                'role': const.QuestionnaireRowRole.text_only,
+                'role': const.QuestionnaireRowRole.text,
                 'text': 'nur etwas mehr Text',
             },
         ]

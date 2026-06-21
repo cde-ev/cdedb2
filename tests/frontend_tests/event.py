@@ -1313,7 +1313,7 @@ etc;anything else""",
         # so it can be deleted
         self.get("/event/event/1/questionnaire/config")
         f = self.response.forms['configurequestionnaireform']
-        f['delete_5'].checked = True
+        f['delete_6'].checked = True
         self.submit(f)
         self.get("/event/event/1/change")
         f = self.response.forms['changeeventform']
@@ -5525,32 +5525,32 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
 
         f = self.response.forms['configurequestionnaireform']
-        self.assertEqual("3", f['field_id_5'].value)
-        self.assertEqual("2", f['field_id_4'].value)
-        self.assertEqual("Weitere Überschrift", f['title_3'].value)
-        self.assertEqual("mit Text darunter", f['text_0'].value)
+        self.assertEqual("3", f['field_id_6'].value)
+        self.assertEqual("2", f['field_id_5'].value)
+        self.assertEqual("Weitere Überschrift", f['title_4'].value)
+        self.assertEqual("mit Text darunter", f['text_1'].value)
 
-        f['title_3'] = "Immernoch Überschrift"
-        f['text_0'] = "mehr Text darunter\nviel mehr"
+        f['title_4'] = "Immernoch Überschrift"
+        f['text_1'] = "mehr Text darunter\nviel mehr"
         self.submit(f)
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
 
         f = self.response.forms['configurequestionnaireform']
-        self.assertEqual("3", f['field_id_5'].value)
-        self.assertEqual("Hauswunsch", f['label_5'].value)
-        self.assertEqual("Immernoch Überschrift", f['title_3'].value)
-        self.assertEqual("mehr Text darunter\nviel mehr", f['text_0'].value)
+        self.assertEqual("3", f['field_id_6'].value)
+        self.assertEqual("Hauswunsch", f['label_6'].value)
+        self.assertEqual("Immernoch Überschrift", f['title_4'].value)
+        self.assertEqual("mehr Text darunter\nviel mehr", f['text_1'].value)
 
         f['delete_4'].checked = True
         self.submit(f)
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
 
         f = self.response.forms['configurequestionnaireform']
-        self.assertNotIn("field_id_5", f.fields)
+        self.assertNotIn("field_id_6", f.fields)
         self.assertEqual("Unterüberschrift", f['title_0'].value)
-        self.assertEqual("nur etwas Text", f['text_2'].value)
-        self.assertEqual("3", f['field_id_4'].value)
-        self.assertEqual("Hauswunsch", f['label_4'].value)
+        self.assertEqual("nur etwas Text", f['text_3'].value)
+        self.assertEqual("3", f['field_id_5'].value)
+        self.assertEqual("Hauswunsch", f['label_5'].value)
 
         f['create_-1'].checked = True
         f['role_-1'] = const.QuestionnaireRowRole.event_field
@@ -5568,9 +5568,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse("Fragebogen konfigurieren")
 
         f = self.response.forms['configurequestionnaireform']
-        self.assertIn("field_id_5", f.fields)
-        self.assertEqual("4", f['field_id_5'].value)
-        self.assertEqual("Input", f['label_5'].value)
+        self.assertIn("field_id_6", f.fields)
+        self.assertEqual("4", f['field_id_6'].value)
+        self.assertEqual("Input", f['label_6'].value)
 
         # Add a row with a datetime field and check that the default value works.
         f['create_-1'] = True
@@ -5579,7 +5579,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['default_value_-1'] = expectation = "2025-05-24 23:47:32"
         self.submit(f)
         f = self.response.forms['configurequestionnaireform']
-        self.assertEqual(expectation + "+02:00", f['default_value_6'].value)
+        self.assertEqual(expectation + "+02:00", f['default_value_7'].value)
 
         execsql("UPDATE event.registrations SET fields = '{}';")
         self.traverse("Fragebogen")
@@ -5595,20 +5595,20 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             {'href': '/event/event/1/questionnaire/reorder'},
         )
         f = self.response.forms['reorderquestionnaireform']
-        self.assertEqual(f['order'].value, "0,1,2,3,4,5")
+        self.assertEqual(f['order'].value, "0,1,2,3,4,5,6")
         f['order'] = "Hallo, Kekse"
         self.submit(f, check_notification=False)
         self.assertValidationError('order', "Ungültige Eingabe für eine Ganzzahl.")
         # row index out of range
         f = self.response.forms['reorderquestionnaireform']
-        f['order'] = "-1,6"
+        f['order'] = "-1,100"
         self.submit(f, check_notification=False)
         self.assertValidationError(
             "order", "Jede Zeile darf nur genau einmal vorkommen."
         )
         # row included twice
         f = self.response.forms['reorderquestionnaireform']
-        f['order'] = "0,1,1,3,4,5"
+        f['order'] = "0,1,1,3,4,5,6"
         self.submit(f, check_notification=False)
         self.assertValidationError(
             "order", "Jede Zeile darf nur genau einmal vorkommen."
@@ -5622,13 +5622,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         )
         f = self.response.forms['reorderquestionnaireform']
         f['order'] = '5,3,1,0,2,4'
+        f['order'] = '6,4,2,0,1,3,5'
         self.submit(f)
         self.assertTitle("Fragebogen umordnen (Große Testakademie 2222)")
         self.traverse({'description': 'Fragebogen konfigurieren'})
         f = self.response.forms['configurequestionnaireform']
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
         self.assertEqual("3", f['field_id_0'].value)
-        self.assertEqual("2", f['field_id_5'].value)
+        self.assertEqual("2", f['field_id_6'].value)
         self.assertEqual("1", f['field_id_2'].value)
         self.assertEqual("", f['field_id_3'].value)
 
@@ -6736,9 +6737,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Check that questionnaire is readonly
         self.traverse({'href': '/event/event/1/questionnaire/config'})
         f = self.response.forms['configurequestionnaireform']
-        self.assertTrue(f['readonly_1'].checked)
-        self.assertTrue(f['readonly_4'].checked)
+        self.assertTrue(f['readonly_2'].checked)
         self.assertTrue(f['readonly_5'].checked)
+        self.assertTrue(f['readonly_6'].checked)
 
         # Check visibility but un-modifiability for participants
         self.logout()

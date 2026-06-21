@@ -83,13 +83,15 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
         role: const.QuestionnaireRowRole,
     ) -> type["QuestionnaireRow"]:
         for cls in (
-            QuestionnaireRow.__subclasses__() + QuestionnaireMagicRow.__subclasses__()
+            QuestionnaireRow.__subclasses__()
+            + QuestionnaireMagicRow.__subclasses__()
+            + QuestionnaireTextRowMeta.__subclasses__()
         ):
-            if cls is QuestionnaireMagicRow:
+            if cls is QuestionnaireMagicRow or cls is QuestionnaireTextRowMeta:
                 continue
             if cls._role == role:
                 return cls
-        raise KeyError
+        raise KeyError(role)
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "QuestionnaireRow":
@@ -121,18 +123,13 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
 
 
 @dataclasses.dataclass
-class QuestionnaireTextRow(QuestionnaireRow):
+class QuestionnaireTextRowMeta(QuestionnaireRow):
     database_table = "event.questionnaire_text_rows"
-    _role = const.QuestionnaireRowRole.text_only
     _frequency = QuestionnaireFrequency.optional
     static = True
 
-    title: str | None
     text: str | None
-
-    @classmethod
-    def get_icon(cls) -> str:
-        return "align-left"
+    title: str | None
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:
@@ -141,6 +138,30 @@ class QuestionnaireTextRow(QuestionnaireRow):
     @classmethod
     def get_drow_html_classes(cls) -> list[str]:
         return ["shaded-info"]
+
+
+@dataclasses.dataclass
+class QuestionnaireTextRow(QuestionnaireTextRowMeta):
+    _role = const.QuestionnaireRowRole.text
+
+    text: str
+    title: None = dataclasses.field(default=None, metadata=Meta.request_exclude.as_dict)
+
+    @classmethod
+    def get_icon(cls) -> str:
+        return "bars"
+
+
+@dataclasses.dataclass(kw_only=True)
+class QuestionnaireHeadingRow(QuestionnaireTextRowMeta):
+    _role = const.QuestionnaireRowRole.heading
+
+    text: None = dataclasses.field(default=None, metadata=Meta.request_exclude.as_dict)
+    title: str
+
+    @classmethod
+    def get_icon(cls) -> str:
+        return "align-left"
 
 
 @dataclasses.dataclass
@@ -339,8 +360,8 @@ class Questionnaire(list[QuestionnaireRow]):
         return [row for row in self if isinstance(row, QuestionnaireFieldRow)]
 
     @property
-    def text_rows(self) -> list[QuestionnaireTextRow]:
-        return [row for row in self if isinstance(row, QuestionnaireTextRow)]
+    def text_rows(self) -> list[QuestionnaireTextRowMeta]:
+        return [row for row in self if isinstance(row, QuestionnaireTextRowMeta)]
 
     def get_field_ids(self) -> set[int]:
         return {row.field_id for row in self if isinstance(row, QuestionnaireFieldRow)}
@@ -452,7 +473,7 @@ def make_default_questionnaire(
 
     return {
         const.QuestionnaireUsages.registration: [
-            {"role": const.QuestionnaireRowRole.text_only, "title": x}
+            {"role": const.QuestionnaireRowRole.heading, "title": x}
             if isinstance(x, str)
             else {"role": x}
             for x in reg_quest

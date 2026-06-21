@@ -1,9 +1,5 @@
 {% extends "web/event/base.tmpl" %}
-{% if kind == enums['QuestionnaireUsages'].registration %}
-    {% set sidenav_active='event_configure_registration' %}
-{% elif kind == enums['QuestionnaireUsages'].additional %}
-    {% set sidenav_active='event_configure_additional_questionnaire' %}
-{% endif %}
+{% set sidenav_active = "event_register_config" if kind == enums["QuestionnaireUsages"].registration else "event_quest_config" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
 {% set jshint='strong' %}
@@ -103,15 +99,9 @@
 
                     {# Text-only entry #}
                     {% elif entry.name == "QuestionnaireTextRow" %}
-                        {% if entry.title %}
-                            <div class="miniature-heading">{{ entry.title }}</div>
-                        {% endif %}
-                        {% if entry.text %}
-                            <div class="miniature-md">{{ entry.text|md }}</div>
-                        {% endif %}
-                        {% if not entry.title and not entry.text %}
-                            <div class="text-italic">Some Text</div>
-                        {% endif %}
+                        <div class="miniature-md">{{ entry.text|md }}</div>
+                    {% elif entry.name == "QuestionnaireHeadingRow" %}
+                        <div class="miniature-heading">{{ entry.title }}</div>
                     {% elif entry.name == "FeePreview" %}
                         <div class="miniature-label">
                             {% trans %}Fee{% endtrans %} ({% trans %}Preview{% endtrans %})
