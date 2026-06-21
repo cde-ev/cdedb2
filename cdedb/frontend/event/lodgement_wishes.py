@@ -646,8 +646,10 @@ def _make_node_color(
         return "#87ffcf"
     elif age <= 28.0:
         return "#87f6ff"
-    else:
+    elif age <= 32.0:
         return "#87d0ff"
+    else:
+        return "#ddb6ff"
 
 
 def _get_age(persona: EventPersona, event: models.Event) -> float:
