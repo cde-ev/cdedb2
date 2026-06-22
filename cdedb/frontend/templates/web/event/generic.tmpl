@@ -331,7 +331,8 @@
             {% endtrans %}
         </p>
     {% else %}
-        {{ row.name }}
+        {{ row }}
+        {{ util.raise_for_test("Unhandled QuestionnaireRow Role: " + row.name) }}
     {% endif %}
     </div>
 {% endmacro %}
