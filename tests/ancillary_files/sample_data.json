@@ -8142,7 +8142,7 @@
             "info": "Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.",
             "field_id": 1,
             "readonly": false,
-            "default_value": "True"
+            "default_value": "true"
         },
         {
             "event_id": 1,
@@ -8175,7 +8175,7 @@
             "info": "Denk daran, deine Eltern mitzubringen!",
             "field_id": 7,
             "readonly": false,
-            "default_value": ""
+            "default_value": null
         }
     ],
     "event.questionnaire_magic_rows": [

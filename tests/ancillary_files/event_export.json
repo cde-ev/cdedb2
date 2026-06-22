@@ -1371,7 +1371,7 @@
     },
     "event.questionnaire_field_rows": {
         "1": {
-            "default_value": "True",
+            "default_value": "true",
             "event_id": 1,
             "field_id": 1,
             "id": 1,
@@ -1407,7 +1407,7 @@
             "role": 5
         },
         "4": {
-            "default_value": "",
+            "default_value": null,
             "event_id": 1,
             "field_id": 7,
             "id": 4,
