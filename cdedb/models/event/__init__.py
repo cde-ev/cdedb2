@@ -187,7 +187,11 @@ class _EventConfigurationMixin(CdEDataclass):
         default=None,
         metadata=EventFieldSpec(
             legal_associations={const.FieldAssociations.registration},
-            legal_kinds={const.FieldDatatypes.str, const.FieldDatatypes.str_multiline},
+            legal_kinds={
+                const.FieldDatatypes.str,
+                const.FieldDatatypes.str_multiline,
+                const.FieldDatatypes.str_monospace,
+            },
         ).as_dict,
     )
     reimbursement_iban_field_id: vtypes.ID | None = dataclasses.field(
@@ -604,7 +608,11 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
     course_room_field_id: Optional[vtypes.ID] = dataclasses.field(
         metadata=EventFieldSpec(
             legal_associations={const.FieldAssociations.course},
-            legal_kinds={const.FieldDatatypes.str, const.FieldDatatypes.str_multiline},
+            legal_kinds={
+                const.FieldDatatypes.str,
+                const.FieldDatatypes.str_multiline,
+                const.FieldDatatypes.str_monospace,
+            },
         ).as_dict
     )
 
@@ -819,6 +827,7 @@ class EventField(EventDataclass):
         type_ = {
             const.FieldDatatypes.str: str,
             const.FieldDatatypes.str_multiline: str,
+            const.FieldDatatypes.str_monospace: str,
             const.FieldDatatypes.bool: bool,
             const.FieldDatatypes.int: int,
             const.FieldDatatypes.float: float,

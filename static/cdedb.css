@@ -1482,3 +1482,13 @@ span.fag {
 .input-group-inline .form-control, .input-group-inline .input-group-btn {
     width: auto !important;
 }
+
+.monospace {
+    font-family: monospace, monospace;
+    white-space: pre-wrap;
+
+    :is(pre)& {
+        margin-top: 2px;
+        margin-bottom: 2px;
+    }
+}

@@ -149,6 +149,7 @@ class FieldDatatypes(CdEIntEnum):
 
     str = 1  #:
     str_multiline = 50  #:
+    str_monospace = 55  #:
     bool = 2  #:
     int = 3  #:
     float = 4  #:
@@ -165,17 +166,21 @@ class FieldDatatypes(CdEIntEnum):
             return 'float'
         if self == FieldDatatypes.non_negative_int:
             return 'int'
-        if self == FieldDatatypes.str_multiline:
+        if self in {FieldDatatypes.str_multiline, FieldDatatypes.str_monospace}:
             return 'str'
         return self.name
 
     @property
     def is_str(self) -> builtins.bool:
-        return self in {FieldDatatypes.str, FieldDatatypes.str_multiline}
+        return self in {
+            FieldDatatypes.str,
+            FieldDatatypes.str_multiline,
+            FieldDatatypes.str_monospace,
+        }
 
     @property
     def text_rows(self) -> builtins.int:
-        if self == FieldDatatypes.str_multiline:
+        if self in {FieldDatatypes.str_multiline, FieldDatatypes.str_monospace}:
             return 5
         return 0
 

@@ -114,6 +114,9 @@ msgstr "Text"
 msgid "FieldDatatypes.str_multiline"
 msgstr "Text (mehrzeilig)"
 
+msgid "FieldDatatypes.str_monospace"
+msgstr "Text (mehrzeilig, monospace)"
+
 #: cdedb/.i18n_additional.py:27
 msgid "FieldDatatypes.bool"
 msgstr "Ja/Nein"
