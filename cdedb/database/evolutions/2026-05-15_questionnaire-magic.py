@@ -79,9 +79,9 @@ migration_query_text = """
 """
 
 migration_query_fields = """
-    INSERT INTO event.questionnaire_field_rows (event_id, kind, pos, role, field_id, label, info) (
+    INSERT INTO event.questionnaire_field_rows (event_id, kind, pos, role, field_id, label, info, default_value) (
         SELECT
-            event_id, kind, pos, 5, field_id, title, info
+            event_id, kind, pos, 5, field_id, title, info, default_value
         FROM
             event.questionnaire_rows
         WHERE
