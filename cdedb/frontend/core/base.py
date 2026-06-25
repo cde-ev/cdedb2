@@ -1264,17 +1264,22 @@ class CoreBaseFrontend(AbstractFrontend):
         # Allow admins to search by (CdEDB)ID
         if ALL_ADMINS & rs.user.roles:
             anid: Optional[vtypes.ID]
+            personas = {}
             anid, errs = inspect(vtypes.PersonaID, phrase, argname="phrase")
             if not errs:
                 assert anid is not None
-                data = (self.coreproxy.get_persona(rs, anid),)
-                data[0]['personas.id'] = data[0]['id']
+                personas = self.coreproxy.get_personas(rs, [anid])
+                if personas:
+                    persona = unwrap(personas)
             else:
                 anid, errs = inspect(vtypes.ID, phrase, argname="phrase")
                 if not errs:
                     assert anid is not None
-                    data = (self.coreproxy.get_persona(rs, anid),)
-                    data[0]['personas.id'] = data[0]['id']
+                    personas = self.coreproxy.get_personas(rs, [anid])
+            if personas:
+                persona = unwrap(personas)
+                persona["personas.id"] = persona["id"]
+                data = (persona,)
 
         # Don't query, if search phrase is too short
         if not data and len(phrase) < self.conf["NUM_PREVIEW_CHARS"]:
