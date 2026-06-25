@@ -280,6 +280,7 @@ class EventFeeType(CdEIntEnum):
     # Donation
     solidary_donation = 11
     instructor_donation = 6
+    followup_donation = 21
     other_donation = 20
 
     # Reimbursement
@@ -301,6 +302,7 @@ class EventFeeType(CdEIntEnum):
             EventFeeType.solidary_donation: "handshake",
             EventFeeType.solidary_increase: "hands-helping",
             EventFeeType.other_donation: "donate",
+            EventFeeType.followup_donation: "forward-fast",
             EventFeeType.crisis_refund: "fire-extinguisher",
             EventFeeType.other_refund: "person-military-to-person",
         }[self]
@@ -317,6 +319,7 @@ class EventFeeType(CdEIntEnum):
             EventFeeType.solidary_donation: EventFeeCategory.donation,
             EventFeeType.solidary_increase: EventFeeCategory.participation_fee,
             EventFeeType.other_donation: EventFeeCategory.donation,
+            EventFeeType.followup_donation: EventFeeCategory.donation,
             EventFeeType.crisis_refund: EventFeeCategory.reimbursement,
             EventFeeType.other_refund: EventFeeCategory.reimbursement,
         }[self]
@@ -333,6 +336,7 @@ class EventFeeType(CdEIntEnum):
             EventFeeType.solidary_donation: EventFeeBudget.solidarity,
             EventFeeType.solidary_increase: EventFeeBudget.solidarity,
             EventFeeType.other_donation: EventFeeBudget.cde,
+            EventFeeType.followup_donation: EventFeeBudget.followup,
             EventFeeType.crisis_refund: EventFeeBudget.expenses,
             EventFeeType.other_refund: EventFeeBudget.expenses,
         }[self]
