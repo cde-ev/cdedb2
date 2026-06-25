@@ -1267,16 +1267,14 @@ class CoreBaseFrontend(AbstractFrontend):
             anid, errs = inspect(vtypes.PersonaID, phrase, argname="phrase")
             if not errs:
                 assert anid is not None
-                tmp = self.coreproxy.get_personas(rs, (anid,))
-                if tmp:
-                    data = (unwrap(tmp),)
+                data = (self.coreproxy.get_persona(rs, anid),)
+                data[0]['personas.id'] = data[0]['id']
             else:
                 anid, errs = inspect(vtypes.ID, phrase, argname="phrase")
                 if not errs:
                     assert anid is not None
-                    tmp = self.coreproxy.get_personas(rs, (anid,))
-                    if tmp:
-                        data = (unwrap(tmp),)
+                    data = (self.coreproxy.get_persona(rs, anid),)
+                    data[0]['personas.id'] = data[0]['id']
 
         # Don't query, if search phrase is too short
         if not data and len(phrase) < self.conf["NUM_PREVIEW_CHARS"]:
