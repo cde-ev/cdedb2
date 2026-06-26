@@ -1266,15 +1266,11 @@ class CoreBaseFrontend(AbstractFrontend):
             anid: Optional[vtypes.ID]
             personas = {}
             anid, errs = inspect(vtypes.PersonaID, phrase, argname="phrase")
-            if not errs:
-                assert anid is not None
+            if anid and not errs:
                 personas = self.coreproxy.get_personas(rs, [anid])
-                if personas:
-                    persona = unwrap(personas)
             else:
                 anid, errs = inspect(vtypes.ID, phrase, argname="phrase")
-                if not errs:
-                    assert anid is not None
+                if anid and not errs:
                     personas = self.coreproxy.get_personas(rs, [anid])
             if personas:
                 persona = unwrap(personas)
