@@ -521,6 +521,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
             rs, [reg['persona_id'] for reg in registrations.values()]
         )
         for reg in registrations.values():
+            # TODO Adjust when migrating registrationd to dataclass
             reg['persona'] = personas[reg['persona_id']].as_dict()
 
         # Retrieve grouped registration ids.
