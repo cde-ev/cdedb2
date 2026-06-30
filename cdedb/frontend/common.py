@@ -58,7 +58,6 @@ from typing import (
     NamedTuple,
     NotRequired,
     Protocol,
-    TypeVar,
     cast,
     overload,
 )
@@ -188,10 +187,6 @@ Headers = typing.TypedDict(
 )
 
 _LOGGER = logging.getLogger(__name__)
-
-
-S = TypeVar('S')
-T = TypeVar('T')
 
 
 class Response(werkzeug.wrappers.Response):
@@ -2378,9 +2373,6 @@ def reconnoitre_ambience(obj: AbstractFrontend, rs: RequestState) -> AmbienceDic
     return ambience
 
 
-F = TypeVar('F', bound=Callable[..., Any])
-
-
 class AntiCSRFMarker(NamedTuple):
     check: bool
     name: str
@@ -2397,7 +2389,7 @@ class FrontendEndpoint(Protocol):
     ) -> werkzeug.Response: ...
 
 
-def access(
+def access[F: Callable[..., Any]](
     *roles: Role,
     modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
     check_anti_csrf: bool | None = None,
@@ -2631,7 +2623,7 @@ def doclink(
 
 
 # noinspection PyPep8Naming
-def REQUESTdata(
+def REQUESTdata[F: Callable[..., Any]](
     *spec: str,
     _hints: vtypes.TypeMapping | None = None,
     _postpone_validation: bool = False,
@@ -2727,7 +2719,7 @@ def REQUESTdata(
 
 
 # noinspection PyPep8Naming
-def REQUESTdatadict(
+def REQUESTdatadict[F: Callable[..., Any]](
     *proto_spec: str | tuple[str, str],
 ) -> Callable[[F], F]:
     """Similar to :py:meth:`REQUESTdata`, but doesn't hand down the
@@ -2842,7 +2834,7 @@ def request_dict_extractor(
 
 
 # noinspection PyPep8Naming
-def REQUESTfile(*spec: str) -> Callable[[F], F]:
+def REQUESTfile[F: Callable[..., Any]](*spec: str) -> Callable[[F], F]:
     """Decorator to extract file uploads from requests.
 
     :param spec: Names of file parameters.
@@ -2871,7 +2863,7 @@ def REQUESTfile(*spec: str) -> Callable[[F], F]:
     return wrap
 
 
-def mailinglist_guard(
+def mailinglist_guard[F: Callable[..., Any]](
     argname: str = "mailinglist_id",
     allow_moderators: bool = True,
     requires_privilege: bool = False,
@@ -2920,7 +2912,7 @@ def mailinglist_guard(
     return wrap
 
 
-def assembly_guard(fun: F) -> F:
+def assembly_guard[F: Callable[..., Any]](fun: F) -> F:
     """This decorator checks that the user has privileged access to an assembly."""
 
     @functools.wraps(fun)
@@ -2952,7 +2944,7 @@ def check_validation(
 
 
 @overload
-def check_validation(
+def check_validation[T](
     rs: RequestState,
     type_: TypeForm[T],
     value: Any,
@@ -2961,7 +2953,7 @@ def check_validation(
 ) -> T | None: ...
 
 
-def check_validation(
+def check_validation[T](
     rs: RequestState,
     type_: TypeForm[T] | type[CdEDataclass],
     value: Any,
@@ -2990,10 +2982,7 @@ def check_validation(
     return cast(None | T | CdEDBObject, ret)
 
 
-DC = TypeVar('DC', bound=CdEDataclass)
-
-
-def extract_and_check_dataclass_validation(
+def extract_and_check_dataclass_validation[DC: CdEDataclass](
     rs: RequestState,
     type_: type[DC],
     name: str | None = None,
@@ -3009,7 +2998,7 @@ def extract_and_check_dataclass_validation(
     return cast(CdEDBObject | None, data)
 
 
-def inspect_validation(
+def inspect_validation[T](
     type_: TypeForm[T],
     value: Any,
     *,
@@ -3139,14 +3128,12 @@ def drow_delete(entity_id: int, prefix: str = "") -> str:
 
 
 def drow_last_index(prefix: str = "") -> str:
+
     return f"{prefix}create_last_index"
 
 
-C = TypeVar('C', bound=CdEDBObject)
-
-
 @overload
-def process_dynamic_input(
+def process_dynamic_input[DC: CdEDataclass](
     rs: RequestState,
     type_: type[DC],
     existing: Collection[int],
@@ -3161,7 +3148,7 @@ def process_dynamic_input(
 
 
 @overload
-def process_dynamic_input(
+def process_dynamic_input[C: CdEDBObject](
     rs: RequestState,
     type_: type[C],
     existing: Collection[int],
@@ -3176,7 +3163,7 @@ def process_dynamic_input(
 
 
 # TODO maybe retrieve the spec from the type_?
-def process_dynamic_input(
+def process_dynamic_input[C: CdEDBObject, DC: CdEDataclass](
     rs: RequestState,
     type_: type[C | DC],
     existing: Collection[int],

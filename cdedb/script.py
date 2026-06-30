@@ -17,7 +17,7 @@ import pathlib
 import time
 from collections.abc import Mapping
 from types import TracebackType
-from typing import Any, TypeVar, cast
+from typing import Any, cast
 
 import psycopg2
 import psycopg2.extensions
@@ -48,10 +48,6 @@ psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 
 __all__ = ['DryRunError', 'Script', 'ScriptAtomizer']
-
-
-B = TypeVar("B", bound=AbstractBackend)
-F = TypeVar("F", bound=AbstractFrontend)
 
 
 class Script:
@@ -168,7 +164,9 @@ class Script:
     def make_backend(self, realm: str, *, proxy: bool = True) -> AbstractBackend:
         return self._make_backend(self.backend_map[realm], proxy=proxy)
 
-    def _make_backend(self, backend_class: type[B], *, proxy: bool = True) -> B:
+    def _make_backend[B: AbstractBackend](
+        self, backend_class: type[B], *, proxy: bool = True
+    ) -> B:
         """Create backend, either as a proxy or not."""
         if ret := self._backends.get((backend_class, proxy)):
             return cast(B, ret)
@@ -182,7 +180,9 @@ class Script:
     def make_frontend(self, realm: str, *, proxy: bool = True) -> AbstractFrontend:
         return self._make_frontend(self.frontend_map[realm], proxy=proxy)
 
-    def _make_frontend(self, frontend_class: type[F], *, proxy: bool = True) -> F:
+    def _make_frontend[F: AbstractFrontend](
+        self, frontend_class: type[F], *, proxy: bool = True
+    ) -> F:
         """Create a frontend."""
         if ret := self._frontends.get((frontend_class, proxy)):
             return cast(F, ret)

@@ -7,7 +7,7 @@ import decimal
 import unittest
 import zoneinfo
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Optional, TypeVar, cast
+from typing import Any, Optional, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -38,8 +38,6 @@ from cdedb.config import Config
 from cdedb.models.common import CdEDataclass
 from cdedb.models.core import GenesisCaseEvent
 
-T = TypeVar('T')
-
 INVAL = object()
 NO_COMPARE = object()
 
@@ -47,7 +45,7 @@ NO_COMPARE = object()
 class TestValidationBase(unittest.TestCase):
     maxDiff = None
 
-    def do_validator_test(
+    def do_validator_test[T](
         self,
         type_: type[T],
         spec: Iterable[tuple[Any, T, type[Exception] | Exception | None]],

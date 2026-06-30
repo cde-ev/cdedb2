@@ -20,7 +20,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
-    TypeVar,
     Union,
     overload,
 )
@@ -45,13 +44,10 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 _CONFIG = Config()
 
-S = TypeVar("S")
-T = TypeVar("T")
-
 
 # Ignore the capitalization error in function name sanitize_None.
 # noinspection PyPep8Naming
-def sanitize_None(data: T | None) -> str | T:
+def sanitize_None[T](data: T | None) -> str | T:
     """Helper to let jinja convert all ``None`` into empty strings for display
     purposes; thus we needn't be careful in this regard. (This is
     coherent with our policy that NULL and the empty string on SQL level
@@ -598,13 +594,13 @@ def md_filter(val: str | None) -> markupsafe.Markup | None:
     return markdown_parse_safe(val)
 
 
-def dict_count_filter(value: Mapping[T, S]) -> Counter[S]:
+def dict_count_filter[T, S](value: Mapping[T, S]) -> Counter[S]:
     """Count the values of a dict and return a dict mapping entries to encounters."""
     return Counter(value.values())
 
 
 @jinja2.pass_environment
-def sort_filter(
+def sort_filter[T](
     env: jinja2.Environment,
     value: Iterable[T],
     reverse: bool = False,
@@ -624,7 +620,7 @@ def sort_filter(
     return xsorted(value, key=key_func, reverse=reverse)
 
 
-def dictsort_filter(
+def dictsort_filter[T, S](
     value: Mapping[T, S], by: Literal["key", "value"] = "key", reverse: bool = False
 ) -> list[tuple[T, S]]:
     """Sort a dict and yield (key, value) pairs.
@@ -644,7 +640,7 @@ def dictsort_filter(
     return xsorted(value.items(), key=sortfunc, reverse=reverse)
 
 
-def set_filter(value: Iterable[T]) -> set[T]:
+def set_filter[T](value: Iterable[T]) -> set[T]:
     """
     A simple filter to construct a Python set from an iterable object. Just
     like Jinja's builtin "list" filter, but for sets.
@@ -652,7 +648,7 @@ def set_filter(value: Iterable[T]) -> set[T]:
     return set(value)
 
 
-def xdictsort_filter(
+def xdictsort_filter[T, S](
     value: Mapping[T, S], attribute: str, reverse: bool = False
 ) -> list[tuple[T, S]]:
     """Allow sorting by an arbitrary attribute of the value.
@@ -668,14 +664,14 @@ def xdictsort_filter(
     return xsorted(value.items(), key=key, reverse=reverse)
 
 
-def keysort_filter(
+def keysort_filter[T](
     value: Iterable[T], sortkey: Callable[[Any], Any], reverse: bool = False
 ) -> list[T]:
     """Sort a simple iterable by their value."""
     return xsorted(value, key=sortkey, reverse=reverse)
 
 
-def keydictsort_filter(
+def keydictsort_filter[T, S](
     value: Mapping[T, S], sortkey: Callable[[Any], Any], reverse: bool = False
 ) -> list[tuple[T, S]]:
     """Sort a dicts items by their value."""
@@ -751,7 +747,7 @@ def multiselect_selectize_filter(
     return [{'id': e[0], 'name': e[1]} for e in entries]
 
 
-def dict_entries_filter(
+def dict_entries_filter[S](
     items: list[tuple[Any, Union[Mapping[str, S], "CdEDataclass"]]], *args: str
 ) -> list[tuple[S, ...]]:
     """

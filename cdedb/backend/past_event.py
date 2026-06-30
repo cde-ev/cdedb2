@@ -8,7 +8,7 @@ import collections
 import copy
 import datetime
 from collections.abc import Collection
-from typing import Any, Protocol, TypeVar
+from typing import Any, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -42,9 +42,7 @@ from cdedb.common.query.log_filter import PastEventLogFilter
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import ParamDict
-from cdedb.models.common import CdEDataclassMap
-
-T = TypeVar("T")
+from cdedb.models.common import CdEDataclass, CdEDataclassMap
 
 
 class PastEventBackend(AbstractBackend):
@@ -691,7 +689,7 @@ class PastEventBackend(AbstractBackend):
         return ret
 
     @internal
-    def filter_participants(
+    def filter_participants[T: CdEDataclass](
         self,
         rs: RequestState,
         participants: CdEDataclassMap[T],

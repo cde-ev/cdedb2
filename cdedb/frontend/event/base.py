@@ -21,7 +21,7 @@ import operator
 import typing
 from collections import OrderedDict
 from collections.abc import Callable, Collection
-from typing import Any, TypeVar, cast
+from typing import Any, cast
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -80,9 +80,6 @@ class CourseChoiceParams(typing.TypedDict):
     parts_per_track_group_per_course: dict[int, dict[int, set[vtypes.ID]]]
 
 
-F = TypeVar("F", bound=Callable[..., Any])
-
-
 class ParticipantListData(typing.TypedDict):
     registrations: CdEDBObjectMap
     ordered: list[int]
@@ -113,7 +110,9 @@ class ConstraintViolationsData(typing.TypedDict):
     inhabitants: dict[int, dict[int, LodgementInhabitants]]
 
 
-def event_guard(*required_privileges: EventPrivileges) -> Callable[[F], F]:
+def event_guard[F: Callable[..., Any]](
+    *required_privileges: EventPrivileges,
+) -> Callable[[F], F]:
     """
     This decorator checks the users privilege regarding the contextual event,
     taken from rs.ambience['event'].

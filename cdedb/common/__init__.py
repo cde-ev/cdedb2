@@ -30,7 +30,6 @@ from types import UnionType
 from typing import (
     TYPE_CHECKING,
     Any,
-    TypeVar,
     Union,
     cast,
     get_args,
@@ -110,8 +109,6 @@ CdEDBLog = tuple[int, tuple[CdEDBObject, ...]]
 
 PathLike = pathlib.Path | str
 Path = pathlib.Path
-
-T = TypeVar("T")
 
 
 class User:
@@ -416,11 +413,8 @@ if TYPE_CHECKING:
 else:
     AbstractBackend = None
 
-B = TypeVar("B", bound=AbstractBackend)
-F = TypeVar("F", bound=Callable[..., Any])
 
-
-def make_proxy(backend: B, internal: bool = False) -> B:
+def make_proxy[B: AbstractBackend](backend: B, internal: bool = False) -> B:
     """Wrap a backend to only expose functions with an access decorator.
 
     If we used an actual RPC mechanism, this would do some additional
@@ -430,7 +424,7 @@ def make_proxy(backend: B, internal: bool = False) -> B:
     We also need to use an inner class so we can provide __getattr__.
     """
 
-    def wrapit(fun: F) -> F:
+    def wrapit[F: Callable[..., Any]](fun: F) -> F:
         @functools.wraps(fun)
         def wrapper(rs: RequestState, *args: Any, **kwargs: Any) -> Any:
             try:
@@ -474,10 +468,7 @@ def build_msg(msg1: str, msg2: str | None = None) -> str:
         return msg1 + "."
 
 
-S = TypeVar("S")
-
-
-def merge_dicts(targetdict: MutableMapping[T, S], *dicts: Mapping[T, S]) -> None:
+def merge_dicts[T, S](targetdict: MutableMapping[T, S], *dicts: Mapping[T, S]) -> None:
     """Merge all dicts into the first one, but do not overwrite.
 
     This is basically the :py:meth:`dict.update` method, but existing
@@ -735,7 +726,7 @@ class CustomJSONEncoder(json.JSONEncoder):
     ) -> str: ...
 
     @overload
-    def default(self, obj: set[T]) -> tuple[T, ...]: ...
+    def default[T](self, obj: set[T]) -> tuple[T, ...]: ...
 
     def default(self, obj: Any) -> str | tuple[Any, ...] | dict[str, Any]:
         import cdedb.models.common as models  # noqa: PLC0415  # pylint: disable=import-outside-toplevel
@@ -771,7 +762,7 @@ class PsycoJson(psycopg2.extras.Json):
         return json_serialize(obj)
 
 
-def pairwise(iterable: Iterable[T]) -> Iterable[tuple[T, T]]:
+def pairwise[T](iterable: Iterable[T]) -> Iterable[tuple[T, T]]:
     """Iterate over adjacent pairs of values of an iterable.
 
     For the input [1, 3, 6, 10] this returns [(1, 3), (3, 6), (6, 10)].
@@ -790,14 +781,14 @@ def unwrap(data: None) -> None: ...
 
 
 @overload
-def unwrap(data: Mapping[Any, T]) -> T: ...
+def unwrap[T](data: Mapping[Any, T]) -> T: ...
 
 
 @overload
-def unwrap(data: Collection[T]) -> T: ...
+def unwrap[T](data: Collection[T]) -> T: ...
 
 
-def unwrap(data: None | Mapping[Any, T] | Collection[T]) -> T | None:
+def unwrap[T](data: None | Mapping[Any, T] | Collection[T]) -> T | None:
     """Remove one nesting layer (of lists, etc.).
 
     This is here to replace code like ``foo = bar[0]`` where bar is a
@@ -847,7 +838,7 @@ def is_optional_type(type_: Any) -> bool:
     return is_optional
 
 
-def get_mandatory_type(type_: TypeForm[T]) -> type[T]:
+def get_mandatory_type[T](type_: TypeForm[T]) -> type[T]:
     """Transform a given type into a non-None one.
 
     Basically the inverse operation of T | None.
@@ -1041,7 +1032,7 @@ class GenesisDecision(CdEIntEnum):
 INFINITE_ENUM_MAGIC_NUMBER = 0
 
 
-def infinite_enum(aclass: T) -> T:
+def infinite_enum[T](aclass: T) -> T:
     """Decorator to document infinite enums.
 
     This only sets a flag on the class for documentation and
@@ -1193,9 +1184,6 @@ def sanitize_filename(name: str) -> str:
     return name.translate(FILENAME_SANITIZE_MAP)
 
 
-MaybeStr = TypeVar("MaybeStr", str, type[None])
-
-
 def diacritic_patterns(s: str, two_way_replace: bool = False) -> str:
     """Replace letters with a pattern matching expressions.
 
@@ -1264,7 +1252,7 @@ def inverse_diacritic_patterns(s: str) -> str:
     return s.translate(UMLAUT_TRANSLATE_TABLE)
 
 
-def abbreviation_mapper(data: Sequence[T]) -> dict[T, str]:
+def abbreviation_mapper[T](data: Sequence[T]) -> dict[T, str]:
     """Assign an unique combination of ascii letters to each element."""
     num_letters = ((len(data) - 1) // 26) + 1
     return {

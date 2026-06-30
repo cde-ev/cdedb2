@@ -15,7 +15,7 @@ import itertools
 from collections import defaultdict
 from collections.abc import Collection, Iterator, Mapping, Sequence
 from functools import cached_property
-from typing import NamedTuple, Protocol, Self, TypeVar, cast
+from typing import NamedTuple, Protocol, Self, cast
 
 import psycopg2.extensions
 
@@ -64,8 +64,6 @@ from cdedb.database.connection import Atomizer
 from cdedb.database.query import Params
 from cdedb.filter import datetime_filter, money_filter
 from cdedb.models.event import CheckinPeriod, ReducedCheckinPeriod
-
-T = TypeVar("T")
 
 
 class CourseChoiceValidationAux(NamedTuple):

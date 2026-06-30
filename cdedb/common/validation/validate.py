@@ -77,7 +77,6 @@ from typing import (
     Any,
     Protocol,
     Self,
-    TypeVar,
     cast,
     get_type_hints,
     overload,
@@ -155,13 +154,6 @@ zxcvbn.matching.add_frequency_lists(FREQUENCY_LISTS)
 
 _LOGGER = logging.getLogger(__name__)
 _CONFIG = Config()
-
-T = TypeVar('T')
-T_co = TypeVar('T_co', covariant=True)
-K = TypeVar('K')
-V = TypeVar('V')
-F = TypeVar('F', bound=Callable[..., Any])
-DC = TypeVar('DC', bound=CdEDataclass | GenericLogFilter)
 
 
 class ValidationSummary(ValueError, Sequence[Exception]):
@@ -242,7 +234,7 @@ class ValidationSummary(ValueError, Sequence[Exception]):
         return False
 
 
-class ValidatorStorage(dict[TypeForm[T], Callable[..., T]]):
+class ValidatorStorage[T](dict[TypeForm[T], Callable[..., T]]):
     def __setitem__(self, type_: TypeForm[T], validator: Callable[..., T]) -> None:
         super().__setitem__(type_, validator)
 
@@ -305,12 +297,12 @@ def validate_assert(
 
 
 @overload
-def validate_assert(
+def validate_assert[T](
     type_: TypeForm[T], value: Any, ignore_warnings: bool, **kwargs: Any
 ) -> T: ...
 
 
-def validate_assert(
+def validate_assert[T](
     type_: TypeForm[T] | type[CdEDataclass],
     value: Any,
     ignore_warnings: bool,
@@ -350,7 +342,7 @@ def validate_check(
 
 
 @overload
-def validate_check(
+def validate_check[T](
     type_: TypeForm[T],
     value: Any,
     ignore_warnings: bool,
@@ -360,7 +352,7 @@ def validate_check(
 ) -> tuple[T | None, list[Error]]: ...
 
 
-def validate_check(
+def validate_check[T](
     type_: TypeForm[T] | type[CdEDataclass],
     value: Any,
     ignore_warnings: bool,
@@ -417,7 +409,7 @@ def get_warnings(errors: list[Error]) -> list[Error]:
     return list(filter(is_warning, errors))
 
 
-def _allow_None(fun: Callable[..., T]) -> Callable[..., T | None]:
+def _allow_None[T](fun: Callable[..., T]) -> Callable[..., T | None]:
     """Wrap a validator to allow ``None`` as valid input.
 
     This causes falsy values to be mapped to ``None`` if there is an error.
@@ -441,7 +433,9 @@ def _allow_None(fun: Callable[..., T]) -> Callable[..., T | None]:
     return new_fun
 
 
-def _add_typed_validator(fun: F, return_type: TypeForm[Any] | None = None) -> F:
+def _add_typed_validator[F: Callable[..., Any]](
+    fun: F, return_type: TypeForm[Any] | None = None
+) -> F:
     """Mark a typed function for processing into validators."""
     # TODO get rid of dynamic return types for enum
     if not return_type:
@@ -454,7 +448,10 @@ def _add_typed_validator(fun: F, return_type: TypeForm[Any] | None = None) -> F:
     return fun
 
 
-def _create_dataclass_validator(
+def _create_dataclass_validator[
+    F: Callable[..., Any],
+    DC: CdEDataclass | GenericLogFilter,
+](
     *types: type[DC], _prepare: Callable[..., CdEDBObject] | None = None, **kwargs_: Any
 ) -> Callable[[F], F]:
     """Takes a function and creates one validator per given dataclass.
@@ -1062,7 +1059,7 @@ def _anonymous_message(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObje
 
 # TODO manual handling of @_add_typed_validator inside decorator or storage?
 @_add_typed_validator
-def _list_of(
+def _list_of[T](
     val: Any,
     atype: type[T],
     argname: str | None = None,
@@ -1095,13 +1092,13 @@ def _list_of(
     return vals
 
 
-class ListValidator(Protocol[T]):
+class ListValidator[T](Protocol):
     def __call__(
         self, val: Any, argname: str | None = None, **kargs: Any
     ) -> list[T]: ...
 
 
-def make_list_validator(type_: type[T]) -> ListValidator[T]:
+def make_list_validator[T](type_: type[T]) -> ListValidator[T]:
     @functools.wraps(_list_of)
     def list_validator(val: Any, argname: str | None = None, **kwargs: Any) -> list[T]:
         return _list_of(val, type_, argname, **kwargs)
@@ -1109,13 +1106,13 @@ def make_list_validator(type_: type[T]) -> ListValidator[T]:
     return list_validator
 
 
-class PairValidator(Protocol[T_co]):
+class PairValidator[T](Protocol):
     def __call__(
         self, val: Any, argname: str | None = None, **kargs: Any
-    ) -> tuple[T_co, T_co]: ...
+    ) -> tuple[T, T]: ...
 
 
-def make_pair_validator(type_: type[T]) -> PairValidator[T]:
+def make_pair_validator[T](type_: type[T]) -> PairValidator[T]:
     @functools.wraps(_range)
     def pair_validator(
         val: Any, argname: str | None = None, **kwargs: Any
@@ -1125,13 +1122,13 @@ def make_pair_validator(type_: type[T]) -> PairValidator[T]:
     return pair_validator
 
 
-class DictValidator(Protocol[T_co]):
+class DictValidator[K, V](Protocol):
     def __call__(
         self, val: Any, argname: str | None = None, **kwargs: Any
     ) -> dict[K, V]: ...
 
 
-def make_dict_validator(type_: type[T]) -> DictValidator[T]:
+def make_dict_validator[K, V](type_: type[dict[K, V]]) -> DictValidator[K, V]:
     """
     Given a type `dict[K, V]` create a validator to validate the keys of a mapping as K and the values as V.
     """
@@ -1165,20 +1162,20 @@ def make_dict_validator(type_: type[T]) -> DictValidator[T]:
     return dict_validator
 
 
-def _set_of(
+def _set_of[T](
     val: Any, atype: type[T], argname: str | None = None, **kwargs: Any
 ) -> set[T]:
     list_type = list[atype]  # type: ignore[valid-type]
     return {v for v in _ALL_TYPED[list_type](val, argname, **kwargs)}
 
 
-class SetValidator(Protocol[T]):
+class SetValidator[T](Protocol):
     def __call__(
         self, val: Any, argname: str | None = None, **kwargs: Any
     ) -> set[T]: ...
 
 
-def make_set_validator(type_: type[T]) -> SetValidator[T]:
+def make_set_validator[T](type_: type[T]) -> SetValidator[T]:
     @functools.wraps(_set_of)
     def set_validator(val: Any, argname: str | None = None, **kwargs: Any) -> set[T]:
         return _set_of(val, type_, argname, **kwargs)
@@ -2316,7 +2313,7 @@ def _past_event(val: CdEDBObject, *args: Any, **kwargs: Any) -> CdEDBObject:
     return val
 
 
-def _optional_object_mapping_helper(
+def _optional_object_mapping_helper[T](
     val_dict: Mapping[Any, Any],
     atype: TypeForm[T],
     argname: str,
@@ -4824,7 +4821,7 @@ def _query(val: Any, argname: str | None = None, **kwargs: Any) -> Query:
     return copy.deepcopy(val)
 
 
-def _range(
+def _range[T](
     val: Any, type_: type[T], argname: str | None = None, **kwargs: Any
 ) -> tuple[T, T]:
     """Validate val to be a tuple of exactly two values of the given type.
@@ -4949,10 +4946,7 @@ def _complaint_entry_version(
     return val
 
 
-E = TypeVar('E', bound=enum.Enum)
-
-
-def _enum_validator_maker(
+def _enum_validator_maker[E: enum.Enum](
     anenum: type[E], name: str | None = None, internal: bool = False
 ) -> Callable[..., E]:
     """Automate validator creation for enums.
@@ -5020,10 +5014,9 @@ def _db_subscription_state(
     return DatabaseSubscriptionState(val)
 
 
-IE = TypeVar("IE", bound=CdEIntEnum)
-
-
-def _infinite_enum_validator_maker(anenum: type[IE], name: str | None = None) -> None:
+def _infinite_enum_validator_maker[IE: CdEIntEnum](
+    anenum: type[IE], name: str | None = None
+) -> None:
     """Automate validator creation for infinity enums.
 
     Since this is pretty generic we do this all in one go.

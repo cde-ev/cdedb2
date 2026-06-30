@@ -40,7 +40,6 @@ from typing import (
     Any,
     ClassVar,
     NamedTuple,
-    TypeVar,
     cast,
     no_type_check,
 )
@@ -138,11 +137,8 @@ def create_mock_image(file_type: str = "png") -> bytes:
     return afile.read()
 
 
-T = TypeVar("T")
-
-
 @no_type_check
-def json_keys_to_int(obj: T) -> T:
+def json_keys_to_int[T](obj: T) -> T:
     """Convert dict keys to integers if possible.
 
     This is a restriction of the JSON format allowing only string keys.
@@ -187,10 +183,8 @@ def _read_sample_data(
 
 _SAMPLE_DATA = _read_sample_data()
 
-B = TypeVar("B", bound=AbstractBackend)
 
-
-def _make_backend_shim(
+def _make_backend_shim[B: AbstractBackend](
     backend: B,
     internal: bool = False,
     allow_private: bool = False,
@@ -676,11 +670,11 @@ class BackendTest(CdEDBTest):
         return backendcls()
 
     @classmethod
-    def initialize_backend(cls, backendcls: type[B]) -> B:
+    def initialize_backend[B: AbstractBackend](cls, backendcls: type[B]) -> B:
         return _make_backend_shim(backendcls(), internal=True, allow_private=False)
 
     @classmethod
-    def initialze_private_backend(cls, backendcls: type[B]) -> B:
+    def initialze_private_backend[B: AbstractBackend](cls, backendcls: type[B]) -> B:
         return _make_backend_shim(backendcls(), internal=True, allow_private=True)
 
 
@@ -1031,9 +1025,6 @@ def get_user(user: UserIdentifier) -> UserObject:
     return user
 
 
-F = TypeVar("F", bound=Callable[..., Any])
-
-
 def as_users(
     *users: UserIdentifier,
     maintain_data: bool = False,
@@ -1064,7 +1055,7 @@ def as_users(
     return wrapper
 
 
-def admin_views(*views: str) -> Callable[[F], F]:
+def admin_views[F: Callable[..., Any]](*views: str) -> Callable[[F], F]:
     """Decorate a test to set different initial admin views."""
 
     def decorator(fun: F) -> F:
@@ -1078,7 +1069,7 @@ def admin_views(*views: str) -> Callable[[F], F]:
     return decorator
 
 
-def prepsql(sql: str, verbose: int = 0) -> Callable[[F], F]:
+def prepsql[F: Callable[..., Any]](sql: str, verbose: int = 0) -> Callable[[F], F]:
     """Decorate a test to run some arbitrary SQL-code beforehand."""
 
     def decorator(fun: F) -> F:
@@ -1092,13 +1083,13 @@ def prepsql(sql: str, verbose: int = 0) -> Callable[[F], F]:
     return decorator
 
 
-def storage(fun: F) -> F:
+def storage[F: Callable[..., Any]](fun: F) -> F:
     """Decorate a test which needs some of the test files on the local drive."""
     setattr(fun, BasicTest.needs_storage_marker, True)
     return fun
 
 
-def event_keeper(fun: F) -> F:
+def event_keeper[F: Callable[..., Any]](fun: F) -> F:
     """Decorate a test which needs an event keeper setup."""
     setattr(fun, BasicTest.needs_event_keeper_marker, True)
     return storage(fun)
@@ -2536,7 +2527,7 @@ class MailTrace(NamedTuple):
     kwargs: dict[str, Any]
 
 
-def make_cron_backend_proxy(cron: CronFrontend, backend: B) -> B:
+def make_cron_backend_proxy[B: AbstractBackend](cron: CronFrontend, backend: B) -> B:
     class CronBackendProxy:
         def __getattr__(self, name: str) -> Callable[..., Any]:
             attr = getattr(backend, name)
@@ -2604,7 +2595,7 @@ class CronTest(CdEDBTest):
         self.stores = []
         self.mails = []
 
-        def store_decorator(fun: F) -> F:
+        def store_decorator[F: Callable[..., Any]](fun: F) -> F:
             @functools.wraps(fun)
             def store_wrapper(
                 rs: RequestState, name: str, data: CdEDBObject
@@ -2620,7 +2611,9 @@ class CronTest(CdEDBTest):
             store_decorator(self.cron.core.set_cron_store),
         )
 
-        def mail_decorator(front: AbstractFrontend) -> Callable[[F], F]:
+        def mail_decorator[F: Callable[..., Any]](
+            front: AbstractFrontend,
+        ) -> Callable[[F], F]:
             def the_decorator(fun: F) -> F:
                 @functools.wraps(fun)
                 def mail_wrapper(
