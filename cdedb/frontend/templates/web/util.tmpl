@@ -180,6 +180,8 @@
         <span class="fas fa-check-circle" title="{{ gettext("subscribed") }}" aria-hidden="true"></span>
     {% elif state == enums["SubscriptionState"].pending %}
         <span class="far fa-circle" title="{{ gettext("pending") }}" aria-hidden="true"></span>
+    {% elif state is none %}
+        <span class="far fa-circle" title="{{ gettext("no relation") }}" aria-hidden="true"></span>
     {% else %}
         <span class="far fa-times-circle" title="{{ gettext("not subscribed") }}" aria-hidden="true"></span>
     {% endif %}

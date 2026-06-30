@@ -955,9 +955,14 @@ class CoreBaseFrontend(AbstractFrontend):
 
         persona = self.coreproxy.get_ml_user(rs, persona_id)
         subscriptions = self.mlproxy.get_user_subscriptions(rs, persona_id)
-        mailinglists = self.mlproxy.get_mailinglists(rs, subscriptions.keys())
         addresses = self.mlproxy.get_user_subscription_addresses(rs, persona_id)
         defect_addresses = self.coreproxy.get_defect_address_reports(rs, [persona_id])
+        mailinglist_ids = set(subscriptions.keys())
+
+        moderated_lists = self.mlproxy.moderator_info(rs, persona_id)
+        mailinglist_ids.update(moderated_lists)
+
+        mailinglists = self.mlproxy.get_mailinglists(rs, mailinglist_ids)
 
         grouped: dict[MailinglistGroup, CdEDBObjectMap]
         grouped = collections.defaultdict(dict)
@@ -980,8 +985,9 @@ class CoreBaseFrontend(AbstractFrontend):
             "show_user_mailinglists",
             {
                 'groups': MailinglistGroup,
-                'mailinglists': grouped,
                 'subscriptions': subscriptions,
+                'moderated_lists': moderated_lists,
+                'mailinglists': grouped,
             },
         )
 

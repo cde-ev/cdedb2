@@ -44,7 +44,7 @@
     {% trans %}
         This lists all mailinglists this user is related to.
         In particular, this includes lists they are or have recently been subscribed to,
-        as well as pending subscriptions and blocks.
+        as well as pending subscriptions, blocks and lists moderated by this user.
     {% endtrans %}
     {% for group in groups %}
         {% if mailinglists[group] %}
@@ -53,7 +53,7 @@
                 {% for list in mailinglists[group].values()|sort|slice(2 if mailinglists[group]|length > 5 else 1) %}
                     <ul class="styleless col-md-6 {% if not loop.last %}nosp{% endif %}">
                         {% for ml in list %}
-                            {% set state = subscriptions[ml.id] %}
+                            {% set state = subscriptions.get(ml.id) %}
                             {% set trouble = state in enums["SubscriptionState"].subscribing_states() and not ml['is_receiving'] %}
                             {% if is_relevant_admin(mailinglist_id=ml.id) or ml.id in user.moderator %}
                                 {% set link = "ml/management" %}
@@ -77,6 +77,11 @@
                                 <span class="far fa-circle dummy"></span>
                                 {% trans %}E-Mail:{% endtrans %}
                                 {{ util.username_mailto(ambience['persona'], email=ml["address"]) }}
+                            {% endif %}
+                            {% if ml.id in moderated_lists %}
+                                <br />
+                                <span class="far fa-circle dummy"></span>
+                                {% trans %}Moderator{% endtrans %}
                             {% endif %}
                             </li>
                         {% endfor %}

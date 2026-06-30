@@ -303,6 +303,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("CdE-Info E-Mail: inga-papierkorb@example.cde")
         self.assertPresence("Kampfbrief-Kommentare (geblockt)")
         self.assertNonPresence("Witz des Tages")
+        self.assertPresence("Gutscheine Moderator")
 
     @as_users("anton")
     def test_user_archived(self) -> None:
