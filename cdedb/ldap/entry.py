@@ -23,7 +23,7 @@ from cdedb.ldap.types import AttributeDescriptionList
 
 Callback = Callable[[Any], None]
 LDAPEntries = list["CdEDBBaseLDAPEntry"]
-BoundDn = DistinguishedName | None
+type BoundDn = DistinguishedName | None
 
 
 logger = logging.getLogger(__name__)
