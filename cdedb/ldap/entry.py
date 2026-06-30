@@ -145,7 +145,7 @@ class CdEDBBaseLDAPEntry(
         # sizeLimit: Any = 0,
         # timeLimit: Any = 0,
         # typesOnly: Any = 0,
-        bound_dn: BoundDn | None = None,
+        bound_dn: BoundDn = None,
     ) -> list["CdEDBBaseLDAPEntry"]:
         """Asyncio analogon to ldaptor.entryhelpers.SearchByTreeWalkingMixin.
 
@@ -192,7 +192,7 @@ class CdEDBBaseLDAPEntry(
     @abc.abstractmethod
     async def children(
         self,
-        bound_dn: BoundDn | None = None,
+        bound_dn: BoundDn = None,
         *,
         filterObject: pureldap.LDAPFilter | None = None,
         attributes: AttributeDescriptionList | None = None,
@@ -208,7 +208,7 @@ class CdEDBBaseLDAPEntry(
 
     async def subtree(
         self,
-        bound_dn: BoundDn | None = None,
+        bound_dn: BoundDn = None,
         *,
         filterObject: pureldap.LDAPFilter | None = None,
         attributes: AttributeDescriptionList | None = None,
@@ -311,7 +311,7 @@ class CdEPreLeafEntry(CdEDBStaticEntry, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     async def children_lister(
         self,
-        bound_dn: BoundDn | None = None,
+        bound_dn: BoundDn = None,
         *,
         filterObject: pureldap.LDAPFilter | None = None,
     ) -> list[DistinguishedName]:
@@ -350,7 +350,7 @@ class CdEPreLeafEntry(CdEDBStaticEntry, metaclass=abc.ABCMeta):
 
     async def children(
         self,
-        bound_dn: BoundDn | None = None,
+        bound_dn: BoundDn = None,
         *,
         filterObject: pureldap.LDAPFilter | None = None,
         attributes: AttributeDescriptionList | None = None,
@@ -392,7 +392,7 @@ class CdEDBLeafEntry(CdEDBBaseLDAPEntry, metaclass=abc.ABCMeta):
 
     async def children(
         self,
-        bound_dn: BoundDn | None = None,
+        bound_dn: BoundDn = None,
         *,
         filterObject: pureldap.LDAPFilter | None = None,
         attributes: AttributeDescriptionList | None = None,
@@ -422,7 +422,7 @@ class RootEntry(CdEDBStaticEntry):
 
     async def children(
         self,
-        bound_dn: BoundDn | None = None,
+        bound_dn: BoundDn = None,
         *,
         filterObject: pureldap.LDAPFilter | None = None,
         attributes: AttributeDescriptionList | None = None,
@@ -471,7 +471,7 @@ class SubschemaEntry(CdEDBStaticEntry):
 
     async def children(
         self,
-        bound_dn: BoundDn | None = None,
+        bound_dn: BoundDn = None,
         *,
         filterObject: pureldap.LDAPFilter | None = None,
         attributes: AttributeDescriptionList | None = None,
@@ -500,7 +500,7 @@ class DeEntry(CdEDBStaticEntry):
 
     async def children(
         self,
-        bound_dn: BoundDn | None = None,
+        bound_dn: BoundDn = None,
         *,
         filterObject: pureldap.LDAPFilter | None = None,
         attributes: AttributeDescriptionList | None = None,
@@ -534,7 +534,7 @@ class CdeEvEntry(CdEDBStaticEntry):
 
     async def children(
         self,
-        bound_dn: BoundDn | None = None,
+        bound_dn: BoundDn = None,
         *,
         filterObject: pureldap.LDAPFilter | None = None,
         attributes: AttributeDescriptionList | None = None,
@@ -586,7 +586,7 @@ class DuasEntry(CdEPreLeafEntry):
 
     async def children_lister(
         self,
-        bound_dn: BoundDn | None = None,
+        bound_dn: BoundDn = None,
         filterObject: pureldap.LDAPFilter | None = None,
     ) -> list[DistinguishedName]:
         # Anonymous requests or personas may not access duas
@@ -629,7 +629,7 @@ class UsersEntry(CdEPreLeafEntry):
 
     async def children_lister(
         self,
-        bound_dn: BoundDn | None = None,
+        bound_dn: BoundDn = None,
         filterObject: pureldap.LDAPFilter | None = None,
     ) -> list[DistinguishedName]:
         # Anonymous requests may access no user
@@ -667,7 +667,7 @@ class GroupsEntry(CdEDBStaticEntry):
 
     async def children(
         self,
-        bound_dn: BoundDn | None = None,
+        bound_dn: BoundDn = None,
         *,
         filterObject: pureldap.LDAPFilter | None = None,
         attributes: AttributeDescriptionList | None = None,
@@ -731,7 +731,7 @@ class StatusGroupsEntry(CdEPreLeafEntry):
 
     async def children_lister(
         self,
-        bound_dn: BoundDn | None = None,
+        bound_dn: BoundDn = None,
         filterObject: pureldap.LDAPFilter | None = None,
     ) -> list[DistinguishedName]:
         # Anonymous requests or personas may not access groups
@@ -774,7 +774,7 @@ class PresiderGroupsEntry(CdEPreLeafEntry):
 
     async def children_lister(
         self,
-        bound_dn: BoundDn | None = None,
+        bound_dn: BoundDn = None,
         filterObject: pureldap.LDAPFilter | None = None,
     ) -> list[DistinguishedName]:
         # Anonymous requests or personas may not access groups
@@ -817,7 +817,7 @@ class OrgaGroupsEntry(CdEPreLeafEntry):
 
     async def children_lister(
         self,
-        bound_dn: BoundDn | None = None,
+        bound_dn: BoundDn = None,
         filterObject: pureldap.LDAPFilter | None = None,
     ) -> list[DistinguishedName]:
         # Anonymous requests or personas may not access groups
@@ -860,7 +860,7 @@ class ModeratorGroupsEntry(CdEPreLeafEntry):
 
     async def children_lister(
         self,
-        bound_dn: BoundDn | None = None,
+        bound_dn: BoundDn = None,
         filterObject: pureldap.LDAPFilter | None = None,
     ) -> list[DistinguishedName]:
         # Anonymous requests or personas may not access groups
@@ -903,7 +903,7 @@ class SubscriberGroupsEntry(CdEPreLeafEntry):
 
     async def children_lister(
         self,
-        bound_dn: BoundDn | None = None,
+        bound_dn: BoundDn = None,
         filterObject: pureldap.LDAPFilter | None = None,
     ) -> list[DistinguishedName]:
         # Anonymous requests or personas may not access groups
@@ -936,7 +936,7 @@ class AnyGroupsEntry(CdEDBStaticEntry):
 
     async def children(
         self,
-        bound_dn: BoundDn | None = None,
+        bound_dn: BoundDn = None,
         *,
         filterObject: pureldap.LDAPFilter | None = None,
         attributes: AttributeDescriptionList | None = None,
