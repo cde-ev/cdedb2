@@ -17,7 +17,7 @@ import enum
 import itertools
 import re
 from collections.abc import Callable, Collection, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, RequestState, unwrap
@@ -36,9 +36,9 @@ _CONFIG = Config()
 # The maximal number of sorting criteria that can be used for queries
 MAX_QUERY_ORDERS = 20
 
-CourseMap: TypeAlias = "models.CdEDataclassMap[models.Course]"
-LodgementMap: TypeAlias = "models.CdEDataclassMap[models.Lodgement]"
-LodgementGroupMap: TypeAlias = "models.CdEDataclassMap[models.LodgementGroup]"
+type CourseMap = models.CdEDataclassMap[models.Course]
+type LodgementMap = models.CdEDataclassMap[models.Lodgement]
+type LodgementGroupMap = models.CdEDataclassMap[models.LodgementGroup]
 
 
 @enum.unique

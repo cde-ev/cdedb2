@@ -198,6 +198,8 @@ class MetaFlag(AbstractFlag):
         # like dict[_, type_]
         if origin is dict:
             _, type_ = typing.get_args(type_)
+        if origin is CdEDataclassMap:
+            type_ = typing.get_args(type_)[0]
         # like "type_"
         if isinstance(type_, typing.ForwardRef):
             type_ = type_.__forward_arg__
