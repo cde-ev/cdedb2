@@ -57,6 +57,7 @@ from cdedb.common.fields import (
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
+from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
@@ -891,7 +892,27 @@ class CoreBaseFrontend(AbstractFrontend):
         for event_id, reg in registrations.items():
             registration_ids[event_id] = unwrap(reg.keys())
             registration_parts[event_id] = unwrap(reg.values())
-        events = self.eventproxy.get_events(rs, registrations.keys())
+        event_ids = set(registration_ids.keys())
+
+        orga_events = self.eventproxy.orga_info(rs, persona_id)
+        event_ids.update(orga_events)
+
+        caretaker_events = self.eventproxy.caretaker_info(rs, persona_id)
+        event_ids.update(caretaker_events)
+
+        checkin_helper_events = self.eventproxy.checkin_helper_info(rs, persona_id)
+        event_ids.update(checkin_helper_events)
+
+        is_event_helper = persona_id in self.eventproxy.get_event_helpers(rs)
+
+        special_role_events = set().union(
+            orga_events, caretaker_events, checkin_helper_events
+        )
+        events = self.eventproxy.get_events(rs, event_ids)
+
+        def is_privileged(event_id: int, *privileges: EventPrivileges) -> bool:
+            return any(is_privileged_event(rs, priv, event_id) for priv in privileges)
+
         return self.render(
             rs,
             "show_user_events",
@@ -899,6 +920,13 @@ class CoreBaseFrontend(AbstractFrontend):
                 'events': events,
                 'registration_ids': registration_ids,
                 'registration_parts': registration_parts,
+                'orga_events': orga_events,
+                'caretaker_events': caretaker_events,
+                'checkin_helper_events': checkin_helper_events,
+                'special_role_events': special_role_events,
+                'is_event_helper': is_event_helper,
+                'is_privileged': is_privileged,
+                'EP': EventPrivileges,
             },
         )
 
