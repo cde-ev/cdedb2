@@ -11,7 +11,7 @@ import copy
 import datetime
 import json
 from collections.abc import Collection
-from typing import Literal, Optional, cast
+from typing import Literal, cast
 
 import werkzeug.datastructures
 import werkzeug.exceptions
@@ -77,7 +77,7 @@ class EventEventMixin(EventBaseFrontend):
             rs, current=False, archived=False
         )
 
-        events_registration: dict[int, Optional[bool]] = {}
+        events_registration: dict[int, bool | None] = {}
         events_payment_pending: dict[int, bool] = {}
         if "event" in rs.user.roles:
             for event_id in current_event_list:
@@ -312,7 +312,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_read)
     @REQUESTdata("edit")
     def show_free_texts(
-        self, rs: RequestState, event_id: int, edit: Optional[str]
+        self, rs: RequestState, event_id: int, edit: str | None
     ) -> Response:
         rs.ignore_validation_errors()
         return self.render(rs, "event/show_free_texts", {'edit': edit})
@@ -325,7 +325,7 @@ class EventEventMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         free_text_key: str,
-        free_text_value: Optional[str],
+        free_text_value: str | None,
     ) -> Response:
         change_notes_by_key = {
             "description": "Beschreibung geändert.",
@@ -1162,7 +1162,7 @@ class EventEventMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         personalized: bool,
-        fee_id: Optional[int] = None,
+        fee_id: int | None = None,
     ) -> Response:
         """Render form to change or create one event fee."""
         rs.ignore_validation_errors()
@@ -1202,7 +1202,7 @@ class EventEventMixin(EventBaseFrontend):
         event_id: int,
         data: CdEDBObject,
         personalized: bool,
-        fee_id: Optional[int] = None,
+        fee_id: int | None = None,
     ) -> Response:
         """Submit changes to or creation of one event fee."""
         if rs.ambience['event'].is_balanced:

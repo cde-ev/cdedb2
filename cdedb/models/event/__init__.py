@@ -79,7 +79,7 @@ class EventDataclass(CdEDataclass, abc.ABC):
 
     @classmethod
     def full_export_spec(
-        cls, entity_key: Optional[str] = None
+        cls, entity_key: str | None = None
     ) -> tuple[str, str, tuple[str, ...]]:
         return (
             cls.database_table,
@@ -345,7 +345,7 @@ class Event(EventDataclass, _EventConfigurationMixin, _EventFreetextMixin):
 
     @classmethod
     def get_select_query(
-        cls, entities: Collection[int], entity_key: Optional[str] = None
+        cls, entities: Collection[int], entity_key: str | None = None
     ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
         query = f"""
             SELECT
@@ -484,13 +484,13 @@ class EventPart(EventDataclass):
     part_begin: datetime.date
     part_end: datetime.date
 
-    waitlist_field_id: Optional[vtypes.ID] = dataclasses.field(
+    waitlist_field_id: vtypes.ID | None = dataclasses.field(
         metadata=EventFieldSpec(
             legal_associations={const.FieldAssociations.registration},
             legal_kinds={const.FieldDatatypes.int},
         ).as_dict
     )
-    camping_mat_field_id: Optional[vtypes.ID] = dataclasses.field(
+    camping_mat_field_id: vtypes.ID | None = dataclasses.field(
         metadata=EventFieldSpec(
             legal_associations={const.FieldAssociations.registration},
             legal_kinds={const.FieldDatatypes.bool},
@@ -513,7 +513,7 @@ class EventPart(EventDataclass):
 
     @classmethod
     def get_select_query(
-        cls, entities: Collection[int], entity_key: Optional[str] = None
+        cls, entities: Collection[int], entity_key: str | None = None
     ) -> tuple[str, tuple["DatabaseValue_s"]]:
         query = f"""
             SELECT
@@ -605,7 +605,7 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
         metadata=(Meta.input_exclude | Meta.asdict_exclude).as_dict
     )
 
-    course_room_field_id: Optional[vtypes.ID] = dataclasses.field(
+    course_room_field_id: vtypes.ID | None = dataclasses.field(
         metadata=EventFieldSpec(
             legal_associations={const.FieldAssociations.course},
             legal_kinds={
@@ -671,20 +671,20 @@ class EventFee(EventDataclass):
 
     kind: const.EventFeeType
     title: str
-    notes: Optional[str]
+    notes: str | None
 
     condition: vtypes.EventFeeCondition | None
-    amount: Optional[decimal.Decimal]
-    amount_min: Optional[decimal.Decimal] = dataclasses.field(
+    amount: decimal.Decimal | None
+    amount_min: decimal.Decimal | None = dataclasses.field(
         default=None, metadata=Meta.exclude.as_dict
     )
-    amount_max: Optional[decimal.Decimal] = dataclasses.field(
+    amount_max: decimal.Decimal | None = dataclasses.field(
         default=None, metadata=Meta.exclude.as_dict
     )
 
     @classmethod
     def get_select_query(
-        cls, entities: Collection[int], entity_key: Optional[str] = None
+        cls, entities: Collection[int], entity_key: str | None = None
     ) -> tuple[str, tuple["DatabaseValue_s"]]:
         query = f"""
             SELECT {','.join(cls.database_fields())}, amount_min, amount_max
@@ -897,7 +897,7 @@ class CustomQueryFilter(EventDataclass):
 
     scope: QueryScope = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
     title: str
-    notes: Optional[str]
+    notes: str | None
     fields: set[str] = dataclasses.field(metadata=Meta.request_exclude.as_dict)
 
     def __post_init__(self) -> None:
@@ -966,7 +966,7 @@ class PartGroup(EventDataclass):
 
     title: str
     shortname: str
-    notes: Optional[str]
+    notes: str | None
     constraint_type: const.EventPartGroupType = dataclasses.field(
         metadata=Meta.input_update_exclude.as_dict
     )
@@ -985,7 +985,7 @@ class PartGroup(EventDataclass):
 
     @classmethod
     def get_select_query(
-        cls, entities: Collection[int], entity_key: Optional[str] = None
+        cls, entities: Collection[int], entity_key: str | None = None
     ) -> tuple[str, tuple["DatabaseValue_s"]]:
         query = f"""
             SELECT
@@ -1016,7 +1016,7 @@ class TrackGroup(EventDataclass):
 
     title: str
     shortname: str
-    notes: Optional[str]
+    notes: str | None
     sortkey: int
     constraint_type: const.CourseTrackGroupType = dataclasses.field(
         metadata=Meta.input_update_exclude.as_dict
@@ -1042,7 +1042,7 @@ class TrackGroup(EventDataclass):
 
     @classmethod
     def get_select_query(
-        cls, entities: Collection[int], entity_key: Optional[str] = None
+        cls, entities: Collection[int], entity_key: str | None = None
     ) -> tuple[str, tuple["DatabaseValue_s"]]:
         query = f"""
             SELECT
@@ -1272,7 +1272,7 @@ class LodgementGroup(EventDataclass):
 
     @classmethod
     def get_select_query(
-        cls, entities: Collection[int], entity_key: Optional[str] = None
+        cls, entities: Collection[int], entity_key: str | None = None
     ) -> tuple[str, tuple["DatabaseValue_s"]]:
         query = f"""
             SELECT
@@ -1366,7 +1366,7 @@ class RegistrationPart(EventDataclass):
     registration: Registration
     tracks: dict[CourseTrack, "RegistrationTrack"]
 
-    lodgement: Optional[Lodgement]
+    lodgement: Lodgement | None
 
     def get_sortkey(self) -> Sortkey:
         return (0,)
@@ -1379,8 +1379,8 @@ class RegistrationTrack(EventDataclass):
     registration: Registration
     registration_part: RegistrationPart
 
-    course: Optional[Course]
-    instructed: Optional[Course]
+    course: Course | None
+    instructed: Course | None
 
     choices: list[Course]
 
@@ -1396,7 +1396,7 @@ class PersonalizedFee(EventDataclass):
     registration_id: vtypes.ID
     fee_id: vtypes.ID
 
-    amount: Optional[decimal.Decimal]
+    amount: decimal.Decimal | None
 
     def get_query(self) -> tuple[str, tuple["DatabaseValue_s", ...]]:
         if self.amount is not None:
@@ -1429,7 +1429,7 @@ class PersonalizedFee(EventDataclass):
 @dataclasses.dataclass
 class ReducedCheckinPeriod:
     checkin_time: datetime.datetime
-    checkout_time: Optional[datetime.datetime]
+    checkout_time: datetime.datetime | None
 
     def pretty(self) -> str:
         formatstr = "%Y-%m-%d %H:%M"

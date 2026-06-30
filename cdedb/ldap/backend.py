@@ -223,7 +223,7 @@ class LDAPsqlBackend:
                     yield cast("CdEDBObject", from_db_output(x))
 
     @staticmethod
-    def _dn_value(dn: DN, attribute: str) -> Optional[str]:
+    def _dn_value(dn: DN, attribute: str) -> str | None:
         """Retrieve the value of the RDN matching the given attribute type."""
         rdn = dn.split()[0]
         [attribute_value] = rdn.split()
@@ -233,7 +233,7 @@ class LDAPsqlBackend:
             return None
 
     @staticmethod
-    def _extract_id(cn: str, prefix: str) -> Optional[int]:
+    def _extract_id(cn: str, prefix: str) -> int | None:
         """Extract the id from a cn by stripping the prefix.
 
         This especially checks that the id is a valid integer.
@@ -311,7 +311,7 @@ class LDAPsqlBackend:
     #                   / g-differential
     # g-differential  = ( MINUS / PLUS ) hour [ minute ]
     # MINUS           = %x2D  ; minus sign ("-")
-    def format_timestamp(self, timestamp: Optional[datetime.datetime]) -> str:
+    def format_timestamp(self, timestamp: datetime.datetime | None) -> str:
         """Create a string representation of a GeneralizedTime."""
         if timestamp is None:
             # this happens in the test suite due to insufficient sample data
@@ -388,7 +388,7 @@ class LDAPsqlBackend:
         return name
 
     @classmethod
-    def dua_name(cls, dn: DN) -> Optional[str]:
+    def dua_name(cls, dn: DN) -> str | None:
         """Extract the 'name' attribute from a duas dn. Counterpart of 'dua_dn'."""
         cn = cls._dn_value(dn, attribute="cn")
         return cn or None
@@ -457,7 +457,7 @@ class LDAPsqlBackend:
         return str(persona_id)
 
     @classmethod
-    def user_id(cls, dn: DN) -> Optional[int]:
+    def user_id(cls, dn: DN) -> int | None:
         """Extract the id of a user from its dn. Counterpart of 'user_dn'."""
         uid = cls._dn_value(dn, attribute="uid")
         if uid is None:
@@ -578,7 +578,7 @@ class LDAPsqlBackend:
 
     async def list_users(
         self,
-        filterObject: Optional[FilterLike] = None,
+        filterObject: FilterLike | None = None,
     ) -> list[DN]:
         query: sql.SQL | sql.Composed = sql.SQL(
             "SELECT id FROM core.personas WHERE NOT is_archived",
@@ -808,7 +808,7 @@ class LDAPsqlBackend:
         return {e["id"]: e async for e in self.query_all(query, params)}
 
     async def get_users(
-        self, dns: list[DN], attributes: Optional[AttributeDescriptionList]
+        self, dns: list[DN], attributes: AttributeDescriptionList | None
     ) -> LDAPObjectMap:
         """Get the users specified by dn.
 
@@ -892,7 +892,7 @@ class LDAPsqlBackend:
         return name
 
     @classmethod
-    def status_group_name(cls, dn: DN) -> Optional[str]:
+    def status_group_name(cls, dn: DN) -> str | None:
         """Extract the name of a status group from its dn.
 
         Counterpart of 'status_group_dn'.
@@ -934,7 +934,7 @@ class LDAPsqlBackend:
         return [self.status_group_dn(name) for name in self.STATUS_GROUPS]
 
     async def _get_status_group(
-        self, dn: DN, name: str, attributes: Optional[AttributeDescriptionList] = None
+        self, dn: DN, name: str, attributes: AttributeDescriptionList | None = None
     ) -> tuple[DN, LDAPObject]:
         """Uninlined code from get_status_groups."""
         if name == "is_searchable":
@@ -963,7 +963,7 @@ class LDAPsqlBackend:
         })
 
     async def get_status_groups(
-        self, dns: list[DN], attributes: Optional[AttributeDescriptionList] = None
+        self, dns: list[DN], attributes: AttributeDescriptionList | None = None
     ) -> LDAPObjectMap:
         dn_to_name = dict()
         for dn in dns:
@@ -1001,7 +1001,7 @@ class LDAPsqlBackend:
         return f"presiders-{assembly_id}"
 
     @classmethod
-    def presider_group_id(cls, dn: DN) -> Optional[int]:
+    def presider_group_id(cls, dn: DN) -> int | None:
         """Extract the id of a presider group from its dn.
 
         Counterpart to 'presider_group_dn'.
@@ -1108,7 +1108,7 @@ class LDAPsqlBackend:
         return f"orgas-{event_id}"
 
     @classmethod
-    def orga_group_id(cls, dn: DN) -> Optional[int]:
+    def orga_group_id(cls, dn: DN) -> int | None:
         """Extract the id of an orga group from its dn.
 
         Counterpart to 'orga_group_dn'.
@@ -1204,7 +1204,7 @@ class LDAPsqlBackend:
         return address.replace("@", "-owner@")
 
     @classmethod
-    def moderator_group_address(cls, dn: DN) -> Optional[str]:
+    def moderator_group_address(cls, dn: DN) -> str | None:
         """Extract the address from a moderator group from its dn.
 
         Note that this returns the regular address of the mailinglist, not the
@@ -1319,7 +1319,7 @@ class LDAPsqlBackend:
         return address
 
     @classmethod
-    def subscriber_group_address(cls, dn: DN) -> Optional[str]:
+    def subscriber_group_address(cls, dn: DN) -> str | None:
         """Extract the address of a subscriber group from its dn.
 
         Counterpart of 'subscriber_group_dn'.

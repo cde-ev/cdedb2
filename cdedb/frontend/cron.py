@@ -9,7 +9,6 @@ import inspect
 import pathlib
 from collections.abc import Collection, Iterator
 from datetime import datetime
-from typing import Optional
 
 from cdedb.common import RequestState, User, now
 from cdedb.common.n_ import n_
@@ -83,7 +82,7 @@ class CronFrontend(BaseApp):
         rs._conn = self.connpool['cdb_admin']
         return rs
 
-    def execute(self, jobs: Optional[Collection[str]] = None) -> bool:
+    def execute(self, jobs: Collection[str] | None = None) -> bool:
         """
         :param jobs: If jobs is given execute only these jobs.
         """

@@ -3,7 +3,6 @@ import dataclasses
 import datetime
 import decimal
 from collections.abc import Callable
-from typing import Optional
 
 import cdedb.models.event as models_event
 from cdedb.common import CdEDBObject, RequestState, n_
@@ -18,7 +17,7 @@ class MoneyTransfer:
     amount: decimal.Decimal
     date: datetime.date
 
-    registration: Optional[CdEDBObject] = None
+    registration: CdEDBObject | None = None
 
 
 @dataclasses.dataclass
@@ -45,7 +44,7 @@ class MoneyTransfersResult:
         *,
         send_individual_notifications: bool,
         by_orga: bool,
-        do_mail: Callable[..., Optional[str]],
+        do_mail: Callable[..., str | None],
         events: models_event.CdEDataclassMap[models_event.Event],
     ) -> None:
         # Import here to avoid cyclic imports.

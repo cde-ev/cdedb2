@@ -3,7 +3,7 @@
 import copy
 import datetime
 import decimal
-from typing import Optional, cast
+from typing import cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -116,7 +116,7 @@ class TestCoreBackend(BackendTest):
 
     @as_users("anton")
     def test_entity_persona(self) -> None:
-        persona_id: Optional[int] = -1
+        persona_id: int | None = -1
         while True:
             persona_id = self.core.next_persona(
                 self.key, persona_id=persona_id, is_member=None, is_archived=False

@@ -21,7 +21,7 @@ import datetime
 import decimal
 from collections.abc import Collection, Iterable
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, Optional, Protocol, cast
+from typing import TYPE_CHECKING, Literal, Protocol, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -331,7 +331,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @access("event")
     def change_minor_form(
-        self, rs: RequestState, event_id: int, minor_form: Optional[bytes]
+        self, rs: RequestState, event_id: int, minor_form: bytes | None
     ) -> DefaultReturnCode:
         """Change or remove an event's minor form.
 
@@ -722,7 +722,7 @@ class EventBaseBackend(EventLowLevelBackend):
         self,
         rs: RequestState,
         orga_token_id: int,
-        cascade: Optional[Collection[str]] = None,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Delete an orga  token.
 
@@ -788,7 +788,7 @@ class EventBaseBackend(EventLowLevelBackend):
         rs: RequestState,
         event_id: int,
         data: CdEDBObject,
-        change_note: Optional[str] = None,
+        change_note: str | None = None,
     ) -> DefaultReturnCode:
         """Update some keys of an event organized via DB.
 
@@ -902,7 +902,7 @@ class EventBaseBackend(EventLowLevelBackend):
         rs: RequestState,
         event_id: int,
         data: CdEDBObject,
-        change_note: Optional[str] = None,
+        change_note: str | None = None,
     ) -> DefaultReturnCode:
         event_id = affirm(vtypes.ID, event_id)
         data = affirm(
@@ -2025,7 +2025,7 @@ class EventBaseBackend(EventLowLevelBackend):
         *,
         after_change: bool = False,
         is_initial: bool = False,
-    ) -> Optional[CdEDBObject]:
+    ) -> CdEDBObject | None:
         """Commit the current state of the event to its git repository.
 
         In general, there are two scenarios where we want to make a new commit:
@@ -2073,7 +2073,7 @@ class EventBaseBackend(EventLowLevelBackend):
     @internal
     def _process_event_keeper_logs(
         self, rs: RequestState, event_id: int
-    ) -> Optional[tuple[CdEDBObject, ...]]:
+    ) -> tuple[CdEDBObject, ...] | None:
         """Format the log entries since the last commit to make them more readable."""
         with Atomizer(rs):
             timestamp = self._event_keeper.latest_logtime(event_id)

@@ -19,7 +19,7 @@ import subprocess
 import tempfile
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal
 
 import tabulate
 
@@ -57,7 +57,7 @@ class EntityKeeper:
     def _run(
         self,
         args: list[Path | str | bytes],
-        cwd: Optional[Path] = None,
+        cwd: Path | None = None,
         *,
         check: Literal["raise", "log", "ignore"] = "raise",
     ) -> subprocess.CompletedProcess[bytes]:
@@ -150,8 +150,8 @@ class EntityKeeper:
         author_email: str = "",
         *,
         may_drop: bool = True,
-        logs: Optional[Sequence[CdEDBObject]] = None,
-    ) -> Optional[subprocess.CompletedProcess[bytes]]:
+        logs: Sequence[CdEDBObject] | None = None,
+    ) -> subprocess.CompletedProcess[bytes] | None:
         """Commit a single file representing an entity to a git repository.
 
         In contrast to its friends, we allow some wiggle room for errors here right now
@@ -214,7 +214,7 @@ class EntityKeeper:
             # In particular, this is expected for empty commits.
             return self._run(commit, check="log")
 
-    def latest_logtime(self, entity_id: int) -> Optional[datetime.datetime]:
+    def latest_logtime(self, entity_id: int) -> datetime.datetime | None:
         """Retrieve the ctime of the latest log entry.
 
         This is determined by the timestamp of the commit, which is set to the ctime
@@ -239,7 +239,7 @@ class EntityKeeper:
         timestamp = response.stdout.decode("utf-8").strip()
         return datetime.datetime.fromisoformat(timestamp)
 
-    def _format_logs(self, logs: Sequence[CdEDBObject]) -> Optional[bytes]:
+    def _format_logs(self, logs: Sequence[CdEDBObject]) -> bytes | None:
         if not self.log_keys:
             return None
 

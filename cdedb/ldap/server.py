@@ -5,7 +5,7 @@ import logging
 import sys
 from asyncio import StreamReader, StreamWriter
 from collections.abc import Callable, Coroutine
-from typing import Any, Optional, Protocol
+from typing import Any, Protocol
 
 from ldaptor.protocols import pureber, pureldap
 from ldaptor.protocols.ldap import ldaperrors
@@ -39,7 +39,7 @@ class ReplyCallback(Protocol):
     def __call__(
         self,
         response: pureldap.LDAPProtocolResponse,
-        controls: Optional[list[Any]] = None,
+        controls: list[Any] | None = None,
     ) -> None: ...
 
 
@@ -60,7 +60,7 @@ class LdapHandler:
         self.root = root
         self.writer = writer
         self.reader = reader
-        self.bound_user: Optional[CdEDBBaseLDAPEntry] = None
+        self.bound_user: CdEDBBaseLDAPEntry | None = None
 
     berdecoder = pureldap.LDAPBERDecoderContext_TopLevel(
         inherit=pureldap.LDAPBERDecoderContext_LDAPMessage(
@@ -110,7 +110,7 @@ class LdapHandler:
         logger.error(f"Got unsolicited notification: f{repr(msg)}")
 
     @staticmethod
-    def check_controls(controls: Optional[tuple[Any, Any, Any]]) -> None:
+    def check_controls(controls: tuple[Any, Any, Any] | None) -> None:
         """Check controls which are sent together with the current request.
 
         Controls are an ldap mechanism to give additional parameters or information
@@ -136,7 +136,7 @@ class LdapHandler:
     @staticmethod
     async def handle_unknown(
         request: pureldap.LDAPProtocolRequest,
-        controls: Optional[pureldap.LDAPControls],
+        controls: pureldap.LDAPControls | None,
         reply: ReplyCallback,
     ) -> None:
         """Fallback handler if the current request to the server is not known."""
@@ -170,7 +170,7 @@ class LdapHandler:
 
         def reply(
             response: pureldap.LDAPProtocolResponse,
-            controls: Optional[list[Any]] = None,
+            controls: list[Any] | None = None,
         ) -> None:
             """Send a message back to the client."""
             response_msg = pureldap.LDAPMessage(response, controls=controls, id=msg.id)
@@ -184,7 +184,7 @@ class LdapHandler:
 
         name = msg.value.__class__.__name__
         handler: Callable[
-            [LDAPProtocolRequest, Optional[LDAPControls], ReplyCallback],
+            [LDAPProtocolRequest, LDAPControls | None, ReplyCallback],
             Coroutine[None, None, None],
         ]
         handler = getattr(self, "handle_" + name, self.handle_unknown)
@@ -213,7 +213,7 @@ class LdapHandler:
     async def handle_LDAPBindRequest(
         self,
         request: pureldap.LDAPBindRequest,
-        controls: Optional[pureldap.LDAPControls],
+        controls: pureldap.LDAPControls | None,
         reply: ReplyCallback,
     ) -> None:
         """Bind with a specific ldap entry to the server.
@@ -254,7 +254,7 @@ class LdapHandler:
     async def handle_LDAPUnbindRequest(
         self,
         request: pureldap.LDAPUnbindRequest,
-        controls: Optional[pureldap.LDAPControls],
+        controls: pureldap.LDAPControls | None,
         reply: ReplyCallback,
     ) -> None:
         """Notification to close the connection to the client."""
@@ -268,7 +268,7 @@ class LdapHandler:
     async def handle_LDAPCompareRequest(
         self,
         request: LDAPCompareRequest,
-        controls: Optional[pureldap.LDAPControls],
+        controls: pureldap.LDAPControls | None,
         reply: ReplyCallback,
     ) -> None:
         """Check if a given ldap entry matches a given filter."""
@@ -319,7 +319,7 @@ class LdapHandler:
     async def handle_LDAPSearchRequest(
         self,
         request: LDAPSearchRequest,
-        controls: Optional[pureldap.LDAPControls],
+        controls: pureldap.LDAPControls | None,
         reply: ReplyCallback,
     ) -> None:
         """Perform a search in the ldap tree."""
@@ -376,7 +376,7 @@ class LdapHandler:
             bound_dn=self.bound_user.dn if self.bound_user else None,
         )
 
-        def filter_entry(entry: CdEDBBaseLDAPEntry) -> Optional[list[Any]]:
+        def filter_entry(entry: CdEDBBaseLDAPEntry) -> list[Any] | None:
             """Filter an entry before sending it to the client.
 
             This is the main place where our security restrictions are implemented.
@@ -523,7 +523,7 @@ class LdapHandler:
     async def handle_LDAPAbandonRequest(
         self,
         request: LDAPAbandonRequest,
-        controls: Optional[pureldap.LDAPControls],
+        controls: pureldap.LDAPControls | None,
         reply: ReplyCallback,
     ) -> None:
         # according to specification, the operation which should be abandoned may or

@@ -31,7 +31,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Generic,
-    Optional,
     TypeVar,
     Union,
     cast,
@@ -82,7 +81,7 @@ CdEDBObjectMap = dict[int, CdEDBObject]
 # Same as above, but we also allow negative ints (for creation, not reflected
 # in the type] and None (for deletion). Used in `_set_tracks` and partial
 # import diff.
-CdEDBOptionalMap = dict[int, Optional[CdEDBObject]]
+CdEDBOptionalMap = dict[int, CdEDBObject | None]
 
 # An integer with special semantics. Positive return values indicate success,
 # a return of zero signals an error, a negative return value indicates some
@@ -97,7 +96,7 @@ DeletionBlockers = dict[str, list[int]]
 
 # Pseudo error objects used to display errors in the frontend. First argument
 # is the field that contains the error, second argument is the error itself.
-Error = tuple[Optional[str], Exception]
+Error = tuple[str | None, Exception]
 
 # A notification to be displayed. First argument ist the notification type
 # (warning, info, error, success, question). Second argument is the message.
@@ -122,19 +121,19 @@ class User:
     def __init__(
         self,
         *,
-        persona_id: Optional[int] = None,
+        persona_id: int | None = None,
         droid: "APIToken | None" = None,
-        roles: Optional[set[Role]] = None,
-        realm_roles: Optional[dict[Realm, set[str]]] = None,
+        roles: set[Role] | None = None,
+        realm_roles: dict[Realm, set[str]] | None = None,
         given_names: str = "",
         nickname: str = "",
         family_name: str = "",
         username: str = "",
-        orga: Optional[Collection[int]] = None,
-        caretaker: Optional[Collection[int]] = None,
-        checkin_helper: Optional[Collection[int]] = None,
-        moderator: Optional[Collection[int]] = None,
-        presider: Optional[Collection[int]] = None,
+        orga: Collection[int] | None = None,
+        caretaker: Collection[int] | None = None,
+        checkin_helper: Collection[int] | None = None,
+        moderator: Collection[int] | None = None,
+        presider: Collection[int] | None = None,
     ) -> None:
         self.persona_id = persona_id
         self.droid = droid
@@ -197,16 +196,16 @@ class RequestState(ConnectionContainer):
 
     def __init__(
         self,
-        sessionkey: Optional[str],
-        apitoken: Optional[str],
+        sessionkey: str | None,
+        apitoken: str | None,
         user: User,
         request: werkzeug.Request,
         notifications: Collection[Notification],
         mapadapter: werkzeug.routing.MapAdapter,
-        requestargs: Optional[Mapping[str, Any]],
+        requestargs: Mapping[str, Any] | None,
         errors: Collection[Error],
-        values: Optional[CdEDBMultiDict],
-        begin: Optional[datetime.datetime],
+        values: CdEDBMultiDict | None,
+        begin: datetime.datetime | None,
         lang: str,
         translations: Mapping[str, gettext.NullTranslations],
         endpoint: str | None = None,
@@ -248,7 +247,7 @@ class RequestState(ConnectionContainer):
         # Used for validation enforcement, set to False if a validator
         # is executed and then to True with the corresponding methods
         # of this class
-        self.validation_appraised: Optional[bool] = None
+        self.validation_appraised: bool | None = None
         self.endpoint = endpoint
 
     @property
@@ -287,7 +286,7 @@ class RequestState(ConnectionContainer):
         self,
         ntype: NotificationType,
         message: str,
-        params: Optional[CdEDBObject] = None,
+        params: CdEDBObject | None = None,
     ) -> None:
         """Store a notification for later delivery to the user."""
         if ntype not in NOTIFICATION_TYPES:
@@ -406,8 +405,8 @@ class RequestState(ConnectionContainer):
         """
         self._errors = list(errors)
 
-    def get_validation_errors_dict(self) -> dict[Optional[str], list[Exception]]:
-        ret: dict[Optional[str], list[Exception]] = {}
+    def get_validation_errors_dict(self) -> dict[str | None, list[Exception]]:
+        ret: dict[str | None, list[Exception]] = {}
         for key, value in self.retrieve_validation_errors():
             ret.setdefault(key, []).append(value)
         return ret
@@ -468,7 +467,7 @@ def make_proxy(backend: B, internal: bool = False) -> B:
     return cast(B, Proxy())
 
 
-def build_msg(msg1: str, msg2: Optional[str] = None) -> str:
+def build_msg(msg1: str, msg2: str | None = None) -> str:
     """Construct log message with appropriate punctuation"""
     if msg2:
         return msg1 + ": " + msg2
@@ -799,7 +798,7 @@ def unwrap(data: Mapping[Any, T]) -> T: ...
 def unwrap(data: Collection[T]) -> T: ...
 
 
-def unwrap(data: None | Mapping[Any, T] | Collection[T]) -> Optional[T]:
+def unwrap(data: None | Mapping[Any, T] | Collection[T]) -> T | None:
     """Remove one nesting layer (of lists, etc.).
 
     This is here to replace code like ``foo = bar[0]`` where bar is a
@@ -1288,8 +1287,8 @@ def encode_parameter(
     target: str,
     name: str,
     param: str,
-    persona_id: Optional[int],
-    timeout: Optional[_tdelta] = _tdelta(seconds=60),
+    persona_id: int | None,
+    timeout: _tdelta | None = _tdelta(seconds=60),
 ) -> str:
     """Crypographically secure a parameter. This allows two things:
 
@@ -1353,7 +1352,7 @@ def encode_parameter(
 
 
 def decode_parameter(
-    salt: str, target: str, name: str, param: str, persona_id: Optional[int]
+    salt: str, target: str, name: str, param: str, persona_id: int | None
 ) -> tuple[bool, None] | tuple[None, str]:
     """Inverse of :py:func:`encode_parameter`. See there for
     documentation.
@@ -1411,7 +1410,7 @@ def parse_date(val: str) -> datetime.date:
 
 
 def parse_datetime(
-    val: str, default_date: Optional[datetime.date] = None
+    val: str, default_date: datetime.date | None = None
 ) -> datetime.datetime:
     """Make a string into a datetime.
 

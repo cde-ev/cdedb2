@@ -232,7 +232,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         rs: RequestState,
         query: Query,
         distinct: bool = True,
-        view: Optional[str] = None,
+        view: str | None = None,
         aggregate: bool = False,
     ) -> tuple[CdEDBObject, ...]:
         """Perform a DB query described by a :py:class:`cdedb.query.Query`
@@ -290,7 +290,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
 
     @staticmethod
     def _construct_query(
-        query: Query, distinct: bool, view: Optional[str], aggregate_select: str
+        query: Query, distinct: bool, view: str | None, aggregate_select: str
     ) -> tuple[str, list[DatabaseValue_s]]:
         params: list[DatabaseValue_s] = []
         constraints = []
@@ -570,7 +570,7 @@ class DatabaseLock:
 
     """
 
-    xid: Optional[psycopg2.extensions.Xid]
+    xid: psycopg2.extensions.Xid | None
 
     def __init__(self, rs: RequestState, *locks: LockType):
         self.rs = rs
@@ -666,7 +666,7 @@ def inspect_validation(
     *,
     ignore_warnings: bool = True,
     **kwargs: Any,
-) -> tuple[Optional[CdEDBObject], list[Error]]: ...
+) -> tuple[CdEDBObject | None, list[Error]]: ...
 
 
 @overload
@@ -676,7 +676,7 @@ def inspect_validation(
     *,
     ignore_warnings: bool = True,
     **kwargs: Any,
-) -> tuple[Optional[T], list[Error]]: ...
+) -> tuple[T | None, list[Error]]: ...
 
 
 def inspect_validation(
@@ -685,7 +685,7 @@ def inspect_validation(
     *,
     ignore_warnings: bool = True,
     **kwargs: Any,
-) -> tuple[Optional[T | CdEDBObject], list[Error]]:
+) -> tuple[T | CdEDBObject | None, list[Error]]:
     """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This should only be used if the error handling must be done in the backend to

@@ -11,7 +11,7 @@ import builtins
 import collections
 import enum
 from functools import cached_property
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from cdedb.uncommon.intenum import CdEIntEnum
 
@@ -432,7 +432,7 @@ class GenesisStati(CdEIntEnum):
     def is_finalized(self) -> bool:
         return self in self.finalized_stati()
 
-    def get_icon(self) -> Optional[str]:
+    def get_icon(self) -> str | None:
         return {
             GenesisStati.unconfirmed: "hourglass-start",
             GenesisStati.to_review: "user-clock",

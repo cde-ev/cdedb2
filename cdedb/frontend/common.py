@@ -57,7 +57,6 @@ from typing import (
     Literal,
     NamedTuple,
     NotRequired,
-    Optional,
     Protocol,
     TypeVar,
     cast,
@@ -234,8 +233,8 @@ class BaseApp(metaclass=abc.ABCMeta):
             target: str,
             name: str,
             param: str,
-            persona_id: Optional[int],
-            timeout: Optional[_tdelta] = self.conf["PARAMETER_TIMEOUT"],
+            persona_id: int | None,
+            timeout: _tdelta | None = self.conf["PARAMETER_TIMEOUT"],
         ) -> str:
             return encode_parameter(
                 url_parameter_salt, target, name, param, persona_id, timeout
@@ -263,7 +262,7 @@ class BaseApp(metaclass=abc.ABCMeta):
         rs: RequestState,
         ntype: NotificationType,
         nmessage: str,
-        nparams: Optional[CdEDBObject] = None,
+        nparams: CdEDBObject | None = None,
     ) -> str:
         """Wrapper around :py:meth:`encode_parameter` for notifications.
 
@@ -308,8 +307,8 @@ class BaseApp(metaclass=abc.ABCMeta):
         self,
         rs: RequestState,
         target: str,
-        params: Optional[CdEDBObject] = None,
-        anchor: Optional[str] = None,
+        params: CdEDBObject | None = None,
+        anchor: str | None = None,
     ) -> werkzeug.Response:
         """Create a response which diverts the user. Special care has to be
         taken not to lose any notifications.
@@ -527,8 +526,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         def _cdedblink(
             endpoint: str,
-            params: Optional[CdEDBMultiDict] = None,
-            magic_placeholders: Optional[Collection[str]] = None,
+            params: CdEDBMultiDict | None = None,
+            magic_placeholders: Collection[str] | None = None,
         ) -> str:
             """We don't want to pass the whole request state to the
             template, hence this wrapper.
@@ -568,9 +567,9 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         def _show_user_link(
             user: User,
             persona_id: int,
-            quote_me: Optional[bool] = None,
-            event_id: Optional[int] = None,
-            ml_id: Optional[int] = None,
+            quote_me: bool | None = None,
+            event_id: int | None = None,
+            ml_id: int | None = None,
         ) -> str:
             """Convenience method to create link to user data page.
 
@@ -689,10 +688,10 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self,
         rs: RequestState,
         store: AttachmentStore,
-        attachment: Optional[werkzeug.datastructures.FileStorage],
-        attachment_hash: Optional[vtypes.Identifier],
-        attachment_filename: Optional[str] = None,
-    ) -> tuple[Optional[vtypes.Identifier], Optional[str]]:
+        attachment: werkzeug.datastructures.FileStorage | None,
+        attachment_hash: vtypes.Identifier | None,
+        attachment_filename: str | None = None,
+    ) -> tuple[vtypes.Identifier | None, str | None]:
         """Locate an attachment by hash and store it, if necessary
 
         :param attachment: A new file uploaded within this request. Supersedes remaining
@@ -729,12 +728,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def send_csv_file(
         rs: RequestState,
         mimetype: str = 'text/csv',
-        filename: Optional[str] = None,
+        filename: str | None = None,
         inline: bool = True,
         *,
-        path: Optional[str | pathlib.Path] = None,
-        afile: Optional[IO[bytes]] = None,
-        data: Optional[AnyStr] = None,
+        path: str | pathlib.Path | None = None,
+        afile: IO[bytes] | None = None,
+        data: AnyStr | None = None,
     ) -> Response:
         """Wrapper around :py:meth:`send_file` for CSV files.
 
@@ -758,13 +757,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     @staticmethod
     def send_file(
         rs: RequestState,
-        mimetype: Optional[str] = None,
-        filename: Optional[str] = None,
+        mimetype: str | None = None,
+        filename: str | None = None,
         inline: bool = True,
         *,
-        path: Optional[PathLike] = None,
-        afile: Optional[IO[bytes]] = None,
-        data: Optional[AnyStr] = None,
+        path: PathLike | None = None,
+        afile: IO[bytes] | None = None,
+        data: AnyStr | None = None,
         encoding: str = 'utf-8',
     ) -> Response:
         """Wrapper around :py:meth:`werkzeug.wsgi.wrap_file` to offer a file for
@@ -888,8 +887,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self,
         rs: RequestState,
         templatename: str,
-        params: Optional[CdEDBObject] = None,
-        mandatory_fields: Optional[Collection[str]] = None,
+        params: CdEDBObject | None = None,
+        mandatory_fields: Collection[str] | None = None,
     ) -> werkzeug.Response:
         """Wrapper around :py:meth:`fill_template` specialised to generating
         HTML responses.
@@ -965,9 +964,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self,
         rs: RequestState,
         defect_addresses: dict[str, EmailAddressReport],
-    ) -> tuple[
-        Optional[str], Optional[dict[vtypes.Email, list[models_ml.Mailinglist]]]
-    ]:
+    ) -> tuple[str | None, dict[vtypes.Email, list[models_ml.Mailinglist]] | None]:
         """Uninlined code to get the data in the required shape."""
         defect_username = None
         mls_with_defect_explicits = None
@@ -994,11 +991,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         rs: RequestState,
         templatename: str,
         headers: Headers,
-        params: Optional[CdEDBObject] = None,
-        attachments: Optional[Collection[Attachment]] = None,
+        params: CdEDBObject | None = None,
+        attachments: Collection[Attachment] | None = None,
         suppress_subject_logging: bool = False,
         suppress_recipient_logging: bool = False,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Wrapper around :py:meth:`fill_template` specialised to sending
         emails. This does generate the email and send it too.
 
@@ -1038,7 +1035,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         self,
         text: str,
         headers: Headers,
-        attachments: Optional[Collection[Attachment]],
+        attachments: Collection[Attachment] | None,
         defect_addresses: dict[str, const.EmailStatus],
     ) -> email.message.Message | email.mime.multipart.MIMEMultipart:
         """Helper for actual email instantiation from a raw message."""
@@ -1174,13 +1171,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
     def generic_user_search(
         self,
         rs: RequestState,
-        download: Optional[str],
+        download: str | None,
         is_search: bool,
         scope: query_mod.QueryScope,
         submit_general_query: Callable[[RequestState, Query], tuple[CdEDBObject, ...]],
         *,
-        choices: Optional[Mapping[str, Mapping[Any, str]]] = None,
-        query: Optional[Query] = None,
+        choices: Mapping[str, Mapping[Any, str]] | None = None,
+        query: Query | None = None,
     ) -> werkzeug.Response:
         """Perform user search.
 
@@ -1290,7 +1287,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         msg: email.message.Message,
         suppress_subject_logging: bool = False,
         suppress_recipient_logging: bool = False,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Helper for getting an email onto the wire.
 
         :returns: Name of the file the email was saved in -- however this
@@ -1324,7 +1321,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return ret
 
     def redirect_show_user(
-        self, rs: RequestState, persona_id: int, quote_me: Optional[bool] = None
+        self, rs: RequestState, persona_id: int, quote_me: bool | None = None
     ) -> werkzeug.Response:
         """Convenience function to redirect to a user detail page.
 
@@ -1349,7 +1346,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         target_file: str,
         cwd: pathlib.Path,
         runs: int,
-        errormsg: Optional[str],
+        errormsg: str | None,
     ) -> pathlib.Path:
         """Helper to compile latex documents in a safe way.
 
@@ -1396,8 +1393,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return pdf_path
 
     def latex_compile(
-        self, rs: RequestState, data: str, runs: int = 2, errormsg: Optional[str] = None
-    ) -> Optional[bytes]:
+        self, rs: RequestState, data: str, runs: int = 2, errormsg: str | None = None
+    ) -> bytes | None:
         """Run LaTeX on the provided document.
 
         This takes care of the necessary temporary files.
@@ -1431,8 +1428,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         data: str,
         filename: str,
         runs: int = 2,
-        errormsg: Optional[str] = None,
-    ) -> Optional[Response]:
+        errormsg: str | None = None,
+    ) -> Response | None:
         """Generate a response from a LaTeX document.
 
         This takes care of the necessary temporary files.
@@ -1463,8 +1460,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         work_dir_name: str,
         tex_file_name: str,
         runs: int = 2,
-        errormsg: Optional[str] = None,
-    ) -> Optional[Response]:
+        errormsg: str | None = None,
+    ) -> Response | None:
         """Generate a response from a LaTeX document.
 
         In contrast to :py:meth:`serve_latex_document` this expects that the
@@ -1528,7 +1525,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
     def check_anti_csrf(
         self, rs: RequestState, action: str, token_name: str, token_payload: str
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         A helper function to check the anti CSRF token
 
@@ -1571,7 +1568,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         *,
         download: bool,
         template: str,
-        template_kwargs: Optional[CdEDBObject] = None,
+        template_kwargs: CdEDBObject | None = None,
     ) -> werkzeug.Response:
         """Generic helper to retrieve log data and render the result.
 
@@ -1658,7 +1655,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         *,
         events_by_shortname: dict[str, models_event.Event],
         amounts_paid: dict[int, decimal.Decimal],
-        category: Optional[str] = None,
+        category: str | None = None,
     ) -> CdEDBObject:
         """Check one line specifying a money transfer.
 
@@ -1906,7 +1903,7 @@ class CdEMailmanClient(mailmanclient.Client):
 
     def get_list_safe(
         self, address: str
-    ) -> Optional[mailmanclient.restobjects.mailinglist.MailingList]:
+    ) -> mailmanclient.restobjects.mailinglist.MailingList | None:
         """Return list with standard error handling.
 
         In contrast to the original function, this does not raise if no list has been
@@ -1923,7 +1920,7 @@ class CdEMailmanClient(mailmanclient.Client):
 
     def get_held_messages(
         self, dblist: models_ml.Mailinglist
-    ) -> Optional[list[mailmanclient.restobjects.held_message.HeldMessage]]:
+    ) -> list[mailmanclient.restobjects.held_message.HeldMessage] | None:
         """Returns all held messages for mailman lists.
 
         If the list is not managed by mailman or inactive, this returns None instead.
@@ -1947,7 +1944,7 @@ class CdEMailmanClient(mailmanclient.Client):
                 self.logger.exception("Mailman connection failed!")
         return None
 
-    def get_held_message_count(self, dblist: models_ml.Mailinglist) -> Optional[int]:
+    def get_held_message_count(self, dblist: models_ml.Mailinglist) -> int | None:
         """Returns the number of held messages for a mailman list.
 
         If the list is not managed by mailman or inactive, this returns None instead.
@@ -2080,7 +2077,7 @@ class Worker(threading.Thread):
         name: str,
         tasks: "WorkerTasks",
         conf: Config,
-        timeout: Optional[float] = 0.1,
+        timeout: float | None = 0.1,
     ) -> "Worker":
         """Create a new Worker, remember and start it.
 
@@ -2403,9 +2400,9 @@ class FrontendEndpoint(Protocol):
 def access(
     *roles: Role,
     modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
-    check_anti_csrf: Optional[bool] = None,
-    anti_csrf_token_name: Optional[str] = None,
-    anti_csrf_token_payload: Optional[str] = None,
+    check_anti_csrf: bool | None = None,
+    anti_csrf_token_name: str | None = None,
+    anti_csrf_token_payload: str | None = None,
 ) -> Callable[[F], F]:
     """The @access decorator marks a function of a frontend for publication and
     adds initialization code around each call.
@@ -2479,9 +2476,9 @@ def access(
 def cdedburl(
     rs: RequestState,
     endpoint: str,
-    params: Optional[CdEDBObject | CdEDBMultiDict] = None,
+    params: CdEDBObject | CdEDBMultiDict | None = None,
     force_external: bool = False,
-    magic_placeholders: Optional[Collection[str]] = None,
+    magic_placeholders: Collection[str] | None = None,
 ) -> str:
     """Construct an HTTP URL.
 
@@ -2636,7 +2633,7 @@ def doclink(
 # noinspection PyPep8Naming
 def REQUESTdata(
     *spec: str,
-    _hints: Optional[vtypes.TypeMapping] = None,
+    _hints: vtypes.TypeMapping | None = None,
     _postpone_validation: bool = False,
     _omit_missing: bool = False,
 ) -> Callable[[F], F]:
@@ -2780,7 +2777,7 @@ RequestConstraint = tuple[Callable[[CdEDBObject], bool], Error]
 def request_extractor(
     rs: RequestState,
     spec: vtypes.TypeMapping,
-    constraints: Optional[Collection[RequestConstraint]] = None,
+    constraints: Collection[RequestConstraint] | None = None,
     postpone_validation: bool = False,
     omit_missing: bool = False,
 ) -> CdEDBObject:
@@ -2949,9 +2946,9 @@ def check_validation(
     rs: RequestState,
     type_: type[CdEDataclass],
     value: Any,
-    name: Optional[str] = None,
+    name: str | None = None,
     **kwargs: Any,
-) -> Optional[CdEDBObject]: ...
+) -> CdEDBObject | None: ...
 
 
 @overload
@@ -2959,18 +2956,18 @@ def check_validation(
     rs: RequestState,
     type_: TypeForm[T],
     value: Any,
-    name: Optional[str] = None,
+    name: str | None = None,
     **kwargs: Any,
-) -> Optional[T]: ...
+) -> T | None: ...
 
 
 def check_validation(
     rs: RequestState,
     type_: TypeForm[T] | type[CdEDataclass],
     value: Any,
-    name: Optional[str] = None,
+    name: str | None = None,
     **kwargs: Any,
-) -> Optional[T | CdEDBObject]:
+) -> T | CdEDBObject | None:
     """Wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This performs the check and appends all occurred errors to the RequestState.
@@ -2999,17 +2996,17 @@ DC = TypeVar('DC', bound=CdEDataclass)
 def extract_and_check_dataclass_validation(
     rs: RequestState,
     type_: type[DC],
-    name: Optional[str] = None,
+    name: str | None = None,
     *,
     additional_data: CdEDBObject | None = None,
     creation: bool,
     **kwargs: Any,
-) -> Optional[CdEDBObject]:
+) -> CdEDBObject | None:
     data = request_dict_extractor(rs, type_.requestdict_fields(creation=creation))
     if additional_data:
         data.update(additional_data)
     data = check_validation(rs, type_, data, argname=name, creation=creation, **kwargs)
-    return cast(Optional[CdEDBObject], data)
+    return cast(CdEDBObject | None, data)
 
 
 def inspect_validation(
@@ -3018,7 +3015,7 @@ def inspect_validation(
     *,
     ignore_warnings: bool = False,
     **kwargs: Any,
-) -> tuple[Optional[T], list[Error]]:
+) -> tuple[T | None, list[Error]]:
     """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This is similar to :func:`~cdedb.frontend.common.check_validation` but returns
@@ -3068,7 +3065,7 @@ def construct_redirect(request: werkzeug.Request, url: str) -> werkzeug.Response
         return ret
 
 
-def make_postal_address(rs: RequestState, persona: CdEDBObject) -> Optional[list[str]]:
+def make_postal_address(rs: RequestState, persona: CdEDBObject) -> list[str] | None:
     """Prepare address info for formatting.
 
     Addresses have some specific formatting wishes, so we are flexible
@@ -3326,8 +3323,8 @@ def csv_output(
     fields: Sequence[str],
     writeheader: bool = True,
     replace_newlines: bool = False,
-    substitutions: Optional[Mapping[str, Mapping[Any, Any]]] = None,
-    tzinfo: Optional[datetime.tzinfo] = None,
+    substitutions: Mapping[str, Mapping[Any, Any]] | None = None,
+    tzinfo: datetime.tzinfo | None = None,
 ) -> str:
     """Generate a csv representation of the passed data.
 
@@ -3362,7 +3359,7 @@ def csv_output(
 def query_result_to_json(
     data: Collection[CdEDBObject],
     fields: Iterable[str],
-    substitutions: Optional[Mapping[str, Mapping[Any, Any]]] = None,
+    substitutions: Mapping[str, Mapping[Any, Any]] | None = None,
 ) -> str:
     """Generate a json representation of the passed data.
 
@@ -3384,7 +3381,7 @@ def query_result_to_json(
 
 
 def calculate_loglinks(
-    rs: RequestState, total: int, offset: Optional[int], length: int
+    rs: RequestState, total: int, offset: int | None, length: int
 ) -> dict[str, CdEDBMultiDict | list[CdEDBMultiDict]]:
     """Calculate the target parameters for the links in the log pagination bar.
 
@@ -3503,9 +3500,9 @@ class TransactionObserver:
 
     def __exit__(
         self,
-        atype: Optional[type[Exception]],
-        value: Optional[Exception],
-        tb: Optional[TracebackType],
+        atype: type[Exception] | None,
+        value: Exception | None,
+        tb: TracebackType | None,
     ) -> Literal[False]:
         if value:
             self.frontend.do_mail(

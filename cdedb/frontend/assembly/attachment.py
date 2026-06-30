@@ -2,8 +2,6 @@
 
 """Services for the assembly realm."""
 
-from typing import Optional
-
 import werkzeug.exceptions
 from schulze_condorcet.types import Candidate
 from werkzeug import Response
@@ -156,11 +154,11 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         rs: RequestState,
         assembly_id: int,
         attachment: werkzeug.datastructures.FileStorage,
-        attachment_hash: Optional[vtypes.Identifier],
-        attachment_filename: Optional[str],
+        attachment_hash: vtypes.Identifier | None,
+        attachment_filename: str | None,
         title: str,
-        filename: Optional[vtypes.Identifier],
-        authors: Optional[str],
+        filename: vtypes.Identifier | None,
+        authors: str | None,
     ) -> Response:
         """Create a new attachment."""
         if not rs.ambience['assembly']['is_active']:
@@ -301,13 +299,13 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         assembly_id: int,
         attachment_id: int,
         attachment: werkzeug.datastructures.FileStorage,
-        attachment_hash: Optional[vtypes.Identifier],
-        attachment_filename: Optional[str],
+        attachment_hash: vtypes.Identifier | None,
+        attachment_filename: str | None,
         title: str,
-        filename: Optional[vtypes.Identifier],
-        authors: Optional[str],
-        changenotes: Optional[str],
-        ack_creation: Optional[bool] = None,
+        filename: vtypes.Identifier | None,
+        authors: str | None,
+        changenotes: str | None,
+        ack_creation: bool | None = None,
     ) -> Response:
         """Create a new version of an existing attachment.
 
@@ -433,8 +431,8 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         version_nr: int,
         title: str,
         filename: vtypes.Identifier,
-        authors: Optional[str],
-        changenotes: Optional[str],
+        authors: str | None,
+        changenotes: str | None,
     ) -> Response:
         """Change the metadata of a new version of an existing attachment."""
         # the check that the attachment belongs to the assembly is already done in

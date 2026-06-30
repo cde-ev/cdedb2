@@ -16,7 +16,6 @@ For every step "foo" of semester management, there are the following methods:
 
 import dataclasses
 import decimal
-from typing import Optional
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -484,7 +483,7 @@ class CdESemesterBackend(CdELastschriftBackend):
     @access("finance_admin")
     def process_for_semester_prearchival(
         self, rs: RequestState, period_id: int, testrun: bool
-    ) -> tuple[bool, Optional[CdEDBObject]]:
+    ) -> tuple[bool, CdEDBObject | None]:
         """Atomized call to warn one persona prior to archival.
 
         :returns: A tuple consisting of a boolean signalling whether there
@@ -567,7 +566,7 @@ class CdESemesterBackend(CdELastschriftBackend):
     @access("finance_admin")
     def process_for_semester_archival(
         self, rs: RequestState, period_id: int
-    ) -> tuple[bool, Optional[CdEDBObject]]:
+    ) -> tuple[bool, CdEDBObject | None]:
         """Atomized call to archive one persona.
 
         :returns: A tuple consisting of a boolean signalling whether there
