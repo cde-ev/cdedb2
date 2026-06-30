@@ -30,7 +30,6 @@ from types import UnionType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Generic,
     TypeVar,
     Union,
     cast,
@@ -1065,11 +1064,8 @@ def infinite_enum(aclass: T) -> T:
     return aclass
 
 
-E = TypeVar("E", bound=CdEIntEnum)
-
-
 @functools.total_ordering
-class InfiniteEnum(Generic[E]):
+class InfiniteEnum[E: CdEIntEnum]:
     """Storage facility for infinite enums with associated data
 
     Also see :py:func:`infinite_enum`"""
