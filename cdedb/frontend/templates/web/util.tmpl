@@ -172,7 +172,8 @@
 
 {# macro to visually represent subscription states
 
-    Pending subscriptions are shown with a "pause", <no subscription relation> is shown as an empty circle.
+    Pending subscriptions are shown with a "pause",
+    "unsubscribed", "blocked" and <no subscription relation> are shown as an empty circle.
 
 #}
 {% macro state_checkbox(state) %}
@@ -180,8 +181,6 @@
         <span class="fas fa-check-circle ml-state-subscribed" title="{{ gettext("subscribed") }}" aria-hidden="true"></span>
     {% elif state == enums["SubscriptionState"].pending %}
         <span class="far fa-circle-pause ml-state-pending" title="{{ gettext("pending") }}" aria-hidden="true"></span>
-    {% elif state is none %}
-        <span class="far fa-circle ml-state-none" title="{{ gettext("no relation") }}" aria-hidden="true"></span>
     {% else %}
         <span class="far fa-times-circle ml-state-unsubscribed" title="{{ gettext("not subscribed") }}" aria-hidden="true"></span>
     {% endif %}
