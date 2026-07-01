@@ -300,10 +300,13 @@ class TestCoreFrontend(FrontendTest):
         self.traverse("Mailinglisten-Daten")
         self.assertTitle("Inga Iota – Mailinglisten-Daten")
         self.assertPresence("inga@example.cde", div='contact-email')
-        self.assertPresence("CdE-Info E-Mail: inga-papierkorb@example.cde")
-        self.assertPresence("Kampfbrief-Kommentare (geblockt)")
-        self.assertNonPresence("Witz des Tages")
-        self.assertPresence("Gutscheine Moderator")
+        self.assertPresence(
+            "CdE-Info E-Mail: inga-papierkorb@example.cde", div="ml-subscriptions"
+        )
+        self.assertPresence("Kampfbrief-Kommentare (geblockt)", div="ml-subscriptions")
+        self.assertNonPresence("Witz des Tages", div="ml-subscriptions")
+        self.assertPresence("Gutscheine", div="moderated-mls")
+        self.assertNonPresence("CdE-Info", div="moderated-mls")
 
     @as_users("anton")
     def test_user_archived(self) -> None:

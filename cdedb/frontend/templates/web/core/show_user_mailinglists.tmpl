@@ -48,6 +48,7 @@
             as well as pending subscriptions and blocks.
         {% endtrans %}
     </p>
+    <div id="ml-subscriptions">
     {% for group, mailinglists in grouped.items() %}
         {{ util.h(group|string, level=4, underline=true) }}
         <div class="row">
@@ -85,11 +86,12 @@
             {% endfor %}
         </div>
     {% endfor %}
+    </div>
 
     {{ util.h(n_("Moderated Mailinglists"), level=3, underline=True) }}
     {% for group, mailinglists in grouped_moderated.items() %}
         {{ util.h(group|string, level=4, underline=true) }}
-        <div class="row">
+        <div class="row" id="moderated-mls">
             {% for list_slice in mailinglists|slice(2) %}
                 <div class="col-md-6">
                     <ul class="{% if not loop.last %}nosp{% endif %}">
