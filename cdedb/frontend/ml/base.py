@@ -91,22 +91,13 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.user.persona_id,
             states=sub_states | {const.SubscriptionState.pending},
         )
-        grouped: dict[MailinglistGroup, CdEDBObjectMap]
-        grouped = collections.defaultdict(dict)
-        for mailinglist_id, title in mailinglists.items():
-            group_id = self.mlproxy.get_ml_type(rs, mailinglist_id).sortkey
-            grouped[group_id][mailinglist_id] = {
-                'title': title,
-                'id': mailinglist_id,
-            }
+        grouped = Mailinglist.group_lists(mailinglist_infos)
         return self.render(
             rs,
             "index",
             {
-                'groups': MailinglistGroup,
-                'mailinglists': grouped,
+                'grouped': grouped,
                 'subscriptions': subscriptions,
-                'mailinglist_infos': mailinglist_infos,
             },
         )
 
