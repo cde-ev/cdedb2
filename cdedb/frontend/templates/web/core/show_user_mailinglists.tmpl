@@ -73,11 +73,11 @@
                         {% elif state == enums["SubscriptionState"].unsubscription_override %}
                             {{ gettext("(blocked)") }}
                         {% endif %}
-                        {% if ml["address"] %}
+                        {% if ml.id in addresses %}
                             <br />
                             <span class="far fa-circle dummy"></span>
                             {% trans %}E-Mail:{% endtrans %}
-                            {{ util.username_mailto(ambience['persona'], email=ml["address"]) }}
+                            {{ util.username_mailto(ambience['persona'], email=addresses[ml.id]) }}
                         {% endif %}
                         </li>
                     {% endfor %}

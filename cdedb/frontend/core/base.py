@@ -978,6 +978,7 @@ class CoreBaseFrontend(AbstractFrontend):
             "show_user_mailinglists",
             {
                 'subscriptions': subscriptions,
+                'addresses': addresses,
                 'receiving': receiving,
                 'grouped': grouped,
                 'grouped_moderated': grouped_moderated,
