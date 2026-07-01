@@ -94,7 +94,7 @@
                 <div class="col-md-6">
                     <ul class="{% if not loop.last %}nosp{% endif %}">
                         {% for ml in list_slice %}
-                            <li>
+                            <li class="{% if not ml.is_active %}text-muted {% endif %}">
                                 {{ util.href(cdedblink("ml/show_mailinglist", {"mailinglist_id": ml.id}), ml.title) }}
                             </li>
                         {% endfor %}
