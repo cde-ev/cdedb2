@@ -257,7 +257,7 @@ class ValidatorStorage[T](dict[TypeForm[T], Callable[..., T]]):
                 type_a, type_b = args
                 if type_a is type_b:
                     return cast(Callable[..., T], make_pair_validator(type_a))
-        elif origin is dict:
+        elif origin is dict or origin is CdEDataclassMap:
             return cast(
                 Callable[..., T], make_dict_validator(cast(type[dict[Any, Any]], type_))
             )
@@ -1133,7 +1133,10 @@ def make_dict_validator[K, V](type_: type[dict[K, V]]) -> DictValidator[K, V]:
     Given a type `dict[K, V]` create a validator to validate the keys of a mapping as K and the values as V.
     """
 
-    key_type, value_type = typing.get_args(type_)
+    if typing.get_origin(type_) is CdEDataclassMap:
+        key_type, value_type = int, typing.get_args(type_)[0]
+    else:
+        key_type, value_type = typing.get_args(type_)
 
     def dict_validator(
         val: Any, argname: str | None = None, *, enumerate_: bool = False, **kwargs: Any
