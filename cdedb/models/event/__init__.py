@@ -307,8 +307,8 @@ class Event(EventDataclass, _EventConfigurationMixin, _EventFreetextMixin):
 
     def __post_init__(self) -> None:
         for field in dataclasses.fields(self):
-            if get_origin(field.type) is dict:
-                value_kind = get_args(field.type)[1]
+            if get_origin(field.type) is CdEDataclassMap:
+                value_kind = get_args(field.type)[0]
                 if isinstance(value_kind, ForwardRef):
                     value_kind = value_kind.__forward_arg__
                 value_class = globals()[value_kind]
