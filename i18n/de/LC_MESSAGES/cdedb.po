@@ -16691,12 +16691,12 @@ msgstr "Mailinglisten-Daten"
 msgid ""
 "This lists all mailinglists this user is related to. In particular, this "
 "includes lists they are or have recently been subscribed to, as well as "
-"pending subscriptions, blocks and lists moderated by this user."
+"pending subscriptions and blocks."
 msgstr ""
 "Diese Liste enthält alle Mailinglisten, die mit dem Nutzer verknüpft sind. "
 "Konkret sind dies alle Listen mit aktuellen oder ehemaligen Abonnehments. "
 "Darüber hinaus finden sich hier alle Listen mit offenen Abonnehment-"
-"Anfragen, Sperren und von diesem Nutzer moderierte Mailinglisten."
+"Anfragen und Sperren."
 
 #: cdedb/frontend/templates/web/core/show_user_mailinglists.tmpl:67
 #: cdedb/frontend/templates/web/ml/advanced_management.tmpl:83

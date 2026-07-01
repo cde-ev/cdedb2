@@ -22,10 +22,10 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.core as models
+import cdedb.models.ml as models_ml
 import cdedb.models.past_event as models_past_event
 from cdedb.common import (
     CdEDBObject,
-    CdEDBObjectMap,
     DefaultReturnCode,
     Realm,
     RequestState,
@@ -97,7 +97,6 @@ from cdedb.frontend.common import (
     request_dict_extractor,
 )
 from cdedb.models.core import CdEPersona
-from cdedb.models.ml import MailinglistGroup
 from cdedb.uncommon.submanshim import SubscriptionPolicy
 
 # Name of each realm
@@ -958,36 +957,30 @@ class CoreBaseFrontend(AbstractFrontend):
         addresses = self.mlproxy.get_user_subscription_addresses(rs, persona_id)
         defect_addresses = self.coreproxy.get_defect_address_reports(rs, [persona_id])
         mailinglist_ids = set(subscriptions.keys())
-
-        moderated_lists = self.mlproxy.moderator_info(rs, persona_id)
-        mailinglist_ids.update(moderated_lists)
-
         mailinglists = self.mlproxy.get_mailinglists(rs, mailinglist_ids)
+        grouped = models_ml.Mailinglist.group_lists(mailinglists)
 
-        grouped: dict[MailinglistGroup, CdEDBObjectMap]
-        grouped = collections.defaultdict(dict)
-        for mailinglist_id, ml in mailinglists.items():
-            is_receiving = (
+        receiving = {
+            ml.id: (
                 addr not in defect_addresses
-                if (addr := addresses.get(mailinglist_id))
+                if (addr := addresses.get(ml.id))
                 else persona.username not in defect_addresses
             )
-            grouped[ml.sortkey][mailinglist_id] = {
-                'title': ml.title,
-                'id': mailinglist_id,
-                'address': addresses.get(mailinglist_id),
-                'is_active': ml.is_active,
-                'is_receiving': is_receiving,
-            }
+            for ml in mailinglists.values()
+        }
+
+        moderated_list_ids = self.mlproxy.moderator_info(rs, persona_id)
+        moderated_lists = self.mlproxy.get_mailinglists(rs, moderated_list_ids)
+        grouped_moderated = models_ml.Mailinglist.group_lists(moderated_lists)
 
         return self.render(
             rs,
             "show_user_mailinglists",
             {
-                'groups': MailinglistGroup,
                 'subscriptions': subscriptions,
-                'moderated_lists': moderated_lists,
-                'mailinglists': grouped,
+                'receiving': receiving,
+                'grouped': grouped,
+                'grouped_moderated': grouped_moderated,
             },
         )
 
