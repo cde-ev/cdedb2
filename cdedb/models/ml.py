@@ -380,7 +380,7 @@ class Mailinglist(CdEDataclass):
             ret[ml.sortkey].append(ml)
         return ret
 
-    def __lt__(self, other: "Mailinglist") -> bool:
+    def __lt__(self, other: "CdEDataclass") -> bool:
         if not isinstance(other, Mailinglist):
             return NotImplemented
 
