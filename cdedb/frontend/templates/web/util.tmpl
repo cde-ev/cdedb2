@@ -820,7 +820,7 @@
     {%- if caller %}{% set value=caller() %}{% endif %}
     {%- call form_input_general(name, label, none, small, info, displayerrors, horizontal, aclass=outerclass, errorname=errorname) %}
         <div {% if name %}name="{{ name }}" {% endif %}class="form-control-static {{ aclass }}"{% if anid %} id="{{ anid }}"{% endif %}>
-            {{ make_icon(icon) if icon }}
+            {{ make_icon(icon) if icon }}{{ nbsp if icon }}
             {{- value -}}
         </div>
     {%- endcall %}
