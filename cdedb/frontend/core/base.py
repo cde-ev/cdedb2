@@ -12,7 +12,7 @@ import operator
 import pathlib
 import quopri
 import tempfile
-from typing import Any, Optional
+from typing import Any, Optional, TypedDict
 
 import segno.helpers
 import werkzeug.datastructures
@@ -106,6 +106,11 @@ USER_REALM_NAMES = {
     "assembly": n_("Assembly user"),
     "ml": n_("Mailinglist user"),
 }
+
+
+class ShowUserAssembliesParams(TypedDict):
+    attended_assemblies: list[CdEDBObject]
+    presided_assemblies: list[CdEDBObject]
 
 
 class CoreBaseFrontend(AbstractFrontend):
@@ -990,6 +995,49 @@ class CoreBaseFrontend(AbstractFrontend):
         """Redirect to use `self` instead of persona_id to make ambience work."""
         return self.redirect(
             rs, "core/show_user_mailinglists", {'persona_id': rs.user.persona_id}
+        )
+
+    @access("assembly")
+    def show_user_assemblies(
+        self, rs: RequestState, persona_id: vtypes.PersonaID
+    ) -> Response:
+        if not (
+            self.coreproxy.is_relative_admin(rs, persona_id)
+            or "assembly_admin" in rs.user.roles
+            or rs.user.persona_id == persona_id
+        ):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
+            # reconnoitre_ambience leads to 404 if user does not exist at all.
+            rs.notify("error", n_("Persona is archived."))
+            return self.redirect_show_user(rs, persona_id)
+
+        assemblies = self.assemblyproxy.list_assemblies(rs)
+        attended_assemblies = self.assemblyproxy.list_attended_assemblies(
+            rs, persona_id
+        )
+        presided_assemblies = self.assemblyproxy.presider_info(rs, persona_id)
+
+        return self.render(
+            rs,
+            "show_user_assemblies",
+            dict(
+                ShowUserAssembliesParams(
+                    attended_assemblies=[
+                        a for a in assemblies.values() if a["id"] in attended_assemblies
+                    ],
+                    presided_assemblies=[
+                        a for a in assemblies.values() if a["id"] in presided_assemblies
+                    ],
+                )
+            ),
+        )
+
+    @access("assembly")
+    def show_user_assemblies_self(self, rs: RequestState) -> Response:
+        """Redirect to use `self` instead of persona_id to make ambience work."""
+        return self.redirect(
+            rs, "core/show_user_assemblies", {"persona_id": rs.user.persona_id}
         )
 
     @access(*REALM_ADMINS)

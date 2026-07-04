@@ -1,0 +1,53 @@
+{% extends "web/core/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+{% block title %}
+    {% trans name=ambience['persona']|persona_name %}
+        {{ name }} – Assembly Data
+    {% endtrans %}
+{% endblock %}
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']), ambience['persona']|persona_name, icon="user") }}
+    {{ util.breadcrumb_link(cdedblink("core/show_user_assemblies"), gettext("Show Assembly Data"), active=True) }}
+{% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Assembly Data"), ambience['persona']|persona_name,
+                            'user', gettext("User")) }}
+{% endblock %}
+
+{% block content %}
+    {% if attended_assemblies %}
+        {{ util.h(n_("Attended Assemblies"), level=3, underline=True) }}
+        <div id="attended-assemblies" class="row">
+            {% for list_slice in attended_assemblies|slice(2) %}
+                <div class="col-md-6">
+                    <ul class="{% if not loop.last %}nosp{% endif %}">
+                        {% for assembly in list_slice %}
+                            <li>
+                                {{ util.href(cdedblink("assembly/show_assembly", {"assembly_id": assembly["id"]}), assembly["title"]) }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if presided_assemblies %}
+        {{ util.h(n_("Presided Assemblies"), level=3, underline=True) }}
+        <div id="presided-assemblies" class="row">
+            {% for list_slice in presided_assemblies|slice(2) %}
+                <div class="col-md-6">
+                    <ul class="{% if not loop.last %}nosp{% endif %}">
+                        {% for assembly in list_slice %}
+                            <li>
+                                {{ util.href(cdedblink("assembly/show_assembly", {"assembly_id": assembly["id"]}), assembly["title"]) }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}

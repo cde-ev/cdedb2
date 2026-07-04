@@ -308,6 +308,29 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Gutscheine", div="moderated-mls")
         self.assertNonPresence("CdE-Info", div="moderated-mls")
 
+    @as_users("viktor", "paul", "quintus", maintain_data=True)
+    def test_showuser_assemblies(self) -> None:
+        if self.user_in("viktor"):
+            self.traverse("Versammlungen", "Archiv-Sammlung", "Werner Wahlleitung")
+        elif self.user_in("paul"):
+            self.admin_view_profile("werner")
+        elif self.user_in("quintus"):
+            # Relative admins may see this page
+            self.realm_admin_view_profile("werner", "cde")
+
+        self.traverse("Versammlungs-Daten")
+        self.assertTitle("Werner Wahlleitung – Versammlungs-Daten")
+        self.assertPresence("Internationaler Kongress", div="attended-assemblies")
+        self.assertNonPresence("Archiv-Sammlung", div="attended-assemblies")
+        self.assertNonPresence(
+            "Kanonische Beispielversammlung", div="attended-assemblies"
+        )
+        self.assertPresence("Internationaler Kongress", div="presided-assemblies")
+        self.assertPresence("Archiv-Sammlung", div="presided-assemblies")
+        self.assertNonPresence(
+            "Kanonische Beispielversammlung", div="presided-assemblies"
+        )
+
     @as_users("anton")
     def test_user_archived(self) -> None:
         def _check_redirected_profile() -> None:
