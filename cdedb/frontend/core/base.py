@@ -22,6 +22,7 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.core as models
+import cdedb.models.event as models_event
 import cdedb.models.ml as models_ml
 import cdedb.models.past_event as models_past_event
 from cdedb.common import (
@@ -106,6 +107,24 @@ USER_REALM_NAMES = {
     "assembly": n_("Assembly user"),
     "ml": n_("Mailinglist user"),
 }
+
+
+class ShowUserEventsParams(TypedDict):
+    events: models_event.EventDataclassMap
+    registrations: dict[int, dict[int, dict[int, const.RegistrationPartStati]]]
+    orga_events: set[int]
+    caretaker_events: set[int]
+    checkin_helper_events: set[int]
+    special_role_events: set[int]
+    is_event_helper: bool
+
+
+class ShowUserMailinglistsParams(TypedDict):
+    subscriptions: dict[int, const.SubscriptionState]
+    addresses: dict[int, str]
+    receiving: dict[vtypes.ID, bool]
+    grouped: dict[models_ml.MailinglistGroup, list[models_ml.Mailinglist]]
+    grouped_moderated: dict[models_ml.MailinglistGroup, list[models_ml.Mailinglist]]
 
 
 class ShowUserAssembliesParams(TypedDict):
@@ -891,12 +910,7 @@ class CoreBaseFrontend(AbstractFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
 
         registrations = self.eventproxy.list_persona_registrations(rs, persona_id)
-        registration_ids: dict[int, int] = {}
-        registration_parts: dict[int, dict[int, const.RegistrationPartStati]] = {}
-        for event_id, reg in registrations.items():
-            registration_ids[event_id] = unwrap(reg.keys())
-            registration_parts[event_id] = unwrap(reg.values())
-        event_ids = set(registration_ids.keys())
+        event_ids = set(registrations.keys())
 
         orga_events = self.eventproxy.orga_info(rs, persona_id)
         event_ids.update(orga_events)
@@ -921,16 +935,17 @@ class CoreBaseFrontend(AbstractFrontend):
             rs,
             "show_user_events",
             {
-                'events': events,
-                'registration_ids': registration_ids,
-                'registration_parts': registration_parts,
-                'orga_events': orga_events,
-                'caretaker_events': caretaker_events,
-                'checkin_helper_events': checkin_helper_events,
-                'special_role_events': special_role_events,
-                'is_event_helper': is_event_helper,
                 'is_privileged': is_privileged,
                 'EP': EventPrivileges,
+                **ShowUserEventsParams(
+                    events=events,
+                    registrations=registrations,
+                    orga_events=orga_events,
+                    caretaker_events=caretaker_events,
+                    checkin_helper_events=checkin_helper_events,
+                    special_role_events=special_role_events,
+                    is_event_helper=is_event_helper,
+                ),
             },
         )
 
@@ -981,13 +996,15 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.render(
             rs,
             "show_user_mailinglists",
-            {
-                'subscriptions': subscriptions,
-                'addresses': addresses,
-                'receiving': receiving,
-                'grouped': grouped,
-                'grouped_moderated': grouped_moderated,
-            },
+            dict(
+                ShowUserMailinglistsParams(
+                    subscriptions=subscriptions,
+                    addresses=addresses,
+                    receiving=receiving,
+                    grouped=grouped,
+                    grouped_moderated=grouped_moderated,
+                )
+            ),
         )
 
     @access("ml")

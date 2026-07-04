@@ -54,7 +54,7 @@
         </div>
     {% endif %}
 
-    {% if registration_ids %}
+    {% if registrations %}
         {{ util.h(gettext("Registrations"), 3) }}
         <div id="registration-list">
             <p>
@@ -63,15 +63,15 @@
                 {% endtrans %}
             </p>
             <ul>
-                {% for event in events.values()|reverse if event.id in registration_ids %}
+                {% for event in events.values()|reverse if event.id in registrations %}
                     <li>
                         {% if ambience['persona'].id == user.persona_id %}
-                            {{ util.href(cdedblink("event/registration_status", {'event_id': event.id}), event['title']) }}
+                            {{ util.href(cdedblink("event/registration_status", {'event_id': event.id}), event.title) }}
                         {% elif is_privileged(event.id, EP.registrations_read, EP.checkin) %}
                             {{ util.href(
                                     cdedblink(
                                         "event/show_registration",
-                                        {'event_id': event.id, 'registration_id': registration_ids[event.id]}
+                                        {'event_id': event.id, 'registration_id': registrations[event.id].keys()|first }
                                     ),
                                     event['title']
                                 ) }}
@@ -83,11 +83,11 @@
                         {% endif %}
                         <br />
                         <small class="text-muted">
-                        {% for part in event['parts'].values()|sort %}
-                            {% if registration_parts[event.id]|length != 1 %}
-                                {{ event['parts'][part.id]['title'] }}:
+                        {% for part in event.parts.values() %}
+                            {% if registrations[event.id].values()|first|length != 1 %}
+                                {{ part.title }}:
                             {% endif %}
-                            {{ gettext(registration_parts[event.id][part.id]|enum(enums['RegistrationPartStati'])) }}
+                            {{ gettext((registrations[event.id].values()|first)[part.id]|enum(enums['RegistrationPartStati'])) }}
                             {%- if not loop.last %}, {% endif -%}
                         {% endfor %}
                         </small>
