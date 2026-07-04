@@ -41,7 +41,7 @@
                     <li>
                         {{ util.href(
                                 cdedblink("event/show_event", {"event_id": event.id}), event.title,
-                                readonly=not event.is_visible_for(user, False, privileged=False)
+                                readonly=not event.is_visible_for(user, False, privileged=True)
                             ) }}:
                         {% set roles = [] %}
                         {% if event.id in orga_events %}{% do roles.append(gettext("Orga")) %}{% endif %}
@@ -78,7 +78,7 @@
                         {% else %}
                             {{ util.href(
                                     cdedblink("event/show_event", {"event_id": event.id}), event.title,
-                                    readonly=not event.is_visible_for(user, False, privileged=False)
+                                    readonly=not event.is_visible_for(user, False, privileged=True)
                                 ) }}
                         {% endif %}
                         <br />
