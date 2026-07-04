@@ -140,7 +140,7 @@ class ReferencePatterns:
     event_fee = re.compile(r"(Teiln(ahme|ehmer)|TN)[-\s]*(beitrag)?", flags=re.I)
 
     event_fee_refund = re.compile(
-        r"Erstattung ((Teilnahme|TN-?)beitrag|(Erste|Zweite) Rate|Anzahlung)",
+        r"Erstattung ((Teilnahme|TN-?)beitr(ag)?|(Erste|Zweite) Rate|Anzahlung)",
         flags=re.I,
     )
 
