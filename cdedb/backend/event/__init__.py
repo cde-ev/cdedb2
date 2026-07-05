@@ -60,7 +60,7 @@ class EventBackend(
 ):
     @access("event_admin")
     def delete_event_blockers(
-        self, rs: RequestState, event_id: int
+        self, rs: RequestState, event_id: vtypes.EventID
     ) -> DeletionBlockers:
         """Determine what keeps an event from being deleted.
 
@@ -346,14 +346,17 @@ class EventBackend(
 
     @access("event_admin")
     def delete_event(
-        self, rs: RequestState, event_id: int, cascade: Collection[str] | None = None
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Remove event.
 
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
         """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         blockers = self.delete_event_blockers(rs, event_id)
         if not cascade:
             cascade = set()
@@ -512,7 +515,7 @@ class EventBackend(
     def partial_import_event(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         data: CdEDBObject,
         dryrun: bool,
         token: str | None = None,
@@ -551,7 +554,7 @@ class EventBackend(
             return delta, previous
 
         with Atomizer(rs):
-            event_id = affirm(vtypes.ID, event_id)
+            event_id = affirm(vtypes.EventID, event_id)
             dryrun = affirm(bool, dryrun)
 
             self.assert_lock(rs, event_id=event_id)

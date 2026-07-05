@@ -463,7 +463,7 @@ class ConstraintViolation(abc.ABC):
 
         Need only be overridden if a subclass has additional associated primary entities.
         """
-        ret = {
+        ret: dict[str, tuple[str, CdEDBObject, str]] = {
             'event': (
                 "event/show_event",
                 {'event_id': self.event.id},

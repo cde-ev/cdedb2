@@ -686,6 +686,7 @@ def _id(val: Any, argname: str | None = None, **kwargs: Any) -> ID:
 
 
 _add_typed_validator(_id, InvolvedID)
+_add_typed_validator(_id, EventID)
 
 
 @_add_typed_validator

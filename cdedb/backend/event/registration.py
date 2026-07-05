@@ -222,7 +222,7 @@ class ComplexRegistrationFee:
 
 class EventRegistrationBackend(EventBaseBackend):
     def _get_course_segments_per_course(
-        self, rs: RequestState, event_id: int
+        self, rs: RequestState, event_id: vtypes.EventID
     ) -> dict[int, set[int]]:
         """
         Helper function to get course segments of all courses of an event.
@@ -267,7 +267,7 @@ class EventRegistrationBackend(EventBaseBackend):
         return {e['id'] for e in self.query_all(rs, q, p)}
 
     def _get_synced_tracks(
-        self, rs: RequestState, event_id: int
+        self, rs: RequestState, event_id: vtypes.EventID
     ) -> dict[int, set[int]]:
         """Return a mapping of track id to ids of tracks synced to that track.
 
@@ -298,7 +298,7 @@ class EventRegistrationBackend(EventBaseBackend):
     def get_course_choice_validation_aux(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         registration_id: int | None,
         orga_input: bool,
         part_ids: Collection[int] | None = None,
@@ -318,7 +318,7 @@ class EventRegistrationBackend(EventBaseBackend):
         be passed directly in case that data is not available in the database yet,
         for example during validation before creating a new registration.
         """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         registration_id = affirm(vtypes.ID | None, registration_id)
         part_ids = affirm(set[vtypes.ID], part_ids or ())
         if registration_id:
@@ -375,7 +375,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def get_course_segments_per_track(
-        self, rs: RequestState, event_id: int, active_only: bool = False
+        self, rs: RequestState, event_id: vtypes.EventID, active_only: bool = False
     ) -> dict[int, set[int]]:
         """Determine which courses can be chosen in each track.
 
@@ -384,7 +384,7 @@ class EventRegistrationBackend(EventBaseBackend):
         :returns: A map of <track id> -> [<course_id>, ...], indicating that these
             courses can be chosen in the given track.
         """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         active_only = affirm(bool, active_only)
 
         query = f"""
@@ -408,7 +408,7 @@ class EventRegistrationBackend(EventBaseBackend):
     def get_course_segments_per_track_group(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         active_only: bool = False,
         involved_parts: Collection[int] | None = None,
     ) -> dict[int, set[int]]:
@@ -419,7 +419,7 @@ class EventRegistrationBackend(EventBaseBackend):
         :returns: A map of <track id> -> [<course_id>, ...], indicating that these
             courses can be chosen in the given track.
         """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         active_only = affirm(bool, active_only)
         involved_parts = affirm(set[vtypes.ID] | None, involved_parts)
 
@@ -489,7 +489,9 @@ class EventRegistrationBackend(EventBaseBackend):
             ret *= self.sql_insert(rs, "event.course_choices", new_choice)
         return ret
 
-    def _get_registration_info(self, rs: RequestState, reg_id: int) -> tuple[int, int]:
+    def _get_registration_info(
+        self, rs: RequestState, reg_id: int
+    ) -> tuple[vtypes.PersonaID, vtypes.EventID]:
         """Helper to retrieve basic registration information."""
         reg_info = self.sql_select_one(
             rs, "event.registrations", ("persona_id", "event_id"), reg_id
@@ -500,8 +502,10 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def list_persona_registrations(
-        self, rs: RequestState, persona_id: int
-    ) -> dict[int, dict[int, dict[int, const.RegistrationPartStati]]]:
+        self, rs: RequestState, persona_id: vtypes.PersonaID
+    ) -> dict[
+        vtypes.EventID, dict[vtypes.ID, dict[vtypes.ID, const.RegistrationPartStati]]
+    ]:
         """List all events a given user has a registration for.
 
         :returns: Mapping of event ids to
@@ -523,7 +527,10 @@ class EventRegistrationBackend(EventBaseBackend):
             WHERE persona_id = %(persona_id)s
         """
         data = self.query_all(rs, query, {"persona_id": persona_id})
-        ret: dict[int, dict[int, dict[int, const.RegistrationPartStati]]] = {}
+        ret: dict[
+            vtypes.EventID,
+            dict[vtypes.ID, dict[vtypes.ID, const.RegistrationPartStati]],
+        ] = {}
         for e in data:
             reg = ret.setdefault(e['event_id'], {}).setdefault(e['registration_id'], {})
             reg[e['part_id']] = const.RegistrationPartStati(e['status'])
@@ -534,16 +541,16 @@ class EventRegistrationBackend(EventBaseBackend):
     def list_registrations_personas(
         self,
         rs: RequestState,
-        event_id: int,
-        persona_ids: Collection[int] | None = None,
-    ) -> dict[int, int]:
+        event_id: vtypes.EventID,
+        persona_ids: Collection[vtypes.PersonaID] | None = None,
+    ) -> dict[vtypes.ID, vtypes.PersonaID]:
         """List all registrations of an event.
 
         :param persona_ids: If passed restrict to registrations by these personas.
         :returns: Mapping of registration ids to persona_ids.
         """
-        event_id = affirm(vtypes.ID, event_id)
-        persona_ids = affirm(set[vtypes.ID] | None, persona_ids)
+        event_id = affirm(vtypes.EventID, event_id)
+        persona_ids = affirm(set[vtypes.PersonaID] | None, persona_ids)
 
         if persona_ids != {rs.user.persona_id} and not is_privileged(
             rs, EventPrivileges.registrations_read_internal, event_id=event_id
@@ -564,8 +571,11 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event", "ml_admin")
     def list_registrations(
-        self, rs: RequestState, event_id: int, persona_id: int | None = None
-    ) -> dict[int, int]:
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        persona_id: vtypes.PersonaID | None = None,
+    ) -> dict[vtypes.ID, vtypes.PersonaID]:
         """Manual singularization of list_registrations_personas
 
         Handles default values properly.
@@ -576,7 +586,9 @@ class EventRegistrationBackend(EventBaseBackend):
             return self.list_registrations_personas(rs, event_id)
 
     @access("event")
-    def list_participants(self, rs: RequestState, event_id: int) -> dict[int, int]:
+    def list_participants(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> dict[int, vtypes.PersonaID]:
         """List all participants of an event.
 
         Just participants of this event are returned and the requester himself must
@@ -584,7 +596,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
         :returns: Mapping of registration ids to persona_ids.
         """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         is_visible = self.get_event(rs, event_id).is_participant_list_visible
 
         # In this case, privilege check is performed afterwards since it depends on
@@ -621,11 +633,11 @@ class EventRegistrationBackend(EventBaseBackend):
     def check_registrations_status(
         self,
         rs: RequestState,
-        persona_ids: Collection[int],
-        event_id: int,
+        persona_ids: Collection[vtypes.PersonaID],
+        event_id: vtypes.EventID,
         stati: Collection[const.RegistrationPartStati],
         part_ids: Collection[int] = (),
-    ) -> dict[int, bool]:
+    ) -> dict[vtypes.PersonaID, bool]:
         """Check if any status for a given event matches one of the given stati.
 
         This is mostly used to determine mailinglist eligibility. Thus,
@@ -634,12 +646,12 @@ class EventRegistrationBackend(EventBaseBackend):
         A user may do this for themselves, an orga for their event and an
         event or ml admin for every user.
         """
-        persona_ids = affirm(set[vtypes.ID], persona_ids)
-        event_id = affirm(vtypes.ID, event_id)
+        persona_ids = affirm(set[vtypes.PersonaID], persona_ids)
+        event_id = affirm(vtypes.EventID, event_id)
         stati = affirm(set[const.RegistrationPartStati], stati)
 
         # By default, assume no participation.
-        ret: dict[int, bool] = {anid: False for anid in persona_ids}
+        ret = {anid: False for anid in persona_ids}
 
         # First, rule out people who can not participate at any event.
         if persona_ids == {rs.user.persona_id} and "event" not in rs.user.roles:
@@ -674,7 +686,7 @@ class EventRegistrationBackend(EventBaseBackend):
             self,
             rs: RequestState,
             persona_id: int,
-            event_id: int,
+            event_id: vtypes.EventID,
             stati: Collection[const.RegistrationPartStati],
         ) -> bool: ...
 
@@ -684,10 +696,10 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def get_registration_map(
-        self, rs: RequestState, event_ids: Collection[int]
+        self, rs: RequestState, event_ids: Collection[vtypes.EventID]
     ) -> dict[tuple[int, int], int]:
         """Retrieve a map of personas to their registrations."""
-        event_ids = affirm(set[vtypes.ID], event_ids)
+        event_ids = affirm(set[vtypes.EventID], event_ids)
         if not all(
             is_privileged(rs, EventPrivileges.registrations_read, event_id=anid)
             or is_privileged(rs, EventPrivileges.log_read, event_id=anid)
@@ -711,9 +723,9 @@ class EventRegistrationBackend(EventBaseBackend):
     def _get_waitlist(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         part_ids: Collection[int] | None = None,
-    ) -> dict[int, list[int] | None]:
+    ) -> dict[vtypes.ID, list[vtypes.ID] | None]:
         """Compute the waitlist in order for the given parts.
 
         Registrations with an empty waitlist field wil be placed at the end of the
@@ -722,7 +734,7 @@ class EventRegistrationBackend(EventBaseBackend):
         :returns: Part id mapping to None, if no waitlist ordering is defined
             or a list of registration ids otherwise.
         """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         part_ids = affirm(set[vtypes.ID], part_ids or set())
         with Atomizer(rs):
             event = self.get_event(rs, event_id)
@@ -730,7 +742,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 part_ids = cast(set[vtypes.ID], set(event.parts.keys()))
             elif not part_ids <= event.parts.keys():
                 raise ValueError(n_("Unknown part for the given event."))
-            ret: dict[int, list[int] | None] = {}
+            ret: dict[vtypes.ID, list[vtypes.ID] | None] = {}
             query = "SELECT id, fields FROM event.registrations WHERE event_id = %s"
             for part_id in part_ids:
                 part = event.parts[part_id]
@@ -761,9 +773,9 @@ class EventRegistrationBackend(EventBaseBackend):
     def get_waitlist(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         part_ids: Collection[int] | None = None,
-    ) -> dict[int, list[int] | None]:
+    ) -> dict[vtypes.ID, list[vtypes.ID] | None]:
         """Public wrapper around _get_waitlist. Adds privilege check."""
         if not is_privileged(rs, EventPrivileges.registrations_read, event_id=event_id):
             raise PrivilegeError(n_("Must be orga to access full waitlist."))
@@ -773,10 +785,10 @@ class EventRegistrationBackend(EventBaseBackend):
     def get_waitlist_position(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         part_ids: Collection[int] | None = None,
-        persona_id: int | None = None,
-    ) -> dict[int, int | None]:
+        persona_id: vtypes.PersonaID | None = None,
+    ) -> dict[vtypes.ID, int | None]:
         """Compute the waitlist position of a user for the given parts.
 
         :returns: Mapping of part id to position on waitlist or None if user is
@@ -794,7 +806,7 @@ class EventRegistrationBackend(EventBaseBackend):
         if not reg_ids:
             raise ValueError(n_("Not registered for this event."))
         reg_id = unwrap(reg_ids.keys())
-        ret: dict[int, int | None] = {}
+        ret: dict[vtypes.ID, int | None] = {}
         for part_id, waitlist in full_waitlist.items():
             try:
                 # If `reg_id` is not in the list, a ValueError will be raised.
@@ -808,7 +820,7 @@ class EventRegistrationBackend(EventBaseBackend):
     def registrations_by_course(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         course_id: int | None = None,
         track_id: int | None = None,
         position: InfiniteEnum[CourseFilterPositions] | None = None,
@@ -824,7 +836,7 @@ class EventRegistrationBackend(EventBaseBackend):
         :param position: A :py:class:`cdedb.common.CourseFilterPositions`
         :param reg_ids: List of registration states (in any part) to filter for
         """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         track_id = affirm(vtypes.ID | None, track_id)
         course_id = affirm(vtypes.ID | None, course_id)
         position = affirm(InfiniteEnum[CourseFilterPositions] | None, position)
@@ -906,7 +918,7 @@ class EventRegistrationBackend(EventBaseBackend):
     def get_num_registrations_by_part(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         stati: Collection[const.RegistrationPartStati],
         include_total: bool = False,
     ) -> dict[int | None, int]:
@@ -914,7 +926,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
         If selected, count total registration count (returned with part_id `None`).
         """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         stati = affirm(set[const.RegistrationPartStati], stati)
         # count per part
         q = """
@@ -939,7 +951,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def get_registration_payment_info(
-        self, rs: RequestState, event_id: int
+        self, rs: RequestState, event_id: vtypes.EventID
     ) -> tuple[bool | None, bool]:
         """Small helper to get information for the dashboard pages.
 
@@ -948,6 +960,7 @@ class EventRegistrationBackend(EventBaseBackend):
         The second flag tells whether there is still some amount left to pay; this
         can only be True if the first flag is True.
         """
+        event_id = affirm(vtypes.EventID, event_id)
         registration_ids = self.list_registrations(
             rs, event_id, rs.user.persona_id
         ).keys()
@@ -1629,11 +1642,11 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("finance_admin")
     def get_amount_owed(
-        self, rs: RequestState, persona_id: int, event_id: int
+        self, rs: RequestState, persona_id: vtypes.PersonaID, event_id: vtypes.EventID
     ) -> decimal.Decimal | None:
         """Retrieve the remaining amount owed for a single persona for one event."""
-        persona_id = affirm(vtypes.ID, persona_id)
-        event_id = affirm(vtypes.ID, event_id)
+        persona_id = affirm(vtypes.PersonaID, persona_id)
+        event_id = affirm(vtypes.EventID, event_id)
         query = f"""
             SELECT amount_owed - amount_paid AS amount
             FROM {models.Registration.database_table}
@@ -1645,11 +1658,11 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def get_registration_id(
-        self, rs: RequestState, persona_id: int, event_id: int
-    ) -> int | None:
+        self, rs: RequestState, persona_id: vtypes.PersonaID, event_id: vtypes.EventID
+    ) -> vtypes.ID | None:
         """Retrieve the registration id of the given persona for the event if any."""
-        persona_id = affirm(vtypes.ID, persona_id)
-        event_id = affirm(vtypes.ID, event_id)
+        persona_id = affirm(vtypes.PersonaID, persona_id)
+        event_id = affirm(vtypes.EventID, event_id)
         registration_ids = self.list_registrations(rs, event_id, persona_id)
         if not registration_ids:
             return None
@@ -1668,7 +1681,7 @@ class EventRegistrationBackend(EventBaseBackend):
     def _update_registrations_amount_owed(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
     ) -> dict[int, ComplexRegistrationFee]:
         """Update the amount owed for all registrations of one event."""
         self.affirm_atomized_context(rs)
@@ -1812,7 +1825,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def calculate_fee_for_partial_registration(
-        self, rs: RequestState, reg: CdEDBObject, *, event_id: int
+        self, rs: RequestState, reg: CdEDBObject, *, event_id: vtypes.EventID
     ) -> decimal.Decimal:
         """Public helper to calculate a fee for a non-stored (partial) registration.
 
@@ -1823,7 +1836,7 @@ class EventRegistrationBackend(EventBaseBackend):
         object is sufficient to calculate the fee without raising an error.
         """
         reg = affirm(Mapping, reg)  # type: ignore[type-abstract]
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         event = self.get_event(rs, event_id)
         return self._calculate_complex_fee(rs, reg, event=event).amount
 
@@ -1831,9 +1844,9 @@ class EventRegistrationBackend(EventBaseBackend):
     def precompute_fee(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         *,
-        persona_id: int | None,
+        persona_id: vtypes.PersonaID | None,
         part_ids: Collection[int],
         field_values: dict[str, bool],
         is_member: bool | None,
@@ -1848,8 +1861,8 @@ class EventRegistrationBackend(EventBaseBackend):
         :param field_values: Mapping of `f"field.{field_id}"` to value of the field.
         :param is_orga: Optional override for orga status in fee calculation.
         """
-        event_id = affirm(vtypes.ID, event_id)
-        persona_id = affirm(vtypes.ID | None, persona_id)
+        event_id = affirm(vtypes.EventID, event_id)
+        persona_id = affirm(vtypes.PersonaID | None, persona_id)
         part_ids = affirm(set[vtypes.ID], part_ids)
         is_member = affirm(bool | None, is_member)
         is_orga = affirm(bool | None, is_orga)
@@ -1920,7 +1933,9 @@ class EventRegistrationBackend(EventBaseBackend):
         )
 
     @access("event")
-    def get_fee_stats(self, rs: RequestState, event_id: int) -> FeeStatsTotal:
+    def get_fee_stats(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> FeeStatsTotal:
         """Group and sum the paid fees by type.
 
         This aggregates all registrations that owe a certain event fee as well as the
@@ -1933,6 +1948,7 @@ class EventRegistrationBackend(EventBaseBackend):
         Insufficient payments cannot be split into the respective kinds of owed fee.
         They are excluded from the paid totals, but tracked separately.
         """
+        event_id = affirm(vtypes.EventID, event_id)
         event = self.get_event(rs, event_id)
         reg_ids = self.list_registrations(rs, event_id)
 
@@ -2130,9 +2146,10 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def book_fees(
-        self, rs: RequestState, event_id: int, transfers: list[CdEDBObject]
+        self, rs: RequestState, event_id: vtypes.EventID, transfers: list[CdEDBObject]
     ) -> models_finance.MoneyTransfersResult:
         """Similar to `cdedb.backend.cde.base.book_money_transfers`."""
+        event_id = affirm(vtypes.EventID, event_id)
         transfers = affirm(list[vtypes.MoneyTransferEntry], transfers, event_only=True)
         index = 0
 

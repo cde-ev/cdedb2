@@ -254,14 +254,14 @@ class EventBaseFrontend(AbstractUserFrontend):
         def is_privileged(
             required_privilege: EventPrivileges = EventPrivileges.basic_read,
             *,
-            event_id: int | None = None,
+            event_id: vtypes.EventID | None = None,
         ) -> bool:
             return self.is_privileged(rs, required_privilege, event_id=event_id)
 
         def is_privileged_for(
             endpoint: str,
             *,
-            event_id: int | None = None,
+            event_id: vtypes.EventID | None = None,
             admin_view_to_consider: str | None = "event_orga",
         ) -> bool:
             endpoint = endpoint.removeprefix(f"{self.realm}/")
@@ -345,7 +345,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         self,
         rs: RequestState,
         *required_privileges: EventPrivileges,
-        event_id: int | None = None,
+        event_id: vtypes.EventID | None = None,
     ) -> bool:
         """
         Check the users privilege regarding the contextual event, given via event_id or
@@ -442,7 +442,7 @@ class EventBaseFrontend(AbstractUserFrontend):
     def participant_list(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         part_id: vtypes.ID | None = None,
         sortkey: str | None = "persona",
         reverse: bool = False,
@@ -502,7 +502,7 @@ class EventBaseFrontend(AbstractUserFrontend):
     def _get_participant_list_data(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         part_ids: Collection[int] = (),
         orga_list: bool = False,
         include_total_count: bool = False,
@@ -592,7 +592,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         )
 
     def _get_user_lodgement_wishes(
-        self, rs: RequestState, event_id: int
+        self, rs: RequestState, event_id: vtypes.EventID
     ) -> UserLodgementWishes | None:
         assert rs.user.persona_id is not None
         if not (
@@ -640,7 +640,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         )
 
     @access("event")
-    def participant_info(self, rs: RequestState, event_id: int) -> Response:
+    def participant_info(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Display the `participant_info`, accessible only to participants."""
         if not self.is_privileged(rs, EventPrivileges.basic_read):
             assert rs.user.persona_id is not None
@@ -755,7 +755,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
     @abc.abstractmethod
     def get_course_choice_params(
-        self, rs: RequestState, event_id: int, orga: bool = True
+        self, rs: RequestState, event_id: vtypes.EventID, orga: bool = True
     ) -> CourseChoiceParams: ...
 
     @abc.abstractmethod
@@ -876,7 +876,7 @@ class EventBaseFrontend(AbstractUserFrontend):
     def constraint_violations(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         min_severity: models_cv.ViolationSeverity = models_cv.ViolationSeverity.INFO,
         violation_kind: models_cv.ViolationKind | None = None,
     ) -> Response:
@@ -996,7 +996,11 @@ class EventBaseFrontend(AbstractUserFrontend):
     @access("event")
     @event_guard(EventPrivileges.log_read)
     def view_event_log(
-        self, rs: RequestState, event_id: int, data: CdEDBObject, download: bool
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        data: CdEDBObject,
+        download: bool,
     ) -> Response:
         """View activities concerning one event organized via DB."""
         rs.values['event_id'] = data['event_id'] = event_id

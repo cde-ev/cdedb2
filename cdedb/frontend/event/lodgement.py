@@ -56,7 +56,7 @@ class EventLodgementMixin(EventBaseFrontend):
     def lodgements(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         sort_part_id: vtypes.ID | None = None,
         sortkey: LodgementsSortkeys | None = None,
         reverse: bool = False,
@@ -170,7 +170,9 @@ class EventLodgementMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(EventPrivileges.lodgements_write)
-    def lodgement_group_summary_form(self, rs: RequestState, event_id: int) -> Response:
+    def lodgement_group_summary_form(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         groups = self.eventproxy.get_lodgement_groups(rs, event_id)
 
         current = {
@@ -185,7 +187,9 @@ class EventLodgementMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.lodgements_write)
-    def lodgement_group_summary(self, rs: RequestState, event_id: int) -> Response:
+    def lodgement_group_summary(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         """Manipulate groups of lodgements."""
         groups = self.eventproxy.get_lodgement_groups(rs, event_id)
         groups = process_dynamic_input(
@@ -209,7 +213,7 @@ class EventLodgementMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.lodgements_read | EventPrivileges.registrations_stats)
     def show_lodgement(
-        self, rs: RequestState, event_id: int, lodgement_id: int
+        self, rs: RequestState, event_id: vtypes.EventID, lodgement_id: int
     ) -> Response:
         """Display details of one lodgement."""
         params: dict[str, Any] = {}
@@ -288,7 +292,9 @@ class EventLodgementMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(EventPrivileges.registrations_read)
-    def lodgement_wishes_graph_form(self, rs: RequestState, event_id: int) -> Response:
+    def lodgement_wishes_graph_form(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         event = rs.ambience['event']
         if event.lodge_field:
             registration_ids = self.eventproxy.list_registrations(rs, event_id)
@@ -322,7 +328,7 @@ class EventLodgementMixin(EventBaseFrontend):
     def lodgement_wishes_graph(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         all_participants: bool,
         part_id: int | None,
         show_lodgements: bool,
@@ -401,7 +407,7 @@ class EventLodgementMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.lodgements_write)
     @REQUESTdata("group_id")
     def create_lodgement_form(
-        self, rs: RequestState, event_id: int, group_id: int | None = None
+        self, rs: RequestState, event_id: vtypes.EventID, group_id: int | None = None
     ) -> Response:
         """Render form."""
         rs.ignore_validation_errors()
@@ -424,7 +430,7 @@ class EventLodgementMixin(EventBaseFrontend):
     def create_lodgement(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         data: CdEDBObject,
         new_group_title: str | None,
     ) -> Response:
@@ -479,7 +485,7 @@ class EventLodgementMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.lodgements_write)
     def change_lodgement_form(
-        self, rs: RequestState, event_id: int, lodgement_id: int
+        self, rs: RequestState, event_id: vtypes.EventID, lodgement_id: int
     ) -> Response:
         """Render form."""
         groups = self.eventproxy.get_lodgement_groups(rs, event_id)
@@ -498,7 +504,11 @@ class EventLodgementMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.lodgements_write)
     @REQUESTdatadict(*models.Lodgement.requestdict_fields(creation=False))
     def change_lodgement(
-        self, rs: RequestState, event_id: int, lodgement_id: int, data: CdEDBObject
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        lodgement_id: int,
+        data: CdEDBObject,
     ) -> Response:
         """Alter the attributes of a lodgement.
 
@@ -523,7 +533,11 @@ class EventLodgementMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.lodgements_write)
     @REQUESTdata("ack_delete")
     def delete_lodgement(
-        self, rs: RequestState, event_id: int, lodgement_id: int, ack_delete: bool
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        lodgement_id: int,
+        ack_delete: bool,
     ) -> Response:
         """Remove a lodgement."""
         if not ack_delete:
@@ -548,7 +562,7 @@ class EventLodgementMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.registrations_write)
     def manage_inhabitants_form(
-        self, rs: RequestState, event_id: int, lodgement_id: int
+        self, rs: RequestState, event_id: vtypes.EventID, lodgement_id: int
     ) -> Response:
         """Render form."""
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
@@ -662,7 +676,7 @@ class EventLodgementMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
     def manage_inhabitants(
-        self, rs: RequestState, event_id: int, lodgement_id: int
+        self, rs: RequestState, event_id: vtypes.EventID, lodgement_id: int
     ) -> Response:
         """Alter who is assigned to a lodgement.
 
@@ -738,7 +752,7 @@ class EventLodgementMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
     def swap_inhabitants(
-        self, rs: RequestState, event_id: int, lodgement_id: int
+        self, rs: RequestState, event_id: vtypes.EventID, lodgement_id: int
     ) -> Response:
         """Swap inhabitants of two lodgements of the same part."""
         params: vtypes.TypeMapping = {
@@ -792,7 +806,7 @@ class EventLodgementMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.lodgements_write)
     def move_lodgements_form(
-        self, rs: RequestState, event_id: int, group_id: int
+        self, rs: RequestState, event_id: vtypes.EventID, group_id: int
     ) -> Response:
         """Move lodgements from one group to another or delete them with the group."""
         groups = self.eventproxy.get_lodgement_groups(rs, event_id)
@@ -813,7 +827,7 @@ class EventLodgementMixin(EventBaseFrontend):
     def move_lodgements(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         group_id: int,
         lodgement_ids: Collection[int],
         target_group_id: int | None,

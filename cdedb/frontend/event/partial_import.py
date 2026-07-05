@@ -10,7 +10,7 @@ import json
 from collections.abc import Mapping
 from typing import Any
 
-import werkzeug.exceptions
+import werkzeug.datastructures
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
@@ -41,7 +41,9 @@ from cdedb.models.event import ReducedCheckinPeriod
 class EventImportMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.basic_write)
-    def questionnaire_import_form(self, rs: RequestState, event_id: int) -> Response:
+    def questionnaire_import_form(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         """Render form for uploading questionnaire data."""
         return self.render(
             rs,
@@ -57,7 +59,7 @@ class EventImportMixin(EventBaseFrontend):
     def questionnaire_import(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         json_file: werkzeug.datastructures.FileStorage | None,
         extend_questionnaire: bool,
         skip_existing_fields: bool,
@@ -90,7 +92,9 @@ class EventImportMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(EventPrivileges.entities_write)
-    def partial_import_form(self, rs: RequestState, event_id: int) -> Response:
+    def partial_import_form(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         """First step of partial import process: Render form to upload file"""
         return self.render(
             rs,
@@ -106,7 +110,7 @@ class EventImportMixin(EventBaseFrontend):
     def partial_import(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         json_file: werkzeug.datastructures.FileStorage | None,
         partial_import_data: Any | None,
         token: str | None,

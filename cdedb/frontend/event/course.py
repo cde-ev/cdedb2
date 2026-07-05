@@ -79,7 +79,7 @@ class EventCourseMixin(EventBaseFrontend):
     def course_list(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         track_ids: Collection[int] = (),
         active_only: bool = False,
     ) -> Response:
@@ -137,7 +137,9 @@ class EventCourseMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(EventPrivileges.courses_read)
-    def show_course(self, rs: RequestState, event_id: int, course_id: int) -> Response:
+    def show_course(
+        self, rs: RequestState, event_id: vtypes.EventID, course_id: int
+    ) -> Response:
         """Display course associated to event organized via DB."""
         params: CdEDBObject = {}
         params['num_attendees'] = params['num_learners'] = None
@@ -212,7 +214,7 @@ class EventCourseMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.courses_write)
     def change_course_form(
-        self, rs: RequestState, event_id: int, course_id: int
+        self, rs: RequestState, event_id: vtypes.EventID, course_id: int
     ) -> Response:
         """Render form."""
         field_values = event_associated_fields_to_request(
@@ -270,7 +272,11 @@ class EventCourseMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.courses_write)
     @REQUESTdatadict(*models.Course.requestdict_fields(creation=False))
     def change_course(
-        self, rs: RequestState, event_id: int, course_id: int, data: CdEDBObject
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        course_id: int,
+        data: CdEDBObject,
     ) -> Response:
         """Modify a course associated to an event organized via DB."""
         data.update(
@@ -288,7 +294,9 @@ class EventCourseMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(EventPrivileges.courses_write)
-    def create_course_form(self, rs: RequestState, event_id: int) -> Response:
+    def create_course_form(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         """Render form."""
         # by default select all tracks
         tracks = rs.ambience['event'].tracks
@@ -306,7 +314,7 @@ class EventCourseMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.courses_write)
     @REQUESTdatadict(*models.Course.requestdict_fields(creation=True))
     def create_course(
-        self, rs: RequestState, event_id: int, data: CdEDBObject
+        self, rs: RequestState, event_id: vtypes.EventID, data: CdEDBObject
     ) -> Response:
         """Create a new course associated to an event organized via DB."""
         data.update(
@@ -324,7 +332,11 @@ class EventCourseMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.courses_write)
     @REQUESTdata("ack_delete")
     def delete_course(
-        self, rs: RequestState, event_id: int, course_id: int, ack_delete: bool
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        course_id: int,
+        ack_delete: bool,
     ) -> Response:
         """Delete a course from an event organized via DB."""
         if not ack_delete:
@@ -353,9 +365,12 @@ class EventCourseMixin(EventBaseFrontend):
         return self.redirect(rs, "event/course_stats")
 
     @access("event")
-    def show_instructed_courses(self, rs: RequestState, event_id: int) -> Response:
+    def show_instructed_courses(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
+        assert rs.user.persona_id
         registration_id = self.eventproxy.get_registration_id(
-            rs, cast(int, rs.user.persona_id), event_id
+            rs, rs.user.persona_id, event_id
         )
         if not registration_id:
             rs.notify("warning", n_("Not registered for event."))
@@ -397,7 +412,7 @@ class EventCourseMixin(EventBaseFrontend):
     def course_choices_form(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         course_id: vtypes.ID | None,
         track_id: vtypes.ID | None,
         position: InfiniteEnum[CourseFilterPositions] | None,
@@ -774,7 +789,7 @@ class EventCourseMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.courses_read | EventPrivileges.registrations_stats)
     @REQUESTdata("include_active")
     def course_stats(
-        self, rs: RequestState, event_id: int, include_active: bool
+        self, rs: RequestState, event_id: vtypes.EventID, include_active: bool
     ) -> Response:
         """List courses.
 
@@ -809,7 +824,7 @@ class EventCourseMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.registrations_write)
     def manage_attendees_form(
-        self, rs: RequestState, event_id: int, course_id: int
+        self, rs: RequestState, event_id: vtypes.EventID, course_id: int
     ) -> Response:
         """Render form."""
         tracks = rs.ambience['event'].tracks
@@ -922,7 +937,7 @@ class EventCourseMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
     def manage_attendees(
-        self, rs: RequestState, event_id: int, course_id: int
+        self, rs: RequestState, event_id: vtypes.EventID, course_id: int
     ) -> Response:
         """Alter who is assigned to this course."""
         # Get all registrations and especially current attendees of this course

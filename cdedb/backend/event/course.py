@@ -41,12 +41,14 @@ from cdedb.database.query import DatabaseValue_s, ParamDict
 
 class EventCourseBackend(EventBaseBackend, abc.ABC):
     @access("anonymous")
-    def list_courses(self, rs: RequestState, event_id: int) -> dict[int, str]:
+    def list_courses(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> dict[int, str]:
         """List all courses organized via DB.
 
         :returns: Mapping of course ids to titles.
         """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         data = self.sql_select(
             rs, "event.courses", ("id", "title"), (event_id,), entity_key="event_id"
         )
@@ -258,10 +260,10 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
 
     @access("event")
     def create_course(
-        self, rs: RequestState, event_id: int, data: CdEDBObject
+        self, rs: RequestState, event_id: vtypes.EventID, data: CdEDBObject
     ) -> DefaultReturnCode:
         """Make a new course organized via DB."""
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         event = self.get_event(rs, event_id)
         data = affirm(models.Course, data, creation=True, event=event)
 

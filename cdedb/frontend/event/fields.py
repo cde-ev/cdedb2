@@ -47,7 +47,9 @@ EntitySetter = Callable[[RequestState, dict[str, Any]], int]
 class EventFieldMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.basic_read)
-    def field_summary_form(self, rs: RequestState, event_id: int) -> Response:
+    def field_summary_form(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         """Render form."""
         formatter = lambda k, v: (
             v
@@ -92,7 +94,10 @@ class EventFieldMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("nav_tab_active")
     def field_summary(
-        self, rs: RequestState, event_id: int, nav_tab_active: str | None = None
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        nav_tab_active: str | None = None,
     ) -> Response:
         """Manipulate the fields of an event."""
         spec = dict(models.EventField.requestdict_fields(creation=False))
@@ -153,7 +158,7 @@ class EventFieldMixin(EventBaseFrontend):
     def field_multiset_aux(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         field_id: int | None,
         ids: Collection[int],
         kind: const.FieldAssociations,
@@ -234,7 +239,7 @@ class EventFieldMixin(EventBaseFrontend):
     def field_multiset_select(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         field_id: vtypes.ID | None,
         ids: list[int] | None,
         kind: const.FieldAssociations,
@@ -284,7 +289,7 @@ class EventFieldMixin(EventBaseFrontend):
     def field_multiset_form(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         field_id: vtypes.ID,
         ids: list[int] | None,
         kind: const.FieldAssociations,
@@ -333,7 +338,7 @@ class EventFieldMixin(EventBaseFrontend):
     def field_multiset(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         field_id: vtypes.ID,
         ids: list[int] | None,
         kind: const.FieldAssociations,

@@ -157,7 +157,7 @@ class OtherDatabaseTables:
 
 @dataclasses.dataclass(kw_only=True)
 class _EventConfigurationMixin(CdEDataclass):
-    id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
+    id: vtypes.EventID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
 
     title: str
     shortname: str
@@ -205,7 +205,7 @@ class _EventConfigurationMixin(CdEDataclass):
 
 @dataclasses.dataclass(kw_only=True)
 class _EventFreetextMixin(CdEDataclass):
-    id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
+    id: vtypes.EventID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
 
     # Exclude from request to avoid unsetting when submitting `change_event_form`.
     description: str | None = dataclasses.field(
@@ -233,7 +233,7 @@ class Event(EventDataclass, _EventConfigurationMixin, _EventFreetextMixin):
     database_table = "event.events"
     entity_key = "id"
 
-    id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
+    id: vtypes.EventID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
 
     # Disallow setting via request altogether.
     is_locked: bool = dataclasses.field(
@@ -279,13 +279,13 @@ class Event(EventDataclass, _EventConfigurationMixin, _EventFreetextMixin):
         default_factory=dict, metadata=Meta.asdict_include.as_dict
     )
 
-    orgas: set[vtypes.ID] = dataclasses.field(
+    orgas: set[vtypes.PersonaID] = dataclasses.field(
         default_factory=set, metadata=Meta.io_exclude.as_dict
     )
-    caretakers: set[vtypes.ID] = dataclasses.field(
+    caretakers: set[vtypes.PersonaID] = dataclasses.field(
         default_factory=set, metadata=Meta.io_exclude.as_dict
     )
-    checkin_helpers: set[vtypes.ID] = dataclasses.field(
+    checkin_helpers: set[vtypes.PersonaID] = dataclasses.field(
         default_factory=set, metadata=Meta.io_exclude.as_dict
     )
 
@@ -476,7 +476,7 @@ class EventPart(EventDataclass):
     )
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+    event_id: vtypes.EventID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     title: str
     shortname: vtypes.Identifier
@@ -665,7 +665,7 @@ class EventFee(EventDataclass):
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     # Exclude during creation, update and request.
-    event_id: vtypes.ID = dataclasses.field(
+    event_id: vtypes.EventID = dataclasses.field(
         metadata=Meta.input_exclude.as_dict,
     )
 
@@ -761,7 +761,7 @@ class EventField(EventDataclass):
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     # Exclude during creation, update and request.
-    event_id: vtypes.ID = dataclasses.field(
+    event_id: vtypes.EventID = dataclasses.field(
         metadata=Meta.input_exclude.as_dict,
     )
 
@@ -893,7 +893,9 @@ class CustomQueryFilter(EventDataclass):
     database_table = "event.custom_query_filters"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
+    event_id: vtypes.EventID = dataclasses.field(
+        metadata=Meta.input_update_exclude.as_dict
+    )
 
     scope: QueryScope = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
     title: str
@@ -962,7 +964,7 @@ class PartGroup(EventDataclass):
     database_table = "event.part_groups"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+    event_id: vtypes.EventID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     title: str
     shortname: str
@@ -1012,7 +1014,7 @@ class TrackGroup(EventDataclass):
     database_table = "event.track_groups"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+    event_id: vtypes.EventID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     title: str
     shortname: str
@@ -1104,8 +1106,8 @@ class SyncTrackGroup(TrackGroup, CourseChoiceObject):  # type: ignore[misc]
 class StoredEventQuery(EventDataclass, _StoredQuery):
     database_table = "event.stored_queries"
 
-    event_id: vtypes.ID = dataclasses.field(
-        default=vtypes.ID(-1), metadata=Meta.request_exclude.as_dict
+    event_id: vtypes.EventID = dataclasses.field(
+        default=vtypes.EventID(vtypes.ID(-1)), metadata=Meta.request_exclude.as_dict
     )
     event: Event = dataclasses.field(
         compare=False,
@@ -1138,7 +1140,7 @@ class Course(EventDataclass):
         default=cast(Event, None),
         metadata=Meta.input_exclude.as_dict,
     )
-    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+    event_id: vtypes.EventID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     segments: CdEDataclassMap["CourseSegment"] = dataclasses.field(
         metadata=(Meta.validate_include | Meta.asdict_include).as_dict
@@ -1257,7 +1259,7 @@ class LodgementGroup(EventDataclass):
     id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
 
     # event: Event
-    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+    event_id: vtypes.EventID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
     title: str
 
     lodgement_ids: set[int] = dataclasses.field(
@@ -1316,7 +1318,7 @@ class Lodgement(EventDataclass):
         default=cast(Event, None),
         metadata=Meta.input_exclude.as_dict,
     )
-    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+    event_id: vtypes.EventID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
     group: LodgementGroup
     group_id: vtypes.ID
 

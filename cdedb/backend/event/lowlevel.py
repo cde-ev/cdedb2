@@ -50,6 +50,10 @@ from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.query import DatabaseValue_s, ParamDict
 
 
+class _GetEventProtocol(Protocol):
+    def __call__(self, rs: RequestState, event_id: vtypes.EventID) -> models.Event: ...
+
+
 class EventLowLevelBackend(AbstractBackend):
     realm = "event"
 
@@ -99,7 +103,7 @@ class EventLowLevelBackend(AbstractBackend):
     def _get_event_fields(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         field_ids: Collection[int] | None = None,
     ) -> models.CdEDataclassMap[models.EventField]:
         """Helper function to retrieve the custom field definitions for some events.
@@ -118,7 +122,7 @@ class EventLowLevelBackend(AbstractBackend):
 
     @internal
     def _get_event_field(
-        self, rs: RequestState, field_id: int, *, event_id: int
+        self, rs: RequestState, field_id: int, *, event_id: vtypes.EventID
     ) -> models.EventField:
         fields = self._get_event_fields(rs, event_id, [field_id])
         if field_id not in fields:
@@ -251,7 +255,11 @@ class EventLowLevelBackend(AbstractBackend):
 
     @internal
     def _set_tracks(
-        self, rs: RequestState, event_id: int, part_id: int, data: CdEDBOptionalMap
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        part_id: int,
+        data: CdEDBOptionalMap,
     ) -> DefaultReturnCode:
         """Helper for creating, updating and/or deleting of tracks for one event part.
 
@@ -382,10 +390,7 @@ class EventLowLevelBackend(AbstractBackend):
             }
             self.sql_update(rs, field.association.database_table, new)
 
-    class _NewGetEventProtocol(Protocol):
-        def __call__(self, rs: RequestState, event_id: int) -> models.Event: ...
-
-    get_event: _NewGetEventProtocol
+    get_event: _GetEventProtocol
 
     @abc.abstractmethod
     def delete_event_fee(self, rs: RequestState, fee_id: int) -> DefaultReturnCode: ...
@@ -515,7 +520,7 @@ class EventLowLevelBackend(AbstractBackend):
 
     @internal
     def _set_event_parts(
-        self, rs: RequestState, event_id: int, parts: CdEDBOptionalMap
+        self, rs: RequestState, event_id: vtypes.EventID, parts: CdEDBOptionalMap
     ) -> DefaultReturnCode:
         """Helper for handling the setting of event parts.
 
@@ -852,7 +857,9 @@ class EventLowLevelBackend(AbstractBackend):
             )
         return ret
 
-    def _track_groups_sanity_check(self, rs: RequestState, event_id: int) -> None:
+    def _track_groups_sanity_check(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> None:
         """Perform checks on the sanity of all track groups."""
 
         #######################
@@ -949,7 +956,7 @@ class EventLowLevelBackend(AbstractBackend):
         return True
 
     def _delete_event_field_blockers(
-        self, rs: RequestState, field_id: int, *, event_id: int
+        self, rs: RequestState, field_id: int, *, event_id: vtypes.EventID
     ) -> DeletionBlockers:
         """Determine what keeps an event part from being deleted.
 
@@ -969,7 +976,7 @@ class EventLowLevelBackend(AbstractBackend):
             are the ids of the blockers.
         """
         field_id = affirm(vtypes.ID, field_id)
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         blockers = {}
 
         event = self.get_event(rs, event_id)
@@ -1038,7 +1045,7 @@ class EventLowLevelBackend(AbstractBackend):
         field_id: int,
         cascade: Collection[str] | None = None,
         *,
-        event_id: int,
+        event_id: vtypes.EventID,
     ) -> DefaultReturnCode:
         """Helper to remove an event field.
 
@@ -1051,7 +1058,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         """
         field_id = affirm(vtypes.ID, field_id)
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         blockers = self._delete_event_field_blockers(rs, field_id, event_id=event_id)
         if not cascade:
             cascade = set()
@@ -1132,7 +1139,7 @@ class EventLowLevelBackend(AbstractBackend):
 
     @internal
     def _set_event_fields(
-        self, rs: RequestState, event_id: int, fields: CdEDBOptionalMap
+        self, rs: RequestState, event_id: vtypes.EventID, fields: CdEDBOptionalMap
     ) -> DefaultReturnCode:
         """Helper for creating, updating or deleting custom event fields.
 
@@ -1212,13 +1219,13 @@ class EventLowLevelBackend(AbstractBackend):
         return ret
 
     @access("event")
-    def has_registrations(self, rs: RequestState, event_id: int) -> bool:
+    def has_registrations(self, rs: RequestState, event_id: vtypes.EventID) -> bool:
         """Determine whether there exist registrations for an event.
 
         This is very low-level but also rather useful, so it is published contrary to
         the other methods in this class which are mostly internal.
         """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         if not is_privileged(
             rs, EventPrivileges.registrations_stats, event_id=event_id
         ):
@@ -1230,7 +1237,7 @@ class EventLowLevelBackend(AbstractBackend):
     def _get_registration_data(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         registration_ids: Collection[int] | None = None,
     ) -> CdEDBObjectMap:
         """Retrieve basic registration data."""
