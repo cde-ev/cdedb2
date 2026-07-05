@@ -17,6 +17,7 @@ import lxml.etree
 import webtest
 from subman import SubscriptionError
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 import cdedb.models.event.constraint_violations as models_cv
@@ -65,12 +66,14 @@ from tests.common import (
     storage,
 )
 
+EventID = lambda x: vtypes.EventID(vtypes.ID(x))
+
 
 class TestEventFrontend(FrontendTest):
     def _set_payment_info(
         self,
         reg_id: int,
-        event_id: int,
+        event_id: vtypes.EventID,
         amount_paid: decimal.Decimal,
         payment: datetime.date | None = None,
     ) -> None:
@@ -678,7 +681,9 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms['coursefilterform']
         self.assertNotIn("active_only", f.fields)
         if self.user_in('annika'):
-            self.event.set_event(self.key, 1, {"is_course_state_visible": True})
+            self.event.set_event(
+                self.key, EventID(1), {"is_course_state_visible": True}
+            )
             self.traverse("Kursliste")
             f = self.response.forms['coursefilterform']
             f['track_ids'] = [2]
@@ -2047,7 +2052,7 @@ etc;anything else""",
         self.traverse("QR")
         self.response = save
 
-        event = self.event.get_event(self.key, 1)
+        event = self.event.get_event(self.key, EventID(1))
         persona = self.core.get_event_user(self.key, self.user['id'])
 
         qr_expectation = b"""\
@@ -2097,16 +2102,20 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("353,99 € auf folgendes Konto")
 
         # Payment checks with iban
-        self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("0"))
+        self._set_payment_info(1, event_id=EventID(1), amount_paid=decimal.Decimal("0"))
         self.traverse({'href': '/event/event/1/registration/status'})
         self.assertPresence("Du musst noch den übrigen Betrag von 553,99 € bezahlen.")
         self.assertPresence("Bitte überweise 553,99 € auf folgendes Konto")
-        self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("100"))
+        self._set_payment_info(
+            1, event_id=EventID(1), amount_paid=decimal.Decimal("100")
+        )
         self.traverse("Meine Anmeldung")
         self.assertPresence("Bitte überweise 453,99 € auf folgendes Konto")
         self.assertPresence("Du hast bereits 100,00 € bezahlt.")
         self.assertPresence("Du musst noch den übrigen Betrag von 453,99 € bezahlen.")
-        self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("1000"))
+        self._set_payment_info(
+            1, event_id=EventID(1), amount_paid=decimal.Decimal("1000")
+        )
         self.traverse("Meine Anmeldung")
         self.assertNonPresence("Überweisung")
         self.assertNonPresence("Konto")
@@ -2114,7 +2123,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence(
             "Du hast 446,01 € mehr bezahlt als deinen Teilnahmebeitrag von 553,99 €."
         )
-        self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("200"))
+        self._set_payment_info(
+            1, event_id=EventID(1), amount_paid=decimal.Decimal("200")
+        )
 
         # Payment checks without iban
         self.traverse({'href': '/event/event/1/change'})
@@ -2188,7 +2199,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['part2.status'] = const.RegistrationPartStati.not_applied
         f['part3.status'] = const.RegistrationPartStati.participant
         self.submit(f)
-        self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("0"))
+        self._set_payment_info(1, event_id=EventID(1), amount_paid=decimal.Decimal("0"))
         self.traverse("Meine Anmeldung")
         self.assertPresence("430,99 €")
         self.assertNonPresence("bereits bezahlt")
@@ -2279,7 +2290,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @event_keeper
     @as_users("annika")
     def test_registration_questionnaire(self) -> None:
-        event_id = 2
+        event_id = EventID(2)
         # Create new boolean registration fields
         event_update = {
             "registration_start": now(),
@@ -2685,7 +2696,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         self.event.set_event(
             self.key,
-            1,
+            EventID(1),
             {
                 'parts': {
                     part_id: {
@@ -3078,7 +3089,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         with self.switch_user("garcia"):
             self.event.set_event(
                 self.key,
-                1,
+                EventID(1),
                 {
                     'is_participant_list_visible': True,
                     'use_additional_questionnaire': True,
@@ -3114,7 +3125,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         with self.switch_user("garcia"):
             reg_id = unwrap(
                 self.event.list_registrations(
-                    self.key, event_id=1, persona_id=self.user['id']
+                    self.key, event_id=EventID(1), persona_id=self.user['id']
                 ).keys()
             )
             self.event.set_registration(self.key, {'id': reg_id, 'list_consent': True})
@@ -3764,7 +3775,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @event_keeper
     @as_users("garcia")
     def test_multiedit_course_instructors(self) -> None:
-        event_id = 3
+        event_id = EventID(3)
         event = self.event.get_event(self.key, event_id)
         track_id = unwrap(event.tracks.keys())
         course_id = 8
@@ -4544,7 +4555,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @as_users("garcia")
     def test_stats_matches(self) -> None:
         # Create a statistic part group containing all event parts
-        event_id = 1
+        event_id = EventID(1)
         self.get('/event/event/1/part/summary')
         self.traverse("Gruppen", "Veranstaltungsteilgruppe hinzufügen")
         f = self.response.forms['configurepartgroupform']
@@ -6884,7 +6895,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.traverse(
                 "Veranstaltungen", "Große Testakademie 2222", "Teilnahmebeiträge"
             )
-            for fee_id, fee in self.event.get_event(self.key, 1).fees.items():
+            for fee_id, fee in self.event.get_event(self.key, EventID(1)).fees.items():
                 if fee.title == "Externenzusatzbeitrag":
                     continue
                 f = self.response.forms[f'deleteeventfeeform{fee_id}']
@@ -7095,12 +7106,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         # Fifth: Reset Questionnaire and fields and try the full import again:
         self.event.set_questionnaire(
-            self.key, 1, const.QuestionnaireUsages.additional, []
+            self.key, EventID(1), const.QuestionnaireUsages.additional, []
         )
-        event = self.event.get_event(self.key, 1)
+        event = self.event.get_event(self.key, EventID(1))
         self.event.set_event(
             self.key,
-            1,
+            EventID(1),
             {
                 'fields': {id_: None for id_ in event.fields if id_ > 1000},
             },
@@ -7127,7 +7138,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
     @as_users("emilia")
     def test_part_groups(self) -> None:
-        event_id = 4
+        event_id = EventID(4)
         event = self.event.get_event(self.key, event_id)
         log_expectation = []
         offset = self.event.retrieve_log(self.key, EventLogFilter(event_id=event_id))[0]
@@ -7347,7 +7358,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
     @as_users("garcia")
     def test_questionnaire_csrf(self) -> None:
-        self.event.set_event(self.key, 1, {'use_additional_questionnaire': True})
+        self.event.set_event(
+            self.key, EventID(1), {'use_additional_questionnaire': True}
+        )
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Fragebogen")
         f = self.response.forms['questionnaireform']
         f['fields.lodge'] = "Test"
@@ -7484,7 +7497,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Findet nicht statt", div="track8-attendees")
 
         # Cancel all other courses:
-        event = self.event.get_event(self.key, 4)
+        event = self.event.get_event(self.key, EventID(4))
         course_ids = self.event.list_courses(self.key, event.id)
         for course_id, title in course_ids.items():
             if title == "Akrobatik für Anfangende":
@@ -7779,7 +7792,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         test_events_shown()
 
         with self.switch_user("farin"):
-            self.event.balance_event(self.key, 2)
+            self.event.balance_event(self.key, EventID(2))
         self.submit(f, check_notification=False)
         test_events_shown(2)
 
@@ -7788,7 +7801,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         test_events_shown(1, 4)
 
         with self.switch_user("farin"):
-            self.event.unbalance_event(self.key, 2)
+            self.event.unbalance_event(self.key, EventID(2))
         self.submit(f, check_notification=False)
         test_events_shown(1, 2, 4)
 
@@ -7803,7 +7816,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         test_events_shown()
 
         with self.switch_user("anton"):
-            self.event.set_event_archived(self.key, 3)
+            self.event.set_event_archived(self.key, EventID(3))
         self.submit(f, check_notification=False)
         test_events_shown(3)
 
@@ -7812,8 +7825,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         test_events_shown()
 
         with self.switch_user("farin"):
-            self.event.balance_event(self.key, 1)
-            self.event.balance_event(self.key, 3)
+            self.event.balance_event(self.key, EventID(1))
+            self.event.balance_event(self.key, EventID(3))
         self.submit(f, check_notification=False)
         test_events_shown(3)
 
@@ -8117,7 +8130,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         # Check that choices are correctly synced for each track group.
         registration = self.event.get_registration(self.key, 1001)
-        event = self.event.get_event(self.key, 4)
+        event = self.event.get_event(self.key, EventID(4))
         for tg in event.track_groups.values():
             choices_set = set()
             for track_id in tg.tracks.keys():
@@ -8130,7 +8143,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['track_num_choices_8'] = 10
         f['track_min_choices_8'] = 9
         self.submit(f)
-        event = self.event.get_event(self.key, 4)
+        event = self.event.get_event(self.key, EventID(4))
         for track in event.track_groups[1].tracks.values():
             self.assertEqual(track.num_choices, 10)
             self.assertEqual(track.min_choices, 9)
@@ -8274,7 +8287,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         # Check that a CCS group can be recreated after being deleted, while
         #  compatible choices exist.
-        event_id = 4
+        event_id = EventID(4)
         event = self.event.get_event(self.key, event_id)
         self.get(f'/event/event/{event_id}/part/summary')
         self.traverse("Gruppen")
@@ -8325,7 +8338,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     def test_ccs_cancelled_courses(self) -> None:
         self.event.set_event(
             self.key,
-            4,
+            EventID(4),
             {
                 'is_course_state_visible': True,
                 'is_participant_list_visible': True,
@@ -8381,7 +8394,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 },
             },
         }
-        self.event.set_event(self.key, 2, event_update)
+        self.event.set_event(self.key, EventID(2), event_update)
         self.traverse("Veranstaltungen", "CdE-Party", "Anmeldung konfigurieren")
         f = self.response.forms['configurequestionnaireform']
         f['create_-1'] = True
@@ -8489,7 +8502,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 'entries': None,
             },
         }
-        self.event.set_event(self.key, 1, {'fields': new_fields})
+        self.event.set_event(self.key, EventID(1), {'fields': new_fields})
         new_filter = models.CustomQueryFilter(
             id=-1,  # type: ignore[arg-type]
             event_id=1,  # type: ignore[arg-type]
@@ -8615,7 +8628,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
     @as_users("anton")
     def test_event_fee_stats(self) -> None:
-        event_id = 2
+        event_id = EventID(2)
         reg_ids = []
         reg_data: CdEDBObject = {
             "event_id": event_id,
@@ -8945,7 +8958,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Test subscribability of limited and limited exclusive lists.
         with self.switch_user("emilia"):
             persona_id = self.user['id']
-            event_id = 4
+            event_id = EventID(4)
             part_group_id = 10
             limited_ml = self.ml.get_mailinglist(self.key, 68)
             exclusive_ml = self.ml.get_mailinglist(self.key, 69)
@@ -9451,7 +9464,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
     @as_users("garcia")
     def test_change_instructor_no_choices(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         self.event.set_event(
             self.key,
             event_id,

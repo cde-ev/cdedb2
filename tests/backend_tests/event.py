@@ -52,6 +52,9 @@ from tests.common import (
 UNIQUE_VIOLATION = psycopg2.errors.lookup(psycopg2.errorcodes.UNIQUE_VIOLATION)
 NON_EXISTING_ID = 2**30
 
+EventID = lambda x: vtypes.EventID(vtypes.ID(x))
+PersonaID = lambda x: vtypes.PersonaID(vtypes.ID(x))
+
 
 class TestEventBackend(BackendTest):
     used_backends = ("core", "event")
@@ -601,7 +604,9 @@ class TestEventBackend(BackendTest):
             self.assertLess(
                 0,
                 self.event.delete_event(
-                    self.key, 1, self.event.delete_event_blockers(self.key, 1)
+                    self.key,
+                    EventID(1),
+                    self.event.delete_event_blockers(self.key, EventID(1)),
                 ),
             )
 
@@ -629,12 +634,12 @@ class TestEventBackend(BackendTest):
         }
         self.assertEqual(
             expectation_part,
-            self.event.get_event(self.key, 4).parts[6].as_dict(),
+            self.event.get_event(self.key, EventID(4)).parts[6].as_dict(),
         )
 
     @as_users("annika")
     def test_track_groups(self) -> None:
-        event_id = 4
+        event_id = EventID(4)
         event = self.event.get_event(self.key, event_id)
         # delete existent track groups to avoid interference
         for tg_id in event.track_groups.keys():
@@ -735,7 +740,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("emilia")
     def test_course_choice_sync(self) -> None:
-        event_id = 4
+        event_id = EventID(4)
         registration_id = 10
         track_id = 6
         event = self.event.get_event(self.key, event_id)
@@ -757,7 +762,7 @@ class TestEventBackend(BackendTest):
     @storage
     @as_users("annika", "garcia")
     def test_change_minor_form(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         with open("/cdedb2/tests/ancillary_files/form.pdf", "rb") as f:
             minor_form = f.read()
         self.assertFalse(self.event.has_minor_form(self.key, event_id))
@@ -796,7 +801,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("annika")
     def test_aposteriori_track_creation(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         part_id = 1
         # The expected new id.
         new_track_id = 1001
@@ -852,7 +857,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("annika", "garcia")
     def test_aposteriori_track_deletion(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         part_id = 2
         track_id = 1
 
@@ -893,7 +898,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("emilia")
     def test_aposteriori_part_creation(self) -> None:
-        event_id = 4
+        event_id = EventID(4)
 
         self.assertTrue(self.event.list_registrations(self.key, event_id))
 
@@ -942,7 +947,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("annika", "garcia")
     def test_json_fields_with_dates(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         update_event = {
             'fields': {
                 -1: {
@@ -977,7 +982,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("annika", "garcia")
     def test_entity_course(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         event = self.event.get_event(self.key, event_id)
         old_courses = self.event.list_courses(self.key, event_id)
         data: CdEDBObject = {
@@ -1073,7 +1078,9 @@ class TestEventBackend(BackendTest):
             },
         ]
         offset = len(self.get_sample_data("event.log"))
-        self.assertLogEqual(log_expectation, "event", event_id=1, offset=offset)
+        self.assertLogEqual(
+            log_expectation, "event", event_id=EventID(1), offset=offset
+        )
 
     @as_users("annika", "garcia", maintain_data=True)
     def test_course_non_removable(self) -> None:
@@ -1081,7 +1088,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("annika", "garcia")
     def test_course_delete(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         data = {
             'title': "Topos theory for the kindergarden",
             'description': """This is an interesting topic
@@ -1141,7 +1148,7 @@ class TestEventBackend(BackendTest):
             self.event.set_registration(self.key, rdata)
 
         # Check that all for choices are present fpr registration 1.
-        full_export = self.event.export_event(self.key, event_id=1)
+        full_export = self.event.export_event(self.key, event_id=EventID(1))
         for course_choice in full_export["event.course_choices"].values():
             del course_choice["id"]
         expectations = [
@@ -1178,7 +1185,7 @@ class TestEventBackend(BackendTest):
         self.event.delete_course(self.key, course_id=2, cascade=cascade)
 
         # Check that the remaining three course choices have been moved up.
-        full_export = self.event.export_event(self.key, event_id=1)
+        full_export = self.event.export_event(self.key, event_id=EventID(1))
         for course_choice in full_export["event.course_choices"].values():
             del course_choice["id"]
         expectations = [
@@ -1205,7 +1212,7 @@ class TestEventBackend(BackendTest):
             self.assertIn(exp, full_export["event.course_choices"].values())
 
         # Check that no additional or duplicate choices exist.
-        partial_export = self.event.partial_export_event(self.key, event_id=1)
+        partial_export = self.event.partial_export_event(self.key, event_id=EventID(1))
         self.assertEqual(
             [1, 3, 4], partial_export["registrations"][1]["tracks"][1]["choices"]
         )
@@ -1239,7 +1246,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("annika", "garcia", maintain_data=True)
     def test_has_registrations(self) -> None:
-        self.assertTrue(self.event.has_registrations(self.key, 1))
+        self.assertTrue(self.event.has_registrations(self.key, EventID(1)))
 
     @as_users("emilia")
     def test_registration_participant(self) -> None:
@@ -1433,7 +1440,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("annika", "garcia")
     def test_entity_registration(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         self.assertEqual(
             {1: 1, 2: 5, 3: 7, 4: 9, 5: 100, 6: 2},
             self.event.list_registrations(self.key, event_id),
@@ -1842,7 +1849,9 @@ class TestEventBackend(BackendTest):
     @as_users("annika", "garcia")
     def test_registration_delete(self) -> None:
         expectation = {1: 1, 2: 5, 3: 7, 4: 9, 5: 100, 6: 2}
-        self.assertEqual(expectation, self.event.list_registrations(self.key, 1))
+        self.assertEqual(
+            expectation, self.event.list_registrations(self.key, EventID(1))
+        )
         with self.assertRaises(ValueError):
             self.event.delete_registration(
                 self.key,
@@ -1861,12 +1870,12 @@ class TestEventBackend(BackendTest):
             )
         self.assertEqual(
             {1: 1, 4: 9, 6: 2},
-            self.event.list_registrations(self.key, 1),
+            self.event.list_registrations(self.key, EventID(1)),
         )
 
     @as_users("annika", "garcia")
     def test_course_filtering(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         expectation = {1: 1, 2: 5, 3: 7, 4: 9, 5: 100, 6: 2}
         self.assertEqual(
             expectation, self.event.registrations_by_course(self.key, event_id)
@@ -1903,7 +1912,7 @@ class TestEventBackend(BackendTest):
     @storage
     @as_users("garcia")
     def test_entity_lodgement_group(self) -> None:
-        event_id = vtypes.ID(1)
+        event_id = EventID(1)
 
         expectation_groups = {
             1: models.LodgementGroup(
@@ -2027,7 +2036,7 @@ class TestEventBackend(BackendTest):
         groups_expectation = {
             1002: models.LodgementGroup(
                 id=vtypes.ID(1002),
-                event_id=vtypes.ID(new_event_id),
+                event_id=new_event_id,
                 title=new_event_title,
             ),
         }
@@ -2035,7 +2044,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("annika", "garcia")
     def test_entity_lodgement(self) -> None:
-        event_id = vtypes.ID(1)
+        event_id = EventID(1)
         expectation_list = {
             1: 'Warme Stube',
             2: 'Kalte Kammer',
@@ -2128,7 +2137,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("berta", "emilia", maintain_data=True)
     def test_get_all_questionnaires(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         expectation = models.questionnaire.QuestionnaireContainer({
             const.QuestionnaireUsages.registration: models.questionnaire.Questionnaire(
                 [
@@ -2281,7 +2290,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("annika", "garcia")
     def test_set_questionnaire(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         edata = {
             'fields': {
                 -1: {
@@ -2386,7 +2395,7 @@ class TestEventBackend(BackendTest):
         scope = QueryScope.registration
         query = Query(
             scope=scope,
-            spec=scope.get_spec(event=self.event.get_event(self.key, 1)),
+            spec=scope.get_spec(event=self.event.get_event(self.key, EventID(1))),
             fields_of_interest=(
                 "reg.id",
                 "reg.payment",
@@ -2414,7 +2423,7 @@ class TestEventBackend(BackendTest):
             order=(("reg.id", True),),
         )
 
-        result = self.event.submit_general_query(self.key, query, event_id=1)
+        result = self.event.submit_general_query(self.key, query, event_id=EventID(1))
         expectation = (
             {
                 'birthday': datetime.date(2012, 6, 2),
@@ -2478,7 +2487,7 @@ class TestEventBackend(BackendTest):
     @as_users("annika")
     def test_queries_without_fields(self) -> None:
         # Check that the query views work if there are no custom fields.
-        event = self.event.get_event(self.key, 3)
+        event = self.event.get_event(self.key, EventID(3))
         self.assertFalse(event.fields)
         query = Query(
             scope=QueryScope.registration,
@@ -2487,7 +2496,7 @@ class TestEventBackend(BackendTest):
             constraints=[],
             order=[],
         )
-        result = self.event.submit_general_query(self.key, query, event_id=2)
+        result = self.event.submit_general_query(self.key, query, event_id=EventID(2))
         self.assertEqual(tuple(), result)
         query = Query(
             scope=QueryScope.event_course,
@@ -2496,7 +2505,7 @@ class TestEventBackend(BackendTest):
             constraints=[],
             order=[],
         )
-        result = self.event.submit_general_query(self.key, query, event_id=2)
+        result = self.event.submit_general_query(self.key, query, event_id=EventID(2))
         self.assertEqual(tuple(), result)
         query = Query(
             scope=QueryScope.lodgement,
@@ -2505,14 +2514,16 @@ class TestEventBackend(BackendTest):
             constraints=[],
             order=[],
         )
-        result = self.event.submit_general_query(self.key, query, event_id=2)
+        result = self.event.submit_general_query(self.key, query, event_id=EventID(2))
         self.assertEqual(tuple(), result)
 
     @as_users("garcia")
     def test_lodgement_query(self) -> None:
         query = Query(
             scope=QueryScope.lodgement,
-            spec=QueryScope.lodgement.get_spec(event=self.event.get_event(self.key, 1)),
+            spec=QueryScope.lodgement.get_spec(
+                event=self.event.get_event(self.key, EventID(1))
+            ),
             fields_of_interest=[
                 "lodgement.regular_capacity",
                 "lodgement.group_id",
@@ -2536,7 +2547,7 @@ class TestEventBackend(BackendTest):
                 ("lodgement.id", False),
             ],
         )
-        result = self.event.submit_general_query(self.key, query, event_id=1)
+        result = self.event.submit_general_query(self.key, query, event_id=EventID(1))
         expectation = (
             {
                 'lodgement.id': 4,
@@ -2580,7 +2591,7 @@ class TestEventBackend(BackendTest):
         query = Query(
             scope=QueryScope.event_course,
             spec=QueryScope.event_course.get_spec(
-                event=self.event.get_event(self.key, 1)
+                event=self.event.get_event(self.key, EventID(1))
             ),
             fields_of_interest=[
                 "course.id",
@@ -2596,7 +2607,7 @@ class TestEventBackend(BackendTest):
                 ("course.id", True),
             ],
         )
-        result = self.event.submit_general_query(self.key, query, event_id=1)
+        result = self.event.submit_general_query(self.key, query, event_id=EventID(1))
         expectation = (
             {
                 'course.id': 1,
@@ -2659,7 +2670,7 @@ class TestEventBackend(BackendTest):
         query = Query(
             scope=QueryScope.event_course,
             spec=QueryScope.event_course.get_spec(
-                event=self.event.get_event(self.key, 1)
+                event=self.event.get_event(self.key, EventID(1))
             ),
             fields_of_interest=[
                 "course.title",
@@ -2671,7 +2682,7 @@ class TestEventBackend(BackendTest):
                 ("course.title", True),
             ],
         )
-        result = self.event.submit_general_query(self.key, query, event_id=1)
+        result = self.event.submit_general_query(self.key, query, event_id=EventID(1))
         self.assertEqual({'course.id': 5, 'course.title': "Backup-Kurs"}, result[0])
 
     @as_users("annika")
@@ -2741,14 +2752,14 @@ class TestEventBackend(BackendTest):
         query = Query(
             scope=QueryScope.registration,
             spec=QueryScope.registration.get_spec(
-                event=self.event.get_event(self.key, 1)
+                event=self.event.get_event(self.key, EventID(1))
             ),
             fields_of_interest=("reg.id", "track1.is_course_instructor"),
             constraints=[],
             order=(("reg.id", True),),
         )
 
-        result = self.event.submit_general_query(self.key, query, event_id=1)
+        result = self.event.submit_general_query(self.key, query, event_id=EventID(1))
         expectation = (
             {
                 "reg.id": 1,
@@ -2779,7 +2790,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("garcia")
     def test_store_event_query(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         event = self.event.get_event(self.key, event_id)
 
         def store(query: Query, name: str) -> int:
@@ -2942,7 +2953,7 @@ class TestEventBackend(BackendTest):
     @event_keeper
     @as_users("annika", "garcia")
     def test_lock_unlock_event(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         offset, _ = self.event.retrieve_log(self.key, EventLogFilter(event_id=event_id))
 
         self.assertTrue(self.event.lock_event(self.key, event_id))
@@ -3018,7 +3029,7 @@ class TestEventBackend(BackendTest):
                 "amount_owed_by_budget",
             ):
                 reg[k] = {str(key): val for key, val in reg[k].items()}
-        self.assertEqual(expectation, self.event.export_event(self.key, 1))
+        self.assertEqual(expectation, self.event.export_event(self.key, EventID(1)))
 
     @storage
     @as_users("annika")
@@ -3050,15 +3061,15 @@ class TestEventBackend(BackendTest):
             if timestamp := reg['fields'].get('arrival_at'):
                 reg['fields']['arrival_at'] = datetime.datetime.fromisoformat(timestamp)
         expectation['EVENT_SCHEMA_VERSION'] = tuple(expectation['EVENT_SCHEMA_VERSION'])
-        export = self.event.partial_export_event(self.key, 1)
+        export = self.event.partial_export_event(self.key, EventID(1))
         self.assertEqual(expectation, export)
 
     @storage
     @event_keeper
     @as_users("annika")
     def test_partial_import_event(self) -> None:
-        event = self.event.get_event(self.key, 1)
-        previous = self.event.partial_export_event(self.key, 1)
+        event = self.event.get_event(self.key, EventID(1))
+        previous = self.event.partial_export_event(self.key, EventID(1))
         with open(
             self.testfile_dir / "partial_event_import.json",
             encoding="utf-8",
@@ -3098,7 +3109,7 @@ class TestEventBackend(BackendTest):
         )
         self.assertEqual(token1, token2)
 
-        updated = self.event.partial_export_event(self.key, 1)
+        updated = self.event.partial_export_event(self.key, EventID(1))
         expectation = previous
         delta = json_keys_to_int(data)
 
@@ -3394,14 +3405,17 @@ class TestEventBackend(BackendTest):
             },
         ]
         self.assertLogEqual(
-            log_expectation, event_id=1, realm="event", offset=self.EVENT_LOG_OFFSET
+            log_expectation,
+            event_id=EventID(1),
+            realm="event",
+            offset=self.EVENT_LOG_OFFSET,
         )
 
     @storage
     @event_keeper
     @as_users("annika")
     def test_partial_import_integrity(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         with open(
             self.testfile_dir / "partial_event_import.json",
             encoding="utf-8",
@@ -3473,7 +3487,7 @@ class TestEventBackend(BackendTest):
     @event_keeper
     @as_users("annika")
     def test_partial_import_event_twice(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         with open(
             self.testfile_dir / "partial_event_import.json",
             encoding="utf-8",
@@ -3598,7 +3612,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("annika", "garcia", maintain_data=True)
     def test_check_registration_status(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
 
         # Check for participant status
         stati = [const.RegistrationPartStati.participant]
@@ -3630,7 +3644,7 @@ class TestEventBackend(BackendTest):
     @as_users("emilia", "garcia", "annika")
     def test_calculate_fees(self) -> None:
         if not self.user_in("emilia"):
-            reg_ids = self.event.list_registrations(self.key, event_id=1)
+            reg_ids = self.event.list_registrations(self.key, event_id=EventID(1))
             expectation = {
                 1: decimal.Decimal("553.99"),
                 2: decimal.Decimal("466.49"),
@@ -3724,7 +3738,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("berta")
     def test_uniqueness(self) -> None:
-        event_id = 2
+        event_id = EventID(2)
         unique_name = 'unique_name'
         data = {
             'fields': {
@@ -3755,7 +3769,7 @@ class TestEventBackend(BackendTest):
     @as_users("annika")
     @unittest.skip("Removed feature.")
     def test_fee_modifiers(self) -> None:
-        event_id = 2
+        event_id = EventID(2)
         event = self.event.get_event(self.key, event_id)
         field_data = {
             'fields': {
@@ -3841,7 +3855,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("garcia")
     def test_waitlist(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         edata = {
             'fields': {
                 -1: {
@@ -3899,14 +3913,19 @@ class TestEventBackend(BackendTest):
             self.event.set_registration(self.key, rdata)
         # Registration 3 belongs to Garcia (persona_id 7).
         expectation = {1: [5, 4, 3, 2, 1], 2: [3, 2], 3: [3, 2]}
-        self.assertEqual(expectation, self.event.get_waitlist(self.key, event_id=1))
         self.assertEqual(
-            {1: 3, 2: 1, 3: 1}, self.event.get_waitlist_position(self.key, event_id=1)
+            expectation, self.event.get_waitlist(self.key, event_id=EventID(1))
+        )
+        self.assertEqual(
+            {1: 3, 2: 1, 3: 1},
+            self.event.get_waitlist_position(self.key, event_id=EventID(1)),
         )
         # Registration 2 belongs to Emilia (persona_id 5).
         self.assertEqual(
             {1: 4, 2: 2, 3: 2},
-            self.event.get_waitlist_position(self.key, event_id=1, persona_id=5),
+            self.event.get_waitlist_position(
+                self.key, event_id=EventID(1), persona_id=PersonaID(5)
+            ),
         )
         # Unset waitlist field data.
         reg_id = 4
@@ -3923,38 +3942,49 @@ class TestEventBackend(BackendTest):
             if reg_id in waitlist:
                 waitlist.remove(reg_id)
                 waitlist.append(reg_id)
-        self.assertEqual(expectation, self.event.get_waitlist(self.key, event_id=1))
+        self.assertEqual(
+            expectation, self.event.get_waitlist(self.key, event_id=EventID(1))
+        )
 
         # Check that users can check their own waitlist position.
         self.login(USER_DICT["emilia"])
         self.assertEqual(
-            {1: 3, 2: 2, 3: 2}, self.event.get_waitlist_position(self.key, event_id=1)
+            {1: 3, 2: 2, 3: 2},
+            self.event.get_waitlist_position(self.key, event_id=EventID(1)),
         )
         with self.assertRaises(PrivilegeError):
-            self.event.get_waitlist_position(self.key, event_id=1, persona_id=1)
+            self.event.get_waitlist_position(
+                self.key, event_id=EventID(1), persona_id=PersonaID(1)
+            )
 
     @as_users("annika")
     def test_set_event_orgas(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         self.assertEqual({7}, self.event.get_event(self.key, event_id).orgas)
-        self.assertLess(0, self.event.add_event_roles(self.key, event_id, {1}, 'orga'))
+        self.assertLess(
+            0, self.event.add_event_roles(self.key, event_id, {PersonaID(1)}, 'orga')
+        )
         self.assertEqual({1, 7}, self.event.get_event(self.key, event_id).orgas)
-        self.assertLess(0, self.event.remove_event_role(self.key, event_id, 1, 'orga'))
-        self.assertLess(0, self.event.add_event_roles(self.key, event_id, {1}, 'orga'))
+        self.assertLess(
+            0, self.event.remove_event_role(self.key, event_id, PersonaID(1), 'orga')
+        )
+        self.assertLess(
+            0, self.event.add_event_roles(self.key, event_id, {PersonaID(1)}, 'orga')
+        )
         self.assertEqual({1, 7}, self.event.get_event(self.key, event_id).orgas)
 
         with self.assertRaises(ValueError) as cm:
-            self.event.add_event_roles(self.key, event_id, {8}, 'orga')
+            self.event.add_event_roles(self.key, event_id, {PersonaID(8)}, 'orga')
         self.assertIn(
             "Some of these personas do not exist or are archived.", cm.exception.args
         )
         with self.assertRaises(ValueError) as cm:
-            self.event.add_event_roles(self.key, event_id, {1000}, 'orga')
+            self.event.add_event_roles(self.key, event_id, {PersonaID(1000)}, 'orga')
         self.assertIn(
             "Some of these personas do not exist or are archived.", cm.exception.args
         )
         with self.assertRaises(ValueError) as cm:
-            self.event.add_event_roles(self.key, event_id, {11}, 'orga')
+            self.event.add_event_roles(self.key, event_id, {PersonaID(11)}, 'orga')
         self.assertIn("Some of these personas are not event users.", cm.exception.args)
 
     @event_keeper
@@ -4201,8 +4231,10 @@ class TestEventBackend(BackendTest):
             ],
             'checkin': True,
         }
-        self.event.add_event_roles(self.key, new_id, {2, 1}, 'orga')
-        self.event.remove_event_role(self.key, new_id, 2, 'orga')
+        self.event.add_event_roles(
+            self.key, new_id, {PersonaID(1), PersonaID(2)}, 'orga'
+        )
+        self.event.remove_event_role(self.key, new_id, PersonaID(2), 'orga')
         self.event.set_event(
             self.key,
             new_id,
@@ -4241,7 +4273,7 @@ class TestEventBackend(BackendTest):
             },
             'is_visible': True,
         }
-        new_id = self.event.create_course(self.key, 1, data)
+        new_id = self.event.create_course(self.key, EventID(1), data)
         data['title'] = "Alternate Universes"
         data['segments'] = {
             1: {
@@ -4327,7 +4359,7 @@ class TestEventBackend(BackendTest):
             'camping_mat_capacity': 11,
             'group_id': 1,
         }
-        new_id = self.event.create_lodgement(self.key, event_id=1, data=new)
+        new_id = self.event.create_lodgement(self.key, event_id=EventID(1), data=new)
         update = {
             'regular_capacity': 21,
             'notes': None,
@@ -4363,7 +4395,7 @@ class TestEventBackend(BackendTest):
             },
         ]
         self.event.set_questionnaire(
-            self.key, 1, const.QuestionnaireUsages.additional, q_data
+            self.key, EventID(1), const.QuestionnaireUsages.additional, q_data
         )
 
         # now check it
@@ -4583,7 +4615,7 @@ class TestEventBackend(BackendTest):
 
         self.assertLogEqual(expectation, realm="event", offset=offset)
 
-    def _create_registration(self, persona_id: int, event_id: int) -> int:
+    def _create_registration(self, persona_id: int, event_id: vtypes.EventID) -> int:
         event = self.event.get_event(self.key, event_id)
         return self.event.create_registration(
             self.key,
@@ -4608,7 +4640,7 @@ class TestEventBackend(BackendTest):
     @as_users("annika")
     def test_registration_timestamps(self) -> None:
         persona_id = self.user['id']
-        event_ids = [1, 2]
+        event_ids = [EventID(1), EventID(2)]
         reg_ids = {}
         base_time = now()
         delta = datetime.timedelta(seconds=42)
@@ -4881,7 +4913,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("emilia")
     def test_part_groups(self) -> None:
-        event_id = 4
+        event_id = EventID(4)
         event = self.event.get_event(self.key, event_id)
 
         # Delete existing registrations so we are free to create and delete event parts.
@@ -5324,7 +5356,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("garcia")
     def test_part_shortname_change(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         new_fee = {
             'kind': const.EventFeeType.common,
             'title': "Test",
@@ -5349,9 +5381,9 @@ class TestEventBackend(BackendTest):
 
     @as_users("garcia")
     def test_orga_apitokens(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         event_log_offset, _ = self.event.retrieve_log(
-            self.key, EventLogFilter(event_id=1)
+            self.key, EventLogFilter(event_id=EventID(1))
         )
 
         orga_token_ids = self.event.list_orga_tokens(self.key, event_id)
@@ -5359,7 +5391,7 @@ class TestEventBackend(BackendTest):
         expectation = {
             1: OrgaToken(
                 id=cast(vtypes.ID, 1),
-                event_id=cast(vtypes.ID, event_id),
+                event_id=event_id,
                 title="Garcias technische Spielerei",
                 notes="Mal probieren, was diese API so alles kann.",
                 etime=datetime.datetime(
@@ -5382,7 +5414,7 @@ class TestEventBackend(BackendTest):
         with freezegun.freeze_time(base_time) as frozen_time:
             new_token = OrgaToken(
                 id=cast(vtypes.ID, -1),
-                event_id=cast(vtypes.ID, event_id),
+                event_id=event_id,
                 title="New Token!",
                 notes=None,
                 etime=base_time + delta,
@@ -5542,7 +5574,7 @@ class TestEventBackend(BackendTest):
     @as_users("anton")
     def test_event_keeper_log_entries(self) -> None:
 
-        event_id = 1
+        event_id = EventID(1)
 
         def normalize_reference_time(dt: datetime.datetime) -> datetime.datetime:
             return datetime.datetime.fromisoformat(
@@ -5658,7 +5690,7 @@ class TestEventBackend(BackendTest):
         self.assertLogEqual(
             log_expectation,
             realm="event",
-            event_id=1,
+            event_id=EventID(1),
             offset=log_offset,
         )
         log_offset += len(log_expectation)
@@ -5699,7 +5731,7 @@ class TestEventBackend(BackendTest):
         self.assertLogEqual(
             log_expectation,
             realm="event",
-            event_id=1,
+            event_id=EventID(1),
             offset=log_offset,
         )
         log_offset += len(log_expectation)
@@ -5755,7 +5787,7 @@ class TestEventBackend(BackendTest):
         self.assertLogEqual(
             log_expectation,
             realm="event",
-            event_id=1,
+            event_id=EventID(1),
             offset=log_offset,
         )
         log_offset += len(log_expectation)
@@ -5811,7 +5843,7 @@ class TestEventBackend(BackendTest):
         self.assertLogEqual(
             log_expectation,
             realm="event",
-            event_id=1,
+            event_id=EventID(1),
             offset=log_offset,
         )
         log_offset += len(log_expectation)
@@ -5891,7 +5923,7 @@ class TestEventBackend(BackendTest):
         self.assertLogEqual(
             log_expectation,
             realm="event",
-            event_id=1,
+            event_id=EventID(1),
             offset=log_offset,
         )
         log_offset += len(log_expectation)
@@ -5944,7 +5976,7 @@ class TestEventBackend(BackendTest):
         self.assertLogEqual(
             log_expectation,
             realm="event",
-            event_id=1,
+            event_id=EventID(1),
             offset=log_offset,
         )
         log_offset += len(log_expectation)
@@ -5953,7 +5985,7 @@ class TestEventBackend(BackendTest):
     @as_users("garcia")
     @prepsql("DELETE FROM event.checkin_periods")
     def test_checkin_query(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         registration_id = 1
 
         base_time = now() - datetime.timedelta(days=2)
@@ -6080,7 +6112,7 @@ class TestEventBackend(BackendTest):
     @as_users("garcia")
     @prepsql("UPDATE event.events SET is_balanced = True WHERE id = 1;")
     def test_event_is_balanced(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
 
         with self.assertRaises(EventIsBalancedError):
             self.event.create_event_fee(self.key, event_id, {})
@@ -6165,7 +6197,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("emilia")
     def test_course_attendees(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         course_id = 1
         other_course_id = 2
 
