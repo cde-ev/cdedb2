@@ -81,8 +81,8 @@ class CourseChoiceParams(typing.TypedDict):
 
 
 class ParticipantListData(typing.TypedDict):
-    registrations: CdEDBObjectMap
-    ordered: list[int]
+    registrations: models.RegistrationMap
+    ordered: list[vtypes.RegistrationID]
     reg_counts: dict[int | None, int]
     personas: CdEDataclassMap[models_core.EventPersona]
     courses: CdEDataclassMap[models.Course]
@@ -97,8 +97,8 @@ class UserLodgementWishes(typing.TypedDict):
 
 class ConstraintViolationsData(typing.TypedDict):
     violations: models_cv.ViolationList
-    all_registrations: CdEDBObjectMap
-    registrations: CdEDBObjectMap
+    all_registrations: models.RegistrationMap
+    registrations: models.RegistrationMap
     personas: CdEDataclassMap[models_core.EventPersona]
     all_courses: CdEDataclassMap[models.Course]
     courses: CdEDataclassMap[models.Course]
@@ -222,7 +222,10 @@ def event_associated_fields_to_request(
 
 def event_associated_fields_to_request_multi(
     event: models.Event,
-    entities: CdEDBObjectMap | models.CdEDataclassMap[models.Course | models.Lodgement],
+    entities: (
+        dict[vtypes.ID, CdEDBObject]
+        | models.CdEDataclassMap[models.Course | models.Lodgement]
+    ),
 ) -> list[CdEDBObject]:
     """
     Given a list of entities, prepare all of their fields to be put into a single form.
@@ -560,7 +563,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             "persona": EntitySorter.make_persona_sorter(family_name_first=False),
         }
 
-        def get_sortkey(anid: int) -> Sortkey:
+        def get_sortkey(anid: vtypes.RegistrationID) -> Sortkey:
             sortkey: Sortkey = tuple()
             registration = registrations[anid]
             persona = personas[registration['persona_id']].as_dict()
@@ -672,13 +675,13 @@ class EventBaseFrontend(AbstractUserFrontend):
     def calculate_groups(
         entity_ids: Collection[int],
         event: models.Event,
-        registrations: CdEDBObjectMap,
+        registrations: models.RegistrationMap,
         key: str,
         personas: CdEDBObjectMap | None = None,
         instructors: bool = True,
         only_present: bool = True,
         only_involved: bool = True,
-    ) -> dict[tuple[int, int], list[int]]:
+    ) -> dict[tuple[int, int], list[vtypes.RegistrationID]]:
         """Determine inhabitants/attendees of lodgements/courses.
 
         This has to take care only to select registrations which are
@@ -702,7 +705,9 @@ class EventBaseFrontend(AbstractUserFrontend):
         else:
             raise ValueError(n_("Invalid key. Expected 'course_id' or 'lodgement_id"))
 
-        def _check_belonging(entity_id: int, sub_id: int, reg_id: int) -> bool:
+        def _check_belonging(
+            entity_id: int, sub_id: int, reg_id: vtypes.RegistrationID
+        ) -> bool:
             """The actual check, un-inlined."""
             instance = registrations[reg_id][aspect][sub_id]
             if aspect == 'parts':
@@ -764,7 +769,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         rs: RequestState,
         *,
         event: models.Event,
-        registrations: CdEDBObjectMap,
+        registrations: models.RegistrationMap,
         course_ids: Collection[int] | None = None,
     ) -> tuple[models.ChoiceStats, models.AttendeeStats]: ...
 

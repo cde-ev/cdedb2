@@ -54,6 +54,7 @@ NON_EXISTING_ID = 2**30
 
 EventID = lambda x: vtypes.EventID(vtypes.ID(x))
 PersonaID = lambda x: vtypes.PersonaID(vtypes.ID(x))
+RegistrationID = lambda x: vtypes.RegistrationID(vtypes.ID(x))
 
 
 class TestEventBackend(BackendTest):
@@ -959,7 +960,7 @@ class TestEventBackend(BackendTest):
             },
         }
         self.event.set_event(self.key, event_id, update_event)
-        reg_id = 1
+        reg_id = RegistrationID(1)
         update_registration = {
             'id': reg_id,
             'fields': {
@@ -1333,7 +1334,9 @@ class TestEventBackend(BackendTest):
             'persona_id': 5,
             'real_persona_id': None,
         }
-        self.assertEqual(expectation, self.event.get_registration(self.key, 2))
+        self.assertEqual(
+            expectation, self.event.get_registration(self.key, RegistrationID(2))
+        )
         data = {
             'id': 2,
             'tracks': {2: {'choices': [2, 3, 4]}},
@@ -1345,7 +1348,9 @@ class TestEventBackend(BackendTest):
         expectation['fields']['transportation'] = 'etc'
         expectation['mixed_lodging'] = False
         expectation['mtime'] = nearly_now()
-        self.assertEqual(expectation, self.event.get_registration(self.key, 2))
+        self.assertEqual(
+            expectation, self.event.get_registration(self.key, RegistrationID(2))
+        )
 
     @as_users("berta", "paul")
     def test_registering(self) -> None:
@@ -1855,11 +1860,11 @@ class TestEventBackend(BackendTest):
         with self.assertRaises(ValueError):
             self.event.delete_registration(
                 self.key,
-                1,
+                RegistrationID(1),
                 ("registration_parts", "registration_tracks", "course_choices"),
             )
         del expectation[1]
-        for reg_id in [2, 3, 5]:
+        for reg_id in [RegistrationID(2), RegistrationID(3), RegistrationID(5)]:
             self.assertLess(
                 0,
                 self.event.delete_registration(
@@ -3699,7 +3704,7 @@ class TestEventBackend(BackendTest):
                         expectation_by_budget, dict(complex_reality.by_budget)
                     )
 
-        reg_id = 2
+        reg_id = RegistrationID(2)
         reg = self.event.get_registration(self.key, reg_id)
         self.assertEqual(reg['amount_owed'], decimal.Decimal("466.49"))
         self.assertEqual(
@@ -4615,7 +4620,9 @@ class TestEventBackend(BackendTest):
 
         self.assertLogEqual(expectation, realm="event", offset=offset)
 
-    def _create_registration(self, persona_id: int, event_id: vtypes.EventID) -> int:
+    def _create_registration(
+        self, persona_id: vtypes.PersonaID, event_id: vtypes.EventID
+    ) -> vtypes.RegistrationID:
         event = self.event.get_event(self.key, event_id)
         return self.event.create_registration(
             self.key,
@@ -4660,7 +4667,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("garcia")
     def test_checkin_checkout(self) -> None:
-        reg_id = 1
+        reg_id = RegistrationID(1)
         base_time = now().replace(microsecond=0)
         delta = datetime.timedelta(seconds=42)
         future_time = base_time + 42 * delta
@@ -4899,8 +4906,8 @@ class TestEventBackend(BackendTest):
                 0,
             )
             reg = self.event.get_registration(self.key, reg_id)
-            reg1 = self.event.get_registration(self.key, reg_id + 1)
-            reg2 = self.event.get_registration(self.key, reg_id + 2)
+            reg1 = self.event.get_registration(self.key, RegistrationID(reg_id + 1))
+            reg2 = self.event.get_registration(self.key, RegistrationID(reg_id + 2))
             self.assertEqual(
                 reg['checkin_periods'],
                 [models.CheckinPeriod.from_database(p) for p in new_periods],
@@ -5637,7 +5644,7 @@ class TestEventBackend(BackendTest):
 
     @as_users("garcia")
     def test_replace_checkin_periods(self) -> None:
-        registration_id = cast(vtypes.ID, 1)
+        registration_id = RegistrationID(1)
         log_offset = len(self.get_sample_data("event.log"))
 
         self.assertEqual(
@@ -5986,7 +5993,7 @@ class TestEventBackend(BackendTest):
     @prepsql("DELETE FROM event.checkin_periods")
     def test_checkin_query(self) -> None:
         event_id = EventID(1)
-        registration_id = 1
+        registration_id = RegistrationID(1)
 
         base_time = now() - datetime.timedelta(days=2)
         delta = datetime.timedelta(hours=2)
@@ -6135,7 +6142,9 @@ class TestEventBackend(BackendTest):
         )
 
         with self.assertRaises(EventIsBalancedError):
-            self.event.set_personalized_fee_amount(self.key, 1, 10, decimal.Decimal(5))
+            self.event.set_personalized_fee_amount(
+                self.key, RegistrationID(1), 10, decimal.Decimal(5)
+            )
 
         with self.assertRaises(EventIsBalancedError):
             self.event.set_event(

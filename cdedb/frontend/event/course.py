@@ -18,7 +18,6 @@ import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
     CdEDBObject,
-    CdEDBObjectMap,
     CdEDBOptionalMap,
     CourseChoiceToolActions,
     CourseFilterPositions,
@@ -544,13 +543,13 @@ class EventCourseMixin(EventBaseFrontend):
     def course_choices(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         course_id: vtypes.ID | None,
         track_id: vtypes.ID | None,
         position: InfiniteEnum[CourseFilterPositions] | None,
         ids: list[int] | None,
         include_active: bool | None,
-        registration_ids: Collection[int],
+        registration_ids: Collection[vtypes.RegistrationID],
         assign_track_ids: Collection[int],
         assign_action: InfiniteEnum[CourseChoiceToolActions],
         assign_course_id: vtypes.ID | None,
@@ -702,7 +701,7 @@ class EventCourseMixin(EventBaseFrontend):
         rs: RequestState,
         *,
         event: models.Event,
-        registrations: CdEDBObjectMap,
+        registrations: models.RegistrationMap,
         course_ids: Collection[int] | None = None,
     ) -> tuple[models.ChoiceStats, models.AttendeeStats]:
         """Generate choice counts and attendee counts"""
@@ -852,7 +851,9 @@ class EventCourseMixin(EventBaseFrontend):
             )
 
         # Generate options for the multi select boxes
-        def _check_without_course(registration_id: int, track_id: int) -> bool:
+        def _check_without_course(
+            registration_id: vtypes.RegistrationID, track_id: int
+        ) -> bool:
             """Un-inlined check for registration without course."""
             reg = registrations[registration_id]
             part = reg['parts'][tracks[track_id].part_id]
@@ -883,7 +884,9 @@ class EventCourseMixin(EventBaseFrontend):
 
         # Generate data to be encoded to json and used by the
         # cdedbMultiSelect() javascript function
-        def _check_not_this_course(registration_id: int, track_id: int) -> bool:
+        def _check_not_this_course(
+            registration_id: vtypes.RegistrationID, track_id: int
+        ) -> bool:
             """Un-inlined check for registration with different course."""
             reg = registrations[registration_id]
             part = reg['parts'][tracks[track_id].part_id]

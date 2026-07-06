@@ -921,7 +921,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event: models.Event,
-        registration_id: int | None = None,
+        registration_id: vtypes.RegistrationID | None = None,
         prev_timestamp: datetime.datetime | None = None,
     ) -> tuple[int, datetime.datetime]:
         """Retrieve recent registrations and if any, send notification.
@@ -1227,7 +1227,10 @@ class EventRegistrationMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.registrations_read, EventPrivileges.checkin)
     def show_registration(
-        self, rs: RequestState, event_id: vtypes.EventID, registration_id: int
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        registration_id: vtypes.RegistrationID,
     ) -> Response:
         """Display all information pertaining to one registration."""
         is_restricted = not self.is_privileged(rs, EventPrivileges.registrations_read)
@@ -1269,7 +1272,10 @@ class EventRegistrationMixin(EventBaseFrontend):
         EventPrivileges.registrations_read_internal | EventPrivileges.payment_write,
     )
     def show_registration_fee(
-        self, rs: RequestState, event_id: vtypes.EventID, registration_id: int
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        registration_id: vtypes.RegistrationID,
     ) -> Response:
         """Display detailed information about amount owed and individual fees."""
         payment_data = self._get_payment_data(rs, event_id, registration_id)
@@ -1288,7 +1294,10 @@ class EventRegistrationMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.registrations_write)
     def add_new_personalized_fee_form(
-        self, rs: RequestState, event_id: vtypes.EventID, registration_id: int
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        registration_id: vtypes.RegistrationID,
     ) -> Response:
         """Render form for creating a new personalized fee for a specific registration.
 
@@ -1320,7 +1329,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        registration_id: int,
+        registration_id: vtypes.RegistrationID,
         data: CdEDBObject,
         amount: decimal.Decimal,
     ) -> Response:
@@ -1354,7 +1363,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        registration_id: int,
+        registration_id: vtypes.RegistrationID,
         fee_id: int,
     ) -> Response:
         """Add a personalized fee amount for this registration and this fee."""
@@ -1381,7 +1390,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        registration_id: int,
+        registration_id: vtypes.RegistrationID,
         fee_id: int,
     ) -> Response:
         """Remove the personalized fee amount for this registration and this fee."""
@@ -1555,7 +1564,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        registration_id: int,
+        registration_id: vtypes.RegistrationID,
         change_note: str | None,
         internal: bool = False,
     ) -> Response:
@@ -1598,7 +1607,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        registration_id: int,
+        registration_id: vtypes.RegistrationID,
         change_note: str | None,
     ) -> Response:
         """Make privileged changes to any information pertaining to a
@@ -1707,7 +1716,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        registration_id: int,
+        registration_id: vtypes.RegistrationID,
         ack_delete: bool,
     ) -> Response:
         """Remove a registration."""
@@ -1986,7 +1995,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        registration_id: vtypes.ID,
+        registration_id: vtypes.RegistrationID,
         from_checkin_page: bool | None = False,
         part_ids: Collection[int] = (),
     ) -> Response:
@@ -2020,7 +2029,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        registration_id: vtypes.ID,
+        registration_id: vtypes.RegistrationID,
         from_checkin_page: bool | None = False,
         part_ids: Collection[int] = (),
     ) -> Response:
@@ -2053,7 +2062,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        registration_id: vtypes.ID,
+        registration_id: vtypes.RegistrationID,
         checkin_time: datetime.datetime,
         checkout_time: datetime.datetime | None,
     ) -> Response:
@@ -2136,7 +2145,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        registration_id: vtypes.ID,
+        registration_id: vtypes.RegistrationID,
         period_id: vtypes.ID,
     ) -> Response:
         """Change the time a participant was present."""
@@ -2208,7 +2217,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        registration_id: vtypes.ID,
+        registration_id: vtypes.RegistrationID,
         period_id: vtypes.ID,
     ) -> Response:
         if rs.has_validation_errors():
@@ -2574,14 +2583,17 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     @overload
     def _get_payment_data(
-        self, rs: RequestState, event_id: vtypes.EventID, registration_id: int
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        registration_id: vtypes.RegistrationID,
     ) -> PaymentData: ...
 
     def _get_payment_data(
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        registration_id: int | None = None,
+        registration_id: vtypes.RegistrationID | None = None,
     ) -> PaymentData | None:
         if not registration_id:
             reg_list = self.eventproxy.list_registrations(
@@ -2617,7 +2629,10 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     @access("event")
     def registration_fee_qr(
-        self, rs: RequestState, event_id: vtypes.EventID, registration_id: int
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        registration_id: vtypes.RegistrationID,
     ) -> Response:
         # Attempting to access a registration one isn't allowed to will have already
         #  raised a PrivilegeError.

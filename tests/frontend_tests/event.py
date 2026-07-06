@@ -67,12 +67,13 @@ from tests.common import (
 )
 
 EventID = lambda x: vtypes.EventID(vtypes.ID(x))
+RegistrationID = lambda x: vtypes.RegistrationID(vtypes.ID(x))
 
 
 class TestEventFrontend(FrontendTest):
     def _set_payment_info(
         self,
-        reg_id: int,
+        reg_id: vtypes.RegistrationID,
         event_id: vtypes.EventID,
         amount_paid: decimal.Decimal,
         payment: datetime.date | None = None,
@@ -2102,19 +2103,21 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("353,99 € auf folgendes Konto")
 
         # Payment checks with iban
-        self._set_payment_info(1, event_id=EventID(1), amount_paid=decimal.Decimal("0"))
+        self._set_payment_info(
+            RegistrationID(1), event_id=EventID(1), amount_paid=decimal.Decimal("0")
+        )
         self.traverse({'href': '/event/event/1/registration/status'})
         self.assertPresence("Du musst noch den übrigen Betrag von 553,99 € bezahlen.")
         self.assertPresence("Bitte überweise 553,99 € auf folgendes Konto")
         self._set_payment_info(
-            1, event_id=EventID(1), amount_paid=decimal.Decimal("100")
+            RegistrationID(1), event_id=EventID(1), amount_paid=decimal.Decimal("100")
         )
         self.traverse("Meine Anmeldung")
         self.assertPresence("Bitte überweise 453,99 € auf folgendes Konto")
         self.assertPresence("Du hast bereits 100,00 € bezahlt.")
         self.assertPresence("Du musst noch den übrigen Betrag von 453,99 € bezahlen.")
         self._set_payment_info(
-            1, event_id=EventID(1), amount_paid=decimal.Decimal("1000")
+            RegistrationID(1), event_id=EventID(1), amount_paid=decimal.Decimal("1000")
         )
         self.traverse("Meine Anmeldung")
         self.assertNonPresence("Überweisung")
@@ -2124,7 +2127,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Du hast 446,01 € mehr bezahlt als deinen Teilnahmebeitrag von 553,99 €."
         )
         self._set_payment_info(
-            1, event_id=EventID(1), amount_paid=decimal.Decimal("200")
+            RegistrationID(1), event_id=EventID(1), amount_paid=decimal.Decimal("200")
         )
 
         # Payment checks without iban
@@ -2199,7 +2202,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['part2.status'] = const.RegistrationPartStati.not_applied
         f['part3.status'] = const.RegistrationPartStati.participant
         self.submit(f)
-        self._set_payment_info(1, event_id=EventID(1), amount_paid=decimal.Decimal("0"))
+        self._set_payment_info(
+            RegistrationID(1), event_id=EventID(1), amount_paid=decimal.Decimal("0")
+        )
         self.traverse("Meine Anmeldung")
         self.assertPresence("430,99 €")
         self.assertNonPresence("bereits bezahlt")
@@ -8129,7 +8134,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         )
 
         # Check that choices are correctly synced for each track group.
-        registration = self.event.get_registration(self.key, 1001)
+        registration = self.event.get_registration(self.key, RegistrationID(1001))
         event = self.event.get_event(self.key, EventID(4))
         for tg in event.track_groups.values():
             choices_set = set()

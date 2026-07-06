@@ -2001,7 +2001,7 @@ class EventEventMixin(EventBaseFrontend):
                     rs, "event/show_registration", {'registration_id': reg_id}
                 )
 
-        reg_id, errs = inspect(vtypes.ID, phrase, argname="phrase")
+        reg_id, errs = inspect(vtypes.RegistrationID, phrase, argname="phrase")
         if not errs:
             assert reg_id is not None
             reg = self.eventproxy.get_registration(rs, reg_id)

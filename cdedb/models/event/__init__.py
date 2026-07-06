@@ -1348,6 +1348,9 @@ class Lodgement(EventDataclass):
 #
 
 
+type RegistrationMap = dict[vtypes.RegistrationID, CdEDBObject]
+
+
 @dataclasses.dataclass
 class Registration(EventDataclass):
     database_table = "event.registrations"
@@ -1395,7 +1398,7 @@ class PersonalizedFee(EventDataclass):
     database_table = "event.personalized_fees"
     entity_key = "registration_id"
 
-    registration_id: vtypes.ID
+    registration_id: vtypes.RegistrationID
     fee_id: vtypes.ID
 
     amount: decimal.Decimal | None
@@ -1449,7 +1452,7 @@ class CheckinPeriod(EventDataclass, ReducedCheckinPeriod):
     database_table = "event.checkin_periods"
     entity_key = "registration_id"
 
-    registration_id: vtypes.ID
+    registration_id: vtypes.RegistrationID
 
     def get_sortkey(self) -> Sortkey:
         if self.checkout_time is not None:

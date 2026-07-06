@@ -36,7 +36,6 @@ from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
     PARSE_OUTPUT_DATEFORMAT,
     CdEDBObject,
-    CdEDBObjectMap,
     CourseFilterPositions,
     DefaultReturnCode,
     DeletionBlockers,
@@ -250,7 +249,9 @@ class EventRegistrationBackend(EventBaseBackend):
             for row in self.query_all(rs, query, {"event_id": event_id})
         }
 
-    def _get_involved_tracks(self, rs: RequestState, registration_id: int) -> set[int]:
+    def _get_involved_tracks(
+        self, rs: RequestState, registration_id: vtypes.RegistrationID
+    ) -> set[int]:
         """Return the track ids of all tracks the registration is involved with."""
         q = """
             SELECT course_tracks.id
@@ -299,7 +300,7 @@ class EventRegistrationBackend(EventBaseBackend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        registration_id: int | None,
+        registration_id: vtypes.RegistrationID | None,
         orga_input: bool,
         part_ids: Collection[int] | None = None,
     ) -> CourseChoiceValidationAux:
@@ -319,7 +320,7 @@ class EventRegistrationBackend(EventBaseBackend):
         for example during validation before creating a new registration.
         """
         event_id = affirm(vtypes.EventID, event_id)
-        registration_id = affirm(vtypes.ID | None, registration_id)
+        registration_id = affirm(vtypes.RegistrationID | None, registration_id)
         part_ids = affirm(set[vtypes.ID], part_ids or ())
         if registration_id:
             involved_tracks = self._get_involved_tracks(rs, registration_id)
@@ -448,7 +449,7 @@ class EventRegistrationBackend(EventBaseBackend):
     def _set_course_choices(
         self,
         rs: RequestState,
-        registration_id: int,
+        registration_id: vtypes.RegistrationID,
         track_id: int,
         choices: Sequence[int] | None,
         aux: CourseChoiceValidationAux,
@@ -490,7 +491,7 @@ class EventRegistrationBackend(EventBaseBackend):
         return ret
 
     def _get_registration_info(
-        self, rs: RequestState, reg_id: int
+        self, rs: RequestState, reg_id: vtypes.RegistrationID
     ) -> tuple[vtypes.PersonaID, vtypes.EventID]:
         """Helper to retrieve basic registration information."""
         reg_info = self.sql_select_one(
@@ -543,7 +544,7 @@ class EventRegistrationBackend(EventBaseBackend):
         rs: RequestState,
         event_id: vtypes.EventID,
         persona_ids: Collection[vtypes.PersonaID] | None = None,
-    ) -> dict[vtypes.ID, vtypes.PersonaID]:
+    ) -> dict[vtypes.RegistrationID, vtypes.PersonaID]:
         """List all registrations of an event.
 
         :param persona_ids: If passed restrict to registrations by these personas.
@@ -575,7 +576,7 @@ class EventRegistrationBackend(EventBaseBackend):
         rs: RequestState,
         event_id: vtypes.EventID,
         persona_id: vtypes.PersonaID | None = None,
-    ) -> dict[vtypes.ID, vtypes.PersonaID]:
+    ) -> dict[vtypes.RegistrationID, vtypes.PersonaID]:
         """Manual singularization of list_registrations_personas
 
         Handles default values properly.
@@ -981,7 +982,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("event", "ml_admin")
     def get_registrations(
         self, rs: RequestState, registration_ids: Collection[int]
-    ) -> CdEDBObjectMap:
+    ) -> models.RegistrationMap:
         """Retrieve data for some registrations.
 
         All have to be from the same event.
@@ -1101,7 +1102,9 @@ class EventRegistrationBackend(EventBaseBackend):
         return ret
 
     class _GetRegistrationProtocol(Protocol):
-        def __call__(self, rs: RequestState, registration_id: int) -> CdEDBObject: ...
+        def __call__(
+            self, rs: RequestState, registration_id: vtypes.RegistrationID
+        ) -> CdEDBObject: ...
 
     get_registration: _GetRegistrationProtocol = singularize(
         get_registrations, "registration_ids", "registration_id"
@@ -1371,7 +1374,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("event")
     def create_registration(
         self, rs: RequestState, data: CdEDBObject, orga_input: bool = True
-    ) -> DefaultReturnCode:
+    ) -> vtypes.RegistrationID:
         """Make a new registration.
 
         The data must contain a dataset for each part and each track
@@ -1427,7 +1430,9 @@ class EventRegistrationBackend(EventBaseBackend):
                 raise ValueError(n_("Missing track dataset."))
             rdata = {k: v for k, v in data.items() if k in REGISTRATION_FIELDS}
             rdata['fields'] = PsycoJson(fdata)
-            new_id = self.sql_insert(rs, "event.registrations", rdata)
+            new_id = vtypes.RegistrationID(
+                vtypes.ID(self.sql_insert(rs, "event.registrations", rdata))
+            )
 
             # Uninlined code from set_registration to make this more
             # performant.
@@ -1472,7 +1477,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def delete_registration_blockers(
-        self, rs: RequestState, registration_id: int
+        self, rs: RequestState, registration_id: vtypes.RegistrationID
     ) -> DeletionBlockers:
         """Determine what keeps a registration from being deleted.
 
@@ -1486,7 +1491,7 @@ class EventRegistrationBackend(EventBaseBackend):
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
-        registration_id = affirm(vtypes.ID, registration_id)
+        registration_id = affirm(vtypes.RegistrationID, registration_id)
         blockers = {}
 
         reg_parts = self.sql_select(
@@ -1533,7 +1538,7 @@ class EventRegistrationBackend(EventBaseBackend):
     def delete_registration(
         self,
         rs: RequestState,
-        registration_id: int,
+        registration_id: vtypes.RegistrationID,
         cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Remove a registration.
@@ -1541,7 +1546,7 @@ class EventRegistrationBackend(EventBaseBackend):
         :param cascade: Specify which deletion blockers to cascadingly remove
             or ignore. If None or empty, cascade none.
         """
-        registration_id = affirm(vtypes.ID, registration_id)
+        registration_id = affirm(vtypes.RegistrationID, registration_id)
         reg = self.get_registration(rs, registration_id)
         if not is_privileged(
             rs, EventPrivileges.registrations_write, event_id=reg['event_id']
@@ -1659,7 +1664,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("event")
     def get_registration_id(
         self, rs: RequestState, persona_id: vtypes.PersonaID, event_id: vtypes.EventID
-    ) -> vtypes.ID | None:
+    ) -> vtypes.RegistrationID | None:
         """Retrieve the registration id of the given persona for the event if any."""
         persona_id = affirm(vtypes.PersonaID, persona_id)
         event_id = affirm(vtypes.EventID, event_id)
@@ -1669,7 +1674,7 @@ class EventRegistrationBackend(EventBaseBackend):
         return unwrap(registration_ids.keys())
 
     def _update_registration_amount_owed(
-        self, rs: RequestState, registration_id: int
+        self, rs: RequestState, registration_id: vtypes.RegistrationID
     ) -> ComplexRegistrationFee:
         """
         Update the amount owed for one registration.
@@ -1682,7 +1687,7 @@ class EventRegistrationBackend(EventBaseBackend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-    ) -> dict[int, ComplexRegistrationFee]:
+    ) -> dict[vtypes.RegistrationID, ComplexRegistrationFee]:
         """Update the amount owed for all registrations of one event."""
         self.affirm_atomized_context(rs)
         registration_ids = self.list_registrations(rs, event_id)
@@ -1690,7 +1695,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
     def _update_registrations_amount_owed_inner(
         self, rs: RequestState, registration_ids: Collection[int]
-    ) -> dict[int, ComplexRegistrationFee]:
+    ) -> dict[vtypes.RegistrationID, ComplexRegistrationFee]:
         self.affirm_atomized_context(rs)
         registrations = self.get_registrations(rs, registration_ids)
         if not registrations:
@@ -1741,10 +1746,13 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def calculate_complex_fee(
-        self, rs: RequestState, registration_id: int, visual_debug: bool = False
+        self,
+        rs: RequestState,
+        registration_id: vtypes.RegistrationID,
+        visual_debug: bool = False,
     ) -> ComplexRegistrationFee:
         """Public access point for retrieving complex fee data."""
-        registration_id = affirm(vtypes.ID, registration_id)
+        registration_id = affirm(vtypes.RegistrationID, registration_id)
         registration = self.get_registration(rs, registration_id)
         event = self.get_event(rs, registration['event_id'])
         return self._calculate_complex_fee(
@@ -1994,14 +2002,14 @@ class EventRegistrationBackend(EventBaseBackend):
     def set_personalized_fee_amount(
         self,
         rs: RequestState,
-        registration_id: int,
+        registration_id: vtypes.RegistrationID,
         fee_id: int,
         amount: decimal.Decimal | None,
     ) -> DefaultReturnCode:
         """
         Either set or remove the personalized amount for one combination of reg and fee.
         """
-        registration_id = affirm(vtypes.ID, registration_id)
+        registration_id = affirm(vtypes.RegistrationID, registration_id)
         fee_id = affirm(vtypes.ID, fee_id)
         amount = affirm(decimal.Decimal | None, amount)
 
@@ -2048,7 +2056,7 @@ class EventRegistrationBackend(EventBaseBackend):
         self,
         rs: RequestState,
         *,
-        registration_id: int,
+        registration_id: vtypes.RegistrationID,
         amount: decimal.Decimal,
         date: datetime.date,
         by_orga: bool,
@@ -2313,7 +2321,7 @@ class EventRegistrationBackend(EventBaseBackend):
         def __call__(
             self,
             rs: RequestState,
-            registration_id: int,
+            registration_id: vtypes.RegistrationID,
             checkin_time: datetime.datetime | None = None,
         ) -> DefaultReturnCode: ...
 
@@ -2403,7 +2411,7 @@ class EventRegistrationBackend(EventBaseBackend):
         def __call__(
             self,
             rs: RequestState,
-            registration_id: int,
+            registration_id: vtypes.RegistrationID,
             checkout_time: datetime.datetime | None = None,
         ) -> DefaultReturnCode: ...
 
@@ -2415,12 +2423,12 @@ class EventRegistrationBackend(EventBaseBackend):
     def add_backdated_checkin_period(
         self,
         rs: RequestState,
-        registration_id: int,
+        registration_id: vtypes.RegistrationID,
         checkin_time: datetime.datetime,
         checkout_time: datetime.datetime | None,
     ) -> DefaultReturnCode:
         """Add an additional backdated period, where a participant was present."""
-        registration_id = affirm(vtypes.ID, registration_id)
+        registration_id = affirm(vtypes.RegistrationID, registration_id)
         checkin_time = affirm(datetime.datetime, checkin_time)
         checkout_time = affirm(datetime.datetime | None, checkout_time)
 
@@ -2487,7 +2495,7 @@ class EventRegistrationBackend(EventBaseBackend):
     def change_checkin_period(
         self,
         rs: RequestState,
-        registration_id: int,
+        registration_id: vtypes.RegistrationID,
         period_id: int,
         checkin_time: datetime.datetime,
         checkout_time: datetime.datetime | None,
@@ -2495,7 +2503,7 @@ class EventRegistrationBackend(EventBaseBackend):
         """Change the time a participant was present.
 
         :param checkout_time: Optional iff the period is the newest one."""
-        registration_id = affirm(vtypes.ID, registration_id)
+        registration_id = affirm(vtypes.RegistrationID, registration_id)
         period_id = affirm(vtypes.ID, period_id)
         checkin_time = affirm(datetime.datetime, checkin_time)
         checkout_time = affirm(datetime.datetime | None, checkout_time)
@@ -2573,10 +2581,10 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def delete_checkin_period(
-        self, rs: RequestState, registration_id: int, period_id: int
+        self, rs: RequestState, registration_id: vtypes.RegistrationID, period_id: int
     ) -> DefaultReturnCode:
         """Delete a (pair of) checkpoint(s) where a participant entered/left."""
-        registration_id = affirm(vtypes.ID, registration_id)
+        registration_id = affirm(vtypes.RegistrationID, registration_id)
         period_id = affirm(vtypes.ID, period_id)
 
         with Atomizer(rs):
@@ -2603,7 +2611,7 @@ class EventRegistrationBackend(EventBaseBackend):
     def replace_checkin_periods(
         self,
         rs: RequestState,
-        registration_id: int,
+        registration_id: vtypes.RegistrationID,
         new_periods: list[ReducedCheckinPeriod],
     ) -> DefaultReturnCode:
         """Specify a new list of checkin periods for a persona.

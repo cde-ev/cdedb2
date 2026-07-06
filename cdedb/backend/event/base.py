@@ -1314,7 +1314,7 @@ class EventBaseBackend(EventLowLevelBackend):
     @abc.abstractmethod
     def _update_registrations_amount_owed(
         self, rs: RequestState, event_id: vtypes.EventID
-    ) -> dict[int, "ComplexRegistrationFee"]: ...
+    ) -> dict[vtypes.RegistrationID, "ComplexRegistrationFee"]: ...
 
     @access("event")
     def check_orga_addition_limit(

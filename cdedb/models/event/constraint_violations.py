@@ -40,7 +40,6 @@ import cdedb.models.event as models
 from cdedb.common import (
     AgeClasses,
     CdEDBObject,
-    CdEDBObjectMap,
     determine_age_class,
     make_persona_name,
     n_,
@@ -322,7 +321,7 @@ class ViolationAux:
     """Container for passing event data through to Violations for instantiation."""
 
     event: models.Event
-    registrations: CdEDBObjectMap
+    registrations: models.RegistrationMap
     personas: CdEDataclassMap[EventPersona]
 
     all_courses: CdEDataclassMap[models.Course]

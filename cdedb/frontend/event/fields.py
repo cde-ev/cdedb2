@@ -17,7 +17,6 @@ import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
     CdEDBObject,
-    CdEDBObjectMap,
     RequestState,
     build_msg,
     get_mandatory_form_fields,
@@ -162,7 +161,12 @@ class EventFieldMixin(EventBaseFrontend):
         field_id: int | None,
         ids: Collection[int],
         kind: const.FieldAssociations,
-    ) -> tuple[CdEDBObjectMap, list[int], dict[int, str], models.EventField | None]:
+    ) -> tuple[
+        dict[vtypes.ID, CdEDBObject],
+        list[vtypes.ID],
+        dict[vtypes.ID, str],
+        models.EventField | None,
+    ]:
         """Process field set inputs.
 
         This function retrieves the data dependent on the given kind and returns it in
@@ -179,12 +183,14 @@ class EventFieldMixin(EventBaseFrontend):
             * field: the event field which will be changed, None if no field_id was
                 given
         """
-        entities: CdEDBObjectMap
-        labels: dict[int, str]
+        entities: dict[vtypes.ID, CdEDBObject]
+        labels: dict[vtypes.ID, str]
         if kind == const.FieldAssociations.registration:
             if not ids:
                 ids = self.eventproxy.list_registrations(rs, event_id)
-            entities = self.eventproxy.get_registrations(rs, ids)
+            entities = cast(
+                dict[vtypes.ID, CdEDBObject], self.eventproxy.get_registrations(rs, ids)
+            )
             personas = self.coreproxy.get_personas(
                 rs, tuple(e['persona_id'] for e in entities.values())
             )
@@ -205,7 +211,7 @@ class EventFieldMixin(EventBaseFrontend):
             # TODO remove after migrating lodgements and registrations to dataclasses
             entities = {course.id: course.as_dict() for course in courses.values()}
             labels = {course.id: course.shortlabel for course in courses.values()}
-            ordered_ids = list(courses.keys())
+            ordered_ids = list(entities.keys())
         elif kind == const.FieldAssociations.lodgement:
             if not ids:
                 ids = self.eventproxy.list_lodgements(rs, event_id)
@@ -214,10 +220,10 @@ class EventFieldMixin(EventBaseFrontend):
                 lodgement.id: lodgement.as_dict() for lodgement in lodgements.values()
             }
             labels = {
-                lodg_id: safe_filter(f"{lodg.title}, <em>{lodg.group.title}</em>")
-                for lodg_id, lodg in lodgements.items()
+                lodg.id: safe_filter(f"{lodg.title}, <em>{lodg.group.title}</em>")
+                for lodg in lodgements.values()
             }
-            ordered_ids = list(lodgements.keys())
+            ordered_ids = list(entities.keys())
         else:
             # this should not happen, since we check before for validation errors
             raise NotImplementedError(f"Unknown kind {kind}")

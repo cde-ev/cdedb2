@@ -383,7 +383,11 @@ class EventBackend(
                     # reg_cascade &= cascade
                     with Silencer(rs):
                         for reg_id in blockers["registrations"]:
-                            ret *= self.delete_registration(rs, reg_id, reg_cascade)
+                            ret *= self.delete_registration(
+                                rs,
+                                vtypes.RegistrationID(vtypes.ID(reg_id)),
+                                reg_cascade,
+                            )
                 if "courses" in cascade:
                     course_cascade = (
                         "attendees", "course_choices", "course_segments", "instructors",

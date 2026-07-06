@@ -72,6 +72,9 @@ PERSONA_TEMPLATE = {
 }
 
 
+RegistrationID = lambda x: vtypes.RegistrationID(vtypes.ID(x))
+
+
 class TestCdEFrontend(FrontendTest):
     @as_users("vera", "berta", maintain_data=True)
     def test_index(self) -> None:
@@ -2600,21 +2603,21 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("461,49 €", div='amount-owed')
         self.assertEqual(
             decimal.Decimal("461.49"),
-            self.event.get_registration(self.key, 2)['amount_owed'],
+            self.event.get_registration(self.key, RegistrationID(2))['amount_owed'],
         )
         self.get('/event/event/1/registration/1001/fee/summary')
         self.assertNonPresence("Externenbeitrag", div='amount-owed')
         self.assertPresence("584,48 €", div='amount-owed')
         self.assertEqual(
             decimal.Decimal("584.48"),
-            self.event.get_registration(self.key, 1001)['amount_owed'],
+            self.event.get_registration(self.key, RegistrationID(1001))['amount_owed'],
         )
         self.get('/event/event/1/registration/1002/fee/summary')
         self.assertPresence("Externenbeitrag", div='amount-owed')
         self.assertPresence("589,48 €", div='amount-owed')
         self.assertEqual(
             decimal.Decimal("589.48"),
-            self.event.get_registration(self.key, 1002)['amount_owed'],
+            self.event.get_registration(self.key, RegistrationID(1002))['amount_owed'],
         )
 
     @prepsql(

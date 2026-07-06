@@ -475,7 +475,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         event_id: vtypes.EventID,
         lodgement_ids: Collection[int] | None = None,
         involved: bool | None = None,
-        _registrations: CdEDBObjectMap | None = None,
+        _registrations: models.RegistrationMap | None = None,
     ) -> dict[int, dict[int, LodgementInhabitants]]:
         """Group number of inhabitants by lodgement, part and camping mat status."""
         event_id = affirm(vtypes.EventID, event_id)

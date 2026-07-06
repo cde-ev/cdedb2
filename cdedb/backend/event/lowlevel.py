@@ -1239,7 +1239,7 @@ class EventLowLevelBackend(AbstractBackend):
         rs: RequestState,
         event_id: vtypes.EventID,
         registration_ids: Collection[int] | None = None,
-    ) -> CdEDBObjectMap:
+    ) -> models.RegistrationMap:
         """Retrieve basic registration data."""
         query = f"""
             SELECT {", ".join(REGISTRATION_FIELDS)}, ctime, mtime
