@@ -678,7 +678,6 @@ class TestCoreFrontend(FrontendTest):
         self.get(url("ml_subscriber", aux="invalid"))
         self.assertEqual({}, self.response.json)
 
-    @as_users("paul")
     def test_selectpersona_ids(self) -> None:
         with self.switch_user("paul"):
             self.get('/core/persona/select?kind=admin_persona&phrase=DB-2-7')
@@ -698,6 +697,15 @@ class TestCoreFrontend(FrontendTest):
             self.assertEqual(tuple(), reality)
             # too short search phrase
             self.get('/core/persona/select?kind=ml_subscriber&aux=54&phrase=14')
+            self.assertEqual({}, self.response.json)
+            self.get("/")
+
+        with self.switch_user("nina"):
+            self.get('/core/persona/select?kind=ml_subscriber&aux=1&phrase=DB-1-9')
+            self.assertEqual([1], [e['id'] for e in self.response.json['personas']])
+            self.get('/core/persona/select?kind=ml_subscriber&aux=1&phrase=1')
+            self.assertEqual([1], [e['id'] for e in self.response.json['personas']])
+            self.get('/core/persona/select?kind=ml_subscriber&aux=54&phrase=A')
             self.assertEqual({}, self.response.json)
             self.get("/")
 
