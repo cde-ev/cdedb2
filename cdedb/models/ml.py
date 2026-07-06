@@ -473,6 +473,7 @@ class EventMailinglist(GeneralMailinglist):
     available_domains = [MailinglistDomain.aka]
     viewer_roles = {"event"}
     relevant_admins = {"event_admin"}
+    notify_owner_on_bounce = True
     ldap_expose = False
 
 
