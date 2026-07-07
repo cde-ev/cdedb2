@@ -40,6 +40,26 @@
         </dd>
     </dl>
 
+    {% if grouped_moderated %}
+    {{ util.h(n_("Moderated Mailinglists"), level=3, underline=True) }}
+    {% for group, mailinglists in grouped_moderated.items() %}
+        {{ util.h(group|string, level=4, underline=true) }}
+        <div class="row" id="moderated-mls">
+            {% for list_slice in mailinglists|slice(2) %}
+                <div class="col-md-6">
+                    <ul class="{% if not loop.last %}nosp{% endif %}">
+                        {% for ml in list_slice %}
+                            <li class="{% if not ml.is_active %}text-muted {% endif %}">
+                                {{ util.href(cdedblink("ml/show_mailinglist", {"mailinglist_id": ml.id}), ml.title) }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+    {% endif %}
+
     {{ util.h(n_("Mailinglist Subscriptions"), level=3, underline=True) }}
     <p>
         {% trans %}
@@ -87,22 +107,4 @@
         </div>
     {% endfor %}
     </div>
-
-    {{ util.h(n_("Moderated Mailinglists"), level=3, underline=True) }}
-    {% for group, mailinglists in grouped_moderated.items() %}
-        {{ util.h(group|string, level=4, underline=true) }}
-        <div class="row" id="moderated-mls">
-            {% for list_slice in mailinglists|slice(2) %}
-                <div class="col-md-6">
-                    <ul class="{% if not loop.last %}nosp{% endif %}">
-                        {% for ml in list_slice %}
-                            <li class="{% if not ml.is_active %}text-muted {% endif %}">
-                                {{ util.href(cdedblink("ml/show_mailinglist", {"mailinglist_id": ml.id}), ml.title) }}
-                            </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            {% endfor %}
-        </div>
-    {% endfor %}
 {% endblock %}
