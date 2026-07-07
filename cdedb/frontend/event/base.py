@@ -67,7 +67,7 @@ from cdedb.models.common import CdEDataclassMap
 
 
 class CourseChoiceParams(typing.TypedDict):
-    courses: CdEDataclassMap[models.Course]
+    courses: models.CourseMap
     courses_per_track: dict[int, set[int]]
     all_courses_per_track: dict[int, set[int]]
     courses_per_track_group: dict[int, set[int]]
@@ -77,7 +77,7 @@ class CourseChoiceParams(typing.TypedDict):
     sync_track_groups: dict[int, models.SyncTrackGroup]
     track_group_map: dict[int, int | None]
     ccos_per_part: dict[int, list[str]]
-    parts_per_track_group_per_course: dict[int, dict[int, set[vtypes.ID]]]
+    parts_per_track_group_per_course: dict[vtypes.CourseID, dict[int, set[vtypes.ID]]]
 
 
 class ParticipantListData(typing.TypedDict):
@@ -85,7 +85,7 @@ class ParticipantListData(typing.TypedDict):
     ordered: list[vtypes.RegistrationID]
     reg_counts: dict[int | None, int]
     personas: CdEDataclassMap[models_core.EventPersona]
-    courses: CdEDataclassMap[models.Course]
+    courses: models.CourseMap
     parts: CdEDataclassMap[models.EventPart]
 
 
@@ -100,8 +100,8 @@ class ConstraintViolationsData(typing.TypedDict):
     all_registrations: models.RegistrationMap
     registrations: models.RegistrationMap
     personas: CdEDataclassMap[models_core.EventPersona]
-    all_courses: CdEDataclassMap[models.Course]
-    courses: CdEDataclassMap[models.Course]
+    all_courses: models.CourseMap
+    courses: models.CourseMap
     choice_stats: models.ChoiceStats
     attendee_stats: models.AttendeeStats
     all_lodgements: CdEDataclassMap[models.Lodgement]
@@ -770,7 +770,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         *,
         event: models.Event,
         registrations: models.RegistrationMap,
-        course_ids: Collection[int] | None = None,
+        course_ids: Collection[vtypes.CourseID] | None = None,
     ) -> tuple[models.ChoiceStats, models.AttendeeStats]: ...
 
     def get_constraint_violations(
@@ -781,7 +781,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         registration_id: vtypes.RegistrationID | None = vtypes.RegistrationID(
             vtypes.ID(-1)
         ),
-        course_id: int | None = -1,
+        course_id: vtypes.CourseID | None = vtypes.CourseID(vtypes.ID(-1)),
         lodgement_id: int | None = -1,
     ) -> ConstraintViolationsData:
         """

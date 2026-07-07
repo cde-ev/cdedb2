@@ -13,6 +13,7 @@ from tests.common import BackendTest, as_users
 from tests.other_tests.test_validation import NO_COMPARE, TestValidationBase
 
 EventID = lambda x: vtypes.EventID(vtypes.ID(x))
+CourseID = lambda x: vtypes.CourseID(vtypes.ID(x))
 
 
 class TestEventModels(BackendTest):
@@ -733,7 +734,7 @@ class TestEventModels(BackendTest):
 
     @as_users("anton")
     def test_get_courses(self) -> None:
-        course_id = vtypes.ID(1)
+        course_id = CourseID(1)
         event_id = EventID(1)
 
         expectation = models.Course(
@@ -769,29 +770,29 @@ class TestEventModels(BackendTest):
         self.assertEqual(expectation.as_dict(), reality.as_dict())
         self.assertEqual(expectation, reality)
 
-        course_ids = [1, 2]
+        course_ids = [CourseID(1), CourseID(2)]
 
         expectation = {
-            1: expectation,
-            2: models.Course(
-                id=vtypes.ID(2),
+            CourseID(1): expectation,
+            CourseID(2): models.Course(
+                id=CourseID(2),
                 event_id=event_id,
                 segments={
                     1: models.CourseSegment(
                         id=vtypes.ID(-1),
-                        course_id=vtypes.ID(2),
+                        course_id=CourseID(2),
                         track_id=vtypes.ID(1),
                         is_active=True,
                     ),
                     2: models.CourseSegment(
                         id=vtypes.ID(-1),
-                        course_id=vtypes.ID(2),
+                        course_id=CourseID(2),
                         track_id=vtypes.ID(2),
                         is_active=False,
                     ),
                     3: models.CourseSegment(
                         id=vtypes.ID(-1),
-                        course_id=vtypes.ID(2),
+                        course_id=CourseID(2),
                         track_id=vtypes.ID(3),
                         is_active=True,
                     ),

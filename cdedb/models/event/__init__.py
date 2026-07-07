@@ -1124,13 +1124,15 @@ class StoredEventQuery(EventDataclass, _StoredQuery):
 # get_course
 #
 
+type CourseMap = dict[vtypes.CourseID, Course]
+
 
 @dataclasses.dataclass
 class Course(EventDataclass):
     database_table = "event.courses"
     entity_key = "id"
 
-    id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
+    id: vtypes.CourseID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
 
     # Give event a default, so automatic sorting of course segments is less horrible.
     event: Event = dataclasses.field(
@@ -1475,20 +1477,20 @@ class ChoiceCounts:
     """
 
     # dict mapping (course_id, track_id) to list of choice counts.
-    _choice_counts: dict[int, dict[int, list[int]]]
+    _choice_counts: dict[vtypes.CourseID, dict[int, list[int]]]
 
     @overload
-    def get(self, course_id: int) -> dict[int, list[int]]: ...
+    def get(self, course_id: vtypes.CourseID) -> dict[int, list[int]]: ...
 
     @overload
-    def get(self, course_id: int, track_id: int) -> list[int]: ...
+    def get(self, course_id: vtypes.CourseID, track_id: int) -> list[int]: ...
 
     @overload
-    def get(self, course_id: int, track_id: int, rank: int) -> int: ...
+    def get(self, course_id: vtypes.CourseID, track_id: int, rank: int) -> int: ...
 
     def get(
         self,
-        course_id: int,
+        course_id: vtypes.CourseID,
         track_id: int | None = None,
         rank: int | None = None,
     ) -> dict[int, list[int]] | list[int] | int:
@@ -1502,7 +1504,9 @@ class ChoiceCounts:
 
     def __getitem__(
         self,
-        item: tuple[int] | tuple[int, int] | tuple[int, int, int],
+        item: tuple[vtypes.CourseID]
+        | tuple[vtypes.CourseID, int]
+        | tuple[vtypes.CourseID, int, int],
     ) -> dict[int, list[int]] | list[int] | int:
         return self.get(*item)
 
@@ -1554,17 +1558,19 @@ class CourseAttendees(dict[int, CourseSegmentAttendees]):
 class Attendees:
     """Wrapper around a mapping of course and track to lists of attendees."""
 
-    _course_attendee_counts: dict[int, CourseAttendees]
+    _course_attendee_counts: dict[vtypes.CourseID, CourseAttendees]
 
     @overload
-    def get(self, course_id: int) -> CourseAttendees: ...
+    def get(self, course_id: vtypes.CourseID) -> CourseAttendees: ...
 
     @overload
-    def get(self, course_id: int, track_id: int) -> CourseSegmentAttendees: ...
+    def get(
+        self, course_id: vtypes.CourseID, track_id: int
+    ) -> CourseSegmentAttendees: ...
 
     def get(
         self,
-        course_id: int,
+        course_id: vtypes.CourseID,
         track_id: int | None = None,
     ) -> CourseAttendees | CourseSegmentAttendees:
         by_track = self._course_attendee_counts.get(course_id, CourseAttendees({}))
@@ -1574,7 +1580,7 @@ class Attendees:
 
     def __getitem__(
         self,
-        item: tuple[int] | tuple[int, int],
+        item: tuple[vtypes.CourseID] | tuple[vtypes.CourseID, int],
     ) -> CourseAttendees | CourseSegmentAttendees:
         return self.get(*item)
 

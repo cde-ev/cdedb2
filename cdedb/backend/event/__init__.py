@@ -395,7 +395,11 @@ class EventBackend(
                     # course_cascade &= cascade
                     with Silencer(rs):
                         for course_id in blockers["courses"]:
-                            ret *= self.delete_course(rs, course_id, course_cascade)
+                            ret *= self.delete_course(
+                                rs,
+                                vtypes.CourseID(vtypes.ID(course_id)),
+                                course_cascade,
+                            )
                 if "lodgements" in cascade:
                     ret *= self.sql_delete(
                         rs, models.Lodgement.database_table, blockers["lodgements"]
@@ -644,7 +648,7 @@ class EventBackend(
             if not used_lodgement_ids <= available_lodgement_ids:
                 raise ValueError("Referential integrity of lodgements violated.")
 
-            used_course_ids: set[int] = set()
+            used_course_ids: set[vtypes.CourseID] = set()
             for registration in data.get('registrations', {}).values():
                 if registration:
                     for track in registration.get('tracks', {}).values():

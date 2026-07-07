@@ -67,6 +67,7 @@ from tests.common import (
 )
 
 EventID = lambda x: vtypes.EventID(vtypes.ID(x))
+CourseID = lambda x: vtypes.CourseID(vtypes.ID(x))
 RegistrationID = lambda x: vtypes.RegistrationID(vtypes.ID(x))
 
 
@@ -8350,7 +8351,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 'is_course_assignment_visible': True,
             },
         )
-        course_id = 9
+        course_id = CourseID(9)
         course = self.event.get_course(self.key, course_id)
         self.event.set_course(
             self.key,

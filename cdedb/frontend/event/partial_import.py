@@ -405,7 +405,7 @@ class EventImportMixin(EventBaseFrontend):
     def _make_partial_import_diff_aux(
         rs: RequestState,
         event: models.Event,
-        courses: CdEDBObjectMap,
+        courses: dict[vtypes.CourseID, CdEDBObject],
         lodgements: CdEDBObjectMap,
     ) -> tuple[CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject]:
         """Helper method, similar to make_registration_query_aux(), to
