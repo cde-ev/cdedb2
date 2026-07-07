@@ -763,7 +763,7 @@ class EventQueryMixin(EventBaseFrontend):
 
         data = None
 
-        anid, errs = inspect(vtypes.ID, phrase, argname="phrase")
+        anid, errs = inspect(vtypes.RegistrationID, phrase, argname="phrase")
         if not errs:
             assert anid is not None
             tmp = self.eventproxy.get_registrations(rs, (anid,))

@@ -112,11 +112,14 @@ USER_REALM_NAMES = {
 
 class ShowUserEventsParams(TypedDict):
     events: models_event.EventDataclassMap
-    registrations: dict[int, dict[int, dict[int, const.RegistrationPartStati]]]
-    orga_events: set[int]
-    caretaker_events: set[int]
-    checkin_helper_events: set[int]
-    special_role_events: set[int]
+    registrations: dict[
+        vtypes.EventID,
+        dict[vtypes.RegistrationID, dict[vtypes.ID, const.RegistrationPartStati]],
+    ]
+    orga_events: set[vtypes.EventID]
+    caretaker_events: set[vtypes.EventID]
+    checkin_helper_events: set[vtypes.EventID]
+    special_role_events: set[vtypes.EventID]
     is_event_helper: bool
 
 

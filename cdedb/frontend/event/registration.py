@@ -12,7 +12,7 @@ import itertools
 import typing
 from collections import OrderedDict
 from collections.abc import Collection
-from typing import cast, overload
+from typing import overload
 
 import segno.helpers
 import werkzeug.datastructures
@@ -1414,7 +1414,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: vtypes.EventID,
         fee_id: int | None = None,
-        registration_ids: list[int] | None = None,
+        registration_ids: list[vtypes.RegistrationID] | None = None,
     ) -> Response:
         """
         Render a form for setting an individual personalized fee for multiple
@@ -1449,11 +1449,9 @@ class EventRegistrationMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             if registration_ids is None:
                 rs.notify("warning", n_("Invalid registrations."))
-                registration_ids = list[int]([])
+                registration_ids = []
         if not registration_ids:
-            registration_ids = list[int](
-                list(self.eventproxy.list_registrations(rs, event_id))
-            )
+            registration_ids = list(self.eventproxy.list_registrations(rs, event_id))
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         if any(reg['event_id'] != event_id for reg in registrations.values()):
             rs.notify("error", n_("Invalid registrations."))
@@ -1496,7 +1494,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: vtypes.EventID,
         fee_id: int,
-        registration_ids: list[int],
+        registration_ids: list[vtypes.RegistrationID],
     ) -> Response:
         """Set multiple personalized fees at once."""
         if rs.has_validation_errors():
@@ -1749,7 +1747,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        reg_ids: list[int],
+        reg_ids: list[vtypes.RegistrationID],
         change_note: str | None,
     ) -> Response:
         """Render form for changing multiple registrations."""
@@ -1864,7 +1862,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        reg_ids: list[int],
+        reg_ids: list[vtypes.RegistrationID],
         change_note: str | None,
     ) -> Response:
         """Make privileged changes to any information pertaining to multiple
@@ -2237,7 +2235,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        registration_ids: list[int] | None = None,
+        registration_ids: list[vtypes.RegistrationID] | None = None,
         field_id: vtypes.ID | None = None,
         internal: bool = False,
     ) -> Response:
@@ -2251,10 +2249,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         if rs.has_validation_errors() and not internal:
             return self.redirect(rs, 'event/registration_query', {'event_id': event_id})
         if not registration_ids:
-            registration_ids = cast(
-                list[int],
-                list(self.eventproxy.list_registrations(rs, event_id)),
-            )
+            registration_ids = list(self.eventproxy.list_registrations(rs, event_id))
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_personas(
             rs, tuple(reg['persona_id'] for reg in registrations.values())
@@ -2324,7 +2319,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        registration_ids: list[int],
+        registration_ids: list[vtypes.RegistrationID],
         action: str,
         field_id: vtypes.ID | None,
         confirm_field_id: vtypes.ID | None,

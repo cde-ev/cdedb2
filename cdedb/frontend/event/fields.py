@@ -188,6 +188,7 @@ class EventFieldMixin(EventBaseFrontend):
         if kind == const.FieldAssociations.registration:
             if not ids:
                 ids = self.eventproxy.list_registrations(rs, event_id)
+            ids = cast(Collection[vtypes.RegistrationID], ids)
             entities = cast(
                 dict[vtypes.ID, CdEDBObject], self.eventproxy.get_registrations(rs, ids)
             )

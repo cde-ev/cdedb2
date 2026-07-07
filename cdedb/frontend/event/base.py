@@ -778,7 +778,9 @@ class EventBaseFrontend(AbstractUserFrontend):
         rs: RequestState,
         event: models.Event,
         *,
-        registration_id: int | None = -1,
+        registration_id: vtypes.RegistrationID | None = vtypes.RegistrationID(
+            vtypes.ID(-1)
+        ),
         course_id: int | None = -1,
         lodgement_id: int | None = -1,
     ) -> ConstraintViolationsData:

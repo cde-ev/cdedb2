@@ -1701,7 +1701,12 @@ class TestEventBackend(BackendTest):
                 'real_persona_id': None,
             },
         }
-        self.assertEqual(expectation, self.event.get_registrations(self.key, (1, 2, 4)))
+        self.assertEqual(
+            expectation,
+            self.event.get_registrations(
+                self.key, (RegistrationID(1), RegistrationID(2), RegistrationID(4))
+            ),
+        )
         data: CdEDBObject = {
             'id': 4,
             'fields': {'transportation': 'pedes'},
@@ -1751,7 +1756,9 @@ class TestEventBackend(BackendTest):
         for key, value in expectation[4]['tracks'].items():
             if key in data['tracks']:
                 value.update(data['tracks'][key])
-        regs = self.event.get_registrations(self.key, (1, 2, 4))
+        regs = self.event.get_registrations(
+            self.key, (RegistrationID(1), RegistrationID(2), RegistrationID(4))
+        )
         self.assertEqual(expectation, regs)
         new_reg: CdEDBObject = {
             'event_id': event_id,
@@ -4871,37 +4878,43 @@ class TestEventBackend(BackendTest):
             }
             self.assertEqual(  # checkin time too early
                 self.event.add_checkins_multi(
-                    self.key, {reg_id: base_time, reg_id + 1: base_time}
+                    self.key, {reg_id: base_time, RegistrationID(reg_id + 1): base_time}
                 ),
                 0,
             )
             self.assertEqual(
                 self.event.add_checkins_multi(
-                    self.key, {reg_id: now() - delta, reg_id + 1: base_time}
+                    self.key,
+                    {reg_id: now() - delta, RegistrationID(reg_id + 1): base_time},
                 ),
                 2,
             )
             self.assertEqual(  # someone already checked in
                 self.event.add_checkins_multi(
-                    self.key, {reg_id: now(), reg_id + 2: base_time}
+                    self.key, {reg_id: now(), RegistrationID(reg_id + 2): base_time}
                 ),
                 0,
             )
             self.assertEqual(  # checkout time before last checkin
                 self.event.add_checkouts_multi(
-                    self.key, {reg_id: base_time, reg_id + 1: base_time}
+                    self.key, {reg_id: base_time, RegistrationID(reg_id + 1): base_time}
                 ),
                 0,
             )
             self.assertEqual(
                 self.event.add_checkouts_multi(  # someone not checked in
-                    self.key, {reg_id: now(), reg_id + 2: base_time + delta}
+                    self.key,
+                    {reg_id: now(), RegistrationID(reg_id + 2): base_time + delta},
                 ),
                 0,
             )
             self.assertGreater(
                 self.event.add_checkouts_multi(
-                    self.key, {reg_id: now() + delta, reg_id + 1: base_time + delta}
+                    self.key,
+                    {
+                        reg_id: now() + delta,
+                        RegistrationID(reg_id + 1): base_time + delta,
+                    },
                 ),
                 0,
             )

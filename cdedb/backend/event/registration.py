@@ -505,7 +505,8 @@ class EventRegistrationBackend(EventBaseBackend):
     def list_persona_registrations(
         self, rs: RequestState, persona_id: vtypes.PersonaID
     ) -> dict[
-        vtypes.EventID, dict[vtypes.ID, dict[vtypes.ID, const.RegistrationPartStati]]
+        vtypes.EventID,
+        dict[vtypes.RegistrationID, dict[vtypes.ID, const.RegistrationPartStati]],
     ]:
         """List all events a given user has a registration for.
 
@@ -530,7 +531,7 @@ class EventRegistrationBackend(EventBaseBackend):
         data = self.query_all(rs, query, {"persona_id": persona_id})
         ret: dict[
             vtypes.EventID,
-            dict[vtypes.ID, dict[vtypes.ID, const.RegistrationPartStati]],
+            dict[vtypes.RegistrationID, dict[vtypes.ID, const.RegistrationPartStati]],
         ] = {}
         for e in data:
             reg = ret.setdefault(e['event_id'], {}).setdefault(e['registration_id'], {})
@@ -589,7 +590,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("event")
     def list_participants(
         self, rs: RequestState, event_id: vtypes.EventID
-    ) -> dict[int, vtypes.PersonaID]:
+    ) -> dict[vtypes.RegistrationID, vtypes.PersonaID]:
         """List all participants of an event.
 
         Just participants of this event are returned and the requester himself must
@@ -829,7 +830,7 @@ class EventRegistrationBackend(EventBaseBackend):
         reg_states: Collection[const.RegistrationPartStati] = (
             const.RegistrationPartStati.participant,
         ),
-    ) -> dict[int, int]:
+    ) -> dict[vtypes.RegistrationID, vtypes.PersonaID]:
         """List registrations of an event pertaining to a certain course.
 
         This is a filter function, mainly for the course assignment tool.
@@ -981,7 +982,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event", "ml_admin")
     def get_registrations(
-        self, rs: RequestState, registration_ids: Collection[int]
+        self, rs: RequestState, registration_ids: Collection[vtypes.RegistrationID]
     ) -> models.RegistrationMap:
         """Retrieve data for some registrations.
 
@@ -1694,7 +1695,7 @@ class EventRegistrationBackend(EventBaseBackend):
         return self._update_registrations_amount_owed_inner(rs, registration_ids)
 
     def _update_registrations_amount_owed_inner(
-        self, rs: RequestState, registration_ids: Collection[int]
+        self, rs: RequestState, registration_ids: Collection[vtypes.RegistrationID]
     ) -> dict[vtypes.RegistrationID, ComplexRegistrationFee]:
         self.affirm_atomized_context(rs)
         registrations = self.get_registrations(rs, registration_ids)
@@ -2235,7 +2236,7 @@ class EventRegistrationBackend(EventBaseBackend):
     def add_checkins(
         self,
         rs: RequestState,
-        registration_ids: Collection[int],
+        registration_ids: Collection[vtypes.RegistrationID],
         checkin_time: datetime.datetime | None = None,
     ) -> DefaultReturnCode:
         """Check participants in, all with the same time.
@@ -2251,15 +2252,14 @@ class EventRegistrationBackend(EventBaseBackend):
     def add_checkins_multi(
         self,
         rs: RequestState,
-        reg_checkin_times: Mapping[int, datetime.datetime],
+        reg_checkin_times: Mapping[vtypes.RegistrationID, datetime.datetime],
     ) -> DefaultReturnCode:
         """Check participants in, individual times per registration.
 
         :param reg_checkin_times: Mapping of registration id to checkin time.
         """
-        reg_checkin_times = cast(
-            dict[int, datetime.datetime],
-            affirm(dict[vtypes.ID, datetime.datetime], reg_checkin_times),
+        reg_checkin_times = affirm(
+            dict[vtypes.RegistrationID, datetime.datetime], reg_checkin_times
         )
         registration_ids = reg_checkin_times.keys()
 
@@ -2333,7 +2333,7 @@ class EventRegistrationBackend(EventBaseBackend):
     def add_checkouts(
         self,
         rs: RequestState,
-        registration_ids: Collection[int],
+        registration_ids: Collection[vtypes.RegistrationID],
         checkout_time: datetime.datetime | None = None,
     ) -> DefaultReturnCode:
         """Check participants out, all at the same time.
@@ -2347,16 +2347,18 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event")
     def add_checkouts_multi(
-        self, rs: RequestState, reg_checkout_times: Mapping[int, datetime.datetime]
+        self,
+        rs: RequestState,
+        reg_checkout_times: Mapping[vtypes.RegistrationID, datetime.datetime],
     ) -> DefaultReturnCode:
         """Check participants out, individual times per registration.
 
         :param reg_checkout_times: mapping of registration id to checkout time.
         """
-        reg_checkout_times = cast(
-            dict[int, datetime.datetime],
-            affirm(dict[vtypes.ID, datetime.datetime], reg_checkout_times),
+        reg_checkout_times = affirm(
+            dict[vtypes.RegistrationID, datetime.datetime], reg_checkout_times
         )
+
         registration_ids = reg_checkout_times.keys()
 
         ret = 1
