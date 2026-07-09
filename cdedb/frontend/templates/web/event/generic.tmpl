@@ -329,6 +329,9 @@
             {% trans link=util.href(cdedblink('core/change_user'), gettext("form to edit your profile")) %}
                 This data is taken from your personal profile. To change it, use this {{ link }}.
             {% endtrans %}
+            {% trans %}
+                Any changes made to your profile data will be carried over automatically and shared with the orgateam.
+            {% endtrans %}
         </p>
     {% else %}
         {{ row }}

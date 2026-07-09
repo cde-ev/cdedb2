@@ -335,7 +335,6 @@ class MyData(QuestionnaireMagicRow):
     _role = const.QuestionnaireRowRole.my_data
     _frequency = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory,
-        const.QuestionnaireUsages.additional: QuestionnaireFrequency.optional,
     }
     static = True
 
