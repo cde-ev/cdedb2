@@ -11,6 +11,7 @@ import webtest
 import cdedb.database.constants as const
 import cdedb.models.core as models_core
 import cdedb.models.droid as model_droid
+import cdedb.models.event as models_event
 from cdedb.common import (
     IGNORE_WARNINGS_NAME,
     CdEDBObject,
@@ -250,6 +251,12 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle(self.user['default_name_format'])
         self.assertPresence(self.user['family_name'], div='title')
 
+    @prepsql(
+        f"""
+        INSERT INTO {models_event.OtherDatabaseTables.caretakers} (event_id, persona_id) VALUES (2, 7);
+        INSERT INTO {models_event.OtherDatabaseTables.checkin_helpers} (event_id, persona_id) VALUES (4, 7);
+        """
+    )
     @as_users("annika", "paul", "quintus", maintain_data=True)
     def test_showuser_events(self) -> None:
         if self.user_in("annika"):
@@ -264,13 +271,18 @@ class TestCoreFrontend(FrontendTest):
 
         self.traverse("Veranstaltungs-Daten")
         self.assertTitle("Garcia Generalis – Veranstaltungs-Daten")
-        self.assertPresence("CyberTestAkademie Teilnehmer")
+        self.assertPresence("CyberTestAkademie Teilnehmer", div="registration-list")
         # part names not shown for one-part events
-        self.assertNonPresence("CyberTestAkademie: Teilnehmer")
-        self.assertPresence("Große Testakademie")
+        self.assertNonPresence("CyberTestAkademie: Teilnehmer", div="registration-list")
+        self.assertPresence("Große Testakademie", div="registration-list")
         self.assertPresence(
-            "Warmup: Teilnehmer, Erste Hälfte: Teilnehmer, Zweite Hälfte: Teilnehmer"
+            "Warmup: Teilnehmer, Erste Hälfte: Teilnehmer, Zweite Hälfte: Teilnehmer",
+            div="registration-list",
         )
+
+        self.assertPresence("Große Testakademie 2222: Orga", div="event-roles-list")
+        self.assertPresence("CdE-Party 2050: Betreuer", div="event-roles-list")
+        self.assertPresence("TripelAkademie: Checkin-Helfer", div="event-roles-list")
 
     @as_users("nina", "paul", "quintus", maintain_data=True)
     def test_showuser_mailinglists(self) -> None:
@@ -288,9 +300,36 @@ class TestCoreFrontend(FrontendTest):
         self.traverse("Mailinglisten-Daten")
         self.assertTitle("Inga Iota – Mailinglisten-Daten")
         self.assertPresence("inga@example.cde", div='contact-email')
-        self.assertPresence("CdE-Info E-Mail: inga-papierkorb@example.cde")
-        self.assertPresence("Kampfbrief-Kommentare (geblockt)")
-        self.assertNonPresence("Witz des Tages")
+        self.assertPresence(
+            "CdE-Info E-Mail: inga-papierkorb@example.cde", div="ml-subscriptions"
+        )
+        self.assertPresence("Kampfbrief-Kommentare (geblockt)", div="ml-subscriptions")
+        self.assertNonPresence("Witz des Tages", div="ml-subscriptions")
+        self.assertPresence("Gutscheine", div="moderated-mls")
+        self.assertNonPresence("CdE-Info", div="moderated-mls")
+
+    @as_users("viktor", "paul", "quintus", maintain_data=True)
+    def test_showuser_assemblies(self) -> None:
+        if self.user_in("viktor"):
+            self.traverse("Versammlungen", "Archiv-Sammlung", "Werner Wahlleitung")
+        elif self.user_in("paul"):
+            self.admin_view_profile("werner")
+        elif self.user_in("quintus"):
+            # Relative admins may see this page
+            self.realm_admin_view_profile("werner", "cde")
+
+        self.traverse("Versammlungs-Daten")
+        self.assertTitle("Werner Wahlleitung – Versammlungs-Daten")
+        self.assertPresence("Internationaler Kongress", div="attended-assemblies")
+        self.assertNonPresence("Archiv-Sammlung", div="attended-assemblies")
+        self.assertNonPresence(
+            "Kanonische Beispielversammlung", div="attended-assemblies"
+        )
+        self.assertPresence("Internationaler Kongress", div="presided-assemblies")
+        self.assertPresence("Archiv-Sammlung", div="presided-assemblies")
+        self.assertNonPresence(
+            "Kanonische Beispielversammlung", div="presided-assemblies"
+        )
 
     @as_users("anton")
     def test_user_archived(self) -> None:
@@ -299,14 +338,18 @@ class TestCoreFrontend(FrontendTest):
             self.assertTitle("Hades Hell")
             self.assertPresence("Account ist archiviert.", div='notifications')
 
-        self.get('/core/persona/8/mailinglists')
-        _check_redirected_profile()
         # The history is available
         self.get('/core/persona/8/history')
         self.assertTitle("Änderungshistorie von Hades Hell")
         self.assertPresence("Benutzer ist archiviert.", div='static-notifications')
         self.get('/core/persona/8/events')
         self.assertTitle("Hades Hell – Veranstaltungs-Daten")
+        self.assertPresence("Benutzer ist archiviert.", div='static-notifications')
+        self.get('/core/persona/8/mailinglists')
+        self.assertTitle("Hades Hell – Mailinglisten-Daten")
+        self.assertPresence("Benutzer ist archiviert.", div='static-notifications')
+        self.get('/core/persona/8/assemblies')
+        self.assertTitle("Hades Hell – Versammlungs-Daten")
         self.assertPresence("Benutzer ist archiviert.", div='static-notifications')
         self.get('/core/persona/8/adminchange')
         _check_redirected_profile()

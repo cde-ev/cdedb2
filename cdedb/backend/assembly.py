@@ -528,6 +528,28 @@ class AssemblyBackend(AbstractBackend):
         ballot_id = affirm(vtypes.ID | None, ballot_id)
         return self.check_attendance(rs, assembly_id=assembly_id, ballot_id=ballot_id)
 
+    @access("assembly")
+    def list_attended_assemblies(
+        self, rs: RequestState, persona_id: vtypes.PersonaID
+    ) -> set[int]:
+        persona_id = affirm(vtypes.PersonaID, persona_id)
+        if not (
+            self.is_admin(rs)
+            or self.core.is_relative_admin(rs, persona_id)
+            or rs.user.persona_id == persona_id
+        ):
+            raise PrivilegeError
+        return {
+            e["assembly_id"]
+            for e in self.sql_select(
+                rs,
+                "assembly.attendees",
+                ["assembly_id"],
+                [persona_id],
+                entity_key="persona_id",
+            )
+        }
+
     @access("assembly", "ml_admin")
     def list_attendees(self, rs: RequestState, assembly_id: int) -> set[int]:
         """Everybody who has subscribed for a specific assembly.

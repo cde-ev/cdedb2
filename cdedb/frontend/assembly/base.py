@@ -28,12 +28,14 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.query.log_filter import AssemblyLogFilter
+from cdedb.common.sorting import EntitySorter
 from cdedb.common.validation.validate import (
     ASSEMBLY_COMMON_FIELDS,
     PERSONA_COMMON_FIELDS,
     PERSONA_FULL_CREATION,
     filter_none,
 )
+from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend,
     REQUESTdata,
@@ -77,10 +79,28 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             assembly_id: len(self.assemblyproxy.list_attendees(rs, assembly_id))
             for assembly_id in rs.user.presider
         }
+
+        cutoff = now() - datetime.timedelta(days=2 * 365)
+
+        def is_recent(assembly: CdEDBObject) -> bool:
+            return assembly["signup_end"] > cutoff
+
+        presided_assemblies = [
+            assembly
+            for assembly_id, assembly in keydictsort_filter(
+                assemblies, EntitySorter.assembly
+            )
+            if is_recent(assembly) and assembly_id in rs.user.presider
+        ]
+
         return self.render(
             rs,
             "base/index",
-            {'assemblies': assemblies, 'attendees_count': attendees_count},
+            {
+                'assemblies': assemblies,
+                'attendees_count': attendees_count,
+                "presided_assemblies": presided_assemblies,
+            },
         )
 
     @access("core_admin", "assembly_admin")

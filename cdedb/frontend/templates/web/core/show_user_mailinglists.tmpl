@@ -17,72 +17,102 @@
                             'user', gettext("User")) }}
 {% endblock %}
 
-{% block content %}
-    {{ util.h(n_("Global information"), level=4, underline=True) }}
-        <dl class="dl-horizontal">
-            <dt title="{% trans %}Name{% endtrans %}">
-                {% trans %}Name{% endtrans %}
-            </dt>
-            <dd>
-                {{ ambience['persona']|persona_name(with_titles=True) }}
-            </dd>
-            <dt title="{% trans %}CdEDB-ID{% endtrans %}">
-                {% trans %}CdEDB-ID{% endtrans %}
-            </dt>
-            <dd id="cdedb-id">
-                {{ ambience['persona']['id']|cdedbid }}
-            </dd>
-            <dt title="{% trans %}E-Mail{% endtrans %}">
-                {% trans %}E-Mail{% endtrans %}
-            </dt>
-            <dd id="contact-email">
-                {{ util.username_mailto(ambience['persona']) }}
-            </dd>
-        </dl>
+{% block static_notifications %}
+    {% if ambience['persona']['is_archived'] %}
+        {% call util.notification('info', id='archived') %}
+            {% trans %}The user is archived.{% endtrans %}
+        {% endcall %}
+    {% endif %}
+{% endblock %}
 
-    {{ util.h(n_("Mailinglist information"), level=4, underline=True) }}
-    {% trans %}
-        This lists all mailinglists this user is related to.
-        In particular, this includes lists they are or have recently been subscribed to,
-        as well as pending subscriptions and blocks.
-    {% endtrans %}
-    {% for group in groups %}
-        {% if mailinglists[group] %}
-            {{ util.h(group|string, level=5, underline=true) }}
-            <div class="row">
-                {% for list in mailinglists[group].values()|sort|slice(2 if mailinglists[group]|length > 5 else 1) %}
-                    <ul class="styleless col-md-6 {% if not loop.last %}nosp{% endif %}">
-                        {% for ml in list %}
-                            {% set state = subscriptions[ml.id] %}
-                            {% set trouble = state in enums["SubscriptionState"].subscribing_states() and not ml['is_receiving'] %}
-                            {% if is_relevant_admin(mailinglist_id=ml.id) or ml.id in user.moderator %}
-                                {% set link = "ml/management" %}
-                            {% else %}
-                                {% set link = "ml/show_mailinglist" %}
-                            {% endif %}
-                            <li class="hide-hover-container clearfix-after{% if not ml['is_active'] or trouble %} text-muted{% endif %}">
-                                {{ util.state_checkbox(state) }}
-                                {% if trouble %}
-                                    {{ util.make_icon('exclamation-triangle', aclass="text-danger",
-                                            title=gettext("Subscribed with defect address, will not receive any mails.")) }}
-                                {% endif %}
-                                {{ util.href(cdedblink(link, {'mailinglist_id': ml.id}), ml["title"]) }}
-                            {% if state == enums["SubscriptionState"].subscription_override %}
-                                {{ gettext("(override)") }}
-                            {% elif state == enums["SubscriptionState"].unsubscription_override %}
-                                {{ gettext("(blocked)") }}
-                            {% endif %}
-                            {% if ml["address"] %}
-                                <br />
-                                <span class="far fa-circle dummy"></span>
-                                {% trans %}E-Mail:{% endtrans %}
-                                {{ util.username_mailto(ambience['persona'], email=ml["address"]) }}
-                            {% endif %}
+{% block content %}
+    {{ util.h(n_("Global information"), level=3, underline=True) }}
+    <dl class="dl-horizontal">
+        <dt title="{% trans %}Name{% endtrans %}">
+            {% trans %}Name{% endtrans %}
+        </dt>
+        <dd>
+            {{ ambience['persona']|persona_name(with_titles=True) }}
+        </dd>
+        <dt title="{% trans %}CdEDB-ID{% endtrans %}">
+            {% trans %}CdEDB-ID{% endtrans %}
+        </dt>
+        <dd id="cdedb-id">
+            {{ ambience['persona']['id']|cdedbid }}
+        </dd>
+        <dt title="{% trans %}E-Mail{% endtrans %}">
+            {% trans %}E-Mail{% endtrans %}
+        </dt>
+        <dd id="contact-email">
+            {{ util.username_mailto(ambience['persona']) }}
+        </dd>
+    </dl>
+
+    {% if grouped_moderated %}
+    {{ util.h(n_("Moderated Mailinglists"), level=3, underline=True) }}
+    {% for group, mailinglists in grouped_moderated.items() %}
+        {{ util.h(group|string, level=4, underline=true) }}
+        <div class="row" id="moderated-mls">
+            {% for list_slice in mailinglists|slice(2) %}
+                <div class="col-md-6">
+                    <ul class="{% if not loop.last %}nosp{% endif %}">
+                        {% for ml in list_slice %}
+                            <li class="{% if not ml.is_active %}text-muted {% endif %}">
+                                {{ util.href(cdedblink("ml/show_mailinglist", {"mailinglist_id": ml.id}), ml.title) }}
                             </li>
                         {% endfor %}
                     </ul>
-                {% endfor %}
-            </div>
-        {% endif %}
+                </div>
+            {% endfor %}
+        </div>
     {% endfor %}
+    {% endif %}
+
+    {{ util.h(n_("Mailinglist Subscriptions"), level=3, underline=True) }}
+    <p>
+        {% trans %}
+            This lists all mailinglists this user is related to.
+            In particular, this includes lists they are or have recently been subscribed to,
+            as well as pending subscriptions and blocks.
+        {% endtrans %}
+    </p>
+    <div id="ml-subscriptions">
+    {% for group, mailinglists in grouped.items() %}
+        {{ util.h(group|string, level=4, underline=true) }}
+        <div class="row">
+            {% for list_slice in mailinglists|slice(2) %}
+                <ul class="styleless col-md-6 {% if not loop.last %}nosp{% endif %}">
+                    {% for ml in list_slice %}
+                        {% set state = subscriptions.get(ml.id) %}
+                        {% set trouble = state in enums["SubscriptionState"].subscribing_states() and not receiving[ml.id] %}
+                        {% if is_relevant_admin(mailinglist_id=ml.id) or ml.id in user.moderator %}
+                            {% set link = "ml/management" %}
+                        {% else %}
+                            {% set link = "ml/show_mailinglist" %}
+                        {% endif %}
+                        <li class="hide-hover-container clearfix-after{% if not ml['is_active'] or trouble %} text-muted{% endif %}">
+                            {{ util.state_checkbox(state) }}
+                            {% if trouble %}
+                                {{ util.make_icon('exclamation-triangle', aclass="text-danger",
+                                        title=gettext("Subscribed with defect address, will not receive any mails.")) }}
+                            {% endif %}
+                            {{ util.href(cdedblink(link, {'mailinglist_id': ml.id}), ml["title"]) }}
+                        {% if state == enums["SubscriptionState"].subscription_override %}
+                            {{ gettext("(override)") }}
+                        {% elif state == enums["SubscriptionState"].unsubscription_override %}
+                            {{ gettext("(blocked)") }}
+                        {% endif %}
+                        {% if ml.id in addresses %}
+                            <br />
+                            <span class="far fa-circle dummy"></span>
+                            {% trans %}E-Mail:{% endtrans %}
+                            {{ util.username_mailto(ambience['persona'], email=addresses[ml.id]) }}
+                        {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endfor %}
+        </div>
+    {% endfor %}
+    </div>
 {% endblock %}
