@@ -1,5 +1,6 @@
 """Dataclass definitions of mailinglist realm."""
 
+import collections
 import dataclasses
 from collections import OrderedDict
 from collections.abc import Collection, Mapping
@@ -130,7 +131,7 @@ class Mailinglist(CdEDataclass):
             raise TypeError("Cannot instantiate abstract class.")
 
     def get_sortkey(self) -> Sortkey:
-        return (self.title,)
+        return (self.sortkey, self.title)
 
     @property
     def ml_type(self) -> MailinglistTypes:
@@ -368,6 +369,23 @@ class Mailinglist(CdEDataclass):
         """Whether or not to do periodic subscription cleanup on this list."""
         return True
 
+    @staticmethod
+    def group_lists(
+        mailinglists: Collection["Mailinglist"] | dict[int, "Mailinglist"],
+    ) -> dict[MailinglistGroup, list["Mailinglist"]]:
+        if isinstance(mailinglists, Mapping):
+            mailinglists = mailinglists.values()
+        ret = collections.defaultdict(list)
+        for ml in xsorted(mailinglists):
+            ret[ml.sortkey].append(ml)
+        return ret
+
+    def __lt__(self, other: "CdEDataclass") -> bool:
+        if not isinstance(other, Mailinglist):
+            return NotImplemented
+
+        return self._lt_inner(other)
+
 
 @dataclass
 class GeneralMailinglist(Mailinglist):
@@ -473,6 +491,7 @@ class EventMailinglist(GeneralMailinglist):
     available_domains = [MailinglistDomain.aka]
     viewer_roles = {"event"}
     relevant_admins = {"event_admin"}
+    notify_owner_on_bounce = True
     ldap_expose = False
 
 

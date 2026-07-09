@@ -12,7 +12,7 @@ import operator
 import pathlib
 import quopri
 import tempfile
-from typing import Any, Optional
+from typing import Any, Optional, TypedDict
 
 import segno.helpers
 import werkzeug.datastructures
@@ -22,10 +22,11 @@ from werkzeug import Response
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.core as models
+import cdedb.models.event as models_event
+import cdedb.models.ml as models_ml
 import cdedb.models.past_event as models_past_event
 from cdedb.common import (
     CdEDBObject,
-    CdEDBObjectMap,
     DefaultReturnCode,
     Realm,
     RequestState,
@@ -57,6 +58,7 @@ from cdedb.common.fields import (
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
+from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
@@ -96,7 +98,6 @@ from cdedb.frontend.common import (
     request_dict_extractor,
 )
 from cdedb.models.core import CdEPersona
-from cdedb.models.ml import MailinglistGroup
 from cdedb.uncommon.submanshim import SubscriptionPolicy
 
 # Name of each realm
@@ -106,6 +107,29 @@ USER_REALM_NAMES = {
     "assembly": n_("Assembly user"),
     "ml": n_("Mailinglist user"),
 }
+
+
+class ShowUserEventsParams(TypedDict):
+    events: models_event.EventDataclassMap
+    registrations: dict[int, dict[int, dict[int, const.RegistrationPartStati]]]
+    orga_events: set[int]
+    caretaker_events: set[int]
+    checkin_helper_events: set[int]
+    special_role_events: set[int]
+    is_event_helper: bool
+
+
+class ShowUserMailinglistsParams(TypedDict):
+    subscriptions: dict[int, const.SubscriptionState]
+    addresses: dict[int, str]
+    receiving: dict[vtypes.ID, bool]
+    grouped: dict[models_ml.MailinglistGroup, list[models_ml.Mailinglist]]
+    grouped_moderated: dict[models_ml.MailinglistGroup, list[models_ml.Mailinglist]]
+
+
+class ShowUserAssembliesParams(TypedDict):
+    attended_assemblies: list[CdEDBObject]
+    presided_assemblies: list[CdEDBObject]
 
 
 class CoreBaseFrontend(AbstractFrontend):
@@ -886,19 +910,42 @@ class CoreBaseFrontend(AbstractFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
 
         registrations = self.eventproxy.list_persona_registrations(rs, persona_id)
-        registration_ids: dict[int, int] = {}
-        registration_parts: dict[int, dict[int, const.RegistrationPartStati]] = {}
-        for event_id, reg in registrations.items():
-            registration_ids[event_id] = unwrap(reg.keys())
-            registration_parts[event_id] = unwrap(reg.values())
-        events = self.eventproxy.get_events(rs, registrations.keys())
+        event_ids = set(registrations.keys())
+
+        orga_events = self.eventproxy.orga_info(rs, persona_id)
+        event_ids.update(orga_events)
+
+        caretaker_events = self.eventproxy.caretaker_info(rs, persona_id)
+        event_ids.update(caretaker_events)
+
+        checkin_helper_events = self.eventproxy.checkin_helper_info(rs, persona_id)
+        event_ids.update(checkin_helper_events)
+
+        is_event_helper = persona_id in self.eventproxy.get_event_helpers(rs)
+
+        special_role_events = set().union(
+            orga_events, caretaker_events, checkin_helper_events
+        )
+        events = self.eventproxy.get_events(rs, event_ids)
+
+        def is_privileged(event_id: int, *privileges: EventPrivileges) -> bool:
+            return any(is_privileged_event(rs, priv, event_id) for priv in privileges)
+
         return self.render(
             rs,
             "show_user_events",
             {
-                'events': events,
-                'registration_ids': registration_ids,
-                'registration_parts': registration_parts,
+                'is_privileged': is_privileged,
+                'EP': EventPrivileges,
+                **ShowUserEventsParams(
+                    events=events,
+                    registrations=registrations,
+                    orga_events=orga_events,
+                    caretaker_events=caretaker_events,
+                    checkin_helper_events=checkin_helper_events,
+                    special_role_events=special_role_events,
+                    is_event_helper=is_event_helper,
+                ),
             },
         )
 
@@ -920,41 +967,40 @@ class CoreBaseFrontend(AbstractFrontend):
             or rs.user.persona_id == persona_id
         ):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
-            # reconnoitre_ambience leads to 404 if user does not exist at all.
-            rs.notify("error", n_("Persona is archived."))
-            return self.redirect_show_user(rs, persona_id)
 
         persona = self.coreproxy.get_ml_user(rs, persona_id)
         subscriptions = self.mlproxy.get_user_subscriptions(rs, persona_id)
-        mailinglists = self.mlproxy.get_mailinglists(rs, subscriptions.keys())
         addresses = self.mlproxy.get_user_subscription_addresses(rs, persona_id)
         defect_addresses = self.coreproxy.get_defect_address_reports(rs, [persona_id])
+        mailinglist_ids = set(subscriptions.keys())
+        mailinglists = self.mlproxy.get_mailinglists(rs, mailinglist_ids)
+        grouped = models_ml.Mailinglist.group_lists(mailinglists)
 
-        grouped: dict[MailinglistGroup, CdEDBObjectMap]
-        grouped = collections.defaultdict(dict)
-        for mailinglist_id, ml in mailinglists.items():
-            is_receiving = (
+        receiving = {
+            ml.id: (
                 addr not in defect_addresses
-                if (addr := addresses.get(mailinglist_id))
+                if (addr := addresses.get(ml.id))
                 else persona.username not in defect_addresses
             )
-            grouped[ml.sortkey][mailinglist_id] = {
-                'title': ml.title,
-                'id': mailinglist_id,
-                'address': addresses.get(mailinglist_id),
-                'is_active': ml.is_active,
-                'is_receiving': is_receiving,
-            }
+            for ml in mailinglists.values()
+        }
+
+        moderated_list_ids = self.mlproxy.moderator_info(rs, persona_id)
+        moderated_lists = self.mlproxy.get_mailinglists(rs, moderated_list_ids)
+        grouped_moderated = models_ml.Mailinglist.group_lists(moderated_lists)
 
         return self.render(
             rs,
             "show_user_mailinglists",
-            {
-                'groups': MailinglistGroup,
-                'mailinglists': grouped,
-                'subscriptions': subscriptions,
-            },
+            dict(
+                ShowUserMailinglistsParams(
+                    subscriptions=subscriptions,
+                    addresses=addresses,
+                    receiving=receiving,
+                    grouped=grouped,
+                    grouped_moderated=grouped_moderated,
+                )
+            ),
         )
 
     @access("ml")
@@ -962,6 +1008,45 @@ class CoreBaseFrontend(AbstractFrontend):
         """Redirect to use `self` instead of persona_id to make ambience work."""
         return self.redirect(
             rs, "core/show_user_mailinglists", {'persona_id': rs.user.persona_id}
+        )
+
+    @access("assembly")
+    def show_user_assemblies(
+        self, rs: RequestState, persona_id: vtypes.PersonaID
+    ) -> Response:
+        if not (
+            self.coreproxy.is_relative_admin(rs, persona_id)
+            or "assembly_admin" in rs.user.roles
+            or rs.user.persona_id == persona_id
+        ):
+            raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
+
+        assemblies = self.assemblyproxy.list_assemblies(rs)
+        attended_assemblies = self.assemblyproxy.list_attended_assemblies(
+            rs, persona_id
+        )
+        presided_assemblies = self.assemblyproxy.presider_info(rs, persona_id)
+
+        return self.render(
+            rs,
+            "show_user_assemblies",
+            dict(
+                ShowUserAssembliesParams(
+                    attended_assemblies=[
+                        a for a in assemblies.values() if a["id"] in attended_assemblies
+                    ],
+                    presided_assemblies=[
+                        a for a in assemblies.values() if a["id"] in presided_assemblies
+                    ],
+                )
+            ),
+        )
+
+    @access("assembly")
+    def show_user_assemblies_self(self, rs: RequestState) -> Response:
+        """Redirect to use `self` instead of persona_id to make ambience work."""
+        return self.redirect(
+            rs, "core/show_user_assemblies", {"persona_id": rs.user.persona_id}
         )
 
     @access(*REALM_ADMINS)
@@ -1264,19 +1349,18 @@ class CoreBaseFrontend(AbstractFrontend):
         # Allow admins to search by (CdEDB)ID
         if ALL_ADMINS & rs.user.roles:
             anid: Optional[vtypes.ID]
+            personas = {}
             anid, errs = inspect(vtypes.PersonaID, phrase, argname="phrase")
-            if not errs:
-                assert anid is not None
-                tmp = self.coreproxy.get_personas(rs, (anid,))
-                if tmp:
-                    data = (unwrap(tmp),)
+            if anid and not errs:
+                personas = self.coreproxy.get_personas(rs, [anid])
             else:
                 anid, errs = inspect(vtypes.ID, phrase, argname="phrase")
-                if not errs:
-                    assert anid is not None
-                    tmp = self.coreproxy.get_personas(rs, (anid,))
-                    if tmp:
-                        data = (unwrap(tmp),)
+                if anid and not errs:
+                    personas = self.coreproxy.get_personas(rs, [anid])
+            if personas:
+                persona = unwrap(personas)
+                persona["personas.id"] = persona["id"]
+                data = (persona,)
 
         # Don't query, if search phrase is too short
         if not data and len(phrase) < self.conf["NUM_PREVIEW_CHARS"]:

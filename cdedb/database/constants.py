@@ -149,6 +149,7 @@ class FieldDatatypes(CdEIntEnum):
 
     str = 1  #:
     str_multiline = 50  #:
+    str_monospace = 55  #:
     bool = 2  #:
     int = 3  #:
     float = 4  #:
@@ -165,17 +166,21 @@ class FieldDatatypes(CdEIntEnum):
             return 'float'
         if self == FieldDatatypes.non_negative_int:
             return 'int'
-        if self == FieldDatatypes.str_multiline:
+        if self in {FieldDatatypes.str_multiline, FieldDatatypes.str_monospace}:
             return 'str'
         return self.name
 
     @property
     def is_str(self) -> builtins.bool:
-        return self in {FieldDatatypes.str, FieldDatatypes.str_multiline}
+        return self in {
+            FieldDatatypes.str,
+            FieldDatatypes.str_multiline,
+            FieldDatatypes.str_monospace,
+        }
 
     @property
     def text_rows(self) -> builtins.int:
-        if self == FieldDatatypes.str_multiline:
+        if self in {FieldDatatypes.str_multiline, FieldDatatypes.str_monospace}:
             return 5
         return 0
 
@@ -277,6 +282,7 @@ class EventFeeType(CdEIntEnum):
     # Donation
     solidary_donation = 11
     instructor_donation = 6
+    followup_donation = 21
     other_donation = 20
 
     # Reimbursement
@@ -298,6 +304,7 @@ class EventFeeType(CdEIntEnum):
             EventFeeType.solidary_donation: "handshake",
             EventFeeType.solidary_increase: "hands-helping",
             EventFeeType.other_donation: "donate",
+            EventFeeType.followup_donation: "forward-fast",
             EventFeeType.crisis_refund: "fire-extinguisher",
             EventFeeType.other_refund: "person-military-to-person",
         }[self]
@@ -314,6 +321,7 @@ class EventFeeType(CdEIntEnum):
             EventFeeType.solidary_donation: EventFeeCategory.donation,
             EventFeeType.solidary_increase: EventFeeCategory.participation_fee,
             EventFeeType.other_donation: EventFeeCategory.donation,
+            EventFeeType.followup_donation: EventFeeCategory.donation,
             EventFeeType.crisis_refund: EventFeeCategory.reimbursement,
             EventFeeType.other_refund: EventFeeCategory.reimbursement,
         }[self]
@@ -330,6 +338,7 @@ class EventFeeType(CdEIntEnum):
             EventFeeType.solidary_donation: EventFeeBudget.solidarity,
             EventFeeType.solidary_increase: EventFeeBudget.solidarity,
             EventFeeType.other_donation: EventFeeBudget.cde,
+            EventFeeType.followup_donation: EventFeeBudget.followup,
             EventFeeType.crisis_refund: EventFeeBudget.expenses,
             EventFeeType.other_refund: EventFeeBudget.expenses,
         }[self]

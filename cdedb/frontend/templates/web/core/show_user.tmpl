@@ -95,7 +95,7 @@
     {% endif %}
 
     {# Related pages #}
-    {% set show_admin_buttons = is_relative_admin_view or user.admin_views.intersection(["complaint", "event_user", "ml_user"]|set) %}
+    {% set show_admin_buttons = is_relative_admin_view or user.admin_views.intersection(["complaint", "event_user", "ml_user", "assembly_user"]|set) %}
     {% if quoteable or show_admin_buttons %}
         <div class="p button-par">
             {% if quoteable %}
@@ -112,10 +112,15 @@
                                  gettext("Show Event Data"), aclass="btn btn-info btn-sm",
                                  icon="chalkboard-teacher") }}
                 {% endif %}
-                {% if (is_relative_admin_view or "ml_user" in user.admin_views) and not ambience['persona']['is_archived'] %}
+                {% if is_relative_admin_view or "ml_user" in user.admin_views %}
                     {{ util.href(cdedblink("core/show_user_mailinglists", {'persona_id': data['id']}),
                                  gettext("Show Mailinglist Data"), aclass="btn btn-info btn-sm",
                                  icon="envelope") }}
+                {% endif %}
+                {% if is_relative_admin_view or "assembly_user" in user.admin_views %}
+                    {{ util.href(cdedblink("core/show_user_assemblies", {'persona_id': data['id']}),
+                                 gettext("Show Assembly Data"), aclass="btn btn-info btn-sm",
+                                 icon="bullhorn") }}
                 {% endif %}
                 {% if "complaint" in user.admin_views and user.all_roles.intersection(["complaint_admin", "complaint.enforcer"]) %}
                     {{ util.href(cdedblink("core/show_user_measures", {'persona_id': data['id']}),

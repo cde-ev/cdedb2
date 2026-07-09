@@ -87,6 +87,10 @@
             {{ util.tel_link(entry|phone) if entry else otherwise }}
         {% elif field['kind'] == datatypes.iban %}
             {{ entry|iban or otherwise }}
+        {% elif field['kind'] == datatypes.str_monospace %}
+            <pre class="monospace">
+                {{- entry|linebreaks or otherwise -}}
+            </pre>
         {% else %}
             {{ entry|linebreaks or otherwise }}
         {% endif %}
@@ -113,6 +117,7 @@
             datatypes.bool: 'bool',
             datatypes.str: 'text',
             datatypes.str_multiline: 'textarea',
+            datatypes.str_monospace: 'textarea_monospace',
             datatypes.int: 'number',
             datatypes.float: 'number',
             datatypes.date: 'date',
@@ -131,6 +136,9 @@
         {%- elif type == 'textarea' %}
             {{- util.input_textarea(name=name, readonly=readonly, defaultvalue=defaultvalue,
                                     anid=anid, rows=field.kind.text_rows) }}
+        {%- elif type == 'textarea_monospace' %}
+            {{- util.input_textarea(name=name, readonly=readonly, defaultvalue=defaultvalue,
+                                    anid=anid, rows=field.kind.text_rows, aclass='form-control monospace') }}
         {%- else %}
             {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type=type,
                 attributes='placeholder=0.00' if type in (datatypes.float, datatypes.non_negative_float) else '') }}
