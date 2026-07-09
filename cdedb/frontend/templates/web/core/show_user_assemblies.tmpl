@@ -17,10 +17,10 @@
 {% endblock %}
 
 {% block content %}
-    {% if attended_assemblies %}
-        {{ util.h(n_("Attended Assemblies"), level=3, underline=True) }}
-        <div id="attended-assemblies" class="row">
-            {% for list_slice in attended_assemblies|slice(2) %}
+    {% if presided_assemblies %}
+        {{ util.h(n_("Presided Assemblies"), level=3, underline=True) }}
+        <div id="presided-assemblies" class="row">
+            {% for list_slice in presided_assemblies|slice(2) %}
                 <div class="col-md-6">
                     <ul class="{% if not loop.last %}nosp{% endif %}">
                         {% for assembly in list_slice %}
@@ -34,10 +34,10 @@
         </div>
     {% endif %}
 
-    {% if presided_assemblies %}
-        {{ util.h(n_("Presided Assemblies"), level=3, underline=True) }}
-        <div id="presided-assemblies" class="row">
-            {% for list_slice in presided_assemblies|slice(2) %}
+    {% if attended_assemblies %}
+        {{ util.h(n_("Attended Assemblies"), level=3, underline=True) }}
+        <div id="attended-assemblies" class="row">
+            {% for list_slice in attended_assemblies|slice(2) %}
                 <div class="col-md-6">
                     <ul class="{% if not loop.last %}nosp{% endif %}">
                         {% for assembly in list_slice %}
