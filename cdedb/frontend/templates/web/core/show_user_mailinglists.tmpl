@@ -17,6 +17,14 @@
                             'user', gettext("User")) }}
 {% endblock %}
 
+{% block static_notifications %}
+    {% if ambience['persona']['is_archived'] %}
+        {% call util.notification('info', id='archived') %}
+            {% trans %}The user is archived.{% endtrans %}
+        {% endcall %}
+    {% endif %}
+{% endblock %}
+
 {% block content %}
     {{ util.h(n_("Global information"), level=3, underline=True) }}
     <dl class="dl-horizontal">

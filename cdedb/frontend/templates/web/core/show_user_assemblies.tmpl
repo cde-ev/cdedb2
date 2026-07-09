@@ -16,6 +16,14 @@
                             'user', gettext("User")) }}
 {% endblock %}
 
+{% block static_notifications %}
+    {% if ambience['persona']['is_archived'] %}
+        {% call util.notification('info', id='archived') %}
+            {% trans %}The user is archived.{% endtrans %}
+        {% endcall %}
+    {% endif %}
+{% endblock %}
+
 {% block content %}
     {% if presided_assemblies %}
         {{ util.h(n_("Presided Assemblies"), level=3, underline=True) }}
