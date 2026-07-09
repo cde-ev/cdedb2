@@ -7983,14 +7983,22 @@
             "event_id": 1,
             "kind": 2,
             "pos": 0,
-            "role": 1,
+            "role": 2,
             "title": "Unterüberschrift",
+            "text": null
+        },
+        {
+            "event_id": 1,
+            "kind": 2,
+            "pos": 1,
+            "role": 1,
+            "title": null,
             "text": "mit Text darunter"
         },
         {
             "event_id": 1,
             "kind": 2,
-            "pos": 2,
+            "pos": 3,
             "role": 1,
             "title": null,
             "text": "nur etwas Text"
@@ -7998,8 +8006,8 @@
         {
             "event_id": 1,
             "kind": 2,
-            "pos": 3,
-            "role": 1,
+            "pos": 4,
+            "role": 2,
             "title": "Weitere Überschrift",
             "text": null
         },
@@ -8007,7 +8015,7 @@
             "event_id": 1,
             "kind": 1,
             "pos": 0,
-            "role": 1,
+            "role": 2,
             "title": "Meine Daten",
             "text": null
         },
@@ -8015,7 +8023,7 @@
             "event_id": 1,
             "kind": 1,
             "pos": 2,
-            "role": 1,
+            "role": 2,
             "title": "Anmeldung",
             "text": null
         },
@@ -8023,7 +8031,7 @@
             "event_id": 1,
             "kind": 1,
             "pos": 5,
-            "role": 1,
+            "role": 2,
             "title": "Kurswahlen",
             "text": null
         },
@@ -8031,7 +8039,7 @@
             "event_id": 1,
             "kind": 1,
             "pos": 7,
-            "role": 1,
+            "role": 2,
             "title": "Weitere Angaben",
             "text": null
         },
@@ -8039,7 +8047,7 @@
             "event_id": 2,
             "kind": 1,
             "pos": 0,
-            "role": 1,
+            "role": 2,
             "title": "Meine Daten",
             "text": null
         },
@@ -8047,7 +8055,7 @@
             "event_id": 2,
             "kind": 1,
             "pos": 2,
-            "role": 1,
+            "role": 2,
             "title": "Anmeldung",
             "text": null
         },
@@ -8055,7 +8063,7 @@
             "event_id": 2,
             "kind": 1,
             "pos": 6,
-            "role": 1,
+            "role": 2,
             "title": "Weitere Angaben",
             "text": null
         },
@@ -8063,7 +8071,7 @@
             "event_id": 3,
             "kind": 1,
             "pos": 0,
-            "role": 1,
+            "role": 2,
             "title": "Meine Daten",
             "text": null
         },
@@ -8071,7 +8079,7 @@
             "event_id": 3,
             "kind": 1,
             "pos": 2,
-            "role": 1,
+            "role": 2,
             "title": "Anmeldung",
             "text": null
         },
@@ -8079,7 +8087,7 @@
             "event_id": 3,
             "kind": 1,
             "pos": 5,
-            "role": 1,
+            "role": 2,
             "title": "Kurswahlen",
             "text": null
         },
@@ -8087,7 +8095,7 @@
             "event_id": 3,
             "kind": 1,
             "pos": 7,
-            "role": 1,
+            "role": 2,
             "title": "Weitere Angaben",
             "text": null
         },
@@ -8095,7 +8103,7 @@
             "event_id": 4,
             "kind": 1,
             "pos": 0,
-            "role": 1,
+            "role": 2,
             "title": "Meine Daten",
             "text": null
         },
@@ -8103,7 +8111,7 @@
             "event_id": 4,
             "kind": 1,
             "pos": 2,
-            "role": 1,
+            "role": 2,
             "title": "Anmeldung",
             "text": null
         },
@@ -8111,7 +8119,7 @@
             "event_id": 4,
             "kind": 1,
             "pos": 5,
-            "role": 1,
+            "role": 2,
             "title": "Kurswahlen",
             "text": null
         },
@@ -8119,7 +8127,7 @@
             "event_id": 4,
             "kind": 1,
             "pos": 7,
-            "role": 1,
+            "role": 2,
             "title": "Weitere Angaben",
             "text": null
         }
@@ -8128,18 +8136,18 @@
         {
             "event_id": 1,
             "kind": 2,
-            "pos": 1,
+            "pos": 2,
             "role": 5,
             "label": "Bälle",
             "info": "Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.",
             "field_id": 1,
             "readonly": false,
-            "default_value": "True"
+            "default_value": "true"
         },
         {
             "event_id": 1,
             "kind": 2,
-            "pos": 4,
+            "pos": 5,
             "role": 5,
             "label": "Vehikel",
             "info": null,
@@ -8150,7 +8158,7 @@
         {
             "event_id": 1,
             "kind": 2,
-            "pos": 5,
+            "pos": 6,
             "role": 5,
             "label": "Hauswunsch",
             "info": null,
@@ -8167,7 +8175,7 @@
             "info": "Denk daran, deine Eltern mitzubringen!",
             "field_id": 7,
             "readonly": false,
-            "default_value": ""
+            "default_value": null
         }
     ],
     "event.questionnaire_magic_rows": [

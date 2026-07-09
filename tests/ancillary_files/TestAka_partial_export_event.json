@@ -385,9 +385,12 @@
         "questionnaire": {
             "QuestionnaireUsages.additional": [
                 {
-                    "role": 1,
-                    "text": "mit Text darunter",
+                    "role": 2,
                     "title": "Unter\u00fcberschrift"
+                },
+                {
+                    "role": 1,
+                    "text": "mit Text darunter"
                 },
                 {
                     "default_value": true,
@@ -399,12 +402,10 @@
                 },
                 {
                     "role": 1,
-                    "text": "nur etwas Text",
-                    "title": null
+                    "text": "nur etwas Text"
                 },
                 {
-                    "role": 1,
-                    "text": null,
+                    "role": 2,
                     "title": "Weitere \u00dcberschrift"
                 },
                 {
@@ -426,16 +427,14 @@
             ],
             "QuestionnaireUsages.registration": [
                 {
-                    "role": 1,
-                    "text": null,
+                    "role": 2,
                     "title": "Meine Daten"
                 },
                 {
                     "role": 90
                 },
                 {
-                    "role": 1,
-                    "text": null,
+                    "role": 2,
                     "title": "Anmeldung"
                 },
                 {
@@ -445,16 +444,14 @@
                     "role": 30
                 },
                 {
-                    "role": 1,
-                    "text": null,
+                    "role": 2,
                     "title": "Kurswahlen"
                 },
                 {
                     "role": 10
                 },
                 {
-                    "role": 1,
-                    "text": null,
+                    "role": 2,
                     "title": "Weitere Angaben"
                 },
                 {

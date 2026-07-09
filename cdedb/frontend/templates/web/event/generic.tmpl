@@ -216,10 +216,9 @@
                 readonly=row.readonly or is_locked, defaultvalue=row.default_value if not (row.readonly or is_locked) else ""
             ) }}
     {% elif row.name == "QuestionnaireTextRow" %}
-        {% if row.title %}
-            {{ util.h(row.title, level=row.kind.title_level, underline=True, translate=False) }}
-        {% endif %}
         {{ row.text|md }}
+    {% elif row.name == "QuestionnaireHeadingRow" %}
+        {{ util.h(row.title, level=row.kind.title_level, underline=True, translate=False) }}
     {% elif row.name == "FeePreview" %}
         {% call fee_preview_panel() %}
             <p class="text-info fw-bold" id="nonmember-surcharge">
@@ -332,7 +331,8 @@
             {% endtrans %}
         </p>
     {% else %}
-        {{ row.name }}
+        {{ row }}
+        {{ util.raise_for_test("Unhandled QuestionnaireRow Role: " + row.name) }}
     {% endif %}
     </div>
 {% endmacro %}

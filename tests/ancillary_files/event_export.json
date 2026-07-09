@@ -1371,14 +1371,14 @@
     },
     "event.questionnaire_field_rows": {
         "1": {
-            "default_value": "True",
+            "default_value": "true",
             "event_id": 1,
             "field_id": 1,
             "id": 1,
             "info": "Du bringst genug B\u00e4lle mit um einen ganzen Kurs abzuwerfen.",
             "kind": 2,
             "label": "B\u00e4lle",
-            "pos": 1,
+            "pos": 2,
             "readonly": false,
             "role": 5
         },
@@ -1390,7 +1390,7 @@
             "info": null,
             "kind": 2,
             "label": "Vehikel",
-            "pos": 4,
+            "pos": 5,
             "readonly": false,
             "role": 5
         },
@@ -1402,12 +1402,12 @@
             "info": null,
             "kind": 2,
             "label": "Hauswunsch",
-            "pos": 5,
+            "pos": 6,
             "readonly": false,
             "role": 5
         },
         "4": {
-            "default_value": "",
+            "default_value": null,
             "event_id": 1,
             "field_id": 7,
             "id": 4,
@@ -1490,17 +1490,17 @@
             "id": 1,
             "kind": 2,
             "pos": 0,
-            "role": 1,
-            "text": "mit Text darunter",
+            "role": 2,
+            "text": null,
             "title": "Unter\u00fcberschrift"
         },
         "2": {
-            "event_id": 1,
+            "event_id":1,
             "id": 2,
             "kind": 2,
-            "pos": 2,
+            "pos": 1,
             "role": 1,
-            "text": "nur etwas Text",
+            "text": "mit Text darunter",
             "title": null
         },
         "3": {
@@ -1509,42 +1509,51 @@
             "kind": 2,
             "pos": 3,
             "role": 1,
-            "text": null,
-            "title": "Weitere \u00dcberschrift"
+            "text": "nur etwas Text",
+            "title": null
         },
         "4": {
             "event_id": 1,
             "id": 4,
-            "kind": 1,
-            "pos": 0,
-            "role": 1,
+            "kind": 2,
+            "pos": 4,
+            "role": 2,
             "text": null,
-            "title": "Meine Daten"
+            "title": "Weitere \u00dcberschrift"
         },
         "5": {
             "event_id": 1,
             "id": 5,
             "kind": 1,
-            "pos": 2,
-            "role": 1,
+            "pos": 0,
+            "role": 2,
             "text": null,
-            "title": "Anmeldung"
+            "title": "Meine Daten"
         },
         "6": {
             "event_id": 1,
             "id": 6,
             "kind": 1,
-            "pos": 5,
-            "role": 1,
+            "pos": 2,
+            "role": 2,
             "text": null,
-            "title": "Kurswahlen"
+            "title": "Anmeldung"
         },
         "7": {
             "event_id": 1,
             "id": 7,
             "kind": 1,
+            "pos": 5,
+            "role": 2,
+            "text": null,
+            "title": "Kurswahlen"
+        },
+        "8": {
+            "event_id": 1,
+            "id": 8,
+            "kind": 1,
             "pos": 7,
-            "role": 1,
+            "role": 2,
             "text": null,
             "title": "Weitere Angaben"
         }

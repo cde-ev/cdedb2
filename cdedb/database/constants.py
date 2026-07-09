@@ -203,7 +203,8 @@ class QuestionnaireUsages(CdEIntEnum):
 
 @enum.unique
 class QuestionnaireRowRole(CdEIntEnum):
-    text_only = 1
+    text = 1
+    heading = 2
     event_field = 5
     course_choices = 10
     part_selection = 20
