@@ -967,10 +967,6 @@ class CoreBaseFrontend(AbstractFrontend):
             or rs.user.persona_id == persona_id
         ):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
-            # reconnoitre_ambience leads to 404 if user does not exist at all.
-            rs.notify("error", n_("Persona is archived."))
-            return self.redirect_show_user(rs, persona_id)
 
         persona = self.coreproxy.get_ml_user(rs, persona_id)
         subscriptions = self.mlproxy.get_user_subscriptions(rs, persona_id)
@@ -1024,10 +1020,6 @@ class CoreBaseFrontend(AbstractFrontend):
             or rs.user.persona_id == persona_id
         ):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if not self.coreproxy.verify_id(rs, persona_id, is_archived=False):
-            # reconnoitre_ambience leads to 404 if user does not exist at all.
-            rs.notify("error", n_("Persona is archived."))
-            return self.redirect_show_user(rs, persona_id)
 
         assemblies = self.assemblyproxy.list_assemblies(rs)
         attended_assemblies = self.assemblyproxy.list_attended_assemblies(
