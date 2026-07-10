@@ -786,8 +786,18 @@ tr.drow-new>td, tr.drow-new1>td {
 tr.drow-delete>td, tr.drow-delete1>td {
     background-color: #f2dede;
 }
-.panel.shaded-info>.panel-body {
-    background-color: #e8e8e8;
+.panel.shaded-info {
+    & .panel-heading {
+        background-color: #e8e8e8;
+    }
+}
+.panel.shaded-magic {
+    & .panel-heading {
+        background-color: #d9edf7;
+    }
+    & .panel-body {
+        display: none;
+    }
 }
 .panel.drow-new, .panel.drow-new {
     border-color: #d6e9c6;
@@ -1136,36 +1146,56 @@ tr.drow-delete>td, tr.drow-delete1>td {
     vertical-align: top;
 }
 .miniature-heading {
-    margin-top: 12px;
     font-weight: bold;
     font-size: 1.1em;
     border-bottom: solid 1px #ddd;
     margin-bottom: 2px;
+
+    & ~ .miniature-heading {
+        margin-top: 12px;
+    }
+
+    &.small {
+        font-size: .9em;
+        border-bottom: none;
+    }
 }
-.miniature-pre {
+.miniature-md {
+    border: dashed 1px #aaa;
+    border-radius: 3px;
     margin-bottom: 3px;
-    font-size: 0.6em;
-    font-family: monospace;
-    white-space: pre-wrap;
+    font-size: 0.8em;
+    max-height: 8em;
+    overflow: scroll;
+    padding: 1px 6px;
+
+    & pre {
+        font-size: inherit;
+    }
 }
 .miniature-label {
     font-size: 0.8em;
     font-weight: bold;
-    width: 120px;
+    width: 112px;
+    margin-right: 8px;
     float: left;
     padding: 2px 0;
+    text-align: right;
+    overflow: hidden;
 }
 .miniature-checkbox {
     margin-left: 120px;
     font-size: 0.8em;
-    padding: 1px 4px;
+    padding: 1px;
+}
+.miniature-content, .miniature-text, .miniature-textarea {
+    font-size: 0.8em;
+    overflow: hidden;
 }
 .miniature-text, .miniature-textarea {
     border: solid 1px #ddd;
     border-radius: 3px;
-    overflow: hidden;
     background-color: #f2f2f2;
-    font-size: 0.8em;
     padding: 1px 6px;
 }
 .miniature-textarea {
@@ -1451,4 +1481,14 @@ span.fag {
 
 .input-group-inline .form-control, .input-group-inline .input-group-btn {
     width: auto !important;
+}
+
+.monospace {
+    font-family: monospace, monospace;
+    white-space: pre-wrap;
+
+    :is(pre)& {
+        margin-top: 2px;
+        margin-bottom: 2px;
+    }
 }

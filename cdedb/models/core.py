@@ -11,7 +11,7 @@ import logging
 import re
 from enum import auto
 from secrets import token_urlsafe
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -73,11 +73,11 @@ class MetaInfo(CdEDataclass):
 class EmailAddressReport(CdEDataclass):
     address: vtypes.Email
     status: const.EmailStatus
-    notes: Optional[str] = None
+    notes: str | None = None
     # This persona has this address as username.
-    user_id: Optional[vtypes.ID] = None
+    user_id: vtypes.ID | None = None
     # This persona has this address as explicit mail address for at least one ml.
-    subscriber_id: Optional[vtypes.ID] = None
+    subscriber_id: vtypes.ID | None = None
     # The mailinglists where this address is used as explicit address.
     ml_ids: set[vtypes.ID] = dataclasses.field(default_factory=set)
 
@@ -117,13 +117,13 @@ class AnonymousMessageData(CdEDataclass):
     )
 
     encrypted_data: str
-    persona_id: Optional[vtypes.ID] = dataclasses.field(
+    persona_id: vtypes.ID | None = dataclasses.field(
         init=False, default=None, metadata=Meta.exclude.as_dict
     )
-    username: Optional[vtypes.Email] = dataclasses.field(
+    username: vtypes.Email | None = dataclasses.field(
         init=False, default=None, metadata=Meta.exclude.as_dict
     )
-    subject: Optional[str] = dataclasses.field(
+    subject: str | None = dataclasses.field(
         init=False, default=None, metadata=Meta.exclude.as_dict
     )
 
@@ -197,7 +197,7 @@ class AnonymousMessageData(CdEDataclass):
             raise CryptographyError(*e.args) from None
         self.persona_id, self.username, self.subject = self.parse_data(decrypted)
 
-    def rotate(self, key: Optional[str] = None) -> str:
+    def rotate(self, key: str | None = None) -> str:
         if self.persona_id is None:
             if key is None:
                 raise ValueError("Need decryption key to rotate encryption.")
@@ -303,6 +303,8 @@ class PersonaName:
 @dataclasses.dataclass(kw_only=True)
 class Persona(CdEDataclass):
     database_table: ClassVar[str] = "core.personas"
+
+    id: vtypes.PersonaID
 
     # core
     is_active: bool = True

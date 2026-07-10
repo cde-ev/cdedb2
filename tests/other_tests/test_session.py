@@ -3,7 +3,7 @@
 import datetime
 import secrets
 from collections.abc import Sequence
-from typing import NamedTuple, Optional, cast
+from typing import NamedTuple, cast
 
 import cdedb.models.droid as model_droid
 from cdedb.common import RequestState, User, nearly_now, now
@@ -24,17 +24,17 @@ class SessionEntry(NamedTuple):
     is_active: bool
     ip: str
     sessionkey: str
-    ctime: Optional[datetime.datetime]
-    atime: Optional[datetime.datetime]
+    ctime: datetime.datetime | None
+    atime: datetime.datetime | None
 
 
 def make_session_entry(
     persona_id: int,
     is_active: bool = True,
     ip: str = "127.0.0.1",
-    sessionkey: Optional[str] = None,
-    ctime: Optional[datetime.datetime] = None,
-    atime: Optional[datetime.datetime] = None,
+    sessionkey: str | None = None,
+    ctime: datetime.datetime | None = None,
+    atime: datetime.datetime | None = None,
 ) -> SessionEntry:
     if sessionkey is None:
         sessionkey = secrets.token_hex()
@@ -311,7 +311,7 @@ class TestMultiSessionFrontend(MultiAppFrontendTest):
         self,
         user: UserIdentifier,
         session_cookie: str,
-    ) -> list[Optional[str]]:
+    ) -> list[str | None]:
         user = get_user(user)
         self.assertGreaterEqual(
             self.n, 3, "This test will only work correctly with 3 or more apps."

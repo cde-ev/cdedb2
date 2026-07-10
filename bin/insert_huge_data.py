@@ -7,6 +7,7 @@ import datetime
 import decimal
 import pathlib
 import pprint
+from typing import Any
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -302,20 +303,37 @@ def event(context: Context) -> int:
     fields = event.get_event(rs, ret).fields
     additional_questionnaire = [
         {
-            'field_id': None,
-            'default_value': None,
-            'info': make_counter(context, 'FragebogenText'),
-            'readonly': False,
+            'role': const.QuestionnaireRowRole.text_only,
             'title': make_counter(context, 'FragebogenÜberschrift'),
+            'text': make_counter(context, 'FragebogenText'),
         }
     ]
-    registration_questionnaire = [
+    registration_questionnaire: list[dict[str, Any]] = [
         {
-            'field_id': None,
-            'default_value': None,
-            'info': make_counter(context, 'FragebogenText'),
-            'readonly': False,
+            'role': const.QuestionnaireRowRole.part_selection,
+        },
+        {
+            'role': const.QuestionnaireRowRole.fee_preview,
+        },
+        {
+            'role': const.QuestionnaireRowRole.course_choices,
+        },
+        {
+            'role': const.QuestionnaireRowRole.list_consent,
+        },
+        {
+            'role': const.QuestionnaireRowRole.mixed_lodging,
+        },
+        {
+            'role': const.QuestionnaireRowRole.foto_notice,
+        },
+        {
+            'role': const.QuestionnaireRowRole.registration_notes,
+        },
+        {
+            'role': const.QuestionnaireRowRole.text_only,
             'title': make_counter(context, 'FragebogenÜberschrift'),
+            'text': make_counter(context, 'FragebogenText'),
         }
     ]
     event.set_questionnaire(rs, ret, const.QuestionnaireUsages.additional, additional_questionnaire)

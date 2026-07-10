@@ -656,7 +656,7 @@ class EventDownloadMixin(EventBaseFrontend):
         if not data:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/show_event")
-        json = json_serialize(data)
+        json = json_serialize(data, sort_keys=True)
         return self.send_file(
             rs,
             mimetype="application/json",

@@ -170,18 +170,19 @@
     {% endif %}
     {%- if title %}<span class="sr-only">{{ title }}</span>{% endif %}{%- endmacro %}
 
-{# Special tri-state macro to represent subscription states
+{# macro to visually represent subscription states
 
-   In contrast to the deko_checkbox, this represents the pending state of someone who has requested subscription by
-   an empty circle. Otherwise, this macro is functionally equivalent.
+    Pending subscriptions are shown with a "pause",
+    "unsubscribed", "blocked" and <no subscription relation> are shown with an "x".
+
 #}
 {% macro state_checkbox(state) %}
     {% if state in enums["SubscriptionState"].subscribing_states() %}
-        <span class="fas fa-check-circle" title="{{ gettext("subscribed") }}" aria-hidden="true"></span>
+        <span class="fas fa-check-circle ml-state-subscribed" title="{{ gettext("subscribed") }}" aria-hidden="true"></span>
     {% elif state == enums["SubscriptionState"].pending %}
-        <span class="far fa-circle" title="{{ gettext("pending") }}" aria-hidden="true"></span>
+        <span class="far fa-circle-pause ml-state-pending" title="{{ gettext("pending") }}" aria-hidden="true"></span>
     {% else %}
-        <span class="far fa-times-circle" title="{{ gettext("not subscribed") }}" aria-hidden="true"></span>
+        <span class="far fa-times-circle ml-state-unsubscribed" title="{{ gettext("not subscribed") }}" aria-hidden="true"></span>
     {% endif %}
 {% endmacro %}
 
@@ -391,7 +392,7 @@
    used for purely cosmetical changes, admin views in particular. Furthermore, it is not supported for all input types,
    hence we fake it in some cases by introducing an additional hidden field while renaming the previous one.
    To make a use of the readonly attribute a concious decision, we obsure it by the name actualreadonly. #}
-{% macro input_hidden(name, value=none, defaultvalue='', anid=none, aclass=none, form=none) %}
+{% macro input_hidden(name, value=none, defaultvalue='', anid=none, aclass=none, form=none, attributes="") %}
     <input{{ dict(
         type="hidden",
         name=name,
@@ -399,7 +400,7 @@
         id=anid,
         class=aclass,
         form=form
-    )|xmlattr }}/>
+    )|xmlattr }} {{ attributes }}/>
 {% endmacro %}
 
 {% macro required_marker() -%}
@@ -447,7 +448,7 @@
 {%- endmacro %}
 
 {% macro input_text(name, readonly=False, actualreadonly=False, defaultvalue='', anid=none, aclass='form-control',
-        maxlength=256000, type='text', placeholder=none, arialabel=none, attributes='', enforce_required=True) %}
+        maxlength=256000, type='text', placeholder=none, arialabel=none, attributes='', enforce_required=True, autocomplete=none) %}
     <input{{ dict(
         type=type if type != 'iban' else 'text',
         name=name,
@@ -458,13 +459,14 @@
         disabled="disabled" if readonly,
         readonly="readonly" if actualreadonly,
         required="required" if name in mandatory_fields and enforce_required,
+        autocomplete=autocomplete,
         **{ 'aria-label': arialabel }
     )|xmlattr }}
         {%- if type == 'number' %}
             placeholder="0"
         {%- elif type == 'tel' %}
             placeholder="+49 1234 5678910"
-            pattern="\+?[0-9 \(\)]+"
+            pattern="\+?[0-9 \(\)-]+"
             title="{{ gettext("Phone number in the format +49 1234 5678910") }}"
         {%- elif type == 'date' %}
             placeholder="YYYY-MM-DD"
@@ -495,14 +497,14 @@
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, actualreadonly=False,
         defaultvalue='', anid=none, maxlength=256000, type='text', placeholder=none, small=False, horizontal=True,
         aclass="", attributes='', addon='', markdown=False, errorname=none, wide=False, outerclass='',
-        enforce_required=True) %}
+        enforce_required=True, autocomplete=none) %}
     {%- set anid = anid or "input-text-{}".format(name) %}
     {%- set caller_ = caller %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, addon=addon,
                                 markdown=markdown, errorname=errorname, wide=wide, aclass=outerclass) %}
         {{- input_text(name, readonly, actualreadonly, defaultvalue, anid, maxlength=maxlength, type=type,
                 placeholder=placeholder, aclass="form-control " + aclass, attributes=attributes,
-                enforce_required=enforce_required) }}
+                enforce_required=enforce_required, autocomplete=autocomplete) }}
         {%- if caller_ %}
             {{- caller_() }}
         {%- endif -%}
@@ -819,7 +821,7 @@
     {%- if caller %}{% set value=caller() %}{% endif %}
     {%- call form_input_general(name, label, none, small, info, displayerrors, horizontal, aclass=outerclass, errorname=errorname) %}
         <div {% if name %}name="{{ name }}" {% endif %}class="form-control-static {{ aclass }}"{% if anid %} id="{{ anid }}"{% endif %}>
-            {{ make_icon(icon) if icon }}
+            {{ make_icon(icon) if icon }}{{ nbsp if icon }}
             {{- value -}}
         </div>
     {%- endcall %}

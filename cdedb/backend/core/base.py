@@ -17,7 +17,7 @@ import datetime
 import decimal
 from collections.abc import Collection
 from secrets import token_hex
-from typing import Any, Literal, Optional, Protocol, overload
+from typing import Any, Literal, Protocol, overload
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -228,8 +228,8 @@ class CoreBaseBackend(AbstractBackend):
         self,
         rs: RequestState,
         code: const.CoreLogCodes,
-        persona_id: Optional[int] = None,
-        change_note: Optional[str] = None,
+        persona_id: int | None = None,
+        change_note: str | None = None,
         atomized: bool = True,
         suppress_persona_id: bool = False,
     ) -> DefaultReturnCode:
@@ -291,11 +291,11 @@ class CoreBaseBackend(AbstractBackend):
         self,
         rs: RequestState,
         code: const.FinanceLogCodes,
-        persona_id: Optional[int],
-        delta: Optional[decimal.Decimal],
-        new_balance: Optional[decimal.Decimal],
-        change_note: Optional[str] = None,
-        transaction_date: Optional[datetime.date] = None,
+        persona_id: int | None,
+        delta: decimal.Decimal | None,
+        new_balance: decimal.Decimal | None,
+        change_note: str | None = None,
+        transaction_date: datetime.date | None = None,
     ) -> DefaultReturnCode:
         """Make an entry in the finance log.
 
@@ -355,7 +355,7 @@ class CoreBaseBackend(AbstractBackend):
         rs: RequestState,
         log_table: str,
         log_id: int,
-        change_note: Optional[str] = None,
+        change_note: str | None = None,
     ) -> DefaultReturnCode:
         """Redacts log messages.
 
@@ -420,7 +420,7 @@ class CoreBaseBackend(AbstractBackend):
     @access("persona")
     def get_changelog_inconsistencies(
         self, rs: RequestState, persona_id: int
-    ) -> Optional[list[str]]:
+    ) -> list[str] | None:
         """Get inconsistencies between latest committed changelog entry and
         core.personas.
 
@@ -447,7 +447,7 @@ class CoreBaseBackend(AbstractBackend):
         self,
         rs: RequestState,
         data: CdEDBObject,
-        generation: Optional[int],
+        generation: int | None,
         may_wait: bool,
         change_note: str,
         force_review: bool = False,
@@ -836,7 +836,7 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("persona")
     def changelog_get_history(
-        self, rs: RequestState, persona_id: int, generations: Optional[Collection[int]]
+        self, rs: RequestState, persona_id: int, generations: Collection[int] | None
     ) -> CdEDBObjectMap:
         """Retrieve history of a data set.
 
@@ -943,8 +943,8 @@ class CoreBaseBackend(AbstractBackend):
     def list_all_moderators(
         self,
         rs: RequestState,
-        ml_types: Optional[Collection[const.MailinglistTypes]] = None,
-        active: Optional[bool] = None,
+        ml_types: Collection[const.MailinglistTypes] | None = None,
+        active: bool | None = None,
     ) -> set[int]:
         """List all moderators of any mailinglists.
 
@@ -973,13 +973,13 @@ class CoreBaseBackend(AbstractBackend):
     def next_persona(
         self,
         rs: RequestState,
-        persona_id: Optional[int],
+        persona_id: int | None,
         *,
-        is_member: Optional[bool],
-        is_archived: Optional[bool],
-        is_cde_realm: Optional[bool] = None,
-        paper_expuls: Optional[bool] = None,
-    ) -> Optional[int]:
+        is_member: bool | None,
+        is_archived: bool | None,
+        is_cde_realm: bool | None = None,
+        paper_expuls: bool | None = None,
+    ) -> int | None:
         """Look up the following persona.
 
         :param is_member: If not None, only consider personas with a matching flag.
@@ -1040,8 +1040,8 @@ class CoreBaseBackend(AbstractBackend):
         self,
         rs: RequestState,
         data: CdEDBObject,
-        generation: Optional[int] = None,
-        change_note: Optional[str] = None,
+        generation: int | None = None,
+        change_note: str | None = None,
         may_wait: bool = True,
         allow_specials: tuple[str, ...] = tuple(),
         force_review: bool = False,
@@ -1167,9 +1167,9 @@ class CoreBaseBackend(AbstractBackend):
         self,
         rs: RequestState,
         data: CdEDBObject,
-        generation: Optional[int] = None,
+        generation: int | None = None,
         may_wait: bool = True,
-        change_note: Optional[str] = None,
+        change_note: str | None = None,
         force_review: bool = False,
     ) -> DefaultReturnCode:
         """Change a data set. Note that you need privileges to edit someone
@@ -1251,7 +1251,7 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("cde")
     def change_foto(
-        self, rs: RequestState, persona_id: int, new_hash: Optional[vtypes.Identifier]
+        self, rs: RequestState, persona_id: int, new_hash: vtypes.Identifier | None
     ) -> DefaultReturnCode:
         """Special modification function for foto changes.
 
@@ -1433,8 +1433,8 @@ class CoreBaseBackend(AbstractBackend):
     def list_privilege_changes(
         self,
         rs: RequestState,
-        persona_id: Optional[int] = None,
-        stati: Optional[Collection[const.PrivilegeChangeStati]] = None,
+        persona_id: int | None = None,
+        stati: Collection[const.PrivilegeChangeStati] | None = None,
     ) -> CdEDBObjectMap:
         """List privilge changes.
 
@@ -1521,8 +1521,8 @@ class CoreBaseBackend(AbstractBackend):
         persona_id: int,
         balance: str | decimal.Decimal,
         log_code: const.FinanceLogCodes,
-        change_note: Optional[str] = None,
-        transaction_date: Optional[datetime.date] = None,
+        change_note: str | None = None,
+        transaction_date: datetime.date | None = None,
     ) -> DefaultReturnCode:
         """Special modification function for monetary aspects."""
         persona_id = affirm(vtypes.ID, persona_id)
@@ -1567,9 +1567,9 @@ class CoreBaseBackend(AbstractBackend):
         rs: RequestState,
         persona_id: int,
         *,
-        is_member: Optional[bool] = None,
-        trial_member: Optional[bool] = None,
-        honorary_member: Optional[bool] = None,
+        is_member: bool | None = None,
+        trial_member: bool | None = None,
+        honorary_member: bool | None = None,
     ) -> DefaultReturnCode:
         """Special modification function for membership.
 
@@ -1707,7 +1707,7 @@ class CoreBaseBackend(AbstractBackend):
     @access("core_admin")
     def get_persona_latest_session(
         self, rs: RequestState, persona_id: int
-    ) -> Optional[datetime.datetime]:
+    ) -> datetime.datetime | None:
         """Retrieve the time of a users latest session.
 
         Returns None if there are no active sessions on record.
@@ -1724,7 +1724,7 @@ class CoreBaseBackend(AbstractBackend):
         self,
         rs: RequestState,
         persona_id: int,
-        reference_date: Optional[datetime.date] = None,
+        reference_date: datetime.date | None = None,
     ) -> bool:
         """Determine whether a persona is eligble to be automatically archived.
 
@@ -2398,7 +2398,7 @@ class CoreBaseBackend(AbstractBackend):
         rs: RequestState,
         persona_id: int,
         new_username: str,
-        password: Optional[str],
+        password: str | None,
     ) -> tuple[bool, str]:
         """Since usernames are used for login, this needs a bit of care.
 
@@ -2451,9 +2451,7 @@ class CoreBaseBackend(AbstractBackend):
 
     class _GetPersonaProtocol(Protocol):
         # TODO: `persona_id` is actually not optional, but it produces a lot of errors.
-        def __call__(
-            self, rs: RequestState, persona_id: Optional[int]
-        ) -> CdEDBObject: ...
+        def __call__(self, rs: RequestState, persona_id: int | None) -> CdEDBObject: ...
 
     @access("persona")
     def get_personas(
@@ -2469,7 +2467,7 @@ class CoreBaseBackend(AbstractBackend):
     class _GetCoreUsersProtocol(Protocol):
         # TODO: `persona_id` is actually not optional, but it produces a lot of errors.
         def __call__(
-            self, rs: RequestState, persona_id: Optional[int]
+            self, rs: RequestState, persona_id: int | None
         ) -> models.CorePersona: ...
 
     get_persona: _GetCoreUsersProtocol = singularize(
@@ -2490,7 +2488,7 @@ class CoreBaseBackend(AbstractBackend):
     class _GetPersonaStatusProtocol(Protocol):
         # TODO: `persona_id` is actually not optional, but it produces a lot of errors.
         def __call__(
-            self, rs: RequestState, persona_id: Optional[int]
+            self, rs: RequestState, persona_id: int | None
         ) -> models.PersonaStatus: ...
 
     get_persona_status: _GetPersonaStatusProtocol = singularize(
@@ -2502,7 +2500,7 @@ class CoreBaseBackend(AbstractBackend):
         self,
         rs: RequestState,
         persona_ids: Collection[int],
-        event_id: Optional[int] = None,
+        event_id: int | None = None,
     ) -> CdEDataclassMap[models.EventPersona]:
         """Get an event view on some data sets.
 
@@ -2558,8 +2556,8 @@ class CoreBaseBackend(AbstractBackend):
         def __call__(
             self,
             rs: RequestState,
-            persona_id: Optional[int],
-            event_id: Optional[int] = None,
+            persona_id: int | None,
+            event_id: int | None = None,
         ) -> models.EventPersona: ...
 
     get_event_user: _GetEventUserProtocol = singularize(
@@ -2585,7 +2583,7 @@ class CoreBaseBackend(AbstractBackend):
         def __call__(
             self,
             rs: RequestState,
-            persona_id: Optional[int],
+            persona_id: int | None,
         ) -> models.PastEventPersona: ...
 
     get_past_event_user: _GetPastEventUserProtocol = singularize(
@@ -2607,8 +2605,8 @@ class CoreBaseBackend(AbstractBackend):
         self,
         rs: RequestState,
         *,
-        ids: Optional[Collection[int]] = None,
-        num: Optional[int] = None,
+        ids: Collection[int] | None = None,
+        num: int | None = None,
     ) -> int:
         """Log quota restricted accesses. Return new total.
 
@@ -2634,7 +2632,7 @@ class CoreBaseBackend(AbstractBackend):
         """
         if ids is not None and num is not None:
             raise ValueError(n_("May not provide more than one input."))
-        access_hash: Optional[str] = None
+        access_hash: str | None = None
         if ids is not None:
             ids = affirm(set[vtypes.ID], ids or set())
             ids -= {rs.user.persona_id}
@@ -2694,8 +2692,8 @@ class CoreBaseBackend(AbstractBackend):
         self,
         rs: RequestState,
         *,
-        ids: Optional[Collection[int]] = None,
-        num: Optional[int] = None,
+        ids: Collection[int] | None = None,
+        num: int | None = None,
     ) -> bool:
         """Check whether the quota was exceeded today.
 
@@ -2736,7 +2734,7 @@ class CoreBaseBackend(AbstractBackend):
     class _GetCdEUserProtocol(Protocol):
         # TODO: `persona_id` is actually not optional, but it produces a lot of errors.
         def __call__(
-            self, rs: RequestState, persona_id: Optional[int]
+            self, rs: RequestState, persona_id: int | None
         ) -> models.CdEPersona: ...
 
     get_cde_user: _GetCdEUserProtocol = singularize(
@@ -2757,7 +2755,7 @@ class CoreBaseBackend(AbstractBackend):
     class _GetMlUserProtocol(Protocol):
         # TODO: `persona_id` is actually not optional, but it produces a lot of errors.
         def __call__(
-            self, rs: RequestState, persona_id: Optional[int]
+            self, rs: RequestState, persona_id: int | None
         ) -> models.MlPersona: ...
 
     get_ml_user: _GetMlUserProtocol = singularize(
@@ -2778,7 +2776,7 @@ class CoreBaseBackend(AbstractBackend):
     class _GetAssemblyUserProtocol(Protocol):
         # TODO: `persona_id` is actually not optional, but it produces a lot of errors.
         def __call__(
-            self, rs: RequestState, persona_id: Optional[int]
+            self, rs: RequestState, persona_id: int | None
         ) -> models.AssemblyPersona: ...
 
     get_assembly_user: _GetAssemblyUserProtocol = singularize(
@@ -2811,7 +2809,7 @@ class CoreBaseBackend(AbstractBackend):
 
     @access(*REALM_ADMINS)
     def create_persona(
-        self, rs: RequestState, data: CdEDBObject, submitted_by: Optional[int] = None
+        self, rs: RequestState, data: CdEDBObject, submitted_by: int | None = None
     ) -> DefaultReturnCode:
         """Instantiate a new data set.
 
@@ -2873,8 +2871,8 @@ class CoreBaseBackend(AbstractBackend):
 
     @access("anonymous")
     def login(
-        self, rs: RequestState, username: str, password: str, ip: Optional[str]
-    ) -> Optional[str]:
+        self, rs: RequestState, username: str, password: str, ip: str | None
+    ) -> str | None:
         """Create a new session.
 
         This invalidates all existing sessions for this persona. Sessions
@@ -3058,7 +3056,7 @@ class CoreBaseBackend(AbstractBackend):
         self,
         rs: RequestState,
         persona_ids: Collection[int],
-        is_archived: Optional[bool] = None,
+        is_archived: bool | None = None,
     ) -> bool:
         """Check that persona ids do exist.
 
@@ -3082,7 +3080,7 @@ class CoreBaseBackend(AbstractBackend):
 
     class _VerifyIDProtocol(Protocol):
         def __call__(
-            self, rs: RequestState, anid: int, is_archived: Optional[bool] = None
+            self, rs: RequestState, anid: int, is_archived: bool | None = None
         ) -> bool: ...
 
     verify_id: _VerifyIDProtocol = singularize(
@@ -3096,7 +3094,7 @@ class CoreBaseBackend(AbstractBackend):
         rs: RequestState,
         persona_ids: Collection[int],
         introspection_only: bool = False,
-    ) -> dict[Optional[int], set[Role]]:
+    ) -> dict[int | None, set[Role]]:
         """Resolve ids into roles.
 
         Returns an empty role set for inactive users."""
@@ -3110,7 +3108,7 @@ class CoreBaseBackend(AbstractBackend):
         def __call__(
             self,
             rs: RequestState,
-            persona_id: Optional[int],
+            persona_id: int | None,
             introspection_only: bool = False,
         ) -> set[Role]: ...
 
@@ -3121,8 +3119,8 @@ class CoreBaseBackend(AbstractBackend):
         self,
         rs: RequestState,
         persona_ids: Collection[int],
-        required_roles: Optional[Collection[Role]] = None,
-        allowed_roles: Optional[Collection[Role]] = None,
+        required_roles: Collection[Role] | None = None,
+        allowed_roles: Collection[Role] | None = None,
         introspection_only: bool = True,
     ) -> bool:
         """Check whether certain ids map to actual (active) personas.
@@ -3152,8 +3150,8 @@ class CoreBaseBackend(AbstractBackend):
             self,
             rs: RequestState,
             anid: int,
-            required_roles: Optional[Collection[Role]] = None,
-            allowed_roles: Optional[Collection[Role]] = None,
+            required_roles: Collection[Role] | None = None,
+            allowed_roles: Collection[Role] | None = None,
             introspection_only: bool = True,
         ) -> bool: ...
 
@@ -3268,9 +3266,9 @@ class CoreBaseBackend(AbstractBackend):
         self,
         rs: RequestState,
         new_password: str,
-        old_password: Optional[str] = None,
-        reset_cookie: Optional[str] = None,
-        persona_id: Optional[int] = None,
+        old_password: str | None = None,
+        reset_cookie: str | None = None,
+        persona_id: int | None = None,
     ) -> DefaultReturnCode:
         """Helper for manipulating password entries.
 
@@ -3557,7 +3555,7 @@ class CoreBaseBackend(AbstractBackend):
     @access("persona")
     def log_anonymous_message(
         self, rs: RequestState, message: models.AnonymousMessageData
-    ) -> Optional[str]:
+    ) -> str | None:
         """Save encrypted metadata regarding an anonymous message sent via contact form.
 
         This is so that one may reply to the anonymous message without needing to know
@@ -3607,7 +3605,7 @@ class CoreBaseBackend(AbstractBackend):
     @access("persona")
     def rotate_anonymous_message(
         self, rs: RequestState, message: models.AnonymousMessageData
-    ) -> Optional[str]:
+    ) -> str | None:
         """Update the encryption key, and the message id of a stored anonymous message.
 
         This is to be done should the message id (including the key) leak.
@@ -3736,7 +3734,7 @@ class CoreBaseBackend(AbstractBackend):
     def list_email_states(
         self,
         rs: RequestState,
-        states: Optional[Collection[const.EmailStatus]] = None,
+        states: Collection[const.EmailStatus] | None = None,
     ) -> dict[str, const.EmailStatus]:
         """List all explicit email states known to the CdEDB.
 
@@ -3763,7 +3761,7 @@ class CoreBaseBackend(AbstractBackend):
     def get_defect_address_reports(
         self,
         rs: RequestState,
-        persona_ids: Optional[Collection[int]] = None,
+        persona_ids: Collection[int] | None = None,
     ) -> dict[str, EmailAddressReport]:
         # Input validation and permission checks are delegated
         return self.get_email_reports(
@@ -3774,8 +3772,8 @@ class CoreBaseBackend(AbstractBackend):
     def get_email_reports(
         self,
         rs: RequestState,
-        persona_ids: Optional[Collection[int]] = None,
-        stati: Optional[Collection[const.EmailStatus]] = None,
+        persona_ids: Collection[int] | None = None,
+        stati: Collection[const.EmailStatus] | None = None,
     ) -> dict[str, EmailAddressReport]:
         """Get defect mail addresses and map them to users and mls, if possible.
 
@@ -3845,7 +3843,7 @@ class CoreBaseBackend(AbstractBackend):
         rs: RequestState,
         address: str,
         status: const.EmailStatus,
-        notes: Optional[str] = None,
+        notes: str | None = None,
     ) -> DefaultReturnCode:
         address = affirm(vtypes.Email, address)
         status = affirm(const.EmailStatus, status)

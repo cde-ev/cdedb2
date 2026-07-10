@@ -9,7 +9,6 @@ import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from re import Pattern
-from typing import Optional
 
 import graphviz
 
@@ -57,8 +56,8 @@ def detect_lodgement_wishes(
     registrations: CdEDBObjectMap,
     personas: CdEDataclassMap[EventPersona],
     event: models.Event,
-    restrict_part_id: Optional[int],
-    restrict_registration_id: Optional[int] = None,
+    restrict_part_id: int | None,
+    restrict_registration_id: int | None = None,
     check_edges: bool = True,
 ) -> tuple[list[LodgementWish], list[Notification]]:
     """Detect lodgement wish graph edges from all registrations' raw rooming
@@ -301,10 +300,10 @@ def create_lodgement_wishes_graph(
     lodgement_groups: models.CdEDataclassMap[models.LodgementGroup],
     event: models.Event,
     personas: CdEDataclassMap[EventPersona],
-    camping_mat_field_names: Mapping[int, Optional[str]],
-    filter_part_id: Optional[int],
+    camping_mat_field_names: Mapping[int, str | None],
+    filter_part_id: int | None,
     show_all: bool,
-    cluster_part_id: Optional[int],
+    cluster_part_id: int | None,
     cluster_by_lodgement: bool,
     cluster_by_lodgement_group: bool,
     show_full_assigned_edges: bool,
@@ -536,7 +535,7 @@ def _make_node_label(
     registration: CdEDBObject,
     personas: CdEDataclassMap[EventPersona],
     event: models.Event,
-    camping_mat_field_names: Mapping[int, Optional[str]],
+    camping_mat_field_names: Mapping[int, str | None],
 ) -> str:
     presence_parts = _parts_with_status(registration, PRESENT_STATI)
     icons = {
@@ -646,8 +645,10 @@ def _make_node_color(
         return "#87ffcf"
     elif age <= 28.0:
         return "#87f6ff"
-    else:
+    elif age <= 32.0:
         return "#87d0ff"
+    else:
+        return "#ddb6ff"
 
 
 def _get_age(persona: EventPersona, event: models.Event) -> float:

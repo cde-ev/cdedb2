@@ -4,7 +4,7 @@
 for managings lodgements, lodgement groups and lodgements' inhabitants."""
 
 from collections.abc import Collection
-from typing import Any, Optional
+from typing import Any
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -57,8 +57,8 @@ class EventLodgementMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: int,
-        sort_part_id: Optional[vtypes.ID] = None,
-        sortkey: Optional[LodgementsSortkeys] = None,
+        sort_part_id: vtypes.ID | None = None,
+        sortkey: LodgementsSortkeys | None = None,
         reverse: bool = False,
     ) -> Response:
         """Overview of the lodgements of an event.
@@ -324,7 +324,7 @@ class EventLodgementMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         all_participants: bool,
-        part_id: Optional[int],
+        part_id: int | None,
         show_lodgements: bool,
         show_lodgement_groups: bool,
         show_full_assigned_edges: bool,
@@ -401,7 +401,7 @@ class EventLodgementMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.lodgements_write)
     @REQUESTdata("group_id")
     def create_lodgement_form(
-        self, rs: RequestState, event_id: int, group_id: Optional[int] = None
+        self, rs: RequestState, event_id: int, group_id: int | None = None
     ) -> Response:
         """Render form."""
         rs.ignore_validation_errors()
@@ -426,7 +426,7 @@ class EventLodgementMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         data: CdEDBObject,
-        new_group_title: Optional[str],
+        new_group_title: str | None,
     ) -> Response:
         """Add a new lodgement."""
         data['fields'] = event_associated_fields_extractor(
@@ -682,7 +682,7 @@ class EventLodgementMixin(EventBaseFrontend):
         # Parse request data
         params: vtypes.TypeMapping = {
             **{
-                f"new_{part_id}": Collection[Optional[vtypes.ID]]
+                f"new_{part_id}": Collection[vtypes.ID | None]
                 for part_id in rs.ambience['event'].parts
             },
             **{
@@ -742,7 +742,7 @@ class EventLodgementMixin(EventBaseFrontend):
     ) -> Response:
         """Swap inhabitants of two lodgements of the same part."""
         params: vtypes.TypeMapping = {
-            f"swap_with_{part_id}": Optional[vtypes.ID]
+            f"swap_with_{part_id}": vtypes.ID | None
             for part_id in rs.ambience['event'].parts
         }
         data = request_extractor(rs, params)
@@ -816,7 +816,7 @@ class EventLodgementMixin(EventBaseFrontend):
         event_id: int,
         group_id: int,
         lodgement_ids: Collection[int],
-        target_group_id: Optional[int],
+        target_group_id: int | None,
         delete_group: bool,
     ) -> Response:
         """Move lodgements from one group to another or delete them with the group."""

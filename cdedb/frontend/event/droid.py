@@ -5,8 +5,6 @@ The `EventDroidMixin` subclasses the `EventBaseFrontend` and provides all the fr
 endpoints related to managing orga apitokens.
 """
 
-from typing import Optional
-
 from werkzeug import Response
 
 from cdedb.common import CdEDBObject, RequestState, merge_dicts, n_
@@ -24,7 +22,7 @@ class EventDroidMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.basic_read)
     def orga_token_summary(
-        self, rs: RequestState, event_id: int, new_token: Optional[str] = None
+        self, rs: RequestState, event_id: int, new_token: str | None = None
     ) -> Response:
         """
         Show an overview of existing orga tokens.

@@ -11,7 +11,7 @@ import builtins
 import collections
 import enum
 from functools import cached_property
-from typing import Optional
+from typing import TYPE_CHECKING
 
 from cdedb.uncommon.intenum import CdEIntEnum
 
@@ -20,6 +20,9 @@ from cdedb.uncommon.submanshim import (  # noqa: F401
     SubscriptionAction,
     SubscriptionState,
 )
+
+if TYPE_CHECKING:
+    from cdedb.models.event.questionnaire import QuestionnaireRow
 
 
 def n_(x: str) -> str:  # pragma: no cover
@@ -146,6 +149,7 @@ class FieldDatatypes(CdEIntEnum):
 
     str = 1  #:
     str_multiline = 50  #:
+    str_monospace = 55  #:
     bool = 2  #:
     int = 3  #:
     float = 4  #:
@@ -162,17 +166,21 @@ class FieldDatatypes(CdEIntEnum):
             return 'float'
         if self == FieldDatatypes.non_negative_int:
             return 'int'
-        if self == FieldDatatypes.str_multiline:
+        if self in {FieldDatatypes.str_multiline, FieldDatatypes.str_monospace}:
             return 'str'
         return self.name
 
     @property
     def is_str(self) -> builtins.bool:
-        return self in {FieldDatatypes.str, FieldDatatypes.str_multiline}
+        return self in {
+            FieldDatatypes.str,
+            FieldDatatypes.str_multiline,
+            FieldDatatypes.str_monospace,
+        }
 
     @property
     def text_rows(self) -> builtins.int:
-        if self == FieldDatatypes.str_multiline:
+        if self in {FieldDatatypes.str_multiline, FieldDatatypes.str_monospace}:
             return 5
         return 0
 
@@ -191,6 +199,32 @@ class QuestionnaireUsages(CdEIntEnum):
     def allow_fee_condition(self) -> bool:
         """Whether or not rows with this usage may use fee condition fields."""
         return self == QuestionnaireUsages.registration
+
+    @property
+    def title_level(self) -> int:
+        """Heading-level for custom titles in this kind of questionnaire."""
+        return 3
+
+
+@enum.unique
+class QuestionnaireRowRole(CdEIntEnum):
+    text_only = 1
+    event_field = 5
+    course_choices = 10
+    part_selection = 20
+    fee_preview = 30
+    list_consent = 40
+    mixed_lodging = 50
+    foto_notice = 60
+    registration_notes = 70
+    table_of_contents = 80
+
+    def get_class(self) -> type["QuestionnaireRow"]:
+        from cdedb.models.event.questionnaire import (  # noqa: PLC0415
+            QuestionnaireRow,
+        )
+
+        return QuestionnaireRow.get_class(self)
 
 
 @enum.unique
@@ -246,6 +280,7 @@ class EventFeeType(CdEIntEnum):
     # Donation
     solidary_donation = 11
     instructor_donation = 6
+    followup_donation = 21
     other_donation = 20
 
     # Reimbursement
@@ -267,6 +302,7 @@ class EventFeeType(CdEIntEnum):
             EventFeeType.solidary_donation: "handshake",
             EventFeeType.solidary_increase: "hands-helping",
             EventFeeType.other_donation: "donate",
+            EventFeeType.followup_donation: "forward-fast",
             EventFeeType.crisis_refund: "fire-extinguisher",
             EventFeeType.other_refund: "person-military-to-person",
         }[self]
@@ -283,6 +319,7 @@ class EventFeeType(CdEIntEnum):
             EventFeeType.solidary_donation: EventFeeCategory.donation,
             EventFeeType.solidary_increase: EventFeeCategory.participation_fee,
             EventFeeType.other_donation: EventFeeCategory.donation,
+            EventFeeType.followup_donation: EventFeeCategory.donation,
             EventFeeType.crisis_refund: EventFeeCategory.reimbursement,
             EventFeeType.other_refund: EventFeeCategory.reimbursement,
         }[self]
@@ -299,6 +336,7 @@ class EventFeeType(CdEIntEnum):
             EventFeeType.solidary_donation: EventFeeBudget.solidarity,
             EventFeeType.solidary_increase: EventFeeBudget.solidarity,
             EventFeeType.other_donation: EventFeeBudget.cde,
+            EventFeeType.followup_donation: EventFeeBudget.followup,
             EventFeeType.crisis_refund: EventFeeBudget.expenses,
             EventFeeType.other_refund: EventFeeBudget.expenses,
         }[self]
@@ -394,7 +432,7 @@ class GenesisStati(CdEIntEnum):
     def is_finalized(self) -> bool:
         return self in self.finalized_stati()
 
-    def get_icon(self) -> Optional[str]:
+    def get_icon(self) -> str | None:
         return {
             GenesisStati.unconfirmed: "hourglass-start",
             GenesisStati.to_review: "user-clock",

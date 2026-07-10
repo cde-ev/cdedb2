@@ -6,7 +6,7 @@ for "genesis", that is for account creation via anonymous account requests.
 """
 
 from collections.abc import Collection
-from typing import Optional, Protocol
+from typing import Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -42,7 +42,7 @@ class CoreGenesisBackend(CoreBaseBackend):
     @access("anonymous")
     def genesis_request(
         self, rs: RequestState, data: CdEDBObject
-    ) -> Optional[DefaultReturnCode]:
+    ) -> DefaultReturnCode | None:
         """Log a request for a new account.
 
         This is the initial entry point for such a request.
@@ -111,7 +111,7 @@ class CoreGenesisBackend(CoreBaseBackend):
 
     @access("core_admin", *models.GenesisCase.all_admins)
     def delete_genesis_case(
-        self, rs: RequestState, case_id: int, cascade: Optional[Collection[str]] = None
+        self, rs: RequestState, case_id: int, cascade: Collection[str] | None = None
     ) -> DefaultReturnCode:
         """Remove a genesis case."""
 
@@ -180,7 +180,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         return bool(unwrap(self.query_one(rs, query, (attachment_hash,))))
 
     @access("anonymous")
-    def genesis_case_by_email(self, rs: RequestState, email: str) -> Optional[int]:
+    def genesis_case_by_email(self, rs: RequestState, email: str) -> int | None:
         """Get the id of an unconfirmed or unreviewed genesis case for a given email.
 
         :returns: The case id if the case is unconfirmed, the negative id if the case
@@ -252,8 +252,8 @@ class CoreGenesisBackend(CoreBaseBackend):
     def genesis_list_cases(
         self,
         rs: RequestState,
-        stati: Optional[Collection[const.GenesisStati]] = None,
-        realms: Optional[Collection[str]] = None,
+        stati: Collection[const.GenesisStati] | None = None,
+        realms: Collection[str] | None = None,
     ) -> CdEDBObjectMap:
         """List persona creation cases.
 
@@ -412,7 +412,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         rs: RequestState,
         case_id: int,
         decision: GenesisDecision,
-        persona_id: Optional[int] = None,
+        persona_id: int | None = None,
     ) -> DefaultReturnCode:
         """Final step in the genesis process. Create or modify an account or do nothing.
 

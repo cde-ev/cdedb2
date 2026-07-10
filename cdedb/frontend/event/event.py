@@ -11,7 +11,7 @@ import copy
 import datetime
 import json
 from collections.abc import Collection
-from typing import Literal, Optional, cast
+from typing import Literal, cast
 
 import werkzeug.datastructures
 import werkzeug.exceptions
@@ -77,7 +77,7 @@ class EventEventMixin(EventBaseFrontend):
             rs, current=False, archived=False
         )
 
-        events_registration: dict[int, Optional[bool]] = {}
+        events_registration: dict[int, bool | None] = {}
         events_payment_pending: dict[int, bool] = {}
         if "event" in rs.user.roles:
             for event_id in current_event_list:
@@ -300,7 +300,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_read)
     @REQUESTdata("edit")
     def show_free_texts(
-        self, rs: RequestState, event_id: int, edit: Optional[str]
+        self, rs: RequestState, event_id: int, edit: str | None
     ) -> Response:
         rs.ignore_validation_errors()
         return self.render(rs, "event/show_free_texts", {'edit': edit})
@@ -313,7 +313,7 @@ class EventEventMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         free_text_key: str,
-        free_text_value: Optional[str],
+        free_text_value: str | None,
     ) -> Response:
         change_notes_by_key = {
             "description": "Beschreibung geändert.",
@@ -407,7 +407,7 @@ class EventEventMixin(EventBaseFrontend):
     @access("event_admin", modi={"POST"})
     @REQUESTdata("persona_id")
     def add_event_helper(
-        self, rs: RequestState, persona_id: vtypes.CdedbID
+        self, rs: RequestState, persona_id: vtypes.PersonaID
     ) -> Response:
         """Make an additional persona become event helper."""
         if rs.has_validation_errors():
@@ -454,7 +454,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.orgas_change)
     @REQUESTdata("orga_ids")
     def add_orgas(
-        self, rs: RequestState, event_id: int, orga_ids: vtypes.CdedbIDList
+        self, rs: RequestState, event_id: int, orga_ids: list[vtypes.PersonaID]
     ) -> Response:
         return self._add_event_roles(rs, event_id, orga_ids, role='orga')
 
@@ -462,7 +462,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.caretakers_change)
     @REQUESTdata("caretaker_ids")
     def add_caretakers(
-        self, rs: RequestState, event_id: int, caretaker_ids: vtypes.CdedbIDList
+        self, rs: RequestState, event_id: int, caretaker_ids: list[vtypes.PersonaID]
     ) -> Response:
         return self._add_event_roles(rs, event_id, caretaker_ids, role='caretaker')
 
@@ -470,7 +470,10 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("checkin_helper_ids")
     def add_checkin_helpers(
-        self, rs: RequestState, event_id: int, checkin_helper_ids: vtypes.CdedbIDList
+        self,
+        rs: RequestState,
+        event_id: int,
+        checkin_helper_ids: list[vtypes.PersonaID],
     ) -> Response:
         return self._add_event_roles(
             rs, event_id, checkin_helper_ids, role='checkin_helper'
@@ -480,7 +483,7 @@ class EventEventMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: int,
-        persona_ids: vtypes.CdedbIDList,
+        persona_ids: list[vtypes.PersonaID],
         role: Literal["orga", "caretaker", "checkin_helper"],
     ) -> Response:
         # Check privileges
@@ -1138,7 +1141,7 @@ class EventEventMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         personalized: bool,
-        fee_id: Optional[int] = None,
+        fee_id: int | None = None,
     ) -> Response:
         """Render form to change or create one event fee."""
         rs.ignore_validation_errors()
@@ -1178,7 +1181,7 @@ class EventEventMixin(EventBaseFrontend):
         event_id: int,
         data: CdEDBObject,
         personalized: bool,
-        fee_id: Optional[int] = None,
+        fee_id: int | None = None,
     ) -> Response:
         """Submit changes to or creation of one event fee."""
         if rs.ambience['event'].is_balanced:
@@ -1572,8 +1575,8 @@ class EventEventMixin(EventBaseFrontend):
         rs: RequestState,
         part_begin: datetime.date,
         part_end: datetime.date,
-        orga_ids: vtypes.CdedbIDList,
-        caretaker_ids: vtypes.CdedbIDList,
+        orga_ids: list[vtypes.PersonaID],
+        caretaker_ids: list[vtypes.PersonaID],
         fee: vtypes.NonNegativeDecimal,
         nonmember_surcharge: vtypes.NonNegativeDecimal,
         create_track: bool,
@@ -1623,7 +1626,7 @@ class EventEventMixin(EventBaseFrontend):
             {
                 'kind': const.EventFeeType.external,
                 'title': "Externenzusatzbeitrag",
-                'notes': "Automatisch erstellt",
+                'notes': "Automatisch erstellt.",
                 'amount': nonmember_surcharge,
                 'condition': "any_part and not is_member and not age.U12",
             },
@@ -1674,6 +1677,11 @@ class EventEventMixin(EventBaseFrontend):
             event = self.eventproxy.get_event(rs, new_id)
             for fee_ in fee_data:
                 self.eventproxy.create_event_fee(rs, new_id, fee_)
+
+            for kind, qst in models.questionnaire.make_default_questionnaire(
+                event
+            ).items():
+                self.eventproxy.set_questionnaire(rs, event.id, kind, qst)
 
             if create_orga_list:
                 orga_ml_data = self._get_mailinglist_setter(rs, event, orgalist=True)
@@ -1799,7 +1807,7 @@ class EventEventMixin(EventBaseFrontend):
         # Lock all questionnaire entries
         aq = const.QuestionnaireUsages.additional
         questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[aq]
-        for entry in questionnaire:
+        for entry in questionnaire.field_rows:
             entry.readonly = True
         self.eventproxy.set_questionnaire(rs, event_id, aq, questionnaire.as_dicts())
 
@@ -1844,9 +1852,9 @@ class EventEventMixin(EventBaseFrontend):
         cascade = {
             "registrations", "courses", "lodgement_groups", "lodgements",
             "field_definitions", "course_tracks", "event_parts", "event_fees",
-            "orgas", "caretakers", "checkin_helpers", "questionnaire",
-            "stored_queries", "log", "mailinglists", "part_groups", "orga_tokens",
-            "custom_query_filters",
+            "orgas", "caretakers", "checkin_helpers", "questionnaire_text_rows",
+            "questionnaire_field_rows", "questionnaire_magic_rows", "stored_queries",
+            "log", "mailinglists", "part_groups", "orga_tokens", "custom_query_filters",
         }  # fmt: skip
 
         code = self.eventproxy.delete_event(rs, event_id, cascade & blockers.keys())
@@ -1938,7 +1946,7 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
 
-        persona_id, errs = inspect(vtypes.CdedbID, phrase, argname="phrase")
+        persona_id, errs = inspect(vtypes.PersonaID, phrase, argname="phrase")
         if not errs:
             reg_ids = self.eventproxy.list_registrations(
                 rs, event_id, persona_id=persona_id
@@ -1952,9 +1960,8 @@ class EventEventMixin(EventBaseFrontend):
         reg_id, errs = inspect(vtypes.ID, phrase, argname="phrase")
         if not errs:
             assert reg_id is not None
-            regs = self.eventproxy.get_registration(rs, reg_id)
-            if regs:
-                reg = unwrap(regs)
+            reg = self.eventproxy.get_registration(rs, reg_id)
+            if reg:
                 if reg['event_id'] == event_id:
                     return self.redirect(
                         rs, "event/show_registration", {'registration_id': reg['id']}

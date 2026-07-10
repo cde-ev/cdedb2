@@ -8,7 +8,7 @@ both the partial import and the questionnaire import.
 import collections.abc
 import json
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -58,10 +58,10 @@ class EventImportMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: int,
-        json_file: Optional[werkzeug.datastructures.FileStorage],
+        json_file: werkzeug.datastructures.FileStorage | None,
         extend_questionnaire: bool,
         skip_existing_fields: bool,
-        token: Optional[str],
+        token: str | None,
     ) -> Response:
         """Import questionnaire rows and custom datafields.
 
@@ -107,9 +107,9 @@ class EventImportMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: int,
-        json_file: Optional[werkzeug.datastructures.FileStorage],
-        partial_import_data: Optional[Any],
-        token: Optional[str],
+        json_file: werkzeug.datastructures.FileStorage | None,
+        partial_import_data: Any | None,
+        token: str | None,
     ) -> Response:
         """Further steps of partial import process
 

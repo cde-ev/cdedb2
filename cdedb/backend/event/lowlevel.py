@@ -11,7 +11,7 @@ import copy
 import decimal
 from collections.abc import Collection
 from pathlib import Path
-from typing import Optional, Protocol
+from typing import Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -66,9 +66,9 @@ class EventLowLevelBackend(AbstractBackend):
         self,
         rs: RequestState,
         code: const.EventLogCodes,
-        event_id: Optional[int],
-        persona_id: Optional[int] = None,
-        change_note: Optional[str] = None,
+        event_id: int | None,
+        persona_id: int | None = None,
+        change_note: str | None = None,
         atomized: bool = True,
     ) -> DefaultReturnCode:
         """Make an entry in the log.
@@ -175,7 +175,7 @@ class EventLowLevelBackend(AbstractBackend):
         self,
         rs: RequestState,
         track_id: int,
-        cascade: Optional[Collection[str]] = None,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Helper to remove a course track.
 
@@ -442,7 +442,7 @@ class EventLowLevelBackend(AbstractBackend):
 
     @internal
     def _delete_event_part(
-        self, rs: RequestState, part_id: int, cascade: Optional[Collection[str]] = None
+        self, rs: RequestState, part_id: int, cascade: Collection[str] | None = None
     ) -> DefaultReturnCode:
         """Helper to remove one event part.
 
@@ -695,7 +695,7 @@ class EventLowLevelBackend(AbstractBackend):
         self,
         rs: RequestState,
         part_group_id: int,
-        cascade: Optional[Collection[str]] = None,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Helper to delete one part group.
 
@@ -795,7 +795,7 @@ class EventLowLevelBackend(AbstractBackend):
         self,
         rs: RequestState,
         track_group_id: int,
-        cascade: Optional[Collection[str]] = None,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Helper to delete one track group.
 
@@ -981,20 +981,28 @@ class EventLowLevelBackend(AbstractBackend):
             blockers["event_fees"] = list(fee_ids)
 
         questionnaire_rows = self.sql_select(
-            rs, "event.questionnaire_rows", ("id",), (field_id,), entity_key="field_id"
+            rs,
+            models.questionnaire.QuestionnaireFieldRow.database_table,
+            ("id",),
+            (field_id,),
+            entity_key="field_id",
         )
         if questionnaire_rows:
             blockers["questionnaire_rows"] = [e["id"] for e in questionnaire_rows]
 
         lodge_fields = self.sql_select(
-            rs, "event.events", ("id",), (field_id,), entity_key="lodge_field_id"
+            rs,
+            models.Event.database_table,
+            ("id",),
+            (field_id,),
+            entity_key="lodge_field_id",
         )
         if lodge_fields:
             blockers["lodge_fields"] = [e["id"] for e in lodge_fields]
 
         camping_mat_fields = self.sql_select(
             rs,
-            "event.event_parts",
+            models.EventPart.database_table,
             ("id",),
             (field_id,),
             entity_key="camping_mat_field_id",
@@ -1004,7 +1012,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         course_room_fields = self.sql_select(
             rs,
-            "event.course_tracks",
+            models.CourseTrack.database_table,
             ("id",),
             (field_id,),
             entity_key="course_room_field_id",
@@ -1014,7 +1022,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         waitlist_fields = self.sql_select(
             rs,
-            "event.event_parts",
+            models.EventPart.database_table,
             ("id",),
             (field_id,),
             entity_key="waitlist_field_id",
@@ -1028,7 +1036,7 @@ class EventLowLevelBackend(AbstractBackend):
         self,
         rs: RequestState,
         field_id: int,
-        cascade: Optional[Collection[str]] = None,
+        cascade: Collection[str] | None = None,
         *,
         event_id: int,
     ) -> DefaultReturnCode:
@@ -1066,7 +1074,9 @@ class EventLowLevelBackend(AbstractBackend):
         if cascade:
             if "questionnaire_rows" in cascade:
                 ret *= self.sql_delete(
-                    rs, "event.questionnaire_rows", blockers["questionnaire_rows"]
+                    rs,
+                    models.questionnaire.QuestionnaireFieldRow.database_table,
+                    blockers["questionnaire_rows"],
                 )
             if "lodge_fields" in cascade:
                 for anid in blockers["lodge_fields"]:
@@ -1221,7 +1231,7 @@ class EventLowLevelBackend(AbstractBackend):
         self,
         rs: RequestState,
         event_id: int,
-        registration_ids: Optional[Collection[int]] = None,
+        registration_ids: Collection[int] | None = None,
     ) -> CdEDBObjectMap:
         """Retrieve basic registration data."""
         query = f"""
@@ -1269,7 +1279,7 @@ class EventLowLevelBackend(AbstractBackend):
         cls,
         data: CdEDBObject,
         translations: dict[str, dict[int, int]],
-        extra_translations: Optional[dict[str, str]] = None,
+        extra_translations: dict[str, str] | None = None,
     ) -> CdEDBObject:
         """Helper to do the actual translation of IDs which got out of sync.
 
@@ -1303,8 +1313,8 @@ class EventLowLevelBackend(AbstractBackend):
         data: CdEDBObjectMap,
         current: CdEDBObjectMap,
         translations: dict[str, dict[int, int]],
-        entity: Optional[str] = None,
-        extra_translations: Optional[dict[str, str]] = None,
+        entity: str | None = None,
+        extra_translations: dict[str, str] | None = None,
     ) -> DefaultReturnCode:
         """Replace one data set in a table with another.
 

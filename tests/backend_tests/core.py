@@ -3,7 +3,7 @@
 import copy
 import datetime
 import decimal
-from typing import Optional, cast
+from typing import cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -116,7 +116,7 @@ class TestCoreBackend(BackendTest):
 
     @as_users("anton")
     def test_entity_persona(self) -> None:
-        persona_id: Optional[int] = -1
+        persona_id: int | None = -1
         while True:
             persona_id = self.core.next_persona(
                 self.key, persona_id=persona_id, is_member=None, is_archived=False
@@ -872,7 +872,7 @@ class TestCoreBackend(BackendTest):
         new_id = self.core.genesis(self.key, case_id)
         self.assertLess(0, new_id)
         value = self.core.get_event_user(self.key, new_id)
-        expectation.persona.id = vtypes.ID(new_id)
+        expectation.persona.id = vtypes.PersonaID(vtypes.ID(new_id))
         self.assertEqual(expectation.persona, value)
 
     @as_users("anton")
@@ -949,7 +949,7 @@ class TestCoreBackend(BackendTest):
         self.assertLess(0, new_id)
         value = self.core.get_ml_user(self.key, new_id)
         persona_expectation = expectation.persona
-        persona_expectation.id = vtypes.ID(new_id)
+        persona_expectation.id = vtypes.PersonaID(vtypes.ID(new_id))
         self.assertEqual(persona_expectation, value)
         # make sure the notes attribute is carried over
         notes = self.core.get_total_persona(self.key, new_id)["notes"]

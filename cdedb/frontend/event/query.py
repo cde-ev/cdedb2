@@ -7,7 +7,7 @@ querying registrations, courses and lodgements.
 
 import collections
 import itertools
-from typing import Any, Optional
+from typing import Any
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -220,7 +220,7 @@ class EventQueryMixin(EventBaseFrontend):
 
         # mangle the input, so we can prefill the form
         query_input = scope.mangle_query_input(rs)
-        query: Optional[Query] = None
+        query: Query | None = None
         if is_search:
             query = check(
                 rs,
@@ -247,7 +247,7 @@ class EventQueryMixin(EventBaseFrontend):
             'spec': spec,
             'query': query,
             'choices_lists': choices_lists,
-            'default_queries': default_queries,
+            'default_queries': models.StoredEventQuery.group_queries(default_queries),
             'has_registrations': has_registrations,
         }
         # Tricky logic: In case of no validation errors we perform a query
@@ -308,8 +308,8 @@ class EventQueryMixin(EventBaseFrontend):
         query_input = None
         if not rs.has_validation_errors():
             stored_query = self.eventproxy.get_event_queries(rs, event_id).get(query_id)
-            if stored_query and stored_query.query:
-                query_input = stored_query.query.serialize_to_url()
+            if stored_query:
+                query_input = stored_query.serialize_to_url()
             code = self.eventproxy.delete_event_query(rs, query_id)
             rs.notify_return_code(code)
         if query_scope and query_scope.get_target():
@@ -371,7 +371,7 @@ class EventQueryMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_read)
     @REQUESTdata("scope")
     def custom_filter_summary(
-        self, rs: RequestState, event_id: int, scope: Optional[QueryScope] = None
+        self, rs: RequestState, event_id: int, scope: QueryScope | None = None
     ) -> Response:
         rs.ignore_validation_errors()
 
@@ -424,7 +424,7 @@ class EventQueryMixin(EventBaseFrontend):
 
     @staticmethod
     def _validate_custom_filter_uniqueness(
-        rs: RequestState, data: CdEDBObject, custom_filter_id: Optional[int]
+        rs: RequestState, data: CdEDBObject, custom_filter_id: int | None
     ) -> None:
         if any(
             cf.title == data['title'] and cf.id != custom_filter_id
@@ -546,7 +546,7 @@ class EventQueryMixin(EventBaseFrontend):
         spec = scope.get_spec(event=rs.ambience['event'], courses=courses)
         self._fix_query_choices(rs, spec)
         query_input = scope.mangle_query_input(rs)
-        query: Optional[Query] = None
+        query: Query | None = None
         if is_search:
             query = check(
                 rs,
@@ -578,7 +578,7 @@ class EventQueryMixin(EventBaseFrontend):
             'spec': spec,
             'query': query,
             'choices_lists': choices_lists,
-            'default_queries': default_queries,
+            'default_queries': models.StoredEventQuery.group_queries(default_queries),
             'selection_default': selection_default,
         }
 
@@ -610,7 +610,7 @@ class EventQueryMixin(EventBaseFrontend):
         )
         self._fix_query_choices(rs, spec)
         query_input = scope.mangle_query_input(rs)
-        query: Optional[Query] = None
+        query: Query | None = None
         if is_search:
             query = check(
                 rs,
@@ -642,7 +642,7 @@ class EventQueryMixin(EventBaseFrontend):
             'spec': spec,
             'query': query,
             'choices_lists': choices_lists,
-            'default_queries': stored_queries,
+            'default_queries': models.StoredEventQuery.group_queries(stored_queries),
             'selection_default': selection_default,
         }
 
@@ -699,7 +699,7 @@ class EventQueryMixin(EventBaseFrontend):
     @access("event")
     @REQUESTdata("phrase", "kind", "aux")
     def select_registration(
-        self, rs: RequestState, phrase: str, kind: str, aux: Optional[vtypes.ID]
+        self, rs: RequestState, phrase: str, kind: str, aux: vtypes.ID | None
     ) -> Response:
         """Provide data for inteligent input fields.
 

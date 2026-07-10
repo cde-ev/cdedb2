@@ -5,6 +5,7 @@
     {% set sidenav_active='event_configure_additional_questionnaire' %}
 {% endif %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/event/generic.tmpl" as generic_event with context %}
 {% set jshint='strong' %}
 
 {% block scripts %}
@@ -53,48 +54,159 @@
                             {{ loop.index0 }}
                         </span>
                     </div>
-                    {% if entry['field_id'] %}
+                    {% macro save_to(name) -%}
+                        <span class="nowrap">
+                            → [
+                                {%- if name is string -%}
+                                    {% trans %}Registration{% endtrans %}:
+                                    <strong>{{ name }}</strong>
+                                {%- else -%}
+                                    {% trans %}Custom Field{% endtrans %}:
+                                    <strong>{{ name.title }}</strong>
+                                {%- endif -%}
+                            ]
+                        </span>
+                    {%- endmacro %}
+                    {% if entry.name == "QuestionnaireFieldRow" %}
                         {% with FIELD = ambience['event']['fields'][entry['field_id']] %}
                             {# In case of a checkbox (bool field without choices), we don't need a left-hand side label #}
                             {% if FIELD['kind'] != enums['FieldDatatypes'].bool or FIELD['entries'] %}
                                 <div class="miniature-label">
-                                    {% if entry['title'] %}
-                                        {{ entry['title']|truncate(50,False,' …') }}
+                                    {% if entry.label %}
+                                        {{ entry.label|truncate(50, False, ' …') }}
                                     {% endif %}
                                 </div>
                             {% endif %}
-                            {% if FIELD['entries'] %}
+                            {% if FIELD.entries %}
                                 <div class="miniature-text">
                                     {{ util.make_icon('angle-down', aclass='pull-right') }}
-                                    → [{{ FIELD['field_name'] }}]
+                                    {{ save_to(FIELD) }}
                                 </div>
                             {% else %}
-                                {% if FIELD['kind'] == enums['FieldDatatypes'].bool %}
+                                {% if FIELD.kind == enums['FieldDatatypes'].bool %}
                                     <div class="miniature-checkbox">
                                         {{ util.make_icon('check-square') }}
-                                        {% if entry['title'] -%}
-                                            <b>{{ entry['title']|truncate(50,False,' …') }}</b>
+                                        {% if entry.label -%}
+                                            <b>{{ entry.label|truncate(50, False, ' …') }}</b>
                                         {%- endif %}
-                                        <span class="nowrap">→ [{{ FIELD['field_name'] }}]</span>
+                                        {{ save_to(FIELD) }}
                                     </div>
                                 {% else %}
                                     {% if FIELD.kind.text_rows %}
-                                        <div class="miniature-textarea">→ [{{ FIELD['field_name'] }}]</div>
+                                        <div class="miniature-textarea">{{ save_to(FIELD) }}</div>
                                     {% else %}
-                                        <div class="miniature-text">→ [{{ FIELD['field_name'] }}]</div>
+                                        <div class="miniature-text">{{ save_to(FIELD) }}</div>
                                     {% endif %}
                                 {% endif %}
                             {% endif %}
                         {% endwith %}
 
                     {# Text-only entry #}
+                    {% elif entry.name == "QuestionnaireTextRow" %}
+                        {% if entry.title %}
+                            <div class="miniature-heading">{{ entry.title }}</div>
+                        {% endif %}
+                        {% if entry.text %}
+                            <div class="miniature-md">{{ entry.text|md }}</div>
+                        {% endif %}
+                        {% if not entry.title and not entry.text %}
+                            <div class="text-italic">Some Text</div>
+                        {% endif %}
+                    {% elif entry.name == "FeePreview" %}
+                        <div class="miniature-label">
+                            {% trans %}Fee{% endtrans %} ({% trans %}Preview{% endtrans %})
+                        </div>
+                        <div class="miniature-content">
+                            {{ generic_event.fee_breakdown_by_kind(fake_complex_fee) }}
+                        </div>
+                    {% elif entry.name == "CourseChoices" %}
+                        {% for cco in choice_objects %}
+                            {% if choice_objects|length > 1 %}
+                                <div class="miniature-heading small">
+                                    {% trans %}Course Choices{% endtrans %}
+                                    {% trans track=cco.reference_track.title %}
+                                        for {{ track }}
+                                    {% endtrans %}
+                                </div>
+                            {% endif %}
+                            {% for i in range(cco.reference_track.num_choices) %}
+                                <div class="miniature-label">
+                                    {{ gettext("%s. Choice")|format(i + 1) }}
+                                </div>
+                                <div class="miniature-text">
+                                    {{ util.make_icon('angle-down', aclass='pull-right') }}
+                                    &lt;{% trans %}Course{% endtrans %}&gt;
+                                </div>
+                            {% endfor %}
+                            <div class="miniature-label">
+                                {{ gettext("Instructed Course") }}
+                            </div>
+                            <div class="miniature-text">
+                                {{ util.make_icon('angle-down', aclass='pull-right') }}
+                                &lt;{% trans %}Course{% endtrans %}&gt;
+                            </div>
+                        {% endfor %}
+                    {% elif entry.name == "PartSelection" %}
+                        <div class="miniature-label">
+                            {{ gettext("Event Parts") }}
+                        </div>
+                        {% for part in ambience["event"].parts.values() %}
+                            <div class="miniature-checkbox">
+                                {{ util.make_icon('check-square') }}
+                                <strong>{{ part.title }}</strong>
+                                {{ save_to(gettext("Event Parts")) }}
+                            </div>
+                        {% endfor %}
+                    {% elif entry.name == "ListConsent" %}
+                        <div class="miniature-label">
+                            {% trans %}Participant List Consent{% endtrans %}
+                        </div>
+                        <div class="miniature-checkbox">
+                            {{ util.make_icon('check-square') }}
+                            {{ save_to(gettext("Participant List Consent")) }}
+                        </div>
+                    {% elif entry.name == "MixedLodging" %}
+                        <div class="miniature-label">
+                            {% trans %}Mixed Lodging{% endtrans %}
+                        </div>
+                        <div class="miniature-text">
+                            {{ util.make_icon('angle-down', aclass='pull-right') }}
+                            {{ save_to(gettext("Mixed Lodging")) }}
+                        </div>
+                    {% elif entry.name == "FotoNotice" %}
+                        <div class="miniature-label">
+                            {% trans %}Photo consent{% endtrans %}
+                        </div>
+                        <div class="miniature-md">
+                            {{ generic_event.print_foto_notice() }}
+                        </div>
+                    {% elif entry.name == "RegistrationNotes" %}
+                        <div class="miniature-label">
+                            {%- if ambience["event"].tracks %}
+                                {% trans %}Notes for Orgas and Instructors{% endtrans %}
+                            {%- else %}
+                                {% trans %}Notes for Orgas{% endtrans %}
+                            {%- endif %}
+                        </div>
+                        <div class="miniature-textarea">
+                            {{ save_to(gettext("Notes")) }}
+                        </div>
+                    {% elif entry.name == "TableOfContents" %}
+                        <div class="miniature-md">
+                            <div class="toc">
+                                <ul class="nosp">
+                                    {% for row in entry.questionnaire.text_rows if row.title %}
+                                        <li>{{ util.href("#" + "_".join(row.title.split()), row.title) }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
                     {% else %}
-                        {% if entry['title'] %}
-                            <div class="miniature-heading">{{ entry['title'] }}</div>
-                        {% endif %}
-                        {% if entry['info'] %}
-                            <div class="miniature-pre">{{ entry['info']|truncate(200,False,' …') }}</div>
-                        {% endif %}
+                        <div class="miniature-heading alert alert-info {{ entry.get_drow_html_classes()|join(" ") }}">
+                            {% trans %}Magic Role{% endtrans %}:
+                            {{ util.make_icon(entry.get_icon()) }}
+                            {{ gettext(entry.role|string) }}
+                        </div>
                     {% endif %}
                 </div>
             </div>

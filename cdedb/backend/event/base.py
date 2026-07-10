@@ -21,7 +21,7 @@ import datetime
 import decimal
 from collections.abc import Collection, Iterable
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, Optional, Protocol, cast
+from typing import TYPE_CHECKING, Literal, Protocol, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -253,7 +253,7 @@ class EventBaseBackend(EventLowLevelBackend):
         self,
         rs: RequestState,
         event_ids: Collection[int],
-    ) -> models.CdEDataclassMap[models.Event]:
+    ) -> models.EventDataclassMap:
         event_ids = affirm(set[vtypes.ID], event_ids)
         with Atomizer(rs):
             event_data = {
@@ -331,7 +331,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @access("event")
     def change_minor_form(
-        self, rs: RequestState, event_id: int, minor_form: Optional[bytes]
+        self, rs: RequestState, event_id: int, minor_form: bytes | None
     ) -> DefaultReturnCode:
         """Change or remove an event's minor form.
 
@@ -722,7 +722,7 @@ class EventBaseBackend(EventLowLevelBackend):
         self,
         rs: RequestState,
         orga_token_id: int,
-        cascade: Optional[Collection[str]] = None,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Delete an orga  token.
 
@@ -788,7 +788,7 @@ class EventBaseBackend(EventLowLevelBackend):
         rs: RequestState,
         event_id: int,
         data: CdEDBObject,
-        change_note: Optional[str] = None,
+        change_note: str | None = None,
     ) -> DefaultReturnCode:
         """Update some keys of an event organized via DB.
 
@@ -902,7 +902,7 @@ class EventBaseBackend(EventLowLevelBackend):
         rs: RequestState,
         event_id: int,
         data: CdEDBObject,
-        change_note: Optional[str] = None,
+        change_note: str | None = None,
     ) -> DefaultReturnCode:
         event_id = affirm(vtypes.ID, event_id)
         data = affirm(
@@ -1341,15 +1341,37 @@ class EventBaseBackend(EventLowLevelBackend):
         self,
         rs: RequestState,
         event_id: int,
-    ) -> models.QuestionnaireContainer:
+    ) -> models.questionnaire.QuestionnaireContainer:
         """Retrieve the questionnaire rows for a specific event."""
         event_id = affirm(vtypes.ID, event_id)
         event = self.get_event(rs, event_id)
-        query = models.QuestionnaireRow.get_select_query([event_id])
-        data = self.query_all(rs, *query)
-        for row in data:
+        data: list[CdEDBObject] = []
+        data.extend(
+            self.query_all(
+                rs,
+                *models.questionnaire.QuestionnaireTextRow.get_select_query([event_id]),
+            )
+        )
+        data.extend(
+            field_rows := self.query_all(
+                rs,
+                *models.questionnaire.QuestionnaireFieldRow.get_select_query([
+                    event_id
+                ]),
+            )
+        )
+        data.extend(
+            self.query_all(
+                rs,
+                *models.questionnaire.QuestionnaireMagicRow.get_select_query([
+                    event_id
+                ]),
+            )
+        )
+
+        for row in field_rows:
             row["event"] = event
-        return models.QuestionnaireContainer.from_database(data, event)
+        return models.questionnaire.QuestionnaireContainer.from_database(data, event)
 
     @access("event")
     def set_questionnaire(
@@ -1373,13 +1395,14 @@ class EventBaseBackend(EventLowLevelBackend):
         self.assert_lock(rs, event_id=event_id)
         with Atomizer(rs):
             # Always delete everything then recreate.
-            query = f"""
-                DELETE FROM {models.QuestionnaireRow.database_table}
-                WHERE event_id = %(event_id)s and kind = %(kind)s
-            """
-            params = {"event_id": event_id, "kind": kind}
-            self.query_exec(rs, query, params)
-            # Otherwise replace rows for all given kinds.
+            for cls in models.questionnaire.QuestionnaireRow.__subclasses__():
+                query = f"""
+                    DELETE FROM {cls.database_table}
+                    WHERE event_id = %(event_id)s and kind = %(kind)s
+                """
+                params = {"event_id": event_id, "kind": kind}
+                self.query_exec(rs, query, params)
+
             ret = 1
             for pos, row in enumerate(data):
                 new_row = copy.deepcopy(row)
@@ -1387,10 +1410,14 @@ class EventBaseBackend(EventLowLevelBackend):
                 # The questionnaire import allows specifying fields by name.
                 #  We cannot remove this before, due to validation idempotency.
                 new_row.pop("field_name", None)
-                ret *= self.sql_insert(
-                    rs, models.QuestionnaireRow.database_table, new_row
-                )
-            self.event_log(rs, const.EventLogCodes.questionnaire_changed, event_id)
+                cls = models.questionnaire.QuestionnaireRow.get_class(new_row["role"])
+                ret *= self.sql_insert(rs, cls.database_table, new_row)
+            self.event_log(
+                rs,
+                const.EventLogCodes.questionnaire_changed,
+                event_id,
+                change_note=rs.log_gettext(str(kind)),
+            )
         return ret
 
     @access("event")
@@ -1588,8 +1615,11 @@ class EventBaseBackend(EventLowLevelBackend):
                     ('id', 'registration_id', 'track_id', 'course_id', 'rank'),
                 ),
                 models.PersonalizedFee.full_export_spec(),
-                models.QuestionnaireRow.full_export_spec(),
+                models.questionnaire.QuestionnaireTextRow.full_export_spec(),
+                models.questionnaire.QuestionnaireFieldRow.full_export_spec(),
+                models.questionnaire.QuestionnaireMagicRow.full_export_spec(),
                 models.StoredEventQuery.full_export_spec(),
+                models.CustomQueryFilter.full_export_spec(),
                 (
                     'event.log',
                     "event_id",
@@ -1734,6 +1764,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 )
             )
             questionnaire = self.get_all_questionnaires(rs, event_id).as_dict(full=True)
+            stored_queries = self.get_event_queries(rs, event_id)  # type: ignore[attr-defined]
             persona_ids = tuple(reg['persona_id'] for reg in registrations.values())
             personas = {
                 p.id: p.as_dict()
@@ -1909,13 +1940,11 @@ class EventBaseBackend(EventLowLevelBackend):
         new_questionnaire = {str(usage): rows for usage, rows in questionnaire.items()}
         for usage, rows in new_questionnaire.items():
             for q in rows:
-                if q['field_id']:
+                if 'field_id' in q:
                     q['field_name'] = event.fields[q['field_id']].field_name
-                else:
-                    q['field_name'] = None
+                    del q['field_id']
                 del q['pos']
                 del q['kind']
-                del q['field_id']
         for field in new_fields.values():
             del field['field_name']
             del field['event_id']
@@ -1923,6 +1952,14 @@ class EventBaseBackend(EventLowLevelBackend):
             field["entries"] = normalize_field_entries(
                 field["entries"], field["kind"], coalesce=""
             )
+        ret["event"]["stored_queries"] = {
+            query.query_name: {
+                "scope": query.scope,
+                "query_group": query.query_group,
+                "serialized_query": query.serialized_query,
+            }
+            for query in stored_queries.values()
+        }
         # personas
         for reg_id, registration in ret['registrations'].items():
             persona = personas[registration['persona_id']]
@@ -1988,7 +2025,7 @@ class EventBaseBackend(EventLowLevelBackend):
         *,
         after_change: bool = False,
         is_initial: bool = False,
-    ) -> Optional[CdEDBObject]:
+    ) -> CdEDBObject | None:
         """Commit the current state of the event to its git repository.
 
         In general, there are two scenarios where we want to make a new commit:
@@ -2036,7 +2073,7 @@ class EventBaseBackend(EventLowLevelBackend):
     @internal
     def _process_event_keeper_logs(
         self, rs: RequestState, event_id: int
-    ) -> Optional[tuple[CdEDBObject, ...]]:
+    ) -> tuple[CdEDBObject, ...] | None:
         """Format the log entries since the last commit to make them more readable."""
         with Atomizer(rs):
             timestamp = self._event_keeper.latest_logtime(event_id)

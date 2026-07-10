@@ -7,7 +7,7 @@ variant for external participants.
 import collections
 import copy
 from collections.abc import Collection, Mapping
-from typing import Any, Optional
+from typing import Any
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -42,6 +42,7 @@ from cdedb.common.privileges import (
     EventPrivileges,
     is_privileged_event as is_privileged,
 )
+from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.connection import Atomizer
 from cdedb.models.droid import OrgaToken
@@ -86,7 +87,9 @@ class EventBackend(
                       it's own blockers.
         * registrations: A registration associated with the event. This can
                          have it's own blockers.
-        * questionnaire: A questionnaire row configured for the event.
+        * questionnaire_text_rows: A questionnaire row (text) configured for the event.
+        * questionnaire_field_rows: A questionnaire row (field) configured for the event.
+        * questionnaire_magic_rows: A questionnaire row (magic) configured for the event.
         * stored_queries: A stored query for the event.
         * log: A log entry for the event.
         * mailinglists: A mailinglist associated with the event. This
@@ -176,7 +179,7 @@ class EventBackend(
             blockers["part_groups"] = [e["id"] for e in part_groups]
             part_group_parts = self.sql_select(
                 rs,
-                "event.part_group_parts",
+                models.OtherDatabaseTables.part_group_parts,
                 ("id",),
                 blockers["part_groups"],
                 entity_key="part_group_id",
@@ -195,7 +198,7 @@ class EventBackend(
             blockers["track_groups"] = [e["id"] for e in track_groups]
             track_group_tracks = self.sql_select(
                 rs,
-                "event.track_group_tracks",
+                models.OtherDatabaseTables.track_group_tracks,
                 ("id",),
                 blockers["track_groups"],
                 entity_key="track_group_id",
@@ -204,19 +207,31 @@ class EventBackend(
                 blockers["track_group_tracks"] = [e["id"] for e in track_group_tracks]
 
         orgas = self.sql_select(
-            rs, "event.orgas", ("id",), (event_id,), entity_key="event_id"
+            rs,
+            models.OtherDatabaseTables.orgas,
+            ("id",),
+            (event_id,),
+            entity_key="event_id",
         )
         if orgas:
             blockers["orgas"] = [e["id"] for e in orgas]
 
         caretakers = self.sql_select(
-            rs, "event.caretakers", ("id",), (event_id,), entity_key="event_id"
+            rs,
+            models.OtherDatabaseTables.caretakers,
+            ("id",),
+            (event_id,),
+            entity_key="event_id",
         )
         if caretakers:
             blockers["caretakers"] = [e["id"] for e in caretakers]
 
         checkin_helpers = self.sql_select(
-            rs, "event.checkin_helpers", ("id",), (event_id,), entity_key="event_id"
+            rs,
+            models.OtherDatabaseTables.checkin_helpers,
+            ("id",),
+            (event_id,),
+            entity_key="event_id",
         )
         if checkin_helpers:
             blockers["checkin_helpers"] = [e["id"] for e in checkin_helpers]
@@ -251,24 +266,54 @@ class EventBackend(
         if registrations:
             blockers["registrations"] = [e["id"] for e in registrations]
 
-        questionnaire_rows = self.sql_select(
+        questionnaire_text_rows = self.sql_select(
             rs,
-            models.QuestionnaireRow.database_table,
+            models.questionnaire.QuestionnaireTextRow.database_table,
             ("id",),
             (event_id,),
-            entity_key=models.QuestionnaireRow.entity_key,
+            entity_key=models.questionnaire.QuestionnaireTextRow.entity_key,
         )
-        if questionnaire_rows:
-            blockers["questionnaire"] = [e["id"] for e in questionnaire_rows]
+        if questionnaire_text_rows:
+            blockers["questionnaire_text_rows"] = [
+                e["id"] for e in questionnaire_text_rows
+            ]
+
+        questionnaire_field_rows = self.sql_select(
+            rs,
+            models.questionnaire.QuestionnaireFieldRow.database_table,
+            ("id",),
+            (event_id,),
+            entity_key=models.questionnaire.QuestionnaireFieldRow.entity_key,
+        )
+        if questionnaire_field_rows:
+            blockers["questionnaire_field_rows"] = [
+                e["id"] for e in questionnaire_field_rows
+            ]
+
+        questionnaire_magic_rows = self.sql_select(
+            rs,
+            models.questionnaire.QuestionnaireMagicRow.database_table,
+            ("id",),
+            (event_id,),
+            entity_key=models.questionnaire.QuestionnaireMagicRow.entity_key,
+        )
+        if questionnaire_magic_rows:
+            blockers["questionnaire_magic_rows"] = [
+                e["id"] for e in questionnaire_magic_rows
+            ]
 
         stored_queries = self.sql_select(
-            rs, "event.stored_queries", ("id",), (event_id,), entity_key="event_id"
+            rs,
+            models.StoredEventQuery.database_table,
+            ("id",),
+            (event_id,),
+            entity_key="event_id",
         )
         if stored_queries:
             blockers["stored_queries"] = [e["id"] for e in stored_queries]
 
         log = self.sql_select(
-            rs, "event.log", ("id",), (event_id,), entity_key="event_id"
+            rs, EventLogFilter.log_table, ("id",), (event_id,), entity_key="event_id"
         )
         if log:
             blockers["log"] = [e["id"] for e in log]
@@ -301,7 +346,7 @@ class EventBackend(
 
     @access("event_admin")
     def delete_event(
-        self, rs: RequestState, event_id: int, cascade: Optional[Collection[str]] = None
+        self, rs: RequestState, event_id: int, cascade: Collection[str] | None = None
     ) -> DefaultReturnCode:
         """Remove event.
 
@@ -376,11 +421,23 @@ class EventBackend(
                     with Silencer(rs):
                         for anid in blockers["track_groups"]:
                             self._delete_track_group(rs, anid, track_group_cascade)
-                if "questionnaire" in cascade:
+                if "questionnaire_text_rows" in cascade:
                     ret *= self.sql_delete(
                         rs,
-                        models.QuestionnaireRow.database_table,
-                        blockers["questionnaire"],
+                        models.questionnaire.QuestionnaireTextRow.database_table,
+                        blockers["questionnaire_text_rows"],
+                    )
+                if "questionnaire_field_rows" in cascade:
+                    ret *= self.sql_delete(
+                        rs,
+                        models.questionnaire.QuestionnaireFieldRow.database_table,
+                        blockers["questionnaire_field_rows"],
+                    )
+                if "questionnaire_magic_rows" in cascade:
+                    ret *= self.sql_delete(
+                        rs,
+                        models.questionnaire.QuestionnaireMagicRow.database_table,
+                        blockers["questionnaire_magic_rows"],
                     )
                 if "field_definitions" in cascade:
                     deletor: CdEDBObject = {
@@ -458,7 +515,7 @@ class EventBackend(
         event_id: int,
         data: CdEDBObject,
         dryrun: bool,
-        token: Optional[str] = None,
+        token: str | None = None,
     ) -> tuple[str, CdEDBObject]:
         """Incorporate changes into an event.
 

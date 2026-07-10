@@ -8,7 +8,7 @@ for managing courses belonging to an event.
 import abc
 import collections
 from collections.abc import Collection
-from typing import Optional, Protocol
+from typing import Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -346,7 +346,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
         self,
         rs: RequestState,
         course_id: int,
-        cascade: Optional[Collection[str]] = None,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Remove a course organized via DB from the DB.
 

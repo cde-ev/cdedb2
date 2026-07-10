@@ -30,9 +30,6 @@ from types import UnionType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Generic,
-    Optional,
-    TypeVar,
     Union,
     cast,
     get_args,
@@ -82,7 +79,7 @@ CdEDBObjectMap = dict[int, CdEDBObject]
 # Same as above, but we also allow negative ints (for creation, not reflected
 # in the type] and None (for deletion). Used in `_set_tracks` and partial
 # import diff.
-CdEDBOptionalMap = dict[int, Optional[CdEDBObject]]
+CdEDBOptionalMap = dict[int, CdEDBObject | None]
 
 # An integer with special semantics. Positive return values indicate success,
 # a return of zero signals an error, a negative return value indicates some
@@ -97,7 +94,7 @@ DeletionBlockers = dict[str, list[int]]
 
 # Pseudo error objects used to display errors in the frontend. First argument
 # is the field that contains the error, second argument is the error itself.
-Error = tuple[Optional[str], Exception]
+Error = tuple[str | None, Exception]
 
 # A notification to be displayed. First argument ist the notification type
 # (warning, info, error, success, question). Second argument is the message.
@@ -113,8 +110,6 @@ CdEDBLog = tuple[int, tuple[CdEDBObject, ...]]
 PathLike = pathlib.Path | str
 Path = pathlib.Path
 
-T = TypeVar("T")
-
 
 # TODO rework this class, make use of CorePersona and PersonaStatus
 class User:
@@ -123,19 +118,19 @@ class User:
     def __init__(
         self,
         *,
-        persona_id: Optional[int] = None,
+        persona_id: int | None = None,
         droid: "APIToken | None" = None,
-        roles: Optional[set[Role]] = None,
-        realm_roles: Optional[dict[Realm, set[str]]] = None,
+        roles: set[Role] | None = None,
+        realm_roles: dict[Realm, set[str]] | None = None,
         given_names: str = "",
         nickname: str = "",
         family_name: str = "",
         username: str = "",
-        orga: Optional[Collection[int]] = None,
-        caretaker: Optional[Collection[int]] = None,
-        checkin_helper: Optional[Collection[int]] = None,
-        moderator: Optional[Collection[int]] = None,
-        presider: Optional[Collection[int]] = None,
+        orga: Collection[int] | None = None,
+        caretaker: Collection[int] | None = None,
+        checkin_helper: Collection[int] | None = None,
+        moderator: Collection[int] | None = None,
+        presider: Collection[int] | None = None,
     ) -> None:
         self.persona_id = persona_id
         self.droid = droid
@@ -198,16 +193,16 @@ class RequestState(ConnectionContainer):
 
     def __init__(
         self,
-        sessionkey: Optional[str],
-        apitoken: Optional[str],
+        sessionkey: str | None,
+        apitoken: str | None,
         user: User,
         request: werkzeug.Request,
         notifications: Collection[Notification],
         mapadapter: werkzeug.routing.MapAdapter,
-        requestargs: Optional[Mapping[str, Any]],
+        requestargs: Mapping[str, Any] | None,
         errors: Collection[Error],
-        values: Optional[CdEDBMultiDict],
-        begin: Optional[datetime.datetime],
+        values: CdEDBMultiDict | None,
+        begin: datetime.datetime | None,
         lang: str,
         translations: Mapping[str, gettext.NullTranslations],
         endpoint: str | None = None,
@@ -249,7 +244,7 @@ class RequestState(ConnectionContainer):
         # Used for validation enforcement, set to False if a validator
         # is executed and then to True with the corresponding methods
         # of this class
-        self.validation_appraised: Optional[bool] = None
+        self.validation_appraised: bool | None = None
         self.endpoint = endpoint
 
     @property
@@ -288,7 +283,7 @@ class RequestState(ConnectionContainer):
         self,
         ntype: NotificationType,
         message: str,
-        params: Optional[CdEDBObject] = None,
+        params: CdEDBObject | None = None,
     ) -> None:
         """Store a notification for later delivery to the user."""
         if ntype not in NOTIFICATION_TYPES:
@@ -407,8 +402,8 @@ class RequestState(ConnectionContainer):
         """
         self._errors = list(errors)
 
-    def get_validation_errors_dict(self) -> dict[Optional[str], list[Exception]]:
-        ret: dict[Optional[str], list[Exception]] = {}
+    def get_validation_errors_dict(self) -> dict[str | None, list[Exception]]:
+        ret: dict[str | None, list[Exception]] = {}
         for key, value in self.retrieve_validation_errors():
             ret.setdefault(key, []).append(value)
         return ret
@@ -419,11 +414,8 @@ if TYPE_CHECKING:
 else:
     AbstractBackend = None
 
-B = TypeVar("B", bound=AbstractBackend)
-F = TypeVar("F", bound=Callable[..., Any])
 
-
-def make_proxy(backend: B, internal: bool = False) -> B:
+def make_proxy[B: AbstractBackend](backend: B, internal: bool = False) -> B:
     """Wrap a backend to only expose functions with an access decorator.
 
     If we used an actual RPC mechanism, this would do some additional
@@ -433,7 +425,7 @@ def make_proxy(backend: B, internal: bool = False) -> B:
     We also need to use an inner class so we can provide __getattr__.
     """
 
-    def wrapit(fun: F) -> F:
+    def wrapit[F: Callable[..., Any]](fun: F) -> F:
         @functools.wraps(fun)
         def wrapper(rs: RequestState, *args: Any, **kwargs: Any) -> Any:
             try:
@@ -469,7 +461,7 @@ def make_proxy(backend: B, internal: bool = False) -> B:
     return cast(B, Proxy())
 
 
-def build_msg(msg1: str, msg2: Optional[str] = None) -> str:
+def build_msg(msg1: str, msg2: str | None = None) -> str:
     """Construct log message with appropriate punctuation"""
     if msg2:
         return msg1 + ": " + msg2
@@ -477,10 +469,7 @@ def build_msg(msg1: str, msg2: Optional[str] = None) -> str:
         return msg1 + "."
 
 
-S = TypeVar("S")
-
-
-def merge_dicts(targetdict: MutableMapping[T, S], *dicts: Mapping[T, S]) -> None:
+def merge_dicts[T, S](targetdict: MutableMapping[T, S], *dicts: Mapping[T, S]) -> None:
     """Merge all dicts into the first one, but do not overwrite.
 
     This is basically the :py:meth:`dict.update` method, but existing
@@ -741,7 +730,7 @@ class CustomJSONEncoder(json.JSONEncoder):
     ) -> str: ...
 
     @overload
-    def default(self, obj: set[T]) -> tuple[T, ...]: ...
+    def default[T](self, obj: set[T]) -> tuple[T, ...]: ...
 
     def default(self, obj: Any) -> str | tuple[Any, ...] | dict[str, Any]:
         import cdedb.models.common as models  # noqa: PLC0415  # pylint: disable=import-outside-toplevel
@@ -777,7 +766,7 @@ class PsycoJson(psycopg2.extras.Json):
         return json_serialize(obj)
 
 
-def pairwise(iterable: Iterable[T]) -> Iterable[tuple[T, T]]:
+def pairwise[T](iterable: Iterable[T]) -> Iterable[tuple[T, T]]:
     """Iterate over adjacent pairs of values of an iterable.
 
     For the input [1, 3, 6, 10] this returns [(1, 3), (3, 6), (6, 10)].
@@ -796,14 +785,14 @@ def unwrap(data: None) -> None: ...
 
 
 @overload
-def unwrap(data: Mapping[Any, T]) -> T: ...
+def unwrap[T](data: Mapping[Any, T]) -> T: ...
 
 
 @overload
-def unwrap(data: Collection[T]) -> T: ...
+def unwrap[T](data: Collection[T]) -> T: ...
 
 
-def unwrap(data: None | Mapping[Any, T] | Collection[T]) -> Optional[T]:
+def unwrap[T](data: None | Mapping[Any, T] | Collection[T]) -> T | None:
     """Remove one nesting layer (of lists, etc.).
 
     This is here to replace code like ``foo = bar[0]`` where bar is a
@@ -853,7 +842,7 @@ def is_optional_type(type_: Any) -> bool:
     return is_optional
 
 
-def get_mandatory_type(type_: TypeForm[T]) -> type[T]:
+def get_mandatory_type[T](type_: TypeForm[T]) -> type[T]:
     """Transform a given type into a non-None one.
 
     Basically the inverse operation of T | None.
@@ -1047,7 +1036,7 @@ class GenesisDecision(CdEIntEnum):
 INFINITE_ENUM_MAGIC_NUMBER = 0
 
 
-def infinite_enum(aclass: T) -> T:
+def infinite_enum[T](aclass: T) -> T:
     """Decorator to document infinite enums.
 
     This only sets a flag on the class for documentation and
@@ -1070,11 +1059,8 @@ def infinite_enum(aclass: T) -> T:
     return aclass
 
 
-E = TypeVar("E", bound=CdEIntEnum)
-
-
 @functools.total_ordering
-class InfiniteEnum(Generic[E]):
+class InfiniteEnum[E: CdEIntEnum]:
     """Storage facility for infinite enums with associated data
 
     Also see :py:func:`infinite_enum`"""
@@ -1202,9 +1188,6 @@ def sanitize_filename(name: str) -> str:
     return name.translate(FILENAME_SANITIZE_MAP)
 
 
-MaybeStr = TypeVar("MaybeStr", str, type[None])
-
-
 def diacritic_patterns(s: str, two_way_replace: bool = False) -> str:
     """Replace letters with a pattern matching expressions.
 
@@ -1273,7 +1256,7 @@ def inverse_diacritic_patterns(s: str) -> str:
     return s.translate(UMLAUT_TRANSLATE_TABLE)
 
 
-def abbreviation_mapper(data: Sequence[T]) -> dict[T, str]:
+def abbreviation_mapper[T](data: Sequence[T]) -> dict[T, str]:
     """Assign an unique combination of ascii letters to each element."""
     num_letters = ((len(data) - 1) // 26) + 1
     return {
@@ -1292,8 +1275,8 @@ def encode_parameter(
     target: str,
     name: str,
     param: str,
-    persona_id: Optional[int],
-    timeout: Optional[_tdelta] = _tdelta(seconds=60),
+    persona_id: int | None,
+    timeout: _tdelta | None = _tdelta(seconds=60),
 ) -> str:
     """Crypographically secure a parameter. This allows two things:
 
@@ -1357,7 +1340,7 @@ def encode_parameter(
 
 
 def decode_parameter(
-    salt: str, target: str, name: str, param: str, persona_id: Optional[int]
+    salt: str, target: str, name: str, param: str, persona_id: int | None
 ) -> tuple[bool, None] | tuple[None, str]:
     """Inverse of :py:func:`encode_parameter`. See there for
     documentation.
@@ -1415,7 +1398,7 @@ def parse_date(val: str) -> datetime.date:
 
 
 def parse_datetime(
-    val: str, default_date: Optional[datetime.date] = None
+    val: str, default_date: datetime.date | None = None
 ) -> datetime.datetime:
     """Make a string into a datetime.
 
@@ -1570,7 +1553,7 @@ IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
 #: data. This has to be incremented whenever the event export changes.
 #: If changes to the partial export and import are backwards compatible,
 #: the minor version may be incremented.
-EVENT_SCHEMA_VERSION = (19, 4)
+EVENT_SCHEMA_VERSION = (20, 0)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3

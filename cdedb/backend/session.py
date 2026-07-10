@@ -10,7 +10,6 @@ special in here.
 """
 
 import logging
-from typing import Optional
 
 import psycopg2.extensions
 from passlib.utils import consteq
@@ -80,7 +79,7 @@ class SessionBackend:
                 data = dict(cur.fetchone() or {})
         return data['info'].get("lockdown_web")
 
-    def lookupsession(self, sessionkey: Optional[str], ip: Optional[str]) -> User:
+    def lookupsession(self, sessionkey: str | None, ip: str | None) -> User:
         """Raison d'etre.
 
         Resolve a session key (originally stored in a cookie) into the
@@ -170,7 +169,7 @@ class SessionBackend:
             family_name=persona.family_name,
         )
 
-    def lookuptoken(self, apitoken: Optional[str], ip: Optional[str]) -> User:
+    def lookuptoken(self, apitoken: str | None, ip: str | None) -> User:
         """Raison d'etre deux.
 
         Resolve an API token (originally submitted via header) into the

@@ -10,7 +10,7 @@ import re
 import tempfile
 import unittest
 from collections.abc import Collection, Sequence
-from typing import Optional, cast
+from typing import cast
 
 import freezegun
 import lxml.etree
@@ -72,7 +72,7 @@ class TestEventFrontend(FrontendTest):
         reg_id: int,
         event_id: int,
         amount_paid: decimal.Decimal,
-        payment: Optional[datetime.date] = None,
+        payment: datetime.date | None = None,
     ) -> None:
         """Mocker around book_fees to ease setting of payment stuff in tests.
 
@@ -1294,7 +1294,7 @@ etc;anything else""",
         self.submit(f, check_notification=False)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
         self.assertValidationError(
-            "kind_-1", "Ungültige Eingabe für Enumeration <enum 'FieldDatatypes'>."
+            "kind_-1", "Ungültige Eingabe für Enumeration 'FieldDatatypes'."
         )
         f['create_-1'].checked = True
         f['field_name_-1'] = "invalid"
@@ -1303,7 +1303,7 @@ etc;anything else""",
         self.submit(f, check_notification=False)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
         self.assertValidationError(
-            "kind_-1", "Ungültige Eingabe für Enumeration <enum 'FieldDatatypes'>."
+            "kind_-1", "Ungültige Eingabe für Enumeration 'FieldDatatypes'."
         )
 
     @event_keeper
@@ -1380,8 +1380,7 @@ etc;anything else""",
         f['create_-1'].checked = True
         f['field_name_-1'] = "notevil"
         f['association_-1'] = const.FieldAssociations.registration
-        f['entries_-1'] = """True;definitely
-        False;no way!"""
+        f['entries_-1'] = "True;definitely\nFalse;no way!"
         self.submit(f)
         self.assertTitle("Datenfelder konfigurieren (Große Testakademie 2222)")
         self.traverse("Konfiguration")
@@ -1391,7 +1390,8 @@ etc;anything else""",
         self.traverse("Fragebogen konfigurieren")
         f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
-        f['title_-1'] = "foobar"
+        f['role_-1'] = const.QuestionnaireRowRole.event_field
+        f['label_-1'] = "foobar"
         f['info_-1'] = "blaster master"
         f['field_id_-1'] = "1001"
         self.submit(f)
@@ -1423,7 +1423,8 @@ etc;anything else""",
         self.traverse("Fragebogen konfigurieren")
         f = self.response.forms['configurequestionnaireform']
         f['create_-1'].checked = True
-        f['title_-1'] = "foobar"
+        f['role_-1'] = const.QuestionnaireRowRole.event_field
+        f['label_-1'] = "foobar"
         f['info_-1'] = "blaster master"
         f['field_id_-1'] = "1001"
         self.submit(f)
@@ -1577,6 +1578,11 @@ etc;anything else""",
                 'code': const.EventLogCodes.event_fee_created,
                 'event_id': 1001,
             },
+            {
+                'code': const.EventLogCodes.questionnaire_changed,
+                'change_note': "Anmeldungs-Fragebogen",
+                'event_id': 1001,
+            },
         ]
 
         # Create another event with course track and orga mailinglist
@@ -1656,6 +1662,11 @@ etc;anything else""",
             {
                 'change_note': "Externenzusatzbeitrag",
                 'code': const.EventLogCodes.event_fee_created,
+                'event_id': 1002,
+            },
+            {
+                'code': const.EventLogCodes.questionnaire_changed,
+                'change_note': "Anmeldungs-Fragebogen",
                 'event_id': 1002,
             },
             {
@@ -1902,16 +1913,20 @@ etc;anything else""",
         if self.user_in('charly'):
             self.assertNonPresence(surcharge)
             self.assertPresence("13.05.1984")
+            self.assertNonPresence("Gemischte Unterbringung nicht möglich")
+            self.assertDivNotExists("#minor-with-guardian")
         elif self.user_in('daniel'):
             self.assertPresence(surcharge)
             self.assertPresence("19.02.2220")
             self.assertNonPresence("Gemischte Unterbringung nicht möglich")
-            self.assertNonPresence("Eltern")
+            self.assertPresence(
+                "gemeinsam mit einem Erziehungsberechtigten", div="minor-with-guardian"
+            )
         elif self.user_in('rowena'):
             self.assertPresence(surcharge)
             self.assertPresence("26.08.932")
             self.assertNonPresence("Gemischte Unterbringung nicht möglich")
-            self.assertNonPresence("Eltern")
+            self.assertDivNotExists("#minor-with-guardian")
         else:
             self.fail("Please reconfigure the users for the above checks.")
 
@@ -2334,46 +2349,52 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             const.QuestionnaireUsages.registration,
             [
                 {
-                    "title": "Ich bin unter 13 Jahre alt.",
+                    "role": const.QuestionnaireRowRole.part_selection,
+                },
+                {
+                    "role": const.QuestionnaireRowRole.fee_preview,
+                },
+                {
+                    "role": const.QuestionnaireRowRole.course_choices,
+                },
+                {
+                    "role": const.QuestionnaireRowRole.list_consent,
+                },
+                {
+                    "role": const.QuestionnaireRowRole.foto_notice,
+                },
+                {
+                    "role": const.QuestionnaireRowRole.mixed_lodging,
+                },
+                {
+                    "role": const.QuestionnaireRowRole.event_field,
                     "field_id": 1001,
-                    "default_value": None,
-                    "info": None,
-                    "readonly": False,
+                    "label": "Ich bin unter 13 Jahre alt.",
                 },
                 {
-                    "title": "Ich bringe noch jemanden mit.",
+                    "role": const.QuestionnaireRowRole.event_field,
                     "field_id": 1002,
-                    "default_value": None,
-                    "info": None,
-                    "readonly": False,
+                    "label": "Ich bringe noch jemanden mit.",
                 },
                 {
-                    "title": "Name des Partners.",
+                    "role": const.QuestionnaireRowRole.event_field,
                     "field_id": 1003,
-                    "default_value": None,
-                    "info": None,
-                    "readonly": False,
+                    "label": "Name des Partners.",
                 },
                 {
-                    "title": "Anzahl an Kissen",
+                    "role": const.QuestionnaireRowRole.event_field,
                     "field_id": 1004,
-                    "default_value": None,
-                    "info": None,
-                    "readonly": False,
+                    "label": "Anzahl an Kissen",
                 },
                 {
-                    "title": "Essgewohnheiten.",
+                    "role": const.QuestionnaireRowRole.event_field,
                     "field_id": 1005,
-                    "default_value": None,
-                    "info": None,
-                    "readonly": False,
+                    "label": "Essgewohnheiten.",
                 },
                 {
-                    "title": "Dein Lieblingstag",
+                    "role": const.QuestionnaireRowRole.event_field,
                     "field_id": 1006,
-                    "default_value": None,
-                    "info": None,
-                    "readonly": False,
+                    "label": "Dein Lieblingstag",
                 },
             ],
         )
@@ -4637,7 +4658,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         registrations = self.event.get_registrations(self.key, registration_ids)
         grouper = EventRegistrationInXChoiceGrouper(event, registrations)
 
-        def _test_grouper_link(reg_ids: Optional[set[int]], link_id: str) -> None:
+        def _test_grouper_link(reg_ids: set[int] | None, link_id: str) -> None:
             with self.subTest(link_id=link_id):
                 links = self.response.html.find_all(id=link_id)
                 if reg_ids is None:
@@ -5488,49 +5509,50 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
     @as_users("garcia")
     def test_questionnaire_manipulation(self) -> None:
-        self.traverse(
-            {'href': '/event/$'},
-            {'href': '/event/event/1/show'},
-            {'href': '/event/event/1/change'},
-        )
+        self.traverse("Veranstaltungen", "Große Testakademie 2222", "Konfiguration")
         self.assertTitle("Große Testakademie 2222 – Konfiguration")
         f = self.response.forms['changeeventform']
         f['use_additional_questionnaire'].checked = True
         self.submit(f)
-        self.traverse({'href': '/event/event/1/registration/questionnaire'})
+        self.traverse("Fragebogen")
         self.assertTitle("Fragebogen (Große Testakademie 2222)")
         f = self.response.forms['questionnaireform']
         self.assertNotIn("may_reserve", f.fields)
-        self.traverse({'href': '/event/event/1/questionnaire/config'})
+        self.traverse("Fragebogen konfigurieren")
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
+
         f = self.response.forms['configurequestionnaireform']
         self.assertEqual("3", f['field_id_5'].value)
         self.assertEqual("2", f['field_id_4'].value)
-        f['field_id_4'] = ""
         self.assertEqual("Weitere Überschrift", f['title_3'].value)
+        self.assertEqual("mit Text darunter", f['text_0'].value)
+
         f['title_3'] = "Immernoch Überschrift"
-        self.assertEqual("mit Text darunter", f['info_0'].value)
-        f['info_0'] = "mehr Text darunter\nviel mehr"
+        f['text_0'] = "mehr Text darunter\nviel mehr"
         self.submit(f)
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
+
         f = self.response.forms['configurequestionnaireform']
         self.assertEqual("3", f['field_id_5'].value)
-        self.assertEqual("Hauswunsch", f['title_5'].value)
-        self.assertEqual("", f['field_id_4'].value)
+        self.assertEqual("Hauswunsch", f['label_5'].value)
         self.assertEqual("Immernoch Überschrift", f['title_3'].value)
-        self.assertEqual("mehr Text darunter\nviel mehr", f['info_0'].value)
+        self.assertEqual("mehr Text darunter\nviel mehr", f['text_0'].value)
+
         f['delete_4'].checked = True
         self.submit(f)
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
+
         f = self.response.forms['configurequestionnaireform']
         self.assertNotIn("field_id_5", f.fields)
         self.assertEqual("Unterüberschrift", f['title_0'].value)
-        self.assertEqual("nur etwas Text", f['info_2'].value)
+        self.assertEqual("nur etwas Text", f['text_2'].value)
         self.assertEqual("3", f['field_id_4'].value)
-        self.assertEqual("Hauswunsch", f['title_4'].value)
+        self.assertEqual("Hauswunsch", f['label_4'].value)
+
         f['create_-1'].checked = True
+        f['role_-1'] = const.QuestionnaireRowRole.event_field
         f['field_id_-1'] = 4
-        f['title_-1'] = "Input"
+        f['label_-1'] = "Input"
         f['readonly_-1'].checked = True
         self.submit(f)
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
@@ -5545,10 +5567,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f = self.response.forms['configurequestionnaireform']
         self.assertIn("field_id_5", f.fields)
         self.assertEqual("4", f['field_id_5'].value)
-        self.assertEqual("Input", f['title_5'].value)
+        self.assertEqual("Input", f['label_5'].value)
 
         # Add a row with a datetime field and check that the default value works.
         f['create_-1'] = True
+        f['role_-1'] = const.QuestionnaireRowRole.event_field
         f['field_id_-1'] = 9  # 'arrival_at'
         f['default_value_-1'] = expectation = "2025-05-24 23:47:32"
         self.submit(f)
@@ -7047,7 +7070,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertEqual(f['extend_questionnaire'].checked, True)
         self.submit(f, check_notification=False)
         self.assertPresence(
-            "Felder dürfen nicht doppelt auftreten ('KleidungAnmerkungen').",
+            "Felder dürfen nicht doppelt auftreten: 'KleidungAnmerkungen'.",
             div="importerrorsummary",
         )
         f['extend_questionnaire'].checked = False
@@ -7066,16 +7089,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             div="importerrorsummary",
         )
         self.assertPresence(
-            "Felder dürfen nicht doppelt auftreten ('KleidungAnmerkungen').",
+            "Felder dürfen nicht doppelt auftreten: 'KleidungAnmerkungen'.",
             div="importerrorsummary",
         )
 
         # Fifth: Reset Questionnaire and fields and try the full import again:
         self.event.set_questionnaire(
             self.key, 1, const.QuestionnaireUsages.additional, []
-        )
-        self.event.set_questionnaire(
-            self.key, 1, const.QuestionnaireUsages.registration, []
         )
         event = self.event.get_event(self.key, 1)
         self.event.set_event(
@@ -7101,6 +7121,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.submit(f)
             self.traverse("Downloads & Import", {"href": "/download/questionnaire"})
             export = json.loads(self.response.text)
+            del export["questionnaire"][str(const.QuestionnaireUsages.registration)]
             self.assertEqual(data, export)
             self.get("/")
 
@@ -8364,14 +8385,17 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse("Veranstaltungen", "CdE-Party", "Anmeldung konfigurieren")
         f = self.response.forms['configurequestionnaireform']
         f['create_-1'] = True
+        f['role_-1'] = const.QuestionnaireRowRole.event_field
         f['field_id_-1'] = 1001
         self.submit(f)
         f = self.response.forms['configurequestionnaireform']
         f['create_-1'] = True
+        f['role_-1'] = const.QuestionnaireRowRole.event_field
         f['field_id_-1'] = 1002
         self.submit(f)
         f = self.response.forms['configurequestionnaireform']
         f['create_-1'] = True
+        f['role_-1'] = const.QuestionnaireRowRole.event_field
         f['field_id_-1'] = 1003
         self.submit(f)
         self.traverse("Anmelden")

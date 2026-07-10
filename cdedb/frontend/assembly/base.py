@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import tempfile
 import zipapp
-from typing import Any, Optional
+from typing import Any
 
 import werkzeug.exceptions
 from schulze_condorcet.types import Candidate
@@ -28,13 +28,14 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.query.log_filter import AssemblyLogFilter
-from cdedb.common.validation.types import CdedbID, Email
+from cdedb.common.sorting import EntitySorter
 from cdedb.common.validation.validate import (
     ASSEMBLY_COMMON_FIELDS,
     PERSONA_COMMON_FIELDS,
     PERSONA_FULL_CREATION,
     filter_none,
 )
+from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
     AbstractUserFrontend,
     REQUESTdata,
@@ -78,10 +79,28 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             assembly_id: len(self.assemblyproxy.list_attendees(rs, assembly_id))
             for assembly_id in rs.user.presider
         }
+
+        cutoff = now() - datetime.timedelta(days=2 * 365)
+
+        def is_recent(assembly: CdEDBObject) -> bool:
+            return assembly["signup_end"] > cutoff
+
+        presided_assemblies = [
+            assembly
+            for assembly_id, assembly in keydictsort_filter(
+                assemblies, EntitySorter.assembly
+            )
+            if is_recent(assembly) and assembly_id in rs.user.presider
+        ]
+
         return self.render(
             rs,
             "base/index",
-            {'assemblies': assemblies, 'attendees_count': attendees_count},
+            {
+                'assemblies': assemblies,
+                'attendees_count': attendees_count,
+                "presided_assemblies": presided_assemblies,
+            },
         )
 
     @access("core_admin", "assembly_admin")
@@ -111,7 +130,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
     @access("core_admin", "assembly_admin")
     @REQUESTdata("download", "is_search")
     def user_search(
-        self, rs: RequestState, download: Optional[str], is_search: bool
+        self, rs: RequestState, download: str | None, is_search: bool
     ) -> Response:
         """Perform search."""
         return self.generic_user_search(
@@ -220,7 +239,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
     @access("assembly_admin", modi={"POST"})
     @REQUESTdata("presider_ids")
     def add_presiders(
-        self, rs: RequestState, assembly_id: int, presider_ids: vtypes.CdedbIDList
+        self, rs: RequestState, assembly_id: int, presider_ids: list[vtypes.PersonaID]
     ) -> Response:
         if not rs.ambience['assembly']['is_active']:
             rs.ignore_validation_errors()
@@ -294,7 +313,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         self,
         rs: RequestState,
         assembly_id: int,
-        presider_address: Optional[str],
+        presider_address: str | None,
         data: dict[str, Any],
     ) -> Response:
         """Modify an assembly."""
@@ -429,10 +448,10 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
     def create_assembly(
         self,
         rs: RequestState,
-        presider_ids: vtypes.CdedbIDList,
+        presider_ids: list[vtypes.PersonaID],
         create_attendee_list: bool,
         create_presider_list: bool,
-        presider_address: Optional[Email],
+        presider_address: vtypes.Email | None,
         data: dict[str, Any],
     ) -> Response:
         """Make a new assembly."""
@@ -542,7 +561,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "assembly/index")
 
     def process_signup(
-        self, rs: RequestState, assembly_id: int, persona_id: Optional[int] = None
+        self, rs: RequestState, assembly_id: int, persona_id: int | None = None
     ) -> None:
         """Helper to actually perform signup."""
         if persona_id:
@@ -591,7 +610,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
     @assembly_guard
     @REQUESTdata("persona_id")
     def external_signup(
-        self, rs: RequestState, assembly_id: int, persona_id: CdedbID
+        self, rs: RequestState, assembly_id: int, persona_id: vtypes.PersonaID
     ) -> Response:
         """Add an external participant to an assembly."""
         if rs.has_validation_errors():

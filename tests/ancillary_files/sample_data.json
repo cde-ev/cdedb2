@@ -4981,14 +4981,14 @@
             "id": 1,
             "case_id": 1,
             "persona_id": 2,
-            "involved_type": 21,
+            "involvement_type": 21,
             "is_informed": false
         },
         {
             "id": 2,
             "case_id": 1,
             "persona_id": 4,
-            "involved_type": 1,
+            "involvement_type": 1,
             "is_informed": true
         }
     ],
@@ -4996,7 +4996,6 @@
         {
             "id": 1,
             "case_id": 1,
-            "involved_persona_id": 2,
             "involved_id": 1,
             "companion_persona_id": 3,
             "is_withdrawn": true
@@ -5004,7 +5003,6 @@
         {
             "id": 2,
             "case_id": 1,
-            "involved_persona_id": 4,
             "involved_id": 2,
             "companion_persona_id": 7,
             "is_withdrawn": false
@@ -7980,83 +7978,358 @@
             "amount": "-30.00"
         }
     ],
-    "event.questionnaire_rows": [
+    "event.questionnaire_text_rows": [
         {
-            "id": 1,
             "event_id": 1,
-            "field_id": 7,
+            "kind": 2,
             "pos": 0,
-            "title": "Ich bin unter 13 Jahre alt.",
-            "info": null,
-            "readonly": false,
-            "default_value": null,
-            "kind": 1
-        },
-        {
-            "id": 2,
-            "event_id": 1,
-            "field_id": null,
-            "pos": 0,
+            "role": 1,
             "title": "Unterüberschrift",
-            "info": "mit Text darunter",
-            "readonly": false,
-            "default_value": null,
-            "kind": 2
+            "text": "mit Text darunter"
         },
         {
-            "id": 3,
             "event_id": 1,
-            "field_id": 1,
-            "pos": 1,
-            "title": "Bälle",
-            "info": "Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.",
-            "readonly": false,
-            "default_value": "True",
-            "kind": 2
-        },
-        {
-            "id": 4,
-            "event_id": 1,
-            "field_id": null,
+            "kind": 2,
             "pos": 2,
+            "role": 1,
             "title": null,
-            "info": "nur etwas Text",
-            "readonly": false,
-            "default_value": null,
-            "kind": 2
+            "text": "nur etwas Text"
         },
         {
-            "id": 5,
             "event_id": 1,
-            "field_id": null,
+            "kind": 2,
             "pos": 3,
+            "role": 1,
             "title": "Weitere Überschrift",
-            "info": null,
-            "readonly": false,
-            "default_value": null,
-            "kind": 2
+            "text": null
         },
         {
-            "id": 6,
             "event_id": 1,
-            "field_id": 2,
-            "pos": 4,
-            "title": "Vehikel",
-            "info": null,
-            "readonly": false,
-            "default_value": "etc",
-            "kind": 2
+            "kind": 1,
+            "pos": 0,
+            "role": 1,
+            "title": "Anmeldung",
+            "text": null
         },
         {
-            "id": 7,
             "event_id": 1,
-            "field_id": 3,
+            "kind": 1,
+            "pos": 3,
+            "role": 1,
+            "title": "Kurswahlen",
+            "text": null
+        },
+        {
+            "event_id": 1,
+            "kind": 1,
             "pos": 5,
-            "title": "Hauswunsch",
-            "info": null,
+            "role": 1,
+            "title": "Weitere Angaben",
+            "text": null
+        },
+        {
+            "event_id": 2,
+            "kind": 1,
+            "pos": 0,
+            "role": 1,
+            "title": "Anmeldung",
+            "text": null
+        },
+        {
+            "event_id": 2,
+            "kind": 1,
+            "pos": 4,
+            "role": 1,
+            "title": "Weitere Angaben",
+            "text": null
+        },
+        {
+            "event_id": 3,
+            "kind": 1,
+            "pos": 0,
+            "role": 1,
+            "title": "Anmeldung",
+            "text": null
+        },
+        {
+            "event_id": 3,
+            "kind": 1,
+            "pos": 3,
+            "role": 1,
+            "title": "Kurswahlen",
+            "text": null
+        },
+        {
+            "event_id": 3,
+            "kind": 1,
+            "pos": 5,
+            "role": 1,
+            "title": "Weitere Angaben",
+            "text": null
+        },
+        {
+            "event_id": 4,
+            "kind": 1,
+            "pos": 0,
+            "role": 1,
+            "title": "Anmeldung",
+            "text": null
+        },
+        {
+            "event_id": 4,
+            "kind": 1,
+            "pos": 3,
+            "role": 1,
+            "title": "Kurswahlen",
+            "text": null
+        },
+        {
+            "event_id": 4,
+            "kind": 1,
+            "pos": 5,
+            "role": 1,
+            "title": "Weitere Angaben",
+            "text": null
+        }
+    ],
+    "event.questionnaire_field_rows": [
+        {
+            "event_id": 1,
+            "kind": 2,
+            "pos": 1,
+            "role": 5,
+            "label": "Bälle",
+            "info": "Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.",
+            "field_id": 1,
             "readonly": false,
-            "default_value": null,
-            "kind": 2
+            "default_value": "True"
+        },
+        {
+            "event_id": 1,
+            "kind": 2,
+            "pos": 4,
+            "role": 5,
+            "label": "Vehikel",
+            "info": null,
+            "field_id": 2,
+            "readonly": false,
+            "default_value": "etc"
+        },
+        {
+            "event_id": 1,
+            "kind": 2,
+            "pos": 5,
+            "role": 5,
+            "label": "Hauswunsch",
+            "info": null,
+            "field_id": 3,
+            "readonly": false,
+            "default_value": null
+        },
+        {
+            "event_id": 1,
+            "kind": 1,
+            "pos": 7,
+            "role": 5,
+            "label": "Ich bin unter 13 Jahre alt.",
+            "info": "Denk daran, deine Eltern mitzubringen!",
+            "field_id": 7,
+            "readonly": false,
+            "default_value": ""
+        }
+    ],
+    "event.questionnaire_magic_rows": [
+        {
+            "event_id": 1,
+            "kind": 1,
+            "pos": 1,
+            "role": 20
+        },
+        {
+            "event_id": 1,
+            "kind": 1,
+            "pos": 2,
+            "role": 30
+        },
+        {
+            "event_id": 1,
+            "kind": 1,
+            "pos": 4,
+            "role": 10
+        },
+        {
+            "event_id": 1,
+            "kind": 1,
+            "pos": 6,
+            "role": 40
+        },
+        {
+            "event_id": 1,
+            "kind": 1,
+            "pos": 8,
+            "role": 50
+        },
+        {
+            "event_id": 1,
+            "kind": 1,
+            "pos": 9,
+            "role": 60
+        },
+        {
+            "event_id": 1,
+            "kind": 1,
+            "pos": 10,
+            "role": 70
+        },
+        {
+            "event_id": 1,
+            "kind": 1,
+            "pos": 11,
+            "role": 30
+        },
+        {
+            "event_id": 2,
+            "kind": 1,
+            "pos": 1,
+            "role": 20
+        },
+        {
+            "event_id": 2,
+            "kind": 1,
+            "pos": 2,
+            "role": 30
+        },
+        {
+            "event_id": 2,
+            "kind": 1,
+            "pos": 3,
+            "role": 10
+        },
+        {
+            "event_id": 2,
+            "kind": 1,
+            "pos": 5,
+            "role": 40
+        },
+        {
+            "event_id": 2,
+            "kind": 1,
+            "pos": 6,
+            "role": 50
+        },
+        {
+            "event_id": 2,
+            "kind": 1,
+            "pos": 7,
+            "role": 60
+        },
+        {
+            "event_id": 2,
+            "kind": 1,
+            "pos": 8,
+            "role": 70
+        },
+        {
+            "event_id": 2,
+            "kind": 1,
+            "pos": 9,
+            "role": 30
+        },
+        {
+            "event_id": 3,
+            "kind": 1,
+            "pos": 1,
+            "role": 20
+        },
+        {
+            "event_id": 3,
+            "kind": 1,
+            "pos": 2,
+            "role": 30
+        },
+        {
+            "event_id": 3,
+            "kind": 1,
+            "pos": 4,
+            "role": 10
+        },
+        {
+            "event_id": 3,
+            "kind": 1,
+            "pos": 6,
+            "role": 40
+        },
+        {
+            "event_id": 3,
+            "kind": 1,
+            "pos": 7,
+            "role": 50
+        },
+        {
+            "event_id": 3,
+            "kind": 1,
+            "pos": 8,
+            "role": 60
+        },
+        {
+            "event_id": 3,
+            "kind": 1,
+            "pos": 9,
+            "role": 70
+        },
+        {
+            "event_id": 3,
+            "kind": 1,
+            "pos": 10,
+            "role": 30
+        },
+        {
+            "event_id": 4,
+            "kind": 1,
+            "pos": 1,
+            "role": 20
+        },
+        {
+            "event_id": 4,
+            "kind": 1,
+            "pos": 2,
+            "role": 30
+        },
+        {
+            "event_id": 4,
+            "kind": 1,
+            "pos": 4,
+            "role": 10
+        },
+        {
+            "event_id": 4,
+            "kind": 1,
+            "pos": 6,
+            "role": 40
+        },
+        {
+            "event_id": 4,
+            "kind": 1,
+            "pos": 7,
+            "role": 50
+        },
+        {
+            "event_id": 4,
+            "kind": 1,
+            "pos": 8,
+            "role": 60
+        },
+        {
+            "event_id": 4,
+            "kind": 1,
+            "pos": 9,
+            "role": 70
+        },
+        {
+            "event_id": 4,
+            "kind": 1,
+            "pos": 10,
+            "role": 30
         }
     ],
     "event.stored_queries": [
@@ -8064,6 +8337,7 @@
             "id": 1,
             "event_id": 1,
             "query_name": "Test-Query",
+            "query_group": "Test",
             "scope": 30,
             "serialized_query": {
                 "is_search": true,

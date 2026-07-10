@@ -40,8 +40,6 @@ from typing import (
     Any,
     ClassVar,
     NamedTuple,
-    Optional,
-    TypeVar,
     cast,
     no_type_check,
 )
@@ -138,11 +136,8 @@ def create_mock_image(file_type: str = "png") -> bytes:
     return afile.read()
 
 
-T = TypeVar("T")
-
-
 @no_type_check
-def json_keys_to_int(obj: T) -> T:
+def json_keys_to_int[T](obj: T) -> T:
     """Convert dict keys to integers if possible.
 
     This is a restriction of the JSON format allowing only string keys.
@@ -187,10 +182,8 @@ def _read_sample_data(
 
 _SAMPLE_DATA = _read_sample_data()
 
-B = TypeVar("B", bound=AbstractBackend)
 
-
-def _make_backend_shim(
+def _make_backend_shim[B: AbstractBackend](
     backend: B,
     internal: bool = False,
     allow_private: bool = False,
@@ -219,7 +212,7 @@ def _make_backend_shim(
     translations = setup_translations(backend.conf)
 
     def setup_requeststate(
-        key: Optional[str],
+        key: str | None,
         ip: str = "127.0.0.0",
     ) -> RequestState:
         """
@@ -300,7 +293,7 @@ def _make_backend_shim(
                 raise PrivilegeError(f"Attribute {name} not public")  # pragma: no cover
 
             @functools.wraps(attr)
-            def wrapper(key: Optional[str], *args: Any, **kwargs: Any) -> Any:
+            def wrapper(key: str | None, *args: Any, **kwargs: Any) -> Any:
                 rs = setup_requeststate(key)
                 try:
                     return attr(rs, *args, **kwargs)
@@ -360,8 +353,8 @@ class BasicTest(unittest.TestCase):
     @staticmethod
     def get_sample_data(
         table: str,
-        ids: Optional[Iterable[int]] = None,
-        keys: Optional[Iterable[str]] = None,
+        ids: Iterable[int] | None = None,
+        keys: Iterable[str] | None = None,
     ) -> CdEDBObjectMap:
         """This mocks a select request against the sample data.
 
@@ -534,7 +527,7 @@ class BackendTest(CdEDBTest):
         self.user = USER_DICT["anonymous"]
         self.key = ANONYMOUS
 
-    def login(self, user: UserIdentifier, *, ip: str = "127.0.0.0") -> Optional[str]:
+    def login(self, user: UserIdentifier, *, ip: str = "127.0.0.0") -> str | None:
         user = get_user(user)
         if user["id"] is None:
             raise RuntimeError(
@@ -676,11 +669,11 @@ class BackendTest(CdEDBTest):
         return backendcls()
 
     @classmethod
-    def initialize_backend(cls, backendcls: type[B]) -> B:
+    def initialize_backend[B: AbstractBackend](cls, backendcls: type[B]) -> B:
         return _make_backend_shim(backendcls(), internal=True, allow_private=False)
 
     @classmethod
-    def initialze_private_backend(cls, backendcls: type[B]) -> B:
+    def initialze_private_backend[B: AbstractBackend](cls, backendcls: type[B]) -> B:
         return _make_backend_shim(backendcls(), internal=True, allow_private=True)
 
 
@@ -1031,9 +1024,6 @@ def get_user(user: UserIdentifier) -> UserObject:
     return user
 
 
-F = TypeVar("F", bound=Callable[..., Any])
-
-
 def as_users(
     *users: UserIdentifier,
     maintain_data: bool = False,
@@ -1064,7 +1054,7 @@ def as_users(
     return wrapper
 
 
-def admin_views(*views: str) -> Callable[[F], F]:
+def admin_views[F: Callable[..., Any]](*views: str) -> Callable[[F], F]:
     """Decorate a test to set different initial admin views."""
 
     def decorator(fun: F) -> F:
@@ -1078,7 +1068,7 @@ def admin_views(*views: str) -> Callable[[F], F]:
     return decorator
 
 
-def prepsql(sql: str, verbose: int = 0) -> Callable[[F], F]:
+def prepsql[F: Callable[..., Any]](sql: str, verbose: int = 0) -> Callable[[F], F]:
     """Decorate a test to run some arbitrary SQL-code beforehand."""
 
     def decorator(fun: F) -> F:
@@ -1092,13 +1082,13 @@ def prepsql(sql: str, verbose: int = 0) -> Callable[[F], F]:
     return decorator
 
 
-def storage(fun: F) -> F:
+def storage[F: Callable[..., Any]](fun: F) -> F:
     """Decorate a test which needs some of the test files on the local drive."""
     setattr(fun, BasicTest.needs_storage_marker, True)
     return fun
 
 
-def event_keeper(fun: F) -> F:
+def event_keeper[F: Callable[..., Any]](fun: F) -> F:
     """Decorate a test which needs an event keeper setup."""
     setattr(fun, BasicTest.needs_event_keeper_marker, True)
     return storage(fun)
@@ -1161,7 +1151,7 @@ class FrontendTest(BackendTest):
             for file in folder.iterdir():
                 file.chmod(0o0644)  # 0644/-rw-r--r--
 
-    def setUp(self, *, prepsql: Optional[str] = None) -> None:
+    def setUp(self, *, prepsql: str | None = None) -> None:
         """Reset web application.
 
         :param prepsql: Similar to the @prepsql decorator this executes a raw
@@ -1202,7 +1192,7 @@ class FrontendTest(BackendTest):
 
     def _log_generation_time(
         self,
-        response: Optional[webtest.TestResponse] = None,
+        response: webtest.TestResponse | None = None,
     ) -> None:
         if response is None:
             response = self.response
@@ -1287,7 +1277,7 @@ class FrontendTest(BackendTest):
         check_notification: bool = True,
         check_button_attrs: bool = False,
         verbose: bool = False,
-        value: Optional[str] = None,
+        value: str | None = None,
         check_mandatory_filled: bool = True,
     ) -> None:
         """Submit a form.
@@ -1379,7 +1369,7 @@ class FrontendTest(BackendTest):
 
     def login(
         self, user: UserIdentifier, *, ip: str = "", verbose: bool = False
-    ) -> Optional[str]:
+    ) -> str | None:
         """Log in as the given user.
 
         :param verbose: If True display additional debug information.
@@ -1497,7 +1487,7 @@ class FrontendTest(BackendTest):
             "//div[@class='alert alert-info']/span/text()"
         )
 
-        def _extract_path(s: str) -> Optional[str]:
+        def _extract_path(s: str) -> str | None:
             regex = r"E-Mail als (.*) auf der Festplatte gespeichert."
             result = re.match(regex, s.strip())
             if not result:
@@ -1635,7 +1625,7 @@ class FrontendTest(BackendTest):
         div: str = "content",
         regex: bool = False,
         exact: bool = False,
-        msg: Optional[str] = None,
+        msg: str | None = None,
     ) -> None:
         """Assert that a string is present in the element with the given id.
 
@@ -1653,7 +1643,7 @@ class FrontendTest(BackendTest):
             self.assertIn(s.strip(), content, msg=msg)
 
     def assertNonPresence(
-        self, s: Optional[str], *, div: str = "content", check_div: bool = True
+        self, s: str | None, *, div: str = "content", check_div: bool = True
     ) -> None:
         """Assert that a string is not present in the element with the given id.
 
@@ -1842,11 +1832,11 @@ class FrontendTest(BackendTest):
 
     def assertNotification(
         self,
-        ntext: Optional[str] = None,
-        ntype: Optional[str] = None,
+        ntext: str | None = None,
+        ntype: str | None = None,
         *,
         static: bool = False,
-        msg: Optional[str] = None,
+        msg: str | None = None,
     ) -> None:
         """Check for a notification containing `ntext` under all `ntype` notifications.
 
@@ -1877,17 +1867,21 @@ class FrontendTest(BackendTest):
                     for node in other_notifications
                 )
                 if errors := self.get_content("debug-data-errors", check_exists=False):
-                    msg += " I found these errors in the debug data: " + errors
+                    msg += "\nI found these errors in the debug data: " + errors
             else:
                 msg += " (There were no notifications)."
-            if errors := self.get_content("debug-data-errors", check_exists=False):
-                msg += "\nI found these errors in the debug data:\n\t" + errors
+                if errors := self.get_content("debug-data-errors", check_exists=False):
+                    msg += "\nI found these errors in the debug data:\n\t" + errors
             self.fail(msg)
         if ntext is not None:
             # joining them this way is useful for meaningful failure message
             all_texts = " | ".join(
                 self._normalize_whitespace(n.text_content()) for n in notifications
             )
+            if errors := self.get_content("debug-data-errors", check_exists=False):
+                if msg is None:
+                    msg = ""
+                msg += "\nI found these errors in the debug data:\n\t" + errors
             self.assertIn(ntext, all_texts, msg=msg)
 
     def assertLogin(self, name: str) -> None:
@@ -1898,8 +1892,8 @@ class FrontendTest(BackendTest):
         self,
         fieldname: str,
         message: str = "",
-        index: Optional[int] = None,
-        notification: Optional[str] = "Validierung fehlgeschlagen",
+        index: int | None = None,
+        notification: str | None = "Validierung fehlgeschlagen",
     ) -> None:
         """
         Check for a specific form input field to be highlighted as .has-error
@@ -1928,8 +1922,8 @@ class FrontendTest(BackendTest):
         self,
         fieldname: str,
         message: str = "",
-        index: Optional[int] = None,
-        notification: Optional[str] = "Eingaben scheinen fehlerhaft",
+        index: int | None = None,
+        notification: str | None = "Eingaben scheinen fehlerhaft",
     ) -> None:
         """
         Check for a specific form input field to be highlighted as .has-warning
@@ -1959,8 +1953,8 @@ class FrontendTest(BackendTest):
         kind: str,
         fieldname: str,
         message: str,
-        index: Optional[int],
-        notification: Optional[str],
+        index: int | None,
+        notification: str | None,
     ) -> None:
         """Common helper for assertValidationError and assertValidationWarning."""
         if kind == "error":
@@ -2010,10 +2004,10 @@ class FrontendTest(BackendTest):
 
     def assertNoLink(
         self,
-        href_pattern: Optional[str | Pattern[str]] = None,
+        href_pattern: str | Pattern[str] | None = None,
         tag: str = 'a',
         href_attr: str = 'href',
-        content: Optional[str] = None,
+        content: str | None = None,
         verbose: bool = False,
     ) -> None:
         """Assert that no tag that matches specific criteria is found. Possible
@@ -2303,7 +2297,7 @@ class FrontendTest(BackendTest):
     def check_create_archive_user(
         self,
         realm: str,
-        data: Optional[CdEDBObject] = None,
+        data: CdEDBObject | None = None,
     ) -> None:
         """Basic check for the user creation and archival functionality of each realm.
 
@@ -2390,7 +2384,7 @@ class FrontendTest(BackendTest):
         _check_deleted_data()
 
     def _click_admin_view_button(
-        self, label: str | Pattern[str], current_state: Optional[bool] = None
+        self, label: str | Pattern[str], current_state: bool | None = None
     ) -> None:
         """
         Helper function for checking the disableable admin views
@@ -2478,7 +2472,7 @@ class MultiAppFrontendTest(FrontendTest):
         cls.responses = [None for _ in range(cls.n)]
         cls.current_app = 0
 
-    def setUp(self, *args: Optional[str], **kwargs: Optional[str]) -> None:
+    def setUp(self, *args: str | None, **kwargs: str | None) -> None:
         """Reset all apps and responses and the current app index."""
         self.responses = [None for _ in range(self.n)]
         super().setUp(*args, **kwargs)
@@ -2529,7 +2523,7 @@ class MailTrace(NamedTuple):
     kwargs: dict[str, Any]
 
 
-def make_cron_backend_proxy(cron: CronFrontend, backend: B) -> B:
+def make_cron_backend_proxy[B: AbstractBackend](cron: CronFrontend, backend: B) -> B:
     class CronBackendProxy:
         def __getattr__(self, name: str) -> Callable[..., Any]:
             attr = getattr(backend, name)
@@ -2597,7 +2591,7 @@ class CronTest(CdEDBTest):
         self.stores = []
         self.mails = []
 
-        def store_decorator(fun: F) -> F:
+        def store_decorator[F: Callable[..., Any]](fun: F) -> F:
             @functools.wraps(fun)
             def store_wrapper(
                 rs: RequestState, name: str, data: CdEDBObject
@@ -2613,12 +2607,14 @@ class CronTest(CdEDBTest):
             store_decorator(self.cron.core.set_cron_store),
         )
 
-        def mail_decorator(front: AbstractFrontend) -> Callable[[F], F]:
+        def mail_decorator[F: Callable[..., Any]](
+            front: AbstractFrontend,
+        ) -> Callable[[F], F]:
             def the_decorator(fun: F) -> F:
                 @functools.wraps(fun)
                 def mail_wrapper(
                     rs: RequestState, name: str, *args: Any, **kwargs: Any
-                ) -> Optional[str]:
+                ) -> str | None:
                     self.mails.append(MailTrace(front.realm, name, args, kwargs))
                     return fun(rs, name, *args, **kwargs)
 

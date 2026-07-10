@@ -1,5 +1,6 @@
 """Dataclass definitions of mailinglist realm."""
 
+import collections
 import dataclasses
 from collections import OrderedDict
 from collections.abc import Collection, Mapping
@@ -104,11 +105,11 @@ class Mailinglist(CdEDataclass):
         metadata=(Meta.io_exclude | Meta.validate_creation_optional).as_dict
     )
 
-    description: Optional[str]
-    additional_footer: Optional[str]
-    subject_prefix: Optional[str]
-    maxsize: Optional[vtypes.PositiveInt]
-    notes: Optional[str]
+    description: str | None
+    additional_footer: str | None
+    subject_prefix: str | None
+    maxsize: vtypes.PositiveInt | None
+    notes: str | None
 
     # some mailinglist types define additional fields
 
@@ -130,7 +131,7 @@ class Mailinglist(CdEDataclass):
             raise TypeError("Cannot instantiate abstract class.")
 
     def get_sortkey(self) -> Sortkey:
-        return (self.title,)
+        return (self.sortkey, self.title)
 
     @property
     def ml_type(self) -> MailinglistTypes:
@@ -162,7 +163,7 @@ class Mailinglist(CdEDataclass):
 
     @classmethod
     def get_select_query(
-        cls, entities: Collection[int], entity_key: Optional[str] = None
+        cls, entities: Collection[int], entity_key: str | None = None
     ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
         simple_fields = cls.database_fields()
         simple_fields.extend(
@@ -368,6 +369,23 @@ class Mailinglist(CdEDataclass):
         """Whether or not to do periodic subscription cleanup on this list."""
         return True
 
+    @staticmethod
+    def group_lists(
+        mailinglists: Collection["Mailinglist"] | dict[int, "Mailinglist"],
+    ) -> dict[MailinglistGroup, list["Mailinglist"]]:
+        if isinstance(mailinglists, Mapping):
+            mailinglists = mailinglists.values()
+        ret = collections.defaultdict(list)
+        for ml in xsorted(mailinglists):
+            ret[ml.sortkey].append(ml)
+        return ret
+
+    def __lt__(self, other: "CdEDataclass") -> bool:
+        if not isinstance(other, Mailinglist):
+            return NotImplemented
+
+        return self._lt_inner(other)
+
 
 @dataclass
 class GeneralMailinglist(Mailinglist):
@@ -407,7 +425,7 @@ class EventAssociatedMeta(GeneralMailinglist):
     """Metaclass for all event associated mailinglists."""
 
     # Allow empty event_id to mark legacy event-lists.
-    event_id: Optional[vtypes.ID] = None
+    event_id: vtypes.ID | None = None
 
     def periodic_cleanup(self, rs: RequestState) -> bool:
         """Disable periodic cleanup to freeze legacy event-lists."""
@@ -473,6 +491,7 @@ class EventMailinglist(GeneralMailinglist):
     available_domains = [MailinglistDomain.aka]
     viewer_roles = {"event"}
     relevant_admins = {"event_admin"}
+    notify_owner_on_bounce = True
     ldap_expose = False
 
 
@@ -546,7 +565,7 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 @dataclass
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     # An additional part group id limits the implicit subscribers.
-    event_part_group_id: Optional[vtypes.ID] = None
+    event_part_group_id: vtypes.ID | None = None
 
     registration_stati: list[const.RegistrationPartStati] = dataclasses.field(
         default_factory=list
@@ -719,7 +738,7 @@ class EventOrgaMailinglist(
 @dataclass
 class AssemblyAssociatedMailinglist(ImplicitsSubscribableMeta, AssemblyMailinglist):
     # Allow empty assembly_id to mark legacy assembly-lists.
-    assembly_id: Optional[vtypes.ID] = None
+    assembly_id: vtypes.ID | None = None
 
     def periodic_cleanup(self, rs: RequestState) -> bool:
         """Disable periodic cleanup to freeze legacy assembly-lists."""

@@ -21,7 +21,7 @@ import operator
 import typing
 from collections import OrderedDict
 from collections.abc import Callable, Collection
-from typing import Any, Optional, TypeVar, cast
+from typing import Any, cast
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -65,7 +65,19 @@ from cdedb.frontend.common import (
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 from cdedb.models.common import CdEDataclassMap
 
-F = TypeVar("F", bound=Callable[..., Any])
+
+class CourseChoiceParams(typing.TypedDict):
+    courses: CdEDataclassMap[models.Course]
+    courses_per_track: dict[int, set[int]]
+    all_courses_per_track: dict[int, set[int]]
+    courses_per_track_group: dict[int, set[int]]
+    all_courses_per_track_group: dict[int, set[int]]
+    simple_tracks: set[int]
+    choice_objects: list[models.CourseChoiceObject]
+    sync_track_groups: dict[int, models.SyncTrackGroup]
+    track_group_map: dict[int, int | None]
+    ccos_per_part: dict[int, list[str]]
+    parts_per_track_group_per_course: dict[int, dict[int, set[vtypes.ID]]]
 
 
 class ParticipantListData(typing.TypedDict):
@@ -97,7 +109,9 @@ class ConstraintViolationsData(typing.TypedDict):
     inhabitants: dict[int, dict[int, LodgementInhabitants]]
 
 
-def event_guard(*required_privileges: EventPrivileges) -> Callable[[F], F]:
+def event_guard[F: Callable[..., Any]](
+    *required_privileges: EventPrivileges,
+) -> Callable[[F], F]:
     """
     This decorator checks the users privilege regarding the contextual event,
     taken from rs.ambience['event'].
@@ -234,8 +248,8 @@ class EventBaseFrontend(AbstractUserFrontend):
         self,
         rs: RequestState,
         templatename: str,
-        params: Optional[CdEDBObject] = None,
-        mandatory_fields: Optional[Collection[str]] = None,
+        params: CdEDBObject | None = None,
+        mandatory_fields: Collection[str] | None = None,
     ) -> Response:
         def is_privileged(
             required_privilege: EventPrivileges = EventPrivileges.basic_read,
@@ -331,7 +345,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         self,
         rs: RequestState,
         *required_privileges: EventPrivileges,
-        event_id: Optional[int] = None,
+        event_id: int | None = None,
     ) -> bool:
         """
         Check the users privilege regarding the contextual event, given via event_id or
@@ -398,7 +412,7 @@ class EventBaseFrontend(AbstractUserFrontend):
     @access("core_admin", "event_admin")
     @REQUESTdata("download", "is_search")
     def user_search(
-        self, rs: RequestState, download: Optional[str], is_search: bool
+        self, rs: RequestState, download: str | None, is_search: bool
     ) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
@@ -429,8 +443,8 @@ class EventBaseFrontend(AbstractUserFrontend):
         self,
         rs: RequestState,
         event_id: int,
-        part_id: Optional[vtypes.ID] = None,
-        sortkey: Optional[str] = "persona",
+        part_id: vtypes.ID | None = None,
+        sortkey: str | None = "persona",
         reverse: bool = False,
     ) -> Response:
         """List participants of an event"""
@@ -597,16 +611,16 @@ class EventBaseFrontend(AbstractUserFrontend):
             self.eventproxy.list_registrations(rs, event_id, rs.user.persona_id).keys()
         )
         registration = self.eventproxy.get_registration(rs, registration_id)
-        data = self._get_participant_list_data(rs, event_id)
-        wishes, problems = detect_lodgement_wishes(
-            data['registrations'],
-            data['personas'],
-            rs.ambience['event'],
-            restrict_part_id=None,
-            restrict_registration_id=registration_id,
-            check_edges=False,
-        )
         if registration['list_consent']:
+            data = self._get_participant_list_data(rs, event_id)
+            wishes, problems = detect_lodgement_wishes(
+                data['registrations'],
+                data['personas'],
+                rs.ambience['event'],
+                restrict_part_id=None,
+                restrict_registration_id=registration_id,
+                check_edges=False,
+            )
             # Ordered list of wished personas
             wished_personas = xsorted([
                 data['personas'][data['registrations'][wish.wished]['persona_id']]
@@ -617,6 +631,7 @@ class EventBaseFrontend(AbstractUserFrontend):
                 "You can not access the Participant List as you have not agreed to"
                 " have your own data sent to other participants before the event."
             )
+            wished_personas = []
             problems = [("error", msg, {})]
         return UserLodgementWishes(
             field=rs.ambience['event'].lodge_field,
@@ -647,9 +662,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             rs, rs.ambience["event"].id
         )[kind]
         field_ids = {
-            entry.field_id
-            for entry in questionnaire
-            if entry.field_id and not entry.readonly
+            entry.field_id for entry in questionnaire.field_rows if not entry.readonly
         }
         return event_associated_fields_extractor(
             rs, rs.ambience["event"], const.FieldAssociations.registration, field_ids
@@ -661,7 +674,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         event: models.Event,
         registrations: CdEDBObjectMap,
         key: str,
-        personas: Optional[CdEDBObjectMap] = None,
+        personas: CdEDBObjectMap | None = None,
         instructors: bool = True,
         only_present: bool = True,
         only_involved: bool = True,
@@ -739,6 +752,11 @@ class EventBaseFrontend(AbstractUserFrontend):
             for entity_id in entity_ids
             for sub_id in sub_ids
         }
+
+    @abc.abstractmethod
+    def get_course_choice_params(
+        self, rs: RequestState, event_id: int, orga: bool = True
+    ) -> CourseChoiceParams: ...
 
     @abc.abstractmethod
     def get_course_stats(
@@ -893,7 +911,7 @@ class EventBaseFrontend(AbstractUserFrontend):
     def constraint_violations_summary(
         self,
         rs: RequestState,
-        event_ids: vtypes.IntCSVList | None = None,
+        event_ids: list[int] | None = None,
         violation_classes: list[str] | None = None,
         is_archived: int = -1,
         is_balanced: int = -1,
@@ -998,8 +1016,8 @@ class EventBaseFrontend(AbstractUserFrontend):
     @staticmethod
     def _get_camping_mat_field_names(
         event: models.Event,
-    ) -> dict[int, Optional[vtypes.RestrictiveIdentifier]]:
-        field_names: dict[int, Optional[vtypes.RestrictiveIdentifier]] = {}
+    ) -> dict[int, vtypes.RestrictiveIdentifier | None]:
+        field_names: dict[int, vtypes.RestrictiveIdentifier | None] = {}
         for part_id, part in event.parts.items():
             if f := part.camping_mat_field:
                 field_names[part_id] = f.field_name

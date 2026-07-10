@@ -65,6 +65,8 @@
         {{ util.anti_csrf_token(config_endpoint) }}
         {{ util.input_hidden("checksum", value=checksum) }}
 
+        {{ util.output_errors("questionnaire", wrapper=True) }}
+
         <div id="drow-container">
             {# Old items, already stored in the database #}
             {% for entry in questionnaire %}
@@ -88,7 +90,9 @@
     </form>
     <script type="text/javascript" nonce="{{ csp_nonce }}">
         (function() {
-            let field_list = {{ registration_fields|tojson }};
+            let field_list = {{ available_fields|tojson }};
+            let classes_by_role = {{ drow_classes_by_role|tojson }};
+            let all_classes = {{ all_drow_classes|tojson }};
             let translations = {
                 "true": "{{ gettext("true") }}",
                 "false": "{{ gettext("false") }}",
@@ -97,11 +101,11 @@
                 {
                     addButton: $("#drow-addbutton"),
                     callback: function () {
-                        $(this).cdedbQuestionnaireConfig(field_list, translations);
+                        $(this).cdedbQuestionnaireConfig(field_list, translations, classes_by_role, all_classes);
                     },
                     delButtonTitle: "{{ gettext("Delete Questionnaire Part") }}"
                 });
-            $(".drow-row").cdedbQuestionnaireConfig(field_list, translations);
+            $(".drow-row,.drow-new").cdedbQuestionnaireConfig(field_list, translations, classes_by_role, all_classes);
             $("#configurequestionnaireform").cdedbProtectChanges();
         })()
     </script>

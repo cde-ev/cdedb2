@@ -42,7 +42,7 @@
             {{ util.form_input_text(name="family_name", label=gettext("Family Name"), small=True) }}
             {# No birth name to avoid mistakes #}
             {{ util.form_input_text(name="username", label=gettext("E-Mail"), small=True, type="email",
-                                    attributes='autocomplete="email"'|s) }}
+                                    autocomplete="email") }}
             {{ util.form_input_select(name="realm", small=True, entries=realm_options,
                                       label=gettext("Rationale"), anid="realm-select") }}
             {{ util.form_input_textarea(name="notes",
