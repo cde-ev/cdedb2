@@ -5,7 +5,7 @@ import datetime
 import decimal
 import types
 import unittest.mock
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import webtest
 
@@ -20,7 +20,7 @@ from tests.common import FrontendTest, as_users, storage
 
 class TestParseFrontend(FrontendTest):
     def csv_submit(
-        self, form: webtest.Form, button: str = "", value: Optional[str] = None
+        self, form: webtest.Form, button: str = "", value: str | None = None
     ) -> None:
         super().submit(form, button=button, value=value, check_notification=False)
         self.assertEqual(self.response.text[0], "\ufeff")
@@ -92,7 +92,7 @@ class TestParseFrontend(FrontendTest):
         def match(
             event: models_event.Event,
             reference: str,
-            expected_confidence: Optional[parse.ConfidenceLevel],
+            expected_confidence: parse.ConfidenceLevel | None,
         ) -> None:
             fake_transaction = cast(
                 parse.Transaction,

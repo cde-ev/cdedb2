@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import tempfile
 import zipapp
-from typing import Any, Optional
+from typing import Any
 
 import werkzeug.exceptions
 from schulze_condorcet.types import Candidate
@@ -130,7 +130,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
     @access("core_admin", "assembly_admin")
     @REQUESTdata("download", "is_search")
     def user_search(
-        self, rs: RequestState, download: Optional[str], is_search: bool
+        self, rs: RequestState, download: str | None, is_search: bool
     ) -> Response:
         """Perform search."""
         return self.generic_user_search(
@@ -313,7 +313,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         self,
         rs: RequestState,
         assembly_id: int,
-        presider_address: Optional[str],
+        presider_address: str | None,
         data: dict[str, Any],
     ) -> Response:
         """Modify an assembly."""
@@ -561,7 +561,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "assembly/index")
 
     def process_signup(
-        self, rs: RequestState, assembly_id: int, persona_id: Optional[int] = None
+        self, rs: RequestState, assembly_id: int, persona_id: int | None = None
     ) -> None:
         """Helper to actually perform signup."""
         if persona_id:

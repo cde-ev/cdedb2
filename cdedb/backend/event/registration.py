@@ -15,7 +15,7 @@ import itertools
 from collections import defaultdict
 from collections.abc import Collection, Iterator, Mapping, Sequence
 from functools import cached_property
-from typing import NamedTuple, Optional, Protocol, Self, TypeVar, cast
+from typing import NamedTuple, Protocol, Self, cast
 
 import psycopg2.extensions
 
@@ -64,8 +64,6 @@ from cdedb.database.connection import Atomizer
 from cdedb.database.query import Params
 from cdedb.filter import datetime_filter, money_filter
 from cdedb.models.event import CheckinPeriod, ReducedCheckinPeriod
-
-T = TypeVar("T")
 
 
 class CourseChoiceValidationAux(NamedTuple):
@@ -301,9 +299,9 @@ class EventRegistrationBackend(EventBaseBackend):
         self,
         rs: RequestState,
         event_id: int,
-        registration_id: Optional[int],
+        registration_id: int | None,
         orga_input: bool,
-        part_ids: Optional[Collection[int]] = None,
+        part_ids: Collection[int] | None = None,
     ) -> CourseChoiceValidationAux:
         """Gather auxilliary data necessary to validate course choices.
 
@@ -412,7 +410,7 @@ class EventRegistrationBackend(EventBaseBackend):
         rs: RequestState,
         event_id: int,
         active_only: bool = False,
-        involved_parts: Optional[Collection[int]] = None,
+        involved_parts: Collection[int] | None = None,
     ) -> dict[int, set[int]]:
         """Determine which courses can be chosen in each track group.
 
@@ -452,7 +450,7 @@ class EventRegistrationBackend(EventBaseBackend):
         rs: RequestState,
         registration_id: int,
         track_id: int,
-        choices: Optional[Sequence[int]],
+        choices: Sequence[int] | None,
         aux: CourseChoiceValidationAux,
         new_registration: bool = False,
     ) -> DefaultReturnCode:
@@ -537,7 +535,7 @@ class EventRegistrationBackend(EventBaseBackend):
         self,
         rs: RequestState,
         event_id: int,
-        persona_ids: Optional[Collection[int]] = None,
+        persona_ids: Collection[int] | None = None,
     ) -> dict[int, int]:
         """List all registrations of an event.
 
@@ -566,7 +564,7 @@ class EventRegistrationBackend(EventBaseBackend):
 
     @access("event", "ml_admin")
     def list_registrations(
-        self, rs: RequestState, event_id: int, persona_id: Optional[int] = None
+        self, rs: RequestState, event_id: int, persona_id: int | None = None
     ) -> dict[int, int]:
         """Manual singularization of list_registrations_personas
 
@@ -714,8 +712,8 @@ class EventRegistrationBackend(EventBaseBackend):
         self,
         rs: RequestState,
         event_id: int,
-        part_ids: Optional[Collection[int]] = None,
-    ) -> dict[int, Optional[list[int]]]:
+        part_ids: Collection[int] | None = None,
+    ) -> dict[int, list[int] | None]:
         """Compute the waitlist in order for the given parts.
 
         Registrations with an empty waitlist field wil be placed at the end of the
@@ -732,7 +730,7 @@ class EventRegistrationBackend(EventBaseBackend):
                 part_ids = cast(set[vtypes.ID], set(event.parts.keys()))
             elif not part_ids <= event.parts.keys():
                 raise ValueError(n_("Unknown part for the given event."))
-            ret: dict[int, Optional[list[int]]] = {}
+            ret: dict[int, list[int] | None] = {}
             query = "SELECT id, fields FROM event.registrations WHERE event_id = %s"
             for part_id in part_ids:
                 part = event.parts[part_id]
@@ -764,8 +762,8 @@ class EventRegistrationBackend(EventBaseBackend):
         self,
         rs: RequestState,
         event_id: int,
-        part_ids: Optional[Collection[int]] = None,
-    ) -> dict[int, Optional[list[int]]]:
+        part_ids: Collection[int] | None = None,
+    ) -> dict[int, list[int] | None]:
         """Public wrapper around _get_waitlist. Adds privilege check."""
         if not is_privileged(rs, EventPrivileges.registrations_read, event_id=event_id):
             raise PrivilegeError(n_("Must be orga to access full waitlist."))
@@ -776,9 +774,9 @@ class EventRegistrationBackend(EventBaseBackend):
         self,
         rs: RequestState,
         event_id: int,
-        part_ids: Optional[Collection[int]] = None,
-        persona_id: Optional[int] = None,
-    ) -> dict[int, Optional[int]]:
+        part_ids: Collection[int] | None = None,
+        persona_id: int | None = None,
+    ) -> dict[int, int | None]:
         """Compute the waitlist position of a user for the given parts.
 
         :returns: Mapping of part id to position on waitlist or None if user is
@@ -796,7 +794,7 @@ class EventRegistrationBackend(EventBaseBackend):
         if not reg_ids:
             raise ValueError(n_("Not registered for this event."))
         reg_id = unwrap(reg_ids.keys())
-        ret: dict[int, Optional[int]] = {}
+        ret: dict[int, int | None] = {}
         for part_id, waitlist in full_waitlist.items():
             try:
                 # If `reg_id` is not in the list, a ValueError will be raised.
@@ -811,10 +809,10 @@ class EventRegistrationBackend(EventBaseBackend):
         self,
         rs: RequestState,
         event_id: int,
-        course_id: Optional[int] = None,
-        track_id: Optional[int] = None,
-        position: Optional[InfiniteEnum[CourseFilterPositions]] = None,
-        reg_ids: Optional[Collection[int]] = None,
+        course_id: int | None = None,
+        track_id: int | None = None,
+        position: InfiniteEnum[CourseFilterPositions] | None = None,
+        reg_ids: Collection[int] | None = None,
         reg_states: Collection[const.RegistrationPartStati] = (
             const.RegistrationPartStati.participant,
         ),
@@ -911,7 +909,7 @@ class EventRegistrationBackend(EventBaseBackend):
         event_id: int,
         stati: Collection[const.RegistrationPartStati],
         include_total: bool = False,
-    ) -> dict[Optional[int], int]:
+    ) -> dict[int | None, int]:
         """Count registrations per part.
 
         If selected, count total registration count (returned with part_id `None`).
@@ -942,7 +940,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("event")
     def get_registration_payment_info(
         self, rs: RequestState, event_id: int
-    ) -> tuple[Optional[bool], bool]:
+    ) -> tuple[bool | None, bool]:
         """Small helper to get information for the dashboard pages.
 
         The first returned flag is None iff there is no registration for the user.
@@ -1101,7 +1099,7 @@ class EventRegistrationBackend(EventBaseBackend):
         self,
         rs: RequestState,
         data: CdEDBObject,
-        change_note: Optional[str] = None,
+        change_note: str | None = None,
         orga_input: bool = True,
     ) -> DefaultReturnCode:
         """Public entry point for setting a registration. Perform sanity checks after."""
@@ -1125,7 +1123,7 @@ class EventRegistrationBackend(EventBaseBackend):
         self,
         rs: RequestState,
         data: Collection[CdEDBObject],
-        change_note: Optional[str] = None,
+        change_note: str | None = None,
     ) -> DefaultReturnCode:
         """Helper for setting multiple registrations at once.
 
@@ -1172,7 +1170,7 @@ class EventRegistrationBackend(EventBaseBackend):
         old_state: CdEDBObject,
         update: CdEDBObject,
         event_part: models.EventPart,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Uninlined code from _set_registration for better readability."""
         old_status = const.RegistrationPartStati(old_state['status'])
         g = rs.log_gettext
@@ -1188,7 +1186,7 @@ class EventRegistrationBackend(EventBaseBackend):
         self,
         rs: RequestState,
         data: CdEDBObject,
-        change_note: Optional[str] = None,
+        change_note: str | None = None,
         orga_input: bool = True,
     ) -> DefaultReturnCode:
         """Update some keys of a registration.
@@ -1523,7 +1521,7 @@ class EventRegistrationBackend(EventBaseBackend):
         self,
         rs: RequestState,
         registration_id: int,
-        cascade: Optional[Collection[str]] = None,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Remove a registration.
 
@@ -1632,7 +1630,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("finance_admin")
     def get_amount_owed(
         self, rs: RequestState, persona_id: int, event_id: int
-    ) -> Optional[decimal.Decimal]:
+    ) -> decimal.Decimal | None:
         """Retrieve the remaining amount owed for a single persona for one event."""
         persona_id = affirm(vtypes.ID, persona_id)
         event_id = affirm(vtypes.ID, event_id)
@@ -1648,7 +1646,7 @@ class EventRegistrationBackend(EventBaseBackend):
     @access("event")
     def get_registration_id(
         self, rs: RequestState, persona_id: int, event_id: int
-    ) -> Optional[int]:
+    ) -> int | None:
         """Retrieve the registration id of the given persona for the event if any."""
         persona_id = affirm(vtypes.ID, persona_id)
         event_id = affirm(vtypes.ID, event_id)
@@ -1982,7 +1980,7 @@ class EventRegistrationBackend(EventBaseBackend):
         rs: RequestState,
         registration_id: int,
         fee_id: int,
-        amount: Optional[decimal.Decimal],
+        amount: decimal.Decimal | None,
     ) -> DefaultReturnCode:
         """
         Either set or remove the personalized amount for one combination of reg and fee.
@@ -2038,7 +2036,7 @@ class EventRegistrationBackend(EventBaseBackend):
         amount: decimal.Decimal,
         date: datetime.date,
         by_orga: bool,
-        is_member: Optional[bool] = None,
+        is_member: bool | None = None,
     ) -> CdEDBObject:
         """
         Add the given amount to the amount that was paid for this registration.
@@ -2213,7 +2211,7 @@ class EventRegistrationBackend(EventBaseBackend):
         self,
         rs: RequestState,
         registration_ids: Collection[int],
-        checkin_time: Optional[datetime.datetime] = None,
+        checkin_time: datetime.datetime | None = None,
     ) -> DefaultReturnCode:
         """Check participants in, all with the same time.
 
@@ -2299,7 +2297,7 @@ class EventRegistrationBackend(EventBaseBackend):
             self,
             rs: RequestState,
             registration_id: int,
-            checkin_time: Optional[datetime.datetime] = None,
+            checkin_time: datetime.datetime | None = None,
         ) -> DefaultReturnCode: ...
 
     add_checkin: _AddCheckinProtocol = singularize(
@@ -2311,7 +2309,7 @@ class EventRegistrationBackend(EventBaseBackend):
         self,
         rs: RequestState,
         registration_ids: Collection[int],
-        checkout_time: Optional[datetime.datetime] = None,
+        checkout_time: datetime.datetime | None = None,
     ) -> DefaultReturnCode:
         """Check participants out, all at the same time.
 
@@ -2389,7 +2387,7 @@ class EventRegistrationBackend(EventBaseBackend):
             self,
             rs: RequestState,
             registration_id: int,
-            checkout_time: Optional[datetime.datetime] = None,
+            checkout_time: datetime.datetime | None = None,
         ) -> DefaultReturnCode: ...
 
     add_checkout: _AddCheckoutProtocol = singularize(
@@ -2402,7 +2400,7 @@ class EventRegistrationBackend(EventBaseBackend):
         rs: RequestState,
         registration_id: int,
         checkin_time: datetime.datetime,
-        checkout_time: Optional[datetime.datetime],
+        checkout_time: datetime.datetime | None,
     ) -> DefaultReturnCode:
         """Add an additional backdated period, where a participant was present."""
         registration_id = affirm(vtypes.ID, registration_id)
@@ -2475,7 +2473,7 @@ class EventRegistrationBackend(EventBaseBackend):
         registration_id: int,
         period_id: int,
         checkin_time: datetime.datetime,
-        checkout_time: Optional[datetime.datetime],
+        checkout_time: datetime.datetime | None,
     ) -> DefaultReturnCode:
         """Change the time a participant was present.
 

@@ -10,7 +10,7 @@ import re
 import tempfile
 import unittest
 from collections.abc import Collection, Sequence
-from typing import Optional, cast
+from typing import cast
 
 import freezegun
 import lxml.etree
@@ -72,7 +72,7 @@ class TestEventFrontend(FrontendTest):
         reg_id: int,
         event_id: int,
         amount_paid: decimal.Decimal,
-        payment: Optional[datetime.date] = None,
+        payment: datetime.date | None = None,
     ) -> None:
         """Mocker around book_fees to ease setting of payment stuff in tests.
 
@@ -4658,7 +4658,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         registrations = self.event.get_registrations(self.key, registration_ids)
         grouper = EventRegistrationInXChoiceGrouper(event, registrations)
 
-        def _test_grouper_link(reg_ids: Optional[set[int]], link_id: str) -> None:
+        def _test_grouper_link(reg_ids: set[int] | None, link_id: str) -> None:
             with self.subTest(link_id=link_id):
                 links = self.response.html.find_all(id=link_id)
                 if reg_ids is None:

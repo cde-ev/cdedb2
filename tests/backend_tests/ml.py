@@ -2,7 +2,7 @@
 
 from collections.abc import Collection
 from dataclasses import fields
-from typing import Optional, cast
+from typing import cast
 
 from subman.exceptions import SubscriptionError
 
@@ -735,7 +735,7 @@ class TestMlBackend(BackendTest):
         mailinglist_id: int,
         action: SA,
         state: SS,
-        kind: Optional[str] = None,
+        kind: str | None = None,
     ) -> None:
         """This calls functions to (administratively) modify the own subscription
         state on a given mailinglist to state and asserts they return code and
@@ -2037,7 +2037,7 @@ class TestMlBackend(BackendTest):
 
     @as_users("nina", "janis")
     def test_subscription_addresses(self) -> None:
-        expectation: dict[int, Optional[str]] = {
+        expectation: dict[int, str | None] = {
             1: 'anton@example.cde',
             2: 'berta@example.cde',
             3: 'charly@example.cde',

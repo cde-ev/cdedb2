@@ -3,7 +3,7 @@
 import datetime
 import json
 from collections.abc import Collection
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 import freezegun
 
@@ -55,7 +55,7 @@ class TestAssemblyBackend(BackendTest):
         return self.assembly.add_attachment(self.key, data)
 
     def _get_attachment_content(
-        self, rs: RequestState, attachment_id: int, version_nr: Optional[int] = None
+        self, rs: RequestState, attachment_id: int, version_nr: int | None = None
     ) -> bytes | None:
         """Get the content of an attachment. Defaults to most recent version."""
         if version_nr is None:

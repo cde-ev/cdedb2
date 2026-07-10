@@ -9,7 +9,7 @@ and courses' attendees.
 import collections
 from collections import OrderedDict
 from collections.abc import Collection
-from typing import Optional, cast
+from typing import cast
 
 from werkzeug import Response
 
@@ -399,11 +399,11 @@ class EventCourseMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: int,
-        course_id: Optional[vtypes.ID],
-        track_id: Optional[vtypes.ID],
-        position: Optional[InfiniteEnum[CourseFilterPositions]],
-        ids: Optional[list[int]],
-        include_active: Optional[bool],
+        course_id: vtypes.ID | None,
+        track_id: vtypes.ID | None,
+        position: InfiniteEnum[CourseFilterPositions] | None,
+        ids: list[int] | None,
+        include_active: bool | None,
     ) -> Response:
         """Provide an overview of course choices.
 
@@ -531,15 +531,15 @@ class EventCourseMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: int,
-        course_id: Optional[vtypes.ID],
-        track_id: Optional[vtypes.ID],
-        position: Optional[InfiniteEnum[CourseFilterPositions]],
-        ids: Optional[list[int]],
-        include_active: Optional[bool],
+        course_id: vtypes.ID | None,
+        track_id: vtypes.ID | None,
+        position: InfiniteEnum[CourseFilterPositions] | None,
+        ids: list[int] | None,
+        include_active: bool | None,
         registration_ids: Collection[int],
         assign_track_ids: Collection[int],
         assign_action: InfiniteEnum[CourseChoiceToolActions],
-        assign_course_id: Optional[vtypes.ID],
+        assign_course_id: vtypes.ID | None,
     ) -> Response:
         """Manipulate course choices.
 
@@ -942,7 +942,7 @@ class EventCourseMixin(EventBaseFrontend):
         # Parse request data
         params: vtypes.TypeMapping = {
             **{
-                f"new_{track_id}": Collection[Optional[vtypes.ID]]
+                f"new_{track_id}": Collection[vtypes.ID | None]
                 for track_id in rs.ambience['course'].segments
             },
             **{

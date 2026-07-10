@@ -15,7 +15,6 @@ import copy
 import dataclasses
 import decimal
 from collections import OrderedDict
-from typing import Optional
 
 import psycopg2.extensions
 
@@ -97,8 +96,8 @@ class CdEBaseBackend(AbstractBackend):
         self,
         rs: RequestState,
         code: const.CdeLogCodes,
-        persona_id: Optional[int] = None,
-        change_note: Optional[str] = None,
+        persona_id: int | None = None,
+        change_note: str | None = None,
     ) -> DefaultReturnCode:
         """Make an entry in the log.
 
@@ -461,7 +460,7 @@ class CdEBaseBackend(AbstractBackend):
         datum: CdEDBObject,
         trial_membership: bool,
         consent: bool,
-    ) -> Optional[int]:
+    ) -> int | None:
         """Uninlined code from perform_batch_admission().
 
         :returns: The affected persona_id, or None if the entry was skipped.

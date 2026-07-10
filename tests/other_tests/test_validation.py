@@ -7,7 +7,7 @@ import decimal
 import unittest
 import zoneinfo
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Optional, TypeVar, cast
+from typing import Any, Optional, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -38,8 +38,6 @@ from cdedb.config import Config
 from cdedb.models.common import CdEDataclass
 from cdedb.models.core import GenesisCaseEvent
 
-T = TypeVar('T')
-
 INVAL = object()
 NO_COMPARE = object()
 
@@ -47,11 +45,11 @@ NO_COMPARE = object()
 class TestValidationBase(unittest.TestCase):
     maxDiff = None
 
-    def do_validator_test(
+    def do_validator_test[T](
         self,
         type_: type[T],
         spec: Iterable[tuple[Any, T, type[Exception] | Exception | None]],
-        extraparams: Optional[Mapping[str, Any]] = None,
+        extraparams: Mapping[str, Any] | None = None,
         ignore_warnings: bool = True,
     ) -> None:
         """Perform extensive tests on a validator.
@@ -164,7 +162,7 @@ class TestValidation(TestValidationBase):
         with self.assertRaises(ValueError):
             validate.validate_assert(int | None, "garbage", ignore_warnings)
 
-        for type_form in cast(list[type[Any]], [int | None, Optional[int]]):
+        for type_form in cast(list[type[Any]], [int | None, Optional[int]]):  # noqa: UP045
             self.do_validator_test(
                 type_form,
                 (
@@ -182,12 +180,12 @@ class TestValidation(TestValidationBase):
         @dataclasses.dataclass
         class Foo(CdEDataclass):
             bar: int | None
-            baz: Optional[int]
+            baz: Optional[int]  # noqa: UP045
 
-        self.assertIsNot(int | None, Optional[int])
+        self.assertIsNot(int | None, Optional[int])  # noqa: UP045
 
         # int | None == Optional[int], but we only really care about the keys here anyway.
-        optional = {"bar": int | None, "baz": Optional[int]}
+        optional = {"bar": int | None, "baz": Optional[int]}  # noqa: UP045
         self.assertEqual(({}, optional), Foo.validation_fields(creation=True))
         self.assertEqual(
             ({"id": vtypes.ID}, optional), Foo.validation_fields(creation=False)

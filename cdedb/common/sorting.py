@@ -4,7 +4,7 @@
 
 import collections.abc
 from collections.abc import Callable, Collection, Generator, Iterable, KeysView
-from typing import Any, Protocol, TypeVar
+from typing import Any, Protocol
 
 import icu
 
@@ -20,8 +20,6 @@ COLLATOR = icu.Collator.createInstance(icu.Locale(LOCALE))
 
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = dict[str, Any]
-
-T = TypeVar("T")
 
 
 def collate(sortkey: Any) -> Any:
@@ -48,7 +46,7 @@ def collate(sortkey: Any) -> Any:
     return sortkey
 
 
-def xsorted(
+def xsorted[T](
     iterable: Iterable[T],
     *,
     key: Callable[[Any], Any] = lambda x: x,

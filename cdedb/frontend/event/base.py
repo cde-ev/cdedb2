@@ -21,7 +21,7 @@ import operator
 import typing
 from collections import OrderedDict
 from collections.abc import Callable, Collection
-from typing import Any, Optional, TypeVar, cast
+from typing import Any, cast
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -80,9 +80,6 @@ class CourseChoiceParams(typing.TypedDict):
     parts_per_track_group_per_course: dict[int, dict[int, set[vtypes.ID]]]
 
 
-F = TypeVar("F", bound=Callable[..., Any])
-
-
 class ParticipantListData(typing.TypedDict):
     registrations: CdEDBObjectMap
     ordered: list[int]
@@ -113,7 +110,9 @@ class ConstraintViolationsData(typing.TypedDict):
     inhabitants: dict[int, dict[int, LodgementInhabitants]]
 
 
-def event_guard(*required_privileges: EventPrivileges) -> Callable[[F], F]:
+def event_guard[F: Callable[..., Any]](
+    *required_privileges: EventPrivileges,
+) -> Callable[[F], F]:
     """
     This decorator checks the users privilege regarding the contextual event,
     taken from rs.ambience['event'].
@@ -250,8 +249,8 @@ class EventBaseFrontend(AbstractUserFrontend):
         self,
         rs: RequestState,
         templatename: str,
-        params: Optional[CdEDBObject] = None,
-        mandatory_fields: Optional[Collection[str]] = None,
+        params: CdEDBObject | None = None,
+        mandatory_fields: Collection[str] | None = None,
     ) -> Response:
         def is_privileged(
             required_privilege: EventPrivileges = EventPrivileges.basic_read,
@@ -347,7 +346,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         self,
         rs: RequestState,
         *required_privileges: EventPrivileges,
-        event_id: Optional[int] = None,
+        event_id: int | None = None,
     ) -> bool:
         """
         Check the users privilege regarding the contextual event, given via event_id or
@@ -414,7 +413,7 @@ class EventBaseFrontend(AbstractUserFrontend):
     @access("core_admin", "event_admin")
     @REQUESTdata("download", "is_search")
     def user_search(
-        self, rs: RequestState, download: Optional[str], is_search: bool
+        self, rs: RequestState, download: str | None, is_search: bool
     ) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
@@ -445,8 +444,8 @@ class EventBaseFrontend(AbstractUserFrontend):
         self,
         rs: RequestState,
         event_id: int,
-        part_id: Optional[vtypes.ID] = None,
-        sortkey: Optional[str] = "persona",
+        part_id: vtypes.ID | None = None,
+        sortkey: str | None = "persona",
         reverse: bool = False,
     ) -> Response:
         """List participants of an event"""
@@ -678,7 +677,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         event: models.Event,
         registrations: CdEDBObjectMap,
         key: str,
-        personas: Optional[CdEDBObjectMap] = None,
+        personas: CdEDBObjectMap | None = None,
         instructors: bool = True,
         only_present: bool = True,
         only_involved: bool = True,
@@ -1020,8 +1019,8 @@ class EventBaseFrontend(AbstractUserFrontend):
     @staticmethod
     def _get_camping_mat_field_names(
         event: models.Event,
-    ) -> dict[int, Optional[vtypes.RestrictiveIdentifier]]:
-        field_names: dict[int, Optional[vtypes.RestrictiveIdentifier]] = {}
+    ) -> dict[int, vtypes.RestrictiveIdentifier | None]:
+        field_names: dict[int, vtypes.RestrictiveIdentifier | None] = {}
         for part_id, part in event.parts.items():
             if f := part.camping_mat_field:
                 field_names[part_id] = f.field_name

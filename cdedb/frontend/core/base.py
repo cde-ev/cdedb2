@@ -12,7 +12,7 @@ import operator
 import pathlib
 import quopri
 import tempfile
-from typing import Any, Optional, TypedDict
+from typing import Any, TypedDict
 
 import segno.helpers
 import werkzeug.datastructures
@@ -144,7 +144,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
     @access("anonymous")
     @REQUESTdata("#wants")
-    def index(self, rs: RequestState, wants: Optional[str] = None) -> Response:
+    def index(self, rs: RequestState, wants: str | None = None) -> Response:
         """Basic entry point.
 
         :param wants: URL to redirect to upon login
@@ -233,7 +233,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 )
                 events = self.eventproxy.get_events(rs, event_ids.keys())
                 final: dict[int, Any] = {}
-                events_registration: dict[int, Optional[bool]] = {}
+                events_registration: dict[int, bool | None] = {}
                 events_payment_pending: dict[int, bool] = {}
                 for event_id, event in events.items():
                     registration, payment_pending = (
@@ -1211,7 +1211,7 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("persona")
     @REQUESTdata("phrase", "kind", "aux")
     def select_persona(
-        self, rs: RequestState, phrase: str, kind: str, aux: Optional[vtypes.ID]
+        self, rs: RequestState, phrase: str, kind: str, aux: vtypes.ID | None
     ) -> Response:
         """Provide data for intelligent input fields.
 
@@ -1344,11 +1344,11 @@ class CoreBaseFrontend(AbstractFrontend):
         else:
             return self.send_json(rs, {})
 
-        data: Optional[tuple[CdEDBObject, ...]] = None
+        data: tuple[CdEDBObject, ...] | None = None
 
         # Allow admins to search by (CdEDB)ID
         if ALL_ADMINS & rs.user.roles:
-            anid: Optional[vtypes.ID]
+            anid: vtypes.ID | None
             personas = {}
             anid, errs = inspect(vtypes.PersonaID, phrase, argname="phrase")
             if anid and not errs:
@@ -1600,9 +1600,9 @@ class CoreBaseFrontend(AbstractFrontend):
     def user_search(
         self,
         rs: RequestState,
-        download: Optional[str],
+        download: str | None,
         is_search: bool,
-        query: Optional[Query] = None,
+        query: Query | None = None,
     ) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
@@ -1708,7 +1708,7 @@ class CoreBaseFrontend(AbstractFrontend):
         rs: RequestState,
         persona_id: int,
         generation: int,
-        change_note: Optional[str],
+        change_note: str | None,
     ) -> Response:
         """Privileged edit of data set."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
@@ -1794,8 +1794,8 @@ class CoreBaseFrontend(AbstractFrontend):
     def email_status_overview(
         self,
         rs: RequestState,
-        address: Optional[vtypes.Email] = None,
-        notes: Optional[str] = None,
+        address: vtypes.Email | None = None,
+        notes: str | None = None,
     ) -> Response:
         """Present overview.
 
@@ -1832,7 +1832,7 @@ class CoreBaseFrontend(AbstractFrontend):
         rs: RequestState,
         address: vtypes.Email,
         status: const.EmailStatus,
-        notes: Optional[str],
+        notes: str | None,
     ) -> Response:
         """Insert or update the status of an email address."""
         if rs.has_validation_errors():
@@ -1853,7 +1853,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
     @access("persona")
     @REQUESTdata("to")
-    def contact_form(self, rs: RequestState, to: Optional[str] = None) -> Response:
+    def contact_form(self, rs: RequestState, to: str | None = None) -> Response:
         """Render form."""
         # The requestparam of "to" is only for prefilling. This automatically only
         #  works with valid recipients, so no need to test validity here.
@@ -1960,7 +1960,7 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("persona")
     @REQUESTdata("secret")
     def contact_reply_form(
-        self, rs: RequestState, secret: Optional[vtypes.Base64] = None
+        self, rs: RequestState, secret: vtypes.Base64 | None = None
     ) -> Response:
         """Render the reply form. Takes a message id via GET to prefill the form."""
         rs.ignore_validation_errors()
@@ -2415,7 +2415,7 @@ class CoreBaseFrontend(AbstractFrontend):
         self,
         rs: RequestState,
         persona_id: int,
-        target_realm: Optional[vtypes.Realm],
+        target_realm: vtypes.Realm | None,
         internal: bool = False,
     ) -> Response:
         """Render form.
@@ -2564,9 +2564,9 @@ class CoreBaseFrontend(AbstractFrontend):
         self,
         rs: RequestState,
         persona_id: int,
-        is_member: Optional[bool] = None,
-        trial_member: Optional[bool] = None,
-        honorary_member: Optional[bool] = None,
+        is_member: bool | None = None,
+        trial_member: bool | None = None,
+        honorary_member: bool | None = None,
     ) -> Response:
         """Change association status.
 

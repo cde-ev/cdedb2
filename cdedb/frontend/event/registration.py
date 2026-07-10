@@ -12,7 +12,7 @@ import itertools
 import typing
 from collections import OrderedDict
 from collections.abc import Collection
-from typing import Optional, cast, overload
+from typing import cast, overload
 
 import segno.helpers
 import werkzeug.datastructures
@@ -99,9 +99,9 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: int,
-        data: Optional[list[CdEDBObject]] = None,
-        csvfields: Optional[Collection[str]] = None,
-        saldo: Optional[decimal.Decimal] = None,
+        data: list[CdEDBObject] | None = None,
+        csvfields: Collection[str] | None = None,
+        saldo: decimal.Decimal | None = None,
     ) -> Response:
         if rs.ambience['event'].is_balanced:
             rs.notify("error", n_("Event is balanced. May not book payments."))
@@ -127,9 +127,9 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         send_notifications: bool,
-        transfers: Optional[str],
-        checksum: Optional[str],
-        transfers_file: Optional[werkzeug.datastructures.FileStorage],
+        transfers: str | None,
+        checksum: str | None,
+        transfers_file: werkzeug.datastructures.FileStorage | None,
     ) -> Response:
         event = rs.ambience['event']
         if event.is_balanced:
@@ -288,9 +288,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             self.eventproxy.get_course_segments_per_track_group(rs, event_id)
         )
         simple_tracks = set(tracks)
-        track_group_map: dict[int, Optional[int]] = {
-            track_id: None for track_id in tracks
-        }
+        track_group_map: dict[int, int | None] = {track_id: None for track_id in tracks}
         sync_track_groups = {
             tg_id: tg
             for tg_id, tg in track_groups.items()
@@ -501,12 +499,12 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: int,
-        persona_id: Optional[int],
+        persona_id: int | None,
         part_ids: list[int],
         field_ids: list[int],
-        is_member: Optional[bool] = None,
-        is_orga: Optional[bool] = None,
-        age: Optional[int] = None,
+        is_member: bool | None = None,
+        is_orga: bool | None = None,
+        age: int | None = None,
     ) -> Response:
         """Compute the total fee for a user based on seleceted parts and bool fields.
 
@@ -590,7 +588,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         orga_input: bool,
-        parts: Optional[CdEDBObjectMap] = None,
+        parts: CdEDBObjectMap | None = None,
         check_enabled: bool = False,
     ) -> CdEDBObject:
         """Helper to retrieve input data for a registration and convert it into a
@@ -632,16 +630,16 @@ class EventRegistrationMixin(EventBaseFrontend):
         standard_params: vtypes.MutableTypeMapping = {
             "reg.list_consent": bool,
             "reg.mixed_lodging": bool,
-            "reg.notes": Optional[str],
+            "reg.notes": str | None,
         }
         if orga_input:
             standard_params.update({
-                "reg.orga_notes": Optional[str],
+                "reg.orga_notes": str | None,
                 "reg.parental_agreement": bool,
             })
             if self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
                 standard_params.update({
-                    "reg.real_persona_id": Optional[vtypes.ID],
+                    "reg.real_persona_id": vtypes.ID | None,
                 })
         standard_params = filter_params(standard_params)
         registration = {
@@ -655,7 +653,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             for part_id in event.parts:
                 part_params.update({
                     f"part{part_id}.status": const.RegistrationPartStati,
-                    f"part{part_id}.lodgement_id": Optional[vtypes.ID],
+                    f"part{part_id}.lodgement_id": vtypes.ID | None,
                     f"part{part_id}.is_camping_mat": bool,
                 })
             part_params = filter_params(part_params)
@@ -695,15 +693,15 @@ class EventRegistrationMixin(EventBaseFrontend):
         track_params: vtypes.MutableTypeMapping = {}
         if orga_input:
             track_params.update({
-                f"track{track_id}.course_id": Optional[vtypes.ID] for track_id in tracks
+                f"track{track_id}.course_id": vtypes.ID | None for track_id in tracks
             })
         track_params.update({
-            f"track{track_id}.course_choice_{i}": Optional[vtypes.ID]
+            f"track{track_id}.course_choice_{i}": vtypes.ID | None
             for track_id in simple_tracks
             for i in range(tracks[track_id].num_choices)
         })
         track_params.update({
-            f"track{track_id}.course_instructor": Optional[vtypes.ID]
+            f"track{track_id}.course_instructor": vtypes.ID | None
             for track_id in simple_tracks
         })
         track_params = filter_params(track_params)
@@ -711,12 +709,12 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         # Now for synced tracks.
         synced_params: vtypes.MutableTypeMapping = {
-            f"group{group.id}.course_choice_{i}": Optional[vtypes.ID]
+            f"group{group.id}.course_choice_{i}": vtypes.ID | None
             for group in sync_track_groups.values()
             for i in range(group.num_choices)
         }
         synced_params.update({
-            f"group{group_id}.course_instructor": Optional[vtypes.ID]
+            f"group{group_id}.course_instructor": vtypes.ID | None
             for group_id in sync_track_groups
         })
         synced_params = filter_params(synced_params)
@@ -923,8 +921,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event: models.Event,
-        registration_id: Optional[int] = None,
-        prev_timestamp: Optional[datetime.datetime] = None,
+        registration_id: int | None = None,
+        prev_timestamp: datetime.datetime | None = None,
     ) -> tuple[int, datetime.datetime]:
         """Retrieve recent registrations and if any, send notification.
 
@@ -1412,7 +1410,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             else:
                 fee_id = request_extractor(
                     rs,
-                    {'fee_id': Optional[int]},
+                    {'fee_id': int | None},
                 )['fee_id']
             if fee_id:
                 # Defer validation to after the redirect.
@@ -1491,7 +1489,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             return self.redirect(rs, "event/fee_summary")
 
         params: vtypes.TypeMapping = {
-            f'amount{reg_id}': Optional[decimal.Decimal] for reg_id in registrations
+            f'amount{reg_id}': decimal.Decimal | None for reg_id in registrations
         }
         data = request_extractor(rs, params)
 
@@ -1544,7 +1542,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         registration_id: int,
-        change_note: Optional[str],
+        change_note: str | None,
         internal: bool = False,
     ) -> Response:
         """Render form.
@@ -1587,7 +1585,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         registration_id: int,
-        change_note: Optional[str],
+        change_note: str | None,
     ) -> Response:
         """Make privileged changes to any information pertaining to a
         registration.
@@ -1723,7 +1721,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         reg_ids: list[int],
-        change_note: Optional[str],
+        change_note: str | None,
     ) -> Response:
         """Render form for changing multiple registrations."""
 
@@ -1838,7 +1836,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         reg_ids: list[int],
-        change_note: Optional[str],
+        change_note: str | None,
     ) -> Response:
         """Make privileged changes to any information pertaining to multiple
         registrations.
@@ -1899,7 +1897,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         part_ids: Collection[int] = (),
-        checkout: Optional[bool] = False,
+        checkout: bool | None = False,
     ) -> Response:
         """Render form."""
         if rs.has_validation_errors() or not part_ids:
@@ -1969,7 +1967,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         registration_id: vtypes.ID,
-        from_checkin_page: Optional[bool] = False,
+        from_checkin_page: bool | None = False,
         part_ids: Collection[int] = (),
     ) -> Response:
         """Check a participant in."""
@@ -2003,7 +2001,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         registration_id: vtypes.ID,
-        from_checkin_page: Optional[bool] = False,
+        from_checkin_page: bool | None = False,
         part_ids: Collection[int] = (),
     ) -> Response:
         """Check a participant out."""
@@ -2037,7 +2035,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         event_id: int,
         registration_id: vtypes.ID,
         checkin_time: datetime.datetime,
-        checkout_time: Optional[datetime.datetime],
+        checkout_time: datetime.datetime | None,
     ) -> Response:
         """Insert a timespan where a participant was present."""
         if rs.has_validation_errors():
@@ -2060,7 +2058,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                 ValueError(n_("Checkout must be after checkin.")),
             ))
         reg = self.eventproxy.get_registration(rs, registration_id)
-        prev_period: Optional[models.CheckinPeriod] = None
+        prev_period: models.CheckinPeriod | None = None
         for next_period in reg['checkin_periods']:
             if next_period.checkin_time > checkin_time:
                 # period is to insert between prev_period and next_period
@@ -2210,8 +2208,8 @@ class EventRegistrationMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: int,
-        registration_ids: Optional[list[int]] = None,
-        field_id: Optional[vtypes.ID] = None,
+        registration_ids: list[int] | None = None,
+        field_id: vtypes.ID | None = None,
         internal: bool = False,
     ) -> Response:
         """Form to check in or out multiple people at once,
@@ -2297,11 +2295,11 @@ class EventRegistrationMixin(EventBaseFrontend):
         event_id: int,
         registration_ids: list[int],
         action: str,
-        field_id: Optional[vtypes.ID],
-        confirm_field_id: Optional[vtypes.ID],
-        ack_field: Optional[bool],
-        checkin_time: Optional[datetime.datetime],
-        checkout_time: Optional[datetime.datetime],
+        field_id: vtypes.ID | None,
+        confirm_field_id: vtypes.ID | None,
+        ack_field: bool | None,
+        checkin_time: datetime.datetime | None,
+        checkout_time: datetime.datetime | None,
     ) -> Response:
         """Checkin/-out multiple people at once.
 

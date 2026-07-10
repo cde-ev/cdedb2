@@ -8,7 +8,7 @@ import collections
 import copy
 import datetime
 from collections.abc import Collection
-from typing import Any, Optional, Protocol, TypeVar
+from typing import Any, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -42,9 +42,7 @@ from cdedb.common.query.log_filter import PastEventLogFilter
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import ParamDict
-from cdedb.models.common import CdEDataclassMap
-
-T = TypeVar("T")
+from cdedb.models.common import CdEDataclass, CdEDataclassMap
 
 
 class PastEventBackend(AbstractBackend):
@@ -69,10 +67,10 @@ class PastEventBackend(AbstractBackend):
         rs: RequestState,
         *,
         code: const.PastEventLogCodes,
-        pevent_id: Optional[int],
-        pcourse_id: Optional[int] = None,
-        persona_id: Optional[int] = None,
-        change_note: Optional[str] = None,
+        pevent_id: int | None,
+        pcourse_id: int | None = None,
+        persona_id: int | None = None,
+        change_note: str | None = None,
     ) -> int:
         """Make an entry in the log for concluded events.
 
@@ -246,7 +244,7 @@ class PastEventBackend(AbstractBackend):
         self,
         rs: RequestState,
         pevent_id: int,
-        cascade: Optional[Collection[str]] = None,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Remove past event.
 
@@ -325,7 +323,7 @@ class PastEventBackend(AbstractBackend):
 
     @access("persona")
     def list_past_courses(
-        self, rs: RequestState, pevent_id: Optional[int] = None
+        self, rs: RequestState, pevent_id: int | None = None
     ) -> dict[int, str]:
         """List all relevant past courses.
 
@@ -449,7 +447,7 @@ class PastEventBackend(AbstractBackend):
         self,
         rs: RequestState,
         pcourse_id: int,
-        cascade: Optional[Collection[str]] = None,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Remove past course.
 
@@ -691,7 +689,7 @@ class PastEventBackend(AbstractBackend):
         return ret
 
     @internal
-    def filter_participants(
+    def filter_participants[T: CdEDataclass](
         self,
         rs: RequestState,
         participants: CdEDataclassMap[T],
@@ -897,7 +895,7 @@ class PastEventBackend(AbstractBackend):
     @access("cde_admin", "event_admin")
     def find_past_event(
         self, rs: RequestState, shortname: str
-    ) -> tuple[Optional[int], list[Error], list[Error]]:
+    ) -> tuple[int | None, list[Error], list[Error]]:
         """Look for events with a certain name.
 
         This is mainly for batch admission, where we want to
@@ -940,7 +938,7 @@ class PastEventBackend(AbstractBackend):
     @access("cde_admin", "event_admin")
     def find_past_course(
         self, rs: RequestState, phrase: str, pevent_id: int
-    ) -> tuple[Optional[int], list[Error], list[Error]]:
+    ) -> tuple[int | None, list[Error], list[Error]]:
         """Look for courses with a certain number/name.
 
         This is mainly for batch admission, where we want to

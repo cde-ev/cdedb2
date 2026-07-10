@@ -17,7 +17,7 @@ import enum
 import itertools
 import re
 from collections.abc import Callable, Collection, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, Optional, cast
 
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, RequestState, unwrap
@@ -36,9 +36,9 @@ _CONFIG = Config()
 # The maximal number of sorting criteria that can be used for queries
 MAX_QUERY_ORDERS = 20
 
-CourseMap: TypeAlias = "models.CdEDataclassMap[models.Course]"
-LodgementMap: TypeAlias = "models.CdEDataclassMap[models.Lodgement]"
-LodgementGroupMap: TypeAlias = "models.CdEDataclassMap[models.LodgementGroup]"
+type CourseMap = models.CdEDataclassMap[models.Course]
+type LodgementMap = models.CdEDataclassMap[models.Lodgement]
+type LodgementGroupMap = models.CdEDataclassMap[models.LodgementGroup]
 
 
 @enum.unique
@@ -365,9 +365,9 @@ class QueryScope(CdEIntEnum):
         return ret
 
     def get_spec(self, *, event: Optional["models.Event"] = None,
-                 courses: Optional[CourseMap] = None,
-                 lodgements: Optional[LodgementMap] = None,
-                 lodgement_groups: Optional[LodgementGroupMap] = None,
+                 courses: CourseMap | None = None,
+                 lodgements: LodgementMap | None = None,
+                 lodgement_groups: LodgementGroupMap | None = None,
                  ) -> QuerySpec:
         """Return the query spec for this scope.
 
@@ -428,7 +428,7 @@ class QueryScope(CdEIntEnum):
         return target
 
     def mangle_query_input(self, rs: RequestState,
-                           defaults: Optional[CdEDBObject] = None) -> dict[str, str]:
+                           defaults: CdEDBObject | None = None) -> dict[str, str]:
         """Helper to bundle the extraction of submitted form data for a query.
 
         This simply extracts all the values expected according to the spec of the
@@ -838,7 +838,7 @@ class Query:
                  fields_of_interest: Collection[str],
                  constraints: Collection[QueryConstraint],
                  order: Sequence[QueryOrder],
-                 name: Optional[str] = None, query_id: Optional[int] = None,
+                 name: str | None = None, query_id: int | None = None,
                  ):
         """
         :param scope: target of FROM clause; key for :py:data:`QUERY_VIEWS`.
@@ -1101,19 +1101,19 @@ def _combine_specs(spec_map: dict[int, QuerySpec], entity_ids: Collection[int],
     return ret
 
 
-def _get_course_choices(courses: Optional[CourseMap]) -> QueryChoices:
+def _get_course_choices(courses: CourseMap | None) -> QueryChoices:
     if courses is None:
         return {}
     return dict((c.id, c.label) for c in xsorted(courses.values()))
 
 
-def _get_lodgement_choices(lodgements: Optional[LodgementMap]) -> QueryChoices:
+def _get_lodgement_choices(lodgements: LodgementMap | None) -> QueryChoices:
     if lodgements is None:
         return {}
     return dict((lodge.id, lodge.title) for lodge in xsorted(lodgements.values()))
 
 
-def _get_lodgement_group_choices(lodgement_groups: Optional[LodgementGroupMap],
+def _get_lodgement_group_choices(lodgement_groups: LodgementGroupMap | None,
                                  ) -> QueryChoices:
     if lodgement_groups is None:
         return {}
@@ -1121,9 +1121,9 @@ def _get_lodgement_group_choices(lodgement_groups: Optional[LodgementGroupMap],
 
 
 def make_registration_query_spec(event: "models.Event",
-                                 courses: Optional[CourseMap] = None,
-                                 lodgements: Optional[LodgementMap] = None,
-                                 lodgement_groups: Optional[LodgementGroupMap] = None,
+                                 courses: CourseMap | None = None,
+                                 lodgements: LodgementMap | None = None,
+                                 lodgement_groups: LodgementGroupMap | None = None,
                                  ) -> QuerySpec:
     """Helper to generate ``QueryScope.registration``'s spec.
 
@@ -1426,9 +1426,9 @@ def make_registration_query_spec(event: "models.Event",
     return spec
 
 
-def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] = None,
-                           lodgements: Optional[LodgementMap] = None,
-                           lodgement_groups: Optional[LodgementGroupMap] = None,
+def make_course_query_spec(event: "models.Event", courses: CourseMap | None = None,
+                           lodgements: LodgementMap | None = None,
+                           lodgement_groups: LodgementGroupMap | None = None,
                            ) -> QuerySpec:
     """Helper to generate ``QueryScope.event_course``'s spec.
 
@@ -1572,9 +1572,9 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
 
 
 def make_lodgement_query_spec(event: "models.Event",
-                              courses: Optional[CourseMap] = None,
-                              lodgements: Optional[LodgementMap] = None,
-                              lodgement_groups: Optional[LodgementGroupMap] = None,
+                              courses: CourseMap | None = None,
+                              lodgements: LodgementMap | None = None,
+                              lodgement_groups: LodgementGroupMap | None = None,
                               ) -> QuerySpec:
     """Helper to generate ``QueryScope.lodgement``'s spec.
 

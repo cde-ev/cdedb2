@@ -17,7 +17,7 @@ import pathlib
 import time
 from collections.abc import Mapping
 from types import TracebackType
-from typing import Any, Optional, TypeVar, cast
+from typing import Any, cast
 
 import psycopg2
 import psycopg2.extensions
@@ -50,10 +50,6 @@ psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 __all__ = ['DryRunError', 'Script', 'ScriptAtomizer']
 
 
-B = TypeVar("B", bound=AbstractBackend)
-F = TypeVar("F", bound=AbstractFrontend)
-
-
 class Script:
     backend_map: Mapping[str, type[AbstractBackend]] = {
         "core": CoreBackend,
@@ -78,14 +74,14 @@ class Script:
     def __init__(
         self,
         *,
-        persona_id: Optional[int] = None,
-        dry_run: Optional[bool] = None,
+        persona_id: int | None = None,
+        dry_run: bool | None = None,
         dbuser: str = 'cdb_anonymous',
-        outfile: Optional[PathLike] = None,
-        outfile_append: Optional[bool] = None,
+        outfile: PathLike | None = None,
+        outfile_append: bool | None = None,
         cursor: type[psycopg2.extensions.cursor] = psycopg2.extras.RealDictCursor,
         check_system_user: bool = True,
-        configpath: Optional[PathLike] = None,
+        configpath: PathLike | None = None,
         **config: Any,
     ):
         """Setup a helper class containing everything you might need for a script.
@@ -135,13 +131,13 @@ class Script:
         )
 
         # Setup internals.
-        self._redirect: Optional[contextlib.AbstractContextManager[None]] = None
-        self._atomizer: Optional[ScriptAtomizer] = None
+        self._redirect: contextlib.AbstractContextManager[None] | None = None
+        self._atomizer: ScriptAtomizer | None = None
         self._configpath = configpath
         self._config_overrides = config
         self.config = Config()
         self._secrets = SecretsConfig()
-        self._translations: Optional[Mapping[str, gettext.NullTranslations]]
+        self._translations: Mapping[str, gettext.NullTranslations] | None
         self._backends: dict[tuple[Any, bool], AbstractBackend] = {}
         self._frontends: dict[tuple[Any, bool], AbstractFrontend] = {}
         self._translations = None
@@ -168,7 +164,9 @@ class Script:
     def make_backend(self, realm: str, *, proxy: bool = True) -> AbstractBackend:
         return self._make_backend(self.backend_map[realm], proxy=proxy)
 
-    def _make_backend(self, backend_class: type[B], *, proxy: bool = True) -> B:
+    def _make_backend[B: AbstractBackend](
+        self, backend_class: type[B], *, proxy: bool = True
+    ) -> B:
         """Create backend, either as a proxy or not."""
         if ret := self._backends.get((backend_class, proxy)):
             return cast(B, ret)
@@ -182,7 +180,9 @@ class Script:
     def make_frontend(self, realm: str, *, proxy: bool = True) -> AbstractFrontend:
         return self._make_frontend(self.frontend_map[realm], proxy=proxy)
 
-    def _make_frontend(self, frontend_class: type[F], *, proxy: bool = True) -> F:
+    def _make_frontend[F: AbstractFrontend](
+        self, frontend_class: type[F], *, proxy: bool = True
+    ) -> F:
         """Create a frontend."""
         if ret := self._frontends.get((frontend_class, proxy)):
             return cast(F, ret)
@@ -236,7 +236,7 @@ class Script:
     def make_assembly_frontend(self, *, proxy: bool = True) -> AssemblyFrontend:
         return self._make_frontend(AssemblyFrontend, proxy=proxy)
 
-    def rs(self, persona_id: Optional[int] = None) -> RequestState:
+    def rs(self, persona_id: int | None = None) -> RequestState:
         """Create a RequestState."""
         persona_id = self.persona_id if persona_id is None else persona_id
         if ret := self._request_states.get(persona_id):
@@ -268,9 +268,9 @@ class Script:
 
     def __exit__(
         self,
-        exc_type: Optional[type[Exception]],
-        exc_val: Optional[Exception],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[Exception] | None,
+        exc_val: Exception | None,
+        exc_tb: TracebackType | None,
     ) -> bool:
         """Thin wrapper around `ScriptAtomizer`."""
         if self._atomizer is None:
@@ -306,9 +306,9 @@ class ScriptAtomizer(Atomizer):
 
     def __exit__(  # type: ignore[override]
         self,
-        exc_type: Optional[type[Exception]],
-        exc_val: Optional[Exception],
-        exc_tb: Optional[TracebackType],
+        exc_type: type[Exception] | None,
+        exc_val: Exception | None,
+        exc_tb: TracebackType | None,
     ) -> bool:
         """Calculate time taken and provide success message.
 

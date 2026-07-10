@@ -4,7 +4,7 @@
 
 import collections
 from collections.abc import Collection
-from typing import Any, Optional
+from typing import Any
 
 import werkzeug
 from subman.exceptions import SubscriptionError
@@ -58,8 +58,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         self,
         rs: RequestState,
         templatename: str,
-        params: Optional[CdEDBObject] = None,
-        mandatory_fields: Optional[Collection[str]] = None,
+        params: CdEDBObject | None = None,
+        mandatory_fields: Collection[str] | None = None,
     ) -> Response:
         params = params or {}
         if 'mailinglist' in rs.ambience:
@@ -146,7 +146,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("core_admin", "ml_admin")
     @REQUESTdata("download", "is_search")
     def user_search(
-        self, rs: RequestState, download: Optional[str], is_search: bool
+        self, rs: RequestState, download: str | None, is_search: bool
     ) -> Response:
         """Perform search."""
         return self.generic_user_search(
@@ -234,7 +234,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml")
     @REQUESTdata("ml_type")
     def create_mailinglist_form(
-        self, rs: RequestState, ml_type: Optional[const.MailinglistTypes]
+        self, rs: RequestState, ml_type: const.MailinglistTypes | None
     ) -> Response:
         """Render form."""
         rs.ignore_validation_errors()
@@ -1328,7 +1328,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml", modi={"POST"})
     @REQUESTdata("email")
     def change_address(
-        self, rs: RequestState, mailinglist_id: int, email: Optional[vtypes.Email]
+        self, rs: RequestState, mailinglist_id: int, email: vtypes.Email | None
     ) -> Response:
         """Modify address to which emails are delivered for this list.
 
@@ -1396,7 +1396,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/show_mailinglist")
 
     def _check_address_change_requirements(
-        self, rs: RequestState, mailinglist_id: int, email: Optional[vtypes.Email]
+        self, rs: RequestState, mailinglist_id: int, email: vtypes.Email | None
     ) -> bool:
         """Check if all conditions required to change a subscription address
         are fulfilled."""
