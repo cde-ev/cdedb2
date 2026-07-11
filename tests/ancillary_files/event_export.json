@@ -1407,14 +1407,14 @@
             "role": 5
         },
         "4": {
-            "default_value": null,
+            "default_value": "",
             "event_id": 1,
             "field_id": 7,
             "id": 4,
             "info": "Denk daran, deine Eltern mitzubringen!",
             "kind": 1,
             "label": "Ich bin unter 13 Jahre alt.",
-            "pos": 9,
+            "pos": 6,
             "readonly": false,
             "role": 5
         }
@@ -1424,63 +1424,63 @@
             "event_id": 1,
             "id": 1,
             "kind": 1,
-            "pos": 1,
+            "pos": 0,
             "role": 90
         },
         "2": {
             "event_id": 1,
             "id": 2,
             "kind": 1,
-            "pos": 3,
+            "pos": 1,
             "role": 20
         },
         "3": {
             "event_id": 1,
             "id": 3,
             "kind": 1,
-            "pos": 4,
+            "pos": 2,
             "role": 30
         },
         "4": {
             "event_id": 1,
             "id": 4,
             "kind": 1,
-            "pos": 6,
+            "pos": 3,
             "role": 10
         },
         "5": {
             "event_id": 1,
             "id": 5,
             "kind": 1,
-            "pos": 8,
+            "pos": 5,
             "role": 40
         },
         "6": {
             "event_id": 1,
             "id": 6,
             "kind": 1,
-            "pos": 10,
+            "pos": 7,
             "role": 50
         },
         "7": {
             "event_id": 1,
             "id": 7,
             "kind": 1,
-            "pos": 11,
+            "pos": 8,
             "role": 60
         },
         "8": {
             "event_id": 1,
             "id": 8,
             "kind": 1,
-            "pos": 12,
+            "pos": 9,
             "role": 70
         },
         "9": {
             "event_id": 1,
             "id": 9,
             "kind": 1,
-            "pos": 13,
+            "pos": 10,
             "role": 30
         }
     },
@@ -1495,7 +1495,7 @@
             "title": "Unter\u00fcberschrift"
         },
         "2": {
-            "event_id":1,
+            "event_id": 1,
             "id": 2,
             "kind": 2,
             "pos": 1,
@@ -1525,34 +1525,7 @@
             "event_id": 1,
             "id": 5,
             "kind": 1,
-            "pos": 0,
-            "role": 2,
-            "text": null,
-            "title": "Meine Daten"
-        },
-        "6": {
-            "event_id": 1,
-            "id": 6,
-            "kind": 1,
-            "pos": 2,
-            "role": 2,
-            "text": null,
-            "title": "Anmeldung"
-        },
-        "7": {
-            "event_id": 1,
-            "id": 7,
-            "kind": 1,
-            "pos": 5,
-            "role": 2,
-            "text": null,
-            "title": "Kurswahlen"
-        },
-        "8": {
-            "event_id": 1,
-            "id": 8,
-            "kind": 1,
-            "pos": 7,
+            "pos": 4,
             "role": 2,
             "text": null,
             "title": "Weitere Angaben"

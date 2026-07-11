@@ -427,25 +427,13 @@
             ],
             "QuestionnaireUsages.registration": [
                 {
-                    "role": 2,
-                    "title": "Meine Daten"
-                },
-                {
                     "role": 90
-                },
-                {
-                    "role": 2,
-                    "title": "Anmeldung"
                 },
                 {
                     "role": 20
                 },
                 {
                     "role": 30
-                },
-                {
-                    "role": 2,
-                    "title": "Kurswahlen"
                 },
                 {
                     "role": 10
