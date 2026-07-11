@@ -8,7 +8,7 @@ import difflib
 import json
 import pathlib
 import sys
-from typing import Any, Optional
+from typing import Any
 
 import click
 
@@ -87,7 +87,7 @@ def get_default_configpath() -> None:
     show_default="same as owner",
 )
 @click.pass_context
-def filesystem(ctx: click.Context, owner: str, group: Optional[str]) -> None:
+def filesystem(ctx: click.Context, owner: str, group: str | None) -> None:
     """Preparations regarding the file system."""
     ctx.obj = {'user': owner, 'group': group}
 
@@ -270,7 +270,7 @@ def compile_sample_data_sql(
     show_default="same as owner",
 )
 @pass_config
-def apply_sample_data(config: Config, owner: str, group: Optional[str]) -> None:
+def apply_sample_data(config: Config, owner: str, group: str | None) -> None:
     """Repopulates the application with sample data."""
     reset_config(config)
     secrets = SecretsConfig()

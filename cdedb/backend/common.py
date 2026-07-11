@@ -18,7 +18,6 @@ from typing import (
     ClassVar,
     Literal,
     Optional,
-    TypeVar,
     cast,
     overload,
 )
@@ -48,16 +47,9 @@ from cdedb.database.constants import FieldDatatypes, LockType
 from cdedb.database.query import DatabaseValue_s, SqlQueryBackend
 from cdedb.models.common import CdEDataclass
 
-F = TypeVar('F', bound=Callable[..., Any])
-LF = TypeVar('LF', bound=GenericLogFilter)
-T = TypeVar('T')
-T2 = TypeVar('T2')
-S = TypeVar('S')
-DC = TypeVar('DC', bound=CdEDataclass | GenericLogFilter)
-
 
 @overload
-def singularize(
+def singularize[T](
     function: Callable[..., Mapping[Any, T]],
     array_param_name: str = "",
     singular_param_name: str = "",
@@ -65,7 +57,7 @@ def singularize(
 
 
 @overload
-def singularize(
+def singularize[T](
     function: Callable[..., T],
     array_param_name: str = "",
     singular_param_name: str = "",
@@ -73,7 +65,7 @@ def singularize(
 ) -> Callable[..., T]: ...
 
 
-def singularize(
+def singularize[T](
     function: Callable[..., T | Mapping[Any, T]],
     array_param_name: str = "ids",
     singular_param_name: str = "anid",
@@ -113,7 +105,7 @@ def singularize(
     return singularized
 
 
-def access(*roles: Role) -> Callable[[F], F]:
+def access[F: Callable[..., Any]](*roles: Role) -> Callable[[F], F]:
     """The @access decorator marks a function of a backend for publication.
 
     Think of this as an RPC interface, only published functions are
@@ -147,7 +139,7 @@ def access(*roles: Role) -> Callable[[F], F]:
     return decorator
 
 
-def internal(function: F) -> F:
+def internal[F: Callable[..., Any]](function: F) -> F:
     """Mark a function of a backend for internal publication.
 
     It will be accessible via the :py:class:`cdedb.common.make_proxy` in
@@ -232,7 +224,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         rs: RequestState,
         query: Query,
         distinct: bool = True,
-        view: Optional[str] = None,
+        view: str | None = None,
         aggregate: bool = False,
     ) -> tuple[CdEDBObject, ...]:
         """Perform a DB query described by a :py:class:`cdedb.query.Query`
@@ -290,7 +282,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
 
     @staticmethod
     def _construct_query(
-        query: Query, distinct: bool, view: Optional[str], aggregate_select: str
+        query: Query, distinct: bool, view: str | None, aggregate_select: str
     ) -> tuple[str, list[DatabaseValue_s]]:
         params: list[DatabaseValue_s] = []
         constraints = []
@@ -302,13 +294,13 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
                 # for str as well as for other types
                 sql_param_str = "lower({0})"
 
-                def caser(x: T) -> T:
+                def caser[T](x: T) -> T:
                     return x.lower()  # type: ignore[attr-defined]
 
             else:
                 sql_param_str = "{0}"
 
-                def caser(x: T) -> T:
+                def caser[T](x: T) -> T:
                     return x
 
             columns = field.split(',')
@@ -570,7 +562,7 @@ class DatabaseLock:
 
     """
 
-    xid: Optional[psycopg2.extensions.Xid]
+    xid: psycopg2.extensions.Xid | None
 
     def __init__(self, rs: RequestState, *locks: LockType):
         self.rs = rs
@@ -643,10 +635,10 @@ def affirm_validation(
 
 
 @overload
-def affirm_validation(assertion: TypeForm[T], value: Any, **kwargs: Any) -> T: ...
+def affirm_validation[T](assertion: TypeForm[T], value: Any, **kwargs: Any) -> T: ...
 
 
-def affirm_validation(
+def affirm_validation[T](
     assertion: TypeForm[T] | type[CdEDataclass], value: Any, **kwargs: Any
 ) -> T | CdEDBObject:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
@@ -666,26 +658,26 @@ def inspect_validation(
     *,
     ignore_warnings: bool = True,
     **kwargs: Any,
-) -> tuple[Optional[CdEDBObject], list[Error]]: ...
+) -> tuple[CdEDBObject | None, list[Error]]: ...
 
 
 @overload
-def inspect_validation(
+def inspect_validation[T](
     type_: type[T],
     value: Any,
     *,
     ignore_warnings: bool = True,
     **kwargs: Any,
-) -> tuple[Optional[T], list[Error]]: ...
+) -> tuple[T | None, list[Error]]: ...
 
 
-def inspect_validation(
+def inspect_validation[T](
     type_: type[T | CdEDataclass],
     value: Any,
     *,
     ignore_warnings: bool = True,
     **kwargs: Any,
-) -> tuple[Optional[T | CdEDBObject], list[Error]]:
+) -> tuple[T | CdEDBObject | None, list[Error]]:
     """Convenient wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This should only be used if the error handling must be done in the backend to

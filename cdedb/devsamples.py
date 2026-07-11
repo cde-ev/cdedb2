@@ -3,7 +3,6 @@
 """Sample data used for dev instances."""
 
 import dataclasses
-from typing import Optional
 
 
 @dataclasses.dataclass
@@ -11,7 +10,7 @@ class MockHeldMessage:
     request_id: int
     sender: str
     subject: str
-    reason: Optional[str]
+    reason: str | None
     msg: str
 
 

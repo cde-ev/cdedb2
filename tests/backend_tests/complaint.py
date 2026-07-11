@@ -316,7 +316,7 @@ class TestComplaintBackend(BackendTest):
                 ),
             },
         )
-        expectation.personas = self.core.new_get_personas(
+        expectation.personas = self.core.get_personas(
             self.key,
             expectation.get_persona_ids(
                 self.complaint.retrieve_log(
@@ -1511,9 +1511,7 @@ class TestComplaintBackend(BackendTest):
         expectation.entry = cast(
             models.ComplaintEntry,
             SimpleNamespace(
-                case=SimpleNamespace(
-                    personas=self.core.new_get_personas(self.key, [1, 3])
-                )
+                case=SimpleNamespace(personas=self.core.get_personas(self.key, [1, 3]))
             ),
         )
 

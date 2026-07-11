@@ -1,6 +1,6 @@
-Hallo {{ data['given_names'] }}!
+Hallo {{ persona['given_names'] }}!
 
-{% if not data['is_cde_realm'] %}
+{% if not persona['is_cde_realm'] %}
 Dein Account für die CdE-Datenbank wurde erstellt. Unter [1]
 kannst Du Deine persönlichen Zugangsdaten erstellen.
 
@@ -10,7 +10,7 @@ die CdE-Mitgliederverwaltung
 {% else %}
 {# We expect new cde users with memberships to visited a DJA/DSA
    recently, and new cde users without membership to be external. #}
-{% if data['is_member'] %}
+{% if persona_status['is_member'] %}
 Ein herzliches Willkommen im Club der Ehemaligen der Deutschen
 SchülerAkademien (CdE)!
 
@@ -33,7 +33,7 @@ Schülern, aus Biologen und Philosophen, aus Leuten aus Deutschland und
 aus aller Welt, aus 40-jährigen und 13-jährigen, die alle eins gemeinsam haben:
 Sie waren alle mal auf einer JuniorAkademie, SchülerAkademie oder CdE-Akademie.
 
-{% if data['is_member'] %}
+{% if persona_status['is_member'] %}
 Der Verein veranstaltet jedes Jahr mehrere Akademien, die ähnlich
 aufgebaut sind wie die Akademie, an der Du teilgenommen hast. Einige
 davon haben einen besonderen thematischen Fokus, beispielsweise
@@ -54,7 +54,7 @@ kannst und wie es weiter geht, soll Dir diese E-Mail zeigen.
 
 Vieles wird über die Vereinsdatenbank organisiert. Unter [1]
 kannst Du Deine persönlichen Zugangsdaten zur CdE-Datenbank erstellen.
-{% if not data['is_searchable'] %}
+{% if not persona_status['is_searchable'] %}
 Wenn Du Dich zum ersten Mal in unserer Datenbank anmeldest, kannst Du
 entscheiden, ob andere Ehemalige Deine Kontaktdaten einsehen dürfen oder
 nicht.
@@ -65,7 +65,7 @@ auf https://www.cde-ev.de ausreichend, aber auch nachstehend findest Du
 eine ausführliche Beschreibung. Hier ist vorab das Wesentliche über
 die Mitgliedschaft im Verein zusammengefasst:
 
-{% if data['trial_member'] %}
+{% if is_trial_member %}
 Wie bleibt man Mitglied im CdE? Da z.B. durch den Druck der
 Vereinszeitschrift "exPuls" Kosten entstehen, wird eine
 Mitgliedsgebühr von {{ fee|money }} pro Halbjahr erhoben. In diesem
@@ -74,7 +74,7 @@ kostenlos, und Du hast so Gelegenheit, den CdE auszuprobieren. Danach
 musst Du den Mitgliedsbeitrag bezahlen, um Mitglied zu bleiben. Nähere
 Informationen dazu findest Du unter https://www.cde-ev.de/wir/mitglied/faq/ .
 Bei weiteren Fragen schreib eine E-Mail an <{{ MANAGEMENT_ADDRESS }}>.
-{% elif data['is_member'] %}
+{% elif persona_status['is_member'] %}
 Wie bleibt man Mitglied im CdE? Da z.B. durch den Druck der
 Vereinszeitschrift "exPuls" Kosten entstehen, wird eine
 Mitgliedsgebühr von {{ fee|money }} pro Halbjahr erhoben. Nähere
@@ -118,7 +118,7 @@ Vorstand des CdE e. V.
 
 === Die CdE-Aktivitäten ===
 
-{% if data['is_member'] %}
+{% if persona_status['is_member'] %}
 Der CdE bietet traditionell etwa fünfmal im Jahr Akademien an,
 die sehr der Akademie ähneln, auf der Du warst.
 

@@ -9,7 +9,7 @@
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/list_privilege_changes"), gettext("Privilege Changes")) }}
-{{ util.breadcrumb_link(cdedblink('core/show_privilege_change', {'case_id': ambience['privilege_change']['id']}),
+{{ util.breadcrumb_link(cdedblink('core/show_privilege_change', {'change_id': ambience['privilege_change']['id']}),
         persona|persona_name, icon="user", active="True") }}
 {% endblock %}
 

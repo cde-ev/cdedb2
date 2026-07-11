@@ -167,7 +167,7 @@ class EventDownloadMixin(EventBaseFrontend):
         reg_order = xsorted(
             registrations.keys(),
             key=lambda anid: EntitySorter.persona(
-                personas[registrations[anid]['persona_id']]
+                personas[registrations[anid]['persona_id']].as_dict()
             ),
         )
         registrations = OrderedDict(
@@ -383,7 +383,7 @@ class EventDownloadMixin(EventBaseFrontend):
             rs.ambience['event'],
             registrations,
             key="lodgement_id",
-            personas=personas,
+            personas={p.id: p.as_dict() for p in personas.values()},
         )
         tex = self.fill_template(
             rs,

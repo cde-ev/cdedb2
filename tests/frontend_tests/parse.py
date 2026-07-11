@@ -5,7 +5,7 @@ import datetime
 import decimal
 import types
 import unittest.mock
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import webtest
 
@@ -20,7 +20,7 @@ from tests.common import FrontendTest, as_users, storage
 
 class TestParseFrontend(FrontendTest):
     def csv_submit(
-        self, form: webtest.Form, button: str = "", value: Optional[str] = None
+        self, form: webtest.Form, button: str = "", value: str | None = None
     ) -> None:
         super().submit(form, button=button, value=value, check_notification=False)
         self.assertEqual(self.response.text[0], "\ufeff")
@@ -92,7 +92,7 @@ class TestParseFrontend(FrontendTest):
         def match(
             event: models_event.Event,
             reference: str,
-            expected_confidence: Optional[parse.ConfidenceLevel],
+            expected_confidence: parse.ConfidenceLevel | None,
         ) -> None:
             fake_transaction = cast(
                 parse.Transaction,
@@ -145,7 +145,8 @@ class TestParseFrontend(FrontendTest):
             'event': None,
         })
         transaction = parse.Transaction(data)
-        transaction.persona = {'id': 1}
+        with self.switch_user("anton"):
+            transaction.persona = self.core.get_persona(self.key, 1)
         event_backend = self.initialize_backend(EventBackend)
         event_backend.list_amounts_owed = unittest.mock.MagicMock(  # type: ignore[method-assign]
             return_value={2: amount}

@@ -44,7 +44,7 @@ dependencies = [
 dev = [
     "mypy==2.1.0",
     "lxml-stubs",
-    "ruff==0.15.19",
+    "ruff==0.15.20",
     "types-bleach",
     "types-ldap3",
     "types-Markdown",
@@ -148,10 +148,6 @@ ignore = [
     "PLR6301",  # Method could be static.
     "PLR2004",  # Magic value comparison.
     "COM812",  # Enforced trailing commas. Disabled due to incompatibility with ruff format.
-    "UP040",
-    "UP045",
-    "UP046",
-    "UP047",
 ]
 [tool.ruff.lint.per-file-ignores]
 "tests/frontend_tests/__init__.py" = ["F401"]

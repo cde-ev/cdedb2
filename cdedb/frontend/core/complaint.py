@@ -4,7 +4,7 @@ import datetime
 import itertools
 from collections.abc import Collection
 from itertools import chain
-from typing import Any, TypeVar
+from typing import Any
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -38,8 +38,6 @@ from cdedb.frontend.common import (
     request_extractor,
 )
 from cdedb.frontend.core.base import CoreBaseFrontend
-
-T = TypeVar("T")
 
 CASE_SEARCH_DEFAULTS = {
     'qop_cases.summary': QueryOperators.match,
@@ -301,7 +299,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         return self.render(rs, "complaint/configure_case", {}, mandatory_fields)
 
     @staticmethod
-    def _check_overlapping_sets(id_lists: dict[str, Collection[T]]) -> set[str]:
+    def _check_overlapping_sets[T](id_lists: dict[str, Collection[T]]) -> set[str]:
         """Return a set of all keys whos value overlaps with another value."""
         ret = set()
         for (name1, set1), (name2, set2) in itertools.combinations(id_lists.items(), 2):
@@ -1194,7 +1192,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             and not self.coreproxy.is_relative_admin(rs, persona_id)
             and persona_id != rs.user.persona_id
         ):
-            del rs.ambience['persona']['username']
+            rs.ambience['persona'].username = rs.ambience['persona'].REDACTED
 
         entries, descriptions = self.complaintproxy.get_user_measures(rs, persona_id)
         author_ids = set(

@@ -17,7 +17,6 @@ from typing import (
     ClassVar,
     Literal,
     Self,
-    TypeVar,
     cast,
     get_args,
     get_origin,
@@ -39,9 +38,8 @@ from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
 if TYPE_CHECKING:
     from cdedb.database.query import DatabaseValue_s
 
-T = TypeVar("T")
 # Should actually be a vtypes.ID instead of an int
-CdEDataclassMap = dict[int, T]
+type CdEDataclassMap[T] = dict[int, T]
 
 
 def requestdict_field_spec(field: dataclasses.Field[Any]) -> Literal["str", "[str]"]:
@@ -77,7 +75,7 @@ class AbstractFlag(AbstractMetaData, Flag):
         """Hide boilerplate of turning the flag into a dict expected by `dataclasses.field`."""
         return {self.get_metadata_name(): self}
 
-    def in_field(self, field: dataclasses.Field[T]) -> bool:
+    def in_field(self, field: dataclasses.Field[Any]) -> bool:
         """Hide boilerplate of extracting the flag information from `dataclasses.Field.metadata`."""
         return self in field.metadata.get(self.get_metadata_name(), self.__class__(0))
 
@@ -198,6 +196,8 @@ class MetaFlag(AbstractFlag):
         # like dict[_, type_]
         if origin is dict:
             _, type_ = typing.get_args(type_)
+        if origin is CdEDataclassMap:
+            type_ = typing.get_args(type_)[0]
         # like "type_"
         if isinstance(type_, typing.ForwardRef):
             type_ = type_.__forward_arg__

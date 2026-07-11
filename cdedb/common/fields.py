@@ -9,6 +9,7 @@ Role = str
 Realm = str
 
 
+# TODO get rid of them
 #: All columns deciding on the current status of a persona
 PERSONA_STATUS_FIELDS = (
     "is_active",

@@ -11,7 +11,6 @@ import copy
 import csv
 import itertools
 from collections.abc import Sequence
-from typing import Optional
 
 from werkzeug import Response
 
@@ -69,7 +68,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             allow_empty=not is_search,
             separator=" ",
         )
-        result: Optional[Sequence[CdEDBObject]] = None
+        result: Sequence[CdEDBObject] | None = None
         count = 0
 
         if rs.has_validation_errors():
@@ -140,7 +139,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
     @access("member", "cde_admin")
     @REQUESTdata("institution")
     def list_past_events(
-        self, rs: RequestState, institution: Optional[const.PastInstitutions] = None
+        self, rs: RequestState, institution: const.PastInstitutions | None = None
     ) -> Response:
         """List all concluded events."""
         if rs.has_validation_errors():
@@ -212,7 +211,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
     @REQUESTdatadict(*models.PastEvent.requestdict_fields(creation=True))
     @REQUESTdata("courses")
     def create_past_event(
-        self, rs: RequestState, courses: Optional[str], data: CdEDBObject
+        self, rs: RequestState, courses: str | None, data: CdEDBObject
     ) -> Response:
         """Add new concluded event."""
         data = check(rs, models.PastEvent, data, creation=True)
@@ -225,7 +224,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
                 dialect=CustomCSVDialect(),
             )
             lineno = 0
-            pcourse: Optional[CdEDBObject]
+            pcourse: CdEDBObject | None
             for pcourse in reader:
                 lineno += 1
                 # This is a placeholder for validation and will be substituted

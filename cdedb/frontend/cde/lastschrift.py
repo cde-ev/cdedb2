@@ -12,7 +12,6 @@ import random
 import string
 from collections import OrderedDict
 from collections.abc import Collection
-from typing import Optional
 
 import dateutil.easter
 import werkzeug.exceptions
@@ -28,7 +27,6 @@ from cdedb.common import (
     determine_age_class,
     get_mandatory_form_fields,
     lastschrift_reference,
-    make_persona_name,
     merge_dicts,
     now,
     unwrap,
@@ -225,7 +223,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
 
     @access("finance_admin")
     def lastschrift_create_form(
-        self, rs: RequestState, persona_id: Optional[int] = None
+        self, rs: RequestState, persona_id: int | None = None
     ) -> Response:
         """Render form."""
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
@@ -488,9 +486,9 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 'lastschrift_id': lastschrift['id'],
                 'period_id': period,
                 'mandate_reference': lastschrift_reference(
-                    persona['id'], lastschrift['id']
+                    persona.id, lastschrift['id']
                 ),
-                'amount': self.cdeproxy.transaction_amount(rs, persona['id']),
+                'amount': self.cdeproxy.transaction_amount(rs, persona.id),
                 'iban': lastschrift['iban'],
                 'type': "RCUR",  # TODO remove this, hardcode it in template
             }
@@ -504,17 +502,15 @@ class CdELastschriftMixin(CdEBaseFrontend):
             if lastschrift['account_owner']:
                 transaction['account_owner'] = lastschrift['account_owner']
             else:
-                transaction['account_owner'] = make_persona_name(
-                    persona, use_legal_name=True
-                )
+                transaction['account_owner'] = persona.get_name(use_legal_name=True)
             timestamp = f"{now().timestamp():.6f}"
             transaction['unique_id'] = "{}-{}".format(
                 transaction['mandate_reference'], timestamp[-9:]
             )
             # cut off bc of limit
             transaction['subject'] = asciificator(
-                f"{cdedbid_filter(persona['id'])}, {persona['family_name']},"
-                f" {persona['given_names']} LSI Mitgliedsbeitrag u. Spende CdE e.V."
+                f"{cdedbid_filter(persona.id)}, {persona.family_name},"
+                f" {persona.given_names} LSI Mitgliedsbeitrag u. Spende CdE e.V."
                 " z. Foerderung der Volks- u. Berufsbildung u. Studentenhilfe"
             )[:140]
 
@@ -534,7 +530,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
     @access("finance_admin", modi={"POST"})
     @REQUESTdata("lastschrift_id")
     def lastschrift_generate_transactions(
-        self, rs: RequestState, lastschrift_id: Optional[vtypes.ID]
+        self, rs: RequestState, lastschrift_id: vtypes.ID | None
     ) -> Response:
         """Issue direct debit transactions.
 
@@ -584,7 +580,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             self.do_mail(
                 rs,
                 "lastschrift/sepa_pre-notification",
-                {'To': (persona['username'],), 'Subject': subject},
+                {'To': (persona.username,), 'Subject': subject},
                 {'data': data},
             )
         rs.notify(
@@ -597,7 +593,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
     @access("finance_admin", modi={"POST"})
     @REQUESTdata("persona_id")
     def lastschrift_skip(
-        self, rs: RequestState, lastschrift_id: int, persona_id: Optional[vtypes.ID]
+        self, rs: RequestState, lastschrift_id: int, persona_id: vtypes.ID | None
     ) -> Response:
         """Do not do a direct debit transaction for this year.
 
@@ -625,7 +621,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         lastschrift_id: int,
         transaction_id: int,
         status: const.LastschriftTransactionStati,
-        persona_id: Optional[vtypes.ID],
+        persona_id: vtypes.ID | None,
     ) -> Response:
         """Finish one transaction.
 
@@ -650,9 +646,9 @@ class CdELastschriftMixin(CdEBaseFrontend):
         self,
         rs: RequestState,
         transaction_ids: Collection[vtypes.ID],
-        success: Optional[bool],
-        cancelled: Optional[bool],
-        failure: Optional[bool],
+        success: bool | None,
+        cancelled: bool | None,
+        failure: bool | None,
     ) -> Response:
         """Finish many transaction."""
         if sum(1 for s in (success, cancelled, failure) if s) != 1:
@@ -686,7 +682,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         rs: RequestState,
         lastschrift_id: int,
         transaction_id: int,
-        persona_id: Optional[vtypes.ID],
+        persona_id: vtypes.ID | None,
     ) -> Response:
         """Revert a successful transaction.
 
@@ -754,17 +750,17 @@ class CdELastschriftMixin(CdEBaseFrontend):
     def lastschrift_subscription_form(
         self,
         rs: RequestState,
-        full_name: Optional[str],
+        full_name: str | None,
         db_id: vtypes.PersonaID | None,
-        username: Optional[vtypes.Email],
-        address_supplement: Optional[str],
-        address: Optional[str],
-        postal_code: Optional[vtypes.GermanPostalCode],
-        location: Optional[str],
-        country: Optional[str],
-        iban: Optional[vtypes.IBAN],
-        account_holder: Optional[str],
-        donation: Optional[vtypes.PositiveDecimal],
+        username: vtypes.Email | None,
+        address_supplement: str | None,
+        address: str | None,
+        postal_code: vtypes.GermanPostalCode | None,
+        location: str | None,
+        country: str | None,
+        iban: vtypes.IBAN | None,
+        account_holder: str | None,
+        donation: vtypes.PositiveDecimal | None,
     ) -> Response:
         """Fill the direct debit authorization template with information."""
 

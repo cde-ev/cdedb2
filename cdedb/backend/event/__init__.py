@@ -7,7 +7,7 @@ variant for external participants.
 import collections
 import copy
 from collections.abc import Collection, Mapping
-from typing import Any, Optional
+from typing import Any
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -346,7 +346,7 @@ class EventBackend(
 
     @access("event_admin")
     def delete_event(
-        self, rs: RequestState, event_id: int, cascade: Optional[Collection[str]] = None
+        self, rs: RequestState, event_id: int, cascade: Collection[str] | None = None
     ) -> DefaultReturnCode:
         """Remove event.
 
@@ -515,7 +515,7 @@ class EventBackend(
         event_id: int,
         data: CdEDBObject,
         dryrun: bool,
-        token: Optional[str] = None,
+        token: str | None = None,
     ) -> tuple[str, CdEDBObject]:
         """Incorporate changes into an event.
 

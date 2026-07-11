@@ -4,7 +4,6 @@ import random
 import re
 import urllib.parse
 from collections.abc import Collection
-from typing import Optional
 
 import webtest
 
@@ -1572,7 +1571,7 @@ class TestCoreFrontend(FrontendTest):
         admin2: UserIdentifier,
         new_admin: UserObject,
         new_privileges: dict[str, bool],
-        old_privileges: Optional[dict[str, bool]] = None,
+        old_privileges: dict[str, bool] | None = None,
         note: str = "For testing.",
     ) -> None:
         """Helper to initialize a privilege change."""
@@ -1600,9 +1599,9 @@ class TestCoreFrontend(FrontendTest):
         admin2: UserIdentifier,
         new_admin: UserObject,
         new_privileges: dict[str, bool],
-        old_privileges: Optional[dict[str, bool]] = None,
+        old_privileges: dict[str, bool] | None = None,
         note: str = "For testing.",
-        new_password: Optional[str] = None,
+        new_password: str | None = None,
     ) -> UserObject:
         """Helper to make a user an admin."""
         self._initialize_privilege_change(
@@ -1639,7 +1638,7 @@ class TestCoreFrontend(FrontendTest):
         admin2: UserIdentifier,
         new_admin: UserObject,
         new_privileges: dict[str, bool],
-        old_privileges: Optional[dict[str, bool]] = None,
+        old_privileges: dict[str, bool] | None = None,
         note: str = "For testing.",
     ) -> None:
         """Helper to reject a privilege change."""
@@ -1765,7 +1764,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("vera")
     def test_create_user(self) -> None:
 
-        def _traverse_to_realm(realm: Optional[str] = None) -> webtest.Form:
+        def _traverse_to_realm(realm: str | None = None) -> webtest.Form:
             self.traverse('Index', 'Nutzer verwalten', 'Nutzer anlegen')
             self.assertTitle("Nutzer anlegen")
             f = self.response.forms['selectrealmform']
@@ -2487,7 +2486,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesisdecisionform']
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
 
-    def _genesis_request(self, data: CdEDBObject, realm: Optional[str] = None) -> None:
+    def _genesis_request(self, data: CdEDBObject, realm: str | None = None) -> None:
         if realm:
             self.get('/core/genesis/request?realm=' + realm)
         else:
@@ -3095,7 +3094,7 @@ class TestCoreFrontend(FrontendTest):
 
     def _create_genesis_doppelganger(
         self,
-        user: Optional[UserIdentifier] = None,
+        user: UserIdentifier | None = None,
         realm: str = "ml",
         unique_username: bool = False,
     ) -> UserObject:
@@ -3403,7 +3402,7 @@ class TestCoreFrontend(FrontendTest):
     def _decide_genesis_case(
         self,
         decision: GenesisDecision,
-        persona_id: Optional[int] = None,
+        persona_id: int | None = None,
         check: bool = True,
     ) -> None:
         f = self.response.forms['genesisdecisionform']

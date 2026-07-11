@@ -101,7 +101,7 @@ class Case(CdEDataclass):
         metadata=Meta.exclude.as_dict,
     )
 
-    personas: CdEDataclassMap[models_core.Persona] = dataclasses.field(
+    personas: CdEDataclassMap[models_core.CorePersona] = dataclasses.field(
         init=False,
         compare=False,
         repr=False,

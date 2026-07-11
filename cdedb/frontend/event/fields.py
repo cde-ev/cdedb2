@@ -7,7 +7,7 @@ managing and using custom datafields.
 
 from collections import Counter
 from collections.abc import Callable, Collection
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -21,7 +21,6 @@ from cdedb.common import (
     RequestState,
     build_msg,
     get_mandatory_form_fields,
-    make_persona_name,
     merge_dicts,
 )
 from cdedb.common.n_ import n_
@@ -108,7 +107,7 @@ class EventFieldMixin(EventBaseFrontend):
             additional_validation={"event": rs.ambience['event']},
         )
 
-        def field_name(field_id: int, field: Optional[CdEDBObject]) -> str:
+        def field_name(field_id: int, field: CdEDBObject | None) -> str:
             """Helper to get the name of a (new or existing) field."""
             return (
                 field['field_name']
@@ -155,10 +154,10 @@ class EventFieldMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: int,
-        field_id: Optional[int],
+        field_id: int | None,
         ids: Collection[int],
         kind: const.FieldAssociations,
-    ) -> tuple[CdEDBObjectMap, list[int], dict[int, str], Optional[models.EventField]]:
+    ) -> tuple[CdEDBObjectMap, list[int], dict[int, str], models.EventField | None]:
         """Process field set inputs.
 
         This function retrieves the data dependent on the given kind and returns it in
@@ -185,13 +184,13 @@ class EventFieldMixin(EventBaseFrontend):
                 rs, tuple(e['persona_id'] for e in entities.values())
             )
             labels = {
-                reg_id: make_persona_name(personas[entity['persona_id']])
+                reg_id: personas[entity['persona_id']].get_name()
                 for reg_id, entity in entities.items()
             }
             ordered_ids = xsorted(
                 entities.keys(),
                 key=lambda anid: EntitySorter.persona(
-                    personas[entities[anid]['persona_id']]
+                    personas[entities[anid]['persona_id']].as_dict()
                 ),
             )
         elif kind == const.FieldAssociations.course:
@@ -236,8 +235,8 @@ class EventFieldMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: int,
-        field_id: Optional[vtypes.ID],
-        ids: Optional[list[int]],
+        field_id: vtypes.ID | None,
+        ids: list[int] | None,
         kind: const.FieldAssociations,
     ) -> Response:
         """Select a field for manipulation across multiple entities."""
@@ -287,9 +286,9 @@ class EventFieldMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         field_id: vtypes.ID,
-        ids: Optional[list[int]],
+        ids: list[int] | None,
         kind: const.FieldAssociations,
-        change_note: Optional[str] = None,
+        change_note: str | None = None,
         internal: bool = False,
     ) -> Response:
         """Render form.
@@ -336,9 +335,9 @@ class EventFieldMixin(EventBaseFrontend):
         rs: RequestState,
         event_id: int,
         field_id: vtypes.ID,
-        ids: Optional[list[int]],
+        ids: list[int] | None,
         kind: const.FieldAssociations,
-        change_note: Optional[str] = None,
+        change_note: str | None = None,
     ) -> Response:
         """Modify a specific field on the given entities."""
         if rs.has_validation_errors():

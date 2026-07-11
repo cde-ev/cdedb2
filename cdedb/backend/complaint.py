@@ -275,7 +275,7 @@ class ComplaintBackend(AbstractBackend):
                 _, log_entries = self.generic_retrieve_log(
                     rs, ComplaintLogFilter(case_id=case.id)
                 )
-                case.personas = self.core.new_get_personas(
+                case.personas = self.core.get_personas(
                     rs, case.get_persona_ids(log_entries)
                 )
                 case.involved = {

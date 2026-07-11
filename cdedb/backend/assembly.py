@@ -34,7 +34,7 @@ import math
 from collections.abc import Collection, Iterator
 from pathlib import Path
 from secrets import token_urlsafe
-from typing import NamedTuple, Optional, Protocol, cast
+from typing import NamedTuple, Protocol, cast
 
 from schulze_condorcet import schulze_evaluate
 
@@ -86,7 +86,7 @@ from cdedb.models.core import AssemblyPersona
 class BallotConfiguration(NamedTuple):
     vote_begin: datetime.datetime
     vote_end: datetime.datetime
-    vote_extension_end: Optional[datetime.datetime]
+    vote_extension_end: datetime.datetime | None
     abs_quorum: int
     rel_quorum: int
 
@@ -192,9 +192,9 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         *,
-        assembly_id: Optional[int] = None,
-        ballot_id: Optional[int] = None,
-        attachment_id: Optional[int] = None,
+        assembly_id: int | None = None,
+        ballot_id: int | None = None,
+        attachment_id: int | None = None,
     ) -> bool:
         """Determine if a user has privileged acces to the given assembly.
 
@@ -216,9 +216,9 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         *,
-        assembly_id: Optional[int] = None,
-        ballot_id: Optional[int] = None,
-        attachment_id: Optional[int] = None,
+        assembly_id: int | None = None,
+        ballot_id: int | None = None,
+        attachment_id: int | None = None,
     ) -> bool:
         """Helper to check authorization.
 
@@ -253,9 +253,9 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         *,
-        assembly_id: Optional[int] = None,
-        ballot_id: Optional[int] = None,
-        attachment_id: Optional[int] = None,
+        assembly_id: int | None = None,
+        ballot_id: int | None = None,
+        attachment_id: int | None = None,
     ) -> bool:
         """Check authorization of this persona.
 
@@ -318,11 +318,11 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         code: const.AssemblyLogCodes,
-        assembly_id: Optional[int],
+        assembly_id: int | None,
         *,
-        ballot_id: Optional[int] = None,
-        persona_id: Optional[int] = None,
-        change_note: Optional[str] = None,
+        ballot_id: int | None = None,
+        persona_id: int | None = None,
+        change_note: str | None = None,
     ) -> DefaultReturnCode:
         """Make an entry in the log.
 
@@ -412,8 +412,8 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         *,
-        ballot_ids: Optional[Collection[int]] = None,
-        attachment_ids: Optional[Collection[int]] = None,
+        ballot_ids: Collection[int] | None = None,
+        attachment_ids: Collection[int] | None = None,
     ) -> set[int]:
         """Helper to retrieve a corresponding assembly id."""
         ballot_ids = affirm(set[vtypes.ID], ballot_ids or set())
@@ -437,8 +437,8 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         *,
-        ballot_id: Optional[int] = None,
-        attachment_id: Optional[int] = None,
+        ballot_id: int | None = None,
+        attachment_id: int | None = None,
     ) -> int:
         """Singular version of `get_assembly_ids`.
 
@@ -469,10 +469,10 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         *,
-        assembly_id: Optional[int] = None,
-        ballot_id: Optional[int] = None,
-        attachment_id: Optional[int] = None,
-        persona_id: Optional[int] = None,
+        assembly_id: int | None = None,
+        ballot_id: int | None = None,
+        attachment_id: int | None = None,
+        persona_id: int | None = None,
     ) -> bool:
         """Check whether a persona attends a specific assembly/ballot.
 
@@ -514,8 +514,8 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         *,
-        assembly_id: Optional[int] = None,
-        ballot_id: Optional[int] = None,
+        assembly_id: int | None = None,
+        ballot_id: int | None = None,
     ) -> bool:
         """Check whether this persona attends a specific assembly/ballot.
 
@@ -642,7 +642,7 @@ class AssemblyBackend(AbstractBackend):
     def list_assemblies(
         self,
         rs: RequestState,
-        is_active: Optional[bool] = None,
+        is_active: bool | None = None,
         restrictive: bool = False,
     ) -> CdEDBObjectMap:
         """List all assemblies.
@@ -708,7 +708,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def set_assembly(
-        self, rs: RequestState, data: CdEDBObject, change_note: Optional[str] = None
+        self, rs: RequestState, data: CdEDBObject, change_note: str | None = None
     ) -> DefaultReturnCode:
         """Update some keys of an assembly.
 
@@ -931,7 +931,7 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         assembly_id: int,
-        cascade: Optional[Collection[str]] = None,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Remove an assembly.
 
@@ -1353,7 +1353,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def comment_concluded_ballot(
-        self, rs: RequestState, ballot_id: int, comment: Optional[str] = None
+        self, rs: RequestState, ballot_id: int, comment: str | None = None
     ) -> DefaultReturnCode:
         """Add a comment to a concluded ballot.
 
@@ -1447,7 +1447,7 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         ballot_id: int,
-        cascade: Optional[Collection[str]] = None,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Remove a ballot.
 
@@ -1648,7 +1648,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def vote(
-        self, rs: RequestState, ballot_id: int, vote: str, secret: Optional[str]
+        self, rs: RequestState, ballot_id: int, vote: str, secret: str | None
     ) -> DefaultReturnCode:
         """Submit a vote.
 
@@ -1783,7 +1783,7 @@ class AssemblyBackend(AbstractBackend):
         return vote['vote']
 
     @access("assembly")
-    def get_ballot_result(self, rs: RequestState, ballot_id: int) -> Optional[bytes]:
+    def get_ballot_result(self, rs: RequestState, ballot_id: int) -> bytes | None:
         """Retrieve the content of a result file for a ballot.
 
         Returns None if the ballot is not tallied yet or if the file is missing.
@@ -1806,7 +1806,7 @@ class AssemblyBackend(AbstractBackend):
             return ret
 
     @access("assembly")
-    def tally_ballot(self, rs: RequestState, ballot_id: int) -> Optional[bytes]:
+    def tally_ballot(self, rs: RequestState, ballot_id: int) -> bytes | None:
         """Evaluate the result of a ballot.
 
         After voting has finished all votes are tallied and a result
@@ -1875,12 +1875,13 @@ class AssemblyBackend(AbstractBackend):
                 SELECT persona_id FROM assembly.voter_register
                 WHERE ballot_id = %(ballot_id)s and has_voted = True
             """
-            voter_ids = self.query_all(rs, query, {"ballot_id": ballot_id})
-            voters = self.core.get_personas(rs, tuple(unwrap(e) for e in voter_ids))
-            voter_names = list(
-                f"{e['given_names']} {e['family_name']}"
-                for e in xsorted(voters.values(), key=EntitySorter.persona)
-            )
+            voter_ids = [
+                e['persona_id']
+                for e in self.query_all(rs, query, {"ballot_id": ballot_id})
+            ]
+            voters = [
+                v.get_name() for v in self.core.get_personas(rs, voter_ids).values()
+            ]
             vote_list = xsorted(votes, key=json_serialize)
             result = {
                 "assembly": assembly['title'],
@@ -1888,7 +1889,7 @@ class AssemblyBackend(AbstractBackend):
                 "result": vote_result,
                 "candidates": candidates,
                 "use_bar": ballot['use_bar'],
-                "voters": voter_names,
+                "voters": voters,
                 "votes": vote_list,
             }
             path = self.get_ballot_file_path(rs, ballot_id)
@@ -1941,7 +1942,7 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         assembly_id: int,
-        cascade: Optional[set[str]] = None,
+        cascade: set[str] | None = None,
     ) -> DefaultReturnCode:
         """Do housekeeping after an assembly has ended.
 
@@ -2098,7 +2099,7 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         attachment_id: int,
-        cascade: Optional[Collection[str]] = None,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Remove an attachment."""
         attachment_id = affirm(vtypes.ID, attachment_id)
@@ -2347,7 +2348,7 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         attachment_ids: Collection[int],
-        timestamp: Optional[datetime.datetime] = None,
+        timestamp: datetime.datetime | None = None,
     ) -> CdEDBObjectMap:
         """Helper to get only the latest (non-deleted) version of attachments.
 
@@ -2648,8 +2649,8 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         *,
-        assembly_id: Optional[int] = None,
-        ballot_id: Optional[int] = None,
+        assembly_id: int | None = None,
+        ballot_id: int | None = None,
     ) -> set[int]:
         """List all files attached to an assembly/ballot.
 

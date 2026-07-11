@@ -10,7 +10,7 @@ import collections
 import dataclasses
 from collections.abc import Collection, Iterator
 from functools import cached_property
-from typing import Any, Optional, Protocol
+from typing import Any, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -146,7 +146,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
 
     @access("event")
     def delete_lodgement_group(
-        self, rs: RequestState, group_id: int, cascade: Optional[Collection[str]] = None
+        self, rs: RequestState, group_id: int, cascade: Collection[str] | None = None
     ) -> DefaultReturnCode:
         """Delete a lodgement group.
 
@@ -203,7 +203,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
 
     @access("event")
     def list_lodgements(
-        self, rs: RequestState, event_id: int, group_id: Optional[int] = None
+        self, rs: RequestState, event_id: int, group_id: int | None = None
     ) -> dict[int, str]:
         """List all lodgements for an event.
 
@@ -407,7 +407,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         self,
         rs: RequestState,
         lodgement_id: int,
-        cascade: Optional[Collection[str]] = None,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Delete a lodgement.
 
@@ -521,7 +521,8 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
             rs, [reg['persona_id'] for reg in registrations.values()]
         )
         for reg in registrations.values():
-            reg['persona'] = personas[reg['persona_id']]
+            # TODO Adjust when migrating registrationd to dataclass
+            reg['persona'] = personas[reg['persona_id']].as_dict()
 
         # Retrieve grouped registration ids.
         query = f"""
@@ -554,7 +555,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         self,
         rs: RequestState,
         group_id: int,
-        target_group_id: Optional[int],
+        target_group_id: int | None,
         delete_group: bool,
     ) -> DefaultReturnCode:
         """Move lodgements from one group to another or delete them with the group."""
