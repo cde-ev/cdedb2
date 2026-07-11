@@ -244,10 +244,12 @@
         {% endcall %}
     {% elif row.name == "CourseChoices" %}
         {% if choice_objects %}
+            {{ util.h("Course Choices", level=3, underline=True) }}
             {{ select_all_course_choices(involved_tracks=involved_tracks) }}
         {% endif %}
     {% elif row.name == "PartSelection" %}
         {% if ambience['event'].parts|length > 1 %}
+            {{ util.h("Registration", level=3, underline=True) }}
             {{ util.form_input_checkboxes(
                     name="parts", label=gettext("Event Parts"), entries=part_options, readonly=(registration and not preview),
                     defaultvalue=payment_parts, info=gettext("In order to change the parts you are registered for, contact the orgas.")
@@ -304,6 +306,7 @@
             </ul>
         </div>
     {% elif row.name == "MyData" %}
+        {{ util.h("My Data", level=3, underline=True) }}
         <dl class="dl-horizontal">
             <dt title="{% trans %}Full Name{% endtrans %}">{% trans %}Full Name{% endtrans %}</dt>
             <dd>

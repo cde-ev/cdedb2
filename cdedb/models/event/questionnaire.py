@@ -452,14 +452,10 @@ def make_default_questionnaire(
     event: Event,
 ) -> dict[const.QuestionnaireUsages, list[CdEDBObject]]:
     reg_quest: list[const.QuestionnaireRowRole | str] = [
-        "Meine Daten",
         const.QuestionnaireRowRole.my_data,
-        "Anmeldung",
         const.QuestionnaireRowRole.part_selection,
         const.QuestionnaireRowRole.fee_preview,
     ]
-    if event.tracks:
-        reg_quest.append("Kurswahlen")
     reg_quest.extend([
         const.QuestionnaireRowRole.course_choices,
         "Weitere Angaben",
