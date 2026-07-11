@@ -71,7 +71,7 @@ class TestMlBackend(BackendTest):
             self.key, source_persona_id=janis_id, target_persona_id=berta_id
         )
         self.assertEqual(code, 0)
-        self.assertFalse(self.core.get_persona(self.key, janis_id)["is_archived"])
+        self.assertFalse(self.core.get_persona(self.key, janis_id).is_archived)
 
         # remove the blocking subscription of berta
         self.ml._remove_subscription(self.key, {'mailinglist_id': 3, 'persona_id': 2})
@@ -196,7 +196,7 @@ class TestMlBackend(BackendTest):
 
         # assure janis is archived
         janis = self.core.get_persona(self.key, janis_id)
-        self.assertTrue(janis['is_archived'])
+        self.assertTrue(janis.is_archived)
 
     @as_users("nina")
     def test_entity_mailinglist(self) -> None:

@@ -583,7 +583,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
                 "signup",
                 {
                     'From': self.conf["NOREPLY_SENDER"],
-                    'To': (persona['username'],),
+                    'To': (persona.username,),
                     'Subject': subject,
                 },
                 {

@@ -1192,7 +1192,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             and not self.coreproxy.is_relative_admin(rs, persona_id)
             and persona_id != rs.user.persona_id
         ):
-            del rs.ambience['persona']['username']
+            rs.ambience['persona'].username = rs.ambience['persona'].REDACTED
 
         entries, descriptions = self.complaintproxy.get_user_measures(rs, persona_id)
         author_ids = set(

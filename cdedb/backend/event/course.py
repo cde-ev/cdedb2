@@ -34,7 +34,7 @@ from cdedb.common.privileges import (
     EventPrivileges,
     is_privileged_event as is_privileged,
 )
-from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import DatabaseValue_s, ParamDict
 
@@ -514,31 +514,27 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
                 "stati": const.RegistrationPartStati.involved_states(),
             }
             persona_ids = set()
-            attendees_by_track = collections.defaultdict(list)
-            instructors_by_track = collections.defaultdict(list)
+            attendees_by_track = collections.defaultdict(set)
+            instructors_by_track = collections.defaultdict(set)
             for e in self.query_all(rs, query, params):
                 persona_ids.add(e["persona_id"])
                 if e["is_instructor"]:
-                    instructors_by_track[e["track_id"]].append(e["persona_id"])
+                    instructors_by_track[e["track_id"]].add(e["persona_id"])
                 else:
-                    attendees_by_track[e["track_id"]].append(e["persona_id"])
+                    attendees_by_track[e["track_id"]].add(e["persona_id"])
             personas = self.core.get_personas(rs, persona_ids)
             return models.CourseAttendees({
                 track_id: models.CourseSegmentAttendees(
-                    learners=xsorted(
-                        (
-                            personas[persona_id]
-                            for persona_id in attendees_by_track[track_id]
-                        ),
-                        key=EntitySorter.persona,
-                    ),
-                    instructors=xsorted(
-                        (
-                            personas[persona_id]
-                            for persona_id in instructors_by_track[track_id]
-                        ),
-                        key=EntitySorter.persona,
-                    ),
+                    learners=[
+                        persona.as_dict()
+                        for persona in personas.values()
+                        if persona.id in attendees_by_track[track_id]
+                    ],
+                    instructors=[
+                        persona.as_dict()
+                        for persona in personas.values()
+                        if persona.id in instructors_by_track[track_id]
+                    ],
                 )
                 for track_id in attendees_by_track.keys() | instructors_by_track.keys()
             })

@@ -129,7 +129,7 @@ from cdedb.common.exceptions import (
     ValidationWarning,
 )
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
-from cdedb.common.i18n import format_country_code, get_localized_country_codes
+from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts, TransactionType
 from cdedb.common.query import Query
@@ -1126,7 +1126,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             force_external=True,
         )
 
-    def send_welcome_mail(self, rs: RequestState, persona: CdEDBObject) -> None:
+    def send_welcome_mail(
+        self,
+        rs: RequestState,
+        persona: models_core.CorePersona,
+        status: models_core.PersonaStatus,
+        is_trial_member: bool = False,
+    ) -> None:
         """Send a welcome mail to new personas.
 
         This informs new personas in general that an account with this email was
@@ -1135,14 +1141,11 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
 
         Therefore, we send this mail again if a persona was granted the cde realm.
         """
-        reset_link = self._password_reset_link(
-            rs,
-            persona["id"],
-        )
-        transaction_subject = make_membership_fee_reference(persona)
-        if persona['is_member']:
+        reset_link = self._password_reset_link(rs, persona.id)
+        transaction_subject = make_membership_fee_reference(persona.as_dict())
+        if status.is_member:
             subject = "Aufnahme in den CdE"
-        elif persona['is_cde_realm']:
+        elif persona.is_cde_realm:
             subject = "Aufnahmeangebot in den CdE"
         else:
             subject = "CdEDB-Account erstellt"
@@ -1151,11 +1154,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             rs,
             "welcome",
             {
-                'To': (persona['username'],),
+                'To': (persona.username,),
                 'Subject': subject,
             },
             {
-                'data': persona,
+                'persona': persona,
+                'persona_status': status,
+                'is_trial_member': is_trial_member,
                 'fee': self.conf["MEMBERSHIP_FEE"],
                 'reset_link': reset_link,
                 'meta_info': meta_info,
@@ -1610,8 +1615,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             for entry in log:
                 for k in persona_fields:
                     if entry.get(k):
-                        entry[f"{k}_given_names"] = personas[entry[k]]['given_names']
-                        entry[f"{k}_family_name"] = personas[entry[k]]['family_name']
+                        entry[f"{k}_given_names"] = personas[entry[k]].given_names
+                        entry[f"{k}_family_name"] = personas[entry[k]].family_name
                     else:
                         entry[f"{k}_given_names"] = entry[f"{k}_family_name"] = None
 
@@ -1723,19 +1728,19 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                     ),
                 ))
             else:
-                if persona['is_archived']:
+                if persona.is_archived:
                     problems.append((
                         'persona_id',
                         ValueError(n_("Persona is archived.")),
                     ))
                 if type_ == TransactionType.MembershipFee:
-                    if not persona['is_cde_realm']:
+                    if not persona.is_cde_realm:
                         problems.append((
                             'persona_id',
                             ValueError(n_("Persona is not in CdE realm.")),
                         ))
                 elif type_ == TransactionType.EventFee:
-                    if not persona['is_event_realm']:
+                    if not persona.is_event_realm:
                         problems.append((
                             'persona_id',
                             ValueError(n_("Persona is not in event realm.")),
@@ -1792,13 +1797,13 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
                             ))
                         amounts_paid[registration['id']] = total
 
-                if family_name != persona['family_name']:
+                if family_name != persona.family_name:
                     problems.append((
                         'family_name',
                         ValueError(n_("Family name doesn’t match.")),
                     ))
 
-                if given_names != persona['given_names']:
+                if given_names != persona.given_names:
                     problems.append((
                         'given_names',
                         ValueError(n_("Given names don’t match.")),
@@ -1807,7 +1812,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         datum.update({
             'category': category,
             'persona': persona,
-            'persona_id': persona['id'] if persona else None,
+            'persona_id': persona.id if persona else None,
             'event': event,
             'event_id': event.id if event else None,
             'registration_id': registration['id'] if registration else None,
@@ -1828,6 +1833,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         return self.send_file(rs, afile=buffer, mimetype="image/svg+xml")
 
 
+# TODO does this boilerplate is actually more usefull than annoying?
 class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     """Base class for all frontends which have their own user realm.
 
@@ -1863,8 +1869,9 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             return self.create_user_form(rs)
         new_id = self.coreproxy.create_persona(rs, data)
         if new_id:
-            data["id"] = new_id
-            self.send_welcome_mail(rs, data)
+            persona = self.coreproxy.get_persona(rs, new_id)
+            status = self.coreproxy.get_persona_status(rs, new_id)
+            self.send_welcome_mail(rs, persona, status, data.get("trial_member", False))
             rs.notify_return_code(new_id, success=n_("User created."))
             return self.redirect_show_user(rs, new_id)
         else:
@@ -2108,7 +2115,7 @@ class Worker(threading.Thread):
 
 
 class AmbienceDict(typing.TypedDict):
-    persona: NotRequired[CdEDBObject]
+    persona: NotRequired[models_core.CorePersona]
     privilege_change: NotRequired[CdEDBObject]
     genesis_case: NotRequired[models_core.GenesisCase]
     lastschrift: NotRequired[CdEDBObject]
@@ -2160,7 +2167,7 @@ def reconnoitre_ambience(obj: AbstractFrontend, rs: RequestState) -> AmbienceDic
         ),
         Scout(
             lambda anid: obj.coreproxy.get_privilege_change(rs, anid),
-            'privilege_change_id',
+            'change_id',
             'privilege_change',
             (),
         ),
@@ -3054,39 +3061,7 @@ def construct_redirect(request: werkzeug.Request, url: str) -> werkzeug.Response
         return ret
 
 
-def make_postal_address(rs: RequestState, persona: CdEDBObject) -> list[str] | None:
-    """Prepare address info for formatting.
-
-    Addresses have some specific formatting wishes, so we are flexible
-    in that we represent an address to be printed as a list of strings
-    each containing one line. The final formatting is now basically join
-    on line breaks.
-
-    Returning None signals that we do not know the address of this persona.
-    """
-    p = persona
-    name = "{} {}".format(p['given_names'], p['family_name'])
-    if p['title']:
-        name = f"{p['title']} {name}"
-    if p['name_supplement']:
-        name = f"{name} {p['name_supplement']}"
-    ret = [name]
-    if p['address_supplement']:
-        ret.append(p['address_supplement'])
-    if p['address']:
-        ret.append(p['address'])
-    if p['postal_code'] or p['location']:
-        ret.append(f"{p['postal_code'] or ''} {p['location'] or ''}".strip())
-    country = rs.translations["de"].gettext(format_country_code(p['country']))
-    ret.append(country)
-    # Each persona has always a name and a country. However, during realm upgrades, it
-    # may happen that some personas do not have an address even if its mandatory.
-    if ret == [name, country]:
-        return None
-    else:
-        return ret
-
-
+# TODO refactor last callsites to use CdEPersona
 def make_membership_fee_reference(persona: CdEDBObject) -> str:
     """Generate the desired reference for membership fee payment.
 
@@ -3099,8 +3074,9 @@ def make_membership_fee_reference(persona: CdEDBObject) -> str:
     )
 
 
+# TODO move to EventPersona
 def make_event_fee_reference(
-    persona: models_core.Persona, event: models_event.Event
+    persona: models_core.CorePersona, event: models_event.Event
 ) -> str:
     """Generate the desired reference for event fee payment.
 

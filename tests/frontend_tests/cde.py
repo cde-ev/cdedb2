@@ -29,7 +29,7 @@ from cdedb.common.i18n import (
 )
 from cdedb.common.query import QueryOperators
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, extract_roles
-from cdedb.frontend.common import Worker, make_postal_address
+from cdedb.frontend.common import Worker
 from tests.common import (
     USER_DICT,
     FrontendTest,
@@ -440,8 +440,9 @@ class TestCdEFrontend(FrontendTest):
     def test_consent_decline(self) -> None:
 
         def _roles(user: UserIdentifier) -> set[Role]:
-            user = get_user(user)
-            return extract_roles(self.core.get_persona(self.key, user['id']))
+            return extract_roles(
+                self.core.get_persona_status(self.key, get_user(user)['id']).as_dict()
+            )
 
         # First, do not change anything
         self.assertTitle("Einwilligung zur Mitgliedersuche")
@@ -2004,8 +2005,8 @@ class TestCdEFrontend(FrontendTest):
         self.core.changelog_resolve_change(self.key, persona_id, generation, ack=True)
         # Check that both legal_given_names and given_names have changed.
         persona = self.core.get_persona(self.key, persona_id)
-        self.assertEqual("Berta B.", persona["legal_given_names"])
-        self.assertEqual("Bertie", persona["given_names"])
+        self.assertEqual("Berta B.", persona.legal_given_names)
+        self.assertEqual("Bertie", persona.given_names)
 
     @as_users("vera")
     def test_batch_admission_review(self) -> None:
@@ -3553,17 +3554,17 @@ class TestCdEFrontend(FrontendTest):
         fake_rs = cast(RequestState, types.SimpleNamespace())
         fake_rs.translations = self.translations
         persona_id = None
-        t = lambda g, p: g(format_country_code(p['country']))
+        t = lambda g, p: g(format_country_code(p.country))
         while persona_id := self.core.next_persona(
             self.key, persona_id, is_member=None, is_archived=False
         ):
-            p = self.core.get_total_persona(self.key, persona_id)
-            if p['country']:
-                address = make_postal_address(fake_rs, p)
+            if self.core.get_total_persona(self.key, persona_id)['country']:
+                p = self.core.get_event_user(self.key, persona_id)
+                address = p.get_postal_address(fake_rs)
                 if address is None:
                     self.assertIn(persona_id, personas_without_address)
                 else:
-                    self.assertNotIn(p['country'], address)
+                    self.assertNotIn(p.country, address)
                     self.assertIn(t(self.translations["de"].gettext, p), address)
 
     def test_country_code_from_country(self) -> None:

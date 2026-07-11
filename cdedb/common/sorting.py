@@ -68,6 +68,7 @@ Sortkey = tuple[Comparable, ...]
 KeyFunction = Callable[[CdEDBObject], Sortkey]
 
 
+# TODO remove once registrations are dataclasses
 def _make_persona_sorter(
     include_nickname: bool = False, family_name_first: bool = True
 ) -> KeyFunction:
@@ -98,6 +99,7 @@ def _make_persona_sorter(
 
 
 # don't call argument 'gettext' to avoid extracting string below
+# TODO move to EventPersona dataclass
 def _make_address_sorter(
     gtxt: Callable[[str], str],
     default_country_code: str,

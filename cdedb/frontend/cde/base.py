@@ -725,9 +725,15 @@ class CdEBaseFrontend(AbstractUserFrontend):
             assert isinstance(stats, BatchAdmissionStats)
             # Send mail after the transaction succeeded
             if sendmail:
-                personas = self.coreproxy.get_personas(rs, stats.new_accounts)
+                personas = self.coreproxy.get_cde_users(rs, stats.new_accounts)
+                stati = self.coreproxy.get_personas_status(rs, stats.new_accounts)
                 for persona in personas.values():
-                    self.send_welcome_mail(rs, persona)
+                    self.send_welcome_mail(
+                        rs,
+                        persona,
+                        stati[persona.id],
+                        is_trial_member=persona.trial_member,
+                    )
             count_new = len(stats.new_accounts | stats.new_members)
             return True, count_new, len(stats.modified_accounts)
 

@@ -448,15 +448,16 @@ class CoreGenesisBackend(CoreBaseBackend):
             elif decision.is_update():
                 assert case.persona_id is not None
                 persona = self.get_persona(rs, case.persona_id)
-                if not self._is_relative_admin(rs, persona):
+                persona_status = self.get_persona_status(rs, case.persona_id)
+                if not self._is_relative_admin(rs, persona_status):
                     raise PrivilegeError(n_("Not privileged."))
-                if persona['is_archived']:
+                if persona.is_archived:
                     code = self.dearchive_persona(
                         rs, case.persona_id, case.persona.username
                     )
                     if not code:  # pragma: no cover
                         raise RuntimeError(n_("Dearchival failed."))
-                elif case.persona.username != persona['username']:
+                elif case.persona.username != persona.username:
                     code, _ = self.change_username(
                         rs, case.persona_id, case.persona.username, None
                     )
@@ -464,7 +465,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                         raise RuntimeError(n_("Username change failed."))
 
                 # we grant trial membership by default for cde genesis cases
-                if case.realm == "cde" and not persona["is_member"]:
+                if case.realm == "cde" and not persona_status.is_member:
                     self.change_membership_easy_mode(
                         rs, case.persona_id, is_member=True, trial_member=True
                     )

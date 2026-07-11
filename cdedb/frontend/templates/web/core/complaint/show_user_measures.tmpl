@@ -37,7 +37,7 @@
                 {% trans %}E-Mail{% endtrans %}
             </dt>
             <dd id="contact-email">
-                {%- if ambience['persona']['username'] -%}
+                {%- if ambience['persona'].has('username')  -%}
                     {{ util.username_mailto(ambience['persona']) }}
                 {%- else -%}
                     —

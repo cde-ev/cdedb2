@@ -28,6 +28,7 @@ from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.core as models_core
 import cdedb.models.event as models
 import cdedb.models.event.constraint_violations as models_cv
 from cdedb.backend.event.lodgement import LodgementInhabitants
@@ -63,7 +64,6 @@ from cdedb.frontend.common import (
 )
 from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 from cdedb.models.common import CdEDataclassMap
-from cdedb.models.core import EventPersona
 
 
 class CourseChoiceParams(typing.TypedDict):
@@ -84,15 +84,14 @@ class ParticipantListData(typing.TypedDict):
     registrations: CdEDBObjectMap
     ordered: list[int]
     reg_counts: dict[int | None, int]
-    personas: CdEDataclassMap[EventPersona]
-    personas_stati: CdEDBObjectMap
+    personas: CdEDataclassMap[models_core.EventPersona]
     courses: CdEDataclassMap[models.Course]
     parts: CdEDataclassMap[models.EventPart]
 
 
 class UserLodgementWishes(typing.TypedDict):
     field: models.EventField | None
-    wished_personas: list[EventPersona]
+    wished_personas: list[models_core.EventPersona]
     problems: list[Notification]
 
 
@@ -100,7 +99,7 @@ class ConstraintViolationsData(typing.TypedDict):
     violations: models_cv.ViolationList
     all_registrations: CdEDBObjectMap
     registrations: CdEDBObjectMap
-    personas: CdEDataclassMap[EventPersona]
+    personas: CdEDataclassMap[models_core.EventPersona]
     all_courses: CdEDataclassMap[models.Course]
     courses: CdEDataclassMap[models.Course]
     choice_stats: models.ChoiceStats
@@ -548,7 +547,6 @@ class EventBaseFrontend(AbstractUserFrontend):
         }
         persona_ids = tuple(e['persona_id'] for e in registrations.values())
         personas = self.coreproxy.get_event_users(rs, persona_ids, event_id)
-        personas_stati = self.coreproxy.get_personas(rs, persona_ids)
 
         all_sorters: dict[str, KeyFunction] = {
             "given_names": EntitySorter.make_persona_sorter(family_name_first=False),
@@ -591,7 +589,6 @@ class EventBaseFrontend(AbstractUserFrontend):
             ordered=ordered,
             parts=parts,
             reg_counts=reg_counts,
-            personas_stati=personas_stati,
         )
 
     def _get_user_lodgement_wishes(

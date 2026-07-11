@@ -243,6 +243,7 @@ def cdedbid_filter(val: None) -> None: ...
 def cdedbid_filter(val: int) -> str: ...
 
 
+# TODO make this (additionally?) a property of Persona
 def cdedbid_filter(val: int | None) -> str | None:
     """Custom jinja filter to format persona ids with a check digit. Every user
     visible id should be formatted with this filter. The check digit is

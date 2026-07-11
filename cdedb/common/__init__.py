@@ -111,6 +111,7 @@ PathLike = pathlib.Path | str
 Path = pathlib.Path
 
 
+# TODO rework this class, make use of CorePersona and PersonaStatus
 class User:
     """Container for a persona."""
 
@@ -579,6 +580,7 @@ def nearly_now(delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT) -> NearlyNow:
     )
 
 
+# TODO remove once registrations are dataclasses
 def make_persona_forename(
     persona: CdEDBObject, use_legal_name: bool = False, include_nickname: bool = False
 ) -> str:
@@ -601,6 +603,7 @@ def make_persona_forename(
     return given_names
 
 
+# TODO remove once registrations are dataclasses
 def make_persona_name(
     persona: CdEDBObject,
     use_legal_name: bool = False,
@@ -627,6 +630,7 @@ def make_persona_name(
     return " ".join(ret)
 
 
+# TODO move to Persona dataclass?
 def compute_checkdigit(value: int) -> str:
     """Map an integer to the checksum used for UI purposes.
 

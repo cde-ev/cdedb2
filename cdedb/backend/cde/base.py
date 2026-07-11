@@ -158,9 +158,9 @@ class CdEBaseBackend(AbstractBackend):
             with Atomizer(rs):
                 result = models_finance.MoneyTransfersResult()
                 persona_ids = {t['persona_id'] for t in transfers}
-                event_personas = self.core.get_event_users(rs, persona_ids)
+                personas = self.core.get_personas(rs, persona_ids)
                 cde_personas = self.core.get_cde_users(
-                    rs, {p.id for p in event_personas.values() if p.is_cde_realm}
+                    rs, {p.id for p in personas.values() if p.is_cde_realm}
                 )
                 for index, transfer in enumerate(transfers):
                     amount, date = transfer['amount'], transfer['date']
@@ -195,30 +195,32 @@ class CdEBaseBackend(AbstractBackend):
                             )
                             result.new_members += bool(code)
                             cde_persona.is_member = bool(code)
-                            event_personas[cde_persona.id].is_member = bool(code)
 
                         # Adjust balance for further steps (multiple payments, emails).
                         cde_persona.balance = new_balance
 
                         # Add to tally.
                         result.membership_fees.append(
-                            models_finance.MoneyTransfer(
-                                persona=cde_persona.as_dict(), amount=amount, date=date
+                            models_finance.MoneyTransferMember(
+                                persona=cde_persona, amount=amount, date=date
                             )
                         )
                     else:
-                        event_persona = event_personas[transfer['persona_id']]
+                        persona = personas[transfer['persona_id']]
+                        is_member = False
+                        if persona.id in cde_personas:
+                            is_member = cde_personas[persona.id].is_member
                         registration = self.event.book_registration_payment(
                             rs,
                             registration_id=transfer['registration_id'],
                             amount=amount,
                             date=date,
                             by_orga=False,
-                            is_member=event_persona.is_member,
+                            is_member=is_member,
                         )
                         event_id = registration['event_id']
-                        ret = models_finance.MoneyTransfer(
-                            persona=event_persona.as_dict(),
+                        ret = models_finance.MoneyTransferEvent(
+                            persona=persona,
                             amount=amount,
                             date=date,
                             registration=registration,
@@ -491,7 +493,8 @@ class CdEBaseBackend(AbstractBackend):
             )
         elif datum['resolution'].is_modification():
             persona_id = datum['doppelganger_id']
-            current = self.core.get_persona(rs, persona_id)
+            # TODO migrate upgrade logic to dataclass
+            current = self.core.get_persona(rs, persona_id).as_dict()
             if current['is_archived']:
                 if current['is_purged']:
                     raise RuntimeError(n_("Cannot restore purged account."))
@@ -546,7 +549,7 @@ class CdEBaseBackend(AbstractBackend):
                     for field in mandatory_fields:
                         promotion[field] = datum['persona'][field]
                 else:
-                    # TODO migrate upgrade logik to dataclasses
+                    # TODO migrate upgrade logic to dataclasses
                     current = self.core.get_event_user(rs, persona_id).as_dict()
                     # take care that we do not override existent data
                     current_fields = {
@@ -565,7 +568,7 @@ class CdEBaseBackend(AbstractBackend):
                     rs, promotion, change_note="Datenübernahme nach Massenaufnahme"
                 )
             if datum['resolution'].do_trial():
-                if current['is_member']:
+                if self.core.get_persona_status(rs, persona_id).is_member:
                     raise RuntimeError(n_("May not grant trial membership to member."))
                 self.core.change_membership_easy_mode(
                     rs, datum['doppelganger_id'], is_member=True, trial_member=True

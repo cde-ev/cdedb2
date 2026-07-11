@@ -12,6 +12,7 @@ from typing import Any, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.core as models_core
 import cdedb.models.event as models_event
 import cdedb.models.past_event as models
 from cdedb.backend.common import (
@@ -39,7 +40,7 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import PastEventLogFilter
-from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import ParamDict
 from cdedb.models.common import CdEDataclass, CdEDataclassMap
@@ -693,7 +694,7 @@ class PastEventBackend(AbstractBackend):
         self,
         rs: RequestState,
         participants: CdEDataclassMap[T],
-        personas: CdEDBObjectMap,
+        personas: CdEDataclassMap[models_core.PastEventPersona],
         honor_admins: bool,
         pevent_id: int | None = None,
         pcourse_id: int | None = None,
@@ -726,8 +727,8 @@ class PastEventBackend(AbstractBackend):
         # if the user is neither admin nor participant, we filter the data
         if "searchable" in rs.user.roles:
             for persona in personas.values():
-                if not persona["is_member"] or not persona["is_searchable"]:
-                    del participants[persona["id"]]
+                if not persona.is_member or not persona.is_searchable:
+                    del participants[persona.id]
             return participants
         return {}
 
@@ -759,7 +760,7 @@ class PastEventBackend(AbstractBackend):
             entity_key="pevent_id",
         )
         total_participants_num = len(data)
-        personas = self.core.get_personas(rs, {e['persona_id'] for e in data})
+        personas = self.core.get_past_event_users(rs, {e['persona_id'] for e in data})
         pevent = self.get_past_event(rs, pevent_id)
         for datum in data:
             datum["persona"] = personas[datum["persona_id"]]
@@ -818,7 +819,7 @@ class PastEventBackend(AbstractBackend):
         """
         params: ParamDict = {"pcourse_id": pcourse_id}
         data = self.query_all(rs, query, params)
-        personas = self.core.get_personas(rs, {e['persona_id'] for e in data})
+        personas = self.core.get_past_event_users(rs, {e['persona_id'] for e in data})
         pcourse = self.get_past_course(rs, pcourse_id)
         for datum in data:
             datum["pcourse"] = pcourse
@@ -826,7 +827,7 @@ class PastEventBackend(AbstractBackend):
         ret = {
             assignment.persona_id: assignment
             for assignment in xsorted(
-                ret.values(), key=lambda x: EntitySorter.persona(personas[x.persona_id])
+                ret.values(), key=lambda x: personas[x.persona_id]
             )
         }
         ret = self.filter_participants(
@@ -847,15 +848,15 @@ class PastEventBackend(AbstractBackend):
     ) -> CdEDataclassMap[models.PastEventParticipant]:
         """List all past events of the given persona."""
         persona_id = affirm(vtypes.ID, persona_id)
-        persona = self.core.get_persona(rs, persona_id)
+        persona = self.core.get_past_event_user(rs, persona_id)
         if not (
             self.is_admin(rs)
             or "core_admin" in rs.user.roles
             or persona_id == rs.user.persona_id
             or (
                 "searchable" in rs.user.roles
-                and persona["is_member"]
-                and persona["is_searchable"]
+                and persona.is_member
+                and persona.is_searchable
             )
         ):
             raise PrivilegeError

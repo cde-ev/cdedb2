@@ -41,7 +41,7 @@ from cdedb.common.query import (
     QuerySpecEntry,
 )
 from cdedb.common.query.log_filter import EventLogFilter
-from cdedb.common.sorting import EntitySorter, xsorted
+from cdedb.common.sorting import xsorted
 from cdedb.filter import cdedbid_filter, iban_filter
 from cdedb.frontend.common import (
     Headers,
@@ -167,24 +167,12 @@ class EventEventMixin(EventBaseFrontend):
         params: CdEDBObject = {}
         is_registered = False
         if "event" in rs.user.roles:
-            params['orgas'] = {
-                e['id']: e
-                for e in xsorted(
-                    self.coreproxy.get_personas(
-                        rs, rs.ambience['event'].orgas
-                    ).values(),
-                    key=EntitySorter.persona,
-                )
-            }
-            params['caretakers'] = {
-                e['id']: e
-                for e in xsorted(
-                    self.coreproxy.get_personas(
-                        rs, rs.ambience['event'].caretakers
-                    ).values(),
-                    key=EntitySorter.persona,
-                )
-            }
+            params['orgas'] = self.coreproxy.get_personas(
+                rs, rs.ambience['event'].orgas
+            )
+            params['caretakers'] = self.coreproxy.get_personas(
+                rs, rs.ambience['event'].caretakers
+            )
             is_registered = bool(
                 self.eventproxy.list_registrations(rs, event_id, rs.user.persona_id)
             )
@@ -457,15 +445,9 @@ class EventEventMixin(EventBaseFrontend):
     def manage_roles(self, rs: RequestState, event_id: int) -> Response:
         params = {}
         for role in ("orgas", "caretakers", "checkin_helpers"):
-            params[role] = {
-                e['id']: e
-                for e in xsorted(
-                    self.coreproxy.get_personas(
-                        rs, getattr(rs.ambience['event'], role)
-                    ).values(),
-                    key=EntitySorter.persona,
-                )
-            }
+            params[role] = self.coreproxy.get_personas(
+                rs, getattr(rs.ambience['event'], role)
+            )
         return self.render(rs, 'event/manage_roles', params)
 
     @access("event", modi={"POST"})
@@ -536,10 +518,7 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify_return_code(code)
 
         if code and persona_ids and role != 'checkin_helper':
-            personas = xsorted(
-                self.coreproxy.get_personas(rs, persona_ids).values(),
-                key=EntitySorter.persona,
-            )
+            personas = self.coreproxy.get_personas(rs, persona_ids)
             if role == 'caretaker':
                 role_str = "Betreuer"
             else:

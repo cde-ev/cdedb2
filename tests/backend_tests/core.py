@@ -1133,8 +1133,10 @@ class TestCoreBackend(BackendTest):
             'is_cde_realm': True,
             'username': 'berta@example.cde',
         }
-        # TODO check again after adjusting get_persona function
-        # self.assertEqual(expectation, self.core.get_persona(self.key, 2))
+        self.assertEqual(
+            models.CorePersona(**expectation),  # type: ignore[arg-type]
+            self.core.get_persona(self.key, 2),
+        )
         expectation.update({
             'is_ml_admin': False,
             'is_cdelokal_admin': False,
@@ -1156,6 +1158,7 @@ class TestCoreBackend(BackendTest):
             'is_event_admin': False,
             'is_complaint_admin': False,
             'is_member': True,
+            'is_searchable': True,
             'address': 'Im Garten 77',
             'address_supplement': 'bei Spielmanns',
             'birthday': datetime.date(1981, 2, 11),
@@ -1377,21 +1380,21 @@ class TestCoreBackend(BackendTest):
             "is_finance_admin": True,
         }
 
-        case_id = self.core.initialize_privilege_change(self.key, data)
-        self.assertLess(0, case_id)
+        change_id = self.core.initialize_privilege_change(self.key, data)
+        self.assertLess(0, change_id)
 
-        persona = self.core.get_persona(self.key, new_admin["id"])
-        self.assertFalse(persona["is_cde_admin"])
-        self.assertFalse(persona["is_finance_admin"])
+        persona = self.core.get_persona_status(self.key, new_admin["id"])
+        self.assertFalse(persona.is_cde_admin)
+        self.assertFalse(persona.is_finance_admin)
 
         self.login(admin2)
         self.core.finalize_privilege_change(
-            self.key, case_id, const.PrivilegeChangeStati.approved
+            self.key, change_id, const.PrivilegeChangeStati.approved
         )
 
-        persona = self.core.get_persona(self.key, new_admin["id"])
-        self.assertTrue(persona["is_cde_admin"])
-        self.assertTrue(persona["is_finance_admin"])
+        persona = self.core.get_persona_status(self.key, new_admin["id"])
+        self.assertTrue(persona.is_cde_admin)
+        self.assertTrue(persona.is_finance_admin)
 
         self.login(admin1)
         core_log_expectation = [

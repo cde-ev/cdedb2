@@ -590,7 +590,9 @@ class CoreGenesisMixin(CoreBaseFrontend):
         # Send notification to the user, depending on decision.
         if decision.is_create():
             persona = self.coreproxy.get_persona(rs, persona_id)
-            self.send_welcome_mail(rs, persona)
+            status = self.coreproxy.get_persona_status(rs, persona_id)
+            is_trial_member = case.realm == "cde"
+            self.send_welcome_mail(rs, persona, status, is_trial_member=is_trial_member)
             rs.notify("success", n_("Case approved."))
         elif decision.is_update():
             persona = self.coreproxy.get_persona(rs, persona_id)
@@ -598,7 +600,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             self.do_mail(
                 rs,
                 "genesis/genesis_updated",
-                {'To': (persona['username'],), 'Subject': "CdEDB-Account reaktiviert"},
+                {'To': (persona.username,), 'Subject': "CdEDB-Account reaktiviert"},
                 {'persona': persona, "reset_link": reset_link},
             )
             rs.notify("success", n_("User updated."))

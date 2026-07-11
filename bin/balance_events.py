@@ -24,9 +24,9 @@ rs = s.rs()
 # This is necessary because balancing creates an event keeper commit,
 #  which requires user information, else git is very unhappy :(
 persona = core_backend.get_persona(rs, rs.user.persona_id)
-rs.user.username = persona["username"]
-rs.user.given_names = persona["given_names"]
-rs.user.family_name = persona["family_name"]
+rs.user.username = persona.username
+rs.user.given_names = persona.given_names
+rs.user.family_name = persona.family_name
 
 balance_count = 0
 non_archived_count = 0

@@ -483,7 +483,7 @@ class CdESemesterBackend(CdELastschriftBackend):
     @access("finance_admin")
     def process_for_semester_prearchival(
         self, rs: RequestState, period_id: int, testrun: bool
-    ) -> tuple[bool, CdEDBObject | None]:
+    ) -> tuple[bool, models.CorePersona | None]:
         """Atomized call to warn one persona prior to archival.
 
         :returns: A tuple consisting of a boolean signalling whether there

@@ -178,7 +178,7 @@ rules = [
                 get_("/list", endpoint="list_privilege_changes"),
             ),
             sub(
-                "/privileges/<int:privilege_change_id>",
+                "/privileges/<int:change_id>",
                 get_("/show", endpoint="show_privilege_change"),
                 post("/decide", endpoint="decide_privilege_change"),
             ),

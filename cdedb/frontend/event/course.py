@@ -24,7 +24,6 @@ from cdedb.common import (
     CourseFilterPositions,
     InfiniteEnum,
     RequestState,
-    make_persona_name,
     merge_dicts,
     unwrap,
 )
@@ -503,7 +502,7 @@ class EventCourseMixin(EventBaseFrontend):
                     xsorted(
                         registrations.items(),
                         key=lambda reg: EntitySorter.persona(
-                            personas[reg[1]['persona_id']]
+                            personas[reg[1]['persona_id']].as_dict()
                         ),
                     )
                 ),
@@ -824,7 +823,7 @@ class EventCourseMixin(EventBaseFrontend):
             rs.ambience['event'],
             registrations,
             key="course_id",
-            personas=personas,
+            personas={p.id: p.as_dict() for p in personas.values()},
             only_involved=False,
             only_present=False,
         )
@@ -853,16 +852,15 @@ class EventCourseMixin(EventBaseFrontend):
                 (
                     (
                         registration_id,
-                        make_persona_name(
-                            personas[registrations[registration_id]['persona_id']],
-                            include_nickname=True,
+                        personas[registrations[registration_id]['persona_id']].get_name(
+                            include_nickname=True
                         ),
                     )
                     for registration_id in registrations
                     if _check_without_course(registration_id, track_id)
                 ),
                 key=lambda tpl: EntitySorter.persona(
-                    personas[registrations[tpl[0]]['persona_id']]
+                    personas[registrations[tpl[0]]['persona_id']].as_dict()
                 ),
             )
             for track_id in tracks
@@ -884,8 +882,8 @@ class EventCourseMixin(EventBaseFrontend):
             track_id: xsorted(
                 (
                     {
-                        'name': make_persona_name(
-                            personas[registration['persona_id']], include_nickname=True
+                        'name': personas[registration['persona_id']].get_name(
+                            include_nickname=True
                         ),
                         'group_id': registration['tracks'][track_id]['course_id'],
                         'id': registration_id,
@@ -896,7 +894,7 @@ class EventCourseMixin(EventBaseFrontend):
                 key=lambda x: (
                     x['group_id'] is not None,
                     EntitySorter.persona(
-                        personas[registrations[x['id']]['persona_id']]
+                        personas[registrations[x['id']]['persona_id']].as_dict()
                     ),
                 ),
             )
