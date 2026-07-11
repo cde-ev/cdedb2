@@ -426,11 +426,12 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
             EventRegistrationPartStatistic.birthdays,
         }
 
-    def test(self, event: models.Event, reg: CdEDBObject, part_id: int) -> bool:
+    def test(self, event: models.Event, entity: CdEDBObject, context_id: int) -> bool:
         """
         Test whether the given registration fits into this statistic for the given part.
         """
-        part = reg['parts'][part_id]
+        reg, part_id = entity, context_id
+        part: CdEDBObject = reg['parts'][part_id]
         if self == self.pending:
             return part['status'] == RPS.applied
         elif self == self.paid:
@@ -504,10 +505,11 @@ class EventRegistrationPartStatistic(StatisticPartMixin, enum.Enum):
         else:
             raise RuntimeError(n_("Impossible."))
 
-    def _get_query_aux(self, event: models.Event, part_id: int) -> StatQueryAux:
+    def _get_query_aux(self, event: models.Event, context_id: int) -> StatQueryAux:
         """
         Return fields of interest, constraints and order for this statistic for a part.
         """
+        part_id = context_id
         part = event.parts[part_id]
         if self == self.pending:
             return (
@@ -744,7 +746,8 @@ class EventCourseStatistic(StatisticTrackMixin, enum.Enum):
         else:
             raise RuntimeError(n_("Impossible."))
 
-    def _get_query_aux(self, event: models.Event, track_id: int) -> StatQueryAux:
+    def _get_query_aux(self, event: models.Event, context_id: int) -> StatQueryAux:
+        track_id = context_id
         # Track specific constraints need to be single-field so the relation between
         #  two constraints isn't spread across different fields for joined queries.
         if self == self.offered:
@@ -806,10 +809,11 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
         #  correlations between constraints.
         return False
 
-    def test(self, event: models.Event, reg: CdEDBObject, track_id: int) -> bool:
+    def test(self, event: models.Event, entity: CdEDBObject, context_id: int) -> bool:
         """Determine whether the registration fits this stat for the given track."""
-        track = reg['tracks'][track_id]
-        part = reg['parts'][event.tracks[track_id].part_id]
+        reg, track_id = entity, context_id
+        track: CdEDBObject = reg['tracks'][track_id]
+        part: CdEDBObject = reg['parts'][event.tracks[track_id].part_id]
 
         # All checks require the registration to be a participant in the given track.
         if part['status'] != RPS.participant:
@@ -830,7 +834,8 @@ class EventRegistrationTrackStatistic(StatisticTrackMixin, enum.Enum):
         else:
             raise RuntimeError(n_("Impossible."))
 
-    def _get_query_aux(self, event: models.Event, track_id: int) -> StatQueryAux:
+    def _get_query_aux(self, event: models.Event, context_id: int) -> StatQueryAux:
+        track_id = context_id
         track = event.tracks[track_id]
         part = event.parts[track.part_id]
         if self == self.all_instructors:
@@ -953,8 +958,8 @@ class EventRegistrationInXChoiceGrouper:
         """Uninlined helper to determine whether a reg fits choice x in a track."""
         course_track = event.tracks[track_id]
         event_part = event.parts[course_track.part_id]
-        part = reg['parts'][event_part.id]
-        track = reg['tracks'][track_id]
+        part: CdEDBObject = reg['parts'][event_part.id]
+        track: CdEDBObject = reg['tracks'][track_id]
         return (
             _is_participant(part)
             and track['course_id']

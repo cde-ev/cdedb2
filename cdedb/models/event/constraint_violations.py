@@ -500,7 +500,7 @@ class ConstraintViolation(abc.ABC):
         if self.fee:
             ret['fee'] = (
                 "event/fee_summary",
-                {},
+                {},  # pyrefly: ignore[implicit-any-empty-container]
                 f"#eventfee_{self.fee.id}",
             )
         return ret
@@ -899,8 +899,8 @@ class NoCourseAssignedCV(RegistrationTrackConstraintViolation):
         registration = context.registration
         track = context.track
 
-        reg_track = registration['tracks'][track.id]
-        reg_part = registration['parts'][track.part_id]
+        reg_track: CdEDBObject = registration['tracks'][track.id]
+        reg_part: CdEDBObject = registration['parts'][track.part_id]
         if not reg_part['status'].is_present():
             return None
         if reg_track['course_id'] is None:
@@ -948,8 +948,8 @@ class IncorrectCourseAssignedCV(RegistrationTrackConstraintViolation):
         registration = context.registration
         track = context.track
 
-        reg_track = registration['tracks'][track.id]
-        reg_part = registration['parts'][track.part_id]
+        reg_track: CdEDBObject = registration['tracks'][track.id]
+        reg_part: CdEDBObject = registration['parts'][track.part_id]
 
         assigned_course: models.Course | None = aux.all_courses.get(
             reg_track['course_id']
@@ -1679,7 +1679,7 @@ class NoLodgementCV(RegistrationPartConstraintViolation):
         registration = context.registration
         part = context.part
 
-        reg_part = registration['parts'][part.id]
+        reg_part: CdEDBObject = registration['parts'][part.id]
         if not reg_part['status'].is_present() or not aux.all_lodgements:
             return None
         if reg_part['lodgement_id'] is None:

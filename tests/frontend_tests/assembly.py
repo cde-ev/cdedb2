@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# pyrefly: ignore-errors[implicit-any-empty-container]
+
 import datetime
 import json
 import pathlib
@@ -1406,6 +1408,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f['filename'] = "//"
         self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('filename', " Muss ein zulässiger Bezeichner sein")
+        f = self.response.forms['configureattachmentversionform']
         self.assertEqual(f['title'].value, "")
         f['title'] = "Maßgebliche Beschlussvorlage"
         f['authors'] = "Der Vorstand"
@@ -1643,6 +1646,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f['vote'] = ASSEMBLY_BAR_SHORTNAME
         self.submit(f)
         self.assertTitle("Bester Hof (Internationaler Kongress)")
+        f = self.response.forms['voteform']
         self.assertEqual(ASSEMBLY_BAR_SHORTNAME, f['vote'].value)
         self.assertNonPresence("Du hast Dich enthalten.")
         f = self.response.forms['abstentionform']

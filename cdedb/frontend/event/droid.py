@@ -66,7 +66,7 @@ class EventDroidMixin(EventBaseFrontend):
         """Create a new orga token. The new token will be displayed after a redirect."""
         data['event_id'] = event_id
         data = check(rs, OrgaToken, data, creation=True)
-        if rs.has_validation_errors() or not data:
+        if rs.has_validation_errors():
             return self.create_orga_token_form(rs, event_id)
 
         new_id, secret = self.eventproxy.create_orga_token(rs, data)
@@ -103,7 +103,7 @@ class EventDroidMixin(EventBaseFrontend):
         """Change an existing orga token."""
         data['id'] = orga_token_id
         data = check(rs, OrgaToken, data)
-        if rs.has_validation_errors() or not data:
+        if rs.has_validation_errors():
             return self.change_orga_token_form(rs, event_id, orga_token_id)
 
         code = self.eventproxy.change_orga_token(rs, data)

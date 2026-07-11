@@ -6,7 +6,7 @@ event and assembly realm in the form of specific mailing lists.
 
 import itertools
 from collections.abc import Collection
-from typing import Any, Protocol, overload
+from typing import Any, Protocol, cast, overload
 
 import subman
 
@@ -1499,7 +1499,12 @@ class MlBackend(AbstractBackend):
             # Get usernames for subscribers without explicit address.
             if not explicits_only:
                 personas = self.core.get_personas(rs, defaults)
-                ret.update({p.id: p.username for p in personas.values()})
+                ret.update(
+                    cast(
+                        dict[int, str | None],
+                        {p.id: p.username for p in personas.values()},
+                    )
+                )
             else:
                 ret.update({p_id: None for p_id in defaults})
 

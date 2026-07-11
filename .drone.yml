@@ -101,6 +101,17 @@ steps:
     - success
   commands:
     - make mypy
+- name: pyrefly
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+    - evolution-trial # wait for all git operations to be done
+  when:
+    status:
+    - failure
+    - success
+  commands:
+    - make pyrefly
 - name: lint
   image: cdedb
   pull: never # do not try to pull image from docker hub
@@ -427,6 +438,17 @@ steps:
     - success
   commands:
     - make mypy
+- name: pyrefly
+  image: cdedb
+  pull: never # do not try to pull image from docker hub
+  depends_on:
+    - evolution-trial # wait for all git operations to be done
+  when:
+    status:
+    - failure
+    - success
+  commands:
+    - make pyrefly
 - name: lint
   image: cdedb
   pull: never # do not try to pull image from docker hub

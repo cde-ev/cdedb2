@@ -319,7 +319,6 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         data = check(rs, vtypes.Assembly, data)
         if rs.has_validation_errors():
             return self.change_assembly_form(rs, assembly_id)
-        assert data is not None
         code = self.assemblyproxy.set_assembly(rs, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "assembly/show_assembly")
@@ -453,7 +452,6 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         data = check(rs, vtypes.Assembly, data, creation=True)
         if rs.has_validation_errors():
             return self.create_assembly_form(rs)
-        assert data is not None
 
         if not create_presider_list and presider_address:
             data["presider_address"] = presider_address
@@ -478,7 +476,6 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             # as there may be other notifications already, notify errors explicitly
             rs.notify_validation()
             return self.create_assembly_form(rs)
-        assert data is not None
         new_id = self.assemblyproxy.create_assembly(rs, data)
         data["id"] = new_id
 

@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
+# pyrefly: ignore-errors[implicit-any-empty-container]
+
 """Base class providing fundamental ml services."""
 
 import collections
 from collections.abc import Collection
 from typing import Any
 
-import werkzeug
+import werkzeug.exceptions
 from subman.exceptions import SubscriptionError
 from werkzeug import Response
 

@@ -6,13 +6,15 @@ This utilizes the mailman REST API to drive the mailinglists residing
 on the mail VM from within the CdEDB.
 """
 
+import pathlib
+
 import mailmanclient as mmc
 
 import cdedb.database.constants as const
 from cdedb.backend.common import DatabaseLock
 from cdedb.common import RequestState
 from cdedb.database.constants import EmailStatus, LockType
-from cdedb.frontend.common import cdedburl
+from cdedb.frontend.common import CdEMailmanClient, cdedburl
 from cdedb.frontend.ml.base import MlBaseFrontend
 from cdedb.models.ml import Mailinglist
 
@@ -66,7 +68,7 @@ class MlMailmanMixin(MlBaseFrontend):
     def mailman_sync_list_meta(
         self,
         rs: RequestState,
-        mailman: mmc.Client,
+        mailman: CdEMailmanClient,
         db_list: Mailinglist,
         mm_list: mmc.MailingList,
     ) -> None:
@@ -245,7 +247,7 @@ The original message as received by Mailman is attached.
                 mm_list.header_matches.add(header, pattern, action)
 
         existing_templates = {t.name: t for t in mm_list.templates}
-        store_path = self.conf["STORAGE_DIR"] / 'mailman_templates'
+        store_path: pathlib.Path = self.conf["STORAGE_DIR"] / 'mailman_templates'
         for name, text in desired_templates.items():
             file_name = f"{db_list.id}__{name}"
             file_path = store_path / file_name
@@ -400,7 +402,7 @@ The original message as received by Mailman is attached.
     def mailman_sync_list(
         self,
         rs: RequestState,
-        mailman: mmc.Client,
+        mailman: CdEMailmanClient,
         db_list: Mailinglist,
         mm_list: mmc.MailingList,
     ) -> None:

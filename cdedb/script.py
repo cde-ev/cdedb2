@@ -59,7 +59,7 @@ class Script:
         "ml": MlBackend,
         "assembly": AssemblyBackend,
         "event": EventBackend,
-        "session": SessionBackend,  # type: ignore[dict-item]
+        "session": cast(type[AbstractBackend], SessionBackend),
     }
     frontend_map: Mapping[str, type[AbstractFrontend]] = {
         "core": CoreFrontend,
@@ -142,12 +142,11 @@ class Script:
         self._frontends: dict[tuple[Any, bool], AbstractFrontend] = {}
         self._translations = None
         self._request_states: dict[int, RequestState] = {}
-        self._conn = None  # type: ignore[assignment]
         self._connect(dbuser, cursor)
 
     def _connect(self, dbuser: str, cursor: type[psycopg2.extensions.cursor]) -> None:
         """Create and save a database connection."""
-        if self._conn:
+        if hasattr(self, "_conn"):
             return  # pragma: no cover
 
         self._conn = psycopg2.connect(
@@ -268,8 +267,8 @@ class Script:
 
     def __exit__(
         self,
-        exc_type: type[Exception] | None,
-        exc_val: Exception | None,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> bool:
         """Thin wrapper around `ScriptAtomizer`."""
@@ -306,8 +305,8 @@ class ScriptAtomizer(Atomizer):
 
     def __exit__(  # type: ignore[override]
         self,
-        exc_type: type[Exception] | None,
-        exc_val: Exception | None,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> bool:
         """Calculate time taken and provide success message.

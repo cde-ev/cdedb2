@@ -720,16 +720,10 @@ def int_to_words(num: int, lang: str) -> str:
 class CustomJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder to handle the types that occur for us."""
 
-    @overload
-    def default(
-        self, obj: datetime.date | datetime.datetime | decimal.Decimal
-    ) -> str: ...
-
-    @overload
-    def default[T](self, obj: set[T]) -> tuple[T, ...]: ...
-
-    def default(self, obj: Any) -> str | tuple[Any, ...] | dict[str, Any]:
+    def default(self, o: Any) -> str | tuple[Any, ...] | dict[str, Any]:
         import cdedb.models.common as models  # noqa: PLC0415  # pylint: disable=import-outside-toplevel
+
+        obj = o
 
         if isinstance(obj, (datetime.datetime, datetime.date)):
             return obj.isoformat()
@@ -862,7 +856,7 @@ def is_list_type(type_: TypeForm[Any]) -> bool:
     """
     return (
         hasattr(type_, "__supertype__")
-        and is_list_type(type_.__supertype__)
+        and is_list_type(type_.__supertype__)  # pyrefly: ignore[internal-error]
         or get_origin(type_) is list  # get_origin(list[something]) is list
     )
 

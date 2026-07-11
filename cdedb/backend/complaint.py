@@ -748,7 +748,6 @@ class ComplaintBackend(AbstractBackend):
         case_id = affirm(vtypes.ID, case_id)
         involvement_type = affirm(const.ComplaintInvolvementType, involvement_type)
         persona_ids = affirm(set[vtypes.PersonaID], persona_ids)
-        persona_ids = cast(set[vtypes.PersonaID], persona_ids)  # mypy bug
 
         if not persona_ids:
             return 0
@@ -780,7 +779,10 @@ class ComplaintBackend(AbstractBackend):
             newly_informed = set()  # of persona_ids
             for involved_id in mixed_existence_sorter(already_involved_ids):
                 involved = case.involved[involved_id]
-                data = {"id": involved_id, "involvement_type": involvement_type}
+                data: CdEDBObject = {
+                    "id": involved_id,
+                    "involvement_type": involvement_type,
+                }
                 if is_informed and not involved.is_informed:
                     data['is_informed'] = True
                     newly_informed.add(involved.persona_id)
@@ -939,7 +941,6 @@ class ComplaintBackend(AbstractBackend):
         case_id = affirm(vtypes.ID, case_id)
         involved_id = affirm(vtypes.InvolvedID, involved_id)
         companion_ids = affirm(set[vtypes.PersonaID], companion_ids)
-        companion_ids = cast(set[vtypes.PersonaID], companion_ids)  # mypy bug
 
         if not companion_ids:
             return 0
@@ -994,7 +995,6 @@ class ComplaintBackend(AbstractBackend):
         case_id = affirm(vtypes.ID, case_id)
         involved_id = affirm(vtypes.InvolvedID, involved_id)
         companion_ids = affirm(set[vtypes.PersonaID], companion_ids)
-        companion_ids = cast(set[vtypes.PersonaID], companion_ids)  # mypy bug
         if not companion_ids:
             return 0
         with Atomizer(rs):
@@ -1259,7 +1259,9 @@ class ComplaintBackend(AbstractBackend):
         if query.scope != QueryScope.complaint_case:
             raise RuntimeError(n_("Bad scope."), query.scope)
 
-        access_timeout = now() - self.conf["COMPLAINT_UNLOCK_TIMEOUT"]
+        access_timeout: datetime.datetime = (
+            now() - self.conf["COMPLAINT_UNLOCK_TIMEOUT"]
+        )
         # "SELECT * FROM" for syntax highlighting only
         view = f"""
             SELECT * FROM

@@ -16,6 +16,7 @@ For every step "foo" of semester management, there are the following methods:
 
 import dataclasses
 import decimal
+from typing import cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -303,7 +304,9 @@ class CdESemesterBackend(CdELastschriftBackend):
                 'balance_done': now(),
             }
             ret = self.set_period(rs, period_update)
-            total = money_filter(period["balance_total"], lang="de")
+            total: str = money_filter(
+                cast(decimal.Decimal, period["balance_total"]), lang="de"
+            )
             msg = (
                 f"{period['balance_trialmembers']} Probemitgliedschaften beendet."
                 f" {total} Guthaben von Mitgliedern abgebucht."
@@ -330,7 +333,9 @@ class CdESemesterBackend(CdELastschriftBackend):
                 'exmember_done': now(),
             }
             ret = self.set_period(rs, period_update)
-            exbalance = money_filter(period["exmember_balance"], lang="de")
+            exbalance: str = money_filter(
+                cast(decimal.Decimal, period["exmember_balance"]), lang="de"
+            )
             exmembers = period["exmember_count"]
             msg = f"{exbalance} Guthaben von {exmembers} Exmitgliedern aufgelöst."
             self.cde_log(

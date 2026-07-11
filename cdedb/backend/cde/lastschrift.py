@@ -481,6 +481,7 @@ class CdELastschriftBackend(CdEBaseBackend):
             transaction = self.get_lastschrift_transaction(rs, transaction_id)
             if transaction['status'].is_finalized():
                 raise RuntimeError(n_("Transaction already tallied."))
+            tally: decimal.Decimal
             if status == const.LastschriftTransactionStati.success:
                 tally = transaction['amount']
             elif status == const.LastschriftTransactionStati.cancelled:
@@ -625,7 +626,7 @@ class CdELastschriftBackend(CdEBaseBackend):
             return True
         with Atomizer(rs):
             period = self.current_period(rs)
-            cutoff = period - 3 * self.conf["PERIODS_PER_YEAR"] + 1
+            cutoff: int = period - 3 * self.conf["PERIODS_PER_YEAR"] + 1
             relevant_periods = tuple(range(cutoff, period + 1))
             ids = self.list_lastschrift_transactions(
                 rs,

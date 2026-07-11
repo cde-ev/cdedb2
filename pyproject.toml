@@ -54,6 +54,7 @@ dev = [
     "types-python-dateutil",
     "types-tabulate",
     "types-zxcvbn",
+    "pyrefly==1.2.0",
 ]
 # Excluded from dev to ensure better docker cache.
 # Make sure to bump the version in Dockerfile-cdedb!
@@ -204,3 +205,34 @@ module = [
     "webtest.utils",
 ]
 ignore_missing_imports = true
+
+[tool.pyrefly]
+min-severity = "info"
+preset = "strict"
+output-format = "min-text"
+
+project-includes = [
+    "cdedb",
+    "tests",
+    "bin",
+]
+project-excludes = [
+    "cdedb/ldap",
+    "bin/archive",
+    "bin/load-test",
+]
+
+python-version = "3.13"
+
+replace-imports-with-any = [
+    "icu",
+    "webtest",
+]
+
+[tool.pyrefly.errors]
+redundant-cast = "warn"
+unused-ignore = "warn"
+bad-override-mutable-attribute = "ignore"
+missing-override-decorator = "ignore"
+implicit-any-empty-container = "ignore"
+implicit-any-lambda = "ignore"

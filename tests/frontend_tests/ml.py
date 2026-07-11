@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# pyrefly: ignore-errors[implicit-any-empty-container]
+
+
 import csv
 import re
 import unittest.mock
@@ -1567,8 +1570,8 @@ class TestMlFrontend(FrontendTest):
             {"description": "Mailinglisten"}, {"description": "Mailingliste anlegen"}
         )
         f = self.response.forms['selectmltypeform']
-        f['ml_type'] = const.MailinglistTypes.cdelokal
         self.assertEqual(len(f['ml_type'].options), 2)
+        f['ml_type'] = const.MailinglistTypes.cdelokal
         self.submit(f)
         f = self.response.forms['configuremailinglistform']
         f['title'] = "Little Whinging"
@@ -1577,10 +1580,10 @@ class TestMlFrontend(FrontendTest):
         )
         f['description'] = "If anyone else lives here, please come by, I am lonely."
         f['local_part'] = "littlewhinging"
-        f['domain'] = const.MailinglistDomain.cdelokal
         self.assertEqual(
             len(f['domain'].options), len(CdeLokalMailinglist.available_domains)
         )
+        f['domain'] = const.MailinglistDomain.cdelokal
         moderator = USER_DICT["berta"]
         f['moderators'] = moderator["DB-ID"]
         self.submit(f)

@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import cast
 
 import pyparsing as pp
 
@@ -89,4 +90,4 @@ _PARSER = create_parser()
 
 @lru_cache
 def parse(s: str) -> pp.ParseResults:
-    return _PARSER.parse_string(s)[0]
+    return cast(pp.ParseResults, _PARSER.parse_string(s, parse_all=True)[0])

@@ -255,7 +255,6 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         data = check(rs, vtypes.Ballot, data, creation=True)
         if rs.has_validation_errors():
             return self.create_ballot_form(rs, assembly_id)
-        assert data is not None
         new_id = self.assemblyproxy.create_ballot(rs, data)
         code = self._set_ballot_attachments(rs, new_id, data["linked_attachments"])
         rs.notify_return_code(code)
@@ -807,7 +806,6 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         data = check(rs, vtypes.Ballot, data)
         if rs.has_validation_errors():
             return self.change_ballot_form(rs, assembly_id, ballot_id)
-        assert data is not None
 
         code = self._set_ballot_attachments(rs, ballot_id, data['linked_attachments'])
         code *= self.assemblyproxy.set_ballot(rs, data)
@@ -1050,7 +1048,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         self, rs: RequestState, assembly_id: int, ballot_id: int
     ) -> Response:
         """Create, edit and delete candidates of a ballot."""
-        existing_candidates = rs.ambience['ballot']['candidates'].keys()
+        existing_candidates: set[int] = set(rs.ambience['ballot']['candidates'])
         candidates = process_dynamic_input(
             rs,
             vtypes.BallotCandidate,

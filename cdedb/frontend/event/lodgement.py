@@ -17,6 +17,7 @@ from cdedb.common import (
     CdEDBObject,
     CdEDBObjectMap,
     LodgementsSortkeys,
+    Notification,
     RequestState,
     get_mandatory_form_fields,
     merge_dicts,
@@ -303,6 +304,7 @@ class EventLodgementMixin(EventBaseFrontend):
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> Response:
         event = rs.ambience['event']
+        problems: list[Notification] = []
         if event.lodge_field:
             registration_ids = self.eventproxy.list_registrations(rs, event_id)
             registrations = self.eventproxy.get_registrations(rs, registration_ids)
@@ -313,8 +315,6 @@ class EventLodgementMixin(EventBaseFrontend):
             _, problems = detect_lodgement_wishes(
                 registrations, personas, event, restrict_part_id=None
             )
-        else:
-            problems = []
         lodgement_groups = self.eventproxy.get_lodgement_groups(rs, event_id)
         return self.render(
             rs,
@@ -470,7 +470,6 @@ class EventLodgementMixin(EventBaseFrontend):
         )
         if rs.has_validation_errors():
             return self.create_lodgement_form(rs, event_id)
-        assert data is not None
 
         # Create the new group.
         if create_new_group:
@@ -536,7 +535,6 @@ class EventLodgementMixin(EventBaseFrontend):
         )
         if rs.has_validation_errors():
             return self.change_lodgement_form(rs, event_id, lodgement_id)
-        assert data is not None
 
         code = self.eventproxy.set_lodgement(rs, lodgement_id, data)
         rs.notify_return_code(code)
@@ -610,7 +608,7 @@ class EventLodgementMixin(EventBaseFrontend):
             registration_id: vtypes.RegistrationID, part_id: int
         ) -> bool:
             """Un-inlined check for registration without lodgement."""
-            part = registrations[registration_id]['parts'][part_id]
+            part: CdEDBObject = registrations[registration_id]['parts'][part_id]
             return (
                 const.RegistrationPartStati(part['status']).is_present()
                 and not part['lodgement_id']
@@ -641,7 +639,7 @@ class EventLodgementMixin(EventBaseFrontend):
             registration_id: vtypes.RegistrationID, part_id: int
         ) -> bool:
             """Un-inlined check for registration with different lodgement."""
-            part = registrations[registration_id]['parts'][part_id]
+            part: CdEDBObject = registrations[registration_id]['parts'][part_id]
             return (
                 const.RegistrationPartStati(part['status']).is_present()
                 and part['lodgement_id'] != lodgement_id
@@ -741,9 +739,9 @@ class EventLodgementMixin(EventBaseFrontend):
             # Check if registration is new inhabitant or deleted inhabitant
             # in any part
             for part_id in rs.ambience['event'].parts:
-                new_inhabitant = reg_id in data[f"new_{part_id}"]
+                new_inhabitant: bool = reg_id in data[f"new_{part_id}"]
                 deleted_inhabitant = data.get(f"delete_{part_id}_{reg_id}", False)
-                is_camping_mat = reg['parts'][part_id]['is_camping_mat']
+                is_camping_mat: bool = reg['parts'][part_id]['is_camping_mat']
                 changed_inhabitant = (
                     reg_id in current_inhabitants[part_id]
                     and data.get(f"is_camping_mat_{part_id}_{reg_id}", False)

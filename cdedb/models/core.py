@@ -588,7 +588,7 @@ class CdEPersona(EventAssemblyPersona):
             msg = f"{CONFIG['PERIODS_PER_YEAR']} periods per year not supported."
             _LOGGER.error(msg)
             return now().date()
-        periods_left = self.balance // CONFIG["MEMBERSHIP_FEE"]
+        periods_left: int = self.balance // CONFIG["MEMBERSHIP_FEE"]
         if self.trial_member:
             periods_left += 1
         if period['balance_done']:
@@ -650,9 +650,9 @@ class GenesisCase(CdEDataclass):
     def get_persona_class(cls) -> type[CorePersona]:
         # extracts the persona class from its type annotation,
         # since this is static information
-        return {
+        return {  # type: ignore[return-value]
             field.type for field in dataclasses.fields(cls) if field.name == "persona"
-        }.pop()  # type: ignore[return-value]
+        }.pop()
 
     @classmethod
     def dataclass_fields(

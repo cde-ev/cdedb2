@@ -70,7 +70,9 @@ if TYPE_CHECKING:
 # meta
 #
 
-EventDataclassMap = CdEDataclassMap["Event"]
+type EventDataclassMap = CdEDataclassMap[Event]
+
+type EventAssociatedFieldsType = type[vtypes.EventAssociatedFields]  # pyrefly: ignore[invalid-annotation]
 
 
 @dataclasses.dataclass
@@ -636,7 +638,7 @@ class CourseTrack(EventDataclass, CourseChoiceObject):
         return self
 
     @property  # type: ignore[misc]
-    def tracks(self) -> CdEDataclassMap["CourseTrack"]:
+    def tracks(self) -> CdEDataclassMap["CourseTrack"]:  # pyrefly: ignore[bad-override]
         return {self.id: self}
 
     @tracks.setter
@@ -953,7 +955,8 @@ class CustomQueryFilter(EventDataclass):
         Return a sorted list of titles of existing fields and potentially names
         of deleted fields.
         """
-        valid, invalid = [], []
+        valid: list[str] = []
+        invalid: list[str] = []
         for f in self.fields:
             if f in spec:
                 valid.append(spec[f].get_title(g))
@@ -1080,7 +1083,7 @@ class SyncTrackGroup(TrackGroup, CourseChoiceObject):
         return list(self.tracks.values())[0]
 
     @property
-    def num_choices(self) -> vtypes.NonNegativeInt:
+    def num_choices(self) -> vtypes.NonNegativeInt:  # pyrefly: ignore[bad-override]
         return self.reference_track.num_choices
 
     @num_choices.setter
@@ -1089,7 +1092,7 @@ class SyncTrackGroup(TrackGroup, CourseChoiceObject):
             track.num_choices = value
 
     @property
-    def min_choices(self) -> vtypes.NonNegativeInt:
+    def min_choices(self) -> vtypes.NonNegativeInt:  # pyrefly: ignore[bad-override]
         return self.reference_track.min_choices
 
     @min_choices.setter
@@ -1172,7 +1175,7 @@ class Course(EventDataclass):
     notes: str | None
 
     fields: vtypes.EventAssociatedFields = dataclasses.field(
-        default_factory=cast(type[vtypes.EventAssociatedFields], dict),
+        default_factory=cast(EventAssociatedFieldsType, dict),
         metadata=Meta.request_exclude.as_dict,
     )
 
@@ -1214,7 +1217,9 @@ class Course(EventDataclass):
             if "segments" in ret:
                 # During validation we also accept None, meaning to delete the segment,
                 #  i.e. it is not (or no longer) offered.
-                ret["segments"] = CdEDataclassMap[CourseSegment | None]
+                ret["segments"] = cast(
+                    TypeForm[Any], CdEDataclassMap[CourseSegment | None]
+                )
         return mandatory, optional
 
 
@@ -1340,7 +1345,7 @@ class Lodgement(EventDataclass):
     notes: str | None
 
     fields: vtypes.EventAssociatedFields = dataclasses.field(
-        default_factory=cast(type[vtypes.EventAssociatedFields], dict)
+        default_factory=cast(EventAssociatedFieldsType, dict)
     )
 
     @classmethod

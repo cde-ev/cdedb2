@@ -917,7 +917,7 @@ class TestCoreFrontend(FrontendTest):
             {'description': 'Passwort ändern'},
         )
         # Password one: Common English words
-        new_password = 'dragonSecret'
+        new_password: str = 'dragonSecret'
         f = self.response.forms['passwordchangeform']
         f['old_password'] = self.user['password']
         f['new_password'] = new_password
