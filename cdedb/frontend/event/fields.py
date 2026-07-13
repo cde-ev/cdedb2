@@ -31,6 +31,7 @@ from cdedb.filter import safe_filter
 from cdedb.frontend.common import (
     REQUESTdata,
     access,
+    ack_delete,
     drow_name,
     process_dynamic_input,
 )
@@ -143,6 +144,40 @@ class EventFieldMixin(EventBaseFrontend):
         return self.redirect(
             rs, "event/field_summary_form", anchor=(nav_tab_active or "").lstrip("#")
         )
+
+    @access("event")
+    @event_guard(EventPrivileges.basic_write | EventPrivileges.entities_write)
+    def prune_field_select(self, rs: RequestState, event_id: vtypes.ID) -> Response:
+        return self.render(rs, "fields/prune_field_select")
+
+    @access("event", modi={"POST"})
+    @event_guard(EventPrivileges.basic_write | EventPrivileges.entities_write)
+    @REQUESTdata("field_id")
+    @ack_delete()
+    def prune_field(
+        self, rs: RequestState, event_id: vtypes.ID, field_id: vtypes.ID
+    ) -> Response:
+        if field_id not in rs.ambience['event'].fields:
+            rs.append_validation_error((
+                "field_id",
+                ValueError(n_("Unknown event field.")),
+            ))
+
+        if rs.has_validation_errors():  # ack delete not set or no field id.
+            return self.prune_field_select(rs, event_id)
+
+        self.eventproxy.event_keeper_commit(
+            rs, event_id, "Snapshot vor Datenfeld-Leerung."
+        )
+        num = self.eventproxy.prune_event_field(rs, field_id)
+        rs.notify_return_code(
+            num,
+            success=n_("Deleted data for %(num)s entities."),
+            info=n_("No associated entities."),
+            params={"num": num},
+        )
+
+        return self.redirect(rs, "event/field_summary_form")
 
     FIELD_REDIRECT = {
         const.FieldAssociations.registration: "event/registration_query",

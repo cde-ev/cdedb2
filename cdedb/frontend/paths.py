@@ -679,6 +679,8 @@ rules = [
                     get_("/setselect", endpoint="field_multiset_select"),
                     get_("/summary", endpoint="field_summary_form"),
                     post("/summary", endpoint="field_summary"),
+                    get_("/prune", endpoint="prune_field_select"),
+                    post("/prune", endpoint="prune_field"),
                     sub(
                         "/<int:field_id>",
                         get_("/set", endpoint="field_multiset_form"),

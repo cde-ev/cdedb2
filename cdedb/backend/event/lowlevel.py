@@ -47,6 +47,7 @@ from cdedb.common.privileges import (
     is_privileged_event as is_privileged,
 )
 from cdedb.common.sorting import mixed_existence_sorter
+from cdedb.database.connection import Atomizer
 from cdedb.database.query import DatabaseValue_s, ParamDict
 
 
@@ -328,7 +329,7 @@ class EventLowLevelBackend(AbstractBackend):
         return ret
 
     @internal
-    def _delete_field_values(self, rs: RequestState, field: models.EventField) -> None:
+    def _delete_field_values(self, rs: RequestState, field: models.EventField) -> int:
         """Helper function for deleting the data stored in a custom data field.
 
         This is used by `_delete_event_field`, when successfully deleting a field
@@ -343,7 +344,7 @@ class EventLowLevelBackend(AbstractBackend):
             WHERE event_id = %(event_id)s
         """
         params: ParamDict = {"field_name": field.field_name, "event_id": field.event_id}
-        self.query_exec(rs, query, params)
+        return self.query_exec(rs, query, params) or -1
 
     @internal
     def _cast_field_values(self, rs: RequestState, field: models.EventField) -> None:
@@ -1210,6 +1211,40 @@ class EventLowLevelBackend(AbstractBackend):
                     )
 
         return ret
+
+    @access("event")
+    def prune_event_field(self, rs: RequestState, field_id: vtypes.ID) -> int:
+        """Delete all _currently_ stored data for the given field.
+
+        This does not affect data stored in event keeper.
+        """
+        field_id = affirm(vtypes.ID, field_id)
+
+        with Atomizer(rs):
+            event_id = unwrap(
+                self.sql_select_one(
+                    rs, models.EventField.database_table, ["event_id"], field_id
+                )
+            )
+            if not event_id:
+                raise ValueError(n_("Unknown event field."))
+            if not is_privileged(
+                rs,
+                EventPrivileges.entities_write | EventPrivileges.basic_write,
+                event_id,
+            ):
+                raise PrivilegeError
+
+            event = self.get_event(rs, event_id)
+            field = event.fields[field_id]
+            ret = self._delete_field_values(rs, field)
+            self.event_log(
+                rs,
+                const.EventLogCodes.field_pruned,
+                event_id,
+                change_note=field.field_name,
+            )
+            return ret
 
     @access("event")
     def has_registrations(self, rs: RequestState, event_id: int) -> bool:

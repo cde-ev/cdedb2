@@ -1,0 +1,46 @@
+{% set sidenav_active="event_field_summary" %}
+{% set jshint="weak" %}
+
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+{% endblock %}
+
+{% block title %}
+    {% trans title=ambience['event']['title'] %}
+        Prune Field Data ({{ title }})
+    {% endtrans %}
+{% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Prune Field Data"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/field_summary"), gettext("Configure Custom Fields")) }}
+    {{ util.breadcrumb_link(cdedblink("event/prune_field_select"), gettext("Prune Field Data"), active=True) }}
+{% endblock %}
+
+{% block content %}
+    <form action="{{ cdedblink('event/prune_field') }}" method="POST" id="prunefieldform" class="form-horizontal">
+        <p class="text-info">
+            {{ util.make_icon("info-circle") }}
+            {% trans %}
+                Select a custom data field to prune data stored for this field from all associated entities (registrations/courses/lodgements).
+            {% endtrans %}
+        </p>
+        {{ util.anti_csrf_token("event/prune_field") }}
+        {{ util.form_input_select(
+                "field_id", label=gettext("Field"), nulloption="", small=True,
+                entries=ambience["event"].fields|entries(
+                    'id', 'field_name', group="sort_group", default_group=gettext("Other Fields")
+                )) }}
+        {{ util.ack_delete(gettext("All data associated with the field will be irreversible deleted."), form=True, small=True) }}
+        {{ util.form_input_submit(label=gettext("Prune Field Data"), icon="fire", aclass="btn btn.xs btn-danger", small=True) }}
+    </form>
+{% endblock %}
