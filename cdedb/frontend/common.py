@@ -2940,6 +2940,39 @@ def assembly_guard[F: Callable[..., Any]](fun: F) -> F:
     return cast(F, new_fun)
 
 
+def ack_delete[F: Callable[..., Any]](
+    name: str = "ack_delete", passthrough: bool = False
+) -> Callable[[F], F]:
+    """
+    Check that an 'ack_delete' field was submitted before proceeding.
+
+    The wrapped endpoint needs to check `rs.has_validation_errors()`.
+
+    :param name: name of the 'ack_delete' field. Defaults to 'ack_delete'.
+    :param passthrough: If True, the 'ack_delete' value is passed to the endpoint.
+        Use this if you need to perform more involved checking of differentiate between
+        validation errors due to missing ack and other validation errors.
+        The value will be passed as a keyword argument. It is not necessary to also
+        retrieve it with '@REQUESTdata' but it won't break anything either.
+    """
+
+    def the_decorator(fun: F) -> F:
+        @functools.wraps(fun)
+        def new_fun(
+            obj: AbstractFrontend, rs: RequestState, *args: Any, **kwargs: Any
+        ) -> Any:
+            ack = request_extractor(rs, {name: bool})[name]
+            if not ack:
+                rs.append_validation_error((name, ValueError(n_("Must be checked."))))
+            if passthrough:
+                kwargs[name] = ack
+            return fun(obj, rs, *args, **kwargs)
+
+        return cast(F, new_fun)
+
+    return the_decorator
+
+
 @overload
 def check_validation(
     rs: RequestState,
