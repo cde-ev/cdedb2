@@ -597,6 +597,7 @@
             checked="checked" if selected,
             disabled="disabled" if readonly or actualreadonly,
             form=formid,
+            title=title,
             **{ 'aria-label': arialabel }
         )|xmlattr }} {{ attributes }} />
         {{ label -}}
@@ -636,7 +637,7 @@
 
 {% macro form_input_checkbox(name, label="", value=True, info='', displayerrors=True, readonly=False,
         actualreadonly=False, defaultvalue='', anid=none, horizontal=True, small=False, attributes='', aclass='',
-        outerclass='') %}
+        outerclass='', title='') %}
     {#- This is the version for a single checkbox as opposed to form_input_checkboxes(). #}
     {%- set anid = anid or "input-checkbox-{}".format(name) %}
     <div class="form-group
@@ -648,7 +649,7 @@
         "{% endif %}>
             <div class="checkbox{% if readonly or actualreadonly %} disabled{% endif %}">
                 {{ input_checkbox(name, label, value, defaultvalue, readonly, actualreadonly, anid,
-                                  attributes=attributes, aclass=aclass) }}
+                                  attributes=attributes, aclass=aclass, title=title) }}
             </div>
             {{- output_errors(name, displayerrors) }}
             {{- output_info(info) }}
