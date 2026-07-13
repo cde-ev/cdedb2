@@ -327,19 +327,22 @@
     {%- endif %}
 {%- endmacro %}
 
-{% macro ack_delete(protect_text, name="ack_delete") %}
+{% macro ack_delete(protect_text, name="ack_delete", form=False, small=False) %}
     {% set caller_ = caller %}
-    {% call output_errors(name, wrapper=True) %}
-        {% if caller_ %}
-            {{ caller_() }}
-        {% else %}
-            {{ input_checkbox(name=name, aclass="ack-delete", title=protect_text,
-                              label=gettext("Are you sure?")) }}
-        {% endif %}
-        {% if not jshint %}
-            {{ raise_for_test("jshint not set for 'util.ack_delete'.") }}
-        {% endif %}
-    {% endcall %}
+    {% if form %}
+        {{ form_input_checkbox(name=name, aclass="ack-delete", title=protect_text, label=gettext("Are you sure?"), small=small) }}
+    {% else %}
+        {% call output_errors(name, wrapper=True) %}
+            {% if caller_ %}
+                {{ caller_() }}
+            {% else %}
+                {{ input_checkbox(name=name, aclass="ack-delete", title=protect_text, label=gettext("Are you sure?")) }}
+            {% endif %}
+            {% if not jshint %}
+                {{ raise_for_test("jshint not set for 'util.ack_delete'.") }}
+            {% endif %}
+        {% endcall %}
+    {% endif %}
     <script nonce="{{ csp_nonce }}">
         $(document.currentScript).closest('form').cdedbProtectAction("{{ protect_text }}");
     </script>
