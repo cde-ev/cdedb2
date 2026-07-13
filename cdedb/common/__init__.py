@@ -298,6 +298,7 @@ class RequestState(ConnectionContainer):
         success: str = n_("Change committed."),
         info: str = n_("Change pending."),
         error: str = n_("Change failed."),
+        params: CdEDBObject | None = None,
     ) -> None:
         """Small helper to issue a notification based on a return code.
 
@@ -311,11 +312,11 @@ class RequestState(ConnectionContainer):
         :param error: Exception message for zero return codes.
         """
         if not code:
-            self.notify("error", error)
+            self.notify("error", error, params)
         elif code is True or code > 0:
-            self.notify("success", success)
+            self.notify("success", success, params)
         elif code < 0:
-            self.notify("info", info)
+            self.notify("info", info, params)
         else:
             raise RuntimeError(n_("Impossible."))
 
