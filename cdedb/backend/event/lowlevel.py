@@ -11,7 +11,7 @@ import copy
 import decimal
 from collections.abc import Collection
 from pathlib import Path
-from typing import Protocol
+from typing import Protocol, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -46,7 +46,7 @@ from cdedb.common.privileges import (
     EventPrivileges,
     is_privileged_event as is_privileged,
 )
-from cdedb.common.sorting import mixed_existence_sorter
+from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import DatabaseValue_s, ParamDict
 
@@ -332,10 +332,13 @@ class EventLowLevelBackend(AbstractBackend):
     def _delete_field_values(self, rs: RequestState, field: models.EventField) -> int:
         """Helper function for deleting the data stored in a custom data field.
 
-        This is used by `_delete_event_field`, when successfully deleting a field
-        definition.
+        This is used by `_delete_event_field` when successfully deleting a field
+        definition and `prune_event_fields` when deleting field contents.
 
-        :param field: The field whose values are to be deleted
+        Returns the number of entities of the fields association, -1 for no entities.
+        This does not incidate whether these entities had any data for the given field.
+
+        :param field: The field whose values are to be deleted.
         """
 
         query = f"""
@@ -1213,21 +1216,38 @@ class EventLowLevelBackend(AbstractBackend):
         return ret
 
     @access("event")
-    def prune_event_field(self, rs: RequestState, field_id: vtypes.ID) -> int:
-        """Delete all _currently_ stored data for the given field.
+    def prune_event_fields(
+        self, rs: RequestState, field_ids: Collection[vtypes.ID]
+    ) -> dict[const.FieldAssociations, int]:
+        """Delete all _currently_ stored data for the given fields.
 
         This does not affect data stored in event keeper.
+
+        Returns the number of affected entities per entity type, limited to
+        the types for which associated fields were given.
+        If there are no entities of a kind, the number will be indicated as -1.
         """
-        field_id = affirm(vtypes.ID, field_id)
+        field_ids = affirm(set[vtypes.ID], field_ids)
+        field_ids = cast(set[vtypes.ID], field_ids)  # mypy bug.
+        if not field_ids:
+            return {}
 
         with Atomizer(rs):
             event_id = unwrap(
                 self.sql_select_one(
-                    rs, models.EventField.database_table, ["event_id"], field_id
+                    rs,
+                    models.EventField.database_table,
+                    ["event_id"],
+                    list(field_ids)[0],
                 )
             )
             if not event_id:
-                raise ValueError(n_("Unknown event field."))
+                raise ValueError(n_("Unknown event field(s)."))
+
+            event = self.get_event(rs, event_id)
+            if not field_ids <= event.fields.keys():
+                raise ValueError(n_("Unknown event field(s)."))
+
             if not is_privileged(
                 rs,
                 EventPrivileges.entities_write | EventPrivileges.basic_write,
@@ -1235,15 +1255,16 @@ class EventLowLevelBackend(AbstractBackend):
             ):
                 raise PrivilegeError
 
-            event = self.get_event(rs, event_id)
-            field = event.fields[field_id]
-            ret = self._delete_field_values(rs, field)
-            self.event_log(
-                rs,
-                const.EventLogCodes.field_pruned,
-                event_id,
-                change_note=field.field_name,
-            )
+            ret = {}
+            for field_id in xsorted(field_ids):
+                field = event.fields[field_id]
+                ret[field.association] = self._delete_field_values(rs, field)
+                self.event_log(
+                    rs,
+                    const.EventLogCodes.field_pruned,
+                    event_id,
+                    change_note=field.field_name,
+                )
             return ret
 
     @access("event")

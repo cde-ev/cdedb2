@@ -6,6 +6,7 @@
 
 {% block scripts %}
     {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_multiselect.js') }}
 {% endblock %}
 
 {% block title %}
@@ -27,16 +28,16 @@
 {% endblock %}
 
 {% block content %}
-    <form action="{{ cdedblink('event/prune_field') }}" method="POST" id="prunefieldform" class="form-horizontal">
+    <form action="{{ cdedblink('event/prune_fields') }}" method="POST" id="prunefieldsform" class="form-horizontal">
         <p class="text-info">
             {{ util.make_icon("info-circle") }}
             {% trans %}
                 Select a custom data field to prune data stored for this field from all associated entities (registrations/courses/lodgements).
             {% endtrans %}
         </p>
-        {{ util.anti_csrf_token("event/prune_field") }}
-        {{ util.form_input_select(
-                "field_id", label=gettext("Field"), nulloption="", small=True,
+        {{ util.anti_csrf_token("event/prune_fields") }}
+        {{ util.form_input_multi_select(
+                "field_ids", label=gettext("Fields"), nulloption="", small=True, size=6, selectize=True,
                 entries=ambience["event"].fields|entries(
                     'id', 'field_name', group="sort_group", default_group=gettext("Other Fields")
                 )) }}

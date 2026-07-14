@@ -152,30 +152,49 @@ class EventFieldMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write | EventPrivileges.entities_write)
-    @REQUESTdata("field_id")
+    @REQUESTdata("field_ids")
     @ack_delete()
-    def prune_field(
-        self, rs: RequestState, event_id: vtypes.ID, field_id: vtypes.ID
+    def prune_fields(
+        self, rs: RequestState, event_id: vtypes.ID, field_ids: Collection[vtypes.ID]
     ) -> Response:
-        if field_id not in rs.ambience['event'].fields:
+        if not set(field_ids) <= rs.ambience['event'].fields.keys():
             rs.append_validation_error((
-                "field_id",
-                ValueError(n_("Unknown event field.")),
+                "field_ids",
+                ValueError(n_("Unknown event field(s).")),
             ))
 
-        if rs.has_validation_errors():  # ack delete not set or no field id.
+        if rs.has_validation_errors():  # ack delete not set or no field ids.
             return self.prune_field_select(rs, event_id)
 
         self.eventproxy.event_keeper_commit(
             rs, event_id, "Snapshot vor Datenfeld-Leerung."
         )
-        num = self.eventproxy.prune_event_field(rs, field_id)
-        rs.notify_return_code(
-            num,
-            success=n_("Deleted data for %(num)s entities."),
-            info=n_("No associated entities."),
-            params={"num": num},
-        )
+
+        result = self.eventproxy.prune_event_fields(rs, field_ids)
+        if const.FieldAssociations.registration in result:
+            num = result[const.FieldAssociations.registration]
+            rs.notify_return_code(
+                num,
+                success=n_("Deleted data from %(num)s registrations."),
+                info=n_("No registrations."),
+                params={"num": num},
+            )
+        if const.FieldAssociations.course in result:
+            num = result[const.FieldAssociations.course]
+            rs.notify_return_code(
+                num,
+                success=n_("Deleted data from %(num)s courses."),
+                info=n_("No courses."),
+                params={"num": num},
+            )
+        if const.FieldAssociations.lodgement in result:
+            num = result[const.FieldAssociations.lodgement]
+            rs.notify_return_code(
+                num,
+                success=n_("Deleted data from %(num)s lodgements."),
+                info=n_("No lodgements."),
+                params={"num": num},
+            )
 
         return self.redirect(rs, "event/field_summary_form")
 

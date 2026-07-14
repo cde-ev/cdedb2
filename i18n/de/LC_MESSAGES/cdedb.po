@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-07-13 22:17+0200\n"
+"POT-Creation-Date: 2026-07-15 02:00+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -2317,8 +2317,8 @@ msgstr "Abbrechen"
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:232
 #: cdedb/frontend/templates/web/generic.tmpl:321
 #: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:214
-#: cdedb/frontend/templates/web/util.tmpl:838
-#: cdedb/frontend/templates/web/util.tmpl:862 cdedb/i18n_additional.py:147
+#: cdedb/frontend/templates/web/util.tmpl:840
+#: cdedb/frontend/templates/web/util.tmpl:864 cdedb/i18n_additional.py:147
 msgid "Save"
 msgstr "Speichern"
 
@@ -3347,7 +3347,7 @@ msgstr "Nur Admins dürfen auf das globale Log zugreifen."
 #: cdedb/backend/event/base.py:1394 cdedb/backend/event/base.py:1569
 #: cdedb/backend/event/base.py:1680 cdedb/backend/event/base.py:1991
 #: cdedb/backend/event/course.py:362 cdedb/backend/event/lodgement.py:215
-#: cdedb/backend/event/lodgement.py:259 cdedb/backend/event/lowlevel.py:1262
+#: cdedb/backend/event/lodgement.py:259 cdedb/backend/event/lowlevel.py:1281
 #: cdedb/backend/event/query.py:82 cdedb/backend/event/query.py:372
 #: cdedb/backend/event/query.py:400 cdedb/backend/event/query.py:596
 #: cdedb/backend/event/registration.py:515
@@ -3837,10 +3837,10 @@ msgstr "Ungültiger Benutzer."
 #: cdedb/backend/event/lodgement.py:168 cdedb/backend/event/lodgement.py:199
 #: cdedb/backend/event/lodgement.py:431 cdedb/backend/event/lodgement.py:464
 #: cdedb/backend/event/lowlevel.py:198 cdedb/backend/event/lowlevel.py:248
-#: cdedb/backend/event/lowlevel.py:466 cdedb/backend/event/lowlevel.py:514
-#: cdedb/backend/event/lowlevel.py:715 cdedb/backend/event/lowlevel.py:763
-#: cdedb/backend/event/lowlevel.py:815 cdedb/backend/event/lowlevel.py:853
-#: cdedb/backend/event/lowlevel.py:1065 cdedb/backend/event/lowlevel.py:1130
+#: cdedb/backend/event/lowlevel.py:467 cdedb/backend/event/lowlevel.py:515
+#: cdedb/backend/event/lowlevel.py:716 cdedb/backend/event/lowlevel.py:764
+#: cdedb/backend/event/lowlevel.py:816 cdedb/backend/event/lowlevel.py:854
+#: cdedb/backend/event/lowlevel.py:1066 cdedb/backend/event/lowlevel.py:1131
 #: cdedb/backend/event/registration.py:1547
 #: cdedb/backend/event/registration.py:1610 cdedb/backend/ml.py:937
 #: cdedb/backend/ml.py:978 cdedb/backend/past_event.py:264
@@ -4458,7 +4458,7 @@ msgstr ""
 "Veranstaltung ist finanziell abgeschlossen. Teilnahmebeitrag darf sich nicht "
 "mehr ändern."
 
-#: cdedb/backend/event/base.py:879 cdedb/backend/event/lowlevel.py:546
+#: cdedb/backend/event/base.py:879 cdedb/backend/event/lowlevel.py:547
 msgid "At least one event part required."
 msgstr "Mindestens ein Veranstaltungsteil muss angegeben werden."
 
@@ -4542,37 +4542,38 @@ msgstr "Unbekanntes Feld für diese Veranstaltung."
 msgid "Non-existing tracks specified."
 msgstr "Nicht-existente Kursschiene angegeben."
 
-#: cdedb/backend/event/lowlevel.py:544 cdedb/frontend/event/event.py:790
+#: cdedb/backend/event/lowlevel.py:545 cdedb/frontend/event/event.py:790
 msgid "Registrations exist, cannot delete event parts."
 msgstr "Es gibt Anmeldungen, Löschen von Veransaltungsteilen nicht möglich."
 
-#: cdedb/backend/event/lowlevel.py:883
+#: cdedb/backend/event/lowlevel.py:884
 msgid "Synced tracks must have same number of choices."
 msgstr ""
 "Synchronisierte Kursschienen müssen dieselbe Anzahl an Kurswahlen haben."
 
-#: cdedb/backend/event/lowlevel.py:897
+#: cdedb/backend/event/lowlevel.py:898
 msgid "Track synced to more than one ccs track group."
 msgstr "Kursschiene in mehr als einer Kurswahlsynchronisierung."
 
-#: cdedb/backend/event/lowlevel.py:919
+#: cdedb/backend/event/lowlevel.py:920
 msgid "Incompatible course choices present."
 msgstr "Inkompatible Kurswahlen."
 
-#: cdedb/backend/event/lowlevel.py:1157
+#: cdedb/backend/event/lowlevel.py:1158
 msgid "Non-existing fields specified."
 msgstr "Angegebene Felder existieren nicht."
 
-#: cdedb/backend/event/lowlevel.py:1198
+#: cdedb/backend/event/lowlevel.py:1199
 msgid ""
 "Cannot change association or kind of a field referenced by an event fee."
 msgstr ""
 "Die Zugehörigkeit und der Datentyp eines Feldes können nicht geändert "
 "werden, falls es in einem Teilnahmbebeitrag referenziert wird."
 
-#: cdedb/backend/event/lowlevel.py:1232 cdedb/frontend/event/fields.py:163
-msgid "Unknown event field."
-msgstr "Unbekanntes Datenfeld."
+#: cdedb/backend/event/lowlevel.py:1245 cdedb/backend/event/lowlevel.py:1249
+#: cdedb/frontend/event/fields.py:163
+msgid "Unknown event field(s)."
+msgstr "Unbekannte(s) Datenfeld(er)."
 
 #: cdedb/backend/event/query.py:782
 msgid "Must be orga to retrieve stored queries."
@@ -5399,7 +5400,7 @@ msgstr "Land"
 #: cdedb/frontend/templates/web/ml/base.tmpl:35
 #: cdedb/frontend/templates/web/ml/index.tmpl:6
 #: cdedb/frontend/templates/web/ml/index.tmpl:9
-#: cdedb/frontend/templates/web/util.tmpl:1141
+#: cdedb/frontend/templates/web/util.tmpl:1143
 msgid "Mailinglists"
 msgstr "Mailinglisten"
 
@@ -5418,7 +5419,7 @@ msgstr "Bereich"
 #: cdedb/frontend/templates/web/event/base.tmpl:378
 #: cdedb/frontend/templates/web/event/event/index.tmpl:5
 #: cdedb/frontend/templates/web/event/event/index.tmpl:10
-#: cdedb/frontend/templates/web/util.tmpl:1140
+#: cdedb/frontend/templates/web/util.tmpl:1142
 msgid "Events"
 msgstr "Veranstaltungen"
 
@@ -5428,13 +5429,13 @@ msgstr "Veranstaltungen"
 #: cdedb/frontend/templates/web/assembly/base/index.tmpl:3
 #: cdedb/frontend/templates/web/assembly/base/index.tmpl:5
 #: cdedb/frontend/templates/web/base.tmpl:175
-#: cdedb/frontend/templates/web/util.tmpl:1142
+#: cdedb/frontend/templates/web/util.tmpl:1144
 msgid "Assemblies"
 msgstr "Versammlungen"
 
 #: cdedb/common/query/__init__.py:585
 #: cdedb/frontend/templates/web/core/promote_user.tmpl:31
-#: cdedb/frontend/templates/web/util.tmpl:1139
+#: cdedb/frontend/templates/web/util.tmpl:1141
 msgid "cde_realm"
 msgstr "CdE"
 
@@ -6282,7 +6283,7 @@ msgstr "Datenfelder"
 
 #: cdedb/common/query/__init__.py:1417 cdedb/common/query/__init__.py:1562
 #: cdedb/common/query/__init__.py:1667
-#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:41
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:42
 #: cdedb/frontend/templates/web/event/generic.tmpl:187
 #: cdedb/frontend/templates/web/event/generic.tmpl:385
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:212
@@ -7549,7 +7550,7 @@ msgstr "Lastschrifteinzüge"
 #: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:28
 #: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:20
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:26
-#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:19
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:20
 #: cdedb/frontend/templates/web/event/import/partial_import.tmpl:18
 #: cdedb/frontend/templates/web/event/import/partial_import_check.tmpl:15
 #: cdedb/frontend/templates/web/event/import/questionnaire_import.tmpl:18
@@ -7739,7 +7740,7 @@ msgstr "Veranstaltungsrollen"
 #: cdedb/frontend/templates/web/assembly/util.tmpl:3
 #: cdedb/frontend/templates/web/core/complaint/configure_entry.tmpl:123
 #: cdedb/frontend/templates/web/core/genesis/genesis_show_case.tmpl:184
-#: cdedb/frontend/templates/web/util.tmpl:540
+#: cdedb/frontend/templates/web/util.tmpl:542
 msgid "Attachment"
 msgstr "Anhang"
 
@@ -7869,7 +7870,7 @@ msgstr "Anhang hinzugefügt."
 #: cdedb/frontend/assembly/base.py:539 cdedb/frontend/assembly/base.py:695
 #: cdedb/frontend/cde/past_event.py:261 cdedb/frontend/cde/past_event.py:335
 #: cdedb/frontend/cde/past_event.py:433 cdedb/frontend/cde/past_event.py:455
-#: cdedb/frontend/common.py:2951 cdedb/frontend/core/base.py:3242
+#: cdedb/frontend/common.py:2966 cdedb/frontend/core/base.py:3242
 #: cdedb/frontend/core/base.py:3315 cdedb/frontend/event/course.py:333
 #: cdedb/frontend/event/event.py:386 cdedb/frontend/event/event.py:586
 #: cdedb/frontend/event/event.py:620 cdedb/frontend/event/event.py:660
@@ -9408,24 +9409,42 @@ msgstr "Keine Anmeldung gefunden."
 msgid "Field name not unique."
 msgstr "Feldname nicht eindeutig."
 
-#: cdedb/frontend/event/fields.py:172
+#: cdedb/frontend/event/fields.py:178
 #, python-format
-msgid "Deleted data for %(num)s entities."
-msgstr "Daten aus %(num)s Datensätzen gelöscht."
+msgid "Deleted data from %(num)s registrations."
+msgstr "Daten aus %(num)s Anmeldungen gelöscht."
 
-#: cdedb/frontend/event/fields.py:173
-msgid "No associated entities."
-msgstr "Keine verknüpften Datensätze."
+#: cdedb/frontend/event/fields.py:179
+msgid "No registrations."
+msgstr "Keine Anmeldungen."
 
-#: cdedb/frontend/event/fields.py:254
+#: cdedb/frontend/event/fields.py:186
+#, python-format
+msgid "Deleted data from %(num)s courses."
+msgstr "Daten aus %(num)s Kursen gelöscht."
+
+#: cdedb/frontend/event/fields.py:187
+msgid "No courses."
+msgstr "Keine Kurse."
+
+#: cdedb/frontend/event/fields.py:194
+#, python-format
+msgid "Deleted data from %(num)s lodgements."
+msgstr "Daten aus %(num)s Unterkünften gelöscht."
+
+#: cdedb/frontend/event/fields.py:195
+msgid "No lodgements."
+msgstr "Keine Unterkünfte."
+
+#: cdedb/frontend/event/fields.py:276
 msgid "Wrong associated event."
 msgstr "Falsche Veranstaltung referenziert."
 
-#: cdedb/frontend/event/fields.py:257
+#: cdedb/frontend/event/fields.py:279
 msgid "Wrong associated field."
 msgstr "Feld einer anderen Veranstaltung angegeben."
 
-#: cdedb/frontend/event/fields.py:399
+#: cdedb/frontend/event/fields.py:421
 msgid "change_note only supported for registrations."
 msgstr "Änderungskommentare werden nur für Anmeldungen unterstützt."
 
@@ -10435,8 +10454,8 @@ msgstr ""
 "sie erstellt wurde."
 
 #: cdedb/frontend/templates/web/assembly/attachment/configure_attachment_version.tmpl:65
-#: cdedb/frontend/templates/web/util.tmpl:336
-#: cdedb/frontend/templates/web/util.tmpl:338
+#: cdedb/frontend/templates/web/util.tmpl:333
+#: cdedb/frontend/templates/web/util.tmpl:339
 msgid "Are you sure?"
 msgstr "sicher?"
 
@@ -11658,7 +11677,7 @@ msgstr "Benutzer-Administration"
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:37
 #: cdedb/frontend/templates/web/event/base.tmpl:431
 #: cdedb/frontend/templates/web/ml/base.tmpl:120
-#: cdedb/frontend/templates/web/util.tmpl:1164
+#: cdedb/frontend/templates/web/util.tmpl:1166
 msgid "Auditor"
 msgstr "Kassenprüfer"
 
@@ -12408,13 +12427,13 @@ msgid "Line %(lineno)s"
 msgstr "Zeile %(lineno)s"
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:96
-#: cdedb/frontend/templates/web/util.tmpl:1126
+#: cdedb/frontend/templates/web/util.tmpl:1128
 msgid "born"
 msgstr "geb. am"
 
 #: cdedb/frontend/templates/web/cde/batch_admission.tmpl:112
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:89
-#: cdedb/frontend/templates/web/util.tmpl:1195
+#: cdedb/frontend/templates/web/util.tmpl:1197
 msgid "Error"
 msgstr "Fehler"
 
@@ -13572,8 +13591,8 @@ msgid "Go to first Error / Warning."
 msgstr "Gehe zum ersten Fehler / Warnung"
 
 #: cdedb/frontend/templates/web/cde/parse/parse_statement.tmpl:221
-#: cdedb/frontend/templates/web/util.tmpl:834
-#: cdedb/frontend/templates/web/util.tmpl:866
+#: cdedb/frontend/templates/web/util.tmpl:836
+#: cdedb/frontend/templates/web/util.tmpl:868
 msgid "Ignore Warnings"
 msgstr "Warnungen ignorieren"
 
@@ -14582,47 +14601,47 @@ msgstr ""
 "bestätigt werden."
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:33
-#: cdedb/frontend/templates/web/util.tmpl:1155
+#: cdedb/frontend/templates/web/util.tmpl:1157
 msgid "Meta admin"
 msgstr "Meta-Admins"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:34
-#: cdedb/frontend/templates/web/util.tmpl:1156
+#: cdedb/frontend/templates/web/util.tmpl:1158
 msgid "Core admin"
 msgstr "Core-Admins"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:35
-#: cdedb/frontend/templates/web/util.tmpl:1157
+#: cdedb/frontend/templates/web/util.tmpl:1159
 msgid "CdE admin"
 msgstr "CdE-Admins"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:36
-#: cdedb/frontend/templates/web/util.tmpl:1158
+#: cdedb/frontend/templates/web/util.tmpl:1160
 msgid "Finance admin"
 msgstr "Finanz-Admins"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:40
-#: cdedb/frontend/templates/web/util.tmpl:1159
+#: cdedb/frontend/templates/web/util.tmpl:1161
 msgid "Event admin"
 msgstr "Veranstaltungs-Admins"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:41
-#: cdedb/frontend/templates/web/util.tmpl:1163
+#: cdedb/frontend/templates/web/util.tmpl:1165
 msgid "Case archive admin"
 msgstr "Fallarchiv-Admins"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:44
-#: cdedb/frontend/templates/web/util.tmpl:1160
+#: cdedb/frontend/templates/web/util.tmpl:1162
 msgid "Mailinglist admin"
 msgstr "Mailinglisten-Admins"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:45
-#: cdedb/frontend/templates/web/util.tmpl:1161
+#: cdedb/frontend/templates/web/util.tmpl:1163
 msgid "CdElokal admin"
 msgstr "CdElokal-Admins"
 
 #: cdedb/frontend/templates/web/core/change_privileges.tmpl:48
-#: cdedb/frontend/templates/web/util.tmpl:1162
+#: cdedb/frontend/templates/web/util.tmpl:1164
 msgid "Assembly admin"
 msgstr "Versammlungs-Admins"
 
@@ -16441,7 +16460,7 @@ msgstr "QR"
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:167
 #: cdedb/frontend/templates/web/event/generic.tmpl:863
-#: cdedb/frontend/templates/web/util.tmpl:371
+#: cdedb/frontend/templates/web/util.tmpl:373
 msgid "Loading..."
 msgstr "Lädt..."
 
@@ -16455,7 +16474,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_user.tmpl:169
 #: cdedb/frontend/templates/web/event/generic.tmpl:865
-#: cdedb/frontend/templates/web/util.tmpl:373
+#: cdedb/frontend/templates/web/util.tmpl:375
 msgid "Close"
 msgstr "Schließen"
 
@@ -17106,7 +17125,7 @@ msgstr "Downloads & Import"
 #: cdedb/frontend/templates/web/event/base.tmpl:257
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:21
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:25
-#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:25
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:26
 #: cdedb/frontend/templates/web/event/query/configure_custom_filter.tmpl:54
 #: cdedb/frontend/templates/web/event/query/custom_filter_summary.tmpl:47
 msgid "Configure Custom Fields"
@@ -19554,7 +19573,6 @@ msgstr ""
 "folgenden Entitäten festzulegen:"
 
 #: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:46
-#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:39
 msgid "Field"
 msgstr "Feld"
 
@@ -19618,9 +19636,9 @@ msgid "Custom Filters"
 msgstr "Eigene Filter"
 
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:151
-#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:18
-#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:26
-#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:44
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:19
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:27
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:45
 msgid "Prune Field Data"
 msgstr "Datenfeld leeren"
 
@@ -19675,12 +19693,12 @@ msgstr "Beschreibungstext"
 msgid "Value"
 msgstr "Wert"
 
-#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:12
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:13
 #, python-format
 msgid "Prune Field Data (%(title)s)"
 msgstr "Datenfeld leeren (%(title)s)"
 
-#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:33
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:34
 msgid ""
 "Select a custom data field to prune data stored for this field from all "
 "associated entities (registrations/courses/lodgements)."
@@ -19688,9 +19706,15 @@ msgstr ""
 "Wähle ein Datenfald aus um die damit verknüpften Daten aus allen Datensätzen "
 "(Anmeldungen/Kursen/Unterkünften) zu löschen."
 
-#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:43
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:40
+#: cdedb/frontend/templates/web/generic.tmpl:152
+msgid "Fields"
+msgstr "Felder"
+
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:44
 msgid "All data associated with the field will be irreversible deleted."
-msgstr "Alle mit diesem Datenfeld verknüpften Daten werden irreversibel gelöscht."
+msgstr ""
+"Alle mit diesem Datenfeld verknüpften Daten werden irreversibel gelöscht."
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:18
 #: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:127
@@ -19845,7 +19869,7 @@ msgid "read-only"
 msgstr "Schreibgeschützt"
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:424
-#: cdedb/frontend/templates/web/util.tmpl:1209
+#: cdedb/frontend/templates/web/util.tmpl:1211
 msgid "Info"
 msgstr "Info"
 
@@ -20822,7 +20846,7 @@ msgid "Reorder Questionnaire (%(title)s)"
 msgstr "Fragebogen umordnen (%(title)s)"
 
 #: cdedb/frontend/templates/web/event/questionnaire/reorder_questionnaire.tmpl:117
-#: cdedb/frontend/templates/web/util.tmpl:363
+#: cdedb/frontend/templates/web/util.tmpl:365
 msgid "Preview"
 msgstr "Vorschau"
 
@@ -21526,7 +21550,7 @@ msgstr "Dauer"
 
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:256
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:285
-#: cdedb/frontend/templates/web/util.tmpl:902
+#: cdedb/frontend/templates/web/util.tmpl:904
 msgid "to"
 msgstr "bis"
 
@@ -21582,10 +21606,6 @@ msgstr "Magisch"
 #: cdedb/frontend/templates/web/generic.tmpl:151
 msgid "show field"
 msgstr "Feld anzeigen"
-
-#: cdedb/frontend/templates/web/generic.tmpl:152
-msgid "Fields"
-msgstr "Felder"
 
 #: cdedb/frontend/templates/web/generic.tmpl:171
 #, python-format
@@ -21886,12 +21906,12 @@ msgid "First"
 msgstr "Erste"
 
 #: cdedb/frontend/templates/web/logging.tmpl:186
-#: cdedb/frontend/templates/web/util.tmpl:1179
+#: cdedb/frontend/templates/web/util.tmpl:1181
 msgid "Previous"
 msgstr "Vorherige"
 
 #: cdedb/frontend/templates/web/logging.tmpl:214
-#: cdedb/frontend/templates/web/util.tmpl:1183
+#: cdedb/frontend/templates/web/util.tmpl:1185
 msgid "Next"
 msgstr "Nächste"
 
@@ -22667,44 +22687,44 @@ msgstr "zu dieser Seite"
 msgid "Malformed error."
 msgstr "Nicht-wohlgeformter Fehler."
 
-#: cdedb/frontend/templates/web/util.tmpl:357
+#: cdedb/frontend/templates/web/util.tmpl:359
 msgid "Supports Markdown."
 msgstr "Unterstützt Markdown."
 
-#: cdedb/frontend/templates/web/util.tmpl:361
+#: cdedb/frontend/templates/web/util.tmpl:363
 msgid "Open Markdown Preview"
 msgstr "Markdown-Vorschau öffnen"
 
-#: cdedb/frontend/templates/web/util.tmpl:366
+#: cdedb/frontend/templates/web/util.tmpl:368
 msgid "Short Markdown summary"
 msgstr "kurze Markdown-Zusammenfassung"
 
-#: cdedb/frontend/templates/web/util.tmpl:366
+#: cdedb/frontend/templates/web/util.tmpl:368
 msgid "Tutorial"
 msgstr "Crashkurs"
 
-#: cdedb/frontend/templates/web/util.tmpl:370
+#: cdedb/frontend/templates/web/util.tmpl:372
 msgid "Markdown Preview"
 msgstr "Markdown-Vorschau"
 
-#: cdedb/frontend/templates/web/util.tmpl:408
-#: cdedb/frontend/templates/web/util.tmpl:430
+#: cdedb/frontend/templates/web/util.tmpl:410
+#: cdedb/frontend/templates/web/util.tmpl:432
 msgid "(mandatory input)"
 msgstr "(Pflichtfeld)"
 
-#: cdedb/frontend/templates/web/util.tmpl:471
+#: cdedb/frontend/templates/web/util.tmpl:473
 msgid "Phone number in the format +49 1234 5678910"
 msgstr "Telefonnummer im Format +49 1234 5678910"
 
-#: cdedb/frontend/templates/web/util.tmpl:477
+#: cdedb/frontend/templates/web/util.tmpl:479
 msgid "Datetime in the format YYYY-MM-DD HH:MM"
 msgstr "Datum und Uhrzeit im Format YYYY-MM-DD HH:MM"
 
-#: cdedb/frontend/templates/web/util.tmpl:482
+#: cdedb/frontend/templates/web/util.tmpl:484
 msgid "IBAN in the usual format, spaces are allowed"
 msgstr "IBAN im üblichen Format, Leerzeichen sind erlaubt"
 
-#: cdedb/frontend/templates/web/util.tmpl:546
+#: cdedb/frontend/templates/web/util.tmpl:548
 msgid ""
 "We already saved your uploaded file, but you can provide a different file "
 "below."
@@ -22712,11 +22732,11 @@ msgstr ""
 "Dein Upload wurde bereits gespeichert, aber du kannst unten nochmal eine "
 "alternative Datei hochladen."
 
-#: cdedb/frontend/templates/web/util.tmpl:547
+#: cdedb/frontend/templates/web/util.tmpl:549
 msgid "New Attachment"
 msgstr "Neuer Anhang"
 
-#: cdedb/frontend/templates/web/util.tmpl:702
+#: cdedb/frontend/templates/web/util.tmpl:704
 #, python-brace-format
 msgid ""
 "Empty string values with defaultvalue not supported. default: {} value: {}"
@@ -22724,63 +22744,63 @@ msgstr ""
 "Leere Zeichenketten-Werte mit Standardwert werden nicht unterstützt. "
 "Standard: {} Wert: {}"
 
-#: cdedb/frontend/templates/web/util.tmpl:900
+#: cdedb/frontend/templates/web/util.tmpl:902
 msgid "from"
 msgstr "von"
 
-#: cdedb/frontend/templates/web/util.tmpl:901
+#: cdedb/frontend/templates/web/util.tmpl:903
 #, python-format
 msgid "%s from"
 msgstr "%s von"
 
-#: cdedb/frontend/templates/web/util.tmpl:903
+#: cdedb/frontend/templates/web/util.tmpl:905
 #, python-format
 msgid "%s to"
 msgstr "%s bis"
 
-#: cdedb/frontend/templates/web/util.tmpl:1000
+#: cdedb/frontend/templates/web/util.tmpl:1002
 #, python-format
 msgid "Hide %(label)s"
 msgstr "%(label)s ausblenden"
 
-#: cdedb/frontend/templates/web/util.tmpl:1000
+#: cdedb/frontend/templates/web/util.tmpl:1002
 #, python-format
 msgid "Show %(label)s"
 msgstr "%(label)s anzeigen"
 
-#: cdedb/frontend/templates/web/util.tmpl:1003
+#: cdedb/frontend/templates/web/util.tmpl:1005
 msgid "(enabled)"
 msgstr "(aktiv)"
 
-#: cdedb/frontend/templates/web/util.tmpl:1044
+#: cdedb/frontend/templates/web/util.tmpl:1046
 msgid "Info!"
 msgstr "Info!"
 
-#: cdedb/frontend/templates/web/util.tmpl:1044
+#: cdedb/frontend/templates/web/util.tmpl:1046
 msgid "Success!"
 msgstr "Erfolg!"
 
-#: cdedb/frontend/templates/web/util.tmpl:1045
+#: cdedb/frontend/templates/web/util.tmpl:1047
 msgid "Error!"
 msgstr "Fehler!"
 
-#: cdedb/frontend/templates/web/util.tmpl:1045
+#: cdedb/frontend/templates/web/util.tmpl:1047
 msgid "Warning!"
 msgstr "Warnung!"
 
-#: cdedb/frontend/templates/web/util.tmpl:1084
+#: cdedb/frontend/templates/web/util.tmpl:1086
 msgid "Permanent link"
 msgstr "Direktlink"
 
-#: cdedb/frontend/templates/web/util.tmpl:1121
+#: cdedb/frontend/templates/web/util.tmpl:1123
 msgid "archived"
 msgstr "archiviert"
 
-#: cdedb/frontend/templates/web/util.tmpl:1131
+#: cdedb/frontend/templates/web/util.tmpl:1133
 msgid "(not a member)"
 msgstr "(kein Mitglied)"
 
-#: cdedb/frontend/templates/web/util.tmpl:1133
+#: cdedb/frontend/templates/web/util.tmpl:1135
 msgid "(trial member)"
 msgstr "(Probemitglied)"
 
