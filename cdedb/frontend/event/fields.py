@@ -152,16 +152,39 @@ class EventFieldMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write | EventPrivileges.entities_write)
-    @REQUESTdata("field_ids")
+    @REQUESTdata("field_ids", "reg_field_ids", "course_field_ids", "lodge_field_ids")
     @ack_delete()
     def prune_fields(
-        self, rs: RequestState, event_id: vtypes.ID, field_ids: Collection[vtypes.ID]
+        self,
+        rs: RequestState,
+        event_id: vtypes.ID,
+        field_ids: Collection[vtypes.ID],
+        reg_field_ids: Collection[vtypes.ID],
+        course_field_ids: Collection[vtypes.ID],
+        lodge_field_ids: Collection[vtypes.ID],
     ) -> Response:
-        if not set(field_ids) <= rs.ambience['event'].fields.keys():
+
+        field_ids = (
+            set(field_ids)
+            | set(reg_field_ids)
+            | set(course_field_ids)
+            | set(lodge_field_ids)
+        )
+
+        if not field_ids <= rs.ambience['event'].fields.keys():
             rs.append_validation_error((
                 "field_ids",
                 ValueError(n_("Unknown event field(s).")),
             ))
+
+        if not field_ids:
+            for name in (
+                "field_ids",
+                "reg_field_ids",
+                "course_field_ids",
+                "lodge_field_ids",
+            ):
+                rs.append_validation_error((name, ValueError(n_("Nothing selected."))))
 
         if rs.has_validation_errors():  # ack delete not set or no field ids.
             return self.prune_field_select(rs, event_id)
@@ -171,6 +194,7 @@ class EventFieldMixin(EventBaseFrontend):
         )
 
         result = self.eventproxy.prune_event_fields(rs, field_ids)
+
         if const.FieldAssociations.registration in result:
             num = result[const.FieldAssociations.registration]
             rs.notify_return_code(

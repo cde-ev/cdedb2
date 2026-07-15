@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-07-15 02:00+0200\n"
+"POT-Creation-Date: 2026-07-15 02:38+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -4528,7 +4528,7 @@ msgid ""
 msgstr ""
 
 #: cdedb/backend/event/lowlevel.py:1245 cdedb/backend/event/lowlevel.py:1249
-#: cdedb/frontend/event/fields.py:163
+#: cdedb/frontend/event/fields.py:177
 msgid "Unknown event field(s)."
 msgstr ""
 
@@ -6220,6 +6220,9 @@ msgstr ""
 #: cdedb/common/query/__init__.py:1417 cdedb/common/query/__init__.py:1562
 #: cdedb/common/query/__init__.py:1667
 #: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:42
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:47
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:52
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:57
 #: cdedb/frontend/templates/web/event/generic.tmpl:187
 #: cdedb/frontend/templates/web/event/generic.tmpl:385
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:212
@@ -9264,42 +9267,46 @@ msgstr ""
 msgid "Field name not unique."
 msgstr ""
 
-#: cdedb/frontend/event/fields.py:178
+#: cdedb/frontend/event/fields.py:187
+msgid "Nothing selected."
+msgstr ""
+
+#: cdedb/frontend/event/fields.py:202
 #, python-format
 msgid "Deleted data from %(num)s registrations."
 msgstr ""
 
-#: cdedb/frontend/event/fields.py:179
+#: cdedb/frontend/event/fields.py:203
 msgid "No registrations."
 msgstr ""
 
-#: cdedb/frontend/event/fields.py:186
+#: cdedb/frontend/event/fields.py:210
 #, python-format
 msgid "Deleted data from %(num)s courses."
 msgstr ""
 
-#: cdedb/frontend/event/fields.py:187
+#: cdedb/frontend/event/fields.py:211
 msgid "No courses."
 msgstr ""
 
-#: cdedb/frontend/event/fields.py:194
+#: cdedb/frontend/event/fields.py:218
 #, python-format
 msgid "Deleted data from %(num)s lodgements."
 msgstr ""
 
-#: cdedb/frontend/event/fields.py:195
+#: cdedb/frontend/event/fields.py:219
 msgid "No lodgements."
 msgstr ""
 
-#: cdedb/frontend/event/fields.py:276
+#: cdedb/frontend/event/fields.py:300
 msgid "Wrong associated event."
 msgstr ""
 
-#: cdedb/frontend/event/fields.py:279
+#: cdedb/frontend/event/fields.py:303
 msgid "Wrong associated field."
 msgstr ""
 
-#: cdedb/frontend/event/fields.py:421
+#: cdedb/frontend/event/fields.py:445
 msgid "change_note only supported for registrations."
 msgstr ""
 
@@ -18756,7 +18763,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:151
 #: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:19
 #: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:27
-#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:45
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:60
 msgid "Prune Field Data"
 msgstr ""
 
@@ -18813,12 +18820,11 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:40
-#: cdedb/frontend/templates/web/generic.tmpl:152
-msgid "Fields"
+msgid "All Fields"
 msgstr ""
 
-#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:44
-msgid "All data associated with the field will be irreversible deleted."
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:59
+msgid "All data associated with these fields will be irreversibly deleted."
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/generic.tmpl:18
@@ -20562,6 +20568,10 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:151
 msgid "show field"
+msgstr ""
+
+#: cdedb/frontend/templates/web/generic.tmpl:152
+msgid "Fields"
 msgstr ""
 
 #: cdedb/frontend/templates/web/generic.tmpl:171
