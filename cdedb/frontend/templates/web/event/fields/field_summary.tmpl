@@ -207,7 +207,7 @@
         <h3 class="tab-heading-alt heading-underline">{% trans %}New Field{% endtrans %}</h3>
         {# Prototype row. For non-JS users: an empty row with 'create'-checkbox, for JS: prototype for new rows. #}
         <div class="row">
-            {{ print_field(-values.get('create_last_index', 0) - 1, None, False, True, 'drow-prototype', newrow=True) }}
+            {{ print_field(-values.get(drow_last_index(), 0) - 1, None, False, True, 'drow-prototype', newrow=True) }}
         </div>
         <p>
             <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">

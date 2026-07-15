@@ -73,7 +73,7 @@
         </div>
         {{ util.form_input_file('json_file', label=gettext('JSON file'), accept="text/*,application/json",
                                 horizontal=False) }}
-        {{ util.form_input_submit(gettext('Save'), cancellink=cdedblink('event/configure_additional_questionnaire'),
+        {{ util.form_input_submit(gettext('Save'), cancellink=cdedblink('event/configure_questionnaire'),
                                   horizontal=False) }}
     </form>
 {% endblock %}

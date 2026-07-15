@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-01 15:37+0200\n"
+"POT-Creation-Date: 2026-09-04 01:30+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -5060,16 +5060,16 @@ msgstr ""
 msgid "Invalid magic role."
 msgstr "Annuntiationes"
 
-#, fuzzy, python-format
-msgid "Must not duplicate field: '%(field_name)s'"
-msgstr "inscriptio electronica nova"
-
 #, python-format
 msgid "Missing role: '%(magic_role)s'."
 msgstr ""
 
 #, fuzzy, python-format
 msgid "Must not duplicate this role: '%(magic_role)s'."
+msgstr "inscriptio electronica nova"
+
+#, fuzzy, python-format
+msgid "Must not duplicate field: '%(field_name)s'"
 msgstr "inscriptio electronica nova"
 
 #, fuzzy
@@ -6877,13 +6877,6 @@ msgstr ""
 #, fuzzy
 msgid "Questionnaire is not enabled yet."
 msgstr "Interrogatio"
-
-#, fuzzy
-msgid "Unknown questionnaire kind."
-msgstr "Interrogatio"
-
-msgid "No questionnaire rows of this kind found."
-msgstr ""
 
 msgid "Every row must occur exactly once."
 msgstr ""
@@ -11641,11 +11634,7 @@ msgid "Configure Custom Fields"
 msgstr ""
 
 #, fuzzy
-msgid "Configure Registration"
-msgstr "Annuntiationes"
-
-#, fuzzy
-msgid "Configure Questionnaire"
+msgid "Configure Questionnaires"
 msgstr "Interrogatio"
 
 msgid "This event was cancelled and has been archived."
@@ -14188,6 +14177,10 @@ msgstr "Interrogatio"
 msgid "Participant Questionnaire"
 msgstr "Interrogatio"
 
+#, fuzzy
+msgid "Configure Questionnaire"
+msgstr "Interrogatio"
+
 msgid "Submit"
 msgstr ""
 
@@ -14225,19 +14218,11 @@ msgid "The following problems with your lodgement wishes were detected"
 msgstr ""
 
 #, fuzzy, python-format
-msgid "Configure Registration (%(title)s)"
-msgstr "(ab %(date)s annuntiari potest)"
-
-#, fuzzy, python-format
-msgid "Configure Questionnaire (%(title)s)"
+msgid "Configure Questionnaires (%(title)s)"
 msgstr "(ab %(date)s annuntiari potest)"
 
 #, fuzzy
-msgid "Reorder Registration"
-msgstr "Annuntiationes"
-
-#, fuzzy
-msgid "Reorder Questionnaire"
+msgid "Reorder Questionnaires"
 msgstr "Interrogatio"
 
 msgid "true"
@@ -14251,11 +14236,7 @@ msgid "Delete Questionnaire Part"
 msgstr "Interrogatio"
 
 #, fuzzy, python-format
-msgid "Reorder Registration (%(title)s)"
-msgstr "(ab %(date)s annuntiari potest)"
-
-#, fuzzy, python-format
-msgid "Reorder Questionnaire (%(title)s)"
+msgid "Reorder Questionnaires (%(title)s)"
 msgstr "(ab %(date)s annuntiari potest)"
 
 msgid "Preview"
@@ -14265,10 +14246,10 @@ msgstr ""
 msgid "Magic Role"
 msgstr "tabellae epistularum electronicarum moderatae"
 
-msgid "Nr,Nr,Nr,…"
+msgid "Order"
 msgstr ""
 
-msgid "Order"
+msgid "Nr,Nr,Nr,…"
 msgstr ""
 
 msgid "Reorder"
@@ -14539,6 +14520,10 @@ msgstr "(ab %(date)s annuntiari potest)"
 #, fuzzy, python-format
 msgid "Registration for %(title)s"
 msgstr "(ab %(date)s annuntiari potest)"
+
+#, fuzzy
+msgid "Configure Registration"
+msgstr "Annuntiationes"
 
 msgid "All data except Event Parts can be changed until the registration ends."
 msgstr ""

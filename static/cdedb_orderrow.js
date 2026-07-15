@@ -146,6 +146,9 @@
                     e.originalEvent.dataTransfer.setData('text', $(this).closest('.orderrow-outer').attr('data-id'));
                     $container.removeClass('active').find('.orderrow-outer').removeClass('active');
                 });
+
+            $container.find(".orderrow-indicator").hide();
+            $input_rowlist.closest(".form-group").hide();
         }
 
         /* ************** *
@@ -162,12 +165,12 @@
      * parameters:
      * $input_rowlist: jQuery object of text only form input field
      */
-    $.fn.cdedbOrderRow = function($input_rowlist) {
-        if ($(this).data('cdedbOrderRow'))
-            return;
-
-        var obj = new OrderRow($(this), $input_rowlist);
-        $(this).data('cdedbOrderRow',obj);
+    $.fn.cdedbOrderRow = function(inputSelector) {
+        $(this).each(function () {
+            if ($(this).data('cdedbOrderRow'))
+                return;
+            $(this).data('cdedbOrderRow', new OrderRow($(this), $(this).parent().find(inputSelector)));
+        })
 
         return this;
     }

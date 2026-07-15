@@ -216,7 +216,7 @@
     {% endtrans %}
 {% endmacro %}
 
-{% macro print_questionnaire_entry(row) %}
+{% macro print_questionnaire_entry(row, is_locked) %}
     <div id="questionnaire_row_{{ row.pos }}">
     {% if row.name == "QuestionnaireFieldRow" %}
         {{ form_field_input(
@@ -369,12 +369,12 @@
                 <span class="drow-hide">
                     {% if newrow %}
                         {{ util.input_checkbox(
-                                "create_" ~ part_id, label=gettext("Add"), aclass='drow-indicator',
-                                attributes={"data-basename": "create_"}|xmlattr
+                                drow_create(part_id, kind.name), label=gettext("Add"), aclass="drow-indicator",
+                                attributes={"data-basename": drow_basename("create", kind.name)}|xmlattr
                             ) }}
                     {% else %}
                         {{ util.input_checkbox(
-                                "delete_" ~ part_id, label=gettext("Remove"), aclass='drow-indicator'
+                                drow_delete(part_id, kind.name), label=gettext("Remove"), aclass="drow-indicator"
                             ) }}
                     {% endif %}
                 </span>
@@ -396,31 +396,31 @@
                 <span class="drow-buttonspace"></span>
             </div>
             {{ util.input_hidden(
-                    "pos_" ~ part_id, defaultvalue=part_id, aclass="input-pos drow-input",
-                    attributes={"data-basename": "pos_"}|xmlattr) }}
+                    drow_name("pos", part_id, kind.name), defaultvalue=part_id, aclass="input-pos drow-input",
+                    attributes={"data-basename": drow_basename("pos", kind.name)}|xmlattr) }}
             {% if newrow %}
                 <div>
                     {{ util.form_input_select(
-                            "role_" ~ part_id, label=gettext("Role"),
-                            entries=available_magic_roles|enum_entries(processing=gettext),
-                            aclass='input-role drow-input', horizontal=False, small=True,
+                            drow_name("role", part_id, kind.name), label=gettext("Role"),
+                            entries=all_questionnaires[kind].get_available_magic_roles()|enum_entries(processing=gettext),
+                            aclass="input-role drow-input", horizontal=False, small=True,
                             attributes={
-                                "data-basename": "role_",
+                                "data-basename": drow_basename("role", kind.name)
                             }|xmlattr
                         ) }}
                 </div>
             {% else %}
                 <h3 class="panel-title">
-                    {% set role = values["role_" ~ part_id] %}
+                    {% set role = values[drow_name("role", part_id, kind.name)] %}
                     {% if role is string %}
                         {% set role = enums["QuestionnaireRowRole"][role.split(".", 1)[1]] %}
                     {% endif %}
                     {% if role %}
                         {{ util.make_icon(role.get_class().get_icon()) }}
                     {% endif %}
-                    {{ gettext(values["role_" ~ part_id]|string) }}
+                    {{ gettext(values[drow_name("role", part_id, kind.name)]|string) }}
                 </h3>
-                {{ util.input_hidden("role_" ~ part_id, aclass="input-role") }}
+                {{ util.input_hidden(drow_name("role", part_id, kind.name), aclass="input-role") }}
             {% endif %}
             <div style="clear:both;"></div>
         </div>
@@ -428,78 +428,79 @@
             <div class="row">
                 <div class="col-md-6">
                     {{ util.form_input_select(
-                            "field_id_" ~ part_id, label=gettext("Custom Field"),
-                            entries=available_fields|entries(
-                                'id', 'field_name', group="sort_group", default_group=gettext("Other Fields")
+                            drow_name("field_id", part_id, kind.name), label=gettext("Custom Field"),
+                            entries=all_questionnaires[kind].get_available_fields()|entries(
+                                "id", "field_name", group="sort_group", default_group=gettext("Other Fields")
                             ),
                             nulloption=gettext("— select a field —"),
-                            aclass='input-field drow-input', horizontal=False,
+                            aclass="input-field drow-input", horizontal=False,
                             attributes={
-                                "data-basename": "field_id_",
+                                "data-basename": drow_basename("field_id", kind.name),
                                 "data-show_for_role": get_roles_with_field("field_id")|map("string")|list,
                             }|xmlattr
                         ) }}
                     {{ util.form_input_text(
-                            "default_value_" ~ part_id, label=gettext("Default Value"),
-                            aclass='input-defaultvalue drow-input', horizontal=False,
+                            drow_name("default_value", part_id, kind.name), label=gettext("Default Value"),
+                            aclass="input-defaultvalue drow-input", horizontal=False,
                             attributes={
-                                "data-basename": "default_value_",
+                                "data-basename": drow_basename("default_value", kind.name),
                                 "data-show_for_role": get_roles_with_field("default_value")|map("string")|list,
                             }|xmlattr
                         ) }}
                     <div class="checkbox">
                         {{ util.input_checkbox(
-                                "readonly_" ~ part_id, label=gettext("read-only"), aclass='input-readonly drow-input',
+                                drow_name("readonly", part_id, kind.name), label=gettext("read-only"),
+                                aclass="input-readonly drow-input",
                                 attributes={
-                                    "data-basename": "readonly_",
+                                    "data-basename": drow_basename("readonly", kind.name),
                                     "data-show_for_role": get_roles_with_field("readonly")|map("string")|list,
                                 }|xmlattr,
-                                readonly=(("readonly_" ~ part_id not in values or not values["readonly_" ~ part_id]) and (kind and not kind.allow_readonly()))
+                                readonly=(("readonly_" ~ part_id not in values or not values[drow_name("readonly", part_id, kind.name)]) and (kind and not kind.allow_readonly()))
                             ) }}
-                        {{ util.output_errors("readonly_" ~ part_id, wrapper=True) }}
+                        {{ util.output_errors(drow_name("readonly", part_id, kind.name), wrapper=True) }}
                     </div>
                     {{ util.form_input_select(
-                            "panel_kind_" ~ part_id, label=gettext("Panel Kind"),
+                            drow_name("panel_kind", part_id, kind.name), label=gettext("Panel Kind"),
                             entries=enums["QuestionnairePanelKind"]|enum_entries(processing=gettext),
                             aclass="input-label drow-input", horizontal=False,
                             attributes={
-                                "data-basename": "panel_kind_",
+                                "data-basename": drow_basename("panel_kind", kind.name),
                                 "data-show_for_role": get_roles_with_field("panel_kind")|map("string")|list,
                             }|xmlattr
                         ) }}
                 </div>
                 <div class="col-md-6">
                     {{ util.form_input_text(
-                            "label_" ~ part_id, label=gettext("Label"),
-                            aclass='input-label drow-input', horizontal=false,
+                            drow_name("label", part_id, kind.name), label=gettext("Label"),
+                            aclass="input-label drow-input", horizontal=false,
                             attributes={
-                                "data-basename": "label_",
+                                "data-basename": drow_basename("label", kind.name),
                                 "data-show_for_role": get_roles_with_field("label")|map("string")|list,
                             }|xmlattr
                         ) }}
                     {{ util.form_input_textarea(
-                            "info_" ~ part_id, label=gettext("Info"), markdown=True,
-                            aclass='input-info drow-input', horizontal=False, rows=5,
+                            drow_name("info", part_id, kind.name), label=gettext("Info"), markdown=True,
+                            aclass="input-info drow-input", horizontal=False, rows=5,
                             attributes={
-                                "data-basename": "info_",
+                                "data-basename": drow_basename("info", kind.name),
                                 "data-show_for_role": get_roles_with_field("info")|map("string")|list,
                             }|xmlattr
                         ) }}
                 </div>
             </div>
             {{ util.form_input_text(
-                    "title_" ~ part_id, label=gettext("Title"),
-                    aclass='input-title drow-input', horizontal=false,
+                    drow_name("title", part_id, kind.name), label=gettext("Title"),
+                    aclass="input-title drow-input", horizontal=false,
                     attributes={
-                        "data-basename": "title_",
+                        "data-basename": drow_basename("title", kind.name),
                         "data-show_for_role": get_roles_with_field("title")|map("string")|list,
                     }|xmlattr
                 ) }}
             {{ util.form_input_textarea(
-                    "text_" ~ part_id, label=gettext("Text"), markdown=True,
+                    drow_name("text", part_id, kind.name), label=gettext("Text"), markdown=True,
                     aclass='input-text drow-input', horizontal=False, rows=5,
                     attributes={
-                        "data-basename": "text_",
+                        "data-basename": drow_basename("text", kind.name),
                         "data-show_for_role": get_roles_with_field("text")|map("string")|list,
                     }|xmlattr
                 ) }}

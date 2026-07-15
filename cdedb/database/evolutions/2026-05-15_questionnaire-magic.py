@@ -136,11 +136,10 @@ with s:
             else:
                 new_additional_questionnaire.append(row)
 
-        event_backend.set_questionnaire(
+        event_backend.set_questionnaires(
             rs,
             event.id,
-            const.QuestionnaireUsages.additional,
-            new_additional_questionnaire,
+            {const.QuestionnaireUsages.additional: new_additional_questionnaire},
         )
 
         default_questionnaire = models.questionnaire.make_default_questionnaire(event)[
@@ -169,8 +168,10 @@ with s:
             else:
                 new_reg_questionnaire.append(row)
 
-        event_backend.set_questionnaire(
-            rs, event.id, const.QuestionnaireUsages.registration, new_reg_questionnaire
+        event_backend.set_questionnaires(
+            rs,
+            event.id,
+            {const.QuestionnaireUsages.registration: new_reg_questionnaire},
         )
 
         print("done")

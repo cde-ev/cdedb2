@@ -79,7 +79,6 @@
                     .removeClass('drow-prototype');
                 // Mark the creation indicator checkbox.
                 $row.find('.drow-indicator').prop("checked", true);
-                $row.find('.drow-input').first().focus();
             }
             addDeleteButton($row);
             // Add input handler for inline add button if it exists.
@@ -151,6 +150,7 @@
             // Call refresh and any given callback.
             refresh();
             settings.callback.call($row);
+            $row.find(".drow-input:visible").first().trigger("focus").trigger("scroll");
         };
 
         var moveRow = function($row, up) {

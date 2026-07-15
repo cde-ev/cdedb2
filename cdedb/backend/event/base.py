@@ -19,7 +19,7 @@ import collections
 import copy
 import datetime
 import decimal
-from collections.abc import Collection, Iterable
+from collections.abc import Collection, Iterable, Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Protocol, cast
 
@@ -1390,50 +1390,61 @@ class EventBaseBackend(EventLowLevelBackend):
         return models.questionnaire.QuestionnaireContainer.from_database(data, event)
 
     @access(Roles.event)
-    def set_questionnaire(
+    def set_questionnaires(
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        kind: const.QuestionnaireUsages,
-        data: list[CdEDBObject],
+        data: Mapping[const.QuestionnaireUsages, Collection[CdEDBObject]],
     ) -> DefaultReturnCode:
         """Replace the current questionnaire of the given kind for the given event."""
         event_id = affirm(vtypes.EventID, event_id)
-        kind = affirm(const.QuestionnaireUsages, kind)
-        data = affirm(
-            vtypes.Questionnaire,
+        all_questionnaires = self.get_all_questionnaires(rs, event_id)
+        questionnaires = affirm(
+            dict[const.QuestionnaireUsages, vtypes.Questionnaire],
             data,
-            kind=kind,
-            all_questionnaires=self.get_all_questionnaires(rs, event_id),
+            all_questionnaires=all_questionnaires,
         )
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_lock(rs, event_id=event_id)
         with Atomizer(rs):
-            # Always delete everything then recreate.
-            for cls in models.questionnaire.QuestionnaireRow.__subclasses__():
-                query = f"""
-                    DELETE FROM {cls.database_table}
-                    WHERE event_id = %(event_id)s and kind = %(kind)s
-                """
-                params = {"event_id": event_id, "kind": kind}
-                self.query_exec(rs, query, params)
-
             ret = 1
-            for pos, row in enumerate(data):
-                new_row = copy.deepcopy(row)
-                new_row['event_id'] = event_id
-                # The questionnaire import allows specifying fields by name.
-                #  We cannot remove this before, due to validation idempotency.
-                new_row.pop("field_name", None)
-                cls = models.questionnaire.QuestionnaireRow.get_class(new_row["role"])
-                ret *= self.sql_insert(rs, cls.database_table, new_row)
-            self.event_log(
-                rs,
-                const.EventLogCodes.questionnaire_changed,
-                event_id,
-                change_note=rs.log_gettext(str(kind)),
-            )
+            for kind, rows in questionnaires.items():
+                # Skip questionnaire kinds that didn't change.
+                if len(rows) == len(all_questionnaires[kind]) and all(
+                    k == "field_name" or row_new[k] == row_existing[k]
+                    for row_new, row_existing in zip(
+                        rows, all_questionnaires[kind].as_dicts()
+                    )
+                    for k in row_new
+                ):
+                    continue
+
+                # Always delete everything then recreate.
+                for cls in models.questionnaire.QuestionnaireRow.__subclasses__():
+                    query = f"""
+                        DELETE FROM {cls.database_table}
+                        WHERE event_id = %(event_id)s and kind = %(kind)s
+                    """
+                    params = {"event_id": event_id, "kind": kind}
+                    self.query_exec(rs, query, params)
+
+                for pos, row in enumerate(rows):
+                    new_row = copy.deepcopy(row)
+                    new_row['event_id'] = event_id
+                    # The questionnaire import allows specifying fields by name.
+                    #  We cannot remove this before, due to validation idempotency.
+                    new_row.pop("field_name", None)
+                    cls = models.questionnaire.QuestionnaireRow.get_class(
+                        new_row["role"]
+                    )
+                    ret *= self.sql_insert(rs, cls.database_table, new_row)
+                self.event_log(
+                    rs,
+                    const.EventLogCodes.questionnaire_changed,
+                    event_id,
+                    change_note=rs.log_gettext(str(kind)),
+                )
         return ret
 
     @access(Roles.event)
@@ -2019,7 +2030,7 @@ class EventBaseBackend(EventLowLevelBackend):
         rs: RequestState,
         event_id: vtypes.EventID,
         fields: CdEDBObjectMap,
-        questionnaires: dict[const.QuestionnaireUsages, vtypes.Questionnaire],
+        questionnaires: Mapping[const.QuestionnaireUsages, Collection[CdEDBObject]],
     ) -> DefaultReturnCode:
         """Special import for custom datafields and questionnaire rows."""
         event_id = affirm(vtypes.EventID, event_id)
@@ -2031,8 +2042,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         with Atomizer(rs):
             ret = self.set_event(rs, event_id, {'fields': fields})
-            for kind, questionnaire in questionnaires.items():
-                ret *= self.set_questionnaire(rs, event_id, kind, questionnaire)
+            ret *= self.set_questionnaires(rs, event_id, questionnaires)
         return ret
 
     @access(Roles.event_admin)

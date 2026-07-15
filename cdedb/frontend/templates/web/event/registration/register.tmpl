@@ -1,4 +1,4 @@
-{% set sidenav_active = "event_register_config" if preview else "event_register" %}
+{% set sidenav_active = "event_quest_config" if preview else "event_register" %}
 {% set jshint = 'strong' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
@@ -25,7 +25,7 @@
                             readonly=not (ambience['event'].is_visible_for(user, is_registered=False, privileged=False)
                                           or orga_view or user.admin_views.has(AdminViews.event_mgmt))) }}
     {% if preview %}
-        {{ util.breadcrumb_link(cdedblink("event/configure_registration"), gettext("Configure Registration")) }}
+        {{ util.breadcrumb_link(cdedblink("event/configure_questionnaire_form"), gettext("Configure Questionnaires")) }}
         {{ util.breadcrumb_link(cdedblink("event/register", {"preview": True}),
                                 gettext("Registration Preview"), active=True) }}
     {% else %}
@@ -39,16 +39,19 @@
 {% endblock %}
 
 {% macro button_par() %}
-    {% if is_privileged_for("event/configure_registration") %}
+    {% if is_privileged_for("event/configure_questionnaire_form") %}
         <div class="p button-par">
-            {{ util.href(cdedblink("event/configure_registration", {"event_id": ambience['event']['id']}),
-                         gettext("Configure Registration"), icon='check-square', aclass="btn btn-sm btn-warning") }}
+            {{ util.href(
+                    cdedblink("event/configure_questionnaire_form") + "#tab_" + kind.name, gettext("Configure Registration"),
+                    aclass="btn btn-sm btn-warning", icon=kind.get_edit_icon()) }}
             {% if not preview %}
-                {{ util.href(cdedblink("event/register", {"preview": True}),
-                             gettext("Registration Preview"), aclass="btn btn-info btn-sm", icon="eye") }}
+                {{ util.href(
+                        cdedblink("event/register_form", {"preview": True}), gettext("Registration Preview"),
+                        aclass="btn btn-info btn-sm", icon=kind.get_preview_icon()) }}
             {% endif %}
-            {{ util.href(cdedblink("event/additional_questionnaire", {"preview": True}),
-                         gettext("Questionnaire Preview"), aclass="btn btn-default btn-sm", icon="eye") }}
+            {{ util.href(
+                    cdedblink("event/additional_questionnaire_form", {"preview": True}), gettext("Questionnaire Preview"),
+                    aclass="btn btn-info btn-sm", icon=enums["QuestionnaireUsages"].additional.get_preview_icon()) }}
         </div>
     {% endif %}
 {% endmacro %}
@@ -86,8 +89,8 @@
     {% endif %}
 
         <div id="registrationquestionnaire">
-            {% for entry in reg_questionnaire %}
-                {{ generic_event.print_questionnaire_entry(entry) }}
+            {% for entry in questionnaire %}
+                {{ generic_event.print_questionnaire_entry(entry, is_locked) }}
             {% endfor %}
         </div>
 

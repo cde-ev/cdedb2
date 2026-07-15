@@ -463,6 +463,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             ),
             'docurl': docurl,
             "drow_name": drow_name,
+            "drow_basename": drow_basename,
             "drow_create": drow_create,
             "drow_delete": drow_delete,
             "drow_last_index": drow_last_index,
@@ -3160,8 +3161,11 @@ def make_event_fee_reference(
 
 
 def drow_name(field_name: str, entity_id: int, prefix: str = "") -> str:
-    prefix = prefix + "_" if prefix else ""
-    return f"{prefix}{field_name}_{entity_id}"
+    return drow_basename(field_name, prefix) + str(entity_id)
+
+
+def drow_basename(field_name: str, prefix: str = "") -> str:
+    return f"{prefix + "_" if prefix else ""}{field_name}_"
 
 
 def drow_create(entity_id: int, prefix: str = "") -> str:
@@ -3173,8 +3177,7 @@ def drow_delete(entity_id: int, prefix: str = "") -> str:
 
 
 def drow_last_index(prefix: str = "") -> str:
-
-    return f"{prefix}create_last_index"
+    return drow_basename("create_last_index", prefix)
 
 
 @overload

@@ -31,8 +31,8 @@
         {{ util.anti_csrf_token('event/amend_registration') }}
 
         <div id="registrationquestionnaire">
-            {% for entry in reg_questionnaire %}
-                {{ generic_event.print_questionnaire_entry(entry) }}
+            {% for entry in questionnaire %}
+                {{ generic_event.print_questionnaire_entry(entry, is_locked) }}
             {% endfor %}
         </div>
 

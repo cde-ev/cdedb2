@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-09-01 15:37+0200\n"
+"POT-Creation-Date: 2026-09-04 01:30+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -4668,16 +4668,16 @@ msgid "Invalid magic role."
 msgstr "Unzulässige Spezialfunktion."
 
 #, python-format
-msgid "Must not duplicate field: '%(field_name)s'"
-msgstr "Felder dürfen nicht doppelt auftreten: '%(field_name)s'."
-
-#, python-format
 msgid "Missing role: '%(magic_role)s'."
 msgstr "Fehlende Spezialfunktion: '%(magic_role)s'."
 
 #, python-format
 msgid "Must not duplicate this role: '%(magic_role)s'."
 msgstr "Spezialfunktion darf nicht doppelt auftreten: '%(magic_role)s'."
+
+#, python-format
+msgid "Must not duplicate field: '%(field_name)s'"
+msgstr "Felder dürfen nicht doppelt auftreten: '%(field_name)s'."
 
 msgid "Invalid UTF-8 sequence."
 msgstr "Ungültige UTF-8-Sequenz."
@@ -6445,12 +6445,6 @@ msgstr "Du musst Orga sein, um die Fragebogen-Vorschau zu nutzen."
 
 msgid "Questionnaire is not enabled yet."
 msgstr "Der Fragebogen ist noch nicht für die Teilnehmenden freigeschaltet."
-
-msgid "Unknown questionnaire kind."
-msgstr "Unbekannter Fragebogentyp."
-
-msgid "No questionnaire rows of this kind found."
-msgstr "Für diese Fragebogen-Art gibt es bisher keine Einträge."
 
 msgid "Every row must occur exactly once."
 msgstr "Jede Zeile darf nur genau einmal vorkommen."
@@ -11394,11 +11388,8 @@ msgstr "Downloads & Import"
 msgid "Configure Custom Fields"
 msgstr "Datenfelder konfigurieren"
 
-msgid "Configure Registration"
-msgstr "Anmeldung konfigurieren"
-
-msgid "Configure Questionnaire"
-msgstr "Fragebogen konfigurieren"
+msgid "Configure Questionnaires"
+msgstr "Fragebögen konfigurieren"
 
 msgid "This event was cancelled and has been archived."
 msgstr "Diese Veranstaltung wurde abgesagt und archiviert."
@@ -14065,6 +14056,9 @@ msgstr "Fragebogen-Vorschau"
 msgid "Participant Questionnaire"
 msgstr "Teilnehmenden-Fragebogen"
 
+msgid "Configure Questionnaire"
+msgstr "Fragebogen konfigurieren"
+
 msgid "Submit"
 msgstr "Abschicken"
 
@@ -14111,18 +14105,11 @@ msgstr ""
 "Bei der Bestimmung der Unterbringungswünsche traten folgende Probleme auf"
 
 #, python-format
-msgid "Configure Registration (%(title)s)"
-msgstr "Anmeldung konfigurieren (%(title)s)"
+msgid "Configure Questionnaires (%(title)s)"
+msgstr "Fragebögen konfigurieren (%(title)s)"
 
-#, python-format
-msgid "Configure Questionnaire (%(title)s)"
-msgstr "Fragebogen konfigurieren (%(title)s)"
-
-msgid "Reorder Registration"
-msgstr "Anmeldung umordnen"
-
-msgid "Reorder Questionnaire"
-msgstr "Fragebogen umordnen"
+msgid "Reorder Questionnaires"
+msgstr "Fragebögen umordnen"
 
 msgid "true"
 msgstr "wahr"
@@ -14134,12 +14121,8 @@ msgid "Delete Questionnaire Part"
 msgstr "Fragebogen-Teil löschen"
 
 #, python-format
-msgid "Reorder Registration (%(title)s)"
-msgstr "Anmeldung umordnen (%(title)s)"
-
-#, python-format
-msgid "Reorder Questionnaire (%(title)s)"
-msgstr "Fragebogen umordnen (%(title)s)"
+msgid "Reorder Questionnaires (%(title)s)"
+msgstr "Fragebögen umordnen (%(title)s)"
 
 msgid "Preview"
 msgstr "Vorschau"
@@ -14147,11 +14130,11 @@ msgstr "Vorschau"
 msgid "Magic Role"
 msgstr "Spezialfunktion"
 
-msgid "Nr,Nr,Nr,…"
-msgstr "Nr,Nr,Nr,…"
-
 msgid "Order"
 msgstr "Reihenfolge"
+
+msgid "Nr,Nr,Nr,…"
+msgstr "Nr,Nr,Nr,…"
 
 msgid "Reorder"
 msgstr "Umordnen"
@@ -14438,6 +14421,9 @@ msgstr "Anmeldungsvorschau für %(title)s"
 #, python-format
 msgid "Registration for %(title)s"
 msgstr "Anmeldung für %(title)s"
+
+msgid "Configure Registration"
+msgstr "Anmeldung konfigurieren"
 
 msgid "All data except Event Parts can be changed until the registration ends."
 msgstr ""
