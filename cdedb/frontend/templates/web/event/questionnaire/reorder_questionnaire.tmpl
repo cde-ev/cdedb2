@@ -110,6 +110,11 @@
                             {{ generic_event.fee_breakdown_by_kind(fake_complex_fee) }}
                         </div>
                     {% elif entry.name == "CourseChoices" %}
+                        {% if choice_objects %}
+                            <div class="miniature-heading">
+                                {% trans %}Course Choices{% endtrans %}
+                            </div>
+                        {% endif %}
                         {% for cco in choice_objects %}
                             {% if choice_objects|length > 1 %}
                                 <div class="miniature-heading small">
@@ -137,6 +142,9 @@
                             </div>
                         {% endfor %}
                     {% elif entry.name == "PartSelection" %}
+                        <div class="miniature-heading">
+                            {% trans %}Registration{% endtrans %}
+                        </div>
                         <div class="miniature-label">
                             {{ gettext("Event Parts") }}
                         </div>
@@ -192,6 +200,9 @@
                             </div>
                         </div>
                     {% elif entry.name == "MyData" %}
+                        <div class="miniature-heading">
+                            {% trans %}My Data{% endtrans %}
+                        </div>
                         <div class="miniature-content">
                             <div class="miniature-label">
                                 {% trans %}Full Name{% endtrans %}
