@@ -1002,7 +1002,9 @@ class PastEventBackend(AbstractBackend):
         regs = self.event.get_registrations(rs, list(reg_ids.keys()))
 
         # maps persona_ids to their dicts of courses, the bool signals instructorship
-        participants_to_courses: dict[int, dict[int, bool]] = {}
+        participants_to_courses: dict[
+            vtypes.PersonaID, dict[vtypes.CourseID, bool]
+        ] = {}
         for reg in regs.values():
             participant_status = const.RegistrationPartStati.participant
             if reg['parts'][part_id]['status'] != participant_status:

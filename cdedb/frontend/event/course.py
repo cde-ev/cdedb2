@@ -44,7 +44,6 @@ from cdedb.frontend.event.base import (
     event_associated_fields_to_request,
     event_guard,
 )
-from cdedb.models.common import CdEDataclassMap
 from cdedb.models.event.constraint_violations import ViolationList
 
 _HIDDEN_COURSES_QUERY = Query(
@@ -137,13 +136,13 @@ class EventCourseMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.courses_read)
     def show_course(
-        self, rs: RequestState, event_id: vtypes.EventID, course_id: int
+        self, rs: RequestState, event_id: vtypes.EventID, course_id: vtypes.CourseID
     ) -> Response:
         """Display course associated to event organized via DB."""
         params: CdEDBObject = {}
         params['num_attendees'] = params['num_learners'] = None
         params['instructor_emails'] = []
-        all_courses: CdEDataclassMap[models.Course] = {}
+        all_courses = {}
         if self.is_privileged(rs, EventPrivileges.registrations_stats):
             violation_data = self.get_constraint_violations(
                 rs, rs.ambience['event'], registration_id=None, course_id=course_id
@@ -204,7 +203,7 @@ class EventCourseMixin(EventBaseFrontend):
             all_courses = self.eventproxy.get_courses(rs, course_ids)
 
         courses = list(all_courses.values())
-        i = [course.id for course in courses].index(course_id)  # type: ignore[arg-type]
+        i = [course.id for course in courses].index(course_id)
         params['prev_course'] = courses[i - 1] if i > 0 else None
         params['next_course'] = courses[i + 1] if i + 1 < len(courses) else None
 
@@ -274,7 +273,7 @@ class EventCourseMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        course_id: int,
+        course_id: vtypes.CourseID,
         data: CdEDBObject,
     ) -> Response:
         """Modify a course associated to an event organized via DB."""
@@ -334,7 +333,7 @@ class EventCourseMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        course_id: int,
+        course_id: vtypes.CourseID,
         ack_delete: bool,
     ) -> Response:
         """Delete a course from an event organized via DB."""
@@ -412,7 +411,7 @@ class EventCourseMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        course_id: vtypes.ID | None,
+        course_id: vtypes.CourseID | None,
         track_id: vtypes.ID | None,
         position: InfiniteEnum[CourseFilterPositions] | None,
         ids: list[int] | None,
@@ -544,7 +543,7 @@ class EventCourseMixin(EventBaseFrontend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        course_id: vtypes.ID | None,
+        course_id: vtypes.CourseID | None,
         track_id: vtypes.ID | None,
         position: InfiniteEnum[CourseFilterPositions] | None,
         ids: list[int] | None,
@@ -702,7 +701,7 @@ class EventCourseMixin(EventBaseFrontend):
         *,
         event: models.Event,
         registrations: models.RegistrationMap,
-        course_ids: Collection[int] | None = None,
+        course_ids: Collection[vtypes.CourseID] | None = None,
     ) -> tuple[models.ChoiceStats, models.AttendeeStats]:
         """Generate choice counts and attendee counts"""
         if course_ids is None:

@@ -1249,7 +1249,10 @@ class EventRegistrationMixin(EventBaseFrontend):
                 rs, event_id, persona_id=persona.id
             )
             constraint_violations = self.get_constraint_violations(
-                rs, rs.ambience['event'], registration_id=registration_id, course_id=-1
+                rs,
+                rs.ambience['event'],
+                registration_id=registration_id,
+                course_id=vtypes.CourseID(vtypes.ID(-1)),
             )
         course_choice_parameters = self.get_course_choice_params(rs, event_id)
         return self.render(

@@ -324,9 +324,9 @@ class ViolationAux:
     registrations: models.RegistrationMap
     personas: CdEDataclassMap[EventPersona]
 
-    all_courses: CdEDataclassMap[models.Course]
+    all_courses: models.CourseMap
     # Violations are only checked for these courses.
-    courses: CdEDataclassMap[models.Course]
+    courses: models.CourseMap
     all_lodgements: CdEDataclassMap[models.Lodgement]
     # Violations are only checked for these lodgements.
     lodgements: CdEDataclassMap[models.Lodgement]

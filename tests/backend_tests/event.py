@@ -53,6 +53,7 @@ UNIQUE_VIOLATION = psycopg2.errors.lookup(psycopg2.errorcodes.UNIQUE_VIOLATION)
 NON_EXISTING_ID = 2**30
 
 EventID = lambda x: vtypes.EventID(vtypes.ID(x))
+CourseID = lambda x: vtypes.CourseID(vtypes.ID(x))
 PersonaID = lambda x: vtypes.PersonaID(vtypes.ID(x))
 RegistrationID = lambda x: vtypes.RegistrationID(vtypes.ID(x))
 
@@ -1085,7 +1086,9 @@ class TestEventBackend(BackendTest):
 
     @as_users("annika", "garcia", maintain_data=True)
     def test_course_non_removable(self) -> None:
-        self.assertNotEqual({}, self.event.delete_course_blockers(self.key, 1))
+        self.assertNotEqual(
+            {}, self.event.delete_course_blockers(self.key, CourseID(1))
+        )
 
     @as_users("annika", "garcia")
     def test_course_delete(self) -> None:
@@ -1123,7 +1126,7 @@ class TestEventBackend(BackendTest):
     @as_users("garcia")
     def test_course_choices_cascade(self) -> None:
         # Set the status quo.
-        for course_id in (1, 2, 3, 4):
+        for course_id in (CourseID(1), CourseID(2), CourseID(3), CourseID(4)):
             cdata = {
                 "segments": {
                     1: {"is_active": True},
@@ -1182,8 +1185,8 @@ class TestEventBackend(BackendTest):
             self.assertIn(exp, full_export["event.course_choices"].values())
 
         # Delete Course 2.
-        cascade = self.event.delete_course_blockers(self.key, course_id=2)
-        self.event.delete_course(self.key, course_id=2, cascade=cascade)
+        cascade = self.event.delete_course_blockers(self.key, course_id=CourseID(2))
+        self.event.delete_course(self.key, course_id=CourseID(2), cascade=cascade)
 
         # Check that the remaining three course choices have been moved up.
         full_export = self.event.export_event(self.key, event_id=EventID(1))
@@ -1908,7 +1911,9 @@ class TestEventBackend(BackendTest):
         expectation = {1: 1, 2: 5, 3: 7, 4: 9, 5: 100, 6: 2}
         self.assertEqual(
             expectation,
-            self.event.registrations_by_course(self.key, event_id, course_id=1),
+            self.event.registrations_by_course(
+                self.key, event_id, course_id=CourseID(1)
+            ),
         )
         expectation = {2: 5, 4: 9, 5: 100}
         self.assertEqual(
@@ -1916,7 +1921,7 @@ class TestEventBackend(BackendTest):
             self.event.registrations_by_course(
                 self.key,
                 event_id,
-                course_id=1,
+                course_id=CourseID(1),
                 position=InfiniteEnum(CourseFilterPositions.assigned, 0),
             ),
         )
@@ -6220,8 +6225,8 @@ class TestEventBackend(BackendTest):
     @as_users("emilia")
     def test_course_attendees(self) -> None:
         event_id = EventID(1)
-        course_id = 1
-        other_course_id = 2
+        course_id = CourseID(1)
+        other_course_id = CourseID(2)
 
         registration_id = self.event.get_registration_id(
             self.key, self.user["id"], event_id

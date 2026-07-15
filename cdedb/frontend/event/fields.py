@@ -208,6 +208,7 @@ class EventFieldMixin(EventBaseFrontend):
         elif kind == const.FieldAssociations.course:
             if not ids:
                 ids = self.eventproxy.list_courses(rs, event_id)
+            ids = cast(Collection[vtypes.CourseID], ids)
             courses = self.eventproxy.get_courses(rs, ids)
             # TODO remove after migrating lodgements and registrations to dataclasses
             entities = {course.id: course.as_dict() for course in courses.values()}
@@ -406,7 +407,9 @@ class EventFieldMixin(EventBaseFrontend):
                     update['id'] = anid
                     self.eventproxy.set_registration(rs, update, msg)
                 elif kind == const.FieldAssociations.course:
-                    self.eventproxy.set_course(rs, anid, update)
+                    self.eventproxy.set_course(
+                        rs, vtypes.CourseID(vtypes.ID(anid)), update
+                    )
                 elif kind == const.FieldAssociations.lodgement:
                     self.eventproxy.set_lodgement(rs, anid, update)
                 else:

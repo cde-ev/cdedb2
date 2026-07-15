@@ -39,8 +39,9 @@ ID = _NewType("ID", int)
 PersonaID = _NewType("PersonaID", ID)
 # Other IDs that are only differentiated by the type checker.
 InvolvedID = _NewType("InvolvedID", ID)
-EventID = _NewType("EventID", ID)
 RegistrationID = _NewType("RegistrationID", ID)
+EventID = _NewType("EventID", ID)
+CourseID = _NewType("CourseID", ID)
 
 PartialImportID = _NewType("PartialImportID", int)
 SingleDigitInt = _NewType("SingleDigitInt", int)

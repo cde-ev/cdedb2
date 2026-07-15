@@ -349,7 +349,7 @@ class EventRegistrationBackend(EventBaseBackend):
     def validate_single_course_choice(
         self,
         rs: RequestState,
-        course_id: int,
+        course_id: vtypes.CourseID,
         track_id: int,
         aux: CourseChoiceValidationAux,
     ) -> bool:
@@ -360,7 +360,7 @@ class EventRegistrationBackend(EventBaseBackend):
         :param aux: As returned by `get_course_choice_validation_aux`. This is
             dependent on the event and a specific registration.
         """
-        course_id = affirm(vtypes.ID, course_id)
+        course_id = affirm(vtypes.CourseID, course_id)
         track_id = affirm(vtypes.ID, track_id)
         # Either the course is offered in this track.
         if track_id in (offered_tracks := aux.course_segments.get(course_id, set())):
@@ -451,7 +451,7 @@ class EventRegistrationBackend(EventBaseBackend):
         rs: RequestState,
         registration_id: vtypes.RegistrationID,
         track_id: int,
-        choices: Sequence[int] | None,
+        choices: Sequence[vtypes.CourseID] | None,
         aux: CourseChoiceValidationAux,
         new_registration: bool = False,
     ) -> DefaultReturnCode:
@@ -823,7 +823,7 @@ class EventRegistrationBackend(EventBaseBackend):
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
-        course_id: int | None = None,
+        course_id: vtypes.CourseID | None = None,
         track_id: int | None = None,
         position: InfiniteEnum[CourseFilterPositions] | None = None,
         reg_ids: Collection[int] | None = None,
@@ -840,7 +840,7 @@ class EventRegistrationBackend(EventBaseBackend):
         """
         event_id = affirm(vtypes.EventID, event_id)
         track_id = affirm(vtypes.ID | None, track_id)
-        course_id = affirm(vtypes.ID | None, course_id)
+        course_id = affirm(vtypes.CourseID | None, course_id)
         position = affirm(InfiniteEnum[CourseFilterPositions] | None, position)
         reg_ids = affirm(set[vtypes.ID] | None, reg_ids)
         reg_states = affirm(set[const.RegistrationPartStati], reg_states)
