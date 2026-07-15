@@ -350,7 +350,12 @@ class EventLowLevelBackend(AbstractBackend):
         return self.query_exec(rs, query, params) or -1
 
     @internal
-    def _cast_field_values(self, rs: RequestState, field: models.EventField) -> None:
+    def _cast_field_values(
+        self,
+        rs: RequestState,
+        *fields: models.EventField,
+        target_kind: const.FieldDatatypes | None = None,
+    ) -> dict[const.FieldAssociations, int]:
         """Helper to cast existing field data to a new type.
 
         This is used by `_set_event_fields`, if the datatype of an existing field is
@@ -358,33 +363,52 @@ class EventLowLevelBackend(AbstractBackend):
 
         If casting fails, the value will be set to `None`, causing data to be lost.
 
+        Returns the number of entities per field association, -1 for no entities.
+        This does not incidate whether these entities had any data for the given fields.
+
         :note: This has to be called inside an atomized context.
 
-        :param field: The field whose values are to be updated
+        :param fields: The fields whose values are to be updated.
+            All fields must belong to the same event.
+        :param target_kind: If given, cast all values to this type.
+            Otherwise use the respective kind of each given field.
         """
         self.affirm_atomized_context(rs)
-        data = self.sql_select(
-            rs,
-            field.association.database_table,
-            ("id", "fields"),
-            [field.event_id],
-            entity_key='event_id',
-        )
-        for entry in data:
-            fdata = entry['fields']
-            value = fdata.get(field.field_name, None)
-            if value is None:
-                continue
-            fdata[field.field_name] = cast_field_value(
-                value,
-                field.kind,
-                argname=f"{field.association.name}.{field.field_name}",
+
+        if not fields:
+            return {}
+
+        grouped: dict[const.FieldAssociations, list[models.EventField]] = {}
+        for field in fields:
+            grouped.setdefault(field.association, []).append(field)
+
+        ret = {}
+        for association, association_fields in grouped.items():
+            data = self.sql_select(
+                rs,
+                association.database_table,
+                ("id", "fields"),
+                [fields[0].event_id],
+                entity_key='event_id',
             )
-            new = {
-                'id': entry['id'],
-                'fields': PsycoJson(fdata),
-            }
-            self.sql_update(rs, field.association.database_table, new)
+            ret[association] = 0
+            for entry in data:
+                fdata = entry['fields']
+                for field in association_fields:
+                    value = fdata.get(field.field_name, None)
+                    if value is None:
+                        continue
+                    fdata[field.field_name] = cast_field_value(
+                        value,
+                        target_kind or field.kind,
+                        argname=f"{association.name}.{field.field_name}",
+                    )
+                new = {
+                    'id': entry['id'],
+                    'fields': PsycoJson(fdata),
+                }
+                ret[association] += self.sql_update(rs, association.database_table, new)
+        return ret
 
     class _NewGetEventProtocol(Protocol):
         def __call__(self, rs: RequestState, event_id: int) -> models.Event: ...
@@ -1255,10 +1279,11 @@ class EventLowLevelBackend(AbstractBackend):
             ):
                 raise PrivilegeError
 
-            ret = {}
-            for field_id in xsorted(field_ids):
-                field = event.fields[field_id]
-                ret[field.association] = self._delete_field_values(rs, field)
+            fields = xsorted(event.fields[field_id] for field_id in field_ids)
+
+            self._cast_field_values(rs, *fields, target_kind=const.FieldDatatypes.bool)
+            ret = self._cast_field_values(rs, *fields)
+            for field in fields:
                 self.event_log(
                     rs,
                     const.EventLogCodes.field_pruned,

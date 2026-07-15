@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-07-15 02:38+0200\n"
+"POT-Creation-Date: 2026-07-15 03:29+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -3608,7 +3608,7 @@ msgstr ""
 #: cdedb/backend/event/base.py:1394 cdedb/backend/event/base.py:1569
 #: cdedb/backend/event/base.py:1680 cdedb/backend/event/base.py:1991
 #: cdedb/backend/event/course.py:362 cdedb/backend/event/lodgement.py:215
-#: cdedb/backend/event/lodgement.py:259 cdedb/backend/event/lowlevel.py:1281
+#: cdedb/backend/event/lodgement.py:259 cdedb/backend/event/lowlevel.py:1306
 #: cdedb/backend/event/query.py:82 cdedb/backend/event/query.py:372
 #: cdedb/backend/event/query.py:400 cdedb/backend/event/query.py:596
 #: cdedb/backend/event/registration.py:515
@@ -4089,10 +4089,10 @@ msgstr "signum arcanum muta"
 #: cdedb/backend/event/lodgement.py:168 cdedb/backend/event/lodgement.py:199
 #: cdedb/backend/event/lodgement.py:431 cdedb/backend/event/lodgement.py:464
 #: cdedb/backend/event/lowlevel.py:198 cdedb/backend/event/lowlevel.py:248
-#: cdedb/backend/event/lowlevel.py:467 cdedb/backend/event/lowlevel.py:515
-#: cdedb/backend/event/lowlevel.py:716 cdedb/backend/event/lowlevel.py:764
-#: cdedb/backend/event/lowlevel.py:816 cdedb/backend/event/lowlevel.py:854
-#: cdedb/backend/event/lowlevel.py:1066 cdedb/backend/event/lowlevel.py:1131
+#: cdedb/backend/event/lowlevel.py:491 cdedb/backend/event/lowlevel.py:539
+#: cdedb/backend/event/lowlevel.py:740 cdedb/backend/event/lowlevel.py:788
+#: cdedb/backend/event/lowlevel.py:840 cdedb/backend/event/lowlevel.py:878
+#: cdedb/backend/event/lowlevel.py:1090 cdedb/backend/event/lowlevel.py:1155
 #: cdedb/backend/event/registration.py:1547
 #: cdedb/backend/event/registration.py:1610 cdedb/backend/ml.py:937
 #: cdedb/backend/ml.py:978 cdedb/backend/past_event.py:264
@@ -4737,7 +4737,7 @@ msgstr ""
 msgid "Event is balanced. Amount owed may no longer change."
 msgstr ""
 
-#: cdedb/backend/event/base.py:879 cdedb/backend/event/lowlevel.py:547
+#: cdedb/backend/event/base.py:879 cdedb/backend/event/lowlevel.py:571
 msgid "At least one event part required."
 msgstr ""
 
@@ -4828,34 +4828,34 @@ msgstr "inscriptio electronica nova"
 msgid "Non-existing tracks specified."
 msgstr "non dictum"
 
-#: cdedb/backend/event/lowlevel.py:545 cdedb/frontend/event/event.py:790
+#: cdedb/backend/event/lowlevel.py:569 cdedb/frontend/event/event.py:790
 #, fuzzy
 msgid "Registrations exist, cannot delete event parts."
 msgstr "(recte ad %(date)s annuntiari potest, posterius annuntiari potest)"
 
-#: cdedb/backend/event/lowlevel.py:884
+#: cdedb/backend/event/lowlevel.py:908
 msgid "Synced tracks must have same number of choices."
 msgstr ""
 
-#: cdedb/backend/event/lowlevel.py:898
+#: cdedb/backend/event/lowlevel.py:922
 msgid "Track synced to more than one ccs track group."
 msgstr ""
 
-#: cdedb/backend/event/lowlevel.py:920
+#: cdedb/backend/event/lowlevel.py:944
 msgid "Incompatible course choices present."
 msgstr ""
 
-#: cdedb/backend/event/lowlevel.py:1158
+#: cdedb/backend/event/lowlevel.py:1182
 #, fuzzy
 msgid "Non-existing fields specified."
 msgstr "non dictum"
 
-#: cdedb/backend/event/lowlevel.py:1199
+#: cdedb/backend/event/lowlevel.py:1223
 msgid ""
 "Cannot change association or kind of a field referenced by an event fee."
 msgstr ""
 
-#: cdedb/backend/event/lowlevel.py:1245 cdedb/backend/event/lowlevel.py:1249
+#: cdedb/backend/event/lowlevel.py:1269 cdedb/backend/event/lowlevel.py:1273
 #: cdedb/frontend/event/fields.py:177
 #, fuzzy
 msgid "Unknown event field(s)."
@@ -6618,10 +6618,10 @@ msgstr ""
 
 #: cdedb/common/query/__init__.py:1417 cdedb/common/query/__init__.py:1562
 #: cdedb/common/query/__init__.py:1667
-#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:42
-#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:47
-#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:52
-#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:57
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:58
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:63
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:68
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:73
 #: cdedb/frontend/templates/web/event/generic.tmpl:187
 #: cdedb/frontend/templates/web/event/generic.tmpl:385
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:212
@@ -19693,6 +19693,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/event/fields/field_multiset.tmpl:43
 #: cdedb/frontend/templates/web/event/fields/field_multiset_select.tmpl:35
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:40
 #: cdedb/frontend/templates/web/event/query/course_query.tmpl:30
 #: cdedb/frontend/templates/web/event/query/course_query.tmpl:45
 #: cdedb/frontend/templates/web/event/query/lodgement_query.tmpl:31
@@ -19808,7 +19809,7 @@ msgstr "Annuntiationes"
 #: cdedb/frontend/templates/web/event/fields/field_summary.tmpl:151
 #: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:19
 #: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:27
-#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:60
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:76
 msgid "Prune Field Data"
 msgstr ""
 
@@ -19865,11 +19866,36 @@ msgid ""
 msgstr ""
 
 #: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:40
+#, python-format
+msgid ""
+"This will preserve the information whether there was some data stored in the "
+"field. It will do nothing for boolean (%(boolean)s) fields. If you need to "
+"completely remove this information, you can use the multi edit for "
+"registrations or the \"%(set_field)s\" functionality for courses and "
+"lodgements."
+msgstr ""
+
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:46
+#, fuzzy
+msgid "Set Field (Registrations)"
+msgstr "Annuntiationes"
+
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:48
+#, fuzzy
+msgid "Set Field (Courses)"
+msgstr "(posterius ad %(date)s annuntiari potest)"
+
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:50
+#, fuzzy
+msgid "Set Field (Lodgements)"
+msgstr "vestigium novum crea"
+
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:56
 #, fuzzy
 msgid "All Fields"
 msgstr "Annuntiationes"
 
-#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:59
+#: cdedb/frontend/templates/web/event/fields/prune_field_select.tmpl:75
 msgid "All data associated with these fields will be irreversibly deleted."
 msgstr ""
 
