@@ -1037,7 +1037,7 @@ class TestEventValidation(BackendTest, TestValidationBase):
                     ],
                     None,
                     ValueError(
-                        "Must not duplicate this role: 'CourseChoices'. (role_6)"
+                        "Must not duplicate this role: 'CourseChoices'. (role_3)"
                     ),
                 ),
                 # Check that foto notice must not be missing.
