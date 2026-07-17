@@ -62,7 +62,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
         self,
         rs: RequestState,
         query: Query,
-        event_id: int | None = None,
+        event_id: vtypes.EventID | None = None,
         aggregate: bool = False,
     ) -> tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
@@ -74,7 +74,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
         aggregate = affirm(bool, aggregate)
         view = None
         if query.scope == QueryScope.registration:
-            event_id = affirm(vtypes.ID, event_id)
+            event_id = affirm(vtypes.EventID, event_id)
             assert event_id is not None
             if not is_privileged(
                 rs, EventPrivileges.registrations_read_internal, event_id=event_id
@@ -365,7 +365,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
             # Step 7: Construct the final view.
             view = registration_view_template()
         elif query.scope == QueryScope.quick_registration:
-            event_id = affirm(vtypes.ID, event_id)
+            event_id = affirm(vtypes.EventID, event_id)
             if not is_privileged(
                 rs, EventPrivileges.registrations_read, event_id=event_id
             ) and not is_privileged(rs, EventPrivileges.checkin, event_id=event_id):
@@ -394,7 +394,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
                 ))
                 query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
         elif query.scope == QueryScope.event_course:
-            event_id = affirm(vtypes.ID, event_id)
+            event_id = affirm(vtypes.EventID, event_id)
             assert event_id is not None
             if not is_privileged(rs, EventPrivileges.courses_read, event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
@@ -588,7 +588,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
 
             view = course_view()
         elif query.scope == QueryScope.lodgement:
-            event_id = affirm(vtypes.ID, event_id)
+            event_id = affirm(vtypes.EventID, event_id)
             assert event_id is not None
             if not is_privileged(
                 rs, EventPrivileges.lodgements_read, event_id=event_id
@@ -775,9 +775,9 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
 
     @access("event", "droid_quick_partial_export", "droid_orga")
     def get_event_queries(
-        self, rs: RequestState, event_id: int
+        self, rs: RequestState, event_id: vtypes.EventID
     ) -> models.CdEDataclassMap[models.StoredEventQuery]:
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         if not is_privileged(rs, EventPrivileges.basic_read, event_id=event_id):
             raise PrivilegeError(n_("Must be orga to retrieve stored queries."))
         with Atomizer(rs):
@@ -821,10 +821,14 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
 
     @access("event")
     def store_event_query(
-        self, rs: RequestState, event_id: int, scope: QueryScope, data: CdEDBObject
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        scope: QueryScope,
+        data: CdEDBObject,
     ) -> DefaultReturnCode:
         """Store a single event query in the database."""
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         scope = affirm(QueryScope, scope, argname="scope")
 
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
@@ -865,10 +869,10 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
         self,
         rs: RequestState,
         scope: QueryScope,
-        event_id: int,
+        event_id: vtypes.EventID,
         data: CdEDBObject,
     ) -> DefaultReturnCode:
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         scope = affirm(QueryScope, scope)
         data["event_id"] = event_id
         data["scope"] = scope
