@@ -91,6 +91,7 @@ from cdedb.frontend.common import (
     REQUESTfile,
     TransactionObserver,
     access,
+    ack_delete,
     basic_redirect,
     check_validation as check,
     inspect_validation as inspect,
@@ -3229,18 +3230,12 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.redirect(rs, "core/list_pending_changes")
 
     @access(*REALM_ADMINS, modi={"POST"})
-    @REQUESTdata("ack_delete", "note")
-    def archive_persona(
-        self, rs: RequestState, persona_id: int, ack_delete: bool, note: str
-    ) -> Response:
+    @REQUESTdata("note")
+    @ack_delete()
+    def archive_persona(self, rs: RequestState, persona_id: int, note: str) -> Response:
         """Move a persona to the attic."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.show_user(
                 rs,
@@ -3304,16 +3299,9 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @access("core_admin", modi={"POST"})
-    @REQUESTdata("ack_delete")
-    def purge_persona(
-        self, rs: RequestState, persona_id: int, ack_delete: bool
-    ) -> Response:
+    @ack_delete()
+    def purge_persona(self, rs: RequestState, persona_id: int) -> Response:
         """Delete all identifying information for a persona."""
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.redirect_show_user(rs, persona_id)
 

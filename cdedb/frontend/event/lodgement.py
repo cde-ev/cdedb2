@@ -31,6 +31,7 @@ from cdedb.frontend.common import (
     REQUESTdata,
     REQUESTdatadict,
     access,
+    ack_delete,
     check_validation as check,
     drow_name,
     process_dynamic_input,
@@ -521,16 +522,11 @@ class EventLodgementMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.lodgements_write)
-    @REQUESTdata("ack_delete")
+    @ack_delete()
     def delete_lodgement(
-        self, rs: RequestState, event_id: int, lodgement_id: int, ack_delete: bool
+        self, rs: RequestState, event_id: int, lodgement_id: int
     ) -> Response:
         """Remove a lodgement."""
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.show_lodgement(rs, event_id, lodgement_id)
 

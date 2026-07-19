@@ -50,6 +50,7 @@ from cdedb.frontend.common import (
     REQUESTfile,
     TransactionObserver,
     access,
+    ack_delete,
     cdedburl,
     check_validation as check,
     drow_name,
@@ -360,7 +361,8 @@ class EventEventMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTfile("minor_form")
-    @REQUESTdata("delete", "ack_delete")
+    @REQUESTdata("delete")
+    @ack_delete(omit_error=True, passthrough=True)
     def change_minor_form(
         self,
         rs: RequestState,
@@ -570,21 +572,16 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.orgas_change)
-    @REQUESTdata("orga_id", "ack_delete")
+    @REQUESTdata("orga_id")
+    @ack_delete()
     def remove_orga(
-        self, rs: RequestState, event_id: int, orga_id: vtypes.ID, ack_delete: bool
+        self, rs: RequestState, event_id: int, orga_id: vtypes.ID
     ) -> Response:
         """Remove a persona as orga of an event.
 
         This is only available for admins and caretakers.
         This can drop your own orga role.
         """
-
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.manage_roles(rs, event_id)
         code = self.eventproxy.remove_event_role(rs, event_id, orga_id, 'orga')
@@ -606,19 +603,18 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.caretakers_change)
-    @REQUESTdata("caretaker_id", "ack_delete")
+    @REQUESTdata("caretaker_id")
+    @ack_delete()
     def remove_caretaker(
-        self, rs: RequestState, event_id: int, caretaker_id: vtypes.ID, ack_delete: bool
+        self,
+        rs: RequestState,
+        event_id: int,
+        caretaker_id: vtypes.ID,
     ) -> Response:
         """Remove a persona as caretaker of an event.
 
         This is only available for admins. This can drop your own caretaker role.
         """
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.manage_roles(rs, event_id)
         code = self.eventproxy.remove_event_role(
@@ -642,23 +638,18 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdata("checkin_helper_id", "ack_delete")
+    @REQUESTdata("checkin_helper_id")
+    @ack_delete()
     def remove_checkin_helper(
         self,
         rs: RequestState,
         event_id: int,
         checkin_helper_id: vtypes.ID,
-        ack_delete: bool,
     ) -> Response:
         """Remove a persona as checkin helper of an event.
 
         This is only available for admins. This can drop your own caretaker role.
         """
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.manage_roles(rs, event_id)
         code = self.eventproxy.remove_event_role(
@@ -774,16 +765,9 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdata("ack_delete")
-    def delete_part(
-        self, rs: RequestState, event_id: int, part_id: int, ack_delete: bool
-    ) -> Response:
+    @ack_delete()
+    def delete_part(self, rs: RequestState, event_id: int, part_id: int) -> Response:
         """Delete a given part."""
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.part_summary(rs, event_id)
         if self.eventproxy.has_registrations(rs, event_id):
@@ -1386,15 +1370,10 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdata("ack_delete")
+    @ack_delete()
     def delete_track_group(
-        self, rs: RequestState, event_id: int, track_group_id: int, ack_delete: bool
+        self, rs: RequestState, event_id: int, track_group_id: int
     ) -> Response:
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.group_summary(rs, event_id)  # pragma: no cover
         code = self.eventproxy.delete_track_group(rs, track_group_id)
@@ -1831,16 +1810,9 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event_admin", modi={"POST"})
     @event_guard(EventPrivileges.delete)
-    @REQUESTdata("ack_delete")
-    def delete_event(
-        self, rs: RequestState, event_id: int, ack_delete: bool
-    ) -> Response:
+    @ack_delete()
+    def delete_event(self, rs: RequestState, event_id: int) -> Response:
         """Remove an event."""
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
 

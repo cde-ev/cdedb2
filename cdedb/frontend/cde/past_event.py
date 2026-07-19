@@ -32,6 +32,7 @@ from cdedb.frontend.common import (
     REQUESTdatadict,
     TransactionObserver,
     access,
+    ack_delete,
     check_validation as check,
 )
 
@@ -250,16 +251,9 @@ class CdEPastEventMixin(CdEBaseFrontend):
         return self.redirect(rs, "cde/show_past_event", {'pevent_id': new_id})
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata("ack_delete")
-    def delete_past_event(
-        self, rs: RequestState, pevent_id: int, ack_delete: bool
-    ) -> Response:
+    @ack_delete()
+    def delete_past_event(self, rs: RequestState, pevent_id: int) -> Response:
         """Remove a past event."""
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.show_past_event(rs, pevent_id)
 
@@ -321,19 +315,14 @@ class CdEPastEventMixin(CdEBaseFrontend):
         return self.redirect(rs, "cde/show_past_course", {'pcourse_id': new_id})
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata("ack_delete")
+    @ack_delete()
     def delete_past_course(
-        self, rs: RequestState, pevent_id: int, pcourse_id: int, ack_delete: bool
+        self, rs: RequestState, pevent_id: int, pcourse_id: int
     ) -> Response:
         """Delete a concluded course.
 
         This also deletes all participation information w.r.t. this course.
         """
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.show_past_course(rs, pevent_id, pcourse_id)
 
@@ -418,20 +407,12 @@ class CdEPastEventMixin(CdEBaseFrontend):
         return self.redirect(rs, "cde/show_past_course", {'pcourse_id': pcourse_id})
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata("persona_id", "ack_delete")
+    @REQUESTdata("persona_id")
+    @ack_delete()
     def remove_participant(
-        self,
-        rs: RequestState,
-        pevent_id: int,
-        persona_id: vtypes.ID,
-        ack_delete: bool,
+        self, rs: RequestState, pevent_id: int, persona_id: vtypes.ID
     ) -> Response:
         """Remove participant."""
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.show_past_event(rs, pevent_id)
         code = self.pasteventproxy.remove_participant(rs, pevent_id, persona_id)
@@ -439,21 +420,16 @@ class CdEPastEventMixin(CdEBaseFrontend):
         return self.redirect(rs, "cde/show_past_event")
 
     @access("cde_admin", modi={"POST"})
-    @REQUESTdata("persona_id", "pcourse_id", "ack_delete")
+    @REQUESTdata("persona_id", "pcourse_id")
+    @ack_delete()
     def remove_course_assignment(
         self,
         rs: RequestState,
         pevent_id: int,
         persona_id: vtypes.ID,
         pcourse_id: vtypes.ID,
-        ack_delete: bool,
     ) -> Response:
         """Remove participant assignment to a concluded course."""
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.show_past_course(rs, pevent_id, pcourse_id)
         code = self.pasteventproxy.remove_course_assignment(rs, pcourse_id, persona_id)

@@ -53,6 +53,7 @@ from cdedb.frontend.common import (
     REQUESTfile,
     TransactionObserver,
     access,
+    ack_delete,
     cdedbid_filter,
     check_validation as check,
     make_epc_qr,
@@ -1686,16 +1687,11 @@ class EventRegistrationMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
-    @REQUESTdata("ack_delete")
+    @ack_delete()
     def delete_registration(
-        self, rs: RequestState, event_id: int, registration_id: int, ack_delete: bool
+        self, rs: RequestState, event_id: int, registration_id: int
     ) -> Response:
         """Remove a registration."""
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.show_registration(rs, event_id, registration_id)
 
