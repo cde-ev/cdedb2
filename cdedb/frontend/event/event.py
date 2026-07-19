@@ -604,10 +604,13 @@ class EventEventMixin(EventBaseFrontend):
         if code:
             orga = self.coreproxy.get_persona(rs, orga_id)
             subject = f"Orga entfernt ({rs.ambience['event'].shortname})"
+            to = [self.conf["EVENT_ADMIN_ADDRESS"]]
+            if rs.ambience['event'].orga_address:
+                to.append(rs.ambience['event'].orga_address)
             self.do_mail(
                 rs,
                 "orga_removed",
-                {'To': (self.conf["EVENT_ADMIN_ADDRESS"],), 'Subject': subject},
+                {'To': to, 'Subject': subject},
                 {
                     'orga': orga,
                     'event': rs.ambience['event'],
@@ -644,10 +647,13 @@ class EventEventMixin(EventBaseFrontend):
         if code:
             orga = self.coreproxy.get_persona(rs, caretaker_id)
             subject = f"Betreuer entfernt ({rs.ambience['event'].shortname})"
+            to = [self.conf["EVENT_ADMIN_ADDRESS"]]
+            if rs.ambience['event'].orga_address:
+                to.append(rs.ambience['event'].orga_address)
             self.do_mail(
                 rs,
                 "orga_removed",
-                {'To': (self.conf["EVENT_ADMIN_ADDRESS"],), 'Subject': subject},
+                {'To': to, 'Subject': subject},
                 {
                     'orga': orga,
                     'event': rs.ambience['event'],
