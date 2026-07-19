@@ -31,6 +31,7 @@ from cdedb.common import (
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import LASTSCHRIFT_FIELDS, LASTSCHRIFT_TRANSACTION_FIELDS
 from cdedb.common.n_ import n_
+from cdedb.common.roles import Roles
 from cdedb.database.connection import Atomizer
 
 
@@ -193,7 +194,7 @@ class CdELastschriftBackend(CdEBaseBackend):
                 None,
                 None,
             )
-            if not self.core.verify_persona(rs, data["persona_id"], ["cde"]):
+            if not self.core.verify_persona(rs, data["persona_id"], Roles.cde):
                 raise ValueError(n_("Invalid persona."))
             update = {"id": data["persona_id"], "donation": initial_donation}
             msg = "Setzen einer initialen Spende nach Lastschrifterstellung."

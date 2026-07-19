@@ -25,6 +25,7 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import PastEventLogFilter
+from cdedb.common.roles import Roles
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     CustomCSVDialect,
@@ -352,7 +353,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
                 "persona_ids",
                 ValueError(n_("Some of these users do not exist.")),
             ))
-        if not self.coreproxy.verify_personas(rs, persona_ids, {"event"}):
+        if not self.coreproxy.verify_personas(rs, persona_ids, Roles.event):
             rs.append_validation_error((
                 "persona_ids",
                 ValueError(n_("Some of these users are not event users.")),
@@ -388,7 +389,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
                 "persona_ids",
                 ValueError(n_("Some of these users do not exist.")),
             ))
-        if not self.coreproxy.verify_personas(rs, persona_ids, {"event"}):
+        if not self.coreproxy.verify_personas(rs, persona_ids, Roles.event):
             rs.append_validation_error((
                 "persona_ids",
                 ValueError(n_("Some of these users are not event users.")),

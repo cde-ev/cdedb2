@@ -28,6 +28,7 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.query.log_filter import AssemblyLogFilter
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import EntitySorter
 from cdedb.common.validation.validate import (
     ASSEMBLY_COMMON_FIELDS,
@@ -253,7 +254,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
                 "presider_ids",
                 ValueError(n_("Some of these users do not exist or are archived.")),
             ))
-        elif not self.coreproxy.verify_personas(rs, presider_ids, {"assembly"}):
+        elif not self.coreproxy.verify_personas(rs, presider_ids, Roles.assembly):
             rs.append_validation_error((
                 "presider_ids",
                 ValueError(n_("Some of these users are not assembly users.")),
@@ -464,7 +465,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
                     'presider_ids',
                     ValueError(n_("Some of these users do not exist or are archived.")),
                 ))
-            if not self.coreproxy.verify_personas(rs, presider_ids, {"assembly"}):
+            if not self.coreproxy.verify_personas(rs, presider_ids, Roles.assembly):
                 rs.append_validation_error((
                     'presider_ids',
                     ValueError(n_("Some of these users are not assembly users.")),
@@ -610,12 +611,12 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
                 'persona_id',
                 ValueError(n_("This user does not exist or is archived.")),
             ))
-        elif not self.coreproxy.verify_persona(rs, persona_id, {"assembly"}):
+        elif not self.coreproxy.verify_persona(rs, persona_id, Roles.assembly):
             rs.append_validation_error((
                 'persona_id',
                 ValueError(n_("This user is not an assembly user.")),
             ))
-        elif self.coreproxy.verify_persona(rs, persona_id, {"member"}):
+        elif self.coreproxy.verify_persona(rs, persona_id, Roles.member):
             rs.append_validation_error((
                 'persona_id',
                 ValueError(n_("Members must sign up themselves.")),

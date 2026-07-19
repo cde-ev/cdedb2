@@ -24,7 +24,7 @@ from cdedb.common.exceptions import CryptographyError, ParameterInvalidError
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query import QueryOperators
 from cdedb.common.query.log_filter import ChangelogLogFilter
-from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
+from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, Realms
 from cdedb.filter import iban_filter
 from tests.common import (
     ANONYMOUS,
@@ -2308,11 +2308,11 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Bereich hinzufügen'})
         self.assertTitle("Bereichsänderung für Emilia Eventis")
         f = self.response.forms['realmselectionform']
-        self.assertNotIn("event", f['target_realm'].options)
-        f['target_realm'].force_value("event")
+        self.assertNotIn(Realms.event, f['target_realm'].options)
+        f['target_realm'].force_value(Realms.event)
         self.submit(f)
         self.assertPresence("Keine Änderung erforderlich.", div='notifications')
-        f['target_realm'] = "cde"
+        f['target_realm'] = Realms.cde
         self.submit(f)
         self.assertTitle("Bereichsänderung für Emilia Eventis")
         f = self.response.forms['promotionform']
@@ -2363,7 +2363,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Bereichsänderung für Nina Neubauer")
         f = self.response.forms['realmselectionform']
         self.assertNotIn("event", f['target_realm'].options)
-        f['target_realm'] = "cde"
+        f['target_realm'] = Realms.cde
         self.submit(f)
         self.assertTitle("Bereichsänderung für Nina Neubauer")
         f = self.response.forms['promotionform']
@@ -2396,7 +2396,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Bereich hinzufügen'})
         self.assertTitle("Bereichsänderung für Kalif Karabatschi")
         f = self.response.forms['realmselectionform']
-        f['target_realm'] = "event"
+        f['target_realm'] = Realms.event
         self.submit(f)
         self.assertTitle("Bereichsänderung für Kalif Karabatschi")
         f = self.response.forms['promotionform']

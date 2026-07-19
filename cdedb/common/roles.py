@@ -3,9 +3,10 @@
 """Everything regarding the role model of the CdEDB."""
 
 import collections
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
-from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS, Realm, Role
+from cdedb.common._roles_meta import _Realms, _Roles
+from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS, Role
 from cdedb.common.n_ import n_
 from cdedb.config import Config
 
@@ -18,56 +19,289 @@ CdEDBObject = dict[str, Any]
 AdminView = str
 
 
-# TODO move to PersonaStatus datclass
-def extract_roles(session: CdEDBObject, introspection_only: bool = False) -> set[Role]:
-    """Associate some roles to a data set.
+class Roles(_Roles):
+    anonymous = ()
 
-    The data contains the relevant portion of attributes from the
-    core.personas table. We have some more logic than simply grabbing
-    the flags from the dict like only allowing admin privileges in a
-    realm if access to the realm is already granted.
+    persona = ()
+
+    cde = "is_cde_realm"
+    event = "is_event_realm"
+    ml = "is_ml_realm"
+    assembly = "is_assembly_realm"
+
+    meta_admin = "is_meta_admin", "cde"
+    core_admin = "is_core_admin", "cde"
+    cde_admin = "is_cde_admin", "cde"
+    event_admin = "is_event_admin", "event"
+    ml_admin = "is_ml_admin", "ml"
+    assembly_admin = "is_assembly_admin", "assembly"
+
+    auditor = "is_auditor", "cde"
+    complaint_admin = "is_complaint_admin", "event"
+    cdelokal_admin = "is_cdelokal_admin", "ml"
+    finance_admin = "is_finance_admin", "cde_admin"
+
+    member = "is_member", "cde"
+    searchable = "is_searchable", "member"
+
+    cron = ()
+
+    droid = ()
+    droid_infra = ()
+    droid_orga = ()
+    droid_resolve = ()
+    droid_quick_partial_export = ()
+
+    @classmethod
+    def all_droid_roles(cls) -> Self:
+        return (
+            cls.droid
+            | cls.droid_infra
+            | cls.droid_orga
+            | cls.droid_resolve
+            | cls.droid_quick_partial_export
+        )
+
+    @classmethod
+    def all_persona_roles(cls) -> Self:
+        return ~cls.all_droid_roles() & ~cls.cron
+
+    @classmethod
+    def all_admin_roles(cls) -> Self:
+        return (
+            cls.meta_admin
+            | cls.core_admin
+            | cls.cde_admin
+            | cls.event_admin
+            | cls.ml_admin
+            | cls.assembly_admin
+            | cls.auditor
+            | cls.complaint_admin
+            | cls.cdelokal_admin
+            | cls.finance_admin
+        )
+
+    def is_any_admin(self) -> bool:
+        """Whether there is any admin role in this set of roles."""
+        return bool(self & self.all_admin_roles())
+
+    def get_user_realms(self) -> "Realms":
+        """Determine the realms of a user with these roles."""
+        return Realms.from_user_roles(self)
+
+    def get_admin_realms(self) -> "Realms":
+        """See 'Realms.from_admin_roles'."""
+        return Realms.from_admin_roles(self)
+
+
+class Realms(_Realms):
+    """
+    This class defines the realm hierarchy and maps realms to (realm admin) roles.
+
+    Each realm is associated with (in this order):
+        - a role, that signifies that a user belongs to the realm.
+        - a role, that signifies that a user may administrate the realm.
+        - optionnally, a list of implied realms.
+            This signifies that a user of this reals must also have these other realms.
+
+            For technical reasons, these realms need to be given as a sequence of
+            strings. It is possible to refer to a realms further below in the definition
+            order.
+
+            These realms are not evaluated transitively. Transitive implications need to
+            be explicitely listed.
+
+            It is technically possible to create circular implications, but tbis is
+            likely to result in unexpected behavior. Similarly a realm should not imply
+            itself.
+
+    The hierarchy defines some realms as implying, implied or maximal for each realm set..
+    These can be retrieved via the 'implying_realms', 'implied_realms' and 'highest_realms'
+    properties respectively.
+
+    >>> user_realms = Realms.event | Realms.ml | Realms.assembly
+    >>> [user_realms.implying_realms, user_realms.implied_realms, user_realms.highest_realms]
+    [Realms.cde, Realms.ml, Realms.event|assembly]
+
+    >>> user_realms = Realms.cde | Realms.event | Realms.ml | Realms.assembly
+    >>> [user_realms.implying_realms, user_realms.implied_realms, user_realms.highest_realms]
+    [Realms.None, Realms.event|ml|assembly, Realms.cde]
+
+    >>> user_realms = Realms.event | Realms.ml
+    >>> [user_realms.implying_realms, user_realms.implied_realms, user_realms.highest_realms]
+    [Realms.cde, Realms.ml, Realms.event]
+
+    >>> user_realms = Realms.assembly | Realms.ml
+    >>> [user_realms.implying_realms, user_realms.implied_realms, user_realms.highest_realms]
+    [Realms.cde, Realms.ml, Realms.assembly]
+    """
+
+    cde = Roles.cde, Roles.cde_admin, "ml", "assembly", "event"
+    event = Roles.event, Roles.event_admin, "ml"
+    ml = Roles.ml, Roles.ml_admin
+    assembly = Roles.assembly, Roles.assembly_admin, "ml"
+
+    @classmethod
+    def from_user_roles(cls, roles: Roles) -> Self:
+        """Determine the realms of a user with the given roles."""
+        return cls.union(realm for realm in cls if realm.role in roles)
+
+    @classmethod
+    def from_admin_roles(cls, roles: Roles) -> Self:
+        """
+        Determine all realms which may be administrated by a user with the given roles.
+
+        Note that core admins may administrate all realms.
+
+        >>> Realms.from_admin_roles(Roles.core_admin)
+        Realms.cde|event|ml|assembly
+        >>> Realms.from_admin_roles(Roles.cde_admin)
+        Realms.cde|event|ml|assembly
+        >>> Realms.from_admin_roles(Roles.event_admin | Roles.assembly_admin)
+        Realms.event|ml|assembly
+        >>> Realms.from_admin_roles(Roles.event_admin)
+        Realms.event|ml
+        >>> Realms.from_admin_roles(Roles.assembly_admin)
+        Realms.ml|assembly
+        >>> Realms.from_admin_roles(Roles.ml_admin)
+        Realms.ml
+        """
+        if Roles.core_admin in roles:
+            return cls.all()
+
+        return cls.union(
+            realm | realm.implied_realms for realm in cls if realm.admin_role in roles
+        )
+
+    @property
+    def implying_realms(self) -> Self:
+        """Determine all realms which would (each) imply all realms in a given set."""
+        return self.__class__.union(
+            realm for realm in ~self if self in realm.implied_realms
+        )
+
+    @property
+    def highest_realms(self) -> Self:
+        """Determine the highest realms in a given set of realms.
+
+        I.e. all realms which are not implied by other realms in the set.
+        """
+        return self & ~self.implied_realms
+
+    def get_required_admin_roles(self, conjunctive: bool = False) -> list[Roles]:
+        """Required admin privilege relative to a persona (signified by its roles)
+
+        Basically this answers the question: If a user has access to the given
+        realms, what kind of admin privilege does one need to perform an
+        operation on the user?
+
+        First we determine the relevant subset of the passed roles. These are
+        the maximal elements according to the realm inheritance. These apex
+        roles regulate the access.
+
+        The answer now depends on whether the operation pertains to some
+        specific realm (editing a user is the prime example here) or affects all
+        realms (creating a user is the corresponding example). This distinction
+        is controlled by the conjunctive parameter, if it is True the operation
+        lies in the intersection of all realms.
+
+        Note that core admins and are always allowed access.
+
+        :returns: List admin role flags. Any of these "sets" is sufficient.
+        """
+        ret = [Roles.core_admin]
+        relevant = self.highest_realms
+        if conjunctive:
+            ret.append(Roles.union(realm.admin_role for realm in relevant))
+        else:
+            for realm in relevant:
+                ret.append(realm.admin_role)
+        return ret
+
+    @property
+    def realm_marker(self) -> str:
+        """Shortcut to the marker of the associated role for better type inference."""
+        assert self.role.marker is not None
+        return self.role.marker
+
+    @property
+    def admin_marker(self) -> str:
+        """Shortcut to the marker of the associated admin for better type inference."""
+        assert self.admin_role.marker is not None
+        return self.admin_role.marker
+
+
+# TODO move to PersonaStatus datclass
+def extract_roles(session: CdEDBObject, introspection_only: bool = False) -> Roles:
+    """Determine user roles from a persona data set.
+
+    The data contains the relevant portion of attributes from the core.personas table.
+
+    Each role is granted based on the value of the associated 'marker' key.
+
+    Each role can also have a list of required roles, without _all_ of which the role
+    is not granted.
+    Because this iterates the members 'Roles' class in definition order, a role may
+    only require preceding roles.
+    Transitively required roles are implicitly checked because of iteration order.
+
+    Note that the required roles _do not_ enforce the realm hierarchy defined by 'Realms'.
 
     Note that this also works on non-personas (i.e. dicts of is_* flags).
 
-    :param introspection_only: If True the result should only be used to
-      take an extrinsic look on a persona and not the determine the privilege
-      level of the data set passed.
+    :param introspection_only:
+        If 'False' (the default) the result will reflect the roles (think "privileges")
+        the user aquires upon login. In particular an unset 'is_active' prevents them
+        from aquiring any non-trivial roles.
+        If 'True' the result will reflect the status of the user, while being acted
+        upon. This does not take 'is_active' into account.
+        This is relevant for e.g. adding the user as participant, moderator, presider,
+        admin, etc.
+
+    >>> user_data = {
+    ...     "is_active": False,
+    ...     "is_core_admin": True,
+    ...     "is_event_admin": True,
+    ...     "is_ml_admin": True,
+    ...     "is_ml_realm": True,
+    ... }
+    >>> extract_roles(user_data)
+    Roles.anonymous
+    >>> extract_roles(user_data, introspection_only=True)
+    Roles.anonymous|persona|ml|ml_admin
+    >>> user_data["is_active"] = True
+    >>> extract_roles(user_data)
+    Roles.anonymous|persona|ml|ml_admin
+    >>> user_data[Realms.cde.realm_marker] = True
+    >>> extract_roles(user_data)
+    Roles.anonymous|persona|cde|ml|core_admin|ml_admin
     """
-    ret = {"anonymous"}
+    ret = Roles.anonymous
     if session['is_active'] or introspection_only:
-        ret.add("persona")
+        ret |= Roles.persona
     elif not introspection_only:
         return ret
-    realms = {"cde", "event", "ml", "assembly"}
-    for realm in realms:
-        if session[f"is_{realm}_realm"]:
-            ret.add(realm)
-            if session.get(f"is_{realm}_admin"):
-                ret.add(f"{realm}_admin")
-    if "cde" in ret:
-        if session.get("is_core_admin"):
-            ret.add("core_admin")
-        if session.get("is_meta_admin"):
-            ret.add("meta_admin")
-        if session["is_member"]:
-            ret.add("member")
-            if session.get("is_searchable"):
-                ret.add("searchable")
-        if session.get("is_auditor"):
-            ret.add("auditor")
-    if "event" in ret:
-        if session.get("is_complaint_admin"):
-            ret.add("complaint_admin")
-    if "ml" in ret:
-        if session.get("is_cdelokal_admin"):
-            ret.add("cdelokal_admin")
-    if "cde_admin" in ret:
-        if session.get("is_finance_admin"):
-            ret.add("finance_admin")
+
+    # Iterate manually to be able to subsequently apply the 'required roles' checks.
+    for possible_role in Roles:
+        if possible_role.marker is None:
+            continue
+        if session.get(possible_role.marker) and possible_role.required_roles in ret:
+            ret |= possible_role
+
     return ret
 
 
-def droid_roles(identity: str) -> set[Role]:
+def extract_user_realms(user: CdEDBObject) -> Realms:
+    """Extract the Realms the user belongs to from the user dataset.
+
+    This can be used to determine the admin privileges required to
+    create and/or edit such a user.
+    """
+    return extract_roles(user, introspection_only=True).get_user_realms()
+
+
+def droid_roles(identity: str) -> Roles:
     """Resolve droid identity to a complete set of roles.
 
     Currently this is rather trivial, but could be more involved in the
@@ -75,92 +309,10 @@ def droid_roles(identity: str) -> set[Role]:
 
     :param identity: The name for the API functionality, e.g. ``resolve``.
     """
-    ret = {'anonymous', 'droid', f'droid_{identity}'}
+    ret = Roles.anonymous | Roles.droid | Roles[f"droid_{identity}"]
     if identity in _CONF["INFRASTRUCTURE_DROIDS"]:
-        ret.add('droid_infra')
-    return ret
+        ret |= Roles.droid_infra
 
-
-# The following dict defines the hierarchy of realms. This has direct impact on
-# the admin privileges: An admin of a specific realm can only query and edit
-# members of that realm, who are not member of another realm implying that
-# realm.
-#
-# This defines an ordering on the realms making the realms a partially
-# ordered set. Later we will use the notion of maximal elements of subsets,
-# which are those which have nothing above them. To clarify this two examples:
-#
-# * in the set {'assembly', 'event', 'ml'} the elements 'assembly' and
-#   'event' are maximal
-#
-# * in the set {'cde', 'assembly', 'event'} only 'cde' is maximal
-#
-# This dict is not evaluated recursively, so recursively implied realms must
-# be added manually to make the implication transitive.
-# TODO move to Persona dataclass
-REALM_INHERITANCE: dict[Realm, set[Role]] = {
-    'cde': {'event', 'assembly', 'ml'},
-    'event': {'ml'},
-    'assembly': {'ml'},
-    'ml': set(),
-}
-
-
-# TODO move to Persona dataclass
-def implied_realms(realm: Realm) -> set[Realm]:
-    """Get additional realms implied by membership in one realm
-
-    :param realm: The name of the realm to check
-    :return: A set of the names of all implied realms
-    """
-    return REALM_INHERITANCE.get(realm, set())
-
-
-# TODO move to Persona dataclass
-def implying_realms(realm: Realm) -> set[Realm]:
-    """Get all realms where membership implies the given realm.
-
-    This can be used to determine the realms in which a user must *not* be to be
-    listed in a specific realm or be edited by its admins.
-
-    :param realm: The realm to search implying realms for
-    :return: A set of all realms implying
-    """
-    return set(r for r, implied in REALM_INHERITANCE.items() if realm in implied)
-
-
-# TODO move to PersonaStatus dataclass
-def privilege_tier(roles: set[Role], conjunctive: bool = False) -> list[set[Role]]:
-    """Required admin privilege relative to a persona (signified by its roles)
-
-    Basically this answers the question: If a user has access to the passed
-    realms, what kind of admin privilege does one need to perform an
-    operation on the user?
-
-    First we determine the relevant subset of the passed roles. These are
-    the maximal elements according to the realm inheritance. These apex
-    roles regulate the access.
-
-    The answer now depends on whether the operation pertains to some
-    specific realm (editing a user is the prime example here) or affects all
-    realms (creating a user is the corresponding example). This distinction
-    is controlled by the conjunctive parameter, if it is True the operation
-    lies in the intersection of all realms.
-
-    Note that core admins and are always allowed access.
-
-    :returns: List of sets of admin roles. Any of these sets is sufficient.
-    """
-    # Get primary user realms (those, that don't imply other realms)
-    relevant = roles & REALM_INHERITANCE.keys()
-    if relevant:
-        implied_roles = set.union(*(REALM_INHERITANCE.get(k, set()) for k in relevant))
-        relevant -= implied_roles
-    if conjunctive:
-        ret = [{realm + "_admin" for realm in relevant}, {"core_admin"}]
-    else:
-        ret = list({realm + "_admin"} for realm in relevant)
-        ret += [{"core_admin"}]
     return ret
 
 
@@ -285,12 +437,6 @@ DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
     # anonymous
     ("anonymous", "cdb_anonymous"),
 ))
-
-
-# All roles available to non-driod users. Can be used to create dummy users
-# with all roles, like for `cdedb.script` or `cdedb.frontend.cron`.
-# TODO move to PersonaStatus dataclass
-ALL_ROLES: set[Role] = set(DB_ROLE_MAPPING) - {"droid"}
 
 
 # TODO move to PersonaStatus dataclass

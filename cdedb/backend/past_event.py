@@ -40,6 +40,7 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import PastEventLogFilter
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import ParamDict
@@ -515,7 +516,7 @@ class PastEventBackend(AbstractBackend):
         music_status = affirm(const.PastMusicKind, music_status)
         with Atomizer(rs):
             # Validate data consistency
-            if not self.core.verify_persona(rs, persona_id, {"event"}):
+            if not self.core.verify_persona(rs, persona_id, Roles.event):
                 raise ValueError(n_("This past event participant is no event user."))
 
             data = {
@@ -578,7 +579,7 @@ class PastEventBackend(AbstractBackend):
         instructor_status = affirm(const.PastInstructorKind, instructor_status)
         with Atomizer(rs):
             # Validate data consistency
-            if not self.core.verify_persona(rs, persona_id, {"event"}):
+            if not self.core.verify_persona(rs, persona_id, Roles.event):
                 raise ValueError(n_("This past event participant is no event user."))
 
             pevent_id: int = unwrap(  # type: ignore[assignment]

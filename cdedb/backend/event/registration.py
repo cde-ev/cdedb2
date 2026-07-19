@@ -58,6 +58,7 @@ from cdedb.common.privileges import (
     EventPrivileges,
     is_privileged_event as is_privileged,
 )
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import Params
@@ -1399,7 +1400,7 @@ class EventRegistrationBackend(EventBaseBackend):
         with Atomizer(rs):
             if not self.core.verify_id(rs, persona_id, is_archived=False):
                 raise ValueError(n_("This user does not exist or is archived."))
-            if not self.core.verify_persona(rs, persona_id, {"event"}):
+            if not self.core.verify_persona(rs, persona_id, Roles.event):
                 raise ValueError(n_("This user is not an event user."))
             if self.list_registrations(rs, data['event_id'], persona_id):
                 raise ValueError(n_("Already registered."))

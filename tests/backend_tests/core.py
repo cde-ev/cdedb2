@@ -25,6 +25,7 @@ from cdedb.common.exceptions import (
 )
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
+from cdedb.common.roles import Roles
 from cdedb.common.validation.validate import PERSONA_CDE_CREATION
 from tests.common import (
     ANONYMOUS,
@@ -1097,21 +1098,25 @@ class TestCoreBackend(BackendTest):
     def test_verify_personas(self) -> None:
         self.assertFalse(
             self.core.verify_personas(
-                self.key, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1000), {"event"}
+                self.key, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1000), Roles.event
             )
         )
         self.assertFalse(self.core.verify_persona(self.key, 1000))
-        self.assertFalse(self.core.verify_persona(self.key, 5, {"cde"}))
-        self.assertTrue(self.core.verify_persona(self.key, 5, {"event"}))
-        self.assertTrue(self.core.verify_persona(self.key, 2, {"cde"}))
-        self.assertTrue(self.core.verify_persona(self.key, 1, {"meta_admin"}))
+        self.assertFalse(self.core.verify_persona(self.key, 5, Roles.cde))
+        self.assertTrue(self.core.verify_persona(self.key, 5, Roles.event))
+        self.assertTrue(self.core.verify_persona(self.key, 2, Roles.cde))
+        self.assertTrue(self.core.verify_persona(self.key, 1, Roles.meta_admin))
         self.assertTrue(
-            self.core.verify_personas(self.key, (1, 2, 3, 7, 9), {"cde", "member"})
+            self.core.verify_personas(
+                self.key, (1, 2, 3, 7, 9), Roles.cde | Roles.member
+            )
         )
         self.assertFalse(
-            self.core.verify_personas(self.key, (1, 2, 3, 7, 9), {"searchable"})
+            self.core.verify_personas(self.key, (1, 2, 3, 7, 9), Roles.searchable)
         )
-        self.assertTrue(self.core.verify_personas(self.key, (1, 2, 9), {"searchable"}))
+        self.assertTrue(
+            self.core.verify_personas(self.key, (1, 2, 9), Roles.searchable)
+        )
 
     @as_users("vera")
     def test_user_getters(self) -> None:

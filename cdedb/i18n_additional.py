@@ -23,7 +23,10 @@ def main() -> None:
     enum_strings = []
     base_cls: type[enum.Enum]
     for base_cls in cast(list[type[enum.Enum]], CdEEnumMeta.__subclasses__()):
-        for enum_cls in base_cls.__subclasses__():
+        subclasses = base_cls.__subclasses__()
+        for enum_cls in subclasses:
+            if hasattr(enum_cls, "__subclasses__"):
+                subclasses.extend(enum_cls.__subclasses__())
             if enum_cls not in cdedb.enums.NON_TRANSLATED_ENUMS:
                 for enum_member in enum_cls:
                     enum_strings.append(str(enum_member))

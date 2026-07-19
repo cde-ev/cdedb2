@@ -17,7 +17,7 @@ import datetime
 import decimal
 from collections.abc import Collection
 from secrets import token_hex
-from typing import Any, Literal, Protocol, overload
+from typing import Any, Literal, Protocol, cast, overload
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -39,7 +39,6 @@ from cdedb.common import (
     Error,
     PsycoJson,
     RequestState,
-    Role,
     User,
     decode_parameter,
     encode_parameter,
@@ -75,11 +74,11 @@ from cdedb.common.query.log_filter import (
 )
 from cdedb.common.roles import (
     ADMIN_KEYS,
-    ALL_ROLES,
     REALM_ADMINS,
+    Realms,
+    Roles,
     extract_roles,
-    implying_realms,
-    privilege_tier,
+    extract_user_realms,
 )
 from cdedb.common.sorting import xsorted
 from cdedb.config import SecretsConfig
@@ -162,8 +161,11 @@ class CoreBaseBackend(AbstractBackend):
         Apart from meta admins, the only difference to `is_relative_admin` is that
         this accepts a full persona, rather than a persona id.
         """
-        roles = extract_roles(persona.as_dict(), introspection_only=True)
-        return any(admin <= rs.user.roles for admin in privilege_tier(roles))
+        user_realms = extract_user_realms(persona.as_dict())
+        return any(
+            admin_roles in rs.user.new_roles
+            for admin_roles in user_realms.get_required_admin_roles()
+        )
 
     @access("persona")
     def is_relative_admin_view(
@@ -181,10 +183,11 @@ class CoreBaseBackend(AbstractBackend):
         if allow_meta_admin and "meta_admin" in rs.user.admin_views:
             return True
         persona_status = self.get_persona_status(rs, persona_id)
-        roles = extract_roles(persona_status.as_dict(), introspection_only=True)
+        user_realms = extract_user_realms(persona_status.as_dict())
         return any(
-            admin_views <= {v.replace('_user', '_admin') for v in rs.user.admin_views}
-            for admin_views in privilege_tier(roles)
+            admin_views.as_set()
+            <= {v.replace('_user', '_admin') for v in rs.user.admin_views}
+            for admin_views in user_realms.get_required_admin_roles()
         )
 
     def verify_persona_password(
@@ -816,13 +819,13 @@ class CoreBaseBackend(AbstractBackend):
 
         Only show changes for realms the respective admin has access too."""
         clearances = []
-        if 'core_admin' not in rs.user.roles:
-            for admin_role in {"cde_admin", "event_admin"}.intersection(rs.user.roles):
-                realm = admin_role.removesuffix("_admin")
-                higher_realms = implying_realms(realm)
-                clearance = f"is_{realm}_realm = TRUE"
-                for higher_realm in higher_realms:
-                    clearance += f" AND NOT is_{higher_realm}_realm = TRUE"
+        if Roles.core_admin not in rs.user.new_roles:
+            for realm in Realms.cde | Realms.event:
+                if realm.admin_role not in rs.user.new_roles:
+                    continue
+                clearance = f"{realm.role.marker} = TRUE"
+                for higher_realm in realm.implying_realms:
+                    clearance += f" AND NOT {higher_realm.role.marker} = TRUE"
                 clearances.append(clearance)
         query = """
             SELECT persona_id, given_names, family_name, generation, ctime
@@ -2825,9 +2828,10 @@ class CoreBaseBackend(AbstractBackend):
         data.update({'is_archived': False, 'is_purged': False})
         data.update({k: False for k in ADMIN_KEYS})
         # Check if admin has rights to create the user in its realms
+        user_realms = extract_user_realms(data)
         if not any(
-            admin <= rs.user.roles
-            for admin in privilege_tier(extract_roles(data), conjunctive=True)
+            admin in rs.user.new_roles
+            for admin in user_realms.get_required_admin_roles(conjunctive=True)
         ):
             raise PrivilegeError(n_("Unable to create this sort of persona."))
         # modified version of hash for 'secret' and thus safe/unknown plaintext
@@ -3092,17 +3096,21 @@ class CoreBaseBackend(AbstractBackend):
     def get_roles_multi(
         self,
         rs: RequestState,
-        persona_ids: Collection[int],
+        persona_ids: Collection[vtypes.PersonaID],
         introspection_only: bool = False,
-    ) -> dict[int | None, set[Role]]:
+    ) -> dict[vtypes.PersonaID, Roles]:
         """Resolve ids into roles.
 
-        Returns an empty role set for inactive users."""
+        :param introspection_only: If True, returns limited roles for inactive users.
+        """
         if set(persona_ids) == {rs.user.persona_id}:
-            return {rs.user.persona_id: rs.user.roles}
+            return {cast(vtypes.PersonaID, rs.user.persona_id): rs.user.new_roles}
         bits = PERSONA_STATUS_FIELDS + ("id",)
         data = self.sql_select(rs, "core.personas", bits, persona_ids)
-        return {d['id']: extract_roles(d, introspection_only) for d in data}
+        return {
+            vtypes.PersonaID(d['id']): extract_roles(d, introspection_only)
+            for d in data
+        }
 
     class _GetRolesSingleProtocol(Protocol):
         def __call__(
@@ -3110,7 +3118,7 @@ class CoreBaseBackend(AbstractBackend):
             rs: RequestState,
             persona_id: int | None,
             introspection_only: bool = False,
-        ) -> set[Role]: ...
+        ) -> Roles: ...
 
     get_roles_single: _GetRolesSingleProtocol = singularize(get_roles_multi)
 
@@ -3119,8 +3127,8 @@ class CoreBaseBackend(AbstractBackend):
         self,
         rs: RequestState,
         persona_ids: Collection[int],
-        required_roles: Collection[Role] | None = None,
-        allowed_roles: Collection[Role] | None = None,
+        required_roles: Roles = Roles.none(),
+        allowed_roles: Roles = Roles.all_persona_roles(),
         introspection_only: bool = True,
     ) -> bool:
         """Check whether certain ids map to actual (active) personas.
@@ -3131,18 +3139,18 @@ class CoreBaseBackend(AbstractBackend):
         :param allowed_roles: If given, check that all personas roles are a subset of
             these.
         """
-        persona_ids = affirm(set[vtypes.ID], persona_ids)
-        required_roles = required_roles or tuple()
-        required_roles = affirm(set[str], required_roles)
-        allowed_roles = allowed_roles or ALL_ROLES
-        allowed_roles = affirm(set[str], allowed_roles)
+        persona_ids = affirm(set[vtypes.PersonaID], persona_ids)
+        persona_ids = cast(set[vtypes.PersonaID], persona_ids)  # mypy bug
+        required_roles = affirm(Roles, required_roles)
+        allowed_roles = affirm(Roles, allowed_roles)
         # add always allowed roles for personas
-        allowed_roles |= {"persona", "anonymous"}
+        allowed_roles |= Roles.persona | Roles.anonymous
+
         roles = self.get_roles_multi(rs, persona_ids, introspection_only)
         return (
             len(roles) == len(persona_ids)
-            and all(value >= required_roles for value in roles.values())
-            and all(allowed_roles >= value for value in roles.values())
+            and all(required_roles in value for value in roles.values())
+            and all(value in allowed_roles for value in roles.values())
         )
 
     class _VerifyPersonaProtocol(Protocol):
@@ -3150,8 +3158,8 @@ class CoreBaseBackend(AbstractBackend):
             self,
             rs: RequestState,
             anid: int,
-            required_roles: Collection[Role] | None = None,
-            allowed_roles: Collection[Role] | None = None,
+            required_roles: Roles = Roles.none(),
+            allowed_roles: Roles = Roles.all_persona_roles(),
             introspection_only: bool = True,
         ) -> bool: ...
 
@@ -3209,9 +3217,8 @@ class CoreBaseBackend(AbstractBackend):
         if data is None:
             raise ValueError(n_("Persona does not exist."))
 
-        if not self.is_admin(rs) and "meta_admin" not in rs.user.roles:
-            roles = self.get_roles_single(rs, persona_id)
-            if any("admin" in role for role in roles):
+        if not self.is_admin(rs) and Roles.meta_admin not in rs.user.new_roles:
+            if self.get_roles_single(rs, persona_id).is_any_admin():
                 raise AdminPasswordResetError(n_("Preventing reset of admin."))
 
         # This defines a specific account/password combination as purpose

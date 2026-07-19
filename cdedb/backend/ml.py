@@ -36,7 +36,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import MlLogFilter
-from cdedb.common.roles import implying_realms
+from cdedb.common.roles import Realms, Roles
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import DatabaseValue_s
@@ -361,16 +361,20 @@ class MlBackend(AbstractBackend):
                 query.spec["is_archived"] = QuerySpecEntry("bool", "")
 
             # Restict to ml users.
-            query.constraints.append(("is_ml_realm", QueryOperators.equal, True))
-            query.spec["is_ml_realm"] = QuerySpecEntry("bool", "")
+            query.constraints.append((
+                Realms.ml.realm_marker,
+                QueryOperators.equal,
+                True,
+            ))
+            query.spec[Realms.ml.realm_marker] = QuerySpecEntry("bool", "")
             # Exclude users of any higher realm (implying event)
-            for realm in implying_realms('ml'):
+            for realm in Realms.ml.implying_realms:
                 query.constraints.append((
-                    f"is_{realm}_realm",
+                    realm.realm_marker,
                     QueryOperators.equal,
                     False,
                 ))
-                query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
+                query.spec[realm.realm_marker] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query, aggregate=aggregate)
@@ -489,7 +493,7 @@ class MlBackend(AbstractBackend):
                 raise ValueError(
                     n_("Some of these users do not exist or are archived.")
                 )
-            if not self.core.verify_personas(rs, persona_ids, {"ml"}):
+            if not self.core.verify_personas(rs, persona_ids, Roles.ml):
                 raise ValueError(n_("Some of these users are not ml users."))
 
             for anid in xsorted(persona_ids):
@@ -1809,7 +1813,7 @@ class MlBackend(AbstractBackend):
             if self.core.get_persona_status(rs, source_persona_id).is_any_admin:
                 raise ValueError(n_("Source User is admin and can not be merged."))
             if not self.core.verify_persona(
-                rs, source_persona_id, allowed_roles={'ml'}
+                rs, source_persona_id, allowed_roles=Roles.ml
             ):
                 raise ValueError(n_("Source persona must be a ml-only user."))
             if source.is_archived:
@@ -1818,7 +1822,7 @@ class MlBackend(AbstractBackend):
             # check the target user is a valid persona and not archived
             target = self.core.get_ml_user(rs, target_persona_id)
             if not self.core.verify_persona(
-                rs, target_persona_id, required_roles={'ml'}
+                rs, target_persona_id, required_roles=Roles.ml
             ):
                 raise ValueError(n_("Target User is no valid ml user."))
             if target.is_archived:

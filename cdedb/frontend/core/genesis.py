@@ -21,6 +21,7 @@ from cdedb.common import (
 )
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
+from cdedb.common.roles import Realms
 from cdedb.frontend.common import (
     REQUESTdata,
     REQUESTfile,
@@ -398,7 +399,9 @@ class CoreGenesisMixin(CoreBaseFrontend):
         doppelgangers_with_missing_realms = {
             persona_id
             for persona_id in doppelgangers.keys()
-            if not self.coreproxy.verify_persona(rs, persona_id, [case.realm])
+            if not self.coreproxy.verify_persona(
+                rs, persona_id, Realms[case.realm].role
+            )
         }
         return self.render(
             rs,
@@ -543,16 +546,18 @@ class CoreGenesisMixin(CoreBaseFrontend):
         ):
             rs.notify("error", n_("Email address already taken."))
             return self.redirect(rs, "core/genesis_show_case")
-        if decision.is_update() and not self.coreproxy.verify_persona(
-            rs,
-            persona_id,  # type: ignore[arg-type]
-            (case.realm,),
-        ):
-            msg = n_(
-                "Invalid persona for update. Add additional realm first: %(realm)s."
-            )
-            rs.notify("error", msg, {'realm': case.realm})
-            return self.redirect(rs, "core/genesis_show_case")
+        if decision.is_update():
+            assert persona_id is not None
+            if not self.coreproxy.verify_persona(
+                rs,
+                persona_id,
+                Realms[case.realm].role,
+            ):
+                msg = n_(
+                    "Invalid persona for update. Add additional realm first: %(realm)s."
+                )
+                rs.notify("error", msg, {'realm': case.realm})
+                return self.redirect(rs, "core/genesis_show_case")
         if case.realm == "cde" and decision.is_create() and case.pevent_id is None:
             rs.notify(
                 "error",

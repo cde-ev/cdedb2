@@ -38,7 +38,7 @@ from cdedb.common.query import (
     QueryScope,
     QuerySpecEntry,
 )
-from cdedb.common.roles import implying_realms
+from cdedb.common.roles import Realms
 from cdedb.database.connection import Atomizer
 from cdedb.models.event import CustomQueryFilter
 
@@ -382,17 +382,21 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
                 query.spec["is_archived"] = QuerySpecEntry("bool", "")
 
             # Include only event users
-            query.constraints.append(("is_event_realm", QueryOperators.equal, True))
-            query.spec["is_event_realm"] = QuerySpecEntry("bool", "")
+            query.constraints.append((
+                Realms.event.realm_marker,
+                QueryOperators.equal,
+                True,
+            ))
+            query.spec[Realms.event.realm_marker] = QuerySpecEntry("bool", "")
 
             # Exclude users of any higher realm (implying event)
-            for realm in implying_realms('event'):
+            for realm in Realms.event.implying_realms:
                 query.constraints.append((
-                    f"is_{realm}_realm",
+                    realm.realm_marker,
                     QueryOperators.equal,
                     False,
                 ))
-                query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
+                query.spec[realm.realm_marker] = QuerySpecEntry("bool", "")
         elif query.scope == QueryScope.event_course:
             event_id = affirm(vtypes.EventID, event_id)
             assert event_id is not None

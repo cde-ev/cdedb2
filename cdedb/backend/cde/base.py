@@ -43,7 +43,7 @@ from cdedb.common.exceptions import PrivilegeError, QuotaException
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import CdELogFilter, FinanceLogFilter
-from cdedb.common.roles import implying_realms
+from cdedb.common.roles import Realms
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
@@ -703,15 +703,19 @@ class CdEBaseBackend(AbstractBackend):
                 query.spec['is_event_realm'] = QuerySpecEntry("bool", "")
             else:
                 # Restrict to exactly cde users (not higher).
-                query.constraints.append(("is_cde_realm", QueryOperators.equal, True))
-                query.spec['is_cde_realm'] = QuerySpecEntry("bool", "")
-                for realm in implying_realms('cde'):
+                query.constraints.append((
+                    Realms.cde.realm_marker,
+                    QueryOperators.equal,
+                    True,
+                ))
+                query.spec[Realms.cde.realm_marker] = QuerySpecEntry("bool", "")
+                for realm in Realms.cde.implying_realms:
                     query.constraints.append((
-                        f"is_{realm}_realm",
+                        realm.realm_marker,
                         QueryOperators.equal,
                         False,
                     ))
-                    query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
+                    query.spec[realm.realm_marker] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query, aggregate=aggregate)

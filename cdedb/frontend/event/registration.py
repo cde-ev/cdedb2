@@ -44,6 +44,7 @@ from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
 from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import date_filter, money_filter
 from cdedb.frontend.common import (
@@ -559,7 +560,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             )
             or "",
         }
-        if persona_id and self.coreproxy.verify_persona(rs, persona_id, "is_cde_realm"):
+        if persona_id and self.coreproxy.verify_persona(rs, persona_id, Roles.cde):
             nonmember_msg += " " + rs.gettext(
                 "If you pay your membership fee before your registration fee,"
                 " the additional fee will be waived."
@@ -1682,7 +1683,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                     "persona.persona_id",
                     ValueError(n_("This user does not exist or is archived.")),
                 ))
-            elif not self.coreproxy.verify_persona(rs, persona_id, {"event"}):
+            elif not self.coreproxy.verify_persona(rs, persona_id, Roles.event):
                 rs.append_validation_error((
                     "persona.persona_id",
                     ValueError(n_("This user is not an event user.")),

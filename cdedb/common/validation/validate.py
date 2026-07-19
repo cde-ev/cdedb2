@@ -137,7 +137,7 @@ from cdedb.common.query import (
     QuerySpec,
 )
 from cdedb.common.query.log_filter import ALL_LOG_FILTERS, GenericLogFilter
-from cdedb.common.roles import ADMIN_KEYS, extract_roles
+from cdedb.common.roles import ADMIN_KEYS, Roles, extract_roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.data import COUNTRY_CODES, FREQUENCY_LISTS, IBAN_LENGTHS
 from cdedb.common.validation.types import *  # noqa: F403
@@ -1538,9 +1538,9 @@ def _persona(
             **PERSONA_TYPE_FIELDS,
             **PERSONA_BASE_CREATION,
         }
-        if "cde" in roles:
+        if Roles.cde in roles:
             mandatory_fields.update(PERSONA_CDE_CREATION)
-        if "event" in roles:
+        if Roles.event in roles:
             mandatory_fields.update(PERSONA_EVENT_CREATION)
         # ml and assembly define no custom fields
     elif transition:

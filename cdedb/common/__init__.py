@@ -50,7 +50,7 @@ import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import Realm, Role
 from cdedb.common.n_ import n_
-from cdedb.common.roles import roles_to_admin_views
+from cdedb.common.roles import Roles, roles_to_admin_views
 from cdedb.config import Config
 from cdedb.database.connection import ConnectionContainer
 from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
@@ -113,7 +113,7 @@ class User:
         *,
         persona_id: vtypes.PersonaID | None = None,
         droid: "APIToken | None" = None,
-        roles: set[Role] | None = None,
+        roles: Roles | None = None,
         realm_roles: dict[Realm, set[str]] | None = None,
         given_names: str = "",
         nickname: str = "",
@@ -129,7 +129,7 @@ class User:
         self.droid = droid
         if self.persona_id and self.droid:
             raise ValueError("Cannot be both droid and persona.")
-        self.roles = roles or {"anonymous"}
+        self.new_roles = roles or Roles.anonymous
         self.realm_roles = realm_roles or {}
         self.username = username
         self.given_names = given_names
@@ -143,6 +143,10 @@ class User:
         self.moderator: set[int] = set(moderator) if moderator else set()
         self.presider: set[int] = set(presider) if presider else set()
         self.admin_views: set[AdminView] = set()
+
+    @property
+    def roles(self) -> set[Role]:
+        return self.new_roles.as_set()
 
     @property
     def all_roles(self) -> set[Role]:

@@ -75,7 +75,7 @@ from cdedb.common.fields import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import AssemblyLogFilter
-from cdedb.common.roles import implying_realms
+from cdedb.common.roles import Realms, Roles
 from cdedb.common.sorting import EntitySorter, mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import DatabaseValue_s, Params
@@ -393,15 +393,19 @@ class AssemblyBackend(AbstractBackend):
                 query.spec["is_archived"] = QuerySpecEntry("bool", "")
 
             # Restrict to assembly users.
-            query.constraints.append(("is_assembly_realm", QueryOperators.equal, True))
-            query.spec["is_assembly_realm"] = QuerySpecEntry("bool", "")
+            query.constraints.append((
+                Realms.assembly.realm_marker,
+                QueryOperators.equal,
+                True,
+            ))
+            query.spec[Realms.assembly.realm_marker] = QuerySpecEntry("bool", "")
 
             # Exclude users of any higher realm (implying event)
-            for realm in implying_realms('assembly'):
+            for realm in Realms.assembly.implying_realms:
                 query.constraints.append(
-                    (f"is_{realm}_realm", QueryOperators.equal, False),
+                    (realm.realm_marker, QueryOperators.equal, False),
                 )
-                query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
+                query.spec[realm.realm_marker] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query, aggregate=aggregate)
@@ -759,7 +763,7 @@ class AssemblyBackend(AbstractBackend):
                         "Some of these users do not exist or are archived."
                     )
                 )
-            if not self.core.verify_personas(rs, persona_ids, {"assembly"}):
+            if not self.core.verify_personas(rs, persona_ids, Roles.assembly):
                 raise ValueError(
                     n_(  # TODO: coverage
                         "Some of these users are not assembly users."
@@ -1624,9 +1628,9 @@ class AssemblyBackend(AbstractBackend):
             )
 
         roles = self.core.get_roles_single(rs, persona_id)
-        if "member" in roles:
+        if Roles.member in roles:
             raise ValueError(n_("Not allowed for members."))  # TODO: coverage
-        if "assembly" not in roles:
+        if Roles.assembly not in roles:
             raise ValueError(n_("Only allowed for assembly users."))  # TODO: coverage
 
         return self.process_signup(rs, assembly_id, persona_id)

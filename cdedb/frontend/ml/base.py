@@ -26,6 +26,7 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.query.log_filter import MlLogFilter
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import keydictsort_filter
@@ -332,7 +333,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 "moderators",
                 ValueError(n_("Some of these users do not exist or are archived.")),
             ))
-        if not self.coreproxy.verify_personas(rs, moderators, {"ml"}):
+        if not self.coreproxy.verify_personas(rs, moderators, Roles.ml):
             rs.append_validation_error((
                 "moderators",
                 ValueError(n_("Some of these users are not ml users.")),
@@ -396,7 +397,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                     ValueError(n_("May not dearchive user.")),
                 ))
         if not self.coreproxy.verify_persona(
-            rs, source_persona_id, allowed_roles={"ml"}
+            rs, source_persona_id, allowed_roles=Roles.ml
         ):
             rs.append_validation_error((
                 "source_persona_id",
@@ -876,7 +877,7 @@ class MlBaseFrontend(AbstractUserFrontend):
                 "moderators",
                 ValueError(n_("Some of these users do not exist or are archived.")),
             ))
-        if not self.coreproxy.verify_personas(rs, moderators, {"ml"}):
+        if not self.coreproxy.verify_personas(rs, moderators, Roles.ml):
             rs.append_validation_error((
                 "moderators",
                 ValueError(n_("Some of these users are not ml users.")),

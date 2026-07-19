@@ -28,7 +28,6 @@ import cdedb.models.past_event as models_past_event
 from cdedb.common import (
     CdEDBObject,
     DefaultReturnCode,
-    Realm,
     RequestState,
     User,
     get_mandatory_form_fields,
@@ -68,9 +67,10 @@ from cdedb.common.roles import (
     ALL_ADMIN_VIEWS,
     ALL_ADMINS,
     REALM_ADMINS,
-    REALM_INHERITANCE,
+    Realms,
+    Roles,
     extract_roles,
-    implied_realms,
+    extract_user_realms,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
@@ -577,7 +577,7 @@ class CoreBaseFrontend(AbstractFrontend):
             raise werkzeug.exceptions.Forbidden(n_("No cde access to profile."))
 
         if "cde_admin" not in rs.user.roles and not self.coreproxy.verify_persona(
-            rs, persona_id, required_roles=['searchable']
+            rs, persona_id, required_roles=Roles.searchable
         ):
             raise werkzeug.exceptions.Forbidden(
                 n_("Access to non-searchable member data.")
@@ -766,22 +766,24 @@ class CoreBaseFrontend(AbstractFrontend):
         #
         # This is the basic mechanism for restricting access, since we only
         # add attributes for which an access level is provided.
-        target_roles = extract_roles(status.as_dict(), introspection_only=True)
+        target_realms = extract_user_realms(status.as_dict())
         persona: models.CorePersona
-        if self.AccessRealm.cde in access_realms and "cde" in target_roles:
+        if self.AccessRealm.cde in access_realms and Realms.cde in target_realms:
             persona = self.coreproxy.get_cde_user(rs, persona_id)
         # event and assembly are independent realms, users may have both at the same time
-        elif (self.AccessRealm.event in access_realms and "event" in target_roles
-                and self.AccessRealm.assembly in access_realms and "assembly" in target_roles):
+        elif (
+            self.AccessRealm.event | self.AccessRealm.assembly in access_realms
+            and Realms.event | Realms.assembly in target_realms
+        ):
             persona = models.EventAssemblyPersona(**{
                 **self.coreproxy.get_assembly_user(rs, persona_id).as_dict(),
                 **self.coreproxy.get_event_user(rs, persona_id, event_id).as_dict(),
             })
-        elif self.AccessRealm.event in access_realms and "event" in target_roles:
+        elif self.AccessRealm.event in access_realms and Realms.event in target_realms:
             persona = self.coreproxy.get_event_user(rs, persona_id, event_id)
-        elif self.AccessRealm.assembly in access_realms and "assembly" in target_roles:
+        elif self.AccessRealm.assembly in access_realms and Realms.assembly in target_realms:
             persona = self.coreproxy.get_assembly_user(rs, persona_id)
-        elif self.AccessRealm.ml in access_realms and "ml" in target_roles:
+        elif self.AccessRealm.ml in access_realms and Realms.ml in target_realms:
             persona = self.coreproxy.get_ml_user(rs, persona_id)
         elif self.AccessRealm.persona in access_realms:
             persona = self.coreproxy.get_persona(rs, persona_id)
@@ -851,7 +853,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
         # Add past event participation info
         past_event_participations = None
-        if self.AccessRealm.cde in access_realms and {"event", "cde"} & target_roles:
+        if self.AccessRealm.cde in access_realms and (Realms.cde | Realms.event) & target_realms:
             past_event_participations = self.pasteventproxy.list_persona_events(rs, persona_id)
 
         # Retrieve number of active sessions if the user is viewing his own profile
@@ -1661,20 +1663,6 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.create_user_form(rs)
         return self.redirect(rs, realm + "/create_user")
 
-    @staticmethod
-    def admin_bits(rs: RequestState) -> set[Realm]:
-        """Determine realms this admin can see.
-
-        This is somewhat involved due to realm inheritance.
-        """
-        ret = {"persona"}
-        if "core_admin" in rs.user.roles:
-            ret |= REALM_INHERITANCE.keys()
-        for realm in REALM_INHERITANCE:
-            if f"{realm}_admin" in rs.user.roles:
-                ret |= {realm} | implied_realms(realm)
-        return ret
-
     @access(*REALM_ADMINS)
     def admin_change_user_form(
         self, rs: RequestState, persona_id: vtypes.PersonaID
@@ -1703,12 +1691,12 @@ class CoreBaseFrontend(AbstractFrontend):
             rs,
             "admin_change_user",
             {
-                'admin_bits': self.admin_bits(rs),
+                'admin_bits': rs.user.new_roles.get_admin_realms().as_set(),
                 'shown_fields': shown_fields,
-                # We have users with an unknown birthday (this shouldn't
-                # be a blocker for admins to edit those users at all) and want to
-                # be able to correct wrong birthdays into missing ones.
             },
+            # We have users with an unknown birthday (this shouldn't
+            #  be a blocker for admins to edit those users at all) and want to
+            #  be able to correct wrong birthdays into missing ones.
             get_mandatory_form_fields(PERSONA_COMMON_FIELDS) - {'birthday'},
         )
 
@@ -1779,7 +1767,7 @@ class CoreBaseFrontend(AbstractFrontend):
             "complaint": self.coreproxy.list_admins(rs, "complaint"),
         }
 
-        display_realms = rs.user.roles.intersection(REALM_INHERITANCE)
+        display_realms = rs.user.new_roles.get_user_realms().as_set()
         if "cde" in display_realms:
             display_realms.add("finance")
             display_realms.add("auditor")
@@ -2410,7 +2398,7 @@ class CoreBaseFrontend(AbstractFrontend):
         self,
         rs: RequestState,
         persona_id: int,
-        target_realm: vtypes.Realm | None,
+        target_realm: Realms | None,
         internal: bool = False,
     ) -> Response:
         """Render form.
@@ -2428,7 +2416,8 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
         merge_dicts(rs.values, rs.ambience['persona'].as_dict())
-        if target_realm and getattr(rs.ambience['persona'], f'is_{target_realm}_realm'):
+        user_realms = extract_user_realms(rs.ambience["persona"].as_dict())
+        if target_realm and target_realm in user_realms:
             rs.notify("warning", n_("No promotion necessary."))
             return self.redirect_show_user(rs, persona_id)
         pevent_ids = self.pasteventproxy.list_past_events(rs)
@@ -2452,6 +2441,13 @@ class CoreBaseFrontend(AbstractFrontend):
                 "pcourse_entries_by_event": models_past_event.PastCourse.get_combined_entries(
                     all_pcourses
                 ),
+                "target_realm": target_realm,
+                "missing_realms": ~user_realms,
+                "missing_target_realms": (
+                    (target_realm | target_realm.implied_realms) & ~user_realms
+                    if target_realm is not None
+                    else None
+                ),
             },
             mandatory_fields,
         )
@@ -2472,7 +2468,7 @@ class CoreBaseFrontend(AbstractFrontend):
         rs: RequestState,
         persona_id: int,
         change_note: str,
-        target_realm: vtypes.Realm,
+        target_realm: Realms,
         pevent_id: int | None,
         is_orga: bool,
         is_instructor: bool,
@@ -2487,7 +2483,7 @@ class CoreBaseFrontend(AbstractFrontend):
             del data[key]
         persona = self.coreproxy.get_total_persona(rs, persona_id)
         # Specific fixes by target realm
-        if target_realm == "cde":
+        if target_realm == Realms.cde:
             reference = {**CDE_TRANSITION_FIELDS}
             persona.update({
                 'trial_member': False,
@@ -2497,7 +2493,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 'paper_expuls': True,
                 'donation': decimal.Decimal(0),
             })
-        elif target_realm == "event":
+        elif target_realm == Realms.event:
             reference = {**EVENT_TRANSITION_FIELDS}
         else:
             reference = {}
@@ -2508,9 +2504,9 @@ class CoreBaseFrontend(AbstractFrontend):
         # trial membership implies membership
         if data.get("trial_member"):
             data["is_member"] = True
-        data[f'is_{target_realm}_realm'] = True
-        for realm in implied_realms(target_realm):
-            data[f'is_{realm}_realm'] = True
+        data[target_realm.realm_marker] = True
+        for realm in target_realm.implied_realms:
+            data[realm.realm_marker] = True
         data = check(rs, vtypes.Persona, data, transition=True)
         if rs.has_validation_errors():
             return self.promote_user_form(
@@ -2525,7 +2521,7 @@ class CoreBaseFrontend(AbstractFrontend):
         assert data is not None
         code = self.coreproxy.change_persona_realms(rs, data, change_note)
         rs.notify_return_code(code)
-        if code > 0 and target_realm == "cde":
+        if code > 0 and target_realm == Realms.cde:
             if pevent_id:
                 orga_status = const.PastOrgaKind.none
                 if is_orga:
@@ -3113,7 +3109,8 @@ class CoreBaseFrontend(AbstractFrontend):
         else:
             # Warn management of possible privilege escalation
             status = self.coreproxy.get_persona_status(rs, rs.ambience['persona'].id)
-            if extract_roles(status.as_dict(), introspection_only=True) & ALL_ADMINS:
+            user_roles = extract_roles(status.as_dict(), introspection_only=True)
+            if user_roles.is_any_admin():
                 to = (
                     self.conf["MANAGEMENT_ADDRESS"],
                     self.conf["TROUBLESHOOTING_ADDRESS"],

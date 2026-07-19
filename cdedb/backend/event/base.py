@@ -65,6 +65,7 @@ from cdedb.common.privileges import (
     is_privileged_event as is_privileged,
 )
 from cdedb.common.query.log_filter import EventLogFilter
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter
@@ -377,7 +378,7 @@ class EventBaseBackend(EventLowLevelBackend):
             raise ValueError(n_("Must not be empty."))
         if not self.core.verify_ids(rs, persona_ids, is_archived=False):
             raise ValueError(n_("Some of these personas do not exist or are archived."))
-        if not self.core.verify_personas(rs, persona_ids, {"event"}):
+        if not self.core.verify_personas(rs, persona_ids, Roles.event):
             raise ValueError(n_("Some of these personas are not event users."))
 
     @access("event_admin")

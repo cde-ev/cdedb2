@@ -33,6 +33,7 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.n_ import n_
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.common.validation.validate import LASTSCHRIFT_COMMON_FIELDS
 from cdedb.filter import keydictsort_filter, money_filter
@@ -256,7 +257,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         data = check(rs, vtypes.Lastschrift, data, creation=True)
         if rs.has_validation_errors():
             return self.lastschrift_create_form(rs, persona_id)
-        if not self.coreproxy.verify_persona(rs, persona_id, ["cde"]):
+        if not self.coreproxy.verify_persona(rs, persona_id, Roles.cde):
             rs.append_validation_error((
                 "persona_id",
                 ValueError(n_("Persona must have cde realm.")),

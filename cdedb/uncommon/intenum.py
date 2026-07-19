@@ -4,6 +4,8 @@ Segregated into its own file to break cyclic imports.
 """
 
 import enum
+from collections.abc import Iterable
+from typing import Self
 
 
 class CdEEnumMeta:
@@ -15,6 +17,8 @@ class CdEEnumMeta:
         information, which we need in many cases.
         """
         return enum.Enum.__str__(self)
+
+    __repr__ = __str__
 
     def __format__(self, format_spec: str) -> str:
         """Clean up ripple effects of the above change.
@@ -35,4 +39,17 @@ class CdEEnum(CdEEnumMeta, enum.Enum):
 
 
 class CdEIntFlag(CdEEnumMeta, enum.IntFlag):
-    pass
+    @classmethod
+    def none(cls) -> Self:
+        return cls(0)
+
+    @classmethod
+    def all(cls) -> Self:
+        return ~cls.none()
+
+    @classmethod
+    def union(cls, flags: Iterable[Self]) -> Self:
+        ret = cls.none()
+        for f in flags:
+            ret |= f
+        return ret

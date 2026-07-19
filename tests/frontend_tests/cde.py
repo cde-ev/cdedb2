@@ -19,7 +19,6 @@ from cdedb.common import (
     CdEDBObject,
     LineResolutions,
     RequestState,
-    Role,
     now,
 )
 from cdedb.common.i18n import (
@@ -28,7 +27,7 @@ from cdedb.common.i18n import (
     get_localized_country_codes,
 )
 from cdedb.common.query import QueryOperators
-from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, extract_roles
+from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, Roles, extract_roles
 from cdedb.frontend.common import Worker
 from tests.common import (
     USER_DICT,
@@ -442,7 +441,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("garcia")
     def test_consent_decline(self) -> None:
 
-        def _roles(user: UserIdentifier) -> set[Role]:
+        def _roles(user: UserIdentifier) -> Roles:
             return extract_roles(
                 self.core.get_persona_status(self.key, get_user(user)['id']).as_dict()
             )
