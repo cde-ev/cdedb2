@@ -279,6 +279,10 @@ MAILMAN_ACCEPTABLE_ALIASES = {
     "admin-dmarc@lists.cde-ev.de": [r"^dmarc\d+@mail.cde-ev.de"],
 }
 
+MAILMAN_NON_EXPLICIT_DESTINATION_LISTS = {
+    "admin@lists.cde-ev.de",
+}
+
 #################
 # Backend stuff #
 #################
