@@ -59,7 +59,9 @@ rules = [
         get_("/", endpoint="index"),
         sub(
             "/core",
-            get_("/api/resolve", endpoint="api_resolve_username"),
+            get_("/api/resolve", endpoint="api_cyberaka_resolve_username"),
+            get_("/api/zammad/address", endpoint="api_zammad_resolve_username"),
+            get_("/api/zammad/persona", endpoint="api_zammad_resolve_persona_id"),
             post("/markdown/parse", endpoint="markdown_parse"),
             post("/login", endpoint="login"),
             post("/logout", endpoint="logout"),

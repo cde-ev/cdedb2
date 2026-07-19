@@ -403,7 +403,7 @@ class RequestState(ConnectionContainer):
             ret.setdefault(key, []).append(value)
         return ret
 
-    def raise_for_validation_errors(self):
+    def raise_for_validation_errors(self) -> None:
         if self.has_validation_errors():
             raise werkzeug.exceptions.BadRequest(
                 "Validation failed! "

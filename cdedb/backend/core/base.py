@@ -3718,7 +3718,7 @@ class CoreBaseBackend(AbstractBackend):
         query = affirm(Query, query)
         return self._submit_general_query(rs, query)
 
-    @access("droid_resolve")
+    @access("droid_resolve", "droid_zammad_resolve")
     def submit_resolve_api_query(
         self, rs: RequestState, query: Query
     ) -> tuple[CdEDBObject, ...]:

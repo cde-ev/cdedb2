@@ -59,7 +59,13 @@ from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
 from cdedb.common.privileges import EventPrivileges, is_privileged_event
-from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.query import (
+    Query,
+    QueryConstraint,
+    QueryOperators,
+    QueryScope,
+    QuerySpecEntry,
+)
 from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.roles import (
@@ -79,6 +85,7 @@ from cdedb.common.validation.validate import (
     PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
 )
 from cdedb.filter import (
+    cdedbid_filter,
     enum_entries_filter,
     markdown_parse_safe,
     money_filter,
@@ -92,10 +99,12 @@ from cdedb.frontend.common import (
     TransactionObserver,
     access,
     basic_redirect,
+    cdedburl,
     check_validation as check,
     inspect_validation as inspect,
     periodic,
     request_dict_extractor,
+    request_extractor,
 )
 from cdedb.models.core import CdEPersona
 from cdedb.uncommon.submanshim import SubscriptionPolicy
@@ -3419,26 +3428,79 @@ class CoreBaseFrontend(AbstractFrontend):
     ) -> DefaultReturnCode:
         return self.coreproxy.set_cron_store(rs, name, data)
 
-    @access("droid_resolve")
-    @REQUESTdata("username")
-    def api_resolve_username(
-        self, rs: RequestState, username: vtypes.Email
-    ) -> Response:
+    def _api_resolve_username(
+        self, rs: RequestState, event_only: bool
+    ) -> tuple[CdEDBObject, ...] | None:
         """API to resolve username to that users given names and family name."""
+        username = request_extractor(rs, {"username": vtypes.Email})["username"]
         if rs.has_validation_errors():
-            err = {'error': tuple(map(str, rs.retrieve_validation_errors()))}
-            return self.send_json(rs, err)
+            return None
 
-        constraints = (
+        constraints: list[QueryConstraint] = [
             ('username', QueryOperators.equal, username),
-            ('is_event_realm', QueryOperators.equal, True),
-        )
+        ]
+
+        if event_only:
+            constraints.append(
+                ('is_event_realm', QueryOperators.equal, True),
+            )
+
         query = Query(
             QueryScope.core_user,
             QueryScope.core_user.get_spec(),
             ("given_names", "family_name", "is_member", "username"),
             constraints,
-            (('personas.id', True),),
+            [],
+        )
+        return self.coreproxy.submit_resolve_api_query(rs, query)
+
+    @access("droid_resolve")
+    def api_cyberaka_resolve_username(self, rs: RequestState) -> Response:
+        result = self._api_resolve_username(rs, event_only=True)
+        if result is None:
+            err = {'error': tuple(map(str, rs.retrieve_validation_errors()))}
+            return self.send_json(rs, err)
+        return self.send_json(rs, unwrap(result) if result else {})
+
+    @access("droid_zammad_resolve")
+    def api_zammad_resolve_username(self, rs: RequestState) -> Response:
+        result = self._api_resolve_username(rs, event_only=False)
+        rs.raise_for_validation_errors()
+        if not result:
+            raise werkzeug.exceptions.NotFound("Username not found.")
+        persona_id = unwrap(result)[QueryScope.core_user.get_primary_key()]
+        return self.send_json(rs, {"persona_id": cdedbid_filter(persona_id)})
+
+    @access("droid_zammad_resolve")
+    @REQUESTdata("persona_id")
+    def api_zammad_resolve_persona_id(
+        self, rs: RequestState, persona_id: vtypes.PersonaID
+    ) -> Response:
+        rs.raise_for_validation_errors()
+
+        query = Query(
+            QueryScope.core_user,
+            QueryScope.core_user.get_spec(),
+            ["given_names", "nickname", "family_name", "username", "foto"],
+            [
+                (
+                    QueryScope.core_user.get_primary_key(),
+                    QueryOperators.equal,
+                    persona_id,
+                )
+            ],
+            [],
         )
         result = self.coreproxy.submit_resolve_api_query(rs, query)
-        return self.send_json(rs, unwrap(result) if result else {})
+
+        if not result:
+            raise werkzeug.exceptions.NotFound(f"Persona {persona_id!r} not found.")
+
+        if foto := result[0]["foto"]:
+            result[0]["foto"] = cdedburl(
+                rs, "core/get_foto", {'foto': foto}, force_external=True
+            )
+
+        del result[0][QueryScope.core_user.get_primary_key()]
+
+        return self.send_json(rs, unwrap(result))

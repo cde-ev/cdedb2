@@ -3471,7 +3471,7 @@ class TestCoreFrontend(FrontendTest):
     def test_resolve_api(self) -> None:
         at = urllib.parse.quote_plus('@')
         token_key = model_droid.APIToken.request_header_key
-        resolve_token = model_droid.ResolveToken.get_token_string(
+        resolve_token = model_droid.CyberAkaResolveToken.get_token_string(
             self.secrets['API_TOKENS']['resolve']
         )
         self.get(
@@ -3513,6 +3513,97 @@ class TestCoreFrontend(FrontendTest):
             },
         )
         self.get('/core/api/resolve', status=403)
+
+    def test_zammad_resolve_api(self) -> None:
+        at = urllib.parse.quote_plus('@')
+        token_key = model_droid.APIToken.request_header_key
+        token = model_droid.ZammadResolveToken.get_token_string(
+            self.secrets['API_TOKENS']['zammad_resolve']
+        )
+        url = "/core/api/zammad/address"
+        headers = {token_key: token, "accepts": "application/json"}
+        self.get(url, status=403)
+        self.get(url, headers={token_key: token}, status=400)
+        self.assertEqual(
+            "400 Validation failed! username: Must not be empty.", self.response.status
+        )
+        self.get(
+            f"{url}?username=abc{at}example.cde",
+            headers=headers,
+            status=404,
+        )
+        self.assertEqual("404 Username not found.", self.response.status)
+        self.get(
+            f"{url}?username=%20bErTa{at}example.CDE%20",
+            headers=headers,
+        )
+        self.assertEqual(self.response.json, {"persona_id": "DB-2-7"})
+        self.get(
+            f"{url}?username=anton{at}example.cde",
+            headers=headers,
+        )
+        self.assertEqual(self.response.json, {"persona_id": "DB-1-9"})
+
+        url2 = "/core/api/zammad/persona"
+
+        self.get(url2, status=403)
+        self.get(url2, headers=headers, status=400)
+        self.assertEqual(
+            "400 Validation failed! persona_id: Must not be empty.",
+            self.response.status,
+        )
+        self.get(
+            f"{url2}?persona_id=1",
+            headers=headers,
+            status=400,
+        )
+        self.assertEqual(
+            "400 Validation failed! persona_id: Wrong formatting.",
+            self.response.status,
+        )
+        self.get(
+            f"{url2}?persona_id=DB-1-X",
+            headers=headers,
+            status=400,
+        )
+        self.assertEqual(
+            "400 Validation failed! persona_id: Checksum failure.",
+            self.response.status,
+        )
+        self.get(
+            f"{url2}?persona_id=DB-100000-4",
+            headers=headers,
+            status=404,
+        )
+        self.assertEqual("404 Persona 100000 not found.", self.response.status)
+        self.get(
+            f"{url2}?persona_id=DB-2-7",
+            headers=headers,
+        )
+        self.assertEqual(
+            self.response.json,
+            {
+                "given_names": USER_DICT["berta"]["given_names"],
+                "nickname": "Bindi",
+                "family_name": USER_DICT["berta"]["family_name"],
+                "foto": "https://localhost/core/foto/e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9",
+                "username": USER_DICT["berta"]["username"],
+            },
+        )
+        self.get(
+            f"{url2}?persona_id=DB-1-9",
+            headers=headers,
+        )
+        self.assertEqual(
+            self.response.json,
+            {
+                "given_names": USER_DICT["anton"]["given_names"],
+                "nickname": None,
+                "family_name": USER_DICT["anton"]["family_name"],
+                "foto": None,
+                "username": USER_DICT["anton"]["username"],
+            },
+        )
 
     @as_users("janis")
     def test_markdown_endpoint(self) -> None:
