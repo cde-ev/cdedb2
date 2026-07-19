@@ -113,11 +113,14 @@ USER_REALM_NAMES = {
 
 class ShowUserEventsParams(TypedDict):
     events: models_event.EventDataclassMap
-    registrations: dict[int, dict[int, dict[int, const.RegistrationPartStati]]]
-    orga_events: set[int]
-    caretaker_events: set[int]
-    checkin_helper_events: set[int]
-    special_role_events: set[int]
+    registrations: dict[
+        vtypes.EventID,
+        dict[vtypes.RegistrationID, dict[vtypes.ID, const.RegistrationPartStati]],
+    ]
+    orga_events: set[vtypes.EventID]
+    caretaker_events: set[vtypes.EventID]
+    checkin_helper_events: set[vtypes.EventID]
+    special_role_events: set[vtypes.EventID]
     is_event_helper: bool
 
 
@@ -237,9 +240,9 @@ class CoreBaseFrontend(AbstractFrontend):
                 final: dict[int, Any] = {}
                 events_registration: dict[int, bool | None] = {}
                 events_payment_pending: dict[int, bool] = {}
-                for event_id, event in events.items():
+                for event in events.values():
                     registration, payment_pending = (
-                        self.eventproxy.get_registration_payment_info(rs, event_id)
+                        self.eventproxy.get_registration_payment_info(rs, event.id)
                     )
                     if not event.is_visible_for(
                         rs.user, registration is True, privileged=False
@@ -263,9 +266,9 @@ class CoreBaseFrontend(AbstractFrontend):
                         and not registration
                     ) or now().date() > event.end:
                         continue
-                    final[event_id] = event
-                    events_registration[event_id] = registration
-                    events_payment_pending[event_id] = payment_pending
+                    final[event.id] = event
+                    events_registration[event.id] = registration
+                    events_payment_pending[event.id] = payment_pending
                 dashboard['events'] = final
                 dashboard['events_registration'] = events_registration
                 dashboard['events_payment_pending'] = events_payment_pending
@@ -636,7 +639,7 @@ class CoreBaseFrontend(AbstractFrontend):
         persona_id: int,
         confirm_id: int,
         quote_me: bool,
-        event_id: vtypes.ID | None,
+        event_id: vtypes.EventID | None,
         ml_id: vtypes.ID | None,
         internal: bool = False,
     ) -> Response:
@@ -728,7 +731,7 @@ class CoreBaseFrontend(AbstractFrontend):
             is_orgalike = event_id in rs.user.orga | rs.user.caretaker
             if is_orgalike or is_admin:
                 is_participant = self.eventproxy.list_registrations(
-                    rs, event_id, persona_id)
+                    rs, event_id, vtypes.PersonaID(vtypes.ID(persona_id)))
                 if (is_orgalike or is_viewing_admin) and is_participant:
                     access_realms |= self.AccessRealm.event
                     access_levels |= self.AccessLevel.orga
@@ -903,7 +906,9 @@ class CoreBaseFrontend(AbstractFrontend):
         )
 
     @access("event")
-    def show_user_events(self, rs: RequestState, persona_id: vtypes.ID) -> Response:
+    def show_user_events(
+        self, rs: RequestState, persona_id: vtypes.PersonaID
+    ) -> Response:
         """Render overview which events a given user is registered for."""
         if not (
             self.coreproxy.is_relative_admin(rs, persona_id)
@@ -1671,7 +1676,9 @@ class CoreBaseFrontend(AbstractFrontend):
         return ret
 
     @access(*REALM_ADMINS)
-    def admin_change_user_form(self, rs: RequestState, persona_id: int) -> Response:
+    def admin_change_user_form(
+        self, rs: RequestState, persona_id: vtypes.PersonaID
+    ) -> Response:
         """Render form."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
@@ -1710,7 +1717,7 @@ class CoreBaseFrontend(AbstractFrontend):
     def admin_change_user(
         self,
         rs: RequestState,
-        persona_id: int,
+        persona_id: vtypes.PersonaID,
         generation: int,
         change_note: str | None,
     ) -> Response:

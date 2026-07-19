@@ -1002,7 +1002,9 @@ class PastEventBackend(AbstractBackend):
         regs = self.event.get_registrations(rs, list(reg_ids.keys()))
 
         # maps persona_ids to their dicts of courses, the bool signals instructorship
-        participants_to_courses: dict[int, dict[int, bool]] = {}
+        participants_to_courses: dict[
+            vtypes.PersonaID, dict[vtypes.CourseID, bool]
+        ] = {}
         for reg in regs.values():
             participant_status = const.RegistrationPartStati.participant
             if reg['parts'][part_id]['status'] != participant_status:
@@ -1047,7 +1049,7 @@ class PastEventBackend(AbstractBackend):
 
     @access("cde_admin", "event_admin")
     def archive_event(
-        self, rs: RequestState, event_id: int, create_past_event: bool = True
+        self, rs: RequestState, event_id: vtypes.EventID, create_past_event: bool = True
     ) -> list[int] | None:
         """Archive a concluded event.
 
@@ -1067,7 +1069,7 @@ class PastEventBackend(AbstractBackend):
           if there were complications or create_past_events is False.
           If there were complications, the second entry is an error message.
         """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         if "cde_admin" not in rs.user.roles or "event_admin" not in rs.user.roles:
             raise PrivilegeError(n_("Needs both admin privileges."))
         with Atomizer(rs):

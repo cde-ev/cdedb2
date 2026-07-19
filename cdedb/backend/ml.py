@@ -211,7 +211,7 @@ class MlBackend(AbstractBackend):
         elif mailinglist:
             affirm(get_ml_type(mailinglist.ml_type), mailinglist)
 
-        persona_id = affirm(vtypes.ID, persona_id)
+        persona_id = affirm(vtypes.PersonaID, persona_id)
         assert mailinglist is not None
 
         if not (
@@ -1691,7 +1691,9 @@ class MlBackend(AbstractBackend):
                 # the list or if `get_subscription_policy` says so.
                 delete = []
                 policies = ml.get_subscription_policies(
-                    rs, self.backends, persona_ids=old_subscribers[mailinglist_id]
+                    rs,
+                    self.backends,
+                    persona_ids=old_subscribers[mailinglist_id],  # type: ignore[arg-type]
                 )
                 for persona_id in old_subscribers[mailinglist_id]:
                     old_state = old_subscribers[mailinglist_id][persona_id]

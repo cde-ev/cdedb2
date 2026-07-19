@@ -24,7 +24,7 @@ from collections.abc import Collection, Iterator, Sequence
 
 import cdedb.database.constants as const
 import cdedb.models.event as models
-from cdedb.common import AgeClasses, CdEDBObject, CdEDBObjectMap, deduct_years, unwrap
+from cdedb.common import AgeClasses, CdEDBObject, deduct_years, unwrap
 from cdedb.common.n_ import n_
 from cdedb.common.query import (
     Query,
@@ -913,7 +913,7 @@ class EventRegistrationInXChoiceGrouper:
     the xth row, already presorted.
     """
 
-    def __init__(self, event: models.Event, regs: CdEDBObjectMap):
+    def __init__(self, event: models.Event, regs: models.RegistrationMap):
         self._sorted_tracks = xsorted(event.tracks.values())
         self._sorted_parts = xsorted(event.parts.values())
         self._sorted_part_groups = xsorted(event.part_groups.values())

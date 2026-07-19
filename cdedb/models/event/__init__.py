@@ -157,7 +157,7 @@ class OtherDatabaseTables:
 
 @dataclasses.dataclass(kw_only=True)
 class _EventConfigurationMixin(CdEDataclass):
-    id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
+    id: vtypes.EventID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
 
     title: str
     shortname: str
@@ -205,7 +205,7 @@ class _EventConfigurationMixin(CdEDataclass):
 
 @dataclasses.dataclass(kw_only=True)
 class _EventFreetextMixin(CdEDataclass):
-    id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
+    id: vtypes.EventID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
 
     # Exclude from request to avoid unsetting when submitting `change_event_form`.
     description: str | None = dataclasses.field(
@@ -233,7 +233,7 @@ class Event(EventDataclass, _EventConfigurationMixin, _EventFreetextMixin):
     database_table = "event.events"
     entity_key = "id"
 
-    id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
+    id: vtypes.EventID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
 
     # Disallow setting via request altogether.
     is_locked: bool = dataclasses.field(
@@ -279,13 +279,13 @@ class Event(EventDataclass, _EventConfigurationMixin, _EventFreetextMixin):
         default_factory=dict, metadata=Meta.asdict_include.as_dict
     )
 
-    orgas: set[vtypes.ID] = dataclasses.field(
+    orgas: set[vtypes.PersonaID] = dataclasses.field(
         default_factory=set, metadata=Meta.io_exclude.as_dict
     )
-    caretakers: set[vtypes.ID] = dataclasses.field(
+    caretakers: set[vtypes.PersonaID] = dataclasses.field(
         default_factory=set, metadata=Meta.io_exclude.as_dict
     )
-    checkin_helpers: set[vtypes.ID] = dataclasses.field(
+    checkin_helpers: set[vtypes.PersonaID] = dataclasses.field(
         default_factory=set, metadata=Meta.io_exclude.as_dict
     )
 
@@ -476,7 +476,7 @@ class EventPart(EventDataclass):
     )
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+    event_id: vtypes.EventID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     title: str
     shortname: vtypes.Identifier
@@ -665,7 +665,7 @@ class EventFee(EventDataclass):
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     # Exclude during creation, update and request.
-    event_id: vtypes.ID = dataclasses.field(
+    event_id: vtypes.EventID = dataclasses.field(
         metadata=Meta.input_exclude.as_dict,
     )
 
@@ -761,7 +761,7 @@ class EventField(EventDataclass):
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
     # Exclude during creation, update and request.
-    event_id: vtypes.ID = dataclasses.field(
+    event_id: vtypes.EventID = dataclasses.field(
         metadata=Meta.input_exclude.as_dict,
     )
 
@@ -893,7 +893,9 @@ class CustomQueryFilter(EventDataclass):
     database_table = "event.custom_query_filters"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
+    event_id: vtypes.EventID = dataclasses.field(
+        metadata=Meta.input_update_exclude.as_dict
+    )
 
     scope: QueryScope = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
     title: str
@@ -962,7 +964,7 @@ class PartGroup(EventDataclass):
     database_table = "event.part_groups"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+    event_id: vtypes.EventID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     title: str
     shortname: str
@@ -1012,7 +1014,7 @@ class TrackGroup(EventDataclass):
     database_table = "event.track_groups"
 
     event: Event = dataclasses.field(init=False, compare=False, repr=False)
-    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+    event_id: vtypes.EventID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     title: str
     shortname: str
@@ -1104,8 +1106,8 @@ class SyncTrackGroup(TrackGroup, CourseChoiceObject):  # type: ignore[misc]
 class StoredEventQuery(EventDataclass, _StoredQuery):
     database_table = "event.stored_queries"
 
-    event_id: vtypes.ID = dataclasses.field(
-        default=vtypes.ID(-1), metadata=Meta.request_exclude.as_dict
+    event_id: vtypes.EventID = dataclasses.field(
+        default=vtypes.EventID(vtypes.ID(-1)), metadata=Meta.request_exclude.as_dict
     )
     event: Event = dataclasses.field(
         compare=False,
@@ -1122,13 +1124,15 @@ class StoredEventQuery(EventDataclass, _StoredQuery):
 # get_course
 #
 
+type CourseMap = dict[vtypes.CourseID, Course]
+
 
 @dataclasses.dataclass
 class Course(EventDataclass):
     database_table = "event.courses"
     entity_key = "id"
 
-    id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
+    id: vtypes.CourseID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
 
     # Give event a default, so automatic sorting of course segments is less horrible.
     event: Event = dataclasses.field(
@@ -1138,7 +1142,7 @@ class Course(EventDataclass):
         default=cast(Event, None),
         metadata=Meta.input_exclude.as_dict,
     )
-    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+    event_id: vtypes.EventID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     segments: CdEDataclassMap["CourseSegment"] = dataclasses.field(
         metadata=(Meta.validate_include | Meta.asdict_include).as_dict
@@ -1257,7 +1261,7 @@ class LodgementGroup(EventDataclass):
     id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
 
     # event: Event
-    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+    event_id: vtypes.EventID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
     title: str
 
     lodgement_ids: set[int] = dataclasses.field(
@@ -1316,7 +1320,7 @@ class Lodgement(EventDataclass):
         default=cast(Event, None),
         metadata=Meta.input_exclude.as_dict,
     )
-    event_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+    event_id: vtypes.EventID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
     group: LodgementGroup
     group_id: vtypes.ID
 
@@ -1344,6 +1348,9 @@ class Lodgement(EventDataclass):
 #
 # get_registration
 #
+
+
+type RegistrationMap = dict[vtypes.RegistrationID, CdEDBObject]
 
 
 @dataclasses.dataclass
@@ -1393,7 +1400,7 @@ class PersonalizedFee(EventDataclass):
     database_table = "event.personalized_fees"
     entity_key = "registration_id"
 
-    registration_id: vtypes.ID
+    registration_id: vtypes.RegistrationID
     fee_id: vtypes.ID
 
     amount: decimal.Decimal | None
@@ -1447,7 +1454,7 @@ class CheckinPeriod(EventDataclass, ReducedCheckinPeriod):
     database_table = "event.checkin_periods"
     entity_key = "registration_id"
 
-    registration_id: vtypes.ID
+    registration_id: vtypes.RegistrationID
 
     def get_sortkey(self) -> Sortkey:
         if self.checkout_time is not None:
@@ -1470,20 +1477,20 @@ class ChoiceCounts:
     """
 
     # dict mapping (course_id, track_id) to list of choice counts.
-    _choice_counts: dict[int, dict[int, list[int]]]
+    _choice_counts: dict[vtypes.CourseID, dict[int, list[int]]]
 
     @overload
-    def get(self, course_id: int) -> dict[int, list[int]]: ...
+    def get(self, course_id: vtypes.CourseID) -> dict[int, list[int]]: ...
 
     @overload
-    def get(self, course_id: int, track_id: int) -> list[int]: ...
+    def get(self, course_id: vtypes.CourseID, track_id: int) -> list[int]: ...
 
     @overload
-    def get(self, course_id: int, track_id: int, rank: int) -> int: ...
+    def get(self, course_id: vtypes.CourseID, track_id: int, rank: int) -> int: ...
 
     def get(
         self,
-        course_id: int,
+        course_id: vtypes.CourseID,
         track_id: int | None = None,
         rank: int | None = None,
     ) -> dict[int, list[int]] | list[int] | int:
@@ -1497,7 +1504,9 @@ class ChoiceCounts:
 
     def __getitem__(
         self,
-        item: tuple[int] | tuple[int, int] | tuple[int, int, int],
+        item: tuple[vtypes.CourseID]
+        | tuple[vtypes.CourseID, int]
+        | tuple[vtypes.CourseID, int, int],
     ) -> dict[int, list[int]] | list[int] | int:
         return self.get(*item)
 
@@ -1549,17 +1558,19 @@ class CourseAttendees(dict[int, CourseSegmentAttendees]):
 class Attendees:
     """Wrapper around a mapping of course and track to lists of attendees."""
 
-    _course_attendee_counts: dict[int, CourseAttendees]
+    _course_attendee_counts: dict[vtypes.CourseID, CourseAttendees]
 
     @overload
-    def get(self, course_id: int) -> CourseAttendees: ...
+    def get(self, course_id: vtypes.CourseID) -> CourseAttendees: ...
 
     @overload
-    def get(self, course_id: int, track_id: int) -> CourseSegmentAttendees: ...
+    def get(
+        self, course_id: vtypes.CourseID, track_id: int
+    ) -> CourseSegmentAttendees: ...
 
     def get(
         self,
-        course_id: int,
+        course_id: vtypes.CourseID,
         track_id: int | None = None,
     ) -> CourseAttendees | CourseSegmentAttendees:
         by_track = self._course_attendee_counts.get(course_id, CourseAttendees({}))
@@ -1569,7 +1580,7 @@ class Attendees:
 
     def __getitem__(
         self,
-        item: tuple[int] | tuple[int, int],
+        item: tuple[vtypes.CourseID] | tuple[vtypes.CourseID, int],
     ) -> CourseAttendees | CourseSegmentAttendees:
         return self.get(*item)
 

@@ -40,7 +40,6 @@ import cdedb.models.event as models
 from cdedb.common import (
     AgeClasses,
     CdEDBObject,
-    CdEDBObjectMap,
     determine_age_class,
     make_persona_name,
     n_,
@@ -322,12 +321,12 @@ class ViolationAux:
     """Container for passing event data through to Violations for instantiation."""
 
     event: models.Event
-    registrations: CdEDBObjectMap
+    registrations: models.RegistrationMap
     personas: CdEDataclassMap[EventPersona]
 
-    all_courses: CdEDataclassMap[models.Course]
+    all_courses: models.CourseMap
     # Violations are only checked for these courses.
-    courses: CdEDataclassMap[models.Course]
+    courses: models.CourseMap
     all_lodgements: CdEDataclassMap[models.Lodgement]
     # Violations are only checked for these lodgements.
     lodgements: CdEDataclassMap[models.Lodgement]
@@ -463,7 +462,7 @@ class ConstraintViolation(abc.ABC):
 
         Need only be overridden if a subclass has additional associated primary entities.
         """
-        ret = {
+        ret: dict[str, tuple[str, CdEDBObject, str]] = {
             'event': (
                 "event/show_event",
                 {'event_id': self.event.id},
