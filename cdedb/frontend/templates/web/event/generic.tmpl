@@ -227,6 +227,10 @@
         {{ row.text|md }}
     {% elif row.name == "QuestionnaireHeadingRow" %}
         {{ util.h(row.title, level=row.kind.title_level, underline=True, translate=False) }}
+    {% elif row.name == "QuestionnairePanelRow" %}
+        {% call util.bootstrap_panel(row.title, row.panel_kind.get_panel_class(), row.panel_kind.get_icon(), level=row.kind.title_level) %}
+            {{ row.text|md }}
+        {% endcall %}
     {% elif row.name == "FeePreview" %}
         {% call fee_preview_panel() %}
             <p class="text-info fw-bold" id="nonmember-surcharge">
@@ -451,6 +455,15 @@
                             ) }}
                         {{ util.output_errors("readonly_" ~ part_id, wrapper=True) }}
                     </div>
+                    {{ util.form_input_select(
+                            "panel_kind_" ~ part_id, label=gettext("Panel Kind"),
+                            entries=enums["QuestionnairePanelKind"]|enum_entries(processing=gettext),
+                            aclass="input-label drow-input", horizontal=False,
+                            attributes={
+                                "data-basename": "panel_kind_",
+                                "data-show_for_role": get_roles_with_field("panel_kind")|map("string")|list,
+                            }|xmlattr
+                        ) }}
                 </div>
                 <div class="col-md-6">
                     {{ util.form_input_text(

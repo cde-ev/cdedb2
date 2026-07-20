@@ -130,6 +130,7 @@ class QuestionnaireTextRowMeta(QuestionnaireRow):
 
     text: str | None
     title: str | None
+    panel_kind: const.QuestionnairePanelKind | None
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:
@@ -146,6 +147,9 @@ class QuestionnaireTextRow(QuestionnaireTextRowMeta):
 
     text: str
     title: None = dataclasses.field(default=None, metadata=Meta.request_exclude.as_dict)
+    panel_kind: None = dataclasses.field(
+        default=None, metadata=Meta.request_exclude.as_dict
+    )
 
     @classmethod
     def get_icon(cls) -> str:
@@ -158,10 +162,26 @@ class QuestionnaireHeadingRow(QuestionnaireTextRowMeta):
 
     text: None = dataclasses.field(default=None, metadata=Meta.request_exclude.as_dict)
     title: str
+    panel_kind: None = dataclasses.field(
+        default=None, metadata=Meta.request_exclude.as_dict
+    )
 
     @classmethod
     def get_icon(cls) -> str:
         return "align-left"
+
+
+@dataclasses.dataclass(kw_only=True)
+class QuestionnairePanelRow(QuestionnaireTextRowMeta):
+    _role = const.QuestionnaireRowRole.panel
+
+    text: str
+    title: str
+    panel_kind: const.QuestionnairePanelKind
+
+    @classmethod
+    def get_icon(cls) -> str:
+        return "rectangle-list"
 
 
 @dataclasses.dataclass

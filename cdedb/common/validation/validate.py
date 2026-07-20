@@ -3120,6 +3120,7 @@ def _by_field_datatype(
 @_create_dataclass_validator(
     models_event.questionnaire.QuestionnaireTextRow,
     models_event.questionnaire.QuestionnaireHeadingRow,
+    models_event.questionnaire.QuestionnairePanelRow,
 )
 def _questionnaire_text_row(
     val: CdEDBObject, argname: str = "", **kwargs: Any
