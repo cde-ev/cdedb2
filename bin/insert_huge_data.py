@@ -139,7 +139,7 @@ def event(context: Context) -> int:
         'is_participant_list_visible': True,
         'is_course_assignment_visible': True,
         'is_cancelled': False,
-        'registration_text': make_counter(context, 'Veranstaltungsanmeldungstext'),
+        'registration_status_text': make_counter(context, 'Veranstaltungsanmeldungstext'),
         'orga_address': make_counter(context, 'OrgaEmail', suffix='@aka.cde-ev.de'),
         'participant_info': make_counter(context, 'Teilnehmerinformation'),
         'orgas': [persona(context) for _ in range(1 if context.quick else 10)],

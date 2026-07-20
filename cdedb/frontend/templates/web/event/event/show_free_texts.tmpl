@@ -88,11 +88,12 @@
 {% block content %}
     {{ render_free_text_panel("description", gettext("Description"), gettext("Shown on the event overview to logged in users."), "bars") }}
     {{ render_free_text_panel("notes", gettext("Orga-Notes"), gettext("Shown to orgas on the event overview."), "tag") }}
-    {{ render_free_text_panel("registration_text", gettext("Register"), gettext('Shown on the "register" page.'), "sign-in-alt") }}
+    {{ render_free_text_panel("registration_status_text", gettext("Registration Status"), gettext('Shown on the "My Registration" page.'), "sign-in-alt") }}
     {{ render_free_text_panel("mail_text", gettext("Registration Mail"), gettext('Part of the registration confirmation mail.'), "envelope", markdown=False) }}
     {# ToDO Add link to participant info page #}
     {{ render_free_text_panel("participant_info", gettext("Participant Info"), gettext('Shown on the "Participant Info" page only to participants.'), "info") }}
     {{ render_free_text_panel("field_definition_notes", gettext("Custom Field Notes"), gettext('Shown to orgas on the "Configure Custom Fields" page.'), "tag") }}
+    {{ render_free_text_panel("questionnaire_notes", gettext("Questionnaire Notes"), gettext('Shown to orgas on the "Configure Questionnaire" and "Conigure Registration" pages.'), "tag") }}
     <script nonce="{{ csp_nonce }}">
         // Do this once for all forms, otherwise it only applies to the last one.
         $('.freetextform').cdedbProtectChanges();

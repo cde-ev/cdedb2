@@ -78,14 +78,14 @@
         </p>
     {% endif %}
 
-    {% if ambience['event']['registration_text'] %}
+    {% if ambience['event'].registration_status_text %}
         {% set button = None %}
         {% if orga_view %}
-            {% set button = generic_event.edit_free_text_button("registration_text") %}
+            {% set button = generic_event.edit_free_text_button("registration_status_text") %}
         {% endif %}
         {% call util.bootstrap_panel(gettext("Note of the Orga Team"), button=button,
                                      icon="info-circle", aclass="panel-info") %}
-            {{ ambience['event']['registration_text']|md }}
+            {{ ambience['event']['registration_status_text']|md }}
         {% endcall %}
     {% endif %}
     {% if not ambience['event']['iban'] and not fee %}

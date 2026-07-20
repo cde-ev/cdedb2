@@ -951,14 +951,15 @@ CREATE TABLE event.events (
         registration_hard_limit      timestamp WITH TIME ZONE,
         iban                         varchar,
         orga_address                 varchar,
-        registration_text            varchar,
+        registration_status_text     varchar,
         mail_text                    varchar,
         -- the next one is only visible to participants
-        participant_info            varchar,
+        participant_info             varchar,
         use_additional_questionnaire boolean NOT NULL DEFAULT False,
         -- orga remarks
         notes                        varchar,
         field_definition_notes       varchar,
+        questionnaire_notes          varchar,
         is_locked                    boolean NOT NULL DEFAULT False,
         is_visible                   boolean NOT NULL DEFAULT False, -- this is purely cosmetical
         is_course_list_visible       boolean NOT NULL DEFAULT False, -- this is purely cosmetical

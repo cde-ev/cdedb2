@@ -211,7 +211,7 @@ class _EventFreetextMixin(CdEDataclass):
     description: str | None = dataclasses.field(
         default=None, metadata=Meta.request_update_exclude.as_dict
     )
-    registration_text: str | None = dataclasses.field(
+    registration_status_text: str | None = dataclasses.field(
         default=None, metadata=Meta.request_update_exclude.as_dict
     )
     mail_text: str | None = dataclasses.field(
@@ -224,6 +224,9 @@ class _EventFreetextMixin(CdEDataclass):
         default=None, metadata=Meta.request_update_exclude.as_dict
     )
     field_definition_notes: str | None = dataclasses.field(
+        default=None, metadata=Meta.request_update_exclude.as_dict
+    )
+    questionnaire_notes: str | None = dataclasses.field(
         default=None, metadata=Meta.request_update_exclude.as_dict
     )
 

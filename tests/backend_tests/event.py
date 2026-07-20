@@ -93,7 +93,7 @@ class TestEventBackend(BackendTest):
             'description': """Some more text
 
                 on more lines.""",
-            'registration_text': None,
+            'registration_status_text': None,
             'mail_text': None,
             'participant_info': """Welcome to our
 
@@ -4067,7 +4067,7 @@ class TestEventBackend(BackendTest):
             ),
             'registration_hard_limit': None,
             'iban': None,
-            'registration_text': None,
+            'registration_status_text': None,
             'mail_text': None,
             'use_additional_questionnaire': False,
             'notes': None,

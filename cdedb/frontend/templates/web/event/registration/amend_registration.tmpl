@@ -30,12 +30,6 @@
           class="form-horizontal">
         {{ util.anti_csrf_token('event/amend_registration') }}
 
-        {% if ambience['event']['registration_text'] %}
-            {% call util.bootstrap_panel(title=gettext("Note of the Orga Team"), icon="info-circle", aclass="panel-info") %}
-                {{ ambience['event']['registration_text']|md }}
-            {% endcall %}
-        {% endif %}
-
         <div id="registrationquestionnaire">
             {% for entry in reg_questionnaire %}
                 {{ generic_event.print_questionnaire_entry(entry) }}

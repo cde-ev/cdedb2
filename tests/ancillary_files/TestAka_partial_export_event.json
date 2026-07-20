@@ -467,10 +467,11 @@
                 }
             ]
         },
+        "questionnaire_notes": null,
         "registration_hard_limit": "2221-10-30T00:00:00+00:00",
         "registration_soft_limit": "2200-10-30T00:00:00+00:00",
         "registration_start": "2000-10-30T00:00:00+00:00",
-        "registration_text": null,
+        "registration_status_text": null,
         "reimbursement_iban_field": null,
         "shortname": "TestAka",
         "stored_queries": {
