@@ -237,6 +237,7 @@ class TestEventBackend(BackendTest):
         data['reimbursement_iban_field_id'] = None
         data['lodge_field_id'] = None
         data['orga_address'] = None
+        data['questionnaire_notes'] = None
         # TODO dynamically adapt ids from the database result
         data['tracks'] = {
             1001: data['parts'][-1]['tracks'][-1],
@@ -2296,6 +2297,7 @@ class TestEventBackend(BackendTest):
                 'role': const.QuestionnaireRowRole.heading,
                 'text': None,
                 'title': 'Weitere bla Überschrift',
+                'panel_kind': None,
             },
             {
                 'role': const.QuestionnaireRowRole.event_field,
@@ -2309,11 +2311,13 @@ class TestEventBackend(BackendTest):
                 'role': const.QuestionnaireRowRole.heading,
                 'text': None,
                 'title': 'Unterüberschrift',
+                'panel_kind': None,
             },
             {
                 'role': const.QuestionnaireRowRole.text,
                 'text': 'mit Text darunter und so',
                 'title': None,
+                'panel_kind': None,
             },
             {
                 'role': const.QuestionnaireRowRole.event_field,
@@ -2327,6 +2331,7 @@ class TestEventBackend(BackendTest):
                 'role': const.QuestionnaireRowRole.text,
                 'text': 'nur etwas mehr Text',
                 'title': None,
+                'panel_kind': None,
             },
         ]
         self.assertLess(

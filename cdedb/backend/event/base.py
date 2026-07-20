@@ -1945,10 +1945,9 @@ class EventBaseBackend(EventLowLevelBackend):
                 if 'field_id' in q:
                     q['field_name'] = event.fields[q['field_id']].field_name
                     del q['field_id']
-                if 'text' in q and not q['text']:
-                    del q['text']
-                if 'title' in q and not q['title']:
-                    del q['title']
+                for key in ("text", "title", "panel_kind"):
+                    if key in q and not q[key]:
+                        del q[key]
                 del q['pos']
                 del q['kind']
         for field in new_fields.values():
