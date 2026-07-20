@@ -102,6 +102,17 @@
                         <div class="miniature-md">{{ entry.text|md }}</div>
                     {% elif entry.name == "QuestionnaireHeadingRow" %}
                         <div class="miniature-heading">{{ entry.title }}</div>
+                    {% elif entry.name == "QuestionnairePanelRow" %}
+                        <div class="panel {{ entry.panel_kind.get_panel_class() }} miniature-panel">
+                            <div class="panel-heading miniature-heading small">
+                                <div class="panel-title">
+                                    {{ util.make_icon(entry.panel_kind.get_icon()) }}{{ nbsp }}{{ entry.title }}
+                                </div>
+                            </div>
+                            <div class="panel-body">
+                                <div class="miniature-md">{{ entry.text|md }}</div>
+                            </div>
+                        </div>
                     {% elif entry.name == "FeePreview" %}
                         <div class="miniature-label">
                             {% trans %}Fee{% endtrans %} ({% trans %}Preview{% endtrans %})
