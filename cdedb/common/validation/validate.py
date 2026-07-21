@@ -3120,7 +3120,10 @@ def _by_field_datatype(
     return ByFieldDatatype(val)
 
 
-@_create_dataclass_validator(models_event.questionnaire.QuestionnaireTextRow)
+@_create_dataclass_validator(
+    models_event.questionnaire.QuestionnaireTextRow,
+    models_event.questionnaire.QuestionnaireHeadingRow,
+)
 def _questionnaire_text_row(
     val: CdEDBObject, argname: str = "", **kwargs: Any
 ) -> CdEDBObject:
@@ -3193,6 +3196,7 @@ def _questionnaire_field_row(
     models_event.questionnaire.FotoNotice,
     models_event.questionnaire.RegistrationNotes,
     models_event.questionnaire.TableOfContents,
+    models_event.questionnaire.MyData,
 )
 def _questionnaire_magic_row(
     val: CdEDBObject,

@@ -268,10 +268,10 @@ class EventBackend(
 
         questionnaire_text_rows = self.sql_select(
             rs,
-            models.questionnaire.QuestionnaireTextRow.database_table,
+            models.questionnaire.QuestionnaireTextRowMeta.database_table,
             ("id",),
             (event_id,),
-            entity_key=models.questionnaire.QuestionnaireTextRow.entity_key,
+            entity_key=models.questionnaire.QuestionnaireTextRowMeta.entity_key,
         )
         if questionnaire_text_rows:
             blockers["questionnaire_text_rows"] = [
@@ -435,7 +435,7 @@ class EventBackend(
                 if "questionnaire_text_rows" in cascade:
                     ret *= self.sql_delete(
                         rs,
-                        models.questionnaire.QuestionnaireTextRow.database_table,
+                        models.questionnaire.QuestionnaireTextRowMeta.database_table,
                         blockers["questionnaire_text_rows"],
                     )
                 if "questionnaire_field_rows" in cascade:

@@ -208,7 +208,8 @@ class QuestionnaireUsages(CdEIntEnum):
 
 @enum.unique
 class QuestionnaireRowRole(CdEIntEnum):
-    text_only = 1
+    text = 1
+    heading = 2
     event_field = 5
     course_choices = 10
     part_selection = 20
@@ -218,6 +219,7 @@ class QuestionnaireRowRole(CdEIntEnum):
     foto_notice = 60
     registration_notes = 70
     table_of_contents = 80
+    my_data = 90
 
     def get_class(self) -> type["QuestionnaireRow"]:
         from cdedb.models.event.questionnaire import (  # noqa: PLC0415

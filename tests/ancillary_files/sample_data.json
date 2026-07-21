@@ -7983,14 +7983,22 @@
             "event_id": 1,
             "kind": 2,
             "pos": 0,
-            "role": 1,
+            "role": 2,
             "title": "Unterüberschrift",
+            "text": null
+        },
+        {
+            "event_id": 1,
+            "kind": 2,
+            "pos": 1,
+            "role": 1,
+            "title": null,
             "text": "mit Text darunter"
         },
         {
             "event_id": 1,
             "kind": 2,
-            "pos": 2,
+            "pos": 3,
             "role": 1,
             "title": null,
             "text": "nur etwas Text"
@@ -7998,96 +8006,40 @@
         {
             "event_id": 1,
             "kind": 2,
-            "pos": 3,
-            "role": 1,
+            "pos": 4,
+            "role": 2,
             "title": "Weitere Überschrift",
             "text": null
         },
         {
             "event_id": 1,
             "kind": 1,
-            "pos": 0,
-            "role": 1,
-            "title": "Anmeldung",
-            "text": null
-        },
-        {
-            "event_id": 1,
-            "kind": 1,
-            "pos": 3,
-            "role": 1,
-            "title": "Kurswahlen",
-            "text": null
-        },
-        {
-            "event_id": 1,
-            "kind": 1,
-            "pos": 5,
-            "role": 1,
+            "pos": 4,
+            "role": 2,
             "title": "Weitere Angaben",
-            "text": null
-        },
-        {
-            "event_id": 2,
-            "kind": 1,
-            "pos": 0,
-            "role": 1,
-            "title": "Anmeldung",
             "text": null
         },
         {
             "event_id": 2,
             "kind": 1,
             "pos": 4,
-            "role": 1,
+            "role": 2,
             "title": "Weitere Angaben",
             "text": null
         },
         {
             "event_id": 3,
             "kind": 1,
-            "pos": 0,
-            "role": 1,
-            "title": "Anmeldung",
-            "text": null
-        },
-        {
-            "event_id": 3,
-            "kind": 1,
-            "pos": 3,
-            "role": 1,
-            "title": "Kurswahlen",
-            "text": null
-        },
-        {
-            "event_id": 3,
-            "kind": 1,
-            "pos": 5,
-            "role": 1,
+            "pos": 4,
+            "role": 2,
             "title": "Weitere Angaben",
             "text": null
         },
         {
             "event_id": 4,
             "kind": 1,
-            "pos": 0,
-            "role": 1,
-            "title": "Anmeldung",
-            "text": null
-        },
-        {
-            "event_id": 4,
-            "kind": 1,
-            "pos": 3,
-            "role": 1,
-            "title": "Kurswahlen",
-            "text": null
-        },
-        {
-            "event_id": 4,
-            "kind": 1,
-            "pos": 5,
-            "role": 1,
+            "pos": 4,
+            "role": 2,
             "title": "Weitere Angaben",
             "text": null
         }
@@ -8096,18 +8048,18 @@
         {
             "event_id": 1,
             "kind": 2,
-            "pos": 1,
+            "pos": 2,
             "role": 5,
             "label": "Bälle",
             "info": "Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.",
             "field_id": 1,
             "readonly": false,
-            "default_value": "True"
+            "default_value": "true"
         },
         {
             "event_id": 1,
             "kind": 2,
-            "pos": 4,
+            "pos": 5,
             "role": 5,
             "label": "Vehikel",
             "info": null,
@@ -8118,7 +8070,7 @@
         {
             "event_id": 1,
             "kind": 2,
-            "pos": 5,
+            "pos": 6,
             "role": 5,
             "label": "Hauswunsch",
             "info": null,
@@ -8129,7 +8081,7 @@
         {
             "event_id": 1,
             "kind": 1,
-            "pos": 7,
+            "pos": 6,
             "role": 5,
             "label": "Ich bin unter 13 Jahre alt.",
             "info": "Denk daran, deine Eltern mitzubringen!",
@@ -8142,6 +8094,12 @@
         {
             "event_id": 1,
             "kind": 1,
+            "pos": 0,
+            "role": 90
+        },
+        {
+            "event_id": 1,
+            "kind": 1,
             "pos": 1,
             "role": 20
         },
@@ -8154,38 +8112,44 @@
         {
             "event_id": 1,
             "kind": 1,
-            "pos": 4,
+            "pos": 3,
             "role": 10
         },
         {
             "event_id": 1,
             "kind": 1,
-            "pos": 6,
+            "pos": 5,
             "role": 40
         },
         {
             "event_id": 1,
             "kind": 1,
-            "pos": 8,
+            "pos": 7,
             "role": 50
         },
         {
             "event_id": 1,
             "kind": 1,
-            "pos": 9,
+            "pos": 8,
             "role": 60
         },
         {
             "event_id": 1,
             "kind": 1,
-            "pos": 10,
+            "pos": 9,
             "role": 70
         },
         {
             "event_id": 1,
             "kind": 1,
-            "pos": 11,
+            "pos": 10,
             "role": 30
+        },
+        {
+            "event_id": 2,
+            "kind": 1,
+            "pos": 0,
+            "role": 90
         },
         {
             "event_id": 2,
@@ -8238,6 +8202,12 @@
         {
             "event_id": 3,
             "kind": 1,
+            "pos": 0,
+            "role": 90
+        },
+        {
+            "event_id": 3,
+            "kind": 1,
             "pos": 1,
             "role": 20
         },
@@ -8250,38 +8220,44 @@
         {
             "event_id": 3,
             "kind": 1,
-            "pos": 4,
+            "pos": 3,
             "role": 10
         },
         {
             "event_id": 3,
             "kind": 1,
-            "pos": 6,
+            "pos": 5,
             "role": 40
         },
         {
             "event_id": 3,
             "kind": 1,
-            "pos": 7,
+            "pos": 6,
             "role": 50
         },
         {
             "event_id": 3,
             "kind": 1,
-            "pos": 8,
+            "pos": 7,
             "role": 60
         },
         {
             "event_id": 3,
             "kind": 1,
-            "pos": 9,
+            "pos": 8,
             "role": 70
         },
         {
             "event_id": 3,
             "kind": 1,
-            "pos": 10,
+            "pos": 9,
             "role": 30
+        },
+        {
+            "event_id": 4,
+            "kind": 1,
+            "pos": 0,
+            "role": 90
         },
         {
             "event_id": 4,
@@ -8298,37 +8274,37 @@
         {
             "event_id": 4,
             "kind": 1,
-            "pos": 4,
+            "pos": 3,
             "role": 10
         },
         {
             "event_id": 4,
             "kind": 1,
-            "pos": 6,
+            "pos": 5,
             "role": 40
         },
         {
             "event_id": 4,
             "kind": 1,
-            "pos": 7,
+            "pos": 6,
             "role": 50
         },
         {
             "event_id": 4,
             "kind": 1,
-            "pos": 8,
+            "pos": 7,
             "role": 60
         },
         {
             "event_id": 4,
             "kind": 1,
-            "pos": 9,
+            "pos": 8,
             "role": 70
         },
         {
             "event_id": 4,
             "kind": 1,
-            "pos": 10,
+            "pos": 9,
             "role": 30
         }
     ],

@@ -1362,7 +1362,9 @@ class EventBaseBackend(EventLowLevelBackend):
         data.extend(
             self.query_all(
                 rs,
-                *models.questionnaire.QuestionnaireTextRow.get_select_query([event_id]),
+                *models.questionnaire.QuestionnaireTextRowMeta.get_select_query([
+                    event_id
+                ]),
             )
         )
         data.extend(
@@ -1638,7 +1640,7 @@ class EventBaseBackend(EventLowLevelBackend):
                     ('id', 'registration_id', 'track_id', 'course_id', 'rank'),
                 ),
                 models.PersonalizedFee.full_export_spec(),
-                models.questionnaire.QuestionnaireTextRow.full_export_spec(),
+                models.questionnaire.QuestionnaireTextRowMeta.full_export_spec(),
                 models.questionnaire.QuestionnaireFieldRow.full_export_spec(),
                 models.questionnaire.QuestionnaireMagicRow.full_export_spec(),
                 models.StoredEventQuery.full_export_spec(),
@@ -1968,6 +1970,10 @@ class EventBaseBackend(EventLowLevelBackend):
                 if 'field_id' in q:
                     q['field_name'] = event.fields[q['field_id']].field_name
                     del q['field_id']
+                if 'text' in q and not q['text']:
+                    del q['text']
+                if 'title' in q and not q['title']:
+                    del q['title']
                 del q['pos']
                 del q['kind']
         for field in new_fields.values():

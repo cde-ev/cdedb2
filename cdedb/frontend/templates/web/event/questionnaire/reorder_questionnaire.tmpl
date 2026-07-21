@@ -1,9 +1,5 @@
 {% extends "web/event/base.tmpl" %}
-{% if kind == enums['QuestionnaireUsages'].registration %}
-    {% set sidenav_active='event_configure_registration' %}
-{% elif kind == enums['QuestionnaireUsages'].additional %}
-    {% set sidenav_active='event_configure_additional_questionnaire' %}
-{% endif %}
+{% set sidenav_active = "event_register_config" if kind == enums["QuestionnaireUsages"].registration else "event_quest_config" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
 {% set jshint='strong' %}
@@ -103,15 +99,9 @@
 
                     {# Text-only entry #}
                     {% elif entry.name == "QuestionnaireTextRow" %}
-                        {% if entry.title %}
-                            <div class="miniature-heading">{{ entry.title }}</div>
-                        {% endif %}
-                        {% if entry.text %}
-                            <div class="miniature-md">{{ entry.text|md }}</div>
-                        {% endif %}
-                        {% if not entry.title and not entry.text %}
-                            <div class="text-italic">Some Text</div>
-                        {% endif %}
+                        <div class="miniature-md">{{ entry.text|md }}</div>
+                    {% elif entry.name == "QuestionnaireHeadingRow" %}
+                        <div class="miniature-heading">{{ entry.title }}</div>
                     {% elif entry.name == "FeePreview" %}
                         <div class="miniature-label">
                             {% trans %}Fee{% endtrans %} ({% trans %}Preview{% endtrans %})
@@ -120,6 +110,11 @@
                             {{ generic_event.fee_breakdown_by_kind(fake_complex_fee) }}
                         </div>
                     {% elif entry.name == "CourseChoices" %}
+                        {% if choice_objects %}
+                            <div class="miniature-heading">
+                                {% trans %}Course Choices{% endtrans %}
+                            </div>
+                        {% endif %}
                         {% for cco in choice_objects %}
                             {% if choice_objects|length > 1 %}
                                 <div class="miniature-heading small">
@@ -147,6 +142,9 @@
                             </div>
                         {% endfor %}
                     {% elif entry.name == "PartSelection" %}
+                        <div class="miniature-heading">
+                            {% trans %}Registration{% endtrans %}
+                        </div>
                         <div class="miniature-label">
                             {{ gettext("Event Parts") }}
                         </div>
@@ -199,6 +197,42 @@
                                         <li>{{ util.href("#" + "_".join(row.title.split()), row.title) }}</li>
                                     {% endfor %}
                                 </ul>
+                            </div>
+                        </div>
+                    {% elif entry.name == "MyData" %}
+                        <div class="miniature-heading">
+                            {% trans %}My Data{% endtrans %}
+                        </div>
+                        <div class="miniature-content">
+                            <div class="miniature-label">
+                                {% trans %}Full Name{% endtrans %}
+                            </div>
+                            <div class="miniature-text">
+                                {{ save_to(gettext("Full Name")) }}
+                            </div>
+                            <div class="miniature-label">
+                                {% trans %}Birthday{% endtrans %}
+                            </div>
+                            <div class="miniature-text">
+                                {{ save_to(gettext("Birthday")) }}
+                            </div>
+                            <div class="miniature-label">
+                                {% trans %}Gender{% endtrans %}
+                            </div>
+                            <div class="miniature-text">
+                                {{ save_to(gettext("Gender")) }}
+                            </div>
+                            <div class="miniature-label">
+                                {% trans %}Pronouns{% endtrans %}
+                            </div>
+                            <div class="miniature-text">
+                                {{ save_to(gettext("Pronouns")) }}
+                            </div>
+                            <div class="miniature-label">
+                                ...
+                            </div>
+                            <div class="miniature-text">
+                                {{ save_to("...") }}
                             </div>
                         </div>
                     {% else %}
