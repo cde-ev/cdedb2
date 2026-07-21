@@ -468,11 +468,11 @@ msgstr "Niemand"
 
 #: cdedb/.i18n_additional.py:115
 msgid "MailinglistRosterVisibility.subscribable"
-msgstr "Abonnementberechtigte"
+msgstr "Abonnementberechtigte (und Abonnenten)"
 
 #: cdedb/.i18n_additional.py:116
 msgid "MailinglistRosterVisibility.members"
-msgstr "Mitglieder"
+msgstr "Vereinsmitglieder und Abonnenten"
 
 #: cdedb/.i18n_additional.py:117
 msgid "MailinglistRosterVisibility.viewers"
