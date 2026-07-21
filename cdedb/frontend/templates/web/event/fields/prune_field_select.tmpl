@@ -55,22 +55,22 @@
         {{ util.form_input_multi_select(
                 "field_ids", label=gettext("All Fields"), nulloption="", small=True, size=6, selectize="new", aclass="mosp",
                 entries=ambience["event"].fields|entries(
-                    'id', 'field_name', group="sort_group", default_group=gettext("Other Fields")
+                    'id', 'title', group="sort_group", default_group=gettext("Other Fields")
                 ), readonly=not ambience["event"].fields) }}
         {{ util.form_input_multi_select(
                 "reg_field_ids", label=gettext(enums["FieldAssociations"].registration|string), nulloption="", small=True, size=6, selectize="new",
                 entries=ambience["event"].registration_fields|entries(
-                    'id', 'field_name', group="sort_group", default_group=gettext("Other Fields")
+                    'id', 'title', group="sort_group", default_group=gettext("Other Fields")
                 ), readonly=not ambience["event"].registration_fields) }}
         {{ util.form_input_multi_select(
                 "course_field_ids", label=gettext(enums["FieldAssociations"].course|string), nulloption="", small=True, size=6, selectize="new",
                 entries=ambience["event"].course_fields|entries(
-                    'id', 'field_name', group="sort_group", default_group=gettext("Other Fields")
+                    'id', 'title', group="sort_group", default_group=gettext("Other Fields")
                 ), readonly=not ambience["event"].course_fields) }}
         {{ util.form_input_multi_select(
                 "lodge_field_ids", label=gettext(enums["FieldAssociations"].lodgement|string), nulloption="", small=True, size=6, selectize="new",
                 entries=ambience["event"].lodgement_fields|entries(
-                    'id', 'field_name', group="sort_group", default_group=gettext("Other Fields")
+                    'id', 'title', group="sort_group", default_group=gettext("Other Fields")
                 ), readonly=not ambience["event"].lodgement_fields) }}
         {{ util.ack_delete(gettext("All data associated with these fields will be irreversibly deleted."), form=True, small=True) }}
         {{ util.form_input_submit(label=gettext("Prune Field Data"), icon="fire", aclass="btn btn.xs btn-danger", small=True) }}
