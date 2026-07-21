@@ -195,6 +195,10 @@ class EventFieldMixin(EventBaseFrontend):
 
         result = self.eventproxy.prune_event_fields(rs, field_ids)
 
+        self.eventproxy.event_keeper_commit(
+            rs, event_id, "Datenfeld-Leerung.", after_change=True
+        )
+
         if const.FieldAssociations.registration in result:
             num = result[const.FieldAssociations.registration]
             rs.notify_return_code(
