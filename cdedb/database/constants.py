@@ -559,6 +559,7 @@ class MailinglistRosterVisibility(CdEIntEnum):
 
     none = 1
     subscribable = 10
+    members = 15
     viewers = 20
 
 

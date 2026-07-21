@@ -1305,6 +1305,11 @@ class MlBackend(AbstractBackend):
         mrv = const.MailinglistRosterVisibility
         assert rs.user.persona_id is not None
 
+        may_subscribe = self.get_subscription_policy(
+            rs, rs.user.persona_id, mailinglist=ml
+        ).may_subscribe()
+        is_subscribed = self.is_subscribed(rs, rs.user.persona_id, ml.id)
+
         if not ml.is_active:
             return False
         elif self.is_moderator(rs, ml.id):
@@ -1316,17 +1321,11 @@ class MlBackend(AbstractBackend):
         elif ml.roster_visibility == mrv.none:
             return False
         elif ml.roster_visibility == mrv.subscribable:
-            return self.get_subscription_policy(
-                rs, rs.user.persona_id, mailinglist=ml
-            ).may_subscribe() or self.is_subscribed(rs, rs.user.persona_id, ml.id)
+            return may_subscribe or is_subscribed
+        elif ml.roster_visibility == mrv.members:
+            return ("member" in rs.user.roles) or may_subscribe or is_subscribed
         elif ml.roster_visibility == mrv.viewers:
-            return (
-                self.may_view(rs, ml)
-                or self.get_subscription_policy(
-                    rs, rs.user.persona_id, mailinglist=ml
-                ).may_subscribe()
-                or self.is_subscribed(rs, rs.user.persona_id, ml.id)
-            )
+            return self.may_view(rs, ml) or may_subscribe or is_subscribed
         else:
             raise RuntimeError
 
