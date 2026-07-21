@@ -42,18 +42,18 @@
                 If you need to completely remove this information, you can use the multi edit for registrations or the "{{ set_field }}" functionality for courses and lodgements.
             {% endtrans %}
         </p>
-        <p>
+        <div class="p button-par">
             {{ util.href(cdedblink("event/field_multiset_select", {'kind': enums['FieldAssociations'].registration}), gettext("Set Field (Registrations)"),
                           readonly=not is_privileged_for('field_multiset_select'), icon='edit', aclass='btn btn-sm btn-warning') }}
             {{ util.href(cdedblink("event/field_multiset_select", {'kind': enums['FieldAssociations'].course}), gettext("Set Field (Courses)"),
                           readonly=not is_privileged_for('field_multiset_select'), icon='edit', aclass='btn btn-sm btn-warning') }}
             {{ util.href(cdedblink("event/field_multiset_select", {'kind': enums['FieldAssociations'].lodgement}), gettext("Set Field (Lodgements)"),
                           readonly=not is_privileged_for('field_multiset_select'), icon='edit', aclass='btn btn-sm btn-warning') }}
-        </p>
+        </div>
 
         {{ util.anti_csrf_token("event/prune_fields") }}
         {{ util.form_input_multi_select(
-                "field_ids", label=gettext("All Fields"), nulloption="", small=True, size=6, selectize="new",
+                "field_ids", label=gettext("All Fields"), nulloption="", small=True, size=6, selectize="new", aclass="mosp",
                 entries=ambience["event"].fields|entries(
                     'id', 'field_name', group="sort_group", default_group=gettext("Other Fields")
                 ), readonly=not ambience["event"].fields) }}
