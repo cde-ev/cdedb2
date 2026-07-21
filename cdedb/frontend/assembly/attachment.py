@@ -2,6 +2,7 @@
 
 """Services for the assembly realm."""
 
+import werkzeug.datastructures
 import werkzeug.exceptions
 from schulze_condorcet.types import Candidate
 from werkzeug import Response
@@ -21,6 +22,7 @@ from cdedb.frontend.common import (
     REQUESTdata,
     REQUESTfile,
     access,
+    ack_delete,
     assembly_guard,
     check_validation as check,
     periodic,
@@ -207,20 +209,11 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdata("attachment_ack_delete")
+    @ack_delete("attachment_ack_delete")
     def delete_attachment(
-        self,
-        rs: RequestState,
-        assembly_id: int,
-        attachment_id: int,
-        attachment_ack_delete: bool,
+        self, rs: RequestState, assembly_id: int, attachment_id: int
     ) -> Response:
         """Delete an attachment."""
-        if not attachment_ack_delete:
-            rs.append_validation_error((
-                "attachment_ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.list_attachments(rs, assembly_id)
 
@@ -461,23 +454,11 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdata("attachment_ack_delete")
+    @ack_delete("attachment_ack_delete")
     def delete_attachment_version(
-        self,
-        rs: RequestState,
-        assembly_id: int,
-        attachment_id: int,
-        version_nr: int,
-        attachment_ack_delete: bool,
+        self, rs: RequestState, assembly_id: int, attachment_id: int, version_nr: int
     ) -> Response:
         """Delete a version of an attachment."""
-        if not attachment_ack_delete:
-            rs.append_validation_error((
-                "attachment_ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
-        # the check that the attachment belongs to the assembly is already done in
-        # `reconnoitre_ambience`
         if rs.has_validation_errors():
             return self.list_attachments(rs, assembly_id)
 

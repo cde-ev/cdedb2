@@ -767,8 +767,8 @@ automatisch eine Bestätigung per E-Mail
                                         {{ util.input_submit(label=gettext("Archive Account"), icon="eraser",
                                                 aclass="btn btn-danger btn-sm", readonly=data['is_meta_admin'],
                                                 title=gettext("Cannot archive meta admins.") if data.is_true('is_meta_admin') else "") }}
-                                        {{ util.ack_delete(gettext("The Account will be archived.")) }}
                                     </div>
+                                    {{ util.ack_delete(gettext("The Account will be archived.")) }}
                                     {{ util.form_input_textarea(name="note", label=gettext("Note"), horizontal=False) }}
                                 </form>
                             </div>

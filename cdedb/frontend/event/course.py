@@ -34,6 +34,7 @@ from cdedb.frontend.common import (
     REQUESTdata,
     REQUESTdatadict,
     access,
+    ack_delete,
     check_validation as check,
     request_dict_extractor,
     request_extractor,
@@ -328,20 +329,14 @@ class EventCourseMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.courses_write)
-    @REQUESTdata("ack_delete")
+    @ack_delete()
     def delete_course(
         self,
         rs: RequestState,
         event_id: vtypes.EventID,
         course_id: vtypes.CourseID,
-        ack_delete: bool,
     ) -> Response:
         """Delete a course from an event organized via DB."""
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.show_course(rs, event_id, course_id)
         blockers = self.eventproxy.delete_course_blockers(rs, course_id)

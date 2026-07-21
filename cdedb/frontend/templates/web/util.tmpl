@@ -327,19 +327,22 @@
     {%- endif %}
 {%- endmacro %}
 
-{% macro ack_delete(protect_text, name="ack_delete") %}
+{% macro ack_delete(protect_text, name="ack_delete", form=False, small=False) %}
     {% set caller_ = caller %}
-    {% call output_errors(name, wrapper=True) %}
-        {% if caller_ %}
-            {{ caller_() }}
-        {% else %}
-            {{ input_checkbox(name=name, aclass="ack-delete", title=protect_text,
-                              label=gettext("Are you sure?")) }}
-        {% endif %}
-        {% if not jshint %}
-            {{ raise_for_test("jshint not set for 'util.ack_delete'.") }}
-        {% endif %}
-    {% endcall %}
+    {% if form %}
+        {{ form_input_checkbox(name=name, aclass="ack-delete", title=protect_text, label=gettext("Are you sure?"), small=small) }}
+    {% else %}
+        {% call output_errors(name, wrapper=True) %}
+            {% if caller_ %}
+                {{ caller_() }}
+            {% else %}
+                {{ input_checkbox(name=name, aclass="ack-delete", title=protect_text, label=gettext("Are you sure?")) }}
+            {% endif %}
+            {% if not jshint %}
+                {{ raise_for_test("jshint not set for 'util.ack_delete'.") }}
+            {% endif %}
+        {% endcall %}
+    {% endif %}
     <script nonce="{{ csp_nonce }}">
         $(document.currentScript).closest('form').cdedbProtectAction("{{ protect_text }}");
     </script>
@@ -594,6 +597,7 @@
             checked="checked" if selected,
             disabled="disabled" if readonly or actualreadonly,
             form=formid,
+            title=title,
             **{ 'aria-label': arialabel }
         )|xmlattr }} {{ attributes }} />
         {{ label -}}
@@ -633,7 +637,7 @@
 
 {% macro form_input_checkbox(name, label="", value=True, info='', displayerrors=True, readonly=False,
         actualreadonly=False, defaultvalue='', anid=none, horizontal=True, small=False, attributes='', aclass='',
-        outerclass='') %}
+        outerclass='', title='') %}
     {#- This is the version for a single checkbox as opposed to form_input_checkboxes(). #}
     {%- set anid = anid or "input-checkbox-{}".format(name) %}
     <div class="form-group
@@ -645,7 +649,7 @@
         "{% endif %}>
             <div class="checkbox{% if readonly or actualreadonly %} disabled{% endif %}">
                 {{ input_checkbox(name, label, value, defaultvalue, readonly, actualreadonly, anid,
-                                  attributes=attributes, aclass=aclass) }}
+                                  attributes=attributes, aclass=aclass, title=title) }}
             </div>
             {{- output_errors(name, displayerrors) }}
             {{- output_info(info) }}
