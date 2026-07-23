@@ -526,14 +526,16 @@ class EventRegistrationMixin(EventBaseFrontend):
         ):
             pass
         else:
+            rs.ignore_validation_errors()
             return Response("{}", mimetype='application/json', status=403)
-        if rs.has_validation_errors():
-            return Response("{}", mimetype='application/json', status=400)
 
         field_params = {
             f"field.{field_id}": bool for field_id in rs.ambience['event'].fields
         }
         field_values = request_extractor(rs, field_params, omit_missing=True)
+
+        if rs.has_validation_errors():
+            return Response("{}", mimetype='application/json', status=400)
 
         complex_fee = self.eventproxy.precompute_fee(
             rs,
