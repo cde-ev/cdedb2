@@ -63,7 +63,8 @@
     </div>
     {% if ambience['event'].questionnaire_notes %}
         {% call util.bootstrap_panel(title=gettext("Questionnaire Notes") + nbsp + generic_event.edit_free_text_button("questionnaire_notes"),
-                                     icon="tag", aclass="panel-default panel-condensed") %}
+                                     icon="tag", aclass="panel-default panel-condensed", footer_class="text-info", footer_icon="info-circle",
+                                     footer_text=gettext('Shown to orgas on the "Configure Questionnaire" and "Conigure Registration" pages.')) %}
             <div id="questionnaire-notes">{{ ambience['event'].questionnaire_notes|md }}</div>
         {% endcall %}
     {% endif %}
