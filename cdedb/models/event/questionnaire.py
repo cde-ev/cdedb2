@@ -71,8 +71,8 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
         return cls._frequency.get(kind, QuestionnaireFrequency.disallowed)
 
     @classmethod
-    @abc.abstractmethod
-    def get_drow_html_classes(cls) -> list[str]: ...
+    def get_drow_html_classes(cls) -> list[str]:
+        return ["questionnaire-row-config"]
 
     @classmethod
     @abc.abstractmethod
@@ -135,10 +135,6 @@ class QuestionnaireTextRowMeta(QuestionnaireRow):
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:
         return super(QuestionnaireRow, cls).from_database(data)
-
-    @classmethod
-    def get_drow_html_classes(cls) -> list[str]:
-        return ["shaded-info"]
 
 
 @dataclasses.dataclass
@@ -231,10 +227,6 @@ class QuestionnaireFieldRow(QuestionnaireRow):
 
         return ret
 
-    @classmethod
-    def get_drow_html_classes(cls) -> list[str]:
-        return []
-
 
 @dataclasses.dataclass
 class QuestionnaireMagicRow(QuestionnaireRow):
@@ -254,7 +246,7 @@ class QuestionnaireMagicRow(QuestionnaireRow):
 
     @classmethod
     def get_drow_html_classes(cls) -> list[str]:
-        return ["shaded-magic"]
+        return super().get_drow_html_classes() + ["questionnaire-row-magic"]
 
 
 @dataclasses.dataclass
