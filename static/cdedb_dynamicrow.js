@@ -87,11 +87,21 @@
                 .on('click', function() {obj.addRow($row);})
                 .show();
             // Add input handler for row move buttons if they exist.
-            $row.find('.drow-move-row-up-button')
-                .on('click', function() {moveRow($row, true)})
+            const up = '.drow-move-row-up-button';
+            const down = '.drow-move-row-down-button';
+            $row.find(up)
+                .on('click', function() {
+                    moveRow($row, true);
+                    let button = $row.find(up);
+                    (button.is(":visible") ? button : $row.find(down)).trigger("focus");
+                })
                 // .show();
             $row.find('.drow-move-row-down-button')
-                .on('click', function() {moveRow($row, false)})
+                .on('click', function() {
+                    moveRow($row, false);
+                    let button = $row.find(down);
+                    (button.is(":visible") ? button : $row.find(up)).trigger("focus");
+                })
                 // .show();
             $row.show();
         }

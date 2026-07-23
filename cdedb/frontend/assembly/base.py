@@ -41,6 +41,7 @@ from cdedb.frontend.common import (
     REQUESTdata,
     REQUESTdatadict,
     access,
+    ack_delete,
     assembly_guard,
     cdedburl,
     check_validation as check,
@@ -264,23 +265,15 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "assembly/show_assembly")
 
     @access("assembly_admin", modi={"POST"})
-    @REQUESTdata("presider_id", "ack_delete")
+    @REQUESTdata("presider_id")
+    @ack_delete()
     def remove_presider(
-        self,
-        rs: RequestState,
-        assembly_id: int,
-        presider_id: vtypes.ID,
-        ack_delete: bool,
+        self, rs: RequestState, assembly_id: int, presider_id: vtypes.ID
     ) -> Response:
         if not rs.ambience['assembly']['is_active']:
             rs.ignore_validation_errors()
             rs.notify("warning", n_("Assembly already concluded."))
             return self.redirect(rs, "assembly/show_assembly")
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.show_assembly(rs, assembly_id)
         if presider_id not in rs.ambience['assembly']['presiders']:
@@ -529,15 +522,8 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "assembly/show_assembly", {'assembly_id': new_id})
 
     @access("assembly_admin", modi={"POST"})
-    @REQUESTdata("ack_delete")
-    def delete_assembly(
-        self, rs: RequestState, assembly_id: int, ack_delete: bool
-    ) -> Response:
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
+    @ack_delete()
+    def delete_assembly(self, rs: RequestState, assembly_id: int) -> Response:
         if rs.has_validation_errors():
             return self.show_assembly(rs, assembly_id)
         blockers = self.assemblyproxy.delete_assembly_blockers(rs, assembly_id)

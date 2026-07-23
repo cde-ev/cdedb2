@@ -276,6 +276,11 @@ MAILMAN_ACCEPTABLE_ALIASES = {
     "dokuforge2@lists.cde-ev.de": ["df2@dokuforge.de"],
     "vanconference25-orga@aka.cde-ev.de": ["vanconference2@aka.cde-ev.de"],
     "sk-schulung24-orga@aka.cde-ev.de": ["schuko24-orga@aka.cde-ev.de"],
+    "admin-dmarc@lists.cde-ev.de": [r"^dmarc\d+@mail.cde-ev.de"],
+}
+
+MAILMAN_NON_EXPLICIT_DESTINATION_LISTS = {
+    "admin@lists.cde-ev.de",
 }
 
 #################

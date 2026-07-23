@@ -45,6 +45,7 @@ import werkzeug.routing
 from schulze_condorcet.types import Candidate
 from typing_extensions import TypeForm
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import Realm, Role
@@ -61,8 +62,6 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 _CONFIG = Config()
 
-# Pseudo objects like assembly, event, course, event part, etc.
-CdEDBObject = dict[str, Any]
 if TYPE_CHECKING:
     CdEDBMultiDict = werkzeug.datastructures.MultiDict[str, Any]
     from cdedb.common.validation.types import TypeMapping
@@ -71,15 +70,9 @@ else:
     CdEDBMultiDict = werkzeug.datastructures.MultiDict
     TypeMapping = Mapping
 
-# Map of pseudo objects, indexed by their id, as returned by
-# `get_events`, event["parts"], etc.
-
-CdEDBObjectMap = dict[int, CdEDBObject]
-
-# Same as above, but we also allow negative ints (for creation, not reflected
-# in the type] and None (for deletion). Used in `_set_tracks` and partial
-# import diff.
-CdEDBOptionalMap = dict[int, CdEDBObject | None]
+CdEDBObject = vtypes.CdEDBObject
+CdEDBObjectMap = vtypes.CdEDBObjectMap
+CdEDBOptionalMap = vtypes.CdEDBOptionalMap
 
 # An integer with special semantics. Positive return values indicate success,
 # a return of zero signals an error, a negative return value indicates some
@@ -118,7 +111,7 @@ class User:
     def __init__(
         self,
         *,
-        persona_id: int | None = None,
+        persona_id: vtypes.PersonaID | None = None,
         droid: "APIToken | None" = None,
         roles: set[Role] | None = None,
         realm_roles: dict[Realm, set[str]] | None = None,
@@ -126,9 +119,9 @@ class User:
         nickname: str = "",
         family_name: str = "",
         username: str = "",
-        orga: Collection[int] | None = None,
-        caretaker: Collection[int] | None = None,
-        checkin_helper: Collection[int] | None = None,
+        orga: Collection[vtypes.EventID] | None = None,
+        caretaker: Collection[vtypes.EventID] | None = None,
+        checkin_helper: Collection[vtypes.EventID] | None = None,
         moderator: Collection[int] | None = None,
         presider: Collection[int] | None = None,
     ) -> None:
@@ -142,9 +135,11 @@ class User:
         self.given_names = given_names
         self.nickname = nickname
         self.family_name = family_name
-        self.orga: set[int] = set(orga) if orga else set()
-        self.caretaker: set[int] = set(caretaker) if caretaker else set()
-        self.checkin_helper: set[int] = set(checkin_helper) if checkin_helper else set()
+        self.orga: set[vtypes.EventID] = set(orga) if orga else set()
+        self.caretaker: set[vtypes.EventID] = set(caretaker) if caretaker else set()
+        self.checkin_helper: set[vtypes.EventID] = (
+            set(checkin_helper) if checkin_helper else set()
+        )
         self.moderator: set[int] = set(moderator) if moderator else set()
         self.presider: set[int] = set(presider) if presider else set()
         self.admin_views: set[AdminView] = set()
@@ -298,6 +293,7 @@ class RequestState(ConnectionContainer):
         success: str = n_("Change committed."),
         info: str = n_("Change pending."),
         error: str = n_("Change failed."),
+        params: CdEDBObject | None = None,
     ) -> None:
         """Small helper to issue a notification based on a return code.
 
@@ -311,11 +307,11 @@ class RequestState(ConnectionContainer):
         :param error: Exception message for zero return codes.
         """
         if not code:
-            self.notify("error", error)
+            self.notify("error", error, params)
         elif code is True or code > 0:
-            self.notify("success", success)
+            self.notify("success", success, params)
         elif code < 0:
-            self.notify("info", info)
+            self.notify("info", info, params)
         else:
             raise RuntimeError(n_("Impossible."))
 

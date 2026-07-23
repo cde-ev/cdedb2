@@ -60,7 +60,7 @@ class EventBackend(
 ):
     @access("event_admin")
     def delete_event_blockers(
-        self, rs: RequestState, event_id: int
+        self, rs: RequestState, event_id: vtypes.EventID
     ) -> DeletionBlockers:
         """Determine what keeps an event from being deleted.
 
@@ -346,14 +346,17 @@ class EventBackend(
 
     @access("event_admin")
     def delete_event(
-        self, rs: RequestState, event_id: int, cascade: Collection[str] | None = None
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Remove event.
 
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
         """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         blockers = self.delete_event_blockers(rs, event_id)
         if not cascade:
             cascade = set()
@@ -380,7 +383,11 @@ class EventBackend(
                     # reg_cascade &= cascade
                     with Silencer(rs):
                         for reg_id in blockers["registrations"]:
-                            ret *= self.delete_registration(rs, reg_id, reg_cascade)
+                            ret *= self.delete_registration(
+                                rs,
+                                vtypes.RegistrationID(vtypes.ID(reg_id)),
+                                reg_cascade,
+                            )
                 if "courses" in cascade:
                     course_cascade = (
                         "attendees", "course_choices", "course_segments", "instructors",
@@ -388,7 +395,11 @@ class EventBackend(
                     # course_cascade &= cascade
                     with Silencer(rs):
                         for course_id in blockers["courses"]:
-                            ret *= self.delete_course(rs, course_id, course_cascade)
+                            ret *= self.delete_course(
+                                rs,
+                                vtypes.CourseID(vtypes.ID(course_id)),
+                                course_cascade,
+                            )
                 if "lodgements" in cascade:
                     ret *= self.sql_delete(
                         rs, models.Lodgement.database_table, blockers["lodgements"]
@@ -512,7 +523,7 @@ class EventBackend(
     def partial_import_event(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         data: CdEDBObject,
         dryrun: bool,
         token: str | None = None,
@@ -551,7 +562,7 @@ class EventBackend(
             return delta, previous
 
         with Atomizer(rs):
-            event_id = affirm(vtypes.ID, event_id)
+            event_id = affirm(vtypes.EventID, event_id)
             dryrun = affirm(bool, dryrun)
 
             self.assert_lock(rs, event_id=event_id)
@@ -637,7 +648,7 @@ class EventBackend(
             if not used_lodgement_ids <= available_lodgement_ids:
                 raise ValueError("Referential integrity of lodgements violated.")
 
-            used_course_ids: set[int] = set()
+            used_course_ids: set[vtypes.CourseID] = set()
             for registration in data.get('registrations', {}).values():
                 if registration:
                     for track in registration.get('tracks', {}).values():

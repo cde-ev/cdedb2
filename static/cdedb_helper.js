@@ -75,7 +75,7 @@
         is_safe_callback = is_safe_callback || function(){ return false; };
 
         let ack_delete = this.find('input.ack-delete[type="checkbox"]');
-        ack_delete.parent().hide();
+        ack_delete.parent().hide().closest(".form-group").hide();
 
         // Submit handler
         $(this).submit(function() {

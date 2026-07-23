@@ -16,6 +16,7 @@ import click
 import psycopg2.extras
 import werkzeug.routing
 
+import cdedb.common.validation.types as vtypes
 from cdedb.common import RequestState, User
 from cdedb.common.roles import ALL_ROLES
 from cdedb.config import Config, SecretsConfig
@@ -174,7 +175,7 @@ def fake_rs(
         sessionkey=None,
         apitoken=None,
         user=User(
-            persona_id=persona_id,
+            persona_id=vtypes.PersonaID(vtypes.ID(persona_id)),
             roles=ALL_ROLES,
         ),
         request=None,  # type: ignore[arg-type]
