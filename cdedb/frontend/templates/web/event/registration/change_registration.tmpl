@@ -108,7 +108,7 @@
     <script nonce="{{ csp_nonce }}">
         feePreviewConstants = {
             'endpoint': '{{ cdedblink('event/precompute_fee') }}',
-            'persona_id': {{ persona['id'] }},
+            'persona_id': '{{ persona['id']|cdedbid }}',
             'is_member': {{ ambience['registration']['is_member']|tojson }},
             'is_orga': {{ (persona['id'] in ambience['event']['orgas'])|tojson }},
         }

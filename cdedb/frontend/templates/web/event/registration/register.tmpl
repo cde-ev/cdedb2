@@ -143,7 +143,7 @@
 
         feePreviewConstants = {
             'endpoint': '{{ cdedblink('event/precompute_fee') }}',
-            'persona_id': {{ user.persona_id if not preview else "null" }},
+            'persona_id': '{{ user.persona_id|cdedbid if not preview else "" }}',
             'is_member': {{ persona['is_member']|tojson }},
             'is_orga': {{ (ambience['event']['id'] in user.orga)|tojson }},
             'age': {{ persona_age }},
