@@ -922,8 +922,9 @@ class CdeLokalMailinglist(SemiPublicMailinglist):
 
 
 @dataclass
-class PublicMemberImplicitMailinglist(AllMembersImplicitMeta, GeneralOptInMailinglist):
-    pass
+class PublicMemberImplicitMailinglist(AllMembersImplicitMeta):
+    # We want _only_ the role map from the GeneralOptInMailinglist.
+    role_map = GeneralOptInMailinglist.role_map
 
 
 @dataclass
