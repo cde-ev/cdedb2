@@ -319,11 +319,11 @@ class EventEventMixin(EventBaseFrontend):
         change_notes_by_key = {
             "description": "Beschreibung geändert.",
             "notes": "Orga-Notizen geändert.",
-            "registration_text": 'Freitext "Anmelden" geändert.',
-            # "registration_status_text": 'Freitext "Meine Anmeldung" geändert.',
+            "registration_status_text": 'Freitext "Meine Anmeldung" geändert.',
             "mail_text": 'Freitext "Anmeldebestätigung" geändert.',
             "participant_info": "Teilnehmer-Infos geändert.",
             "field_definition_notes": "Notizen zu Datenfeldern geändert.",
+            "questionnaire_notes": "Notizen zu Fragebögen geändert.",
         }
         if (
             rs.has_validation_errors() or free_text_key not in change_notes_by_key

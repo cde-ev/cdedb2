@@ -40,7 +40,7 @@ class TestEventModels(BackendTest):
                 datetime.datetime(2221, 10, 30, 0, 0, 0, tzinfo=datetime.UTC)
             ),
             orgas={7},  # type: ignore[arg-type]
-            registration_text=None,
+            registration_status_text=None,
             mail_text="Wir verwenden ein neues Kristallkugel-basiertes"
             " Kurszuteilungssystem; bis wir das ordentlich ans Laufen"
             " gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste"
@@ -49,6 +49,7 @@ class TestEventModels(BackendTest):
             " nicht wahr?",
             notes="Todoliste ... just kidding ;)",
             field_definition_notes="Die Sortierung der Felder bitte nicht ändern!",
+            questionnaire_notes=None,
             is_locked=False,
             is_archived=False,
             is_cancelled=False,
@@ -456,11 +457,12 @@ class TestEventModels(BackendTest):
             registration_soft_limit=None,
             registration_hard_limit=None,
             orgas={5},  # type: ignore[arg-type]
-            registration_text=None,
+            registration_status_text=None,
             mail_text=None,
             participant_info=None,
             notes=None,
             field_definition_notes=None,
+            questionnaire_notes=None,
             is_locked=False,
             is_archived=False,
             is_cancelled=False,

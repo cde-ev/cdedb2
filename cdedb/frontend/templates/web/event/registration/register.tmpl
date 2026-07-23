@@ -85,17 +85,6 @@
         {{ util.anti_csrf_token('event/register') }}
     {% endif %}
 
-        {% if ambience['event']['registration_text'] %}
-        {% set button = None %}
-        {% if orga_view %}
-            {% set button = generic_event.edit_free_text_button("registration_text") %}
-        {% endif %}
-        {% call util.bootstrap_panel(gettext("Note of the Orga Team"), button=button,
-                                     icon="info-circle", aclass="panel-info") %}
-            {{ ambience['event']['registration_text']|md }}
-        {% endcall %}
-        {% endif %}
-
         <div id="registrationquestionnaire">
             {% for entry in reg_questionnaire %}
                 {{ generic_event.print_questionnaire_entry(entry) }}
@@ -154,7 +143,7 @@
 
         feePreviewConstants = {
             'endpoint': '{{ cdedblink('event/precompute_fee') }}',
-            'persona_id': {{ user.persona_id if not preview else "null" }},
+            'persona_id': '{{ user.persona_id|cdedbid if not preview else "" }}',
             'is_member': {{ persona['is_member']|tojson }},
             'is_orga': {{ (ambience['event']['id'] in user.orga)|tojson }},
             'age': {{ persona_age }},

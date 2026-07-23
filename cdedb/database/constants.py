@@ -210,6 +210,7 @@ class QuestionnaireUsages(CdEIntEnum):
 class QuestionnaireRowRole(CdEIntEnum):
     text = 1
     heading = 2
+    panel = 3
     event_field = 5
     course_choices = 10
     part_selection = 20
@@ -227,6 +228,30 @@ class QuestionnaireRowRole(CdEIntEnum):
         )
 
         return QuestionnaireRow.get_class(self)
+
+
+@enum.unique
+class QuestionnairePanelKind(CdEIntEnum):
+    default = 10
+    info = 20
+    warning = 30
+    danger = 40
+
+    def get_icon(self) -> str:
+        return {
+            self.default: "tag",
+            self.info: "info-circle",
+            self.warning: "exclamation-triangle",
+            self.danger: "exclamation-circle",
+        }[self]
+
+    def get_panel_class(self) -> str:
+        return {
+            self.default: "panel-default",
+            self.info: "panel-info",
+            self.warning: "panel-warning",
+            self.danger: "panel-danger",
+        }[self]
 
 
 @enum.unique

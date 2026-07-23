@@ -786,16 +786,11 @@ tr.drow-new>td, tr.drow-new1>td {
 tr.drow-delete>td, tr.drow-delete1>td {
     background-color: #f2dede;
 }
-.panel.shaded-info {
+.panel.questionnaire-row-config {
     & .panel-heading {
         background-color: #e8e8e8;
     }
-}
-.panel.shaded-magic {
-    & .panel-heading {
-        background-color: #d9edf7;
-    }
-    & .panel-body {
+    &.questionnaire-row-magic .panel-body {
         display: none;
     }
 }
@@ -1200,6 +1195,19 @@ tr.drow-delete>td, tr.drow-delete1>td {
 }
 .miniature-textarea {
     min-height: 40px;
+}
+.miniature-panel {
+    margin-bottom: 0;
+
+    & .panel-heading {
+        padding: 2px;
+        & .panel-title {
+            font-size: 1em;
+        }
+    }
+    & .panel-body {
+        padding: 5px;
+    }
 }
 
 
