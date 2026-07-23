@@ -454,7 +454,7 @@ class TestCdEFrontend(FrontendTest):
         self.login(USER_DICT["garcia"])
         f = self.response.forms['nackconsentform']
         self.submit(f)
-        self.assertNotIn("searchable", _roles(self.user))
+        self.assertNotIn(Roles.searchable, _roles(self.user))
         self.logout()
         # Now check, that you are not redirected to form, and search is not shown
         self.login(USER_DICT["garcia"])
@@ -465,13 +465,13 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Datenschutzerklärung'})
         self.assertTitle("Einwilligung zur Mitgliedersuche")
         self.traverse({'description': 'Nichts ändern'})
-        self.assertNotIn("searchable", _roles(self.user))
+        self.assertNotIn(Roles.searchable, _roles(self.user))
         # Now, finally agree to consent
         self.traverse({'description': 'Datenschutzerklärung'})
         self.assertTitle("Einwilligung zur Mitgliedersuche")
         f = self.response.forms['ackconsentform']
         self.submit(f)
-        self.assertIn("searchable", _roles(self.user))
+        self.assertIn(Roles.searchable, _roles(self.user))
 
     @as_users("berta")
     def test_consent_noop(self) -> None:
@@ -2545,7 +2545,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_money_transfers_waived_fee(self) -> None:
-        self.get("/core/persona/5/promote?target_realm=cde&submitform=True")
+        self.get("/core/persona/5/promote?target_realm=Realms.cde&submitform=True")
         f = self.response.forms["promotionform"]
         f["trial_member"].checked = True
         f["change_note"] = "a really good reason"

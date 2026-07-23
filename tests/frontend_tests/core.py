@@ -3566,7 +3566,7 @@ class TestCoreFrontend(FrontendTest):
         self.admin_view_profile('janis')
         self.traverse({'description': 'Bereich hinzufügen'})
         f = self.response.forms['realmselectionform']
-        f['target_realm'] = "assembly"
+        f['target_realm'] = Realms.assembly
         self.submit(f)
         f = self.response.forms['promotionform']
         f['change_note'] = promotion_change_note = "trivial promotion"

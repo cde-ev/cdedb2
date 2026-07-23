@@ -49,7 +49,7 @@ class TestCommon(BasicTest):
                 'is_assembly_realm': True,
                 'is_member': True,
                 'is_searchable': True,
-            }),
+            }).as_set(),
         )
 
     def test_number_to_words(self) -> None:
