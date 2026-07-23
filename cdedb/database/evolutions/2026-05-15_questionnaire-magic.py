@@ -21,7 +21,9 @@ table_query = """
             -- A customized heading for this element.
             title                   varchar,
             -- Additional formatted text that is displayed below the heading if any.
-            text                    varchar
+            text                    varchar,
+            -- For panel rows: The kind of panel ("info", "warning", "danger", etc.). See cdedb.constants.QuestionnairePanelKind.
+            panel_kind              integer
     );
     CREATE INDEX questionnaire_text_rows_event_id_kind_idx ON event.questionnaire_text_rows(event_id, kind);
     GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_text_rows TO cdb_persona;
