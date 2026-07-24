@@ -208,19 +208,24 @@ class QuestionnaireUsages(CdEIntEnum):
 
 @enum.unique
 class QuestionnaireRowRole(CdEIntEnum):
+    # Text Rows.
     text = 1
     heading = 2
     panel = 3
+    table_of_contents = 80
+
+    # Field Rows.
     event_field = 5
-    course_choices = 10
+
+    # Magic Rows.
+    my_data = 90
     part_selection = 20
     fee_preview = 30
+    course_choices = 10
     list_consent = 40
     mixed_lodging = 50
     foto_notice = 60
     registration_notes = 70
-    table_of_contents = 80
-    my_data = 90
 
     def get_class(self) -> type["QuestionnaireRow"]:
         from cdedb.models.event.questionnaire import (  # noqa: PLC0415
@@ -228,6 +233,15 @@ class QuestionnaireRowRole(CdEIntEnum):
         )
 
         return QuestionnaireRow.get_class(self)
+
+    def optgroup_label(self) -> str:
+        return {
+            self.text: n_("Text"),
+            self.heading: n_("Text"),
+            self.panel: n_("Text"),
+            self.table_of_contents: n_("Text"),
+            self.event_field: n_("Custom Fields"),
+        }.get(self, n_("Special"))
 
 
 @enum.unique
