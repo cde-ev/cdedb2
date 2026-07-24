@@ -125,6 +125,29 @@
             /* Remove names from prototype row to avoid interference with new rows */
             $element.find('.drow-prototype .drow-input').removeAttr('name');
 
+            let all_rows = $element.find(".drow-row,.drow-new").not(".drow-prototype");
+            let prototype = $element.find(".drow-prototype");
+            let rows_by_pos = {};
+            all_rows.each(function() {
+                let pos = $(this).find(".input-pos").val();
+                if (pos !== undefined) {
+                    rows_by_pos[pos] = $(this);
+                }
+            })
+            let sorted = [];
+            for (let i = 0; i < Object.keys(rows_by_pos).length; i++) {
+                if (rows_by_pos[i] !== undefined) {
+                    sorted.push(rows_by_pos[i]);
+                }
+            }
+            if (all_rows.length == sorted.length) {
+                all_rows.detach();
+                sorted.forEach(function(elem) {
+                    prototype.before(elem);
+                })
+                console.log("Success!")
+            }
+
             refresh();
         };
 
@@ -200,7 +223,7 @@
 
             // Iterate over all new rows to ensure there are no gaps in the drow ids.
             //  This changes the input names, and thus the extraction order, but the
-            //  final order can determined by position anyway.
+            //  final order can be determined by position anyway.
             i = -1;
             $element.find('.drow-new').each(function() {
                 setDRowID($(this), i);
