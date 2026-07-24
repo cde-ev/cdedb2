@@ -3220,7 +3220,7 @@ def _questionnaire_magic_row(
 
 
 @_create_dataclass_validator(
-    models_event.questionnaire.QuestionnaireRow,  # type: ignore[type-abstract]
+    models_event.questionnaire.QuestionnaireRow,
     allow_superfluous=True,
     pass_superfluous=True,
 )

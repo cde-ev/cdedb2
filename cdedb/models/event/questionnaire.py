@@ -75,9 +75,11 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
     def get_drow_html_classes(cls) -> list[str]:
         return ["questionnaire-row-config"]
 
+    _icon: ClassVar[str]
+
     @classmethod
-    @abc.abstractmethod
-    def get_icon(cls) -> str: ...
+    def get_icon(cls) -> str:
+        return cls._icon
 
     def get_toc_entries(self, g: Callable[[str], str]) -> list[tuple[str, str]]:
         """Return ToC-entries resulting from this row.
@@ -154,6 +156,7 @@ class QuestionnaireTextRowMeta(QuestionnaireRow):
 @dataclasses.dataclass
 class QuestionnaireTextRow(QuestionnaireTextRowMeta):
     _role = const.QuestionnaireRowRole.text
+    _icon = "bars"
 
     text: str
     title: None = dataclasses.field(default=None, metadata=Meta.request_exclude.as_dict)
@@ -161,14 +164,11 @@ class QuestionnaireTextRow(QuestionnaireTextRowMeta):
         default=None, metadata=Meta.request_exclude.as_dict
     )
 
-    @classmethod
-    def get_icon(cls) -> str:
-        return "bars"
-
 
 @dataclasses.dataclass(kw_only=True)
 class QuestionnaireHeadingRow(QuestionnaireTextRowMeta):
     _role = const.QuestionnaireRowRole.heading
+    _icon = "align-left"
 
     text: None = dataclasses.field(default=None, metadata=Meta.request_exclude.as_dict)
     title: str
@@ -176,22 +176,15 @@ class QuestionnaireHeadingRow(QuestionnaireTextRowMeta):
         default=None, metadata=Meta.request_exclude.as_dict
     )
 
-    @classmethod
-    def get_icon(cls) -> str:
-        return "align-left"
-
 
 @dataclasses.dataclass(kw_only=True)
 class QuestionnairePanelRow(QuestionnaireTextRowMeta):
     _role = const.QuestionnaireRowRole.panel
+    _icon = "rectangle-list"
 
     text: str
     title: str
     panel_kind: const.QuestionnairePanelKind
-
-    @classmethod
-    def get_icon(cls) -> str:
-        return "rectangle-list"
 
 
 @dataclasses.dataclass
@@ -199,6 +192,7 @@ class QuestionnaireFieldRow(QuestionnaireRow):
     database_table = "event.questionnaire_field_rows"
     _role = const.QuestionnaireRowRole.event_field
     _frequency = QuestionnaireFrequency.optional
+    _icon = "pen-to-square"
     static = True
 
     field_id: vtypes.ID
@@ -214,10 +208,6 @@ class QuestionnaireFieldRow(QuestionnaireRow):
 
     readonly: bool = False
     default_value: Any = None  # TODO: ByDatafieldKind maybe some union?
-
-    @classmethod
-    def get_icon(cls) -> str:
-        return "pen-to-square"
 
     def get_label(self) -> str:
         return self.label or self.field.title
@@ -246,15 +236,13 @@ class QuestionnaireFieldRow(QuestionnaireRow):
 class QuestionnaireMagicRow(QuestionnaireRow):
     database_table = "event.questionnaire_magic_rows"
 
+    _icon = "wand-magic-sparkles"
+
     _heading_level: ClassVar[int] = 3
     _toc_entries: ClassVar[list[str]] = []
 
     def get_toc_entries(self, g: Callable[[str], str]) -> list[tuple[str, str]]:
         return [(g(entry), entry) for entry in self._toc_entries]
-
-    @classmethod
-    def get_icon(cls) -> str:
-        return "wand-magic-sparkles"
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "QuestionnaireMagicRow":
@@ -276,10 +264,7 @@ class CourseChoices(QuestionnaireMagicRow):
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory
     }
     _toc_entries = [n_("Course Choices")]
-
-    @classmethod
-    def get_icon(cls) -> str:
-        return "book"
+    _icon = "book"
 
 
 @dataclasses.dataclass
@@ -289,10 +274,7 @@ class PartSelection(QuestionnaireMagicRow):
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory
     }
     _toc_entries = [n_("Registration")]
-
-    @classmethod
-    def get_icon(cls) -> str:
-        return "clock"
+    _icon = "clock"
 
 
 @dataclasses.dataclass
@@ -302,10 +284,7 @@ class FeePreview(QuestionnaireMagicRow):
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory,
     }
     static = True
-
-    @classmethod
-    def get_icon(cls) -> str:
-        return "coins"
+    _icon = "coins"
 
 
 @dataclasses.dataclass
@@ -314,10 +293,7 @@ class ListConsent(QuestionnaireMagicRow):
     _frequency = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory,
     }
-
-    @classmethod
-    def get_icon(cls) -> str:
-        return "address-card"
+    _icon = "address-card"
 
 
 @dataclasses.dataclass
@@ -326,10 +302,7 @@ class MixedLodging(QuestionnaireMagicRow):
     _frequency = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory,
     }
-
-    @classmethod
-    def get_icon(cls) -> str:
-        return "venus-mars"
+    _icon = "venus-mars"
 
 
 @dataclasses.dataclass
@@ -339,10 +312,7 @@ class FotoNotice(QuestionnaireMagicRow):
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory,
     }
     static = True
-
-    @classmethod
-    def get_icon(cls) -> str:
-        return "images"
+    _icon = "images"
 
 
 @dataclasses.dataclass
@@ -358,10 +328,7 @@ class TableOfContents(QuestionnaireMagicRow):
     _role = const.QuestionnaireRowRole.table_of_contents
     _frequency = QuestionnaireFrequency.optional
     static = True
-
-    @classmethod
-    def get_icon(cls) -> str:
-        return "list"
+    _icon = "list"
 
 
 @dataclasses.dataclass
@@ -372,10 +339,7 @@ class MyData(QuestionnaireMagicRow):
     }
     static = True
     _toc_entries = [n_("My Data")]
-
-    @classmethod
-    def get_icon(cls) -> str:
-        return "user"
+    _icon = "user"
 
 
 class Questionnaire(list[QuestionnaireRow]):
