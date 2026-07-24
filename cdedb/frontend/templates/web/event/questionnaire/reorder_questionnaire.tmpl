@@ -204,8 +204,8 @@
                         <div class="miniature-md">
                             <div class="toc">
                                 <ul class="nosp">
-                                    {% for row in entry.questionnaire.text_rows if row.title %}
-                                        <li>{{ util.href("#" + "_".join(row.title.split()), row.title) }}</li>
+                                    {% for title, title_id in entry.questionnaire.get_toc_entries(gettext) %}
+                                        <li>{{ util.href("#" + "_".join(title_id.split()), title) }}</li>
                                     {% endfor %}
                                 </ul>
                             </div>

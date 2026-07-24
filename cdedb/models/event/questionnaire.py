@@ -2,12 +2,13 @@ import abc
 import collections
 import dataclasses
 import enum
-from collections.abc import Collection, Mapping
+import itertools
+from collections.abc import Callable, Collection, Iterable, Mapping
 from typing import Any, ClassVar, Self, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, cast_field_value
+from cdedb.common import CdEDBObject, cast_field_value, n_
 from cdedb.common.sorting import Sortkey
 from cdedb.config import Config
 from cdedb.models.common import CdEDataclassMap, MetaFlag as Meta
@@ -78,6 +79,14 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
     @abc.abstractmethod
     def get_icon(cls) -> str: ...
 
+    def get_toc_entries(self, g: Callable[[str], str]) -> list[tuple[str, str]]:
+        """Return ToC-entries resulting from this row.
+
+        First tuple element is the (translated by g) display text, second element is
+        the HTML id to link to (usually the untranslated title).
+        """
+        return []
+
     @staticmethod
     def get_class(
         role: const.QuestionnaireRowRole,
@@ -135,6 +144,11 @@ class QuestionnaireTextRowMeta(QuestionnaireRow):
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:
         return super(QuestionnaireRow, cls).from_database(data)
+
+    def get_toc_entries(self, g: Callable[[str], str]) -> list[tuple[str, str]]:
+        if self.title:
+            return [(self.title, self.title)]
+        return []
 
 
 @dataclasses.dataclass
@@ -232,6 +246,12 @@ class QuestionnaireFieldRow(QuestionnaireRow):
 class QuestionnaireMagicRow(QuestionnaireRow):
     database_table = "event.questionnaire_magic_rows"
 
+    _heading_level: ClassVar[int] = 3
+    _toc_entries: ClassVar[list[str]] = []
+
+    def get_toc_entries(self, g: Callable[[str], str]) -> list[tuple[str, str]]:
+        return [(g(entry), entry) for entry in self._toc_entries]
+
     @classmethod
     def get_icon(cls) -> str:
         return "wand-magic-sparkles"
@@ -255,6 +275,7 @@ class CourseChoices(QuestionnaireMagicRow):
     _frequency = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory
     }
+    _toc_entries = [n_("Course Choices")]
 
     @classmethod
     def get_icon(cls) -> str:
@@ -267,6 +288,7 @@ class PartSelection(QuestionnaireMagicRow):
     _frequency = {
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory
     }
+    _toc_entries = [n_("Registration")]
 
     @classmethod
     def get_icon(cls) -> str:
@@ -349,6 +371,7 @@ class MyData(QuestionnaireMagicRow):
         const.QuestionnaireUsages.registration: QuestionnaireFrequency.mandatory,
     }
     static = True
+    _toc_entries = [n_("My Data")]
 
     @classmethod
     def get_icon(cls) -> str:
@@ -373,6 +396,9 @@ class Questionnaire(list[QuestionnaireRow]):
     @property
     def text_rows(self) -> list[QuestionnaireTextRowMeta]:
         return [row for row in self if isinstance(row, QuestionnaireTextRowMeta)]
+
+    def get_toc_entries(self, g: Callable[[str], str]) -> Iterable[tuple[str, str]]:
+        return itertools.chain.from_iterable(row.get_toc_entries(g) for row in self)
 
     def get_field_ids(self) -> set[int]:
         return {row.field_id for row in self if isinstance(row, QuestionnaireFieldRow)}

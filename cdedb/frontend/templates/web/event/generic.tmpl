@@ -248,12 +248,12 @@
         {% endcall %}
     {% elif row.name == "CourseChoices" %}
         {% if choice_objects %}
-            {{ util.h("Course Choices", level=3, underline=True) }}
+            {{ util.h(row._toc_entries[0], level=row._heading_level, underline=True) }}
             {{ select_all_course_choices(involved_tracks=involved_tracks) }}
         {% endif %}
     {% elif row.name == "PartSelection" %}
         {% if ambience['event'].parts|length > 1 %}
-            {{ util.h("Registration", level=3, underline=True) }}
+            {{ util.h(row._toc_entries[0], level=row._heading_level, underline=True) }}
             {{ util.form_input_checkboxes(
                     name="parts", label=gettext("Event Parts"), entries=part_options, readonly=(registration and not preview),
                     defaultvalue=payment_parts, info=gettext("In order to change the parts you are registered for, contact the orgas.")
@@ -304,13 +304,13 @@
     {% elif row.name == "TableOfContents" %}
         <div class="toc">
             <ul>
-                {% for other_row in row.questionnaire.text_rows if other_row.title %}
-                    <li>{{ util.href("#" + "_".join(other_row.title.split()), other_row.title) }}</li>
+                {% for title, title_id in row.questionnaire.get_toc_entries(gettext) %}
+                    <li>{{ util.href("#" + "_".join(title_id.split()), title) }}</li>
                 {% endfor %}
             </ul>
         </div>
     {% elif row.name == "MyData" %}
-        {{ util.h("My Data", level=3, underline=True) }}
+        {{ util.h(row._toc_entries[0], level=row._heading_level, underline=True) }}
         <dl class="dl-horizontal">
             <dt title="{% trans %}Full Name{% endtrans %}">{% trans %}Full Name{% endtrans %}</dt>
             <dd>
