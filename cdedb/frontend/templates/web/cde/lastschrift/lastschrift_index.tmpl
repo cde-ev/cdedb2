@@ -183,6 +183,7 @@
                 {% endtrans -%}
             </span>:
             {{ util.input_submit(label=gettext("SEPA-PAIN"), name='download', aclass="btn btn-default", icon="download",
+                                 title=gettext("Create SEPA-PAIN-file"),
                                  anid="finalization-download",
                                  formaction=cdedblink("cde/lastschrift_download_sepapain"), formmethod="GET") }}
             {{ util.input_submit(label=gettext("Success"), name='success', aclass="btn btn-success") }}

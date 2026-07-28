@@ -153,13 +153,6 @@
                 {% endtrans %}
             </p>
             <div class="p">
-                <form action="{{ cdedblink('cde/lastschrift_download_sepapain') }}" method="GET"
-                    id="downloadsepapainform" style="display: inline;">
-                    {{ util.anti_csrf_token('cde/lastschrift_download_sepapain') }}
-                    {{ util.input_hidden(name="lastschrift_id", value=active_permit) }}
-                    {{ util.input_submit(label=gettext("Create SEPA-PAIN-file"), icon="download",
-                                         aclass="btn btn-sm btn-default") }}
-                </form>
                 <form action="{{ cdedblink('cde/lastschrift_generate_transactions') }}" method="POST"
                     id="generatetransactionform" style="display: inline;">
                     {{ util.anti_csrf_token('cde/lastschrift_generate_transactions') }}
@@ -205,6 +198,13 @@
                     <td class="button-par">
                         {% if transaction['status'] == enums['LastschriftTransactionStati'].issued %}
                             {% if user.admin_views.has(AdminViews.finance) %}
+                                <form action="{{ cdedblink('cde/lastschrift_download_sepapain') }}" method="GET"
+                                      id="downloadsepapainform" style="display: inline;">
+                                    {{ util.anti_csrf_token('cde/lastschrift_download_sepapain') }}
+                                    {{ util.input_hidden(name="lastschrift_id", value=active_permit) }}
+                                    {{ util.input_submit(label=gettext("SEPA-PAIN"), title=gettext("Create SEPA-PAIN-file"),
+                                         icon="download", aclass="btn btn-xs btn-default") }}
+                                </form>
                                 <form action="{{ cdedblink('cde/lastschrift_finalize_transaction',
                                                {'lastschrift_id': transaction['lastschrift_id'],
                                                 'transaction_id': transaction_id}) }}" method="POST"
