@@ -179,7 +179,6 @@ warn_no_return = true
 warn_unreachable = true
 warn_unused_ignores = true
 enable_incomplete_feature = [
-    "TypeForm",
 ]
 #This has way too many false positives, due to CdEDBObject = Dict[str, Any]
 #warn_return_any = true
