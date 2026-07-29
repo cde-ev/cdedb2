@@ -42,7 +42,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "mypy==2.2.0",
+    "mypy==2.3.0",
     "lxml-stubs",
     "ruff==0.15.21",
     "types-bleach",
@@ -179,7 +179,6 @@ warn_no_return = true
 warn_unreachable = true
 warn_unused_ignores = true
 enable_incomplete_feature = [
-    "TypeForm",
 ]
 #This has way too many false positives, due to CdEDBObject = Dict[str, Any]
 #warn_return_any = true

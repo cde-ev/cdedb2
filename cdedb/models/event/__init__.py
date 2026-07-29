@@ -1069,7 +1069,7 @@ class TrackGroup(EventDataclass):
         return self.constraint_type, self.sortkey, self.title
 
 
-class SyncTrackGroup(TrackGroup, CourseChoiceObject):  # type: ignore[misc]
+class SyncTrackGroup(TrackGroup, CourseChoiceObject):
     constraint_type = const.CourseTrackGroupType.course_choice_sync
 
     def is_complex(self) -> bool:
