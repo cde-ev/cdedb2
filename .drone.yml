@@ -287,6 +287,18 @@ steps:
   - apk add --no-cache gettext
   - git checkout $DRONE_TARGET_BRANCH
   - git merge $DRONE_COMMIT
+- name: cde-render
+  image: texlive/texlive
+  depends_on:
+    - evolution-trial
+  when:
+    status:
+    - failure
+    - success
+  commands:
+    - curl -LsSf https://astral.sh/uv/install.sh | sh && . $HOME/.local/bin/env
+    - mkdir tests/cde-render
+    - uvx cde-render Nametags -i tests/ancillary_files/TestAka_partial_export_event.json -o tests/cde-render
 
 volumes:
 - name: dockersock
@@ -601,6 +613,18 @@ steps:
   - apk add --no-cache gettext
   - git checkout $DRONE_TARGET_BRANCH
   - git merge $DRONE_COMMIT
+- name: cde-render
+  image: texlive/texlive
+  depends_on:
+    - evolution-trial
+  when:
+    status:
+    - failure
+    - success
+  commands:
+    - curl -LsSf https://astral.sh/uv/install.sh | sh && . $HOME/.local/bin/env
+    - mkdir tests/cde-render
+    - uvx cde-render Nametags -i tests/ancillary_files/TestAka_partial_export_event.json -o tests/cde-render
 
 volumes:
 - name: dockersock
