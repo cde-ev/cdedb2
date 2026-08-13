@@ -15,7 +15,7 @@
     {% set title = gettext("Revoke Entry") %}
     {% set action_target = "core/revoke_entry" %}
     {% set new_entry = True %}
-{% elif ambience['entry'] %}
+{% elif 'entry' in ambience %}
     {% if parent_id %}
         {% set title = gettext("Add Child Entry") %}
         {% set action_target = "core/add_entry" %}

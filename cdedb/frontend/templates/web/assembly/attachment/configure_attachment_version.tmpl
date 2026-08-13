@@ -8,7 +8,7 @@
 {% endblock %}
 {% set jshint = 'weak' %}
 
-{% if ambience['attachment_version'] %}
+{% if 'attachment_version' in ambience %}
     {% set pagename = gettext("Edit Version %s")|format(ambience['attachment_version']['version_nr']) %}
     {% set submit_endpoint="assembly/change_attachment_version" %}
 {% else %}

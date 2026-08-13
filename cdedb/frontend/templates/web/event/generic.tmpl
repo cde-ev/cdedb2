@@ -698,7 +698,7 @@
                         <td></td>
                     {% endif %}
                 {% elif js_preview %}
-                    {% if ambience['registration'] and fee.id in ambience['registration']['personalized_fees'] %}
+                    {% if 'registration' in ambience and fee.id in ambience['registration']['personalized_fees'] %}
                         {{ _fee_amount_td(ambience['registration']['personalized_fees'][fee.id], fee.id) }}
                     {% else %}
                         {{ _fee_amount_td(None, fee.id) }}

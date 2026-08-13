@@ -9,12 +9,12 @@
     {% trans %}
         New Direct Debit Authorization
     {% endtrans %}
-    {% if ambience['persona'] %}
+    {% if 'persona' in ambience %}
         ({{ ambience['persona']|persona_name }})
     {% endif %}
 {%- endblock %}
 {% block heading -%}
-    {% if ambience['persona'] %}
+    {% if 'persona' in ambience %}
         {{ util.context_heading(gettext("New Direct Debit Authorization"),
                                 ambience['persona']|persona_name,
                                 'user', gettext("User")) }}
@@ -28,7 +28,7 @@
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorizations"),
                             readonly="finance" not in user.admin_views) }}
-    {% if ambience['persona'] %}
+    {% if 'persona' in ambience %}
         {{ util.breadcrumb_link(cdedblink("cde/lastschrift_show", {'persona_id': values['persona_id']}),
                                 ambience['persona']|persona_name,
                                 icon="euro-sign",
@@ -58,7 +58,7 @@
         {{ util.form_input_text(name="account_owner", label=gettext("Account holder (if different)")) }}
         {{ util.form_input_textarea(name="account_address", label=gettext("Account holder’s address (if different)")) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes"), rows="5", markdown=True) }}
-        {% if ambience['persona'] %}
+        {% if 'persona' in ambience %}
             {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink('cde/lastschrift_show')) }}
         {% else %}
             {{ util.form_input_submit(label=gettext("Create"), cancellink=cdedblink('cde/lastschrift_index')) }}
