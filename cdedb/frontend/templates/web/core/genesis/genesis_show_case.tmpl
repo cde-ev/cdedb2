@@ -95,19 +95,19 @@
         <dd id="given-names">
             {{ persona|persona_name }}
         </dd>
-        {% if persona.birth_name %}
+        {% if persona.has("birth_name") %}
             <dt title="{% trans %}Birth Name{% endtrans %}">
                 {% trans %}Birth Name{% endtrans %}
             </dt>
             <dd>{{ persona.birth_name }}</dd>
         {% endif %}
-        {% if persona.birthday %}
+        {% if persona.has("birthday") %}
             <dt title="{% trans %}Birthday{% endtrans %}">
                 {% trans %}Birthday{% endtrans %}
             </dt>
             <dd id="birthday">{{ persona.birthday|date(lang=lang) }}</dd>
         {% endif %}
-        {% if persona.gender %}
+        {% if persona.has("gender") %}
             <dt title="{% trans %}Gender{% endtrans %}">
                 {% trans %}Gender{% endtrans %}
             </dt>
@@ -117,19 +117,19 @@
             {% trans %}E-Mail{% endtrans %}
         </dt>
         <dd id="username">
-            {% if persona.username %}
+            {% if persona.has("username") %}
                 {{ util.username_mailto(persona) }}
             {% else %}
                 —
             {% endif %}
         </dd>
-        {% if persona.telephone %}
+        {% if persona.has("telephone") %}
             <dt title="{% trans %}Phone{% endtrans %}">
                 {% trans %}Phone{% endtrans %}
             </dt>
             <dd id="telephone">{{ util.tel_link(persona.telephone|phone) }}</dd>
         {% endif %}
-        {% if persona.mobile %}
+        {% if persona.has("mobile") %}
             <dt title="{% trans %}Mobile Phone{% endtrans %}">
                 {% trans %}Mobile Phone{% endtrans %}
             </dt>
@@ -145,7 +145,7 @@
                 </i>
             </dd>
         {% endif %}
-        {% if (persona.address or persona.address_supplement or persona.postal_code or persona.location or persona.country) %}
+        {% if (persona.has("address") or persona.has("address_supplement") or persona.has("postal_code") or persona.has("location") or persona.has("country")) %}
             <dt title="{% trans %}Address{% endtrans %}">
                 {% trans %}Address{% endtrans %}
             </dt>
