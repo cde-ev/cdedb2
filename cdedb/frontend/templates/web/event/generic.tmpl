@@ -451,7 +451,7 @@
                                     "data-basename": "readonly_",
                                     "data-show_for_role": get_roles_with_field("readonly")|map("string")|list,
                                 }|xmlattr,
-                                readonly=(not values["readonly_" ~ part_id] and (kind and not kind.allow_readonly()))
+                                readonly=(("readonly_" ~ part_id not in values or not values["readonly_" ~ part_id]) and (kind and not kind.allow_readonly()))
                             ) }}
                         {{ util.output_errors("readonly_" ~ part_id, wrapper=True) }}
                     </div>

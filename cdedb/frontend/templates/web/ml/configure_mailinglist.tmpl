@@ -74,7 +74,7 @@
     {% endif %}
 {% endblock %}
 {% block content %}
-    {% if not ambience['mailinglist'] and ml_type is none %}
+    {% if 'mailinglist' not in ambience and ml_type is none %}
         <form action="{{ cdedblink('ml/create_mailinglist_form') }}" method="GET" id="selectmltypeform"
               class="form-horizontal">
             {{ util.form_input_select(name="ml_type", label=gettext("Mailinglist Type"),
@@ -119,7 +119,7 @@
                 {% set ml_type = ambience['mailinglist'].ml_type %}
             {% endif %}
             {{ util.input_hidden(name="ml_type", value=ml_type) }}
-            {% if not ambience['mailinglist'] or readonly %}
+            {% if 'mailinglist' not in ambience or readonly %}
                 {{ util.form_input_static(
                     label=gettext("Mailinglist Type"),
                     value=gettext(enums['MailinglistTypes'](ml_type)|string)) }}
@@ -181,7 +181,7 @@
                                  " of this mailinglist. (Opt-Out)")) }}
             {% endif %}
 
-            {% if not ambience['mailinglist'] %}
+            {% if 'mailinglist' not in ambience %}
                 <h3 class="heading-underline">{% trans %}Moderators{% endtrans %}</h3>
                 {{ util.form_input_text(
                     type="search", name="moderators", label=gettext("Moderators"), placeholder="DB-XXXX-X,DB-XXXX-X,…",

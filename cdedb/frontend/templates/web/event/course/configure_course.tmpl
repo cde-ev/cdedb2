@@ -85,10 +85,10 @@
                 {{ util.h(track.title, level=4, underline=True, translate=False) }}
             {% endif %}
             {{ util.form_input_checkbox(
-                    "segment" + track.id|string, label=gettext("Is offered"), defaultvalue="True" if not ambience['course'] else "",
+                    "segment" + track.id|string, label=gettext("Is offered"), defaultvalue="True" if 'course' not in ambience else "",
                     aclass="segment-offered", attributes='data-track_id={}'.format(track.id)) }}
             {{ util.form_input_checkbox(
-                    "segment" + track.id|string + ".is_active", label=gettext("Takes place"), defaultvalue="True" if not ambience['course'] else "",
+                    "segment" + track.id|string + ".is_active", label=gettext("Takes place"), defaultvalue="True" if 'course' not in ambience else "",
                     aclass="segment-" + track.id|string, info=cancel_info if not multitrack else "") }}
         {% endfor %}
 
