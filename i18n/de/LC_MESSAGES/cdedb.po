@@ -1344,11 +1344,11 @@ msgstr "Verg. Kurs gelöscht"
 
 #: cdedb/.i18n_additional.py:334
 msgid "PastEventLogCodes.participant_set"
-msgstr "Teilnehmende gesetzt"
+msgstr "Teilnehmer:in gesetzt"
 
 #: cdedb/.i18n_additional.py:335
 msgid "PastEventLogCodes.participant_removed"
-msgstr "Teilnehmende entfernt"
+msgstr "Teilnehmer:in entfernt"
 
 #: cdedb/.i18n_additional.py:336
 msgid "PastEventLogCodes.course_assignment_set"
@@ -1448,7 +1448,7 @@ msgstr "Anhang von Abstimmung getrennt"
 
 #: cdedb/.i18n_additional.py:360
 msgid "AssemblyLogCodes.new_attendee"
-msgstr "Neue Teilnehmende"
+msgstr "Neue Teilnehmer:in"
 
 #: cdedb/.i18n_additional.py:361
 msgid "MlLogCodes.list_created"
@@ -11695,12 +11695,12 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/base/list_attendees.tmpl:36
 msgid "User-ID of the new participant"
-msgstr "Account-ID der neuen Teilnehmenden"
+msgstr "Account-ID der neuen Teilnehmer:in"
 
 #: cdedb/frontend/templates/web/assembly/base/list_attendees.tmpl:46
 msgid "The user will be added as a participant. This cannot be undone."
 msgstr ""
-"Der Account wird als Teilnehmende hinzugefügt. Das kann nicht rückgängig "
+"Der Account wird als Teilnehmer:in hinzugefügt. Das kann nicht rückgängig "
 "gemacht werden."
 
 #: cdedb/frontend/templates/web/assembly/base/list_attendees.tmpl:49
@@ -13604,16 +13604,16 @@ msgstr "Um nach Kursleitenden zu suchen, nutze bitte die %(membersearch)s."
 
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:44
 msgid "Add Participant to this Course"
-msgstr "Teilnehmenden zu diesem Kurs hinzufügen"
+msgstr "Teilnehmer:in zu diesem Kurs hinzufügen"
 
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:54
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:116
 msgid "ID of the new Participant"
-msgstr "ID des neuen Teilnehmenden"
+msgstr "ID der neuen Teilnehmer:in"
 
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:95
 msgid "The Participant will be removed from this Course."
-msgstr "Der Teilnehmende wird aus diesem Kurs entfernt."
+msgstr "Die Teilnehmer:in wird aus diesem Kurs entfernt."
 
 #: cdedb/frontend/templates/web/cde/past_event/show_past_course.tmpl:96
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:181
@@ -13666,11 +13666,11 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:106
 msgid "Add Participant <u>without</u> Course"
-msgstr "Teilnehmenden <u>ohne</u> Kurs hinzufügen"
+msgstr "Teilnehmer:in <u>ohne</u> Kurs hinzufügen"
 
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:180
 msgid "The Participant will be removed from the Event."
-msgstr "Der Teilnehmende wird aus der Veranstaltung entfernt."
+msgstr "Die Teilnehmer:in wird von der Veranstaltung entfernt."
 
 #: cdedb/frontend/templates/web/cde/past_event/show_past_event.tmpl:208
 msgid "This Event had no Participants."
@@ -17557,7 +17557,7 @@ msgstr "Zur Zeit keine Kursteilnehmende eingeteilt."
 
 #: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:70
 msgid "Add Attendee"
-msgstr "Kursteilnehmenden hinzufügen"
+msgstr "Kursteilnehmer:in hinzufügen"
 
 #: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:79
 #: cdedb/frontend/templates/web/event/lodgement/manage_inhabitants.tmpl:77
@@ -17566,7 +17566,7 @@ msgstr "aktuell"
 
 #: cdedb/frontend/templates/web/event/course/manage_attendees.tmpl:81
 msgid "Remove Attendee"
-msgstr "Kursteilnehmenden entfernen"
+msgstr "Kursteilnehmer:in entfernen"
 
 #: cdedb/frontend/templates/web/event/course/show_course.tmpl:11
 #, python-format
@@ -20016,10 +20016,10 @@ msgid ""
 "the mouse-over tooltip of the nodes. The nodes are hyperlinked to the "
 "details page of the participant."
 msgstr ""
-"Jeder Knoten repräsentiert einen Teilnehmenden. Teilnehmende auf der Warteliste "
+"Jeder Knoten repräsentiert eine Teilnehmer:in. Teilnehmende auf der Warteliste "
 "sind ebenfalls im Graph enthalten, werden jedoch mit einer gestrichelten "
 "Umrandung dargestellt. Die Hintergrundfarbe der Knoten entspricht grob dem "
-"Alter der Teilnehmenden. Weitere Informationen über einen Teilnehmenden werden im "
+"Alter der Teilnehmenden. Weitere Informationen über eine Teilnehmer:in werden im "
 "Mouse-over Tooltip der Knoten angezeigt (insb. seine eingetragenen Wünsche). "
 "Die Knoten sind Hyperlinks auf die Detail-Ansichts-Seite der Teilnehmenden."
 
@@ -20800,11 +20800,11 @@ msgstr "Zeige nur Teilnehmende in Veranstaltungsteilen:"
 
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:214
 msgid "The participant will be checked out"
-msgstr "Der Teilnehmende wird ausgecheckt."
+msgstr "Die Teilnehmer:in wird ausgecheckt."
 
 #: cdedb/frontend/templates/web/event/registration/checkin.tmpl:215
 msgid "The participant will be checked in."
-msgstr "Der Teilnehmende wird eingecheckt."
+msgstr "Die Teilnehmer:in wird eingecheckt."
 
 #: cdedb/frontend/templates/web/event/registration/checkin_multiset.tmpl:12
 #, python-format
