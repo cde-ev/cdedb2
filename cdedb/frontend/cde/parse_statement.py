@@ -427,6 +427,8 @@ class Transaction:
         if self._persona_id and not self.persona:
             try:
                 self.persona = core.get_persona(rs, self._persona_id)
+                if self.persona.is_cde_realm:
+                    self.persona = core.get_cde_user(rs, self.persona.id)
             except KeyError:
                 self._persona_id = None
                 self.persona = None
@@ -525,6 +527,8 @@ class Transaction:
                 persona_matches, key=lambda p_id: persona_matches[p_id]
             )
             self.persona = personas.get(best_persona_id)
+            if self.persona and self.persona.is_cde_realm:
+                self.persona = core.get_cde_user(rs, self.persona.id)
             self.persona_confidence = persona_matches[best_persona_id]
 
     def _match_event(
