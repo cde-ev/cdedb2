@@ -3544,7 +3544,7 @@ class CoreBaseBackend(AbstractBackend):
             | {"birthday", "birth_name", "trial_member"}
         )
         # Circumvent privilege check, since this is a rather special case.
-        ret = self.retrieve_personas(rs, persona_ids, columns)
+        ret = self.retrieve_personas(rs, persona_ids, tuple(columns))
         for persona_ in ret.values():
             # TODO refactor this whole function
             status = models.PersonaStatus(**{
