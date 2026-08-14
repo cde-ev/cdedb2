@@ -44,7 +44,7 @@ with s:
             print(f"Updated registration {registration_id} (persona {persona_id}) with historical member status (is_member={data['is_member']}).")
         else:
             persona = event.core.get_persona(s.rs(), persona_id)
-            if persona['is_archived']:
+            if persona.is_archived:
                 archived += 1
                 print(f"No historical member status for registration {registration_id} (persona {persona_id}) because they are archived.")
             else:

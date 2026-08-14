@@ -3,7 +3,6 @@
 
 import ssl
 from collections.abc import Mapping
-from typing import Optional
 
 import ldap3
 from ldap3 import ALL_ATTRIBUTES
@@ -70,7 +69,7 @@ class TestLDAP(BasicTest):
         password: str = test_dua_pw,
         search_base: str = root_dn,
         attributes: list[str] | str = ALL_ATTRIBUTES,
-        excluded_attributes: Optional[list[str]] = None,
+        excluded_attributes: list[str] | None = None,
     ) -> None:
         with ldap3.Connection(
             self.server,
@@ -99,8 +98,8 @@ class TestLDAP(BasicTest):
         self,
         search_filter: str,
         *,
-        except_users: Optional[set[str]] = None,
-        only_duas: Optional[set[str]] = None,
+        except_users: set[str] | None = None,
+        only_duas: set[str] | None = None,
         search_base: str = root_dn,
         attributes: list[str] | str = ALL_ATTRIBUTES,
     ) -> None:
@@ -346,7 +345,7 @@ class TestLDAP(BasicTest):
         )
 
         user_id = 2
-        expectation: dict[str, list[str] | list[NearlyNow]] = {
+        expectation = {
             'uid': ['2'],
             'mail': ['berta@example.cde'],
             'ipaUniqueID': ['personas/2'],
@@ -617,7 +616,7 @@ class TestLDAP(BasicTest):
             'cn=kongress-leitung-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=kongress-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
         }
-        expectation_orga: set[str] = set()
+        expectation_orga = set()
         expectation_presider = {
             'cn=presiders-1,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',
             'cn=presiders-3,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',

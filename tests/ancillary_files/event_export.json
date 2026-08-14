@@ -1,7 +1,7 @@
 {
     "EVENT_SCHEMA_VERSION": [
-        19,
-        4
+        20,
+        0
     ],
     "core.personas": {
         "1": {
@@ -45,48 +45,6 @@
             "telephone": "+4923498765",
             "title": null,
             "username": "anton@example.cde"
-        },
-        "100": {
-            "address": "Kasumigaseki 1-3-2",
-            "address_supplement": null,
-            "birthday": "2019-12-28",
-            "country": "JP",
-            "family_name": "Abukara",
-            "gender": 10,
-            "given_names": "Akira",
-            "id": 100,
-            "is_active": true,
-            "is_archived": false,
-            "is_assembly_admin": true,
-            "is_assembly_realm": true,
-            "is_auditor": true,
-            "is_cde_admin": true,
-            "is_cde_realm": true,
-            "is_cdelokal_admin": true,
-            "is_complaint_admin": true,
-            "is_core_admin": true,
-            "is_event_admin": true,
-            "is_event_realm": true,
-            "is_finance_admin": true,
-            "is_member": true,
-            "is_meta_admin": true,
-            "is_ml_admin": true,
-            "is_ml_realm": true,
-            "is_purged": false,
-            "is_searchable": true,
-            "legal_given_names": null,
-            "location": "Tokyo",
-            "mobile": null,
-            "name_supplement": null,
-            "nickname": null,
-            "postal_code": null,
-            "pronouns": null,
-            "pronouns_nametag": false,
-            "pronouns_profile": false,
-            "show_legal_given_names": false,
-            "telephone": "+81314159265",
-            "title": null,
-            "username": "akira@example.cde"
         },
         "2": {
             "address": "Im Garten 77",
@@ -257,46 +215,96 @@
             "username": "inga@example.cde"
         },
         "38": {
-            "is_active": true,
-            "is_meta_admin": false,
-            "is_core_admin": false,
-            "is_cde_admin": false,
-            "is_finance_admin": false,
-            "is_event_admin": false,
-            "is_ml_admin": false,
-            "is_assembly_admin": false,
-            "is_complaint_admin": false,
-            "is_cde_realm": true,
-            "is_event_realm": true,
-            "is_ml_realm": true,
-            "is_assembly_realm": true,
-            "is_cdelokal_admin": true,
-            "is_auditor": false,
-            "is_member": false,
-            "is_searchable": true,
-            "is_archived": false,
-            "is_purged": false,
-            "id": 38,
-            "username": "ludwig@example.cde",
-            "family_name": "Lokus",
-            "given_names": "Ludwig",
-            "nickname": null,
-            "legal_given_names": null,
-            "title": null,
-            "name_supplement": null,
-            "show_legal_given_names": false,
-            "gender": 2,
-            "birthday": "1990-09-19",
-            "telephone": null,
-            "mobile": null,
-            "address_supplement": null,
             "address": null,
-            "postal_code": null,
-            "location": null,
+            "address_supplement": null,
+            "birthday": "1990-09-19",
             "country": "DE",
+            "family_name": "Lokus",
+            "gender": 2,
+            "given_names": "Ludwig",
+            "id": 38,
+            "is_active": true,
+            "is_archived": false,
+            "is_assembly_admin": false,
+            "is_assembly_realm": true,
+            "is_auditor": false,
+            "is_cde_admin": false,
+            "is_cde_realm": true,
+            "is_cdelokal_admin": true,
+            "is_complaint_admin": false,
+            "is_core_admin": false,
+            "is_event_admin": false,
+            "is_event_realm": true,
+            "is_finance_admin": false,
+            "is_member": false,
+            "is_meta_admin": false,
+            "is_ml_admin": false,
+            "is_ml_realm": true,
+            "is_purged": false,
+            "is_searchable": true,
+            "legal_given_names": null,
+            "location": null,
+            "mobile": null,
+            "name_supplement": null,
+            "nickname": null,
+            "postal_code": null,
             "pronouns": null,
             "pronouns_nametag": false,
-            "pronouns_profile": false
+            "pronouns_profile": false,
+            "show_legal_given_names": false,
+            "telephone": null,
+            "title": null,
+            "username": "ludwig@example.cde"
+        },
+        "100": {
+            "address": "Kasumigaseki 1-3-2",
+            "address_supplement": null,
+            "birthday": "2019-12-28",
+            "country": "JP",
+            "family_name": "Abukara",
+            "gender": 10,
+            "given_names": "Akira",
+            "id": 100,
+            "is_active": true,
+            "is_archived": false,
+            "is_assembly_admin": true,
+            "is_assembly_realm": true,
+            "is_auditor": true,
+            "is_cde_admin": true,
+            "is_cde_realm": true,
+            "is_cdelokal_admin": true,
+            "is_complaint_admin": true,
+            "is_core_admin": true,
+            "is_event_admin": true,
+            "is_event_realm": true,
+            "is_finance_admin": true,
+            "is_member": true,
+            "is_meta_admin": true,
+            "is_ml_admin": true,
+            "is_ml_realm": true,
+            "is_purged": false,
+            "is_searchable": true,
+            "legal_given_names": null,
+            "location": "Tokyo",
+            "mobile": null,
+            "name_supplement": null,
+            "nickname": null,
+            "postal_code": null,
+            "pronouns": null,
+            "pronouns_nametag": false,
+            "pronouns_profile": false,
+            "show_legal_given_names": false,
+            "telephone": "+81314159265",
+            "title": null,
+            "username": "akira@example.cde"
+        }
+    },
+    "event.caretakers": {},
+    "event.checkin_helpers": {
+        "1": {
+            "event_id": 1,
+            "id": 1,
+            "persona_id": 38
         }
     },
     "event.checkin_periods": {
@@ -307,20 +315,68 @@
             "registration_id": 6
         }
     },
-    "event.caretakers": {},
-    "event.checkin_helpers": {
-        "1": {
-            "id": 1,
-            "persona_id": 38,
-            "event_id": 1
-        }
-    },
     "event.course_choices": {
         "1": {
             "course_id": 1,
             "id": 1,
             "rank": 0,
             "registration_id": 1,
+            "track_id": 1
+        },
+        "2": {
+            "course_id": 3,
+            "id": 2,
+            "rank": 1,
+            "registration_id": 1,
+            "track_id": 1
+        },
+        "3": {
+            "course_id": 4,
+            "id": 3,
+            "rank": 2,
+            "registration_id": 1,
+            "track_id": 1
+        },
+        "4": {
+            "course_id": 2,
+            "id": 4,
+            "rank": 3,
+            "registration_id": 1,
+            "track_id": 1
+        },
+        "5": {
+            "course_id": 2,
+            "id": 5,
+            "rank": 0,
+            "registration_id": 1,
+            "track_id": 2
+        },
+        "6": {
+            "course_id": 1,
+            "id": 6,
+            "rank": 0,
+            "registration_id": 1,
+            "track_id": 3
+        },
+        "7": {
+            "course_id": 4,
+            "id": 7,
+            "rank": 1,
+            "registration_id": 1,
+            "track_id": 3
+        },
+        "8": {
+            "course_id": 5,
+            "id": 8,
+            "rank": 0,
+            "registration_id": 2,
+            "track_id": 1
+        },
+        "9": {
+            "course_id": 4,
+            "id": 9,
+            "rank": 1,
+            "registration_id": 2,
             "track_id": 1
         },
         "10": {
@@ -393,13 +449,6 @@
             "registration_id": 3,
             "track_id": 2
         },
-        "2": {
-            "course_id": 3,
-            "id": 2,
-            "rank": 1,
-            "registration_id": 1,
-            "track_id": 1
-        },
         "20": {
             "course_id": 2,
             "id": 20,
@@ -470,13 +519,6 @@
             "registration_id": 5,
             "track_id": 1
         },
-        "3": {
-            "course_id": 4,
-            "id": 3,
-            "rank": 2,
-            "registration_id": 1,
-            "track_id": 1
-        },
         "30": {
             "course_id": 5,
             "id": 30,
@@ -518,48 +560,6 @@
             "rank": 1,
             "registration_id": 5,
             "track_id": 3
-        },
-        "4": {
-            "course_id": 2,
-            "id": 4,
-            "rank": 3,
-            "registration_id": 1,
-            "track_id": 1
-        },
-        "5": {
-            "course_id": 2,
-            "id": 5,
-            "rank": 0,
-            "registration_id": 1,
-            "track_id": 2
-        },
-        "6": {
-            "course_id": 1,
-            "id": 6,
-            "rank": 0,
-            "registration_id": 1,
-            "track_id": 3
-        },
-        "7": {
-            "course_id": 4,
-            "id": 7,
-            "rank": 1,
-            "registration_id": 1,
-            "track_id": 3
-        },
-        "8": {
-            "course_id": 5,
-            "id": 8,
-            "rank": 0,
-            "registration_id": 2,
-            "track_id": 1
-        },
-        "9": {
-            "course_id": 4,
-            "id": 9,
-            "rank": 1,
-            "registration_id": 2,
-            "track_id": 1
         }
     },
     "event.course_segments": {
@@ -568,24 +568,6 @@
             "id": 1,
             "is_active": true,
             "track_id": 1
-        },
-        "10": {
-            "course_id": 5,
-            "id": 10,
-            "is_active": true,
-            "track_id": 1
-        },
-        "11": {
-            "course_id": 5,
-            "id": 11,
-            "is_active": true,
-            "track_id": 2
-        },
-        "12": {
-            "course_id": 5,
-            "id": 12,
-            "is_active": false,
-            "track_id": 3
         },
         "2": {
             "course_id": 1,
@@ -598,24 +580,6 @@
             "id": 3,
             "is_active": true,
             "track_id": 1
-        },
-        "35": {
-            "course_id": 13,
-            "id": 35,
-            "is_active": false,
-            "track_id": 1
-        },
-        "36": {
-            "course_id": 13,
-            "id": 36,
-            "is_active": true,
-            "track_id": 2
-        },
-        "37": {
-            "course_id": 13,
-            "id": 37,
-            "is_active": true,
-            "track_id": 3
         },
         "4": {
             "course_id": 2,
@@ -650,6 +614,42 @@
         "9": {
             "course_id": 4,
             "id": 9,
+            "is_active": true,
+            "track_id": 3
+        },
+        "10": {
+            "course_id": 5,
+            "id": 10,
+            "is_active": true,
+            "track_id": 1
+        },
+        "11": {
+            "course_id": 5,
+            "id": 11,
+            "is_active": true,
+            "track_id": 2
+        },
+        "12": {
+            "course_id": 5,
+            "id": 12,
+            "is_active": false,
+            "track_id": 3
+        },
+        "35": {
+            "course_id": 13,
+            "id": 35,
+            "is_active": false,
+            "track_id": 1
+        },
+        "36": {
+            "course_id": 13,
+            "id": 36,
+            "is_active": true,
+            "track_id": 2
+        },
+        "37": {
+            "course_id": 13,
+            "id": 37,
             "is_active": true,
             "track_id": 3
         }
@@ -702,20 +702,6 @@
             "nr": "\u03b1",
             "shortname": "Heldentum",
             "title": "Planetenretten f\u00fcr Anf\u00e4nger"
-        },
-        "13": {
-            "description": "Besser sp\u00e4t als nie.",
-            "event_id": 1,
-            "fields": {},
-            "id": 13,
-            "instructors": null,
-            "is_visible": true,
-            "max_size": null,
-            "min_size": null,
-            "notes": null,
-            "nr": "\u03b6",
-            "shortname": "Extra",
-            "title": "Extra-Kurs"
         },
         "2": {
             "description": "Inklusive Post, Backwaren und fr\u00fchzeitigem Ableben.",
@@ -780,6 +766,62 @@
             "nr": "\u03b5",
             "shortname": "Backup",
             "title": "Backup-Kurs"
+        },
+        "13": {
+            "description": "Besser sp\u00e4t als nie.",
+            "event_id": 1,
+            "fields": {},
+            "id": 13,
+            "instructors": null,
+            "is_visible": true,
+            "max_size": null,
+            "min_size": null,
+            "notes": null,
+            "nr": "\u03b6",
+            "shortname": "Extra",
+            "title": "Extra-Kurs"
+        }
+    },
+    "event.custom_query_filters": {
+        "1": {
+            "event_id": 1,
+            "fields": "reg_fields.xfield_brings_balls,reg_fields.xfield_is_child",
+            "id": 1,
+            "notes": null,
+            "scope": 30,
+            "title": "B\u00e4lle oder Kind?"
+        },
+        "2": {
+            "event_id": 1,
+            "fields": "reg_fields.xfield_is_child,reg_fields.xfield_brings_balls",
+            "id": 2,
+            "notes": null,
+            "scope": 30,
+            "title": "Kind oder B\u00e4lle?"
+        },
+        "3": {
+            "event_id": 1,
+            "fields": "reg.notes,reg.orga_notes",
+            "id": 3,
+            "notes": null,
+            "scope": 30,
+            "title": "Alle Notizen"
+        },
+        "4": {
+            "event_id": 1,
+            "fields": "reg.amount_paid,persona.birthday",
+            "id": 4,
+            "notes": null,
+            "scope": 30,
+            "title": "Bad Combo!"
+        },
+        "5": {
+            "event_id": 1,
+            "fields": "reg_fields.xfield_anzahl_GROSSBUCHSTABEN,reg_fields.xfield_deleted_field",
+            "id": 5,
+            "notes": "Ups, h\u00e4tte ich das Feld nicht l\u00f6schen sollen?",
+            "scope": 30,
+            "title": "Extrem wichtig!"
         }
     },
     "event.event_fees": {
@@ -791,15 +833,6 @@
             "kind": 1,
             "notes": null,
             "title": "Teilnahmebeitrag Warmup"
-        },
-        "10": {
-            "amount": null,
-            "condition": null,
-            "event_id": 1,
-            "id": 10,
-            "kind": 5,
-            "notes": "Individuelle H\u00f6he",
-            "title": "KL-Erstattung"
         },
         "2": {
             "amount": "123.00",
@@ -872,6 +905,15 @@
             "kind": 1,
             "notes": null,
             "title": "Orgarabatt"
+        },
+        "10": {
+            "amount": null,
+            "condition": null,
+            "event_id": 1,
+            "id": 10,
+            "kind": 5,
+            "notes": "Individuelle H\u00f6he",
+            "title": "KL-Erstattung"
         }
     },
     "event.event_parts": {
@@ -929,10 +971,11 @@
             "notify_on_registration": -1,
             "orga_address": "aka@example.cde",
             "participant_info": "Die Kristallkugel hat gute Dienste geleistet, nicht wahr?",
+            "questionnaire_notes": null,
             "registration_hard_limit": "2221-10-30T00:00:00+00:00",
             "registration_soft_limit": "2200-10-30T00:00:00+00:00",
             "registration_start": "2000-10-30T00:00:00+00:00",
-            "registration_text": null,
+            "registration_status_text": null,
             "reimbursement_iban_field_id": null,
             "shortname": "TestAka",
             "title": "Gro\u00dfe Testakademie 2222",
@@ -1186,43 +1229,16 @@
         "1": {
             "change_note": null,
             "code": 50,
-            "ctime": "2014-01-01T02:00:00+00:00",
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
             "event_id": 1,
             "id": 1,
             "persona_id": 1,
             "submitted_by": 1
         },
-        "10": {
-            "change_note": "22.02.2022, 18:00:00",
-            "code": 500,
-            "ctime": "2014-01-01T09:00:00+00:00",
-            "event_id": 1,
-            "id": 10,
-            "persona_id": 2,
-            "submitted_by": 1
-        },
-        "11": {
-            "change_note": "23.02.2022, 10:00:00",
-            "code": 505,
-            "ctime": "2014-01-01T09:00:00+00:00",
-            "event_id": 1,
-            "id": 11,
-            "persona_id": 2,
-            "submitted_by": 1
-        },
-        "12": {
-            "id": 12,
-            "ctime": "2026-04-24T15:34:27.593566+00:00",
-            "code": 800,
-            "submitted_by": 7,
-            "event_id": 1,
-            "persona_id": 38,
-            "change_note": null
-        },
         "2": {
             "change_note": null,
             "code": 50,
-            "ctime": "2014-01-01T01:00:00+00:00",
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
             "event_id": 1,
             "id": 2,
             "persona_id": 5,
@@ -1231,7 +1247,7 @@
         "3": {
             "change_note": null,
             "code": 50,
-            "ctime": "2014-01-01T03:00:00+00:00",
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
             "event_id": 1,
             "id": 3,
             "persona_id": 7,
@@ -1240,7 +1256,7 @@
         "4": {
             "change_note": null,
             "code": 50,
-            "ctime": "2014-01-01T04:00:08+00:00",
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
             "event_id": 1,
             "id": 4,
             "persona_id": 9,
@@ -1249,7 +1265,7 @@
         "5": {
             "change_note": null,
             "code": 50,
-            "ctime": "2014-01-01T05:00:00+00:00",
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
             "event_id": 1,
             "id": 5,
             "persona_id": 100,
@@ -1258,7 +1274,7 @@
         "6": {
             "change_note": null,
             "code": 50,
-            "ctime": "2014-01-01T06:00:00+00:00",
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
             "event_id": 1,
             "id": 6,
             "persona_id": 2,
@@ -1267,7 +1283,7 @@
         "7": {
             "change_note": "200,00 \u20ac am 01.01.2014 gezahlt.",
             "code": 55,
-            "ctime": "2014-01-01T07:00:00+00:00",
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
             "event_id": 1,
             "id": 7,
             "persona_id": 1,
@@ -1276,7 +1292,7 @@
         "8": {
             "change_note": "548,48 \u20ac am 04.04.2014 gezahlt.",
             "code": 55,
-            "ctime": "2014-01-01T08:00:00+00:00",
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
             "event_id": 1,
             "id": 8,
             "persona_id": 9,
@@ -1285,17 +1301,44 @@
         "9": {
             "change_note": "10,50 \u20ac am 06.06.2014 gezahlt.",
             "code": 55,
-            "ctime": "2014-01-01T09:00:00+00:00",
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
             "event_id": 1,
             "id": 9,
             "persona_id": 2,
             "submitted_by": 1
+        },
+        "10": {
+            "change_note": "22.02.2022, 18:00:00",
+            "code": 500,
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
+            "event_id": 1,
+            "id": 10,
+            "persona_id": 2,
+            "submitted_by": 1
+        },
+        "11": {
+            "change_note": "23.02.2022, 10:00:00",
+            "code": 505,
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
+            "event_id": 1,
+            "id": 11,
+            "persona_id": 2,
+            "submitted_by": 1
+        },
+        "12": {
+            "change_note": null,
+            "code": 800,
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
+            "event_id": 1,
+            "id": 12,
+            "persona_id": 38,
+            "submitted_by": 7
         }
     },
     "event.orga_apitokens": {
         "1": {
             "atime": null,
-            "ctime": "2023-04-30T00:00:00+00:00",
+            "ctime": "2026-05-06T02:09:47.588903+00:00",
             "etime": "2222-12-31T23:59:59+00:00",
             "event_id": 1,
             "id": 1,
@@ -1327,83 +1370,171 @@
             "registration_id": 3
         }
     },
-    "event.questionnaire_rows": {
+    "event.questionnaire_field_rows": {
         "1": {
-            "default_value": null,
-            "event_id": 1,
-            "field_id": 7,
-            "id": 1,
-            "info": null,
-            "kind": 1,
-            "pos": 0,
-            "readonly": false,
-            "title": "Ich bin unter 13 Jahre alt."
-        },
-        "2": {
-            "default_value": null,
-            "event_id": 1,
-            "field_id": null,
-            "id": 2,
-            "info": "mit Text darunter",
-            "kind": 2,
-            "pos": 0,
-            "readonly": false,
-            "title": "Unter\u00fcberschrift"
-        },
-        "3": {
-            "default_value": "True",
+            "default_value": "true",
             "event_id": 1,
             "field_id": 1,
-            "id": 3,
+            "id": 1,
             "info": "Du bringst genug B\u00e4lle mit um einen ganzen Kurs abzuwerfen.",
             "kind": 2,
-            "pos": 1,
-            "readonly": false,
-            "title": "B\u00e4lle"
-        },
-        "4": {
-            "default_value": null,
-            "event_id": 1,
-            "field_id": null,
-            "id": 4,
-            "info": "nur etwas Text",
-            "kind": 2,
+            "label": "B\u00e4lle",
             "pos": 2,
             "readonly": false,
-            "title": null
+            "role": 5
         },
-        "5": {
-            "default_value": null,
-            "event_id": 1,
-            "field_id": null,
-            "id": 5,
-            "info": null,
-            "kind": 2,
-            "pos": 3,
-            "readonly": false,
-            "title": "Weitere \u00dcberschrift"
-        },
-        "6": {
+        "2": {
             "default_value": "etc",
             "event_id": 1,
             "field_id": 2,
-            "id": 6,
+            "id": 2,
             "info": null,
             "kind": 2,
-            "pos": 4,
+            "label": "Vehikel",
+            "pos": 5,
             "readonly": false,
-            "title": "Vehikel"
+            "role": 5
         },
-        "7": {
+        "3": {
             "default_value": null,
             "event_id": 1,
             "field_id": 3,
-            "id": 7,
+            "id": 3,
             "info": null,
             "kind": 2,
-            "pos": 5,
+            "label": "Hauswunsch",
+            "pos": 6,
             "readonly": false,
-            "title": "Hauswunsch"
+            "role": 5
+        },
+        "4": {
+            "default_value": "",
+            "event_id": 1,
+            "field_id": 7,
+            "id": 4,
+            "info": "Denk daran, deine Eltern mitzubringen!",
+            "kind": 1,
+            "label": "Ich bin unter 13 Jahre alt.",
+            "pos": 6,
+            "readonly": false,
+            "role": 5
+        }
+    },
+    "event.questionnaire_magic_rows": {
+        "1": {
+            "event_id": 1,
+            "id": 1,
+            "kind": 1,
+            "pos": 0,
+            "role": 90
+        },
+        "2": {
+            "event_id": 1,
+            "id": 2,
+            "kind": 1,
+            "pos": 1,
+            "role": 20
+        },
+        "3": {
+            "event_id": 1,
+            "id": 3,
+            "kind": 1,
+            "pos": 2,
+            "role": 30
+        },
+        "4": {
+            "event_id": 1,
+            "id": 4,
+            "kind": 1,
+            "pos": 3,
+            "role": 10
+        },
+        "5": {
+            "event_id": 1,
+            "id": 5,
+            "kind": 1,
+            "pos": 5,
+            "role": 40
+        },
+        "6": {
+            "event_id": 1,
+            "id": 6,
+            "kind": 1,
+            "pos": 7,
+            "role": 50
+        },
+        "7": {
+            "event_id": 1,
+            "id": 7,
+            "kind": 1,
+            "pos": 8,
+            "role": 60
+        },
+        "8": {
+            "event_id": 1,
+            "id": 8,
+            "kind": 1,
+            "pos": 9,
+            "role": 70
+        },
+        "9": {
+            "event_id": 1,
+            "id": 9,
+            "kind": 1,
+            "pos": 10,
+            "role": 30
+        }
+    },
+    "event.questionnaire_text_rows": {
+        "1": {
+            "event_id": 1,
+            "id": 1,
+            "kind": 2,
+            "panel_kind": null,
+            "pos": 0,
+            "role": 2,
+            "text": null,
+            "title": "Unter\u00fcberschrift"
+        },
+        "2": {
+            "event_id": 1,
+            "id": 2,
+            "kind": 2,
+            "panel_kind": null,
+            "pos": 1,
+            "role": 1,
+            "text": "mit Text darunter",
+            "title": null
+        },
+        "3": {
+            "event_id": 1,
+            "id": 3,
+            "kind": 2,
+            "panel_kind": null,
+            "pos": 3,
+            "role": 1,
+            "text": "nur etwas Text",
+            "title": null
+        },
+        "4": {
+            "event_id": 1,
+            "id": 4,
+            "kind": 2,
+            "panel_kind": null,
+            "pos": 4,
+            "role": 2,
+            "text": null,
+            "title": "Weitere \u00dcberschrift"
+        },
+        "5": {
+            "event_id": 1,
+            "id": 5,
+            "kind": 1,
+            "panel_kind": null,
+            "pos": 4,
+            "role": 2,
+            "text": null,
+            "title": "Weitere Angaben"
         }
     },
     "event.registration_parts": {
@@ -1414,6 +1545,70 @@
             "part_id": 1,
             "registration_id": 1,
             "status": -1
+        },
+        "2": {
+            "id": 2,
+            "is_camping_mat": false,
+            "lodgement_id": null,
+            "part_id": 2,
+            "registration_id": 1,
+            "status": 1
+        },
+        "3": {
+            "id": 3,
+            "is_camping_mat": false,
+            "lodgement_id": 1,
+            "part_id": 3,
+            "registration_id": 1,
+            "status": 2
+        },
+        "4": {
+            "id": 4,
+            "is_camping_mat": false,
+            "lodgement_id": null,
+            "part_id": 1,
+            "registration_id": 2,
+            "status": 3
+        },
+        "5": {
+            "id": 5,
+            "is_camping_mat": false,
+            "lodgement_id": 4,
+            "part_id": 2,
+            "registration_id": 2,
+            "status": 4
+        },
+        "6": {
+            "id": 6,
+            "is_camping_mat": false,
+            "lodgement_id": 4,
+            "part_id": 3,
+            "registration_id": 2,
+            "status": 2
+        },
+        "7": {
+            "id": 7,
+            "is_camping_mat": false,
+            "lodgement_id": 2,
+            "part_id": 1,
+            "registration_id": 3,
+            "status": 2
+        },
+        "8": {
+            "id": 8,
+            "is_camping_mat": false,
+            "lodgement_id": null,
+            "part_id": 2,
+            "registration_id": 3,
+            "status": 2
+        },
+        "9": {
+            "id": 9,
+            "is_camping_mat": false,
+            "lodgement_id": 2,
+            "part_id": 3,
+            "registration_id": 3,
+            "status": 2
         },
         "10": {
             "id": 10,
@@ -1486,70 +1681,6 @@
             "part_id": 3,
             "registration_id": 6,
             "status": -1
-        },
-        "2": {
-            "id": 2,
-            "is_camping_mat": false,
-            "lodgement_id": null,
-            "part_id": 2,
-            "registration_id": 1,
-            "status": 1
-        },
-        "3": {
-            "id": 3,
-            "is_camping_mat": false,
-            "lodgement_id": 1,
-            "part_id": 3,
-            "registration_id": 1,
-            "status": 2
-        },
-        "4": {
-            "id": 4,
-            "is_camping_mat": false,
-            "lodgement_id": null,
-            "part_id": 1,
-            "registration_id": 2,
-            "status": 3
-        },
-        "5": {
-            "id": 5,
-            "is_camping_mat": false,
-            "lodgement_id": 4,
-            "part_id": 2,
-            "registration_id": 2,
-            "status": 4
-        },
-        "6": {
-            "id": 6,
-            "is_camping_mat": false,
-            "lodgement_id": 4,
-            "part_id": 3,
-            "registration_id": 2,
-            "status": 2
-        },
-        "7": {
-            "id": 7,
-            "is_camping_mat": false,
-            "lodgement_id": 2,
-            "part_id": 1,
-            "registration_id": 3,
-            "status": 2
-        },
-        "8": {
-            "id": 8,
-            "is_camping_mat": false,
-            "lodgement_id": null,
-            "part_id": 2,
-            "registration_id": 3,
-            "status": 2
-        },
-        "9": {
-            "id": 9,
-            "is_camping_mat": false,
-            "lodgement_id": 2,
-            "part_id": 3,
-            "registration_id": 3,
-            "status": 2
         }
     },
     "event.registration_tracks": {
@@ -1559,6 +1690,62 @@
             "id": 1,
             "registration_id": 1,
             "track_id": 1
+        },
+        "2": {
+            "course_id": null,
+            "course_instructor": null,
+            "id": 2,
+            "registration_id": 1,
+            "track_id": 2
+        },
+        "3": {
+            "course_id": null,
+            "course_instructor": null,
+            "id": 3,
+            "registration_id": 1,
+            "track_id": 3
+        },
+        "4": {
+            "course_id": null,
+            "course_instructor": null,
+            "id": 4,
+            "registration_id": 2,
+            "track_id": 1
+        },
+        "5": {
+            "course_id": null,
+            "course_instructor": null,
+            "id": 5,
+            "registration_id": 2,
+            "track_id": 2
+        },
+        "6": {
+            "course_id": 1,
+            "course_instructor": 1,
+            "id": 6,
+            "registration_id": 2,
+            "track_id": 3
+        },
+        "7": {
+            "course_id": null,
+            "course_instructor": null,
+            "id": 7,
+            "registration_id": 3,
+            "track_id": 1
+        },
+        "8": {
+            "course_id": 2,
+            "course_instructor": null,
+            "id": 8,
+            "registration_id": 3,
+            "track_id": 2
+        },
+        "9": {
+            "course_id": null,
+            "course_instructor": null,
+            "id": 9,
+            "registration_id": 3,
+            "track_id": 3
         },
         "10": {
             "course_id": null,
@@ -1621,62 +1808,6 @@
             "course_instructor": null,
             "id": 18,
             "registration_id": 6,
-            "track_id": 3
-        },
-        "2": {
-            "course_id": null,
-            "course_instructor": null,
-            "id": 2,
-            "registration_id": 1,
-            "track_id": 2
-        },
-        "3": {
-            "course_id": null,
-            "course_instructor": null,
-            "id": 3,
-            "registration_id": 1,
-            "track_id": 3
-        },
-        "4": {
-            "course_id": null,
-            "course_instructor": null,
-            "id": 4,
-            "registration_id": 2,
-            "track_id": 1
-        },
-        "5": {
-            "course_id": null,
-            "course_instructor": null,
-            "id": 5,
-            "registration_id": 2,
-            "track_id": 2
-        },
-        "6": {
-            "course_id": 1,
-            "course_instructor": 1,
-            "id": 6,
-            "registration_id": 2,
-            "track_id": 3
-        },
-        "7": {
-            "course_id": null,
-            "course_instructor": null,
-            "id": 7,
-            "registration_id": 3,
-            "track_id": 1
-        },
-        "8": {
-            "course_id": 2,
-            "course_instructor": null,
-            "id": 8,
-            "registration_id": 3,
-            "track_id": 2
-        },
-        "9": {
-            "course_id": null,
-            "course_instructor": null,
-            "id": 9,
-            "registration_id": 3,
             "track_id": 3
         }
     },
@@ -1876,6 +2007,7 @@
         "1": {
             "event_id": 1,
             "id": 1,
+            "query_group": "Test",
             "query_name": "Test-Query",
             "scope": 30,
             "serialized_query": {

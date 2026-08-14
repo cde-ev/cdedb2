@@ -29,7 +29,7 @@ from cdedb.common.i18n import (
 )
 from cdedb.common.query import QueryOperators
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, extract_roles
-from cdedb.frontend.common import Worker, make_postal_address
+from cdedb.frontend.common import Worker
 from tests.common import (
     USER_DICT,
     FrontendTest,
@@ -72,6 +72,9 @@ PERSONA_TEMPLATE = {
 }
 
 
+RegistrationID = lambda x: vtypes.RegistrationID(vtypes.ID(x))
+
+
 class TestCdEFrontend(FrontendTest):
     @as_users("vera", "berta", maintain_data=True)
     def test_index(self) -> None:
@@ -87,7 +90,7 @@ class TestCdEFrontend(FrontendTest):
             )
 
         member = models.CdEPersona(
-            id=vtypes.ID(-1),
+            id=vtypes.PersonaID(vtypes.ID(-1)),
             given_names="",
             family_name="",
             username=vtypes.Email(""),
@@ -440,8 +443,9 @@ class TestCdEFrontend(FrontendTest):
     def test_consent_decline(self) -> None:
 
         def _roles(user: UserIdentifier) -> set[Role]:
-            user = get_user(user)
-            return extract_roles(self.core.get_persona(self.key, user['id']))
+            return extract_roles(
+                self.core.get_persona_status(self.key, get_user(user)['id']).as_dict()
+            )
 
         # First, do not change anything
         self.assertTitle("Einwilligung zur Mitgliedersuche")
@@ -1813,7 +1817,7 @@ class TestCdEFrontend(FrontendTest):
             output.append(head)
         head, _ = content.split("Erneut validieren")
         output.append(head)
-        expectation: tuple[tuple[str, ...], ...] = (
+        expectation = (
             tuple(),
             tuple(),
             tuple(),
@@ -1898,7 +1902,7 @@ class TestCdEFrontend(FrontendTest):
             output.append(head)
         head, _ = content.split("Erneut validieren")
         output.append(head)
-        expectation: tuple[tuple[str, ...], ...] = (
+        expectation = (
             tuple(),
             tuple(),
             tuple(),
@@ -1920,7 +1924,7 @@ class TestCdEFrontend(FrontendTest):
                 self.assertTrue(
                     re.search(piece, out), msg=f"{piece} not found in {out}"
                 )
-        nonexpectation: tuple[tuple[str, ...], ...] = (
+        nonexpectation = (
             tuple(),
             tuple(),
             tuple(),
@@ -2004,8 +2008,8 @@ class TestCdEFrontend(FrontendTest):
         self.core.changelog_resolve_change(self.key, persona_id, generation, ack=True)
         # Check that both legal_given_names and given_names have changed.
         persona = self.core.get_persona(self.key, persona_id)
-        self.assertEqual("Berta B.", persona["legal_given_names"])
-        self.assertEqual("Bertie", persona["given_names"])
+        self.assertEqual("Berta B.", persona.legal_given_names)
+        self.assertEqual("Bertie", persona.given_names)
 
     @as_users("vera")
     def test_batch_admission_review(self) -> None:
@@ -2286,25 +2290,11 @@ class TestCdEFrontend(FrontendTest):
         lines = f['transfers'].value.split('\n')
         inputdata = (
             '\n'
-            .join(
-                lines[5:],
-            )
-            .replace(
-                '-12.34',
-                '12.34',
-            )
-            .replace(
-                'Party50',
-                'Mitgliedsbeitrag',
-            )
-            .replace(
-                'Charles',
-                'Charly',
-            )
-            .replace(
-                'Daniel D.',
-                'Daniel',
-            )
+            .join(lines[5:])
+            .replace('-12.34', '12.34')
+            .replace('Party50', 'Mitgliedsbeitrag')
+            .replace('Charles', 'Charly')
+            .replace('Daniel D.', 'Daniel')
         )
         f['transfers'] = inputdata
         self.submit(f, check_notification=False)
@@ -2330,6 +2320,19 @@ class TestCdEFrontend(FrontendTest):
             div="notifications",
         )
 
+        mails = self._fetch_mail()
+        self.assertEqual(
+            [
+                "[CdE] Mitgliedsbeitrag eingegangen",
+                "[CdE] Mitgliedsbeitrag eingegangen",
+                "[CdE] Überweisung für Große Testakademie 2222 eingetroffen",
+                "Neue Überweisungen für Eure Veranstaltung",
+                "[CdE] Erstattung für Große Testakademie 2222 ausgeführt",
+                "Erstattungen für Eure Veranstaltung durchgeführt",
+                "Überweisungen eingetragen",
+            ],
+            [mail.get("Subject") for mail in mails],
+        )
         finance_admin_mail = self.fetch_mail_content(-1)
         self.assertIn(
             "4 Überweisungen eingetragen. Insgesamt 486,33\xa0€:",
@@ -2493,6 +2496,15 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         f = self.response.forms["transfersform"]
         self.submit(f, verbose=True)
+        notification_mail = self._fetch_mail()[0]
+        self.assertEqual(
+            "[CdE] Überweisung eingegangen – Guthaben zu gering!",
+            notification_mail.get("Subject"),
+        )
+        self.assertIn(
+            "Leider reicht dein Guthaben nicht aus",
+            self._get_mail_content(notification_mail),
+        )
         self.admin_view_profile("daniel")
         self.assertNonPresence("CdE-Mitglied", div='membership')
 
@@ -2591,21 +2603,21 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("461,49 €", div='amount-owed')
         self.assertEqual(
             decimal.Decimal("461.49"),
-            self.event.get_registration(self.key, 2)['amount_owed'],
+            self.event.get_registration(self.key, RegistrationID(2))['amount_owed'],
         )
         self.get('/event/event/1/registration/1001/fee/summary')
         self.assertNonPresence("Externenbeitrag", div='amount-owed')
         self.assertPresence("584,48 €", div='amount-owed')
         self.assertEqual(
             decimal.Decimal("584.48"),
-            self.event.get_registration(self.key, 1001)['amount_owed'],
+            self.event.get_registration(self.key, RegistrationID(1001))['amount_owed'],
         )
         self.get('/event/event/1/registration/1002/fee/summary')
         self.assertPresence("Externenbeitrag", div='amount-owed')
         self.assertPresence("589,48 €", div='amount-owed')
         self.assertEqual(
             decimal.Decimal("589.48"),
-            self.event.get_registration(self.key, 1002)['amount_owed'],
+            self.event.get_registration(self.key, RegistrationID(1002))['amount_owed'],
         )
 
     @prepsql(
@@ -3545,17 +3557,17 @@ class TestCdEFrontend(FrontendTest):
         fake_rs = cast(RequestState, types.SimpleNamespace())
         fake_rs.translations = self.translations
         persona_id = None
-        t = lambda g, p: g(format_country_code(p['country']))
+        t = lambda g, p: g(format_country_code(p.country))
         while persona_id := self.core.next_persona(
             self.key, persona_id, is_member=None, is_archived=False
         ):
-            p = self.core.get_total_persona(self.key, persona_id)
-            if p['country']:
-                address = make_postal_address(fake_rs, p)
+            if self.core.get_total_persona(self.key, persona_id)['country']:
+                p = self.core.get_event_user(self.key, persona_id)
+                address = p.get_postal_address(fake_rs)
                 if address is None:
                     self.assertIn(persona_id, personas_without_address)
                 else:
-                    self.assertNotIn(p['country'], address)
+                    self.assertNotIn(p.country, address)
                     self.assertIn(t(self.translations["de"].gettext, p), address)
 
     def test_country_code_from_country(self) -> None:

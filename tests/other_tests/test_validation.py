@@ -7,7 +7,7 @@ import decimal
 import unittest
 import zoneinfo
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Optional, TypeVar, cast
+from typing import Any, Optional, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -38,19 +38,18 @@ from cdedb.config import Config
 from cdedb.models.common import CdEDataclass
 from cdedb.models.core import GenesisCaseEvent
 
-T = TypeVar('T')
-
 INVAL = object()
+NO_COMPARE = object()
 
 
 class TestValidationBase(unittest.TestCase):
     maxDiff = None
 
-    def do_validator_test(
+    def do_validator_test[T](
         self,
         type_: type[T],
         spec: Iterable[tuple[Any, T, type[Exception] | Exception | None]],
-        extraparams: Optional[Mapping[str, Any]] = None,
+        extraparams: Mapping[str, Any] | None = None,
         ignore_warnings: bool = True,
     ) -> None:
         """Perform extensive tests on a validator.
@@ -68,29 +67,35 @@ class TestValidationBase(unittest.TestCase):
                 if retval is INVAL:
                     retval = inval
                 if not exception:
-                    self.assertEqual(
-                        validate.validate_check(
-                            type_, inval, ignore_warnings, **extraparams
-                        ),
-                        (retval, []),
+                    if retval is not NO_COMPARE:
+                        self.assertEqual(
+                            (retval, []),
+                            validate.validate_check(
+                                type_, inval, ignore_warnings, **extraparams
+                            ),
+                        )
+                    validated_inval = validate.validate_assert(
+                        type_, inval, ignore_warnings, **extraparams
                     )
-                    self.assertEqual(
-                        validate.validate_assert(
-                            type_, inval, ignore_warnings, **extraparams
-                        ),
-                        retval,
-                    )
+                    if retval is not NO_COMPARE:
+                        self.assertEqual(retval, validated_inval)
                 else:
-                    exception_args = None
+                    expected_exception_args = None
                     if isinstance(exception, Exception):
-                        exception_args = exception.args
+                        expected_exception_args = exception.args
                         exception = type(exception)
                     with self.assertRaises(exception) as cm:
                         validate.validate_assert(
                             type_, inval, ignore_warnings, **extraparams
                         )
-                    if exception_args:
-                        self.assertEqual(cm.exception.args, exception_args)
+                    if expected_exception_args:
+                        real_exception_args = cm.exception.args
+                        if len(real_exception_args) > 1:
+                            real_exception_args = (
+                                real_exception_args[0] % real_exception_args[1],
+                                *real_exception_args[2:],
+                            )
+                        self.assertEqual(expected_exception_args, real_exception_args)
                     self.assertEqual(
                         retval,
                         validate.validate_check(
@@ -157,7 +162,7 @@ class TestValidation(TestValidationBase):
         with self.assertRaises(ValueError):
             validate.validate_assert(int | None, "garbage", ignore_warnings)
 
-        for type_form in cast(list[type[Any]], [int | None, Optional[int]]):
+        for type_form in cast(list[type[Any]], [int | None, Optional[int]]):  # noqa: UP045
             self.do_validator_test(
                 type_form,
                 (
@@ -175,12 +180,12 @@ class TestValidation(TestValidationBase):
         @dataclasses.dataclass
         class Foo(CdEDataclass):
             bar: int | None
-            baz: Optional[int]
+            baz: Optional[int]  # noqa: UP045
 
-        self.assertIsNot(int | None, Optional[int])
+        self.assertIsNot(int | None, Optional[int])  # noqa: UP045
 
         # int | None == Optional[int], but we only really care about the keys here anyway.
-        optional = {"bar": int | None, "baz": Optional[int]}
+        optional = {"bar": int | None, "baz": Optional[int]}  # noqa: UP045
         self.assertEqual(({}, optional), Foo.validation_fields(creation=True))
         self.assertEqual(
             ({"id": vtypes.ID}, optional), Foo.validation_fields(creation=False)

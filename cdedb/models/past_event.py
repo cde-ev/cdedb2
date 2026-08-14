@@ -1,10 +1,11 @@
 import dataclasses
 import datetime
 from collections import defaultdict
-from typing import Any, Self
+from typing import Self
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.core as models_core
 import cdedb.models.event
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.models.common import CdEDataclass, CdEDataclassMap, MetaFlag as Meta
@@ -115,7 +116,7 @@ class PastEventParticipant(CdEDataclass):
     database_table = "past_event.participants"
 
     persona_id: vtypes.ID
-    persona: dict[str, Any] = dataclasses.field(
+    persona: models_core.PastEventPersona = dataclasses.field(
         compare=False, repr=False, metadata=Meta.exclude.as_dict
     )
 
@@ -141,8 +142,8 @@ class PastEventParticipant(CdEDataclass):
 
     def get_sortkey(self) -> Sortkey:
         return (
-            self.persona["family_name"],
-            self.persona["given_names"],
+            self.persona.family_name,
+            self.persona.given_names,
             self.persona_id,
             *self.pevent.get_sortkey(),
         )

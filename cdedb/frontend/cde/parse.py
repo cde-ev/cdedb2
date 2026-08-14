@@ -13,7 +13,6 @@ import itertools
 import pathlib
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import Optional
 
 from werkzeug import Response
 from werkzeug.datastructures import FileStorage
@@ -53,8 +52,8 @@ class CdEParseMixin(CdEBaseFrontend):
     def parse_statement_form(
         self,
         rs: RequestState,
-        data: Optional[CdEDBObject] = None,
-        params: Optional[CdEDBObject] = None,
+        data: CdEDBObject | None = None,
+        params: CdEDBObject | None = None,
     ) -> Response:
         """Render form.
 
@@ -137,9 +136,9 @@ class CdEParseMixin(CdEBaseFrontend):
                 params["has_none"].append(t.t_id)
             if t.event and t.persona:
                 reg_id = self.eventproxy.get_registration_id(
-                    rs, persona_id=t.persona['id'], event_id=t.event.id
+                    rs, persona_id=t.persona.id, event_id=t.event.id
                 )
-                params["registration_ids"][(t.persona['id'], t.event.id)] = reg_id
+                params["registration_ids"][(t.persona.id, t.event.id)] = reg_id
             params["accounts"][t.account] += 1
             if t.event and t.type == TransactionType.EventFee:
                 params["events"][t.event.id] += 1
@@ -219,9 +218,9 @@ class CdEParseMixin(CdEBaseFrontend):
         rs: RequestState,
         count: int,
         date: datetime.date,
-        validate: Optional[str] = None,
-        excel: Optional[str] = None,
-        db_import: Optional[str] = None,
+        validate: str | None = None,
+        excel: str | None = None,
+        db_import: str | None = None,
         ignore_warnings: bool = False,
     ) -> Response:
         """
@@ -292,9 +291,9 @@ class CdEParseMixin(CdEBaseFrontend):
     def money_transfers_form(
         self,
         rs: RequestState,
-        data: Optional[list[CdEDBObject]] = None,
-        csvfields: Optional[tuple[str, ...]] = None,
-        saldos: Optional[dict[int, decimal.Decimal]] = None,
+        data: list[CdEDBObject] | None = None,
+        csvfields: tuple[str, ...] | None = None,
+        saldos: dict[int, decimal.Decimal] | None = None,
     ) -> Response:
         events = self.eventproxy.get_events(rs, self.eventproxy.list_events(rs))
         data = data or []
@@ -319,9 +318,9 @@ class CdEParseMixin(CdEBaseFrontend):
         self,
         rs: RequestState,
         send_notifications: bool,
-        transfers: Optional[str],
-        checksum: Optional[str],
-        transfers_file: Optional[FileStorage],
+        transfers: str | None,
+        checksum: str | None,
+        transfers_file: FileStorage | None,
     ) -> Response:
         """Update member balances.
 

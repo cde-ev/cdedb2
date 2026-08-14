@@ -2,7 +2,7 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans count=cases|length %}
+    {% trans count=changes|length %}
     	Pending Privilege Changes [{{ count }}]
     {% endtrans %}
 {% endblock %}
@@ -12,9 +12,9 @@
 {% endblock %}
 {% block content %}
    <ul>
-        {% for persona_id, entry in cases.items() %} {# This is already sorted. #}
+        {% for persona_id, entry in changes.items() %} {# This is already sorted. #}
            <li>
-               {{ util.href(cdedblink('core/show_privilege_change', {'privilege_change_id': entry["id"]}),
+               {{ util.href(cdedblink('core/show_privilege_change', {'change_id': entry["id"]}),
                             personas[persona_id]|persona_name) }}
            </li>
         {% endfor %}

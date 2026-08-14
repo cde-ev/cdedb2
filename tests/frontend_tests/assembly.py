@@ -6,7 +6,6 @@ import pathlib
 import re
 import subprocess
 import tempfile
-from typing import Optional
 
 import freezegun
 import webtest
@@ -68,7 +67,7 @@ class AssemblyTestHelpers(FrontendTest):
     }
 
     def _create_assembly(
-        self, adata: Optional[CdEDBObject] = None, delta: Optional[CdEDBObject] = None
+        self, adata: CdEDBObject | None = None, delta: CdEDBObject | None = None
     ) -> None:
         """Helper function to automatically create a new asembly.
 
@@ -129,8 +128,8 @@ class AssemblyTestHelpers(FrontendTest):
     def _create_ballot(
         self,
         bdata: CdEDBObject,
-        candidates: Optional[list[CdEDBObject]] = None,
-        atitle: Optional[str] = None,
+        candidates: list[CdEDBObject] | None = None,
+        atitle: str | None = None,
     ) -> None:
         """Helper to create a new ballot.
 

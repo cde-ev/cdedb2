@@ -3,8 +3,8 @@ import dataclasses
 import datetime
 import decimal
 from collections.abc import Callable
-from typing import Optional
 
+import cdedb.models.core as models_core
 import cdedb.models.event as models_event
 from cdedb.common import CdEDBObject, RequestState, n_
 from cdedb.config import Config
@@ -13,12 +13,18 @@ _CONF = Config()
 
 
 @dataclasses.dataclass
-class MoneyTransfer:
-    persona: CdEDBObject
+class MoneyTransferMember:
+    persona: models_core.CdEPersona
     amount: decimal.Decimal
     date: datetime.date
 
-    registration: Optional[CdEDBObject] = None
+
+@dataclasses.dataclass
+class MoneyTransferEvent:
+    persona: models_core.CorePersona
+    amount: decimal.Decimal
+    date: datetime.date
+    registration: CdEDBObject
 
 
 @dataclasses.dataclass
@@ -26,11 +32,11 @@ class MoneyTransfersResult:
     success: bool = True
     index: int = -1
 
-    membership_fees: list[MoneyTransfer] = dataclasses.field(default_factory=list)
-    event_fees: dict[int, list[MoneyTransfer]] = dataclasses.field(
+    membership_fees: list[MoneyTransferMember] = dataclasses.field(default_factory=list)
+    event_fees: dict[int, list[MoneyTransferEvent]] = dataclasses.field(
         default_factory=lambda: collections.defaultdict(list)
     )
-    event_reimbursements: dict[int, list[MoneyTransfer]] = dataclasses.field(
+    event_reimbursements: dict[int, list[MoneyTransferEvent]] = dataclasses.field(
         default_factory=lambda: collections.defaultdict(list)
     )
 
@@ -45,29 +51,30 @@ class MoneyTransfersResult:
         *,
         send_individual_notifications: bool,
         by_orga: bool,
-        do_mail: Callable[..., Optional[str]],
+        do_mail: Callable[..., str | None],
         events: models_event.CdEDataclassMap[models_event.Event],
     ) -> None:
         # Import here to avoid cyclic imports.
-        from cdedb.frontend.common import Headers, make_postal_address  # noqa: PLC0415
+        from cdedb.frontend.common import Headers  # noqa: PLC0415
 
         if send_individual_notifications:
-            for transfer in self.membership_fees:
-                p = transfer.persona
+            for member_transfer in self.membership_fees:
+                if member_transfer.persona.balance < _CONF["MEMBERSHIP_FEE"]:
+                    subject = "Überweisung eingegangen – Guthaben zu gering!"
+                else:
+                    subject = "Mitgliedsbeitrag eingegangen"
                 headers: Headers = {
-                    'Subject': "Überweisung eingegangen – Guthaben zu gering!"
-                    if p['balance'] < _CONF["MEMBERSHIP_FEE"]
-                    else "Mitgliedsbeitrag eingegangen",
-                    'To': [transfer.persona['username']],
+                    'Subject': subject,
+                    'To': [member_transfer.persona.username],
                 }
                 do_mail(
                     rs,
                     'parse/transfer_received',
                     headers,
                     {
-                        'persona': transfer.persona,
-                        'address': make_postal_address(rs, transfer.persona),
-                        'transfer': transfer,
+                        'persona': member_transfer.persona,
+                        'address': member_transfer.persona.get_postal_address(rs),
+                        'transfer': member_transfer,
                         'fee': _CONF['MEMBERSHIP_FEE'],
                     },
                 )
@@ -106,7 +113,7 @@ class MoneyTransfersResult:
             }
             if send_individual_notifications:
                 for transfer in booked_transfers:
-                    headers['To'] = [transfer.persona['username']]
+                    headers['To'] = [transfer.persona.username]
                     do_mail(
                         rs,
                         'parse/event_transfer_received',
@@ -148,7 +155,7 @@ class MoneyTransfersResult:
             }
             if send_individual_notifications:
                 for transfer in reimbursements:
-                    headers['To'] = [transfer.persona['username']]
+                    headers['To'] = [transfer.persona.username]
                     do_mail(
                         rs,
                         'parse/event_reimbursement_booked',
@@ -163,7 +170,7 @@ class MoneyTransfersResult:
                 headers = {
                     'To': to,
                     'Reply-To': reply_to,
-                    'Subject': "Erstattungen für Eure Veranstaltung durchgeführt.",
+                    'Subject': "Erstattungen für Eure Veranstaltung durchgeführt",
                     'Prefix': "",
                 }
                 do_mail(

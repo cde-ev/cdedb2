@@ -4,13 +4,13 @@ import random
 import re
 import urllib.parse
 from collections.abc import Collection
-from typing import Optional
 
 import webtest
 
 import cdedb.database.constants as const
 import cdedb.models.core as models_core
 import cdedb.models.droid as model_droid
+import cdedb.models.event as models_event
 from cdedb.common import (
     IGNORE_WARNINGS_NAME,
     CdEDBObject,
@@ -250,6 +250,12 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle(self.user['default_name_format'])
         self.assertPresence(self.user['family_name'], div='title')
 
+    @prepsql(
+        f"""
+        INSERT INTO {models_event.OtherDatabaseTables.caretakers} (event_id, persona_id) VALUES (2, 7);
+        INSERT INTO {models_event.OtherDatabaseTables.checkin_helpers} (event_id, persona_id) VALUES (4, 7);
+        """
+    )
     @as_users("annika", "paul", "quintus", maintain_data=True)
     def test_showuser_events(self) -> None:
         if self.user_in("annika"):
@@ -264,13 +270,18 @@ class TestCoreFrontend(FrontendTest):
 
         self.traverse("Veranstaltungs-Daten")
         self.assertTitle("Garcia Generalis – Veranstaltungs-Daten")
-        self.assertPresence("CyberTestAkademie Teilnehmer")
+        self.assertPresence("CyberTestAkademie Teilnehmer", div="registration-list")
         # part names not shown for one-part events
-        self.assertNonPresence("CyberTestAkademie: Teilnehmer")
-        self.assertPresence("Große Testakademie")
+        self.assertNonPresence("CyberTestAkademie: Teilnehmer", div="registration-list")
+        self.assertPresence("Große Testakademie", div="registration-list")
         self.assertPresence(
-            "Warmup: Teilnehmer, Erste Hälfte: Teilnehmer, Zweite Hälfte: Teilnehmer"
+            "Warmup: Teilnehmer, Erste Hälfte: Teilnehmer, Zweite Hälfte: Teilnehmer",
+            div="registration-list",
         )
+
+        self.assertPresence("Große Testakademie 2222: Orga", div="event-roles-list")
+        self.assertPresence("CdE-Party 2050: Betreuer", div="event-roles-list")
+        self.assertPresence("TripelAkademie: Checkin-Helfer", div="event-roles-list")
 
     @as_users("nina", "paul", "quintus", maintain_data=True)
     def test_showuser_mailinglists(self) -> None:
@@ -288,9 +299,36 @@ class TestCoreFrontend(FrontendTest):
         self.traverse("Mailinglisten-Daten")
         self.assertTitle("Inga Iota – Mailinglisten-Daten")
         self.assertPresence("inga@example.cde", div='contact-email')
-        self.assertPresence("CdE-Info E-Mail: inga-papierkorb@example.cde")
-        self.assertPresence("Kampfbrief-Kommentare (geblockt)")
-        self.assertNonPresence("Witz des Tages")
+        self.assertPresence(
+            "CdE-Info E-Mail: inga-papierkorb@example.cde", div="ml-subscriptions"
+        )
+        self.assertPresence("Kampfbrief-Kommentare (geblockt)", div="ml-subscriptions")
+        self.assertNonPresence("Witz des Tages", div="ml-subscriptions")
+        self.assertPresence("Gutscheine", div="moderated-mls")
+        self.assertNonPresence("CdE-Info", div="moderated-mls")
+
+    @as_users("viktor", "paul", "quintus", maintain_data=True)
+    def test_showuser_assemblies(self) -> None:
+        if self.user_in("viktor"):
+            self.traverse("Versammlungen", "Archiv-Sammlung", "Werner Wahlleitung")
+        elif self.user_in("paul"):
+            self.admin_view_profile("werner")
+        elif self.user_in("quintus"):
+            # Relative admins may see this page
+            self.realm_admin_view_profile("werner", "cde")
+
+        self.traverse("Versammlungs-Daten")
+        self.assertTitle("Werner Wahlleitung – Versammlungs-Daten")
+        self.assertPresence("Internationaler Kongress", div="attended-assemblies")
+        self.assertNonPresence("Archiv-Sammlung", div="attended-assemblies")
+        self.assertNonPresence(
+            "Kanonische Beispielversammlung", div="attended-assemblies"
+        )
+        self.assertPresence("Internationaler Kongress", div="presided-assemblies")
+        self.assertPresence("Archiv-Sammlung", div="presided-assemblies")
+        self.assertNonPresence(
+            "Kanonische Beispielversammlung", div="presided-assemblies"
+        )
 
     @as_users("anton")
     def test_user_archived(self) -> None:
@@ -299,14 +337,18 @@ class TestCoreFrontend(FrontendTest):
             self.assertTitle("Hades Hell")
             self.assertPresence("Account ist archiviert.", div='notifications')
 
-        self.get('/core/persona/8/mailinglists')
-        _check_redirected_profile()
         # The history is available
         self.get('/core/persona/8/history')
         self.assertTitle("Änderungshistorie von Hades Hell")
         self.assertPresence("Benutzer ist archiviert.", div='static-notifications')
         self.get('/core/persona/8/events')
         self.assertTitle("Hades Hell – Veranstaltungs-Daten")
+        self.assertPresence("Benutzer ist archiviert.", div='static-notifications')
+        self.get('/core/persona/8/mailinglists')
+        self.assertTitle("Hades Hell – Mailinglisten-Daten")
+        self.assertPresence("Benutzer ist archiviert.", div='static-notifications')
+        self.get('/core/persona/8/assemblies')
+        self.assertTitle("Hades Hell – Versammlungs-Daten")
         self.assertPresence("Benutzer ist archiviert.", div='static-notifications')
         self.get('/core/persona/8/adminchange')
         _check_redirected_profile()
@@ -678,7 +720,6 @@ class TestCoreFrontend(FrontendTest):
         self.get(url("ml_subscriber", aux="invalid"))
         self.assertEqual({}, self.response.json)
 
-    @as_users("paul")
     def test_selectpersona_ids(self) -> None:
         with self.switch_user("paul"):
             self.get('/core/persona/select?kind=admin_persona&phrase=DB-2-7')
@@ -698,6 +739,15 @@ class TestCoreFrontend(FrontendTest):
             self.assertEqual(tuple(), reality)
             # too short search phrase
             self.get('/core/persona/select?kind=ml_subscriber&aux=54&phrase=14')
+            self.assertEqual({}, self.response.json)
+            self.get("/")
+
+        with self.switch_user("nina"):
+            self.get('/core/persona/select?kind=ml_subscriber&aux=1&phrase=DB-1-9')
+            self.assertEqual([1], [e['id'] for e in self.response.json['personas']])
+            self.get('/core/persona/select?kind=ml_subscriber&aux=1&phrase=1')
+            self.assertEqual([1], [e['id'] for e in self.response.json['personas']])
+            self.get('/core/persona/select?kind=ml_subscriber&aux=54&phrase=A')
             self.assertEqual({}, self.response.json)
             self.get("/")
 
@@ -1521,7 +1571,7 @@ class TestCoreFrontend(FrontendTest):
         admin2: UserIdentifier,
         new_admin: UserObject,
         new_privileges: dict[str, bool],
-        old_privileges: Optional[dict[str, bool]] = None,
+        old_privileges: dict[str, bool] | None = None,
         note: str = "For testing.",
     ) -> None:
         """Helper to initialize a privilege change."""
@@ -1549,9 +1599,9 @@ class TestCoreFrontend(FrontendTest):
         admin2: UserIdentifier,
         new_admin: UserObject,
         new_privileges: dict[str, bool],
-        old_privileges: Optional[dict[str, bool]] = None,
+        old_privileges: dict[str, bool] | None = None,
         note: str = "For testing.",
-        new_password: Optional[str] = None,
+        new_password: str | None = None,
     ) -> UserObject:
         """Helper to make a user an admin."""
         self._initialize_privilege_change(
@@ -1588,7 +1638,7 @@ class TestCoreFrontend(FrontendTest):
         admin2: UserIdentifier,
         new_admin: UserObject,
         new_privileges: dict[str, bool],
-        old_privileges: Optional[dict[str, bool]] = None,
+        old_privileges: dict[str, bool] | None = None,
         note: str = "For testing.",
     ) -> None:
         """Helper to reject a privilege change."""
@@ -1714,7 +1764,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("vera")
     def test_create_user(self) -> None:
 
-        def _traverse_to_realm(realm: Optional[str] = None) -> webtest.Form:
+        def _traverse_to_realm(realm: str | None = None) -> webtest.Form:
             self.traverse('Index', 'Nutzer verwalten', 'Nutzer anlegen')
             self.assertTitle("Nutzer anlegen")
             f = self.response.forms['selectrealmform']
@@ -2436,7 +2486,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesisdecisionform']
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
 
-    def _genesis_request(self, data: CdEDBObject, realm: Optional[str] = None) -> None:
+    def _genesis_request(self, data: CdEDBObject, realm: str | None = None) -> None:
         if realm:
             self.get('/core/genesis/request?realm=' + realm)
         else:
@@ -3044,7 +3094,7 @@ class TestCoreFrontend(FrontendTest):
 
     def _create_genesis_doppelganger(
         self,
-        user: Optional[UserIdentifier] = None,
+        user: UserIdentifier | None = None,
         realm: str = "ml",
         unique_username: bool = False,
     ) -> UserObject:
@@ -3352,7 +3402,7 @@ class TestCoreFrontend(FrontendTest):
     def _decide_genesis_case(
         self,
         decision: GenesisDecision,
-        persona_id: Optional[int] = None,
+        persona_id: int | None = None,
         check: bool = True,
     ) -> None:
         f = self.response.forms['genesisdecisionform']

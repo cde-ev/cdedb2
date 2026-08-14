@@ -626,13 +626,13 @@ GRANT SELECT, UPDATE ON complaint.authors_id_seq TO cdb_admin;
 CREATE TABLE complaint.involved (
         id                      serial PRIMARY KEY,
         case_id                 int NOT NULL REFERENCES complaint.cases(id),
-        persona_id              int NOT NULL REFERENCES core.personas(id),
+        persona_id              int REFERENCES core.personas(id),
         UNIQUE(case_id, persona_id),
-        involved_type           integer NOT NULL, -- database.constants.ComplaintInvolvementType
+        involvement_type        integer NOT NULL, -- database.constants.ComplaintInvolvementType
         is_informed             boolean NOT NULL DEFAULT FALSE
 );
 GRANT SELECT ON complaint.involved TO cdb_persona;
-GRANT INSERT, UPDATE (is_informed), DELETE ON complaint.involved TO cdb_admin;
+GRANT INSERT, UPDATE (persona_id, involvement_type, is_informed), DELETE ON complaint.involved TO cdb_admin;
 GRANT SELECT, UPDATE ON complaint.involved_id_seq TO cdb_admin;
 
 -- very limited access per case and persona
@@ -640,8 +640,6 @@ CREATE TABLE complaint.companions (
         id                      serial PRIMARY KEY,
         -- Who is being accompanied in which case.
         case_id                 int NOT NULL REFERENCES complaint.cases(id),
-        involved_persona_id     int NOT NULL REFERENCES core.personas(id),
-        -- This is duplicating the info from above, but this ensures integrity to the other table.
         involved_id             int NOT NULL REFERENCES complaint.involved(id) ON DELETE CASCADE,
         -- Who is doing the accompanying.
         companion_persona_id    int NOT NULL REFERENCES core.personas(id),
@@ -953,14 +951,15 @@ CREATE TABLE event.events (
         registration_hard_limit      timestamp WITH TIME ZONE,
         iban                         varchar,
         orga_address                 varchar,
-        registration_text            varchar,
+        registration_status_text     varchar,
         mail_text                    varchar,
         -- the next one is only visible to participants
-        participant_info            varchar,
+        participant_info             varchar,
         use_additional_questionnaire boolean NOT NULL DEFAULT False,
         -- orga remarks
         notes                        varchar,
         field_definition_notes       varchar,
+        questionnaire_notes          varchar,
         is_locked                    boolean NOT NULL DEFAULT False,
         is_visible                   boolean NOT NULL DEFAULT False, -- this is purely cosmetical
         is_course_list_visible       boolean NOT NULL DEFAULT False, -- this is purely cosmetical
@@ -1366,28 +1365,70 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON event.personalized_fees TO cdb_persona;
 GRANT SELECT, UPDATE ON event.personalized_fees_id_seq TO cdb_persona;
 GRANT SELECT ON event.personalized_fees TO cdb_anonymous;
 
-CREATE TABLE event.questionnaire_rows (
+CREATE TABLE event.questionnaire_text_rows (
         id                      bigserial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
-        -- This is NULL for text-only entries.
-        field_id                integer REFERENCES event.field_definitions(id),
+        -- The specific questionnaire variant where this row will be used. See cdedb.constants.QuestionnaireUsages.
+        kind                    integer NOT NULL,
+        -- The position at which this element is shown in the questionnaire.
         pos                     integer NOT NULL,
+        -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowRole.
+        -- For entries in this table this will always be 'text_only'.
+        role                    integer NOT NULL,
+        -- A customized heading for this element.
         title                   varchar,
-        info                    varchar,
-        -- This must be NULL exactly for text-only entries.
-        readonly                boolean NOT NULL,
-        default_value           varchar,
-        -- Where the row will be used (registration, questionnaire). See cdedb.constants.QuestionnaireUsages.
-        kind                    integer NOT NULL
+        -- Additional formatted text that is displayed below the heading if any.
+        text                    varchar,
+        -- For panel rows: The kind of panel ("info", "warning", "danger", etc.). See cdedb.constants.QuestionnairePanelKind.
+        panel_kind              integer
 );
-CREATE INDEX questionnaire_rows_event_id_idx ON event.questionnaire_rows(event_id);
-GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_rows TO cdb_persona;
-GRANT SELECT, UPDATE ON event.questionnaire_rows_id_seq TO cdb_persona;
+CREATE INDEX questionnaire_text_rows_event_id_kind_idx ON event.questionnaire_text_rows(event_id, kind);
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_text_rows TO cdb_persona;
+GRANT SELECT, UPDATE ON event.questionnaire_text_rows_id_seq TO cdb_persona;
+
+CREATE TABLE event.questionnaire_field_rows (
+        id                      bigserial PRIMARY KEY,
+        event_id                integer NOT NULL REFERENCES event.events(id),
+        -- The specific questionnaire variant where this row will be used. See cdedb.constants.QuestionnaireUsages.
+        kind                    integer NOT NULL,
+        -- The position at which this element is shown in the questionnaire.
+        pos                     integer NOT NULL,
+        -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowRole.
+        -- For entries in this table this will always be 'event_field'.
+        role                    integer NOT NULL,
+        -- A customized label for this element.
+        label                   varchar,
+        -- Additional information that is displayed below the field input.
+        info                    varchar,
+        field_id                integer REFERENCES event.field_definitions(id),
+        -- If set, the value for the linked field can no longer be changed.
+        readonly                boolean NOT NULL DEFAULT FALSE,
+        -- If set, a value that is prefilled into the form if there is no stored value.
+        default_value           varchar
+);
+CREATE INDEX questionnaire_field_rows_event_id_kind_idx ON event.questionnaire_field_rows(event_id, kind);
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_field_rows TO cdb_persona;
+GRANT SELECT, UPDATE ON event.questionnaire_field_rows_id_seq TO cdb_persona;
+
+CREATE TABLE event.questionnaire_magic_rows (
+        id                      bigserial PRIMARY KEY,
+        event_id                integer NOT NULL REFERENCES event.events(id),
+        -- The specific questionnaire variant where this row will be used. See cdedb.constants.QuestionnaireUsages.
+        kind                    integer NOT NULL,
+        -- The position at which this element is shown in the questionnaire.
+        pos                     integer NOT NULL,
+        -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowRole.
+        role                    integer NOT NULL
+);
+CREATE INDEX questionnaire_magic_rows_event_id_kind_idx ON event.questionnaire_magic_rows(event_id, kind);
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_magic_rows TO cdb_persona;
+GRANT SELECT, UPDATE ON event.questionnaire_magic_rows_id_seq TO cdb_persona;
 
 CREATE TABLE event.stored_queries (
         id                      bigserial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events,
         query_name              varchar NOT NULL,
+        query_group             varchar,
         -- See cdedb.common.query.QueryScope:
         scope                   integer NOT NULL,
         serialized_query        jsonb NOT NULL DEFAULT '{}'::jsonb,

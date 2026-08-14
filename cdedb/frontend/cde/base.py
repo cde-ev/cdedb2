@@ -14,7 +14,7 @@ import itertools
 import operator
 from collections import OrderedDict
 from collections.abc import Collection, Sequence
-from typing import Any, Optional
+from typing import Any, cast
 
 from werkzeug import Response
 from werkzeug.datastructures import FileStorage
@@ -216,7 +216,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             ),
         }
 
-        result: Optional[Sequence[CdEDBObject]] = None
+        result: Sequence[CdEDBObject] | None = None
         count = 0
 
         if not is_search:
@@ -245,7 +245,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             near_pc = rs.values['near_pc'] = rs.request.values.get('near_pc')
             near_radius = rs.values['near_radius'] = request_extractor(
                 rs,
-                {'near_radius': Optional[int]},
+                {'near_radius': int | None},
             )['near_radius']
             if pl and pu:
                 defaults['qval_postal_code,postal_code2'] = f"{pl:0<5} {pu:0<5}"
@@ -376,7 +376,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
     @access("core_admin", "cde_admin")
     @REQUESTdata("download", "is_search")
     def user_search(
-        self, rs: RequestState, download: Optional[str], is_search: bool
+        self, rs: RequestState, download: str | None, is_search: bool
     ) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
@@ -438,8 +438,8 @@ class CdEBaseFrontend(AbstractUserFrontend):
     def batch_admission_form(
         self,
         rs: RequestState,
-        data: Optional[list[CdEDBObject]] = None,
-        csvfields: Optional[tuple[str, ...]] = None,
+        data: list[CdEDBObject] | None = None,
+        csvfields: tuple[str, ...] | None = None,
     ) -> Response:
         """Render form.
 
@@ -505,11 +505,13 @@ class CdEBaseFrontend(AbstractUserFrontend):
             rs.values[f"resolution{datum['lineno']}"] = LineResolutions.none
             warnings.append((None, ValueError(n_("Entry changed."))))
 
-        persona: CdEDBObject = copy.deepcopy(datum['raw'])
-        persona = {
-            key: val.strip() if isinstance(val, str) else val
-            for key, val in persona.items()
-        }
+        persona = cast(
+            CdEDBObject,
+            {
+                key: val.strip() if isinstance(val, str) else val
+                for key, val in copy.deepcopy(datum['raw']).items()
+            },
+        )
         # Adapt input of gender from old convention (this is the format
         # used by external processes, i.e. BuB)
         gender_convert = {
@@ -692,7 +694,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         trial_membership: bool,
         consent: bool,
         sendmail: bool,
-    ) -> tuple[bool, Optional[int], Optional[int]]:
+    ) -> tuple[bool, int | None, int | None]:
         """Resolve all entries in the batch admission form.
 
         :returns: Success information and for positive outcome the
@@ -723,9 +725,15 @@ class CdEBaseFrontend(AbstractUserFrontend):
             assert isinstance(stats, BatchAdmissionStats)
             # Send mail after the transaction succeeded
             if sendmail:
-                personas = self.coreproxy.get_personas(rs, stats.new_accounts)
+                personas = self.coreproxy.get_cde_users(rs, stats.new_accounts)
+                stati = self.coreproxy.get_personas_status(rs, stats.new_accounts)
                 for persona in personas.values():
-                    self.send_welcome_mail(rs, persona)
+                    self.send_welcome_mail(
+                        rs,
+                        persona,
+                        stati[persona.id],
+                        is_trial_member=persona.trial_member,
+                    )
             count_new = len(stats.new_accounts | stats.new_members)
             return True, count_new, len(stats.modified_accounts)
 
@@ -770,8 +778,8 @@ class CdEBaseFrontend(AbstractUserFrontend):
         consent: bool,
         sendmail: bool,
         finalized: bool,
-        accounts: Optional[str],
-        accounts_file: Optional[FileStorage],
+        accounts: str | None,
+        accounts_file: FileStorage | None,
     ) -> Response:
         """Make a lot of new accounts.
 
@@ -817,12 +825,12 @@ class CdEBaseFrontend(AbstractUserFrontend):
             params: vtypes.TypeMapping = {
                 # as on the first submit no values for the resolution are transmitted,
                 # we have to cast None -> LineResolutions.none after extraction
-                f"resolution{lineno}": Optional[LineResolutions],
-                f"doppelganger_id{lineno}": Optional[vtypes.ID],
-                f"hash{lineno}": Optional[str],
-                f"is_orga{lineno}": Optional[bool],
-                f"is_instructor{lineno}": Optional[bool],
-                f"update_username{lineno}": Optional[bool],
+                f"resolution{lineno}": LineResolutions | None,
+                f"doppelganger_id{lineno}": vtypes.ID | None,
+                f"hash{lineno}": str | None,
+                f"is_orga{lineno}": bool | None,
+                f"is_instructor{lineno}": bool | None,
+                f"update_username{lineno}": bool | None,
             }
             tmp = request_extractor(rs, params)
             if tmp[f"resolution{lineno}"] is None:
@@ -933,7 +941,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
     def determine_open_permits(
         self,
         rs: RequestState,
-        lastschrift_ids: Optional[Collection[int]] = None,
+        lastschrift_ids: Collection[int] | None = None,
     ) -> set[int]:
         """Find ids, which to debit this period.
 

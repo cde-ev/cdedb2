@@ -21,11 +21,10 @@ import datetime
 import enum
 import itertools
 from collections.abc import Collection, Iterator, Sequence
-from typing import Optional
 
 import cdedb.database.constants as const
 import cdedb.models.event as models
-from cdedb.common import AgeClasses, CdEDBObject, CdEDBObjectMap, deduct_years, unwrap
+from cdedb.common import AgeClasses, CdEDBObject, deduct_years, unwrap
 from cdedb.common.n_ import n_
 from cdedb.common.query import (
     Query,
@@ -38,7 +37,7 @@ from cdedb.common.sorting import xsorted
 
 RPS = const.RegistrationPartStati
 
-StatQueryAux = tuple[list[str], Optional[list[QueryConstraint]], list[QueryOrder]]
+StatQueryAux = tuple[list[str], list[QueryConstraint] | None, list[QueryOrder]]
 
 __all__ = [
     'EventRegistrationPartStatistic',
@@ -95,7 +94,7 @@ def _present_constraint(part: models.EventPart) -> QueryConstraint:
 def _age_constraint(
     part: models.EventPart,
     max_age: int,
-    min_age: Optional[int] = None,
+    min_age: int | None = None,
 ) -> QueryConstraint:
     min_date = deduct_years(part.part_begin, max_age)
     if min_age is None:
@@ -115,7 +114,7 @@ def _waitlist_order(event: models.Event, part: models.EventPart) -> list[QueryOr
     return ret + [('reg.payment', True), ('ctime.creation_time', True)]
 
 
-def merge_constraints(*constraints: QueryConstraint) -> Optional[QueryConstraint]:
+def merge_constraints(*constraints: QueryConstraint) -> QueryConstraint | None:
     """
     Helper function to try to merge a collection of query constraints into a single one.
 
@@ -149,7 +148,7 @@ def merge_constraints(*constraints: QueryConstraint) -> Optional[QueryConstraint
     return (",".join(fields), unwrap(operators), unwrap(values))
 
 
-def merge_queries(base_query: Query, *queries: Query) -> Optional[Query]:
+def merge_queries(base_query: Query, *queries: Query) -> Query | None:
     """Return a new query, which is derived from the base query and the merged
     constraints of the other queries.
 
@@ -254,8 +253,8 @@ class StatisticMixin:
     def get_track_ids(
         event: models.Event,
         *,
-        part_id: Optional[int] = None,
-        part_group_id: Optional[int] = None,
+        part_id: int | None = None,
+        part_group_id: int | None = None,
     ) -> Sequence[int]:
         """Determine the relevant track ids for the given part (group) id."""
         if part_id:
@@ -269,9 +268,9 @@ class StatisticMixin:
     def get_link_id(
         self,
         *,
-        track_id: Optional[int] = None,
-        part_id: Optional[int] = None,
-        part_group_id: Optional[int] = None,
+        track_id: int | None = None,
+        part_id: int | None = None,
+        part_group_id: int | None = None,
     ) -> str:
         """Build an id for the link to the related query."""
 
@@ -301,9 +300,9 @@ class StatisticPartMixin(StatisticMixin):
     def get_link_id(
         self,
         *,
-        track_id: Optional[int] = None,
-        part_id: Optional[int] = None,
-        part_group_id: Optional[int] = None,
+        track_id: int | None = None,
+        part_id: int | None = None,
+        part_group_id: int | None = None,
     ) -> str:
         """Build an id for the link to the related query."""
         if part_id:
@@ -348,9 +347,9 @@ class StatisticTrackMixin(StatisticMixin):
     def get_link_id(
         self,
         *,
-        track_id: Optional[int] = None,
-        part_id: Optional[int] = None,
-        part_group_id: Optional[int] = None,
+        track_id: int | None = None,
+        part_id: int | None = None,
+        part_group_id: int | None = None,
     ) -> str:
         """Build an id for the link to the related query."""
         if track_id:
@@ -914,7 +913,7 @@ class EventRegistrationInXChoiceGrouper:
     the xth row, already presorted.
     """
 
-    def __init__(self, event: models.Event, regs: CdEDBObjectMap):
+    def __init__(self, event: models.Event, regs: models.RegistrationMap):
         self._sorted_tracks = xsorted(event.tracks.values())
         self._sorted_parts = xsorted(event.parts.values())
         self._sorted_part_groups = xsorted(event.part_groups.values())
@@ -931,7 +930,7 @@ class EventRegistrationInXChoiceGrouper:
             for part_group in self._sorted_part_groups
         }
 
-        self.choice_track_map: dict[int, dict[int, Optional[set[int]]]] = {
+        self.choice_track_map: dict[int, dict[int, set[int] | None]] = {
             x: {
                 track.id: set() if track.num_choices > x else None
                 for track in self._sorted_tracks
@@ -963,7 +962,7 @@ class EventRegistrationInXChoiceGrouper:
             and track['choices'][x] == track['course_id']
         )
 
-    def _get_ids(self, x: int, track_ids: Collection[int]) -> Optional[set[int]]:
+    def _get_ids(self, x: int, track_ids: Collection[int]) -> set[int] | None:
         """Uninlined helper to determine the number of fitting entries across tracks.
 
         If all given tracks do not offer an xth choice, return None, otherwise return
@@ -971,7 +970,7 @@ class EventRegistrationInXChoiceGrouper:
         is easily done by unioning the values per track, but special care needs to be
         given to the None values.
         """
-        result: Optional[set[int]] = None
+        result: set[int] | None = None
         for track_id in track_ids:
             tmp = self.choice_track_map[x][track_id]
             if tmp is not None:
@@ -983,7 +982,7 @@ class EventRegistrationInXChoiceGrouper:
 
     def __iter__(
         self,
-    ) -> Iterator[tuple[int, dict[str, dict[int, Optional[set[int]]]]]]:
+    ) -> Iterator[tuple[int, dict[str, dict[int, set[int] | None]]]]:
         """Iterate over all x choices, for each one return sorted counts by type."""
         # ret: dict[int, dict[str, dict[int, Optional[set[int]]]]] = {
         ret = {
@@ -1008,7 +1007,7 @@ class EventRegistrationInXChoiceGrouper:
     @staticmethod
     def _get_base_query(
         event: models.Event,
-        reg_ids: Optional[Collection[int]],
+        reg_ids: Collection[int] | None,
     ) -> Query:
         return Query(
             QueryScope.registration,
@@ -1053,9 +1052,9 @@ class EventRegistrationInXChoiceGrouper:
     def get_link_id(
         x: int,
         *,
-        track_id: Optional[int] = None,
-        part_id: Optional[int] = None,
-        part_group_id: Optional[int] = None,
+        track_id: int | None = None,
+        part_id: int | None = None,
+        part_group_id: int | None = None,
     ) -> str:
         if track_id:
             return f"track_in_{x}_choice_{track_id}"

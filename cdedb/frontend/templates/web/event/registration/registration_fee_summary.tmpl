@@ -27,7 +27,7 @@
     <dt title="{% trans %}Amount Owed{% endtrans %}">{% trans %}Amount Owed{% endtrans %}</dt>
     <dd id="amount-owed">
         {% if complex_fee.is_complex() %}
-            {{ generic_event.fee_breakdown_by_kind() }}
+            {{ generic_event.fee_breakdown_by_kind(complex_fee) }}
         {% else %}
             {{ complex_fee.amount|money(lang=lang) }}
         {% endif %}

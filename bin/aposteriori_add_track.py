@@ -32,4 +32,4 @@ update_event = {
 
 # Execution
 
-event.set_event(script.rs(), event_id, update_event)
+event.set_event(script.rs(), event_id, update_event)  # type: ignore[arg-type]

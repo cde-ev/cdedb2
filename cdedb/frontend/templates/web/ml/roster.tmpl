@@ -33,7 +33,7 @@
         {% trans %}Currently, these people are subscribed to this mailinglist:{% endtrans %}
     </p>
     <div class="row" id="subscriber-list">
-        {% for list in roster | slice(3 if roster|length > 10 else (2 if roster|length > 5 else 1)) %}
+        {% for list in roster.values() | slice(3 if roster|length > 10 else (2 if roster|length > 5 else 1)) %}
             <div class="col-sm-4">
                 <ul class="nosp slim">
                     {% for subscriber in list %}

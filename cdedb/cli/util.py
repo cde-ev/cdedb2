@@ -10,12 +10,13 @@ import pathlib
 import pwd
 from collections.abc import Callable, Generator, Iterator
 from shutil import which
-from typing import Any, Optional
+from typing import Any
 
 import click
 import psycopg2.extras
 import werkzeug.routing
 
+import cdedb.common.validation.types as vtypes
 from cdedb.common import RequestState, User
 from cdedb.common.roles import ALL_ROLES
 from cdedb.config import Config, SecretsConfig
@@ -69,7 +70,7 @@ def sanity_check_production(fun: Callable[..., Any]) -> Callable[..., Any]:
 
 
 @contextlib.contextmanager
-def switch_user(user: str, group: Optional[str] = None) -> Generator[None]:
+def switch_user(user: str, group: str | None = None) -> Generator[None]:
     """Use as context manager to temporary switch the running user's effective uid."""
     original_uid = os.geteuid()
     original_gid = os.getegid()
@@ -162,7 +163,7 @@ def connect(
 def fake_rs(
     conn: IrradiatedConnection,
     persona_id: int = 0,
-    urls: Optional[werkzeug.routing.MapAdapter] = None,
+    urls: werkzeug.routing.MapAdapter | None = None,
 ) -> RequestState:
     """Create a RequestState which may be used during more elaborated commands.
 
@@ -174,7 +175,7 @@ def fake_rs(
         sessionkey=None,
         apitoken=None,
         user=User(
-            persona_id=persona_id,
+            persona_id=vtypes.PersonaID(vtypes.ID(persona_id)),
             roles=ALL_ROLES,
         ),
         request=None,  # type: ignore[arg-type]

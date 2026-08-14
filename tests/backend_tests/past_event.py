@@ -8,6 +8,8 @@ import cdedb.models.past_event as models
 from cdedb.common import nearly_now
 from tests.common import BackendTest, as_users, event_keeper
 
+EventID = lambda x: vtypes.EventID(vtypes.ID(x))
+
 
 class TestPastEventBackend(BackendTest):
     used_backends = ("core", "event", "pastevent")
@@ -135,7 +137,7 @@ class TestPastEventBackend(BackendTest):
 
     @as_users("vera")
     def test_entity_participant(self) -> None:
-        personas = self.core.get_personas(self.key, [2, 3, 4, 5, 6, 100])
+        personas = self.core.get_past_event_users(self.key, [2, 3, 4, 5, 6, 100])
         pevent = self.pastevent.get_past_event(self.key, 1)
         pcourses = self.pastevent.get_past_courses(self.key, [1, 2])
         expectation = {
@@ -463,14 +465,16 @@ class TestPastEventBackend(BackendTest):
     @as_users("anton")
     def test_archive(self) -> None:
         # First, an event without participants
-        self.event.set_event(self.key, event_id=2, data={'is_cancelled': True})
+        self.event.set_event(self.key, event_id=EventID(2), data={'is_cancelled': True})
         with self.assertRaises(ValueError):
-            self.pastevent.archive_event(self.key, 2)
-        new_ids = self.pastevent.archive_event(self.key, 2, create_past_event=False)
+            self.pastevent.archive_event(self.key, EventID(2))
+        new_ids = self.pastevent.archive_event(
+            self.key, EventID(2), create_past_event=False
+        )
         self.assertEqual(None, new_ids)
 
         # Event with participants
-        event_id = 1
+        event_id = EventID(1)
         update = {
             'registration_soft_limit': datetime.datetime(
                 2001, 10, 30, 0, 0, 0, tzinfo=datetime.UTC

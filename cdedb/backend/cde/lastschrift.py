@@ -9,7 +9,7 @@ transactions.
 import datetime
 import decimal
 from collections.abc import Collection
-from typing import Optional, Protocol
+from typing import Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -40,10 +40,10 @@ class CdELastschriftBackend(CdEBaseBackend):
         self,
         rs: RequestState,
         persona_id: int,
-        is_member: Optional[bool] = None,
-        trial_member: Optional[bool] = None,
-        honorary_member: Optional[bool] = None,
-    ) -> tuple[DefaultReturnCode, Optional[int], Optional[int]]:
+        is_member: bool | None = None,
+        trial_member: bool | None = None,
+        honorary_member: bool | None = None,
+    ) -> tuple[DefaultReturnCode, int | None, int | None]:
         """Special modification function for membership.
 
         This is similar to the version from the core backend, but can
@@ -101,8 +101,8 @@ class CdELastschriftBackend(CdEBaseBackend):
     def list_lastschrift(
         self,
         rs: RequestState,
-        persona_ids: Optional[Collection[int]] = None,
-        active: Optional[bool] = True,
+        persona_ids: Collection[int] | None = None,
+        active: bool | None = True,
     ) -> dict[int, int]:
         """List all direct debit permits.
 
@@ -251,7 +251,7 @@ class CdELastschriftBackend(CdEBaseBackend):
         self,
         rs: RequestState,
         lastschrift_id: int,
-        cascade: Optional[Collection[str]] = None,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Remove data about an old lastschrift.
 
@@ -307,9 +307,9 @@ class CdELastschriftBackend(CdEBaseBackend):
     def list_lastschrift_transactions(
         self,
         rs: RequestState,
-        lastschrift_ids: Optional[Collection[int]] = None,
-        stati: Optional[Collection[const.LastschriftTransactionStati]] = None,
-        periods: Optional[Collection[int]] = None,
+        lastschrift_ids: Collection[int] | None = None,
+        stati: Collection[const.LastschriftTransactionStati] | None = None,
+        periods: Collection[int] | None = None,
     ) -> dict[int, int]:
         """List direct debit transactions.
         :param lastschrift_ids: If this is not None show only those

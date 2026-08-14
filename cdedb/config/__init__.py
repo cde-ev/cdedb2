@@ -203,18 +203,20 @@ class Config(BaseConfig):
 
         _LOGGER.debug(repr(self))
 
-        yield
+        try:
+            yield
 
-        _LOGGER.debug(
-            f"Resetting after config override to {real_config_paths=} and {real_context_manager_overrides=}."
-        )
+        finally:
+            _LOGGER.debug(
+                f"Resetting after config override to {real_config_paths=} and {real_context_manager_overrides=}."
+            )
 
-        self._config_paths = real_config_paths
-        self._context_manager_overrides = real_context_manager_overrides
+            self._config_paths = real_config_paths
+            self._context_manager_overrides = real_context_manager_overrides
 
-        self.reload()
+            self.reload()
 
-        _LOGGER.debug(repr(self))
+            _LOGGER.debug(repr(self))
 
     # The repr is only relevant for debugging.
     def __repr__(self) -> str:  # pragma: no cover

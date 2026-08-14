@@ -11,7 +11,7 @@ This should be the only module which makes subsistantial use of psycopg.
 import logging
 from collections.abc import Collection, Mapping
 from types import TracebackType
-from typing import Any, NoReturn, Optional
+from typing import Any, NoReturn
 
 import psycopg2
 import psycopg2.extensions
@@ -51,7 +51,7 @@ def _create_connection(
     password: str,
     host: str,
     port: int,
-    isolation_level: Optional[int] = SERIALIZABLE,
+    isolation_level: int | None = SERIALIZABLE,
 ) -> "IrradiatedConnection":
     """This creates a wrapper around :py:class:`psycopg2.extensions.connection`
     and correctly initializes the database connection.
@@ -82,7 +82,7 @@ def connection_pool_factory(
     secrets: SecretsConfig,
     host: str,
     port: int,
-    isolation_level: Optional[int] = SERIALIZABLE,
+    isolation_level: int | None = SERIALIZABLE,
 ) -> Mapping[str, "IrradiatedConnection"]:
     """This returns a dict-like object which has database roles as keys and
     database connections as values (which are created on the fly).
@@ -179,9 +179,9 @@ class Atomizer:
 
     def __exit__(
         self,
-        atype: Optional[type[Exception]],
-        value: Optional[Exception],
-        tb: Optional[TracebackType],
+        atype: type[Exception] | None,
+        value: Exception | None,
+        tb: TracebackType | None,
     ) -> None:
         self.rs._conn.decontaminate()
         return self.rs._conn.__exit__(atype, value, tb)
@@ -202,9 +202,9 @@ class IrradiatedConnection(psycopg2.extensions.connection):
         super().__init__(*args, **kwargs)
         self._radiation_level = 0
         # keep a copy of any exception we encounter.
-        self._saved_etype: Optional[type[BaseException]] = None
-        self._saved_evalue: Optional[BaseException] = None
-        self._saved_tb: Optional[TracebackType] = None
+        self._saved_etype: type[BaseException] | None = None
+        self._saved_evalue: BaseException | None = None
+        self._saved_tb: TracebackType | None = None
 
     def __enter__(self) -> "IrradiatedConnection":
         if self._radiation_level:
@@ -220,9 +220,9 @@ class IrradiatedConnection(psycopg2.extensions.connection):
 
     def __exit__(
         self,
-        etype: Optional[type[BaseException]],
-        evalue: Optional[BaseException],
-        tb: Optional[TracebackType],
+        etype: type[BaseException] | None,
+        evalue: BaseException | None,
+        tb: TracebackType | None,
     ) -> None:
         if self._radiation_level:
             # grab any exception

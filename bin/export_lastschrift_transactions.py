@@ -50,17 +50,17 @@ with s:
             "date": transaction["payment_date"],
             "amount_german": number_to_german(transaction["tally"]),
             "cdedbid": cdedbid_filter(lastschrift["persona_id"]),
-            "family_name": persona["family_name"],
-            "given_names": persona["given_names"],
+            "family_name": persona.family_name,
+            "given_names": persona.given_names,
             "category": TransactionType.LastschriftInitiative.category(),
             "account_nr": meta_data.lastschrift_account.display_str(),
             "reference": asciificator(
-                f"{cdedbid_filter(persona['id'])}, {persona['family_name']},"
-                f" {persona['given_names']} LSI Mitgliedsbeitrag u. Spende CdE e.V."
+                f"{cdedbid_filter(persona.id)}, {persona.family_name},"
+                f" {persona.given_names} LSI Mitgliedsbeitrag u. Spende CdE e.V."
                 " z. Foerderung der Volks- u. Berufsbildung u. Studentenhilfe"
             )[:140],
             "account_holder": (
-                lastschrift["account_owner"] or make_persona_name(persona)
+                lastschrift["account_owner"] or persona.get_name()
             ),
             "iban": lastschrift["iban"],
         })

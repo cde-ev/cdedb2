@@ -96,6 +96,7 @@ rules = [
                 post("/password/change", endpoint="change_password"),
                 get_("/events", endpoint="show_user_events_self"),
                 get_("/mailinglists", endpoint="show_user_mailinglists_self"),
+                get_("/assemblies", endpoint="show_user_assemblies_self"),
                 get_("/lastschrift", endpoint="my_lastschrift"),
             ),
             sub(
@@ -142,6 +143,7 @@ rules = [
                 get_("/show", endpoint="show_user"),
                 get_("/events", endpoint="show_user_events"),
                 get_("/mailinglists", endpoint="show_user_mailinglists"),
+                get_("/assemblies", endpoint="show_user_assemblies"),
                 get_("/measures", endpoint="show_user_measures"),
                 get_("/vcard", endpoint="download_vcard"),
                 get_("/vcard/qr", endpoint="qr_vcard"),
@@ -176,7 +178,7 @@ rules = [
                 get_("/list", endpoint="list_privilege_changes"),
             ),
             sub(
-                "/privileges/<int:privilege_change_id>",
+                "/privileges/<int:change_id>",
                 get_("/show", endpoint="show_privilege_change"),
                 post("/decide", endpoint="decide_privilege_change"),
             ),
@@ -203,7 +205,7 @@ rules = [
                     ),
                     post("/involved/add", endpoint="add_involved"),
                     sub(
-                        "/involved/<int:persona_id>",
+                        "/involved/<int:involved_id>",
                         get_("/companions/change", endpoint="manage_companions_form"),
                         post("/companions/add", endpoint="add_companions"),
                         sub(

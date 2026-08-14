@@ -232,6 +232,11 @@ Hier sind die Änderungen gelistet, die in den jeweiligen Inkrementierungen der
 Export-Version neu eingeführt wurden. Für jede Version ist angegeben, ob die
 Version für den partiellen Import strikt abwärtskompatibel sind oder nicht.
 
+* Version (20, 0): Der Fragebogen ist nun modularer und kann (bzw. muss) Zeilen mit
+  Spezialfunktion (z.B. "Kurswahlen") enthalten.
+  Die Attribute der Text- und Datenfeld-Zeilen im Fragebogen heißen nun unterschiedlich
+  (Text: ``title`` und ``text``, Datenfeld: ``label`` und ``info``).
+  Die ``input_size``-Konfiguration für Fragebogen-Abfragen wurde abgeschafft.
 * Version (19, 4): Die Log-Codes "Kurs: angebotene Schienen geändert" und
   "Kurs: stattfindende Schienen geändert" wurden entfernt.
 * Version (19, 3): Im partiellen Export ist die ``amount_owed`` einer Anmeldung nun auch

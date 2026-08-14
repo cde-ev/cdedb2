@@ -19,7 +19,7 @@
     {% trans %}
         This restores the archived Account. It will be usable again.
     {% endtrans %}
-    <form action="{{ cdedblink('core/dearchive_persona') }}" method="POST" id="dearchivepersonaform"
+    <form action="{{ cdedblink('core/dearchive_persona') }}" method="POST" id="dearchivepersonaform" autocomplete="off"
             class="form-horizontal">
         {{ util.anti_csrf_token('core/dearchive_persona') }}
         {{ util.form_input_static(label=gettext("Account"), value=data|persona_name) }}
