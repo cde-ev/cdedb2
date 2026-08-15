@@ -904,7 +904,7 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence("Checksumme stimmt nicht", div='addenforcerform')
         f['persona_id'] = "DB-999-7"
         self.submit(f, check_notification=False)
-        self.assertPresence("Benutzer existiert nicht", div='addenforcerform')
+        self.assertPresence("Account existiert nicht", div='addenforcerform')
         f['persona_id'] = USER_DICT['kalif']['DB-ID']
         self.submit(f)
         self.assertPresence("Janis", div="enforcer-list")
@@ -917,7 +917,7 @@ class TestComplaintFrontend(FrontendTest):
         f['persona_id'] = "999"
         self.submit(f, check_notification=False)
         self.assertNotification(
-            "Benutzer existiert nicht oder ist kein Maßnahmenmanager", 'error'
+            "Account existiert nicht oder ist kein Maßnahmenmanager", 'error'
         )
         f = self.response.forms[remove_form_id]
         self.submit(f)
@@ -925,7 +925,7 @@ class TestComplaintFrontend(FrontendTest):
         self.assertNonPresence("Janis", div="enforcer-list")
         self.submit(f, check_notification=False)
         self.assertNotification(
-            "Benutzer existiert nicht oder ist kein Maßnahmenmanager", 'error'
+            "Account existiert nicht oder ist kein Maßnahmenmanager", 'error'
         )
 
     _fake_ctime = datetime.datetime(

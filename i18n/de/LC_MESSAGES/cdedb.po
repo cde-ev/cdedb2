@@ -12955,7 +12955,7 @@ msgstr "Diese Fallbegleitung hatte sich bereits zurückgezogen."
 
 #: cdedb/frontend/core/complaint.py:575 cdedb/frontend/core/complaint.py:577
 msgid "This user is no withdrawn companion."
-msgstr "Dieser Nutzer ist keine zurückgezogene Fallbegleitung."
+msgstr "Diese Person ist keine zurückgezogene Fallbegleitung."
 
 #: cdedb/frontend/core/complaint.py:577 cdedb/frontend/core/complaint.py:579
 #: cdedb/frontend/core/complaint.py:594
@@ -21723,7 +21723,7 @@ msgstr "Veranstaltungs-Daten"
 
 #: cdedb/frontend/templates/web/core/show_user_events.tmpl:28
 msgid "Event Helper"
-msgstr "Veranstaltungshelfer"
+msgstr "Veranstaltungshelfer:in"
 
 #: cdedb/frontend/templates/web/core/show_user_events.tmpl:28
 #: cdedb/frontend/templates/web/core/show_user_events.tmpl:61
@@ -21736,7 +21736,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/core/show_user_events.tmpl:30
 msgid "The user is Event Helper."
-msgstr "Dieser Nutzer ist Veranstaltungshelfer."
+msgstr "Diese Person ist Veranstaltungshelfer:in."
 
 #: cdedb/frontend/templates/web/core/show_user_events.tmpl:37
 msgid "Event Specific Roles"
@@ -21744,11 +21744,11 @@ msgstr "Veranstaltungsrollen"
 
 #: cdedb/frontend/templates/web/core/show_user_events.tmpl:48
 msgid "Caretaker"
-msgstr "Betreuer"
+msgstr "Betreuer:in"
 
 #: cdedb/frontend/templates/web/core/show_user_events.tmpl:49
 msgid "Checkin Helper"
-msgstr "Checkin-Helfer"
+msgstr "Checkin-Helfer:in"
 
 #: cdedb/frontend/templates/web/core/show_user_events.tmpl:54
 #: cdedb/frontend/templates/web/core/show_user_events.tmpl:96

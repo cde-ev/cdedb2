@@ -91,7 +91,7 @@ class TestMlBackend(BackendTest):
         # check the logs
         expectation = (
             {
-                'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
+                'change_note': 'Account 10 ist in diesem Account aufgegangen.',
                 'code': const.MlLogCodes.subscribed,
                 'ctime': nearly_now(),
                 'id': 1001,
@@ -118,7 +118,7 @@ class TestMlBackend(BackendTest):
                 'submitted_by': 1,
             },
             {
-                'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
+                'change_note': 'Account 10 ist in diesem Account aufgegangen.',
                 'code': const.MlLogCodes.marked_override,
                 'ctime': nearly_now(),
                 'id': 1004,
@@ -136,7 +136,7 @@ class TestMlBackend(BackendTest):
                 'submitted_by': 1,
             },
             {
-                'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
+                'change_note': 'Account 10 ist in diesem Account aufgegangen.',
                 'code': const.MlLogCodes.subscribed,
                 'ctime': nearly_now(),
                 'id': 1006,
@@ -154,7 +154,7 @@ class TestMlBackend(BackendTest):
                 'submitted_by': 1,
             },
             {
-                'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
+                'change_note': 'Account 10 ist in diesem Account aufgegangen.',
                 'code': const.MlLogCodes.subscribed,
                 'ctime': nearly_now(),
                 'id': 1008,
@@ -172,7 +172,7 @@ class TestMlBackend(BackendTest):
                 'submitted_by': 1,
             },
             {
-                'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
+                'change_note': 'Account 10 ist in diesem Account aufgegangen.',
                 'code': const.MlLogCodes.moderator_added,
                 'ctime': nearly_now(),
                 'id': 1010,
@@ -181,7 +181,7 @@ class TestMlBackend(BackendTest):
                 'submitted_by': 1,
             },
             {
-                'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
+                'change_note': 'Account 10 ist in diesem Account aufgegangen.',
                 'code': const.MlLogCodes.moderator_added,
                 'ctime': nearly_now(),
                 'id': 1011,
@@ -206,7 +206,7 @@ class TestMlBackend(BackendTest):
             5: 'Sozialistischer Kampfbrief',
             7: 'Aktivenforum 2001',
             8: 'Orga-Liste',
-            9: 'Teilnehmer-Liste',
+            9: 'Teilnehmenden-Liste',
             10: 'Warte-Liste',
             11: 'Kampfbrief-Kommentare',
             12: 'Moderatoren-Liste',
@@ -221,7 +221,7 @@ class TestMlBackend(BackendTest):
             57: 'Geheimbund',
             58: 'Testakademie 2222, Gäste',
             59: 'CdE-Party 2050 Orgateam',
-            60: 'CdE-Party 2050 Teilnehmer',
+            60: 'CdE-Party 2050 Teilnehmende',
             61: 'Kanonische Beispielversammlung',
             62: 'Walergebnisse',
             63: 'DSA-Liste',

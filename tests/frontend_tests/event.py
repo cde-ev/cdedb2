@@ -118,15 +118,14 @@ class TestEventFrontend(FrontendTest):
         self.assertPresence("Erste Hälfte", div="timeframe-parts")
         self.assertNonPresence("Everybody come!")
         self.assertPresence(
-            "für eingeloggte Veranstaltungsnutzer sichtbar", div='static-notifications'
+            "für eingeloggte Veranstaltungsaccounts sichtbar",
+            div='static-notifications',
         )
 
         self.traverse({'description': 'Kursliste'})
         self.assertPresence("α. Planetenretten für Anfänger", div='list-courses')
         self.assertPresence("Wir werden die Bäume drücken.", div='list-courses')
-        msg = (
-            "Die Kursleitenden sind nur für eingeloggte Veranstaltungsnutzer sichtbar."
-        )
+        msg = "Die Kursleitenden sind nur für eingeloggte Veranstaltungsaccounts sichtbar."
         self.assertPresence(msg, div="instructors-not-visible")
         self.assertNonPresence("Bernd Lucke")
 
@@ -149,20 +148,20 @@ class TestEventFrontend(FrontendTest):
     )
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
-        everyone = {"Veranstaltungen", "Übersicht", "Veranstaltungshelfer"}
+        everyone = {"Veranstaltungen", "Übersicht", "Veranstaltungshelfer:innen"}
         admin = {"Alle Veranstaltungen", "Ungereimtheiten", "Log"}
 
         # not event admins (also orgas!)
         if self.user_in('emilia', 'martin', 'werner'):
             ins = everyone
-            out = admin | {"Nutzer verwalten"}
+            out = admin | {"Accounts verwalten"}
         # core admins
         elif self.user_in('vera'):
-            ins = everyone | {"Nutzer verwalten"}
+            ins = everyone | {"Accounts verwalten"}
             out = admin
         # event admins
         elif self.user_in('annika'):
-            ins = everyone | admin | {"Nutzer verwalten"}
+            ins = everyone | admin | {"Accounts verwalten"}
             out = set()
         # event helpers
         elif self.user_in('petra'):
@@ -244,9 +243,9 @@ class TestEventFrontend(FrontendTest):
     @as_users("annika", "vera", maintain_data=True)
     def test_user_search(self) -> None:
         self.traverse(
-            {'description': 'Veranstaltunge'}, {'description': 'Nutzer verwalten'}
+            {'description': 'Veranstaltunge'}, {'description': 'Accounts verwalten'}
         )
-        self.assertTitle("Veranstaltungsnutzerverwaltung")
+        self.assertTitle("Veranstaltungsaccountverwaltung")
         f = self.response.forms['queryform']
         f['qop_username'] = QueryOperators.match.value
         f['qval_username'] = 'a@'
@@ -254,7 +253,7 @@ class TestEventFrontend(FrontendTest):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Veranstaltungsnutzerverwaltung")
+        self.assertTitle("Veranstaltungsaccountverwaltung")
         self.assertPresence("Ergebnis [2]", div='query-results')
         self.assertPresence("Hohle Gasse 13", div='query-result')
         self.assertPresence("Vereinigtes Königreich")
@@ -282,7 +281,7 @@ class TestEventFrontend(FrontendTest):
 
         self.traverse({'href': '/event'})
         self._click_admin_view_button(
-            re.compile(r"Benutzer-Administration"), current_state=False
+            re.compile(r"Account-Administration"), current_state=False
         )
 
         # Test Event Administration Admin View
@@ -297,7 +296,7 @@ class TestEventFrontend(FrontendTest):
         )
         self.traverse({'href': '/event/event/1/show'})
         self.assertIn('deleteeventform', self.response.forms)
-        self.traverse("Betreuer verwalten")
+        self.traverse("Betreuer:innen verwalten")
         self.assertIn('addorgasform', self.response.forms)
         self.traverse(
             "Veranstaltungen", "Alle Veranstaltungen", "Veranstaltung anlegen"
@@ -396,7 +395,7 @@ class TestEventFrontend(FrontendTest):
             )
             self.assertPresence("Everybody come!", div='description')
             self.assertNonPresence(
-                "für eingeloggte Veranstaltungsnutzer sichtbar", div='notifications'
+                "für eingeloggte Veranstaltungsaccounts sichtbar", div='notifications'
             )
             self.assertPresence(
                 "30.10.2000, 01:00:00 – 30.10.2200, 01:00:00 ",
@@ -447,7 +446,7 @@ class TestEventFrontend(FrontendTest):
     def test_manage_orgas(self) -> None:
         with self.switch_user("annika"):
             self.traverse(
-                "Veranstaltungen", "Große Testakademie 2222", "Betreuer verwalten"
+                "Veranstaltungen", "Große Testakademie 2222", "Betreuer:innen verwalten"
             )
             f = self.response.forms['addcaretakersform']
             f['caretaker_ids'] = USER_DICT['charly']['DB-ID']
@@ -514,7 +513,7 @@ class TestEventFrontend(FrontendTest):
         everyone = {"Veranstaltungsübersicht", "Übersicht", "Kursliste"}
         not_registered = {"Anmelden"}
         registered = {"Meine Anmeldung"}
-        registered_or_privileged = {"Teilnehmer-Infos"}
+        registered_or_privileged = {"Teilnehmenden-Infos"}
         privileged = {
             "Statistik",
             "Kurse",
@@ -528,13 +527,13 @@ class TestEventFrontend(FrontendTest):
         }
         registrations_stats = {"Statistik", "Kurse", "Unterkünfte", "Teilnahmebeiträge"}
         orga = {
-            "Teilnehmerliste",
+            "Teilnahmeliste",
             "Anmeldungen",
             "Log",
             "Checkin",
             "Ungereimtheiten",
         }
-        checkin_helper = {"Teilnehmerliste", "Checkin"}
+        checkin_helper = {"Teilnahmeliste", "Checkin"}
         self.traverse("Veranstaltungen", "Große Testakademie 2222")
         # TODO this could be more expanded (event without courses, distinguish
         #  between registered and participant, ...
@@ -744,18 +743,18 @@ class TestEventFrontend(FrontendTest):
         # orgas
         self.assertNonPresence("Beispiel")
         # check visibility and hint text on empty participant_info
-        self.traverse("Teilnehmer-Infos")
-        self.assertTitle("Universale Akademie – Teilnehmer-Infos")
+        self.traverse("Teilnehmenden-Infos")
+        self.assertTitle("Universale Akademie – Teilnehmenden-Infos")
         self.assertPresence("Die Kristallkugel hat gute Dienste geleistet, nicht wahr?")
         self.traverse("Bearbeiten")
         self.assertTitle("Universale Akademie – Freitexte")
         f = self.response.forms['changefreetextform-participant_info']
         f['free_text_value'] = ""
         self.submit(f)
-        self.assertNoLink("Teilnehmer-Infos")
+        self.assertNoLink("Teilnehmenden-Infos")
         self.get('/event/event/1/notes')
         self.assertPresence(
-            "Diese Seite ist momentan für Teilnehmer nicht sichtbar. Um das zu ändern, "
+            "Diese Seite ist momentan für Teilnehmende nicht sichtbar. Um das zu ändern, "
             "können Orgas über die Konfigurations-Seite hier etwas hinzufügen.",
             div='static-notifications',
         )
@@ -772,7 +771,7 @@ class TestEventFrontend(FrontendTest):
             self.submit(f, check_notification=False)
             self.assertValidationError(
                 'orga_ids',
-                "Einige dieser Accounts sind keine Veranstaltungsnutzer.",
+                "Einige dieser Accounts sind keine Veranstaltungsaccounts.",
                 index=-1,
             )
             # Try to add an archived user.
@@ -786,14 +785,14 @@ class TestEventFrontend(FrontendTest):
             self.assertValidationError('orga_ids', msg, index=-1)
             f['orga_ids'] = USER_DICT['berta']['DB-ID']
             self.submit(f)
-            self.assertTitle("Orgas & Betreuer verwalten (Universale Akademie)")
+            self.assertTitle("Orgas & Betreuer:innen verwalten (Universale Akademie)")
             self.assertPresence("Beispiel", div='orgas_list')
             text = self.fetch_mail_content()
             self.assertIn("als Orgas hinzugefügt", text)
             f = self.response.forms['removeorgaform2']
             f['ack_delete'].checked = True
             self.submit(f)
-            self.assertTitle("Orgas & Betreuer verwalten (Universale Akademie)")
+            self.assertTitle("Orgas & Betreuer:innen verwalten (Universale Akademie)")
             self.assertNonPresence("Beispiel")
             text = self.fetch_mail_content()
             self.assertIn("als Orga entfernt", text)
@@ -1530,7 +1529,7 @@ etc;anything else""",
         f['nonmember_surcharge'] = "8"
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            'orga_ids', "Einige dieser Accounts sind keine Veranstaltungsnutzer."
+            'orga_ids', "Einige dieser Accounts sind keine Veranstaltungsaccounts."
         )
         self.assertValidationError('part_end', "Muss später als Beginn sein.")
         f = self.response.forms['createeventform']
@@ -1703,14 +1702,14 @@ etc;anything else""",
         # then the participant list
         self.traverse(
             {'description': 'Mailinglisten'},
-            {'description': 'Alternative Akademie Teilnehmer'},
+            {'description': 'Alternative Akademie Teilnehmende'},
         )
         self.assertPresence("Anton", div="moderator-list")
         self.assertPresence("Emilia", div="moderator-list")
         self.traverse({'description': 'Konfiguration'})
         f = self.response.forms['configuremailinglistform']
         self.assertEqual('altaka-all', f['local_part'].value)
-        self.assertPresence("Teilnehmer/Anmeldungen (Opt-out)")
+        self.assertPresence("Teilnehmende/Anmeldungen (Opt-out)")
         # TODO check for correct registration part stati
         self.assertEqual('AltAka', f['subject_prefix'].value)
 
@@ -1911,7 +1910,9 @@ etc;anything else""",
         participant_info_url = '/event/event/1/notes'
         self.get(participant_info_url)
         self.assertTitle("Große Testakademie 2222")
-        self.assertPresence("Kein Teilnehmer der Veranstaltung.", div='notifications')
+        self.assertPresence(
+            "Du nimmst nicht an dieser Veranstaltung teil.", div='notifications'
+        )
 
         # now, start registration testing
         surcharge = "Da Du kein CdE-Mitglied bist, musst Du "
@@ -2028,7 +2029,9 @@ etc;anything else""",
             self.traverse({'href': participant_info_url})
         self.get(participant_info_url)
         self.assertTitle("Große Testakademie 2222")
-        self.assertPresence("Kein Teilnehmer der Veranstaltung", div='notifications')
+        self.assertPresence(
+            "Du nimmst nicht an dieser Veranstaltung teil", div='notifications'
+        )
 
         # check log
         # TODO Rewrite this test to not require reset to work
@@ -2039,7 +2042,7 @@ etc;anything else""",
             "Anmeldung erstellt", div=str(self.EVENT_LOG_OFFSET + 1) + "-1001"
         )
         self.assertPresence(
-            "Anmeldung durch Teilnehmer bearbeitet.",
+            "Anmeldung durch Teilnehmer:in bearbeitet.",
             div=str(self.EVENT_LOG_OFFSET + 2) + "-1002",
         )
 
@@ -2476,7 +2479,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Veranstaltung geändert", div=str(self.EVENT_LOG_OFFSET + 1) + "-1001"
         )
         self.assertPresence(
-            "Fragebogen durch Teilnehmer bearbeitet.",
+            "Fragebogen durch Teilnehmende bearbeitet.",
             div=str(self.EVENT_LOG_OFFSET + 2) + "-1002",
         )
 
@@ -2817,7 +2820,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.get('/event/event/1/registration/list')
             self.assertTitle("Große Testakademie 2222")
             self.assertPresence(
-                "Fehler! Die Teilnehmerliste ist noch nicht veröffentlicht.",
+                "Fehler! Die Teilnahmeliste ist noch nicht veröffentlicht.",
                 div='notifications',
             )
 
@@ -2834,9 +2837,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 {'href': '/event/event/1/show'},
                 {'href': 'event/event/1/registration/list'},
             )
-            self.assertTitle("Teilnehmerliste Große Testakademie 2222")
+            self.assertTitle("Teilnahmeliste Große Testakademie 2222")
             self.assertPresence(
-                "Die Teilnehmerliste ist aktuell nur für Orgas und Admins sichtbar.",
+                "Die Teilnahmeliste ist aktuell nur für Orgas und Admins sichtbar.",
                 div='static-notifications',
             )
             self.assertPresence("Übersicht")
@@ -2849,7 +2852,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.assertNonPresence("Kurs")
 
             self.traverse({'href': r'event/event/1/registration/list\?part_id=1'})
-            self.assertPresence("Es gibt in Summe 3 Teilnehmer.")
+            self.assertPresence("Es gibt in Summe 3 Teilnehmende.")
             self.assertNonPresence("Garcia")
             self.assertNonPresence("Kurs")
             self.assertNonPresence("Veranstaltungsteile")
@@ -2861,7 +2864,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.submit(f)
 
             self.traverse({'href': 'event/event/1/registration/list'})
-            self.assertTitle("Teilnehmerliste Große Testakademie 2222")
+            self.assertTitle("Teilnahmeliste Große Testakademie 2222")
             self.assertPresence("Veranstaltungsteile")
             self.assertNonPresence("Kurs")
             self.traverse({'href': r'event/event/1/registration/list\?part_id=1'})
@@ -2889,9 +2892,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 {'href': '/event/event/1/show'},
                 {'href': '/event/event/1/registration/list'},
             )
-            self.assertTitle("Teilnehmerliste Große Testakademie 2222")
+            self.assertTitle("Teilnahmeliste Große Testakademie 2222")
             self.assertNonPresence(
-                "Die Teilnehmerliste ist aktuell nur für Orgas und Admins sichtbar.",
+                "Die Teilnahmeliste ist aktuell nur für Orgas und Admins sichtbar.",
                 div='static-notifications',
             )
             self.assertPresence("Warmup")
@@ -2913,11 +2916,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 {'href': '/event/event/1/show'},
                 {'href': '/event/event/1/registration/list'},
             )
-            self.assertTitle("Teilnehmerliste Große Testakademie 2222")
+            self.assertTitle("Teilnahmeliste Große Testakademie 2222")
             self.assertPresence(
-                "Du kannst die Teilnehmerliste nicht sehen, da du "
+                "Du kannst die Teilnahmeliste nicht sehen, da du "
                 "nicht zugestimmt hast, deine Daten auf der "
-                "Teilnehmerliste zur Verfügung zu stellen."
+                "Teilnahmeliste zur Verfügung zu stellen."
             )
             self.assertNonPresence("Übersicht")
             self.assertNonPresence("Zweite Hälfte")
@@ -2940,28 +2943,28 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f["reg.list_consent"].checked = True
         self.submit(f)
 
-        self.traverse("Teilnehmerliste")
+        self.traverse("Teilnahmeliste")
         # Emmy has not given list_consent, check she is counted anyway
         self.assertPresence("berta@example.cde")
         self.assertNonPresence("emilia@example.cde")
-        self.assertPresence("Es gibt in Summe 2 Teilnehmer.")
+        self.assertPresence("Es gibt in Summe 2 Teilnehmende.")
 
         self.traverse("Silvesterfeier")
         # Berta is only guest - neither counted nor listed
-        self.assertPresence("Es gibt in Summe 1 Teilnehmer.")
+        self.assertPresence("Es gibt in Summe 1 Teilnehmende.")
         self.assertNonPresence("Vorname")
 
         self.traverse("1. Hälfte Windischleuba")
         self.assertNonPresence("Vorname")
-        self.assertPresence("Bisher gibt es keine Teilnehmer.")
+        self.assertPresence("Bisher gibt es keine Teilnehmenden.")
 
         self.traverse("1. Hälfte Oberwesel")
         self.assertPresence("berta@example.cde")
-        self.assertPresence("Es gibt in Summe 1 Teilnehmer.")
+        self.assertPresence("Es gibt in Summe 1 Teilnehmende.")
 
         self.traverse("1. Hälfte Kaub")
         self.assertNonPresence("Vorname")
-        self.assertPresence("Es gibt in Summe 1 Teilnehmer.")
+        self.assertPresence("Es gibt in Summe 1 Teilnehmende.")
 
     @as_users("berta")
     def test_participant_list_event_with_one_part(self) -> None:
@@ -2970,8 +2973,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             {'href': '/event/event/2/show'},
             {'href': '/event/event/2/registration/list'},
         )
-        self.assertTitle("Teilnehmerliste CdE-Party 2050")
-        self.assertPresence("Bisher gibt es keine Teilnehmer.")
+        self.assertTitle("Teilnahmeliste CdE-Party 2050")
+        self.assertPresence("Bisher gibt es keine Teilnehmenden.")
 
         # add a registration
         self.traverse(
@@ -3021,8 +3024,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
 
         # now, check the sorting
-        self.traverse({'description': 'Teilnehmerliste'})
-        self.assertTitle("Teilnehmerliste Große Testakademie 2222")
+        self.traverse({'description': 'Teilnahmeliste'})
+        self.assertTitle("Teilnahmeliste Große Testakademie 2222")
         akira = USER_DICT['akira']
         anton = USER_DICT['anton']
         berta = USER_DICT['berta']
@@ -3078,7 +3081,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse(
             {'description': 'Veranstaltungen'},
             {'description': 'Große Testakademie 2222'},
-            {'description': 'Teilnehmerliste'},
+            {'description': 'Teilnahmeliste'},
         )
         # emilia is no member and therefore must not be linked
         self.assertNoLink(content='Eventis')
@@ -3208,7 +3211,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Nicht genug Geld. 455,99 € < 466,49 €", div="line1_infos")
         self.assertPresence("Zu viel Geld. 999,99 € > 584,48 €", div="line2_infos")
         self.assertPresence(
-            "Benutzer ist nicht für diese Veranstaltung angemeldet.",
+            "Person ist nicht für diese Veranstaltung angemeldet.",
             div="line3_problems",
         )
         self.assertPresence("Ungültige Eingabe für ein Datum.", div="line4_problems")
@@ -3698,7 +3701,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             {
                 'persona_id': 5,
                 'code': const.EventLogCodes.registration_status_changed,
-                'change_note': "2.H.: Teilnehmer -> Abgemeldet",
+                'change_note': "2.H.: Teilnehmend -> Abgemeldet",
             },
             {
                 'persona_id': 5,
@@ -3708,7 +3711,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             {
                 'persona_id': 7,
                 'code': const.EventLogCodes.registration_status_changed,
-                'change_note': "2.H.: Teilnehmer -> Abgemeldet",
+                'change_note': "2.H.: Teilnehmend -> Abgemeldet",
             },
             {
                 'persona_id': 7,
@@ -3946,19 +3949,19 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['persona.persona_id'] = "DB-8-6"
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            'persona.persona_id', "Dieser Benutzer existiert nicht oder ist archiviert."
+            'persona.persona_id', "Dieser Account existiert nicht oder ist archiviert."
         )
         # Try to add a non-existent user.
         f['persona.persona_id'] = "DB-10000-5"
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            'persona.persona_id', "Dieser Benutzer existiert nicht oder ist archiviert."
+            'persona.persona_id', "Dieser Account existiert nicht oder ist archiviert."
         )
         # Try to add a non-event user.
         f['persona.persona_id'] = "DB-11-6"
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            'persona.persona_id', "Dieser Nutzer ist kein Veranstaltungsnutzer."
+            'persona.persona_id', "Dieser Account ist kein Veranstaltungsaccount."
         )
         # Check invalid course choices
         f['track1.course_choice_0'] = 5
@@ -4550,7 +4553,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         )
         self.assertTitle("Statistik (Große Testakademie 2222)")
 
-        self.assertPresence("Teilnehmer-Statistik")
+        self.assertPresence("Teilnehmenden-Statistik")
         self.assertPresence("1.H.", div="participant-stats")
         self.assertPresence("Nie eingecheckt")
 
@@ -5876,7 +5879,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.submit(f)  # period id 1003
             self.submit(f, check_notification=False)
             self.assertValidationError(
-                'checkin_time', "Kann eingecheckte Nutzer nicht einchecken."
+                'checkin_time', "Kann eingecheckte Personen nicht einchecken."
             )
             self.submit(self.response.forms['deleteperiodform1003'])
 
@@ -6151,11 +6154,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # check log
         self.traverse("Log")
         self.assertPresence(
-            "Kursteilnehmer von Heldentum geändert.",
+            "Kursteilnehmende von Heldentum geändert.",
             div=str(self.EVENT_LOG_OFFSET + 1) + "-1001",
         )
         self.assertPresence(
-            "Kursteilnehmer von Heldentum geändert.",
+            "Kursteilnehmende von Heldentum geändert.",
             div=str(self.EVENT_LOG_OFFSET + 2) + "-1002",
         )
 
@@ -6173,9 +6176,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertNonPresence("Emilia", div='inhabitants')
         self.assertNonPresence("In Anmeldungsliste", div='inhabitants-2')
         self.assertNonPresence("nicht zugestimmt")
-        self.traverse("Bewohner verwalten")
+        self.traverse("Bewohnende verwalten")
         self.assertTitle(
-            "Bewohner der Unterkunft Kalte Kammer verwalten (Große Testakademie 2222)"
+            "Bewohnende der Unterkunft Kalte Kammer verwalten (Große Testakademie 2222)"
         )
         self.assertCheckbox(False, "is_camping_mat_3_3")
         self.assertCheckbox(True, "is_camping_mat_3_4")
@@ -6191,9 +6194,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Inga", div='inhabitants-3')
 
         # check the status of the camping mat checkbox was not overridden
-        self.traverse("Bewohner verwalten")
+        self.traverse("Bewohnende verwalten")
         self.assertTitle(
-            "Bewohner der Unterkunft Kalte Kammer verwalten (Große Testakademie 2222)"
+            "Bewohnende der Unterkunft Kalte Kammer verwalten (Große Testakademie 2222)"
         )
         self.assertCheckbox(False, "is_camping_mat_3_3")
         self.assertCheckbox(True, "is_camping_mat_3_4")
@@ -6223,11 +6226,11 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # check log
         self.traverse("Log")
         self.assertPresence(
-            "Bewohner von Kalte Kammer geändert.",
+            "Bewohnende von Kalte Kammer geändert.",
             div=str(self.EVENT_LOG_OFFSET + 1) + "-1001",
         )
         self.assertPresence(
-            "Bewohner von Kalte Kammer geändert.",
+            "Bewohnende von Kalte Kammer geändert.",
             div=str(self.EVENT_LOG_OFFSET + 2) + "-1002",
         )
 
@@ -6239,7 +6242,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             {'description': 'Große Testakademie 2222'},
             {'description': 'Unterkünfte'},
             {'description': 'Einzelzelle'},
-            {'description': 'Bewohner verwalten'},
+            {'description': 'Bewohnende verwalten'},
         )
         self.assertPresence('Akira', div='inhabitant-1-5')
         self.assertCheckbox(False, "is_camping_mat_1_5")
@@ -6256,11 +6259,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse(
             {'description': 'Unterkünfte'},
             {'description': 'Kalte Kammer'},
-            {'description': 'Bewohner verwalten'},
+            {'description': 'Bewohnende verwalten'},
         )
         self.assertPresence('Garcia', div='inhabitant-1-3')
         self.assertCheckbox(False, "is_camping_mat_1_3")
-        self.assertPresence('Zur Zeit keine Bewohner eingeteilt.', div='inhabitants-2')
+        self.assertPresence(
+            'Zur Zeit keine Bewohnenden eingeteilt.', div='inhabitants-2'
+        )
         self.assertPresence('Garcia', div='inhabitant-3-3')
         self.assertCheckbox(False, "is_camping_mat_3_3")
         self.assertPresence('Inga', div='inhabitant-3-4')
@@ -6278,7 +6283,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse(
             {'description': 'Unterkünfte'},
             {'description': 'Einzelzelle'},
-            {'description': 'Bewohner verwalten'},
+            {'description': 'Bewohnende verwalten'},
         )
         self.assertPresence('Garcia', div='inhabitant-1-3')
         self.assertCheckbox(False, "is_camping_mat_1_3")
@@ -6296,11 +6301,13 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse(
             {'description': 'Unterkünfte'},
             {'description': 'Kalte Kammer'},
-            {'description': 'Bewohner verwalten'},
+            {'description': 'Bewohnende verwalten'},
         )
         self.assertPresence('Akira', div='inhabitant-1-5')
         self.assertCheckbox(False, "is_camping_mat_1_5")
-        self.assertPresence('Zur Zeit keine Bewohner eingeteilt.', div='inhabitants-2')
+        self.assertPresence(
+            'Zur Zeit keine Bewohnenden eingeteilt.', div='inhabitants-2'
+        )
         self.assertPresence('Emilia', div='inhabitant-3-2')
         self.assertCheckbox(False, "is_camping_mat_3_2")
         self.assertNonPresence('Garcia', div="inhabitants-1")
@@ -6310,8 +6317,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # check log
         self.get('/event/event/1/log')
         change_note = (
-            "Bewohner von Kalte Kammer und Einzelzelle für Warmup getauscht, "
-            "Bewohner von Kalte Kammer und Einzelzelle für Zweite Hälfte getauscht."
+            "Bewohnende von Kalte Kammer und Einzelzelle für Warmup getauscht, "
+            "Bewohnende von Kalte Kammer und Einzelzelle für Zweite Hälfte getauscht."
         )
         self.assertPresence(change_note, div=str(self.EVENT_LOG_OFFSET + 1) + "-1001")
         self.assertPresence(change_note, div=str(self.EVENT_LOG_OFFSET + 2) + "-1002")
@@ -6828,7 +6835,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['note'] = "Archived for testing."
         self.submit(f)
         self.assertTitle("Daniel Dino")
-        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        self.assertPresence("Der Account ist archiviert.", div='archived')
         f = self.response.forms['purgepersonaform']
         f['ack_delete'].checked = True
         with self.assertRaises(RuntimeError):
@@ -6838,7 +6845,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         )
         self.submit(f)
         self.assertTitle("N. N.")
-        self.assertPresence("Der Benutzer wurde geleert.", div='purged')
+        self.assertPresence("Der Account wurde geleert.", div='purged')
 
         # now, test if the event is still working
         self.traverse(
@@ -7002,8 +7009,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertTitle("CdE-Party 2050")
         self.assertPresence("Charly")
 
-        self.traverse("Veranstaltungen", "CdE-Party 2050", "Teilnehmerliste")
-        self.assertTitle("Teilnehmerliste CdE-Party 2050")
+        self.traverse("Veranstaltungen", "CdE-Party 2050", "Teilnahmeliste")
+        self.assertTitle("Teilnahmeliste CdE-Party 2050")
         self.assertPresence("Charly")
 
         # archive charly
@@ -7024,8 +7031,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertPresence("CdE-Party 2050")
 
-        self.traverse("Veranstaltungen", "CdE-Party 2050", "Teilnehmerliste")
-        self.assertTitle("Teilnehmerliste CdE-Party 2050")
+        self.traverse("Veranstaltungen", "CdE-Party 2050", "Teilnahmeliste")
+        self.assertTitle("Teilnahmeliste CdE-Party 2050")
         self.assertPresence("Charly")
 
         # purge charly
@@ -7035,8 +7042,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.submit(f)
         self.assertNonPresence("CdE-Party 2050")
 
-        self.traverse("Veranstaltungen", "CdE-Party 2050", "Teilnehmerliste")
-        self.assertTitle("Teilnehmerliste CdE-Party 2050")
+        self.traverse("Veranstaltungen", "CdE-Party 2050", "Teilnahmeliste")
+        self.assertTitle("Teilnahmeliste CdE-Party 2050")
         self.assertNonPresence("Charly")
         self.assertPresence("N. N.")
 
@@ -7751,7 +7758,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 "1 Ausfallende Kurse mit Teilnehmenden",
                 "3 Anmeldungen mit nicht bezahltem Beitrag",
                 "2 Unzulässige gemischte Unterkünfte",
-                "1 Unterkünfte mit inkorrekter Bewohnerzahl",
+                "1 Unterkünfte mit inkorrekter Bewohnendenzahl",
                 "2 Fehlende Kurseinteilungen",
                 "1 Anmeldungen mit übrigem zu zahlenden Beitrag",
                 "1 Eingecheckte Abwesende",
@@ -9150,8 +9157,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         else:
             cutoff_id = 0
         with self.conf.with_overrides(EVENT_LIMITED_ACCESS_CUTOFF_ID=cutoff_id):
-            self.traverse("Veranstaltungen", "Veranstaltungshelfer")
-            self.assertTitle("Veranstaltungshelfer [1]")
+            self.traverse("Veranstaltungen", "Veranstaltungshelfer:innen")
+            self.assertTitle("Veranstaltungshelfer:innen [1]")
             self.assertNotIn('addeventhelperform', self.response.forms)
             self.assertNotIn('removeeventhelperform42', self.response.forms)
             self.assertPresence("Petra Philanthrop")
@@ -9194,7 +9201,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.traverse("Warme Stube")
             self.assertPresence("2 + 0", div='inhabitants-3')
             self.assertPresence(
-                "Gemischte Unterkunft mit konfligierenden Teilnehmern.",
+                "Gemischte Unterkunft mit konfligierenden Teilnehmenden.",
                 div='inhabitants-3',
             )
             if not self.user_in("ludwig"):
@@ -9363,12 +9370,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
     @as_users("annika")
     def test_event_quicksearch(self) -> None:
-        self.traverse("Veranstaltungen", "Veranstaltungshelfer")
-        self.assertTitle("Veranstaltungshelfer [1]")
+        self.traverse("Veranstaltungen", "Veranstaltungshelfer:innen")
+        self.assertTitle("Veranstaltungshelfer:innen [1]")
         f = self.response.forms["quickeventform"]
         f["event_id"] = ""
         self.submit(f)
-        self.assertTitle("Veranstaltungshelfer [1]")
+        self.assertTitle("Veranstaltungshelfer:innen [1]")
         self.assertNotification("Unbekannte Veranstaltung.", "error")
         f = self.response.forms["quickeventform"]
         f["event_id"] = 1
@@ -9438,7 +9445,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f["persona.persona_id"] = "DB-1-9"
         self.submit(f)
 
-        self.traverse("Übersicht", "Betreuer verwalten")
+        self.traverse("Übersicht", "Betreuer:innen verwalten")
         f = self.response.forms["addcaretakersform"]
         f["caretaker_ids"] = "DB-5-1"
         self.submit(f)

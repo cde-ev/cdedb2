@@ -159,7 +159,7 @@ class TestBrowser(BrowserTest):
         page.get_by_role("button", name="Anmelden").click()
         page.wait_for_url("http://localhost:5000/")
 
-        page.get_by_role("button", name="Benutzer-Administration").click()
+        page.get_by_role("button", name="Account-Administration").click()
         page.wait_for_url("http://localhost:5000/")
         page.locator("#adminshowuserform .selectize-input").click()
         page.locator("#adminshowuserform .selectize-input input").type("emi")
@@ -251,9 +251,9 @@ class TestBrowser(BrowserTest):
 
         page.get_by_role("link", name="Mitglieder").click()
         page.wait_for_url("http://localhost:5000/cde/")
-        page.get_by_role("button", name="Benutzer-Administration").click()
+        page.get_by_role("button", name="Account-Administration").click()
         page.wait_for_url("http://localhost:5000/cde/")
-        page.get_by_role("link", name="Nutzer verwalten", exact=True).click()
+        page.get_by_role("link", name="Accounts verwalten", exact=True).click()
         page.wait_for_url("http://localhost:5000/cde/search/user")
 
         page.get_by_placeholder("– Filter hinzufügen –").click()
@@ -382,7 +382,7 @@ class TestBrowser(BrowserTest):
         ).get_by_text("Gast").click()
         page.locator("#tab_qf_js").get_by_text("Wu: Status").locator(
             ".selectize-dropdown"
-        ).get_by_text("Teilnehmer").click()
+        ).get_by_text("Teilnehmende").click()
         page.locator("#tab_qf_js .filterfield-list").get_by_text(
             "Familienname"
         ).locator("button").click()
@@ -392,7 +392,7 @@ class TestBrowser(BrowserTest):
         page.screenshot(path="/tmp/screenshot.png", full_page=True)
         expect(page.locator('#query-results')).to_contain_text('Ergebnis [4]')
         expect(page.locator('.filterfield-list')).to_contain_text('Warteliste')
-        expect(page.locator('.filterfield-list')).to_contain_text('Teilnehmer')
+        expect(page.locator('.filterfield-list')).to_contain_text('Teilnehmende')
         expect(page.locator('.filterfield-list')).to_contain_text('Gast')
 
     @storage

@@ -2355,24 +2355,24 @@ class FrontendTest(BackendTest):
         f['note'] = "Archived for testing."
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
-        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        self.assertPresence("Der Account ist archiviert.", div='archived')
         _check_deleted_data()
         # 2. Find user via archived search
         self.traverse({'href': '/' + realm + '/$'})
-        self.traverse("Nutzer verwalten")
-        self.assertTitle("utzerverwaltung", exact=False)
+        self.traverse("Accounts verwalten")
+        self.assertTitle("Veranstaltungsaccountverwaltung", exact=False)
         f = self.response.forms['queryform']
         f['qop_is_archived'] = ""
         f['qop_given_names'] = QueryOperators.match.value
         f['qval_given_names'] = 'Zelda'
         self.submit(f)
-        self.assertTitle("utzerverwaltung", exact=False)
+        self.assertTitle("Veranstaltungsaccountverwaltung", exact=False)
         self.assertPresence("Ergebnis [1]", div='query-results')
         self.assertPresence("Zeruda", div='query-result')
         self.traverse({'description': 'Profil', 'href': '/core/persona/1001/show'})
         # 3: Dearchive user
         self.assertTitle("Zelda Zeruda-Hime")
-        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        self.assertPresence("Der Account ist archiviert.", div='archived')
         self.traverse({'description': "Account wiederherstellen"})
         f = self.response.forms['dearchivepersonaform']
         self.submit(f, check_notification=False, check_mandatory_filled=False)
