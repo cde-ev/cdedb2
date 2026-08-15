@@ -1220,7 +1220,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
         age = determine_age_class(persona.birthday, rs.ambience['event'].begin)
         registration['mixed_lodging'] = registration['mixed_lodging'] and age.may_mix()
-        change_note = "Anmeldung durch Teilnehmer bearbeitet."
+        change_note = "Anmeldung durch Teilnehmer:in bearbeitet."
         code = self.eventproxy.set_registration(
             rs, registration, change_note, orga_input=False
         )

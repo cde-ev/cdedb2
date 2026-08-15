@@ -913,13 +913,13 @@ class LDAPsqlBackend:
         return cls._is_entry_dn(dn, cls.status_groups_dn, "cn")
 
     STATUS_GROUPS = {
-        "is_active": "Aktive Nutzer.",
-        "is_member": "Nutzer, die aktuell Mitglied im CdE sind.",
-        "is_searchable": "Nutzer, die aktuell Mitglied im CdE und in der Datenbank suchbar sind.",
-        "is_ml_realm": "Nutzer, die auf Mailinglisten stehen dürfen.",
-        "is_event_realm": "Nutzer, die an Veranstaltungen teilnehmen dürfen.",
-        "is_assembly_realm": "Nutzer, die an Versammlungen teilnehmen dürfen.",
-        "is_cde_realm": "Nutzer, die jemals Mitglied im CdE waren oder sind.",
+        "is_active": "Aktive Personen.",
+        "is_member": "Personen, die aktuell Mitglied im CdE sind.",
+        "is_searchable": "Personen, die aktuell Mitglied im CdE und in der Datenbank suchbar sind.",
+        "is_ml_realm": "Personen, die auf Mailinglisten stehen dürfen.",
+        "is_event_realm": "Personen, die an Veranstaltungen teilnehmen dürfen.",
+        "is_assembly_realm": "Personen, die an Versammlungen teilnehmen dürfen.",
+        "is_cde_realm": "Personen, die jemals Mitglied im CdE waren oder sind.",
         "is_ml_admin": "Mailinglisten-Administratoren",
         "is_event_admin": "Veranstaltungs-Administratoren",
         "is_assembly_admin": "Versammlungs-Administratoren",
