@@ -16175,7 +16175,7 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot_result.tmpl:156
 msgid ""
-"The following table contains the pairwise preferences over all option. It "
+"The following table contains the pairwise preferences over all options. It "
 "can be read as"
 msgstr ""
 "Die folgende Tabelle enthält die paarweise Präferenz aller Optionen. Sie "
@@ -16233,7 +16233,7 @@ msgid "You voted against all candidates."
 msgstr "Du hast Dich gegen alle Kandidaten entschieden."
 
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot_result.tmpl:238
-msgid "You voted against all option."
+msgid "You voted against all options."
 msgstr "Du hast Dich gegen alle Optionen ausgesprochen."
 
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot_result.tmpl:241
@@ -21776,7 +21776,6 @@ msgstr "Mailinglisten-Daten"
 #: cdedb/frontend/templates/web/core/show_user_mailinglists.tmpl:44
 #: cdedb/frontend/templates/web/core/show_user_mailinglists.tmpl:45
 #: cdedb/frontend/templates/web/core/show_user_mailinglists.tmpl:73
-#, fuzzy
 msgid ""
 "This lists all mailinglists this user is related to. In particular, this "
 "includes lists they are or have recently been subscribed to, as well as "
