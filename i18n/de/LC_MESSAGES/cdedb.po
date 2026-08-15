@@ -592,7 +592,7 @@ msgstr "Niemand"
 #: cdedb/.i18n_additional.py:103 cdedb/.i18n_additional.py:115
 #: cdedb/.i18n_additional.py:118 cdedb/.i18n_additional.py:122
 msgid "MailinglistRosterVisibility.subscribable"
-msgstr "Abonnementberechtigte (und Abonnenten)"
+msgstr "Abonnementberechtigte (und Abonnent:innen)"
 
 #: cdedb/.i18n_additional.py:104 cdedb/.i18n_additional.py:116
 #: cdedb/.i18n_additional.py:117 cdedb/.i18n_additional.py:120
@@ -674,7 +674,7 @@ msgstr "Rückgebucht"
 
 #: cdedb/.i18n_additional.py:116 cdedb/.i18n_additional.py:119
 msgid "MailinglistRosterVisibility.members"
-msgstr "Vereinsmitglieder und Abonnenten"
+msgstr "Vereinsmitglieder und Abonnent:innen"
 
 #: cdedb/.i18n_additional.py:117 cdedb/.i18n_additional.py:129
 #: cdedb/.i18n_additional.py:130 cdedb/.i18n_additional.py:133
@@ -12449,7 +12449,7 @@ msgstr "Auf diese Seite kann nur die Mailinglisten-Moderation zugreifen."
 msgid ""
 "You only have restricted moderator access and may not change subscriptions."
 msgstr ""
-"Du hast nur eingeschränkten Moderations-Zugriff und darfst keine Abbonements "
+"Du hast nur eingeschränkten Moderations-Zugriff und darfst keine Abonnements "
 "ändern."
 
 #: cdedb/frontend/common.py:2913 cdedb/frontend/common.py:2916
@@ -12753,7 +12753,7 @@ msgstr "Bild aktualisiert."
 #: cdedb/frontend/core/base.py:2712 cdedb/frontend/core/base.py:2716
 #: cdedb/frontend/core/base.py:2717
 msgid "Please provide the user's email address."
-msgstr "Bitte gib die Emailadresse des Account an."
+msgstr "Bitte gib die Emailadresse des Accounts an."
 
 #: cdedb/frontend/core/base.py:2647 cdedb/frontend/core/base.py:2722
 #: cdedb/frontend/core/base.py:2725 cdedb/frontend/core/base.py:2729
@@ -16241,7 +16241,7 @@ msgid "You voted for the following candidates:"
 msgstr "Du hast für die folgenden Kandidaten gestimmt:"
 
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot_result.tmpl:241
-msgid "You voted for the following option:"
+msgid "You voted for the following options:"
 msgstr "Du hast für die folgenden Optionen gestimmt:"
 
 #: cdedb/frontend/templates/web/assembly/ballot/show_ballot_result.tmpl:243
@@ -27723,7 +27723,7 @@ msgid ""
 msgstr ""
 "'%(subscribable)s' bedeutet alle, die uneingeschränkt die Liste abonnieren "
 "können. Für Listen mit moderiertem Opt-In sind das nur die aktuellen "
-"Abonnenten."
+"Abonnent:innen."
 
 #: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:161
 #: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:166

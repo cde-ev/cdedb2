@@ -152,10 +152,10 @@ Das Abonnement von $member auf der Mailingliste
     $listname
 wurde deaktiviert, da zu viele Mails nicht zugestellt werden konnten.
 
-Dies bedeutet, dass keine weiteren Mails dieser Liste an den Abonnenten versendet
+Dies bedeutet, dass keine weiteren Mails dieser Liste an die Abonnent:in versendet
 werden. Diese Einschränkung ist momentan *nicht* in der CdEDB sichtbar.
 
-Als Moderator kannst du versuchen, den Abonnenten auf einem anderen Weg zu
+Als Moderator kannst du versuchen, die Abonnent:in auf einem anderen Weg zu
 kontaktieren und über den Grund der Unzustellbarkeit zu informieren.
 Die Zustellbenachrichtigung, falls vorhanden, ist angehängt.
 Bei Fragen dazu wende dich an das Adminteam:
@@ -179,7 +179,7 @@ auch wenn mehrere Emails unzustellbar waren.
 Bei Wiederholung wird dies dazu führen, dass dem Account keine Mails dieser Liste
 mehr gesendet werden.
 
-Als Moderator kannst du versuchen, den Abonnenten auf einem anderen Weg zu
+Als Moderator kannst du versuchen, die Abonnent:in auf einem anderen Weg zu
 kontaktieren und über den Grund der Unzustellbarkeit zu informieren.
 Die Zustellbenachrichtigung, falls vorhanden, ist angehängt.
 Bei Fragen dazu wende dich an das Adminteam:
