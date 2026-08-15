@@ -1297,9 +1297,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Einzugsermächtigung'})
         self.assertTitle("Einzugsermächtigung Bertå Beispiel")
         self.assertPresence("Dagobert Anatidae & Co. KG", div='active-permit')
-        self.assertPresence(
-            "Das Mitglied ist der Kontoinhaber.", div='inactive-permits'
-        )
+        self.assertPresence("Das Mitglied ist Kontoinhaber:in.", div='inactive-permits')
         if self.user_in("farin"):
             self.assertIn("revokeform", self.response.forms)
         else:
@@ -1632,7 +1630,10 @@ class TestCdEFrontend(FrontendTest):
         f['telephone'] = ""
         f['donation'] = "3"
         self.submit(f, check_notification=False)
-        self.assertValidationWarning('donation', "Du bist nicht der Eigentümer des")
+        self.assertValidationWarning(
+            'donation',
+            "Der von dir hinterlegte Bankaccount läuft nicht auf deinen Namen.",
+        )
         f = self.response.forms['changedataform']
         f[IGNORE_WARNINGS_NAME] = True
         self.submit(f, check_notification=False)
@@ -2666,7 +2667,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Erledigt am", div='payment-request')
         self.assertPresence("Erledigt am", div='eject-members')
         self.assertPresence("2 Mitgliedschaften beendet.", div="eject-members")
-        self.assertPresence("1 Account archiviert.", div="eject-members")
+        self.assertPresence("1 Accounts archiviert.", div="eject-members")
 
         self.assertPresence("Insgesamt 7 Mitglieder.", div='balance-update')
         self.assertPresence("Davon 2 Probemitglieder.", div='balance-update')
@@ -2986,13 +2987,13 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("PfingstAkademie 2014")
         if self.user_in(22):
             self.assertPresence(
-                "Du bist kein Teilnehmende dieser vergangenen Veranstaltung und "
+                "Du hast an dieser vergangenen Veranstaltung nicht teilgenommen und "
                 "kannst diesen Link nur in Deiner Eigenschaft als Admin sehen.",
                 div='gallery-admin-info',
             )
         else:
             self.assertNonPresence(
-                "Du bist kein Teilnehmende dieser vergangenen Veranstaltung und "
+                "Du hast an dieser vergangenen Veranstaltung nicht teilgenommen und "
                 "kannst diesen Link nur in Deiner Eigenschaft als Admin sehen."
             )
         # inga is no participant nor admin
@@ -3069,7 +3070,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("berta")
     def test_past_course_counting(self) -> None:
         self.get("/cde/past/event/4/course/3/show")
-        self.assertPresence("Keine Teilnehmende eingetragen.")
+        self.assertPresence("Dieser Kurs hat keine Teilnehmenden.")
 
     @as_users("berta", "charly", maintain_data=True)
     def test_show_past_event_own_link(self) -> None:
@@ -3272,7 +3273,7 @@ class TestCdEFrontend(FrontendTest):
         f['persona_ids'] = "DB-7-8, DB-33-7"
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            'persona_ids', "Einige dieser Account existieren nicht."
+            'persona_ids', "Einige dieser Accounts existieren nicht."
         )
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         f = self.response.forms['addparticipantform']

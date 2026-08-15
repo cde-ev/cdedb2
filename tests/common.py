@@ -2360,13 +2360,13 @@ class FrontendTest(BackendTest):
         # 2. Find user via archived search
         self.traverse({'href': '/' + realm + '/$'})
         self.traverse("Accounts verwalten")
-        self.assertTitle("Veranstaltungsaccountverwaltung", exact=False)
+        self.assertTitle("ccountverwaltung", exact=False)
         f = self.response.forms['queryform']
         f['qop_is_archived'] = ""
         f['qop_given_names'] = QueryOperators.match.value
         f['qval_given_names'] = 'Zelda'
         self.submit(f)
-        self.assertTitle("Veranstaltungsaccountverwaltung", exact=False)
+        self.assertTitle("ccountverwaltung", exact=False)
         self.assertPresence("Ergebnis [1]", div='query-results')
         self.assertPresence("Zeruda", div='query-result')
         self.traverse({'description': 'Profil', 'href': '/core/persona/1001/show'})

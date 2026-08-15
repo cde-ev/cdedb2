@@ -722,7 +722,7 @@ class TestPrivacyFrontend(FrontendTest):
 
                 if self.user_in(*(core | ml)):
                     self.get('/ml/search/user')
-                    self.assertTitle("MailinglistenAccountverwaltung")
+                    self.assertTitle("Mailinglistenaccountverwaltung")
                 else:
                     self.get(
                         '/ml/search/user',
@@ -732,7 +732,7 @@ class TestPrivacyFrontend(FrontendTest):
 
                 if self.user_in(*(core | assembly)):
                     self.get('/assembly/search/user')
-                    self.assertTitle("VersammlungsAccountverwaltung")
+                    self.assertTitle("Versammlungsaccountverwaltung")
                 else:
                     self.get(
                         '/assembly/search/user',

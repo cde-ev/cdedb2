@@ -2479,7 +2479,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Veranstaltung geändert", div=str(self.EVENT_LOG_OFFSET + 1) + "-1001"
         )
         self.assertPresence(
-            "Fragebogen durch Teilnehmende bearbeitet.",
+            "Fragebogen durch Teilnehmer:in bearbeitet.",
             div=str(self.EVENT_LOG_OFFSET + 2) + "-1002",
         )
 

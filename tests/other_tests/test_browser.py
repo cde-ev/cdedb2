@@ -382,7 +382,7 @@ class TestBrowser(BrowserTest):
         ).get_by_text("Gast").click()
         page.locator("#tab_qf_js").get_by_text("Wu: Status").locator(
             ".selectize-dropdown"
-        ).get_by_text("Teilnehmende").click()
+        ).get_by_text("Teilnehmend").click()
         page.locator("#tab_qf_js .filterfield-list").get_by_text(
             "Familienname"
         ).locator("button").click()
@@ -392,7 +392,7 @@ class TestBrowser(BrowserTest):
         page.screenshot(path="/tmp/screenshot.png", full_page=True)
         expect(page.locator('#query-results')).to_contain_text('Ergebnis [4]')
         expect(page.locator('.filterfield-list')).to_contain_text('Warteliste')
-        expect(page.locator('.filterfield-list')).to_contain_text('Teilnehmende')
+        expect(page.locator('.filterfield-list')).to_contain_text('Teilnehmend')
         expect(page.locator('.filterfield-list')).to_contain_text('Gast')
 
     @storage

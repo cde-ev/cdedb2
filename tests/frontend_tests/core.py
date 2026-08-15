@@ -62,7 +62,7 @@ class TestCoreFrontend(FrontendTest):
         f["password"] = user["password"]
         self.submit(f, check_notification=False)
         self.assertLogin(user["given_names"])
-        self.assertTitle("Administratorenübersicht")
+        self.assertTitle("Admin-Übersicht")
 
     @as_users("vera", "berta", "emilia", maintain_data=True)
     def test_logout(self) -> None:
@@ -166,7 +166,7 @@ class TestCoreFrontend(FrontendTest):
             "Index",
             "Übersicht",
             "Meine Daten",
-            "Administratorenübersicht",
+            "Admin-Übersicht",
             "Kontakt",
         }
         genesis = {"Accountanfragen"}
@@ -174,9 +174,9 @@ class TestCoreFrontend(FrontendTest):
         defect_email = {"Defekte Email-Adressen"}
         core_admin = {"Accounts verwalten", "Metadaten"}
         meta_admin = {"Admin-Änderungen"}
-        log = {"Account-Log", "Accountdaten-Log"}
+        log = {"Account-Log", "Änderungs-Log"}
         complaint_admin = {"Fallarchiv", "Fall-Log"}
-        complaint_enforcer = {"Maßnahmenübersicht", "Fall-Unterstützer"}
+        complaint_enforcer = {"Maßnahmenübersicht", "Fall-Unterstützer:innen"}
         complaint = complaint_admin | complaint_enforcer
 
         # admin of a realm without genesis cases
@@ -270,20 +270,20 @@ class TestCoreFrontend(FrontendTest):
 
         self.traverse("Veranstaltungs-Daten")
         self.assertTitle("Garcia Generalis – Veranstaltungs-Daten")
-        self.assertPresence("CyberTestAkademie Teilnehmende", div="registration-list")
+        self.assertPresence("CyberTestAkademie Teilnehmend", div="registration-list")
         # part names not shown for one-part events
         self.assertNonPresence(
-            "CyberTestAkademie: Teilnehmende", div="registration-list"
+            "CyberTestAkademie: Teilnehmend", div="registration-list"
         )
         self.assertPresence("Große Testakademie", div="registration-list")
         self.assertPresence(
-            "Warmup: Teilnehmende, Erste Hälfte: Teilnehmende, Zweite Hälfte: Teilnehmende",
+            "Warmup: Teilnehmend, Erste Hälfte: Teilnehmend, Zweite Hälfte: Teilnehmend",
             div="registration-list",
         )
 
         self.assertPresence("Große Testakademie 2222: Orga", div="event-roles-list")
-        self.assertPresence("CdE-Party 2050: Betreuer:innen", div="event-roles-list")
-        self.assertPresence("TripelAkademie: Checkin-Helfer", div="event-roles-list")
+        self.assertPresence("CdE-Party 2050: Betreuer:in", div="event-roles-list")
+        self.assertPresence("TripelAkademie: Checkin-Helfer:in", div="event-roles-list")
 
     @as_users("nina", "paul", "quintus", maintain_data=True)
     def test_showuser_mailinglists(self) -> None:
@@ -2017,11 +2017,11 @@ class TestCoreFrontend(FrontendTest):
             f = self.response.forms['ackchangeform']
             self.submit(f)
             self.assertTitle("Zu prüfende Profiländerungen [0]")
-            self.traverse({'description': 'Accountdaten-Log'})
+            self.traverse({'description': 'Änderungs-Log'})
             f = self.response.forms['logshowform']
             f['reviewed_by'] = 'DB-22-1'
             self.submit(f)
-            self.assertTitle('Accountdaten-Log [1–1 von 1]')
+            self.assertTitle('Änderungs-Log [1–1 von 1]')
             self.assertPresence("Bertå Ganondorf")
         self.traverse(self.user['given_names'])
         self.assertNonPresence(self.user['family_name'])
@@ -2279,7 +2279,7 @@ class TestCoreFrontend(FrontendTest):
         # Check the overview.
         self.login(USER_DICT['inga'])
         self.traverse({"href": "/core/admins"})
-        self.assertTitle("Administratorenübersicht")
+        self.assertTitle("Admin-Übersicht")
         self.assertPresence("Anton Administrator", div="meta")
         self.assertPresence("Martin Meiste", div="meta")
         self.assertPresence("Anton Administrator", div="core")
@@ -2299,8 +2299,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Bertå Beispiel", div="assembly")
         self.logout()
         self.login(USER_DICT["janis"])
-        self.traverse({'description': 'Administratorenübersicht'})
-        self.assertTitle("Administratorenübersicht")
+        self.traverse({'description': 'Admin-Übersicht'})
+        self.assertTitle("Admin-Übersicht")
         self.assertPresence("Anton Administrator", div="core")
         self.assertNonPresence("Bertå Beispiel")
 
@@ -2568,7 +2568,7 @@ class TestCoreFrontend(FrontendTest):
 
         self.login('annika')  # event-only admin
         self.traverse("Accountanfragen")
-        self.assertPresence("Veranstaltungs-Account-Anfragen")
+        self.assertPresence("Veranstaltungs-Accountanfragen")
         self.assertPresence("zorro@example.cde", div='request-1001')
         self.traverse({'href': '/core/genesis/1001/show'})
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
@@ -2699,16 +2699,16 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("zelda@example.cde")
         self.assertNonPresence("zorro@example.cde")
         if self.user_in('paul'):
-            self.assertPresence("Mailinglisten-Account-Anfragen")
+            self.assertPresence("Mailinglisten-Accountanfragen")
             self.assertPresence("Michaela Mailcrawler")
-            self.assertPresence("Veranstaltungs-Account-Anfragen")
+            self.assertPresence("Veranstaltungs-Accountanfragen")
             self.assertPresence("Wolfgang Weihnacht")
         else:
-            self.assertNonPresence("Mailinglisten-Account-Anfragen")
+            self.assertNonPresence("Mailinglisten-Accountanfragen")
             self.assertNonPresence("Michaela Mailcrawler")
-            self.assertNonPresence("Veranstaltungs-Account-Anfragen")
+            self.assertNonPresence("Veranstaltungs-Accountanfragen")
             self.assertNonPresence("Wolfgang Weihnacht")
-        self.assertPresence("CdE-Mitglieds-Account-Anfragen")
+        self.assertPresence("CdE-Mitglieds-Accountanfragen")
         self.assertPresence("Kristin Zeder")
 
         # modify genesis request
@@ -2890,7 +2890,7 @@ class TestCoreFrontend(FrontendTest):
 
         def assert_account_presence(ml: bool, event: bool, cde: bool) -> None:
             self.assertTitle("Accountanfragen")
-            ml_msg = "keine Mailinglisten-Account-Anfragen zur Bestätigung aus."
+            ml_msg = "keine Mailinglisten-Accountanfragen zur Bestätigung aus."
             if ml:
                 self.assertPresence("Michaela Mailcrawler", div="current-cases")
                 self.assertNonPresence("Michaela Mailcrawler", div="concluded-cases")
@@ -2899,7 +2899,7 @@ class TestCoreFrontend(FrontendTest):
                 self.assertNonPresence("Michaele Mailcrawler", div="current-cases")
                 self.assertPresence("Michaela Mailcrawler", div="concluded-cases")
                 self.assertPresence(ml_msg)
-            event_msg = "keine Veranstaltungs-Account-Anfragen zur Bestätigung aus."
+            event_msg = "keine Veranstaltungs-Accountanfragen zur Bestätigung aus."
             if event:
                 self.assertPresence("Wolfgang Weihnacht", div="current-cases")
                 self.assertNonPresence("Wolfgang Weihnacht", div="concluded-cases")
@@ -2908,7 +2908,7 @@ class TestCoreFrontend(FrontendTest):
                 self.assertNonPresence("Wolfgang Weihnacht", div="current-cases")
                 self.assertPresence("Wolfgang Weihnacht", div="concluded-cases")
                 self.assertPresence(event_msg)
-            cde_msg = "keine CdE-Mitglieds-Account-Anfragen zur Bestätigung aus."
+            cde_msg = "keine CdE-Mitglieds-Accountanfragen zur Bestätigung aus."
             if cde:
                 self.assertPresence("Kristin Zeder", div="current-cases")
                 self.assertNonPresence("Kristin Zeder", div="concluded-cases")
@@ -3273,7 +3273,7 @@ class TestCoreFrontend(FrontendTest):
             check_notification=False,
         )
         self.assertPresence(
-            "Ungültiger Account für Aktualisierung."
+            "Account kann nicht aktualisiert werden."
             " Füge zunächst folgenden Bereich hinzu: cde.",
             div="notifications",
         )
@@ -3463,7 +3463,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertFalse(self.core.is_relative_admin(self.key, 1001))
         self._decide_genesis_case(GenesisDecision.approve, persona_id=1001, check=False)
         self.assertPresence(
-            "Ungültiger Account für Aktualisierung.", div="notifications"
+            "Account kann nicht aktualisiert werden.", div="notifications"
         )
 
         # The event user. This option should work.
@@ -3600,7 +3600,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("katarina")
     def test_auditor(self) -> None:
         realm_logs = {
-            "Index": ("Account-Log", "Accountdaten-Log"),
+            "Index": ("Account-Log", "Änderungs-Log"),
             "Mitglieder": ("CdE-Log", "Finanz-Log", "Verg.-Veranstaltungen-Log"),
             "Veranstaltungen": ("Log",),
             "Mailinglisten": ("Log",),
