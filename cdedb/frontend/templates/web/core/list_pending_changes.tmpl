@@ -2,7 +2,7 @@
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
-    {% trans count=pending|length %}
+    {% trans count=personas|length %}
     	Pending Profilechanges [{{ count }}]
     {% endtrans %}
 {% endblock %}
@@ -12,10 +12,10 @@
 {% endblock %}
 {% block content %}
    <ul>
-        {% for persona_id, entry in pending|keydictsort(EntitySorter.changelog) %}
+        {# Already sorted #}
+        {% for persona in personas.values() %}
            <li>
-               {{ util.href(cdedblink('core/inspect_change', {'persona_id': persona_id}),
-                            entry|persona_name) }}
+               {{ util.href(cdedblink('core/inspect_change', {'persona_id': persona.id}), persona.get_name()) }}
            </li>
         {% endfor %}
    </ul>

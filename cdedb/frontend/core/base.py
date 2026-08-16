@@ -3062,8 +3062,10 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("core_admin", "cde_admin", "event_admin")
     def list_pending_changes(self, rs: RequestState) -> Response:
         """List non-committed changelog entries."""
-        pending = self.coreproxy.changelog_get_pending_changes(rs)
-        return self.render(rs, "list_pending_changes", {'pending': pending})
+        pending_personas = self.coreproxy.changelog_get_pending_changes(rs)
+        # its ensured that there is up to one pending changelog entry per persona
+        personas = self.coreproxy.get_personas(rs, pending_personas.keys())
+        return self.render(rs, "list_pending_changes", {'personas': personas})
 
     @periodic("pending_changelog_remind")
     def pending_changelog_remind(
