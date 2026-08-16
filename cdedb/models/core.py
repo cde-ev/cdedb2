@@ -11,7 +11,7 @@ import logging
 import re
 from enum import auto
 from secrets import token_urlsafe
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -73,11 +73,11 @@ class MetaInfo(CdEDataclass):
 class EmailAddressReport(CdEDataclass):
     address: vtypes.Email
     status: const.EmailStatus
-    notes: Optional[str] = None
+    notes: str | None = None
     # This persona has this address as username.
-    user_id: Optional[vtypes.ID] = None
+    user_id: vtypes.ID | None = None
     # This persona has this address as explicit mail address for at least one ml.
-    subscriber_id: Optional[vtypes.ID] = None
+    subscriber_id: vtypes.ID | None = None
     # The mailinglists where this address is used as explicit address.
     ml_ids: set[vtypes.ID] = dataclasses.field(default_factory=set)
 
@@ -117,13 +117,13 @@ class AnonymousMessageData(CdEDataclass):
     )
 
     encrypted_data: str
-    persona_id: Optional[vtypes.ID] = dataclasses.field(
+    persona_id: vtypes.ID | None = dataclasses.field(
         init=False, default=None, metadata=Meta.exclude.as_dict
     )
-    username: Optional[vtypes.Email] = dataclasses.field(
+    username: vtypes.Email | None = dataclasses.field(
         init=False, default=None, metadata=Meta.exclude.as_dict
     )
-    subject: Optional[str] = dataclasses.field(
+    subject: str | None = dataclasses.field(
         init=False, default=None, metadata=Meta.exclude.as_dict
     )
 
@@ -197,7 +197,7 @@ class AnonymousMessageData(CdEDataclass):
             raise CryptographyError(*e.args) from None
         self.persona_id, self.username, self.subject = self.parse_data(decrypted)
 
-    def rotate(self, key: Optional[str] = None) -> str:
+    def rotate(self, key: str | None = None) -> str:
         if self.persona_id is None:
             if key is None:
                 raise ValueError("Need decryption key to rotate encryption.")
@@ -304,6 +304,19 @@ class PersonaName:
 class Persona(CdEDataclass):
     database_table: ClassVar[str] = "core.personas"
 
+    id: vtypes.PersonaID
+
+    # core
+    is_active: bool = True
+    is_archived: bool = False
+    is_purged: bool = False
+
+    # Retrieve realm bits to enable the dataclass to know if it is pure.
+    is_ml_realm: bool = False
+    is_assembly_realm: bool = False
+    is_event_realm: bool = False
+    is_cde_realm: bool = False
+
     def __post_init__(self) -> None:
         for field in dataclasses.fields(self):
             if PersonaFlag.mandatory_true_flag.in_field(field):
@@ -339,27 +352,18 @@ class Persona(CdEDataclass):
 
 @dataclasses.dataclass(kw_only=True)
 class PersonaStatus(Persona):
-    # core
-    is_active: bool = True
-    is_archived: bool = False
-    is_purged: bool = False
-
     # ml
-    is_ml_realm: bool = False
     is_ml_admin: bool = False
     is_cdelokal_admin: bool = False
 
     # assembly
-    is_assembly_realm: bool = False
     is_assembly_admin: bool = False
 
     # event
-    is_event_realm: bool = False
     is_event_admin: bool = False
     is_complaint_admin: bool = False
 
     # cde
-    is_cde_realm: bool = False
     is_member: bool = False
     is_searchable: bool = False
     is_cde_admin: bool = False
@@ -369,7 +373,7 @@ class PersonaStatus(Persona):
     is_auditor: bool = False
 
     @functools.cached_property
-    def is_admin(self) -> bool:
+    def is_any_admin(self) -> bool:
         "Persona has any admin privilege."
         return any(getattr(self, bit) for bit in self.get_admin_bits())
 
@@ -383,18 +387,6 @@ class CorePersona(Persona, PersonaName):
         metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict
     )
     # This does not include the ``password_hash`` for security reasons.
-
-    # status flags
-    is_active: bool = True
-    is_archived: bool = False
-    is_purged: bool = False
-
-    # retrieve all realm bits to enable the dataclass to know if it is pure
-    is_ml_realm: bool = False
-    is_assembly_realm: bool = False
-    is_event_realm: bool = False
-    is_cde_realm: bool = False
-
     # Do not include admin notes, get this via its own getter.
 
     @property
@@ -461,14 +453,33 @@ class AssemblyPersona(MlPersona):
 
 
 @dataclasses.dataclass(kw_only=True)
+class PastEventPersona(MlPersona):
+    is_event_realm: bool = dataclasses.field(
+        default=False, metadata=PersonaFlag.mandatory_true_flag.as_dict
+    )
+    is_event_admin: bool = False
+    is_complaint_admin: bool = False
+
+    # Can only be True for CdEPersona, but are used heavily to determine visibility.
+    is_member: bool = False
+    is_searchable: bool = False
+
+    @property
+    def is_pure(self) -> bool:
+        return not (self.is_assembly_realm or self.is_cde_realm)
+
+
+@dataclasses.dataclass(kw_only=True)
 class EventPersona(MlPersona):
     is_event_realm: bool = dataclasses.field(
         default=False, metadata=PersonaFlag.mandatory_true_flag.as_dict
     )
     is_event_admin: bool = False
     is_complaint_admin: bool = False
-    # TODO this is currently exposed via partial export, should make a single effort to remove this
+
+    # Can only be True for CdEPersona, but are used heavily to determine visibility.
     is_member: bool = False
+    is_searchable: bool = False
 
     gender: const.Genders = dataclasses.field(
         metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict

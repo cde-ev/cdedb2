@@ -3,7 +3,6 @@
 """Genesis specific services for the core realm."""
 
 import datetime
-from typing import Optional
 
 import werkzeug.datastructures
 import werkzeug.exceptions
@@ -37,7 +36,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
     @access("anonymous")
     @REQUESTdata("realm")
     def genesis_request_form(
-        self, rs: RequestState, realm: Optional[str] = None
+        self, rs: RequestState, realm: str | None = None
     ) -> Response:
         """Render form."""
         rs.ignore_validation_errors()
@@ -72,9 +71,9 @@ class CoreGenesisMixin(CoreBaseFrontend):
         self,
         rs: RequestState,
         realm: str,
-        attachment: Optional[werkzeug.datastructures.FileStorage],
-        attachment_filename: Optional[str] = None,
-        attachment_hash: Optional[vtypes.Identifier] = None,
+        attachment: werkzeug.datastructures.FileStorage | None,
+        attachment_filename: str | None = None,
+        attachment_hash: vtypes.Identifier | None = None,
     ) -> Response:
         """Voice the desire to become a persona.
 
@@ -518,7 +517,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         rs: RequestState,
         genesis_case_id: int,
         decision: GenesisDecision,
-        persona_id: Optional[int],
+        persona_id: int | None,
     ) -> Response:
         """Approve or decline a genensis case.
 
@@ -592,11 +591,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         if decision.is_create():
             persona = self.coreproxy.get_persona(rs, persona_id)
             status = self.coreproxy.get_persona_status(rs, persona_id)
-            is_trial_member = False
-            if case.realm == "cde":
-                is_trial_member = self.coreproxy.get_cde_user(
-                    rs, persona_id
-                ).trial_member
+            is_trial_member = case.realm == "cde"
             self.send_welcome_mail(rs, persona, status, is_trial_member=is_trial_member)
             rs.notify("success", n_("Case approved."))
         elif decision.is_update():

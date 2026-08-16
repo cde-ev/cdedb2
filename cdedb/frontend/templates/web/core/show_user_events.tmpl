@@ -25,34 +25,78 @@
 {% endblock %}
 
 {% block content %}
-    <p>
-        {% trans %}
-            This lists all events which have not been deleted yet and this user has a registration for.
-        {% endtrans %}
-    </p>
-    <ul>
-        {% for event in events.values()|sort(reverse=True) %}
-            <li>
-                {% if 'event_admin' in user.roles %}
-                    {{ util.href(cdedblink("event/show_registration",
-                                           {'event_id': event.id, 'registration_id': registration_ids[event.id]}),
-                                 event['title']) }}
-                {% else %}
-                    {{ util.href(cdedblink("event/registration_status", {'event_id': event.id}), event['title']) }}
-                {% endif %}
-                <br />
-                <small class="text-muted">
-                {% for part in event['parts'].values()|sort %}
-                    {% if registration_parts[event.id]|length != 1 %}
-                        {{ event['parts'][part.id]['title'] }}:
-                    {% endif %}
-                    {{ gettext(registration_parts[event.id][part.id]|enum(enums['RegistrationPartStati'])) }}
-                    {%- if not loop.last %}, {% endif -%}
+    {% if is_event_helper %}
+        {{ util.h(gettext("Event Helper"), 3) }}
+        <p>
+            {% trans %}
+                The user is Event Helper.
+            {% endtrans %}
+        </p>
+    {% endif %}
+
+    {% if special_role_events %}
+        {{ util.h(gettext("Event Specific Roles"), 3) }}
+        <div id="event-roles-list">
+            <ul>
+                {% for event in events.values()|reverse if event.id in special_role_events %}
+                    <li>
+                        {{ util.href(
+                                cdedblink("event/show_event", {"event_id": event.id}), event.title,
+                                readonly=not event.is_visible_for(user, False, privileged=True)
+                            ) }}:
+                        {% set roles = [] %}
+                        {% if event.id in orga_events %}{% do roles.append(gettext("Orga")) %}{% endif %}
+                        {% if event.id in caretaker_events %}{% do roles.append(gettext("Caretaker")) %}{% endif %}
+                        {% if event.id in checkin_helper_events %}{% do roles.append(gettext("Checkin Helper")) %}{% endif %}
+                        {{ roles|join(", ") }}
+                    </li>
                 {% endfor %}
-                </small>
-            </li>
-        {% else %}
-            <p class="text-muted">{% trans %}This user has no registrations.{% endtrans %}</p>
-        {% endfor %}
-    </ul>
+            </ul>
+        </div>
+    {% endif %}
+
+    {% if registrations %}
+        {{ util.h(gettext("Registrations"), 3) }}
+        <div id="registration-list">
+            <p>
+                {% trans %}
+                    This lists all events which have not been deleted yet and this user has a registration for.
+                {% endtrans %}
+            </p>
+            <ul>
+                {% for event in events.values()|reverse if event.id in registrations %}
+                    <li>
+                        {% if ambience['persona'].id == user.persona_id %}
+                            {{ util.href(cdedblink("event/registration_status", {'event_id': event.id}), event.title) }}
+                        {% elif is_privileged(event.id, EP.registrations_read, EP.checkin) %}
+                            {{ util.href(
+                                    cdedblink(
+                                        "event/show_registration",
+                                        {'event_id': event.id, 'registration_id': registrations[event.id].keys()|first }
+                                    ),
+                                    event['title']
+                                ) }}
+                        {% else %}
+                            {{ util.href(
+                                    cdedblink("event/show_event", {"event_id": event.id}), event.title,
+                                    readonly=not event.is_visible_for(user, False, privileged=True)
+                                ) }}
+                        {% endif %}
+                        <br />
+                        <small class="text-muted">
+                        {% for part in event.parts.values() %}
+                            {% if registrations[event.id].values()|first|length != 1 %}
+                                {{ part.title }}:
+                            {% endif %}
+                            {{ gettext((registrations[event.id].values()|first)[part.id]|enum(enums['RegistrationPartStati'])) }}
+                            {%- if not loop.last %}, {% endif -%}
+                        {% endfor %}
+                        </small>
+                    </li>
+                {% else %}
+                    <p class="text-muted">{% trans %}This user has no registrations.{% endtrans %}</p>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
 {% endblock %}

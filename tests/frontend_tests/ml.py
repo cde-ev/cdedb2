@@ -1203,12 +1203,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse("Mailinglisten")
         # check icon
         self.assertEqual(
-            len(
-                self.response.lxml.get_element_by_id('mailinglist4').find_class(
-                    'fa-times-circle'
-                )
-            ),
-            1,
+            len(self._get_nodes(".ml-state-pending", check_exists=False)), 0
         )
         self.traverse("Klatsch und Tratsch")
         self.assertTitle("Klatsch und Tratsch")
@@ -1217,14 +1212,7 @@ class TestMlFrontend(FrontendTest):
         self.assertIn('cancel-request-form', self.response.forms)
         self.traverse("Mailinglisten-Übersicht")
         # check icon
-        self.assertEqual(
-            len(
-                self.response.lxml.get_element_by_id('mailinglist4').find_class(
-                    'fa-circle'
-                )
-            ),
-            1,
-        )
+        self.assertEqual(len(self._get_nodes(".ml-state-pending")), 1)
         self.logout()
         self.login(USER_DICT['berta'])
         self.traverse(
@@ -1242,12 +1230,7 @@ class TestMlFrontend(FrontendTest):
         self.traverse("Mailinglisten")
         # check icon
         self.assertEqual(
-            len(
-                self.response.lxml.get_element_by_id('mailinglist4').find_class(
-                    'fa-check-circle'
-                )
-            ),
-            1,
+            len(self._get_nodes(".ml-state-pending", check_exists=False)), 0
         )
         self.traverse("Klatsch und Tratsch")
         self.assertIn('unsubscribeform', self.response.forms)

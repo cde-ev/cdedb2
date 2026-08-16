@@ -16,7 +16,6 @@ For every step "foo" of semester management, there are the following methods:
 
 import dataclasses
 import decimal
-from typing import Optional
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -560,14 +559,14 @@ class CdESemesterBackend(CdELastschriftBackend):
                 self.change_membership(rs, persona_id, is_member=False)
                 period_update['ejection_count'] = period['ejection_count'] + 1
             else:
-                persona = None  # type: ignore[assignment]
+                persona = None
             self.set_period(rs, period_update)
             return True, persona
 
     @access("finance_admin")
     def process_for_semester_archival(
         self, rs: RequestState, period_id: int
-    ) -> tuple[bool, Optional[CdEDBObject]]:
+    ) -> tuple[bool, CdEDBObject | None]:
         """Atomized call to archive one persona.
 
         :returns: A tuple consisting of a boolean signalling whether there

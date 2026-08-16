@@ -7,7 +7,7 @@ managing and using custom datafields.
 
 from collections import Counter
 from collections.abc import Callable, Collection
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import werkzeug.exceptions
 from werkzeug import Response
@@ -17,7 +17,6 @@ import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
     CdEDBObject,
-    CdEDBObjectMap,
     RequestState,
     build_msg,
     get_mandatory_form_fields,
@@ -47,7 +46,9 @@ EntitySetter = Callable[[RequestState, dict[str, Any]], int]
 class EventFieldMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.basic_read)
-    def field_summary_form(self, rs: RequestState, event_id: int) -> Response:
+    def field_summary_form(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         """Render form."""
         formatter = lambda k, v: (
             v
@@ -69,12 +70,9 @@ class EventFieldMixin(EventBaseFrontend):
         locked = {
             field_id for field_id, fee_ids in event_fees_per_field.items() if fee_ids
         }
-        referenced = set()
+        referenced: set[int] = set()
         full_questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)
-        for v in full_questionnaire.values():
-            for row in v:
-                if row.field_id:
-                    referenced.add(row.field_id)
+        referenced.update(full_questionnaire.field_usage().keys())
         if rs.ambience['event'].lodge_field:
             referenced.add(rs.ambience['event'].lodge_field.id)
         if rs.ambience['event'].reimbursement_iban_field:
@@ -95,7 +93,10 @@ class EventFieldMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("nav_tab_active")
     def field_summary(
-        self, rs: RequestState, event_id: int, nav_tab_active: str | None = None
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        nav_tab_active: str | None = None,
     ) -> Response:
         """Manipulate the fields of an event."""
         spec = dict(models.EventField.requestdict_fields(creation=False))
@@ -110,7 +111,7 @@ class EventFieldMixin(EventBaseFrontend):
             additional_validation={"event": rs.ambience['event']},
         )
 
-        def field_name(field_id: int, field: Optional[CdEDBObject]) -> str:
+        def field_name(field_id: int, field: CdEDBObject | None) -> str:
             """Helper to get the name of a (new or existing) field."""
             return (
                 field['field_name']
@@ -156,11 +157,16 @@ class EventFieldMixin(EventBaseFrontend):
     def field_multiset_aux(
         self,
         rs: RequestState,
-        event_id: int,
-        field_id: Optional[int],
+        event_id: vtypes.EventID,
+        field_id: int | None,
         ids: Collection[int],
         kind: const.FieldAssociations,
-    ) -> tuple[CdEDBObjectMap, list[int], dict[int, str], Optional[models.EventField]]:
+    ) -> tuple[
+        dict[vtypes.ID, CdEDBObject],
+        list[vtypes.ID],
+        dict[vtypes.ID, str],
+        models.EventField | None,
+    ]:
         """Process field set inputs.
 
         This function retrieves the data dependent on the given kind and returns it in
@@ -177,10 +183,15 @@ class EventFieldMixin(EventBaseFrontend):
             * field: the event field which will be changed, None if no field_id was
                 given
         """
+        entities: dict[vtypes.ID, CdEDBObject]
+        labels: dict[vtypes.ID, str]
         if kind == const.FieldAssociations.registration:
             if not ids:
                 ids = self.eventproxy.list_registrations(rs, event_id)
-            entities = self.eventproxy.get_registrations(rs, ids)
+            ids = cast(Collection[vtypes.RegistrationID], ids)
+            entities = cast(
+                dict[vtypes.ID, CdEDBObject], self.eventproxy.get_registrations(rs, ids)
+            )
             personas = self.coreproxy.get_personas(
                 rs, tuple(e['persona_id'] for e in entities.values())
             )
@@ -197,11 +208,12 @@ class EventFieldMixin(EventBaseFrontend):
         elif kind == const.FieldAssociations.course:
             if not ids:
                 ids = self.eventproxy.list_courses(rs, event_id)
+            ids = cast(Collection[vtypes.CourseID], ids)
             courses = self.eventproxy.get_courses(rs, ids)
             # TODO remove after migrating lodgements and registrations to dataclasses
             entities = {course.id: course.as_dict() for course in courses.values()}
             labels = {course.id: course.shortlabel for course in courses.values()}
-            ordered_ids = list(courses.keys())
+            ordered_ids = list(entities.keys())
         elif kind == const.FieldAssociations.lodgement:
             if not ids:
                 ids = self.eventproxy.list_lodgements(rs, event_id)
@@ -210,10 +222,10 @@ class EventFieldMixin(EventBaseFrontend):
                 lodgement.id: lodgement.as_dict() for lodgement in lodgements.values()
             }
             labels = {
-                lodg_id: safe_filter(f"{lodg.title}, <em>{lodg.group.title}</em>")
-                for lodg_id, lodg in lodgements.items()
+                lodg.id: safe_filter(f"{lodg.title}, <em>{lodg.group.title}</em>")
+                for lodg in lodgements.values()
             }
-            ordered_ids = list(lodgements.keys())
+            ordered_ids = list(entities.keys())
         else:
             # this should not happen, since we check before for validation errors
             raise NotImplementedError(f"Unknown kind {kind}")
@@ -235,9 +247,9 @@ class EventFieldMixin(EventBaseFrontend):
     def field_multiset_select(
         self,
         rs: RequestState,
-        event_id: int,
-        field_id: Optional[vtypes.ID],
-        ids: Optional[vtypes.IntCSVList],
+        event_id: vtypes.EventID,
+        field_id: vtypes.ID | None,
+        ids: list[int] | None,
         kind: const.FieldAssociations,
     ) -> Response:
         """Select a field for manipulation across multiple entities."""
@@ -246,7 +258,7 @@ class EventFieldMixin(EventBaseFrontend):
             # This should never happen without HTML manipulation, anyway.
             return self.redirect(rs, "event/show_event")
         if ids is None:
-            ids = cast(vtypes.IntCSVList, [])
+            ids = cast(list[int], [])
 
         if field_id:
             return self.redirect(
@@ -285,11 +297,11 @@ class EventFieldMixin(EventBaseFrontend):
     def field_multiset_form(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         field_id: vtypes.ID,
-        ids: Optional[vtypes.IntCSVList],
+        ids: list[int] | None,
         kind: const.FieldAssociations,
-        change_note: Optional[str] = None,
+        change_note: str | None = None,
         internal: bool = False,
     ) -> Response:
         """Render form.
@@ -301,7 +313,7 @@ class EventFieldMixin(EventBaseFrontend):
             redirect = self.FIELD_REDIRECT.get(kind, "event/show_event")
             return self.redirect(rs, redirect)
         if ids is None:
-            ids = cast(vtypes.IntCSVList, [])
+            ids = cast(list[int], [])
 
         entities, ordered_ids, labels, field = self.field_multiset_aux(
             rs, event_id, field_id, ids, kind
@@ -334,11 +346,11 @@ class EventFieldMixin(EventBaseFrontend):
     def field_multiset(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         field_id: vtypes.ID,
-        ids: Optional[vtypes.IntCSVList],
+        ids: list[int] | None,
         kind: const.FieldAssociations,
-        change_note: Optional[str] = None,
+        change_note: str | None = None,
     ) -> Response:
         """Modify a specific field on the given entities."""
         if rs.has_validation_errors():
@@ -352,7 +364,7 @@ class EventFieldMixin(EventBaseFrontend):
                 internal=True,
             )
         if ids is None:
-            ids = cast(vtypes.IntCSVList, [])
+            ids = cast(list[int], [])
 
         entities, _, _, field = self.field_multiset_aux(
             rs, event_id, field_id, ids, kind
@@ -395,7 +407,9 @@ class EventFieldMixin(EventBaseFrontend):
                     update['id'] = anid
                     self.eventproxy.set_registration(rs, update, msg)
                 elif kind == const.FieldAssociations.course:
-                    self.eventproxy.set_course(rs, anid, update)
+                    self.eventproxy.set_course(
+                        rs, vtypes.CourseID(vtypes.ID(anid)), update
+                    )
                 elif kind == const.FieldAssociations.lodgement:
                     self.eventproxy.set_lodgement(rs, anid, update)
                 else:

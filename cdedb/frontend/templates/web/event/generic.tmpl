@@ -63,63 +63,6 @@
     {% endfor %}
 {% endmacro %}
 
-{# Insert general and additional fields in the registration form, including
-    * lodging preference
-    * Photo consent
-    * Agreement to be visible in online participant list
-    * custom orga fields
-    * general notes field
-
-    age                 An age class object, determining the restrictions of lodging preferences.
-    reg_questionnaire   The registration questionnaire object of the current event
-#}
-{% macro additional_registration_choices(age, reg_questionnaire) %}
-
-    {{ util.form_input_checkbox(name="reg.list_consent", defaultvalue='True', label=gettext("Privacy consent"), info=gettext(
-            "I agree that my data, including my name, address and my email, may be sent "
-            "to other participants of this event beforehand.")) }}
-
-    {% if not age.may_mix() %}
-        {{ util.input_hidden(name="reg.mixed_lodging", value=False) }}
-        {{ util.form_input_static(label=gettext("Mixed Lodging"), value=gettext("Mixed Lodging not possible.")) }}
-    {% else %}
-        {% if age.is_minor() %}
-            {% set mix_info = gettext("The selection must be compatible with the parental consent form.") %}
-        {% else %}
-            {% set mix_info = "" %}
-        {% endif %}
-        {{ util.form_input_select(name="reg.mixed_lodging", entries=(
-            (True, gettext("I agree to mixed lodging.")),
-            (False, gettext("I want to be lodged separated by gender."))),
-            label=gettext("Mixed Lodging"), info=mix_info) }}
-    {% endif %}
-
-    {% call util.form_input_general(label=gettext("Photo consent"), displayerrors=False) %}
-        <p class="nosp">
-            {% trans %}
-                In the context of this event, photos and recordings will be made to be used for the
-                event-documentation and a CdE-internal, password protected media collection. Individual photos and
-                recordings can be excluded from this by request.
-            {% endtrans %}
-        </p>
-    {% endcall %}
-
-    {% if reg_questionnaire %}
-        <div id="registrationquestionnaire">
-            {% for entry in reg_questionnaire %}
-                {{ print_questionnaire_entry(entry) }}
-            {% endfor %}
-        </div>
-    {% endif %}
-
-    {%- if ambience["event"]["tracks"] %}
-        {%- set noteslabel = gettext("Notes for Orgas and Instructors") %}
-    {%- else %}
-        {%- set noteslabel = gettext("Notes for Orgas") %}
-    {%- endif %}
-    {{ util.form_input_textarea(name="reg.notes", label=noteslabel, rows="5") }}
-{% endmacro %}
-
 {# Display the value of a custom event field.
    This is the counterpart of (form_)field_input.
 
@@ -144,6 +87,10 @@
             {{ util.tel_link(entry|phone) if entry else otherwise }}
         {% elif field['kind'] == datatypes.iban %}
             {{ entry|iban or otherwise }}
+        {% elif field['kind'] == datatypes.str_monospace %}
+            <pre class="monospace">
+                {{- entry|linebreaks or otherwise -}}
+            </pre>
         {% else %}
             {{ entry|linebreaks or otherwise }}
         {% endif %}
@@ -159,7 +106,6 @@
 #}
 {% macro field_input(field, name=none, readonly=False, defaultvalue='', anid=none, bool_label=none) %}
     {%- set name = name or "fields." + field['field_name'] %}
-    {%- set bool_label = bool_label or field['title'] %}
     {# Wrapping is necessary to identify the data field for the fee preview. #}
     <div id="field.{{ field['field_name'] }}" data-field_id="{{ field['id'] }}">
     {%- if field['entries'] %}
@@ -171,6 +117,7 @@
             datatypes.bool: 'bool',
             datatypes.str: 'text',
             datatypes.str_multiline: 'textarea',
+            datatypes.str_monospace: 'textarea_monospace',
             datatypes.int: 'number',
             datatypes.float: 'number',
             datatypes.date: 'date',
@@ -189,6 +136,9 @@
         {%- elif type == 'textarea' %}
             {{- util.input_textarea(name=name, readonly=readonly, defaultvalue=defaultvalue,
                                     anid=anid, rows=field.kind.text_rows) }}
+        {%- elif type == 'textarea_monospace' %}
+            {{- util.input_textarea(name=name, readonly=readonly, defaultvalue=defaultvalue,
+                                    anid=anid, rows=field.kind.text_rows, aclass='form-control monospace') }}
         {%- else %}
             {{- util.input_text(name=name, readonly=readonly, defaultvalue=defaultvalue, anid=anid, type=type,
                 attributes='placeholder=0.00' if type in (datatypes.float, datatypes.non_negative_float) else '') }}
@@ -206,15 +156,16 @@
     force_label Enforce the presentation of the label in the surrounding form_* even if the field is of type bool
 #}
 {% macro form_field_input(field, name=none, label=none, info='', displayerrors=True, readonly=False,
-                          defaultvalue='', anid=none, force_label=False, bool_label=none, outerclass='') %}
-    {%- set name = name or "fields." + field['field_name'] %}
-    {%- set label = (none if (field['kind'] == enums['FieldDatatypes'].bool
-                              and not force_label and not field['entries'])
-                     else label or field['title']) %}
+                          defaultvalue='', anid=none, force_label=False, outerclass='') %}
+    {%- set name = name or "fields." + field.field_name %}
+    {%- set form_label = label or field.title %}
+    {%- if field.kind == enums['FieldDatatypes'].bool and not force_label and not field.entries %}
+        {%- set form_label = none %}
+    {%- endif %}
     {%- set anid = anid or "event-input-{}".format(name) %}
-    {%- call util.form_input_general(name=name, label=label, anid=anid, small=False, info=info,
+    {%- call util.form_input_general(name=name, label=form_label, anid=anid, small=False, info=info,
                                      displayerrors=displayerrors, horizontal=True, aclass=outerclass) %}
-        {{- field_input(field, name, readonly, defaultvalue, anid, bool_label) }}
+        {{- field_input(field, name, readonly, defaultvalue, anid, bool_label=label or field.title) }}
     {%- endcall %}
 {%- endmacro %}
 
@@ -257,24 +208,151 @@
     {% endif %}
 {% endmacro %}
 
-{% macro print_questionnaire_entry(entry) %}
-    {# Field entry #}
-    {% if entry['field_id'] %}
-        {% with FIELD = ambience['event']['fields'][entry['field_id']],
-                readonly = entry['readonly'] or is_locked %}
-            {{ form_field_input(
-                    FIELD, label=entry['title'], info=entry['info'],
-                    readonly=readonly, defaultvalue=entry['default_value'] if not readonly else "",
-                    bool_label=entry['title']) }}
-        {% endwith %}
-    {# Text-only entry #}
-    {% else %}
-        {% if entry['title'] %}
-            {{ util.h(entry['title'], level=(3 if entry['kind'] == enums['QuestionnaireUsages'].additional else 4),
-                            underline=True, translate=False) }}
+{% macro print_foto_notice() %}
+    {% trans %}
+        In the context of this event, photos and recordings will be made to be used for the
+        event-documentation and a CdE-internal, password protected media collection. Individual photos and
+        recordings can be excluded from this by request.
+    {% endtrans %}
+{% endmacro %}
+
+{% macro print_questionnaire_entry(row) %}
+    <div id="questionnaire_row_{{ row.pos }}">
+    {% if row.name == "QuestionnaireFieldRow" %}
+        {{ form_field_input(
+                row.field, label=row.label, info=row.info|md|replace("<p>", "")|replace("</p>", "") if row.info else "",
+                readonly=row.readonly or is_locked, defaultvalue=row.default_value if not (row.readonly or is_locked) else ""
+            ) }}
+    {% elif row.name == "QuestionnaireTextRow" %}
+        {{ row.text|md }}
+    {% elif row.name == "QuestionnaireHeadingRow" %}
+        {{ util.h(row.title, level=row.kind.title_level, underline=True, translate=False) }}
+    {% elif row.name == "QuestionnairePanelRow" %}
+        {% call util.bootstrap_panel(row.title, row.panel_kind.get_panel_class(), row.panel_kind.get_icon(), level=row.kind.title_level) %}
+            {{ row.text|md }}
+        {% endcall %}
+    {% elif row.name == "FeePreview" %}
+        {% call fee_preview_panel() %}
+            <p class="text-info fw-bold" id="nonmember-surcharge">
+                {% if not persona["is_member"] %}
+                    {% trans %}
+                        Because you are not a CdE-Member, you might have to pay an additional "External Fee".
+                    {% endtrans %}
+                    {% if persona["is_cde_realm"] %}
+                        {% trans %}
+                            If you pay your membership fee before your registration fee, the additional fee will be waived.
+                        {% endtrans %}
+                    {% endif %}
+                {% endif %}
+            </p>
+        {% endcall %}
+    {% elif row.name == "CourseChoices" %}
+        {% if choice_objects %}
+            {{ util.h("Course Choices", level=3, underline=True) }}
+            {{ select_all_course_choices(involved_tracks=involved_tracks) }}
         {% endif %}
-        {{ entry.info|md }}
+    {% elif row.name == "PartSelection" %}
+        {% if ambience['event'].parts|length > 1 %}
+            {{ util.h("Registration", level=3, underline=True) }}
+            {{ util.form_input_checkboxes(
+                    name="parts", label=gettext("Event Parts"), entries=part_options, readonly=(registration and not preview),
+                    defaultvalue=payment_parts, info=gettext("In order to change the parts you are registered for, contact the orgas.")
+                ) }}
+        {% elif ambience['event'].parts|length == 1 %}
+            {{ util.input_hidden(name="parts", value=(ambience['event'].parts|list)[0]) }}
+        {% endif %}
+    {% elif row.name == "ListConsent" %}
+        {{ util.form_input_checkbox(
+                name="reg.list_consent", defaultvalue='True', label=gettext("Participant List Consent"),
+                info=gettext(
+                    "I agree that my data, including my name, address and my email, may be sent"
+                    " to other participants of this event beforehand."
+                )
+            ) }}
+    {% elif row.name == "MixedLodging" %}
+        {% if not age_class.may_mix() %}
+            {{ util.input_hidden(name="reg.mixed_lodging", value=False) }}
+            {{ util.form_input_static(label=gettext("Mixed Lodging"), value=gettext("Mixed Lodging not possible.")) }}
+        {% else %}
+            {% if age_class.is_minor() %}
+                {% set mix_info = gettext("The selection must be compatible with the parental consent form.") %}
+            {% else %}
+                {% set mix_info = "" %}
+            {% endif %}
+            {{ util.form_input_select(
+                    name="reg.mixed_lodging",
+                    entries=(
+                        (True, gettext("I agree to mixed lodging.")),
+                        (False, gettext("I want to be lodged separated by gender.")),
+                    ),
+                    label=gettext("Mixed Lodging"), info=mix_info
+                ) }}
+        {% endif %}
+    {% elif row.name == "FotoNotice" %}
+        {% call util.form_input_general(label=gettext("Photo consent"), displayerrors=False) %}
+            <p class="nosp">
+                {{ print_foto_notice() }}
+            </p>
+        {% endcall %}
+    {% elif row.name == "RegistrationNotes" %}
+        {%- if ambience["event"].tracks %}
+            {%- set noteslabel = gettext("Notes for Orgas and Instructors") %}
+        {%- else %}
+            {%- set noteslabel = gettext("Notes for Orgas") %}
+        {%- endif %}
+        {{ util.form_input_textarea(name="reg.notes", label=noteslabel, rows="5") }}
+    {% elif row.name == "TableOfContents" %}
+        <div class="toc">
+            <ul>
+                {% for other_row in row.questionnaire.text_rows if other_row.title %}
+                    <li>{{ util.href("#" + "_".join(other_row.title.split()), other_row.title) }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% elif row.name == "MyData" %}
+        {{ util.h("My Data", level=3, underline=True) }}
+        <dl class="dl-horizontal">
+            <dt title="{% trans %}Full Name{% endtrans %}">{% trans %}Full Name{% endtrans %}</dt>
+            <dd>
+                {{ persona|persona_name(include_nickname=True, with_titles=True) }}
+            </dd>
+
+            <dt title="{% trans %}Birthday{% endtrans %}">{% trans %}Birthday{% endtrans %}</dt>
+            <dd>{{ persona['birthday']|date(lang=lang) }}</dd>
+            <dt title="{% trans %}Gender{% endtrans %}">{% trans %}Gender{% endtrans %}</dt>
+            <dd>{{ gettext(enums['Genders'](persona['gender'])|string) }}</dd>
+            <dt title="{% trans %}Pronouns{% endtrans %}">{% trans %}Pronouns{% endtrans %}</dt>
+            <dd>{{ persona['pronouns'] }}</dd>
+            <dt title="{% trans %}Show pronouns on nametags{% endtrans %}">{% trans %}Pronouns on nametags{% endtrans %}</dt>
+            <dd>{{ util.deko_checkbox(persona['pronouns_nametag']) }}</dd>
+            <dt title="{% trans %}E-Mail{% endtrans %}">{% trans %}E-Mail{% endtrans %}</dt>
+            <dd> {{ persona['username'] }} </dd>
+            <dt title="{% trans %}Phone{% endtrans %}">{% trans %}Phone{% endtrans %}</dt>
+            <dd>{{ persona['telephone']|phone }}</dd>
+            <dt title="{% trans %}Mobile Phone{% endtrans %}">{% trans %}Mobile Phone{% endtrans %}</dt>
+            <dd>{{ persona['mobile']|phone }}</dd>
+            <dt title="{% trans %}Address{% endtrans %}">{% trans %}Address{% endtrans %}</dt>
+            <dd>{{ persona['address'] }}</dd>
+            <dt title="{% trans %}Address Supplement{% endtrans %}">{% trans %}Address Supplement{% endtrans %}</dt>
+            <dd>{{ persona['address_supplement'] }}</dd>
+            <dt title="{% trans %}City{% endtrans %}">{% trans %}City{% endtrans %}</dt>
+            <dd>{{ persona['postal_code'] }} {{ persona['location'] }}</dd>
+            <dt title="{% trans %}Country{% endtrans %}">{% trans %}Country{% endtrans %}</dt>
+            <dd>{{ util.gettext_country(persona['country']) }}</dd>
+        </dl>
+        <p>
+            {% trans link=util.href(cdedblink('core/change_user'), gettext("form to edit your profile")) %}
+                This data is taken from your personal profile. To change it, use this {{ link }}.
+            {% endtrans %}
+            {% trans %}
+                Any changes made to your profile data will be carried over automatically and shared with the orgateam.
+            {% endtrans %}
+        </p>
+    {% else %}
+        {{ row }}
+        {{ util.raise_for_test("Unhandled QuestionnaireRow Role: " + row.name) }}
     {% endif %}
+    </div>
 {% endmacro %}
 
 
@@ -283,58 +361,145 @@
    newrow rows will have 'create' instead of 'delete' checkbox and have 'data-basename' attributes #}
 {% macro questionnaire_config_entry(part_id, kind, aclass="", newrow=False) %}
     <div class="panel panel-default {{ aclass }}" data-drow-id="{{ part_id }}">
-        <div class="panel-body">
+        <div class="panel-heading">
+            <div class="pull-right">
+                <span class="drow-hide">
+                    {% if newrow %}
+                        {{ util.input_checkbox(
+                                "create_" ~ part_id, label=gettext("Add"), aclass='drow-indicator',
+                                attributes={"data-basename": "create_"}|xmlattr
+                            ) }}
+                    {% else %}
+                        {{ util.input_checkbox(
+                                "delete_" ~ part_id, label=gettext("Remove"), aclass='drow-indicator'
+                            ) }}
+                    {% endif %}
+                </span>
+                <button title="{{ gettext("Move row up.") }}" aria-label="{{ gettext("Move row up.") }}"
+                        type="button" class="btn btn-primary btn-sm drow-move-row-up-button"
+                        style="display: none">
+                    {{- util.make_icon("caret-up") -}}
+                </button>
+                <button title="{{ gettext("Move row down.") }}" aria-label="{{ gettext("Move row down.") }}"
+                        type="button" class="btn btn-primary btn-sm drow-move-row-down-button"
+                        style="display: none">
+                    {{- util.make_icon("caret-down") -}}
+                </button>
+                <button title="{{ gettext("Add new row above.") }}" aria-label="{{ gettext("Add new row above.") }}"
+                        type="button" class="btn btn-success btn-sm drow-inline-add-button"
+                        style="display: none">
+                    {{- util.make_icon("plus") -}}
+                </button>
+                <span class="drow-buttonspace"></span>
+            </div>
+            {{ util.input_hidden(
+                    "pos_" ~ part_id, defaultvalue=part_id, aclass="input-pos drow-input",
+                    attributes={"data-basename": "pos_"}|xmlattr) }}
+            {% if newrow %}
+                <div style="width: 75%;">
+                    {{ util.form_input_select(
+                            "role_" ~ part_id, label=gettext("Role"),
+                            entries=available_magic_roles|enum_entries(processing=gettext),
+                            aclass='input-role drow-input', horizontal=False, small=True,
+                            attributes={
+                                "data-basename": "role_",
+                            }|xmlattr
+                        ) }}
+                </div>
+            {% else %}
+                <h3 class="panel-title" style="margin: 5px 0 0">
+                    {% set role = values["role_" ~ part_id] %}
+                    {% if role is string %}
+                        {% set role = enums["QuestionnaireRowRole"][role.split(".", 1)[1]] %}
+                    {% endif %}
+                    {% if role %}
+                        {{ util.make_icon(role.get_class().get_icon()) }}
+                    {% endif %}
+                    {{ gettext(values["role_" ~ part_id]|string) }}
+                </h3>
+                {{ util.input_hidden("role_" ~ part_id, aclass="input-role") }}
+            {% endif %}
+            <div style="clear:both;"></div>
+        </div>
+        <div class="panel-body" style="padding: 10px 10px 10px 15px;">
             <div class="row">
                 <div class="col-md-6">
-                    {{ util.form_input_text(name="title_{}".format(part_id), label=gettext("Title_[[name of an entity]]"),
-                                            attributes=('data-basename="title_"'|s if newrow else ''),
-                                            aclass='input-title drow-input', horizontal=false) }}
-                    {% set textarea_id = "input-textarea-info_{}".format(part_id) %}
-                    {# This can not use form_input_textarea, since we support markdown just for text-only fields. #}
-                    {%- call util.form_input_general(name="info_{}".format(part_id), label=gettext("Text"),
-                                                     horizontal=false, anid=textarea_id)  %}
-                        {{ util.input_textarea(name="info_{}".format(part_id), anid=textarea_id,
-                                               attributes=('data-basename="info_"'|s if newrow else ''),
-                                               aclass='form-control input-info drow-input') }}
-                        {{ util.markdown_preview(textarea_id, gettext("Supports Markdown for “Only Text” fields.")) }}
-                    {%- endcall %}
+                    {{ util.form_input_select(
+                            "field_id_" ~ part_id, label=gettext("Custom Field"),
+                            entries=available_fields|entries(
+                                'id', 'field_name', group="sort_group", default_group=gettext("Other Fields")
+                            ),
+                            nulloption=gettext("— select a field —"),
+                            aclass='input-field drow-input', horizontal=False,
+                            attributes={
+                                "data-basename": "field_id_",
+                                "data-show_for_role": get_roles_with_field("field_id")|map("string")|list,
+                            }|xmlattr
+                        ) }}
+                    {{ util.form_input_text(
+                            "default_value_" ~ part_id, label=gettext("Default Value"),
+                            aclass='input-defaultvalue drow-input', horizontal=False,
+                            attributes={
+                                "data-basename": "default_value_",
+                                "data-show_for_role": get_roles_with_field("default_value")|map("string")|list,
+                            }|xmlattr
+                        ) }}
+                    <div class="checkbox">
+                        {{ util.input_checkbox(
+                                "readonly_" ~ part_id, label=gettext("read-only"), aclass='input-readonly drow-input',
+                                attributes={
+                                    "data-basename": "readonly_",
+                                    "data-show_for_role": get_roles_with_field("readonly")|map("string")|list,
+                                }|xmlattr,
+                                readonly=(not values["readonly_" ~ part_id] and (kind and not kind.allow_readonly()))
+                            ) }}
+                        {{ util.output_errors("readonly_" ~ part_id, wrapper=True) }}
+                    </div>
+                    {{ util.form_input_select(
+                            "panel_kind_" ~ part_id, label=gettext("Panel Kind"),
+                            entries=enums["QuestionnairePanelKind"]|enum_entries(processing=gettext),
+                            aclass="input-label drow-input", horizontal=False,
+                            attributes={
+                                "data-basename": "panel_kind_",
+                                "data-show_for_role": get_roles_with_field("panel_kind")|map("string")|list,
+                            }|xmlattr
+                        ) }}
                 </div>
                 <div class="col-md-6">
-                    {{ util.form_input_select("field_id_{}".format(part_id), label=gettext("Query"),
-                                              entries=registration_fields|entries('id', 'field_name'),
-                                              nulloption=gettext("— Only Text —"),
-                                              attributes=('data-basename="field_id_"'|s if newrow else ''),
-                                              aclass='input-field drow-input', horizontal=False) }}
+                    {{ util.form_input_text(
+                            "label_" ~ part_id, label=gettext("Label"),
+                            aclass='input-label drow-input', horizontal=false,
+                            attributes={
+                                "data-basename": "label_",
+                                "data-show_for_role": get_roles_with_field("label")|map("string")|list,
+                            }|xmlattr
+                        ) }}
                     {{ util.form_input_textarea(
-                        "default_value_{}".format(part_id), label=gettext("Default Value"), rows=2,
-                        attributes=('data-basename="default_value_"'|s if newrow else ''),
-                        aclass='input-defaultvalue drow-input', horizontal=False) }}
-                    <div class="form-group row">
-                        <div class="col-sm-8">
-                            <div class="checkbox">
-                                {{ util.input_checkbox("readonly_{}".format(part_id), label=gettext("read-only"),
-                                                       attributes=('data-basename="readonly_"'|s if newrow else ''),
-                                                       aclass='input-readonly drow-input',
-                                                       readonly=(not values["readonly_{}".format(part_id)]
-                                                                 and (kind and not kind.allow_readonly()))) }}
-                                {{ util.output_errors("readonly_{}".format(part_id), wrapper=True) }}
-                            </div>
-                        </div>
-                        <div class="col-sm-4 text-right">
-                            <span class="drow-buttonspace">
-                                {% if newrow %}
-                                    {{ util.input_checkbox("create_{}".format(part_id), label=gettext("Add"),
-                                                           attributes='data-basename="create_"'|s,
-                                                           aclass='drow-indicator') }}
-                                {% else %}
-                                    {{ util.input_checkbox("delete_{}".format(part_id), label=gettext("Remove"),
-                                                           aclass='drow-indicator') }}
-                                {% endif %}
-                            </span>
-                        </div>
-                    </div>
+                            "info_" ~ part_id, label=gettext("Info"), markdown=True,
+                            aclass='input-info drow-input', horizontal=False, rows=5,
+                            attributes={
+                                "data-basename": "info_",
+                                "data-show_for_role": get_roles_with_field("info")|map("string")|list,
+                            }|xmlattr
+                        ) }}
                 </div>
             </div>
+            {{ util.form_input_text(
+                    "title_" ~ part_id, label=gettext("Title"),
+                    aclass='input-title drow-input', horizontal=false,
+                    attributes={
+                        "data-basename": "title_",
+                        "data-show_for_role": get_roles_with_field("title")|map("string")|list,
+                    }|xmlattr
+                ) }}
+            {{ util.form_input_textarea(
+                    "text_" ~ part_id, label=gettext("Text"), markdown=True,
+                    aclass='input-text drow-input', horizontal=False, rows=5,
+                    attributes={
+                        "data-basename": "text_",
+                        "data-show_for_role": get_roles_with_field("text")|map("string")|list,
+                    }|xmlattr
+                ) }}
         </div>
     </div>
 {% endmacro %}
@@ -708,7 +873,7 @@
 
     Skip fee kinds that sum to zero, unless `show_all=True`.
 #}
-{% macro fee_breakdown_by_kind(show_all=False) -%}
+{% macro fee_breakdown_by_kind(complex_fee, show_all=False) -%}
     <table id="fee-breakdown" class="table-slim table-condensed bg-info" style="color: #333">
         <tbody>
             {# Already sorted automatically. #}

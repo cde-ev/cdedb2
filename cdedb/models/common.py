@@ -1,10 +1,12 @@
 """Base definition of CdEDB models using dataclasses."""
 
 import abc
+import collections
 import copy
 import dataclasses
 import functools
 import inspect
+import sys
 import typing
 from collections.abc import Collection
 from dataclasses import dataclass
@@ -15,7 +17,6 @@ from typing import (
     ClassVar,
     Literal,
     Self,
-    TypeVar,
     cast,
     get_args,
     get_origin,
@@ -35,18 +36,19 @@ from cdedb.common.sorting import Sortkey, collate, xsorted
 from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
 
 if TYPE_CHECKING:
-    from typing import Self
-
     from cdedb.database.query import DatabaseValue_s
 
-T = TypeVar("T")
 # Should actually be a vtypes.ID instead of an int
-CdEDataclassMap = dict[int, T]
+type CdEDataclassMap[T] = dict[int, T]
 
 
 def requestdict_field_spec(field: dataclasses.Field[Any]) -> Literal["str", "[str]"]:
     """The spec of this field, expected by the REQUESTdatadict extractor."""
     if get_origin(field.type) in {list, tuple, set}:
+        if get_args(field.type) == (vtypes.PersonaID,):
+            # For fields annotated as `list[vtypes.PersonaId]` we want to extract them
+            #  as a CSV-string, rather than as a list from the multi dict.
+            return "str"
         return "[str]"
     else:
         return "str"
@@ -73,7 +75,7 @@ class AbstractFlag(AbstractMetaData, Flag):
         """Hide boilerplate of turning the flag into a dict expected by `dataclasses.field`."""
         return {self.get_metadata_name(): self}
 
-    def in_field(self, field: dataclasses.Field[T]) -> bool:
+    def in_field(self, field: dataclasses.Field[Any]) -> bool:
         """Hide boilerplate of extracting the flag information from `dataclasses.Field.metadata`."""
         return self in field.metadata.get(self.get_metadata_name(), self.__class__(0))
 
@@ -194,6 +196,8 @@ class MetaFlag(AbstractFlag):
         # like dict[_, type_]
         if origin is dict:
             _, type_ = typing.get_args(type_)
+        if origin is CdEDataclassMap:
+            type_ = typing.get_args(type_)[0]
         # like "type_"
         if isinstance(type_, typing.ForwardRef):
             type_ = type_.__forward_arg__
@@ -299,8 +303,14 @@ class CdEDataclass:
     def many_from_database(
         cls, list_of_data: Collection[CdEDBObject], sort: bool = True
     ) -> CdEDataclassMap["Self"]:
-        sort = xsorted if sort else list
-        return {obj.id: obj for obj in sort(map(cls.from_database, list_of_data))}
+        sorter = xsorted if sort else list
+        return {obj.id: obj for obj in sorter(map(cls.from_database, list_of_data))}
+
+    @classmethod
+    def many_from_database_list(
+        cls, list_of_data: Collection[CdEDBObject]
+    ) -> list["Self"]:
+        return xsorted(map(cls.from_database, list_of_data))
 
     @classmethod
     def get_select_query(
@@ -544,6 +554,7 @@ class StoredQuery(CdEDataclass):
     id: vtypes.ID = dataclasses.field(metadata=MetaFlag.input_creation_exclude.as_dict)
 
     query_name: str
+
     scope: QueryScope = dataclasses.field(metadata=MetaFlag.request_exclude.as_dict)
     serialized_query: vtypes.QueryInput = dataclasses.field(
         metadata=MetaFlag.request_exclude.as_dict
@@ -554,6 +565,8 @@ class StoredQuery(CdEDataclass):
         repr=False,
         metadata=MetaFlag.exclude.as_dict,
     )
+
+    query_group: str | None = None
 
     @property
     def user_created(self) -> bool:
@@ -585,7 +598,7 @@ class StoredQuery(CdEDataclass):
         if self.query:
             ret |= self.query.serialize_to_url()
         if self.user_created:
-            ret |= {"query_name": self.query_name}
+            ret |= {"query_name": self.query_name, "query_group": self.query_group}
         return ret
 
     def query_by_name(self) -> tuple[str, CdEDBObject]:
@@ -607,4 +620,14 @@ class StoredQuery(CdEDataclass):
         return ret
 
     def get_sortkey(self) -> Sortkey:
-        return (self.query_name,)
+        return (
+            self.query_group or chr(sys.maxunicode),  # Sort empty group last.
+            self.query_name,
+        )
+
+    @classmethod
+    def group_queries(cls, queries: list[Self]) -> dict[str, list[Self]]:
+        ret = collections.defaultdict(list)
+        for q in xsorted(queries):
+            ret[q.query_group or ""].append(q)
+        return ret

@@ -98,48 +98,53 @@
     "questionnaire": {
         "QuestionnaireUsages.additional": [
             {
-                "default_value": null,
-                "field_name": null,
-                "info": "Bitte gib hier Deine Kleidungsw\u00fcnsche an.",
-                "readonly": false,
+                "role": 2,
                 "title": "Akademiekleidung"
+            },
+            {
+                "role": 1,
+                "text": "Bitte gib hier Deine Kleidungsw\u00fcnsche an."
             },
             {
                 "default_value": null,
                 "field_name": "KleidungTShirtCreator",
                 "info": null,
                 "readonly": false,
-                "title": "Unisex T-Shirt"
+                "label": "Unisex T-Shirt",
+                "role": 5
             },
             {
                 "default_value": null,
                 "field_name": "KleidungTShirtCreatorGroesse",
                 "info": null,
                 "readonly": false,
-                "title": "Unisex T-Shirt Gr\u00f6\u00dfe"
+                "label": "Unisex T-Shirt Gr\u00f6\u00dfe",
+                "role": 5
             },
             {
                 "default_value": null,
                 "field_name": "KleidungTShirtExpresser",
                 "info": null,
                 "readonly": false,
-                "title": "Damen T-Shirt"
+                "label": "Damen T-Shirt",
+                "role": 5
             },
             {
                 "default_value": null,
                 "field_name": "KleidungTShirtExpresserGroesse",
                 "info": null,
                 "readonly": false,
-                "title": "Damen T-Shirt Gr\u00f6\u00dfe"
+                "label": "Damen T-Shirt Gr\u00f6\u00dfe",
+                "role": 5
             },
             {
                 "default_value": null,
                 "field_name": "KleidungAnmerkungen",
                 "info": null,
                 "readonly": false,
-                "title": "Anmerkungen zur Kleidungsbestellung"
+                "label": "Anmerkungen zur Kleidungsbestellung",
+                "role": 5
             }
-        ],
-        "QuestionnaireUsages.registration": []
+        ]
     }
 }

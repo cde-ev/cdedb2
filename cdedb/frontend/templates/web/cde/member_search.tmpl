@@ -82,26 +82,24 @@
             <div class="panel-body">
                 <div class="row">
                     <div class="col-sm-6">
-                        {{ util.form_input_text(name="qval_fulltext", label=gettext("Fulltext"), aclass="input-sm") }}
-                        {{ util.form_input_text(name="qval_given_names,searchable_legal_given_names,nickname",
+                        {{ util.form_input_text(type="search", name="qval_fulltext", label=gettext("Fulltext"), aclass="input-sm") }}
+                        {{ util.form_input_text(type="search", name="qval_given_names,searchable_legal_given_names,nickname",
                                 label=gettext("Given Names"), aclass="input-sm") }}
-                        {{ util.form_input_text(name="qval_family_name,birth_name", label=gettext("Family Name"),
+                        {{ util.form_input_text(type="search", name="qval_family_name,birth_name", label=gettext("Family Name"),
                                 aclass="input-sm") }}
-                        {{ util.form_input_text(name="qval_username", label=gettext("E-Mail"), aclass="input-sm") }}
-                        {{ util.form_input_text(name="phone", label=gettext("Phone"), type="tel",
+                        {{ util.form_input_text(type="search", name="qval_username", label=gettext("E-Mail"), aclass="input-sm") }}
+                        {{ util.form_input_text(type="tel", name="phone", label=gettext("Phone"),
                                                 aclass="input-sm") }}
                         {{ util.form_input_text(
-                                name="qval_weblink,specialisation,affiliation,timeline,interests,free_form",
+                                type="search", name="qval_weblink,specialisation,affiliation,timeline,interests,free_form",
                                 label=gettext("Interests"), aclass="input-sm") }}
                         {{ generic.past_course_select(small=False, select_class="input-sm", input_name_prefix="qval_") }}
                     </div>
                     <div class="col-sm-6">
-                        {{ util.form_input_from_to('postal_lower', 'postal_upper', label=gettext("ZIP"),
-                                                type='number') }}
-                        {{ util.form_input_text(name="qval_location,location2", label=gettext("City"),
-                                                aclass="input-sm") }}
-                        {{ util.form_input_text('near_pc', label=gettext("Near ZIP")) }}
-                        {{ util.form_input_select('near_radius', label=gettext("Radius"), entries=near_radius.items(),
+                        {{ util.form_input_from_to(name1='postal_lower', name2='postal_upper', label=gettext("ZIP"), type='number') }}
+                        {{ util.form_input_text(type="search", name="qval_location,location2", label=gettext("City"), aclass="input-sm") }}
+                        {{ util.form_input_text(type="search", name='near_pc', label=gettext("Near ZIP")) }}
+                        {{ util.form_input_select(name='near_radius', label=gettext("Radius"), entries=near_radius.items(),
                                                   nulloption=nbsp, aclass="input-sm") }}
                         {{ util.form_input_select(name="qval_country,country2", label=gettext("Country"),
                                                   entries=COUNTRY_CODES, nulloption=nbsp) }}

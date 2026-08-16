@@ -4,7 +4,7 @@
 
 import collections
 from collections.abc import Collection
-from typing import Any, Optional
+from typing import Any
 
 import werkzeug
 from subman.exceptions import SubscriptionError
@@ -58,8 +58,8 @@ class MlBaseFrontend(AbstractUserFrontend):
         self,
         rs: RequestState,
         templatename: str,
-        params: Optional[CdEDBObject] = None,
-        mandatory_fields: Optional[Collection[str]] = None,
+        params: CdEDBObject | None = None,
+        mandatory_fields: Collection[str] | None = None,
     ) -> Response:
         params = params or {}
         if 'mailinglist' in rs.ambience:
@@ -91,22 +91,13 @@ class MlBaseFrontend(AbstractUserFrontend):
             rs.user.persona_id,
             states=sub_states | {const.SubscriptionState.pending},
         )
-        grouped: dict[MailinglistGroup, CdEDBObjectMap]
-        grouped = collections.defaultdict(dict)
-        for mailinglist_id, title in mailinglists.items():
-            group_id = self.mlproxy.get_ml_type(rs, mailinglist_id).sortkey
-            grouped[group_id][mailinglist_id] = {
-                'title': title,
-                'id': mailinglist_id,
-            }
+        grouped = Mailinglist.group_lists(mailinglist_infos)
         return self.render(
             rs,
             "index",
             {
-                'groups': MailinglistGroup,
-                'mailinglists': grouped,
+                'grouped': grouped,
                 'subscriptions': subscriptions,
-                'mailinglist_infos': mailinglist_infos,
             },
         )
 
@@ -155,7 +146,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("core_admin", "ml_admin")
     @REQUESTdata("download", "is_search")
     def user_search(
-        self, rs: RequestState, download: Optional[str], is_search: bool
+        self, rs: RequestState, download: str | None, is_search: bool
     ) -> Response:
         """Perform search."""
         return self.generic_user_search(
@@ -243,7 +234,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml")
     @REQUESTdata("ml_type")
     def create_mailinglist_form(
-        self, rs: RequestState, ml_type: Optional[const.MailinglistTypes]
+        self, rs: RequestState, ml_type: const.MailinglistTypes | None
     ) -> Response:
         """Render form."""
         rs.ignore_validation_errors()
@@ -303,7 +294,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         rs: RequestState,
         data: dict[str, Any],
         ml_type: const.MailinglistTypes,
-        moderators: vtypes.CdedbIDList,
+        moderators: list[vtypes.PersonaID],
     ) -> Response:
         """Make a new list."""
         data["moderators"] = moderators
@@ -374,8 +365,8 @@ class MlBaseFrontend(AbstractUserFrontend):
     def merge_accounts(
         self,
         rs: RequestState,
-        source_persona_id: vtypes.CdedbID,
-        target_persona_id: vtypes.CdedbID,
+        source_persona_id: vtypes.PersonaID,
+        target_persona_id: vtypes.PersonaID,
         clone_addresses: bool,
     ) -> Response:
         """Merge a ml only user (source) into an other user (target).
@@ -673,16 +664,8 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(allow_moderators=False)
-    @REQUESTdata("ack_delete")
-    def delete_mailinglist(
-        self, rs: RequestState, mailinglist_id: int, ack_delete: bool
-    ) -> Response:
+    def delete_mailinglist(self, rs: RequestState, mailinglist_id: int) -> Response:
         """Remove a mailinglist."""
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
 
@@ -882,7 +865,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @mailinglist_guard()
     @REQUESTdata("moderators")
     def add_moderators(
-        self, rs: RequestState, mailinglist_id: int, moderators: vtypes.CdedbIDList
+        self, rs: RequestState, mailinglist_id: int, moderators: list[vtypes.PersonaID]
     ) -> Response:
         """Promote personas to moderator."""
         if rs.has_validation_errors():
@@ -1059,7 +1042,10 @@ class MlBaseFrontend(AbstractUserFrontend):
     @mailinglist_guard(requires_privilege=True)
     @REQUESTdata("subscriber_ids")
     def add_subscribers(
-        self, rs: RequestState, mailinglist_id: int, subscriber_ids: vtypes.CdedbIDList
+        self,
+        rs: RequestState,
+        mailinglist_id: int,
+        subscriber_ids: list[vtypes.PersonaID],
     ) -> Response:
         """Administratively subscribe somebody."""
         if rs.has_validation_errors():
@@ -1162,7 +1148,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         self,
         rs: RequestState,
         mailinglist_id: int,
-        modsubscriber_ids: vtypes.CdedbIDList,
+        modsubscriber_ids: list[vtypes.PersonaID],
     ) -> Response:
         """Administratively subscribe somebody with moderator override."""
         if rs.has_validation_errors():
@@ -1206,7 +1192,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         self,
         rs: RequestState,
         mailinglist_id: int,
-        modunsubscriber_ids: vtypes.CdedbIDList,
+        modunsubscriber_ids: list[vtypes.PersonaID],
     ) -> Response:
         """Administratively block somebody."""
         if rs.has_validation_errors():
@@ -1286,7 +1272,7 @@ class MlBaseFrontend(AbstractUserFrontend):
     @access("ml", modi={"POST"})
     @REQUESTdata("email")
     def change_address(
-        self, rs: RequestState, mailinglist_id: int, email: Optional[vtypes.Email]
+        self, rs: RequestState, mailinglist_id: int, email: vtypes.Email | None
     ) -> Response:
         """Modify address to which emails are delivered for this list.
 
@@ -1354,7 +1340,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         return self.redirect(rs, "ml/show_mailinglist")
 
     def _check_address_change_requirements(
-        self, rs: RequestState, mailinglist_id: int, email: Optional[vtypes.Email]
+        self, rs: RequestState, mailinglist_id: int, email: vtypes.Email | None
     ) -> bool:
         """Check if all conditions required to change a subscription address
         are fulfilled."""
@@ -1384,7 +1370,7 @@ class MlBaseFrontend(AbstractUserFrontend):
             )
             requests = list(requests)  # convert from dict which breaks JSON
 
-            ml_store = store.get(str(ml_id))
+            ml_store: CdEDBObject | None = store.get(str(ml_id))
             if ml_store is None:
                 ml_store = {
                     'persona_ids': requests,

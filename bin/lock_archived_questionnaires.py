@@ -4,6 +4,7 @@
 import cdedb.database.constants as const
 from cdedb.backend.common import Silencer
 from cdedb.script import Script
+import cdedb.models.event as models
 
 # setup
 
@@ -20,5 +21,6 @@ with script:
             aq = const.QuestionnaireUsages.additional
             questionnaire = event.get_all_questionnaires(rs, event_id)[aq]
             for entry in questionnaire:
-                entry.readonly = True
+                if isinstance(entry, models.questionnaire.QuestionnaireFieldRow):
+                    entry.readonly = True
             event.set_questionnaire(rs, event_id, aq, questionnaire.as_dicts())

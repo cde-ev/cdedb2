@@ -27,5 +27,5 @@ with script:
     user_rs.translations = setup_translations(script.config)
     user_rs.ambience = reconnoitre_ambience(event, user_rs)
 
-    event.stats(user_rs, event_id)
+    event.stats(user_rs, event_id)  # type: ignore[arg-type]
     cProfile.run("event.stats(user_rs, event_id)", sys.argv[2])

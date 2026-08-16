@@ -8,7 +8,7 @@ import collections
 import copy
 import datetime
 from collections.abc import Collection
-from typing import Any, Optional, Protocol, TypeVar
+from typing import Any, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -43,9 +43,7 @@ from cdedb.common.query.log_filter import PastEventLogFilter
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import ParamDict
-from cdedb.models.common import CdEDataclassMap
-
-T = TypeVar("T")
+from cdedb.models.common import CdEDataclass, CdEDataclassMap
 
 
 class PastEventBackend(AbstractBackend):
@@ -70,10 +68,10 @@ class PastEventBackend(AbstractBackend):
         rs: RequestState,
         *,
         code: const.PastEventLogCodes,
-        pevent_id: Optional[int],
-        pcourse_id: Optional[int] = None,
-        persona_id: Optional[int] = None,
-        change_note: Optional[str] = None,
+        pevent_id: int | None,
+        pcourse_id: int | None = None,
+        persona_id: int | None = None,
+        change_note: str | None = None,
     ) -> int:
         """Make an entry in the log for concluded events.
 
@@ -247,7 +245,7 @@ class PastEventBackend(AbstractBackend):
         self,
         rs: RequestState,
         pevent_id: int,
-        cascade: Optional[Collection[str]] = None,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Remove past event.
 
@@ -326,7 +324,7 @@ class PastEventBackend(AbstractBackend):
 
     @access("persona")
     def list_past_courses(
-        self, rs: RequestState, pevent_id: Optional[int] = None
+        self, rs: RequestState, pevent_id: int | None = None
     ) -> dict[int, str]:
         """List all relevant past courses.
 
@@ -450,7 +448,7 @@ class PastEventBackend(AbstractBackend):
         self,
         rs: RequestState,
         pcourse_id: int,
-        cascade: Optional[Collection[str]] = None,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Remove past course.
 
@@ -692,11 +690,11 @@ class PastEventBackend(AbstractBackend):
         return ret
 
     @internal
-    def filter_participants(
+    def filter_participants[T: CdEDataclass](
         self,
         rs: RequestState,
         participants: CdEDataclassMap[T],
-        personas: CdEDataclassMap[models_core.PersonaStatus],
+        personas: CdEDataclassMap[models_core.PastEventPersona],
         honor_admins: bool,
         pevent_id: int | None = None,
         pcourse_id: int | None = None,
@@ -762,12 +760,10 @@ class PastEventBackend(AbstractBackend):
             entity_key="pevent_id",
         )
         total_participants_num = len(data)
-        personas = self.core.get_personas(rs, {e['persona_id'] for e in data})
-        personas_status = self.core.get_personas_status(rs, personas.keys())
+        personas = self.core.get_past_event_users(rs, {e['persona_id'] for e in data})
         pevent = self.get_past_event(rs, pevent_id)
         for datum in data:
             datum["persona"] = personas[datum["persona_id"]]
-            datum["persona_status"] = personas_status[datum["persona_id"]]
             datum["pevent"] = pevent
         ret = models.PastEventParticipant.many_from_database(data)
         ret = {participant.persona_id: participant for participant in ret.values()}
@@ -792,7 +788,7 @@ class PastEventBackend(AbstractBackend):
         ret = self.filter_participants(
             rs,
             participants=ret,  # type: ignore[arg-type]
-            personas=personas_status,
+            personas=personas,
             honor_admins=honor_admins,
             pevent_id=pevent_id,
         )
@@ -823,7 +819,7 @@ class PastEventBackend(AbstractBackend):
         """
         params: ParamDict = {"pcourse_id": pcourse_id}
         data = self.query_all(rs, query, params)
-        personas = self.core.get_personas(rs, {e['persona_id'] for e in data})
+        personas = self.core.get_past_event_users(rs, {e['persona_id'] for e in data})
         pcourse = self.get_past_course(rs, pcourse_id)
         for datum in data:
             datum["pcourse"] = pcourse
@@ -837,7 +833,7 @@ class PastEventBackend(AbstractBackend):
         ret = self.filter_participants(
             rs,
             participants=ret,  # type: ignore[arg-type]
-            personas=self.core.get_personas_status(rs, personas.keys()),
+            personas=personas,
             honor_admins=honor_admins,
             pcourse_id=pcourse_id,
         )
@@ -852,15 +848,15 @@ class PastEventBackend(AbstractBackend):
     ) -> CdEDataclassMap[models.PastEventParticipant]:
         """List all past events of the given persona."""
         persona_id = affirm(vtypes.ID, persona_id)
-        persona_status = self.core.get_persona_status(rs, persona_id)
+        persona = self.core.get_past_event_user(rs, persona_id)
         if not (
             self.is_admin(rs)
             or "core_admin" in rs.user.roles
             or persona_id == rs.user.persona_id
             or (
                 "searchable" in rs.user.roles
-                and persona_status.is_member
-                and persona_status.is_searchable
+                and persona.is_member
+                and persona.is_searchable
             )
         ):
             raise PrivilegeError
@@ -874,11 +870,8 @@ class PastEventBackend(AbstractBackend):
             entity_key="persona_id",
         )
         pevents = self.get_past_events(rs, {datum["pevent_id"] for datum in data})
-        persona = self.core.get_persona(rs, persona_id)
-        persona_status = self.core.get_persona_status(rs, persona_id)
         for datum in data:
             datum["persona"] = persona
-            datum["persona_status"] = persona_status
             datum["pevent"] = pevents[datum["pevent_id"]]
         ret = models.PastEventParticipant.many_from_database(data)
         ret = {p.pevent_id: p for p in ret.values()}
@@ -903,7 +896,7 @@ class PastEventBackend(AbstractBackend):
     @access("cde_admin", "event_admin")
     def find_past_event(
         self, rs: RequestState, shortname: str
-    ) -> tuple[Optional[int], list[Error], list[Error]]:
+    ) -> tuple[int | None, list[Error], list[Error]]:
         """Look for events with a certain name.
 
         This is mainly for batch admission, where we want to
@@ -946,7 +939,7 @@ class PastEventBackend(AbstractBackend):
     @access("cde_admin", "event_admin")
     def find_past_course(
         self, rs: RequestState, phrase: str, pevent_id: int
-    ) -> tuple[Optional[int], list[Error], list[Error]]:
+    ) -> tuple[int | None, list[Error], list[Error]]:
         """Look for courses with a certain number/name.
 
         This is mainly for batch admission, where we want to
@@ -1009,7 +1002,9 @@ class PastEventBackend(AbstractBackend):
         regs = self.event.get_registrations(rs, list(reg_ids.keys()))
 
         # maps persona_ids to their dicts of courses, the bool signals instructorship
-        participants_to_courses: dict[int, dict[int, bool]] = {}
+        participants_to_courses: dict[
+            vtypes.PersonaID, dict[vtypes.CourseID, bool]
+        ] = {}
         for reg in regs.values():
             participant_status = const.RegistrationPartStati.participant
             if reg['parts'][part_id]['status'] != participant_status:
@@ -1054,7 +1049,7 @@ class PastEventBackend(AbstractBackend):
 
     @access("cde_admin", "event_admin")
     def archive_event(
-        self, rs: RequestState, event_id: int, create_past_event: bool = True
+        self, rs: RequestState, event_id: vtypes.EventID, create_past_event: bool = True
     ) -> list[int] | None:
         """Archive a concluded event.
 
@@ -1074,7 +1069,7 @@ class PastEventBackend(AbstractBackend):
           if there were complications or create_past_events is False.
           If there were complications, the second entry is an error message.
         """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         if "cde_admin" not in rs.user.roles or "event_admin" not in rs.user.roles:
             raise PrivilegeError(n_("Needs both admin privileges."))
         with Atomizer(rs):
@@ -1082,7 +1077,7 @@ class PastEventBackend(AbstractBackend):
             if not event.is_cancelled and event.end >= now().date():
                 raise ValueError(n_("Event is not concluded yet."))
             self.event.set_event_archived(rs, event_id)
-            new_ids = None
+            new_ids: list[int] | None = None
             if create_past_event:
                 new_ids = []
                 for part_id in xsorted(event.parts):

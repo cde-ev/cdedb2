@@ -11,7 +11,7 @@ import builtins
 import collections
 import enum
 from functools import cached_property
-from typing import Optional
+from typing import TYPE_CHECKING
 
 from cdedb.uncommon.intenum import CdEIntEnum
 
@@ -20,6 +20,9 @@ from cdedb.uncommon.submanshim import (  # noqa: F401
     SubscriptionAction,
     SubscriptionState,
 )
+
+if TYPE_CHECKING:
+    from cdedb.models.event.questionnaire import QuestionnaireRow
 
 
 def n_(x: str) -> str:  # pragma: no cover
@@ -146,6 +149,7 @@ class FieldDatatypes(CdEIntEnum):
 
     str = 1  #:
     str_multiline = 50  #:
+    str_monospace = 55  #:
     bool = 2  #:
     int = 3  #:
     float = 4  #:
@@ -162,17 +166,21 @@ class FieldDatatypes(CdEIntEnum):
             return 'float'
         if self == FieldDatatypes.non_negative_int:
             return 'int'
-        if self == FieldDatatypes.str_multiline:
+        if self in {FieldDatatypes.str_multiline, FieldDatatypes.str_monospace}:
             return 'str'
         return self.name
 
     @property
     def is_str(self) -> builtins.bool:
-        return self in {FieldDatatypes.str, FieldDatatypes.str_multiline}
+        return self in {
+            FieldDatatypes.str,
+            FieldDatatypes.str_multiline,
+            FieldDatatypes.str_monospace,
+        }
 
     @property
     def text_rows(self) -> builtins.int:
-        if self == FieldDatatypes.str_multiline:
+        if self in {FieldDatatypes.str_multiline, FieldDatatypes.str_monospace}:
             return 5
         return 0
 
@@ -191,6 +199,59 @@ class QuestionnaireUsages(CdEIntEnum):
     def allow_fee_condition(self) -> bool:
         """Whether or not rows with this usage may use fee condition fields."""
         return self == QuestionnaireUsages.registration
+
+    @property
+    def title_level(self) -> int:
+        """Heading-level for custom titles in this kind of questionnaire."""
+        return 3
+
+
+@enum.unique
+class QuestionnaireRowRole(CdEIntEnum):
+    text = 1
+    heading = 2
+    panel = 3
+    event_field = 5
+    course_choices = 10
+    part_selection = 20
+    fee_preview = 30
+    list_consent = 40
+    mixed_lodging = 50
+    foto_notice = 60
+    registration_notes = 70
+    table_of_contents = 80
+    my_data = 90
+
+    def get_class(self) -> type["QuestionnaireRow"]:
+        from cdedb.models.event.questionnaire import (  # noqa: PLC0415
+            QuestionnaireRow,
+        )
+
+        return QuestionnaireRow.get_class(self)
+
+
+@enum.unique
+class QuestionnairePanelKind(CdEIntEnum):
+    default = 10
+    info = 20
+    warning = 30
+    danger = 40
+
+    def get_icon(self) -> str:
+        return {
+            self.default: "tag",
+            self.info: "info-circle",
+            self.warning: "exclamation-triangle",
+            self.danger: "exclamation-circle",
+        }[self]
+
+    def get_panel_class(self) -> str:
+        return {
+            self.default: "panel-default",
+            self.info: "panel-info",
+            self.warning: "panel-warning",
+            self.danger: "panel-danger",
+        }[self]
 
 
 @enum.unique
@@ -246,6 +307,7 @@ class EventFeeType(CdEIntEnum):
     # Donation
     solidary_donation = 11
     instructor_donation = 6
+    followup_donation = 21
     other_donation = 20
 
     # Reimbursement
@@ -267,6 +329,7 @@ class EventFeeType(CdEIntEnum):
             EventFeeType.solidary_donation: "handshake",
             EventFeeType.solidary_increase: "hands-helping",
             EventFeeType.other_donation: "donate",
+            EventFeeType.followup_donation: "forward-fast",
             EventFeeType.crisis_refund: "fire-extinguisher",
             EventFeeType.other_refund: "person-military-to-person",
         }[self]
@@ -283,6 +346,7 @@ class EventFeeType(CdEIntEnum):
             EventFeeType.solidary_donation: EventFeeCategory.donation,
             EventFeeType.solidary_increase: EventFeeCategory.participation_fee,
             EventFeeType.other_donation: EventFeeCategory.donation,
+            EventFeeType.followup_donation: EventFeeCategory.donation,
             EventFeeType.crisis_refund: EventFeeCategory.reimbursement,
             EventFeeType.other_refund: EventFeeCategory.reimbursement,
         }[self]
@@ -299,6 +363,7 @@ class EventFeeType(CdEIntEnum):
             EventFeeType.solidary_donation: EventFeeBudget.solidarity,
             EventFeeType.solidary_increase: EventFeeBudget.solidarity,
             EventFeeType.other_donation: EventFeeBudget.cde,
+            EventFeeType.followup_donation: EventFeeBudget.followup,
             EventFeeType.crisis_refund: EventFeeBudget.expenses,
             EventFeeType.other_refund: EventFeeBudget.expenses,
         }[self]
@@ -394,7 +459,7 @@ class GenesisStati(CdEIntEnum):
     def is_finalized(self) -> bool:
         return self in self.finalized_stati()
 
-    def get_icon(self) -> Optional[str]:
+    def get_icon(self) -> str | None:
         return {
             GenesisStati.unconfirmed: "hourglass-start",
             GenesisStati.to_review: "user-clock",
@@ -521,6 +586,7 @@ class MailinglistRosterVisibility(CdEIntEnum):
 
     none = 1
     subscribable = 10
+    members = 15
     viewers = 20
 
 
@@ -1111,7 +1177,7 @@ class FinanceLogCodes(CdEIntEnum):
 class EventLogCodes(CdEIntEnum):
     """Available log messages event.log."""
 
-    # Event
+    # Event (new codes should start at 1000)
     event_created = 1  #:
     event_changed = 2  #:
     event_deleted = 3  #:
@@ -1119,7 +1185,7 @@ class EventLogCodes(CdEIntEnum):
     event_locked = 60  #:
     event_unlocked = 61  #:
 
-    # Registrations
+    # Registrations (2000)
     registration_created = 50  #:
     registration_changed = 51  #:
     registration_deleted = 52  #:
@@ -1129,7 +1195,7 @@ class EventLogCodes(CdEIntEnum):
     registration_payment_received_orga = 57  #:
     registration_payment_reimbursed_orga = 58  #:
 
-    # Courses
+    # Courses (3000)
     course_created = 40  #:
     course_changed = 41  #:
     course_segment_deleted = 420  #:
@@ -1138,7 +1204,7 @@ class EventLogCodes(CdEIntEnum):
     course_segment_activated = 431  #:
     course_deleted = 44  #:
 
-    # Lodgements
+    # Lodgements (4000)
     lodgement_changed = 25  #:
     lodgement_created = 26  #:
     lodgement_deleted = 27  #:
@@ -1146,7 +1212,7 @@ class EventLogCodes(CdEIntEnum):
     lodgement_group_changed = 71  #:
     lodgement_group_deleted = 72  #:
 
-    # Parts & Tracks
+    # Parts & Tracks (5000)
     part_created = 15  #:
     part_changed = 16  #:
     part_deleted = 17  #:
@@ -1154,54 +1220,54 @@ class EventLogCodes(CdEIntEnum):
     track_updated = 36  #:
     track_removed = 37  #:
 
-    # Fields
+    # Fields (6000)
     field_added = 20  #:
     field_updated = 21  #:
     field_removed = 22  #:
     questionnaire_changed = 30  #:
 
-    # Fees
+    # Fees (7000)
     event_fee_created = 80  #:
     event_fee_modified = 81  #:
     event_fee_deleted = 82  #:
     personalized_fee_amount_set = 400  #:
     personalized_fee_amount_deleted = 401  #:
 
-    # Queries
+    # Queries (8000)
     query_stored = 90  #:
     query_deleted = 91  #:
     custom_filter_created = 95  #:
     custom_filter_changed = 96  #:
     custom_filter_deleted = 97  #:
 
-    # Checkin
+    # Checkin (9000)
     checkin_added = 500  #:
     checkout_added = 505  #:
     checkin_changed = 510  #:
     checkout_changed = 515  #:
     checkin_period_deleted = 530  #:
 
-    # Part Groups
+    # Part Groups (10_000)
     part_group_created = 100  #:
     part_group_changed = 101  #:
     part_group_deleted = 102  #:
     part_group_link_created = 105  #:
     part_group_link_deleted = 106  #:
 
-    # Track Groups
+    # Track Groups (11_000)
     track_group_created = 110  #:
     track_group_changed = 111  #:
     track_group_deleted = 112  #:
     track_group_link_created = 113  #:
     track_group_link_deleted = 114  #:
 
-    # Orga Tokens
+    # Orga Tokens (12_000)
     orga_token_created = 200  #:
     orga_token_changed = 201  #:
     orga_token_revoked = 202  #:
     orga_token_deleted = 203  #:
 
-    # Event Roles
+    # Event Roles (13_000)
     helper_added = 7  #:
     helper_removed = 8  #:
     orga_added = 10  #:
@@ -1209,7 +1275,7 @@ class EventLogCodes(CdEIntEnum):
     caretaker_added = 12  #:
     caretaker_removed = 13  #:
 
-    # Other
+    # Other (100_000)
     event_partial_import = 62  #:
     minor_form_updated = 85  #:
     minor_form_removed = 86  #:

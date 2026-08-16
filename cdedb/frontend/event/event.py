@@ -11,7 +11,7 @@ import copy
 import datetime
 import json
 from collections.abc import Collection
-from typing import Literal, Optional, cast
+from typing import Literal, cast
 
 import werkzeug.datastructures
 import werkzeug.exceptions
@@ -50,6 +50,7 @@ from cdedb.frontend.common import (
     REQUESTfile,
     TransactionObserver,
     access,
+    ack_delete,
     cdedburl,
     check_validation as check,
     drow_name,
@@ -77,7 +78,7 @@ class EventEventMixin(EventBaseFrontend):
             rs, current=False, archived=False
         )
 
-        events_registration: dict[int, Optional[bool]] = {}
+        events_registration: dict[int, bool | None] = {}
         events_payment_pending: dict[int, bool] = {}
         if "event" in rs.user.roles:
             for event_id in current_event_list:
@@ -139,7 +140,7 @@ class EventEventMixin(EventBaseFrontend):
                 regs = self.eventproxy.list_registrations(rs, event.id)
                 events_registrations[event.id] = len(regs)
 
-        def querylink(event_id: int) -> str:
+        def querylink(event_id: vtypes.EventID) -> str:
             query = Query(
                 QueryScope.registration,
                 QueryScope.registration.get_spec(event=events[event_id]),
@@ -162,7 +163,7 @@ class EventEventMixin(EventBaseFrontend):
         )
 
     @access("anonymous")
-    def show_event(self, rs: RequestState, event_id: int) -> Response:
+    def show_event(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Display event organized via DB."""
         params: CdEDBObject = {}
         is_registered = False
@@ -200,11 +201,11 @@ class EventEventMixin(EventBaseFrontend):
     @access("event")
     @REQUESTdata("event_id", "endpoint", "args")
     def redirect_event(
-        self, rs: RequestState, event_id: int, endpoint: str, args: str
+        self, rs: RequestState, event_id: vtypes.EventID, endpoint: str, args: str
     ) -> Response:
         original_params = json.loads(args.replace("'", '"')) if args else {}
         original_event_id = original_params.get("event_id")
-        params = original_params
+        params: CdEDBObject = original_params
         if rs.has_validation_errors() or not event_id:
             rs.notify("error", rs.gettext("Unknown event."))
             default_endpoint = "event/list_events"
@@ -238,7 +239,7 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(EventPrivileges.basic_read)
-    def change_event_form(self, rs: RequestState, event_id: int) -> Response:
+    def change_event_form(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Render form."""
         merge_dicts(rs.values, rs.ambience['event'].as_dict())
 
@@ -265,7 +266,7 @@ class EventEventMixin(EventBaseFrontend):
         *models._EventConfigurationMixin.requestdict_fields(creation=False)
     )
     def change_event(
-        self, rs: RequestState, event_id: int, data: CdEDBObject
+        self, rs: RequestState, event_id: vtypes.EventID, data: CdEDBObject
     ) -> Response:
         """Modify an event organized via DB."""
         data = check(
@@ -300,7 +301,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_read)
     @REQUESTdata("edit")
     def show_free_texts(
-        self, rs: RequestState, event_id: int, edit: Optional[str]
+        self, rs: RequestState, event_id: vtypes.EventID, edit: str | None
     ) -> Response:
         rs.ignore_validation_errors()
         return self.render(rs, "event/show_free_texts", {'edit': edit})
@@ -311,18 +312,18 @@ class EventEventMixin(EventBaseFrontend):
     def change_free_text(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         free_text_key: str,
-        free_text_value: Optional[str],
+        free_text_value: str | None,
     ) -> Response:
         change_notes_by_key = {
             "description": "Beschreibung geändert.",
             "notes": "Orga-Notizen geändert.",
-            "registration_text": 'Freitext "Anmelden" geändert.',
-            # "registration_status_text": 'Freitext "Meine Anmeldung" geändert.',
+            "registration_status_text": 'Freitext "Meine Anmeldung" geändert.',
             "mail_text": 'Freitext "Anmeldebestätigung" geändert.',
             "participant_info": "Teilnehmer-Infos geändert.",
             "field_definition_notes": "Notizen zu Datenfeldern geändert.",
+            "questionnaire_notes": "Notizen zu Fragebögen geändert.",
         }
         if (
             rs.has_validation_errors() or free_text_key not in change_notes_by_key
@@ -340,7 +341,7 @@ class EventEventMixin(EventBaseFrontend):
         return self.redirect(rs, "event/show_free_texts")
 
     @access("event")
-    def get_minor_form(self, rs: RequestState, event_id: int) -> Response:
+    def get_minor_form(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Retrieve minor form."""
         is_registered = bool(
             self.eventproxy.list_registrations(rs, event_id, rs.user.persona_id)
@@ -360,11 +361,12 @@ class EventEventMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTfile("minor_form")
-    @REQUESTdata("delete", "ack_delete")
+    @REQUESTdata("delete")
+    @ack_delete(omit_error=True, passthrough=True)
     def change_minor_form(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         minor_form: werkzeug.datastructures.FileStorage,
         delete: bool,
         ack_delete: bool,
@@ -407,7 +409,7 @@ class EventEventMixin(EventBaseFrontend):
     @access("event_admin", modi={"POST"})
     @REQUESTdata("persona_id")
     def add_event_helper(
-        self, rs: RequestState, persona_id: vtypes.CdedbID
+        self, rs: RequestState, persona_id: vtypes.PersonaID
     ) -> Response:
         """Make an additional persona become event helper."""
         if rs.has_validation_errors():
@@ -425,7 +427,9 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event_admin", modi={"POST"})
     @REQUESTdata("persona_id")
-    def remove_event_helper(self, rs: RequestState, persona_id: vtypes.ID) -> Response:
+    def remove_event_helper(
+        self, rs: RequestState, persona_id: vtypes.PersonaID
+    ) -> Response:
         """Remove a persona as event helper.
 
         This is only available for admins.
@@ -442,7 +446,7 @@ class EventEventMixin(EventBaseFrontend):
         EventPrivileges.caretakers_change,
         EventPrivileges.basic_write,
     )
-    def manage_roles(self, rs: RequestState, event_id: int) -> Response:
+    def manage_roles(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         params = {}
         for role in ("orgas", "caretakers", "checkin_helpers"):
             params[role] = self.coreproxy.get_personas(
@@ -454,7 +458,10 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.orgas_change)
     @REQUESTdata("orga_ids")
     def add_orgas(
-        self, rs: RequestState, event_id: int, orga_ids: vtypes.CdedbIDList
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        orga_ids: list[vtypes.PersonaID],
     ) -> Response:
         return self._add_event_roles(rs, event_id, orga_ids, role='orga')
 
@@ -462,7 +469,10 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.caretakers_change)
     @REQUESTdata("caretaker_ids")
     def add_caretakers(
-        self, rs: RequestState, event_id: int, caretaker_ids: vtypes.CdedbIDList
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        caretaker_ids: list[vtypes.PersonaID],
     ) -> Response:
         return self._add_event_roles(rs, event_id, caretaker_ids, role='caretaker')
 
@@ -470,7 +480,10 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("checkin_helper_ids")
     def add_checkin_helpers(
-        self, rs: RequestState, event_id: int, checkin_helper_ids: vtypes.CdedbIDList
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        checkin_helper_ids: list[vtypes.PersonaID],
     ) -> Response:
         return self._add_event_roles(
             rs, event_id, checkin_helper_ids, role='checkin_helper'
@@ -479,8 +492,8 @@ class EventEventMixin(EventBaseFrontend):
     def _add_event_roles(
         self,
         rs: RequestState,
-        event_id: int,
-        persona_ids: vtypes.CdedbIDList,
+        event_id: vtypes.EventID,
+        persona_ids: list[vtypes.PersonaID],
         role: Literal["orga", "caretaker", "checkin_helper"],
     ) -> Response:
         # Check privileges
@@ -567,21 +580,19 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.orgas_change)
-    @REQUESTdata("orga_id", "ack_delete")
+    @REQUESTdata("orga_id")
+    @ack_delete()
     def remove_orga(
-        self, rs: RequestState, event_id: int, orga_id: vtypes.ID, ack_delete: bool
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        orga_id: vtypes.PersonaID,
     ) -> Response:
         """Remove a persona as orga of an event.
 
         This is only available for admins and caretakers.
         This can drop your own orga role.
         """
-
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.manage_roles(rs, event_id)
         code = self.eventproxy.remove_event_role(rs, event_id, orga_id, 'orga')
@@ -589,10 +600,13 @@ class EventEventMixin(EventBaseFrontend):
         if code:
             orga = self.coreproxy.get_persona(rs, orga_id)
             subject = f"Orga entfernt ({rs.ambience['event'].shortname})"
+            to = [self.conf["EVENT_ADMIN_ADDRESS"]]
+            if rs.ambience['event'].orga_address:
+                to.append(rs.ambience['event'].orga_address)
             self.do_mail(
                 rs,
                 "orga_removed",
-                {'To': (self.conf["EVENT_ADMIN_ADDRESS"],), 'Subject': subject},
+                {'To': to, 'Subject': subject},
                 {
                     'orga': orga,
                     'event': rs.ambience['event'],
@@ -603,19 +617,18 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.caretakers_change)
-    @REQUESTdata("caretaker_id", "ack_delete")
+    @REQUESTdata("caretaker_id")
+    @ack_delete()
     def remove_caretaker(
-        self, rs: RequestState, event_id: int, caretaker_id: vtypes.ID, ack_delete: bool
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        caretaker_id: vtypes.PersonaID,
     ) -> Response:
         """Remove a persona as caretaker of an event.
 
         This is only available for admins. This can drop your own caretaker role.
         """
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.manage_roles(rs, event_id)
         code = self.eventproxy.remove_event_role(
@@ -625,10 +638,13 @@ class EventEventMixin(EventBaseFrontend):
         if code:
             orga = self.coreproxy.get_persona(rs, caretaker_id)
             subject = f"Betreuer entfernt ({rs.ambience['event'].shortname})"
+            to = [self.conf["EVENT_ADMIN_ADDRESS"]]
+            if rs.ambience['event'].orga_address:
+                to.append(rs.ambience['event'].orga_address)
             self.do_mail(
                 rs,
                 "orga_removed",
-                {'To': (self.conf["EVENT_ADMIN_ADDRESS"],), 'Subject': subject},
+                {'To': to, 'Subject': subject},
                 {
                     'orga': orga,
                     'event': rs.ambience['event'],
@@ -639,23 +655,18 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdata("checkin_helper_id", "ack_delete")
+    @REQUESTdata("checkin_helper_id")
+    @ack_delete()
     def remove_checkin_helper(
         self,
         rs: RequestState,
-        event_id: int,
-        checkin_helper_id: vtypes.ID,
-        ack_delete: bool,
+        event_id: vtypes.EventID,
+        checkin_helper_id: vtypes.PersonaID,
     ) -> Response:
         """Remove a persona as checkin helper of an event.
 
         This is only available for admins. This can drop your own caretaker role.
         """
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.manage_roles(rs, event_id)
         code = self.eventproxy.remove_event_role(
@@ -670,7 +681,7 @@ class EventEventMixin(EventBaseFrontend):
     def create_event_mailinglist(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         orgalist: bool = False,
         part_group_id: int | None = None,
     ) -> Response:
@@ -734,7 +745,9 @@ class EventEventMixin(EventBaseFrontend):
                 blocked_parts.add(part_id)
         return blocked_parts
 
-    def _deletion_blocked_tracks(self, rs: RequestState, event_id: int) -> set[int]:
+    def _deletion_blocked_tracks(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> set[int]:
         """Returns all track_ids from tracks of a given event which must not be deleted.
 
         Extracts all tracks of the given event from the database and checks if there are
@@ -753,7 +766,7 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(EventPrivileges.basic_read)
-    def part_summary(self, rs: RequestState, event_id: int) -> Response:
+    def part_summary(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Display a comprehensive overview of all parts of a given event."""
         referenced_parts = self._deletion_blocked_parts(rs, rs.ambience["event"])
         may_change_part_ids = self.is_privileged(
@@ -771,16 +784,11 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdata("ack_delete")
+    @ack_delete()
     def delete_part(
-        self, rs: RequestState, event_id: int, part_id: int, ack_delete: bool
+        self, rs: RequestState, event_id: vtypes.EventID, part_id: int
     ) -> Response:
         """Delete a given part."""
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.part_summary(rs, event_id)
         if self.eventproxy.has_registrations(rs, event_id):
@@ -812,7 +820,7 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(EventPrivileges.basic_write)
-    def add_part_form(self, rs: RequestState, event_id: int) -> Response:
+    def add_part_form(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         if rs.ambience['event'].is_balanced:
             rs.notify("error", n_("Event is balanced. May not create new part."))
             return self.redirect(rs, "event/part_summary")
@@ -840,7 +848,7 @@ class EventEventMixin(EventBaseFrontend):
     def add_part(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         data: CdEDBObject,
         fee: vtypes.NonNegativeDecimal,
     ) -> Response:
@@ -879,7 +887,7 @@ class EventEventMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.basic_write)
     def change_part_form(
-        self, rs: RequestState, event_id: int, part_id: int
+        self, rs: RequestState, event_id: vtypes.EventID, part_id: int
     ) -> Response:
         part = rs.ambience['event'].parts[part_id]
 
@@ -932,7 +940,11 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdatadict(*models.EventPart.requestdict_fields(creation=False))
     def change_part(
-        self, rs: RequestState, event_id: int, part_id: int, data: CdEDBObject
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        part_id: int,
+        data: CdEDBObject,
     ) -> Response:
         """Change one part, including the associated tracks and fee modifiers."""
         data = check(rs, models.EventPart, data, event=rs.ambience["event"])
@@ -1066,7 +1078,7 @@ class EventEventMixin(EventBaseFrontend):
     @access("event")
     # TODO Be more lenient here (for finance_admins and auditors)
     @event_guard(EventPrivileges.registrations_stats)
-    def fee_summary(self, rs: RequestState, event_id: int) -> Response:
+    def fee_summary(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Show a summary of all event fees."""
         fee_stats = self.eventproxy.get_fee_stats(rs, event_id)
         violations = self.get_constraint_violations(rs, rs.ambience['event'])
@@ -1088,7 +1100,7 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(EventPrivileges.registrations_stats)
-    def fee_stats(self, rs: RequestState, event_id: int) -> Response:
+    def fee_stats(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Show stats for existing fees."""
         fee_stats = self.eventproxy.get_fee_stats(rs, event_id)
 
@@ -1136,9 +1148,9 @@ class EventEventMixin(EventBaseFrontend):
     def configure_fee_form(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         personalized: bool,
-        fee_id: Optional[int] = None,
+        fee_id: int | None = None,
     ) -> Response:
         """Render form to change or create one event fee."""
         rs.ignore_validation_errors()
@@ -1175,10 +1187,10 @@ class EventEventMixin(EventBaseFrontend):
     def configure_fee(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         data: CdEDBObject,
         personalized: bool,
-        fee_id: Optional[int] = None,
+        fee_id: vtypes.ID | None = None,
     ) -> Response:
         """Submit changes to or creation of one event fee."""
         if rs.ambience['event'].is_balanced:
@@ -1207,7 +1219,9 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write | EventPrivileges.registrations_write)
-    def delete_fee(self, rs: RequestState, event_id: int, fee_id: int) -> Response:
+    def delete_fee(
+        self, rs: RequestState, event_id: vtypes.EventID, fee_id: vtypes.ID
+    ) -> Response:
         """Delete one event fee."""
         if rs.ambience['event'].is_balanced:
             rs.notify(
@@ -1223,7 +1237,7 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(EventPrivileges.basic_read)
-    def group_summary(self, rs: RequestState, event_id: int) -> Response:
+    def group_summary(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         non_existing_mailinglists = {
             part_group.id
             for part_group in rs.ambience['event'].part_groups.values()
@@ -1247,7 +1261,9 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(EventPrivileges.basic_write)
-    def add_part_group_form(self, rs: RequestState, event_id: int) -> Response:
+    def add_part_group_form(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         return self.render(
             rs,
             "event/configure_part_group",
@@ -1259,7 +1275,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdatadict(*models.PartGroup.requestdict_fields(creation=True))
     def add_part_group(
-        self, rs: RequestState, event_id: int, data: CdEDBObject
+        self, rs: RequestState, event_id: vtypes.EventID, data: CdEDBObject
     ) -> Response:
         data = check(
             rs, models.PartGroup, data, creation=True, event=rs.ambience["event"]
@@ -1274,7 +1290,7 @@ class EventEventMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.basic_write)
     def change_part_group_form(
-        self, rs: RequestState, event_id: int, part_group_id: int
+        self, rs: RequestState, event_id: vtypes.EventID, part_group_id: int
     ) -> Response:
         merge_dicts(rs.values, rs.ambience['part_group'].as_dict())
         # add this to autofill the values correctly (they are readonly anyway)
@@ -1290,7 +1306,11 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdatadict(*models.PartGroup.requestdict_fields(creation=False))
     def change_part_group(
-        self, rs: RequestState, event_id: int, part_group_id: int, data: CdEDBObject
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        part_group_id: vtypes.ID,
+        data: CdEDBObject,
     ) -> Response:
         data["id"] = part_group_id
         data = check(rs, models.PartGroup, data, event=rs.ambience["event"])
@@ -1304,7 +1324,7 @@ class EventEventMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     def delete_part_group(
-        self, rs: RequestState, event_id: int, part_group_id: int
+        self, rs: RequestState, event_id: vtypes.EventID, part_group_id: vtypes.ID
     ) -> Response:
         if rs.has_validation_errors():
             return self.group_summary(rs, event_id)  # pragma: no cover
@@ -1314,7 +1334,9 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(EventPrivileges.basic_write)
-    def add_track_group_form(self, rs: RequestState, event_id: int) -> Response:
+    def add_track_group_form(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         return self.render(
             rs,
             "event/configure_track_group",
@@ -1326,7 +1348,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdatadict(*models.TrackGroup.requestdict_fields(creation=True))
     def add_track_group(
-        self, rs: RequestState, event_id: int, data: CdEDBObject
+        self, rs: RequestState, event_id: vtypes.EventID, data: CdEDBObject
     ) -> Response:
         data = check(
             rs, models.TrackGroup, data, creation=True, event=rs.ambience['event']
@@ -1354,7 +1376,7 @@ class EventEventMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.basic_write)
     def change_track_group_form(
-        self, rs: RequestState, event_id: int, track_group_id: int
+        self, rs: RequestState, event_id: vtypes.EventID, track_group_id: vtypes.ID
     ) -> Response:
         merge_dicts(rs.values, rs.ambience['track_group'].as_dict())
         # add this to autofill the values correctly (they are readonly anyway)
@@ -1370,7 +1392,11 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdatadict(*models.TrackGroup.requestdict_fields(creation=False))
     def change_track_group(
-        self, rs: RequestState, event_id: int, track_group_id: int, data: CdEDBObject
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        track_group_id: vtypes.ID,
+        data: CdEDBObject,
     ) -> Response:
         data["id"] = track_group_id
         data = check(rs, models.TrackGroup, data, event=rs.ambience["event"])
@@ -1383,15 +1409,13 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    @REQUESTdata("ack_delete")
+    @ack_delete()
     def delete_track_group(
-        self, rs: RequestState, event_id: int, track_group_id: int, ack_delete: bool
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        track_group_id: vtypes.ID,
     ) -> Response:
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.group_summary(rs, event_id)  # pragma: no cover
         code = self.eventproxy.delete_track_group(rs, track_group_id)
@@ -1482,7 +1506,7 @@ class EventEventMixin(EventBaseFrontend):
                 maxsize=EventOrgaMailinglist.maxsize_default,
                 additional_footer=None,
                 is_active=True,
-                event_id=vtypes.ID(event.id),
+                event_id=vtypes.EventID(vtypes.ID(event.id)),
                 notes=None,
                 moderators=event.orgas,
                 whitelist=set(),
@@ -1572,8 +1596,8 @@ class EventEventMixin(EventBaseFrontend):
         rs: RequestState,
         part_begin: datetime.date,
         part_end: datetime.date,
-        orga_ids: vtypes.CdedbIDList,
-        caretaker_ids: vtypes.CdedbIDList,
+        orga_ids: list[vtypes.PersonaID],
+        caretaker_ids: list[vtypes.PersonaID],
         fee: vtypes.NonNegativeDecimal,
         nonmember_surcharge: vtypes.NonNegativeDecimal,
         create_track: bool,
@@ -1623,7 +1647,7 @@ class EventEventMixin(EventBaseFrontend):
             {
                 'kind': const.EventFeeType.external,
                 'title': "Externenzusatzbeitrag",
-                'notes': "Automatisch erstellt",
+                'notes': "Automatisch erstellt.",
                 'amount': nonmember_surcharge,
                 'condition': "any_part and not is_member and not age.U12",
             },
@@ -1675,6 +1699,11 @@ class EventEventMixin(EventBaseFrontend):
             for fee_ in fee_data:
                 self.eventproxy.create_event_fee(rs, new_id, fee_)
 
+            for kind, qst in models.questionnaire.make_default_questionnaire(
+                event
+            ).items():
+                self.eventproxy.set_questionnaire(rs, event.id, kind, qst)
+
             if create_orga_list:
                 orga_ml_data = self._get_mailinglist_setter(rs, event, orgalist=True)
                 if self.mlproxy.verify_existence(rs, orga_ml_data.address):
@@ -1711,7 +1740,7 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.lock)
-    def lock_event(self, rs: RequestState, event_id: int) -> Response:
+    def lock_event(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Lock an event."""
         if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
             rs.notify("error", n_("Cannot lock offline instance."))
@@ -1724,7 +1753,7 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.lock)
-    def unlock_event(self, rs: RequestState, event_id: int) -> Response:
+    def unlock_event(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Unlock an event."""
         if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
             rs.notify("error", n_("Cannot unlock offline instance."))
@@ -1741,7 +1770,7 @@ class EventEventMixin(EventBaseFrontend):
     def archive_event(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         ack_archive: bool,
         create_past_event: bool,
     ) -> Response:
@@ -1799,7 +1828,7 @@ class EventEventMixin(EventBaseFrontend):
         # Lock all questionnaire entries
         aq = const.QuestionnaireUsages.additional
         questionnaire = self.eventproxy.get_all_questionnaires(rs, event_id)[aq]
-        for entry in questionnaire:
+        for entry in questionnaire.field_rows:
             entry.readonly = True
         self.eventproxy.set_questionnaire(rs, event_id, aq, questionnaire.as_dicts())
 
@@ -1823,16 +1852,9 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event_admin", modi={"POST"})
     @event_guard(EventPrivileges.delete)
-    @REQUESTdata("ack_delete")
-    def delete_event(
-        self, rs: RequestState, event_id: int, ack_delete: bool
-    ) -> Response:
+    @ack_delete()
+    def delete_event(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Remove an event."""
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
 
@@ -1844,9 +1866,9 @@ class EventEventMixin(EventBaseFrontend):
         cascade = {
             "registrations", "courses", "lodgement_groups", "lodgements",
             "field_definitions", "course_tracks", "event_parts", "event_fees",
-            "orgas", "caretakers", "checkin_helpers", "questionnaire",
-            "stored_queries", "log", "mailinglists", "part_groups", "orga_tokens",
-            "custom_query_filters",
+            "orgas", "caretakers", "checkin_helpers", "questionnaire_text_rows",
+            "questionnaire_field_rows", "questionnaire_magic_rows", "stored_queries",
+            "log", "mailinglists", "part_groups", "orga_tokens", "custom_query_filters",
         }  # fmt: skip
 
         code = self.eventproxy.delete_event(rs, event_id, cascade & blockers.keys())
@@ -1858,7 +1880,7 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("finance_admin", modi={"POST"})
     @event_guard(EventPrivileges.balance)
-    def balance_event(self, rs: RequestState, event_id: int) -> Response:
+    def balance_event(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Balance an event."""
         if rs.ambience['event'].is_balanced:
             rs.notify("warning", n_("Event already balanced."))
@@ -1869,7 +1891,7 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("finance_admin", modi={"POST"})
     @event_guard(EventPrivileges.balance)
-    def unbalance_event(self, rs: RequestState, event_id: int) -> Response:
+    def unbalance_event(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Unbalance an event."""
         if not rs.ambience['event'].is_balanced:
             rs.notify("warning", n_("Event isn't balanced."))
@@ -1880,7 +1902,9 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.approve_registration)
-    def approve_registration(self, rs: RequestState, event_id: int) -> Response:
+    def approve_registration(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         if rs.ambience['event'].is_registration_approved:
             rs.notify("warning", n_("Registration already approved."))
         else:
@@ -1903,7 +1927,9 @@ class EventEventMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.approve_registration)
-    def unapprove_registration(self, rs: RequestState, event_id: int) -> Response:
+    def unapprove_registration(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         if not rs.ambience['event'].is_registration_approved:
             rs.notify("warning", n_("Registration already unapproved."))
         else:
@@ -1928,7 +1954,7 @@ class EventEventMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.registrations_read, EventPrivileges.checkin)
     @REQUESTdata("phrase")
     def quick_show_registration(
-        self, rs: RequestState, event_id: int, phrase: str
+        self, rs: RequestState, event_id: vtypes.EventID, phrase: str
     ) -> Response:
         """Allow orgas to quickly retrieve a registration.
 
@@ -1938,21 +1964,22 @@ class EventEventMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
 
-        anid, errs = inspect(vtypes.CdedbID, phrase, argname="phrase")
+        persona_id, errs = inspect(vtypes.PersonaID, phrase, argname="phrase")
         if not errs:
-            reg_ids = self.eventproxy.list_registrations(rs, event_id, persona_id=anid)
+            reg_ids = self.eventproxy.list_registrations(
+                rs, event_id, persona_id=persona_id
+            )
             if reg_ids:
                 reg_id = unwrap(reg_ids.keys())
                 return self.redirect(
                     rs, "event/show_registration", {'registration_id': reg_id}
                 )
 
-        anid, errs = inspect(vtypes.ID, phrase, argname="phrase")
+        reg_id, errs = inspect(vtypes.RegistrationID, phrase, argname="phrase")
         if not errs:
-            assert anid is not None
-            regs = self.eventproxy.get_registrations(rs, (anid,))
-            if regs:
-                reg = unwrap(regs)
+            assert reg_id is not None
+            reg = self.eventproxy.get_registration(rs, reg_id)
+            if reg:
                 if reg['event_id'] == event_id:
                     return self.redirect(
                         rs, "event/show_registration", {'registration_id': reg['id']}

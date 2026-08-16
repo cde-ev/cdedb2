@@ -8,7 +8,7 @@ import io
 import json
 import time
 from collections.abc import Collection
-from typing import Any, Optional
+from typing import Any
 
 import werkzeug.exceptions
 from schulze_condorcet import pairwise_preference, schulze_evaluate_detailed
@@ -48,6 +48,7 @@ from cdedb.frontend.common import (
     REQUESTdata,
     REQUESTdatadict,
     access,
+    ack_delete,
     assembly_guard,
     check_validation as check,
     drow_name,
@@ -190,7 +191,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
     @REQUESTdata("source_id", _postpone_validation=True)
     @assembly_guard
     def create_ballot_form(
-        self, rs: RequestState, assembly_id: int, source_id: Optional[int] = None
+        self, rs: RequestState, assembly_id: int, source_id: int | None = None
     ) -> Response:
         """Render form.
 
@@ -264,15 +265,15 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         self,
         rs: RequestState,
         ballot_id: int,
-        attachment_ids: set[Optional[int]],
+        attachment_ids: set[int | None],
     ) -> DefaultReturnCode:
         """Wrapper around `AssemblyBackend.set_ballot_attachments` to filter None.
 
         We filter None from the id list, so that users are able to unset all attachments
         by selecting only the None option in the form.
         """
-        attachment_ids = set(filter(None, attachment_ids))
-        return self.assemblyproxy.set_ballot_attachments(rs, ballot_id, attachment_ids)
+        attachment_ids_ = set(filter(None, attachment_ids))
+        return self.assemblyproxy.set_ballot_attachments(rs, ballot_id, attachment_ids_)
 
     @access("assembly", modi={"POST"})
     @REQUESTdata("secret")
@@ -399,7 +400,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         rs: RequestState,
         assembly_id: int,
         ballot_id: int,
-        secret: Optional[str] = None,
+        secret: str | None = None,
     ) -> Response:
         """This shows a more detailed result of a tallied ballot.
 
@@ -529,7 +530,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         return collections.Counter(as_vote_strings(votes))
 
     def _retrieve_own_vote(
-        self, rs: RequestState, ballot: CdEDBObject, secret: Optional[str] = None
+        self, rs: RequestState, ballot: CdEDBObject, secret: str | None = None
     ) -> CdEDBObject:
         """Helper function to present the own vote
 
@@ -644,7 +645,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
 
     def get_online_result(
         self, rs: RequestState, ballot: dict[str, Any]
-    ) -> Optional[CdEDBObject]:
+    ) -> CdEDBObject | None:
         """Helper to get the result information of a tallied ballot."""
         if ballot['is_tallied']:
             ballot_result = self.assemblyproxy.get_ballot_result(rs, ballot['id'])
@@ -894,7 +895,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
     @assembly_guard
     @REQUESTdata("comment")
     def comment_concluded_ballot(
-        self, rs: RequestState, assembly_id: int, ballot_id: int, comment: Optional[str]
+        self, rs: RequestState, assembly_id: int, ballot_id: int, comment: str | None
     ) -> Response:
         if rs.has_validation_errors():
             return self.comment_concluded_ballot_form(rs, assembly_id, ballot_id)
@@ -938,16 +939,14 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdata("ack_delete")
+    @ack_delete()
     def delete_ballot(
-        self, rs: RequestState, assembly_id: int, ballot_id: int, ack_delete: bool
+        self,
+        rs: RequestState,
+        assembly_id: int,
+        ballot_id: int,
     ) -> Response:
         """Remove a ballot."""
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.show_ballot(rs, assembly_id, ballot_id)
         blockers = self.assemblyproxy.delete_ballot_blockers(rs, ballot_id)
@@ -982,7 +981,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         candidates = xsorted(
             Candidate(e['shortname']) for e in ballot['candidates'].values()
         )
-        vote: Optional[str]
+        vote: str | None
         if ballot['votes']:
             # classical voting
             voted = unwrap(request_extractor(rs, {"vote": Collection[str]}))
@@ -1014,7 +1013,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
                     vote = as_vote_string([rejected])
         else:
             # preferential voting
-            vote = unwrap(request_extractor(rs, {"vote": Optional[str]}))
+            vote = unwrap(request_extractor(rs, {"vote": str | None}))
             # Empty preferential vote counts as abstaining
             if not vote:
                 if ballot['use_bar']:

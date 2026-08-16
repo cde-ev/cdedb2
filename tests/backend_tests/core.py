@@ -3,7 +3,7 @@
 import copy
 import datetime
 import decimal
-from typing import Optional, cast
+from typing import cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -116,7 +116,7 @@ class TestCoreBackend(BackendTest):
 
     @as_users("anton")
     def test_entity_persona(self) -> None:
-        persona_id: Optional[int] = -1
+        persona_id: int | None = -1
         while True:
             persona_id = self.core.next_persona(
                 self.key, persona_id=persona_id, is_member=None, is_archived=False
@@ -872,7 +872,7 @@ class TestCoreBackend(BackendTest):
         new_id = self.core.genesis(self.key, case_id)
         self.assertLess(0, new_id)
         value = self.core.get_event_user(self.key, new_id)
-        expectation.persona.id = vtypes.ID(new_id)
+        expectation.persona.id = vtypes.PersonaID(vtypes.ID(new_id))
         self.assertEqual(expectation.persona, value)
 
     @as_users("anton")
@@ -949,7 +949,7 @@ class TestCoreBackend(BackendTest):
         self.assertLess(0, new_id)
         value = self.core.get_ml_user(self.key, new_id)
         persona_expectation = expectation.persona
-        persona_expectation.id = vtypes.ID(new_id)
+        persona_expectation.id = vtypes.PersonaID(vtypes.ID(new_id))
         self.assertEqual(persona_expectation, value)
         # make sure the notes attribute is carried over
         notes = self.core.get_total_persona(self.key, new_id)["notes"]
@@ -1158,6 +1158,7 @@ class TestCoreBackend(BackendTest):
             'is_event_admin': False,
             'is_complaint_admin': False,
             'is_member': True,
+            'is_searchable': True,
             'address': 'Im Garten 77',
             'address_supplement': 'bei Spielmanns',
             'birthday': datetime.date(1981, 2, 11),
@@ -1379,8 +1380,8 @@ class TestCoreBackend(BackendTest):
             "is_finance_admin": True,
         }
 
-        case_id = self.core.initialize_privilege_change(self.key, data)
-        self.assertLess(0, case_id)
+        change_id = self.core.initialize_privilege_change(self.key, data)
+        self.assertLess(0, change_id)
 
         persona = self.core.get_persona_status(self.key, new_admin["id"])
         self.assertFalse(persona.is_cde_admin)
@@ -1388,7 +1389,7 @@ class TestCoreBackend(BackendTest):
 
         self.login(admin2)
         self.core.finalize_privilege_change(
-            self.key, case_id, const.PrivilegeChangeStati.approved
+            self.key, change_id, const.PrivilegeChangeStati.approved
         )
 
         persona = self.core.get_persona_status(self.key, new_admin["id"])
@@ -1523,7 +1524,9 @@ class TestCoreBackend(BackendTest):
         self.login("anton")
         admin_key = self.key
         self.event.delete_registration(
-            self.key, 7, ("registration_parts", "course_choices", "registration_tracks")
+            self.key,
+            vtypes.RegistrationID(vtypes.ID(7)),
+            ("registration_parts", "course_choices", "registration_tracks"),
         )
         for u in USER_DICT.values():
             self.login("vera")

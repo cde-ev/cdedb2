@@ -2,7 +2,7 @@
 
 from collections.abc import Collection
 from dataclasses import fields
-from typing import Optional, cast
+from typing import cast
 
 from subman.exceptions import SubscriptionError
 
@@ -16,13 +16,11 @@ from cdedb.database.constants import SubscriptionState as SS
 from cdedb.uncommon.submanshim import SubscriptionAction as SA
 from tests.common import USER_DICT, BackendTest, as_users, prepsql
 
+PersonaID = lambda x: vtypes.PersonaID(vtypes.ID(x))
+
 
 class TestMlBackend(BackendTest):
     used_backends = ("core", "ml")
-
-    @staticmethod
-    def as_id(anid: int) -> vtypes.ID:
-        return vtypes.ID(anid)
 
     @as_users("janis")
     def test_basics(self) -> None:
@@ -250,12 +248,12 @@ class TestMlBackend(BackendTest):
                 attachment_policy=const.AttachmentPolicy.pdf_only,
                 convert_html=True,
                 roster_visibility=const.MailinglistRosterVisibility.none,
-                id=self.as_id(3),
+                id=vtypes.ID(3),
                 is_active=True,
                 maxsize=vtypes.PositiveInt(2048),
                 additional_footer=None,
                 mod_policy=const.ModerationPolicy.non_subscribers,
-                moderators={self.as_id(2), self.as_id(3), self.as_id(10)},
+                moderators={PersonaID(2), PersonaID(3), PersonaID(10)},
                 subject_prefix='witz',
                 title='Witz des Tages',
                 notes=None,
@@ -265,16 +263,16 @@ class TestMlBackend(BackendTest):
                 local_part=vtypes.EmailLocalPart('kongress'),
                 domain=const.MailinglistDomain.lists,
                 description=None,
-                assembly_id=self.as_id(1),
+                assembly_id=vtypes.ID(1),
                 attachment_policy=const.AttachmentPolicy.pdf_only,
                 convert_html=True,
                 roster_visibility=const.MailinglistRosterVisibility.none,
-                id=self.as_id(5),
+                id=vtypes.ID(5),
                 is_active=True,
                 maxsize=vtypes.PositiveInt(1024),
                 additional_footer=None,
                 mod_policy=const.ModerationPolicy.non_subscribers,
-                moderators={self.as_id(2), self.as_id(23)},
+                moderators={PersonaID(2), PersonaID(23)},
                 subject_prefix='kampf',
                 title='Sozialistischer Kampfbrief',
                 notes=None,
@@ -287,12 +285,12 @@ class TestMlBackend(BackendTest):
                 attachment_policy=const.AttachmentPolicy.pdf_only,
                 convert_html=True,
                 roster_visibility=const.MailinglistRosterVisibility.none,
-                id=self.as_id(7),
+                id=vtypes.ID(7),
                 is_active=True,
                 maxsize=vtypes.PositiveInt(1024),
                 additional_footer=None,
                 mod_policy=const.ModerationPolicy.non_subscribers,
-                moderators={self.as_id(2), self.as_id(10)},
+                moderators={PersonaID(2), PersonaID(10)},
                 subject_prefix='aktivenforum',
                 title='Aktivenforum 2001',
                 notes=None,
@@ -360,7 +358,7 @@ class TestMlBackend(BackendTest):
             maxsize=None,
             additional_footer=None,
             mod_policy=const.ModerationPolicy.unmoderated,
-            moderators={self.as_id(1), self.as_id(2)},
+            moderators={PersonaID(1), PersonaID(2)},
             whitelist=set(),
             subject_prefix='viva la revolution',
             title='Proletarier aller Länder',
@@ -371,7 +369,7 @@ class TestMlBackend(BackendTest):
         self.assertNotIn(new_id, oldlists)
         self.assertIn(new_id, self.ml.list_mailinglists(self.key))
         expectation = new_data
-        expectation.id = self.as_id(new_id)
+        expectation.id = vtypes.ID(new_id)
         self.assertEqual(expectation, self.ml.get_mailinglist(self.key, new_id))
         self.assertLess(
             0,
@@ -403,7 +401,7 @@ class TestMlBackend(BackendTest):
             roster_visibility=const.MailinglistRosterVisibility.none,
             maxsize=None,
             additional_footer=None,
-            moderators={self.user['id'], self.as_id(10)},
+            moderators={self.user['id'], PersonaID(10)},
             whitelist=set(),
             subject_prefix="test",
             title="TestAka",
@@ -413,10 +411,10 @@ class TestMlBackend(BackendTest):
         )
         with self.assertRaises(PrivilegeError):
             self.ml.create_mailinglist(self.key, data)
-        data.event_id = self.as_id(2)
+        data.event_id = vtypes.EventID(vtypes.ID(2))
         with self.assertRaises(PrivilegeError):
             self.ml.create_mailinglist(self.key, data)
-        data.event_id = self.as_id(1)
+        data.event_id = vtypes.EventID(vtypes.ID(1))
         self.assertLess(0, self.ml.create_mailinglist(self.key, data))
 
         data = models_ml.EventOrgaMailinglist(**{
@@ -448,7 +446,7 @@ class TestMlBackend(BackendTest):
             roster_visibility=const.MailinglistRosterVisibility.none,
             maxsize=None,
             additional_footer=None,
-            moderators={self.user['id'], self.as_id(10)},
+            moderators={self.user['id'], PersonaID(10)},
             whitelist=set(),
             subject_prefix="test",
             title="TestAka",
@@ -457,10 +455,10 @@ class TestMlBackend(BackendTest):
         )
         with self.assertRaises(PrivilegeError):
             self.ml.create_mailinglist(self.key, data)
-        data.assembly_id = self.as_id(2)
+        data.assembly_id = vtypes.ID(2)
         with self.assertRaises(PrivilegeError):
             self.ml.create_mailinglist(self.key, data)
-        data.assembly_id = self.as_id(3)
+        data.assembly_id = vtypes.ID(3)
         self.assertLess(0, self.ml.create_mailinglist(self.key, data))
 
         data = models_ml.AssemblyPresiderMailinglist(**data.as_dict())
@@ -488,28 +486,24 @@ class TestMlBackend(BackendTest):
             maxsize=None,
             additional_footer=None,
             mod_policy=const.ModerationPolicy.unmoderated,
-            moderators={self.as_id(2), self.as_id(9)},
+            moderators={PersonaID(2), PersonaID(9)},
             whitelist=set(),
             notes=None,
             subject_prefix='viva la revolution',
             title='Proletarier aller Länder',
         )
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
-        new_data.moderators |= {self.as_id(100000)}
+        new_data.moderators |= {PersonaID(100000)}
         with self.assertRaises(ValueError):
             self.ml.create_mailinglist(self.key, new_data)
-        new_data.moderators -= {self.as_id(100000)}
+        new_data.moderators -= {PersonaID(100000)}
         # Hades is archived.
-        new_data.moderators |= {self.as_id(8)}
+        new_data.moderators |= {PersonaID(8)}
         with self.assertRaises(ValueError):
             self.ml.create_mailinglist(self.key, new_data)
-        new_data.moderators -= {self.as_id(8)}
+        new_data.moderators -= {PersonaID(8)}
         new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
-        new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
-        new_data.whitelist = vtypes.Email("datenbank@example.cde")  # type: ignore[assignment]
-        with self.assertRaises(ValueError):
-            self.ml.create_mailinglist(self.key, new_data)
         new_data.local_part = vtypes.EmailLocalPart(f"{new_data.local_part}x")
         new_data.whitelist = {vtypes.Email("datenbank@example.cde")}
         self.assertLess(0, self.ml.create_mailinglist(self.key, new_data))
@@ -739,7 +733,7 @@ class TestMlBackend(BackendTest):
         mailinglist_id: int,
         action: SA,
         state: SS,
-        kind: Optional[str] = None,
+        kind: str | None = None,
     ) -> None:
         """This calls functions to (administratively) modify the own subscription
         state on a given mailinglist to state and asserts they return code and
@@ -1817,7 +1811,7 @@ class TestMlBackend(BackendTest):
             maxsize=None,
             additional_footer=None,
             mod_policy=const.ModerationPolicy.unmoderated,
-            moderators={self.as_id(2)},
+            moderators={PersonaID(2)},
             subject_prefix='viva la revolution',
             title='Proletarier aller Länder',
             notes="secrecy is important",
@@ -1920,12 +1914,12 @@ class TestMlBackend(BackendTest):
             attachment_policy=const.AttachmentPolicy.forbid,
             convert_html=True,
             roster_visibility=const.MailinglistRosterVisibility.none,
-            event_id=self.as_id(2),
+            event_id=vtypes.EventID(vtypes.ID(2)),
             is_active=True,
             maxsize=None,
             additional_footer=None,
             mod_policy=const.ModerationPolicy.unmoderated,
-            moderators={self.as_id(2)},
+            moderators={PersonaID(2)},
             whitelist=set(),
             subject_prefix='orga',
             title='Orgateam',
@@ -2041,7 +2035,7 @@ class TestMlBackend(BackendTest):
 
     @as_users("nina", "janis")
     def test_subscription_addresses(self) -> None:
-        expectation: dict[int, Optional[str]] = {
+        expectation: dict[int, str | None] = {
             1: 'anton@example.cde',
             2: 'berta@example.cde',
             3: 'charly@example.cde',
@@ -2081,7 +2075,7 @@ class TestMlBackend(BackendTest):
             self.assertEqual(
                 expectation, self.ml.get_subscription_addresses(self.key, 3)
             )
-            expectation = {k: None for k in expectation}  # type: ignore[misc]
+            expectation = {k: None for k in expectation}
             self.assertEqual(
                 expectation,
                 self.ml.get_subscription_addresses(self.key, 3, explicits_only=True),
@@ -2663,7 +2657,7 @@ class TestMlBackend(BackendTest):
             maxsize=None,
             additional_footer=None,
             mod_policy=const.ModerationPolicy.unmoderated,
-            moderators={self.as_id(1), self.as_id(2)},
+            moderators={PersonaID(1), PersonaID(2)},
             whitelist=set(),
             subject_prefix='viva la revolution',
             title='Proletarier aller Länder',

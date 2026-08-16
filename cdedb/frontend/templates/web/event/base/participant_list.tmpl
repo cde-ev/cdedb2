@@ -104,10 +104,9 @@
                 </thead>
                 <tbody>
                 {% for registration_id in ordered %}
-                    {% with persona = personas[registrations[registration_id]['persona_id']],
-                            persona_status = personas_stati[registrations[registration_id]['persona_id']] %}
+                    {% with persona = personas[registrations[registration_id]['persona_id']] %}
                     <tr id="row-{{ loop.index }}">
-                        {% if persona_status['is_searchable'] and persona_status['is_member'] %}
+                        {% if persona['is_searchable'] and persona['is_member'] %}
                             <td>{{ profile_link(persona, persona|persona_name(include_nickname=True, with_family_name=False)) }}</td>
                             <td>{{ profile_link(persona, persona['family_name']) }}</td>
                         {% else %}
@@ -149,10 +148,9 @@
                 <tbody>
                 {# Registrations without list consent are already filtered out. #}
                 {% for registration_id in ordered %}
-                    {% with persona = personas[registrations[registration_id]['persona_id']],
-                            persona_status = personas_stati[registrations[registration_id]['persona_id']] %}
+                    {% with persona = personas[registrations[registration_id]['persona_id']] %}
                     <tr id="row-{{ loop.index }}">
-                        {% if persona_status['is_searchable'] and persona_status['is_member'] %}
+                        {% if persona['is_searchable'] and persona['is_member'] %}
                             <td>{{ profile_link(persona, persona|persona_name(include_nickname=True, with_family_name=False)) }}</td>
                             <td>{{ profile_link(persona, persona['family_name']) }}</td>
                         {% else %}

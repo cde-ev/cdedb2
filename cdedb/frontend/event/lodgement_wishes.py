@@ -9,14 +9,13 @@ import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from re import Pattern
-from typing import Optional
 
 import graphviz
 
+import cdedb.common.validation.types as vtypes
 import cdedb.models.event as models
 from cdedb.common import (
     CdEDBObject,
-    CdEDBObjectMap,
     Notification,
     RequestState,
     inverse_diacritic_patterns,
@@ -46,19 +45,19 @@ class LodgementWish:
         wished to be *not* assigned to the same lodgement as the wished person.
     """
 
-    wishing: int
-    wished: int
+    wishing: vtypes.RegistrationID
+    wished: vtypes.RegistrationID
     present_together: bool
     bidirectional: bool = False
     negated: bool = False
 
 
 def detect_lodgement_wishes(
-    registrations: CdEDBObjectMap,
+    registrations: models.RegistrationMap,
     personas: CdEDataclassMap[EventPersona],
     event: models.Event,
-    restrict_part_id: Optional[int],
-    restrict_registration_id: Optional[int] = None,
+    restrict_part_id: int | None,
+    restrict_registration_id: vtypes.RegistrationID | None = None,
     check_edges: bool = True,
 ) -> tuple[list[LodgementWish], list[Notification]]:
     """Detect lodgement wish graph edges from all registrations' raw rooming
@@ -98,7 +97,7 @@ def detect_lodgement_wishes(
         a list of localizable problem notification messages.
     """
     # Create a list of regex patterns, referencing the other personas, to search
-    lookup_map: list[tuple[Pattern[str], int]] = [
+    lookup_map: list[tuple[Pattern[str], vtypes.RegistrationID]] = [
         (make_identifying_regex(personas[registration['persona_id']]), registration_id)
         for registration_id, registration in registrations.items()
     ]
@@ -106,7 +105,9 @@ def detect_lodgement_wishes(
         wish_field_name = event.lodge_field.field_name
     else:
         return [], []
-    wishes: dict[tuple[int, int], LodgementWish] = {}
+    wishes: dict[
+        tuple[vtypes.RegistrationID, vtypes.RegistrationID], LodgementWish
+    ] = {}
     problems: list[Notification] = []
 
     # Limit registrations to check for matches if necessary.
@@ -124,7 +125,7 @@ def detect_lodgement_wishes(
         # Skip registrations with emtpy wishes field
         if not registration['fields'].get(wish_field_name):
             continue
-        match_positions: list[tuple[tuple[int, int], int]] = []
+        match_positions: list[tuple[tuple[int, int], vtypes.RegistrationID]] = []
         # Check each of the regex patterns against the wishes field
         for pattern, other_registration_id in lookup_map:
             # Self-wishes are not allowed
@@ -295,16 +296,16 @@ def _gender_equality(first: Genders, second: Genders) -> bool:
 
 def create_lodgement_wishes_graph(
     rs: RequestState,
-    registrations: CdEDBObjectMap,
+    registrations: models.RegistrationMap,
     wishes: list[LodgementWish],
     lodgements: models.CdEDataclassMap[models.Lodgement],
     lodgement_groups: models.CdEDataclassMap[models.LodgementGroup],
     event: models.Event,
     personas: CdEDataclassMap[EventPersona],
-    camping_mat_field_names: Mapping[int, Optional[str]],
-    filter_part_id: Optional[int],
+    camping_mat_field_names: Mapping[int, str | None],
+    filter_part_id: int | None,
     show_all: bool,
-    cluster_part_id: Optional[int],
+    cluster_part_id: int | None,
     cluster_by_lodgement: bool,
     cluster_by_lodgement_group: bool,
     show_full_assigned_edges: bool,
@@ -536,7 +537,7 @@ def _make_node_label(
     registration: CdEDBObject,
     personas: CdEDataclassMap[EventPersona],
     event: models.Event,
-    camping_mat_field_names: Mapping[int, Optional[str]],
+    camping_mat_field_names: Mapping[int, str | None],
 ) -> str:
     presence_parts = _parts_with_status(registration, PRESENT_STATI)
     icons = {
@@ -612,7 +613,7 @@ def _make_node_tooltip(
 
 def _make_edge_tooltip(
     edge: LodgementWish,
-    registrations: CdEDBObjectMap,
+    registrations: models.RegistrationMap,
     personas: CdEDataclassMap[EventPersona],
 ) -> str:
     return "{name1} {sign} {name2}".format(
@@ -646,8 +647,10 @@ def _make_node_color(
         return "#87ffcf"
     elif age <= 28.0:
         return "#87f6ff"
-    else:
+    elif age <= 32.0:
         return "#87d0ff"
+    else:
+        return "#ddb6ff"
 
 
 def _get_age(persona: EventPersona, event: models.Event) -> float:

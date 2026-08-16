@@ -39,6 +39,9 @@ SQL_DATA = dict[
 RS = cast(RequestState, None)
 
 
+EventID = lambda x: vtypes.EventID(vtypes.ID(x))
+
+
 def format_insert_sql(table: str, data: SQL_DATA) -> str:
     tmp = {}
     for key, value in data.items():
@@ -626,7 +629,7 @@ class TestCron(CronTest):
         self.assertTrue(store.is_available(old_attachment_hash))
 
     def test_cleanup_event_checkin_helpers(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         log_filter = EventLogFilter(
             event_id=event_id,
             codes=[
@@ -716,14 +719,14 @@ class TestCron(CronTest):
                 length=None,
                 timestamp=None,
                 ctime=ctime,
-                submitted_by=vtypes.ID(1),
+                submitted_by=cast(vtypes.PersonaID, 1),
                 dtime=ctime,
-                deleted_by=vtypes.ID(1),
+                deleted_by=cast(vtypes.PersonaID, 1),
                 dreason=None,
                 marked_for_purge=marked_for_purge,
-                purged_by=cast(vtypes.ID, user_id),
+                purged_by=cast(vtypes.PersonaID, user_id),
                 is_purged=True,
-                authors=cast(vtypes.CdedbIDList, set()),
+                authors=set(),
             )
 
             case = self.complaint.get_case(RS, case_id)

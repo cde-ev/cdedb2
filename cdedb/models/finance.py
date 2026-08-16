@@ -3,7 +3,6 @@ import dataclasses
 import datetime
 import decimal
 from collections.abc import Callable
-from typing import Optional
 
 import cdedb.models.core as models_core
 import cdedb.models.event as models_event
@@ -22,7 +21,7 @@ class MoneyTransferMember:
 
 @dataclasses.dataclass
 class MoneyTransferEvent:
-    persona: models_core.EventPersona
+    persona: models_core.CorePersona
     amount: decimal.Decimal
     date: datetime.date
     registration: CdEDBObject
@@ -52,7 +51,7 @@ class MoneyTransfersResult:
         *,
         send_individual_notifications: bool,
         by_orga: bool,
-        do_mail: Callable[..., Optional[str]],
+        do_mail: Callable[..., str | None],
         events: models_event.CdEDataclassMap[models_event.Event],
     ) -> None:
         # Import here to avoid cyclic imports.
@@ -60,10 +59,12 @@ class MoneyTransfersResult:
 
         if send_individual_notifications:
             for member_transfer in self.membership_fees:
+                if member_transfer.persona.balance < _CONF["MEMBERSHIP_FEE"]:
+                    subject = "Überweisung eingegangen – Guthaben zu gering!"
+                else:
+                    subject = "Mitgliedsbeitrag eingegangen"
                 headers: Headers = {
-                    'Subject': "Überweisung eingegangen – Guthaben zu gering!"
-                    if member_transfer.persona.balance < _CONF["MEMBERSHIP_FEE"]
-                    else "Mitgliedsbeitrag eingegangen",
+                    'Subject': subject,
                     'To': [member_transfer.persona.username],
                 }
                 do_mail(
@@ -169,7 +170,7 @@ class MoneyTransfersResult:
                 headers = {
                     'To': to,
                     'Reply-To': reply_to,
-                    'Subject': "Erstattungen für Eure Veranstaltung durchgeführt.",
+                    'Subject': "Erstattungen für Eure Veranstaltung durchgeführt",
                     'Prefix': "",
                 }
                 do_mail(

@@ -1,7 +1,7 @@
-{% macro print_persona(persona, persona_status) %}
+{% macro print_persona(persona) %}
     {% if "past_event" in user.admin_views or persona['id'] == user.persona_id %}
         {{ util.persona_anchor(persona, include_nickname=true) -}}
-    {% elif "searchable" in user.roles and persona_status['is_member'] and persona_status['is_searchable'] %}
+    {% elif "searchable" in user.roles and persona['is_member'] and persona['is_searchable'] %}
         {{ util.persona_anchor(persona, include_nickname=true, quote_me=true) -}}
     {% else %}
         {{ persona|persona_name(include_nickname=true) -}}

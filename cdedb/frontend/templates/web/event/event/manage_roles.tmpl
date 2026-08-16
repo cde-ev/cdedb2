@@ -72,7 +72,7 @@
                                 <form action="{{ cdedblink("event/remove_orga") }}" method="POST"
                                       id="removeorgaform{{ orga.id }}" class="hide-hover display-inline">
                                     {{ util.anti_csrf_token("event/remove_orga") }}
-                                    {{ util.input_hidden(name="orga_id", value=orga.id) }}
+                                    {{ util.input_hidden(name="orga_id", value=orga.id|cdedbid) }}
                                     {{ util.input_submit(title=gettext("Remove Orga"), icon="minus", label="",
                                                          aclass="btn btn-xs btn-danger list-button-float") }}
                                     {{ util.ack_delete("The orga will be removed from the event.") }}
