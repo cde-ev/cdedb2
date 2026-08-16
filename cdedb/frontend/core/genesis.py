@@ -599,15 +599,21 @@ class CoreGenesisMixin(CoreBaseFrontend):
             return self.genesis_show_case(rs, genesis_case_id)
         case = rs.ambience['genesis_case']
 
-        # Do privilege and sanity checks.
+        # Do privilege checks.
         if not self.is_admin(rs) and case.relative_admin not in rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
         if case.status != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
             return self.redirect(rs, "core/genesis_show_case")
-        # simplify the UI by displaying only one button
-        if persona_id and decision == GenesisDecision.approve:
-            decision = GenesisDecision.update
+
+        # We use a simplified UI with less buttons.
+        if persona_id:
+            if decision == GenesisDecision.approve:
+                decision = GenesisDecision.update
+            elif decision == GenesisDecision.approve_grant_trial_membership:
+                decision = GenesisDecision.update_grant_trial_membership
+
+        # Do some sanity checks.
         if decision.is_create() and self.coreproxy.verify_existence(
             rs, case.persona.username, include_genesis=False
         ):
@@ -638,13 +644,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             rs.notify("error", n_("Failed."))
             return self.genesis_show_case(rs, genesis_case_id)
 
-        # internal upgrade requests use the existing data, do not reapply it
-        if (
-            (decision.is_create() or decision.is_update())
-            and case.pevent_id
-            and case.realm == 'cde'
-            and not case.is_upgrade
-        ):
+        if decision.is_approved() and case.pevent_id and case.realm == 'cde':
             code = 1
             if not self.pasteventproxy.is_participant(rs, case.pevent_id, persona_id):
                 code *= self.pasteventproxy.set_participant(
@@ -663,8 +663,10 @@ class CoreGenesisMixin(CoreBaseFrontend):
         if decision.is_create():
             persona = self.coreproxy.get_persona(rs, persona_id)
             status = self.coreproxy.get_persona_status(rs, persona_id)
-            is_trial_member = case.realm == "cde"
-            self.send_welcome_mail(rs, persona, status, is_trial_member=is_trial_member)
+            trial_member = False
+            if case.realm == "cde":
+                trial_member = self.coreproxy.get_cde_user(rs, persona_id).trial_member
+            self.send_welcome_mail(rs, persona, status, is_trial_member=trial_member)
             rs.notify("success", n_("Case approved."))
         elif case.is_upgrade:
             # TODO send email notification?

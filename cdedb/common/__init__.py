@@ -1020,12 +1020,31 @@ class GenesisDecision(CdEIntEnum):
     deny = 2  #: Deny the request. Do not create or update an account.
     #: Deny the request but update an existing account, dearchiving it if necessary.
     update = 3
+    #: Approve the request and grant a trial membership.
+    approve_grant_trial_membership = 4
+    #: Deny the request and grant a trial membership.
+    update_grant_trial_membership = 5
+
+    def is_approved(self) -> bool:
+        return self != GenesisDecision.deny
 
     def is_create(self) -> bool:
-        return self == GenesisDecision.approve
+        return self in {
+            GenesisDecision.approve,
+            GenesisDecision.approve_grant_trial_membership,
+        }
 
     def is_update(self) -> bool:
-        return self == GenesisDecision.update
+        return self in {
+            GenesisDecision.update,
+            GenesisDecision.update_grant_trial_membership,
+        }
+
+    def grants_trial_membership(self) -> bool:
+        return self in {
+            GenesisDecision.approve_grant_trial_membership,
+            GenesisDecision.update_grant_trial_membership,
+        }
 
 
 #: magic number which signals our makeshift algebraic data type

@@ -513,11 +513,6 @@ class CoreGenesisBackend(CoreBaseBackend):
                     if not code:  # pragma: no cover
                         raise RuntimeError(n_("Username change failed."))
 
-                # we grant trial membership by default for cde genesis cases
-                if case.realm == "cde" and not persona_status.is_member:
-                    self.change_membership_easy_mode(
-                        rs, case.persona_id, is_member=True, trial_member=True
-                    )
                 # Set force_review, so that all changes can be reviewed and adjusted
                 # manually and we don't just overwrite existing data blindly.
                 self.change_persona(
@@ -530,5 +525,12 @@ class CoreGenesisBackend(CoreBaseBackend):
             # Special return value for rejected cases.
             else:
                 return -1
+
+            if decision.grants_trial_membership() and case.realm == "cde":
+                persona_status = self.get_persona_status(rs, ret)
+                if not persona_status.is_member:
+                    self.change_membership_easy_mode(
+                        rs, ret, is_member=True, trial_member=True
+                    )
 
             return ret

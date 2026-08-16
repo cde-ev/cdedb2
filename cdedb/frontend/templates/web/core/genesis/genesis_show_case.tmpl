@@ -145,16 +145,6 @@
             </dt>
             <dd id="mobile">{{ util.tel_link(persona.mobile|phone) }}</dd>
         {% endif %}
-        {% if ambience['genesis_case']['realm'] == 'cde' %}
-            <dt title="{% trans %}Membership{% endtrans %}">
-                {% trans %}Membership{% endtrans %}
-            </dt>
-            <dd>
-                <i>
-                    {% trans %}Trial membership will automatically be granted if the persona is not a member. You can undo this by changing their profile afterwards.{% endtrans %}
-                </i>
-            </dd>
-        {% endif %}
         {% if (persona.address or persona.address_supplement or persona.postal_code or persona.location or persona.country) %}
             <dt title="{% trans %}Address{% endtrans %}">
                 {% trans %}Address{% endtrans %}
@@ -239,14 +229,13 @@
             </div>
 
             <div class="button-par">
-                {% if ambience['genesis_case']['is_upgrade'] %}
+                {{ util.input_submit(
+                    name="decision", value = enums['GenesisDecision'].approve,
+                    label=gettext("Approve"), aclass="btn btn-success") }}
+                {% if ambience["genesis_case"].realm == "cde" %}
                     {{ util.input_submit(
-                        name="decision", value = enums['GenesisDecision'].update,
-                        label=gettext("Approve"), aclass="btn btn-success") }}
-                {% else %}
-                    {{ util.input_submit(
-                        name="decision", value = enums['GenesisDecision'].approve,
-                        label=gettext("Approve"), aclass="btn btn-success") }}
+                        name="decision", value = enums['GenesisDecision'].approve_grant_trial_membership,
+                        label=gettext("Approve (grant trial membership)"), aclass="btn btn-success") }}
                 {% endif %}
                 {{ util.input_submit(
                     name="decision", value = enums['GenesisDecision'].deny,

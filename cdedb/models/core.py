@@ -842,8 +842,5 @@ class GenesisCaseCdE(GenesisCase):
         # Skip the dataclass dispatching in GenesisCase.
         return super(GenesisCase, cls).from_database(meta_data)
 
-    def get_persona_creation(self) -> EventPersona:
-        persona = copy.deepcopy(self.persona)
-        persona.is_member = True
-        persona.trial_member = True
-        return persona
+    def get_persona_creation(self) -> CdEPersona:
+        return copy.deepcopy(self.persona)
