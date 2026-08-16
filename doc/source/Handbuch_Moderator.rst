@@ -7,7 +7,7 @@ die dsa-Liste und Lokalgruppenmailinglisten (aktuell wird am Umzug letzterer
 in die DB gearbeitet).
 
 Abonnent:innen verwalten
---------------------
+------------------------
 
 Alle Notwendigen Informationen hierzu findet ihr direkt auf den Seiten
 ``Verwaltung`` und ``Erweiterte Verwaltung`` eurer Mailingliste.
@@ -39,7 +39,7 @@ wirksam, da die Mailinglistensoftware erst noch synchronisiert werden
 muss. Dies sollte in der Regel innerhalb einer Viertelstunde passieren.
 
 Privilegierte Moderator:innen
-^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Bei manchen Mailinglisten braucht es zusätzliche Berechtigungen in der Datenbank,
 um deren Abonnent:innen verwalten zu können.
