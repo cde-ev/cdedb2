@@ -1,9 +1,6 @@
 {% set sidenav_active='core_index' %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
-{% block scripts %}
-    {% if 'core_admin' in user.roles %}{{ util.cdedb_script('cdedb_searchpersona.js') }}{% endif %}
-{% endblock %}
 {% block title %}
     {% trans %}
     	CdE-Datenbank
@@ -33,8 +30,7 @@
                 <form action="{{ cdedblink('core/admin_show_user') }}" method="GET" id="adminshowuserform">
                     <div class="sr-only">{% trans %}Search for Users by ID or Name{% endtrans %}</div>
                     <div class="input-group">
-                        <input type="search" name="phrase" class="form-control" id="input-showuser-id"
-                               aria-label="{% trans %}CdEDB-ID, Name or E-Mail{% endtrans %}"/>
+                        {{ util.input_text(type="search", name="phrase", placeholder=gettext("CdEDB-ID, Name or E-Mail")) }}
                         <span class="input-group-btn">
                             {{ util.input_submit("", icon='search', title=gettext("Search")) }}
                         </span>
@@ -45,16 +41,15 @@
                     </div>
                 </form>
                 <script nonce="{{ csp_nonce }}">
-                    var $i = $('#input-showuser-id');
-                    $i.cdedbSearchPerson('{{ cdedblink('core/select_persona') }}', {'kind' : 'admin_persona'}, [],
-                                         true, false, "{{ gettext("CdEDB-ID, Name or E-Mail") }}",
-                                         {'toggle': $('#adminshowuser_archived_toggle'), 'kind': 'admin_all_users'}
+                    $("#adminshowuserform :input[type='search']").cdedbSearchPerson(
+                        '{{ cdedblink('core/select_persona') }}',
+                        {'kind' : 'admin_persona'},
+                        [],  // exclude
+                        true,  // free-form
+                        false,  // multi
+                        undefined,  // placeholder
+                        {'toggle': $('#adminshowuser_archived_toggle'), 'kind': 'admin_all_users'}
                     );
-                    $i.change(function(){
-                        if ($(this).val()) {
-                            $('#adminshowuserform').submit();
-                        }
-                    });
                 </script>
             {% endcall %}
             </div>
@@ -113,25 +108,30 @@
             {% call util.bootstrap_panel(title=gettext("Orga-Events"), icon='chalkboard-teacher',
                                          aclass='panel-warning', anid="orga-box") %}
                 <ul class="slim spaced">
-                    {% for event in dashboard['orga'].values()|sort %}
+                    {% for event in dashboard['orga'] %}
                         <li>
-                            {{ util.href(cdedblink('event/show_event', {'event_id': event.id}), event['title'],
+                            {{ util.href(cdedblink('event/show_event', {'event_id': event.id}), event.title,
                                     icon='chalkboard-teacher') }}
-                            {% if event['registration_start'] %}
+                            {% if dashboard['orga_registrations'][event.id] %}
                                 <br />
+                                {% trans count=dashboard['orga_registrations'][event.id] %}
+                                    {{ count }} Registrations
+                                {% endtrans %}
+                            {% endif %}
+                            {% if event.registration_start and event.is_registration_approved %}
                                 {% if event['registration_start'] <= dashboard['present'] %}
-                                    {% trans count=dashboard['orga_registrations'][event.id] %}
-                                    	{{ count }} Registrations
-                                    {% endtrans %}
                                     {% if not event['registration_hard_limit'] and not event['registration_soft_limit'] %}
+                                        <br />
                                         {% trans %}
                                             (Registration open)
                                         {% endtrans %}
                                     {% elif not event['registration_hard_limit'] and event['registration_soft_limit'] and event['registration_soft_limit'] >= dashboard['present'] %}
+                                        <br />
                                         {% trans date=event['registration_soft_limit']|datetime(lang=lang) %}
                                             (Registration until {{ date }}, late registration open.)
                                         {% endtrans %}
                                     {% elif event['registration_hard_limit'] and event['registration_soft_limit'] and event['registration_soft_limit'] >= dashboard['present'] %}
+                                        <br />
                                         {% if event['registration_hard_limit'] == event['registration_soft_limit'] %}
                                             {% trans date=event['registration_soft_limit']|datetime(lang=lang) %}
                                                 (Registration until {{ date }})
@@ -142,15 +142,22 @@
                                             {% endtrans %}
                                         {% endif %}
                                     {% elif event['registration_hard_limit'] and event['registration_hard_limit'] >= dashboard['present'] %}
+                                        <br />
                                         {% trans date=event['registration_hard_limit']|datetime(lang=lang) %}
                                             (Late registration until {{ date }})
                                         {% endtrans %}
                                     {% endif %}
                                 {% else %}
+                                    <br />
                                     {% trans date=event['registration_start']|datetime(lang=lang) %}
                                     	(Registration starts {{ date }})
                                     {% endtrans %}
                                 {% endif %}
+                            {% elif not event.is_registration_approved %}
+                                <br />
+                                {% trans %}
+                                    (Registration not yet approved)
+                                {% endtrans %}
                             {% endif %}
                             <br />
                             <span class="small">

@@ -1,4 +1,5 @@
 """Filter definitions for jinja templates"""
+
 import collections
 import datetime
 import decimal
@@ -8,6 +9,7 @@ import re
 import threading
 from collections import Counter
 from collections.abc import (
+    Callable,
     Collection,
     Container,
     ItemsView,
@@ -17,10 +19,7 @@ from collections.abc import (
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Literal,
-    Optional,
-    TypeVar,
     Union,
     overload,
 )
@@ -37,21 +36,18 @@ import phonenumbers
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, User, compute_checkdigit, make_persona_name
 from cdedb.common.sorting import xsorted
-from cdedb.config import LazyConfig
+from cdedb.config import Config
 
 if TYPE_CHECKING:
     from cdedb.models.common import CdEDataclass
 
 _LOGGER = logging.getLogger(__name__)
-_CONFIG = LazyConfig()
-
-S = TypeVar("S")
-T = TypeVar("T")
+_CONFIG = Config()
 
 
 # Ignore the capitalization error in function name sanitize_None.
 # noinspection PyPep8Naming
-def sanitize_None(data: Optional[T]) -> Union[str, T]:
+def sanitize_None[T](data: T | None) -> str | T:
     """Helper to let jinja convert all ``None`` into empty strings for display
     purposes; thus we needn't be careful in this regard. (This is
     coherent with our policy that NULL and the empty string on SQL level
@@ -71,7 +67,7 @@ def safe_filter(val: None) -> None: ...
 def safe_filter(val: str) -> markupsafe.Markup: ...
 
 
-def safe_filter(val: Optional[str]) -> Optional[markupsafe.Markup]:
+def safe_filter(val: str | None) -> markupsafe.Markup | None:
     """Custom jinja filter to mark a string as safe.
 
     This prevents autoescaping of this entity. To be used for dynamically
@@ -84,10 +80,13 @@ def safe_filter(val: Optional[str]) -> Optional[markupsafe.Markup]:
     return markupsafe.Markup(val)
 
 
-def date_filter(val: Union[datetime.date, str, None],
-                formatstr: str = "%Y-%m-%d", lang: Optional[str] = None,
-                verbosity: str = "medium",
-                passthrough: bool = False) -> Optional[str]:
+def date_filter(
+    val: datetime.date | str | None,
+    formatstr: str = "%Y-%m-%d",
+    lang: str | None = None,
+    verbosity: str = "medium",
+    passthrough: bool = False,
+) -> str | None:
     """Custom jinja filter to format ``datetime.date`` objects.
 
     :param formatstr: Formatting used, if no l10n happens.
@@ -113,7 +112,7 @@ def date_filter(val: Union[datetime.date, str, None],
         }
         locale = icu.Locale(lang)
         date_formatter = icu.DateFormat.createDateInstance(
-            verbosity_mapping[verbosity], locale,
+            verbosity_mapping[verbosity], locale
         )
         effective = datetime.datetime.combine(val, datetime.time())
         if not hasattr(effective, '_date_to_freeze'):
@@ -130,9 +129,12 @@ def date_filter(val: Union[datetime.date, str, None],
     return val.strftime(formatstr)
 
 
-def datetime_filter(val: Union[datetime.datetime, str, None],
-                    formatstr: str = "%Y-%m-%d %H:%M (%Z)", lang: Optional[str] = None,
-                    passthrough: bool = False) -> Optional[str]:
+def datetime_filter(
+    val: datetime.datetime | str | None,
+    formatstr: str = "%Y-%m-%d %H:%M (%Z)",
+    lang: str | None = None,
+    passthrough: bool = False,
+) -> str | None:
     """Custom jinja filter to format ``datetime.datetime`` objects.
 
     :param formatstr: Formatting used, if no l10n happens.
@@ -152,14 +154,15 @@ def datetime_filter(val: Union[datetime.datetime, str, None],
     if lang:
         locale = icu.Locale(lang)
         datetime_formatter = icu.DateFormat.createDateTimeInstance(
-            icu.DateFormat.MEDIUM, icu.DateFormat.MEDIUM, locale)
+            icu.DateFormat.MEDIUM, icu.DateFormat.MEDIUM, locale
+        )
         zone = _CONFIG["DEFAULT_TIMEZONE"].key
         datetime_formatter.setTimeZone(icu.TimeZone.createTimeZone(zone))
         # isinstance check is always true since freezegun overiddes __instancecheck__
         # if isinstance(val, freezegun.api.FakeDatetime):
-        if type(val) is freezegun.api.FakeDatetime:  # type: ignore[attr-defined]
+        if type(val) is freezegun.api.FakeDatetime:
             # icu cannot deal with FakeDatetime objects, convert them
-            val = datetime.datetime.fromtimestamp(val.timestamp())
+            val = freezegun.api.real_datetime.fromtimestamp(val.timestamp())
         return datetime_formatter.format(val)
     else:
         return val.strftime(formatstr)
@@ -169,38 +172,39 @@ def timedelta_filter(delta: datetime.timedelta, gettext: Callable[[str], str]) -
     """Pretty representation of duration."""
     if delta.days:
         return gettext("{days}\xa0days, {hours}\xa0hours").format(
-            days=delta.days, hours=delta.seconds // (60*60),
+            days=delta.days, hours=delta.seconds // (60 * 60)
         )
-    elif hours := delta.seconds // (60*60):
+    elif hours := delta.seconds // (60 * 60):
         return gettext("{hours}\xa0hours, {minutes}\xa0minutes").format(
-            hours=hours, minutes=(delta.seconds % (60*60)) // 60,
+            hours=hours, minutes=(delta.seconds % (60 * 60)) // 60
         )
     elif minutes := delta.seconds // 60:
         return gettext("{minutes}\xa0minutes, {seconds}\xa0seconds").format(
-            minutes=minutes, seconds=delta.seconds % 60,
+            minutes=minutes, seconds=delta.seconds % 60
         )
     elif delta.seconds >= 10:
         return gettext("{seconds}\xa0sseconds, {milliseconds}\xa0milliseconds").format(
-            seconds=delta.seconds, milliseconds=delta.microseconds // 1000,
+            seconds=delta.seconds, milliseconds=delta.microseconds // 1000
         )
     else:
         return gettext("{milliseconds}\xa0milliseconds").format(
-            milliseconds=delta.seconds * 1000 + delta.microseconds // 1000,
+            milliseconds=delta.seconds * 1000 + delta.microseconds // 1000
         )
 
 
 @overload
-def money_filter(val: None, currency: str = "EUR", lang: str = "de",
-                 ) -> None: ...
+def money_filter(val: None, currency: str = "EUR", lang: str = "de") -> None: ...
 
 
 @overload
-def money_filter(val: decimal.Decimal, currency: str = "EUR", lang: str = "de",
-                 ) -> str: ...
+def money_filter(
+    val: decimal.Decimal, currency: str = "EUR", lang: str = "de"
+) -> str: ...
 
 
-def money_filter(val: Optional[decimal.Decimal], currency: str = "EUR",
-                 lang: str = "de") -> Optional[str]:
+def money_filter(
+    val: decimal.Decimal | None, currency: str = "EUR", lang: str = "de"
+) -> str | None:
     """Custom jinja filter to format ``decimal.Decimal`` objects.
 
     This is for values representing monetary amounts.
@@ -221,7 +225,7 @@ def decimal_filter(val: None, lang: str) -> None: ...
 def decimal_filter(val: float, lang: str) -> str: ...
 
 
-def decimal_filter(val: Optional[float], lang: str) -> Optional[str]:
+def decimal_filter(val: float | None, lang: str) -> str | None:
     """Cutom jinja filter to format floating point numbers."""
     if val is None:
         return None
@@ -239,7 +243,8 @@ def cdedbid_filter(val: None) -> None: ...
 def cdedbid_filter(val: int) -> str: ...
 
 
-def cdedbid_filter(val: Optional[int]) -> Optional[str]:
+# TODO make this (additionally?) a property of Persona
+def cdedbid_filter(val: int | None) -> str | None:
     """Custom jinja filter to format persona ids with a check digit. Every user
     visible id should be formatted with this filter. The check digit is
     one of the letters between 'A' and 'K' to make a clear distinction
@@ -258,13 +263,13 @@ def iban_filter(val: None) -> None: ...
 def iban_filter(val: str) -> str: ...
 
 
-def iban_filter(val: Optional[str]) -> Optional[str]:
+def iban_filter(val: str | None) -> str | None:
     """Custom jinja filter for displaying IBANs in nice to read blocks."""
     if val is None:
         return None
     else:
         val = val.strip().replace(" ", "")
-        return " ".join(val[x:x + 4] for x in range(0, len(val), 4))
+        return " ".join(val[x : x + 4] for x in range(0, len(val), 4))
 
 
 @overload
@@ -275,7 +280,7 @@ def hidden_iban_filter(val: None) -> None: ...
 def hidden_iban_filter(val: str) -> str: ...
 
 
-def hidden_iban_filter(val: Optional[str]) -> Optional[str]:
+def hidden_iban_filter(val: str | None) -> str | None:
     """Custom jinja filter for hiding IBANs in nice to read blocks."""
     if val is None:
         return None
@@ -292,7 +297,7 @@ def phone_filter(val: None) -> None: ...
 def phone_filter(val: str) -> str: ...
 
 
-def phone_filter(val: Optional[str]) -> Optional[str]:
+def phone_filter(val: str | None) -> str | None:
     """Custom jinja filter to format phone numbers."""
     if val is None:
         return None
@@ -305,19 +310,26 @@ def phone_filter(val: Optional[str]) -> Optional[str]:
         return val
 
     return phonenumbers.format_number(
-        phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
+        phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL
+    )
 
 
-def persona_name_filter(val: Union[CdEDBObject, User, "CdEDataclass"], *args: bool, **kwargs: bool) -> str:
+def persona_name_filter(
+    val: Union[CdEDBObject, User, "CdEDataclass"], *args: bool, **kwargs: bool
+) -> str:
     """Wrapper to format persona names."""
     if isinstance(val, User):
         return val.persona_name(*args, **kwargs)
     else:
         # TODO this leads to cyclic imports otherwise
-        from cdedb.models.common import (  # noqa: PLC0415  # pylint: disable=import-outside-toplevel
+        from cdedb.models.core import (  # noqa: PLC0415  # pylint: disable=import-outside-toplevel
             CdEDataclass,
+            PersonaName,
         )
-        if isinstance(val, CdEDataclass):
+
+        if isinstance(val, PersonaName):
+            return val.get_name(*args, **kwargs)
+        elif isinstance(val, CdEDataclass):
             val = val.as_dict()
         return make_persona_name(val, *args, **kwargs)
 
@@ -330,7 +342,7 @@ def escape_filter(val: None) -> None: ...
 def escape_filter(val: str) -> markupsafe.Markup: ...
 
 
-def escape_filter(val: Optional[str]) -> Optional[markupsafe.Markup]:
+def escape_filter(val: str | None) -> markupsafe.Markup | None:
     """Custom jinja filter to reconcile escaping with the finalize method
     (which suppresses all ``None`` values and thus mustn't be converted to
     strings first).
@@ -363,7 +375,7 @@ def tex_escape_filter(val: None) -> None: ...
 def tex_escape_filter(val: str) -> str: ...
 
 
-def tex_escape_filter(val: Optional[str]) -> Optional[str]:
+def tex_escape_filter(val: str | None) -> str | None:
     """Custom jinja filter for escaping LaTeX-relevant charakters."""
     if val is None:
         return None
@@ -382,7 +394,7 @@ def enum_filter(val: None, enum_: type[enum.Enum]) -> None: ...
 def enum_filter(val: int, enum_: type[enum.Enum]) -> str: ...
 
 
-def enum_filter(val: Optional[int], enum_: type[enum.Enum]) -> Optional[str]:
+def enum_filter(val: int | None, enum_: type[enum.Enum]) -> str | None:
     """Custom jinja filter to convert enums to something printable.
 
     This exists mainly because of the possibility of None values.
@@ -393,17 +405,18 @@ def enum_filter(val: Optional[int], enum_: type[enum.Enum]) -> Optional[str]:
 
 
 @overload
-def genus_filter(val: None, female: str, male: str, unknown: Optional[str],
-                 ) -> None: ...
+def genus_filter(val: None, female: str, male: str, unknown: str | None) -> None: ...
 
 
 @overload
-def genus_filter(val: int, female: str, male: str,
-                 unknown: Optional[str]) -> Optional[str]: ...
+def genus_filter(
+    val: int, female: str, male: str, unknown: str | None
+) -> str | None: ...
 
 
-def genus_filter(val: Optional[int], female: str, male: str,
-                 unknown: Optional[str] = None) -> Optional[str]:
+def genus_filter(
+    val: int | None, female: str, male: str, unknown: str | None = None
+) -> str | None:
     """Custom jinja filter to select gendered form of a string."""
     if val is None:
         return None
@@ -433,12 +446,14 @@ def linebreaks_filter(val: None, replacement: str) -> None: ...
 
 
 @overload
-def linebreaks_filter(val: Union[str, markupsafe.Markup],
-                      replacement: str) -> markupsafe.Markup: ...
+def linebreaks_filter(
+    val: str | markupsafe.Markup, replacement: str
+) -> markupsafe.Markup: ...
 
 
-def linebreaks_filter(val: Union[None, str, markupsafe.Markup],
-                      replacement: str = "<br>") -> Optional[markupsafe.Markup]:
+def linebreaks_filter(
+    val: None | str | markupsafe.Markup, replacement: str = "<br>"
+) -> markupsafe.Markup | None:
     """Custom jinja filter to convert line breaks to <br>.
 
     This filter escapes the input value (if required), replaces the linebreaks
@@ -473,7 +488,7 @@ def get_bleach_cleaner() -> bleach.sanitizer.Cleaner:
         'thead', 'table', 'tbody', 'td', 'hr', 'p', 'span', 'div', 'pre', 'tt',
         'sup', 'sub', 'small', 'br', 'u', 'dl', 'dt', 'dd', 'details', 'summary',
         's',
-    ]
+    ]  # fmt: skip
     attributes = {
         'a': ['href', 'title'],
         'abbr': ['title'],
@@ -501,7 +516,7 @@ def bleach_filter(val: None) -> None: ...
 def bleach_filter(val: str) -> markupsafe.Markup: ...
 
 
-def bleach_filter(val: Optional[str]) -> Optional[markupsafe.Markup]:
+def bleach_filter(val: str | None) -> markupsafe.Markup | None:
     """Custom jinja filter to convert sanitize html with bleach."""
     if val is None:
         return None
@@ -549,8 +564,10 @@ def get_markdown_parser() -> markdown.Markdown:
                 },
             },
         }
-        md = markdown.Markdown(extensions=["extra", "sane_lists", "smarty", "toc"],
-                               extension_configs=extension_configs)
+        md = markdown.Markdown(
+            extensions=["extra", "sane_lists", "smarty", "toc"],
+            extension_configs=extension_configs,
+        )
 
         MARKDOWN_PARSER.md = md
     else:
@@ -571,21 +588,25 @@ def md_filter(val: None) -> None: ...
 def md_filter(val: str) -> markupsafe.Markup: ...
 
 
-def md_filter(val: Optional[str]) -> Optional[markupsafe.Markup]:
+def md_filter(val: str | None) -> markupsafe.Markup | None:
     """Custom jinja filter to convert markdown to html."""
     if val is None:
         return None
     return markdown_parse_safe(val)
 
 
-def dict_count_filter(value: Mapping[T, S]) -> Counter[S]:
+def dict_count_filter[T, S](value: Mapping[T, S]) -> Counter[S]:
     """Count the values of a dict and return a dict mapping entries to encounters."""
     return Counter(value.values())
 
 
 @jinja2.pass_environment
-def sort_filter(env: jinja2.Environment, value: Iterable[T],
-                reverse: bool = False, attribute: Optional[Any] = None) -> list[T]:
+def sort_filter[T](
+    env: jinja2.Environment,
+    value: Iterable[T],
+    reverse: bool = False,
+    attribute: Any | None = None,
+) -> list[T]:
     """Sort an iterable using `xsorted`, using correct collation.
 
     TODO: With Jinja 2.11, make_multi_attrgetter should be used
@@ -600,8 +621,9 @@ def sort_filter(env: jinja2.Environment, value: Iterable[T],
     return xsorted(value, key=key_func, reverse=reverse)
 
 
-def dictsort_filter(value: Mapping[T, S], by: Literal["key", "value"] = "key",
-                    reverse: bool = False) -> list[tuple[T, S]]:
+def dictsort_filter[T, S](
+    value: Mapping[T, S], by: Literal["key", "value"] = "key", reverse: bool = False
+) -> list[tuple[T, S]]:
     """Sort a dict and yield (key, value) pairs.
 
     Because python dicts are unsorted you may want to use this function to
@@ -619,7 +641,7 @@ def dictsort_filter(value: Mapping[T, S], by: Literal["key", "value"] = "key",
     return xsorted(value.items(), key=sortfunc, reverse=reverse)
 
 
-def set_filter(value: Iterable[T]) -> set[T]:
+def set_filter[T](value: Iterable[T]) -> set[T]:
     """
     A simple filter to construct a Python set from an iterable object. Just
     like Jinja's builtin "list" filter, but for sets.
@@ -627,8 +649,9 @@ def set_filter(value: Iterable[T]) -> set[T]:
     return set(value)
 
 
-def xdictsort_filter(value: Mapping[T, S], attribute: str,
-                     reverse: bool = False) -> list[tuple[T, S]]:
+def xdictsort_filter[T, S](
+    value: Mapping[T, S], attribute: str, reverse: bool = False
+) -> list[tuple[T, S]]:
     """Allow sorting by an arbitrary attribute of the value.
 
     Jinja only provides sorting by key or entire value. Also Jinja does
@@ -642,20 +665,23 @@ def xdictsort_filter(value: Mapping[T, S], attribute: str,
     return xsorted(value.items(), key=key, reverse=reverse)
 
 
-def keysort_filter(value: Iterable[T], sortkey: Callable[[Any], Any],
-                   reverse: bool = False) -> list[T]:
+def keysort_filter[T](
+    value: Iterable[T], sortkey: Callable[[Any], Any], reverse: bool = False
+) -> list[T]:
     """Sort a simple iterable by their value."""
     return xsorted(value, key=sortkey, reverse=reverse)
 
 
-def keydictsort_filter(value: Mapping[T, S], sortkey: Callable[[Any], Any],
-                       reverse: bool = False) -> list[tuple[T, S]]:
+def keydictsort_filter[T, S](
+    value: Mapping[T, S], sortkey: Callable[[Any], Any], reverse: bool = False
+) -> list[tuple[T, S]]:
     """Sort a dicts items by their value."""
     return xsorted(value.items(), key=lambda e: sortkey(e[1]), reverse=reverse)
 
 
-def map_dict_filter(d: dict[str, str], processing: Callable[[Any], str],
-                    ) -> ItemsView[str, str]:
+def map_dict_filter(
+    d: dict[str, str], processing: Callable[[Any], str]
+) -> ItemsView[str, str]:
     """
     Processes the values of some string using processing function
 
@@ -665,12 +691,14 @@ def map_dict_filter(d: dict[str, str], processing: Callable[[Any], str],
     return {k: processing(v) for k, v in d.items()}.items()
 
 
-def enum_entries_filter(enum: Iterable[enum.IntEnum],
-                        processing: Optional[Callable[[Any], str]] = None,
-                        raw: bool = False, prefix: str = "",
-                        exempt: Collection[enum. Enum] = frozenset(),
-                        intval: bool = False,
-                        ) -> list[tuple[enum.IntEnum | int, str]]:
+def enum_entries_filter(
+    enum: Iterable[enum.IntEnum],
+    processing: Callable[[Any], str] | None = None,
+    raw: bool = False,
+    prefix: str = "",
+    exempt: Collection[enum.Enum] = frozenset(),
+    intval: bool = False,
+) -> list[tuple[enum.IntEnum | int, str]]:
     """
     Transform an Enum into a list of of (value, string) tuple entries. The
     string is piped trough the passed processing callback function to get the
@@ -692,33 +720,37 @@ def enum_entries_filter(enum: Iterable[enum.IntEnum],
     if raw:
         pre = lambda x: x
     else:
-        pre = lambda x: (x.display_str() if hasattr(x, "display_str") else str(x))
-    if intval:
-        sortkey = lambda x: x
-    else:
-        sortkey = lambda e: e[0].value
-    to_sort = ((int(entry) if intval else entry, prefix + processing(pre(entry)))
-               for entry in enum if entry not in exempt)
-    ret = xsorted(to_sort, key=sortkey)
+        pre = lambda x: x.display_str() if hasattr(x, "display_str") else str(x)
+    ret = (
+        (int(entry) if intval else entry, prefix + processing(pre(entry)))
+        for entry in enum
+        if entry not in exempt
+    )
     grouped = collections.defaultdict(list)
     for value, label in ret:
         group_label = value.optgroup_label() if hasattr(value, "optgroup_label") else ""
         if group_label:
             group_label = processing(group_label)
+        label_addon = value.label_addon() if hasattr(value, "label_addon") else ""
+        if label_addon:
+            label_addon = processing(label_addon)
+            label = f"{label} ({label_addon})"
         grouped[group_label].append((value, label))
     if len(grouped) == 1:
         return list(grouped.values())[0]
     return grouped  # type: ignore[return-value]
 
 
-def multiselect_selectize_filter(entries: Iterable[tuple[int | enum.IntEnum, str]]
-                                 ) -> list[CdEDBObject]:
+def multiselect_selectize_filter(
+    entries: Iterable[tuple[int | enum.IntEnum, str]],
+) -> list[CdEDBObject]:
     """Convert (value, title)s to format taken by the cdedbMultiSelect JS function."""
     return [{'id': e[0], 'name': e[1]} for e in entries]
 
 
-def dict_entries_filter(items: list[tuple[Any, Union[Mapping[str, S], "CdEDataclass"]]],
-                        *args: str) -> list[tuple[S, ...]]:
+def dict_entries_filter[S](
+    items: list[tuple[Any, Union[Mapping[str, S], "CdEDataclass"]]], *args: str
+) -> list[tuple[S, ...]]:
     """
     Transform a list of dict items with dict-type values into a list of
     tuples of specified fields of the value dict.
@@ -741,20 +773,25 @@ def dict_entries_filter(items: list[tuple[Any, Union[Mapping[str, S], "CdEDatacl
     from cdedb.models.common import (  # noqa: PLC0415  # pylint: disable=import-outside-toplevel
         CdEDataclass,
     )
+
     values = [v.to_database() if isinstance(v, CdEDataclass) else v for _, v in items]
     return [tuple(value[k] for k in args) for value in values]
 
 
-def entries_filter(entities: Mapping[Any, "CdEDataclass"] | Iterable["CdEDataclass"],
-                   *args: str, include: Optional[Container[int]] = None,
-                   ) -> list[tuple[Any, ...]]:
+def entries_filter(
+    entities: Mapping[Any, "CdEDataclass"] | Iterable["CdEDataclass"],
+    *args: str,
+    group: str = "",
+    default_group: str = "",
+    include: Container[int] | None = None,
+) -> list[tuple[Any, ...]] | dict[Any, list[tuple[Any, ...]]]:
     """Transform a dict of dataclasses into a list of tuples of specified fields.
 
     Example::
 
         >>> entities = {1: Dataclass(id=1, name=a, active=True),
                         2: Dataclass(id=2, name=b, active=False)}
-        >>> entries_filter(items, 'name', 'active')
+        >>> entries_filter(entities, 'name', 'active')
         [('a', True), ('b', False)]
 
     :param entities: A dict of CdEDataclasses.
@@ -767,10 +804,15 @@ def entries_filter(entities: Mapping[Any, "CdEDataclass"] | Iterable["CdEDatacla
     """
     if isinstance(entities, dict):
         entities = entities.values()
-    return [
-        tuple(getattr(entity, key) for key in args)
-        for entity in entities if (include is None or entity.id in include)
-    ]
+    ret = collections.defaultdict(list)
+    for entity in entities:
+        if include is None or entity.id in include:
+            ret[getattr(entity, group, None) or default_group].append(
+                tuple(getattr(entity, key) for key in args)
+            )
+    if len(ret) == 1:
+        return list(ret.values())[0]
+    return ret
 
 
 def hasattr_filter(entity: object, attr: Any) -> bool:

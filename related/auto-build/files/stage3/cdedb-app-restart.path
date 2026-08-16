@@ -1,0 +1,12 @@
+# /etc/systemd/system/cdedb-app-restart.path
+# This service is dev only.
+[Unit]
+AssertPathExists=!/PRODUCTIONVM
+
+[Path]
+PathChanged=/cdedb2/pyproject.toml
+#PathChanged=/cdedb2/i18n/de/LC_MESSAGES/cdedb.po
+#PathChanged=/cdedb2/i18n/en/LC_MESSAGES/cdedb.po
+
+[Install]
+WantedBy=multi-user.target

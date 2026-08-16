@@ -9,24 +9,24 @@ import cdedb.models.complaint as models
 from cdedb.backend.common import (
     AbstractBackend,
     access,
-    affirm_set_validation as affirm_set,
     affirm_validation as affirm,
-    affirm_validation_optional as affirm_optional,
     singularize,
 )
 from cdedb.common import (
-    BytesLike,
     CdEDBLog,
     CdEDBObject,
     DefaultReturnCode,
     RequestState,
     now,
+    unwrap,
 )
-from cdedb.common.exceptions import PrivilegeError
+from cdedb.common.attachment import EncryptedAttachmentStore
+from cdedb.common.crypt import get_decrypt, get_decrypt_decode, get_encrypt
+from cdedb.common.exceptions import AdverseCompanionError, PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import ComplaintLogFilter
-from cdedb.common.sorting import mixed_existence_sorter
+from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
 from cdedb.database.constants import ComplaintLogCodes
@@ -59,25 +59,66 @@ class ComplaintBackend(AbstractBackend):
         secrets = SecretsConfig()
         complaint_secret = secrets["COMPLAINT_SECRET"]
 
-        def encrypt(description: str | None) -> bytes | None:
-            if description is None:
-                return None
-            return models.ComplaintEntryVersion.encrypt(description, complaint_secret)
+        self.encrypt = get_encrypt(complaint_secret)
 
-        self.encrypt = staticmethod(encrypt)
+        self.decrypt = get_decrypt(complaint_secret)
+        self.decrypt_decode = get_decrypt_decode(complaint_secret)
 
-        def decrypt(description: BytesLike | None) -> str | None:
-            if description is None:
-                return None
-            if not isinstance(description, bytes):
-                description = bytes(description)
-            return models.ComplaintEntryVersion.decrypt(description, complaint_secret)
-
-        self.decrypt = staticmethod(decrypt)
+        self._attachment_store = EncryptedAttachmentStore(
+            self.conf['STORAGE_DIR'] / "complaint_attachment",
+            secret=complaint_secret,
+        )
 
     @classmethod
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
+
+    @access("complaint_admin")
+    def get_attachment_store(self, rs: RequestState) -> EncryptedAttachmentStore:
+        return self._attachment_store
+
+    @access("complaint_admin")
+    def retrieve_attachment(
+        self, rs: RequestState, entry_id: int, version_nr: int
+    ) -> bytes | None:
+        entry_id = affirm(vtypes.ID, entry_id)
+        version_nr = affirm(vtypes.ID, version_nr)
+        case_id = self._get_case_id(rs, entry_id)
+        entry = self.get_case(rs, case_id).entries[entry_id]
+        entry_version = entry.all_versions[version_nr - 1]
+
+        if not entry_version.attachment_hash:
+            raise ValueError("Entry version has no attachment.")
+
+        if entry.entry_type.is_hidden and not self.is_unlocked(rs, case_id):
+            raise PrivilegeError
+
+        # attachment hash is obscured upon retrieval.
+        attachment_hash = cast(
+            str,
+            unwrap(
+                self.sql_select_one(
+                    rs,
+                    models.ComplaintEntryVersion.database_table,
+                    ["attachment_hash"],
+                    entry_version.id,
+                )
+            ),
+        )
+
+        return self.get_attachment_store(rs).get(attachment_hash)
+
+    @access("complaint_admin")
+    def get_attachment_usage(self, rs: RequestState, attachment_hash: str) -> bool:
+        attachment_hash = affirm(vtypes.Identifier, attachment_hash)
+        query = f"""
+            SELECT COUNT(*)
+            FROM {models.ComplaintEntryVersion.database_table}
+            WHERE attachment_hash = %(attachment_hash)s
+        """
+        return bool(
+            unwrap(self.query_one(rs, query, {"attachment_hash": attachment_hash}))
+        )
 
     @access("persona")
     def list_enforcers(self, rs: RequestState) -> set[vtypes.ID]:
@@ -131,56 +172,6 @@ class ComplaintBackend(AbstractBackend):
                 )
         return ret
 
-    @access("persona")
-    def list_monitors(self, rs: RequestState) -> set[vtypes.ID]:
-        """List all monitors."""
-        data = self.query_all(rs, "SELECT persona_id FROM complaint.monitors", [])
-        return {e['persona_id'] for e in data}
-
-    @access("complaint_admin")
-    def add_monitor(self, rs: RequestState, persona_id: vtypes.ID) -> DefaultReturnCode:
-        """Add a new monitor."""
-        persona_id = affirm(vtypes.ID, persona_id)
-        if not self.core.verify_id(rs, persona_id, is_archived=False):
-            raise ValueError(n_("This user does not exist or is archived."))
-
-        with Atomizer(rs):
-            if persona_id in self.list_monitors(rs):
-                return -1
-            ret = self.sql_insert(rs, "complaint.monitors", {'persona_id': persona_id})
-            if ret:
-                self.complaint_log(
-                    rs=rs,
-                    code=ComplaintLogCodes.monitor_added,
-                    case_id=None,
-                    persona_id=persona_id,
-                )
-        return ret
-
-    @access("complaint_admin")
-    def remove_monitor(
-        self, rs: RequestState, persona_id: vtypes.ID
-    ) -> DefaultReturnCode:
-        """Remove monitor privileges for a persona."""
-        persona_id = affirm(vtypes.ID, persona_id)
-        if not self.core.verify_id(rs, persona_id, is_archived=False):
-            raise ValueError(n_("This user does not exist or is archived."))
-
-        with Atomizer(rs):
-            if persona_id not in self.list_monitors(rs):
-                return -1
-            ret = self.sql_delete(
-                rs, "complaint.monitors", {persona_id}, entity_key="persona_id"
-            )
-            if ret:
-                self.complaint_log(
-                    rs=rs,
-                    code=ComplaintLogCodes.monitor_removed,
-                    case_id=None,
-                    persona_id=persona_id,
-                )
-        return ret
-
     def complaint_log(
         self,
         *,
@@ -195,6 +186,8 @@ class ComplaintBackend(AbstractBackend):
         # To ensure logging is done if and only if the corresponding action happened,
         # we require atomization here.
         self.affirm_atomized_context(rs)
+        if rs.is_quiet:
+            return 0
         data = {
             "code": code,
             "case_id": case_id,
@@ -253,7 +246,7 @@ class ComplaintBackend(AbstractBackend):
         self, rs: RequestState, case_ids: Collection[int]
     ) -> models.CdEDataclassMap[models.Case]:
         """Retrieve metadata and a list of complaint entries for some complaint cases."""
-        case_ids = affirm_set(vtypes.ID, case_ids)
+        case_ids = affirm(set[vtypes.ID], case_ids)
         with Atomizer(rs):
             case_data = self.query_all(rs, *models.Case.get_select_query(case_ids))
             if not case_data:
@@ -277,10 +270,22 @@ class ComplaintBackend(AbstractBackend):
                     entry_version
                 )
 
-            return models.Case.many_from_database(case_data)
+            ret = models.Case.many_from_database(case_data)
+            for case in ret.values():
+                _, log_entries = self.generic_retrieve_log(
+                    rs, ComplaintLogFilter(case_id=case.id)
+                )
+                case.personas = self.core.get_personas(
+                    rs, case.get_persona_ids(log_entries)
+                )
+                case.involved = {
+                    involved.id: involved
+                    for involved in xsorted(case.involved.values())
+                }
+            return ret
 
     class _GetCaseProtocol(Protocol):
-        def __call__(self, rs: RequestState, case_id: int) -> CdEDBObject: ...
+        def __call__(self, rs: RequestState, case_id: int) -> models.Case: ...
 
     get_case = singularize(get_cases, 'case_ids', 'case_id')
 
@@ -296,8 +301,8 @@ class ComplaintBackend(AbstractBackend):
         _related_cases = {
             maybe_related_case_id: case
             for maybe_related_case_id, case in _cases.items()
-            if _cases[case_id].all_properly_involved.keys()
-            & case.all_properly_involved.keys()
+            if _cases[case_id].properly_involved_persona_ids
+            & case.properly_involved_persona_ids
         }
         del _related_cases[case_id]
 
@@ -377,9 +382,6 @@ class ComplaintBackend(AbstractBackend):
                 **data,
                 entries={},
                 involved={},
-                informed_involved=set(),
-                companions={},
-                withdrawn_companions={},
             )
             self.complaint_log(
                 rs=rs, code=const.ComplaintLogCodes.case_created, case_id=new_id
@@ -408,6 +410,9 @@ class ComplaintBackend(AbstractBackend):
         new_version_id = self.sql_insert(
             rs, models.ComplaintEntryVersion.database_table, data
         )
+        if filehash := data.get("attachment_hash"):
+            if not self.get_attachment_store(rs).is_available(filehash):
+                raise RuntimeError(n_("File has been lost."))
         self.sql_insert_many(
             rs,
             "complaint.authors",
@@ -466,25 +471,17 @@ class ComplaintBackend(AbstractBackend):
         with Atomizer(rs):
             case = self.get_case(rs, case_id)
 
-            entry_data = cast(
-                CdEDBObject,
-                affirm(
-                    models.ComplaintEntry,
-                    entry_data,
-                    creation=True,
-                    passthrough=True,
-                    entries=case.entries,
-                ),
+            entry_data = affirm(
+                models.ComplaintEntry,
+                entry_data,
+                creation=True,
+                entries=case.entries,
             )
-            version_data = cast(
-                CdEDBObject,
-                affirm(
-                    models.ComplaintEntryVersion,
-                    version_data,
-                    creation=True,
-                    passthrough=True,
-                    entry_type=entry_data['entry_type'],
-                ),
+            version_data = affirm(
+                models.ComplaintEntryVersion,
+                version_data,
+                creation=True,
+                entry_type=entry_data['entry_type'],
             )
 
             entry_data["case_id"] = case_id
@@ -505,17 +502,13 @@ class ComplaintBackend(AbstractBackend):
         """Add a new version of an existing complaint entry."""
         entry_id = affirm(vtypes.ID, entry_id)
         entry = self.get_case(rs, self._get_case_id(rs, entry_id)).entries[entry_id]
-        data = cast(
-            CdEDBObject,
-            affirm(
-                models.ComplaintEntryVersion,
-                data,
-                creation=False,
-                passthrough=True,
-                entry_type=entry.entry_type,
-            ),
+        data = affirm(
+            models.ComplaintEntryVersion,
+            data,
+            creation=False,
+            entry_type=entry.entry_type,
         )
-        dreason = affirm_optional(str, dreason)
+        dreason = affirm(str | None, dreason)
 
         with Atomizer(rs):
             self._delete_entry(rs, entry_id=entry_id, dreason=dreason)
@@ -527,7 +520,7 @@ class ComplaintBackend(AbstractBackend):
     ) -> DefaultReturnCode:
         """Delete an existing entry version."""
         entry_id = affirm(vtypes.ID, entry_id)
-        dreason = affirm_optional(str, dreason)
+        dreason = affirm(str | None, dreason)
         with Atomizer(rs):
             case_id = self._get_case_id(rs, entry_id)
             entry = self.get_case(rs, case_id).entries[entry_id]
@@ -560,15 +553,11 @@ class ComplaintBackend(AbstractBackend):
 
         revocation_type = const.ComplaintEntryType.revocation_explanation
 
-        version_data = cast(
-            CdEDBObject,
-            affirm(
-                models.ComplaintEntryVersion,
-                version_data,
-                creation=True,
-                passthrough=True,
-                entry_type=revocation_type,
-            ),
+        version_data = affirm(
+            models.ComplaintEntryVersion,
+            version_data,
+            creation=True,
+            entry_type=revocation_type,
         )
         with Atomizer(rs):
             case_id = self._get_case_id(rs, entry_id)
@@ -611,13 +600,143 @@ class ComplaintBackend(AbstractBackend):
             return self.add_entry(rs, case_id, new_entry, version_data)
 
     @access("complaint_admin")
+    def mark_entry_version_for_purge(
+        self, rs: RequestState, entry_id: int, entry_version_id: int
+    ) -> DefaultReturnCode:
+        entry_id = affirm(vtypes.ID, entry_id)
+        entry_version_id = affirm(vtypes.ID, entry_version_id)
+
+        with Atomizer(rs):
+            case_id = self._get_case_id(rs, entry_id)
+            case = self.get_case(rs, case_id)
+            entry = case.entries[entry_id]
+
+            if not (entry_version := entry.versions_by_id.get(entry_version_id)):
+                raise ValueError(n_("Unknown entry version."))
+            if entry_version.marked_for_purge:
+                raise ValueError(n_("Entry version already marked for purge."))
+
+            code = self.sql_update(
+                rs,
+                models.ComplaintEntryVersion.database_table,
+                {
+                    'id': entry_version_id,
+                    'marked_for_purge': now(),
+                    'purged_by': rs.user.persona_id,
+                },
+            )
+        return code
+
+    @access("complaint_admin")
+    def unmark_entry_version_for_purge(
+        self, rs: RequestState, entry_id: int, entry_version_id: int
+    ) -> DefaultReturnCode:
+        entry_id = affirm(vtypes.ID, entry_id)
+        entry_version_id = affirm(vtypes.ID, entry_version_id)
+
+        with Atomizer(rs):
+            case_id = self._get_case_id(rs, entry_id)
+            case = self.get_case(rs, case_id)
+            entry = case.entries[entry_id]
+
+            if not (entry_version := entry.versions_by_id.get(entry_version_id)):
+                raise ValueError(n_("Unknown entry version."))
+            if not entry_version.marked_for_purge:
+                raise ValueError(n_("Entry version not marked for purge."))
+
+            code = self.sql_update(
+                rs,
+                models.ComplaintEntryVersion.database_table,
+                {
+                    'id': entry_version_id,
+                    'marked_for_purge': None,
+                    'purged_by': None,
+                },
+            )
+        return code
+
+    @access("cron")
+    def purge_entry_version(
+        self, rs: RequestState, entry_id: int, entry_version_id: int
+    ) -> DefaultReturnCode:
+        entry_id = affirm(vtypes.ID, entry_id)
+        entry_version_id = affirm(vtypes.ID, entry_version_id)
+
+        with Atomizer(rs):
+            case_id = self._get_case_id(rs, entry_id)
+            case = self.get_case(rs, case_id)
+            entry = case.entries[entry_id]
+
+            if not (entry_version := entry.versions_by_id[entry_version_id]):
+                raise ValueError(n_("Unknown entry version."))
+
+            purge_delay = self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"]
+            if not entry_version.marked_for_purge:
+                raise ValueError(n_("Entry version not marked for purge."))
+            if now() - entry_version.marked_for_purge < purge_delay:
+                raise ValueError(n_("Not yet ready for purge."))
+
+            code = self.sql_update(
+                rs,
+                models.ComplaintEntryVersion.database_table,
+                {
+                    'id': entry_version_id,
+                    'is_purged': True,
+                    'description': None,
+                    'length': None,
+                    'timestamp': None,
+                    'dreason': None,
+                    'attachment_hash': None,
+                    'attachment_title': None,
+                    'attachment_filename': None,
+                },
+            )
+            self.sql_delete(
+                rs,
+                models.ComplaintAuthors.database_table,
+                [entry_version_id],
+                entity_key="entry_version_id",
+            )
+        return code
+
+    @access("complaint_admin")
+    def list_entry_versions_marked_for_purge(
+        self, rs: RequestState
+    ) -> list[models.ComplaintEntryVersion]:
+        with Atomizer(rs):
+            marked_for_purge = self.query_all(
+                rs,
+                f"""
+                    SELECT cev.id AS entry_version_id, ce.id AS entry_id, ce.case_id
+                    FROM {models.ComplaintEntryVersion.database_table} cev
+                        JOIN {models.ComplaintEntry.database_table} ce ON cev.entry_id = ce.id
+                    WHERE NOT is_purged AND marked_for_purge IS NOT NULL
+                """,
+                [],
+            )
+            cases: models.CdEDataclassMap[models.Case] = {}
+
+            ret = []
+            for datum in marked_for_purge:
+                case_id = datum["case_id"]
+                entry_id = datum["entry_id"]
+                entry_version_id = datum["entry_version_id"]
+
+                case = cases.get(case_id)
+                if not case:
+                    cases[case_id] = case = self.get_case(rs, case_id)
+                entry = case.entries[entry_id]
+                ret.append(entry.versions_by_id[entry_version_id])
+
+            return ret
+
+    @access("complaint_admin")
     def add_involved(
         self,
         rs: RequestState,
         case_id: int,
-        involved_type: const.ComplaintInvolvementType,
-        persona_ids: Collection[int],
-        is_informed: bool | None = None,
+        involvement_type: const.ComplaintInvolvementType,
+        persona_ids: Collection[vtypes.PersonaID],
     ) -> DefaultReturnCode:
         """Add the given personas as involved people of the given type to a case.
 
@@ -627,66 +746,98 @@ class ComplaintBackend(AbstractBackend):
             The number of newly added personas otherwise.
         """
         case_id = affirm(vtypes.ID, case_id)
-        involved_type = affirm(const.ComplaintInvolvementType, involved_type)
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
-        is_informed = affirm_optional(bool, is_informed)
+        involvement_type = affirm(const.ComplaintInvolvementType, involvement_type)
+        persona_ids = affirm(set[vtypes.PersonaID], persona_ids)
+        persona_ids = cast(set[vtypes.PersonaID], persona_ids)  # mypy bug
 
         if not persona_ids:
             return 0
 
-        if involved_type == const.ComplaintInvolvementType.appellant:
-            if is_informed is False:
-                raise ValueError(n_("Appellant cannot be uninformed."))
+        if involvement_type == const.ComplaintInvolvementType.appellant:
             is_informed = True
-        elif is_informed is None:
+        else:
             is_informed = False
 
-        with Atomizer(rs):
-            if not self.core.verify_ids(rs, persona_ids):
-                raise ValueError(n_("Unknown users."))
+        if not self.core.verify_ids(rs, persona_ids):
+            raise ValueError(n_("Unknown users."))
 
+        ret = 1
+        with Atomizer(rs):
             case = self.get_case(rs, case_id)
 
-            if any(
-                persona_ids & involved
-                for inv_type, involved in case.involved.items()
-                if inv_type != involved_type
-            ):
-                raise ValueError(n_("Already involved otherwise."))
-            if persona_ids & case.active_companions.keys():
+            if persona_ids & case.get_companions(is_active=True).keys():
                 raise ValueError(n_("Already active companions."))
 
-            newly_involved = persona_ids - case.involved.get(involved_type, set())
-            if not newly_involved:
-                return -1
-            ret = self.sql_insert_many(
-                rs,
-                models.ComplaintInvolved.database_table,
-                [
-                    {
-                        "case_id": case_id,
-                        "persona_id": persona_id,
-                        "involved_type": involved_type,
-                        "is_informed": is_informed,
-                    }
-                    for persona_id in newly_involved
-                ],
-            )
-            for persona_id in mixed_existence_sorter(newly_involved):
-                ret *= self.complaint_log(
+            # If some of these users are involved already, update them instead.
+            # We will log this as remove + add.
+            already_involved_ids = {
+                involved_id
+                for involved_id, involved in case.involved.items()
+                if involved.persona_id in set(persona_ids) & case.involved_persona_ids
+            }
+
+            # If they are updated to a state requiring is_informed, log this later
+            newly_informed = set()  # of persona_ids
+            for involved_id in mixed_existence_sorter(already_involved_ids):
+                involved = case.involved[involved_id]
+                data = {"id": involved_id, "involvement_type": involvement_type}
+                if is_informed and not involved.is_informed:
+                    data['is_informed'] = True
+                    newly_informed.add(involved.persona_id)
+                ret = self.sql_update(rs, models.ComplaintInvolved.database_table, data)
+                ret *= -1
+                self.complaint_log(
+                    rs=rs,
+                    code=const.ComplaintLogCodes.involved_removed,
+                    case_id=case_id,
+                    persona_id=involved.persona_id,
+                    change_note=rs.log_gettext(str(involved.involvement_type)),
+                )
+
+            newly_involved = set(persona_ids) - case.involved_persona_ids
+            if newly_involved:
+                ret *= self.sql_insert_many(
+                    rs,
+                    models.ComplaintInvolved.database_table,
+                    [
+                        {
+                            "case_id": case_id,
+                            "persona_id": persona_id,
+                            "involvement_type": involvement_type,
+                            "is_informed": is_informed,
+                        }
+                        for persona_id in newly_involved
+                    ],
+                )
+
+            for persona_id in sorted(persona_ids):
+                self.complaint_log(
                     rs=rs,
                     code=const.ComplaintLogCodes.involved_added,
                     case_id=case_id,
                     persona_id=persona_id,
-                    change_note=rs.log_gettext(str(involved_type)),
+                    change_note=rs.log_gettext(str(involvement_type)),
                 )
-                if is_informed:
-                    ret *= self.complaint_log(
+
+            if is_informed:
+                for persona_id in sorted(newly_involved & newly_informed):
+                    self.complaint_log(
                         rs=rs,
                         code=const.ComplaintLogCodes.involved_informed,
                         case_id=case_id,
                         persona_id=persona_id,
                     )
+
+            # Finally check, if any companions are now adverse.
+            new_case = self.get_case(rs, case_id)
+            for involvement_type in const.ComplaintInvolvementType:
+                companions = new_case.companions_by_involved_type(is_active=True).get(
+                    involvement_type, set()
+                )
+                adverse_companions = new_case.adverse_companions(involvement_type)
+                if companions & adverse_companions:
+                    raise AdverseCompanionError
+
         return ret
 
     @access("complaint_admin")
@@ -694,7 +845,7 @@ class ComplaintBackend(AbstractBackend):
         self,
         rs: RequestState,
         case_id: int,
-        persona_ids: Collection[int],
+        involved_ids: Collection[vtypes.InvolvedID],
     ) -> DefaultReturnCode:
         """Remove some users as involved with a case.
 
@@ -704,74 +855,65 @@ class ComplaintBackend(AbstractBackend):
             The number of removed personas otherwise.
         """
         case_id = affirm(vtypes.ID, case_id)
-        persona_ids = affirm_set(vtypes.ID, persona_ids)
+        involved_ids = affirm(set[vtypes.InvolvedID], involved_ids)
 
-        if not persona_ids:
+        if not involved_ids:
             return 0
 
         with Atomizer(rs):
-            if not self.core.verify_ids(rs, persona_ids):
-                raise ValueError(n_("Unknown users."))
-
             case = self.get_case(rs, case_id)
-            removed = persona_ids & case.all_involved.keys()
+            removed = involved_ids & case.involved.keys()
             if not removed:
                 return -1
-            query = f"""
-                DELETE FROM {models.ComplaintInvolved.database_table}
-                WHERE case_id = %(case_id)s AND persona_id = ANY(%(persona_ids)s)
-            """
-            ret = self.query_exec(
-                rs,
-                query,
-                {
-                    "case_id": case_id,
-                    "persona_ids": persona_ids,
-                },
+            ret = self.sql_delete(
+                rs, models.ComplaintInvolved.database_table, involved_ids
             )
-            for persona_id in mixed_existence_sorter(removed):
+            for involved_id in mixed_existence_sorter(removed):
+                involved = case.involved[involved_id]
+                companions = involved.get_companions(is_active=None)
                 ret *= self.complaint_log(
                     rs=rs,
                     code=const.ComplaintLogCodes.involved_removed,
                     case_id=case_id,
-                    persona_id=persona_id,
-                    change_note=rs.log_gettext(str(case.all_involved[persona_id])),
+                    persona_id=involved.persona_id,
+                    change_note=rs.log_gettext(str(involved.involvement_type)),
                 )
-                for companion_id in mixed_existence_sorter(
-                    case.companions_by_involved.get(persona_id, set())
-                ):
+                for companion_id in mixed_existence_sorter(companions):
                     ret *= self.complaint_log(
                         rs=rs,
                         code=const.ComplaintLogCodes.companion_removed,
                         case_id=case_id,
-                        persona_id=persona_id,
+                        persona_id=involved.persona_id,
                         companion_id=companion_id,
                     )
         return ret
 
     @access("complaint_admin")
     def set_involved_informed(
-        self, rs: RequestState, case_id: int, persona_id: int, is_informed: bool
+        self,
+        rs: RequestState,
+        case_id: int,
+        involved_id: vtypes.InvolvedID,
+        is_informed: bool,
     ) -> DefaultReturnCode:
         """Set the informed status of an involved person."""
         case_id = affirm(vtypes.ID, case_id)
-        persona_id = affirm(vtypes.ID, persona_id)
+        involved_id = affirm(vtypes.InvolvedID, involved_id)
         is_informed = affirm(bool, is_informed)
 
         with Atomizer(rs):
             case = self.get_case(rs, case_id)
-            if persona_id not in case.all_involved:
+            if involved_id not in case.involved:
                 raise ValueError(n_("Uninvolved user."))
-            if is_informed == (persona_id in case.informed_involved):
+            if is_informed == case.involved[involved_id].is_informed:
                 return -1
             query = f"""
                 UPDATE {models.ComplaintInvolved.database_table}
                 SET is_informed = %(is_informed)s
-                WHERE case_id = %(case_id)s AND persona_id = %(persona_id)s
+                WHERE id = %(involved_id)s
             """
             params = {
-                "case_id": case_id,
-                "persona_id": persona_id,
+                "involved_id": involved_id,
                 "is_informed": is_informed,
             }
             ret = self.query_exec(rs, query, params)
@@ -779,6 +921,7 @@ class ComplaintBackend(AbstractBackend):
                 code = const.ComplaintLogCodes.involved_informed
             else:
                 code = const.ComplaintLogCodes.involved_uninformed
+            persona_id = case.involved[involved_id].persona_id
             ret *= self.complaint_log(
                 rs=rs, code=code, case_id=case_id, persona_id=persona_id
             )
@@ -789,13 +932,14 @@ class ComplaintBackend(AbstractBackend):
         self,
         rs: RequestState,
         case_id: int,
-        persona_id: int,
-        companion_ids: Collection[int],
+        involved_id: vtypes.InvolvedID,
+        companion_ids: Collection[vtypes.PersonaID],
     ) -> DefaultReturnCode:
         """Add companions to a person involved in a case."""
         case_id = affirm(vtypes.ID, case_id)
-        persona_id = affirm(vtypes.ID, persona_id)
-        companion_ids = affirm_set(vtypes.ID, companion_ids)
+        involved_id = affirm(vtypes.InvolvedID, involved_id)
+        companion_ids = affirm(set[vtypes.PersonaID], companion_ids)
+        companion_ids = cast(set[vtypes.PersonaID], companion_ids)  # mypy bug
 
         if not companion_ids:
             return 0
@@ -805,31 +949,21 @@ class ComplaintBackend(AbstractBackend):
                 raise ValueError(n_("Unknown companions."))
 
             case = self.get_case(rs, case_id)
-            companion_ids -= case.companions_by_involved.get(persona_id, set())
+            if involved_id not in case.involved:
+                raise ValueError(n_("Uninvolved user."))
+            involved = case.involved[involved_id]
+            companion_ids -= involved.get_companions(is_active=None).keys()
             if not companion_ids:
                 return -1
 
-            # Retrieve id of the involvement table.
-            query = f"""
-                SELECT id, involved_type
-                FROM {models.ComplaintInvolved.database_table}
-                WHERE case_id = %(case_id)s AND persona_id = %(persona_id)s
-            """
-            params = {"case_id": case_id, "persona_id": persona_id}
-            if not (involved := self.query_one(rs, query, params)):
-                raise ValueError(n_("Uninvolved user."))
-            involved_id = involved["id"]
-            involved_type = const.ComplaintInvolvementType(involved["involved_type"])
-
-            if companion_ids & case.adverse_companions(involved_type):
-                raise ValueError(n_("Adverse companion."))
-            if companion_ids & case.all_involved.keys():
+            if companion_ids & case.adverse_companions(involved.involvement_type):
+                raise AdverseCompanionError
+            if companion_ids & case.involved_persona_ids:
                 raise ValueError(n_("Involved companion."))
 
             values = [
                 {
                     "case_id": case_id,
-                    "involved_persona_id": persona_id,
                     "involved_id": involved_id,
                     "companion_persona_id": companion_id,
                 }
@@ -843,7 +977,7 @@ class ComplaintBackend(AbstractBackend):
                     rs=rs,
                     code=const.ComplaintLogCodes.companion_added,
                     case_id=case_id,
-                    persona_id=persona_id,
+                    persona_id=involved.persona_id,
                     companion_id=companion_id,
                 )
         return ret
@@ -853,30 +987,32 @@ class ComplaintBackend(AbstractBackend):
         self,
         rs: RequestState,
         case_id: int,
-        persona_id: int,
-        companion_ids: Collection[int],
+        involved_id: vtypes.InvolvedID,
+        companion_ids: Collection[vtypes.PersonaID],
     ) -> DefaultReturnCode:
         """Remove companions from a person involved in a case."""
         case_id = affirm(vtypes.ID, case_id)
-        persona_id = affirm(vtypes.ID, persona_id)
-        companion_ids = affirm_set(vtypes.ID, companion_ids)
+        involved_id = affirm(vtypes.InvolvedID, involved_id)
+        companion_ids = affirm(set[vtypes.PersonaID], companion_ids)
+        companion_ids = cast(set[vtypes.PersonaID], companion_ids)  # mypy bug
         if not companion_ids:
             return 0
         with Atomizer(rs):
             case = self.get_case(rs, case_id)
-            companion_ids &= case.companions_by_involved.get(persona_id, set())
+            if involved_id not in case.involved:
+                raise ValueError(n_("Uninvolved user."))
+            involved = case.involved[involved_id]
+            companion_ids &= involved.get_companions(is_active=None).keys()
             if not companion_ids:
                 return -1
 
             query = f"""
                 DELETE FROM {models.ComplaintCompanion.database_table}
-                WHERE case_id = %(case_id)s
-                    AND involved_persona_id = %(persona_id)s
+                    WHERE involved_id = %(involved_id)s
                     AND companion_persona_id = ANY(%(companion_ids)s)
             """
             params: dict[str, DatabaseValue_s] = {
-                "case_id": case_id,
-                "persona_id": persona_id,
+                "involved_id": involved_id,
                 "companion_ids": companion_ids,
             }
             ret = self.query_exec(rs, query, params)
@@ -886,7 +1022,7 @@ class ComplaintBackend(AbstractBackend):
                     rs=rs,
                     code=const.ComplaintLogCodes.companion_removed,
                     case_id=case_id,
-                    persona_id=persona_id,
+                    persona_id=involved.persona_id,
                     companion_id=companion_id,
                 )
         return ret
@@ -896,36 +1032,35 @@ class ComplaintBackend(AbstractBackend):
         self,
         rs: RequestState,
         case_id: int,
-        persona_id: int,
-        companion_id: int,
+        involved_id: vtypes.InvolvedID,
+        companion_id: vtypes.PersonaID,
         is_withdrawn: bool,
     ) -> DefaultReturnCode:
-        """Set the informed status of an involved person."""
+        """Set the withdrawn status of a companion."""
         case_id = affirm(vtypes.ID, case_id)
-        persona_id = affirm(vtypes.ID, persona_id)
-        companion_id = affirm(vtypes.ID, companion_id)
+        involved_id = affirm(vtypes.InvolvedID, involved_id)
+        companion_id = affirm(vtypes.PersonaID, companion_id)
         is_withdrawn = affirm(bool, is_withdrawn)
 
         with Atomizer(rs):
             case = self.get_case(rs, case_id)
-            if persona_id not in case.all_involved:
+            if involved_id not in case.involved:
                 raise ValueError(n_("Uninvolved user."))
-            if companion_id not in case.companions_by_involved.get(persona_id, set()):
+            involved = case.involved[involved_id]
+            if companion_id not in involved.get_companions(is_active=None):
                 raise ValueError(n_("Not a companion."))
             if is_withdrawn == (
-                persona_id in case.withdrawn_companions.get(companion_id, set())
+                companion_id in involved.get_companions(is_active=False)
             ):
                 return -1
             query = f"""
                 UPDATE {models.ComplaintCompanion.database_table}
                 SET is_withdrawn = %(is_withdrawn)s
-                WHERE case_id = %(case_id)s
-                    AND involved_persona_id = %(persona_id)s
+                WHERE involved_id = %(involved_id)s
                     AND companion_persona_id = %(companion_id)s
             """
             params = {
-                "case_id": case_id,
-                "persona_id": persona_id,
+                "involved_id": involved_id,
                 "companion_id": companion_id,
                 "is_withdrawn": is_withdrawn,
             }
@@ -938,7 +1073,7 @@ class ComplaintBackend(AbstractBackend):
                 rs=rs,
                 code=code,
                 case_id=case_id,
-                persona_id=persona_id,
+                persona_id=involved.persona_id,
                 companion_id=companion_id,
             )
         return ret
@@ -948,8 +1083,7 @@ class ComplaintBackend(AbstractBackend):
         rs: RequestState,
         *,
         case_id: int | None = None,
-        entry_id: int | None = None,
-        version_ids: Collection[int] | None = None,
+        entry_ids: Collection[int] | None = None,
         visible: bool | None,
         deleted: bool | None = False,
     ) -> dict[int, str]:
@@ -967,13 +1101,9 @@ class ComplaintBackend(AbstractBackend):
             conditions.append("entries.case_id = %(case_id)s")
             params["case_id"] = case_id
 
-        if entry_id is not None:
-            conditions.append("entry_id = %(entry_id)s")
-            params['entry_id'] = entry_id
-
-        if version_ids is not None:
-            conditions.append("versions.id = ANY(%(version_ids)s)")
-            params['version_ids'] = version_ids
+        if entry_ids is not None:
+            conditions.append("entries.id = ANY(%(entry_ids)s)")
+            params['entry_ids'] = entry_ids
 
         if visible is not None:
             conditions.append("entries.entry_type = ANY(%(entry_types)s)")
@@ -992,7 +1122,7 @@ class ComplaintBackend(AbstractBackend):
             query += "WHERE " + " AND ".join(conditions)
 
         return {
-            e["id"]: self.decrypt(e["description"]) or ""
+            e["id"]: self.decrypt_decode(e["description"]) or ""
             for e in self.query_all(rs, query, params)
         }
 
@@ -1001,7 +1131,7 @@ class ComplaintBackend(AbstractBackend):
         self,
         rs: RequestState,
         case_id: int,
-        entry_id: int | None = None,
+        entry_ids: Collection[int] | None = None,
         deleted: bool | None = False,
     ) -> dict[int, str]:
         """List all descriptions that are visible without unlock.
@@ -1009,10 +1139,10 @@ class ComplaintBackend(AbstractBackend):
         :returns: Mapping of entry *version* ids to descriptions.
         """
         case_id = affirm(int, case_id)
-        entry_id = affirm_optional(int, entry_id)
-        deleted = affirm_optional(bool, deleted)
+        entry_ids = affirm(set[vtypes.ID] | None, entry_ids)
+        deleted = affirm(bool | None, deleted)
         return self._get_descriptions(
-            rs, case_id=case_id, entry_id=entry_id, visible=True, deleted=deleted
+            rs, case_id=case_id, entry_ids=entry_ids, visible=True, deleted=deleted
         )
 
     def _log_unlock(
@@ -1194,18 +1324,27 @@ class ComplaintBackend(AbstractBackend):
         return self.general_query(rs, query, view=view)
 
     @access("persona")
-    def list_user_measures(
+    def get_user_measures(
         self, rs: RequestState, concerned_id: int, is_active: bool | None = True
-    ) -> set[vtypes.ID]:
+    ) -> tuple[models.CdEDataclassMap[models.ComplaintEntry], dict[int, str]]:
+        """Get all measures against a specific user.
+
+        This includes active measures, future measures and expired measures,
+        but not deleted, revoked or purged measures.
+
+        Additionally it does not include expired provisional measures.
+        """
+
         concerned_id = affirm(vtypes.ID, concerned_id)
-        is_active = affirm_optional(bool, is_active)
+        is_active = affirm(bool | None, is_active)
         if not (
             {"complaint_admin", "complaint.enforcer"} & rs.user.all_roles
             or concerned_id == rs.user.persona_id
         ):
             raise PrivilegeError
+
         query = f"""
-            SELECT versions.id
+            SELECT entries.id AS entry_id, versions.id AS version_id
             FROM {models.ComplaintEntryVersion.database_table} AS versions
                 LEFT JOIN {models.ComplaintEntry.database_table} AS entries
                     ON entries.id = versions.entry_id
@@ -1213,100 +1352,87 @@ class ComplaintBackend(AbstractBackend):
                 entries.concerned_id = %(concerned_id)s
                 AND entries.entry_type = ANY(%(entry_types)s)
                 AND versions.dtime IS NULL
+                AND NOT versions.is_purged
+                AND NOT entries.is_revoked
         """
         params: dict[str, DatabaseValue_s] = {
             "concerned_id": concerned_id,
             "entry_types": const.ComplaintEntryType.measure_types(),
         }
 
-        if is_active is not None:
-            query += """
-                AND (
-                    NOT entries.is_revoked
-                    AND (versions.etime > now() OR versions.etime IS NULL)
-                ) = %(is_active)s
-            """
-            params["is_active"] = is_active
+        data = self.query_all(rs, query, params)
+        entry_ids_to_version_ids = {e['entry_id']: e['version_id'] for e in data}
+        entries = self._get_measures(rs, entry_ids_to_version_ids)
 
-        return {e['id'] for e in self.query_all(rs, query, params)}
+        entries = {
+            e_id: e
+            for e_id, e in entries.items()
+            if not (e.is_provisional and e.is_expired_measure)
+        }
+        descriptions = self._get_descriptions(
+            rs, entry_ids=entries.keys(), visible=True
+        )
+        return entries, descriptions
 
     @access("complaint_admin", "complaint.enforcer")
-    def list_measures(
-        self,
-        rs: RequestState,
-        entry_types: set[const.ComplaintEntryType] | None = None,
-        is_active: bool | None = True,
-    ) -> dict[int, int]:
-        is_active = affirm_optional(bool, is_active)
-        if entry_types is None:
-            entry_types = const.ComplaintEntryType.measure_types()
-        else:
-            entry_types = affirm_set(const.ComplaintEntryType, entry_types)
-            if not entry_types <= const.ComplaintEntryType.measure_types():
-                raise ValueError(n_("Can only list measures."))
+    def get_measures(
+        self, rs: RequestState
+    ) -> tuple[models.CdEDataclassMap[models.ComplaintEntry], dict[int, str]]:
+        """Get all active measures against all users.
 
+        This includes neither future nor expired measures regardless of their type.
+        It also does not include deleted, revoked or purged measures.
+        """
         query = f"""
-            SELECT versions.id, entries.case_id
+            SELECT entries.id AS entry_id, versions.id AS version_id
             FROM {models.ComplaintEntryVersion.database_table} AS versions
-                JOIN {models.ComplaintEntry.database_table} AS entries
+                LEFT JOIN {models.ComplaintEntry.database_table} AS entries
                     ON entries.id = versions.entry_id
             WHERE
                 entries.entry_type = ANY(%(entry_types)s)
                 AND versions.dtime IS NULL
+                AND NOT versions.is_purged
+                AND NOT entries.is_revoked
         """
         params: dict[str, DatabaseValue_s] = {
-            "entry_types": entry_types,
+            "entry_types": const.ComplaintEntryType.measure_types(),
         }
 
-        if is_active is not None:
-            query += """
-                AND (
-                    NOT entries.is_revoked
-                    AND (versions.etime > now() OR versions.etime IS NULL)
-                ) = %(is_active)s
-            """
-            params["is_active"] = is_active
+        data = self.query_all(rs, query, params)
+        entry_ids_to_version_ids = {e['entry_id']: e['version_id'] for e in data}
+        entries = self._get_measures(rs, entry_ids_to_version_ids)
 
-        return {e['id']: e['case_id'] for e in self.query_all(rs, query, params)}
+        entries = {e_id: e for e_id, e in entries.items() if e.is_active_measure}
+        descriptions = self._get_descriptions(
+            rs, entry_ids=entries.keys(), visible=True
+        )
+        return entries, descriptions
 
-    @access("persona")
-    def get_measures(
-        self, rs: RequestState, measure_ids: Collection[int]
-    ) -> tuple[
-        models.CdEDataclassMap[models.ComplaintEntryVersion],
-        dict[int, str],
-        dict[int, CdEDBObject],
-    ]:
+    def _get_measures(
+        self, rs: RequestState, entry_ids_to_version_ids: dict[int, int]
+    ) -> models.CdEDataclassMap[models.ComplaintEntry]:
         """Get relevant information on specified measures
 
         :returns: the associated entry versions, their descriptions, and
             some keys on the respective entries.
         """
-        measure_ids = affirm_set(vtypes.ID, measure_ids)
+        entry_data = {
+            e["id"]: e
+            for e in self.query_all(
+                rs,
+                *models.ComplaintEntry.get_select_query(
+                    entry_ids_to_version_ids.keys(), entity_key="id"
+                ),
+            )
+        }
         version_data = self.query_all(
             rs,
             *models.ComplaintEntryVersion.get_select_query(
-                measure_ids, entity_key="id"
+                entry_ids_to_version_ids.values(), entity_key="id"
             ),
         )
-        versions = models.ComplaintEntryVersion.many_from_database(version_data)
-        descriptions = self._get_descriptions(rs, version_ids=measure_ids, visible=True)
-        entry_ids = {e.entry_id for e in versions.values()}
-        entry_data = self.sql_select(
-            rs,
-            models.ComplaintEntry.database_table,
-            ['id', 'concerned_id', 'entry_type', 'case_id', 'is_revoked'],
-            entry_ids,
-        )
-        if not {
-            "complaint_admin",
-            "complaint.enforcer",
-        } & rs.user.all_roles and not all(
-            entry['concerned_id'] == rs.user.persona_id for entry in entry_data
-        ):
-            raise PrivilegeError
-        for e in entry_data:
-            e['entry_type'] = const.ComplaintEntryType(e['entry_type'])
-        entries = {e['id']: e for e in entry_data}
+        for v in version_data:
+            entry_data[v["entry_id"]]["all_versions"] = [v]
 
-        return versions, descriptions, entries
+        entries = models.ComplaintEntry.many_from_database(entry_data.values())
+        return entries

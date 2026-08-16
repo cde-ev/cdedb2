@@ -72,7 +72,11 @@
                             {% with reg_id = params.get('registration_ids', {}).get((persona['id'], event.id)) %}
                                 {% if reg_id %}
                                     <li>
-                                        {{ util.href(cdedblink("event/show_registration", {'event_id': event.id, 'registration_id': reg_id}), gettext("Matched Registration")) }}
+                                        {{ util.href(cdedblink("event/show_registration", {'event_id': event.id, 'registration_id': reg_id}),
+                                                     gettext("Matched Registration"), anid="registration-link" ~ t_id,
+                                                     readonly=not event_is_privileged(EventPrivileges.registrations_read, event_id=event.id)) }}
+                                        ({{ util.href(cdedblink("event/show_registration_fee", {'event_id': event.id, 'registration_id': reg_id}),
+                                                      gettext("Fee Details"), anid="registration-fee-link" ~ t_id) }})
                                     </li>
                                 {% endif %}
                             {% endwith %}
@@ -114,7 +118,7 @@
                         {{ util.input_checkbox(name="persona_confirm{}".format(t_id)) }}
                     </div>
                     <div class="col-md-11">
-                        {{ util.form_input_text(name="cdedbid{}".format(t_id), small=True, horizontal=False,
+                        {{ util.form_input_text(type="search", name="cdedbid{}".format(t_id), small=True, horizontal=False,
                                     label=gettext("Member"), anid="input-cdedbid-{}".format(t_id)) }}
                             <script nonce="{{ csp_nonce }}">
                                 $('#input-cdedbid-{{ t_id }}').cdedbSearchPerson(
@@ -146,7 +150,7 @@
                 <a class="btn btn-default btn-sm" href="#transaction-container{{ params["jump_order"][t_id] }}">
                     {{ util.make_icon('arrow-down') }}
                     {% trans %}
-                        Go to next Error.
+                        Go to next Error / Warning.
                     {% endtrans %}
                 </a>
             {% else %}
@@ -167,7 +171,7 @@
         <form action="{{ cdedblink('cde/parse_statement') }}" method="POST" id="statementform" enctype="multipart/form-data">
             {{ util.anti_csrf_token('cde/parse_statement') }}
             {{ util.form_input_file(name="statement_file", label=gettext("Statement"), horizontal=False, accept="text/csv,.csv",
-                    info=gettext("Directly paste the Bank Statement from Bank für Sozialwirtschaft or Skatbank here.")) }}
+                    info=gettext("Directly paste the Bank Statement from SozialBank or Skatbank here.")) }}
 
             {{ util.form_input_submit(label=gettext("Parse"), icon="chevron-right", horizontal=False) }}
         </form>
@@ -199,7 +203,7 @@
                 <a class="btn btn-default btn-sm" href="#transaction-container{{ params["jump_order"][None] }}">
                     {{ util.make_icon('arrow-down') }}
                     {% trans %}
-                        Go to first Error.
+                        Go to first Error / Warning.
                     {% endtrans %}
                 </a>
             {% endif %}

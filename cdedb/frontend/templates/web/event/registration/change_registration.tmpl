@@ -35,7 +35,7 @@
 {% endblock %}
 
 {% block content %}
-    <form action="{{ cdedblink('event/change_registration') }}" method="POST" id="changeregistrationform"
+    <form action="{{ cdedblink('event/change_registration') }}" method="POST" id="changeregistrationform" autocomplete="off"
           class="form-horizontal">
         {{ util.anti_csrf_token('event/change_registration') }}
 
@@ -69,7 +69,7 @@
                                       entries=enums['RegistrationPartStati']|enum_entries(processing=gettext)) }}
             {% if lodgements %}
                 {{ util.form_input_select(name="part{}.lodgement_id".format(part.id), label=gettext("Lodgement"),
-                                          entries=lodgements|keydictsort(EntitySorter.lodgement)|dict_entries('id', 'title'), nulloption=nbsp) }}
+                                          entries=lodgements|entries('id', 'title'), nulloption=nbsp) }}
             {% endif %}
             {{ util.form_input_checkbox(name="part{}.is_camping_mat".format(part.id), label=gettext("Uses Camping Mat")) }}
 
@@ -90,9 +90,11 @@
 
         {{ generic_event.select_all_course_choices() }}
 
-        {{ generic_event.print_field_inputs(enums['FieldAssociations'].registration) }}
+        {{ generic_event.print_field_inputs(enums['FieldAssociations'].registration, is_restricted=is_restricted) }}
 
-        {{ generic_event.fee_preview_panel(show_composition=True, hideable=True) }}
+        {% if not is_restricted %}
+            {{ generic_event.fee_preview_panel(show_composition=True, hideable=True) }}
+        {% endif %}
 
         <div class="panel panel-primary">
             <div class="panel-body">
@@ -106,7 +108,7 @@
     <script nonce="{{ csp_nonce }}">
         feePreviewConstants = {
             'endpoint': '{{ cdedblink('event/precompute_fee') }}',
-            'persona_id': {{ persona['id'] }},
+            'persona_id': '{{ persona['id']|cdedbid }}',
             'is_member': {{ ambience['registration']['is_member']|tojson }},
             'is_orga': {{ (persona['id'] in ambience['event']['orgas'])|tojson }},
         }

@@ -16,8 +16,12 @@
         $(function() {
             $('.skip-form').cdedbProtectAction(
                 "{{ gettext("This Direct Debit will be skipped for this semster. This cannot be undone.") }}");
-            $('#finalizationform').cdedbProtectAction("{{ gettext("This action cannot be undone.") }}",
-                    function(){return $('#finalization-cancel')[0] == document.activeElement;});
+            $('#finalizationform').cdedbProtectAction(
+                "{{ gettext("This action cannot be undone.") }}",
+                function() {
+                    // This skips the protections if the form is submitted via one of these submit buttons.
+                    return $('#finalization-cancel')[0] == document.activeElement || $('#finalization-download')[0] == document.activeElement;
+                });
             $('#generatetransactionsform').cdedbProtectAction("{{ gettext("Direct Debits will be created.") }}")
             $('.generatetransactionform').cdedbProtectAction("{{ gettext("Direct Debit will be created.") }}")
         });
@@ -53,10 +57,12 @@
         <tbody>
         {% for lastschrift_id, lastschrift in active_lastschrifts.items() if lastschrift['open']%}
             <tr>
-                <td>
+                <td style="padding-right: 1em">
                     {% set persona = personas[lastschrift['persona_id']] %}
                     {{ util.href(cdedblink('cde/lastschrift_show', {'persona_id': lastschrift['persona_id']}),
                                  persona|persona_name) }}
+                    {{ util.href(show_user_link(user, lastschrift['persona_id']),
+                                 gettext("Profile"), icon='user', aclass="btn btn-xs btn-default pull-right") }}
                 </td>
                 <td>
                     <form action="{{ cdedblink('cde/lastschrift_download_sepapain') }}" method="GET"
@@ -111,7 +117,7 @@
 
     <h2>{% trans %}Open Direct Debits{% endtrans %}</h2>
     <div id="open-dd">
-    {% if transactions|length > 0 %}
+    {% if transactions|length > 0 %}
         <p>
             {% trans %}
                 The following Direct Debits are pending. As soon as they are executed, enter whether they were
@@ -122,15 +128,15 @@
 
         <div class="p softhide" id="js-button-group">
             <div class="btn-group">
-                <button type="button" class="btn btn-sm btn-info" title="{% trans %}Select All{% endtrans %}"
+                <button type="button" class="btn btn-sm btn-default" title="{% trans %}Select All{% endtrans %}"
                         id="btn-select-all">
                     {{ util.make_icon('check-square') }} <span class="hidden-xs">{% trans %}All{% endtrans %}</span>
                 </button>
-                <button type="button" class="btn btn-sm btn-info" title="{% trans %}Select None{% endtrans %}"
+                <button type="button" class="btn btn-sm btn-default" title="{% trans %}Select None{% endtrans %}"
                         id="btn-select-none">
                     {{ util.make_icon('square') }} <span class="hidden-xs">{% trans %}None{% endtrans %}</span>
                 </button>
-                <button type="button" class="btn btn-sm btn-info" title="{% trans %}Invert Selection{% endtrans %}"
+                <button type="button" class="btn btn-sm btn-default" title="{% trans %}Invert Selection{% endtrans %}"
                         id="btn-select-swap">
                     {{ util.make_icon('caret-square-right') }} <span class="hidden-xs">{% trans %}Invert{% endtrans %}</span>
                 </button>
@@ -142,7 +148,7 @@
             <table class="table table-condensed ls-list" id="open_lastschrift_table">
                 <thead>
                     <tr>
-                        <th></th>
+                        <th><span class="softhide" id="js-select-num">(<span id="label-select-num">0</span>)</span></th>
                         <th>{% trans %}Member{% endtrans %}</th>
                         <th>{% trans %}Created{% endtrans %}</th>
                         <th>{% trans %}Payment date{% endtrans %}</th>
@@ -150,7 +156,7 @@
                 </thead>
                 <tbody>
                 {% for transaction_id, transaction in transactions %}
-                    <tr class="ls-item">
+                    <tr class="ls-item" data-amount="{{ transaction['amount'] }}">
                         <td>
                             {{ util.input_checkbox(name="transaction_ids", value=transaction_id, aclass="rowSelector") }}
                         </td>
@@ -169,32 +175,60 @@
                         </td>
                         <td>{{ transaction['issued_at']|datetime(lang=lang) }}</td>
                         <td>{{ transaction['payment_date']|date(lang=lang) }}</td>
-                        <td>{{ transaction['amount'] }}€</td>
+                        <td>{{ transaction['amount']|money(lang=lang) }}</td>
                    </tr>
                 {% endfor %}
                 </tbody>
             </table>
-            <script nonce="{{ csp_nonce }}">
-                $('#open_lastschrift_table').cdedbListSelect();
-                var lsObj = $('#open_lastschrift_table').data('listSelect');
-                $('#btn-select-all').click(function(){
-                    lsObj.selectAll();
-                });
-                $('#btn-select-none').click(function(){
-                    lsObj.selectNone();
-                });
-                $('#btn-select-swap').click(function(){
-                    lsObj.invertSelection();
-                });
-                $('#js-button-group').show();
-            </script>
 
-            {% trans %}All selected:{% endtrans %}
+            {% set num -%}
+                <span id="selected-stats-num">0</span>
+            {%- endset %}
+            {% set total -%}
+                <span id="selected-stats-total">{{ 0|money(lang=lang) }}</span>
+            {%- endset %}
+            {% trans %}All selected{% endtrans -%}
+            <span class="softhide" id="selected-stats">
+                {% trans num=num|s, total=total|s %}
+                    (Selected: {{ num }}, Total: {{ total }})
+                {% endtrans -%}
+            </span>:
+            {{ util.input_submit(label=gettext("SEPA-PAIN"), name='download', aclass="btn btn-default", icon="download",
+                                 anid="finalization-download",
+                                 formaction=cdedblink("cde/lastschrift_download_sepapain"), formmethod="GET") }}
             {{ util.input_submit(label=gettext("Success"), name='success', aclass="btn btn-success") }}
             {{ util.input_submit(label=gettext("Failed"), name='failure', aclass="btn btn-danger", icon="exclamation-circle") }}
             {{ util.input_submit(label=gettext("Cancelled"), name='cancelled', aclass="btn btn-warning", icon="times-circle",
-                    anid="finalization-cancel") }}
+                                 anid="finalization-cancel") }}
         </form>
+        <script nonce="{{ csp_nonce }}">
+            $('#open_lastschrift_table').cdedbListSelect({
+                'callback': function () {
+                    let selected = $(this).find('.ls-selected');
+                    $('#label-select-num').text(selected.length.toString());
+                    $('#selected-stats-num').text(selected.length.toString());
+                    let total = $.makeArray(
+                        selected.map(function () {return $(this).data('amount')})
+                    ).reduce((a, x) => a + Number(x), 0);
+                    $('#selected-stats-total').text(
+                        new Intl.NumberFormat("{{ "de-DE" if lang == "de" else "en-US" }}", { style: "currency", currency: "EUR" }).format(total)
+                    );
+                }
+            });
+            var lsObj = $('#open_lastschrift_table').data('listSelect');
+            $('#btn-select-all').click(function(){
+                lsObj.selectAll();
+            });
+            $('#btn-select-none').click(function(){
+                lsObj.selectNone();
+            });
+            $('#btn-select-swap').click(function(){
+                lsObj.invertSelection();
+            });
+            $('#js-button-group').show();
+            $('#js-select-num').show();
+            $('#selected-stats').show();
+        </script>
     {% else %}
         <p>
             {% trans %}There are currently no Direct Debits pending.{% endtrans %}

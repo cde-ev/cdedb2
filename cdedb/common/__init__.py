@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """Global utility functions."""
-import collections
+
 import collections.abc
 import dataclasses
 import datetime
@@ -14,21 +14,22 @@ import hmac
 import itertools
 import json
 import logging
-import logging.handlers
 import pathlib
 import re
 import string
-import sys
 import zoneinfo
-from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
+from collections.abc import (
+    Callable,
+    Collection,
+    Iterable,
+    Mapping,
+    MutableMapping,
+    Sequence,
+)
 from types import UnionType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Generic,
-    Optional,
-    TypeVar,
     Union,
     cast,
     get_args,
@@ -40,28 +41,27 @@ import phonenumbers
 import psycopg2.extras
 import werkzeug
 import werkzeug.datastructures
-import werkzeug.exceptions
 import werkzeug.routing
 from schulze_condorcet.types import Candidate
+from typing_extensions import TypeForm
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import Realm, Role
 from cdedb.common.n_ import n_
 from cdedb.common.roles import roles_to_admin_views
-from cdedb.config import LazyConfig
+from cdedb.config import Config
 from cdedb.database.connection import ConnectionContainer
 from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
 
 if TYPE_CHECKING:
     import cdedb.models.event as models_event
-    from cdedb.models.event import CdEDataclassMap
+    from cdedb.models.common import CdEDataclassMap
 
 _LOGGER = logging.getLogger(__name__)
-_CONFIG = LazyConfig()
+_CONFIG = Config()
 
-# Pseudo objects like assembly, event, course, event part, etc.
-CdEDBObject = dict[str, Any]
 if TYPE_CHECKING:
     CdEDBMultiDict = werkzeug.datastructures.MultiDict[str, Any]
     from cdedb.common.validation.types import TypeMapping
@@ -70,15 +70,9 @@ else:
     CdEDBMultiDict = werkzeug.datastructures.MultiDict
     TypeMapping = Mapping
 
-# Map of pseudo objects, indexed by their id, as returned by
-# `get_events`, event["parts"], etc.
-
-CdEDBObjectMap = dict[int, CdEDBObject]
-
-# Same as above, but we also allow negative ints (for creation, not reflected
-# in the type] and None (for deletion). Used in `_set_tracks` and partial
-# import diff.
-CdEDBOptionalMap = dict[int, Optional[CdEDBObject]]
+CdEDBObject = vtypes.CdEDBObject
+CdEDBObjectMap = vtypes.CdEDBObjectMap
+CdEDBOptionalMap = vtypes.CdEDBOptionalMap
 
 # An integer with special semantics. Positive return values indicate success,
 # a return of zero signals an error, a negative return value indicates some
@@ -93,7 +87,7 @@ DeletionBlockers = dict[str, list[int]]
 
 # Pseudo error objects used to display errors in the frontend. First argument
 # is the field that contains the error, second argument is the error itself.
-Error = tuple[Optional[str], Exception]
+Error = tuple[str | None, Exception]
 
 # A notification to be displayed. First argument ist the notification type
 # (warning, info, error, success, question). Second argument is the message.
@@ -106,23 +100,31 @@ AdminView = str
 
 CdEDBLog = tuple[int, tuple[CdEDBObject, ...]]
 
-PathLike = Union[pathlib.Path, str]
+PathLike = pathlib.Path | str
 Path = pathlib.Path
 
-T = TypeVar("T")
 
-
+# TODO rework this class, make use of CorePersona and PersonaStatus
 class User:
     """Container for a persona."""
 
-    def __init__(self, *, persona_id: Optional[int] = None,
-                 droid: "APIToken | None" = None,
-                 roles: Optional[set[Role]] = None,
-                 realm_roles: Optional[dict[Realm, set[str]]] = None,
-                 given_names: str = "", nickname: str = "", family_name: str = "",
-                 username: str = "", orga: Optional[Collection[int]] = None,
-                 moderator: Optional[Collection[int]] = None,
-                 presider: Optional[Collection[int]] = None) -> None:
+    def __init__(
+        self,
+        *,
+        persona_id: vtypes.PersonaID | None = None,
+        droid: "APIToken | None" = None,
+        roles: set[Role] | None = None,
+        realm_roles: dict[Realm, set[str]] | None = None,
+        given_names: str = "",
+        nickname: str = "",
+        family_name: str = "",
+        username: str = "",
+        orga: Collection[vtypes.EventID] | None = None,
+        caretaker: Collection[vtypes.EventID] | None = None,
+        checkin_helper: Collection[vtypes.EventID] | None = None,
+        moderator: Collection[int] | None = None,
+        presider: Collection[int] | None = None,
+    ) -> None:
         self.persona_id = persona_id
         self.droid = droid
         if self.persona_id and self.droid:
@@ -133,7 +135,11 @@ class User:
         self.given_names = given_names
         self.nickname = nickname
         self.family_name = family_name
-        self.orga: set[int] = set(orga) if orga else set()
+        self.orga: set[vtypes.EventID] = set(orga) if orga else set()
+        self.caretaker: set[vtypes.EventID] = set(caretaker) if caretaker else set()
+        self.checkin_helper: set[vtypes.EventID] = (
+            set(checkin_helper) if checkin_helper else set()
+        )
         self.moderator: set[int] = set(moderator) if moderator else set()
         self.presider: set[int] = set(presider) if presider else set()
         self.admin_views: set[AdminView] = set()
@@ -155,11 +161,14 @@ class User:
         self.admin_views = self.available_admin_views & set(enabled_views)
 
     def persona_name(self, include_nickname: bool = False) -> str:
-        return make_persona_name({
-            'given_names': self.given_names,
-            'nickname': self.nickname,
-            'family_name': self.family_name,
-        }, include_nickname=include_nickname)
+        return make_persona_name(
+            {
+                'given_names': self.given_names,
+                'nickname': self.nickname,
+                'family_name': self.family_name,
+            },
+            include_nickname=include_nickname,
+        )
 
 
 if TYPE_CHECKING:
@@ -172,20 +181,27 @@ class RequestState(ConnectionContainer):
     convenient semi-magic behaviours (magic enough to be nice, but non-magic
     enough to not be non-nice).
     """
+
     default_lang = "en"
     log_lang = "de"
     mail_lang = "de"
 
-    def __init__(self, sessionkey: Optional[str], apitoken: Optional[str], user: User,
-                 request: werkzeug.Request, notifications: Collection[Notification],
-                 mapadapter: werkzeug.routing.MapAdapter,
-                 requestargs: Optional[Mapping[str, Any]],
-                 errors: Collection[Error],
-                 values: Optional[CdEDBMultiDict],
-                 begin: Optional[datetime.datetime],
-                 lang: str,
-                 translations: Mapping[str, gettext.NullTranslations],
-                 ) -> None:
+    def __init__(
+        self,
+        sessionkey: str | None,
+        apitoken: str | None,
+        user: User,
+        request: werkzeug.Request,
+        notifications: Collection[Notification],
+        mapadapter: werkzeug.routing.MapAdapter,
+        requestargs: Mapping[str, Any] | None,
+        errors: Collection[Error],
+        values: CdEDBMultiDict | None,
+        begin: datetime.datetime | None,
+        lang: str,
+        translations: Mapping[str, gettext.NullTranslations],
+        endpoint: str | None = None,
+    ) -> None:
         """
         :param mapadapter: URL generator (specific for this request)
         :param requestargs: verbatim copy of the arguments contained in the URL
@@ -223,7 +239,8 @@ class RequestState(ConnectionContainer):
         # Used for validation enforcement, set to False if a validator
         # is executed and then to True with the corresponding methods
         # of this class
-        self.validation_appraised: Optional[bool] = None
+        self.validation_appraised: bool | None = None
+        self.endpoint = endpoint
 
     @property
     def gettext(self) -> Callable[[str], str]:
@@ -257,19 +274,27 @@ class RequestState(ConnectionContainer):
     def mail_ngettext(self) -> Callable[[str, str, int], str]:
         return self.translations[self.mail_lang].ngettext
 
-    def notify(self, ntype: NotificationType, message: str,
-               params: Optional[CdEDBObject] = None) -> None:
+    def notify(
+        self,
+        ntype: NotificationType,
+        message: str,
+        params: CdEDBObject | None = None,
+    ) -> None:
         """Store a notification for later delivery to the user."""
         if ntype not in NOTIFICATION_TYPES:
-            raise ValueError(n_("Invalid notification type %(t)s found."),
-                             {'t': ntype})
+            raise ValueError(n_("Invalid notification type %(t)s found."), {'t': ntype})
         params = params or {}
         self.notifications.append((ntype, message, params))
 
-    def notify_return_code(self, code: Union[DefaultReturnCode, bool], *,
-                           success: str = n_("Change committed."),
-                           info: str = n_("Change pending."),
-                           error: str = n_("Change failed.")) -> None:
+    def notify_return_code(
+        self,
+        code: DefaultReturnCode | bool,
+        *,
+        success: str = n_("Change committed."),
+        info: str = n_("Change pending."),
+        error: str = n_("Change failed."),
+        params: CdEDBObject | None = None,
+    ) -> None:
         """Small helper to issue a notification based on a return code.
 
         We allow some flexibility in what type of return code we accept. It
@@ -282,11 +307,11 @@ class RequestState(ConnectionContainer):
         :param error: Exception message for zero return codes.
         """
         if not code:
-            self.notify("error", error)
+            self.notify("error", error, params)
         elif code is True or code > 0:
-            self.notify("success", success)
+            self.notify("success", success, params)
         elif code < 0:
-            self.notify("info", info)
+            self.notify("info", info, params)
         else:
             raise RuntimeError(n_("Impossible."))
 
@@ -299,8 +324,13 @@ class RequestState(ConnectionContainer):
         """
         if errors := self.retrieve_validation_errors():
             if all(isinstance(kind, ValidationWarning) for param, kind in errors):
-                self.notify("warning", n_("Input seems faulty. Please double-check if"
-                                          " you really want to save it."))
+                self.notify(
+                    "warning",
+                    n_(
+                        "Input seems faulty. Please double-check if"
+                        " you really want to save it."
+                    ),
+                )
             else:
                 self.notify("error", n_("Failed validation."))
 
@@ -368,8 +398,8 @@ class RequestState(ConnectionContainer):
         """
         self._errors = list(errors)
 
-    def get_validation_errors_dict(self) -> dict[Optional[str], list[Exception]]:
-        ret: dict[Optional[str], list[Exception]] = {}
+    def get_validation_errors_dict(self) -> dict[str | None, list[Exception]]:
+        ret: dict[str | None, list[Exception]] = {}
         for key, value in self.retrieve_validation_errors():
             ret.setdefault(key, []).append(value)
         return ret
@@ -380,11 +410,8 @@ if TYPE_CHECKING:
 else:
     AbstractBackend = None
 
-B = TypeVar("B", bound=AbstractBackend)
-F = TypeVar("F", bound=Callable[..., Any])
 
-
-def make_proxy(backend: B, internal: bool = False) -> B:
+def make_proxy[B: AbstractBackend](backend: B, internal: bool = False) -> B:
     """Wrap a backend to only expose functions with an access decorator.
 
     If we used an actual RPC mechanism, this would do some additional
@@ -394,7 +421,7 @@ def make_proxy(backend: B, internal: bool = False) -> B:
     We also need to use an inner class so we can provide __getattr__.
     """
 
-    def wrapit(fun: F) -> F:
+    def wrapit[F: Callable[..., Any]](fun: F) -> F:
         @functools.wraps(fun)
         def wrapper(rs: RequestState, *args: Any, **kwargs: Any) -> Any:
             try:
@@ -406,6 +433,7 @@ def make_proxy(backend: B, internal: bool = False) -> B:
             finally:
                 if not internal:
                     rs.conn = None  # type: ignore[assignment]
+
         return cast(F, wrapper)
 
     class Proxy:
@@ -416,8 +444,9 @@ def make_proxy(backend: B, internal: bool = False) -> B:
                 getattr(attr, "internal", False) and not internal,
                 not callable(attr),
             ]):
-                raise PrivilegeError(n_("Attribute %(name)s not public"),
-                                     {"name": name})
+                raise PrivilegeError(
+                    n_("Attribute %(name)s not public"), {"name": name}
+                )
 
             return wrapit(attr)
 
@@ -428,51 +457,7 @@ def make_proxy(backend: B, internal: bool = False) -> B:
     return cast(B, Proxy())
 
 
-def setup_logger(name: str, logfile_path: pathlib.Path,
-                 log_level: int, syslog_level: Optional[int] = None,
-                 console_log_level: Optional[int] = None) -> logging.Logger:
-    """Configure the :py:mod:`logging` module.
-
-    Since this works hierarchical, it should only be necessary to call this
-    once and then every child logger is routed through this configured logger.
-    """
-    logger = logging.getLogger(name)
-    if logger.handlers:
-        logger.debug(f"Logger {name} already initialized.")
-        return logger
-    logger.propagate = False
-    logger.setLevel(log_level)
-    formatter = logging.Formatter(
-        '[%(asctime)s,%(name)s,%(levelname)s] %(message)s')
-    file_handler = logging.FileHandler(str(logfile_path), delay=True, encoding='utf-8')
-    file_handler.setLevel(log_level)
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
-    if syslog_level:
-        syslog_handler = logging.handlers.SysLogHandler()
-        syslog_handler.setLevel(syslog_level)
-        syslog_handler.setFormatter(formatter)
-        logger.addHandler(syslog_handler)
-    if console_log_level:
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setLevel(console_log_level)
-        console_handler.setFormatter(formatter)
-        logger.addHandler(console_handler)
-    return logger
-
-
-def glue(*args: str) -> str:
-    """Join overly long strings, adds boundary white space for convenience.
-
-    It would be possible to use auto string concatenation as in ``("a
-    string" "another string")`` instead, but there you have to be
-    careful to add boundary white space yourself, so we once preferred this
-    explicit function.
-    """
-    return " ".join(args)
-
-
-def build_msg(msg1: str, msg2: Optional[str] = None) -> str:
+def build_msg(msg1: str, msg2: str | None = None) -> str:
     """Construct log message with appropriate punctuation"""
     if msg2:
         return msg1 + ": " + msg2
@@ -480,10 +465,7 @@ def build_msg(msg1: str, msg2: Optional[str] = None) -> str:
         return msg1 + "."
 
 
-S = TypeVar("S")
-
-
-def merge_dicts(targetdict: MutableMapping[T, S], *dicts: Mapping[T, S]) -> None:
+def merge_dicts[T, S](targetdict: MutableMapping[T, S], *dicts: Mapping[T, S]) -> None:
     """Merge all dicts into the first one, but do not overwrite.
 
     This is basically the :py:meth:`dict.update` method, but existing
@@ -501,9 +483,11 @@ def merge_dicts(targetdict: MutableMapping[T, S], *dicts: Mapping[T, S]) -> None
     for adict in dicts:
         for key, value in adict.items():
             if key not in targetdict:
-                if (isinstance(value, collections.abc.Collection)
-                        and not isinstance(value, str)
-                        and isinstance(targetdict, werkzeug.datastructures.MultiDict)):
+                if (
+                    isinstance(value, collections.abc.Collection)
+                    and not isinstance(value, str)
+                    and isinstance(targetdict, werkzeug.datastructures.MultiDict)
+                ):
                     if isinstance(value, dict) and "id" in value:
                         targetdict[key] = value["id"]
                     else:
@@ -512,7 +496,7 @@ def merge_dicts(targetdict: MutableMapping[T, S], *dicts: Mapping[T, S]) -> None
                     targetdict[key] = value
 
 
-BytesLike = Union[bytes, bytearray, memoryview]
+BytesLike = bytes | bytearray | memoryview
 
 
 def get_hash(*args: BytesLike) -> str:
@@ -537,7 +521,7 @@ def now() -> datetime.datetime:
     This is a separate function so we do not forget to make it time zone
     aware.
     """
-    return datetime.datetime.now(datetime.timezone.utc)
+    return datetime.datetime.now(datetime.UTC)
 
 
 _NEARLY_DELTA_DEFAULT = datetime.timedelta(minutes=10)
@@ -549,10 +533,15 @@ class NearlyNow(datetime.datetime):
     Since automatically generated timestamp are not totally predictible,
     we use this to avoid nasty work arounds.
     """
+
     _delta: datetime.timedelta
 
-    def __new__(cls, *args: Any, delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT,
-                **kwargs: Any) -> "NearlyNow":
+    def __new__(
+        cls,
+        *args: Any,
+        delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT,
+        **kwargs: Any,
+    ) -> "NearlyNow":
         self = super().__new__(cls, *args, **kwargs)
         self._delta = delta
         return self
@@ -574,15 +563,23 @@ class NearlyNow(datetime.datetime):
 
 def nearly_now(delta: datetime.timedelta = _NEARLY_DELTA_DEFAULT) -> NearlyNow:
     """Create a NearlyNow."""
-    now = datetime.datetime.now(datetime.timezone.utc)
+    now = datetime.datetime.now(datetime.UTC)
     return NearlyNow(
-        year=now.year, month=now.month, day=now.day, hour=now.hour,
-        minute=now.minute, second=now.second, tzinfo=datetime.timezone.utc, delta=delta)
+        year=now.year,
+        month=now.month,
+        day=now.day,
+        hour=now.hour,
+        minute=now.minute,
+        second=now.second,
+        tzinfo=datetime.UTC,
+        delta=delta,
+    )
 
 
-def make_persona_forename(persona: CdEDBObject,
-                          use_legal_name: bool = False,
-                          include_nickname: bool = False) -> str:
+# TODO remove once registrations are dataclasses
+def make_persona_forename(
+    persona: CdEDBObject, use_legal_name: bool = False, include_nickname: bool = False
+) -> str:
     """Construct the forename of a persona according to the display name specification.
 
     The name specification can be found at the documentation page about
@@ -602,18 +599,22 @@ def make_persona_forename(persona: CdEDBObject,
     return given_names
 
 
-def make_persona_name(persona: CdEDBObject,
-                      use_legal_name: bool = False,
-                      include_nickname: bool = False,
-                      with_family_name: bool = True,
-                      with_titles: bool = False) -> str:
+# TODO remove once registrations are dataclasses
+def make_persona_name(
+    persona: CdEDBObject,
+    use_legal_name: bool = False,
+    include_nickname: bool = False,
+    with_family_name: bool = True,
+    with_titles: bool = False,
+) -> str:
     """Format the name of a given persona according to the display name specification
 
     For a full specification, which name variant should be used in which context, see
     the documentation page about "User Experience Conventions".
     """
     forename = make_persona_forename(
-        persona, use_legal_name=use_legal_name, include_nickname=include_nickname)
+        persona, use_legal_name=use_legal_name, include_nickname=include_nickname
+    )
     ret = []
     if with_titles and persona.get('title'):
         ret.append(persona['title'])
@@ -625,6 +626,7 @@ def make_persona_name(persona: CdEDBObject,
     return " ".join(ret)
 
 
+# TODO move to Persona dataclass?
 def compute_checkdigit(value: int) -> str:
     """Map an integer to the checksum used for UI purposes.
 
@@ -662,14 +664,14 @@ def _small_int_to_words(num: int, lang: str) -> str:
     """
     if num < 0 or num > 999:
         raise ValueError(n_("Out of supported scope."))
-    digits = tuple((num // 10 ** i) % 10 for i in range(3))
+    digits = tuple((num // 10**i) % 10 for i in range(3))
     if lang == "de":
         atoms = ("null", "ein", "zwei", "drei", "vier", "fünf", "sechs",
                  "sieben", "acht", "neun", "zehn", "elf", "zwölf", "dreizehn",
                  "vierzehn", "fünfzehn", "sechzehn", "siebzehn", "achtzehn",
-                 "neunzehn")
+                 "neunzehn")  # fmt: skip
         tens = ("", "", "zwanzig", "dreißig", "vierzig", "fünfzig", "sechzig",
-                "siebzig", "achtzig", "neunzig")
+                "siebzig", "achtzig", "neunzig")  # fmt: skip
         ret = ""
         if digits[2]:
             ret += atoms[digits[2]] + "hundert"
@@ -707,8 +709,7 @@ def int_to_words(num: int, lang: str) -> str:
             number_words.append(_small_int_to_words(tmp % 1000, lang))
             tmp //= 1000
         ret = ""
-        for number_word, multiplier in reversed(tuple(zip(number_words,
-                                                          multipliers))):
+        for number_word, multiplier in reversed(tuple(zip(number_words, multipliers))):
             if number_word != "null":
                 ret += number_word + multiplier
         return ret
@@ -720,14 +721,16 @@ class CustomJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder to handle the types that occur for us."""
 
     @overload
-    def default(self, obj: Union[datetime.date, datetime.datetime,
-                                 decimal.Decimal]) -> str: ...
+    def default(
+        self, obj: datetime.date | datetime.datetime | decimal.Decimal
+    ) -> str: ...
 
     @overload
-    def default(self, obj: set[T]) -> tuple[T, ...]: ...
+    def default[T](self, obj: set[T]) -> tuple[T, ...]: ...
 
-    def default(self, obj: Any) -> Union[str, tuple[Any, ...], dict[str, Any]]:
+    def default(self, obj: Any) -> str | tuple[Any, ...] | dict[str, Any]:
         import cdedb.models.common as models  # noqa: PLC0415  # pylint: disable=import-outside-toplevel
+
         if isinstance(obj, (datetime.datetime, datetime.date)):
             return obj.isoformat()
         elif isinstance(obj, decimal.Decimal):
@@ -759,7 +762,7 @@ class PsycoJson(psycopg2.extras.Json):
         return json_serialize(obj)
 
 
-def pairwise(iterable: Iterable[T]) -> Iterable[tuple[T, T]]:
+def pairwise[T](iterable: Iterable[T]) -> Iterable[tuple[T, T]]:
     """Iterate over adjacent pairs of values of an iterable.
 
     For the input [1, 3, 6, 10] this returns [(1, 3), (3, 6), (6, 10)].
@@ -778,14 +781,14 @@ def unwrap(data: None) -> None: ...
 
 
 @overload
-def unwrap(data: Mapping[Any, T]) -> T: ...
+def unwrap[T](data: Mapping[Any, T]) -> T: ...
 
 
 @overload
-def unwrap(data: Collection[T]) -> T: ...
+def unwrap[T](data: Collection[T]) -> T: ...
 
 
-def unwrap(data: Union[None, Mapping[Any, T], Collection[T]]) -> Optional[T]:
+def unwrap[T](data: None | Mapping[Any, T] | Collection[T]) -> T | None:
     """Remove one nesting layer (of lists, etc.).
 
     This is here to replace code like ``foo = bar[0]`` where bar is a
@@ -802,17 +805,18 @@ def unwrap(data: Union[None, Mapping[Any, T], Collection[T]]) -> Optional[T]:
     if data is None:
         return None
     if isinstance(data, (str, bytes)):
-        raise TypeError(n_("Cannot unwrap str or bytes. Got %(data)s."),
-                        {'data': type(data)})
+        raise TypeError(
+            n_("Cannot unwrap str or bytes. Got %(data)s."), {'data': type(data)}
+        )
     if not isinstance(data, collections.abc.Collection):
         raise TypeError(
-            n_("Can only unwrap collections. Got %(data)s."),
-            {'data': type(data)})
+            n_("Can only unwrap collections. Got %(data)s."), {'data': type(data)}
+        )
     if not len(data) == 1:
         raise ValueError(
-            n_("Can only unwrap collections with one element."
-               " Got %(len)s elements."),
-            {'len': len(data)})
+            n_("Can only unwrap collections with one element. Got %(len)s elements."),
+            {'len': len(data)},
+        )
     if isinstance(data, collections.abc.Mapping):
         [value] = data.values()
     elif isinstance(data, collections.abc.Collection):
@@ -827,22 +831,38 @@ NoneType = type(None)
 
 def is_optional_type(type_: Any) -> bool:
     is_optional = (
-        get_origin(type_) is Union
-        or get_origin(type_) is UnionType
+        get_origin(type_) is Union or get_origin(type_) is UnionType
     ) and NoneType in get_args(type_)
     if is_optional and len(get_args(type_)) != 2:
         raise RuntimeError("We only support simple optional types.")
     return is_optional
 
 
-def is_list_type(type_: type[Any]) -> bool:
+def get_mandatory_type[T](type_: TypeForm[T]) -> type[T]:
+    """Transform a given type into a non-None one.
+
+    Basically the inverse operation of T | None.
+    """
+    if is_optional_type(type_):
+        arg1, arg2 = get_args(type_)
+        if arg1 is not NoneType:
+            return arg1
+        elif arg2 is not NoneType:
+            return arg2
+        else:
+            raise RuntimeError("No mandatory type found.")
+    return cast(type[T], type_)
+
+
+def is_list_type(type_: TypeForm[Any]) -> bool:
     """Whether this is a custom list type.
 
     Our validation accepts empty lists by default,
     so we don't want to mark such inputs as mandatory.
     """
     return (
-        hasattr(type_, "__supertype__") and is_list_type(type_.__supertype__)
+        hasattr(type_, "__supertype__")
+        and is_list_type(type_.__supertype__)
         or get_origin(type_) is list  # get_origin(list[something]) is list
     )
 
@@ -858,8 +878,11 @@ def get_mandatory_form_fields(
     ret: set[str] = set()
     for arg in args:
         if isinstance(arg, Mapping):
-            ret |= {key for key, type_ in arg.items()
-                    if not (is_optional_type(type_) or is_list_type(type_))}
+            ret |= {
+                key
+                for key, type_ in arg.items()
+                if not (is_optional_type(type_) or is_list_type(type_))
+            }
         else:
             ret |= arg.mandatory_form_fields  # type: ignore[attr-defined]
     return ret
@@ -868,6 +891,7 @@ def get_mandatory_form_fields(
 @enum.unique
 class LodgementsSortkeys(enum.Enum):
     """Sortkeys for lodgement overview."""
+
     #: default sortkey (currently equal to EntitySorter.lodgement)
     title = 1
     #: regular_capacity which is used in this part
@@ -880,12 +904,16 @@ class LodgementsSortkeys(enum.Enum):
     total_camping_mat = 21
 
     def is_used_sorting(self) -> bool:
-        return self in {LodgementsSortkeys.used_regular,
-                        LodgementsSortkeys.used_camping_mat}
+        return self in {
+            LodgementsSortkeys.used_regular,
+            LodgementsSortkeys.used_camping_mat,
+        }
 
     def is_total_sorting(self) -> bool:
-        return self in {LodgementsSortkeys.total_regular,
-                        LodgementsSortkeys.total_camping_mat}
+        return self in {
+            LodgementsSortkeys.total_regular,
+            LodgementsSortkeys.total_camping_mat,
+        }
 
 
 @enum.unique
@@ -896,6 +924,7 @@ class AgeClasses(CdEIntEnum):
     If there is any need for additional detail in differentiating this
     can be centrally added here.
     """
+
     full = 1  #: at least 18 years old
     u18 = 2  #: between 16 and 18 years old
     u16 = 3  #: between 14 and 16 years old
@@ -913,7 +942,7 @@ class AgeClasses(CdEIntEnum):
         """Whether persons of this age may be legally accomodated in a mixed
         lodging together with the opposite gender.
         """
-        return self in {AgeClasses.full, AgeClasses.u18, AgeClasses.u10}
+        return self in {AgeClasses.full, AgeClasses.u18, AgeClasses.u16, AgeClasses.u10}
 
     def with_guardian(self) -> bool:
         """Whether we assume that the child is accompanied by a legal guardian
@@ -932,12 +961,11 @@ def deduct_years(date: datetime.date, years: int) -> datetime.date:
     except ValueError:
         # this can happen in only one situation: we tried to move a leap
         # day into a year without leap
-        assert (date.month == 2 and date.day == 29)
+        assert date.month == 2 and date.day == 29
         return date.replace(year=date.year - years, day=28)
 
 
-def determine_age_class(birth: datetime.date, reference: datetime.date,
-                        ) -> AgeClasses:
+def determine_age_class(birth: datetime.date, reference: datetime.date) -> AgeClasses:
     """Basically a constructor for :py:class:`AgeClasses`.
 
     :param reference: Time at which to check age status (e.g. the first day of
@@ -956,8 +984,8 @@ def determine_age_class(birth: datetime.date, reference: datetime.date,
 
 @enum.unique
 class LineResolutions(CdEIntEnum):
-    """Possible actions during batch admission
-    """
+    """Possible actions during batch admission"""
+
     create = 1  #: Create a new account with this data.
     skip = 2  #: Do nothing with this line.
     renew_trial = 3  #: Renew the trial membership of an existing account.
@@ -967,26 +995,27 @@ class LineResolutions(CdEIntEnum):
 
     def do_trial(self) -> bool:
         """Whether to grant a trial membership."""
-        return self in {LineResolutions.renew_trial,
-                        LineResolutions.renew_and_update}
+        return self in {LineResolutions.renew_trial, LineResolutions.renew_and_update}
 
     def do_update(self) -> bool:
         """Whether to incorporate the new data (address, ...)."""
-        return self in {LineResolutions.update,
-                        LineResolutions.renew_and_update}
+        return self in {LineResolutions.update, LineResolutions.renew_and_update}
 
     def is_modification(self) -> bool:
         """Whether we modify an existing account.
 
         In this case we do not create a new account."""
-        return self in {LineResolutions.renew_trial,
-                        LineResolutions.update,
-                        LineResolutions.renew_and_update}
+        return self in {
+            LineResolutions.renew_trial,
+            LineResolutions.update,
+            LineResolutions.renew_and_update,
+        }
 
 
 @enum.unique
 class GenesisDecision(CdEIntEnum):
     """Possible decisions during review of a genesis request."""
+
     approve = 1  #: Approve the request and create a new account.
     deny = 2  #: Deny the request. Do not create or update an account.
     #: Deny the request but update an existing account, dearchiving it if necessary.
@@ -1003,7 +1032,7 @@ class GenesisDecision(CdEIntEnum):
 INFINITE_ENUM_MAGIC_NUMBER = 0
 
 
-def infinite_enum(aclass: T) -> T:
+def infinite_enum[T](aclass: T) -> T:
     """Decorator to document infinite enums.
 
     This only sets a flag on the class for documentation and
@@ -1026,11 +1055,8 @@ def infinite_enum(aclass: T) -> T:
     return aclass
 
 
-E = TypeVar("E", bound=CdEIntEnum)
-
-
 @functools.total_ordering
-class InfiniteEnum(Generic[E]):
+class InfiniteEnum[E: CdEIntEnum]:
     """Storage facility for infinite enums with associated data
 
     Also see :py:func:`infinite_enum`"""
@@ -1075,6 +1101,7 @@ class CourseFilterPositions(CdEIntEnum):
     or something else. Where exactly we search for the course is
     specified via this enum.
     """
+
     #: This is the reference to the infinite enum int.
     specific_rank = INFINITE_ENUM_MAGIC_NUMBER
     instructor = -1  #: Being a course instructor for the course in question.
@@ -1090,6 +1117,7 @@ class CourseChoiceToolActions(CdEIntEnum):
 
     Specify the action to take.
     """
+
     #: reference to the infinite enum int
     specific_rank = INFINITE_ENUM_MAGIC_NUMBER
     assign_fixed = -4  #: the course is specified separately
@@ -1124,7 +1152,7 @@ UMLAUT_MAP = {
     "Ý": "Y", "Ÿ": "Y",
     "ź": "z",
     "Ź": "Z",
-}
+}  # fmt: skip
 
 
 def asciificator(s: str, *, normalize_whitespace: bool = False) -> str:
@@ -1138,9 +1166,7 @@ def asciificator(s: str, *, normalize_whitespace: bool = False) -> str:
     for char in s:
         if char in UMLAUT_MAP:
             ret += UMLAUT_MAP[char]
-        elif char in (
-            string.ascii_letters + string.digits + " /-?:().,+"
-        ):
+        elif char in (string.ascii_letters + string.digits + " /-?:().,+"):
             ret += char
         else:
             ret += ' '
@@ -1150,18 +1176,12 @@ def asciificator(s: str, *, normalize_whitespace: bool = False) -> str:
 
 
 # According to https://en.wikipedia.org/wiki/Filename#Reserved_characters_and_words
-FILENAME_SANITIZE_MAP = str.maketrans({
-    x: '_'
-    for x in "/\\?%*:|\"<> ."
-})
+FILENAME_SANITIZE_MAP = str.maketrans({x: '_' for x in "/\\?%*:|\"<> ."})
 
 
 def sanitize_filename(name: str) -> str:
     """Sanitize filenames by replacing forbidden and problematic characters with '_'."""
     return name.translate(FILENAME_SANITIZE_MAP)
-
-
-MaybeStr = TypeVar("MaybeStr", str, type[None])
 
 
 def diacritic_patterns(s: str, two_way_replace: bool = False) -> str:
@@ -1214,7 +1234,8 @@ def diacritic_patterns(s: str, two_way_replace: bool = False) -> str:
 
 UMLAUT_TRANSLATE_TABLE = str.maketrans({
     char: f"({char}|{repl})" if len(repl) > 1 else f"[{char}{repl}]"
-    for char, repl in UMLAUT_MAP.items()})
+    for char, repl in UMLAUT_MAP.items()
+})
 
 
 def inverse_diacritic_patterns(s: str) -> str:
@@ -1231,19 +1252,28 @@ def inverse_diacritic_patterns(s: str) -> str:
     return s.translate(UMLAUT_TRANSLATE_TABLE)
 
 
-def abbreviation_mapper(data: Sequence[T]) -> dict[T, str]:
+def abbreviation_mapper[T](data: Sequence[T]) -> dict[T, str]:
     """Assign an unique combination of ascii letters to each element."""
     num_letters = ((len(data) - 1) // 26) + 1
-    return {item: "".join(shortname) for item, shortname in zip(
-        data, itertools.product(string.ascii_uppercase, repeat=num_letters))}
+    return {
+        item: "".join(shortname)
+        for item, shortname in zip(
+            data, itertools.product(string.ascii_uppercase, repeat=num_letters)
+        )
+    }
 
 
 _tdelta = datetime.timedelta
 
 
-def encode_parameter(salt: str, target: str, name: str, param: str,
-                     persona_id: Optional[int],
-                     timeout: Optional[_tdelta] = _tdelta(seconds=60)) -> str:
+def encode_parameter(
+    salt: str,
+    target: str,
+    name: str,
+    param: str,
+    persona_id: int | None,
+    timeout: _tdelta | None = _tdelta(seconds=60),
+) -> str:
     """Crypographically secure a parameter. This allows two things:
 
     * trust user submitted data (which we beforehand gave to the user in
@@ -1290,8 +1320,9 @@ def encode_parameter(salt: str, target: str, name: str, param: str,
       parameter never expires
     """
     if persona_id is None and timeout is None:
-        raise ValueError(n_(
-            "Security degradation: anonymous and non-expiring parameter"))
+        raise ValueError(
+            n_("Security degradation: anonymous and non-expiring parameter")
+        )
     h = hmac.new(salt.encode('ascii'), digestmod="sha512")
     if timeout is None:
         timestamp = 24 * '.'
@@ -1304,9 +1335,9 @@ def encode_parameter(salt: str, target: str, name: str, param: str,
     return f"{h.hexdigest()}--{message}"
 
 
-def decode_parameter(salt: str, target: str, name: str, param: str,
-                     persona_id: Optional[int],
-                     ) -> Union[tuple[bool, None], tuple[None, str]]:
+def decode_parameter(
+    salt: str, target: str, name: str, param: str, persona_id: int | None
+) -> tuple[bool, None] | tuple[None, str]:
     """Inverse of :py:func:`encode_parameter`. See there for
     documentation.
 
@@ -1341,8 +1372,13 @@ def parse_date(val: str) -> datetime.date:
     We only support a limited set of formats to avoid any surprises
     """
     val = val.strip()
-    formats = (("%Y-%m-%d", 10), ("%Y%m%d", 8), ("%d.%m.%Y", 10),
-               ("%m/%d/%Y", 10), ("%d.%m.%y", 8))
+    formats = (
+        ("%Y-%m-%d", 10),
+        ("%Y%m%d", 8),
+        ("%d.%m.%Y", 10),
+        ("%m/%d/%Y", 10),
+        ("%d.%m.%y", 8),
+    )
     for fmt, _ in formats:
         try:
             return datetime.datetime.strptime(val, fmt).date()
@@ -1358,7 +1394,7 @@ def parse_date(val: str) -> datetime.date:
 
 
 def parse_datetime(
-    val: str, default_date: Optional[datetime.date] = None,
+    val: str, default_date: datetime.date | None = None
 ) -> datetime.datetime:
     """Make a string into a datetime.
 
@@ -1366,8 +1402,7 @@ def parse_datetime(
     """
     date_formats = ("%Y-%m-%d", "%Y%m%d", "%d.%m.%Y", "%m/%d/%Y", "%d.%m.%y")
     connectors = ("T", " ")
-    time_formats = (
-        "%H:%M:%S.%f%z", "%H:%M:%S%z", "%H:%M:%S.%f", "%H:%M:%S", "%H:%M")
+    time_formats = ("%H:%M:%S.%f%z", "%H:%M:%S%z", "%H:%M:%S.%f", "%H:%M:%S", "%H:%M")
     formats = itertools.chain(
         map("".join, itertools.product(date_formats, connectors, time_formats)),
         map(" ".join, itertools.product(time_formats, date_formats)),
@@ -1386,8 +1421,10 @@ def parse_datetime(
             try:
                 ret = datetime.datetime.strptime(val, fmt)
                 ret = ret.replace(
-                    year=default_date.year, month=default_date.month,
-                    day=default_date.day)
+                    year=default_date.year,
+                    month=default_date.month,
+                    day=default_date.day,
+                )
                 break
             except ValueError:
                 pass
@@ -1396,46 +1433,106 @@ def parse_datetime(
     if ret.tzinfo is None:
         timezone: zoneinfo.ZoneInfo = _CONFIG["DEFAULT_TIMEZONE"]
         ret = ret.replace(tzinfo=timezone)
-    return ret.astimezone(datetime.timezone.utc)
+    return ret.astimezone(datetime.UTC)
 
 
-def parse_phone(val: str) -> str:
-    # This kind of duplicates the phone validator, because our needs at error handling
-    # are very different.
-    phone: phonenumbers.PhoneNumber = phonenumbers.parse(val, region="DE")
-    # handle the phone number as normalized string internally
+def normalize_phone(phone: phonenumbers.PhoneNumber) -> str:
+    """Normalize phone number to string for storage."""
     return phonenumbers.format_number(phone, phonenumbers.PhoneNumberFormat.E164)
 
 
-def cast_fields(data: CdEDBObject, fields: "CdEDataclassMap[models_event.EventField]",
-                ) -> CdEDBObject:
-    """Helper to deserialize json fields.
+def parse_phone(val: str) -> str:
+    """Parse a phone number, return as normalized string."""
+    phone: phonenumbers.PhoneNumber = phonenumbers.parse(val, region="DE")
+    return normalize_phone(phone)
 
-    We serialize some classes as strings and need to undo this upon
-    retrieval from the database.
+
+def cast_field_value(
+    value: str | None, kind: const.FieldDatatypes, *, argname: str = ""
+) -> Any:
+    """Deserialize a stored field value from string to field datatype via validation."""
+    from cdedb.common.validation.types import ByFieldDatatype  # noqa: PLC0415
+    from cdedb.common.validation.validate import validate_check  # noqa: PLC0415
+
+    val, _errs = validate_check(
+        ByFieldDatatype, value, argname=argname, ignore_warnings=True, kind=kind
+    )
+    return val
+
+
+def normalize_field_value(
+    value: Any | None, kind: const.FieldDatatypes, coalesce: str | None
+) -> str | None:
+    """Convert a field value from field datatype to normalized string.
+
+    :param coalesce: The default string to return for an empty value.
+        We typically prefer None, but sometimes that won't work.
     """
+    normalizers: dict[const.FieldDatatypes, Callable[[Any], str]] = {
+        const.FieldDatatypes.date: datetime.date.isoformat,
+        const.FieldDatatypes.datetime: datetime.datetime.isoformat,
+        const.FieldDatatypes.phone: parse_phone,
+    }
+    if value is None or value == "":  # noqa: PLC1901
+        return coalesce
+    if normalizer := normalizers.get(kind):
+        return normalizer(value)
+    return str(value)
+
+
+def cast_fields(
+    data: CdEDBObject, fields: "CdEDataclassMap[models_event.EventField]"
+) -> CdEDBObject:
+    """Deserialize a collection of field values. For details see `cast_field_value`."""
     spec: dict[str, const.FieldDatatypes]
     spec = {f.field_name: f.kind for f in fields.values()}
-    casters: dict[const.FieldDatatypes, Callable[[Any], Any]] = {
-        const.FieldDatatypes.date: parse_date,
-        const.FieldDatatypes.datetime: parse_datetime,
+
+    return {
+        key: cast_field_value(val, spec.get(key, const.FieldDatatypes.str), argname=key)
+        for key, val in data.items()
     }
 
-    def _do_cast(key: str, val: Any) -> Any:
-        if val is None:
-            return None
-        if key in spec and (caster := casters.get(spec[key])):
-            return caster(val)
-        return val
 
-    return {key: _do_cast(key, val) for key, val in data.items()}
+def cast_field_entries(
+    entries: Sequence[tuple[str, str]] | None, kind: const.FieldDatatypes
+) -> dict[Any, str] | None:
+    """Deserialize a list of field entries into field datatypes."""
+    if not entries:
+        return None
+    ret = {
+        cast_field_value(value, kind, argname=f"entries.{i}"): description
+        for i, (value, description) in enumerate(entries)
+    }
+    if len(ret) != len(entries):
+        _LOGGER.warning(
+            "Casting of field entries produced duplicated: %s vs %s", ret, entries
+        )
+    return ret
+
+
+def normalize_field_entries(
+    entries: dict[Any, str] | None,
+    kind: const.FieldDatatypes,
+    coalesce: str | None = None,
+) -> dict[str | None, str] | None:
+    """
+    Normalize a collection of entries for one field.
+
+    :param coalesce: The default string to return for an empty value.
+        We typically prefer None, but sometimes that won't work.
+    """
+    if not entries:
+        return None
+    return {
+        normalize_field_value(value, kind, coalesce): description
+        for value, description in entries.items()
+    }
 
 
 #: Set of possible values for ``ntype`` in
 #: :py:meth:`RequestState.notify`. Must conform to the regex
 #: ``[a-z]+``.
-NOTIFICATION_TYPES: set[NotificationType] = {"success", "info", "question",
-                                             "warning", "error"}
+NOTIFICATION_TYPES: set[NotificationType] = {"success", "info", "warning", "error"}
 
 #: The form field name used for the anti CSRF token.
 #: It should be added to all data modifying form using the
@@ -1452,7 +1549,7 @@ IGNORE_WARNINGS_NAME = "_magic_ignore_warnings"
 #: data. This has to be incremented whenever the event export changes.
 #: If changes to the partial export and import are backwards compatible,
 #: the minor version may be incremented.
-EVENT_SCHEMA_VERSION = (19, 3)
+EVENT_SCHEMA_VERSION = (20, 0)
 
 #: Default number of course choices of new event course tracks
 DEFAULT_NUM_COURSE_CHOICES = 3

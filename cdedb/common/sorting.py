@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 """Global utility functions."""
+
 import collections.abc
-from collections.abc import Collection, Generator, Iterable, KeysView
-from typing import Any, Callable, Protocol, TypeVar, Union
+from collections.abc import Callable, Collection, Generator, Iterable, KeysView
+from typing import Any, Protocol
 
 import icu
 
@@ -20,8 +21,6 @@ COLLATOR = icu.Collator.createInstance(icu.Locale(LOCALE))
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = dict[str, Any]
 
-T = TypeVar("T")
-
 
 def collate(sortkey: Any) -> Any:
     """Key function for sorting.
@@ -37,7 +36,9 @@ def collate(sortkey: Any) -> Any:
     positive numbers, as minus and hyphens can not be distinguished."""
     if isinstance(sortkey, str):
         return COLLATOR.getSortKey(sortkey)
-    if isinstance(sortkey, (tuple, list, dict, set, frozenset, collections.abc.Iterator)):
+    if isinstance(
+        sortkey, (tuple, list, dict, set, frozenset, collections.abc.Iterator)
+    ):
         # Make sure strings in nested Iterables are sorted
         # correctly as well.
         # Don't be too eager and do this for all iterables.
@@ -45,15 +46,18 @@ def collate(sortkey: Any) -> Any:
     return sortkey
 
 
-def xsorted(iterable: Iterable[T], *, key: Callable[[Any], Any] = lambda x: x,
-            reverse: bool = False) -> list[T]:
+def xsorted[T](
+    iterable: Iterable[T],
+    *,
+    key: Callable[[Any], Any] = lambda x: x,
+    reverse: bool = False,
+) -> list[T]:
     """Wrapper for sorted() to achieve a natural sort.
 
     For users, the interface of this function should be identical
     to sorted().
     """
-    return sorted(iterable, key=lambda x: collate(key(x)),
-                  reverse=reverse)
+    return sorted(iterable, key=lambda x: collate(key(x)), reverse=reverse)
 
 
 class Comparable(Protocol):
@@ -64,8 +68,10 @@ Sortkey = tuple[Comparable, ...]
 KeyFunction = Callable[[CdEDBObject], Sortkey]
 
 
-def _make_persona_sorter(include_nickname: bool = False,
-                        family_name_first: bool = True) -> KeyFunction:
+# TODO remove once registrations are dataclasses
+def _make_persona_sorter(
+    include_nickname: bool = False, family_name_first: bool = True
+) -> KeyFunction:
     """Create a function to sort names accordingly to the display name specification
 
     The returned key function accepts a persona dict and returns a sorting key,
@@ -92,9 +98,11 @@ def _make_persona_sorter(include_nickname: bool = False,
     return sorter
 
 
+# don't call argument 'gettext' to avoid extracting string below
+# TODO move to EventPersona dataclass
 def _make_address_sorter(
-    # don't call argument 'gettext' to avoid extracting string below
-    gtxt: Callable[[str], str], default_country_code: str
+    gtxt: Callable[[str], str],
+    default_country_code: str,
 ) -> KeyFunction:
     def sorter(persona: CdEDBObject) -> Sortkey:
         country = persona.get('country', "") or ""
@@ -107,8 +115,9 @@ def _make_address_sorter(
             gtxt(f"CountryCodes.{country}"),
             postal_code,
             location,
-            address
+            address,
         )
+
     return sorter
 
 
@@ -136,19 +145,6 @@ class EntitySorter:
         return EntitySorter.persona(registration['persona'])
 
     @staticmethod
-    def lodgement(lodgement: CdEDBObject) -> Sortkey:
-        return (lodgement['title'], lodgement['id'])
-
-    @staticmethod
-    def lodgement_by_group(lodgement: CdEDBObject) -> Sortkey:
-        return (lodgement['group_title'], lodgement['group_id'], lodgement['title'],
-                lodgement['id'])
-
-    @staticmethod
-    def lodgement_group(lodgement_group: CdEDBObject) -> Sortkey:
-        return (lodgement_group['title'], lodgement_group['id'])
-
-    @staticmethod
     def candidates(candidates: CdEDBObject) -> Sortkey:
         return (candidates['shortname'], candidates['id'])
 
@@ -170,37 +166,21 @@ class EntitySorter:
         return (version['attachment_id'], version['version_nr'])
 
     @staticmethod
-    def past_event(past_event: CdEDBObject) -> Sortkey:
-        return (past_event['tempus'], past_event['id'])
-
-    @staticmethod
-    def past_event_select_entries(past_event: CdEDBObject) -> Sortkey:
-        """
-        This groups the events by year descending, and then orders them by title for
-        better UX in _very_ long select inputs.
-        """
-        return (-past_event['tempus'].year, past_event['title'], past_event['id'])
-
-    @staticmethod
-    def past_course(past_course: CdEDBObject) -> Sortkey:
-        return (past_course['nr'], past_course['title'], past_course['id'])
-
-    @staticmethod
     def transaction(transaction: CdEDBObject) -> Sortkey:
         return (transaction['issued_at'], transaction['id'])
 
     @staticmethod
-    def genesis_case(genesis_case: CdEDBObject) -> Sortkey:
-        return (genesis_case['ctime'], genesis_case['id'])
-
-    @staticmethod
     def changelog(changelog_entry: CdEDBObject) -> Sortkey:
-        return (changelog_entry['ctime'], changelog_entry['generation'],
-                changelog_entry['persona_id'])
+        return (
+            changelog_entry['ctime'],
+            changelog_entry['generation'],
+            changelog_entry['persona_id'],
+        )
 
 
-def mixed_existence_sorter(iterable: Union[Collection[int], KeysView[int]],
-                           ) -> Generator[int, None, None]:
+def mixed_existence_sorter[T: int](
+    iterable: Collection[T] | KeysView[T],
+) -> Generator[T]:
     """Iterate over a set of indices in the relevant way.
 
     That is first over the non-negative indices in ascending order and

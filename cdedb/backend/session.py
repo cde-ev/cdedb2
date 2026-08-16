@@ -10,19 +10,19 @@ special in here.
 """
 
 import logging
-from typing import Optional
 
 import psycopg2.extensions
 from passlib.utils import consteq
 
 import cdedb.common.validation.types as vtypes
-from cdedb.backend.common import inspect_validation as inspect, verify_password
-from cdedb.common import User, n_, now, setup_logger
+from cdedb.backend.common import inspect_validation as inspect
+from cdedb.common import User, n_, now
+from cdedb.common.crypt import verify_password
 from cdedb.common.exceptions import APITokenError
-from cdedb.common.fields import PERSONA_STATUS_FIELDS
 from cdedb.common.roles import extract_roles
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import connection_pool_factory
+from cdedb.models.core import CorePersona, PersonaStatus
 from cdedb.models.droid import (
     DynamicAPIToken,
     StaticAPIToken,
@@ -49,13 +49,6 @@ class SessionBackend:
             secrets['API_TOKENS'][droid], secret
         )
 
-        setup_logger(
-            "cdedb.backend.session",
-            self.conf["LOG_DIR"] / "cdedb-backend-session.log",
-            self.conf["LOG_LEVEL"],
-            syslog_level=self.conf["SYSLOG_LEVEL"],
-            console_log_level=self.conf["CONSOLE_LOG_LEVEL"],
-        )
         # logger are thread-safe!
         self.logger = logging.getLogger("cdedb.backend.session")
         # To prevent lots of serialization failures due to races for
@@ -86,7 +79,7 @@ class SessionBackend:
                 data = dict(cur.fetchone() or {})
         return data['info'].get("lockdown_web")
 
-    def lookupsession(self, sessionkey: Optional[str], ip: Optional[str]) -> User:
+    def lookupsession(self, sessionkey: str | None, ip: str | None) -> User:
         """Raison d'etre.
 
         Resolve a session key (originally stored in a cookie) into the
@@ -115,23 +108,17 @@ class SessionBackend:
         if data:
             deactivate = False
             if data["is_active"]:
-                if data["ip"] == ip:
-                    timestamp = now()
-                    if data["atime"] + self.conf["SESSION_TIMEOUT"] >= timestamp:
-                        if data["ctime"] + self.conf["SESSION_LIFESPAN"] >= timestamp:
-                            # here we finally verified the session key
-                            persona_id = data["persona_id"]
-                        else:
-                            deactivate = True
-                            self.logger.info(f"TTL exceeded for {sessionkey}")
+                timestamp = now()
+                if data["atime"] + self.conf["SESSION_TIMEOUT"] >= timestamp:
+                    if data["ctime"] + self.conf["SESSION_LIFESPAN"] >= timestamp:
+                        # here we finally verified the session key
+                        persona_id = data["persona_id"]
                     else:
                         deactivate = True
-                        self.logger.info(f"Session timed out: {sessionkey}")
+                        self.logger.info(f"TTL exceeded for {sessionkey}")
                 else:
                     deactivate = True
-                    self.logger.info(
-                        f"IP mismatch ({ip} vs {data['ip']}) for {sessionkey}"
-                    )
+                    self.logger.info(f"Session timed out: {sessionkey}")
             else:
                 self.logger.info(f"Got inactive session key {sessionkey}.")
             if deactivate:
@@ -148,33 +135,41 @@ class SessionBackend:
             return User()
 
         query = "UPDATE core.sessions SET atime = now() WHERE sessionkey = %s"
-        query2 = f"""
-            SELECT
-                id AS persona_id, given_names, nickname, family_name, username,
-                {', '.join(PERSONA_STATUS_FIELDS)}
-            FROM core.personas
-            WHERE id = %s
-        """
         with self.connpool["cdb_persona"] as conn:
             with conn.cursor() as cur:
                 cur.execute(query, (sessionkey,))
-                cur.execute(query2, (persona_id,))
+
+                # retrieve the persona
+                cur.execute(*CorePersona.get_select_query([persona_id]))
                 data = cur.fetchone()
                 assert data is not None
+                persona = CorePersona.from_database(data)
+
+                # retrieve its status bits
+                cur.execute(*PersonaStatus.get_select_query([persona_id]))
+                data = cur.fetchone()
+                assert data is not None
+                status = PersonaStatus.from_database(data)
+
         if self._is_locked_down() and not (
-            data['is_meta_admin'] or data['is_core_admin']
+            status.is_meta_admin or status.is_core_admin
         ):
             # Short circuit in case of lockdown
             return User()
-        if not data["is_active"]:
+        if not status.is_active:
             self.logger.warning(f"Found inactive user {persona_id}")
             return User()
 
-        pkeys = ('persona_id', 'username', 'given_names', 'nickname', 'family_name')
-        vals = {k: data[k] for k in pkeys}
-        return User(roles=extract_roles(data), **vals)
+        return User(
+            roles=extract_roles(status.as_dict()),
+            persona_id=persona.id,
+            username=persona.username,
+            given_names=persona.given_names,
+            nickname=persona.nickname or "",
+            family_name=persona.family_name,
+        )
 
-    def lookuptoken(self, apitoken: Optional[str], ip: Optional[str]) -> User:
+    def lookuptoken(self, apitoken: str | None, ip: str | None) -> User:
         """Raison d'etre deux.
 
         Resolve an API token (originally submitted via header) into the
@@ -183,11 +178,11 @@ class SessionBackend:
         A malformed token or a valid token for an unknown droid or
         with an invalid secret will raise an error.
         """
-        apitoken, errs = inspect(vtypes.APITokenString, apitoken)
-        if not apitoken or errs:
+        token, errs = inspect(vtypes.APITokenString, apitoken)
+        if not token or errs:
             raise APITokenError(n_("Malformed API token."))
 
-        droid_name, secret = apitoken
+        droid_name, secret = token
 
         try:
             droid_class, token_id = resolve_droid_name(droid_name)

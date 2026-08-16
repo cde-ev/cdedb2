@@ -3,7 +3,6 @@
 
 import ssl
 from collections.abc import Mapping
-from typing import Optional, Union
 
 import ldap3
 from ldap3 import ALL_ATTRIBUTES
@@ -39,12 +38,14 @@ class TestLDAP(BasicTest):
     USERS = {
         user: f'uid={value["id"]},ou=users,dc=cde-ev,dc=de'
         # take only non-archived users into account
-        for user, value in USER_DICT.items() if value['username']
+        for user, value in USER_DICT.items()
+        if value['username']
     }
     USER_passwords = {
         user: value['password']
         # take only non-archived users into account
-        for user, value in USER_DICT.items() if value['username']
+        for user, value in USER_DICT.items()
+        if value['username']
     }
 
     @classmethod
@@ -52,18 +53,29 @@ class TestLDAP(BasicTest):
         super().setUpClass()
         tls = Tls(validate=ssl.CERT_REQUIRED, ca_certs_file=cls.conf["LDAP_PEM_PATH"])
         cls.server = ldap3.Server(
-            cls.conf['LDAP_HOST'], port=cls.conf['LDAP_PORT'], get_info=ldap3.ALL,
-            use_ssl=True, tls=tls)
+            cls.conf['LDAP_HOST'],
+            port=cls.conf['LDAP_PORT'],
+            get_info=ldap3.ALL,
+            use_ssl=True,
+            tls=tls,
+        )
 
     def single_result_search(
-        self, search_filter: str, raw_expectation: Mapping[str, list[str] | list[NearlyNow]], *,
-        user: str = test_dua_dn, password: str = test_dua_pw,
+        self,
+        search_filter: str,
+        raw_expectation: Mapping[str, list[str] | list[NearlyNow]],
+        *,
+        user: str = test_dua_dn,
+        password: str = test_dua_pw,
         search_base: str = root_dn,
-        attributes: Union[list[str], str] = ALL_ATTRIBUTES,
-        excluded_attributes: Optional[list[str]] = None,
+        attributes: list[str] | str = ALL_ATTRIBUTES,
+        excluded_attributes: list[str] | None = None,
     ) -> None:
         with ldap3.Connection(
-            self.server, user=user, password=password, raise_exceptions=True,
+            self.server,
+            user=user,
+            password=password,
+            raise_exceptions=True,
         ) as conn:
             conn.search(
                 search_base=search_base,
@@ -74,7 +86,9 @@ class TestLDAP(BasicTest):
             raw_result: dict[str, list[str]] = conn.entries[0].entry_attributes_as_dict
             # Accordingly to RFC 4511, attributes and values of attributes are unordered
             result = {key: sorted(values) for key, values in raw_result.items()}
-            expectation = {key: sorted(values) for key, values in raw_expectation.items()}
+            expectation = {
+                key: sorted(values) for key, values in raw_expectation.items()
+            }
             if excluded_attributes:
                 for attribute in excluded_attributes:
                     result.pop(attribute)
@@ -82,11 +96,12 @@ class TestLDAP(BasicTest):
 
     def check_search_access(
         self,
-        search_filter: str, *,
-        except_users: Optional[set[str]] = None,
-        only_duas: Optional[set[str]] = None,
+        search_filter: str,
+        *,
+        except_users: set[str] | None = None,
+        only_duas: set[str] | None = None,
         search_base: str = root_dn,
-        attributes: Union[list[str], str] = ALL_ATTRIBUTES,
+        attributes: list[str] | str = ALL_ATTRIBUTES,
     ) -> None:
         """Test that this search yields no results for all users and some result
         for all duas.
@@ -104,7 +119,9 @@ class TestLDAP(BasicTest):
             for cn, identity in identities.items():
                 with self.subTest(cn):
                     with ldap3.Connection(
-                        self.server, user=identity, password=passwords[cn],
+                        self.server,
+                        user=identity,
+                        password=passwords[cn],
                         raise_exceptions=True,
                     ) as conn:
                         conn.search(
@@ -127,8 +144,10 @@ class TestLDAP(BasicTest):
     def test_simple_password_bind(self) -> None:
         # try to bind to nonexistent dua
         conn = ldap3.Connection(
-            self.server, user='cn=nonexistent,ou=duas,dc=cde-ev,dc=de',
-            password=self.test_dua_pw)
+            self.server,
+            user='cn=nonexistent,ou=duas,dc=cde-ev,dc=de',
+            password=self.test_dua_pw,
+        )
         self.assertFalse(conn.bind())
 
         # try to bind to existent dua with wrong password
@@ -136,26 +155,30 @@ class TestLDAP(BasicTest):
         self.assertFalse(conn.bind())
 
         # bind with a dua
-        conn = ldap3.Connection(self.server, user=self.test_dua_dn,
-                                password=self.test_dua_pw)
+        conn = ldap3.Connection(
+            self.server, user=self.test_dua_dn, password=self.test_dua_pw
+        )
         self.assertTrue(conn.bind())
         # TODO not supported by ldaptor
         # self.assertEqual('dn:' + self.test_dua_dn, conn.extend.standard.who_am_i())
         self.assertTrue(conn.unbind())
 
         # try to bind to nonexistent user
-        conn = ldap3.Connection(self.server, user='uid=0,ou=users,dc=cde-ev,dc=de',
-                                password='secret')
+        conn = ldap3.Connection(
+            self.server, user='uid=0,ou=users,dc=cde-ev,dc=de', password='secret'
+        )
         self.assertFalse(conn.bind())
 
         # try to bind to existend user with wrong password
-        conn = ldap3.Connection(self.server, user='uid=1,ou=users,dc=cde-ev,dc=de',
-                                password='wrongPW')
+        conn = ldap3.Connection(
+            self.server, user='uid=1,ou=users,dc=cde-ev,dc=de', password='wrongPW'
+        )
         self.assertFalse(conn.bind())
 
         # bind with a users
-        conn = ldap3.Connection(self.server, user='uid=1,ou=users,dc=cde-ev,dc=de',
-                                password='secret')
+        conn = ldap3.Connection(
+            self.server, user='uid=1,ou=users,dc=cde-ev,dc=de', password='secret'
+        )
         self.assertTrue(conn.bind())
         # TODO not supported by ldaptor
         # self.assertEqual(
@@ -172,7 +195,9 @@ class TestLDAP(BasicTest):
         user = "anton"
         user_dn = self.USERS[user]
         with ldap3.Connection(
-            self.server, user=user_dn, password=self.USER_passwords[user],
+            self.server,
+            user=user_dn,
+            password=self.USER_passwords[user],
             raise_exceptions=True,
         ) as conn:
             conn.compare(user_dn, "sn", "Administrator")
@@ -200,14 +225,14 @@ class TestLDAP(BasicTest):
             'cn': ['Anton Administrator'],
             'objectClass': ['inetOrgPerson'],
         }
-        search_filter = (
-            "(&"
-                "(objectClass=inetOrgPerson)"
-                f"(uid={user_id})"
-            ")"
+        search_filter = f"(&(objectClass=inetOrgPerson)(uid={user_id}))"
+        self.single_result_search(
+            search_filter,
+            expectation,
+            attributes=attributes,
+            user=user,
+            password=password,
         )
-        self.single_result_search(search_filter, expectation, attributes=attributes,
-                                  user=user, password=password)
 
         # users may not access any group and their members
         # However, they are able to access their own group membership by the 'memberOf'
@@ -216,7 +241,6 @@ class TestLDAP(BasicTest):
         expectation = {
             'memberOf': [
                 'cn=42-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
-                'cn=aktivenforum2000@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=all@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=announce@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=everyone-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
@@ -237,9 +261,7 @@ class TestLDAP(BasicTest):
                 'cn=is_ml_admin,ou=status,ou=groups,dc=cde-ev,dc=de',
                 'cn=is_ml_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
                 'cn=is_searchable,ou=status,ou=groups,dc=cde-ev,dc=de',
-                'cn=kanonisch@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=klatsch@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-                'cn=kongress@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=lokalgruppen-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=migration-owner@testmail.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=mitgestaltung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
@@ -249,10 +271,8 @@ class TestLDAP(BasicTest):
                 'cn=orga,ou=any,ou=groups,dc=cde-ev,dc=de',
                 'cn=orgas-2,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
                 'cn=orgas-3,ou=event-orgas,ou=groups,dc=cde-ev,dc=de',
-                'cn=participants@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=party50-all-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=party50-owner@aka.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
-                'cn=party50@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=platin-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
                 'cn=platin@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
                 'cn=struktur@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
@@ -261,18 +281,18 @@ class TestLDAP(BasicTest):
                 'cn=gu@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             ],
         }
-        self.single_result_search(search_filter, expectation, attributes=attributes,
-                                  user=user, password=password)
+        self.single_result_search(
+            search_filter,
+            expectation,
+            attributes=attributes,
+            user=user,
+            password=password,
+        )
 
         # users must not access other users data
         conn = ldap3.Connection(self.server, user=user, password=password)
         conn.bind()
-        search_filter = (
-            "(&"
-                "(objectClass=inetOrgPerson)"
-                f"(uid={other_user_id})"
-            ")"
-        )
+        search_filter = f"(&(objectClass=inetOrgPerson)(uid={other_user_id}))"
         conn.search(search_base=self.root_dn, search_filter=search_filter)
         self.assertEqual(list(), conn.entries)
 
@@ -298,10 +318,7 @@ class TestLDAP(BasicTest):
             'o': ['Users'],
         }
         search_filter = (
-            "(&"
-                "(objectClass=organizationalUnit)"
-                f"(o={organizational_unit_o})"
-            ")"
+            f"(&(objectClass=organizationalUnit)(o={organizational_unit_o}))"
         )
         self.single_result_search(search_filter, expectation)
 
@@ -313,24 +330,41 @@ class TestLDAP(BasicTest):
             'mail': ['anton@example.cde'],
             'ipaUniqueID': ['personas/1'],
             'modifyTimestamp': [nearly_now()],
-
             'cn': ['Anton Administrator'],
             'displayName': ['Anton Administrator'],
             'givenName': ['Anton'],
             'sn': ['Administrator'],
-
-            # there is no password returned, since passwords may not be retrived but
+            'labeledURI': [],
+            # there is no password returned, since passwords may not be retrieved but
             # only used for binding
             'objectClass': ['inetOrgPerson'],
         }
-        search_filter = (
-            "(&"
-            "(objectClass=inetOrgPerson)"
-            f"(uid={user_id})"
-            ")"
-        )
+        search_filter = f"(&(objectClass=inetOrgPerson)(uid={user_id}))"
         self.single_result_search(
-            search_filter, expectation, excluded_attributes=["memberOf"])
+            search_filter, expectation, excluded_attributes=["memberOf"]
+        )
+
+        user_id = 2
+        expectation = {
+            'uid': ['2'],
+            'mail': ['berta@example.cde'],
+            'ipaUniqueID': ['personas/2'],
+            'modifyTimestamp': [nearly_now()],
+            'cn': ['Bertå Beispiel'],
+            'displayName': ['Bertå Beispiel'],
+            'givenName': ['Bertå'],
+            'sn': ['Beispiel'],
+            'labeledURI': [
+                'https://localhost/db/core/foto/e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9 Profile Picture'
+            ],
+            # there is no password returned, since passwords may not be retrieved but
+            # only used for binding
+            'objectClass': ['inetOrgPerson'],
+        }
+        search_filter = f"(&(objectClass=inetOrgPerson)(uid={user_id}))"
+        self.single_result_search(
+            search_filter, expectation, excluded_attributes=["memberOf"]
+        )
 
     def test_static_group_entity(self) -> None:
         """Check if all attributes of static groups are correctly present."""
@@ -347,15 +381,14 @@ class TestLDAP(BasicTest):
             'modifyTimestamp': [nearly_now()],
             'objectClass': ['groupOfUniqueNames'],
         }
-        search_filter = (
-            "(&"
-            "(objectClass=groupOfUniqueNames)"
-            f"(cn={group_cn})"
-            ")"
-        )
+        search_filter = f"(&(objectClass=groupOfUniqueNames)(cn={group_cn}))"
         self.check_search_access(search_filter)
-        self.single_result_search(search_filter, expectation, user=self.admin_dua_dn,
-                                  password=self.admin_dua_pw)
+        self.single_result_search(
+            search_filter,
+            expectation,
+            user=self.admin_dua_dn,
+            password=self.admin_dua_pw,
+        )
 
     def test_ml_subscriber_group_entity(self) -> None:
         """Check if all attributes of ml-subscriber groups are correctly present."""
@@ -373,15 +406,15 @@ class TestLDAP(BasicTest):
             'objectClass': ['groupOfUniqueNames'],
         }
 
-        search_filter = (
-            "(&"
-            "(objectClass=groupOfUniqueNames)"
-            f"(cn={group_cn})"
-            ")"
-        )
+        search_filter = f"(&(objectClass=groupOfUniqueNames)(cn={group_cn}))"
         self.check_search_access(search_filter)
-        self.single_result_search(search_filter, expectation, search_base=search_base,
-                                  user=self.admin_dua_dn, password=self.admin_dua_pw)
+        self.single_result_search(
+            search_filter,
+            expectation,
+            search_base=search_base,
+            user=self.admin_dua_dn,
+            password=self.admin_dua_pw,
+        )
 
     def test_ml_moderator_group_entity(self) -> None:
         """Check if all attributes of ml-moderator groups are correctly present."""
@@ -398,15 +431,15 @@ class TestLDAP(BasicTest):
             'objectClass': ['groupOfUniqueNames'],
         }
 
-        search_filter = (
-            "(&"
-            "(objectClass=groupOfUniqueNames)"
-            f"(cn={group_cn})"
-            ")"
-        )
+        search_filter = f"(&(objectClass=groupOfUniqueNames)(cn={group_cn}))"
         self.check_search_access(search_filter)
-        self.single_result_search(search_filter, expectation, search_base=search_base,
-                                  user=self.admin_dua_dn, password=self.admin_dua_pw)
+        self.single_result_search(
+            search_filter,
+            expectation,
+            search_base=search_base,
+            user=self.admin_dua_dn,
+            password=self.admin_dua_pw,
+        )
 
     def test_event_orgas_group_entity(self) -> None:
         """Check if all attributes of event-orga groups are correctly present."""
@@ -423,15 +456,15 @@ class TestLDAP(BasicTest):
             'objectClass': ['groupOfUniqueNames'],
         }
 
-        search_filter = (
-            "(&"
-            "(objectClass=groupOfUniqueNames)"
-            f"(cn={group_cn})"
-            ")"
-        )
+        search_filter = f"(&(objectClass=groupOfUniqueNames)(cn={group_cn}))"
         self.check_search_access(search_filter)
-        self.single_result_search(search_filter, expectation, search_base=search_base,
-                                  user=self.admin_dua_dn, password=self.admin_dua_pw)
+        self.single_result_search(
+            search_filter,
+            expectation,
+            search_base=search_base,
+            user=self.admin_dua_dn,
+            password=self.admin_dua_pw,
+        )
 
     def test_assembly_presiders_group_entity(self) -> None:
         """Check if all attributes of assembly-presider groups are correctly present."""
@@ -448,15 +481,15 @@ class TestLDAP(BasicTest):
             'objectClass': ['groupOfUniqueNames'],
         }
 
-        search_filter = (
-            "(&"
-            "(objectClass=groupOfUniqueNames)"
-            f"(cn={group_cn})"
-            ")"
-        )
+        search_filter = f"(&(objectClass=groupOfUniqueNames)(cn={group_cn}))"
         self.check_search_access(search_filter)
-        self.single_result_search(search_filter, expectation, search_base=search_base,
-                                  user=self.admin_dua_dn, password=self.admin_dua_pw)
+        self.single_result_search(
+            search_filter,
+            expectation,
+            search_base=search_base,
+            user=self.admin_dua_dn,
+            password=self.admin_dua_pw,
+        )
 
     def test_any_group_entity(self) -> None:
         """Check if all attributes of any groups are correctly present."""
@@ -477,15 +510,15 @@ class TestLDAP(BasicTest):
             'objectClass': ['groupOfUniqueNames'],
         }
 
-        search_filter = (
-            "(&"
-            "(objectClass=groupOfUniqueNames)"
-            f"(cn={group_cn})"
-            ")"
-        )
+        search_filter = f"(&(objectClass=groupOfUniqueNames)(cn={group_cn}))"
         self.check_search_access(search_filter)
-        self.single_result_search(search_filter, expectation, search_base=search_base,
-                                  user=self.admin_dua_dn, password=self.admin_dua_pw)
+        self.single_result_search(
+            search_filter,
+            expectation,
+            search_base=search_base,
+            user=self.admin_dua_dn,
+            password=self.admin_dua_pw,
+        )
 
     def test_dua_entity(self) -> None:
         """Check if all attributes of DUAs are correctly present."""
@@ -497,12 +530,7 @@ class TestLDAP(BasicTest):
             # there is no password returned, since passwords may not be retrived but
             # only used for binding
         }
-        search_filter = (
-            "(&"
-            "(objectClass=person)"
-            f"(cn={dua_cn})"
-            ")"
-        )
+        search_filter = f"(&(objectClass=person)(cn={dua_cn}))"
         self.check_search_access(search_filter, only_duas={"test"})
         self.single_result_search(search_filter, expectation)
 
@@ -518,15 +546,12 @@ class TestLDAP(BasicTest):
             'cn=is_member,ou=status,ou=groups,dc=cde-ev,dc=de',
         }
         expectation_subscriber = {
-            'cn=aka@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=all@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=announce@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=everyone@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=info@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-            'cn=kanonisch@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=mitgestaltung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=moderatoren@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-            'cn=participants@aka.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=werbung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=gu@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
         }
@@ -546,19 +571,30 @@ class TestLDAP(BasicTest):
             'cn=moderator,ou=any,ou=groups,dc=cde-ev,dc=de',
         }
         expectation_all = {
-            *expectation_status, *expectation_subscriber, *expectation_moderator,
-            *expectation_orga, *expectation_presider, *expectation_any}
+            *expectation_status,
+            *expectation_subscriber,
+            *expectation_moderator,
+            *expectation_orga,
+            *expectation_presider,
+            *expectation_any,
+        }
         search_filter = (
             "(&"
-                "(objectClass=groupOfUniqueNames)"
-                f"(uniqueMember=uid={user_id},ou=users,{self.root_dn})"
+            "(objectClass=groupOfUniqueNames)"
+            f"(uniqueMember=uid={user_id},ou=users,{self.root_dn})"
             ")"
         )
         self.check_search_access(search_filter)
         with ldap3.Connection(
-                self.server, user=self.admin_dua_dn, password=self.admin_dua_pw,
+            self.server,
+            user=self.admin_dua_dn,
+            password=self.admin_dua_pw,
         ) as conn:
-            conn.search(search_base=self.root_dn, search_filter=search_filter)
+            conn.search(
+                search_base=self.root_dn,
+                search_filter=search_filter,
+                attributes=ALL_ATTRIBUTES,
+            )
             result_names: set[str] = {entry.entry_dn for entry in conn.entries}
             self.assertEqual(expectation_all, result_names)
 
@@ -572,21 +608,15 @@ class TestLDAP(BasicTest):
             'cn=is_ml_realm,ou=status,ou=groups,dc=cde-ev,dc=de',
         }
         expectation_subscriber = {
-
             'cn=everyone@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-            'cn=kongress@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-            'cn=kongress-leitung@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
             'cn=moderatoren@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-            'cn=opt@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
-            'cn=wal@lists.cde-ev.de,ou=ml-subscribers,ou=groups,dc=cde-ev,dc=de',
         }
         expectation_moderator = {
-
             'cn=kanonisch-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=kongress-leitung-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=kongress-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
         }
-        expectation_orga: set[str] = set()
+        expectation_orga = set()
         expectation_presider = {
             'cn=presiders-1,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',
             'cn=presiders-3,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',
@@ -596,19 +626,30 @@ class TestLDAP(BasicTest):
             'cn=presider,ou=any,ou=groups,dc=cde-ev,dc=de',
         }
         expectation_all = {
-            *expectation_status, *expectation_subscriber, *expectation_moderator,
-            *expectation_orga, *expectation_presider, *expectation_any}
+            *expectation_status,
+            *expectation_subscriber,
+            *expectation_moderator,
+            *expectation_orga,
+            *expectation_presider,
+            *expectation_any,
+        }
         search_filter = (
             "(&"
-                "(objectClass=groupOfUniqueNames)"
-                f"(uniqueMember=uid={user_id},ou=users,{self.root_dn})"
+            "(objectClass=groupOfUniqueNames)"
+            f"(uniqueMember=uid={user_id},ou=users,{self.root_dn})"
             ")"
         )
         self.check_search_access(search_filter)
         with ldap3.Connection(
-            self.server, user=self.admin_dua_dn, password=self.admin_dua_pw,
+            self.server,
+            user=self.admin_dua_dn,
+            password=self.admin_dua_pw,
         ) as conn:
-            conn.search(search_base=self.root_dn, search_filter=search_filter)
+            conn.search(
+                search_base=self.root_dn,
+                search_filter=search_filter,
+                attributes=ALL_ATTRIBUTES,
+            )
             result_names = {entry.entry_dn for entry in conn.entries}
             self.assertEqual(expectation_all, result_names)
 
@@ -629,8 +670,34 @@ class TestLDAP(BasicTest):
         }
         self.check_search_access(search_filter)
         # TODO use appropiate non-admin-dua here
-        self.single_result_search(search_filter, expectation, attributes=attributes,
-                                  user=self.admin_dua_dn, password=self.admin_dua_pw)
+        self.single_result_search(
+            search_filter,
+            expectation,
+            attributes=attributes,
+            user=self.admin_dua_dn,
+            password=self.admin_dua_pw,
+        )
+
+    def test_search_attributes_of_status_group(self) -> None:
+        group_cn = "is_cdelokal_admin"
+        attributes = ['objectClass', 'cn', 'uniqueMember']
+        search_filter = f"(&(objectClass=groupOfUniqueNames)(cn={group_cn}))"
+        expectation = {
+            'cn': ['is_cdelokal_admin'],
+            'objectClass': ['groupOfUniqueNames'],
+            'uniqueMember': [
+                "uid=1,ou=users,dc=cde-ev,dc=de",
+                "uid=38,ou=users,dc=cde-ev,dc=de",
+                "uid=100,ou=users,dc=cde-ev,dc=de",
+            ],
+        }
+        self.single_result_search(
+            search_filter,
+            expectation,
+            attributes=attributes,
+            user=self.admin_dua_dn,
+            password=self.admin_dua_pw,
+        )
 
     def test_search_user_attributes(self) -> None:
         """Search a user by given attributes and return some of its attributes."""
@@ -646,33 +713,21 @@ class TestLDAP(BasicTest):
         }
 
         # First, test search by uid
-        search_filter = (
-            "(&"
-            "(objectClass=inetOrgPerson)"
-            f"(uid={user_id})"
-            ")"
-        )
+        search_filter = f"(&(objectClass=inetOrgPerson)(uid={user_id}))"
         self.single_result_search(search_filter, expectation, attributes=attributes)
 
         # Second, test search by email
-        search_filter = (
-            "(&"
-            "(objectclass=*)"
-            f"(mail={user_mail})"
-            ")"
-        )
+        search_filter = f"(&(objectclass=*)(mail={user_mail}))"
         self.single_result_search(search_filter, expectation, attributes=attributes)
 
     def test_search_pagination(self) -> None:
         """Test search with pagedResultsControl."""
-        search_filter = (
-            "(&"
-            "(objectclass=inetOrgPerson)"
-            ")"
-        )
+        search_filter = "(&(objectclass=inetOrgPerson))"
 
         with ldap3.Connection(
-            self.server, user=self.test_dua_dn, password=self.test_dua_pw,
+            self.server,
+            user=self.test_dua_dn,
+            password=self.test_dua_pw,
             raise_exceptions=True,
         ) as conn:
             # first page
@@ -688,8 +743,9 @@ class TestLDAP(BasicTest):
             self.assertEqual(['2'], conn.entries[1].entry_attributes_as_dict["uid"])
 
             # second page
-            cookie = conn.result["controls"]["1.2.840.113556.1.4.319"][
-                "value"]["cookie"]
+            cookie = conn.result["controls"]["1.2.840.113556.1.4.319"]["value"][
+                "cookie"
+            ]
             self.assertNotEqual(b"", cookie)
             conn.search(
                 search_base=self.root_dn,
@@ -714,8 +770,9 @@ class TestLDAP(BasicTest):
             self.assertEqual(20, len(conn.entries))
 
             # second and last page
-            cookie = conn.result["controls"]["1.2.840.113556.1.4.319"][
-                "value"]["cookie"]
+            cookie = conn.result["controls"]["1.2.840.113556.1.4.319"]["value"][
+                "cookie"
+            ]
             size = conn.result["controls"]["1.2.840.113556.1.4.319"]["value"]["size"]
             self.assertNotEqual(b"", cookie)
             self.assertLess(size, 40)
@@ -727,8 +784,9 @@ class TestLDAP(BasicTest):
                 attributes=["uid"],
             )
             self.assertLess(len(conn.entries), 20)
-            cookie = conn.result["controls"]["1.2.840.113556.1.4.319"][
-                "value"]["cookie"]
+            cookie = conn.result["controls"]["1.2.840.113556.1.4.319"]["value"][
+                "cookie"
+            ]
             self.assertEqual(b"", cookie)
 
     def test_caseinsensitive_attributes(self) -> None:
@@ -742,10 +800,5 @@ class TestLDAP(BasicTest):
             'objectClass': ['inetOrgPerson'],
         }
 
-        search_filter = (
-            "(&"
-            "(oBjeCtclASS=*)"
-            f"(UID={user_id})"
-            ")"
-        )
+        search_filter = f"(&(oBjeCtclASS=*)(UID={user_id}))"
         self.single_result_search(search_filter, expectation, attributes=attributes)

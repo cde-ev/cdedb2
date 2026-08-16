@@ -20,7 +20,10 @@ QEMUOPTIONS ?= -m 1G -enable-kvm -net nic,model=virtio -net user,hostfwd=tcp:127
 
 QEMUCACHING ?= writethrough
 
-DEBVERSION = 12.8.0
+# depending whether we are on stable or oldstable...
+DEBSERVER = https://cdimage.debian.org/cdimage/release
+# DEBSERVER = https://meetings-archive.debian.net/cdimage/archive
+DEBVERSION = 13.5.0
 NETINSTISO = debian-${DEBVERSION}-amd64-netinst.iso
 
 DISTINFO_DATA?= ${AWK} -v alg=$$algo -v file=$${file} \
@@ -55,7 +58,7 @@ fetch: ${WORKDIR}/.done_fetch
 ${WORKDIR}/.done_fetch:
 	[ -d ${WORKDIR} ] || (mkdir -p ${WORKDIR} && chmod 755 ${WORKDIR})
 	[ -d ${DISTDIR} ] || (mkdir -p ${DISTDIR} && chmod 755 ${DISTDIR})
-	[ -f ${DISTDIR}/${NETINSTISO} ] || (cd ${DISTDIR} && ${FETCH} https://cdimage.debian.org/cdimage/release/${DEBVERSION}/amd64/iso-cd/${NETINSTISO})
+	[ -f ${DISTDIR}/${NETINSTISO} ] || (cd ${DISTDIR} && ${FETCH} ${DEBSERVER}/${DEBVERSION}/amd64/iso-cd/${NETINSTISO})
 	touch $@
 
 checksum:${WORKDIR}/.done_checksum
@@ -109,7 +112,7 @@ ${WORKDIR}/.done_cdimage:${WORKDIR}/.done_patch
 build-stage1:${WORKDIR}/.done_stage1
 ${WORKDIR}/.done_stage1:${WORKDIR}/.done_cdimage
 	rm -f ${WORKDIR}/stage1.qcow2
-	${QEMUIMG} create -f qcow2 ${WORKDIR}/stage1.qcow2 10G
+	${QEMUIMG} create -f qcow2 ${WORKDIR}/stage1.qcow2 20G
 	${QEMU} ${QEMUOPTIONS} -no-reboot -drive file=${WORKDIR}/stage1.qcow2,cache=${QEMUCACHING},if=virtio -drive file=${WORKDIR}/bootstrap.iso,media=cdrom,index=2 -boot order=d
 	touch $@
 
@@ -127,13 +130,13 @@ ${WORKDIR}/.done_stage2cd:${WORKDIR}/.done_checksum files/stage2-install
 	cp files/stage2-install ${WORKDIR}/stage2cd/cdedb-install
 	chmod 755 ${WORKDIR}/stage2cd/cdedb-install
 	cp files/call-cdedbinstall ${WORKDIR}/stage2cd/init
-	cp files/stage2/* ${WORKDIR}/stage2cd/
+	cp -r files/stage2/* ${WORKDIR}/stage2cd/
 	cp ../../doc/source/motd-vm.txt ${WORKDIR}/stage2cd/motd.txt
 ifndef DEPLOYMENT_KEY_PATH
 	$(error Must provide deployment key (i.e. ssh key for user with access to ForgeJo))
 endif
-	cp "${DEPLOYMENT_KEY_PATH}" ${WORKDIR}/stage2cd/ssh_user_rsa_key
-	cp "${DEPLOYMENT_KEY_PATH}.pub" ${WORKDIR}/stage2cd/ssh_user_rsa_key.pub
+	cp "${DEPLOYMENT_KEY_PATH}" ${WORKDIR}/stage2cd/ssh_user/
+	cp "${DEPLOYMENT_KEY_PATH}.pub" ${WORKDIR}/stage2cd/ssh_user/
 	chmod 755 ${WORKDIR}/stage2cd/init
 	chmod u+x bin/*/*
 	PATH=$$PATH:./bin/`uname`; \

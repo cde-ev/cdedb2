@@ -3,13 +3,14 @@ import datetime
 import random
 import re
 import urllib.parse
-from typing import Optional, Union
+from collections.abc import Collection
 
 import webtest
 
 import cdedb.database.constants as const
 import cdedb.models.core as models_core
 import cdedb.models.droid as model_droid
+import cdedb.models.event as models_event
 from cdedb.common import (
     IGNORE_WARNINGS_NAME,
     CdEDBObject,
@@ -19,13 +20,14 @@ from cdedb.common import (
     make_persona_name,
     now,
 )
-from cdedb.common.exceptions import CryptographyError
+from cdedb.common.exceptions import CryptographyError, ParameterInvalidError
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query import QueryOperators
 from cdedb.common.query.log_filter import ChangelogLogFilter
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.filter import iban_filter
 from tests.common import (
+    ANONYMOUS,
     USER_DICT,
     FrontendTest,
     UserIdentifier,
@@ -50,8 +52,7 @@ class TestCoreFrontend(FrontendTest):
                 f['username'] = user['username']
                 f['password'] = user['password']
                 self.submit(f, check_notification=False)
-                self.assertPresence(user['given_names'], div='displayname',
-                                    exact=True)
+                self.assertPresence(user['given_names'], div='displayname', exact=True)
 
     def test_login_redirect(self) -> None:
         user = USER_DICT["berta"]
@@ -83,8 +84,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Search Mask", div='qf_title')
         self.assertNonPresence("Suchmaske")
         # Test storing of locale (via cookie)
-        self.traverse({'description': 'Members'},
-                      {'description': 'Manage Users'})
+        self.traverse({'description': 'Members'}, {'description': 'Manage Users'})
         self.assertPresence("Search Mask", div='qf_title')
         self.assertNonPresence("Suchmaske")
         # Test changing locale back to german
@@ -106,8 +106,10 @@ class TestCoreFrontend(FrontendTest):
                 self.assertNonPresence("Aktivenforum 2000")
                 self.assertPresence("Aktivenforum 2001", div='moderator-box')
                 # Check if there is actually the correct request
-                self.traverse({'href': '/ml/mailinglist/7/management',
-                               'description': "1 Abonnement-Anfrage"})
+                self.traverse({
+                    'href': '/ml/mailinglist/7/management',
+                    'description': "1 Abonnement-Anfrage",
+                })
                 self.traverse({'href': '/'})
                 self.assertTitle("CdE-Datenbank")
                 self.assertPresence("bereits angemeldet", div='event-box')
@@ -119,12 +121,15 @@ class TestCoreFrontend(FrontendTest):
                 self.assertPresence("Platin-Lounge", div='moderator-box')
                 # Check moderation notification
                 self.assertPresence("Moderatoren-Liste", div='moderator-box')
-                self.traverse({'href': '/ml/mailinglist/12/moderate',
-                               'description': "3 E-Mails"})
+                self.traverse({
+                    'href': '/ml/mailinglist/12/moderate',
+                    'description': "3 E-Mails",
+                })
                 self.traverse({'href': '/'})
                 self.assertTitle("CdE-Datenbank")
-                self.assertPresence("bereits angemeldet, Bezahlung ausstehend",
-                                    div='event-box')
+                self.assertPresence(
+                    "bereits angemeldet, Bezahlung ausstehend", div='event-box'
+                )
             self.assertPresence("Moderierte Mailinglisten", div='moderator-box')
             self.assertPresence("Orga-Veranstaltungen", div='orga-box')
             self.assertPresence("CdE-Party 2050", div='orga-box')
@@ -144,12 +149,25 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Anmelden")
         self.assertNonPresence("Meine Daten")
 
-    @as_users("annika", "martin", "nina", "vera", "werner", "katarina", "simon",
-              "janis", maintain_data=True)
+    @as_users(
+        "annika",
+        "martin",
+        "nina",
+        "vera",
+        "werner",
+        "katarina",
+        "simon",
+        "janis",
+        maintain_data=True,
+    )
     def test_sidebar(self) -> None:
         self.assertTitle("CdE-Datenbank")
         everyone = {
-            "Index", "Übersicht", "Meine Daten", "Administratorenübersicht", "Kontakt",
+            "Index",
+            "Übersicht",
+            "Meine Daten",
+            "Administratorenübersicht",
+            "Kontakt",
         }
         genesis = {"Accountanfragen"}
         pending = {"Änderungen prüfen"}
@@ -164,8 +182,15 @@ class TestCoreFrontend(FrontendTest):
         # admin of a realm without genesis cases
         if self.user_in('werner'):
             ins = everyone
-            out = (pending | defect_email | genesis | core_admin | meta_admin | log
-                   | complaint)
+            out = (
+                pending
+                | defect_email
+                | genesis
+                | core_admin
+                | meta_admin
+                | log
+                | complaint
+            )
         # event admin (genesis, review)
         elif self.user_in('annika'):
             ins = everyone | genesis | pending
@@ -192,28 +217,50 @@ class TestCoreFrontend(FrontendTest):
             out = pending | defect_email | core_admin | meta_admin | log
         elif self.user_in('janis'):
             ins = everyone | complaint_enforcer
-            out = (pending | defect_email | core_admin | meta_admin | log
-                   | complaint_admin)
+            out = (
+                pending | defect_email | core_admin | meta_admin | log | complaint_admin
+            )
         else:
             self.fail("Please adjust users for this tests.")
 
         self.check_sidebar(ins, out)
 
-    @as_users("anton", "berta", "charly", "daniel", "emilia", "ferdinand",
-              "garcia", "inga", "janis", "kalif", "martin", "nina",
-              "vera", "werner", "annika", "farin", "akira",
-              maintain_data=True)
+    @as_users(
+        "anton",
+        "berta",
+        "charly",
+        "daniel",
+        "emilia",
+        "ferdinand",
+        "garcia",
+        "inga",
+        "janis",
+        "kalif",
+        "martin",
+        "nina",
+        "vera",
+        "werner",
+        "annika",
+        "farin",
+        "akira",
+        maintain_data=True,
+    )
     def test_showuser(self) -> None:
         self.traverse({'description': self.user['given_names']})
         self.assertTitle(self.user['default_name_format'])
         self.assertPresence(self.user['family_name'], div='title')
 
+    @prepsql(
+        f"""
+        INSERT INTO {models_event.OtherDatabaseTables.caretakers} (event_id, persona_id) VALUES (2, 7);
+        INSERT INTO {models_event.OtherDatabaseTables.checkin_helpers} (event_id, persona_id) VALUES (4, 7);
+        """
+    )
     @as_users("annika", "paul", "quintus", maintain_data=True)
     def test_showuser_events(self) -> None:
         if self.user_in("annika"):
             # event admins navigate via event page
-            self.traverse("Veranstaltungen", "Große Testakademie",
-                          "Garcia Generalis")
+            self.traverse("Veranstaltungen", "Große Testakademie", "Garcia Generalis")
         elif self.user_in("paul"):
             # core admin
             self.admin_view_profile("garcia")
@@ -223,19 +270,26 @@ class TestCoreFrontend(FrontendTest):
 
         self.traverse("Veranstaltungs-Daten")
         self.assertTitle("Garcia Generalis – Veranstaltungs-Daten")
-        self.assertPresence("CyberTestAkademie Teilnehmer")
+        self.assertPresence("CyberTestAkademie Teilnehmer", div="registration-list")
         # part names not shown for one-part events
-        self.assertNonPresence("CyberTestAkademie: Teilnehmer")
-        self.assertPresence("Große Testakademie")
-        self.assertPresence("Warmup: Teilnehmer, Erste Hälfte: Teilnehmer,"
-                            " Zweite Hälfte: Teilnehmer")
+        self.assertNonPresence("CyberTestAkademie: Teilnehmer", div="registration-list")
+        self.assertPresence("Große Testakademie", div="registration-list")
+        self.assertPresence(
+            "Warmup: Teilnehmer, Erste Hälfte: Teilnehmer, Zweite Hälfte: Teilnehmer",
+            div="registration-list",
+        )
+
+        self.assertPresence("Große Testakademie 2222: Orga", div="event-roles-list")
+        self.assertPresence("CdE-Party 2050: Betreuer", div="event-roles-list")
+        self.assertPresence("TripelAkademie: Checkin-Helfer", div="event-roles-list")
 
     @as_users("nina", "paul", "quintus", maintain_data=True)
     def test_showuser_mailinglists(self) -> None:
         if self.user_in("nina"):
             # Mailinglist admins come from management
-            self.traverse("Mailinglisten", "Allumfassende Liste", "Verwaltung",
-                          "Inga Iota")
+            self.traverse(
+                "Mailinglisten", "Allumfassende Liste", "Verwaltung", "Inga Iota"
+            )
         elif self.user_in("paul"):
             self.admin_view_profile("inga")
         elif self.user_in("quintus"):
@@ -245,9 +299,36 @@ class TestCoreFrontend(FrontendTest):
         self.traverse("Mailinglisten-Daten")
         self.assertTitle("Inga Iota – Mailinglisten-Daten")
         self.assertPresence("inga@example.cde", div='contact-email')
-        self.assertPresence("CdE-Info E-Mail: inga-papierkorb@example.cde")
-        self.assertPresence("Kampfbrief-Kommentare (geblockt)")
-        self.assertNonPresence("Witz des Tages")
+        self.assertPresence(
+            "CdE-Info E-Mail: inga-papierkorb@example.cde", div="ml-subscriptions"
+        )
+        self.assertPresence("Kampfbrief-Kommentare (geblockt)", div="ml-subscriptions")
+        self.assertNonPresence("Witz des Tages", div="ml-subscriptions")
+        self.assertPresence("Gutscheine", div="moderated-mls")
+        self.assertNonPresence("CdE-Info", div="moderated-mls")
+
+    @as_users("viktor", "paul", "quintus", maintain_data=True)
+    def test_showuser_assemblies(self) -> None:
+        if self.user_in("viktor"):
+            self.traverse("Versammlungen", "Archiv-Sammlung", "Werner Wahlleitung")
+        elif self.user_in("paul"):
+            self.admin_view_profile("werner")
+        elif self.user_in("quintus"):
+            # Relative admins may see this page
+            self.realm_admin_view_profile("werner", "cde")
+
+        self.traverse("Versammlungs-Daten")
+        self.assertTitle("Werner Wahlleitung – Versammlungs-Daten")
+        self.assertPresence("Internationaler Kongress", div="attended-assemblies")
+        self.assertNonPresence("Archiv-Sammlung", div="attended-assemblies")
+        self.assertNonPresence(
+            "Kanonische Beispielversammlung", div="attended-assemblies"
+        )
+        self.assertPresence("Internationaler Kongress", div="presided-assemblies")
+        self.assertPresence("Archiv-Sammlung", div="presided-assemblies")
+        self.assertNonPresence(
+            "Kanonische Beispielversammlung", div="presided-assemblies"
+        )
 
     @as_users("anton")
     def test_user_archived(self) -> None:
@@ -256,14 +337,18 @@ class TestCoreFrontend(FrontendTest):
             self.assertTitle("Hades Hell")
             self.assertPresence("Account ist archiviert.", div='notifications')
 
-        self.get('/core/persona/8/mailinglists')
-        _check_redirected_profile()
         # The history is available
         self.get('/core/persona/8/history')
         self.assertTitle("Änderungshistorie von Hades Hell")
         self.assertPresence("Benutzer ist archiviert.", div='static-notifications')
         self.get('/core/persona/8/events')
         self.assertTitle("Hades Hell – Veranstaltungs-Daten")
+        self.assertPresence("Benutzer ist archiviert.", div='static-notifications')
+        self.get('/core/persona/8/mailinglists')
+        self.assertTitle("Hades Hell – Mailinglisten-Daten")
+        self.assertPresence("Benutzer ist archiviert.", div='static-notifications')
+        self.get('/core/persona/8/assemblies')
+        self.assertTitle("Hades Hell – Versammlungs-Daten")
         self.assertPresence("Benutzer ist archiviert.", div='static-notifications')
         self.get('/core/persona/8/adminchange')
         _check_redirected_profile()
@@ -304,28 +389,33 @@ class TestCoreFrontend(FrontendTest):
         # we test here only if the presented vcard is kind of correct and whether
         # hidden address details are excluded. *When* a vcard
         # should be present is tested in the privacy tests.
-        self.traverse({'description': 'Mitglieder'},
-                      {'description': 'CdE-Mitglied suchen'})
+        self.traverse(
+            {'description': 'Mitglieder'}, {'description': 'CdE-Mitglied suchen'}
+        )
         f = self.response.forms['membersearchform']
         f['qval_given_names,searchable_legal_given_names,nickname'] = "Berta"
         self.submit(f)
 
         self.assertTitle(USER_DICT['berta']['default_name_format'])
         self.traverse({'description': 'VCard'})
-        vcard = ["BEGIN:VCARD",
-                 "VERSION:3.0",
-                 "ADR;TYPE=intl,home,postal,pref:;;;Utopia;;34576;Deutschland",
-                 ("ADR;TYPE=intl,home,postal:;;Strange Road 9 3/4;"
-                  "Foreign City;;8XA 45-$;Vereinigtes Königreich"),
-                 "BDAY:1981-02-11",
-                 "EMAIL:berta@example.cde",
-                 "FN:Bertå Beispiel",
-                 "N:Beispiel;Bertå;;Dr.;MdB",
-                 "NICKNAME:Bindi",
-                 "TEL;TYPE=HOME:+495432987654321",
-                 "TEL;TYPE=CELL:+4916312345678",
-                 "PHOTO;ENCODING=b;TYPE=PNG:iVBOR",  # truncated base64 encoded image
-                 "END:VCARD"]
+        vcard = [
+            "BEGIN:VCARD",
+            "VERSION:3.0",
+            "ADR;TYPE=intl,home,postal,pref:;;;Utopia;;34576;Deutschland",
+            (
+                "ADR;TYPE=intl,home,postal:;;Strange Road 9 3/4;"
+                "Foreign City;;8XA 45-$;Vereinigtes Königreich"
+            ),
+            "BDAY:1981-02-11",
+            "EMAIL:berta@example.cde",
+            "FN:Bertå Beispiel",
+            "N:Beispiel;Bertå;;Dr.;MdB",
+            "NICKNAME:Bindi",
+            "TEL;TYPE=HOME:+495432987654321",
+            "TEL;TYPE=CELL:+4916312345678",
+            "PHOTO;ENCODING=b;TYPE=PNG:iVBOR",  # truncated base64 encoded image
+            "END:VCARD",
+        ]
         for line in vcard:
             self.assertIn(line, self.response.text)
 
@@ -342,39 +432,43 @@ class TestCoreFrontend(FrontendTest):
         self.get('/')
         self.assertNoLink("/core/meta")
         # Submit the adminviewstoggleform with the right button
-        self._click_admin_view_button(re.compile(r"Index-Administration"),
-                                      current_state=False)
-        self.traverse({'href': '/core/meta'},
-                      {'href': '/'})
+        self._click_admin_view_button(
+            re.compile(r"Index-Administration"), current_state=False
+        )
+        self.traverse({'href': '/core/meta'}, {'href': '/'})
         self.assertNoLink("/core/search/user")  # Should not have an effect here
-        self._click_admin_view_button(re.compile(r"Index-Administration"),
-                                      current_state=True)
+        self._click_admin_view_button(
+            re.compile(r"Index-Administration"), current_state=True
+        )
         self.assertNoLink("/core/meta")
 
         # No meta administration for vera
-        button = self.response.html\
-            .find(id="adminviewstoggleform") \
-            .find(text=re.compile(r"Admin-Administration"))
+        button = self.response.html.find(id="adminviewstoggleform").find(
+            text=re.compile(r"Admin-Administration")
+        )
         self.assertIsNone(button)
 
         # user review forms
         self.assertNoLink('/core/genesis/list')
         self.assertNoLink('/core/changelog/list')
-        self._click_admin_view_button(re.compile(r"Benutzer-Review"),
-                                      current_state=False)
-        self.traverse({'href': '/core/genesis/list'},
-                      {'href': '/core/changelog/list'})
+        self._click_admin_view_button(
+            re.compile(r"Benutzer-Review"), current_state=False
+        )
+        self.traverse({'href': '/core/genesis/list'}, {'href': '/core/changelog/list'})
 
         # user administration
         # No adminshowuserform present
         self.assertNotIn('adminshowuserform', self.response.forms)
         self.assertNoLink('/core/changelog/view')
 
-        self._click_admin_view_button(re.compile(r"Benutzer-Administration"),
-                                      current_state=False)
-        self.traverse({'href': '/core/changelog/view'},
-                      {'href': '/cde/'},
-                      {'href': '/cde/search/user'})
+        self._click_admin_view_button(
+            re.compile(r"Benutzer-Administration"), current_state=False
+        )
+        self.traverse(
+            {'href': '/core/changelog/view'},
+            {'href': '/cde/'},
+            {'href': '/cde/search/user'},
+        )
         # Now, the adminshowuserform is present, so we can navigate to Berta
         self.admin_view_profile('berta')
 
@@ -383,8 +477,9 @@ class TestCoreFrontend(FrontendTest):
         self.response.click(href=re.compile(r'\d+/adminchange'))
         self.response.click(href='/membership/change')
         # Disable the User admin view. No buttons should be present anymore
-        self._click_admin_view_button(re.compile(r"Benutzer-Administration"),
-                                      current_state=True)
+        self._click_admin_view_button(
+            re.compile(r"Benutzer-Administration"), current_state=True
+        )
         self.assertNoLink('/username/adminchange')
         self.assertNoLink(re.compile(r'\d+/adminchange'))
         self.assertNoLink('/membership/change')
@@ -399,8 +494,9 @@ class TestCoreFrontend(FrontendTest):
         self.admin_view_profile('berta')
         self.assertTitle("Bertå Beispiel")
         self.assertTitle(USER_DICT['berta']['default_name_format'])
-        self.assertPresence("Bei Überweisungen aus dem Ausland achte bitte",
-                            div='copy-paste-template')
+        self.assertPresence(
+            "Bei Überweisungen aus dem Ausland achte bitte", div='copy-paste-template'
+        )
 
         self.admin_view_profile('emilia')
         self.assertTitle(USER_DICT['emilia']['default_name_format'])
@@ -412,11 +508,15 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("berta")
     def test_member_profile_past_events(self) -> None:
-        self.traverse({'description': self.user['given_names']},
-                      {'description': "PfingstAkademie 2014"})
+        self.traverse(
+            {'description': self.user['given_names']},
+            {'description': "PfingstAkademie 2014"},
+        )
         self.assertTitle("PfingstAkademie 2014")
-        self.traverse({'description': self.user['given_names']},
-                      {'description': "Swish -- und alles ist gut"})
+        self.traverse(
+            {'description': self.user['given_names']},
+            {'description': "Swish -- und alles ist gut"},
+        )
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
 
     @as_users("daniel", "emilia", maintain_data=True)
@@ -432,282 +532,236 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'href': '/core/self/show'})
         self.assertNonPresence("Bei Überweisungen aus dem Ausland achte bitte")
 
-    @as_users("anton")
+    @prepsql(
+        "UPDATE core.personas SET family_name = 'Test';"
+        "DELETE FROM ml.moderators WHERE id != 2;"
+    )
     def test_selectpersona(self) -> None:
-        self.get('/core/persona/select?kind=admin_persona&phrase=din')
-        expectation = {
-            'personas': [{'email': 'daniel@example.cde',
-                          'id': 4,
-                          'name': 'Daniel Dino'},
-                         {'email': 'ferdinand@example.cde',
-                          'id': 6,
-                          'name': 'Ferdinand Findus'}]}
-        self.assertEqual(expectation, self.response.json)
-        self.get('/core/persona/select?kind=admin_all_users&phrase=had')
-        expectation = {
-            'personas': [{'email': None,
-                          'id': 8,
-                          'name': "Hades Hell"}]}
-        self.assertEqual(expectation, self.response.json)
-        self.get('/core/persona/select?kind=ml_user&phrase=@exam')
-        expectation = (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        self.get('/core/persona/select?kind=pure_ml_user&phrase=@exam')
-        expectation = (10, 14)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        self.get('/core/persona/select?kind=event_user&phrase=bert')
-        expectation = (2,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        self.get('/core/persona/select?kind=pure_assembly_user&phrase=kal')
-        expectation = (11,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        self.get('/core/persona/select?kind=other&phrase=@exam')
+        core_admins = {"anton", "akira", "farin", "vera", "paul"}
+        cde_admins = {"anton", "akira", "quintus", "farin", "vera", "ferdinand", "olaf"}
+        event_admins = {"anton", "akira", "annika", "ferdinand"}
+        assembly_admins = {"anton", "akira", "ferdinand", "viktor"}
+        ml_admins = {"anton", "akira", "nina", "ferdinand"}
+        complaint_admins = {"anton", "akira", "simon"}
+        cdelokal_admins = {"ludwig"}
+        meta_admins = {"martin"}
+        auditors = {"katarina"}
+        presiders = {"werner"}
+        orgas = {"garcia", "emilia", "anton", "akira", "berta"}
+        moderators = {"janis"}
+        caretakers: set[str] = set()
+
+        all_users = list(USER_DICT)
+        sessionkeys = {}
+        for user_nick, user in USER_DICT.items():
+            if not user["username"]:
+                continue
+            sessionkeys[user_nick] = self.core.login(
+                ANONYMOUS, user["username"], user["password"], ip="127.0.0.0"
+            )
+
+        def url(
+            kind: str, phrase: str = "Test", *, aux: int | str | None = None
+        ) -> str:
+            return f"/core/persona/select?kind={kind}&phrase={phrase}&aux={aux or ''}"
+
+        def check_kind(
+            kind: str,
+            allow: set[str],
+            *,
+            allow_username: bool = False,
+            max_len: int = 12,
+            ins: Collection[str] = (),
+            outs: Collection[str] = (),
+            aux: int | None = None,
+        ) -> None:
+            for user in all_users:
+                if not sessionkeys.get(user):
+                    continue
+                with self.subTest(user=user, kind=kind):
+                    self.app.set_cookie('sessionkey', sessionkeys[user])
+                    if user in allow:
+                        self.get(url(kind, aux=aux))
+                        result = set(p["id"] for p in self.response.json["personas"])
+                        expected_len = min(max_len, 12 if user in core_admins else 3)
+                        self.assertEqual(expected_len, len(result))
+                        if allow_username:
+                            self.assertTrue(
+                                all(
+                                    "email" in p for p in self.response.json["personas"]
+                                ),
+                                "E-Mail unexpectedly not returned.",
+                            )
+                        else:
+                            self.assertFalse(
+                                any(
+                                    "email" in p for p in self.response.json["personas"]
+                                ),
+                                "E-Mail unexpectedly returned.",
+                            )
+                        for hit in ins:
+                            name = urllib.parse.quote_plus(
+                                USER_DICT[hit]["given_names"]
+                            )
+                            self.get(url(kind, name, aux=aux))
+                            self.assertEqual(1, len(self.response.json["personas"]))
+                        for miss in outs:
+                            name = urllib.parse.quote_plus(
+                                USER_DICT[miss]["given_names"]
+                            )
+                            self.get(url(kind, name, aux=aux))
+                            self.assertEqual([], self.response.json["personas"])
+
+                        self.get(url(kind, "@exam", aux=aux))
+                        if allow_username:
+                            self.assertEqual(
+                                expected_len, len(self.response.json["personas"])
+                            )
+                        else:
+                            self.assertEqual([], self.response.json["personas"])
+                    else:
+                        self.get(url(kind, aux=aux), status=403)
+
+        check_kind(
+            "admin_persona",
+            core_admins
+            | cde_admins
+            | complaint_admins
+            | ml_admins
+            | meta_admins
+            | auditors,
+            allow_username=True,
+            ins=(
+                "anton",
+                "berta",
+                "charly",
+                "daniel",
+                "emilia",
+                "farin",
+                "garcia",
+                "inga",
+                "janis",
+                "kalif",
+                "martin",
+            ),
+            outs=("hades",),
+        )
+        check_kind(
+            "admin_all_users",
+            core_admins | complaint_admins | ml_admins,
+            allow_username=True,
+            ins=("hades",),
+        )
+        check_kind(
+            "cde_user",
+            cde_admins | auditors,
+            allow_username=True,
+            outs=("kalif", "janis", "emilia"),
+        )
+        check_kind(
+            "past_event_user",
+            cde_admins | auditors,
+            ins=("hades",),
+            outs=("kalif", "janis"),
+        )
+        check_kind(
+            "pure_assembly_user",
+            presiders | assembly_admins,
+            ins=("kalif",),
+            outs=("berta", "janis"),
+        )
+        check_kind(
+            "assembly_user",
+            presiders | assembly_admins | auditors,
+            ins=("berta", "kalif"),
+            outs=("janis",),
+        )
+        check_kind(
+            "event_user",
+            orgas | caretakers | event_admins | auditors,
+            ins=("berta", "emilia"),
+            outs=("kalif", "janis"),
+        )
+        check_kind(
+            "ml_user",
+            core_admins
+            | cde_admins
+            | event_admins
+            | auditors
+            | assembly_admins
+            | ml_admins
+            | cdelokal_admins
+            | moderators,
+            outs=("hades",),
+        )
+        check_kind(
+            "pure_ml_user",
+            ml_admins,
+            allow_username=True,
+            max_len=2,
+            outs=("berta", "emilia", "kalif"),
+            ins=("janis",),
+        )
+        check_kind(
+            "ml_subscriber",
+            allow=ml_admins | moderators,
+            allow_username=True,
+            max_len=9,
+            aux=2,
+        )
+
+        self.app.set_cookie('sessionkey', sessionkeys["anton"])
+        # Check empty return on invalid kind.
+        self.get(url("invalid"))
         self.assertEqual({}, self.response.json)
-        self.get('/core/persona/select?kind=ml_user&phrase=@exam&aux=other')
+        # Check error on missing aux value.
+        self.get(url("ml_subscriber"), status=400)
+        # Check empty return on invalid aux value.
+        self.get(url("ml_subscriber", aux="invalid"))
         self.assertEqual({}, self.response.json)
-        # Legal given names match only if searchable
-        self.get('/core/persona/select?kind=admin_persona&phrase=ibn')
-        expectation = (11,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        self.get('/core/persona/select?kind=admin_persona&phrase=Armin')
-        self.assertEqual({'personas': []}, self.response.json)
 
-    @as_users("quintus")
-    def test_selectpersona_two(self) -> None:
-        # Quintus is unsearchable, but this should not matter here.
-        self.get('/core/persona/select?kind=admin_persona&phrase=din')
-        expectation = (4, 6)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-
-    @as_users("annika", "berta", "katarina", "martin", "nina", "paul", "rowena",
-              "quintus", "viktor", "werner", maintain_data=True)
-    def test_selectpersona_403(self) -> None:
-        # only core and ml admins
-        if not self.user_in("paul", "nina"):
-            self.get('/core/persona/select?kind=admin_all_users&phrase=hades',
-                     status=403)
-            self.assertTitle('403: Forbidden')
-        # only core or cde or ml admins and auditors
-        if not self.user_in("paul", "quintus", "nina", "katarina"):
-            self.get('/core/persona/select?kind=admin_persona&phrase=@exam',
-                     status=403)
-            self.assertTitle('403: Forbidden')
-        # only cde admins or auditors
-        if not self.user_in("quintus", "katarina"):
-            self.get('/core/persona/select?kind=cde_user&phrase=@exam',
-                     status=403)
-            self.assertTitle('403: Forbidden')
-            self.get('/core/persona/select?kind=past_event_user&phrase=@exam',
-                     status=403)
-            self.assertTitle('403: Forbidden')
-        # only auditors, assembly admins and presiders
-        if not self.user_in("katarina", "viktor", "werner"):
-            self.get('/core/persona/select?kind=assembly_user&phrase=@exam',
-                     status=403)
-            self.assertTitle('403: Forbidden')
-        # only assembly admins and presiders
-        if not self.user_in("viktor", "werner"):
-            self.get('/core/persona/select?kind=pure_assembly_user&phrase=@exam',
-                     status=403)
-            self.assertTitle('403: Forbidden')
-        # visible to all admins except for meta admins
-        if self.user_in("martin", "rowena"):
-            self.get('/core/persona/select?kind=ml_user&phrase=@exam',
-                     status=403)
-            self.assertTitle('403: Forbidden')
-        # only ml admins
-        if not self.user_in("nina"):
-            self.get('/core/persona/select?kind=pure_ml_user&phrase=@exam',
-                     status=403)
-            self.assertTitle('403: Forbidden')
-        # only event admins, orgas and auditors
-        if not self.user_in("annika", "berta", "katarina"):
-            self.get('/core/persona/select?kind=event_user&phrase=@exam',
-                     status=403)
-            self.assertTitle('403: Forbidden')
-        # everyone who may manage the given mailinglist
-        if self.user_in("martin", "rowena", "werner"):
-            self.get('/core/persona/select'
-                     '?kind=ml_subscriber&phrase=@exam&aux=57',
-                     status=403)
-            self.assertTitle('403: Forbidden')
-
-    @as_users("vera")
-    def test_selectpersona_relative_cde_admin(self) -> None:
-        self.get('/core/persona/select'
-                 '?kind=ml_user&phrase=@exam')
-        expectation = (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-
-    @as_users("annika")
-    def test_selectpersona_relative_event_admin(self) -> None:
-        self.get('/core/persona/select'
-                 '?kind=ml_user&phrase=@exam')
-        expectation = (1, 2, 3)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-
-    @as_users("viktor")
-    def test_selectpersona_relative_assembly_admin(self) -> None:
-        self.get('/core/persona/select'
-                 '?kind=ml_user&phrase=@exam')
-        expectation = (1, 2, 3)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-
-    @as_users("garcia", "nina", maintain_data=True)
-    def test_selectpersona_ml_event(self) -> None:
-        # Only event participants are shown
-        # ml_admins are allowed to do this even if they are no orgas.
-        self.get('/core/persona/select'
-                 '?kind=ml_subscriber&phrase=@exam&aux=9')
-        expectation = (1, 2, 5)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        self.get('/core/persona/select'
-                '?kind=ml_subscriber&phrase=@exam', status=400)
-        self.get('/core/persona/select'
-                 '?kind=ml_subscriber&phrase=inga&aux=9')
-        expectation = (9,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-
-    @as_users("berta")
-    def test_selectpersona_ml_event_403(self) -> None:
-        self.get('/core/persona/select'
-                 '?kind=ml_subscriber&phrase=@exam&aux=9',
-                 status=403)
-        self.assertTitle('403: Forbidden')
-
-    @as_users("berta", "werner", maintain_data=True)
-    def test_selectpersona_ml_assembly(self) -> None:
-        # Only assembly participants are shown
-        self.get('/core/persona/select'
-                 '?kind=ml_subscriber&phrase=@exam&aux=5')
-        expectation = (1, 2, 9)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-
-    @as_users("garcia")
-    def test_selectpersona_unprivileged_event(self) -> None:
-        self.get('/core/persona/select?kind=event_user&phrase=bert')
-        expectation = (2,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-
-    @as_users("werner")
-    def test_selectpersona_unprivileged_assembly(self) -> None:
-        # Normal use search
-        self.get('/core/persona/select?kind=assembly_user&phrase=bert')
-        expectation = (2,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        # Pure assembly user search
-        self.get('/core/persona/select?kind=pure_assembly_user&phrase=kalif')
-        expectation = (11,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        self.get('/core/persona/select?kind=pure_assembly_user&phrase=bert')
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(tuple(), reality)
-
-    @as_users("berta")
-    def test_selectpersona_unprivileged_ml(self) -> None:
-        self.get('/core/persona/select?kind=ml_user&phrase=@exam')
-        expectation = (1, 2, 3)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-
-    @as_users("janis")
-    def test_selectpersona_unprivileged_ml2(self) -> None:
-        self.get('/core/persona/select?kind=ml_user&phrase=@exam')
-        expectation = (1, 2, 3)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-
-    @as_users("katarina")
-    def test_selectpersona_auditor(self) -> None:
-        self.get('/core/persona/select?kind=admin_persona&phrase=din')
-        expectation = {
-            'personas': [
-                {
-                    'id': 4,
-                    'name': 'Daniel Dino',
-                },
-                {
-                    'id': 6,
-                    'name': 'Ferdinand Findus',
-                },
-            ],
-        }
-        self.assertEqual(expectation, self.response.json)
-        self.get('/core/persona/select?kind=ml_user&phrase=@exam')
-        expectation = (1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 13, 14)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation[:self.conf["NUM_PREVIEW_PERSONAS"]], reality)
-        self.get('/core/persona/select?kind=event_user&phrase=bert')
-        expectation = (2,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        self.get('/core/persona/select?kind=past_event_user&phrase=emil')
-        expectation = (5,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        self.get('/core/persona/select?kind=assembly_user&phrase=kalif')
-        expectation = (11,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        self.get('/core/persona/select?kind=pure_assembly_user&phrase=kal', status=403)
-        self.get('/core/persona/select?kind=pure_ml_user&phrase=@exam', status=403)
-        for ml_id in self.ml.list_mailinglists(self.key):
-            self.get(f'/core/persona/select?kind=ml_subscriber'
-                     f'&phrase=@exam&aux={ml_id}', status=403)
-
-    @as_users("quintus")
-    def test_selectpersona_past_event(self) -> None:
-        # yield archived users
-        self.get('/core/persona/select?kind=past_event_user&phrase=Hades')
-        expectation = (8,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-
-    @as_users("paul")
     def test_selectpersona_ids(self) -> None:
-        self.get('/core/persona/select?kind=admin_persona&phrase=DB-2-7')
-        expectation = (2,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
-        self.get('/core/persona/select?kind=ml_user&phrase=14')
-        expectation = (14,)
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(expectation, reality)
+        with self.switch_user("paul"):
+            self.get('/core/persona/select?kind=admin_persona&phrase=DB-2-7')
+            expectation = (2,)
+            reality = tuple(e['id'] for e in self.response.json['personas'])
+            self.assertEqual(expectation, reality)
+            self.get('/core/persona/select?kind=ml_user&phrase=14')
+            expectation = (14,)
+            reality = tuple(e['id'] for e in self.response.json['personas'])
+            self.assertEqual(expectation, reality)
+            self.get("/")
 
-    @as_users("inga")
-    def test_selectpersona_ids_unprivileged(self) -> None:
-        # search by ID only for admins, not moderators
-        self.get('/core/persona/select?kind=ml_user&phrase=DB-2-7')
-        reality = tuple(e['id'] for e in self.response.json['personas'])
-        self.assertEqual(tuple(), reality)
-        # too short search phrase
-        self.get('/core/persona/select?kind=ml_subscriber&aux=54&phrase=14')
-        self.assertEqual({}, self.response.json)
+        with self.switch_user("inga"):
+            # search by ID only for admins, not moderators
+            self.get('/core/persona/select?kind=ml_user&phrase=DB-2-7')
+            reality = tuple(e['id'] for e in self.response.json['personas'])
+            self.assertEqual(tuple(), reality)
+            # too short search phrase
+            self.get('/core/persona/select?kind=ml_subscriber&aux=54&phrase=14')
+            self.assertEqual({}, self.response.json)
+            self.get("/")
+
+        with self.switch_user("nina"):
+            self.get('/core/persona/select?kind=ml_subscriber&aux=1&phrase=DB-1-9')
+            self.assertEqual([1], [e['id'] for e in self.response.json['personas']])
+            self.get('/core/persona/select?kind=ml_subscriber&aux=1&phrase=1')
+            self.assertEqual([1], [e['id'] for e in self.response.json['personas']])
+            self.get('/core/persona/select?kind=ml_subscriber&aux=54&phrase=A')
+            self.assertEqual({}, self.response.json)
+            self.get("/")
 
     @as_users("vera")
     def test_adminshowuser_advanced(self) -> None:
         # unique result - non-archived users
-        for phrase, user in (("DB-2-7", USER_DICT['berta']),
-                              ("2", USER_DICT['berta']),
-                              ("Bertålotta Beispiel", USER_DICT['berta']),
-                              ("berta@example.cde", USER_DICT['berta']),
-                              ("anton@example.cde", USER_DICT['anton']),
-                              ("Utopia", USER_DICT['berta'])):
+        for phrase, user in (
+            ("DB-2-7", USER_DICT['berta']),
+            ("2", USER_DICT['berta']),
+            ("Bertålotta Beispiel", USER_DICT['berta']),
+            ("berta@example.cde", USER_DICT['berta']),
+            ("anton@example.cde", USER_DICT['anton']),
+            ("Utopia", USER_DICT['berta']),
+        ):
             self.traverse({'href': '^/$'})
             f = self.response.forms['adminshowuserform']
             f['phrase'] = phrase
@@ -766,8 +820,9 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("vera", "berta", "garcia", "daniel")
     def test_changedata(self) -> None:
-        self.traverse({'description': self.user['given_names']},
-                      {'description': 'Bearbeiten'})
+        self.traverse(
+            {'description': self.user['given_names']}, {'description': 'Bearbeiten'}
+        )
         f = self.response.forms['changedataform']
         f['nickname'] = "Zelda"
         f['location2'] = "Hyrule"
@@ -842,8 +897,10 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("vera")
     def test_adminchangedata_self(self) -> None:
-        self.traverse({'description': self.user['given_names']},
-                      {'href': '/core/persona/22/adminchange'})
+        self.traverse(
+            {'description': self.user['given_names']},
+            {'href': '/core/persona/22/adminchange'},
+        )
         self.assertTitle("Vera Verwaltung bearbeiten")
         f = self.response.forms['changedataform']
         f['nickname'] = "Zelda"
@@ -855,8 +912,10 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("vera", "berta", "emilia", maintain_data=True)
     def test_change_password_zxcvbn(self) -> None:
-        self.traverse({'description': self.user['given_names']},
-                      {'description': 'Passwort ändern'})
+        self.traverse(
+            {'description': self.user['given_names']},
+            {'description': 'Passwort ändern'},
+        )
         # Password one: Common English words
         new_password = 'dragonSecret'
         f = self.response.forms['passwordchangeform']
@@ -866,10 +925,13 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
         self.assertValidationError(
-            "new_password", "Das ist ähnlich zu einem häufig genutzten Passwort.",
-            notification="Passwort ist zu schwach.")
+            "new_password",
+            "Das ist ähnlich zu einem häufig genutzten Passwort.",
+            notification="Passwort ist zu schwach.",
+        )
         self.assertPresence(
-            'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
+            'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.'
+        )
         # Password two: Repeating patterns
         new_password = 'dfgdfg123'
         f = self.response.forms['passwordchangeform']
@@ -878,14 +940,16 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertValidationError("new_password",
-                                   'Wiederholungen wie „abcabcabc“ sind nur geringfügig'
-                                   ' schwieriger zu erraten als „abc“.',
-                                   notification="Passwort ist zu schwach.")
+        self.assertValidationError(
+            "new_password",
+            'Wiederholungen wie „abcabcabc“ sind nur geringfügig'
+            ' schwieriger zu erraten als „abc“.',
+            notification="Passwort ist zu schwach.",
+        )
         self.assertPresence(
-            'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.')
-        self.assertPresence(
-            'Vermeide Wiederholungen von Wörtern und Buchstaben.')
+            'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.'
+        )
+        self.assertPresence('Vermeide Wiederholungen von Wörtern und Buchstaben.')
         # Password three: Common German words
         new_password = 'wurdeGemeinde'
         f = self.response.forms['passwordchangeform']
@@ -897,7 +961,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertValidationError(
             "new_password",
             'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.',
-            notification="Passwort ist zu schwach.")
+            notification="Passwort ist zu schwach.",
+        )
         self.assertPresence('Großschreibung hilft nicht wirklich.')
         # Password four: German umlauts
         new_password = 'überwährend'
@@ -909,18 +974,22 @@ class TestCoreFrontend(FrontendTest):
         self.assertValidationError(
             "new_password",
             'Füge ein oder zwei weitere Wörter hinzu. Unübliche Wörter sind besser.',
-            notification="Passwort ist zu schwach.")
+            notification="Passwort ist zu schwach.",
+        )
         # Password five: User-specific passwords
-        new_password = (self.user['given_names'].replace('-', ' ').split()[0] +
-                        self.user['family_name'].replace('-', ' ').split()[0])
+        new_password = (
+            self.user['given_names'].replace('-', ' ').split()[0]
+            + self.user['family_name'].replace('-', ' ').split()[0]
+        )
         f = self.response.forms['passwordchangeform']
         f['old_password'] = self.user['password']
         f['new_password'] = new_password
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertValidationError("new_password", "",
-                                   notification="Passwort ist zu schwach.")
+        self.assertValidationError(
+            "new_password", "", notification="Passwort ist zu schwach."
+        )
         # Password six+seven: CdE-specific passwords
         new_password = "cdeakademie"
         f = self.response.forms['passwordchangeform']
@@ -929,8 +998,9 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertValidationError("new_password", "",
-                                   notification="Passwort ist zu schwach.")
+        self.assertValidationError(
+            "new_password", "", notification="Passwort ist zu schwach."
+        )
         new_password = "duschorgie"
         f = self.response.forms['passwordchangeform']
         f['old_password'] = self.user['password']
@@ -938,13 +1008,16 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
-        self.assertValidationError("new_password", "",
-                                   notification="Passwort ist zu schwach.")
+        self.assertValidationError(
+            "new_password", "", notification="Passwort ist zu schwach."
+        )
 
     @as_users("vera", "ferdinand")
     def test_change_password_zxcvbn_admin(self) -> None:
-        self.traverse({'description': self.user['given_names']},
-                      {'description': 'Passwort ändern'})
+        self.traverse(
+            {'description': self.user['given_names']},
+            {'description': 'Passwort ändern'},
+        )
         # Strong enough for normal users, but not for admins
         new_password = 'phonebookbread'
         f = self.response.forms['passwordchangeform']
@@ -954,13 +1027,17 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertNonPresence('Passwort geändert.')
         self.assertValidationError(
-            "new_password", "Passwort ist zu schwach für einen Admin-Account.",
-            notification="Passwort ist zu schwach.")
+            "new_password",
+            "Passwort ist zu schwach für einen Admin-Account.",
+            notification="Passwort ist zu schwach.",
+        )
 
     @as_users("berta", "emilia", maintain_data=True)
     def test_change_password_zxcvbn_noadmin(self) -> None:
-        self.traverse({'description': self.user['given_names']},
-                      {'description': 'Passwort ändern'})
+        self.traverse(
+            {'description': self.user['given_names']},
+            {'description': 'Passwort ändern'},
+        )
         # Strong enough for normal users, but not for admins
         new_password = 'phonebookbread'
         f = self.response.forms['passwordchangeform']
@@ -974,8 +1051,10 @@ class TestCoreFrontend(FrontendTest):
     def test_change_password(self) -> None:
         user = self.user
         new_password = 'krce84#(=kNO3xb'
-        self.traverse({'description': self.user['given_names']},
-                      {'description': 'Passwort ändern'})
+        self.traverse(
+            {'description': self.user['given_names']},
+            {'description': 'Passwort ändern'},
+        )
 
         # non-matching password
         f = self.response.forms['passwordchangeform']
@@ -983,10 +1062,16 @@ class TestCoreFrontend(FrontendTest):
         f['new_password'] = new_password
         f['new_password2'] = 'something else'
         self.submit(f, check_notification=False)
-        self.assertValidationError('new_password', "Passwörter stimmen nicht überein.",
-                                   notification="Passwörter stimmen nicht überein.")
-        self.assertValidationError('new_password2', "Passwörter stimmen nicht überein.",
-                                   notification="Passwörter stimmen nicht überein.")
+        self.assertValidationError(
+            'new_password',
+            "Passwörter stimmen nicht überein.",
+            notification="Passwörter stimmen nicht überein.",
+        )
+        self.assertValidationError(
+            'new_password2',
+            "Passwörter stimmen nicht überein.",
+            notification="Passwörter stimmen nicht überein.",
+        )
 
         # wrong old password
         f = self.response.forms['passwordchangeform']
@@ -994,8 +1079,9 @@ class TestCoreFrontend(FrontendTest):
         f['new_password'] = new_password
         f['new_password2'] = new_password
         self.submit(f, check_notification=False)
-        self.assertValidationError('old_password', "Passwort falsch.",
-                                   notification="Passwort ist falsch.")
+        self.assertValidationError(
+            'old_password', "Passwort falsch.", notification="Passwort ist falsch."
+        )
 
         # everything correct
         f = self.response.forms['passwordchangeform']
@@ -1057,7 +1143,8 @@ class TestCoreFrontend(FrontendTest):
                         self.assertValidationError(
                             "new_password",
                             "Das ist ähnlich zu einem häufig genutzten Passwort.",
-                            notification="Passwort ist zu schwach.")
+                            notification="Passwort ist zu schwach.",
+                        )
 
     @prepsql("DELETE FROM core.email_states")
     def test_repeated_password_reset(self) -> None:
@@ -1077,27 +1164,29 @@ class TestCoreFrontend(FrontendTest):
         f['new_password2'] = 'something else'
         self.submit(f, check_notification=False)
         self.assertPresence("Passwörter stimmen nicht überein.", div='notifications')
-        self.assertValidationError('new_password', "Passwörter stimmen nicht überein.",
-                                   notification="Passwörter stimmen nicht überein.")
-        self.assertValidationError('new_password2', "Passwörter stimmen nicht überein.",
-                                   notification="Passwörter stimmen nicht überein.")
+        self.assertValidationError(
+            'new_password',
+            "Passwörter stimmen nicht überein.",
+            notification="Passwörter stimmen nicht überein.",
+        )
+        self.assertValidationError(
+            'new_password2',
+            "Passwörter stimmen nicht überein.",
+            notification="Passwörter stimmen nicht überein.",
+        )
         f = self.response.forms['passwordresetform']
         f['new_password'] = new_password
         f['new_password2'] = new_password
         self.submit(f)
         # Second reset with same link should fail
         self.get(link)
-        self.assertTitle("Neues Passwort setzen")
-        f = self.response.forms['passwordresetform']
-        f['new_password'] = new_password
-        f['new_password2'] = new_password
-        self.submit(f, check_notification=False)
-        self.assertPresence("Link ist ungültig oder wurde bereits verwendet.",
-                            div="notifications")
+        self.assertTitle("Passwort zurücksetzen")
+        self.assertPresence(
+            "Link ist ungültig oder wurde bereits verwendet.", div="notifications"
+        )
 
     @prepsql("DELETE FROM core.email_states")
     def test_password_reset_username_change(self) -> None:
-        new_password = "krce63koLe#$e"
         user = USER_DICT['berta']
         username = user['username']
         self.get("/")
@@ -1106,16 +1195,19 @@ class TestCoreFrontend(FrontendTest):
         f['email'] = username
         self.submit(f)
         link = self.fetch_link()
+        cookie = self.core.make_reset_cookie(
+            self.key, user["id"], datetime.timedelta(seconds=10)
+        )
         with self.switch_user('vera'):
             self.core.change_username(
-                self.key, user['id'], "new_username@example.cde", password=None)
+                self.key, user['id'], "new_username@example.cde", password=None
+            )
         self.get(link)
-        f = self.response.forms['passwordresetform']
-        f['new_password'] = f['new_password2'] = new_password
-        self.submit(f, check_notification=False)
-        self.assertPresence("Unbekannte E-Mail-Adresse", div="notifications")
-        with self.assertRaises(ValueError):
-            self.core.check_password_strength(self.key, new_password, email=username)
+        self.assertPresence(
+            "Link ist ungültig oder wurde bereits verwendet.", div="notifications"
+        )
+        with self.assertRaises(ParameterInvalidError):
+            self.core.check_reset_cookie(self.key, persona_id=user["id"], cookie=cookie)
 
     def test_admin_reset_password(self) -> None:
         new_password = "krce63koLe#$e"
@@ -1165,13 +1257,16 @@ class TestCoreFrontend(FrontendTest):
         # First test with current username
         user = self.user
         current_username = self.user['username']
-        self.traverse({'description': self.user['given_names']},
-                      {'href': '/core/self/username/change'})
+        self.traverse(
+            {'description': self.user['given_names']},
+            {'href': '/core/self/username/change'},
+        )
         f = self.response.forms['usernamechangeform']
         f['new_username'] = current_username
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            "new_username", "Muss sich von der aktuellen E-Mail-Adresse unterscheiden.")
+            "new_username", "Muss sich von der aktuellen E-Mail-Adresse unterscheiden."
+        )
         self.assertNonPresence("E-Mail abgeschickt!", div="notifications")
         # Now with taken username
         f['new_username'] = "charly@example.cde"
@@ -1246,17 +1341,14 @@ class TestCoreFrontend(FrontendTest):
             'is_assembly_admin': True,
         }
         # Grant new admin privileges.
-        self._approve_privilege_change(
-            admin1, admin2, new_admin1, new_privileges1)
+        self._approve_privilege_change(admin1, admin2, new_admin1, new_privileges1)
         self.logout()
-        self._approve_privilege_change(
-            admin1, admin2, new_admin2, new_privileges2)
+        self._approve_privilege_change(admin1, admin2, new_admin2, new_privileges2)
         self.logout()
         # Check results of Any Admin query.
         self.login(admin1)
         self.get('/core/search/user')
-        save = self.response
-        self.response = save.click(description="Alle Admins")
+        self.traverse("Alle Admins")
         self.assertPresence("Ergebnis [17]", div='query-results')
         self.assertPresence("Akira", div='query-result')
         self.assertPresence("Anton", div='query-result')
@@ -1296,13 +1388,27 @@ class TestCoreFrontend(FrontendTest):
         }
         new_password = "ihsokdmfsod"
         new_admin_copy = self._approve_privilege_change(
-            USER_DICT["anton"], USER_DICT["martin"], new_admin,
-            new_privileges, old_privileges, new_password=new_password)
-        self.assertNotification("E-Mail", 'info')
+            USER_DICT["martin"],
+            USER_DICT["anton"],
+            new_admin,
+            new_privileges,
+            old_privileges,
+            new_password=new_password,
+        )
+        user_mail = self.fetch_mail_content(0)
+        self.assertIn(
+            "Deine Adminrechte in der CdE-Datenbank haben sich geändert.", user_mail
+        )
+        admins_mail = self.fetch_mail_content(1)
+        self.assertIn("folgende Adminprivilegien hinzugefügt:", admins_mail)
+        self.assertIn("Veranstaltungs-Admin", admins_mail)
+        self.assertIn("Versammlungs-Admin", admins_mail)
+        self.assertIn("CdElokal-Admin", admins_mail)
         # Check success.
         self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
-        self.assertTitle("Privilegien ändern für {}".format(
-            new_admin['default_name_format']))
+        self.assertTitle(
+            "Privilegien ändern für {}".format(new_admin['default_name_format'])
+        )
         f = self.response.forms['privilegechangeform']
         old_privileges.update(new_privileges)
         for k, v in old_privileges.items():
@@ -1320,15 +1426,17 @@ class TestCoreFrontend(FrontendTest):
     def test_change_privileges_dependency_error(self) -> None:
         new_admin = USER_DICT["berta"]
         self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
-        self.assertTitle("Privilegien ändern für {}".format(
-            new_admin["default_name_format"]))
+        self.assertTitle(
+            "Privilegien ändern für {}".format(new_admin["default_name_format"])
+        )
         f = self.response.forms['privilegechangeform']
         f['is_finance_admin'] = True
         f['notes'] = "Berta ist jetzt Praktikant der Finanz Vorstände."
         self.submit(f, check_notification=False)
         self.assertValidationError(
             "is_finance_admin",
-            "Diese Rolle kann nicht an nicht-CdE-Admin vergeben werden.")
+            "Diese Rolle kann nicht an nicht-CdE-Admin vergeben werden.",
+        )
         f['is_cde_admin'] = True
         f['notes'] = "Dann ist Berta jetzt eben CdE und Finanz Admin."
         self.submit(f)
@@ -1350,13 +1458,18 @@ class TestCoreFrontend(FrontendTest):
             'is_ml_admin': False,
         }
         self._reject_privilege_change(
-            USER_DICT["anton"], USER_DICT["martin"], new_admin,
-            new_privileges, old_privileges)
+            USER_DICT["anton"],
+            USER_DICT["martin"],
+            new_admin,
+            new_privileges,
+            old_privileges,
+        )
         self.assertNonPresence("E-Mail")
         # Check success.
         self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
-        self.assertTitle("Privilegien ändern für {}".format(
-            new_admin["default_name_format"]))
+        self.assertTitle(
+            "Privilegien ändern für {}".format(new_admin["default_name_format"])
+        )
         f = self.response.forms['privilegechangeform']
         # Check that old privileges are still active.
         for k, v in old_privileges.items():
@@ -1368,10 +1481,10 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['adminshowuserform']
         f['phrase'] = new_admin["DB-ID"]
         self.submit(f)
-        self.traverse(
-            {'href': '/core/persona/{}/privileges'.format(new_admin["id"])})
-        self.assertTitle("Privilegien ändern für {}".format(
-            new_admin["default_name_format"]))
+        self.traverse({'href': '/core/persona/{}/privileges'.format(new_admin["id"])})
+        self.assertTitle(
+            "Privilegien ändern für {}".format(new_admin["default_name_format"])
+        )
         f = self.response.forms['privilegechangeform']
         self.assertNotIn('is_meta_admin', f.fields)
         self.assertNotIn('is_core_admin', f.fields)
@@ -1385,16 +1498,19 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms["invalidatepasswordform"]
         f["confirm_username"] = "something else"
         self.submit(f, check_notification=False)
-        self.assertValidationError('confirm_username',
-                                   "Bitte gib die Emailadresse des Nutzers an.")
+        self.assertValidationError(
+            'confirm_username', "Bitte gib die Emailadresse des Nutzers an."
+        )
         f["confirm_username"] = USER_DICT[other_user_name]["username"]
         self.submit(f)
         self.logout()
         self.login(USER_DICT[other_user_name])
         self.assertPresence("Login fehlgeschlagen.", div="notifications")
 
-    @prepsql("DELETE FROM core.email_states;"
-             " UPDATE event.events SET is_archived = True WHERE id = 3")
+    @prepsql(
+        "DELETE FROM core.email_states;"
+        " UPDATE event.events SET is_archived = True WHERE id = 3"
+    )
     def test_archival_admin_requirement(self) -> None:
         # First grant admin privileges to new admin.
         new_admin = USER_DICT["berta"]
@@ -1404,8 +1520,12 @@ class TestCoreFrontend(FrontendTest):
         }
         new_password = "ponsdfsidnsdgj"
         new_admin_copy = self._approve_privilege_change(
-            USER_DICT["anton"], USER_DICT["martin"], new_admin,
-            new_privileges, new_password=new_password)
+            USER_DICT["anton"],
+            USER_DICT["martin"],
+            new_admin,
+            new_privileges,
+            new_password=new_password,
+        )
         # Test archival
         self.logout()
         self.login(new_admin_copy)
@@ -1423,11 +1543,13 @@ class TestCoreFrontend(FrontendTest):
         }
         self._initialize_privilege_change(user, user, user, new_privileges)
         self.login(user)
-        self.traverse({'description': "Admin-Änderungen"},
-                      {'description': "Anton Administrator"})
+        self.traverse(
+            {'description': "Admin-Änderungen"}, {'description': "Anton Administrator"}
+        )
         self.assertPresence(
             "Diese Änderung der Admin-Privilegien wurde von Dir angestoßen",
-            div="notifications")
+            div="notifications",
+        )
         self.assertNotIn('ackprivilegechangeform', self.response.forms)
 
     @as_users("anton")
@@ -1437,25 +1559,30 @@ class TestCoreFrontend(FrontendTest):
         f["note"] = "Archived for testing."
         f["ack_delete"].checked = True
         self.submit(f, check_notification=False)
-        self.assertPresence("Admins können nicht archiviert werden.",
-                            div="notifications")
+        self.assertPresence(
+            "Admins können nicht archiviert werden.", div="notifications"
+        )
         self.assertNonPresence("Benutzer ist archiviert", div="notifications")
         self.assertPresence(USER_DICT["martin"]["username"])
 
-    def _initialize_privilege_change(self, admin1: UserIdentifier,
-                                     admin2: UserIdentifier, new_admin: UserObject,
-                                     new_privileges: dict[str, bool],
-                                     old_privileges: Optional[dict[str, bool]] = None,
-                                     note: str = "For testing.") -> None:
+    def _initialize_privilege_change(
+        self,
+        admin1: UserIdentifier,
+        admin2: UserIdentifier,
+        new_admin: UserObject,
+        new_privileges: dict[str, bool],
+        old_privileges: dict[str, bool] | None = None,
+        note: str = "For testing.",
+    ) -> None:
         """Helper to initialize a privilege change."""
         self.login(admin1)
-        f = self.response.forms['adminshowuserform']
+        f = self.response.forms['quickpersonasearch']
         f['phrase'] = new_admin["DB-ID"]
         self.submit(f)
-        self.traverse(
-            {'href': '/core/persona/{}/privileges'.format(new_admin["id"])})
-        self.assertTitle("Privilegien ändern für {}".format(
-            new_admin["default_name_format"]))
+        self.traverse({'href': '/core/persona/{}/privileges'.format(new_admin["id"])})
+        self.assertTitle(
+            "Privilegien ändern für {}".format(new_admin["default_name_format"])
+        )
         f = self.response.forms['privilegechangeform']
         if old_privileges:
             for k, v in old_privileges.items():
@@ -1466,24 +1593,33 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.logout()
 
-    def _approve_privilege_change(self, admin1: UserIdentifier, admin2: UserIdentifier,
-                                  new_admin: UserObject,
-                                  new_privileges: dict[str, bool],
-                                  old_privileges: Optional[dict[str, bool]] = None,
-                                  note: str = "For testing.",
-                                  new_password: Optional[str] = None) -> UserObject:
+    def _approve_privilege_change(
+        self,
+        admin1: UserIdentifier,
+        admin2: UserIdentifier,
+        new_admin: UserObject,
+        new_privileges: dict[str, bool],
+        old_privileges: dict[str, bool] | None = None,
+        note: str = "For testing.",
+        new_password: str | None = None,
+    ) -> UserObject:
         """Helper to make a user an admin."""
         self._initialize_privilege_change(
-            admin1, admin2, new_admin, new_privileges, old_privileges)
+            admin1, admin2, new_admin, new_privileges, old_privileges
+        )
         # Confirm privilege change.
         self.login(admin2)
-        self.traverse({'description': "Admin-Änderungen"},
-                      {'description': new_admin['family_name']})
+        self.traverse(
+            {'description': "Admin-Änderungen"},
+            {'description': new_admin['family_name']},
+        )
         f = self.response.forms["ackprivilegechangeform"]
         self.submit(f)
         self.assertNotification("Änderung wurde übernommen.", 'success')
         if new_password:
             saved = self.response
+            mail = self.fetch_mail_content()
+            self.assertIn("Passwort", mail)
             link = self.fetch_link(num=2)
             self.get(link)
             f = self.response.forms["passwordresetform"]
@@ -1496,26 +1632,43 @@ class TestCoreFrontend(FrontendTest):
             self.response = saved
         return new_admin
 
-    def _reject_privilege_change(self, admin1: UserIdentifier, admin2: UserIdentifier,
-                                 new_admin: UserObject,
-                                 new_privileges: dict[str, bool],
-                                 old_privileges: Optional[dict[str, bool]] = None,
-                                 note: str = "For testing.") -> None:
+    def _reject_privilege_change(
+        self,
+        admin1: UserIdentifier,
+        admin2: UserIdentifier,
+        new_admin: UserObject,
+        new_privileges: dict[str, bool],
+        old_privileges: dict[str, bool] | None = None,
+        note: str = "For testing.",
+    ) -> None:
         """Helper to reject a privilege change."""
         self._initialize_privilege_change(
-            admin1, admin2, new_admin, new_privileges, old_privileges)
+            admin1, admin2, new_admin, new_privileges, old_privileges
+        )
         # Confirm privilege change.
         self.login(admin2)
-        self.traverse({'description': "Admin-Änderungen"},
-                      {'description': new_admin['family_name']})
+        self.traverse(
+            {'description': "Admin-Änderungen"},
+            {'description': new_admin['family_name']},
+        )
         f = self.response.forms["nackprivilegechangeform"]
         self.submit(f)
         self.assertPresence("Änderung abgelehnt.", div="notifications")
 
     @as_users("vera")
     def test_toggle_activity(self) -> None:
-        for i, u in enumerate(("berta", "charly", "daniel", "emilia", "garcia",
-                               "inga", "janis", "kalif", "martin", "olaf")):
+        for i, u in enumerate((
+            "berta",
+            "charly",
+            "daniel",
+            "emilia",
+            "garcia",
+            "inga",
+            "janis",
+            "kalif",
+            "martin",
+            "olaf",
+        )):
             with self.subTest(target=u):
                 self.admin_view_profile(u)
                 f = self.response.forms['activitytoggleform']
@@ -1541,15 +1694,18 @@ class TestCoreFrontend(FrontendTest):
     def test_get_foto(self) -> None:
         response = self.app.get(
             '/core/foto/e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e6'
-            '1ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9')
+            '1ffbec03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9'
+        )
         self.assertTrue(response.body.startswith(b"\x89PNG"))
         self.assertTrue(len(response.body) > 10000)
 
     @storage
     @as_users("vera", "berta")
     def test_set_foto(self) -> None:
-        self.traverse({'description': self.user['given_names']},
-                      {'description': 'Profilbild ändern'})
+        self.traverse(
+            {'description': self.user['given_names']},
+            {'description': 'Profilbild ändern'},
+        )
         f = self.response.forms['setfotoform']
         self.submit(f, check_notification=False)
         self.assertValidationError('foto', "Darf nicht leer sein.")
@@ -1565,8 +1721,10 @@ class TestCoreFrontend(FrontendTest):
     @storage
     @as_users("vera", "berta")
     def test_set_foto_jpg(self) -> None:
-        self.traverse({'description': self.user['given_names']},
-                      {'description': 'Profilbild ändern'})
+        self.traverse(
+            {'description': self.user['given_names']},
+            {'description': 'Profilbild ändern'},
+        )
         f = self.response.forms['setfotoform']
         with open(self.testfile_dir / "picture.jpg", 'rb') as datafile:
             data = datafile.read()
@@ -1606,7 +1764,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("vera")
     def test_create_user(self) -> None:
 
-        def _traverse_to_realm(realm: Optional[str] = None) -> webtest.Form:
+        def _traverse_to_realm(realm: str | None = None) -> webtest.Form:
             self.traverse('Index', 'Nutzer verwalten', 'Nutzer anlegen')
             self.assertTitle("Nutzer anlegen")
             f = self.response.forms['selectrealmform']
@@ -1712,10 +1870,13 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("N. N.")
         self.assertNonPresence("Hades")
-        self.assertPresence("Name N. N."
-                            " Geburtsdatum N/A Geschlecht keine Angabe"
-                            " Pronomen – Pronomen auf Namensschild Nein",
-                            div='personal-information', exact=True)
+        self.assertPresence(
+            "Name N. N."
+            " Geburtsdatum N/A Geschlecht keine Angabe"
+            " Pronomen – Pronomen auf Namensschild Nein",
+            div='personal-information',
+            exact=True,
+        )
         self.assertNonPresence("archiviert")
         self.assertPresence("Der Benutzer wurde geleert.", div='purged')
         self.assertNotIn('dearchivepersonaform', self.response.forms)
@@ -1754,7 +1915,8 @@ class TestCoreFrontend(FrontendTest):
         self.traverse("Mitglieder")
         self.assertPresence("Sozialbank", div="payment-info")
         self.assertPresence(
-            iban_filter(Accounts.Sozialbank.get_iban()), div="payment-info")
+            iban_filter(Accounts.Sozialbank.get_iban()), div="payment-info"
+        )
         self.assertNonPresence("Skatbank", div="payment-info")
         self.traverse("Index", "Metadaten")
         self.assertTitle("Metadaten")
@@ -1773,7 +1935,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertNonPresence("Sozialbank", div="payment-info")
         self.assertPresence("Skatbank", div="payment-info")
         self.assertPresence(
-            iban_filter(Accounts.Skatbank.get_iban()), div="payment-info")
+            iban_filter(Accounts.Skatbank.get_iban()), div="payment-info"
+        )
 
     def test_lockdown_web(self) -> None:
         self.login('vera')
@@ -1806,12 +1969,19 @@ class TestCoreFrontend(FrontendTest):
         # Test warnings about name ambiguity.
         self.traverse("Meine Daten", "Bearbeiten")
         f = self.response.forms['changedataform']
-        f['family_name'] = f['birth_name'] = "Ganondorf"
+        f['family_name'] = f['birth_name'] = f['name_supplement'] = "Ganondorf"
         f['legal_given_names'] = f['nickname'] = f['given_names'].value
         self.submit(f, check_notification=False)
-        self.assertValidationWarning('birth_name', "Geburtsname entspricht dem Familiennamen")
-        self.assertValidationWarning('legal_given_names', "Bürgerlicher Vorname entspricht dem Rufnamen")
+        self.assertValidationWarning(
+            'birth_name', "Geburtsname entspricht dem Familiennamen"
+        )
+        self.assertValidationWarning(
+            'legal_given_names', "Bürgerlicher Vorname entspricht dem Rufnamen"
+        )
         self.assertValidationWarning('nickname', "Spitzname entspricht dem Rufnamen")
+        self.assertValidationWarning(
+            'name_supplement', "Sollte nicht deinen Namen enthalten"
+        )
 
         # Test regular changelog facility.
         self.traverse("Meine Daten", "Bearbeiten")
@@ -1819,8 +1989,7 @@ class TestCoreFrontend(FrontendTest):
         f['family_name'] = "Ganondorf"
         f['birth_name'] = ""
         self.submit(f, check_notification=False)
-        self.assertPresence("Die Änderung wartet auf Bestätigung.",
-                            div='notifications')
+        self.assertPresence("Die Änderung wartet auf Bestätigung.", div='notifications')
         self.assertPresence(self.user['family_name'], div='personal-information')
         self.assertPresence("Gemeinser", div='personal-information')
         self.assertNonPresence('Ganondorf')
@@ -1836,11 +2005,13 @@ class TestCoreFrontend(FrontendTest):
         with self.switch_user("vera"):
             self.traverse({'description': 'Änderungen prüfen'})
             self.assertTitle("Zu prüfende Profiländerungen [1]")
-            self.traverse({'description': 'Ganondorf'},
-                          {'description': 'Änderungen bearbeiten'})
+            self.traverse(
+                {'description': 'Ganondorf'}, {'description': 'Änderungen bearbeiten'}
+            )
             self.assertTitle("Bertå Ganondorf bearbeiten")
-            self.traverse({'description': 'Änderungen prüfen'},
-                          {'description': 'Ganondorf'})
+            self.traverse(
+                {'description': 'Änderungen prüfen'}, {'description': 'Ganondorf'}
+            )
             f = self.response.forms['ackchangeform']
             self.submit(f)
             self.assertTitle("Zu prüfende Profiländerungen [0]")
@@ -1883,18 +2054,21 @@ class TestCoreFrontend(FrontendTest):
                 f = self.response.forms['changedataform']
                 f['family_name'] = "Ganondorf"
                 self.submit(f, check_notification=False)
-                self.assertPresence("Die Änderung wartet auf Bestätigung.",
-                                    div='notifications')
-                self.assertPresence(self.user['family_name'],
-                                    div='personal-information')
+                self.assertPresence(
+                    "Die Änderung wartet auf Bestätigung.", div='notifications'
+                )
+                self.assertPresence(
+                    self.user['family_name'], div='personal-information'
+                )
                 self.assertPresence("Gemeinser", div='personal-information')
                 self.assertNonPresence('Ganondorf')
 
         def _quintus_displace_change(family_name: str) -> None:
             self.traverse({'description': 'Änderungen prüfen'})
             self.assertTitle("Zu prüfende Profiländerungen [1]")
-            self.traverse({'description': 'Ganondorf'},
-                          {'description': 'Änderungen bearbeiten'})
+            self.traverse(
+                {'description': 'Ganondorf'}, {'description': 'Änderungen bearbeiten'}
+            )
             self.assertTitle("Bertå Ganondorf bearbeiten")
             self.assertPresence("Speichern (inklusive zu prüfender Änderungen)")
             f = self.response.forms['changedataform']
@@ -1911,13 +2085,15 @@ class TestCoreFrontend(FrontendTest):
 
         with self.switch_user("paul"):
             total_entries = self.core.retrieve_changelog_meta(
-                self.key, ChangelogLogFilter())[0]
+                self.key, ChangelogLogFilter()
+            )[0]
 
         _berta_change_profile()
         _quintus_displace_change("Beispiel")
         self.assertTitle("Bertå Beispiel")
-        self.assertNotification("Änderung hat eine ausstehende Änderung zurückgesetzt.",
-                                'warning')
+        self.assertNotification(
+            "Änderung hat eine ausstehende Änderung zurückgesetzt.", 'warning'
+        )
         self.assertPresence("Beispiel")
         self.assertNonPresence("Ganon")
         self.assertNonPresence("dorf")
@@ -1936,10 +2112,10 @@ class TestCoreFrontend(FrontendTest):
             f = self.response.forms['changedataform']
             f['affiliation'] = "Jederfrau"
             self.submit(f, check_notification=False)
-            self.assertPresence("Die Änderung wartet auf Bestätigung.",
-                                div='notifications')
-            self.assertPresence(self.user['family_name'],
-                                div='personal-information')
+            self.assertPresence(
+                "Die Änderung wartet auf Bestätigung.", div='notifications'
+            )
+            self.assertPresence(self.user['family_name'], div='personal-information')
             self.assertPresence("Jedermann", div='additional')
             self.assertNonPresence("Jederfrau")
             self.assertNonPresence('Ganondorf')
@@ -1964,7 +2140,7 @@ class TestCoreFrontend(FrontendTest):
 
         # Check for proper logging
         with self.switch_user("paul"):
-            changelog_expectation: tuple[dict[str, Union[int, str, None]], ...] = (
+            changelog_expectation: tuple[dict[str, int | str | None], ...] = (
                 {
                     'code': const.PersonaChangeStati.superseded,
                     'reviewed_by': None,
@@ -2023,8 +2199,9 @@ class TestCoreFrontend(FrontendTest):
                     entry['change_note'] = "Allgemeine Änderung."
 
             # Set offset to avoid selecting the Init. changelog entries
-            self.assertLogEqual(changelog_expectation, realm='changelog',
-                                offset=total_entries)
+            self.assertLogEqual(
+                changelog_expectation, realm='changelog', offset=total_entries
+            )
 
     @as_users("vera")
     def test_history(self) -> None:
@@ -2066,9 +2243,12 @@ class TestCoreFrontend(FrontendTest):
         self.assertIn('<h4 id="CDEDB_MD_inga">', self.response.text)
         self.assertIn('<div class="toc">', self.response.text)
         self.assertIn(
-            '<li><a href="#CDEDB_MD_musik">Musik</a></li>', self.response.text)
-        self.assertIn('<a class="btn btn-xs btn-warning" href="http://www.cde-ev.de">',
-                      self.response.text)
+            '<li><a href="#CDEDB_MD_musik">Musik</a></li>', self.response.text
+        )
+        self.assertIn(
+            '<a class="btn btn-xs btn-warning" href="http://www.cde-ev.de">',
+            self.response.text,
+        )
 
     def test_admin_overview(self) -> None:
         # Makes Berta Event + CdE Admin
@@ -2086,8 +2266,12 @@ class TestCoreFrontend(FrontendTest):
             'is_ml_admin': False,
         }
         self._approve_privilege_change(
-            USER_DICT["anton"], USER_DICT["martin"], USER_DICT["berta"],
-            new_privileges, old_privileges)
+            USER_DICT["anton"],
+            USER_DICT["martin"],
+            USER_DICT["berta"],
+            new_privileges,
+            old_privileges,
+        )
         self.logout()
 
         # Check the overview.
@@ -2133,16 +2317,31 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Bereichsänderung für Emilia Eventis")
         f = self.response.forms['promotionform']
         self.submit(f, check_notification=False, check_mandatory_filled=False)
+
+        self.assertNotHidden(".pcourse-nojs-info", ".pcourse-noevent-info")
+        self.assertHidden(".pcourse-input", ".pcourse-nocourses-info")
+
         f = self.response.forms['promotionform']
-        f['pevent_id'] = 2
-        self.assertPresence("Die Kursauswahl wird angezeigt, nachdem")
+        f['pevent_id'] = 1
         f['is_orga'] = True
         self.assertValidationError('change_note', "Darf nicht leer sein.")
         f['change_note'] = change_note = "Hat eine Akademie organisiert."
         self.submit(f, check_notification=False)
+
+        self.assertNotHidden(".pcourse-input")
+        self.assertHidden(
+            ".pcourse-nojs-info", ".pcourse-noevent-info", ".pcourse-nocourses-info"
+        )
+
+        f['pevent_id'] = 2
+        self.submit(f, check_notification=False)
+
+        self.assertNotHidden(".pcourse-nocourses-info")
+        self.assertHidden(
+            ".pcourse-nojs-info", ".pcourse-noevent-info", ".pcourse-input"
+        )
+
         f = self.response.forms['promotionform']
-        self.assertNonPresence("Die Kursauswahl wird angezeigt, nachdem")
-        f['pcourse_id'] = ''
         self.submit(f, check_notification=False)
         # ignore phone number ValidationWarning
         # TODO list this warnings anywhere?
@@ -2151,7 +2350,7 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         self.assertTitle("Emilia Eventis")
         self.assertPresence("0,00 €", div='balance')
-        self.assertPresence("Geburtstagsfete (Orga)", div="past-events")
+        self.assertPresence("Geburtstagsfete Orga", div="past-events")
         self.assertCheckbox(True, "paper_expuls_checkbox")
         self.assertNonPresence("CdE-Mitglied", div="cde-membership")
         self.assertNonPresence("Probemitglied", div="cde-membership")
@@ -2182,7 +2381,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Probemitglied", div="cde-membership")
         self.assertPresence("PfingstAkademie", div="past-events")
         self.assertPresence("Swish", div="past-events")
-        self.assertPresence("KL", div="past-events")
+        self.assertPresence("Kursleitung", div="past-events")
 
         # check for correct welcome mail
         mail = self.fetch_mail_content()
@@ -2287,7 +2486,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesisdecisionform']
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
 
-    def _genesis_request(self, data: CdEDBObject, realm: Optional[str] = None) -> None:
+    def _genesis_request(self, data: CdEDBObject, realm: str | None = None) -> None:
         if realm:
             self.get('/core/genesis/request?realm=' + realm)
         else:
@@ -2300,20 +2499,29 @@ class TestCoreFrontend(FrontendTest):
             with open(self.testfile_dir / "form.pdf", 'rb') as datafile:
                 attachment_data = datafile.read()
             f['attachment'] = webtest.Upload(
-                "cert.pdf", attachment_data, content_type="application/pdf")
+                "cert.pdf", attachment_data, content_type="application/pdf"
+            )
         self.submit(f)
         link = self.fetch_link()
         self.get(link)
 
     ML_GENESIS_DATA: CdEDBObject = {
-        'given_names': "Zelda", 'family_name': "Zeruda-Hime",
-        'username': "zelda@example.cde", 'notes': "Gimme!", 'realm': "ml"}
+        'given_names': "Zelda",
+        'family_name': "Zeruda-Hime",
+        'username': "zelda@example.cde",
+        'notes': "Gimme!",
+        'realm': "ml",
+    }
 
     EVENT_GENESIS_DATA = ML_GENESIS_DATA.copy()
     EVENT_GENESIS_DATA.update({
-        'realm': "event", 'gender': const.Genders.other,
-        'birthday': "1987-06-05", 'address': "An der Eiche", 'postal_code': "12345",
-        'location': "Marcuria", 'country': "AQ",
+        'realm': "event",
+        'gender': const.Genders.other,
+        'birthday': "1987-06-05",
+        'address': "An der Eiche",
+        'postal_code': "12345",
+        'location': "Marcuria",
+        'country': "AQ",
     })
 
     CDE_GENESIS_DATA = EVENT_GENESIS_DATA.copy()
@@ -2365,9 +2573,15 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesisdecisionform']
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
         link = self.fetch_link()
-        self.submit(f, button="decision", value=str(GenesisDecision.approve),
-                    check_notification=False)
-        self.assertPresence("Emailadresse bereits vergeben.", div="notifications")
+        self.submit(
+            f,
+            button="decision",
+            value=str(GenesisDecision.approve),
+            check_notification=False,
+        )
+        self.assertPresence(
+            "Anfrage befindet sich nicht in der Begutachtung.", div="notifications"
+        )
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
         self.logout()
         self.get(link)
@@ -2401,9 +2615,10 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Accountanfragen")
         self.assertPresence("zelda@example.cde", div='request-1001')
         self.traverse({"href": "/core/genesis/1001/show"})
-        self.assertTitle(f"Accountanfrage von {self.ML_GENESIS_DATA['given_names']}"
-                         f" {self.ML_GENESIS_DATA['family_name']}")
-        self.assertNonPresence("Bereich ändern")
+        self.assertTitle(
+            f"Accountanfrage von {self.ML_GENESIS_DATA['given_names']}"
+            f" {self.ML_GENESIS_DATA['family_name']}"
+        )
 
         f = self.response.forms['genesisdecisionform']
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
@@ -2447,7 +2662,8 @@ class TestCoreFrontend(FrontendTest):
         with open(self.testfile_dir / "form.pdf", 'rb') as datafile:
             data = datafile.read()
         f['attachment'] = webtest.Upload(
-            "my_participation_certificate.pdf", data, content_type="application/pdf")
+            "my_participation_certificate.pdf", data, content_type="application/pdf"
+        )
         self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError("notes", "Darf nicht leer sein.")
         self.assertPresence("Anhang my_participation_certificate.pdf")
@@ -2466,7 +2682,8 @@ class TestCoreFrontend(FrontendTest):
         f['birthday'] = (now().date() - datetime.timedelta(days=5)).isoformat()
         self.submit(f, check_notification=False)
         self.assertValidationWarning(
-            "birthday", "Geburtstag war vor weniger als einem Jahr.")
+            "birthday", "Geburtstag war vor weniger als einem Jahr."
+        )
         f = self.response.forms['genesisform']
         f[IGNORE_WARNINGS_NAME] = True
         self.submit(f)
@@ -2475,8 +2692,7 @@ class TestCoreFrontend(FrontendTest):
 
         # verify correctness of genesis overview page
         self.login(user)
-        self.traverse({'href': '/core'},
-                      {'href': '/core/genesis/list'})
+        self.traverse({'href': '/core'}, {'href': '/core/genesis/list'})
         self.assertTitle("Accountanfragen")
         self.assertPresence("zelda@example.cde")
         self.assertNonPresence("zorro@example.cde")
@@ -2505,7 +2721,8 @@ class TestCoreFrontend(FrontendTest):
         f['pevent_id'] = 1
         self.submit(f, check_notification=False)
         self.assertValidationWarning(
-            "birthday", "Geburtstag war vor weniger als einem Jahr.")
+            "birthday", "Geburtstag war vor weniger als einem Jahr."
+        )
         f['birthday'] = self.CDE_GENESIS_DATA['birthday']
         self.submit(f)
 
@@ -2522,19 +2739,47 @@ class TestCoreFrontend(FrontendTest):
             self.response = saved
 
         # select a past course
-        self.traverse({'href': '/core/genesis/1001/modify'})
-        self.assertTitle("Accountanfrage bearbeiten (Zelda Zeruda-Hime)")
+        self.traverse("bearbeiten")
         f = self.response.forms['genesismodifyform']
         f['pcourse_id'] = 2
         f['pevent_id'] = ''
         self.submit(f, check_notification=False)
-        self.assertValidationError('pevent_id',
-                                   "nicht mit der angegebenen Vergangenen")
+        self.assertValidationError('pevent_id', "nicht mit der angegebenen Vergangenen")
+
+        self.assertNotHidden(".pcourse-nojs-info", ".pcourse-noevent-info")
+        self.assertHidden(".pcourse-input", ".pcourse-nocourses-info")
+
         f = self.response.forms['genesismodifyform']
-        self.assertPresence("Kurs kann angegeben werden, wenn eine Vergangene")
-        f['pevent_id'] = 1
+        f['pevent_id'] = ''
+        f['pcourse_id'] = ''
         self.submit(f)
-        self.traverse({'href': '/core/genesis/1001/modify'})
+        self.traverse("bearbeiten")
+
+        self.assertNotHidden(".pcourse-nojs-info", ".pcourse-noevent-info")
+        self.assertHidden(".pcourse-input", ".pcourse-nocourses-info")
+
+        f = self.response.forms['genesismodifyform']
+        f['pevent_id'] = 2
+        f['pcourse_id'] = ''
+        self.submit(f)
+        self.traverse("bearbeiten")
+
+        self.assertNotHidden(".pcourse-nocourses-info")
+        self.assertHidden(
+            ".pcourse-nojs-info", ".pcourse-noevent-info", ".pcourse-input"
+        )
+
+        f = self.response.forms['genesismodifyform']
+        f['pevent_id'] = 1
+        f['pcourse_id'] = ''
+        self.submit(f)
+        self.traverse("bearbeiten")
+
+        self.assertNotHidden(".pcourse-input")
+        self.assertHidden(
+            ".pcourse-nojs-info", ".pcourse-noevent-info", ".pcourse-nocourses-info"
+        )
+
         f = self.response.forms['genesismodifyform']
         f['pcourse_id'] = 2
         self.submit(f)
@@ -2636,7 +2881,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Goethe")
         self.traverse({'href': '/cde'})
         self.assertTitle('CdE-Mitgliederbereich')
-        self.traverse({'description': 'Verschiedenes'})
+        self.traverse('Linksammlung')
 
     @as_users("paul")
     def test_genesis_overview(self) -> None:
@@ -2685,6 +2930,10 @@ class TestCoreFrontend(FrontendTest):
         # decide cde request
         self.traverse({"href": "/core/genesis/3/show"})
         self.assertTitle("Accountanfrage von Kristin Zeder")
+        self.traverse("Accountanfrage bearbeiten")
+        f = self.response.forms['genesismodifyform']
+        f["pevent_id"] = 1
+        self.submit(f)
         self._decide_genesis_case(GenesisDecision.approve)
         assert_account_presence(ml=False, event=True, cde=False)
 
@@ -2709,15 +2958,15 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         # Submit twice
         self.submit(f, check_notification=False)
-        self.assertPresence("Bestätigungsmail erneut versendet.",
-                            div="notifications")
+        self.assertPresence("Bestätigungsmail erneut versendet.", div="notifications")
         link = self.fetch_link()
         self.get(link)
         self.follow()
         # Submit thrice
         self.submit(f, check_notification=False)
-        self.assertPresence("Deine Anfrage wartet derzeit auf Bestätigung.",
-                            div="notifications")
+        self.assertPresence(
+            "Deine Anfrage wartet derzeit auf Bestätigung.", div="notifications"
+        )
         self.get('/')
         self.traverse({'description': 'Account anfordern'})
         self.assertTitle("Account anfordern")
@@ -2729,8 +2978,7 @@ class TestCoreFrontend(FrontendTest):
         f['realm'] = "ml"
         # Submit once
         self.submit(f, check_notification=False)
-        self.assertPresence("E-Mail-Adresse bereits vorhanden.",
-                            div="notifications")
+        self.assertPresence("E-Mail-Adresse bereits vorhanden.", div="notifications")
         user = USER_DICT['vera']
         self.login(user)
         self.traverse({'description': 'Account-Log'})
@@ -2744,7 +2992,8 @@ class TestCoreFrontend(FrontendTest):
         f['new_username'] = self.ML_GENESIS_DATA['username']
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            'new_username', "Ein Benutzer mit dieser E-Mail-Adresse existiert bereits.")
+            'new_username', "Ein Benutzer mit dieser E-Mail-Adresse existiert bereits."
+        )
 
     def test_genesis_verification_mail_resend(self) -> None:
         self.get('/')
@@ -2783,7 +3032,8 @@ class TestCoreFrontend(FrontendTest):
         f['birthday'] = "2222-06-05"
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            "birthday", "Ein Geburtsdatum muss in der Vergangenheit liegen.")
+            "birthday", "Ein Geburtsdatum muss in der Vergangenheit liegen."
+        )
 
     def test_genesis_missing_data(self) -> None:
         self.get('/')
@@ -2835,12 +3085,19 @@ class TestCoreFrontend(FrontendTest):
 
         self.assertTitle("Accountanfrage von Zelda Zeruda")
         f = self.response.forms['genesisdecisionform']
-        self.submit(f, button="decision", value=str(GenesisDecision.approve),
-                    check_notification=False)
+        self.submit(
+            f,
+            button="decision",
+            value=str(GenesisDecision.approve),
+            check_notification=False,
+        )
 
-    def _create_genesis_doppelganger(self, user: Optional[UserIdentifier] = None,
-                                     realm: str = "ml", unique_username: bool = False,
-                                     ) -> UserObject:
+    def _create_genesis_doppelganger(
+        self,
+        user: UserIdentifier | None = None,
+        realm: str = "ml",
+        unique_username: bool = False,
+    ) -> UserObject:
         # Create a new request almost identical to the current or given user.
         user = get_user(user or self.user)
 
@@ -2862,7 +3119,7 @@ class TestCoreFrontend(FrontendTest):
         dg_data["notes"] = "Bestimmt jemand anderes1"
         dg_data["realm"] = realm
         # Select a unique username. For repeated use, specify `unique_username=True`.
-        prefix = str(random.randint(10 ** 5, 10 ** 7)) if unique_username else ""
+        prefix = str(random.randint(10**5, 10**7)) if unique_username else ""
         dg_data["username"] = prefix + "notme@example.cde"
 
         self._genesis_request(dg_data)
@@ -2884,14 +3141,20 @@ class TestCoreFrontend(FrontendTest):
 
         self.traverse("Accountanfragen")
         self.traverse({"href": "/core/genesis/1001/show"})
-        self.assertTitle(f"Accountanfrage von {self.user['given_names']}"
-                         f" {self.user['family_name']}")
+        self.assertTitle(
+            f"Accountanfrage von {self.user['given_names']} {self.user['family_name']}"
+        )
         self.assertPresence("Ähnliche Accounts")
         self.assertPresence(self.user['username'], div="doppelgangers")
         f = self.response.forms['genesisdecisionform']
         # Rejection causes info not success notification.
-        self.submit(f, button="decision", value=str(GenesisDecision.deny),
-                    check_notification=False, verbose=True)
+        self.submit(
+            f,
+            button="decision",
+            value=str(GenesisDecision.deny),
+            check_notification=False,
+            verbose=True,
+        )
         self.assertPresence("Anfrage abgewiesen", div="notifications")
         log_expectation.append({
             'code': const.CoreLogCodes.genesis_rejected,
@@ -2913,7 +3176,8 @@ class TestCoreFrontend(FrontendTest):
         ])
         alternate_username = "notzelda@example.cde"
         self._genesis_request(
-            dict(self.EVENT_GENESIS_DATA, username=alternate_username))
+            dict(self.EVENT_GENESIS_DATA, username=alternate_username)
+        )
         log_expectation.extend([
             {
                 'code': const.CoreLogCodes.genesis_request,
@@ -2928,14 +3192,20 @@ class TestCoreFrontend(FrontendTest):
         # Approve the first request.
         self.traverse("Accountanfragen")
         self.traverse({"href": "/core/genesis/1002/show"})
-        self.assertTitle(f"Accountanfrage von {self.EVENT_GENESIS_DATA['given_names']}"
-                         f" {self.EVENT_GENESIS_DATA['family_name']}")
+        self.assertTitle(
+            f"Accountanfrage von {self.EVENT_GENESIS_DATA['given_names']}"
+            f" {self.EVENT_GENESIS_DATA['family_name']}"
+        )
         self.assertPresence(self.EVENT_GENESIS_DATA["username"])
         self.assertNonPresence("Ähnliche Accounts")
         self.assertNonPresence("Wiederherstellen", div="genesisdecisionform")
         f = self.response.forms['genesisdecisionform']
-        self.submit(f, button="decision", value=str(GenesisDecision.approve),
-                    check_notification=False)
+        self.submit(
+            f,
+            button="decision",
+            value=str(GenesisDecision.approve),
+            check_notification=False,
+        )
         new_persona_id = 1001
         log_expectation.extend([
             {
@@ -2958,20 +3228,28 @@ class TestCoreFrontend(FrontendTest):
         ])
 
         # Check that the first username exists and the alternate one does not.
-        self.assertTrue(self.core.verify_existence(
-            self.key, self.EVENT_GENESIS_DATA['username']))
-        self.assertFalse(self.core.verify_existence(
-            self.key, alternate_username, include_genesis=False))
+        self.assertTrue(
+            self.core.verify_existence(self.key, self.EVENT_GENESIS_DATA['username'])
+        )
+        self.assertFalse(
+            self.core.verify_existence(
+                self.key, alternate_username, include_genesis=False
+            )
+        )
 
         # Check that the second request finds the new account as a doppelgänger and
         # update that account to the alternate username.
         self.traverse("Accountanfragen")
         self.traverse({"href": "/core/genesis/1003/show"})
-        self.assertTitle(f"Accountanfrage von {self.EVENT_GENESIS_DATA['given_names']}"
-                         f" {self.EVENT_GENESIS_DATA['family_name']}")
+        self.assertTitle(
+            f"Accountanfrage von {self.EVENT_GENESIS_DATA['given_names']}"
+            f" {self.EVENT_GENESIS_DATA['family_name']}"
+        )
         self.assertPresence(alternate_username)
         self.assertPresence("Ähnliche Accounts")
         self.assertPresence(self.EVENT_GENESIS_DATA['username'], div="doppelgangers")
+        # user has already event realm, no need to add it
+        self.assertNonPresence("Bereich hinzufügen.", div="doppelgangers")
         save = self.response
         self.traverse(self.EVENT_GENESIS_DATA['family_name'])
         self.response = save
@@ -2979,36 +3257,33 @@ class TestCoreFrontend(FrontendTest):
         # Check that a cde genesis request cannot be merged into a non-cde account.
         f = self.response.forms['genesismodifyrealmform']
         self.submit(f)
+        self.assertPresence(
+            "Vor dem Zusammenführen musst du diesem Account", div="doppelgangers"
+        )
+        self.assertPresence("CdE Bereich hinzufügen.", div="doppelgangers")
         f = self.response.forms['genesisdecisionform']
         # Set persona_id to the value of the second radio button.
         f['persona_id'] = f['persona_id'].options[1][0]
-        self.submit(f, button="decision", value=str(GenesisDecision.update),
-                    check_notification=False)
-        self.assertPresence("Ungültiger Benutzer für Aktualisierung."
-                            " Füge zunächst folgenden Bereich hinzu: cde.",
-                            div="notifications")
+        self.submit(
+            f,
+            button="decision",
+            value=str(GenesisDecision.approve),
+            check_notification=False,
+        )
+        self.assertPresence(
+            "Ungültiger Benutzer für Aktualisierung."
+            " Füge zunächst folgenden Bereich hinzu: cde.",
+            div="notifications",
+        )
         # Repair the request.
         f = self.response.forms['genesismodifyrealmform']
         self.submit(f)
 
-        # Check that approving the request fails if a persona is selected.
-        f = self.response.forms['genesisdecisionform']
-        f['persona_id'] = f['persona_id'].options[1][0]
-        self.submit(f, button="decision", value=str(GenesisDecision.approve),
-                    check_notification=False)
-        self.assertPresence("Existierender Account ausgewählt,"
-                            " aber Accountanfrage bestätigt.", div="notifications")
-
         # Now merge the genesis request into the existing account.
         # Submit without selecting doppelganger.
         f = self.response.forms['genesisdecisionform']
-        f['persona_id'] = ""
-        self.submit(f, button="decision", value=str(GenesisDecision.update),
-                    check_notification=False)
-        self.assertPresence("Kein Account ausgewählt.", div="notifications")
-        # Now for real.
         f['persona_id'] = f['persona_id'].options[1][0]
-        self.submit(f, button="decision", value=str(GenesisDecision.update))
+        self.submit(f, button="decision", value=str(GenesisDecision.approve))
         self.assertPresence("Benutzer aktualisiert", div="notifications")
         log_expectation.extend([
             {
@@ -3038,13 +3313,14 @@ class TestCoreFrontend(FrontendTest):
         ])
 
         self.assertLogEqual(
-            log_expectation, realm="core", offset=len(self.get_sample_data("core.log")))
+            log_expectation, realm="core", offset=len(self.get_sample_data("core.log"))
+        )
 
         # Check that the first username no longer exists, but the alternate one does.
-        self.assertFalse(self.core.verify_existence(
-            self.key, self.EVENT_GENESIS_DATA['username']))
-        self.assertTrue(self.core.verify_existence(
-            self.key, alternate_username))
+        self.assertFalse(
+            self.core.verify_existence(self.key, self.EVENT_GENESIS_DATA['username'])
+        )
+        self.assertTrue(self.core.verify_existence(self.key, alternate_username))
 
     @storage
     @as_users("vera")
@@ -3053,8 +3329,16 @@ class TestCoreFrontend(FrontendTest):
         self._genesis_request(self.CDE_GENESIS_DATA)
         self.traverse("Accountanfragen")
         self.traverse({"href": "/core/genesis/1001/show"})
-        self.assertTitle(f"Accountanfrage von {self.CDE_GENESIS_DATA['given_names']}"
-                         f" {self.CDE_GENESIS_DATA['family_name']}")
+        self.assertTitle(
+            f"Accountanfrage von {self.CDE_GENESIS_DATA['given_names']}"
+            f" {self.CDE_GENESIS_DATA['family_name']}"
+        )
+        self._decide_genesis_case(GenesisDecision.approve, check=False)
+        self.assertNotification("müssen eine vergangene Veranstaltung enthalten")
+        self.traverse("Accountanfrage bearbeiten")
+        f = self.response.forms['genesismodifyform']
+        f["pevent_id"] = 1
+        self.submit(f)
         self._decide_genesis_case(GenesisDecision.approve)
         new_persona_id = 1001
 
@@ -3071,18 +3355,30 @@ class TestCoreFrontend(FrontendTest):
 
         # issue a new genesis request with almost identical data
         alternate_username = f"asdf{self.CDE_GENESIS_DATA['username']}"
-        self._genesis_request(dict(
-            self.CDE_GENESIS_DATA, username=alternate_username, mobile="06597620191"))
+        self._genesis_request(
+            dict(
+                self.CDE_GENESIS_DATA, username=alternate_username, mobile="06597620191"
+            )
+        )
         self.traverse("Accountanfragen")
         self.traverse({"href": "/core/genesis/1002/show"})
-        self.assertTitle(f"Accountanfrage von {self.CDE_GENESIS_DATA['given_names']}"
-                         f" {self.CDE_GENESIS_DATA['family_name']}")
+        self.assertTitle(
+            f"Accountanfrage von {self.CDE_GENESIS_DATA['given_names']}"
+            f" {self.CDE_GENESIS_DATA['family_name']}"
+        )
         self.assertPresence(alternate_username)
-        self._decide_genesis_case(GenesisDecision.update, persona_id=1001)
+        self.traverse("Accountanfrage bearbeiten")
+        f = self.response.forms['genesismodifyform']
+        f["pevent_id"] = 1
+        self.submit(f)
+        self._decide_genesis_case(GenesisDecision.approve, persona_id=1001)
 
         # Check that the data of the second genesis request persisted
-        self.traverse("Änderungen prüfen", f"{self.CDE_GENESIS_DATA['given_names']}"
-                                           f" {self.CDE_GENESIS_DATA['family_name']}")
+        self.traverse(
+            "Änderungen prüfen",
+            f"{self.CDE_GENESIS_DATA['given_names']}"
+            f" {self.CDE_GENESIS_DATA['family_name']}",
+        )
         self.assertPresence("Mobiltelefon – +49 6597 620191")
 
     @as_users("vera")
@@ -3091,19 +3387,24 @@ class TestCoreFrontend(FrontendTest):
         self._create_genesis_doppelganger(hades)
         self.traverse("Accountanfragen")
         self.traverse({"href": "/core/genesis/1001/show"})
-        self.assertTitle(f"Accountanfrage von {hades['given_names']}"
-                         f" {hades['family_name']}")
-        self.assertPresence(f"{hades['given_names']} {hades['family_name']}",
-                            div="doppelgangers")
+        self.assertTitle(
+            f"Accountanfrage von {hades['given_names']} {hades['family_name']}"
+        )
+        self.assertPresence(
+            f"{hades['given_names']} {hades['family_name']}", div="doppelgangers"
+        )
         self.assertPresence("(archiviert)", div="doppelgangers")
         f = self.response.forms['genesisdecisionform']
         f['persona_id'] = hades['id']
-        self.submit(f, button="decision", value=str(GenesisDecision.update))
+        self.submit(f, button="decision", value=str(GenesisDecision.approve))
         self.assertPresence("Benutzer aktualisiert.", div="notifications")
 
-    def _decide_genesis_case(self, decision: GenesisDecision,
-                             persona_id: Optional[int] = None, check: bool = True,
-                             ) -> None:
+    def _decide_genesis_case(
+        self,
+        decision: GenesisDecision,
+        persona_id: int | None = None,
+        check: bool = True,
+    ) -> None:
         f = self.response.forms['genesisdecisionform']
         if persona_id:
             f['persona_id'] = persona_id
@@ -3116,24 +3417,31 @@ class TestCoreFrontend(FrontendTest):
             dg_data_1 = self._create_genesis_doppelganger(existing_user, realm="ml")
             self.traverse("Accountanfragen")
             self.traverse({"href": "/core/genesis/1001/show"})
-            self.assertTitle(f"Accountanfrage von {dg_data_1['given_names']}"
-                             f" {dg_data_1['family_name']}")
+            self.assertTitle(
+                f"Accountanfrage von {dg_data_1['given_names']}"
+                f" {dg_data_1['family_name']}"
+            )
             self.assertPresence(dg_data_1["username"])
             self._decide_genesis_case(GenesisDecision.approve)
             dg_data_2 = self._create_genesis_doppelganger(
-                existing_user, realm="event", unique_username=True)
+                existing_user, realm="event", unique_username=True
+            )
             self.traverse("Accountanfragen")
             self.traverse({"href": "/core/genesis/1002/show"})
-            self.assertTitle(f"Accountanfrage von {dg_data_2['given_names']}"
-                             f" {dg_data_2['family_name']}")
+            self.assertTitle(
+                f"Accountanfrage von {dg_data_2['given_names']}"
+                f" {dg_data_2['family_name']}"
+            )
             self.assertPresence(dg_data_2["username"])
             self._decide_genesis_case(GenesisDecision.approve)
         dg_data_3 = self._create_genesis_doppelganger(
-            existing_user, realm="event", unique_username=True)
+            existing_user, realm="event", unique_username=True
+        )
         self.traverse("Accountanfragen")
         self.traverse({"href": "/core/genesis/1003/show"})
-        self.assertTitle(f"Accountanfrage von {dg_data_3['given_names']}"
-                         f" {dg_data_3['family_name']}")
+        self.assertTitle(
+            f"Accountanfrage von {dg_data_3['given_names']} {dg_data_3['family_name']}"
+        )
         self.assertPresence(dg_data_3["username"])
 
         self.assertPresence(existing_user['given_names'], div="doppelgangers")
@@ -3147,49 +3455,63 @@ class TestCoreFrontend(FrontendTest):
         # The original user. This option is disabled, but webtest allows it anyway.
         self.assertFalse(self.core.is_relative_admin(self.key, existing_user['id']))
         with self.assertRaises(PrivilegeError):
-            self._decide_genesis_case(GenesisDecision.update, existing_user['id'])
+            self._decide_genesis_case(GenesisDecision.approve, existing_user['id'])
 
         # The ml-user. This option is disabled, but webtest allows it anyway.
         self.assertFalse(self.core.is_relative_admin(self.key, 1001))
-        self._decide_genesis_case(GenesisDecision.update, persona_id=1001, check=False)
+        self._decide_genesis_case(GenesisDecision.approve, persona_id=1001, check=False)
         self.assertPresence(
-            "Ungültiger Benutzer für Aktualisierung.", div="notifications")
+            "Ungültiger Benutzer für Aktualisierung.", div="notifications"
+        )
 
         # The event user. This option should work.
         self.assertTrue(self.core.is_relative_admin(self.key, 1002))
-        self._decide_genesis_case(GenesisDecision.update, persona_id=1002)
+        self._decide_genesis_case(GenesisDecision.approve, persona_id=1002)
 
     def test_resolve_api(self) -> None:
         at = urllib.parse.quote_plus('@')
         token_key = model_droid.APIToken.request_header_key
         resolve_token = model_droid.ResolveToken.get_token_string(
-            self.secrets['API_TOKENS']['resolve'])
+            self.secrets['API_TOKENS']['resolve']
+        )
         self.get(
             f'/core/api/resolve?username=%20bErTa{at}example.CDE%20',
-            headers={token_key: resolve_token})
-        self.assertEqual(self.response.json, {
-            "given_names": USER_DICT["berta"]["given_names"],
-            "family_name": "Beispiel",
-            "is_member": True,
-            "personas.id": 2,
-            "username": "berta@example.cde",
-        })
+            headers={token_key: resolve_token},
+        )
+        self.assertEqual(
+            self.response.json,
+            {
+                "given_names": USER_DICT["berta"]["given_names"],
+                "family_name": "Beispiel",
+                "is_member": True,
+                "personas.id": 2,
+                "username": "berta@example.cde",
+            },
+        )
         self.get(
             f'/core/api/resolve?username=anton{at}example.cde',
-            headers={token_key: resolve_token})
-        self.assertEqual(self.response.json, {
-            "given_names": USER_DICT["anton"]["given_names"],
-            "family_name": "Administrator",
-            "is_member": True,
-            "personas.id": 1,
-            "username": "anton@example.cde",
-        })
+            headers={token_key: resolve_token},
+        )
+        self.assertEqual(
+            self.response.json,
+            {
+                "given_names": USER_DICT["anton"]["given_names"],
+                "family_name": "Administrator",
+                "is_member": True,
+                "personas.id": 1,
+                "username": "anton@example.cde",
+            },
+        )
         self.get(
             '/core/api/resolve?username=antonatexample.cde',
-            headers={token_key: resolve_token})
-        self.assertEqual(self.response.json, {
-            'error':  ["('username', ValueError('Must be a valid email address.'))"],
-        })
+            headers={token_key: resolve_token},
+        )
+        self.assertEqual(
+            self.response.json,
+            {
+                'error': ["('username', ValueError('Must be a valid email address.'))"],
+            },
+        )
         self.get('/core/api/resolve', status=403)
 
     @as_users("janis")
@@ -3204,32 +3526,41 @@ class TestCoreFrontend(FrontendTest):
         # First: generate data
         # request two new accounts
         self._genesis_request(self.ML_GENESIS_DATA)
-        logs.append((1001, const.CoreLogCodes.genesis_request))
-        logs.append((1002, const.CoreLogCodes.genesis_verified))
+        logs.append(const.CoreLogCodes.genesis_request)
+        logs.append(const.CoreLogCodes.genesis_verified)
 
         event_genesis = self.EVENT_GENESIS_DATA.copy()
         event_genesis['username'] = "tester@example.cde"
         self._genesis_request(event_genesis)
-        logs.append((1003, const.CoreLogCodes.genesis_request))
-        logs.append((1004, const.CoreLogCodes.genesis_verified))
+        logs.append(const.CoreLogCodes.genesis_request)
+        logs.append(const.CoreLogCodes.genesis_verified)
 
         # approve the account requests
         self.login(user)
-        self.traverse("Accountanfragen", "Details")
+        self.traverse("Accountanfragen", "Details", "Accountanfrage bearbeiten")
+        f = self.response.forms['genesismodifyform']
+        f['pevent_id'] = 1
+        self.submit(f)
+        self.traverse("Accountanfrage bearbeiten")
+        f = self.response.forms['genesismodifyform']
+        f['pcourse_id'] = 1
+        self.submit(f)
         f = self.response.forms['genesisdecisionform']
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
-        logs.append((1005, const.CoreLogCodes.genesis_change))
-        logs.append((1006, const.CoreLogCodes.persona_creation))
-        logs.append((1007, const.CoreLogCodes.genesis_approved))
-        logs.append((1008, const.CoreLogCodes.password_reset_cookie))
+        logs.append(const.CoreLogCodes.genesis_change)
+        logs.append(const.CoreLogCodes.genesis_change)
+        logs.append(const.CoreLogCodes.genesis_change)
+        logs.append(const.CoreLogCodes.persona_creation)
+        logs.append(const.CoreLogCodes.genesis_approved)
+        logs.append(const.CoreLogCodes.password_reset_cookie)
 
         self.traverse("Details")
         f = self.response.forms['genesisdecisionform']
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
-        logs.append((1009, const.CoreLogCodes.genesis_change))
-        logs.append((1010, const.CoreLogCodes.persona_creation))
-        logs.append((1011, const.CoreLogCodes.genesis_approved))
-        logs.append((1012, const.CoreLogCodes.password_reset_cookie))
+        logs.append(const.CoreLogCodes.genesis_change)
+        logs.append(const.CoreLogCodes.persona_creation)
+        logs.append(const.CoreLogCodes.genesis_approved)
+        logs.append(const.CoreLogCodes.password_reset_cookie)
 
         # make janis assembly user
         self.admin_view_profile('janis')
@@ -3240,7 +3571,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['promotionform']
         f['change_note'] = promotion_change_note = "trivial promotion"
         self.submit(f)
-        logs.append((1013, const.CoreLogCodes.realm_change))
+        logs.append(const.CoreLogCodes.realm_change)
 
         # change berta's user name
         self.admin_view_profile('berta')
@@ -3248,16 +3579,17 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['usernamechangeform']
         f['new_username'] = "bertalotta@example.cde"
         self.submit(f)
-        logs.append((1014, const.CoreLogCodes.username_change))
+        logs.append(const.CoreLogCodes.username_change)
 
         # Now check it
-        self.traverse({'description': 'Index'},
-                      {'description': 'Account-Log'})
-        self.log_pagination("Account-Log", tuple(logs))
+        self.traverse({'description': 'Index'}, {'description': 'Account-Log'})
+        self.log_pagination("Account-Log", tuple(enumerate(logs, start=1001)))
         f = self.response.forms["logshowform"]
-        f["codes"] = [const.CoreLogCodes.genesis_verified.value,
-                      const.CoreLogCodes.realm_change.value,
-                      const.CoreLogCodes.username_change.value]
+        f["codes"] = [
+            const.CoreLogCodes.genesis_verified,
+            const.CoreLogCodes.realm_change,
+            const.CoreLogCodes.username_change,
+        ]
         self.submit(f)
         self.assertPresence(promotion_change_note)
         self.assertPresence("zelda@example.cde")
@@ -3342,7 +3674,8 @@ LG Emilia
 
             if result := re.search("Geheimnis: (?P<secret>.+)\n", sent_anonymous):
                 message_id, key = models_core.AnonymousMessageData.parse_secret(
-                    result['secret'])
+                    result['secret']
+                )
             else:
                 self.fail("Failed to extract secret.")
 
@@ -3396,7 +3729,8 @@ LG Emilia
             rotate_notice = self.fetch_mail_content()
             if result := re.search("Geheimnis: (?P<secret>.+)\n", rotate_notice):
                 new_message_id, new_key = models_core.AnonymousMessageData.parse_secret(
-                    result['secret'])
+                    result['secret']
+                )
             else:
                 self.fail("Failed to extract secret.")
 
@@ -3438,7 +3772,8 @@ LG Emilia
             ]
         with self.switch_user('vera'):
             self.assertLogEqual(
-                log_expectation, realm="core",
+                log_expectation,
+                realm="core",
                 offset=len(self.get_sample_data('core.log')),
             )
 
@@ -3478,10 +3813,12 @@ LG Emilia
 
     @as_users("vera", "nina")
     def test_defect_email_profile(self) -> None:
-        self.traverse({'description': 'Mailinglisten'},
-                      {'description': 'Nutzer verwalten'},
-                      {'description': r'Alle \(nicht-archivierten\) Nutzer'},
-                      {'description': 'DB-10-8'})
+        self.traverse(
+            {'description': 'Mailinglisten'},
+            {'description': 'Nutzer verwalten'},
+            {'description': r'Alle \(nicht-archivierten\) Nutzer'},
+            {'description': 'DB-10-8'},
+        )
         self.assertTitle('Janis Jalapeño')
         self.assertNonPresence('defekte Email-Adresse')
         self.assertPresence('Als defekt markieren')
@@ -3494,10 +3831,12 @@ LG Emilia
         self.submit(f)
         self.assertPresence("janis@example.cde")
 
-        self.traverse({'description': 'Mailinglisten'},
-                      {'description': 'Nutzer verwalten'},
-                      {'description': r'Alle \(nicht-archivierten\) Nutzer'},
-                      {'description': 'DB-10-8'})
+        self.traverse(
+            {'description': 'Mailinglisten'},
+            {'description': 'Nutzer verwalten'},
+            {'description': r'Alle \(nicht-archivierten\) Nutzer'},
+            {'description': 'DB-10-8'},
+        )
         self.assertTitle('Janis Jalapeño')
         self.assertPresence('defekte Email-Adresse')
         self.assertNonPresence('Als defekt markieren')

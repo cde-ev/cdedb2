@@ -32,7 +32,7 @@
         {{ util.form_input_text(name="regular_capacity", label=gettext("Regular Capacity"), type="number", attributes='min="0"') }}
         {{ util.form_input_text(name="camping_mat_capacity", label=gettext("Camping Mat Capacity"), type="number", attributes='min="0"') }}
         {% if groups|length > 1 %}
-            {{ util.form_input_select(name="group_id", entries=groups.items(), label=gettext("Lodgement Group"), sort=True) }}
+            {{ util.form_input_select(name="group_id", entries=(groups.values()|first).entries(groups), label=gettext("Lodgement Group"), sort=True) }}
         {% else %}
             {{ util.input_hidden(name="group_id", value=groups|first) }}
         {% endif %}

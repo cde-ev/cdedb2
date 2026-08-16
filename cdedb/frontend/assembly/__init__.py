@@ -9,6 +9,7 @@ from cdedb.frontend.assembly.base import AssemblyBaseFrontend
 __all__ = ['AssemblyFrontend']
 
 
-class AssemblyFrontend(AssemblyAttachmentMixin, AssemblyBallotMixin,
-                       AssemblyBaseFrontend):
+class AssemblyFrontend(
+    AssemblyAttachmentMixin, AssemblyBallotMixin, AssemblyBaseFrontend
+):
     pass

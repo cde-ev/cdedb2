@@ -21,6 +21,7 @@ example the following things not taken into account:
   * locked events
   * form submits with some valid data and only some values set to to the payload
 """
+
 import argparse
 import itertools
 import pathlib
@@ -36,10 +37,13 @@ from cdedb.cli.util import sanity_check
 from cdedb.frontend.application import Application
 
 # Custom type definitions.
-ResponseData = NamedTuple("ResponseData", [("response", webtest.TestResponse),
-                                           ("url", str), ("referer", Optional[str])])
-CheckReturn = NamedTuple("CheckReturn", [("errors", List[str]),
-                                         ("queue", List[ResponseData])])
+ResponseData = NamedTuple(
+    "ResponseData",
+    [("response", webtest.TestResponse), ("url", str), ("referer", Optional[str])],
+)
+CheckReturn = NamedTuple(
+    "CheckReturn", [("errors", List[str]), ("queue", List[ResponseData])]
+)
 
 # Keep track of runtime data.
 visited_urls: Set[str] = set()
@@ -53,24 +57,31 @@ excludes = [
     re.compile(r"^/event/event/\d+/fee/\d+/delete$"),
 ]
 
+
 @sanity_check
 def work(
     outdir: pathlib.Path,
     *,
     verbose: bool = False,
     payload: str = "<script>abcdef</script>",
-    secondary_payload: Tuple[str, ...] = ("&amp;lt;", "&amp;gt;")
+    secondary_payload: Tuple[str, ...] = ("&amp;lt;", "&amp;gt;"),
 ) -> int:
     """Iterate over all visible page links and check them for the xss payload."""
     app = Application()
-    wt_app = webtest.TestApp(app, extra_environ={
-        'REMOTE_ADDR': "127.0.0.0",
-        'HTTP_HOST': "localhost",
-        'SERVER_PROTOCOL': "HTTP/1.1",
-        'wsgi.url_scheme': 'https'})
+    wt_app = webtest.TestApp(
+        app,
+        extra_environ={
+            'REMOTE_ADDR': "127.0.0.0",
+            'HTTP_HOST': "localhost",
+            'SERVER_PROTOCOL': "HTTP/1.1",
+            'wsgi.url_scheme': 'https',
+        },
+    )
     if not outdir.exists():
-        print(f"Target directory {outdir!r} doesn't exist."
-              f" Nothing will be written to file.")
+        print(
+            f"Target directory {outdir!r} doesn't exist."
+            f" Nothing will be written to file."
+        )
 
     posted_urls.clear()
     visited_urls.clear()
@@ -96,8 +107,13 @@ def work(
             response_data = response_queue.get(False)
         except queue.Empty:
             break
-        e, q = check(response_data, outdir=outdir, verbose=verbose,
-                     payload=payload, secondary_payloads=secondary_payload)
+        e, q = check(
+            response_data,
+            outdir=outdir,
+            verbose=verbose,
+            payload=payload,
+            secondary_payloads=secondary_payload,
+        )
         errors.extend(e)
         for rd in q:
             response_queue.put(rd)
@@ -108,8 +124,9 @@ def work(
     return len(errors)
 
 
-def write_next_file(outdir: Optional[pathlib.Path], data: bytes, filename: Optional[str] = None
-                    ) -> None:
+def write_next_file(
+    outdir: Optional[pathlib.Path], data: bytes, filename: Optional[str] = None
+) -> None:
     """Write data to the next available numbered file in the target directory."""
     if outdir and outdir.exists():
         if filename is None:
@@ -119,9 +136,14 @@ def write_next_file(outdir: Optional[pathlib.Path], data: bytes, filename: Optio
             f.write(data)
 
 
-def check(response_data: ResponseData, *, payload: str,
-          secondary_payloads: Collection[str] = (), outdir: Optional[pathlib.Path] = None,
-          verbose: bool = False) -> CheckReturn:
+def check(
+    response_data: ResponseData,
+    *,
+    payload: str,
+    secondary_payloads: Collection[str] = (),
+    outdir: Optional[pathlib.Path] = None,
+    verbose: bool = False,
+) -> CheckReturn:
     """Check a single response for presence of the payload.
 
     :param payload: The payload that we try to inject everywhere we can. For optimal
@@ -174,8 +196,14 @@ def check(response_data: ResponseData, *, payload: str,
         if 'href' not in link_element.attrs:
             continue
         target = str(link_element.attrs['href'])
-        if target.startswith(('http://', 'https://', 'mailto:', 'tel:', '/doc/',
-                              '/static/')):
+        if target.startswith((
+            'http://',
+            'https://',
+            'mailto:',
+            'tel:',
+            '/doc/',
+            '/static/',
+        )):
             continue
         if target.startswith('/db'):
             target = target[3:]
@@ -187,9 +215,15 @@ def check(response_data: ResponseData, *, payload: str,
         if len(tmp) == 1:
             unique_target = tmp[0]
         else:
-            unique_target = tmp[0] + "?" + "&".join(
-                p for p in tmp[1].split('&')
-                if p.split('=')[0] not in {'confirm_id'})
+            unique_target = (
+                tmp[0]
+                + "?"
+                + "&".join(
+                    p
+                    for p in tmp[1].split('&')
+                    if p.split('=')[0] not in {'confirm_id'}
+                )
+            )
 
         if not target or unique_target in visited_urls:
             continue
@@ -219,8 +253,9 @@ def check(response_data: ResponseData, *, payload: str,
 
         # Second try: Fill in the magic token into every form field
         for field in itertools.chain.from_iterable(form.fields.values()):
-            if isinstance(field, (webtest.forms.Checkbox, webtest.forms.Radio,
-                                  webtest.forms.File)):
+            if isinstance(
+                field, (webtest.forms.Checkbox, webtest.forms.Radio, webtest.forms.File)
+            ):
                 continue
             field.force_value(payload)
         try:
@@ -237,24 +272,39 @@ def check(response_data: ResponseData, *, payload: str,
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Insert XSS payload into database, then traverse all sites to make"
-                    " sure it is escaped properly.")
+        " sure it is escaped properly."
+    )
 
     general = parser.add_argument_group("General options")
     general.add_argument(
-        "--outdir", "-o", default="./out",
-        help="The directory where output is saved. default: %(default)s")
+        "--outdir",
+        "-o",
+        default="./out",
+        help="The directory where output is saved. default: %(default)s",
+    )
 
     config = parser.add_argument_group("Configuration")
     config.add_argument("--verbose", "-v", action="store_true")
     config.add_argument(
-        "--payload", "-p", default="<script>abcdef</script>",
-        help="The xss payload to be injected. default: %(default)s")
+        "--payload",
+        "-p",
+        default="<script>abcdef</script>",
+        help="The xss payload to be injected. default: %(default)s",
+    )
     config.add_argument(
-        "--secondary", "-sp", nargs='*', default=["&amp;lt;", "&amp;gt;"],
-        help="Pre-inserted strings which must not be shown. default: %(default)s")
+        "--secondary",
+        "-sp",
+        nargs='*',
+        default=["&amp;lt;", "&amp;gt;"],
+        help="Pre-inserted strings which must not be shown. default: %(default)s",
+    )
 
     args = parser.parse_args()
 
-    ret = work(pathlib.Path(args.outdir), verbose=args.verbose,
-               payload=args.payload, secondary_payload=args.secondary)
+    ret = work(
+        pathlib.Path(args.outdir),
+        verbose=args.verbose,
+        payload=args.payload,
+        secondary_payload=args.secondary,
+    )
     sys.exit(ret)

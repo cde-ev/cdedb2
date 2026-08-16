@@ -8,6 +8,7 @@ Run as:
 Turn off dry run with:
   `sudo -u www-cde SCRIPT_PERSONA=X SCRIPT_DRYRUN="" bin/balance_event.py`.`
 """
+
 from cdedb.backend.core import CoreBackend
 from cdedb.backend.event import EventBackend
 from cdedb.script import Script
@@ -15,17 +16,17 @@ from cdedb.script import Script
 MAX_EVENT_ID = 66
 
 s = Script(dbuser="cdb_member")
-event_backend: EventBackend = s.make_backend("event")
-core_backend: CoreBackend = s.make_backend("core")
+event_backend = s.make_event_backend(proxy=True)
+core_backend = s.make_core_backend(proxy=True)
 
 rs = s.rs()
 
 # This is necessary because balancing creates an event keeper commit,
 #  which requires user information, else git is very unhappy :(
 persona = core_backend.get_persona(rs, rs.user.persona_id)
-rs.user.username = persona["username"]
-rs.user.given_names = persona["given_names"]
-rs.user.family_name = persona["family_name"]
+rs.user.username = persona.username
+rs.user.given_names = persona.given_names
+rs.user.family_name = persona.family_name
 
 balance_count = 0
 non_archived_count = 0

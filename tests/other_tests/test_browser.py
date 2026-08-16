@@ -2,17 +2,22 @@
 """Tests for functionality executed in the users's browser, manly JavaScript."""
 
 import functools
+import logging
+import os
+import pathlib
 import re
 import unittest
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
-from playwright.sync_api import Page, expect, sync_playwright
+from playwright.sync_api import Browser, Page, expect, sync_playwright
 
 from tests.common import BrowserTest, event_keeper, storage
 
+_LOGGER = logging.getLogger(__file__)
 
-def make_page(*args: Any, headless: bool = True,
-              timeout: float = 5000) -> Callable:  # type: ignore[type-arg]
+
+def make_page(*args: Any, headless: bool = True, timeout: float = 5000) -> Callable:  # type: ignore[type-arg]
     """Decorator to handle playwright setup.
 
     This injects a `Page` object usable for testing.
@@ -31,13 +36,44 @@ def make_page(*args: Any, headless: bool = True,
                 # FIXME webkit fails to log in mysteriously
                 # FIXME firefox fails to deterministically reproduce result
                 for name in ['chromium']:
-                    browser = getattr(pw, name).launch(headless=headless)
-                    page = browser.new_page(locale='de-DE')
+                    browser: Browser = getattr(pw, name).launch(headless=headless)
+                    video_dir = (
+                        f"tests/playwright/{func.__name__}_{name}"
+                        if not os.environ.get("CI")
+                        else None
+                    )
+                    if video_dir:  # pragma: no cover
+                        pathlib.Path(video_dir).mkdir(parents=True, exist_ok=True)
+                    context = browser.new_context(
+                        record_video_dir=video_dir, locale="de-DE"
+                    )
+                    page: Page = context.new_page()
                     page.set_default_timeout(timeout)
+                    page.set_default_navigation_timeout(timeout)
                     fkwargs['page'] = page
                     with self.subTest(browser=name):
-                        func(self, *fargs, **fkwargs)
+                        try:
+                            func(self, *fargs, **fkwargs)
+                        except Exception:  # pragma: no cover
+                            if page.video:
+                                _LOGGER.info(
+                                    f"Saved video of failed test at {page.video.path()!r}."
+                                )
+                                path = pathlib.Path(page.video.path()).with_suffix(
+                                    ".png"
+                                )
+                                page.screenshot(full_page=True, path=path)
+                                _LOGGER.info(
+                                    f"Saved screenshot at point of failure to '{path}'."
+                                )
+                            raise
+                        else:
+                            if page.video:  # pragma: no cover
+                                pathlib.Path(page.video.path()).unlink()
+                                _LOGGER.info(f"Removed '{page.video.path()}'.")
+                    context.close()
                     browser.close()
+
         return new_func
 
     if len(args) > 0:
@@ -45,6 +81,7 @@ def make_page(*args: Any, headless: bool = True,
 
     def mp(func: Callable) -> Callable:  # type: ignore[type-arg]
         return make_page(func, headless=headless, timeout=timeout)
+
     return mp
 
 
@@ -124,13 +161,15 @@ class TestBrowser(BrowserTest):
 
         page.get_by_role("button", name="Benutzer-Administration").click()
         page.wait_for_url("http://localhost:5000/")
-        page.locator(".selectize-input").click()
-        page.get_by_placeholder("CdEDB-ID, Name oder E-Mail").type("emi")
-        page.get_by_text("Emilia EventisDB-5-1 • emilia@example.cde").click()
+        page.locator("#adminshowuserform .selectize-input").click()
+        page.locator("#adminshowuserform .selectize-input input").type("emi")
+        page.get_by_text("Emilia (Emmy) EventisDB-5-1 • emilia@example.cde").click()
+        page.press("#adminshowuserform .selectize-input", key="Enter")
         page.wait_for_url("http://localhost:5000/core/persona/5/show?*")
 
         expect(page.locator("#admin-notes")).to_have_text(
-            "War früher mal berühmt, hat deswegen ihren Nachnamen geändert.")
+            "War früher mal berühmt, hat deswegen ihren Nachnamen geändert."
+        )
 
     @event_keeper
     @make_page
@@ -160,13 +199,15 @@ class TestBrowser(BrowserTest):
         page.locator('input[name="field_name_-1"]').click()
         page.locator('input[name="field_name_-1"]').fill("favorit")
 
-        page.locator("#dynamicrow-delete-button-0").click()
-
         # test tab navigation...
         page.get_by_role("tab", name="Kursfelder").click()
-        page.wait_for_url("http://localhost:5000/event/event/1/field/summary#tab_course")
+        page.wait_for_url(
+            "http://localhost:5000/event/event/1/field/summary#tab_course"
+        )
         page.get_by_role("tab", name="Anmeldungsfelder").click()
-        page.wait_for_url("http://localhost:5000/event/event/1/field/summary#tab_registration")
+        page.wait_for_url(
+            "http://localhost:5000/event/event/1/field/summary#tab_registration"
+        )
 
         # ... continue testing dynamiicrow
         page.get_by_role("button", name="Feld hinzufügen").click()
@@ -175,13 +216,18 @@ class TestBrowser(BrowserTest):
         page.locator('input[name="field_name_-2"]').click()
         page.locator('input[name="field_name_-2"]').fill("held")
 
-        page.locator("#dynamicrow-delete-button-9").click()
+        page.locator("#dynamicrow-delete-button--1").click()
+        page.locator("#dynamicrow-delete-button-8").click()
 
         page.get_by_role("tab", name="Kursfelder").click()
-        page.wait_for_url("http://localhost:5000/event/event/1/field/summary#tab_course")
+        page.wait_for_url(
+            "http://localhost:5000/event/event/1/field/summary#tab_course"
+        )
 
         page.get_by_role("button", name="Speichern").click()
-        page.wait_for_url("http://localhost:5000/event/event/1/field/summary#tab_course")
+        page.wait_for_url(
+            "http://localhost:5000/event/event/1/field/summary#tab_course"
+        )
 
         expect(page.locator('input[name="title_1001"]')).to_have_value('Lieblingsheld')
         expect(page.locator('input[name="field_name_1001"]')).to_have_value('held')
@@ -219,14 +265,19 @@ class TestBrowser(BrowserTest):
         page.locator(".selectize-input").first.click()
         page.locator("#tab_qf_js").get_by_text("Namenszusatz").click()
         page.locator("li:has-text(\"Namenszusatz passt zu\")").get_by_role(
-            "button", name="").click()
-        page.locator(".col-sm-6 > .input-group > .selectize-control"
-                     " > .selectize-input").first.click()
+            "button", name=""
+        ).click()
+        page.locator(
+            ".col-sm-6 > .input-group > .selectize-control > .selectize-input"
+        ).first.click()
         page.locator("#tab_qf_js").get_by_text("Geschlecht").nth(1).click()
         page.locator("span:has-text(\"Familienname\")").get_by_role(
-            "button", name="").click()
-        page.locator(".row > div:nth-child(2) > .input-group > .selectize-control"
-                     " > .selectize-input").click()
+            "button", name=""
+        ).click()
+        page.locator(
+            ".row > div:nth-child(2) > .input-group > .selectize-control"
+            " > .selectize-input"
+        ).click()
         page.locator("#tab_qf_js").get_by_text("E-Mail").nth(2).click()
         page.get_by_role("button", name="Suche").click()
 
@@ -258,40 +309,91 @@ class TestBrowser(BrowserTest):
         page.get_by_role("link", name=re.compile("^Anmeldungen$")).click()
         page.wait_for_url("http://localhost:5000/event/event/1/registration/query")
 
-        page.locator("#tab_qf_js div:has-text(\"Filter hinzufügen\") div",
-                     ).nth(1).click()
+        page.locator(
+            "#tab_qf_js div:has-text(\"Filter hinzufügen\") div",
+        ).nth(1).click()
+        page.wait_for_timeout(100)
         page.locator("#tab_qf_js").get_by_text("Rufname").first.click()
         page.get_by_role("textbox", name="Vergleichswert").click()
         page.get_by_role("textbox", name="Vergleichswert").fill("asdfgh")
-        page.locator("#tab_qf_js div:has-text(\"Filter hinzufügen\") div",
-                     ).nth(1).click()
+        page.locator(
+            "#tab_qf_js div:has-text(\"Filter hinzufügen\") div",
+        ).nth(1).click()
         page.locator("#tab_qf_js").get_by_text("Familienname").first.click()
         page.locator("li:has-text(\"Familienname passt zupasst nicht\")").get_by_role(
-            "textbox", name="Vergleichswert").click()
+            "textbox", name="Vergleichswert"
+        ).click()
         page.locator("li:has-text(\"Familienname passt zupasst nicht\")").get_by_role(
-            "textbox", name="Vergleichswert").fill("e")
+            "textbox", name="Vergleichswert"
+        ).fill("e")
         page.locator("li:has-text(\"Rufname passt zupasst nicht\")").get_by_role(
-            "button", name="").click()
-        page.locator(".col-sm-6 > .input-group > .selectize-control"
-                     " > .selectize-input").first.click()
+            "button", name=""
+        ).click()
+        page.locator(
+            ".col-sm-6 > .input-group > .selectize-control > .selectize-input"
+        ).first.click()
         page.locator("#tab_qf_js").get_by_text("Geschlecht").nth(1).click()
         page.locator("#tab_qf_js").get_by_text("Bezahlter Betrag").nth(1).click()
         page.locator("#tab_qf_js").get_by_text("Bringt Bälle mit").nth(1).click()
         page.locator("span:has-text(\"E-Mail\")").get_by_role(
-            "button", name="").click()
-        page.locator(".row > div:nth-child(2) > .input-group > .selectize-control"
-                     " > .selectize-input").click()
-        page.locator(".row > div:nth-child(2) > .input-group > .selectize-control"
-                     " > .selectize-dropdown > .selectize-dropdown-content"
-                     " > div:nth-child(8)").click()
+            "button", name=""
+        ).click()
+        page.locator(
+            ".row > div:nth-child(2) > .input-group > .selectize-control"
+            " > .selectize-input"
+        ).click()
+        page.locator(
+            ".row > div:nth-child(2) > .input-group > .selectize-control"
+            " > .selectize-dropdown > .selectize-dropdown-content"
+            " > div:nth-child(8)"
+        ).click()
         page.get_by_role("button", name="Suche").click()
         page.wait_for_url("http://localhost:5000/event/event/1/registration/query?*")
 
-        expect(page.locator('#content')).to_contain_text('Ergebnis [3]')
-        expect(page.locator('#content')).to_contain_text('Emilia')
-        expect(page.locator('#content')).to_contain_text('0,00 €')
-        expect(page.locator('#content')).to_contain_text('weiblich')
-        expect(page.locator('#content')).not_to_contain_text('emilia@example.cde')
+        expect(page.locator('#query-results')).to_contain_text('Ergebnis [3]')
+        expect(page.locator('#result-container')).to_contain_text('Emilia')
+        expect(page.locator('#result-container')).to_contain_text('0,00 €')
+        expect(page.locator('#result-container')).to_contain_text('weiblich')
+        expect(page.locator('#result-container')).not_to_contain_text(
+            'emilia@example.cde'
+        )
+
+        page.locator("#tab_qf_js div:has-text(\"Filter hinzufügen\")").click()
+        page.locator("#tab_qf_js").get_by_text("Wu: Status").click()
+        page.locator("#tab_qf_js").get_by_text("Wu: Status").get_by_text(
+            "Nicht Angemeldet"
+        ).nth(1).click()
+        page.locator("#tab_qf_js").get_by_text("Wu: Status").locator(
+            ".selectize-dropdown"
+        ).get_by_text("Warteliste").click()
+        page.get_by_role("button", name="Suche").click()
+        page.wait_for_url("http://localhost:5000/event/event/1/registration/query?*")
+        expect(page.locator('#query-results')).to_contain_text('Ergebnis [1]')
+        expect(page.locator('.filterfield-list')).to_contain_text('Warteliste')
+
+        page.locator("#tab_qf_js").get_by_text("Wu: Status").locator(
+            "select:not(.selectized)"
+        ).select_option(label="ist eines aus")
+        page.locator("#tab_qf_js").get_by_text("Wu: Status").locator(
+            ".selectize-input input"
+        ).focus()
+        page.locator("#tab_qf_js").get_by_text("Wu: Status").locator(
+            ".selectize-dropdown"
+        ).get_by_text("Gast").click()
+        page.locator("#tab_qf_js").get_by_text("Wu: Status").locator(
+            ".selectize-dropdown"
+        ).get_by_text("Teilnehmer").click()
+        page.locator("#tab_qf_js .filterfield-list").get_by_text(
+            "Familienname"
+        ).locator("button").click()
+
+        page.get_by_role("button", name="Suche").click()
+        page.wait_for_url("http://localhost:5000/event/event/1/registration/query?*")
+        page.screenshot(path="/tmp/screenshot.png", full_page=True)
+        expect(page.locator('#query-results')).to_contain_text('Ergebnis [4]')
+        expect(page.locator('.filterfield-list')).to_contain_text('Warteliste')
+        expect(page.locator('.filterfield-list')).to_contain_text('Teilnehmer')
+        expect(page.locator('.filterfield-list')).to_contain_text('Gast')
 
     @storage
     @make_page
@@ -303,9 +405,18 @@ class TestBrowser(BrowserTest):
         """
         ids_by_realm = {
             "event": {"#input-select-gender", "#input-select-country"}
-                     | {f"#input-text-{name}"
-                        for name in ("birthday", "telephone", "mobile", "address",
-                                     "address_supplement", "postal_code", "location")},
+            | {
+                f"#input-text-{name}"
+                for name in (
+                    "birthday",
+                    "telephone",
+                    "mobile",
+                    "address",
+                    "address_supplement",
+                    "postal_code",
+                    "location",
+                )
+            },
             "cde": {"#input-file-attachment"},
         }
         for realm in ("ml", "event", "cde"):
@@ -327,11 +438,14 @@ class TestBrowser(BrowserTest):
                     page.get_by_role("button", name="Anfrage abschicken").click()
                     page.wait_for_url("http://localhost:5000/core/genesis/request")
                     expect(page.locator("#input-text-username")).to_have_value(
-                        f"gregor-{realm}@example.cde")
+                        f"gregor-{realm}@example.cde"
+                    )
                     expect(page.locator("#input-text-given_names")).to_have_value(
-                        "Gregor")
+                        "Gregor"
+                    )
                     expect(page.locator("#input-text-family_name")).to_have_value(
-                        "Genesis")
+                        "Genesis"
+                    )
                     for id_ in ids_by_realm["event"]:
                         expect(page.locator(id_)).to_be_visible()
                         if "gender" in id_:
@@ -353,9 +467,10 @@ class TestBrowser(BrowserTest):
                         for id_ in ids_by_realm["cde"]:
                             expect(page.locator(f"{id_}:invalid")).to_be_visible()
                             page.locator(f"{id_}:invalid").set_input_files(
-                                self.testfile_dir / "picture.pdf")
+                                self.testfile_dir / "picture.pdf"
+                            )
                     else:
                         self.fail("Adjust cases for this test.")
 
                 page.get_by_role("button", name="Anfrage abschicken").click()
-                page.wait_for_url("http://localhost:5000")
+                page.wait_for_url("http://localhost:5000/")

@@ -1,15 +1,22 @@
 #!/usr/bin/env python3
+import datetime
+
+import freezegun
+import webtest
 
 import cdedb.database.constants as const
-from tests.common import (
-    USER_DICT,
-    FrontendTest,
-    as_users,
-)
+import cdedb.models.complaint as models
+from cdedb.common import now
+from cdedb.common.query.log_filter import ComplaintLogFilter
+from cdedb.config import Config
+from tests.common import CRON, USER_DICT, FrontendTest, as_users, prepsql, storage
+
+_CONFIG = Config()
 
 
 class TestComplaintFrontend(FrontendTest):
     @as_users("simon")
+    @storage
     def test_entity_case(self) -> None:
         self.traverse("Fallarchiv")
         self.assertTitle("Fallarchiv")
@@ -24,43 +31,61 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence("Beispiel", div='involved_target')
         # Test informing
         self.assertNonPresence("informiert", div='involved_target')
-        self.assertNotIn('uninforminvolvedform2', self.response.forms)
-        f = self.response.forms['informinvolvedform2']
+        self.assertNotIn('uninforminvolvedform1', self.response.forms)
+        f = self.response.forms['informinvolvedform1']
         self.submit(f)
-        self.assertPresence("Beispiel (ist informiert)", div='involved_target')
-        self.assertNotIn('informinvolvedform2', self.response.forms)
-        f = self.response.forms['uninforminvolvedform2']
+        self.assertPresence("Beispiel (informiert)", div='involved_target')
+        self.assertNotIn('informinvolvedform1', self.response.forms)
+        f = self.response.forms['uninforminvolvedform1']
         self.submit(f)
         self.assertNonPresence("informiert", div='involved_target')
 
         self.assertPresence("Fallbegleitung: Charly Clown", div='involved_target')
 
         self.assertPresence("Betroffene", div='involved_affected')
-        self.assertPresence("Daniel Dino (ist informiert)", div='involved_affected')
+        self.assertPresence("Daniel Dino (informiert)", div='involved_affected')
         self.assertPresence("Fallbegleitung: Garcia Generalis", div='involved_affected')
         self.assertNonPresence(
             "Beschwerdeführer", div='involved_appellant', check_div=False
         )
         f = self.response.forms['addinvolvedform']
         f['persona_ids'] = "DB-4-3"
-        f['involvement_type'] = str(const.ComplaintInvolvementType.appellant)
+        f['involvement_type'] = const.ComplaintInvolvementType.appellant
         self.submit(f, check_notification=False)
+        self.assertNotification("waren bereits beteiligt", 'info')
+
+        self.assertPresence("Beschwerdeführer", div='involved_appellant')
+        self.assertPresence("Daniel Dino (informiert)", div='involved_appellant')
         self.assertPresence(
-            "Einige dieser Nutzer sind bereits anderweitig beteiligt.",
-            div='addinvolvedform',
+            "Fallbegleitung: Garcia Generalis", div='involved_appellant'
         )
+        self.assertNonPresence("Betroffene", div='involved_affected', check_div=False)
+
+        f = self.response.forms['addinvolvedform']
+        f['persona_ids'] = "DB-4-3"
+        f['involvement_type'] = const.ComplaintInvolvementType.affected
+        self.submit(f, check_notification=False)
+        self.assertNotification("waren bereits beteiligt", 'info')
+
+        self.assertPresence("Betroffene", div='involved_affected')
+        self.assertPresence("Daniel Dino", div='involved_affected')
+        self.assertPresence("Fallbegleitung: Garcia Generalis", div='involved_affected')
+        self.assertNonPresence(
+            "Beschwerdeführer", div='involved_appellant', check_div=False
+        )
+        # self.assertNotification("1 Personen sind nun nicht mehr informiert.", "info")
 
         f = self.response.forms['addinvolvedform']
         f['persona_ids'] = "DB-1-9"
         f['involvement_type'] = str(const.ComplaintInvolvementType.appellant)
         self.submit(f)
         self.assertPresence(
-            "Anton Administrator (ist informiert)", div="involved_appellant"
+            "Anton Administrator (informiert)", div="involved_appellant"
         )
         self.assertNonPresence("Fallbegleitung", div='involved_appellant')
-        self.assertNotIn('informinvolvedform1', self.response.forms)
-        self.assertNotIn('uninforminvolvedform1', self.response.forms)
-        self.traverse({'href': 'involved/1/companions/change'})
+        self.assertNotIn('informinvolvedform1001', self.response.forms)
+        self.assertNotIn('uninforminvolvedform1001', self.response.forms)
+        self.traverse({'href': 'involved/1001/companions/change'})
         self.assertTitle("Fallbegleitung für Anton Administrator verwalten (Fall 1)")
         f = self.response.forms['addcompanionform']
         f['companion_ids'] = "DB-1-9"
@@ -69,10 +94,10 @@ class TestComplaintFrontend(FrontendTest):
         f['companion_ids'] = "DB-4-3"
         self.submit(f, check_notification=False)
         self.assertPresence("Fallbegleitung kann nicht selbst beteiligt sein.")
-        f = self.response.forms['addcompanionform']
-        f['companion_ids'] = "DB-3-5"
-        self.submit(f, check_notification=False)
-        self.assertPresence("Fallbegleitung auf Gegenseite.")
+        # f = self.response.forms['addcompanionform']
+        # f['companion_ids'] = "DB-3-5"
+        # self.submit(f, check_notification=False)
+        # self.assertPresence("Fallbegleitung auf Gegenseite.")
         f = self.response.forms['addcompanionform']
         f['companion_ids'] = "DB-5-1,DB-9-4"
         self.submit(f)
@@ -89,7 +114,7 @@ class TestComplaintFrontend(FrontendTest):
         self.assertNonPresence("Inga")
         self.traverse("Fall 1")
         self.assertPresence("Fallbegleitung: Emilia Eventis", div='involved_appellant')
-        f = self.response.forms['removeinvolvedform1']
+        f = self.response.forms['removeinvolvedform1001']
         self.submit(f)
         self.assertNonPresence(
             "Anton Administrator", div='involved_appellant', check_div=False
@@ -105,7 +130,7 @@ class TestComplaintFrontend(FrontendTest):
             "Garcia Generalis war Fallbegleitung und ist nun als zurückgezogen",
             'warning',
         )
-        self.traverse({'href': 'involved/4/companions/change'})
+        self.traverse({'href': 'involved/2/companions/change'})
         f = self.response.forms['reinstatecompanionform7']
         self.submit(f, check_notification=False)
         self.assertNotification(
@@ -125,12 +150,15 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence(
             "Berta muss bei Anmeldung ein Einzelzimmer beantragen.", div='entry5'
         )
+        self.assertDivNotExists("entry2-description")
+        self.assertPresence("Aussage von Charly", div="entry2-attachment")
+        self.assertNoLink("entry/2/version/1/attachment")
         self.assertNonPresence("Beteiligten hinzugefügt")
         self.traverse("Zeige Log-Einträge")
         self.assertPresence(
-            "Beteiligten hinzugefügt: Anton Administrator", div='logentry1003'
+            "Beteiligten hinzugefügt: Anton Administrator", div='logentry1007'
         )
-        self.assertPresence("von Simon Struktur; Beschwerdeführer", div='logentry1003')
+        self.assertPresence("von Simon Struktur; Beschwerdeführer", div='logentry1007')
         # self.assertPresence(date_filter(now().date(), lang="de"), div='logentry1001')
         self.assertNoLink('/core/complaint/case/1/history')
 
@@ -164,13 +192,66 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence("75 Zeichen.", div='entry1001')
         self.assertNonPresence("Versionen", div='entry1001')
 
+        # Create an entry with an attachment.
+        self.traverse("Eigenständigen Eintrag hinzufügen")
+        f = self.response.forms["selectentrytypeform"]
+        f["entry_type"] = const.ComplaintEntryType.provisional_statement_given
+        self.submit(f)
+        f = self.response.forms["configureentryform"]
+        f["concerned_id"] = "DB-2-7"
+        f["authors"] = "DB-1-9"
+        f["description"] = ""
+        f["attachment"] = ""
+        f["attachment_filename"] = "foo"
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
+        self.assertValidationError("description", "Muss eine Zeichenkette sein.")
+        self.assertValidationError("attachment", "Unvollständiger Anhang.")
+        self.assertValidationError("attachment_title", "Unvollständiger Anhang.")
+        f = self.response.forms["configureentryform"]
+        f["attachment_filename"] = ""
+        f["attachment_title"] = "bar"
+        valid_pdf = (self.testfile_dir / "form.pdf").read_bytes()
+        f["attachment"] = webtest.Upload(
+            "form.pdf",
+            valid_pdf,
+            content_type="application/octet-stream",
+        )
+        self.submit(f, check_notification=False, check_mandatory_filled=False)
+        self.assertValidationError("description", "Muss eine Zeichenkette sein.")
+        f = self.response.forms["configureentryform"]
+        self.assertEqual("form.pdf", f.get("attachment_filename", 0).value)
+        self.assertEqual("form.pdf", f.get("attachment_filename", 1).value)
+        self.assertTrue(f["attachment_hash"])
+        self.assertPresence("Dein Upload wurde bereits gespeichert")
+        self.assertPresence("form.pdf", div="cached_attachment")
+        self.assertFalse(self.complaint.is_unlocked(self.key, 1))
+        saved = self.response
+        self.traverse("form.pdf")
+        self.assertNotification(
+            "Fall muss entsperrt sein um auf Anhang zuzugreifen.", "error"
+        )
+        self.assertTrue(self.complaint.unlock_case(self.key, 1, "cached attachment"))
+        self.response = saved
+        self.traverse("form.pdf")
+        self.assertEqual(valid_pdf, self.response.body)
+        f["description"] = "baz"
+        self.submit(f)
+        self.assertPresence("bar", div="entry1002")
+        saved = self.response
+        self.traverse("bar")
+        self.assertEqual(valid_pdf, self.response.body)
+        self.response = saved
+        self.assertTrue(self.complaint.lock_case(self.key, 1))
+
         # Excursion part 1: Check measure is displayed in overview
         self.traverse("Maßnahmenübersicht")
         self.assertTitle("Maßnahmenübersicht")
-        self.assertPresence("Maßnahme gegen Bertå Beispiel", div='entry6')
-        self.assertPresence("von Charly Clown", div='entry6')
         self.assertPresence(
-            "Berta muss bei Anmeldung ein Einzelzimmer beantragen.", div='entry6'
+            "Maßnahme gemäß Übereinkunft (für Bertå Beispiel)", div='entry5-6'
+        )
+        self.assertPresence("von Charly Clown", div='entry5-6')
+        self.assertPresence(
+            "Berta muss bei Anmeldung ein Einzelzimmer beantragen.", div='entry5-6'
         )
         self.traverse("Fall 1")
 
@@ -189,11 +270,11 @@ class TestComplaintFrontend(FrontendTest):
         )
         pre_submit_response = self.response
         self.submit(f)
-        self.assertPresence("Maßnahme: widerrufen", div='entry1002')
-        self.assertPresence("99 Zeichen. Erstellt am ", div='entry1002')
+        self.assertPresence("Maßnahme: widerrufen", div='entry1003')
+        self.assertPresence("99 Zeichen. Erstellt am ", div='entry1003')
         self.assertNonPresence("Wäscheklammer")
         self.assertNoLink("entry/4/revoke")
-        self.assertNoLink("entry/1002/revoke")
+        self.assertNoLink("entry/1003/revoke")
 
         # Try revocation once more
         self.response = pre_submit_response
@@ -216,6 +297,15 @@ class TestComplaintFrontend(FrontendTest):
         f = self.response.forms['unlockcaseform']
         f['reason'] = "Ich bin halt leider viel zu neugierig."
         self.submit(f)
+        self.assertPresence("Philosophiekurs", div="entry2-description")
+        self.assertPresence("Aussage von Charly", div="entry2-attachment")
+        saved_response = self.response
+        self.traverse({"href": "entry/2/version/1/attachment"})
+        self.assertTrue(self.response.body.startswith(b"%PDF"))
+        self.assertEqual(
+            (self.testfile_dir / "form.pdf").read_bytes(), self.response.body
+        )
+        self.response = saved_response
         self.assertNoLink("entry/2/remove")
         self.assertNoLink("entry/4/remove")
         self.traverse(
@@ -235,18 +325,18 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence("Schnarchzimmer", div='entry4')
 
         # Revoke recovation
-        self.traverse({'href': "entry/1002/revoke"})
+        self.traverse({'href': "entry/1003/revoke"})
         f = self.response.forms['configureentryform']
         f['authors'] = "DB-19-1"
         f['description'] = "Hat leider nicht geklappt…"
         self.submit(f)
-        self.assertNoLink("entry/1003/revoke")
-        self.get("/core/complaint/case/1/entry/1003/revoke")
+        self.assertNoLink("entry/1004/revoke")
+        self.get("/core/complaint/case/1/entry/1004/revoke")
         self.follow()
         self.assertTitle("Fall 1")
         msg = "Widerruf eines Widerrufs kann nicht widerrufen werden."
         self.assertNotification(msg, 'error')
-        self.post("/core/complaint/case/1/entry/1003/revoke", {}, evade_anti_csrf=True)
+        self.post("/core/complaint/case/1/entry/1004/revoke", {}, evade_anti_csrf=True)
         self.follow()
         self.assertTitle("Fall 1")
         self.assertNotification(msg, 'error')
@@ -254,23 +344,25 @@ class TestComplaintFrontend(FrontendTest):
         # Excursion part 3: Check revoked measure revocation leads to display
         self.traverse("Maßnahmenübersicht")
         self.assertTitle("Maßnahmenübersicht")
-        self.assertPresence("Maßnahme gegen Bertå Beispiel", div='entry6')
+        self.assertPresence(
+            "Maßnahme gemäß Übereinkunft (für Bertå Beispiel)", div='entry5-6'
+        )
         self.traverse("Fall 1")
 
         # Remove entry
-        self.traverse({'href': "entry/1003/remove"})
+        self.traverse({'href': "entry/1004/remove"})
         f = self.response.forms['removeentryform']
         f['dreason'] = "War ein Versehen."
         self.submit(f)
         self.assertNonPresence("Widerruf: widerrufen")
-        self.get("/core/complaint/case/1/entry/1003/remove")
+        self.get("/core/complaint/case/1/entry/1004/remove")
         self.follow()
         self.assertTitle("Fall 1")
         msg = "Eintrag ist bereits entfernt."
         self.assertNotification(msg, 'info')
         self.get("/core/complaint/case/1/show")
         self.post(
-            "/core/complaint/case/1/entry/1003/remove",
+            "/core/complaint/case/1/entry/1004/remove",
             {'dreason': "Piep."},
             evade_anti_csrf=True,
         )
@@ -291,23 +383,25 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence("Version 1 von Charly Clown. 80 Zeichen.", div='entry4')
         self.assertPresence("Ersetzt am ", div='entry4')
         self.assertNonPresence("Gelöscht am ", div='entry4')
-        self.assertPresence("Anton Administrator: Ungünstige Wortwahl", div='entry4')
+        self.assertPresence("Anton Administrator. Ungünstige Wortwahl", div='entry4')
         self.assertPresence("lang und breit", div='entry4')
         self.assertPresence("Version 2 von Charly Clown. 77 Zeichen.", div='entry4')
         self.assertPresence("Version 3 von Charly Clown. 59 Zeichen.", div='entry4')
         self.assertPresence("Schnarchzimmer", div='entry4')
-        self.assertPresence("Widerruf: widerrufen", div='entry1003')
+        self.assertPresence("Widerruf: widerrufen", div='entry1004')
         self.assertPresence("Version 1 von Simon Struktur. 26 Zeichen.")
-        self.assertPresence("Gelöscht am", div='entry1003')
-        self.assertNonPresence("Ersetzt am", div='entry1003')
-        self.assertNoLink("/entry/")
+        self.assertPresence("Gelöscht am", div='entry1004')
+        self.assertNonPresence("Ersetzt am", div='entry1004')
+        self.assertNoLink(r"/entry/\d+/remove")
+        self.assertNoLink(r"/entry/\d+/revoke")
+        self.assertNoLink(r"/entry/\d+/replace")
         self.assertPresence(
             "Beteiligten hinzugefügt: Daniel Dino von Anton Administrator; Betroffene",
             div='logentry2',
         )
         self.assertPresence(
             "Fallbegleitung zurückgezogen: Garcia Generalis (für Daniel Dino)",
-            div='logentry1012',
+            div='logentry1015',
         )
 
         # Lock case
@@ -356,8 +450,8 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence("Startdatum 02.01.2222")
         self.assertPresence("Enddatum 06.01.2222")
         self.assertPresence("Anton", div='involved_affected')
-        self.assertPresence("Information", div='entry1004')
-        self.assertPresence("43 Zeichen", div='entry1004')
+        self.assertPresence("Information", div='entry1005')
+        self.assertPresence("43 Zeichen", div='entry1005')
         self.assertNonPresence("Tür und Angel")
 
         # ##
@@ -437,7 +531,7 @@ class TestComplaintFrontend(FrontendTest):
         f['authors'] = "DB-19-1"
         f['description'] = "Hat sich nie wieder gemeldet."
         self.submit(f)
-        self.assertPresence("29 Zeichen.", div='entry1005')
+        self.assertPresence("29 Zeichen.", div='entry1006')
         self.assertNonPresence("Hat sich nie wieder gemeldet.")
         # with concerned_id
         self.traverse("Eigenständigen Eintrag hinzufügen")
@@ -452,7 +546,7 @@ class TestComplaintFrontend(FrontendTest):
         self.assertValidationError('concerned_id')
         f['concerned_id'] = "DB-6-X"
         self.submit(f, verbose=True)
-        self.assertPresence("24 Zeichen", div='entry1006')
+        self.assertPresence("24 Zeichen", div='entry1007')
         self.assertNonPresence("Ich will auch was sagen!")
 
         self.traverse("Fallarchiv")
@@ -479,9 +573,9 @@ class TestComplaintFrontend(FrontendTest):
             f['qval_involved.persona_id'] = "DB-10-8"
             self.submit(f)
             self.assertNotification("1 Fälle nicht angezeigt.", 'warning')
-            f['qval_involved.involved_type'] = (
-                const.ComplaintInvolvementType.target.value,
-            )
+            f['qval_involved.involvement_type'] = [
+                const.ComplaintInvolvementType.target.value
+            ]
             self.submit(f)
             self.assertNonPresence("nnicht angezeigt", div='notifications')
 
@@ -500,8 +594,8 @@ class TestComplaintFrontend(FrontendTest):
 
             urls = {
                 "/core/complaint/case/1001/change",
-                "/core/complaint/case/1001/entry/1004/remove",
-                "/core/complaint/case/1001/entry/1004/revoke",
+                "/core/complaint/case/1001/entry/1005/remove",
+                "/core/complaint/case/1001/entry/1005/revoke",
                 "/core/complaint/case/1001/entry/add",
             }
             for url in urls:
@@ -522,13 +616,32 @@ class TestComplaintFrontend(FrontendTest):
             },
             {
                 'case_id': 1,
-                'change_note': 'Beschwerdeführer',
-                'code': const.ComplaintLogCodes.involved_added,
-                'persona_id': 1,
+                'change_note': 'Betroffene',
+                'code': const.ComplaintLogCodes.involved_removed,
+                'persona_id': 4,
             },
             {
                 'case_id': 1,
-                'code': const.ComplaintLogCodes.involved_informed,
+                'change_note': 'Beschwerdeführer',
+                'code': const.ComplaintLogCodes.involved_added,
+                'persona_id': 4,
+            },
+            {
+                'case_id': 1,
+                'change_note': 'Beschwerdeführer',
+                'code': const.ComplaintLogCodes.involved_removed,
+                'persona_id': 4,
+            },
+            {
+                'case_id': 1,
+                'change_note': 'Betroffene',
+                'code': const.ComplaintLogCodes.involved_added,
+                'persona_id': 4,
+            },
+            {
+                'case_id': 1,
+                'change_note': 'Beschwerdeführer',
+                'code': const.ComplaintLogCodes.involved_added,
                 'persona_id': 1,
             },
             {
@@ -584,6 +697,11 @@ class TestComplaintFrontend(FrontendTest):
                 'change_note': 'Versteckt vor',
                 'code': const.ComplaintLogCodes.involved_added,
                 'persona_id': 7,
+            },
+            {
+                'case_id': 1,
+                'change_note': 'cached attachment',
+                'code': const.ComplaintLogCodes.case_unlocked,
             },
             {
                 'case_id': 1,
@@ -695,18 +813,21 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence(
             "Maßnahme gemäß Übereinkunft von Charly Clown – aus Fall 1"
             " Berta muss bei Anmeldung ein Einzelzimmer beantragen.",
-            div="entry6",
+            div="entry5-6",
         )
         self.assertPresence(
             "Maßnahme gemäß Übereinkunft (abgelaufen) von Charly Clown – aus Fall 1"
             " Quarantäne für eine Woche!",
-            div="entry7",
+            div="entry6-7",
         )
+        self.assertNonPresence("widerrufen")
+        self.assertDivNotExists("entry8-9")
         self.assertPresence(
-            "Maßnahme gemäß Übereinkunft (widerrufen) von Petra Philanthrop"
-            " – aus Fall 1 Sollte Berta noch einmal die Vögel aus dem Schlaf",
-            div="entry8",
+            "Maßnahme gemäß Übereinkunft (noch nicht aktiv) von Charly Clown"
+            " – aus Fall 1 Für eine Zukunft ohne Schnarcher",
+            div="entry9-10",
         )
+
         self.traverse("Fall 1")
         self.assertTitle("Fall 1")
 
@@ -731,17 +852,19 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence(
             "Maßnahme gemäß Übereinkunft von Charly Clown"
             " Berta muss bei Anmeldung ein Einzelzimmer beantragen.",
-            div="entry6",
+            div="entry5-6",
         )
         self.assertPresence(
             "Maßnahme gemäß Übereinkunft (abgelaufen)"
             " von Charly Clown Quarantäne für eine Woche!",
-            div="entry7",
+            div="entry6-7",
         )
+        self.assertNonPresence("widerrufen")
+        self.assertDivNotExists("entry8-9")
         self.assertPresence(
-            "Maßnahme gemäß Übereinkunft (widerrufen) von Petra Philanthrop"
-            " Sollte Berta noch einmal die Vögel aus dem Schlaf schnarchen",
-            div="entry8",
+            "Maßnahme gemäß Übereinkunft (noch nicht aktiv) von Charly Clown"
+            " Für eine Zukunft ohne Schnarcher",
+            div="entry9-10",
         )
         self.assertNonPresence("aus Fall 1")
 
@@ -749,11 +872,19 @@ class TestComplaintFrontend(FrontendTest):
     def test_measure_overview(self) -> None:
         self.traverse("Maßnahmenübersicht")
         self.assertTitle("Maßnahmenübersicht")
-        self.assertPresence("Maßnahme gegen Bertå Beispiel", div='entry6')
-        self.assertPresence("von Charly Clown", div='entry6')
         self.assertPresence(
-            "Berta muss bei Anmeldung ein Einzelzimmer beantragen.", div='entry6'
+            "Maßnahme gemäß Übereinkunft (für Bertå Beispiel)", div='entry5-6'
         )
+        self.assertPresence("von Charly Clown", div='entry5-6')
+        self.assertPresence(
+            "Berta muss bei Anmeldung ein Einzelzimmer beantragen.", div='entry5-6'
+        )
+        # Do not show expired measure
+        self.assertNonPresence("Quarantäne für eine Woche!")
+        # Do not show revoked measure
+        self.assertNonPresence("Sollte Berta noch einmal die Vögel aus dem Schlaf")
+        # Do not show not-yet active measure
+        self.assertNonPresence("Für eine Zukunft ohne Schnarcher")
         if self.user_in("simon"):
             self.traverse("Fall 1")
         else:
@@ -796,3 +927,126 @@ class TestComplaintFrontend(FrontendTest):
         self.assertNotification(
             "Benutzer existiert nicht oder ist kein Maßnahmenmanager", 'error'
         )
+
+    _fake_ctime = datetime.datetime(
+        2025, 12, 12, 8, 4, 2, tzinfo=_CONFIG["DEFAULT_TIMEZONE"]
+    )
+
+    @prepsql(f"""
+        UPDATE {models.ComplaintEntryVersion.database_table}
+        SET ctime = '{_fake_ctime.isoformat()}'
+    """)
+    @prepsql(f"""
+        UPDATE {ComplaintLogFilter.log_table}
+        SET ctime = '{_fake_ctime.isoformat()}'
+    """)
+    @storage
+    @as_users("simon")
+    def test_export_case(self) -> None:
+        self.get("/core/complaint/case/1/export")
+        self.assertTitle("Fall 1")
+        self.assertNotification("Fall muss zuerst entsperrt werden.")
+        f = self.response.forms["unlockcaseform"]
+        f["reason"] = "Test the export."
+        self.submit(f)
+        self.get("/core/complaint/case/1/export")
+        expectation = (self.testfile_dir / "case_1.txt").read_text()
+
+        # Have to avoid whitespace normalization for comparison.
+        self.assertEqual(
+            expectation.splitlines(),
+            self._get_raw_content(
+                "#case1-export", check_exists=True, index=0
+            ).splitlines(),
+        )
+
+    @storage
+    @as_users("simon")
+    def test_purge_entry_version(self) -> None:
+        self.get("/core/complaint/case/1/show")
+        f = self.response.forms["unlockcaseform"]
+        f['reason'] = "Test the purge."
+        self.submit(f)
+        self.traverse("Eintragshistorie zeigen")
+        self.assertPresence("Version 1 von Charly Clown. 80 Zeichen.", div="version4")
+        self.assertPresence("28.05.2025, 18:00:00", div="version4")
+        self.assertPresence(
+            r"Erstellt am .*? von Anton Administrator\.", div="version4", regex=True
+        )
+        self.assertPresence(
+            r"Ersetzt am .*? von Anton Administrator\. Ungünstige Wortwahl\.",
+            div="version4",
+            regex=True,
+        )
+        self.assertPresence(
+            "Berta hat lang und breit erklärt zukünftig immer ein Einzelzimmer zu beantragen.",
+            div="version4",
+        )
+        self.assertNonPresence("Löschung", div="version4")
+        self.assertHasClass("#version4", "text-muted")
+
+        f = self.response.forms["markentryforpurgeform4"]
+        self.submit(f)
+        text = self.fetch_mail_content()
+        self.assertIn("unwiderruflich gelöscht", text)
+        self.assertIn('/case/1/history#version4', text)
+        self.assertPresence("Version 1 von Charly Clown. 80 Zeichen.", div="version4")
+        self.assertPresence("28.05.2025, 18:00:00", div="version4")
+        self.assertPresence(
+            r"Erstellt am .*? von Anton Administrator\.", div="version4", regex=True
+        )
+        self.assertPresence(
+            r"Ersetzt am .*? von Anton Administrator\. Ungünstige Wortwahl\.",
+            div="version4",
+            regex=True,
+        )
+        self.assertPresence(
+            "Berta hat lang und breit erklärt zukünftig immer ein Einzelzimmer zu beantragen.",
+            div="version4",
+        )
+        self.assertPresence(
+            f"Löschung vorgemerkt am .*? von {self.user['given_names']}",
+            div="version4",
+            regex=True,
+        )
+        self.assertHasClass("#version4", "bg-danger")
+
+        f = self.response.forms["unmarkentryforpurgeform4"]
+        self.submit(f)
+        text = self.fetch_mail_content()
+        self.assertIn("Aufhalten der Löschung", text)
+        self.assertIn('/case/1/history#version4', text)
+        self.assertNonPresence("Löschung", div="version4")
+        self.assertNotHasClass("#version4", "bg-danger")
+
+        f = self.response.forms["markentryforpurgeform4"]
+        self.submit(f)
+
+        with freezegun.freeze_time(now()) as frozen_time:
+            frozen_time.tick(self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"])
+
+            self.complaint.purge_entry_version(CRON, 4, 4)
+
+        self.get("/core/complaint/case/1/history")
+        self.assertPresence("Version 1 (permanent gelöscht)", div="version4")
+        self.assertNonPresence("80 Zeichen", div="version4")
+        self.assertNonPresence("28.05.2025, 18:00:00", div="version4")
+        self.assertPresence(
+            r"Erstellt am .*? von Anton Administrator\.", div="version4", regex=True
+        )
+        self.assertPresence(
+            r"Ersetzt am .*? von Anton Administrator\.",
+            div="version4",
+            regex=True,
+        )
+        self.assertNonPresence("Ungünstige Wortwahl", div="version4")
+        self.assertNonPresence(
+            "Berta hat lang und breit erklärt zukünftig immer ein Einzelzimmer zu beantragen.",
+            div="version4",
+        )
+        self.assertPresence(
+            f"Löschung vorgemerkt am .*? von {self.user['given_names']}",
+            div="version4",
+            regex=True,
+        )
+        self.assertHasClass("#version4", "bg-danger")

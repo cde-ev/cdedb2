@@ -4,12 +4,12 @@
 {% import "web/event/generic.tmpl" as generic with context %}
 {% block scripts %}
     {{ super() }}
-    {% if values['event_id'] in user.orga or user.admin_views.intersection(('event_orga', 'event_mgmt')) %}
+    {% if orga_view or 'event_mgmt' in user.admin_views %}
         {{ util.cdedb_script('cdedb_searchpersona.js') }}
         {{ util.cdedb_script('cdedb_helper.js') }}
     {% endif %}
 {% endblock %}
-{% if values['event_id'] in user.orga or user.admin_views.intersection(('event_orga', 'event_mgmt')) %}
+{% if orga_view or 'event_mgmt' in user.admin_views %}
     {% set jshint = 'strong' %}
 {% endif %}
 {% block title %}
@@ -21,6 +21,11 @@
 {% endblock %}
 {% block static_notifications %}
     {{ super() }}
+    {% if ambience['event']['institution'] == enums["PastInstitutions"].private %}
+        {% call util.notification('warning', id='is_private') %}
+            {% trans %}This event is not organized under the supervision of CdE, but independently by the Orgas.{% endtrans %}
+        {% endcall %}
+    {% endif %}
     {% if "event" not in user.roles %}
         {% call util.notification('info', id='instructors-not-visible') %}
             {% trans %}More detailed information about the event is visible to logged in event users.{% endtrans %}
@@ -29,9 +34,17 @@
 {% endblock %}
 {% block content %}
     {% if "event" in user.roles %}
-        {% if ambience['event'].id in user.orga or "event_orga" in user.admin_views %}
+        {% if orga_view or is_privileged_for("event/remove_orga", admin_view_to_consider="event_mgmt") or is_privileged_for("event/remove_caretaker", admin_view_to_consider="event_mgmt") %}
             <div class="p button-par">
-                {{ generic.edit_free_text_button("description", label=gettext("Edit description"), small=False, pull_right=False) }}
+                {% if orga_view %}
+                    {{ generic.edit_free_text_button("description", label=gettext("Edit description"), small=False, pull_right=False) }}
+                {% endif %}
+                {% if is_privileged_for("event/manage_roles", admin_view_to_consider="event_mgmt") %}
+                    {{ util.href(cdedblink("event/manage_roles"), gettext("Manage Roles"), aclass="btn btn-warning btn-sm", icon="user-friends") }}
+                {% endif %}
+                {% if orga_view and ambience['event'].iban %}
+                    {{ util.href(cdedblink("event/event_payment"), label=gettext("Payment QR-Code"), icon="euro", aclass="btn btn-sm btn-info") }}
+                {% endif %}
             </div>
         {% endif %}
         <div id="description">{{ ambience['event']['description']|md }}</div>
@@ -65,7 +78,7 @@
                 {% endif %}
             </dd>
         {% endif %}
-        {% if not ambience['event']['registration_start'] is none %}
+        {% if ambience['event'].registration_start is not none and ambience['event'].is_registration_approved %}
             <dt title="{% trans %}Registration{% endtrans %}">
                 {% trans %}Registration{% endtrans %}
             </dt>
@@ -79,8 +92,7 @@
                 {% else %}
                     {{ ambience['event']['registration_start']|datetime(lang=lang) }}&#8239;–&#8239;
                     {{- (hard_limit if soft_limit is none else soft_limit)|datetime(lang=lang) }}
-                    {% if ((values['event_id'] in user.orga or 'event_orga' in user.admin_views)
-                        or (soft_limit and now() > soft_limit)) and soft_limit != hard_limit %}
+                    {% if (orga_view or (soft_limit and now() > soft_limit)) and soft_limit != hard_limit %}
                         {% if hard_limit %}
                             {% trans date=hard_limit|datetime(lang=lang) %}
                                 (Late registrations until {{ date }})
@@ -110,22 +122,42 @@
             <dt title="{% trans %}Orgas{% endtrans %}">
                 {% trans %}Orgas{% endtrans %}
             </dt>
-            <dd id="orgas">
-                {% for anid, entry in orgas.items() %} {# This is already sorted. #}
-                    {{ util.persona_anchor(entry, include_nickname=true) }}{% if not loop.last %},{% endif %}
-                {% else %}
-                    {% trans %}None{% endtrans %}
-                {% endfor %}
+            <dd>
+                <span id="orgas">
+                    {% for anid, entry in orgas.items() %} {# This is already sorted. #}
+                        {{ util.persona_anchor(entry, include_nickname=true) }}{% if not loop.last %},{% endif %}
+                    {% else %}
+                        {% trans %}None{% endtrans %}
+                    {% endfor %}
+                </span>
+                {% if is_privileged_for("event/remove_orga", admin_view_to_consider="event_mgmt") %}
+                    {{ util.href(cdedblink("event/manage_roles") + "#orgas", gettext("Manage Orgas"), aclass="btn btn-warning btn-xs", icon="user-friends") }}
+                {% endif %}
+            </dd>
+            <dt title="{% trans %}Caretakers{% endtrans %}">
+                {% trans %}Caretakers{% endtrans %}
+            </dt>
+            <dd>
+                <span id="caretakers">
+                    {% for anid, entry in caretakers.items() %} {# This is already sorted. #}
+                        {{ util.persona_anchor(entry, include_nickname=true) }}{% if not loop.last %},{% endif %}
+                    {% else %}
+                        {% trans %}None{% endtrans %}
+                    {% endfor %}
+                </span>
+                {% if is_privileged_for("event/remove_caretaker", admin_view_to_consider="event_mgmt") %}
+                    {{ util.href(cdedblink("event/manage_roles") + "#caretakers", gettext("Manage Caretakers"), aclass="btn btn-warning btn-xs", icon="hands-holding-circle") }}
+                {% endif %}
             </dd>
         {% endif %}
     </dl>
-    {% if values['event_id'] in user.orga or user.admin_views.intersection(('event_orga', 'event_mgmt')) %}
+    {% if orga_view or 'event_mgmt' in user.admin_views %}
         <dl class="dl-horizontal">
             <dt title="{% trans %}Shortname{% endtrans %}">{% trans %}Shortname{% endtrans %}</dt>
             <dd id="shortname">{{ ambience['event']['shortname'] }}</dd>
             <dt title="{% trans %}Institution{% endtrans %}">{% trans %}Institution{% endtrans %}</dt>
             <dd id="institution">{{ gettext(ambience['event']['institution']|string) }}</dd>
-            {% if values['event_id'] in user.orga or 'event_orga' in user.admin_views %}
+            {% if orga_view %}
                 <dt title="{% trans %}CdE-Account{% endtrans %}">{% trans %}CdE-Account{% endtrans %}</dt>
                 <dd id="cde-iban">
                     {%- if ambience['event'].iban -%}
@@ -140,7 +172,7 @@
     {% endif %}
 
 
-    {% if values['event_id'] in user.orga or 'event_orga' in user.admin_views %}
+    {% if orga_view %}
         {% if ambience['event']['notes'] %}
             {% call util.bootstrap_panel(title=gettext("Orga-Notes"),
                                          button=generic.edit_free_text_button("notes"),
@@ -151,7 +183,7 @@
     {% endif %}
 
     <div class="row">
-        {% if values['event_id'] in user.orga or 'event_orga' in user.admin_views %}
+        {% if orga_view %}
             {% set min_severity = enums['ViolationSeverity'].INFO %}
             {% set violations = constraint_violations['violations'] if constraint_violations else None %}
             {% if violations and violations.max_severity >= min_severity %}
@@ -244,64 +276,10 @@
                 {% endcall %}
             </div>
         {% endif %}
-        {% if "event_mgmt" in user.admin_views %}
-            <div class="col-md-6" id="manage-orgas">
-                {% call util.bootstrap_panel(title=gettext("Orgas"), icon='user-friends') %}
-                <ul>
-                    {% for anid, entry in orgas.items() %} {# This is already sorted. #}
-                        <li class="hide-hover-container clearfix-after">
-                            {{ util.persona_anchor(entry, include_nickname=true) }} ({{ anid|cdedbid }})
-                            <form action="{{ cdedblink('event/remove_orga') }}" method="POST"
-                                    id="removeorgaform{{ anid }}" class="hide-hover display-inline">
-                                {{ util.anti_csrf_token('event/remove_orga') }}
-                                {{ util.input_hidden(name="orga_id", value=anid) }}
-                                {{ util.input_submit(title=gettext("Remove Orga"), icon='minus', label="",
-                                                     aclass='btn btn-xs btn-danger list-button-float') }}
-                                {{ util.ack_delete(gettext("The orga will be removed from the event.")) }}
-                            </form>
-                        </li>
-                    {% endfor %}
-                </ul>
-                <form action="{{ cdedblink('event/add_orga') }}" method="POST" id="addorgaform" class="p">
-                    {{ util.anti_csrf_token('event/add_orga') }}
-                    {% call util.output_errors('orga_id', wrapper=True) %}
-                    <div class="input-group has-success">
-                        <span class="input-group-addon">{{ util.make_icon('plus', title=gettext("Add Orga")) }}</span>
-                        {{ util.input_text(name="orga_id", placeholder="DB-XXXX-X", anid='input-add-orga',
-                                           arialabel=gettext("ID of the new Orga")) }}
-                        <script nonce="{{ csp_nonce }}">
-                            $('#input-add-orga').cdedbSearchPerson(
-                                '{{ cdedblink('core/select_persona') }}',
-                                {{ {'kind': 'event_user', 'aux': ambience['event']['id'] }|tojson }},
-                                {{ ambience['event']['orgas']|list|tojson }}, false, false,
-                                "{{ gettext("ID, name, email") }}"
-                            );
-                        </script>
-                        <div class="input-group-btn">
-                            {{ util.input_submit(label=gettext("Add"), aclass='btn btn-success') }}
-                        </div>
-                    </div>
-                    {% if ambience['event'].id in user.orga %}
-                        <p class="help-block no-color text-warning" style="margin-bottom:0">
-                            {{- util.make_icon('exclamation-triangle') }}{{ nbsp }}
-                            {% trans %}
-                                 You should not add/remove orgas for your own event.
-                            {% endtrans %}
-                        </p>
-                    {% endif %}
-                {% endcall %}
-                </form>
-                {% endcall %}
-            </div>
-        {% endif %}
     </div>
 
-
-    {% if "event_mgmt" in user.admin_views or "finance" in user.admin_views or (
-            values['event_id'] in user.orga and (not ambience['event']['orga_address'] or not participant_list)) %}
-        {# This ensures no empty box is shown for orgas. #}
-        {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
-            {% if not ambience['event']['orga_address'] %}
+    {% call util.conditional_bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
+            {% if not ambience['event']['orga_address'] and orga_view %}
                 <div class="row" id="create-orga-list">
                     <div class="col-sm-4">
                         <div class="p">
@@ -326,7 +304,7 @@
                     </div>
                 </div>
             {% endif %}
-            {% if not participant_list %}
+            {% if not participant_list and orga_view %}
                 <div class="row" id="create-participant-list">
                     <div class="col-sm-4">
                         <div class="p">
@@ -347,6 +325,42 @@
                             {% trans %}
                                 Create a participant mailinglist for this event with a default configuration.
                             {% endtrans %}
+                        </p>
+                    </div>
+                </div>
+            {% endif %}
+            {% if is_privileged_for("event/approve_registration", admin_view_to_consider="event_mgmt") %}
+                <div class="row" id="approve-registration">
+                    <div class="col-sm-4">
+                        <div class="p">
+                            {% if not ambience['event'].is_registration_approved %}
+                                <form action="{{ cdedblink('event/approve_registration') }}" method="POST" id="approveregistrationform"
+                                      style="display: inline;">
+                                    {{ util.anti_csrf_token('event/approve_registration') }}
+                                    {{ util.input_submit(label=gettext("Approve Registration"), readonly=is_locked,
+                                                         aclass="btn btn-primary btn-wrap", icon="unlock") }}
+                                </form>
+                            {% else %}
+                                <form action="{{ cdedblink('event/unapprove_registration') }}" method="POST" id="unapproveregistrationform"
+                                      style="display: inline;">
+                                    {{ util.anti_csrf_token('event/unapprove_registration') }}
+                                    {{ util.input_submit(label=gettext("Unapprove Registration"), readonly=is_locked,
+                                                         aclass="btn btn-danger btn-wrap", icon="lock") }}
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-sm-8">
+                        <p class="text-muted">
+                            {% if not ambience['event'].is_registration_approved %}
+                                {% trans %}
+                                    Allows registration to begin at the configured time. Is reversible.
+                                {% endtrans %}
+                            {% else %}
+                                {% trans %}
+                                    Blocks registration regardless of the configured time. Is reversible.
+                                {% endtrans %}
+                            {% endif %}
                         </p>
                     </div>
                 </div>
@@ -443,6 +457,20 @@
                     </div>
                 </div>
             {% endif %}
-        {% endcall %}
+    {% endcall %}
+{% endblock %}
+
+{% block adminviews %}
+    {% if ambience['event'].id in (user.orga.union(user.caretaker)) %}
+        {{ util.admin_views_toggle((
+                (gettext("Event Administration"), ["event_mgmt", "event_list"], ["event_mgmt"]),
+                (gettext("Finance Administration"), ["finance"], None),
+            )) }}
+    {% else %}
+        {{ util.admin_views_toggle((
+                (gettext("Event Administration"), ["event_mgmt", "event_list"], ["event_mgmt"]),
+                (gettext("Orga Controls"), ["event_orga"], None),
+                (gettext("Finance Administration"), ["finance"], None),
+            )) }}
     {% endif %}
 {% endblock %}

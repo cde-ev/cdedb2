@@ -1,21 +1,24 @@
 #!/usr/bin/env python3
 
 """The WSGI-application to tie it all together."""
+
 import datetime
 import json
 import os
 import pathlib
+import subprocess
 import types
-from typing import TYPE_CHECKING, Optional
+from wsgiref.types import WSGIApplication
 
 import jinja2
 import psycopg2.extensions
-import werkzeug
 import werkzeug.exceptions
 import werkzeug.routing
 import werkzeug.wrappers
 import werkzeug.wsgi
+from werkzeug.middleware.proxy_fix import ProxyFix
 
+import cdedb.common.validation.types as vtypes
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.complaint import ComplaintBackend
 from cdedb.backend.core import CoreBackend
@@ -30,7 +33,6 @@ from cdedb.common import (
     User,
     make_proxy,
     now,
-    setup_logger,
 )
 from cdedb.common.exceptions import (
     APITokenError,
@@ -63,12 +65,6 @@ from cdedb.frontend.ml import MlFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
 from cdedb.models.droid import APIToken
 
-if TYPE_CHECKING:
-    # TODO replace once we raise requirements to Python 3.11
-    # where this is exposed as wsgiref.WSGIApplication.
-    # This is a pseudo-module supported by major type checkers.
-    from _typeshed.wsgi import WSGIApplication
-
 
 class Application(BaseApp):
     """This does state creation upon every request and then hands it on to the
@@ -89,29 +85,25 @@ class Application(BaseApp):
         self.event = EventFrontend()
         self.assembly = AssemblyFrontend()
         self.ml = MlFrontend()
-        logger_path = self.conf["LOG_DIR"] / "cdedb.log"
-        setup_logger("cdedb", logger_path, self.conf["LOG_LEVEL"],
-            syslog_level=self.conf["SYSLOG_LEVEL"],
-            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
-
-        # Set up a logger for all Worker instances.
-        setup_logger(
-            "cdedb.frontend.worker", self.conf["LOG_DIR"] / "cdedb-frontend-worker.log",
-            self.conf["LOG_LEVEL"], syslog_level=self.conf["SYSLOG_LEVEL"],
-            console_log_level=self.conf["CONSOLE_LOG_LEVEL"])
         self.urlmap = CDEDB_PATHS
         secrets = SecretsConfig()
         self.connpool = connection_pool_factory(
-            self.conf["CDB_DATABASE_NAME"], DATABASE_ROLES,
-            secrets, self.conf["DB_HOST"], self.conf["DB_PORT"])
+            self.conf["CDB_DATABASE_NAME"],
+            DATABASE_ROLES,
+            secrets,
+            self.conf["DB_HOST"],
+            self.conf["DB_PORT"],
+        )
         # Construct a reduced Jinja environment for rendering error pages.
         self.jinja_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(
-                str(self.conf["REPOSITORY_PATH"] / "cdedb/frontend/templates")),
-            extensions=['jinja2.ext.i18n', 'jinja2.ext.do',
-                        'jinja2.ext.loopcontrols'],
-            finalize=sanitize_None, autoescape=True,
-            auto_reload=self.conf["CDEDB_DEV"])
+                str(self.conf["REPOSITORY_PATH"] / "cdedb/frontend/templates")
+            ),
+            extensions=['jinja2.ext.i18n', 'jinja2.ext.do', 'jinja2.ext.loopcontrols'],
+            finalize=sanitize_None,
+            autoescape=True,
+            auto_reload=self.conf["CDEDB_DEV"],
+        )
         self.jinja_env.globals.update({
             'now': now,
             'staticurl': staticurl,
@@ -124,14 +116,16 @@ class Application(BaseApp):
         if pathlib.Path("/PRODUCTIONVM").is_file():  # pragma: no cover
             # Sanity checks for the live instance
             if self.conf["CDEDB_DEV"] or self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
-                raise RuntimeError(
-                    n_("Refusing to start in debug/offline mode."))
+                raise RuntimeError(n_("Refusing to start in debug/offline mode."))
 
-    def make_error_page(self, error: Exception,
-                        request: werkzeug.wrappers.Request, user: User,
-                        begin: datetime.datetime,
-                        message: Optional[str] = None,
-                        ) -> Response:
+    def make_error_page(
+        self,
+        error: Exception,
+        request: werkzeug.wrappers.Request,
+        user: User,
+        begin: datetime.datetime,
+        message: str | None = None,
+    ) -> Response:
         """Helper to format an error page.
 
         This is similar to
@@ -171,7 +165,7 @@ class Application(BaseApp):
 
             urls = self.urlmap.bind_to_environ(request.environ)
 
-            def _cdedblink(endpoint: str, params: Optional[CdEDBObject] = None) -> str:
+            def _cdedblink(endpoint: str, params: CdEDBObject | None = None) -> str:
                 return urls.build(endpoint, params or {})
 
             request_begin = now()
@@ -179,15 +173,15 @@ class Application(BaseApp):
                 'ambience': {},
                 'cdedblink': _cdedblink,
                 'errors': {},
-                'request_time': lambda: (now() - request_begin),
-                'generation_time': lambda: (now() - begin),
+                'request_time': lambda: now() - request_begin,
+                'generation_time': lambda: now() - begin,
                 'gettext': gettext,
                 'ngettext': self.translations[lang].ngettext,
                 'lang': lang,
                 'notifications': tuple(),
                 'user': user,
                 'values': {},
-                'nbsp': "\u00A0",
+                'nbsp': "\u00a0",
                 'error': error,
                 'help': message,
             }
@@ -202,21 +196,29 @@ class Application(BaseApp):
                 error = werkzeug.exceptions.InternalServerError(repr(error))
             status = f"{error.code} {error.description}"
             return Response(
-                f"HTTP {error.code}: {error.name}\n{error.description}", status=status)
+                f"HTTP {error.code}: {error.name}\n{error.description}", status=status
+            )
 
     @werkzeug.wrappers.Request.application  # type: ignore[arg-type]
-    def __call__(self, request: werkzeug.wrappers.Request) -> "WSGIApplication":
+    def __call__(  # type: ignore[misc]
+        self, request: werkzeug.wrappers.Request
+    ) -> werkzeug.wrappers.Response:
         # note time for performance measurement
         begin = now()
         user = User()
 
         # additional safeguard to apache blocking non-trusted hosts, see cdedb-site.conf
-        if (not werkzeug.wsgi.host_is_trusted(request.host, self.conf["HTTP_HOSTS"])
-                and not self.conf["CDEDB_DEV"]):
+        if (
+            not werkzeug.wsgi.host_is_trusted(request.host, self.conf["HTTP_HOSTS"])
+            and not self.conf["CDEDB_DEV"]
+        ):
             return self.make_error_page(
                 werkzeug.exceptions.SecurityError(),
-                request, user, begin,
-                n_("Used a non-trusted http host header. Refuse to proceed."))
+                request,
+                user,
+                begin,
+                n_("Used a non-trusted http host header. Refuse to proceed."),
+            )
         try:
             sessionkey = request.cookies.get("sessionkey")
             apitoken = request.headers.get(APIToken.request_header_key)
@@ -227,8 +229,7 @@ class Application(BaseApp):
                 user = self.sessionproxy.lookuptoken(apitoken, request.remote_addr)
                 # Error early to make debugging easier.
                 if 'droid' not in user.roles:
-                    raise werkzeug.exceptions.Forbidden(
-                        "API token invalid.")
+                    raise werkzeug.exceptions.Forbidden("API token invalid.")
             else:
                 user = self.sessionproxy.lookupsession(sessionkey, request.remote_addr)
 
@@ -236,13 +237,14 @@ class Application(BaseApp):
                 if sessionkey and not user.persona_id:
                     params = {
                         'wants': self.encode_parameter(
-                            "core/index", "wants", request.url,
+                            "core/index",
+                            "wants",
+                            request.url,
                             user.persona_id,
-                            timeout=self.conf[
-                                "UNCRITICAL_PARAMETER_TIMEOUT"]),
+                            timeout=self.conf["EXTENDED_PARAMETER_TIMEOUT"],
+                        ),
                     }
-                    ret = construct_redirect(
-                        request, urls.build("core/index", params))
+                    ret = construct_redirect(request, urls.build("core/index", params))
                     ret.delete_cookie("sessionkey")
                     # Having to mock a request state here is kind of ugly
                     # and depends on the implementation details of
@@ -251,8 +253,12 @@ class Application(BaseApp):
                     fake_rs = types.SimpleNamespace()
                     fake_rs.user = user
                     notifications = json.dumps([
-                        self.encode_notification(fake_rs,  # type: ignore[arg-type]
-                                                 "error", n_("Session expired."))])
+                        self.encode_notification(
+                            fake_rs,  # type: ignore[arg-type]
+                            "error",
+                            n_("Session expired."),
+                        )
+                    ])
                     ret.set_cookie("displaynote", notifications)
                     return ret
 
@@ -260,10 +266,19 @@ class Application(BaseApp):
 
             lang = self.get_locale(request)
             rs = RequestState(
-                sessionkey=sessionkey, apitoken=apitoken, user=user,
-                request=request, notifications=[], mapadapter=urls,
-                requestargs=args, errors=[], values=None, begin=begin,
-                lang=lang, translations=self.translations,
+                sessionkey=sessionkey,
+                apitoken=apitoken,
+                user=user,
+                request=request,
+                notifications=[],
+                mapadapter=urls,
+                requestargs=args,
+                errors=[],
+                values=None,
+                begin=begin,
+                lang=lang,
+                translations=self.translations,
+                endpoint=endpoint,
             )
             rs.values.update(args)
             component, action = endpoint.split('/')
@@ -273,8 +288,7 @@ class Application(BaseApp):
                 try:
                     notifications = json.loads(raw_notifications)
                     for note in notifications:
-                        ntype, nmessage, nparams = (
-                            self.decode_notification(rs, note))
+                        ntype, nmessage, nparams = self.decode_notification(rs, note)
                         if ntype:
                             assert nmessage is not None
                             assert nparams is not None
@@ -290,17 +304,19 @@ class Application(BaseApp):
             handler: FrontendEndpoint = getattr(frontend, action)
             if request.method not in handler.modi:
                 raise werkzeug.exceptions.MethodNotAllowed(
-                    handler.modi,
-                    f"Unsupported request method {request.method}.")
+                    handler.modi, f"Unsupported request method {request.method}."
+                )
 
             # Check anti CSRF token (if required by the endpoint)
             if handler.anti_csrf.check and 'droid' not in user.roles:
-                error = frontend.check_anti_csrf(rs, action, handler.anti_csrf.name,
-                                                 handler.anti_csrf.payload)
+                error = frontend.check_anti_csrf(
+                    rs, action, handler.anti_csrf.name, handler.anti_csrf.payload
+                )
                 if error is not None:
                     rs.csrf_alert = True
-                    rs.extend_validation_errors(
-                        ((handler.anti_csrf.name, ValueError(error)),))
+                    rs.extend_validation_errors((
+                        (handler.anti_csrf.name, ValueError(error)),
+                    ))
                     rs.notify('error', error)
 
             # Decide whether the user wants to ignore ValidationWarnings.
@@ -319,37 +335,43 @@ class Application(BaseApp):
                 realm_roles: dict[Realm, set[str]] = {realm: set() for realm in realms}
                 if user.persona_id in self.complaintproxy.list_enforcers(rs):
                     realm_roles['complaint'].add('enforcer')
-                if user.persona_id in self.complaintproxy.list_monitors(rs):
-                    realm_roles['complaint'].add('monitor')
                 if "event" in rs.user.roles:
                     if user.persona_id in self.eventproxy.get_event_helpers(rs):
                         realm_roles['event'].add('event_helper')
                 user.realm_roles = realm_roles
 
                 # Insert orga and moderator status context
-                orga: set[int] = set()
+                orga: set[vtypes.EventID] = set()
+                caretaker: set[vtypes.EventID] = set()
+                checkin_helper: set[vtypes.EventID] = set()
                 if "event" in user.roles:
                     orga = self.eventproxy.orga_info(rs, user.persona_id)
+                    caretaker = self.eventproxy.caretaker_info(rs, user.persona_id)
+                    checkin_helper = self.eventproxy.checkin_helper_info(
+                        rs, user.persona_id
+                    )
                 moderator: set[int] = set()
                 if "ml" in user.roles:
-                    moderator = self.mlproxy.moderator_info(
-                        rs, user.persona_id)
+                    moderator = self.mlproxy.moderator_info(rs, user.persona_id)
                 presider: set[int] = set()
                 if "assembly" in user.roles:
-                    presider = self.assemblyproxy.presider_info(
-                        rs, user.persona_id)
+                    presider = self.assemblyproxy.presider_info(rs, user.persona_id)
                 user.orga = orga
+                user.caretaker = caretaker
+                user.checkin_helper = checkin_helper
                 user.moderator = moderator
                 user.presider = presider
                 user.init_admin_views_from_cookie(
-                    request.cookies.get(ADMIN_VIEWS_COOKIE_NAME, ''))
+                    request.cookies.get(ADMIN_VIEWS_COOKIE_NAME, '')
+                )
 
             try:
                 ret = handler(rs, **args)
                 if rs.validation_appraised is False:
                     self.logger.error(
                         f"User {rs.user.persona_id} has evaded input validation"
-                        f" with errors {rs.retrieve_validation_errors()}")
+                        f" with errors {rs.retrieve_validation_errors()}"
+                    )
                     raise RuntimeError(f"Input validation forgotten: {handler}")
                 return ret
             except QuotaException as e:
@@ -357,13 +379,14 @@ class Application(BaseApp):
                 # Beware that this means that quota violations will only be logged if
                 # they happen through the frontend.
                 self.coreproxy.log_quota_violation(rs)
-                return self.make_error_page(
-                    e, request, user, begin,
-                    n_("You reached the internal limit for user profile views. "
-                       "This is a privacy feature to prevent users from cloning "
-                       "the address database. Unfortunatetly, this may also yield "
-                       "some false positive restrictions. Your limit will be "
-                       "reset in the next days."))
+                msg = n_(
+                    "You reached the internal limit for user profile views."
+                    " This is a privacy feature to prevent users from cloning"
+                    " the address database. Unfortunatetly, this may also yield"
+                    " some false positive restrictions. Your limit will be"
+                    " reset in the next days."
+                )
+                return self.make_error_page(e, request, user, begin, msg)
             finally:
                 # noinspection PyProtectedMember
                 rs._conn.commit()
@@ -375,15 +398,17 @@ class Application(BaseApp):
             return self.make_error_page(e, request, user, begin)
         except psycopg2.extensions.TransactionRollbackError as e:
             # Serialization error
-            return self.make_error_page(
-                werkzeug.exceptions.InternalServerError(str(e.args)),
-                request, user, begin,
-                n_("A modification to the database could not be executed due "
-                   "to simultaneous access. Please reload the page to try "
-                   "again."))
+            msg = n_(
+                "A modification to the database could not be executed due"
+                " to simultaneous access. Please reload the page to try again."
+            )
+            err = werkzeug.exceptions.InternalServerError(str(e.args))
+            return self.make_error_page(err, request, user, begin, msg)
         except Exception as e:
-            self.logger.error(f">>>\n>>>\n>>>\n>>> Exception while serving"
-                              f" {request.url} <<<\n<<<\n<<<\n<<<")
+            self.logger.error(
+                f">>>\n>>>\n>>>\n>>> Exception while serving"
+                f" {request.url} <<<\n<<<\n<<<\n<<<"
+            )
             self.logger.exception("FIRST AS SIMPLE TRACEBACK")
             self.logger.error("SECOND TRY CGITB")
 
@@ -391,20 +416,28 @@ class Application(BaseApp):
             if not isinstance(e, CryptographyError):
                 self.cgitb_log()
 
+            if isinstance(e, subprocess.CalledProcessError):
+                if e.output is not None:
+                    self.logger.error(f"Called Process output: {e.output.decode()}")
+                if e.stderr is not None:
+                    self.logger.error(f"Called Process stderr: {e.stderr.decode()}")
+
             # Raise exceptions when in TEST environment to let the test runner
             # catch them.
-            if (
-                self.conf["CDEDB_TEST"]
-                or (self.conf["CDEDB_DEV"] and os.environ.get("INTERACTIVE_DEBUGGER"))
+            if self.conf["CDEDB_TEST"] or (
+                self.conf["CDEDB_DEV"] and os.environ.get("INTERACTIVE_DEBUGGER")
             ):
                 raise
 
             # debug output if applicable
-            if self.conf["CDEDB_DEV"] and not isinstance(e, APITokenError):  # pragma: no cover
+            if self.conf["CDEDB_DEV"] and not isinstance(
+                e, APITokenError
+            ):  # pragma: no cover
                 return self.cgitb_html()
 
             # generic errors
             # TODO add original_error after upgrading to werkzeug 1.0
+            #  We are at werkzeug 2.2.2 …
             return self.make_error_page(e, request, user, begin)
 
     def get_locale(self, request: werkzeug.wrappers.Request) -> str:
@@ -417,5 +450,11 @@ class Application(BaseApp):
         if request.cookies.get('locale') in self.conf["I18N_LANGUAGES"]:
             return request.cookies['locale']
 
-        return request.accept_languages.best_match(  # type: ignore[return-value]
-            self.conf["I18N_LANGUAGES"], default="de")
+        return request.accept_languages.best_match(
+            self.conf["I18N_LANGUAGES"], default="de"
+        )
+
+
+def get_proxy_fixed_application() -> WSGIApplication:
+    app: WSGIApplication = Application()  # type: ignore[assignment]
+    return ProxyFix(app, x_for=1, x_host=1, x_proto=1)

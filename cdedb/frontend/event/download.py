@@ -25,7 +25,6 @@ from cdedb.common import (
     asciificator,
     determine_age_class,
     json_serialize,
-    make_persona_name,
     unwrap,
 )
 from cdedb.common.n_ import n_
@@ -40,21 +39,21 @@ from cdedb.frontend.event.lodgement_wishes import detect_lodgement_wishes
 class EventDownloadMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.basic_read)
-    def downloads(self, rs: RequestState, event_id: int) -> Response:
+    def downloads(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Offer documents like nametags for download."""
         try:
             lodgements_exist = bool(self.eventproxy.list_lodgements(rs, event_id))
         except PrivilegeError:
             # Acceptable fallback for users without lodgements_read
             lodgements_exist = True
-        return self.render(rs, "downloads",
-                           {'lodgements_exist': lodgements_exist})
+        return self.render(rs, "downloads", {'lodgements_exist': lodgements_exist})
 
     @access("event")
     @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("runs")
-    def download_nametags(self, rs: RequestState, event_id: int,
-                          runs: vtypes.SingleDigitInt) -> Response:
+    def download_nametags(
+        self, rs: RequestState, event_id: vtypes.EventID, runs: vtypes.SingleDigitInt
+    ) -> Response:
         """Create nametags.
 
         You probably want to edit the provided tex file.
@@ -64,19 +63,24 @@ class EventDownloadMixin(EventBaseFrontend):
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
-        personas = self.coreproxy.get_event_users(rs, tuple(
-            reg['persona_id'] for reg in registrations.values()), event_id)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
+        personas = self.coreproxy.get_event_users(
+            rs, tuple(reg['persona_id'] for reg in registrations.values()), event_id
+        )
         for registration in registrations.values():
             registration['age'] = determine_age_class(
-                personas[registration['persona_id']]['birthday'],
-                rs.ambience['event'].begin)
+                personas[registration['persona_id']].birthday,
+                rs.ambience['event'].begin,
+            )
         reg_order = xsorted(
             registrations.keys(),
             key=lambda anid: EntitySorter.persona(
-                personas[registrations[anid]['persona_id']]))
+                personas[registrations[anid]['persona_id']].as_dict()
+            ),
+        )
         registrations = OrderedDict(
-            (reg_id, registrations[reg_id]) for reg_id in reg_order)
+            (reg_id, registrations[reg_id]) for reg_id in reg_order
+        )
         registrations_by_part_by_age: dict[int, dict[AgeClasses, CdEDBObjectMap]] = {
             part_id: {age: {} for age in reversed(AgeClasses)}
             for part_id in rs.ambience['event'].parts
@@ -87,10 +91,17 @@ class EventDownloadMixin(EventBaseFrontend):
                     registrations_by_part_by_age[part_id][reg['age']][reg_id] = reg
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
-        tex = self.fill_template(rs, "tex", "nametags", {
-            'lodgements': lodgements, 'personas': personas, 'courses': courses,
-            'registrations_by_part_by_age': registrations_by_part_by_age,
-        })
+        tex = self.fill_template(
+            rs,
+            "tex",
+            "nametags",
+            {
+                'lodgements': lodgements,
+                'personas': personas,
+                'courses': courses,
+                'registrations_by_part_by_age': registrations_by_part_by_age,
+            },
+        )
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event'].shortname)
             work_dir.mkdir()
@@ -105,8 +116,8 @@ class EventDownloadMixin(EventBaseFrontend):
             for course_id in courses:
                 shutil.copy(src, work_dir / f"logo-{course_id}.png")
             file = self.serve_complex_latex_document(
-                rs, tmp_dir, rs.ambience['event'].shortname,
-                filename, runs)
+                rs, tmp_dir, rs.ambience['event'].shortname, filename, runs
+            )
             if file:
                 return file
             else:
@@ -116,8 +127,9 @@ class EventDownloadMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("runs")
-    def download_course_puzzle(self, rs: RequestState, event_id: int,
-                               runs: vtypes.SingleDigitInt) -> Response:
+    def download_course_puzzle(
+        self, rs: RequestState, event_id: vtypes.EventID, runs: vtypes.SingleDigitInt
+    ) -> Response:
         """Aggregate course choice information.
 
         This can be printed and cut to help with distribution of participants.
@@ -128,36 +140,54 @@ class EventDownloadMixin(EventBaseFrontend):
         tracks = event.tracks
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
-        personas = self.coreproxy.get_personas(rs, tuple(
-            reg['persona_id'] for reg in registrations.values()))
+        personas = self.coreproxy.get_personas(
+            rs, tuple(reg['persona_id'] for reg in registrations.values())
+        )
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         counts = {
             course_id: {
                 (track_id, i): sum(
-                    1 for reg in registrations.values()
-                    if (len(reg['tracks'][track_id]['choices']) > i
+                    1
+                    for reg in registrations.values()
+                    if (
+                        len(reg['tracks'][track_id]['choices']) > i
                         and reg['tracks'][track_id]['choices'][i] == course_id
-                        and (reg['parts'][track.part_id]['status']
-                             == const.RegistrationPartStati.participant)))
-                for track_id, track in tracks.items() for i in
-                range(track.num_choices)
+                        and (
+                            reg['parts'][track.part_id]['status']
+                            == const.RegistrationPartStati.participant
+                        )
+                    )
+                )
+                for track_id, track in tracks.items()
+                for i in range(track.num_choices)
             }
             for course_id in course_ids
         }
         reg_order = xsorted(
             registrations.keys(),
             key=lambda anid: EntitySorter.persona(
-                personas[registrations[anid]['persona_id']]))
+                personas[registrations[anid]['persona_id']].as_dict()
+            ),
+        )
         registrations = OrderedDict(
-            (reg_id, registrations[reg_id]) for reg_id in reg_order)
-        tex = self.fill_template(rs, "tex", "course_puzzle", {
-            'courses': courses, 'counts': counts,
-            'tracks': tracks, 'registrations': registrations,
-            'personas': personas})
+            (reg_id, registrations[reg_id]) for reg_id in reg_order
+        )
+        tex = self.fill_template(
+            rs,
+            "tex",
+            "course_puzzle",
+            {
+                'courses': courses,
+                'counts': counts,
+                'tracks': tracks,
+                'registrations': registrations,
+                'personas': personas,
+            },
+        )
         file = self.serve_latex_document(
-            rs, tex,
-            "{}_course_puzzle".format(rs.ambience['event'].shortname), runs)
+            rs, tex, f"{rs.ambience['event'].shortname}_course_puzzle", runs
+        )
         if file:
             return file
         else:
@@ -167,8 +197,9 @@ class EventDownloadMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("runs")
-    def download_lodgement_puzzle(self, rs: RequestState, event_id: int,
-                                  runs: vtypes.SingleDigitInt) -> Response:
+    def download_lodgement_puzzle(
+        self, rs: RequestState, event_id: vtypes.EventID, runs: vtypes.SingleDigitInt
+    ) -> Response:
         """Aggregate lodgement information.
 
         This can be printed and cut to help with distribution of participants.
@@ -179,24 +210,26 @@ class EventDownloadMixin(EventBaseFrontend):
         event = rs.ambience['event']
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
-        personas = self.coreproxy.get_event_users(rs, tuple(
-            reg['persona_id'] for reg in registrations.values()), event_id)
+        personas = self.coreproxy.get_event_users(
+            rs, tuple(reg['persona_id'] for reg in registrations.values()), event_id
+        )
         for registration in registrations.values():
             registration['age'] = determine_age_class(
-                personas[registration['persona_id']]['birthday'],
-                event.begin)
-        key = (lambda reg_id:
-               personas[registrations[reg_id]['persona_id']]['birthday'])
+                personas[registration['persona_id']].birthday, event.begin
+            )
+        key = lambda reg_id: personas[registrations[reg_id]['persona_id']].birthday
         registrations = OrderedDict(
-            (reg_id, registrations[reg_id]) for reg_id in xsorted(registrations,
-                                                                  key=key))
+            (reg_id, registrations[reg_id])
+            for reg_id in xsorted(registrations, key=key)
+        )
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
 
         rwish = collections.defaultdict(list)
         if event.lodge_field:
-            wishes, problems = detect_lodgement_wishes(registrations, personas,
-                                                       event, None)
+            wishes, problems = detect_lodgement_wishes(
+                registrations, personas, event, None
+            )
             for wish in wishes:
                 if wish.negated:
                     continue
@@ -207,18 +240,27 @@ class EventDownloadMixin(EventBaseFrontend):
             problems = []
         reverse_wish = {
             reg_id: ", ".join(
-                make_persona_name(
-                    personas[registrations[wishing_id]['persona_id']])
-                for wishing_id in rwish[reg_id])
+                personas[registrations[wishing_id]['persona_id']].get_name()
+                for wishing_id in rwish[reg_id]
+            )
             for reg_id in registrations
         }
 
-        tex = self.fill_template(rs, "tex", "lodgement_puzzle", {
-            'lodgements': lodgements, 'registrations': registrations,
-            'personas': personas, 'reverse_wish': reverse_wish,
-            'wish_problems': problems})
-        file = self.serve_latex_document(rs, tex, "{}_lodgement_puzzle".format(
-            rs.ambience['event'].shortname), runs)
+        tex = self.fill_template(
+            rs,
+            "tex",
+            "lodgement_puzzle",
+            {
+                'lodgements': lodgements,
+                'registrations': registrations,
+                'personas': personas,
+                'reverse_wish': reverse_wish,
+                'wish_problems': problems,
+            },
+        )
+        file = self.serve_latex_document(
+            rs, tex, f"{rs.ambience['event'].shortname}_lodgement_puzzle", runs
+        )
         if file:
             return file
         else:
@@ -228,8 +270,9 @@ class EventDownloadMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("runs")
-    def download_course_lists(self, rs: RequestState, event_id: int,
-                              runs: vtypes.SingleDigitInt) -> Response:
+    def download_course_lists(
+        self, rs: RequestState, event_id: vtypes.EventID, runs: vtypes.SingleDigitInt
+    ) -> Response:
         """Create lists to post to course rooms."""
         if rs.has_validation_errors():
             return self.redirect(rs, 'event/downloads')
@@ -239,13 +282,19 @@ class EventDownloadMixin(EventBaseFrontend):
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_event_users(
-            rs, tuple(e['persona_id'] for e in registrations.values()), event_id)
-        for p_id, p in personas.items():
-            p['age'] = determine_age_class(
-                p['birthday'], rs.ambience['event'].begin)
+            rs, tuple(e['persona_id'] for e in registrations.values()), event_id
+        )
+        personas_age = {
+            p.id: determine_age_class(p.birthday, rs.ambience['event'].begin)
+            for p in personas.values()
+        }
         attendees = self.calculate_groups(
-            courses, rs.ambience['event'], registrations, key="course_id",
-            personas=personas)
+            courses,
+            rs.ambience['event'],
+            registrations,
+            key="course_id",
+            personas={p.id: p.as_dict() for p in personas.values()},
+        )
         instructors = {}
         # Look for the field name of the course_room_fields.
         cr_field_names = {}
@@ -257,25 +306,38 @@ class EventDownloadMixin(EventBaseFrontend):
                 instructors[(c_id, t_id)] = [
                     r_id
                     for r_id in attendees[(c_id, t_id)]
-                    if (registrations[r_id]['tracks'][t_id]['course_instructor']
-                        == c_id)
+                    if (
+                        registrations[r_id]['tracks'][t_id]['course_instructor'] == c_id
+                    )
                 ]
         reg_order = xsorted(
             registrations.keys(),
             key=lambda anid: EntitySorter.persona(
-                personas[registrations[anid]['persona_id']]))
+                personas[registrations[anid]['persona_id']].as_dict()
+            ),
+        )
         registrations = OrderedDict(
-            (reg_id, registrations[reg_id]) for reg_id in reg_order)
-        tex = self.fill_template(rs, "tex", "course_lists", {
-            'courses': courses, 'registrations': registrations,
-            'personas': personas, 'attendees': attendees,
-            'instructors': instructors, 'course_room_fields': cr_field_names,
-            'tracks': tracks})
+            (reg_id, registrations[reg_id]) for reg_id in reg_order
+        )
+        tex = self.fill_template(
+            rs,
+            "tex",
+            "course_lists",
+            {
+                'courses': courses,
+                'registrations': registrations,
+                'personas': personas,
+                'personas_age': personas_age,
+                'attendees': attendees,
+                'instructors': instructors,
+                'course_room_fields': cr_field_names,
+                'tracks': tracks,
+            },
+        )
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event'].shortname)
             work_dir.mkdir()
-            filename = "{}_course_lists.tex".format(
-                rs.ambience['event'].shortname)
+            filename = "{}_course_lists.tex".format(rs.ambience['event'].shortname)
             with open(work_dir / filename, 'w', encoding='utf-8') as f:
                 f.write(tex)
             src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
@@ -288,9 +350,12 @@ class EventDownloadMixin(EventBaseFrontend):
                 else:
                     shutil.copy(src, dest)
             file = self.serve_complex_latex_document(
-                rs, tmp_dir, rs.ambience['event'].shortname,
-                "{}_course_lists.tex".format(rs.ambience['event'].shortname),
-                runs)
+                rs,
+                tmp_dir,
+                rs.ambience['event'].shortname,
+                f"{rs.ambience['event'].shortname}_course_lists.tex",
+                runs,
+            )
             if file:
                 return file
             else:
@@ -300,37 +365,52 @@ class EventDownloadMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("runs")
-    def download_lodgement_lists(self, rs: RequestState, event_id: int,
-                                 runs: vtypes.SingleDigitInt) -> Response:
+    def download_lodgement_lists(
+        self, rs: RequestState, event_id: vtypes.EventID, runs: vtypes.SingleDigitInt
+    ) -> Response:
         """Create lists to post to lodgements."""
         if rs.has_validation_errors():
             return self.redirect(rs, 'event/downloads')
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
-        lodgements = self.eventproxy.get_lodgements(rs, lodgement_ids)
+        lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
         registration_ids = self.eventproxy.list_registrations(rs, event_id)
         registrations = self.eventproxy.get_registrations(rs, registration_ids)
         personas = self.coreproxy.get_personas(
-            rs, tuple(e['persona_id'] for e in registrations.values()))
+            rs, tuple(e['persona_id'] for e in registrations.values())
+        )
         inhabitants = self.calculate_groups(
-            lodgements, rs.ambience['event'], registrations, key="lodgement_id",
-            personas=personas)
-        tex = self.fill_template(rs, "tex", "lodgement_lists", {
-            'lodgements': lodgements, 'registrations': registrations,
-            'personas': personas, 'inhabitants': inhabitants})
+            lodgements,
+            rs.ambience['event'],
+            registrations,
+            key="lodgement_id",
+            personas={p.id: p.as_dict() for p in personas.values()},
+        )
+        tex = self.fill_template(
+            rs,
+            "tex",
+            "lodgement_lists",
+            {
+                'lodgements': lodgements,
+                'registrations': registrations,
+                'personas': personas,
+                'inhabitants': inhabitants,
+            },
+        )
         with tempfile.TemporaryDirectory() as tmp_dir:
             work_dir = pathlib.Path(tmp_dir, rs.ambience['event'].shortname)
             work_dir.mkdir()
-            filename = "{}_lodgement_lists.tex".format(
-                rs.ambience['event'].shortname)
+            filename = "{}_lodgement_lists.tex".format(rs.ambience['event'].shortname)
             with open(work_dir / filename, 'w', encoding='utf-8') as f:
                 f.write(tex)
             src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
             shutil.copy(src, work_dir / "aka-logo.png")
             file = self.serve_complex_latex_document(
-                rs, tmp_dir, rs.ambience['event'].shortname,
-                "{}_lodgement_lists.tex".format(
-                    rs.ambience['event'].shortname),
-                runs)
+                rs,
+                tmp_dir,
+                rs.ambience['event'].shortname,
+                f"{rs.ambience['event'].shortname}_lodgement_lists.tex",
+                runs,
+            )
             if file:
                 return file
             else:
@@ -340,10 +420,15 @@ class EventDownloadMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("runs", "landscape", "orgas_only", "part_ids")
-    def download_participant_list(self, rs: RequestState, event_id: int,
-                                  runs: vtypes.SingleDigitInt, landscape: bool,
-                                  orgas_only: bool,
-                                  part_ids: Collection[vtypes.ID]) -> Response:
+    def download_participant_list(
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        runs: vtypes.SingleDigitInt,
+        landscape: bool,
+        orgas_only: bool,
+        part_ids: Collection[vtypes.ID],
+    ) -> Response:
         """Create list to send to all participants."""
         if rs.has_validation_errors():
             return self.redirect(rs, 'event/downloads')
@@ -351,13 +436,19 @@ class EventDownloadMixin(EventBaseFrontend):
         if runs and not data['registrations']:
             rs.notify("info", n_("Empty PDF."))
             return self.redirect(rs, "event/downloads")
-        data['orientation'] = "landscape" if landscape else "portrait"
-        data['orgas_only'] = orgas_only
-        tex = self.fill_template(rs, "tex", "participant_list", data)
+        tex = self.fill_template(
+            rs,
+            "tex",
+            "participant_list",
+            {
+                'orientation': "landscape" if landscape else "portrait",
+                'orgas_only': orgas_only,
+                **data,
+            },
+        )
         file = self.serve_latex_document(
-            rs, tex, "{}_participant_list".format(
-                rs.ambience['event'].shortname),
-            runs)
+            rs, tex, f"{rs.ambience['event'].shortname}_participant_list", runs
+        )
         if file:
             return file
         else:
@@ -366,7 +457,9 @@ class EventDownloadMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(EventPrivileges.courses_read)
-    def download_dokuteam_courselist(self, rs: RequestState, event_id: int) -> Response:
+    def download_dokuteam_courselist(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         """A pipe-seperated courselist for the dokuteam aca-generator script."""
         course_ids = self.eventproxy.list_courses(rs, event_id)
         if not course_ids:
@@ -375,17 +468,26 @@ class EventDownloadMixin(EventBaseFrontend):
         courses = self.eventproxy.get_courses(rs, course_ids)
         active_courses = filter(lambda c: c.active_segments, courses.values())
         sorted_courses = xsorted(active_courses)
-        data = self.fill_template(rs, "other", "dokuteam_courselist", {
-            "sorted_courses": sorted_courses,
-        })
+        data = self.fill_template(
+            rs,
+            "other",
+            "dokuteam_courselist",
+            {
+                "sorted_courses": sorted_courses,
+            },
+        )
         return self.send_file(
-            rs, data=data, inline=False,
-            filename=f"{rs.ambience['event'].shortname}_dokuteam_courselist.txt")
+            rs,
+            data=data,
+            inline=False,
+            filename=f"{rs.ambience['event'].shortname}_dokuteam_courselist.txt",
+        )
 
     @access("event")
     @event_guard(EventPrivileges.registrations_read)
-    def download_dokuteam_participant_list(self, rs: RequestState,
-                                           event_id: int) -> Response:
+    def download_dokuteam_participant_list(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         """Create participant list per track for dokuteam."""
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
@@ -398,27 +500,39 @@ class EventDownloadMixin(EventBaseFrontend):
             # create one list per track
             for part in rs.ambience["event"].parts.values():
                 for track_id, track in part.tracks.items():
-                    fields_of_interest = ["persona.given_names", "persona.family_name",
-                                          f"track{track_id}.course_id"]
-                    constrains = [(f"track{track_id}.course_id",
-                                   QueryOperators.nonempty, None)]
+                    fields_of_interest = [
+                        "persona.given_names",
+                        "persona.family_name",
+                        f"track{track_id}.course_id",
+                    ]
+                    constrains = [
+                        (f"track{track_id}.course_id", QueryOperators.nonempty, None)
+                    ]
                     order = [("persona.given_names", True)]
-                    query = Query(QueryScope.registration, spec, fields_of_interest,
-                                  constrains, order)
-                    query_res = self.eventproxy.submit_general_query(rs, query,
-                                                                     event_id)
+                    query = Query(
+                        QueryScope.registration,
+                        spec,
+                        fields_of_interest,
+                        constrains,
+                        order,
+                    )
+                    query_res = self.eventproxy.submit_general_query(
+                        rs, query, event_id
+                    )
                     course_key = f"track{track_id}.course_id"
                     # we have to replace the course id with the course number
                     result = tuple(
                         {
-                            k if k != course_key else 'course':
-                                v if k != course_key else courses[v].nr
+                            k if k != course_key else 'course': v
+                            if k != course_key
+                            else courses[v].nr
                             for k, v in entry.items()
                         }
                         for entry in query_res
                     )
                     data = self.fill_template(
-                        rs, "other", "dokuteam_participant_list", {'result': result})
+                        rs, "other", "dokuteam_participant_list", {'result': result}
+                    )
 
                     # save the result in one file per track
                     filename = f"{asciificator(track.shortname)}.csv"
@@ -427,97 +541,143 @@ class EventDownloadMixin(EventBaseFrontend):
 
             # create a zip archive of all lists
             zipname = f"{rs.ambience['event'].shortname}_dokuteam_participant_list"
-            zippath = shutil.make_archive(str(pathlib.Path(tmp_dir, zipname)), 'zip',
-                                          base_dir=work_dir, root_dir=tmp_dir)
+            zippath = shutil.make_archive(
+                str(pathlib.Path(tmp_dir, zipname)),
+                'zip',
+                base_dir=work_dir,
+                root_dir=tmp_dir,
+            )
 
-            return self.send_file(rs, path=zippath, inline=False,
-                                  filename=f"{zipname}.zip")
+            return self.send_file(
+                rs, path=zippath, inline=False, filename=f"{zipname}.zip"
+            )
 
     @access("event")
     @event_guard(EventPrivileges.courses_read | EventPrivileges.registrations_stats)
-    def download_csv_courses(self, rs: RequestState, event_id: int) -> Response:
+    def download_csv_courses(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         """Create CSV file with all courses"""
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
 
         spec = QueryScope.event_course.get_spec(
-            event=rs.ambience['event'], courses=courses)
+            event=rs.ambience['event'], courses=courses
+        )
 
-        query = Query(QueryScope.event_course, spec,
-                      fields_of_interest=spec.keys(), constraints=[], order=[])
+        query = Query(
+            QueryScope.event_course,
+            spec,
+            fields_of_interest=spec.keys(),
+            constraints=[],
+            order=[],
+        )
         result = self.eventproxy.submit_general_query(rs, query, event_id=event_id)
         if not result:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/downloads")
         return self.send_query_download(
-            rs, result, query, "csv",
-            filename=f"{rs.ambience['event'].shortname}_courses")
+            rs,
+            result,
+            query,
+            "csv",
+            filename=f"{rs.ambience['event'].shortname}_courses",
+        )
 
     @access("event")
     @event_guard(EventPrivileges.lodgements_read | EventPrivileges.registrations_stats)
-    def download_csv_lodgements(self, rs: RequestState, event_id: int,
-                                ) -> Response:
+    def download_csv_lodgements(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         """Create CSV file with all lodgements"""
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
-        groups = self.eventproxy.new_get_lodgement_groups(rs, event_id)
+        groups = self.eventproxy.get_lodgement_groups(rs, event_id)
 
         spec = QueryScope.lodgement.get_spec(
-            event=rs.ambience['event'], lodgements=lodgements, lodgement_groups=groups)
+            event=rs.ambience['event'], lodgements=lodgements, lodgement_groups=groups
+        )
 
-        query = Query(QueryScope.lodgement, spec,
-                      fields_of_interest=spec.keys(), constraints=[], order=[])
+        query = Query(
+            QueryScope.lodgement,
+            spec,
+            fields_of_interest=spec.keys(),
+            constraints=[],
+            order=[],
+        )
         result = self.eventproxy.submit_general_query(rs, query, event_id=event_id)
         if not result:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/downloads")
         return self.send_query_download(
-            rs, result, query, "csv",
-            filename=f"{rs.ambience['event'].shortname}_lodgements")
+            rs,
+            result,
+            query,
+            "csv",
+            filename=f"{rs.ambience['event'].shortname}_lodgements",
+        )
 
     @access("event")
     @event_guard(EventPrivileges.registrations_read)
-    def download_csv_registrations(self, rs: RequestState, event_id: int,
-                                   ) -> Response:
+    def download_csv_registrations(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         """Create CSV file with all registrations"""
         # Get data
         course_ids = self.eventproxy.list_courses(rs, event_id)
         courses = self.eventproxy.get_courses(rs, course_ids)
         lodgement_ids = self.eventproxy.list_lodgements(rs, event_id)
         lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
-        lodgement_groups = self.eventproxy.new_get_lodgement_groups(rs, event_id)
+        lodgement_groups = self.eventproxy.get_lodgement_groups(rs, event_id)
 
         spec = QueryScope.registration.get_spec(
-            event=rs.ambience['event'], courses=courses, lodgements=lodgements,
-            lodgement_groups=lodgement_groups)
+            event=rs.ambience['event'],
+            courses=courses,
+            lodgements=lodgements,
+            lodgement_groups=lodgement_groups,
+        )
 
-        query = Query(QueryScope.registration, spec,
-                      fields_of_interest=spec.keys(), constraints=[], order=[])
+        query = Query(
+            QueryScope.registration,
+            spec,
+            fields_of_interest=spec.keys(),
+            constraints=[],
+            order=[],
+        )
         result = self.eventproxy.submit_general_query(rs, query, event_id=event_id)
         if not result:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/downloads")
         return self.send_query_download(
-            rs, result, query, "csv",
-            filename=f"{rs.ambience['event'].shortname}_registrations")
+            rs,
+            result,
+            query,
+            "csv",
+            filename=f"{rs.ambience['event'].shortname}_registrations",
+        )
 
     @access("event", modi={"GET"})
     @event_guard(EventPrivileges.all_read)
-    def download_export(self, rs: RequestState, event_id: int) -> Response:
+    def download_export(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Retrieve all data for this event to initialize an offline instance."""
         data = self.eventproxy.export_event(rs, event_id)
         if not data:
             rs.notify("info", n_("Empty File."))
             return self.redirect(rs, "event/show_event")
-        json = json_serialize(data)
+        json = json_serialize(data, sort_keys=True)
         return self.send_file(
-            rs, mimetype="application/json", data=json, inline=False,
-            filename=f"{rs.ambience['event'].shortname}_export_event.json")
+            rs,
+            mimetype="application/json",
+            data=json,
+            inline=False,
+            filename=f"{rs.ambience['event'].shortname}_export_event.json",
+        )
 
     @access("event")
     @event_guard(EventPrivileges.all_read)
-    def download_partial_export(self, rs: RequestState, event_id: int,
-                                ) -> Response:
+    def download_partial_export(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         """Retrieve data for third-party applications."""
         data = self.eventproxy.partial_export_event(rs, event_id)
         if not data:
@@ -525,12 +685,18 @@ class EventDownloadMixin(EventBaseFrontend):
             return self.redirect(rs, "event/downloads")
         json = json_serialize(data, sort_keys=True)
         return self.send_file(
-            rs, mimetype="application/json", data=json, inline=False,
-            filename=f"{rs.ambience['event'].shortname}_partial_export_event.json")
+            rs,
+            mimetype="application/json",
+            data=json,
+            inline=False,
+            filename=f"{rs.ambience['event'].shortname}_partial_export_event.json",
+        )
 
     @access("event")
     @event_guard(EventPrivileges.basic_read)
-    def download_questionnaire_export(self, rs: RequestState, event_id: int) -> Response:
+    def download_questionnaire_export(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         data = self.eventproxy.partial_export_event(rs, event_id)
         if not data:
             rs.notify("info", n_("Empty File."))
@@ -541,18 +707,24 @@ class EventDownloadMixin(EventBaseFrontend):
         }
         json = json_serialize(data, sort_keys=True)
         return self.send_file(
-            rs, mimetype="application/json", data=json, inline=False,
+            rs,
+            mimetype="application/json",
+            data=json,
+            inline=False,
             filename=f"{rs.ambience['event'].shortname}_questionnaire_export.json",
         )
 
     @access("droid_orga")
     @event_guard(EventPrivileges.all_read)
-    def droid_partial_export(self, rs: RequestState, event_id: int) -> Response:
+    def droid_partial_export(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         data = self.eventproxy.partial_export_event(rs, event_id)
         if not data:
             raise werkzeug.exceptions.InternalServerError(n_("Empty File."))
         return self.send_file(
-            rs, mimetype="application/json", data=json_serialize(data, sort_keys=True))
+            rs, mimetype="application/json", data=json_serialize(data, sort_keys=True)
+        )
 
     @access("droid_orga")
     def droid_partial_export_dispatch(self, rs: RequestState) -> Response:
@@ -577,4 +749,5 @@ class EventDownloadMixin(EventBaseFrontend):
         if not data:
             raise werkzeug.exceptions.InternalServerError(n_("Empty File."))
         return self.send_file(
-            rs, mimetype="application/json", data=json_serialize(data, sort_keys=True))
+            rs, mimetype="application/json", data=json_serialize(data, sort_keys=True)
+        )

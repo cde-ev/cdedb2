@@ -55,6 +55,7 @@
         {{ util.form_input_text(name="title", label=gettext("Label")) }}
         {{ util.form_input_text(name="authors", label=gettext("Authors")) }}
         {{ util.form_input_text(name="filename", label=gettext("Filename"), info=(gettext("Leave empty for current filename.") if not ambience['attachment_version'] else "")) }}
+        {{ util.form_input_text(name="changenotes", label=gettext("Changenotes")) }}
         {% if not ambience['attachment_version'] %}
             {{ util.form_input_attachment(link=cdedblink("assembly/get_cached_attachment", {'attachment_hash': values.get('attachment_hash')}),
                                           accept="application/pdf", info=gettext("Only PDFs allowed.")) }}

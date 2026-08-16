@@ -19,7 +19,7 @@ echo ""
 echo "Pacify git paranoia..."
 echo "--------------------------------------------"
 
-cp /media/cdrom0/gitconfig /etc/gitconfig
+cp /media/cdrom0/gitconfig-system /etc/gitconfig
 
 echo ""
 echo "Getting a copy of the cdedb sources..."
@@ -32,43 +32,36 @@ chown cdedb:cdedb /cdedb2
 # dPROD use ssh://gitea@10.9.0.2:63332/cdedb/cdedb2.git
 sudo -u cdedb git clone ssh://gitea@tracker.cde-ev.de:20009/cdedb/cdedb2.git /cdedb2 || sudo -u cdedb git clone ssh://gitea@10.9.0.2:63332/cdedb/cdedb2.git /cdedb2
 cd /cdedb2
-# correct upstream URL after auto-build
-sudo -u cdedb git remote set-url origin ssh://gitea@tracker.cde-ev.de:20009/cdedb/cdedb2.git
-# activate custom git hooks from the repo
+# custom git config
 # dPROD not present
-sudo -u cdedb git config --local core.hooksPath .githooks
-# insert po-git-handlers
-# dPROD not present
-sudo -u cdedb tee -a /cdedb2/.git/config <<EOF
+sudo -u cdedb cp /media/cdrom0/gitconfig-local | sudo -u cdedb tee /cdedb2/.git/config > /dev/null
+# set upstream URL in git config
+sudo -u cdedb git remote add origin ssh://gitea@tracker.cde-ev.de:20009/cdedb/cdedb2.git
+sudo -u cdedb git branch -u origin/master master
 
-[diff "podiff"]
-        textconv = i18n/git-diff-filter-po.sh
-[merge "pomerge"]
-        name = Gettext merge driver
-        driver = i18n/git-merge-po.sh %O %A %B
-[pull]
-        rebase = merges
-EOF
-# add cdedb to python path
-mkdir -p /usr/local/lib/python3.11/dist-packages
-sudo ln -s /cdedb2/cdedb/ /usr/local/lib/python3.11/dist-packages/cdedb
+echo ""
+echo "Installing python dependencies..."
+echo "--------------------------------------------"
+
+cd /cdedb2
+
+# Setup virtual environments for dev/scripting and for the gunicorn and ldap services.
+sudo make venv www-cde-venv
 
 echo ""
 echo "Create local config files..."
 echo "--------------------------------------------"
 
-# set the configpath to the default value
-# we use the default configurationpath, so no need to set CDEDB_CONFIGPATH
-
-# move the defaultconfig to the right place
-install -D /media/cdrom0/localconfig.py "$(python3 -m cdedb config default-configpath)"
-chown cdedb:cdedb "$(python3 -m cdedb config default-configpath)"
+# Create an empty override config.
+mkdir /etc/cdedb
+touch /etc/cdedb/config.py
+chown cdedb:cdedb "$(uv run python3 -m cdedb config default-configpath)"
 # make it world-readable, since it contains no secret data
-chmod 644 "$(python3 -m cdedb config default-configpath)"
+chmod 644 "$(uv run python3 -m cdedb config default-configpath)"
 
 # create default (and public) secrets config
 # dPROD actual secrets
-cat >"$(python3 -m cdedb config get SECRETS_CONFIGPATH)" <<EOF
+cat >"$(uv run python3 -m cdedb config get SECRETS_CONFIGPATH)" <<EOF
 #!/usr/bin/env python3
 #
 # This is the default file for the SecretsConfig. On development and offline instances,
@@ -88,8 +81,8 @@ cat >"$(python3 -m cdedb config get SECRETS_CONFIGPATH)" <<EOF
 # sudo chmod 640 /path/to/your/secrets_config.py
 #
 EOF
-chown cdedb:cdedb "$(python3 -m cdedb config get SECRETS_CONFIGPATH)"
-chmod 644 "$(python3 -m cdedb config get SECRETS_CONFIGPATH)"
+chown cdedb:cdedb "$(uv run python3 -m cdedb config get SECRETS_CONFIGPATH)"
+chmod 644 "$(uv run python3 -m cdedb config get SECRETS_CONFIGPATH)"
 
 # set the mailman htpasswd
 # dPROD different password
@@ -111,7 +104,7 @@ echo "Creating storage directory for uploads..."
 echo "--------------------------------------------"
 
 # Create the storage dir itself. Ensure that www-cde owns everything.
-python3 -m cdedb filesystem --owner www-cde --group www-data storage create
+uv run python3 -m cdedb filesystem --owner www-cde --group www-data storage create
 
 echo ""
 echo "Setting up dummy ldap because cyclic dependency..."
@@ -125,8 +118,8 @@ echo "--------------------------------------------"
 
 # This is a bit heavy-handed on stopping/restarting stuff to debug some obscure hangs
 systemctl stop pgbouncer
-cp /media/cdrom0/postgresql.conf /etc/postgresql/15/main/
-cp /media/cdrom0/pg_hba.conf /etc/postgresql/15/main/
+cp /media/cdrom0/postgresql.conf /etc/postgresql/17/main/
+cp /media/cdrom0/pg_hba.conf /etc/postgresql/17/main/
 
 systemctl restart postgresql
 sleep 10
@@ -139,8 +132,8 @@ sudo -u postgres psql <<-EOSQL
     CREATE DATABASE nobody WITH OWNER = nobody TEMPLATE = template0 ENCODING = 'UTF8';
     ALTER DATABASE nobody SET datestyle TO 'ISO, YMD';
 EOSQL
-python3 -m cdedb db create-users
-python3 -m cdedb db create
+uv run python3 -m cdedb db create-users
+uv run python3 -m cdedb db create
 
 systemctl stop pgbouncer
 
@@ -159,24 +152,19 @@ systemctl start pgbouncer
 sudo -u cdedb make sample-data
 
 echo ""
-echo "Create central directory for log files..."
-echo "--------------------------------------------"
-
-# Create the log directory. Ensure that www-cde owns everything.
-python3 -m cdedb filesystem --owner www-cde --group www-data log create
-
-echo ""
 echo "Setting up ldap..."
 echo "--------------------------------------------"
 # copy the systemd service file to the right place
 cp /media/cdrom0/cde-ldap.service /etc/systemd/system/
 cp /media/cdrom0/cde-ldap.socket /etc/systemd/system/
 
-# create a separate service file for the test suite, with the right configpath
-# dPROD not present
+# dPROD: dev override and test service not present
+# create a separate service file for the test suite, create dev and test overrides
+mkdir /etc/systemd/system/cde-ldap.service.d/
+mkdir /etc/systemd/system/cde-ldap-test.service.d/
+cp /media/cdrom0/cde-ldap-dev.conf /etc/systemd/system/cde-ldap.service.d/50-dev-override.conf
 cp /media/cdrom0/cde-ldap.service /etc/systemd/system/cde-ldap-test.service
-# ensure the tests is accessible via python path, since config.test_ldap.py performs imports
-sed -i -r -e "s|Environment=CDEDB_CONFIGPATH=/etc/cdedb/config.py|Environment=CDEDB_CONFIGPATH=/cdedb2/tests/config/test_ldap.py\nEnvironment=PYTHONPATH=/cdedb2/|g" /etc/systemd/system/cde-ldap-test.service
+cp /media/cdrom0/cde-ldap-test.conf /etc/systemd/system/cde-ldap-test.service.d/50-test-override.conf
 
 # add the self-signed certificate to the trusted ldap certificates
 # (note the previous step in stage2)
@@ -189,9 +177,7 @@ echo ""
 echo "Set up the apache2..."
 echo "--------------------------------------------"
 
-for i in proxy_http ssl headers authnz_ldap http2; do
-    a2enmod $i
-done;
+a2enmod proxy_http ssl headers authnz_ldap http2
 
 a2dissite 000-default
 
@@ -212,6 +198,17 @@ cp /media/cdrom0/cdedb-app.service /etc/systemd/system/
 cp /media/cdrom0/cdedb-app.socket /etc/systemd/system/
 systemctl enable --now cdedb-app.socket
 
+# dPROD not present
+# Add override for dev environments.
+mkdir /etc/systemd/system/cdedb-app.service.d/
+cp /media/cdrom0/cdedb-app-dev.conf /etc/systemd/system/cdedb-app.service.d/50-dev-override.conf
+
+# Add a service to auto restart the service upon some file changes.
+# dPROD not present
+cp /media/cdrom0/cdedb-app-restart.service /etc/systemd/system/
+cp /media/cdrom0/cdedb-app-restart.path /etc/systemd/system/
+systemctl enable --now cdedb-app-restart.path
+
 echo ""
 echo "Set up the fail2ban..."
 echo "--------------------------------------------"
@@ -224,6 +221,8 @@ cp /media/cdrom0/fail2ban-filter-cdedb-sessionkey.conf \
    /etc/fail2ban/filter.d/cdedb-sessionkey.conf
 cp /media/cdrom0/fail2ban-filter-cdedb-apitoken.conf \
    /etc/fail2ban/filter.d/cdedb-apitoken.conf
+cp /media/cdrom0/fail2ban-filter-cdedb-contact.conf \
+   /etc/fail2ban/filter.d/cdedb-contact.conf
 cp /media/cdrom0/jail.local /etc/fail2ban/
 
 # dPROD VMWare adjustments not applicable
@@ -246,17 +245,6 @@ if [ -e /media/cdrom0/vdi ]; then
 
 fi
 
-
-echo ""
-echo "Set up the template renderer..."
-echo "--------------------------------------------"
-
-cd /home/cdedb
-# dPROD not present
-sudo -u cdedb git clone ssh://gitea@tracker.cde-ev.de:20009/orgas/cde_template_renderer_v3.git \
-    || sudo -u cdedb git clone ssh://gitea@10.9.0.2:63332//orgas/cde_template_renderer_v3.git
-sudo -u cdedb cp /media/cdrom0/refresh_template_renderer_data.py .
-chmod +x refresh_template_renderer_data.py
 
 echo ""
 echo "Disable auto-build init..."

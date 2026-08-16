@@ -3,6 +3,7 @@
 
 Should not be archived after use.
 """
+
 from cdedb.common.fields import PERSONA_ALL_FIELDS
 from cdedb.script import Script
 
@@ -13,7 +14,7 @@ CHECK = True
 
 script = Script(persona_id=-1, dbuser="cdb_admin")
 rs = script.rs()
-core = script.make_backend("core", proxy=False)
+core = script.make_core_backend(proxy=False)
 
 # work
 
@@ -24,15 +25,13 @@ with script:
     persona_id = core.next_persona(rs, -1, is_member=None, is_archived=None)
     while persona_id is not None:
         persona = core.retrieve_persona(rs, persona_id, ALL_FIELDS)
-        data = {
-            'id': persona_id,
-            'fulltext': core.create_fulltext(persona)
-        }
+        data = {'id': persona_id, 'fulltext': core.create_fulltext(persona)}
         code = core.sql_update(rs, "core.personas", data)
         count += code
         if code != 1:
             raise RuntimeError(
-                f"Somethings went wrong while updating persona {persona_id}.")
+                f"Somethings went wrong while updating persona {persona_id}."
+            )
         else:
             print(persona_id, end=" ", flush=True)
         persona_id = core.next_persona(rs, persona_id, is_member=None, is_archived=None)

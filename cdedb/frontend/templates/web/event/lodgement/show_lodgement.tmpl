@@ -47,7 +47,7 @@
                         {% trans %}Lodgement Group{% endtrans %}
                     </dt>
                     <dd>
-                        {{ groups[ambience['lodgement']['group_id']] }}
+                        {{ groups[ambience['lodgement']['group_id']].title }}
                     </dd>
                 {% endif %}
             </dl>
@@ -88,7 +88,7 @@
                     </div>
 
                     <div class="panel-body">
-                        {% set part_violations = violations.get(lodgement_id=ambience['lodgement']['id'], part=part) %}
+                        {% set part_violations = violations.get(lodgement=ambience['lodgement'], part=part) %}
                         <div id="part-violations-{{ part.id }}">
                             {% for violation in part_violations if violation.severity >= enums['ViolationSeverity'].DEBUG %}
                                 {% set text = generic_event.print_violation(violation, entity_page="lodgement").strip() %}

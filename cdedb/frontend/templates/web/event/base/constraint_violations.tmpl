@@ -8,15 +8,15 @@
     {{ util.cdedb_script('cdedb_filter_violations.js') }}
 {% endblock %}
 {% block title %}
-    {{ ambience['event']['title'] }} – {% trans %}Constraint Violations{% endtrans %}
+    {{ ambience['event']['title'] }} – {% trans %}Inconsistencies{% endtrans %}
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon='chalkboard-teacher') }}
-    {{ util.breadcrumb_link(cdedblink("event/constraint_violations"), gettext("Constraint Violations"), active=True) }}
+    {{ util.breadcrumb_link(cdedblink("event/constraint_violations"), gettext("Inconsistencies"), active=True) }}
 {% endblock %}
 {% block heading %}
-    {{ util.context_heading(gettext("Constraint Violations"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
+    {{ util.context_heading(gettext("Inconsistencies"), ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
 {% endblock %}
 {% block content %}
     {% if violations %}
@@ -26,14 +26,14 @@
             <div id="event_{{ ambience['event'].id }}" class="event">
                 {% for class_name, violation_list in violations.by_class.items() %}
                     <div class="violation-list maybehide">
-                        {{ util.doclink_("Handbuch_Orga_Verstöße", class_name|lower) }}
+                        {{ util.doclink_("Handbuch_Orga_Ungereimtheiten", class_name|lower) }}
                         {{ util.h(class_name, underline=true) }}
                         {{ generic.list_violations(class_name, violation_list, entity_page="", min_severity=min_severity, violation_kind=violation_list[0].kind) }}
                     </div>
                 {% endfor %}
                 <div class="maybenothide text-muted">
                     {% trans %}
-                        There are currently no violations matching the filter.
+                        There are currently no inconsistencies matching the filter.
                     {% endtrans %}
                 </div>
             </div>
@@ -41,7 +41,7 @@
     {% else %}
         <div class="text-muted">
             {% trans %}
-                There are currently no violations.
+                There are currently no inconsistencies.
             {% endtrans %}
         </div>
     {% endif %}

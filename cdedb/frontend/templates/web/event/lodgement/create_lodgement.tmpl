@@ -37,7 +37,7 @@
             {{ util.input_hidden(name="group_id", value=groups|first) }}
         {% elif groups|length > 1 %}
             {{ util.form_input_select(
-                name="group_id", entries=groups.items(), label=gettext("Lodgement Group"),
+                name="group_id", entries=(groups.values()|first).entries(groups), label=gettext("Lodgement Group"),
                 nulloption=gettext("– create new group –"), sort=True) }}
             {{ util.form_input_text(name="new_group_title", label=gettext("New Lodgement Group Title"), errorname="group_id",
                                 info=gettext("Only for creating a new group.") if groups else "") }}

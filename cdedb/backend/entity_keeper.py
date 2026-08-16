@@ -19,13 +19,13 @@ import subprocess
 import tempfile
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Union
+from typing import Literal
 
 import tabulate
 
 import cdedb.common.validation.types as vtypes
 from cdedb.backend.common import affirm_validation as affirm
-from cdedb.common import CdEDBObject, PathLike, now, setup_logger
+from cdedb.common import CdEDBObject, PathLike, now
 from cdedb.config import Config
 from cdedb.filter import datetime_filter
 
@@ -51,43 +51,45 @@ class EntityKeeper:
         self.log_timestamp_key = log_timestamp_key
 
         # Initialize logger.
-        logger_name = "cdedb.backend.entitykeeper"
-        setup_logger(
-            logger_name,
-            self.conf["LOG_DIR"] / "cdedb-backend-keeper.log",
-            self.conf["LOG_LEVEL"],
-            syslog_level=self.conf["SYSLOG_LEVEL"],
-            console_log_level=self.conf["CONSOLE_LOG_LEVEL"],
-        )
-        self.logger = logging.getLogger(logger_name)
-        self.logger.debug(f"Instantiated {self} with configpath {conf._configpath}.")
+        self.logger = logging.getLogger("cdedb.backend.entitykeeper")
+        self.logger.debug(f"Instantiated {self} with config {conf}.")
 
     def _run(
         self,
-        args: list[Union[Path, str, bytes]],
-        cwd: Optional[Path] = None,
-        check: Optional[bool] = True,
+        args: list[Path | str | bytes],
+        cwd: Path | None = None,
+        *,
+        check: Literal["raise", "log", "ignore"] = "raise",
     ) -> subprocess.CompletedProcess[bytes]:
         """Custom wrapper of subprocess.run to include proper logging.
 
-        :param check: If True, raise on error. If False, log an error.
-            If None, ignore error."""
+        :param check: Options are "raise", "log" and "ignore".
+        """
         # Delay check to ensure logging
         completed = subprocess.run(
             args, cwd=cwd, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
         msg = completed.stdout or ""
-        if check is not None and completed.returncode != 0:
-            self.logger.error(
-                "Git error performing command %s in directory %s: %s", args, cwd, msg
-            )
+        if check in {"log", "raise"}:
+            if completed.returncode != 0:
+                self.logger.error(
+                    "Git error performing command %s in directory %s: %s",
+                    args,
+                    cwd,
+                    msg,
+                )
+            if check == "raise":
+                completed.check_returncode()
+        elif check == "ignore":
+            if completed.returncode != 0:
+                self.logger.debug(
+                    "Git output performing command %s in directory %s: %s",
+                    args,
+                    cwd,
+                    msg,
+                )
         else:
-            self.logger.debug(
-                "Git output performing command %s in directory %s: %s", args, cwd, msg
-            )
-        if check:
-            # Now, raise the check extension
-            completed.check_returncode()
+            raise RuntimeError("Invalid 'check' instruction.")
         return completed
 
     def init(self, entity_id: int, exists_ok: bool = False) -> "EntityKeeper":
@@ -148,8 +150,8 @@ class EntityKeeper:
         author_email: str = "",
         *,
         may_drop: bool = True,
-        logs: Optional[Sequence[CdEDBObject]] = None,
-    ) -> Optional[subprocess.CompletedProcess[bytes]]:
+        logs: Sequence[CdEDBObject] | None = None,
+    ) -> subprocess.CompletedProcess[bytes] | None:
         """Commit a single file representing an entity to a git repository.
 
         In contrast to its friends, we allow some wiggle room for errors here right now
@@ -174,7 +176,7 @@ class EntityKeeper:
             # actual git directory.
             self._run(["git", f"--work-tree={td}", "add", td / filename], cwd=full_dir)
             # Then commit everything as if we were in the repository directory.
-            commit: list[Union[PathLike, bytes]]
+            commit: list[PathLike | bytes]
             commit = ["git", "-C", full_dir, "commit", "-m", commit_msg.encode("utf8")]
             if logs and (formated_logs := self._format_logs(logs)):
                 commit.append("-m")
@@ -199,21 +201,20 @@ class EntityKeeper:
                 # git diff-index reports whether the working directory is clean using
                 # its exit code. If the dir is clean it returns 0, and 1 otherwise.
                 # Does not work for the initial commit since HEAD is not defined yet.
-                completed = self._run(
+                if not self._run(
                     ["git", f"--work-tree={td}", "diff-index", "--exit-code", "HEAD"],
                     cwd=full_dir,
-                    check=None,
-                )
-                if completed.returncode == 0:
+                    check="ignore",
+                ).returncode:
                     return None
             if not may_drop:
                 commit.append("--allow-empty")
 
             # Do not check here such that an error does not drag the whole request down
             # In particular, this is expected for empty commits.
-            return self._run(commit, check=False)
+            return self._run(commit, check="log")
 
-    def latest_logtime(self, entity_id: int) -> Optional[datetime.datetime]:
+    def latest_logtime(self, entity_id: int) -> datetime.datetime | None:
         """Retrieve the ctime of the latest log entry.
 
         This is determined by the timestamp of the commit, which is set to the ctime
@@ -224,7 +225,7 @@ class EntityKeeper:
         # This has a non-zero exit code if HEAD does not point to any commit. This is
         # the case if there are no commits present yet.
         if self._run(
-            ["git", "rev-parse", "HEAD"], check=False, cwd=full_dir
+            ["git", "rev-parse", "HEAD"], check="ignore", cwd=full_dir
         ).returncode:
             return None
         # get the timestamp of the last commit in ISO 8601 format
@@ -238,7 +239,7 @@ class EntityKeeper:
         timestamp = response.stdout.decode("utf-8").strip()
         return datetime.datetime.fromisoformat(timestamp)
 
-    def _format_logs(self, logs: Sequence[CdEDBObject]) -> Optional[bytes]:
+    def _format_logs(self, logs: Sequence[CdEDBObject]) -> bytes | None:
         if not self.log_keys:
             return None
 

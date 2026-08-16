@@ -75,7 +75,6 @@ Die Attribute einer ``questionnaire row`` sind:
 
 * title (str)
 * info (str)
-* input_size (int)
 * readonly (bool)
 * default_value (str, int oder null)
 * field_name (str)
@@ -92,7 +91,6 @@ angezeigt. ::
           {
               "title": "Essen",
               "info": "Bitte gib hier an, wie Du Dich auf der Akademie ernähren möchtest.",
-              "input_size": 0,
               "readonly": false,
               "default_value": null,
               "field_name": "Verpflegung"

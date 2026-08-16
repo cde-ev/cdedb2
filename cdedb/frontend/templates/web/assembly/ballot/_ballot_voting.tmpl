@@ -334,7 +334,7 @@
 
             <tbody>
                 {% call(id, row_class, is_new_row) util.dynamic_row_meta(sorted_candidate_ids) %}
-                    <tr class="{{ row_class }}" role="group" aria-label="Candidate {{ id }}">
+                    <tr class="{{ row_class }}" role="group" aria-label="Candidate {{ id }}" data-drow-id="{{ id }}">
                         <td class={{ util.has_errors(drow_name("shortname", id)) }}>
                             {{ util.input_text(drow_name("shortname", id), aclass='drow-input form-control',
                                     attributes=util.drow_basename("shortname"), arialabel=gettext("Shortname")) }}

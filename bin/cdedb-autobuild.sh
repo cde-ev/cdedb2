@@ -1,32 +1,36 @@
 #!/bin/bash
 
 COMPLETE="NO"
-if [[ $(basename $0) = "cdedb-autobuild-stage123.sh" ]]; then
+if [[ $(basename "$0") = "cdedb-autobuild-stage123.sh" ]]; then
     COMPLETE="YES"
 fi;
 
 REPODIR=/home/cdedb/cdedb2/
 AUTOBUILDDIR=/home/cdedb/cdedb2/related/auto-build/
 WWWDIR=/var/www/austausch/html/cdedb2/images/
+DEPLOYMENT_KEY_PATH=/home/cdedb/.ssh/id_rsa
 
-QEMUOPTIONS="-nographic -m 1G -net nic,model=virtio -net user"
+# Options:
+# -display none
+# -vnc :123
+QEMUOPTIONS="-display none -m 1G -net nic,model=virtio -net user"
 
 # get the most current state of the repository
-cd $REPODIR
+cd $REPODIR || exit
 git pull
 PORT=$(git --no-pager log -1 --format='%H')
-export PORT QEMUOPTIONS
+export PORT QEMUOPTIONS DEPLOYMENT_KEY_PATH
 
 # does an up-to-date image exist?
 if [[ -e $WWWDIR/cdedb-$PORT.qcow2 && $COMPLETE = "NO" ]]; then
     echo "port already exists... exiting"
     exit 0
 else
-    rm -f $WWWDIR/cdedb-$PORT.qcow2
+    rm -f $WWWDIR/cdedb-"$PORT".qcow2
 fi;
 
 # build images
-cd $AUTOBUILDDIR
+cd $AUTOBUILDDIR || exit
 
 echo "free space report no. 1"
 df
@@ -59,11 +63,11 @@ fi;
 
 echo "make vdiimage"
 make vdiimage || exit 103
-if [ ! -e $AUTOBUILDDIR/images/cdedb-$PORT.vdi ]; then
+if [ ! -e $AUTOBUILDDIR/images/cdedb-"$PORT".vdi ]; then
    echo "bailing out, as viimage does not exist ... exiting"
    exit 105
 fi;
-gzip $AUTOBUILDDIR/images/cdedb-$PORT.vdi
+gzip $AUTOBUILDDIR/images/cdedb-"$PORT".vdi
 
 echo "free space report no. 3"
 df
@@ -72,8 +76,8 @@ df
 echo "moving images"
 rm -f $WWWDIR/cdedb-*.qcow2
 rm -f $WWWDIR/cdedb-*.vdi.gz
-mv $AUTOBUILDDIR/images/cdedb-$PORT.qcow2 $WWWDIR/
-mv $AUTOBUILDDIR/images/cdedb-$PORT.vdi.gz $WWWDIR/
+mv $AUTOBUILDDIR/images/cdedb-"$PORT".qcow2 $WWWDIR/
+mv $AUTOBUILDDIR/images/cdedb-"$PORT".vdi.gz $WWWDIR/
 echo "images moved, removing intermediary images"
 rm -f $AUTOBUILDDIR/work/*.qcow2
 sudo /sbin/fstrim -a -v

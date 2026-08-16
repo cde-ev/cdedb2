@@ -37,8 +37,7 @@ Die Import-Datei
 ----------------
 
 Bei der Import-Datei handelt es sich um eine JSON-Datei, die im gleichen
-Format ist wie der partielle Export minus einige unveränderliche Felder. Im
-Wesentlichen enthält der Export die folgenden Elemente::
+Format ist wie der partielle Export. Im Wesentlichen enthält der Export die folgenden Elemente::
 
   {
       "EVENT_SCHEMA_VERSION": [<numeric id>, <numeric id>],
@@ -64,9 +63,9 @@ Export entnommen werden. Ebenso wird für das restliche Schema auf den Export
 verwiesen.
 
 Der Schlüssel ``event``, sowie der Schlüssel ``persona`` der in jeder
-Anmeldung vorhanden ist, dürfen beim Import nicht vorkommen. Sie stellen
-Informationen zur Verfügung, die durch den partiellen Import nicht verändert
-werden können.
+Anmeldung vorhanden ist, stellen Informationen zur Verfügung, die durch den
+partiellen Import nicht verändert werden können. Sie dürfen beim Import vorhanden
+sein, werden aber ignoriert.
 
 Prinzipiell sind alle Elemente außer ``EVENT_SCHEMA_VERSION``, ``id``
 ``kind`` und ``timestamp`` optional, können also weggelassen werden. Es ist
@@ -233,6 +232,13 @@ Hier sind die Änderungen gelistet, die in den jeweiligen Inkrementierungen der
 Export-Version neu eingeführt wurden. Für jede Version ist angegeben, ob die
 Version für den partiellen Import strikt abwärtskompatibel sind oder nicht.
 
+* Version (20, 0): Der Fragebogen ist nun modularer und kann (bzw. muss) Zeilen mit
+  Spezialfunktion (z.B. "Kurswahlen") enthalten.
+  Die Attribute der Text- und Datenfeld-Zeilen im Fragebogen heißen nun unterschiedlich
+  (Text: ``title`` und ``text``, Datenfeld: ``label`` und ``info``).
+  Die ``input_size``-Konfiguration für Fragebogen-Abfragen wurde abgeschafft.
+* Version (19, 4): Die Log-Codes "Kurs: angebotene Schienen geändert" und
+  "Kurs: stattfindende Schienen geändert" wurden entfernt.
 * Version (19, 3): Im partiellen Export ist die ``amount_owed`` einer Anmeldung nun auch
   ``by_kind`` aufgeschlüsselt.
   Im partiellen Import einer Anmeldung sind nun alle Felder erlaubt, die auch im partiellen Export

@@ -1,48 +1,50 @@
 [project]
 name = "cdedb2"
 version = "2.1.0"
+requires-python = ">=3.13,<3.14"
 dependencies = [
-    "babel==2.10.3",
-    "bleach==5.0.1",
-    "click==8.1.3",
-    "coverage==6.5.0",
+    "babel==2.17.0",
+    "bleach==6.4.0",
+    "click==8.3.3",
+    "coverage==7.6.0",
     "cssselect==1.3.0",
-    "cryptography==45.0.3",
-    "freezegun==1.2.1",
-    "graphviz==0.20.1",
-    "gunicorn==20.1.0",
-    "html5lib==1.1",
-    "jinja2==3.1.2",
+    "cryptography==48.0.1",
+    "freezegun==1.5.1",
+    "graphviz==0.20.2",
+    "gunicorn==23.0.0",
+    "jinja2==3.1.6",
     "ldap3==2.9.1",
-    "lxml==4.9.2",
+    "legacy-cgi; python_version >= '3.13'",
+    "lxml==6.1.0",
     "mailmanclient==3.3.5",
-    "markdown==3.4.1",
+    "markdown==3.8.1",
     "passlib==1.7.4",
     "phonenumbers==8.12.57",
-    "pillow==9.4.0",
-    "psycopg2-binary==2.9.5",
-    "pyicu==2.10.2",
-    "pyparsing==3.0.9",
-    "python-dateutil==2.8.2",
-    "python-magic==0.4.26",
-    "pytz==2022.7.1",
-    "requests==2.28.1",
-    "schulze-condorcet==2.0.1",
-    "segno==1.5.2",
-    "sphinx==5.3.0",
-    "sphinx-rtd-theme==1.2.0",
-    "subman==0.1.1",
-    "tabulate==0.8.9",
-    "webtest==3.0.6",
-    "werkzeug==2.2.2",
-    "zxcvbn==4.4.28",
+    "pillow==12.3.0",
+    "psycopg2-binary==2.9.10",
+    "pyicu==2.14",
+    "pyparsing==3.1.2",
+    "python-dateutil==2.9.0",
+    "python-magic==0.4.27",
+    "pytz==2025.2",
+    "schulze-condorcet==2.0.1",  # not in debian
+    "segno==1.6.6",
+    "sphinx==8.1.3",
+    "sphinx-rtd-theme==3.0.2",
+    "subman==0.1.1",  # not in debian
+    "cysystemd==2.0.5",
+    "tabulate==0.9.0",
+    "typing-extensions==4.15.0",
+    "webtest==3.0.6",  # This is more up-to-date than trixie.
+    "werkzeug==3.1.6",
+    "zxcvbn==4.5.0",  # not in trixie.
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
-    "mypy==1.14.0",
+    "mypy==2.3.0",
     "lxml-stubs",
-    "ruff==0.8.4",
+    "ruff==0.16.1",
     "types-bleach",
     "types-ldap3",
     "types-Markdown",
@@ -56,27 +58,53 @@ dev = [
 # Excluded from dev to ensure better docker cache.
 # Make sure to bump the version in Dockerfile-cdedb!
 playwright = [
-    "playwright==1.43.0",
+    "playwright==1.55.0",
 ]
 # dependencies for the cdedb-ldap interface
 ldap = [
     "ldaptor==21.2.0",
-    "psycopg[binary]==3.1.7",
-    "psycopg-pool==3.1.5",
-    "subman==0.1.1",
+    "psycopg[binary,pool]==3.2.12",
 ]
 
-[tool.setuptools]
-packages = ["cdedb"]
+[build-system]
+requires = ["uv_build"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "cdedb"
+module-root = ""
+
+[tool.uv]
+# Reduce for now, because of uv and renovate interaction.
+exclude-newer = "14 days"
+
+[tool.uv.exclude-newer-package]
+# Critical infrastructure packages we want to allow timely security updates for.
+gunicorn = "1 day"
+passlib = "1 day"
+werkzeug = "1 day"
+
+# We only use this internally so this isn't critical.
+#  Renovate doesn't know that though and this reduces PR spam.
+cryptography = "1 day"
+
+# Our first party packages. If they are updated we probably want that update right away.
+subman = "1 minute"
+schulze-condorcet = "1 minute"
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py313"
 line-length = 88
 preview = true
 output-format = "concise"
 src = ["cdedb", "tests"]
 
+include = ["pyproject.toml", "cdedb/**/*.py", "tests/**/*.py"]
+
 [tool.ruff.format]
+exclude = [
+    "cdedb/database/evolutions/archive/**/*.py",
+]
 quote-style = "preserve"
 
 [tool.ruff.lint]
@@ -114,6 +142,7 @@ ignore = [
     "TRY003",  # Exception message not defined in exception class.
     "PLW2901",  # redefining for loop variable.
     "PLW1641",  # non hashable child class.
+    "PLW0717",  # Too many statements in try clause.
     "PLR09",  # Too many things in classes.
     "PLR1702",  # Too many nested blocks.
     "PLR6301",  # Method could be static.
@@ -135,12 +164,12 @@ known-first-party = ["cdedb", "tests"]
 combine-as-imports = true
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.13"
 show_error_codes = true
 #show_error_context = true
 enable_error_code = "ignore-without-code"
 
-allow_redefinition = true
+allow_redefinition_new = true
 check_untyped_defs = true
 disallow_any_generics = true
 disallow_incomplete_defs = true
@@ -149,15 +178,22 @@ warn_redundant_casts = true
 warn_no_return = true
 warn_unreachable = true
 warn_unused_ignores = true
+enable_incomplete_feature = [
+]
 #This has way too many false positives, due to CdEDBObject = Dict[str, Any]
 #warn_return_any = true
 
 local_partial_types = true
 
+modules = ["bin"]
+packages = ["cdedb", "tests"]
+
 [[tool.mypy.overrides]]
 module = [
     # general
     "icu",
+    "systemd.*",
+    "cgitb",
     # ldap
     "ldaptor.*",
     # frontend

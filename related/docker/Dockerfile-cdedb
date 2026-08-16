@@ -1,4 +1,4 @@
-FROM debian:bookworm-20240130
+FROM debian:trixie-20251020
 
 # TODO this should be obsolete, since we generate the certificates with a first run script.
 #  however, this does not work for the ci (which becomes visible for the offline vm test)
@@ -25,6 +25,7 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     openssl \
     apache2 \
     python3 \
+    python3-pip \
     gunicorn \
     tzdata \
     \
@@ -36,73 +37,44 @@ RUN apt-get update && apt-get install --yes --no-install-recommends \
     texlive-luatex \
     && rm -rf /var/lib/apt/lists/*
 
-# install playwright dependencies (and pip)
-RUN apt-get update && apt-get install --yes --no-install-recommends \
-    python3-pip \
-    \
-    libasound2 \
-    libatk-bridge2.0-0 \
-    libatk1.0-0 \
-    libatomic1 \
-    libatspi2.0-0 \
-    libcups2 \
-    libdrm2 \
-    libenchant-2-2 \
-    libgbm1 \
-    libgles2 \
-    libgstreamer-gl1.0-0 \
-    libharfbuzz-icu0 \
-    libhyphen0 \
-    libmanette-0.2-0 \
-    libnspr4 \
-    libnss3 \
-    libopengl0 \
-    libwayland-client0 \
-    libwoff1 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxfixes3 \
-    libxkbcommon0 \
-    libxrandr2 \
-    \
-    && rm -rf /var/lib/apt/lists/*
+RUN pip install "uv>=0.11.8" --break-system-packages
 
-# install playwright
-# make sure to bump the playwright version in pyproject.toml
-RUN python3 -m pip --no-cache-dir install --break-system-packages 'playwright>=1.43.0'
+# install packages
+RUN uv pip install playwright==1.55.0 --system --break-system-packages
 
 # Retrieve browser engines, but only do so for root (which runs the tests in
 # the CI) and not for the cdedb user. Same reasoning as for the auto-build: we
 # want to save some disk space.
-RUN /usr/local/bin/playwright install
+RUN uv run playwright install --with-deps
 # RUN sudo -u cdedb /usr/local/bin/playwright install
 
 # utilities and to install packages via pip, and package dependencies
-# dependencies:
-# - graphviz for the python package with the same name
-# - libicu-dev for pyicu
-# - libmagic1 for python-magic (see https://github.com/ahupp/python-magic/pull/294)
+# - python package dependencies:
+#   - building/running pyicu: g++ pkg-config python3-dev libicu-dev
+#   - building/running graphviz: graphviz
+#   - building/running python-magic: libmagic1
+#   - building/running python-systemd: libsystemd-dev
 RUN apt-get update && apt-get install --yes --no-install-recommends \
-    wget \
-    unzip \
-    python3-dev \
     g++ \
     pkg-config \
+    python3-dev \
+    libicu-dev \
     \
     graphviz \
-    libicu-dev \
+    \
     libmagic1 \
+    \
+    libsystemd-dev \
     \
     && rm -rf /var/lib/apt/lists/*
 
-# copy project configuration for pip
-COPY ./pyproject.toml /tmp/
+# copy project configuration for uv
+COPY ./pyproject.toml /cdedb2/
+COPY ./uv.lock /cdedb2/
 
 # install packages
 # since this works as a dev and CI container, install dev and ldap (for running tests) too
-RUN python3 -m pip --no-cache-dir install --break-system-packages \
-        $(python3 -c 'import tomllib; f = tomllib.load(open("/tmp/pyproject.toml", "rb")); \
-                      print(*f["project"]["dependencies"], *f["project"]["optional-dependencies"]["dev"], *f["project"]["optional-dependencies"]["ldap"])')
+RUN cd /cdedb2 && uv pip install --system --break-system-packages -r pyproject.toml --group dev --group ldap
 
 # add startup scripts
 COPY ./related/docker/cdedb-entrypoint.sh /cdedb-entrypoint.sh
@@ -123,9 +95,9 @@ COPY ./related/auto-build/files/stage3 /tmp/autobuild/
 # - add symlink to /cdedb2/cdedb directory so python can find it,
 # - create the cdedb user and enable passwordless sudo,
 # - create the magic file to signal that we are inside a container.
-RUN cp /tmp/autobuild/gitconfig /etc/gitconfig \
+RUN cp /tmp/autobuild/gitconfig-system /etc/gitconfig \
     \
-    && a2enmod proxy_http ssl headers authnz_ldap \
+    && a2enmod proxy_http ssl headers authnz_ldap http2 \
     && a2dissite 000-default \
     && echo "" > /etc/apache2/ports.conf \
     && cp /tmp/autobuild/cdedb-site.conf /etc/apache2/sites-available \
@@ -133,13 +105,14 @@ RUN cp /tmp/autobuild/gitconfig /etc/gitconfig \
     && cp /tmp/autobuild/index.html /var/www/html/ \
     \
     && groupadd --system www-cde \
-    && useradd --system -g www-cde -d /var/lib/cdedb -M www-cde \
+    && useradd --system -g www-cde --create-home www-cde \
     \
     && cp /tmp/autobuild/mailman-htpasswd /etc/cdedb-mailman-htpasswd \
     && chown www-cde:www-data /etc/cdedb-mailman-htpasswd \
     && chmod 640 /etc/cdedb-mailman-htpasswd \
     \
-    && install -D /tmp/autobuild/localconfig.py /etc/cdedb/config.py \
+    && mkdir -p /etc/cdedb \
+    && touch /etc/cdedb/config.py \
     && touch /etc/cdedb/public-secrets.py \
     \
     && rm -rf /tmp/autobuild \
@@ -162,6 +135,12 @@ EXPOSE 443
 
 # mount the code here
 WORKDIR /cdedb2
+
+ENV UV_PROJECT_ENVIRONMENT=/.venv
+
+RUN cd /cdedb2 && uv sync --all-groups --no-install-project
+
+RUN chown cdedb:cdedb -R $UV_PROJECT_ENVIRONMENT
 
 STOPSIGNAL SIGWINCH
 ENTRYPOINT ["/cdedb-entrypoint.sh"]

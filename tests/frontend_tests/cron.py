@@ -6,12 +6,15 @@ import decimal
 import json
 import numbers
 import unittest.mock
-from typing import Any, Union, cast
+from typing import Any, cast
 
 import freezegun
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, RequestState, now
+import cdedb.models.complaint as models_complaint
+from cdedb.common import CdEDBObject, RequestState, nearly_now, now
+from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import xsorted
 from tests.common import CronTest, event_keeper, execsql, prepsql, storage
 
@@ -20,10 +23,23 @@ INSERT INTO {table} ({columns}) VALUES ({values});
 """
 
 # numbers.Number should include Decimal, int and bool but doesn't.
-SQL_DATA = dict[str, Union[None, datetime.datetime, datetime.date, str, numbers.Number,
-                           decimal.Decimal, int, bool, dict[str, Any]]]
+SQL_DATA = dict[
+    str,
+    None
+    | datetime.datetime
+    | datetime.date
+    | str
+    | numbers.Number
+    | decimal.Decimal
+    | int
+    | bool
+    | dict[str, Any],
+]
 
 RS = cast(RequestState, None)
+
+
+EventID = lambda x: vtypes.EventID(vtypes.ID(x))
 
 
 def format_insert_sql(table: str, data: SQL_DATA) -> str:
@@ -44,8 +60,9 @@ def format_insert_sql(table: str, data: SQL_DATA) -> str:
         else:
             raise ValueError(f"Unknown datum {key} -> {value}")  # pragma: no cover
     keys = tuple(tmp)
-    return INSERT_TEMPLATE.format(table=table, columns=", ".join(keys),
-                                  values=", ".join(tmp[key] for key in keys))
+    return INSERT_TEMPLATE.format(
+        table=table, columns=", ".join(keys), values=", ".join(tmp[key] for key in keys)
+    )
 
 
 def genesis_template(**kwargs: Any) -> str:
@@ -66,11 +83,14 @@ def forget_finalized_genesis_template() -> str:
     ctime = now() - datetime.timedelta(days=89)
     status = const.GenesisStati
     successful = genesis_template(
-        username="1@example.cde", status=status.successful, ctime=ctime)
+        username="1@example.cde", status=status.successful, ctime=ctime
+    )
     updated = genesis_template(
-        username="2@example.cde", status=status.existing_updated, ctime=ctime)
+        username="2@example.cde", status=status.existing_updated, ctime=ctime
+    )
     rejected = genesis_template(
-        username="3@example.cde", status=status.rejected, ctime=ctime)
+        username="3@example.cde", status=status.rejected, ctime=ctime
+    )
     return successful + updated + rejected
 
 
@@ -93,7 +113,7 @@ def changelog_template(**kwargs: Any) -> str:
         'decided_search': True,
         'family_name': 'Zeruda-Hime',
         'foto': 'e83e5a2d36462d6810108d6a5fb556dcc6ae210a580bfe4f6211fe925e61ffbe'
-                'c03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9',
+        'c03e425a3c06bea24333cc17797fc29b047c437ef5beb33ac0f570c6589d64f9',
         'free_form': 'stuff she said',
         'gender': const.Genders.female.value,
         'generation': 2,
@@ -167,15 +187,17 @@ def privilege_change_template(**kwargs: Any) -> str:
 
 
 class TestCron(CronTest):
+    maxDiff = None
+
     def test_genesis_remind_empty(self) -> None:
         self.execute('genesis_remind')
 
-    @prepsql(genesis_template(
-        ctime=(now() - datetime.timedelta(hours=6))))
+    @prepsql(genesis_template(ctime=(now() - datetime.timedelta(hours=6))))
     def test_genesis_remind_new(self) -> None:
         self.execute('genesis_remind')
-        self.assertEqual(["genesis/genesis_requests_pending"],
-                         [mail.template for mail in self.mails])
+        self.assertEqual(
+            ["genesis/genesis_requests_pending"], [mail.template for mail in self.mails]
+        )
 
     @prepsql(genesis_template())
     def test_genesis_remind_newer(self) -> None:
@@ -186,20 +208,25 @@ class TestCron(CronTest):
         genesis_template(ctime=(now() - datetime.timedelta(hours=6)))
         + cron_template(
             title="genesis_remind",
-            store={"tstamp": (now() - datetime.timedelta(hours=1)).timestamp(),
-                   "ids": [1001]}))
+            store={
+                "tstamp": (now() - datetime.timedelta(hours=1)).timestamp(),
+                "ids": [1001],
+            },
+        )
+    )
     def test_genesis_remind_old(self) -> None:
         self.execute('genesis_remind')
         self.assertEqual([], [mail.template for mail in self.mails])
 
     @prepsql(
         genesis_template(ctime=(now() - datetime.timedelta(hours=6)))
-        + cron_template(title="genesis_remind",
-                        store={"tstamp": 1, "ids": [1001]}))
+        + cron_template(title="genesis_remind", store={"tstamp": 1, "ids": [1001]})
+    )
     def test_genesis_remind_older(self) -> None:
         self.execute('genesis_remind')
-        self.assertEqual(["genesis/genesis_requests_pending"],
-                         [mail.template for mail in self.mails])
+        self.assertEqual(
+            ["genesis/genesis_requests_pending"], [mail.template for mail in self.mails]
+        )
 
     @storage
     def test_genesis_forget_empty(self) -> None:
@@ -212,32 +239,40 @@ class TestCron(CronTest):
         self.assertEqual({1, 2, 3, 4, 1001}, set(self.core.genesis_list_cases(RS)))
 
     @storage
-    @prepsql(genesis_template(
-        ctime=datetime.datetime(2000, 1, 1),
-        status=const.GenesisStati.successful.value))
+    @prepsql(
+        genesis_template(
+            ctime=datetime.datetime(2000, 1, 1),
+            status=const.GenesisStati.successful.value,
+        )
+    )
     def test_genesis_forget_successful(self) -> None:
         self.execute('genesis_forget')
         self.assertEqual({1, 2, 3, 4}, set(self.core.genesis_list_cases(RS)))
 
     @storage
-    @prepsql(genesis_template(
-        ctime=datetime.datetime(2000, 1, 1),
-        status=const.GenesisStati.rejected.value))
+    @prepsql(
+        genesis_template(
+            ctime=datetime.datetime(2000, 1, 1),
+            status=const.GenesisStati.rejected.value,
+        )
+    )
     def test_genesis_forget_rejected(self) -> None:
         self.execute('genesis_forget')
         self.assertEqual({1, 2, 3, 4}, set(self.core.genesis_list_cases(RS)))
 
     @storage
-    @prepsql(genesis_template(
-        ctime=datetime.datetime(2000, 1, 1),
-        status=const.GenesisStati.unconfirmed.value))
+    @prepsql(
+        genesis_template(
+            ctime=datetime.datetime(2000, 1, 1),
+            status=const.GenesisStati.unconfirmed.value,
+        )
+    )
     def test_genesis_forget_unconfirmed(self) -> None:
         self.execute('genesis_forget')
         self.assertEqual({1, 2, 3, 4}, set(self.core.genesis_list_cases(RS)))
 
     @storage
-    @prepsql(genesis_template(
-        status=const.GenesisStati.unconfirmed.value))
+    @prepsql(genesis_template(status=const.GenesisStati.unconfirmed.value))
     def test_genesis_forget_recent_unconfirmed(self) -> None:
         self.execute('genesis_forget')
         self.assertEqual({1, 2, 3, 4, 1001}, set(self.core.genesis_list_cases(RS)))
@@ -248,17 +283,18 @@ class TestCron(CronTest):
         """Do not forget finalized cases which are less than 90 days old."""
         self.execute('genesis_forget')
         self.assertEqual(
-            {1, 2, 3, 4, 1001, 1002, 1003}, set(self.core.genesis_list_cases(RS)))
+            {1, 2, 3, 4, 1001, 1002, 1003}, set(self.core.genesis_list_cases(RS))
+        )
 
     def test_changelog_remind_empty(self) -> None:
         self.cron.execute(['pending_changelog_remind'])
 
-    @prepsql(changelog_template(
-        ctime=now() - datetime.timedelta(hours=14)))
+    @prepsql(changelog_template(ctime=now() - datetime.timedelta(hours=14)))
     def test_changelog_remind_new(self) -> None:
         self.execute('pending_changelog_remind')
-        self.assertEqual(["changelog_requests_pending"],
-                         [mail.template for mail in self.mails])
+        self.assertEqual(
+            ["changelog_requests_pending"], [mail.template for mail in self.mails]
+        )
 
     @prepsql(changelog_template())
     def test_changelog_remind_newer(self) -> None:
@@ -269,8 +305,12 @@ class TestCron(CronTest):
         changelog_template(ctime=now() - datetime.timedelta(hours=14))
         + cron_template(
             title="pending_changelog_remind",
-            store={"tstamp": (now() - datetime.timedelta(hours=1)).timestamp(),
-                   "ids": ['2/2']}))
+            store={
+                "tstamp": (now() - datetime.timedelta(hours=1)).timestamp(),
+                "ids": ['2/2'],
+            },
+        )
+    )
     def test_changelog_remind_old(self) -> None:
         self.execute('pending_changelog_remind')
         self.assertEqual([], [mail.template for mail in self.mails])
@@ -278,15 +318,19 @@ class TestCron(CronTest):
     @prepsql(
         changelog_template(ctime=now() - datetime.timedelta(hours=14))
         + cron_template(
-            title="pending_changelog_remind",
-            store={"tstamp": 1, "ids": ['2/2']}))
+            title="pending_changelog_remind", store={"tstamp": 1, "ids": ['2/2']}
+        )
+    )
     def test_changelog_remind_older(self) -> None:
         self.execute('pending_changelog_remind')
-        self.assertEqual(["changelog_requests_pending"],
-                         [mail.template for mail in self.mails])
+        self.assertEqual(
+            ["changelog_requests_pending"], [mail.template for mail in self.mails]
+        )
 
-    @prepsql("DELETE FROM ml.subscription_states WHERE subscription_state = "
-             f"{const.SubscriptionState.pending};")
+    @prepsql(
+        "DELETE FROM ml.subscription_states WHERE subscription_state = "
+        f"{const.SubscriptionState.pending};"
+    )
     def test_subscription_request_remind_empty(self) -> None:
         self.execute('subscription_request_remind')
         self.assertEqual([], [mail.template for mail in self.mails])
@@ -295,26 +339,33 @@ class TestCron(CronTest):
         # Mailinglist 7 has pending subscription for persona 6
         # Mailinglist 54 for 2 and Mailinglist 56 for 7
         self.execute('subscription_request_remind')
-        self.assertEqual(["subscription_request_remind"] * 3,
-                         [mail.template for mail in self.mails])
+        self.assertEqual(
+            ["subscription_request_remind"] * 3, [mail.template for mail in self.mails]
+        )
 
-    @prepsql(subscription_request_template(persona_id=9, mailinglist_id=4)
-             + subscription_request_template(persona_id=27, mailinglist_id=4)
-             + subscription_request_template(persona_id=2, mailinglist_id=7)
-             + subscription_request_template(persona_id=3, mailinglist_id=8))
+    @prepsql(
+        subscription_request_template(persona_id=9, mailinglist_id=4)
+        + subscription_request_template(persona_id=27, mailinglist_id=4)
+        + subscription_request_template(persona_id=2, mailinglist_id=7)
+        + subscription_request_template(persona_id=3, mailinglist_id=8)
+    )
     def test_subscription_request_remind_multiple(self) -> None:
         self.execute('subscription_request_remind')
         # 7, 54 and 56 have pending subscriptions
-        self.assertEqual(["subscription_request_remind"] * 5,
-                         [mail.template for mail in self.mails])
+        self.assertEqual(
+            ["subscription_request_remind"] * 5, [mail.template for mail in self.mails]
+        )
 
-    @prepsql(cron_template(title="subscription_request_remind",
-                           store={7: {'persona_ids': [6],
-                                      'tstamp': now().timestamp()},
-                                  54: {'persona_ids': [2],
-                                      'tstamp': now().timestamp()},
-                                  56: {'persona_ids': [7],
-                                      'tstamp': now().timestamp()}}))
+    @prepsql(
+        cron_template(
+            title="subscription_request_remind",
+            store={
+                7: {'persona_ids': [6], 'tstamp': now().timestamp()},
+                54: {'persona_ids': [2], 'tstamp': now().timestamp()},
+                56: {'persona_ids': [7], 'tstamp': now().timestamp()},
+            },
+        )
+    )
     def test_subscription_request_remind_old(self) -> None:
         self.execute('subscription_request_remind')
         self.assertEqual([], [mail.template for mail in self.mails])
@@ -323,57 +374,68 @@ class TestCron(CronTest):
         self.execute('privilege_change_remind')
         self.assertEqual([], [mail.template for mail in self.mails])
 
-    @prepsql(privilege_change_template(
-        is_cde_admin=True, ctime=now() - datetime.timedelta(hours=6)))
+    @prepsql(
+        privilege_change_template(
+            is_cde_admin=True, ctime=now() - datetime.timedelta(hours=6)
+        )
+    )
     def test_privilege_change_remind_new(self) -> None:
         self.execute('privilege_change_remind')
-        self.assertEqual(['privilege_change_remind'],
-                         [mail.template for mail in self.mails])
+        self.assertEqual(
+            ['privilege_change_remind'], [mail.template for mail in self.mails]
+        )
 
     @prepsql(privilege_change_template(is_cde_admin=True))
     def test_privilege_change_remind_newer(self) -> None:
         self.execute('privilege_change_remind')
-        self.assertEqual([],
-                         [mail.template for mail in self.mails])
+        self.assertEqual([], [mail.template for mail in self.mails])
 
     @prepsql(
-        privilege_change_template(is_cde_admin=True,
-                                  ctime=now() - datetime.timedelta(hours=6))
+        privilege_change_template(
+            is_cde_admin=True, ctime=now() - datetime.timedelta(hours=6)
+        )
         + cron_template(
             title="privilege_change_remind",
-            store={"tstamp": (now() - datetime.timedelta(hours=1)).timestamp(),
-                   "ids": [1001]}))
+            store={
+                "tstamp": (now() - datetime.timedelta(hours=1)).timestamp(),
+                "ids": [1001],
+            },
+        )
+    )
     def test_privilege_change_remind_old(self) -> None:
         self.execute('privilege_change_remind')
-        self.assertEqual([],
-                         [mail.template for mail in self.mails])
+        self.assertEqual([], [mail.template for mail in self.mails])
 
     @prepsql(
-        privilege_change_template(is_cde_admin=True,
-                                  ctime=now() - datetime.timedelta(hours=6))
+        privilege_change_template(
+            is_cde_admin=True, ctime=now() - datetime.timedelta(hours=6)
+        )
         + cron_template(
-            title="privilege_change_remind",
-            store={"tstamp": 1, "ids": [1001]}))
+            title="privilege_change_remind", store={"tstamp": 1, "ids": [1001]}
+        )
+    )
     def test_privilege_change_remind_older(self) -> None:
         self.execute('privilege_change_remind')
-        self.assertEqual(['privilege_change_remind'],
-                         [mail.template for mail in self.mails])
+        self.assertEqual(
+            ['privilege_change_remind'], [mail.template for mail in self.mails]
+        )
 
     @prepsql("UPDATE cde.lastschrift SET revoked_at = now() WHERE id = 3")
     def test_forget_old_lastschrifts(self) -> None:
         name = "forget_old_lastschrifts"
-        self.assertEqual(
-            [1, 3], list(self.cde.list_lastschrift(RS, active=False)))
+        self.assertEqual([1, 3], list(self.cde.list_lastschrift(RS, active=False)))
         self.execute(name)
         # Make sure only the old lastschrift is deleted.
         self.assertEqual(
-            [3], list(self.cde.list_lastschrift(RS, active=False)),
+            [3],
+            list(self.cde.list_lastschrift(RS, active=False)),
         )
         self.assertEqual([1], self.core.get_cron_store(RS, name)["deleted"])
         self.execute(name)
         # Make sure nothing changes when the cron job runs again.
         self.assertEqual(
-            [3], list(self.cde.list_lastschrift(RS, active=False)),
+            [3],
+            list(self.cde.list_lastschrift(RS, active=False)),
         )
         self.assertEqual([1], self.core.get_cron_store(RS, name)["deleted"])
 
@@ -387,16 +449,11 @@ class TestCron(CronTest):
         self.execute("check_tally_ballot")
         ballots = self.assembly.get_ballots(RS, ballot_ids)
         self.assertEqual(2, sum(1 for b in ballots.values() if b['is_tallied']))
-        self.assertEqual(['ballot_tallied'] * 2,
-                         [mail.template for mail in self.mails])
+        self.assertEqual(['ballot_tallied'] * 2, [mail.template for mail in self.mails])
 
     def test_clean_session_log(self) -> None:
         # We just want to test that no exception is raised.
         self.execute('deactivate_old_sessions', 'clean_session_log')
-
-    def test_validate_stored_event_queries(self) -> None:
-        # We just want to test that no exception is raised.
-        self.execute('validate_stored_event_queries')
 
     @event_keeper
     def test_event_keeper(self) -> None:
@@ -408,32 +465,40 @@ class TestCron(CronTest):
         self.execute(cronjob)
         self.assertEqual([], [mail.template for mail in self.mails])
         self.assertEqual(
-            {"1": {}, "2": {}, "3": {}, "4": {}}, self.core.get_cron_store(RS, cronjob))
+            {"1": {}, "2": {}, "3": {}, "4": {}}, self.core.get_cron_store(RS, cronjob)
+        )
 
     # this part belongs to "Große Testakademie 2222"
-    @prepsql("UPDATE event.event_parts"
-             " SET (part_begin, part_end) = (CURRENT_DATE, CURRENT_DATE) WHERE id = 1")
+    @prepsql(
+        "UPDATE event.event_parts"
+        " SET (part_begin, part_end) = (CURRENT_DATE, CURRENT_DATE) WHERE id = 1"
+    )
     def test_mail_orgateam_reminders_halftime(self) -> None:
         cronjob = "mail_orgateam_reminders"
         self.execute(cronjob)
         self.assertEqual(["halftime_reminder"], [mail.template for mail in self.mails])
         self.assertEqual(
-            {"1": {}, "2": {}, "3": {}, "4": {}}, self.core.get_cron_store(RS, cronjob))
+            {"1": {}, "2": {}, "3": {}, "4": {}}, self.core.get_cron_store(RS, cronjob)
+        )
 
     # this part is the only event part of the event "CdE-Party 2050"
     # we need to set an orga address to the event, otherwise no mails can be sent
-    @prepsql("UPDATE event.event_parts"
-             " SET (part_begin, part_end) = (date '2000-01-01', date '2000-01-01')"
-             " WHERE id = 4;"
-             " UPDATE event.events SET orga_address = 'party@example.cde' WHERE id = 2")
+    @prepsql(
+        "UPDATE event.event_parts"
+        " SET (part_begin, part_end) = (date '2000-01-01', date '2000-01-01')"
+        " WHERE id = 4;"
+        " UPDATE event.events SET orga_address = 'party@example.cde' WHERE id = 2"
+    )
     def test_mail_orgateam_reminders_past(self) -> None:
         cronjob = "mail_orgateam_reminders"
         self.execute(cronjob)
         self.assertEqual(
-            ["past_event_reminder"], [mail.template for mail in self.mails])
+            ["past_event_reminder"], [mail.template for mail in self.mails]
+        )
         self.assertEqual(
             {"1": {}, "2": {'did_past_event_reminder': True}, "3": {}, "4": {}},
-            self.core.get_cron_store(RS, cronjob))
+            self.core.get_cron_store(RS, cronjob),
+        )
 
         # make sure that the past mail is sent only once
         self.mails = []
@@ -441,17 +506,19 @@ class TestCron(CronTest):
         self.assertEqual([], [mail.template for mail in self.mails])
         self.assertEqual(
             {"1": {}, "2": {'did_past_event_reminder': True}, "3": {}, "4": {}},
-            self.core.get_cron_store(RS, cronjob))
+            self.core.get_cron_store(RS, cronjob),
+        )
 
-    @prepsql(f"UPDATE event.events SET notify_on_registration ="
-             f" {const.NotifyOnRegistration.hourly.value}")
+    @prepsql(
+        f"UPDATE event.events SET notify_on_registration ="
+        f" {const.NotifyOnRegistration.hourly.value}"
+    )
     def test_notify_on_registration(self) -> None:
         cronjob = "notify_on_registration"
 
         base_time = now().replace(microsecond=0) + datetime.timedelta(seconds=5)
         delta = datetime.timedelta(minutes=5)
         with freezegun.freeze_time(base_time) as frozen_time:
-
             self.execute(cronjob)
             mail_expectation = ["notify_on_registration"]
             store_expectation: CdEDBObject = {
@@ -519,24 +586,157 @@ class TestCron(CronTest):
     @storage
     def test_forget_assembly_attachments(self) -> None:
         self.execute('forget_assembly_attachments')
-        self.assertTrue(self.assembly.get_attachment_store(RS).is_available(
-            self.get_sample_datum(
-                'assembly.attachment_versions', 4)['file_hash']))
+        self.assertTrue(
+            self.assembly.get_attachment_store(RS).is_available(
+                self.get_sample_datum('assembly.attachment_versions', 4)['file_hash']
+            )
+        )
         execsql("UPDATE assembly.attachment_versions SET dtime = now() WHERE id = 4")
         self.execute('forget_assembly_attachments')
-        self.assertFalse(self.assembly.get_attachment_store(RS).is_available(
-            self.get_sample_datum(
-                'assembly.attachment_versions', 4)['file_hash']))
+        self.assertFalse(
+            self.assembly.get_attachment_store(RS).is_available(
+                self.get_sample_datum('assembly.attachment_versions', 4)['file_hash']
+            )
+        )
         versions = self.get_sample_data('assembly.attachment_versions')
         for version in versions.values():
             if version['dtime'] is None and version['id'] != 4:
-                self.assertTrue(self.assembly.get_attachment_store(RS).is_available(
-                    version['file_hash']))
+                self.assertTrue(
+                    self.assembly.get_attachment_store(RS).is_available(
+                        version['file_hash']
+                    )
+                )
 
     @storage
     def test_forget_fotos(self) -> None:
         # We just want to test that no exception is raised.
         self.execute('forget_profile_fotos')
+
+    @storage
+    def test_forget_complaint_attachments(self) -> None:
+        store = self.complaint.get_attachment_store(RS)
+        new_attachment_hash = store.store(
+            (self.testfile_dir / "rechen.pdf").read_bytes()
+        )
+        old_attachment_hash = self.get_sample_datum(
+            models_complaint.ComplaintEntryVersion.database_table, (2)
+        )["attachment_hash"]
+        self.assertIsNotNone(old_attachment_hash)
+        self.assertTrue(store.is_available(new_attachment_hash))
+        self.assertTrue(store.is_available(old_attachment_hash))
+        self.execute('forget_complaint_attachments')
+        self.assertFalse(store.is_available(new_attachment_hash))
+        self.assertTrue(store.is_available(old_attachment_hash))
+
+    def test_cleanup_event_checkin_helpers(self) -> None:
+        event_id = EventID(1)
+        log_filter = EventLogFilter(
+            event_id=event_id,
+            codes=[
+                const.EventLogCodes.checkin_helper_added,
+                const.EventLogCodes.checkin_helper_removed,
+            ],
+        )
+        event = self.event.get_event(RS, event_id)
+        self.assertEqual(event.checkin_helpers, {38})
+        log_len, _ = self.event.retrieve_log(RS, log_filter)
+        self.assertEqual(log_len, 1)
+        self.execute('cleanup_event_checkin_helpers')
+        event = self.event.get_event(RS, event_id)
+        self.assertEqual(event.checkin_helpers, {38})
+        log_len, _ = self.event.retrieve_log(RS, log_filter)
+        self.assertEqual(log_len, 1)
+        with freezegun.freeze_time(now()) as frozen_time:
+            frozen_time.tick(self.conf["EVENT_CHECKIN_HELPER_DURATION"])
+            self.execute('cleanup_event_checkin_helpers')
+            event = self.event.get_event(RS, event_id)
+            self.assertEqual(event.checkin_helpers, set())
+            log_len, _ = self.event.retrieve_log(RS, log_filter)
+            self.assertEqual(log_len, 2)
+
+    @storage
+    def test_purge_complaint_entry_versions(self) -> None:
+        case_id, entry_id, version_id = 1, 4, 4
+        user_id = cast(RequestState, 1)
+
+        ctime = nearly_now()
+
+        with freezegun.freeze_time(now()) as frozen_time:
+            self.execute("purge_complaint_entry_versions")
+            self.assertEqual(
+                {"pending": [], "purged": []},
+                self.core.get_cron_store(RS, "purge_complaint_entry_versions"),
+            )
+            self.assertEqual([], [mail.template for mail in self.mails])
+
+            self.complaint.mark_entry_version_for_purge(user_id, entry_id, version_id)
+            self.execute("purge_complaint_entry_versions")
+            self.assertEqual(
+                {"pending": [version_id], "purged": []},
+                self.core.get_cron_store(RS, "purge_complaint_entry_versions"),
+            )
+
+            self.complaint.unmark_entry_version_for_purge(user_id, entry_id, version_id)
+
+            # Tick twice the delay and check that no purge happens due to unmarking.
+            frozen_time.tick(self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"] * 2)
+
+            self.execute("purge_complaint_entry_versions")
+            self.assertEqual(
+                {"pending": [], "purged": []},
+                self.core.get_cron_store(RS, "purge_complaint_entry_versions"),
+            )
+
+            self.complaint.mark_entry_version_for_purge(user_id, entry_id, version_id)
+            marked_for_purge = now()
+            self.execute("purge_complaint_entry_versions")
+            self.assertEqual(
+                {"pending": [version_id], "purged": []},
+                self.core.get_cron_store(RS, "purge_complaint_entry_versions"),
+            )
+
+            # Tick less than the delay and check that no purge happens.
+            frozen_time.tick(self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"] / 2)
+
+            self.execute("purge_complaint_entry_versions")
+            self.assertEqual(
+                {"pending": [version_id], "purged": []},
+                self.core.get_cron_store(RS, "purge_complaint_entry_versions"),
+            )
+
+            # Tick (more than) the remaining delay and check that the purge happens.
+            frozen_time.tick(self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"])
+
+            self.execute("purge_complaint_entry_versions")
+            self.assertEqual(
+                {"pending": [], "purged": [version_id]},
+                self.core.get_cron_store(RS, "purge_complaint_entry_versions"),
+            )
+
+            expectation = models_complaint.ComplaintEntryVersion(
+                id=vtypes.ID(version_id),
+                entry_id=vtypes.ID(entry_id),
+                length=None,
+                timestamp=None,
+                ctime=ctime,
+                submitted_by=cast(vtypes.PersonaID, 1),
+                dtime=ctime,
+                deleted_by=cast(vtypes.PersonaID, 1),
+                dreason=None,
+                marked_for_purge=marked_for_purge,
+                purged_by=cast(vtypes.PersonaID, user_id),
+                is_purged=True,
+                authors=set(),
+            )
+
+            case = self.complaint.get_case(RS, case_id)
+            self.assertEqual(
+                expectation.as_dict(),
+                case.entries[entry_id].versions_by_id[version_id].as_dict(),
+            )
+            self.assertEqual(
+                expectation, case.entries[entry_id].versions_by_id[version_id]
+            )
 
     @storage
     @unittest.mock.patch("cdedb.frontend.common.CdEMailmanClient")
@@ -550,6 +750,7 @@ class TestCron(CronTest):
                 pass
 
         # Commented items will be available in mailman 3.3
+        # list of available options in mailman: https://docs.mailman3.org/projects/mailman/en/latest/src/mailman/rest/docs/listconf.html
         base_settings = {
             'send_welcome_message': False,
             'send_goodbye_message': False,
@@ -567,6 +768,7 @@ class TestCron(CronTest):
             'dmarc_mitigate_unconditionally': False,
             # 'dmarc_wrapped_message_text': 'Nachricht wegen DMARC eingepackt.',
             'administrivia': True,
+            'preferred_language': 'de',
             'member_roster_visibility': 'moderators',
             'advertised': True,
             'max_num_recipients': 0,
@@ -575,32 +777,37 @@ class TestCron(CronTest):
             'bounce_notify_owner_on_bounce_increment': False,
         }
         mm_lists = {
-            'zombie': unittest.mock.MagicMock(
-                fqdn_listname='zombie@lists.cde-ev.de'),
+            'zombie': unittest.mock.MagicMock(fqdn_listname='zombie@lists.cde-ev.de'),
             'announce': unittest.mock.MagicMock(
                 fqdn_listname='announce@lists.cde-ev.de',
                 settings=SaveDict(
                     **base_settings,
-                    **{'display_name': "Announce name",
-                       'description': "Announce description",
-                       'info': "Announce info",
-                       'subject_prefix': "[ann] ",
-                       'max_message_size': 1024,
-                       'default_member_action': 'hold',
-                       'default_nonmember_action': 'hold',
-                       })),
+                    **{
+                        'display_name': "Announce name",
+                        'description': "Announce description",
+                        'info': "Announce info",
+                        'subject_prefix': "[ann] ",
+                        'max_message_size': 1024,
+                        'default_member_action': 'hold',
+                        'default_nonmember_action': 'hold',
+                    },
+                ),
+            ),
             'witz': unittest.mock.MagicMock(
                 fqdn_listname='witz@lists.cde-ev.de',
                 settings=SaveDict(
                     **base_settings,
-                    **{'display_name': "Witz name",
-                       'description': "Witz description",
-                       'info': "Witz info",
-                       'subject_prefix': "[witz] ",
-                       'max_message_size': 512,
-                       'default_member_action': 'hold',
-                       'default_nonmember_action': 'hold',
-                       })),
+                    **{
+                        'display_name': "Witz name",
+                        'description': "Witz description",
+                        'info': "Witz info",
+                        'subject_prefix': "[witz] ",
+                        'max_message_size': 512,
+                        'default_member_action': 'hold',
+                        'default_nonmember_action': 'hold',
+                    },
+                ),
+            ),
             'klatsch': unittest.mock.MagicMock(),
             'aktivenforum2000': unittest.mock.MagicMock(),
             'aktivenforum': unittest.mock.MagicMock(),
@@ -637,12 +844,12 @@ class TestCron(CronTest):
         }
 
         client = client_class.return_value
-        client.lists = [mm_lists['announce'], mm_lists['witz'],
-                        mm_lists['zombie']]
+        client.lists = [mm_lists['announce'], mm_lists['witz'], mm_lists['zombie']]
         client.get_domain.return_value.create_list.side_effect = mm_lists.get
         mm_lists['witz'].members = [
             unittest.mock.MagicMock(email='janis-spam@example.cde'),
-            unittest.mock.MagicMock(email='undead@example.cde')]
+            unittest.mock.MagicMock(email='undead@example.cde'),
+        ]
 
         #
         # Run
@@ -655,42 +862,45 @@ class TestCron(CronTest):
         umcall = unittest.mock.call
         # Creation
         self.assertEqual(
-            list(xsorted(
-                client.get_domain.return_value.create_list.call_args_list)),
-            list(xsorted([umcall('wait'),
-                          umcall('klatsch'),
-                          umcall('aka'),
-                          umcall('opt'),
-                          umcall('werbung'),
-                          umcall('aktivenforum'),
-                          umcall('aktivenforum2000'),
-                          umcall('kongress'),
-                          umcall('kongress-leitung'),
-                          umcall('participants'),
-                          umcall('party50-all'),
-                          umcall('party50'),
-                          umcall('info'),
-                          umcall('mitgestaltung'),
-                          umcall('moderatoren'),
-                          umcall('everyone'),
-                          umcall('lokalgruppen'),
-                          umcall('all'),
-                          umcall('gutscheine'),
-                          umcall('bau'),
-                          umcall('wal'),
-                          umcall('test-gast'),
-                          umcall('kanonisch'),
-                          umcall('42'),
-                          umcall('dsa'),
-                          umcall('platin'),
-                          umcall('geheim'),
-                          umcall('hogwarts'),
-                          umcall('gu'),
-                          umcall('whz'),
-                          umcall('whzmfz'),
-                          umcall('struktur'),
-                          umcall('migration'),
-                          ])))
+            list(xsorted(client.get_domain.return_value.create_list.call_args_list)),
+            list(
+                xsorted([
+                    umcall('wait'),
+                    umcall('klatsch'),
+                    umcall('aka'),
+                    umcall('opt'),
+                    umcall('werbung'),
+                    umcall('aktivenforum'),
+                    umcall('aktivenforum2000'),
+                    umcall('kongress'),
+                    umcall('kongress-leitung'),
+                    umcall('participants'),
+                    umcall('party50-all'),
+                    umcall('party50'),
+                    umcall('info'),
+                    umcall('mitgestaltung'),
+                    umcall('moderatoren'),
+                    umcall('everyone'),
+                    umcall('lokalgruppen'),
+                    umcall('all'),
+                    umcall('gutscheine'),
+                    umcall('bau'),
+                    umcall('wal'),
+                    umcall('test-gast'),
+                    umcall('kanonisch'),
+                    umcall('42'),
+                    umcall('dsa'),
+                    umcall('platin'),
+                    umcall('geheim'),
+                    umcall('hogwarts'),
+                    umcall('gu'),
+                    umcall('whz'),
+                    umcall('whzmfz'),
+                    umcall('struktur'),
+                    umcall('migration'),
+                ])
+            ),
+        )
         # Meta update
         expectation = {
             'advertised': True,
@@ -703,31 +913,45 @@ class TestCron(CronTest):
         }
         for key, value in expectation.items():
             self.assertEqual(mm_lists['witz'].settings[key], value)
-        self.assertEqual(mm_lists['werbung'].set_template.call_count, 3)
+        self.assertEqual(mm_lists['werbung'].set_template.call_count, 4)
         # Subscriber update
         self.assertEqual(
             mm_lists['witz'].subscribe.call_args_list,
-            [umcall('new-anton@example.cde',
+            [
+                umcall(
+                    'new-anton@example.cde',
                     display_name='Anton Administrator',
-                    pre_approved=True, pre_confirmed=True, pre_verified=True)])
+                    pre_approved=True,
+                    pre_confirmed=True,
+                    pre_verified=True,
+                )
+            ],
+        )
         self.assertEqual(
             mm_lists['witz'].unsubscribe.call_args_list,
-            [umcall('undead@example.cde', pre_confirmed=True, pre_approved=True)])
+            [umcall('undead@example.cde', pre_confirmed=True, pre_approved=True)],
+        )
         self.assertEqual(mm_lists['klatsch'].subscribe.call_count, 3)
         # Moderator update
         self.assertEqual(
-            mm_lists['aka'].add_moderator.call_args_list,
-            [umcall('garcia@example.cde')])
+            mm_lists['aka'].add_moderator.call_args_list, [umcall('garcia@example.cde')]
+        )
         # Whitelist update
         self.assertEqual(
             list(xsorted(mm_lists['aktivenforum'].add_role.call_args_list)),
-            list(xsorted([umcall('nonmember', 'captiankirk@example.cde'),
-                          umcall('nonmember', 'aliens@example.cde'),
-                          umcall('nonmember', 'drwho@example.cde')])))
+            list(
+                xsorted([
+                    umcall('nonmember', 'captiankirk@example.cde'),
+                    umcall('nonmember', 'aliens@example.cde'),
+                    umcall('nonmember', 'drwho@example.cde'),
+                ])
+            ),
+        )
 
         # Deletion
-        self.assertEqual(client.delete_list.call_args_list,
-                         [umcall('zombie@lists.cde-ev.de')])
+        self.assertEqual(
+            client.delete_list.call_args_list, [umcall('zombie@lists.cde-ev.de')]
+        )
 
     @storage
     @prepsql("DELETE FROM core.email_states")

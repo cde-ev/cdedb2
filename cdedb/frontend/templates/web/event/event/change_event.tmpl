@@ -25,6 +25,9 @@
         {{ util.href(cdedblink("event/show_free_texts"), gettext("Free Texts"), icon='bars', aclass='btn btn-info btn-sm') }}
         {{ util.href(cdedblink("event/part_summary"), gettext("Event Parts"), icon='clock', aclass='btn btn-info btn-sm') }}
         {{ util.href(cdedblink("event/orga_token_summary"), gettext("Orga Tokens"), icon="robot", aclass="btn btn-sm btn-default") }}
+        {% if is_privileged_for("event/manage_roles", admin_view_to_consider="event_mgmt") %}
+            {{ util.href(cdedblink("event/manage_roles"), gettext("Manage Roles"), aclass="btn btn-default btn-sm", icon="user-friends") }}
+        {% endif %}
     </div>
 
     <form action="{{ cdedblink('event/change_event') }}" method="POST" id="changeeventform" class="form-horizontal">
@@ -76,15 +79,24 @@
                                 "Questionnaire, people will be shown a list of successfully detected lodgement wishes.")) }}
         {% if ambience['event']['tracks'] %}
             {{ util.form_input_checkbox(name="is_course_assignment_visible", label=gettext("Visibility of Course Assignment"),
-                                    info=gettext("If checked, the course assignment is shown to the participants. "
-                                    "In particular, it is shown to each participant on the registration status and on the "
-                                    "Participant List.")) }}
+                                    info=gettext(
+                                        "If checked, the course assignment is shown to the participants."
+                                        " In particular, it is shown to each participant on the registration status and on the Participant List."
+                                        " Additionally, instructors will be able to see their assigned attendees, even if the participant list isn't visible.")) }}
         {% endif %}
         {{ util.form_input_checkbox(name="is_cancelled", label=gettext("Cancellation of the event"),
                                 info=gettext("If checked, the event is shown as cancelled. This can be undone and "
                                 "allows the event to be archived. There are no further effects. Do not do this without "
                                 "consulting the chairmen of the CdE.")) }}
-        {{ util.form_input_text(name="registration_start", label=gettext("Registration Start"), type='datetime-local') }}
+        {% call util.form_input_text(
+                name="registration_start", label=gettext("Registration Start"), type='datetime-local',
+                outerclass="has-warning" if not ambience['event'].is_registration_approved else "") %}
+            {% if not ambience['event'].is_registration_approved %}
+                {% call util.output_info("", aclass="help-block alert alert-warning") %}
+                    {{ gettext("Registration has not yet been approved. People will not be able to register at the time configured here.") }}
+                {% endcall %}
+            {% endif %}
+        {% endcall %}
         {{ util.form_input_text(name="registration_soft_limit", label=gettext("Registration Soft Limit"),
                                 type="datetime-local",
                                 info=gettext("Is displayed initially. Changes to registration are only possible until "
@@ -102,12 +114,12 @@
                                 info=gettext("Only leave this empty if payment is going to be handled directly by the orgas.")) }}
 
         <h4 class="heading-underline">{% trans %}Special Purpose Custom Fields{% endtrans %}</h4>
-        {{ util.form_input_select(name="lodge_field_id", label=gettext("Field for Rooming Preferences"), entries=lodge_fields,
+        {{ util.form_input_select(name="lodge_field_id", label=gettext("Field for Rooming Preferences"), entries=fields["lodge_field_id"]|entries('id', 'title'),
                                   nulloption=nbsp, info=gettext("The custom field in which the participants’ "
                                   "rooming preferences will be saved. It is used for the automatic detection "
                                   "of lodgement wishes and the lodgement graph. Fieldtype: Text")) }}
         {{ util.form_input_select(name="reimbursement_iban_field_id", label=gettext("Field for Reimbursement IBAN"),
-                                  entries=reimbursement_fields, nulloption=nbsp,
+                                  entries=fields["reimbursement_iban_field_id"]|entries('id', 'title'), nulloption=nbsp,
                                   info=gettext("The custom field in which IBANs for reimbursements are saved."
                                                " Will be automatically selected by certain fee related queries."
                                                " Fieldtype: IBAN")) }}

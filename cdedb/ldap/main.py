@@ -6,6 +6,7 @@ import os
 import signal
 import socket
 import ssl
+import sys
 
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
@@ -14,13 +15,17 @@ from cdedb.config import Config, SecretsConfig
 from cdedb.ldap.backend import LDAPsqlBackend
 from cdedb.ldap.entry import RootEntry
 from cdedb.ldap.server import LdapHandler
+from cdedb.logging_ import setup_root_logger
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("cdedb.ldap")
 
 
 async def main() -> None:
     conf = Config()
     secrets = SecretsConfig()
+
+    if conf.get("CDEDB_TEST"):
+        setup_root_logger(test=True, replace=True)
 
     logger.debug("Waiting for database connection ...")
     conn_params = dict(
@@ -47,11 +52,12 @@ async def main() -> None:
         # and https://issues.apache.org/jira/browse/DIRAPI-381.
         context.maximum_version = ssl.TLSVersion.TLSv1_2
     context.load_cert_chain(
-        certfile=conf["LDAP_PEM_PATH"], keyfile=conf["LDAP_KEY_PATH"])
+        certfile=conf["LDAP_PEM_PATH"], keyfile=conf["LDAP_KEY_PATH"]
+    )
 
     # Systemd socket activation
     if "LISTEN_FDS" in os.environ:
-        logging.debug("Detected socket activation")
+        logger.debug("Detected socket activation")
         # Systemd passes fds from SD_LISTEN_FDS_START...SD_LISTEN_FDS_START+LISTEN_FDS,
         # SD_LISTEN_FDS_START is always 3, and we only expect one fd to be passed to us.
         # Set family and type to -1 which instructs Python
@@ -67,28 +73,38 @@ async def main() -> None:
         port=port,
         sock=sock,
         ssl=context,
+        # Delay start until handlers are fully set up.
+        start_serving=False,
     )
 
     for s in server.sockets:
-        logging.info(f"Listening on {s!r}")
+        logger.info(f"Listening on {s!r}")
 
-    def shutdown(server: asyncio.Server) -> None:
-        # TODO We should probably send a NoticeOfDisconnection
-        # after some grace period
-        logger.info("Shutting down")
-        server.close()
+    stop = asyncio.Event()
 
-    server.get_loop().add_signal_handler(signal.SIGTERM, lambda: shutdown(server))
-    server.get_loop().add_signal_handler(signal.SIGINT, lambda: shutdown(server))
+    server.get_loop().add_signal_handler(signal.SIGTERM, stop.set)
+    server.get_loop().add_signal_handler(signal.SIGINT, stop.set)
     logger.info("Startup completed")
 
     async with server:
         try:
-            await server.serve_forever()
-        except asyncio.CancelledError:
-            logger.info("Server shut down")
+            await server.start_serving()
+            await stop.wait()
+        finally:
+            # This entire block could be dropped if this issue is resolved (and backported):
+            #  https://github.com/python/cpython/pull/124689#issuecomment-2746315898
+            logger.info("Closing server")
+            server.close()
+            # TODO: drop version check once 3.13 is deployed with uv.
+            if sys.version_info >= (3, 13):  # noqa: UP036
+                logger.info("Closing clients")
+                server.close_clients()
+            logger.info("Waiting for close")
+            await server.wait_closed()
+            logger.info("Server closed")
+
+            # TODO: Send a NoticeOfDisconnection after a while.
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
     asyncio.run(main())

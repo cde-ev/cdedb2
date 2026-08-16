@@ -1,9 +1,11 @@
 {% set sidenav_active='assembly_assembly_log' %}
 {% extends "web/assembly/base.tmpl" %}
+{% set jshint="weak" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/logging.tmpl" as logging with context %}
 {% block scripts %}
     {{ util.cdedb_script('cdedb_searchpersona.js') }}
+    {{ util.cdedb_script('cdedb_helper.js') }}
 {% endblock %}
 {% block title %}
     {% trans title=ambience['assembly']['title'] %}{{ title }}: Log{% endtrans %}
@@ -21,9 +23,14 @@
 {% endblock %}
 
 {% block content %}
-    {% call logging.table(log) %}
+    {% call logging.table(log, ['Ballot']) %}
         {% for entry in log %}
-            {{ logging.row(entry, enums['AssemblyLogCodes'], loop.index) }}
+            {% set ballot_link = None %}
+            {% if entry['ballot_id'] %}
+                {% set ballot_link = util.href(cdedblink("assembly/show_ballot", {"assembly_id": entry['assembly_id'], "ballot_id": entry['ballot_id']}),
+                                               ballots[entry['ballot_id']]) %}
+            {% endif %}
+            {{ logging.row(entry, enums['AssemblyLogCodes'], loop.index, [ballot_link]) }}
         {% endfor %}
     {% endcall %}
 

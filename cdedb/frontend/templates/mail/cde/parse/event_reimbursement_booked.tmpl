@@ -1,0 +1,13 @@
+Hallo {{ transfer.persona|persona_name(with_family_name=False) }},
+
+Für die Veranstaltung
+    {{ event['title'] }}
+haben wir dir am {{ transfer.date|date(lang="de") }} eine Erstattung in Höhe von
+    {{ -transfer.amount|money }}
+überwiesen.
+
+Sollte diese Erstattung nicht bei dir angekommen sein, kontaktiere bitte das Buchhaltungsteam unter:
+    <{{ finance_admin_address }}>
+
+Viele Grüße
+die CdE-Datenbank

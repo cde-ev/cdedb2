@@ -7,4 +7,5 @@ logic will be contained in here.
 
 All output formatting should be handled by the :py:mod:`jinja2` templates.
 """
+
 pass

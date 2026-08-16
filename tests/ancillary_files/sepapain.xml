@@ -83,7 +83,7 @@ xsi:schemaLocation="urn:iso:std:iso:20022:tech:xsd:pain.008.001.02 pain.008.001.
                                                         </FinInstnId>
                                                 </DbtrAgt>
                                                 <Dbtr>
-                                                        <Nm>Dagobert Anatidae</Nm>
+                                                        <Nm>Dagobert Anatidae &amp; Co. KG</Nm>
                                                 </Dbtr>
                                                 <DbtrAcct>
                                                         <Id>

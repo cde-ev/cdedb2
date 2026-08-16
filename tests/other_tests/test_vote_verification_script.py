@@ -7,8 +7,10 @@ import unittest
 class TestVerificationScript(unittest.TestCase):
     def test_verify_vote(self) -> None:
         output = subprocess.check_output([
-            "bin/verify_vote.py", "snthdiueoa",
-            "tests/ancillary_files/ballot_result.json"])
+            "bin/verify_vote.py",
+            "snthdiueoa",
+            "tests/ancillary_files/ballot_result.json",
+        ])
         expectation = b"""Versammlung: Internationaler Kongress
 Abstimmung: Antwort auf die letzte aller Fragen
 Optionen: Ich (1), 23 (2), 42 (3), Philosophie (4)

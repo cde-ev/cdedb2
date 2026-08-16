@@ -1,0 +1,15 @@
+Liebe Orgas,
+
+Die Anmeldung für die Veranstaltung
+    {{ ambience["event"].title }}
+wurde von
+    {{ user.persona_name(include_nickname=True) }}
+{% if approve -%}
+freigeschaltet.
+{% else -%}
+gesperrt.
+{% endif %}
+
+Viele Grüße
+
+Die Datenbank

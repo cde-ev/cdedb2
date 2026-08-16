@@ -1,9 +1,12 @@
 """Base definition of CdEDB models using dataclasses."""
+
 import abc
+import collections
 import copy
 import dataclasses
 import functools
 import inspect
+import sys
 import typing
 from collections.abc import Collection
 from dataclasses import dataclass
@@ -14,48 +17,67 @@ from typing import (
     ClassVar,
     Literal,
     Self,
-    TypeVar,
     cast,
     get_args,
     get_origin,
 )
 
 import cdedb.common.validation.types as vtypes
-from cdedb.common import CdEDBObject, get_mandatory_form_fields, is_optional_type
+from cdedb.common import (
+    CdEDBObject,
+    Error,
+    get_mandatory_form_fields,
+    get_mandatory_type,
+    is_optional_type,
+    json_serialize,
+)
+from cdedb.common.query import Query, QueryScope, QuerySpec
 from cdedb.common.sorting import Sortkey, collate, xsorted
 from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
 
 if TYPE_CHECKING:
-    from typing_extensions import Self
+    from cdedb.database.query import DatabaseValue_s
 
-    from cdedb.database.query import (
-        DatabaseValue_s,
-    )
-
-T = TypeVar("T")
 # Should actually be a vtypes.ID instead of an int
-CdEDataclassMap = dict[int, T]
+type CdEDataclassMap[T] = dict[int, T]
 
 
 def requestdict_field_spec(field: dataclasses.Field[Any]) -> Literal["str", "[str]"]:
     """The spec of this field, expected by the REQUESTdatadict extractor."""
     if get_origin(field.type) in {list, tuple, set}:
+        if get_args(field.type) == (vtypes.PersonaID,):
+            # For fields annotated as `list[vtypes.PersonaId]` we want to extract them
+            #  as a CSV-string, rather than as a list from the multi dict.
+            return "str"
         return "[str]"
     else:
         return "str"
 
 
-class AbstractFlag(Flag):
-    """Boilerplate of flags representing metadata of CdEDataclass fields."""
+class AbstractMetaData:
+    """Boilerplate for metadata for CdEDataclass fields."""
+
+    @classmethod
+    def get_metadata_name(cls) -> str:
+        return f"cdedb.{cls.__name__}"
 
     @property
     def as_dict(self) -> dict[str, Self]:
         """Hide boilerplate of turning the flag into a dict expected by `dataclasses.field`."""
-        return {f"cdedb.{self.__class__}": self}
+        return {self.get_metadata_name(): self}
 
-    def in_field(self, field: dataclasses.Field[T]) -> bool:
+
+class AbstractFlag(AbstractMetaData, Flag):
+    """Boilerplate for metadata flags for CdEDataclass fields."""
+
+    @property
+    def as_dict(self) -> dict[str, Self]:
+        """Hide boilerplate of turning the flag into a dict expected by `dataclasses.field`."""
+        return {self.get_metadata_name(): self}
+
+    def in_field(self, field: dataclasses.Field[Any]) -> bool:
         """Hide boilerplate of extracting the flag information from `dataclasses.Field.metadata`."""
-        return self in field.metadata.get(f"cdedb.{self.__class__}", {})
+        return self in field.metadata.get(self.get_metadata_name(), self.__class__(0))
 
 
 class MetaFlag(AbstractFlag):
@@ -72,6 +94,10 @@ class MetaFlag(AbstractFlag):
     validate_update_exclude = auto()
     """Omit this field from `cls.validation_fields(creation=False)`.
     Can be used to make a field immutable."""
+    validate_include = auto()
+    """Include this field in `cls.validation_fields()`.
+    Can be used if the field would otherwise be automatically excluded, like
+    a field containing another dataclass."""
     validate_exclude = validate_creation_exclude | validate_update_exclude
     """Omit this field from `cls.validation_fields()`.
     Can be used for fields that are magically inserted elsewhere."""
@@ -81,6 +107,15 @@ class MetaFlag(AbstractFlag):
     validate_update_mandatory = auto()
     """Make this field mandatory in `cls.validation_fields(creation=False)`.
     By default, all fields here are optional."""
+    validate_creation_skip = auto()
+    """Validate this field as `Any` in `cls.validation_fields(creation=True)`.
+    Can be used for fields that are validated manually."""
+    validate_update_skip = auto()
+    """Validate this field as `Any` in `cls.validation_fields(creation=False)`.
+    Can be used for fields that are validated manually."""
+    validate_skip = validate_creation_skip | validate_update_skip
+    """Validate this field as `Any` in `cls.validation_fields(creation=None)`.
+    Can be used for fields that are validated manually."""
 
     # request
 
@@ -128,6 +163,9 @@ class MetaFlag(AbstractFlag):
 
     # asdict
 
+    asdict_exclude = auto()
+    """Exclude this field from `self.asdict()`. Useful for dicts nested in other dicts,
+    making referential ids superfluous."""
     asdict_include = auto()
     """Include the field to `self.asdict()`, even if it would otherwise not be."""
 
@@ -158,6 +196,8 @@ class MetaFlag(AbstractFlag):
         # like dict[_, type_]
         if origin is dict:
             _, type_ = typing.get_args(type_)
+        if origin is CdEDataclassMap:
+            type_ = typing.get_args(type_)[0]
         # like "type_"
         if isinstance(type_, typing.ForwardRef):
             type_ = type_.__forward_arg__
@@ -173,10 +213,15 @@ class CdEDataclass:
     The behavior of some of the default methods can be modified by setting metadata on
     dataclass fields via `metadata=MetaFlag.flag.as_dict`.
     """
+
     # for ephemeral instances, this is actually negative despite its annotation
     id: vtypes.ID = dataclasses.field(
-        metadata=(MetaFlag.input_creation_exclude | MetaFlag.request_exclude
-                  | MetaFlag.validate_update_mandatory).as_dict)
+        metadata=(
+            MetaFlag.input_creation_exclude
+            | MetaFlag.request_exclude
+            | MetaFlag.validate_update_mandatory
+        ).as_dict
+    )
 
     database_table: ClassVar[str]
     entity_key: ClassVar[str] = "id"
@@ -199,7 +244,7 @@ class CdEDataclass:
             field.name: values[field.name]
             for field in self.dataclass_fields()
             if field.name in database_fields
-                and not MetaFlag.to_database_exclude.in_field(field)
+            and not MetaFlag.to_database_exclude.in_field(field)
         }
 
         # Storing an ephemeral object to database corresponds to its creation. In this
@@ -225,6 +270,11 @@ class CdEDataclass:
                     if data.get(name) is not None:
                         data[name] = type_(data[name])
 
+            # Convert literal types.
+            if get_origin(type_) == Literal:
+                if len(set(get_args(type_))) == 1:
+                    data[name] = get_args(type_)[0]
+
             # Convert array types.
             for array_type in {list, tuple, set}:
                 if get_origin(type_) is array_type:
@@ -233,25 +283,31 @@ class CdEDataclass:
                         continue
                     data[name] = array_type(data[name])
                     # Check if we can convert the elements of the array.
-                    if (len(set(get_args(type_)) - {Ellipsis}) == 1
-                            and isinstance((inner_type := get_args(type_)[0]), type)):
+                    if len(set(get_args(type_)) - {Ellipsis}) == 1 and isinstance(
+                        (inner_type := get_args(type_)[0]), type
+                    ):
                         # Convert list/set/tuple[enum] fields into enum members.
                         if issubclass(inner_type, (CdEEnum, CdEIntEnum)):
-                            data[name] = array_type(
-                                inner_type(x) for x in data[name])
+                            data[name] = array_type(inner_type(x) for x in data[name])
         return cls(**data)
 
     @classmethod
-    def many_from_database(cls, list_of_data: Collection[CdEDBObject],
-                           ) -> CdEDataclassMap["Self"]:
-        return {
-            obj.id: obj for obj in xsorted(map(cls.from_database, list_of_data))
-        }
+    def many_from_database(
+        cls, list_of_data: Collection[CdEDBObject], sort: bool = True
+    ) -> CdEDataclassMap["Self"]:
+        sorter = xsorted if sort else list
+        return {obj.id: obj for obj in sorter(map(cls.from_database, list_of_data))}
 
     @classmethod
-    def get_select_query(cls, entities: Collection[int],
-                         entity_key: str | None = None,
-                         ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
+    def many_from_database_list(
+        cls, list_of_data: Collection[CdEDBObject]
+    ) -> list["Self"]:
+        return xsorted(map(cls.from_database, list_of_data))
+
+    @classmethod
+    def get_select_query(
+        cls, entities: Collection[int], entity_key: str | None = None
+    ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
         query = f"""
             SELECT {','.join(cls.database_fields())}
             FROM {cls.database_table}
@@ -275,7 +331,7 @@ class CdEDataclass:
 
     @classmethod
     def validation_fields(
-            cls, *, creation: bool,
+        cls, *, creation: bool
     ) -> tuple[vtypes.MutableTypeMapping, vtypes.MutableTypeMapping]:
         """Map the field names to the type of the fields to validate this entity.
 
@@ -285,32 +341,52 @@ class CdEDataclass:
         mandatory: vtypes.MutableTypeMapping = {}
         optional: vtypes.MutableTypeMapping = {}
         for field in cls.dataclass_fields():
-            if MetaFlag.is_excluded(field.type):
+            field_type = cast(type[Any], field.type)
+            if (
+                not creation and MetaFlag.validate_update_skip.in_field(field)
+                or (creation and MetaFlag.validate_creation_skip.in_field(field))
+            ):  # fmt: skip
+                field_type = Any
+            if state := cls._is_validation_field_mandatory(field, creation=creation):
+                mandatory[field.name] = get_mandatory_type(field_type)
+            elif state is None:
                 continue
-            field.type = cast(type[Any], field.type)
-            if creation:
-                if MetaFlag.validate_creation_exclude.in_field(field):
-                    continue
-                if MetaFlag.validate_creation_optional.in_field(field):
-                    optional[field.name] = field.type
-                    continue
-                if (
-                        is_optional_type(field.type)
-                        # Fields with a default are optional at creation.
-                        or field.default is not dataclasses.MISSING
-                        or field.default_factory is not dataclasses.MISSING
-                ):
-                    optional[field.name] = field.type
-                else:
-                    mandatory[field.name] = field.type
             else:
-                if MetaFlag.validate_update_exclude.in_field(field):
-                    continue
-                if MetaFlag.validate_update_mandatory.in_field(field):
-                    mandatory[field.name] = field.type
-                else:
-                    optional[field.name] = field.type
+                optional[field.name] = field_type
         return mandatory, optional
+
+    @classmethod
+    def _is_validation_field_mandatory(
+        cls, field: dataclasses.Field[Any], creation: bool
+    ) -> bool | None:
+        """Uninlined code to determine a fields validation status.
+
+        Returns 'true' if the field is mandatory, 'false' if the field is optional,
+        and 'None' if the field is excluded from validation.
+        """
+        if MetaFlag.is_excluded(field.type) and not MetaFlag.validate_include.in_field(field):  # fmt: skip
+            return None
+        if creation:
+            if MetaFlag.validate_creation_exclude.in_field(field):
+                return None
+            elif MetaFlag.validate_creation_optional.in_field(field):
+                return False
+            elif (
+                is_optional_type(field.type)
+                # Fields with a default are optional at creation.
+                or field.default is not dataclasses.MISSING
+                or field.default_factory is not dataclasses.MISSING
+            ):
+                return False
+            else:
+                return True
+        else:  # noqa: PLR5501
+            if MetaFlag.validate_update_exclude.in_field(field):
+                return None
+            elif MetaFlag.validate_update_mandatory.in_field(field):
+                return True
+            else:
+                return False
 
     def _to_validation(self) -> CdEDBObject:
         """Generate a dict representation of this entity to be validated."""
@@ -321,8 +397,10 @@ class CdEDataclass:
         data = {
             field.name: values[field.name]
             for field in self.dataclass_fields()
-            if field.name in mandatory
-                or field.name in optional and field.name in values
+            if (
+                field.name in mandatory
+                or (field.name in optional and field.name in values)
+            )
         }
 
         # during creation etc. the entity has no id, it is only a placeholder
@@ -344,7 +422,7 @@ class CdEDataclass:
 
     @classmethod
     def requestdict_fields(
-            cls, *, creation: bool | None,
+        cls, *, creation: bool | None
     ) -> list[tuple[str, Literal["str", "[str]"]]]:
         """Determine which fields of this entity are extracted via @REQUESTdatadict.
 
@@ -370,10 +448,15 @@ class CdEDataclass:
     def database_fields(cls) -> list[str]:
         """List all fields of this entity which are saved to the database."""
         return [
-            field.name for field in cls.dataclass_fields()
-            if not MetaFlag.is_excluded(field.type)
-               and not MetaFlag.database_exclude.in_field(field)
-            or MetaFlag.database_include.in_field(field)
+            field.name
+            for field in cls.dataclass_fields()
+            if (
+                (
+                    not MetaFlag.is_excluded(field.type)
+                    and not MetaFlag.database_exclude.in_field(field)
+                )
+                or MetaFlag.database_include.in_field(field)
+            )
         ]
 
     def as_dict(self) -> dict[str, Any]:
@@ -386,8 +469,9 @@ class CdEDataclass:
         """
         return self._asdict_inner(self, dict)
 
-    def _asdict_inner(self, obj: Any,  # type: ignore[no-untyped-def]
-                      dict_factory: Any):
+    def _asdict_inner(  # type: ignore[no-untyped-def]
+        self, obj: Any, dict_factory: Any
+    ):
         if dataclasses._is_dataclass_instance(obj):  # type: ignore[attr-defined]
             result = []
             for f in dataclasses.fields(obj):
@@ -429,19 +513,20 @@ class CdEDataclass:
         elif isinstance(obj, dict):
             return type(obj)((self._asdict_inner(k, dict_factory),
                               self._asdict_inner(v, dict_factory))
-                             for k, v in obj.items())
+                             for k, v in obj.items())  # fmt: skip
         else:
             return copy.deepcopy(obj)
 
     @staticmethod
     def _include_in_dict(field: dataclasses.Field[Any]) -> bool:
         """Should this field be part of the dict representation of this object?"""
-        return (MetaFlag.asdict_include.in_field(field)
-                or not MetaFlag.is_excluded(field.type))
+        return (
+            MetaFlag.asdict_include.in_field(field)
+            or not MetaFlag.is_excluded(field.type)
+        ) and not MetaFlag.asdict_exclude.in_field(field)
 
     @abc.abstractmethod
-    def get_sortkey(self) -> Sortkey:
-        ...
+    def get_sortkey(self) -> Sortkey: ...
 
     def _lt_inner(self, other: "CdEDataclass") -> bool:
         # Ensure natural sort. See xsorted for details.
@@ -454,3 +539,87 @@ class CdEDataclass:
             return NotImplemented
 
         return self._lt_inner(other)
+
+
+@dataclasses.dataclass
+class StoredQuery(CdEDataclass):
+    id: vtypes.ID = dataclasses.field(metadata=MetaFlag.input_creation_exclude.as_dict)
+
+    query_name: str
+
+    scope: QueryScope = dataclasses.field(metadata=MetaFlag.request_exclude.as_dict)
+    serialized_query: vtypes.QueryInput = dataclasses.field(
+        metadata=MetaFlag.request_exclude.as_dict
+    )
+    errors: list["Error"] = dataclasses.field(
+        default_factory=list,
+        compare=False,
+        repr=False,
+        metadata=MetaFlag.exclude.as_dict,
+    )
+
+    query_group: str | None = None
+
+    @property
+    def user_created(self) -> bool:
+        return bool(self.id and self.id > 0)
+
+    def _get_spec(self) -> QuerySpec:
+        return self.scope.get_spec()
+
+    @functools.cached_property
+    def query(self) -> Query:
+        spec = self._get_spec()
+        from cdedb.common.validation.validate import validate_check  # noqa: PLC0415
+
+        query: Query | None
+        query, errs = validate_check(
+            vtypes.QueryInput,
+            self.serialized_query,
+            ignore_warnings=True,
+            spec=spec,
+        )
+        if not query:
+            self.errors = errs
+            return cast(Query, None)
+        query.query_id = self.id
+        return query
+
+    def serialize_to_url(self) -> CdEDBObject:
+        ret: CdEDBObject = {}
+        if self.query:
+            ret |= self.query.serialize_to_url()
+        if self.user_created:
+            ret |= {"query_name": self.query_name, "query_group": self.query_group}
+        return ret
+
+    def query_by_name(self) -> tuple[str, CdEDBObject]:
+        if self.scope in {
+            QueryScope.registration,
+            QueryScope.lodgement,
+            QueryScope.event_course,
+        }:
+            return "event/event_query_by_name", {"query_name": self.query_name}
+        else:
+            return "core/query_by_name", {
+                "query_name": self.query_name,
+                "scope": self.scope,
+            }
+
+    def to_database(self) -> CdEDBObject:
+        ret = super().to_database()
+        ret["serialized_query"] = json_serialize(self.serialized_query)
+        return ret
+
+    def get_sortkey(self) -> Sortkey:
+        return (
+            self.query_group or chr(sys.maxunicode),  # Sort empty group last.
+            self.query_name,
+        )
+
+    @classmethod
+    def group_queries(cls, queries: list[Self]) -> dict[str, list[Self]]:
+        ret = collections.defaultdict(list)
+        for q in xsorted(queries):
+            ret[q.query_group or ""].append(q)
+        return ret

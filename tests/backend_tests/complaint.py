@@ -1,12 +1,24 @@
+import copy
 import datetime
 import functools
+from types import SimpleNamespace
+from typing import cast
 
+import freezegun
+
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.complaint as models
-from cdedb.common import CdEDBObject, PrivilegeError, nearly_now, now
+from cdedb.common import CdEDBObject, PrivilegeError, get_hash, nearly_now, now
+from cdedb.common.crypt import get_decrypt
+from cdedb.common.exceptions import AdverseCompanionError
 from cdedb.common.query import Query, QueryOperators, QueryScope
-from tests.common import USER_DICT, BackendTest, as_users, execsql
+from cdedb.common.query.log_filter import ComplaintLogFilter
+from tests.common import CRON, USER_DICT, BackendTest, as_users, execsql, storage
 from tests.other_tests.test_validation import INVAL, TestValidationBase
+
+InvolvedID = lambda x: vtypes.InvolvedID(vtypes.ID(x))
+PersonaID = lambda x: vtypes.PersonaID(vtypes.ID(x))
 
 
 class TestComplaintBackend(BackendTest):
@@ -17,210 +29,308 @@ class TestComplaintBackend(BackendTest):
     @as_users("simon")
     def test_get_case(self) -> None:
         expectation = models.Case(
-            id=1,  # type: ignore[arg-type]
+            id=vtypes.ID(1),
             kind=const.ComplaintKind.other_harassment,
             is_grave=False,
             summary="Jemand schnarcht ganz furchtbar.",
             start_date=datetime.date(2025, 5, 28),
             end_date=None,
             involved={
-                const.ComplaintInvolvementType.affected: {4},
-                const.ComplaintInvolvementType.target: {2},
-            },
-            informed_involved={4},
-            companions={
-                3: {2},
-                7: {4},
-            },
-            withdrawn_companions={
-                3: {2},
+                InvolvedID(1): models.ComplaintInvolved(
+                    id=InvolvedID(1),
+                    persona_id=PersonaID(2),
+                    involvement_type=const.ComplaintInvolvementType.target,
+                    is_informed=False,
+                    _companions={PersonaID(3): False},
+                ),
+                InvolvedID(2): models.ComplaintInvolved(
+                    id=InvolvedID(2),
+                    persona_id=PersonaID(4),
+                    involvement_type=const.ComplaintInvolvementType.affected,
+                    is_informed=True,
+                    _companions={PersonaID(7): True},
+                ),
             },
             entries={
                 1: models.ComplaintEntry(
-                    id=1,  # type: ignore[arg-type]
-                    case_id=1,  # type: ignore[arg-type]
+                    id=vtypes.ID(1),
+                    case_id=vtypes.ID(1),
                     entry_type=const.ComplaintEntryType.generic_information,
                     parent_id=None,
                     concerned_id=None,
                     all_versions=[
                         models.ComplaintEntryVersion(
-                            id=1,  # type: ignore[arg-type]
-                            entry_id=1,  # type: ignore[arg-type]
+                            id=vtypes.ID(1),
+                            entry_id=vtypes.ID(1),
                             length=146,
                             timestamp=datetime.datetime(
-                                2025, 5, 28, 14, tzinfo=datetime.timezone.utc
+                                2025, 5, 28, 14, tzinfo=datetime.UTC
                             ),
                             ctime=nearly_now(),
-                            submitted_by=1,  # type: ignore[arg-type]
-                            authors={3},  # type: ignore[arg-type]
+                            submitted_by=PersonaID(1),
+                            authors={PersonaID(3)},
                         ),
                     ],
                 ),
                 2: models.ComplaintEntry(
-                    id=2,  # type: ignore[arg-type]
-                    case_id=1,  # type: ignore[arg-type]
+                    id=vtypes.ID(2),
+                    case_id=vtypes.ID(1),
                     entry_type=const.ComplaintEntryType.provisional_statement_given,
                     parent_id=None,
-                    concerned_id=2,  # type: ignore[arg-type]
+                    concerned_id=PersonaID(2),
                     all_versions=[
                         models.ComplaintEntryVersion(
-                            id=2,  # type: ignore[arg-type]
-                            entry_id=2,  # type: ignore[arg-type]
+                            id=vtypes.ID(2),
+                            entry_id=vtypes.ID(2),
                             length=258,
                             timestamp=datetime.datetime(
-                                2025, 5, 28, 14, tzinfo=datetime.timezone.utc
+                                2025, 5, 28, 14, tzinfo=datetime.UTC
                             ),
+                            attachment_hash="REDACTED:d28c1a205a1d",
+                            attachment_title="Aussage von Charly",
+                            attachment_filename="aussage_charly.pdf",
                             ctime=nearly_now(),
-                            submitted_by=1,  # type: ignore[arg-type]
-                            authors={3},  # type: ignore[arg-type]
+                            submitted_by=PersonaID(1),
+                            authors={PersonaID(3)},
                         ),
                     ],
                 ),
                 3: models.ComplaintEntry(
-                    id=3,  # type: ignore[arg-type]
-                    case_id=1,  # type: ignore[arg-type]
+                    id=vtypes.ID(3),
+                    case_id=vtypes.ID(1),
                     entry_type=const.ComplaintEntryType.statement_signed,
-                    parent_id=2,  # type: ignore[arg-type]
+                    parent_id=vtypes.ID(2),
                     concerned_id=None,
                     all_versions=[
                         models.ComplaintEntryVersion(
-                            id=3,  # type: ignore[arg-type]
-                            entry_id=3,  # type: ignore[arg-type]
+                            id=vtypes.ID(3),
+                            entry_id=vtypes.ID(3),
                             length=None,
                             timestamp=datetime.datetime(
-                                2025, 5, 28, 15, tzinfo=datetime.timezone.utc
+                                2025, 5, 28, 15, tzinfo=datetime.UTC
                             ),
                             ctime=nearly_now(),
-                            submitted_by=1,  # type: ignore[arg-type]
-                            authors={3},  # type: ignore[arg-type]
+                            submitted_by=PersonaID(1),
+                            authors={PersonaID(3)},
                         ),
                     ],
                 ),
                 4: models.ComplaintEntry(
-                    id=4,  # type: ignore[arg-type]
-                    case_id=1,  # type: ignore[arg-type]
+                    id=vtypes.ID(4),
+                    case_id=vtypes.ID(1),
                     entry_type=const.ComplaintEntryType.agreement,
                     parent_id=None,
                     concerned_id=None,
                     all_versions=[
                         models.ComplaintEntryVersion(
-                            id=4,  # type: ignore[arg-type]
-                            entry_id=4,  # type: ignore[arg-type]
+                            id=vtypes.ID(4),
+                            entry_id=vtypes.ID(4),
                             length=80,
                             timestamp=datetime.datetime(
-                                2025, 5, 28, 16, tzinfo=datetime.timezone.utc
+                                2025, 5, 28, 16, tzinfo=datetime.UTC
                             ),
                             ctime=nearly_now(),
-                            submitted_by=1,  # type: ignore[arg-type]
+                            submitted_by=PersonaID(1),
                             dtime=nearly_now(),
-                            deleted_by=1,  # type: ignore[arg-type]
+                            deleted_by=PersonaID(1),
                             dreason="Ungünstige Wortwahl.",
-                            authors={3},  # type: ignore[arg-type]
+                            authors={PersonaID(3)},
                         ),
                         models.ComplaintEntryVersion(
-                            id=5,  # type: ignore[arg-type]
-                            entry_id=4,  # type: ignore[arg-type]
+                            id=vtypes.ID(5),
+                            entry_id=vtypes.ID(4),
                             length=77,
                             timestamp=datetime.datetime(
-                                2025, 5, 28, 16, tzinfo=datetime.timezone.utc
+                                2025, 5, 28, 16, tzinfo=datetime.UTC
                             ),
                             ctime=nearly_now(),
-                            submitted_by=1,  # type: ignore[arg-type]
-                            authors={3},  # type: ignore[arg-type]
+                            submitted_by=PersonaID(1),
+                            authors={PersonaID(3)},
                         ),
                     ],
                 ),
                 5: models.ComplaintEntry(
-                    id=5,  # type: ignore[arg-type]
-                    case_id=1,  # type: ignore[arg-type]
+                    id=vtypes.ID(5),
+                    case_id=vtypes.ID(1),
                     entry_type=const.ComplaintEntryType.agreement_measure,
-                    parent_id=4,  # type: ignore[arg-type]
-                    concerned_id=2,  # type: ignore[arg-type]
+                    parent_id=vtypes.ID(4),
+                    concerned_id=PersonaID(2),
                     all_versions=[
                         models.ComplaintEntryVersion(
-                            id=6,  # type: ignore[arg-type]
-                            entry_id=5,  # type: ignore[arg-type]
+                            id=vtypes.ID(6),
+                            entry_id=vtypes.ID(5),
                             length=53,
                             timestamp=datetime.datetime(
-                                2025, 5, 28, 16, tzinfo=datetime.timezone.utc
+                                2025, 5, 28, 16, tzinfo=datetime.UTC
                             ),
                             ctime=nearly_now(),
-                            submitted_by=1,  # type: ignore[arg-type]
-                            authors={3},  # type: ignore[arg-type]
+                            submitted_by=PersonaID(1),
+                            authors={PersonaID(3)},
                         ),
                     ],
                 ),
                 6: models.ComplaintEntry(
-                    id=6,  # type: ignore[arg-type]
-                    case_id=1,  # type: ignore[arg-type]
+                    id=vtypes.ID(6),
+                    case_id=vtypes.ID(1),
                     entry_type=const.ComplaintEntryType.agreement_measure,
-                    parent_id=4,  # type: ignore[arg-type]
-                    concerned_id=2,  # type: ignore[arg-type]
+                    parent_id=vtypes.ID(4),
+                    concerned_id=PersonaID(2),
                     all_versions=[
                         models.ComplaintEntryVersion(
-                            id=7,  # type: ignore[arg-type]
-                            entry_id=6,  # type: ignore[arg-type]
+                            id=vtypes.ID(7),
+                            entry_id=vtypes.ID(6),
                             length=26,
                             timestamp=datetime.datetime(
-                                2025, 5, 31, 23, 6, 25, tzinfo=datetime.timezone.utc
+                                2025, 5, 31, 23, 6, 25, tzinfo=datetime.UTC
                             ),
                             etime=datetime.datetime(
-                                2025, 6, 8, 6, 6, 25, tzinfo=datetime.timezone.utc
+                                2025, 6, 8, 6, 6, 25, tzinfo=datetime.UTC
                             ),
                             ctime=nearly_now(),
-                            submitted_by=1,  # type: ignore[arg-type]
-                            authors={3},  # type: ignore[arg-type]
+                            submitted_by=PersonaID(1),
+                            authors={PersonaID(3)},
                         )
                     ],
                 ),
                 7: models.ComplaintEntry(
-                    id=7,  # type: ignore[arg-type]
-                    case_id=1,  # type: ignore[arg-type]
+                    id=vtypes.ID(7),
+                    case_id=vtypes.ID(1),
                     entry_type=const.ComplaintEntryType.agreement_measure,
-                    parent_id=4,  # type: ignore[arg-type]
-                    concerned_id=2,  # type: ignore[arg-type]
+                    parent_id=vtypes.ID(4),
+                    concerned_id=PersonaID(2),
                     is_revoked=True,
                     all_versions=[
                         models.ComplaintEntryVersion(
-                            id=8,  # type: ignore[arg-type]
-                            entry_id=7,  # type: ignore[arg-type]
+                            id=vtypes.ID(8),
+                            entry_id=vtypes.ID(7),
                             length=91,
                             timestamp=datetime.datetime(
-                                2025, 6, 9, 12, 0, tzinfo=datetime.timezone.utc
+                                2025, 6, 9, 12, 0, tzinfo=datetime.UTC
                             ),
                             ctime=nearly_now(),
-                            submitted_by=1,  # type: ignore[arg-type]
-                            authors={42},  # type: ignore[arg-type]
+                            submitted_by=PersonaID(1),
+                            authors={PersonaID(42)},
                         )
                     ],
                 ),
                 8: models.ComplaintEntry(
-                    id=8,  # type: ignore[arg-type]
-                    case_id=1,  # type: ignore[arg-type]
+                    id=vtypes.ID(8),
+                    case_id=vtypes.ID(1),
                     entry_type=const.ComplaintEntryType.revocation_explanation,
-                    parent_id=7,  # type: ignore[arg-type]
+                    parent_id=vtypes.ID(7),
                     all_versions=[
                         models.ComplaintEntryVersion(
-                            id=9,  # type: ignore[arg-type]
-                            entry_id=8,  # type: ignore[arg-type]
+                            id=vtypes.ID(9),
+                            entry_id=vtypes.ID(8),
                             length=68,
                             timestamp=datetime.datetime(
-                                2025, 6, 10, 12, 0, tzinfo=datetime.timezone.utc
+                                2025, 6, 10, 12, 0, tzinfo=datetime.UTC
                             ),
                             ctime=nearly_now(),
-                            submitted_by=1,  # type: ignore[arg-type]
-                            authors={3},  # type: ignore[arg-type]
+                            submitted_by=PersonaID(1),
+                            authors={PersonaID(3)},
+                        )
+                    ],
+                ),
+                9: models.ComplaintEntry(
+                    id=vtypes.ID(9),
+                    case_id=vtypes.ID(1),
+                    entry_type=const.ComplaintEntryType.agreement_measure,
+                    parent_id=vtypes.ID(4),
+                    concerned_id=PersonaID(2),
+                    all_versions=[
+                        models.ComplaintEntryVersion(
+                            id=vtypes.ID(10),
+                            entry_id=vtypes.ID(9),
+                            length=33,
+                            timestamp=datetime.datetime(
+                                3000, 1, 1, 0, 0, tzinfo=datetime.UTC
+                            ),
+                            ctime=nearly_now(),
+                            submitted_by=PersonaID(1),
+                            authors={PersonaID(3)},
+                        )
+                    ],
+                ),
+                10: models.ComplaintEntry(
+                    id=vtypes.ID(10),
+                    case_id=vtypes.ID(1),
+                    entry_type=const.ComplaintEntryType.generic_information,
+                    all_versions=[
+                        models.ComplaintEntryVersion(
+                            id=vtypes.ID(11),
+                            entry_id=vtypes.ID(10),
+                            length=None,
+                            timestamp=None,
+                            ctime=nearly_now(),
+                            submitted_by=PersonaID(1),
+                            deleted_by=PersonaID(1),
+                            dtime=nearly_now(),
+                            marked_for_purge=nearly_now(),
+                            purged_by=PersonaID(1),
+                            is_purged=True,
+                            authors=set(),
+                        )
+                    ],
+                ),
+                11: models.ComplaintEntry(
+                    id=vtypes.ID(11),
+                    case_id=vtypes.ID(1),
+                    entry_type=const.ComplaintEntryType.provisional_to_arbcom,
+                    all_versions=[
+                        models.ComplaintEntryVersion(
+                            id=vtypes.ID(12),
+                            entry_id=vtypes.ID(11),
+                            length=29,
+                            timestamp=datetime.datetime(
+                                2025, 5, 28, 15, 30, tzinfo=datetime.UTC
+                            ),
+                            ctime=nearly_now(),
+                            submitted_by=PersonaID(1),
+                            authors={PersonaID(7)},
+                        )
+                    ],
+                ),
+                12: models.ComplaintEntry(
+                    id=vtypes.ID(12),
+                    case_id=vtypes.ID(1),
+                    entry_type=const.ComplaintEntryType.provisional_measure,
+                    concerned_id=PersonaID(4),
+                    parent_id=vtypes.ID(11),
+                    all_versions=[
+                        models.ComplaintEntryVersion(
+                            id=vtypes.ID(13),
+                            entry_id=vtypes.ID(12),
+                            length=16,
+                            timestamp=datetime.datetime(
+                                2025, 5, 28, 15, 45, tzinfo=datetime.UTC
+                            ),
+                            etime=datetime.datetime(
+                                2025, 5, 29, 7, tzinfo=datetime.UTC
+                            ),
+                            ctime=nearly_now(),
+                            submitted_by=PersonaID(1),
+                            authors={PersonaID(7)},
                         )
                     ],
                 ),
             },
         )
+        expectation.personas = self.core.get_personas(
+            self.key,
+            expectation.get_persona_ids(
+                self.complaint.retrieve_log(
+                    self.key, ComplaintLogFilter(case_id=expectation.id)
+                )[1]
+            ),
+        )
+
         reality = self.complaint.get_case(self.key, 1)
         for expected_entry, real_entry in zip(
-            expectation.entries.values(), reality.entries.values()
+            sorted(expectation.entries.values()), reality.entries.values()
         ):
             for expected_version, real_version in zip(
-                expected_entry.all_versions, real_entry.all_versions
+                sorted(expected_entry.all_versions), real_entry.all_versions
             ):
                 self.assertEqual(expected_version.as_dict(), real_version.as_dict())
                 self.assertEqual(expected_version, real_version)
@@ -230,10 +340,28 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(expectation, reality)
 
         self.assertEqual({1, 2, 3, 4, 7, 42}, reality.get_persona_ids(tuple()))
-        self.assertEqual({2, 4}, reality.all_involved.keys())
-        self.assertEqual({2: {3}, 4: {7}}, reality.companions_by_involved)
-        self.assertEqual({2: {3}}, reality.withdrawn_companions_by_involved)
-        self.assertEqual({7: {4}}, reality.active_companions)
+        self.assertEqual({2, 4}, reality.involved_persona_ids)
+        self.assertEqual(
+            {2: {3: False}, 4: {7: True}},
+            {
+                involved.persona_id: involved.get_companions(is_active=None)
+                for involved in reality.properly_involved.values()
+            },
+        )
+        self.assertEqual(
+            {2: {3: False}, 4: {}},
+            {
+                involved.persona_id: involved.get_companions(is_active=False)
+                for involved in reality.properly_involved.values()
+            },
+        )
+        self.assertEqual(
+            {2: {}, 4: {7: True}},
+            {
+                involved.persona_id: involved.get_companions(is_active=True)
+                for involved in reality.properly_involved.values()
+            },
+        )
 
     @as_users("simon")
     def test_set_case(self) -> None:
@@ -292,9 +420,6 @@ class TestComplaintBackend(BackendTest):
             **new_case_data,
             entries={},
             involved={},
-            informed_involved=set(),
-            companions={},
-            withdrawn_companions={},
         )
         self.assertEqual(expectation.as_dict(), new_case.as_dict())
         self.assertEqual(expectation, new_case)
@@ -327,18 +452,18 @@ class TestComplaintBackend(BackendTest):
         )
         case = self.complaint.get_case(self.key, case_id)
         expectation = models.ComplaintEntry(
-            id=new_entry_id,  # type: ignore[arg-type]
-            case_id=case_id,  # type: ignore[arg-type]
+            id=vtypes.ID(new_entry_id),
+            case_id=vtypes.ID(case_id),
             **new_entry_data,
             all_versions=[
                 models.ComplaintEntryVersion(
-                    id=1001,  # type: ignore[arg-type]
-                    entry_id=new_entry_id,  # type: ignore[arg-type]
+                    id=vtypes.ID(1001),
+                    entry_id=vtypes.ID(new_entry_id),
                     timestamp=new_version_data["timestamp"],
                     length=len(new_version_data["description"]),
                     ctime=nearly_now(),
                     submitted_by=self.user['id'],
-                    authors={3},  # type: ignore[arg-type]
+                    authors={PersonaID(3)},
                 )
             ],
         )
@@ -348,8 +473,8 @@ class TestComplaintBackend(BackendTest):
 
     @as_users("simon")
     def test_replace_entry(self) -> None:
-        case_id = 1
-        entry_id = 3
+        case_id = vtypes.ID(1)
+        entry_id = vtypes.ID(3)
         original_case = self.complaint.get_case(self.key, case_id)
         new_version_data: CdEDBObject = {
             "timestamp": now(),
@@ -366,8 +491,8 @@ class TestComplaintBackend(BackendTest):
         replaced_entry.active_version.deleted_by = self.user['id']
         replaced_entry.all_versions.append(
             models.ComplaintEntryVersion(
-                id=1001,  # type: ignore[arg-type]
-                entry_id=entry_id,  # type: ignore[arg-type]
+                id=vtypes.ID(1001),
+                entry_id=entry_id,
                 **new_version_data,
                 ctime=nearly_now(),
                 submitted_by=self.user['id'],
@@ -402,96 +527,143 @@ class TestComplaintBackend(BackendTest):
     @as_users("simon")
     def test_add_remove_involved(self) -> None:
         case_id = 1
-        new_involved = 1
+        new_involved = PersonaID(1)
         _case = self.complaint.get_case(self.key, case_id)
         original_involved = sorted(
-            _case.involved[const.ComplaintInvolvementType.target]
-        )[0]
-        original_companions = sorted(_case.companions_by_involved[original_involved])
+            _case.involved_by_type[const.ComplaintInvolvementType.target]
+        )[0].id
+        original_involved_persona_id = _case.involved[original_involved].persona_id
+        assert original_involved_persona_id is not None
+
+        original_companions = sorted(
+            _case.involved[original_involved].get_companions(is_active=None)
+        )
         self.assertNotIn(
-            new_involved, _case.all_involved, "Sample data changed. Review test setup."
+            new_involved,
+            _case.involved_persona_ids,
+            "Sample data changed. Review test setup.",
         )
 
         original_case = self.complaint.get_case(self.key, case_id)
         expectation = self.complaint.get_case(self.key, case_id)
 
+        # Adding an empty list does nothing.
         self.assertEqual(
             0,
             self.complaint.add_involved(
                 self.key, case_id, const.ComplaintInvolvementType.target, []
             ),
         )
+        # Add a new involved as a target.
         self.assertLessEqual(
             1,
             self.complaint.add_involved(
                 self.key,
                 case_id=case_id,
-                involved_type=const.ComplaintInvolvementType.target,
+                involvement_type=const.ComplaintInvolvementType.target,
                 persona_ids=[new_involved],
-                is_informed=True,
             ),
         )
+        # Adding them again is a noop.
         self.assertEqual(
             -1,
             self.complaint.add_involved(
                 self.key,
                 case_id=case_id,
-                involved_type=const.ComplaintInvolvementType.target,
+                involvement_type=const.ComplaintInvolvementType.target,
                 persona_ids=[new_involved],
             ),
         )
-        with self.assertRaisesRegex(ValueError, "Already involved otherwise."):
-            self.complaint.add_involved(
-                self.key, case_id, const.ComplaintInvolvementType.other, [new_involved]
-            )
 
+        # Check that new target shows up in the case.
         case = self.complaint.get_case(self.key, case_id)
-        expectation.involved.setdefault(
-            const.ComplaintInvolvementType.target, set()
-        ).add(new_involved)
-        expectation.informed_involved.add(new_involved)
+        new_involved_id = case.involved_by_persona_id[new_involved].id
+        expectation.involved[new_involved_id] = models.ComplaintInvolved(
+            id=new_involved_id,
+            persona_id=new_involved,
+            involvement_type=const.ComplaintInvolvementType.target,
+            is_informed=False,
+            _companions={},
+        )
 
         self.assertEqual(expectation.as_dict(), case.as_dict())
         self.assertEqual(expectation, case)
 
-        self.assertEqual(
-            -1,
-            self.complaint.set_involved_informed(self.key, case_id, new_involved, True),
-        )
         self.assertLessEqual(
             1,
             self.complaint.set_involved_informed(
-                self.key, case_id, new_involved, False
+                self.key, case_id, new_involved_id, True
+            ),
+        )
+        # Set them as uninformed.
+        self.assertLessEqual(
+            1,
+            self.complaint.set_involved_informed(
+                self.key, case_id, new_involved_id, False
             ),
         )
 
+        # Removing noone does nothing.
         self.assertEqual(0, self.complaint.remove_involved(self.key, case_id, []))
+        # Removing the new involved works.
         self.assertLessEqual(
-            1, self.complaint.remove_involved(self.key, case_id, [new_involved])
+            1, self.complaint.remove_involved(self.key, case_id, [new_involved_id])
         )
+        # But doing it again is a noop.
         self.assertEqual(
-            -1, self.complaint.remove_involved(self.key, case_id, [new_involved])
+            -1, self.complaint.remove_involved(self.key, case_id, [new_involved_id])
         )
 
         case = self.complaint.get_case(self.key, case_id)
         self.assertEqual(original_case.as_dict(), case.as_dict())
         self.assertEqual(original_case, case)
 
+        # Adding the original involved as a new type removes and readds their companions.
         self.assertLessEqual(
-            1, self.complaint.remove_involved(self.key, case_id, [original_involved])
+            1,
+            self.complaint.set_involved_informed(
+                self.key, case_id, original_involved, True
+            ),
+        )
+        self.assertEqual(
+            -1,
+            self.complaint.add_involved(
+                self.key,
+                case_id,
+                const.ComplaintInvolvementType.other,
+                [original_involved_persona_id],
+            ),
         )
 
-        original_case.involved.pop(const.ComplaintInvolvementType.target)
-        for companion_id in original_companions:
-            original_case.companions[companion_id].remove(original_involved)
-            if not original_case.companions[companion_id]:
-                del original_case.companions[companion_id]  # pragma: no cover
-            original_case.withdrawn_companions.pop(companion_id, None)
+        # Removing the original involved also removes their companions.
+        case = self.complaint.get_case(self.key, case_id)
+        self.assertLessEqual(
+            1,
+            self.complaint.remove_involved(
+                self.key,
+                case_id,
+                [case.involved_by_persona_id[original_involved_persona_id].id],
+            ),
+        )
+
+        original_case.involved.pop(
+            original_case.involved_by_persona_id[original_involved_persona_id].id
+        )
         case = self.complaint.get_case(self.key, case_id)
         self.assertEqual(original_case.as_dict(), case.as_dict())
         self.assertEqual(original_case, case)
 
         log_expectation: list[CdEDBObject] = [
+            {
+                "code": const.ComplaintLogCodes.involved_added,
+                "change_note": "Zielpersonen",
+                "persona_id": new_involved,
+            },
+            {
+                "code": const.ComplaintLogCodes.involved_removed,
+                "change_note": "Zielpersonen",
+                "persona_id": new_involved,
+            },
             {
                 "code": const.ComplaintLogCodes.involved_added,
                 "change_note": "Zielpersonen",
@@ -511,14 +683,28 @@ class TestComplaintBackend(BackendTest):
                 "persona_id": new_involved,
             },
             {
+                "code": const.ComplaintLogCodes.involved_informed,
+                "persona_id": original_involved_persona_id,
+            },
+            {
                 "code": const.ComplaintLogCodes.involved_removed,
                 "change_note": "Zielpersonen",
-                "persona_id": original_involved,
+                "persona_id": original_involved_persona_id,
+            },
+            {
+                "code": const.ComplaintLogCodes.involved_added,
+                "change_note": "Sonstige",
+                "persona_id": original_involved_persona_id,
+            },
+            {
+                "code": const.ComplaintLogCodes.involved_removed,
+                "change_note": "Sonstige",
+                "persona_id": original_involved_persona_id,
             },
             *[
                 {
                     "code": const.ComplaintLogCodes.companion_removed,
-                    "persona_id": original_involved,
+                    "persona_id": original_involved_persona_id,
                     "companion_id": companion_id,
                 }
                 for companion_id in original_companions
@@ -532,32 +718,41 @@ class TestComplaintBackend(BackendTest):
     def test_add_remove_companions(self) -> None:
         case_id = 1
         _case = self.complaint.get_case(self.key, case_id)
-        persona_id = 2
-        old_companion = list(_case.companions_by_involved[persona_id])[0]
-        new_companion = 5
+        persona_id = PersonaID(2)
+        involved_id = list(
+            involved.id
+            for involved in _case.involved.values()
+            if involved.persona_id == persona_id
+        )[0]
+        old_companion = list(
+            _case.involved[involved_id].get_companions(is_active=None)
+        )[0]
+        new_companion = PersonaID(5)
         self.assertNotIn(
-            new_companion, _case.companions, "Sample data changed, review test setup."
+            new_companion,
+            _case.get_companions(is_active=None),
+            "Sample data changed, review test setup.",
         )
 
         original_case = self.complaint.get_case(self.key, case_id)
 
         self.assertEqual(
-            0, self.complaint.add_companions(self.key, case_id, persona_id, [])
+            0, self.complaint.add_companions(self.key, case_id, involved_id, [])
         )
         self.assertEqual(
             -1,
             self.complaint.add_companions(
-                self.key, case_id, persona_id, [old_companion]
+                self.key, case_id, involved_id, [old_companion]
             ),
         )
         self.assertLessEqual(
             1,
             self.complaint.add_companions(
-                self.key, case_id, persona_id, [new_companion]
+                self.key, case_id, involved_id, [new_companion]
             ),
         )
 
-        original_case.companions[5] = {2}
+        original_case.involved[involved_id]._companions.update({PersonaID(5): True})
         case = self.complaint.get_case(self.key, case_id)
         self.assertEqual(original_case.as_dict(), case.as_dict())
         self.assertEqual(original_case, case)
@@ -565,19 +760,17 @@ class TestComplaintBackend(BackendTest):
         self.assertLessEqual(
             1,
             self.complaint.set_companion_withdrawn(
-                self.key, case_id, persona_id, new_companion, True
+                self.key, case_id, involved_id, new_companion, True
             ),
         )
         self.assertEqual(
             -1,
             self.complaint.set_companion_withdrawn(
-                self.key, case_id, persona_id, new_companion, True
+                self.key, case_id, involved_id, new_companion, True
             ),
         )
 
-        original_case.withdrawn_companions.setdefault(new_companion, set()).add(
-            persona_id
-        )
+        original_case.involved[involved_id]._companions[new_companion] = False
         case = self.complaint.get_case(self.key, case_id)
         self.assertEqual(original_case.as_dict(), case.as_dict())
         self.assertEqual(original_case, case)
@@ -585,23 +778,23 @@ class TestComplaintBackend(BackendTest):
         self.assertLessEqual(
             1,
             self.complaint.set_companion_withdrawn(
-                self.key, case_id, persona_id, new_companion, False
+                self.key, case_id, involved_id, new_companion, False
             ),
         )
 
         self.assertEqual(
-            0, self.complaint.remove_companions(self.key, case_id, persona_id, [])
+            0, self.complaint.remove_companions(self.key, case_id, involved_id, [])
         )
         self.assertLessEqual(
             1,
             self.complaint.remove_companions(
-                self.key, case_id, persona_id, [new_companion]
+                self.key, case_id, involved_id, [new_companion]
             ),
         )
         self.assertEqual(
             -1,
             self.complaint.remove_companions(
-                self.key, case_id, persona_id, [new_companion]
+                self.key, case_id, involved_id, [new_companion]
             ),
         )
 
@@ -699,7 +892,14 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(1, len(result))
         self.assertEqual(case_id, result[0]["cases.id"])
 
-        self.complaint.set_companion_withdrawn(self.key, case_id, 2, 3, False)
+        case = self.complaint.get_case(self.key, case_id)
+        self.complaint.set_companion_withdrawn(
+            self.key,
+            case_id,
+            case.involved_by_persona_id[PersonaID(2)].id,
+            PersonaID(3),
+            False,
+        )
         result = self.complaint.submit_general_query(self.key, query)
         self.assertEqual(0, len(result))
 
@@ -725,7 +925,10 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(0, len(result))
 
         self.complaint.add_involved(
-            self.key, case_id, const.ComplaintInvolvementType.appellant, [1]
+            self.key,
+            case_id,
+            const.ComplaintInvolvementType.appellant,
+            [PersonaID(1)],
         )
         result = self.complaint.submit_general_query(self.key, query)
         self.assertEqual(1, len(result))
@@ -733,8 +936,8 @@ class TestComplaintBackend(BackendTest):
 
     @as_users("simon")
     def test_revoke_entry(self) -> None:
-        case_id = 1
-        entry_id = 5
+        case_id = vtypes.ID(1)
+        entry_id = vtypes.ID(5)
         revocation_type = const.ComplaintEntryType.revocation_explanation
 
         expectation = self.complaint.get_case(self.key, case_id)
@@ -745,7 +948,9 @@ class TestComplaintBackend(BackendTest):
             "description": "Oops!... I Did It Again",
             "authors": {3},
         }
-        new_entry_id = self.complaint.revoke_entry(self.key, entry_id, revoke_data)
+        new_entry_id = vtypes.ID(
+            self.complaint.revoke_entry(self.key, entry_id, revoke_data)
+        )
         self.assertLessEqual(1, new_entry_id)
 
         with self.assertRaisesRegex(ValueError, "Entry already revoked."):
@@ -754,14 +959,14 @@ class TestComplaintBackend(BackendTest):
         # Check the result.
         expectation.entries[entry_id].is_revoked = True
         expectation.entries[new_entry_id] = models.ComplaintEntry(
-            id=new_entry_id,  # type: ignore[arg-type]
-            case_id=case_id,  # type: ignore[arg-type]
+            id=new_entry_id,
+            case_id=case_id,
             entry_type=revocation_type,
-            parent_id=entry_id,  # type: ignore[arg-type]
+            parent_id=entry_id,
             all_versions=[
                 models.ComplaintEntryVersion(
-                    id=1001,  # type: ignore[arg-type]
-                    entry_id=new_entry_id,  # type: ignore[arg-type]
+                    id=vtypes.ID(1001),
+                    entry_id=new_entry_id,
                     length=len(revoke_data["description"]),
                     ctime=nearly_now(),
                     submitted_by=self.user['id'],
@@ -775,8 +980,8 @@ class TestComplaintBackend(BackendTest):
         self.assertEqual(expectation, case)
 
         # Revoke the revocation.
-        new_new_entry_id = self.complaint.revoke_entry(
-            self.key, new_entry_id, revoke_data
+        new_new_entry_id = vtypes.ID(
+            self.complaint.revoke_entry(self.key, new_entry_id, revoke_data)
         )
         self.assertLessEqual(1, new_new_entry_id)
 
@@ -787,14 +992,14 @@ class TestComplaintBackend(BackendTest):
         expectation.entries[entry_id].is_revoked = False
         expectation.entries[new_entry_id].is_revoked = True
         expectation.entries[new_new_entry_id] = models.ComplaintEntry(
-            id=new_new_entry_id,  # type: ignore[arg-type]
-            case_id=case_id,  # type: ignore[arg-type]
+            id=new_new_entry_id,
+            case_id=case_id,
             entry_type=revocation_type,
-            parent_id=new_entry_id,  # type: ignore[arg-type]
+            parent_id=new_entry_id,
             all_versions=[
                 models.ComplaintEntryVersion(
-                    id=1002,  # type: ignore[arg-type]
-                    entry_id=new_new_entry_id,  # type: ignore[arg-type]
+                    id=vtypes.ID(1002),
+                    entry_id=new_new_entry_id,
                     length=len(revoke_data["description"]),
                     ctime=nearly_now(),
                     submitted_by=self.user['id'],
@@ -815,12 +1020,20 @@ class TestComplaintBackend(BackendTest):
 
         case = self.complaint.get_case(self.key, case_id)
 
-        target_id = list(case.involved[const.ComplaintInvolvementType.target])[0]
-        target_companion_id = list(case.companions_by_involved[target_id])[0]
-        affected_id = list(case.involved[const.ComplaintInvolvementType.affected])[0]
-        affected_companion_id = list(case.companions_by_involved[affected_id])[0]
-        appellant_id = 5
-        appellant_companion_id = 6
+        target_id = list(
+            case.involved_persona_ids_by_type(const.ComplaintInvolvementType.target)
+        )[0]
+        target_companion_id = list(
+            case.involved_by_persona_id[target_id].get_companions(is_active=None)
+        )[0]
+        affected_id = list(
+            case.involved_persona_ids_by_type(const.ComplaintInvolvementType.affected)
+        )[0]
+        affected_companion_id = list(
+            case.involved_by_persona_id[affected_id].get_companions(is_active=None)
+        )[0]
+        appellant_id = PersonaID(5)
+        appellant_companion_id = PersonaID(6)
 
         self.assertEqual(
             6,
@@ -842,43 +1055,100 @@ class TestComplaintBackend(BackendTest):
                 [appellant_id],
             ),
         )
+        case = self.complaint.get_case(self.key, case_id)
         self.assertLessEqual(
             1,
             self.complaint.add_companions(
-                self.key, case_id, appellant_id, [appellant_companion_id]
+                self.key,
+                case_id,
+                case.involved_by_persona_id[appellant_id].id,
+                [appellant_companion_id],
             ),
         )
         self.assertLessEqual(
             1,
             self.complaint.set_companion_withdrawn(
-                self.key, case_id, target_id, target_companion_id, False
+                self.key,
+                case_id,
+                case.involved_by_persona_id[target_id].id,
+                target_companion_id,
+                False,
             ),
         )
 
-        with self.assertRaisesRegex(ValueError, "Adverse companion."):
+        with self.assertRaises(AdverseCompanionError):
             self.complaint.add_companions(
-                self.key, case_id, target_id, [affected_companion_id]
+                self.key,
+                case_id,
+                case.involved_by_persona_id[target_id].id,
+                [affected_companion_id],
             )
-        with self.assertRaisesRegex(ValueError, "Adverse companion."):
+        with self.assertRaises(AdverseCompanionError):
             self.complaint.add_companions(
-                self.key, case_id, target_id, [appellant_companion_id]
+                self.key,
+                case_id,
+                case.involved_by_persona_id[target_id].id,
+                [appellant_companion_id],
             )
-        with self.assertRaisesRegex(ValueError, "Adverse companion."):
+        with self.assertRaises(AdverseCompanionError):
             self.complaint.add_companions(
-                self.key, case_id, affected_id, [target_companion_id]
+                self.key,
+                case_id,
+                case.involved_by_persona_id[affected_id].id,
+                [target_companion_id],
             )
-        with self.assertRaisesRegex(ValueError, "Adverse companion."):
+        with self.assertRaises(AdverseCompanionError):
             self.complaint.add_companions(
-                self.key, case_id, appellant_id, [target_companion_id]
+                self.key,
+                case_id,
+                case.involved_by_persona_id[appellant_id].id,
+                [target_companion_id],
             )
 
-        with self.assertRaisesRegex(ValueError, "Involved companion."):
-            self.complaint.add_companions(self.key, case_id, target_id, [target_id])
-        with self.assertRaisesRegex(ValueError, "Involved companion."):
-            self.complaint.add_companions(self.key, case_id, affected_id, [affected_id])
+        # Adding an involved persona as another type migrates their companions so it also doesn't work.
+        self.assertLessEqual(
+            1,
+            self.complaint.add_companions(
+                self.key,
+                case_id,
+                case.involved_by_persona_id[appellant_id].id,
+                [affected_companion_id],
+            ),
+        )
+        with self.assertRaises(AdverseCompanionError):
+            self.complaint.add_involved(
+                self.key, case_id, const.ComplaintInvolvementType.target, [affected_id]
+            )
+        self.assertLessEqual(
+            1,
+            self.complaint.remove_companions(
+                self.key,
+                case_id,
+                case.involved_by_persona_id[appellant_id].id,
+                [affected_companion_id],
+            ),
+        )
+
         with self.assertRaisesRegex(ValueError, "Involved companion."):
             self.complaint.add_companions(
-                self.key, case_id, appellant_id, [appellant_id]
+                self.key,
+                case_id,
+                case.involved_by_persona_id[target_id].id,
+                [target_id],
+            )
+        with self.assertRaisesRegex(ValueError, "Involved companion."):
+            self.complaint.add_companions(
+                self.key,
+                case_id,
+                case.involved_by_persona_id[affected_id].id,
+                [affected_id],
+            )
+        with self.assertRaisesRegex(ValueError, "Involved companion."):
+            self.complaint.add_companions(
+                self.key,
+                case_id,
+                case.involved_by_persona_id[appellant_id].id,
+                [appellant_id],
             )
 
         with self.assertRaisesRegex(ValueError, "Already active companions."):
@@ -906,7 +1176,11 @@ class TestComplaintBackend(BackendTest):
         self.assertLessEqual(
             1,
             self.complaint.set_companion_withdrawn(
-                self.key, case_id, target_id, target_companion_id, True
+                self.key,
+                case_id,
+                case.involved_by_persona_id[target_id].id,
+                target_companion_id,
+                True,
             ),
         )
         self.assertLessEqual(
@@ -921,7 +1195,11 @@ class TestComplaintBackend(BackendTest):
         self.assertLessEqual(
             1,
             self.complaint.set_companion_withdrawn(
-                self.key, case_id, affected_id, affected_companion_id, True
+                self.key,
+                case_id,
+                case.involved_by_persona_id[affected_id].id,
+                affected_companion_id,
+                True,
             ),
         )
         self.assertLessEqual(
@@ -936,7 +1214,11 @@ class TestComplaintBackend(BackendTest):
         self.assertLessEqual(
             1,
             self.complaint.set_companion_withdrawn(
-                self.key, case_id, appellant_id, appellant_companion_id, True
+                self.key,
+                case_id,
+                case.involved_by_persona_id[appellant_id].id,
+                appellant_companion_id,
+                True,
             ),
         )
         self.assertLessEqual(
@@ -956,10 +1238,6 @@ class TestComplaintBackend(BackendTest):
                 "change_note": "Beschwerdeführer",
             },
             {
-                "code": const.ComplaintLogCodes.involved_informed,
-                "persona_id": appellant_id,
-            },
-            {
                 "code": const.ComplaintLogCodes.companion_added,
                 "persona_id": appellant_id,
                 "companion_id": appellant_companion_id,
@@ -968,6 +1246,16 @@ class TestComplaintBackend(BackendTest):
                 "code": const.ComplaintLogCodes.companion_reinstated,
                 "persona_id": target_id,
                 "companion_id": target_companion_id,
+            },
+            {
+                "code": const.ComplaintLogCodes.companion_added,
+                "persona_id": appellant_id,
+                "companion_id": affected_companion_id,
+            },
+            {
+                "code": const.ComplaintLogCodes.companion_removed,
+                "persona_id": appellant_id,
+                "companion_id": affected_companion_id,
             },
             {
                 "code": const.ComplaintLogCodes.companion_withdrawn,
@@ -999,10 +1287,6 @@ class TestComplaintBackend(BackendTest):
                 "persona_id": appellant_companion_id,
                 "change_note": "Beschwerdeführer",
             },
-            {
-                "code": const.ComplaintLogCodes.involved_informed,
-                "persona_id": appellant_companion_id,
-            },
         ]
         self.assertLogEqual(
             log_expecation, "complaint", case_id=case_id, offset=self.LOG_OFFSET
@@ -1014,27 +1298,23 @@ class TestComplaintBackend(BackendTest):
         active_measure_entry_id = 5
         active_measure_persona_id = 2
 
-        self.assertEqual(
-            set(), self.complaint.list_user_measures(self.key, 3, is_active=None)
-        )
-        self.assertEqual(
-            set(), self.complaint.list_user_measures(self.key, 4, is_active=None)
-        )
-        self.assertEqual(
-            set(), self.complaint.list_user_measures(self.key, 7, is_active=None)
-        )
-        self.assertEqual(
-            {7, 8}, self.complaint.list_user_measures(self.key, 2, is_active=False)
-        )
+        self.assertEqual(({}, {}), self.complaint.get_user_measures(self.key, 3))
+        self.assertEqual(({}, {}), self.complaint.get_user_measures(self.key, 4))
+        self.assertEqual(({}, {}), self.complaint.get_user_measures(self.key, 7))
+        entries, descriptions = self.complaint.get_user_measures(self.key, 2)
+        self.assertEqual({5, 6, 9}, set(entries))
+        self.assertEqual({6, 7, 10}, set(descriptions))
 
         with self.switch_user("simon"):
             case = self.complaint.get_case(self.key, case_id)
-        measure = case.entries[active_measure_entry_id].active_version
-        assert measure is not None
-        self.assertEqual(
-            {measure.id},
-            self.complaint.list_user_measures(self.key, active_measure_persona_id),
+        measure_entry = case.entries[active_measure_entry_id]
+        measure_version = measure_entry.active_version
+        assert measure_version is not None
+        entries, descriptions = self.complaint.get_user_measures(
+            self.key, active_measure_persona_id
         )
+        self.assertEqual(measure_entry, entries[active_measure_entry_id])
+        self.assertIn(measure_version.id, descriptions)
 
         revoke_data: CdEDBObject = {
             "timestamp": now(),
@@ -1044,89 +1324,70 @@ class TestComplaintBackend(BackendTest):
         with self.switch_user("simon"):
             self.complaint.revoke_entry(self.key, active_measure_entry_id, revoke_data)
 
-        self.assertEqual(
-            set(),
-            self.complaint.list_user_measures(
-                self.key, active_measure_persona_id, is_active=True
-            ),
+        entries, descriptions = self.complaint.get_user_measures(
+            self.key, active_measure_persona_id
         )
+        self.assertNotIn(active_measure_entry_id, entries)
+        self.assertNotIn(measure_version.id, descriptions)
 
         with self.switch_user("simon"):
             case = self.complaint.get_case(self.key, case_id)
         measure = case.entries[active_measure_entry_id].active_version
         assert measure is not None
-        self.assertEqual(
-            {measure.id, 7, 8},
-            self.complaint.list_user_measures(
-                self.key, active_measure_persona_id, is_active=False
-            ),
+        entries, descriptions = self.complaint.get_user_measures(
+            self.key, active_measure_persona_id
         )
+        self.assertEqual({6, 9}, set(entries))
+        self.assertEqual({7, 10}, set(descriptions))
 
     @as_users("berta")
     def test_user_measures_unprivileged(self) -> None:
-        measure_entry_id = 6
         measure_persona_id = 2
         # access own measures
-        self.assertEqual(
-            {measure_entry_id},
-            self.complaint.list_user_measures(self.key, measure_persona_id),
+        entries, descriptions = self.complaint.get_user_measures(
+            self.key, measure_persona_id
         )
-
-        measures, descriptions, entries = self.complaint.get_measures(
-            self.key, {measure_entry_id}
-        )
-        self.assertEqual({measure_entry_id}, measures.keys())
-        self.assertEqual({measure_entry_id}, descriptions.keys())
-        self.assertEqual({measures[measure_entry_id].entry_id}, entries.keys())
+        self.assertEqual({5, 6, 9}, set(entries))
+        self.assertEqual({6, 7, 10}, set(descriptions))
 
         with self.assertRaises(PrivilegeError):
-            self.complaint.list_measures(self.key)
+            self.complaint.get_measures(self.key)
 
         # non-affected user
         with self.switch_user("inga"):
             with self.assertRaises(PrivilegeError):
-                self.complaint.list_user_measures(self.key, measure_persona_id)
-            with self.assertRaises(PrivilegeError):
-                self.complaint.get_measures(self.key, {measure_entry_id})
+                self.complaint.get_user_measures(self.key, measure_persona_id)
 
     @as_users("simon", "janis")
     def test_measures(self) -> None:
-        measure_ids_expectation = {6: 1}
-        self.assertEqual(
-            measure_ids_expectation,
-            self.complaint.list_measures(self.key),
-        )
-
-        measures_expectation = {
-            6: models.ComplaintEntryVersion(
-                id=6,  # type: ignore[arg-type]
-                entry_id=5,  # type: ignore[arg-type]
-                length=53,
-                ctime=nearly_now(),
-                submitted_by=1,  # type: ignore[arg-type]
-                authors={3},  # type: ignore[arg-type]
-                timestamp=datetime.datetime(
-                    2025, 5, 28, 16, tzinfo=datetime.timezone.utc
-                ),
-            ),
-        }
         descriptions_expectation = {
             6: "Berta muss bei Anmeldung ein Einzelzimmer beantragen.",
         }
         entries_expectation = {
-            5: {
-                "case_id": 1,
-                "concerned_id": 2,
-                "entry_type": const.ComplaintEntryType.agreement_measure,
-                "id": 5,
-                "is_revoked": False,
-            }
+            5: models.ComplaintEntry(
+                id=vtypes.ID(5),
+                case_id=vtypes.ID(1),
+                entry_type=const.ComplaintEntryType.agreement_measure,
+                parent_id=vtypes.ID(4),
+                concerned_id=PersonaID(2),
+                all_versions=[
+                    models.ComplaintEntryVersion(
+                        id=vtypes.ID(6),
+                        entry_id=vtypes.ID(5),
+                        length=53,
+                        ctime=nearly_now(),
+                        submitted_by=PersonaID(1),
+                        authors={PersonaID(3)},
+                        timestamp=datetime.datetime(
+                            2025, 5, 28, 16, tzinfo=datetime.UTC
+                        ),
+                    ),
+                ],
+            )
         }
         self.assertEqual(
-            (measures_expectation, descriptions_expectation, entries_expectation),
-            self.complaint.get_measures(
-                self.key, self.complaint.list_measures(self.key)
-            ),
+            (entries_expectation, descriptions_expectation),
+            self.complaint.get_measures(self.key),
         )
 
     @as_users("simon")
@@ -1142,6 +1403,198 @@ class TestComplaintBackend(BackendTest):
 
         self.assertEqual(1, self.complaint.remove_enforcer(self.key, janis_id))
         self.assertEqual(-1, self.complaint.remove_enforcer(self.key, janis_id))
+
+    @as_users("simon")
+    @storage
+    def test_attachment_store(self) -> None:
+        decrypt = get_decrypt(self.secrets["COMPLAINT_SECRET"])
+        invalid_pdf = b"abc"
+        with self.assertRaisesRegex(ValueError, "Only pdf allowed."):
+            self.complaint.get_attachment_store(self.key).store(invalid_pdf)
+
+        case_id, entry_id, version_nr = 1, 2, 1
+        sample_attachment_content = (self.testfile_dir / "form.pdf").read_bytes()
+        sample_attachment_hash = self.get_sample_datum(
+            models.ComplaintEntryVersion.database_table,
+            entry_id,
+        )["attachment_hash"]
+        self.assertEqual(
+            get_hash(sample_attachment_content),
+            sample_attachment_hash,
+        )
+        self.assertEqual(
+            sample_attachment_content,
+            self.complaint.get_attachment_store(self.key).get(sample_attachment_hash),
+        )
+        with self.assertRaises(PrivilegeError):
+            self.complaint.retrieve_attachment(self.key, entry_id, version_nr)
+
+        self.complaint.unlock_case(self.key, case_id, "testing")
+        self.assertEqual(
+            sample_attachment_content,
+            self.complaint.retrieve_attachment(self.key, entry_id, version_nr),
+        )
+
+        valid_pdf = (self.testfile_dir / "rechen.pdf").read_bytes()
+        attachment_hash = self.complaint.get_attachment_store(self.key).store(valid_pdf)
+        self.assertEqual(
+            valid_pdf,
+            self.complaint.get_attachment_store(self.key).get(attachment_hash),
+        )
+        encrypted = (
+            self.complaint
+            .get_attachment_store(self.key)
+            .get_path(attachment_hash)
+            .read_bytes()
+        )
+        self.assertNotEqual(valid_pdf, encrypted)
+        self.assertEqual(valid_pdf, decrypt(encrypted))
+        self.complaint.get_attachment_store(self.key).store(valid_pdf)
+        new_encrypted = (
+            self.complaint
+            .get_attachment_store(self.key)
+            .get_path(attachment_hash)
+            .read_bytes()
+        )
+        self.assertNotEqual(encrypted, new_encrypted)
+        self.assertEqual(valid_pdf, decrypt(new_encrypted))
+
+        case_id = 1
+        entry_data = {
+            "entry_type": const.ComplaintEntryType.provisional_statement_given,
+            "concerned_id": 2,
+        }
+        version_data = {
+            "description": "Test",
+            "timestamp": now(),
+            "authors": [1],
+            "attachment_hash": "abc",
+            "attachment_title": "Test",
+            "attachment_filename": "test.pdf",
+        }
+        with self.assertRaisesRegex(RuntimeError, "File has been lost."):
+            self.complaint.add_entry(self.key, case_id, entry_data, version_data)
+        version_data["attachment_hash"] = attachment_hash
+        self.complaint.add_entry(self.key, case_id, entry_data, version_data)
+
+        self.assertTrue(
+            self.complaint.get_attachment_store(self.key).forget_one(
+                self.key, lambda rs, attachment_hash: False, attachment_hash
+            )
+        )
+        self.assertIsNone(
+            self.complaint.get_attachment_store(self.key).get(attachment_hash)
+        )
+        self.assertFalse(
+            self.complaint.get_attachment_store(self.key).is_available(attachment_hash)
+        )
+
+    @as_users("simon")
+    def test_purge_entry_version(self) -> None:
+        case_id, entry_id, version_id = 1, 4, 4
+
+        expectation = models.ComplaintEntryVersion(
+            id=vtypes.ID(version_id),
+            entry_id=vtypes.ID(entry_id),
+            length=80,
+            timestamp=datetime.datetime(2025, 5, 28, 16, tzinfo=datetime.UTC),
+            ctime=nearly_now(),
+            submitted_by=PersonaID(1),
+            dtime=nearly_now(),
+            deleted_by=PersonaID(1),
+            dreason="Ungünstige Wortwahl.",
+            marked_for_purge=None,
+            purged_by=None,
+            is_purged=False,
+            authors={PersonaID(3)},
+        )
+        expectation.entry = cast(
+            models.ComplaintEntry,
+            SimpleNamespace(
+                case=SimpleNamespace(personas=self.core.get_personas(self.key, [1, 3]))
+            ),
+        )
+
+        case = self.complaint.get_case(self.key, case_id)
+        self.assertEqual(
+            expectation.as_dict(),
+            case.entries[entry_id].versions_by_id[version_id].as_dict(),
+        )
+        self.assertEqual(expectation, case.entries[entry_id].versions_by_id[version_id])
+
+        self.complaint.mark_entry_version_for_purge(self.key, entry_id, version_id)
+
+        old_expectation = copy.deepcopy(expectation)
+
+        expectation.marked_for_purge = nearly_now()
+        expectation.purged_by = self.user["id"]
+
+        case = self.complaint.get_case(self.key, case_id)
+        self.assertEqual(
+            expectation.as_dict(),
+            case.entries[entry_id].versions_by_id[version_id].as_dict(),
+        )
+        self.assertEqual(expectation, case.entries[entry_id].versions_by_id[version_id])
+
+        with self.assertRaisesRegex(
+            ValueError, "Entry version already marked for purge."
+        ):
+            self.complaint.mark_entry_version_for_purge(self.key, entry_id, version_id)
+
+        self.complaint.unmark_entry_version_for_purge(self.key, entry_id, version_id)
+
+        case = self.complaint.get_case(self.key, case_id)
+        self.assertEqual(
+            old_expectation.as_dict(),
+            case.entries[entry_id].versions_by_id[version_id].as_dict(),
+        )
+        self.assertEqual(
+            old_expectation, case.entries[entry_id].versions_by_id[version_id]
+        )
+
+        with self.assertRaisesRegex(ValueError, "Entry version not marked for purge."):
+            self.complaint.unmark_entry_version_for_purge(
+                self.key, entry_id, version_id
+            )
+
+        with self.assertRaises(PrivilegeError):
+            self.complaint.purge_entry_version(self.key, entry_id, version_id)
+
+        with self.assertRaisesRegex(ValueError, "Entry version not marked for purge."):
+            self.complaint.purge_entry_version(CRON, entry_id, version_id)
+
+        self.complaint.mark_entry_version_for_purge(self.key, entry_id, version_id)
+
+        with self.assertRaisesRegex(ValueError, "Not yet ready for purge."):
+            self.complaint.purge_entry_version(CRON, entry_id, version_id)
+
+        with freezegun.freeze_time(now()) as frozen_time:
+            frozen_time.tick(self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"])
+
+            self.complaint.purge_entry_version(CRON, entry_id, version_id)
+
+        expectation = models.ComplaintEntryVersion(
+            id=vtypes.ID(version_id),
+            entry_id=vtypes.ID(entry_id),
+            length=None,
+            timestamp=None,
+            ctime=nearly_now(),
+            submitted_by=PersonaID(1),
+            dtime=nearly_now(),
+            deleted_by=PersonaID(1),
+            dreason=None,
+            marked_for_purge=nearly_now(),
+            purged_by=self.user["id"],
+            is_purged=True,
+            authors=set(),
+        )
+
+        case = self.complaint.get_case(self.key, case_id)
+        self.assertEqual(
+            expectation.as_dict(),
+            case.entries[entry_id].versions_by_id[version_id].as_dict(),
+        )
+        self.assertEqual(expectation, case.entries[entry_id].versions_by_id[version_id])
 
 
 class TestComplaintValidation(TestValidationBase):
@@ -1274,8 +1727,7 @@ class TestComplaintValidation(TestValidationBase):
                     },
                     None,
                     ValueError(
-                        "Invalid input for the enumeration %(enum)s (kind)",
-                        {'enum': const.ComplaintKind},
+                        "Invalid input for the enumeration 'ComplaintKind'. (kind)"
                     ),
                 ),
                 (
@@ -1294,14 +1746,14 @@ class TestComplaintValidation(TestValidationBase):
     def test_entry(self) -> None:
         entries = {
             1: models.ComplaintEntry(
-                id=1,  # type: ignore[arg-type]
-                case_id=1,  # type: ignore[arg-type]
+                id=vtypes.ID(1),
+                case_id=vtypes.ID(1),
                 entry_type=const.ComplaintEntryType.agreement,
                 all_versions=[],
             ),
             2: models.ComplaintEntry(
-                id=2,  # type: ignore[arg-type]
-                case_id=1,  # type: ignore[arg-type]
+                id=vtypes.ID(2),
+                case_id=vtypes.ID(1),
                 entry_type=const.ComplaintEntryType.provisional_statement_given,
                 all_versions=[],
             ),
@@ -1357,7 +1809,7 @@ class TestComplaintValidation(TestValidationBase):
                     None,
                 ),
             ],
-            {"creation": True, "passthrough": True, "entries": entries},
+            {"creation": True, "entries": entries},
         )
         # Test unsuccessful creations.
         self.do_validator_test(
@@ -1369,8 +1821,7 @@ class TestComplaintValidation(TestValidationBase):
                     },
                     None,
                     ValueError(
-                        "Invalid input for the enumeration %(enum)s (entry_type)",
-                        {'enum': const.ComplaintEntryType},
+                        "Invalid input for the enumeration 'ComplaintEntryType'. (entry_type)"
                     ),
                 ),
                 (
@@ -1379,8 +1830,7 @@ class TestComplaintValidation(TestValidationBase):
                     },
                     None,
                     ValueError(
-                        "Invalid input for the enumeration %(enum)s (entry_type)",
-                        {'enum': const.ComplaintEntryType},
+                        "Invalid input for the enumeration 'ComplaintEntryType'. (entry_type)"
                     ),
                 ),
                 (
@@ -1417,7 +1867,7 @@ class TestComplaintValidation(TestValidationBase):
                     ValueError("Invalid parent type. (parent_id)"),
                 ),
             ],
-            {"creation": True, "passthrough": True, "entries": entries},
+            {"creation": True, "entries": entries},
         )
 
     def test_entry_version(self) -> None:
@@ -1435,10 +1885,13 @@ class TestComplaintValidation(TestValidationBase):
                     {
                         "description": None,
                         "timestamp": datetime.datetime(
-                            2025, 5, 30, 20, 25, tzinfo=datetime.timezone.utc
+                            2025, 5, 30, 20, 25, tzinfo=datetime.UTC
                         ),
                         "authors": [1],
                         "etime": None,
+                        "attachment_hash": None,
+                        "attachment_title": None,
+                        "attachment_filename": None,
                     },
                     None,
                 ),
@@ -1448,27 +1901,36 @@ class TestComplaintValidation(TestValidationBase):
                         "timestamp": now(),
                         "authors": [1, 2, 3],
                         "etime": None,
+                        "attachment_hash": None,
+                        "attachment_title": None,
+                        "attachment_filename": None,
                     },
                     INVAL,
                     None,
                 ),
                 (
                     {
-                        "timestamp": datetime.datetime(2025, 5, 30, 22, 25),
+                        "timestamp": datetime.datetime(
+                            2025, 5, 30, 22, 25, tzinfo=datetime.UTC
+                        ),
                         "authors": ["DB-1-9"],
                     },
                     {
                         "description": None,
-                        "timestamp": datetime.datetime(2025, 5, 30, 22, 25),
+                        "timestamp": datetime.datetime(
+                            2025, 5, 30, 22, 25, tzinfo=datetime.UTC
+                        ),
                         "authors": [1],
                         "etime": None,
+                        "attachment_hash": None,
+                        "attachment_title": None,
+                        "attachment_filename": None,
                     },
                     None,
                 ),
             ],
             {
                 "creation": True,
-                "passthrough": True,
                 "entry_type": const.ComplaintEntryType.statement_signed,
             },
         )
@@ -1487,18 +1949,20 @@ class TestComplaintValidation(TestValidationBase):
                         "description": "Test.",
                         "authors": [1],
                         "timestamp": datetime.datetime(
-                            2025, 5, 30, 20, 25, tzinfo=datetime.timezone.utc
+                            2025, 5, 30, 20, 25, tzinfo=datetime.UTC
                         ),
                         "etime": datetime.datetime(
-                            2025, 5, 31, 20, 25, tzinfo=datetime.timezone.utc
+                            2025, 5, 31, 20, 25, tzinfo=datetime.UTC
                         ),
+                        "attachment_hash": None,
+                        "attachment_title": None,
+                        "attachment_filename": None,
                     },
                     None,
                 ),
             ],
             {
                 "creation": True,
-                "passthrough": True,
                 "entry_type": const.ComplaintEntryType.definite_measure,
             },
         )
@@ -1512,6 +1976,9 @@ class TestComplaintValidation(TestValidationBase):
                         "timestamp": now(),
                         "authors": [1],
                         "etime": None,
+                        "attachment_hash": None,
+                        "attachment_title": None,
+                        "attachment_filename": None,
                     },
                     INVAL,
                     None,
@@ -1519,7 +1986,123 @@ class TestComplaintValidation(TestValidationBase):
             ],
             {
                 "creation": True,
-                "passthrough": True,
                 "entry_type": const.ComplaintEntryType.generic_information,
+            },
+        )
+        # Test successful creation of entry version with attachment:
+        self.do_validator_test(
+            models.ComplaintEntryVersion,
+            [
+                (
+                    {
+                        "description": "Test.",
+                        "timestamp": now(),
+                        "authors": [1],
+                        "etime": None,
+                        "attachment_hash": get_hash(b"abc"),
+                        "attachment_title": "Test",
+                        "attachment_filename": "test.pdf",
+                    },
+                    INVAL,
+                    None,
+                )
+            ],
+            {
+                "creation": True,
+                "entry_type": const.ComplaintEntryType.provisional_statement_given,
+            },
+        )
+        self.do_validator_test(
+            models.ComplaintEntryVersion,
+            [
+                (
+                    {
+                        "description": "Test.",
+                        "timestamp": now(),
+                        "authors": [1],
+                        "etime": None,
+                        "attachment_hash": get_hash(b"abc"),
+                        "attachment_title": "Test",
+                        "attachment_filename": "test.pdf",
+                    },
+                    INVAL,
+                    None,
+                )
+            ],
+            {
+                "creation": True,
+                "entry_type": const.ComplaintEntryType.generic_information,
+            },
+        )
+        # Test creation of entry version with attachment with invalid entry type.
+        self.do_validator_test(
+            models.ComplaintEntryVersion,
+            [
+                (
+                    {
+                        "description": "Test.",
+                        "timestamp": now(),
+                        "authors": [1],
+                        "etime": None,
+                        "attachment_hash": get_hash(b"abc"),
+                        "attachment_title": "Test",
+                        "attachment_filename": "test.pdf",
+                    },
+                    None,
+                    ValueError("Must be empty. (attachment_hash)"),
+                )
+            ],
+            {
+                "creation": True,
+                "entry_type": const.ComplaintEntryType.synthesis,
+            },
+        )
+        # Test invalid input for entry version with attachment:
+        self.do_validator_test(
+            models.ComplaintEntryVersion,
+            [
+                (
+                    {
+                        "description": "Test.",
+                        "timestamp": now(),
+                        "authors": [1],
+                        "etime": None,
+                        "attachment_hash": "",
+                        "attachment_title": "Test",
+                        "attachment_filename": "test.pdf",
+                    },
+                    None,
+                    ValueError("Incomplete attachment. (attachment_hash)"),
+                ),
+                (
+                    {
+                        "description": "Test.",
+                        "timestamp": now(),
+                        "authors": [1],
+                        "etime": None,
+                        "attachment_hash": get_hash(b"abc"),
+                        "attachment_title": "",
+                        "attachment_filename": "test.pdf",
+                    },
+                    None,
+                    ValueError("Incomplete attachment. (attachment_title)"),
+                ),
+                (
+                    {
+                        "description": "Test.",
+                        "timestamp": now(),
+                        "authors": [1],
+                        "etime": None,
+                        "attachment_hash": get_hash(b"abc"),
+                        "attachment_title": "Test",
+                        "attachment_filename": "",
+                    },
+                    None,
+                    ValueError("Incomplete attachment. (attachment_filename)"),
+                ),
+            ],
+            {
+                "creation": True,
+                "entry_type": const.ComplaintEntryType.provisional_statement_given,
             },
         )

@@ -66,7 +66,7 @@
             {{ util.anti_csrf_token('event/field_multiset') }}
             {% for anid in ordered %}
                 {{ generic_event.form_field_input(
-                    ambience['event']['fields'][values['field_id']|int], name="input{}".format(anid),
+                    field, name=field.request_name + anid|string,
                     label=labels[anid], force_label=True, outerclass='multiset-input') }}
             {% endfor %}
             {{ util.input_hidden(name="field_id") }}

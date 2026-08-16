@@ -54,7 +54,7 @@
                 {{ util.anti_csrf_token('ml/add_moderators') }}
                 <div class="input-group has-success">
                     <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-                    {{ util.input_text(name="moderators", anid="input-add-moderator",
+                    {{ util.input_text(type="search", name="moderators", anid="input-add-moderator",
                                        placeholder="DB-XXXX-X,DB-XXXX-X,…",
                                        arialabel=gettext("IDs of the new moderators")) }}
                     <script nonce="{{ csp_nonce }}">
@@ -151,7 +151,7 @@
         {{ util.anti_csrf_token('ml/add_subscribers') }}
         <div class="input-group has-success">
             <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-            {{ util.input_text(name="subscriber_ids", placeholder="DB-XXXX-X,DB-XXXX-X,…", anid="input-add-subscriber",
+            {{ util.input_text(type="search", name="subscriber_ids", placeholder="DB-XXXX-X,DB-XXXX-X,…", anid="input-add-subscriber",
                                arialabel=gettext("ID of the new subscribers")) }}
             <script nonce="{{ csp_nonce }}">
                 $('#input-add-subscriber').cdedbSearchPerson(

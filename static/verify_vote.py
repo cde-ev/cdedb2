@@ -22,8 +22,10 @@ def encrypt_vote(salt: str, secret: str, vote: str) -> str:
     return h.hexdigest()
 
 
-def retrieve_vote(votes: Collection[Dict[str, str]], secret: str,
-                  ) -> Optional[Dict[str, str]]:
+def retrieve_vote(
+    votes: Collection[Dict[str, str]],
+    secret: str,
+) -> Optional[Dict[str, str]]:
     """Ermittle Stimme, die mit dem Geheimnis abgegeben wurde."""
     for v in votes:
         if v['hash'] == encrypt_vote(v['salt'], secret, v['vote']):
@@ -34,7 +36,8 @@ def retrieve_vote(votes: Collection[Dict[str, str]], secret: str,
 if __name__ == "__main__":
     # Analysiere Kommandozeilenargumente
     parser = argparse.ArgumentParser(
-        description='Verifiziere die eigene Stimme in Ergebnisdateien.')
+        description='Verifiziere die eigene Stimme in Ergebnisdateien.'
+    )
     parser.add_argument('secret', help="persönliches Geheimnis")
     parser.add_argument('results', help="Pfad zu Ergebnisdateien", nargs='+')
     args = parser.parse_args()
@@ -54,8 +57,8 @@ if __name__ == "__main__":
         print("Versammlung: {}".format(data['assembly']))
         print("Abstimmung: {}".format(data['ballot']))
         candidates = ", ".join(
-            f"{value} ({key})"
-            for key, value in sorted(data['candidates'].items()))
+            f"{value} ({key})" for key, value in sorted(data['candidates'].items())
+        )
         print(f"Optionen: {candidates}")
         # ... und ermittle die eigene Stimme
         vote_dict = retrieve_vote(data['votes'], args.secret)

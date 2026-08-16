@@ -8,28 +8,40 @@ on boilerplate.
 Additionally this provides some level of guidance on how to interact
 with the production environment.
 """
+
 import contextlib
 import getpass
 import gettext
 import os
 import pathlib
-import tempfile
 import time
 from collections.abc import Mapping
-from pkgutil import resolve_name
 from types import TracebackType
-from typing import IO, Any, Optional
+from typing import Any, cast
 
 import psycopg2
 import psycopg2.extensions
 import psycopg2.extras
 
+from cdedb.backend.assembly import AssemblyBackend
+from cdedb.backend.cde import CdEBackend
+from cdedb.backend.complaint import ComplaintBackend
+from cdedb.backend.core import CoreBackend
+from cdedb.backend.event import EventBackend
+from cdedb.backend.ml import MlBackend
+from cdedb.backend.past_event import PastEventBackend
+from cdedb.backend.session import SessionBackend
 from cdedb.cli.util import fake_rs, redirect_to_file
 from cdedb.common import AbstractBackend, PathLike, RequestState, make_proxy
 from cdedb.common.n_ import n_
-from cdedb.config import Config, SecretsConfig, get_configpath, set_configpath
+from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import Atomizer, IrradiatedConnection
+from cdedb.frontend.assembly import AssemblyFrontend
+from cdedb.frontend.cde import CdEFrontend
 from cdedb.frontend.common import AbstractFrontend, setup_translations
+from cdedb.frontend.core import CoreFrontend
+from cdedb.frontend.event import EventFrontend
+from cdedb.frontend.ml import MlFrontend
 from cdedb.frontend.paths import CDEDB_PATHS
 
 psycopg2.extensions.register_type(psycopg2.extensions.UNICODE)
@@ -38,101 +50,40 @@ psycopg2.extensions.register_type(psycopg2.extensions.UNICODEARRAY)
 __all__ = ['DryRunError', 'Script', 'ScriptAtomizer']
 
 
-class TempConfig:
-    """Provide a thin wrapper around a temporary file.
-
-    The advantage of this is that it works with both a given configpath xor config
-    keyword arguments. If either of both is given, the current config path is used.
-    If this is not set, we use the DEFAULT_CONFIGPATH.
-
-    If config keyword arguments are given, the config options from the real configpath
-    (taken from the environment) are used as fallback values.
-    If a configpath is given, only the config options specified there are taken into
-    account.
-    """
-
-    def __init__(self, configpath: Optional[PathLike] = None, **config: Any):
-        if configpath and config:  # pragma: no cover
-            raise ValueError(f"Do not provide both config ({config}) and"
-                             f" configpath ({configpath}).")
-        self._configpath = configpath
-        self._config = config
-        # this will be used to hold the current configpath from the environment
-        # and restore it later on
-        self._real_configpath: pathlib.Path
-        self._f: Optional[IO[str]] = None
-
-    def __enter__(self) -> None:
-        # This also sets the config path to the default one if no config path is set.
-        self._real_configpath = get_configpath(fallback=True)
-        if self._config:
-            secrets = SecretsConfig()
-            self._f = tempfile.NamedTemporaryFile("w", suffix=".py", encoding="utf-8")
-            f = self._f.__enter__()
-            # copy the real_config into the temporary config
-            with open(self._real_configpath, encoding="utf-8") as cf:
-                real_config = cf.read()
-            f.write(real_config)
-            # now, add all keyword config options. Since they are added _after_ the
-            # real_config options, they overwrite them if necessary
-            for k, v in self._config.items():
-                if k in secrets:
-                    msg = ("Override secret config options via kwarg is not possible."
-                           " Please use the SECRET_CONFIGPATH config argument instead.")
-                    raise ValueError(msg)
-                f.write(f"\n{k} = {v}")
-            f.flush()
-            set_configpath(f.name)
-        elif self._configpath:
-            assert self._configpath is not None
-            set_configpath(self._configpath)
-
-    def __exit__(self, exc_type: Optional[type[Exception]],
-                 exc_val: Optional[Exception],
-                 exc_tb: Optional[TracebackType]) -> Optional[bool]:
-        # restore the real configpath
-        set_configpath(self._real_configpath)
-        if self._f:
-            return self._f.__exit__(exc_type, exc_val, exc_tb)
-        return False
-
-    def __str__(self) -> str:
-        if self._config:
-            return str(self._config)
-        elif self._configpath:
-            return pathlib.Path(self._configpath).read_text(encoding="utf-8")
-        else:
-            return ""
-
-
 class Script:
-    backend_map = {
-        "core": "CoreBackend",
-        "cde": "CdEBackend",
-        "past_event": "PastEventBackend",
-        "ml": "MlBackend",
-        "assembly": "AssemblyBackend",
-        "event": "EventBackend",
-        "session": "SessionBackend",
+    backend_map: Mapping[str, type[AbstractBackend]] = {
+        "core": CoreBackend,
+        "complaint": ComplaintBackend,
+        "cde": CdEBackend,
+        "past_event": PastEventBackend,
+        "ml": MlBackend,
+        "assembly": AssemblyBackend,
+        "event": EventBackend,
+        "session": SessionBackend,  # type: ignore[dict-item]
     }
-    frontend_map = {
-        "core": "CoreFrontend",
-        "cde": "CdEFrontend",
-        "ml": "MlFrontend",
-        "assembly": "AssemblyFrontend",
-        "event": "EventFrontend",
+    frontend_map: Mapping[str, type[AbstractFrontend]] = {
+        "core": CoreFrontend,
+        "cde": CdEFrontend,
+        "ml": MlFrontend,
+        "assembly": AssemblyFrontend,
+        "event": EventFrontend,
     }
 
     _conn: IrradiatedConnection
 
-    def __init__(self, *, persona_id: Optional[int] = None,
-                 dry_run: Optional[bool] = None, dbuser: str = 'cdb_anonymous',
-                 outfile: Optional[PathLike] = None,
-                 outfile_append: Optional[bool] = None,
-                 cursor: type[
-                     psycopg2.extensions.cursor] = psycopg2.extras.RealDictCursor,
-                 check_system_user: bool = True, configpath: Optional[PathLike] = None,
-                 **config: Any):
+    def __init__(
+        self,
+        *,
+        persona_id: int | None = None,
+        dry_run: bool | None = None,
+        dbuser: str = 'cdb_anonymous',
+        outfile: PathLike | None = None,
+        outfile_append: bool | None = None,
+        cursor: type[psycopg2.extensions.cursor] = psycopg2.extras.RealDictCursor,
+        check_system_user: bool = True,
+        configpath: PathLike | None = None,
+        **config: Any,
+    ):
         """Setup a helper class containing everything you might need for a script.
 
         The parameters `persona_id`, `dry_run` and `configpath` may be left out, in
@@ -151,10 +102,8 @@ class Script:
         :param cursor: CursorFactory for the cursor used by this connection.
         :param check_system_user: Whether or not ot check for the correct invoking user,
             you need to have a really good reason to turn this off.
-        :param configpath: Path to additional config file. Mutually exclusive with
-            `config`.
-        :param config: Additional config options via keyword arguments. Mutually
-            exclusive with `configpath`.
+        :param configpath: Path to additional config file.
+        :param config: Additional config options via keyword arguments.
         """
         if check_system_user and getpass.getuser() != "www-cde":
             raise RuntimeError("Must be run as user www-cde.")  # pragma: no cover
@@ -168,7 +117,8 @@ class Script:
         if persona_id is None:
             persona_id = int(os.environ.get("SCRIPT_PERSONA_ID", "-1"))
         self.persona_id = int(
-            os.environ.get("EVOLUTION_TRIAL_OVERRIDE_PERSONA_ID", persona_id))
+            os.environ.get("EVOLUTION_TRIAL_OVERRIDE_PERSONA_ID", persona_id)
+        )
         if dry_run is None:
             dry_run = bool(os.environ.get("SCRIPT_DRY_RUN", True))  # noqa: PLW1508
         self.dry_run = bool(os.environ.get("EVOLUTION_TRIAL_OVERRIDE_DRY_RUN", dry_run))
@@ -177,27 +127,25 @@ class Script:
         outfile = os.environ.get("EVOLUTION_TRIAL_OVERRIDE_OUTFILE", outfile)
         self.outfile = pathlib.Path(outfile) if outfile else None
         self.outfile_append = bool(
-            os.environ.get("EVOLUTION_TRIAL_OVERRIDE_OUTFILE_APPEND", outfile_append))
+            os.environ.get("EVOLUTION_TRIAL_OVERRIDE_OUTFILE_APPEND", outfile_append)
+        )
 
         # Setup internals.
-        self._redirect: Optional[contextlib.AbstractContextManager[None]] = None
-        self._atomizer: Optional[ScriptAtomizer] = None
-        self._tempconfig = TempConfig(configpath, **config)
-        with self._tempconfig:
-            self.config = Config()
-            self._secrets = SecretsConfig()
-        self._translations: Optional[Mapping[str, gettext.NullTranslations]]
-        self._backends: dict[tuple[str, bool], AbstractBackend]
-        self._frontends: dict[str, AbstractFrontend]
+        self._redirect: contextlib.AbstractContextManager[None] | None = None
+        self._atomizer: ScriptAtomizer | None = None
+        self._configpath = configpath
+        self._config_overrides = config
+        self.config = Config()
+        self._secrets = SecretsConfig()
+        self._translations: Mapping[str, gettext.NullTranslations] | None
+        self._backends: dict[tuple[Any, bool], AbstractBackend] = {}
+        self._frontends: dict[tuple[Any, bool], AbstractFrontend] = {}
         self._translations = None
-        self._backends = {}
-        self._frontends = {}
         self._request_states: dict[int, RequestState] = {}
         self._conn = None  # type: ignore[assignment]
         self._connect(dbuser, cursor)
 
-    def _connect(self, dbuser: str, cursor: type[psycopg2.extensions.cursor],
-                 ) -> None:
+    def _connect(self, dbuser: str, cursor: type[psycopg2.extensions.cursor]) -> None:
         """Create and save a database connection."""
         if self._conn:
             return  # pragma: no cover
@@ -213,30 +161,82 @@ class Script:
         )
         self._conn.set_client_encoding("UTF8")
 
-    def make_backend(self, realm: str, *, proxy: bool = True):  # type: ignore[no-untyped-def]
-        """Create backend, either as a proxy or not."""
-        if ret := self._backends.get((realm, proxy)):
-            return ret
-        with self._tempconfig:
-            backend_name = self.backend_map[realm]
-            backend = resolve_name(f"cdedb.backend.{realm}.{backend_name}")()
-        self._backends.update({
-            (realm, True): make_proxy(backend),
-            (realm, False): backend,
-        })
-        return self._backends[(realm, proxy)]
+    def make_backend(self, realm: str, *, proxy: bool = True) -> AbstractBackend:
+        return self._make_backend(self.backend_map[realm], proxy=proxy)
 
-    def make_frontend(self, realm: str):  # type: ignore[no-untyped-def]
+    def _make_backend[B: AbstractBackend](
+        self, backend_class: type[B], *, proxy: bool = True
+    ) -> B:
+        """Create backend, either as a proxy or not."""
+        if ret := self._backends.get((backend_class, proxy)):
+            return cast(B, ret)
+        backend = backend_class()
+        self._backends[(backend_class, False)] = backend
+        self._backends[(backend_class, True)] = make_proxy(backend)
+        if proxy:
+            return cast(B, self._backends[(backend_class, True)])
+        return backend
+
+    def make_frontend(self, realm: str, *, proxy: bool = True) -> AbstractFrontend:
+        return self._make_frontend(self.frontend_map[realm], proxy=proxy)
+
+    def _make_frontend[F: AbstractFrontend](
+        self, frontend_class: type[F], *, proxy: bool = True
+    ) -> F:
         """Create a frontend."""
-        if ret := self._frontends.get(realm):
-            return ret
-        with self._tempconfig:
-            frontend_name = self.frontend_map[realm]
-            frontend = resolve_name(f"cdedb.frontend.{realm}.{frontend_name}")()
-        self._frontends[realm] = frontend
+        if ret := self._frontends.get((frontend_class, proxy)):
+            return cast(F, ret)
+        frontend = frontend_class()
+        if not proxy:
+            for backend_name, backend_class in self.backend_map.items():
+                setattr(
+                    frontend,
+                    f"{backend_name}proxy",
+                    self._make_backend(backend_class, proxy=proxy),
+                )
+        self._frontends[(frontend_class, proxy)] = frontend
         return frontend
 
-    def rs(self, persona_id: Optional[int] = None) -> RequestState:
+    def make_core_backend(self, *, proxy: bool = True) -> CoreBackend:
+        return self._make_backend(CoreBackend, proxy=proxy)
+
+    def make_complaint_backend(self, *, proxy: bool = True) -> ComplaintBackend:
+        return self._make_backend(ComplaintBackend, proxy=proxy)
+
+    def make_cde_backend(self, *, proxy: bool = True) -> CdEBackend:
+        return self._make_backend(CdEBackend, proxy=proxy)
+
+    def make_event_backend(self, *, proxy: bool = True) -> EventBackend:
+        return self._make_backend(EventBackend, proxy=proxy)
+
+    def make_past_event_backend(self, *, proxy: bool = True) -> PastEventBackend:
+        return self._make_backend(PastEventBackend, proxy=proxy)
+
+    def make_ml_backend(self, *, proxy: bool = True) -> MlBackend:
+        return self._make_backend(MlBackend, proxy=proxy)
+
+    def make_assembly_backend(self, *, proxy: bool = True) -> AssemblyBackend:
+        return self._make_backend(AssemblyBackend, proxy=proxy)
+
+    def make_session_backend(self, *, proxy: bool = True) -> SessionBackend:
+        return self._make_backend(SessionBackend, proxy=proxy)  # type: ignore[type-var]
+
+    def make_core_frontend(self, *, proxy: bool = True) -> CoreFrontend:
+        return self._make_frontend(CoreFrontend, proxy=proxy)
+
+    def make_cde_frontend(self, *, proxy: bool = True) -> CdEFrontend:
+        return self._make_frontend(CdEFrontend, proxy=proxy)
+
+    def make_event_frontend(self, *, proxy: bool = True) -> EventFrontend:
+        return self._make_frontend(EventFrontend, proxy=proxy)
+
+    def make_ml_frontend(self, *, proxy: bool = True) -> MlFrontend:
+        return self._make_frontend(MlFrontend, proxy=proxy)
+
+    def make_assembly_frontend(self, *, proxy: bool = True) -> AssemblyFrontend:
+        return self._make_frontend(AssemblyFrontend, proxy=proxy)
+
+    def rs(self, persona_id: int | None = None) -> RequestState:
         """Create a RequestState."""
         persona_id = self.persona_id if persona_id is None else persona_id
         if ret := self._request_states.get(persona_id):
@@ -245,27 +245,39 @@ class Script:
             self._translations = setup_translations(self.config)
         urls = CDEDB_PATHS.bind("db.cde-ev.de", script_name="/db/", url_scheme="https")
         rs = fake_rs(self._conn, persona_id, urls=urls)
+        rs.translations = self._translations
         self._request_states[persona_id] = rs
         return rs
 
     def __enter__(self) -> IrradiatedConnection:
         """Thin wrapper around `ScriptAtomizer`."""
+        self._exit_stack = contextlib.ExitStack()
         if not self._atomizer:
             self._atomizer = ScriptAtomizer(self.rs(), dry_run=self.dry_run)
         if self.outfile:
             self._redirect = redirect_to_file(self.outfile, self.outfile_append)
-            self._redirect.__enter__()
+            self._exit_stack.enter_context(self._redirect)
+        self._exit_stack.enter_context(
+            self.config.with_overrides(
+                config_paths=[self._configpath] if self._configpath else None,
+                **self._config_overrides,
+            )
+        )
+        self._exit_stack.__enter__()
         return self._atomizer.__enter__()
 
-    def __exit__(self, exc_type: Optional[type[Exception]],
-                 exc_val: Optional[Exception],
-                 exc_tb: Optional[TracebackType]) -> bool:
+    def __exit__(
+        self,
+        exc_type: type[Exception] | None,
+        exc_val: Exception | None,
+        exc_tb: TracebackType | None,
+    ) -> bool:
         """Thin wrapper around `ScriptAtomizer`."""
         if self._atomizer is None:
             raise RuntimeError(n_("Impossible."))
-        if self._redirect:
-            self._redirect.__exit__(exc_type, exc_val, exc_tb)
-        return self._atomizer.__exit__(exc_type, exc_val, exc_tb)
+        ret = self._atomizer.__exit__(exc_type, exc_val, exc_tb)
+        self._exit_stack.__exit__(exc_type, exc_val, exc_tb)
+        return ret
 
 
 class DryRunError(Exception):
@@ -281,6 +293,7 @@ class ScriptAtomizer(Atomizer):
     :param dry_run: If True, do not commit changes if script ran successfully,
         instead roll back.
     """
+
     start_time: float
 
     def __init__(self, rs: RequestState, *, dry_run: bool = True) -> None:
@@ -291,9 +304,12 @@ class ScriptAtomizer(Atomizer):
         self.start_time = time.monotonic()
         return super().__enter__()
 
-    def __exit__(self, exc_type: Optional[type[Exception]],  # type: ignore[override]
-                 exc_val: Optional[Exception],
-                 exc_tb: Optional[TracebackType]) -> bool:
+    def __exit__(  # type: ignore[override]
+        self,
+        exc_type: type[Exception] | None,
+        exc_val: Exception | None,
+        exc_tb: TracebackType | None,
+    ) -> bool:
         """Calculate time taken and provide success message.
 
         Ensure the transaction is rolled back if self.dry_run is True.

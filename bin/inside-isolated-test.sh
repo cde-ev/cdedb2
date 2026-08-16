@@ -1,8 +1,8 @@
 #!/bin/bash
 
-cd /cdedb2
+cd /cdedb2 || exit
 git pull
-git checkout $2
+git checkout "$2"
 git pull
 make -B tests/ancillary_files/sample_data.sql
 ./bin/check.py 2> >(tee -a /tmp/output-check.txt >&2)

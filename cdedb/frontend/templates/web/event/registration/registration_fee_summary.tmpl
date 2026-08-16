@@ -1,4 +1,4 @@
-{% set sidenav_active='registrations' %}
+{% set sidenav_active='event_registration' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% import "web/event/generic.tmpl" as generic_event with context %}
@@ -16,8 +16,8 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
-    {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations")) }}
-    {{ util.breadcrumb_link(cdedblink("event/show_registration"), persona|persona_name, icon="user") }}
+    {{ util.breadcrumb_link(cdedblink("event/registration_query"), gettext("Registrations"), readonly=not is_privileged_for("registration_query")) }}
+    {{ util.breadcrumb_link(cdedblink("event/show_registration"), persona|persona_name, icon="user", readonly=not is_privileged_for("show_registration")) }}
     {{ util.breadcrumb_link(cdedblink("event/show_registration_fee"), gettext("Fee Details"), active=True) }}
 {% endblock %}
 
@@ -27,7 +27,7 @@
     <dt title="{% trans %}Amount Owed{% endtrans %}">{% trans %}Amount Owed{% endtrans %}</dt>
     <dd id="amount-owed">
         {% if complex_fee.is_complex() %}
-            {{ generic_event.fee_breakdown_by_kind() }}
+            {{ generic_event.fee_breakdown_by_kind(complex_fee) }}
         {% else %}
             {{ complex_fee.amount|money(lang=lang) }}
         {% endif %}

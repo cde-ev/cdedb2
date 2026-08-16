@@ -22,21 +22,10 @@
             {{ util.form_input_attachment(link=cdedblink("core/genesis_get_attachment", {'attachment_hash': values.get('attachment_hash') }),
                                           small=True, accept="text/*,application/pdf",
                                           info=attachment_info + attachment_restrictions, enforce_required=false) }}
-            {{ util.form_input_select("pevent_id", past_event_entries, label=gettext("Event"), small=True,
-                                      nulloption=gettext("– none –"), anid="input-pastevents",
+            {{ util.form_input_select(name="pevent_id", entries=pevent_entries, aclass="pcourse-pevent-input",
+                                      nulloption=nbsp, label=gettext("Past Event"), selectize=True,
                                       info=gettext("Select one of your past events which entitles you to become a CdE member."
                                                    " This could be a DSA, DJA, etc., or a longer CdE event.")) }}
-            <script nonce="{{ csp_nonce }}">
-                $("#input-pastevents").selectize({
-                    'valueField' : 'id',
-                    'labelField' : 'name',
-                    searchField: ['name'],
-                    create: false,
-                    options: {{ selectize_data|tojson }},
-                    maxItems: 1,
-                    copyClassesToDropdown: false,
-                });
-            </script>
             {{ util.form_input_submit(label=gettext("Confirm Request") , small=True) }}
         </div>
     </form>

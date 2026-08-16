@@ -1,15 +1,17 @@
 """Parse a given json dict into sql statements."""
+
 import csv
 import pathlib
-from collections.abc import Sized
+from collections.abc import Callable, Sized
 from itertools import chain
-from typing import Any, Callable, Optional, TypedDict
+from typing import Any, TypedDict
 
 from psycopg2.extensions import cursor
 
 import cdedb.models.complaint as models_complaint
 from cdedb.backend.core import CoreBackend
 from cdedb.common import CdEDBObject, PsycoJson
+from cdedb.common.crypt import _encrypt
 from cdedb.config import SecretsConfig
 from cdedb.database.conversions import to_db_input
 from cdedb.database.query import DatabaseValue_s
@@ -66,10 +68,9 @@ def prepare_aux(data: CdEDBObject) -> AuxData:
     # dynamically generates data to insert.
     # The function will get the entire row as a argument.
     entry_replacements = {
-        "core.personas":
-            {
-                "fulltext": core.create_fulltext,
-            },
+        "core.personas": {
+            "fulltext": core.create_fulltext,
+        },
     }
 
     # For xss checking insert a payload into all string fields except excluded ones.
@@ -84,10 +85,11 @@ def prepare_aux(data: CdEDBObject) -> AuxData:
         "hash", "filename", "file_hash", "address", "local_part", "new_balance",
         "modifier_name", "transaction_date", "condition", "donation", "payment_date",
         'etime', 'rtime', 'secret_hash', 'member_total', "start_date", "end_date",
-        "timestamp",
-    }
+        "timestamp", "marked_for_purge",
+    }  # fmt: skip
     xss_table_excludes = {
-        "cde.org_period", "cde.expuls_period",
+        "cde.org_period",
+        "cde.expuls_period",
     }
 
     return AuxData(
@@ -102,17 +104,22 @@ def prepare_aux(data: CdEDBObject) -> AuxData:
     )
 
 
-def format_inserts(table_name: str, table_data: Sized, keys: tuple[str, ...],
-                   params: list[DatabaseValue_s], aux: AuxData) -> SQLCommand:
+def format_inserts(
+    table_name: str,
+    table_data: Sized,
+    keys: tuple[str, ...],
+    params: list[DatabaseValue_s],
+    aux: AuxData,
+) -> SQLCommand:
     # Create len(data) many row placeholders for len(keys) many values.
     value_list = ",\n".join((f"({', '.join(('%s',) * len(keys))})",) * len(table_data))
     query = f"INSERT INTO {table_name} ({', '.join(keys)}) VALUES {value_list}"
-    params: list[DatabaseValue_s] = [to_db_input(p) for p in params]
+    params = [to_db_input(p) for p in params]
 
     return query, params
 
 
-def json2sql(data: CdEDBObject, xss_payload: Optional[str] = None) -> list[SQLCommand]:
+def json2sql(data: CdEDBObject, xss_payload: str | None = None) -> list[SQLCommand]:
     """Convert a dict loaded from a json file into sql statements.
 
     The dict contains tables, mapped to columns, mapped to values. The table and column
@@ -156,13 +163,15 @@ def json2sql(data: CdEDBObject, xss_payload: Optional[str] = None) -> list[SQLCo
                 if isinstance(entry[k], dict):
                     entry[k] = PsycoJson(entry[k])
                 elif isinstance(entry[k], str) and xss_payload is not None:
-                    if (table not in aux["xss_table_excludes"]
-                            and k not in aux['xss_field_excludes']):
+                    if (
+                        table not in aux["xss_table_excludes"]
+                        and k not in aux['xss_field_excludes']
+                    ):
                         entry[k] += xss_payload
                 if table == models_complaint.ComplaintEntryVersion.database_table:
                     if k == "description" and entry[k]:
-                        entry[k] = models_complaint.ComplaintEntryVersion.encrypt(
-                            entry[k], aux["secrets"]["COMPLAINT_SECRET"]
+                        entry[k] = _encrypt(
+                            entry[k], key=aux["secrets"]["COMPLAINT_SECRET"]
                         )
             for k, f in aux["entry_replacements"].get(table, {}).items():
                 entry[k] = f(entry)
@@ -184,8 +193,7 @@ def json2sql(data: CdEDBObject, xss_payload: Optional[str] = None) -> list[SQLCo
     # Here we set all sequential ids to start with 1001, so that
     # ids are consistent when running the test suite.
     commands.extend(
-        (f"SELECT setval('{table}_id_seq', 1000)", [])
-        for table in aux["seq_id_tables"]
+        (f"SELECT setval('{table}_id_seq', 1000)", []) for table in aux["seq_id_tables"]
     )
 
     return commands
@@ -200,7 +208,7 @@ def insert_postal_code_locations() -> SQLCommand:
     Read geo coordinates of german PLZs and create INSERTs to save them to the database.
     """
     with pathlib.Path(
-            "/cdedb2/tests/ancillary_files/plz.csv",
+        "/cdedb2/tests/ancillary_files/plz.csv",
     ).open(encoding="utf-8") as f:
         entries = list(csv.DictReader(f, delimiter=',', quotechar='"'))
     command = f"""
@@ -209,12 +217,18 @@ def insert_postal_code_locations() -> SQLCommand:
         VALUES
             {",".join(["(%s, %s, ll_to_earth(%s, %s), %s, %s)"] * len(entries))}
     """
-    params = list(chain.from_iterable(
-        [
-            e['plz'], e['note'].removeprefix(e['plz']).replace('\n', ' ').strip(),
-            e['lat'], e['lon'], e['lat'], e['lon'],
-        ]
-        for e in entries
-    ))
+    params = list(
+        chain.from_iterable(
+            [
+                e['plz'],
+                e['note'].removeprefix(e['plz']).replace('\n', ' ').strip(),
+                e['lat'],
+                e['lon'],
+                e['lat'],
+                e['lon'],
+            ]
+            for e in entries
+        )
+    )
 
     return command, params

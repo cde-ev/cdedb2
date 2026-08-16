@@ -17,7 +17,8 @@ from schulze_condorcet import schulze_evaluate, schulze_evaluate_detailed
 if __name__ == "__main__":
     # Analysiere Kommandozeilenargumente
     parser = argparse.ArgumentParser(
-        description='Verifiziere die Auszählung in Ergebnisdateien.')
+        description='Verifiziere die Auszählung in Ergebnisdateien.'
+    )
     parser.add_argument('results', help="Pfad zu Ergebnisdateien", nargs='+')
     args = parser.parse_args()
 
@@ -36,7 +37,8 @@ if __name__ == "__main__":
         print(f"Versammlung: {data['assembly']}")
         print(f"Abstimmung: {data['ballot']}")
         candidates = "\n          ".join(
-            f"{value} ({key})" for key, value in sorted(data['candidates'].items()))
+            f"{value} ({key})" for key, value in sorted(data['candidates'].items())
+        )
         print(f"Optionen: {candidates}")
 
         # ... und zähle neu aus
@@ -50,8 +52,10 @@ if __name__ == "__main__":
         # zeige schließlich die Ergebnisse an
         announce = "Detail:"
         for level in detailed_result:
-            print(f"{announce} Optionen {level['preferred']} bekamen mehr Stimmen als"
-                  f" {level['rejected']}")
+            print(
+                f"{announce} Optionen {level['preferred']} bekamen mehr Stimmen als"
+                f" {level['rejected']}"
+            )
             announce = "       "
             pro = [f"{key}: {value}" for key, value in level['support'].items()]
             con = [f"{key}: {value}" for key, value in level['opposition'].items()]

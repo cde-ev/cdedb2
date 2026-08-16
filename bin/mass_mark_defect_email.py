@@ -2,6 +2,7 @@
 """Mark a large amount of email addresses as defect."""
 
 import datetime
+from typing import Any
 
 import cdedb.database.constants as const
 from cdedb.backend.common import Silencer
@@ -11,7 +12,7 @@ from cdedb.script import Script
 
 script = Script(persona_id=-1, dbuser="cdb_admin", dry_run=True)
 rs = script.rs()
-core = script.make_backend("core", proxy=False)
+core = script.make_core_backend(proxy=False)
 cutoff = datetime.timedelta(days=90)
 target_state = const.EmailStatus.defect
 default_notes = "Massenimport defekter Emailadressen."  # explicate
@@ -27,8 +28,9 @@ with script:
     query = (
         "SELECT p.id, p.username, p.given_names, p.family_name, MAX(s.atime) AS atime"
         " FROM core.personas AS p LEFT OUTER JOIN core.sessions AS s"
-        " ON s.persona_id = p.id WHERE username = ANY(%s) GROUP BY (p.id)")
-    params = (email_addresses,)
+        " ON s.persona_id = p.id WHERE username = ANY(%s) GROUP BY (p.id)"
+    )
+    params: tuple[Any] = (email_addresses,)
     data = core.query_all(rs, query, params)
     lookup = {entry['username']: entry for entry in data}
 
@@ -40,13 +42,17 @@ with script:
         if address.lower() in preexisting:
             preex = preexisting[address]
             if preex['status'] == target_state:
-                print(f'Not touching existing entry for `{address}`'
-                      f' (old notes: ```{preex["notes"]}```;'
-                      f' new notes: ```{notes}```).')
+                print(
+                    f'Not touching existing entry for `{address}`'
+                    f' (old notes: ```{preex["notes"]}```;'
+                    f' new notes: ```{notes}```).'
+                )
             else:
-                print(f'Not transitioning existing entry for `{address}`'
-                      f' (old notes: ```{preex["notes"]}```;'
-                      f' new notes: ```{notes}```).')
+                print(
+                    f'Not transitioning existing entry for `{address}`'
+                    f' (old notes: ```{preex["notes"]}```;'
+                    f' new notes: ```{notes}```).'
+                )
             continue
         do_mark = True
         notes = notes or default_notes
@@ -67,4 +73,3 @@ with script:
                 print(f'Marked as defect: `{address}`.')
             else:
                 print(f'Failure for: `{address}`.')
-

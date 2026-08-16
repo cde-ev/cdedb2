@@ -32,14 +32,13 @@
                 } else {
                     fields[key].closest('.form-group').hide();
                     fields[key].val('');
+                    fields[key].trigger('change');
                 }
             }
         }
 
         // Add event handler and call function once on document load
-        for (let i in fields) {
-            fields[i].change(update_view);
-        }
+        fields['ml_type'].on('change', update_view);
         update_view();
 
 
@@ -58,16 +57,13 @@
             } else {
                 // If no event is selected, hide them.
                 event_specific_input_groups.hide();
-                console.log(event_specific_input_groups);
                 let event_specific_inputs = event_specific_input_groups.find('input, select');
                 event_specific_inputs.prop('checked', false);
                 event_specific_inputs.val('');
             }
         }
         fields['event_id'].on('change', update_event_specific_inputs);
-        if (fields['event_id'].val() === '') {
-            event_specific_input_groups.hide();
-        }
+        update_event_specific_inputs();
 
 
         /**

@@ -40,5 +40,7 @@ containing either a list of instructions or even better a list of commands,
 that can directly be executed to achieve this. For examples, take a look in
 the ``related/deploy`` folder and/or the ``cdedb/database/evolutions`` folder
 and the doc page for evolution scripts (:doc:`Development_Workflows_Scripts`).
-For additional dependencies also adjust the installation script(s) in
-``related/auto-build/files`` and Dockerfile(s) ``related/docker``.
+If there are changes in the python dependencies all you need to do is adjust
+the ``pyproject.toml`` accordingly. If there are changes to other dependencies
+you need to adjust the installation script(s) in ``related/auto-build/files``
+and Dockerfile(s) ``related/docker`` in addition to the deploy notes/script.

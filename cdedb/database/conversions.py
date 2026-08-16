@@ -2,7 +2,7 @@
 
 import collections.abc
 import enum
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     # Lazy import saves many dependecies for standalone ldaptor mode
@@ -14,8 +14,8 @@ if TYPE_CHECKING:
 # mypy treats all imports from psycopg2 as `Any`, so we do not gain anything by
 # overloading the definition.
 def from_db_output(
-    output: Optional["psycopg2.extras.RealDictRow"],
-) -> Optional["CdEDBObject"]:
+    output: "psycopg2.extras.RealDictRow | CdEDBObject | None",
+) -> "CdEDBObject | None":
     """Convert a :py:class:`psycopg2.extras.RealDictRow` into a normal
     :py:class:`dict`. We only use the outputs as dictionaries and
     the psycopg variant has some rough edges (e.g. it does not survive
@@ -31,7 +31,7 @@ def from_db_output(
 
 # mypy cannot really understand the intricacies of what this function does, so
 # we keep this simple. instead of overloading the definition.
-def to_db_input(obj: Any) -> Union[Any, list[Any]]:
+def to_db_input(obj: Any) -> Any | list[Any]:
     """Mangle data to make psycopg happy.
 
     Convert :py:class:`tuple`s (and all other iterables, but not strings
@@ -43,9 +43,12 @@ def to_db_input(obj: Any) -> Union[Any, list[Any]]:
     their numeric value. Everywhere else these automagically work
     like integers, but here they have to be handled explicitly.
     """
-    if (isinstance(obj, collections.abc.Iterable)
-            and not isinstance(obj, (str, bytes, collections.abc.Mapping))):
+    if isinstance(obj, collections.abc.Iterable) and not isinstance(
+        obj, (str, bytes, collections.abc.Mapping)
+    ):
         return [to_db_input(x) for x in obj]
+    elif isinstance(obj, collections.abc.Mapping):
+        return [to_db_input(item) for item in obj.items()]
     elif isinstance(obj, enum.Enum):
         return obj.value
     else:

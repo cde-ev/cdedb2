@@ -4,86 +4,112 @@
 The `EventCourseBackend` subclasses the `EventBaseBackend` and provides functionality
 for managing courses belonging to an event.
 """
+
 import abc
+import collections
 from collections.abc import Collection
-from typing import Optional, Protocol
+from typing import Protocol, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.backend.common import (
     access,
-    affirm_set_validation as affirm_set,
     affirm_validation as affirm,
     singularize,
 )
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
     CdEDBObject,
+    CdEDBOptionalMap,
     DefaultReturnCode,
     DeletionBlockers,
     PsycoJson,
     RequestState,
-    glue,
     unwrap,
 )
 from cdedb.common.exceptions import PrivilegeError
-from cdedb.common.fields import COURSE_FIELDS
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import (
     EventPrivileges,
     is_privileged_event as is_privileged,
 )
+from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
+from cdedb.database.query import DatabaseValue_s, ParamDict
 
 
 class EventCourseBackend(EventBaseBackend, abc.ABC):
     @access("anonymous")
-    def list_courses(self, rs: RequestState,
-                        event_id: int) -> dict[int, str]:
+    def list_courses(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> dict[vtypes.CourseID, str]:
         """List all courses organized via DB.
 
         :returns: Mapping of course ids to titles.
         """
-        event_id = affirm(vtypes.ID, event_id)
-        data = self.sql_select(rs, "event.courses", ("id", "title"),
-                               (event_id,), entity_key="event_id")
+        event_id = affirm(vtypes.EventID, event_id)
+        data = self.sql_select(
+            rs, "event.courses", ("id", "title"), (event_id,), entity_key="event_id"
+        )
         return {e['id']: e['title'] for e in data}
 
     @access("anonymous")
-    def get_courses(self, rs: RequestState, course_ids: Collection[int],
-                        ) -> models.CdEDataclassMap[models.Course]:
+    def get_courses(
+        self,
+        rs: RequestState,
+        course_ids: Collection[vtypes.CourseID],
+        *,
+        _event: models.Event | None = None,
+    ) -> models.CourseMap:
         """Retrieve data for some courses organized via DB.
 
         They must be associated to the same event. This contains additional
         information on the parts in which the course takes place.
         """
-        course_ids = affirm_set(vtypes.ID, course_ids)
+        course_ids = affirm(set[vtypes.CourseID], course_ids)
         with Atomizer(rs):
-            course_data = self.query_all(
-                rs, *models.Course.get_select_query(course_ids))
+            course_data = {
+                e["id"]: e
+                for e in self.query_all(rs, *models.Course.get_select_query(course_ids))
+            }
             if not course_data:
                 return {}
-            events = {e['event_id'] for e in course_data}
+            events = {e['event_id'] for e in course_data.values()}
             if len(events) > 1:
                 raise ValueError(n_("Only courses from one event allowed."))
             event_id = unwrap(events)
-            event_fields = self._get_event_fields(rs, event_id)
-        return models.Course.many_from_database([
-            {
-                **course,
-                'event_fields': event_fields.values(),
-            }
-            for course in course_data
-        ])
+            if _event:
+                event = _event
+            else:
+                event = self.get_event(rs, event_id)
+
+            segment_data = self.query_all(
+                rs, *models.CourseSegment.get_select_query(course_ids)
+            )
+
+            for course in course_data.values():
+                course['event'] = event
+                course["segments"] = []
+            for segment in segment_data:
+                course_data[segment["course_id"]]["segments"].append(segment)
+
+        return cast(
+            models.CourseMap,
+            models.Course.many_from_database(course_data.values()),
+        )
 
     class _GetCourseProtocol(Protocol):
-        def __call__(self, rs: RequestState, course_id: int) -> models.Course: ...
+        def __call__(
+            self, rs: RequestState, course_id: vtypes.CourseID
+        ) -> models.Course: ...
+
     get_course: _GetCourseProtocol = singularize(get_courses, "course_ids", "course_id")
 
     @access("event")
-    def set_course(self, rs: RequestState,
-                   data: CdEDBObject) -> DefaultReturnCode:
+    def set_course(
+        self, rs: RequestState, course_id: vtypes.CourseID, data: CdEDBObject
+    ) -> DefaultReturnCode:
         """Update some keys of a course linked to an event organized via DB.
 
         If the 'segments' key is present you have to pass the complete list
@@ -94,145 +120,187 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
         list of active tracks. This has to be a subset of the segments of
         the course.
         """
-        data = affirm(vtypes.Course, data)
+        course_id = affirm(vtypes.CourseID, course_id)
         ret = 1
         with Atomizer(rs):
-            current = self.sql_select_one(rs, "event.courses",
-                                          ("title", "event_id"), data['id'])
-            assert current is not None
-            if not is_privileged(rs, EventPrivileges.courses_write,
-                                 current['event_id']):
-                raise PrivilegeError(n_("Not privileged."))
-            self.assert_lock(rs, event_id=current['event_id'])
+            current = self.get_course(rs, course_id)
+            data = affirm(models.Course, data, event=current.event)
+            current_dict = current.as_dict()
+            if not is_privileged(rs, EventPrivileges.courses_write, current.event_id):
+                raise PrivilegeError
+            self.assert_lock(rs, event_id=current.event_id)
 
-            cdata = {k: v for k, v in data.items()
-                     if k in COURSE_FIELDS and k != "fields"}
+            course_fields = set(models.Course.database_fields()) - {"fields"}
+
             changed = False
-            if len(cdata) > 1:
-                ret *= self.sql_update(rs, "event.courses", cdata)
+            data["id"] = course_id
+            changed_data = {
+                k: v
+                for k, v in data.items()
+                if k in course_fields and v != current_dict[k]
+            }
+            if changed_data:
+                changed_data["id"] = current.id
+                ret *= self.sql_update(rs, "event.courses", changed_data)
                 changed = True
-            if 'fields' in data:
-                # delayed validation since we need additional info
-                event_fields = self._get_event_fields(rs, current['event_id'])
-                fdata = affirm(
-                    vtypes.EventAssociatedFields, data['fields'],
-                    fields=models.EventField.many_from_database(event_fields.values()),
-                    association=const.FieldAssociations.course,
-                )
 
-                fupdate = {
-                    'id': data['id'],
-                    'fields': fdata,
+            if 'fields' in data:
+                fdata = {
+                    k: v
+                    for k, v in data['fields'].items()
+                    if k not in current.fields or v != current.fields[k]
                 }
-                ret *= self.sql_json_inplace_update(rs, "event.courses",
-                                                    fupdate)
-                changed = True
+                if fdata:
+                    fupdate = {'id': current.id, 'fields': fdata}
+                    ret *= self.sql_json_inplace_update(
+                        rs, models.Course.database_table, fupdate
+                    )
+                    changed = True
+
             if changed:
                 self.event_log(
-                    rs, const.EventLogCodes.course_changed, current['event_id'],
-                    change_note=current['title'])
-            if 'segments' in data:
-                current_segments = self.sql_select(
-                    rs, "event.course_segments", ("track_id",),
-                    (data['id'],), entity_key="course_id")
-                existing = {e['track_id'] for e in current_segments}
-                new = data['segments'] - existing
-                deleted = existing - data['segments']
-                if new:
-                    # check, that all new tracks belong to the event of the
-                    # course
-                    tracks = self.sql_select(
-                        rs, "event.course_tracks", ("part_id",), new)
-                    associated_parts = list(unwrap(e) for e in tracks)
-                    associated_events = self.sql_select(
-                        rs, "event.event_parts", ("event_id",),
-                        associated_parts)
-                    event_ids = {e['event_id'] for e in associated_events}
-                    if {current['event_id']} != event_ids:
-                        raise ValueError(n_("Non-associated tracks found."))
+                    rs,
+                    const.EventLogCodes.course_changed,
+                    current.event_id,
+                    change_note=current.title,
+                )
 
-                    for anid in new:
-                        insert = {
-                            'course_id': data['id'],
-                            'track_id': anid,
-                            'is_active': True,
-                        }
-                        ret *= self.sql_insert(rs, "event.course_segments",
-                                               insert)
-                if deleted:
-                    query = ("DELETE FROM event.course_segments"
-                             " WHERE course_id = %s AND track_id = ANY(%s)")
-                    ret *= self.query_exec(rs, query, (data['id'], deleted))
-                if new or deleted:
+            if 'segments' in data:
+                ret *= self._set_course_segments(rs, data['segments'], current)
+
+        return ret
+
+    def _set_course_segments(
+        self, rs: RequestState, segment_data: CdEDBOptionalMap, course: models.Course
+    ) -> DefaultReturnCode:
+        """Uninlined code from set_course."""
+
+        self.affirm_atomized_context(rs)
+        ret = 1
+
+        if not segment_data.keys() <= course.event.tracks.keys():
+            raise ValueError(n_("Invalid tracks specified."))
+
+        deleted = {
+            track_id
+            for track_id, segment in segment_data.items()
+            if segment is None and track_id in course.segments
+        }
+        new = {
+            track_id: segment
+            for track_id, segment in segment_data.items()
+            if segment is not None and track_id not in course.segments
+        }
+        changed = {
+            track_id: segment
+            for track_id, segment in segment_data.items()
+            if segment is not None
+            and track_id in course.segments
+            and segment != course.segments[track_id].as_dict()
+        }
+
+        cn = lambda track_id: f"{course.title} ({course.event.tracks[track_id].title})"
+
+        if deleted:
+            params: dict[str, DatabaseValue_s] = {
+                "course_id": course.id,
+                "track_ids": deleted,
+            }
+            query = f"""
+                DELETE FROM {models.CourseSegment.database_table}
+                WHERE course_id = %(course_id)s AND track_id = ANY(%(track_ids)s)
+            """
+            ret *= self.query_exec(rs, query, params)
+            for track_id in xsorted(deleted):
+                self.event_log(
+                    rs,
+                    const.EventLogCodes.course_segment_deleted,
+                    course.event_id,
+                    change_note=cn(track_id),
+                )
+                if course.segments[track_id].is_active:
                     self.event_log(
-                        rs, const.EventLogCodes.course_segments_changed,
-                        current['event_id'], change_note=current['title'])
-            if 'active_segments' in data:
-                current_segments = self.sql_select(
-                    rs, "event.course_segments", ("track_id", "is_active"),
-                    (data['id'],), entity_key="course_id")
-                existing = {e['track_id'] for e in current_segments}
-                # check that all active segments are actual segments of this
-                # course
-                if not existing >= data['active_segments']:
-                    raise ValueError(n_("Wrong-associated segments found."))
-                active = {e['track_id'] for e in current_segments
-                          if e['is_active']}
-                activated = data['active_segments'] - active
-                deactivated = active - data['active_segments']
-                if activated:
-                    query = glue(
-                        "UPDATE event.course_segments SET is_active = True",
-                        "WHERE course_id = %s AND track_id = ANY(%s)")
-                    ret *= self.query_exec(rs, query, (data['id'], activated))
-                if deactivated:
-                    query = glue(
-                        "UPDATE event.course_segments SET is_active = False",
-                        "WHERE course_id = %s AND track_id = ANY(%s)")
-                    ret *= self.query_exec(rs, query, (data['id'], deactivated))
-                if activated or deactivated:
-                    self.event_log(
-                        rs, const.EventLogCodes.course_segment_activity_changed,
-                        current['event_id'], change_note=current['title'])
+                        rs,
+                        const.EventLogCodes.course_segment_deactivated,
+                        course.event_id,
+                        change_note=cn(track_id),
+                    )
+
+        for track_id, segment in xsorted(new.items()):
+            _metadata = {"course_id": course.id, "track_id": track_id}
+            segment = {**segment, **_metadata}
+            ret *= self.sql_insert(rs, models.CourseSegment.database_table, segment)
+            self.event_log(
+                rs,
+                const.EventLogCodes.course_segment_created,
+                course.event_id,
+                change_note=cn(track_id),
+            )
+            if segment["is_active"]:
+                self.event_log(
+                    rs,
+                    const.EventLogCodes.course_segment_activated,
+                    course.event_id,
+                    change_note=cn(track_id),
+                )
+
+        for track_id, segment in xsorted(changed.items()):
+            _metadata = {"course_id": course.id, "track_id": track_id}
+            segment = {**segment, **_metadata}
+            ret *= self.sql_insert(
+                rs,
+                models.CourseSegment.database_table,
+                segment,
+                update_on_conflict=True,
+                conflict_target="course_id, track_id",
+            )
+            if segment["is_active"] != course.segments[track_id].is_active:
+                if segment["is_active"]:
+                    code = const.EventLogCodes.course_segment_activated
+                else:
+                    code = const.EventLogCodes.course_segment_deactivated
+                self.event_log(rs, code, course.event_id, change_note=cn(track_id))
+
         return ret
 
     @access("event")
-    def create_course(self, rs: RequestState,
-                      data: CdEDBObject) -> DefaultReturnCode:
+    def create_course(
+        self, rs: RequestState, event_id: vtypes.EventID, data: CdEDBObject
+    ) -> vtypes.CourseID:
         """Make a new course organized via DB."""
-        data = affirm(vtypes.Course, data, creation=True)
-        # direct validation since we already have an event_id
+        event_id = affirm(vtypes.EventID, event_id)
+        event = self.get_event(rs, event_id)
+        data = affirm(models.Course, data, creation=True, event=event)
+
         with Atomizer(rs):
-            self.assert_lock(rs, event_id=data['event_id'])
-            event = self.get_event(rs, data['event_id'])
-            # Check for existence of course tracks
-            if not event.tracks:
-                raise RuntimeError(n_("Event without tracks forbids courses."))
-            fdata = affirm(
-                vtypes.EventAssociatedFields, data.get('fields') or {},
-                fields=event.fields, association=const.FieldAssociations.course)
-            data['fields'] = PsycoJson(fdata)
-            if not is_privileged(rs, EventPrivileges.courses_write, data['event_id']):
-                raise PrivilegeError(n_("Not privileged."))
-            cdata = {k: v for k, v in data.items()
-                     if k in COURSE_FIELDS}
-            new_id = self.sql_insert(rs, "event.courses", cdata)
-            self.event_log(rs, const.EventLogCodes.course_created,
-                           data['event_id'], change_note=data['title'])
-            if 'segments' in data or 'active_segments' in data:
-                pdata = {
-                    'id': new_id,
-                }
-                if 'segments' in data:
-                    pdata['segments'] = data['segments']
-                if 'active_segments' in data:
-                    pdata['active_segments'] = data['active_segments']
-                self.set_course(rs, pdata)
+            self.assert_lock(rs, event_id=event_id)
+            if not is_privileged(rs, EventPrivileges.courses_write, event_id):
+                raise PrivilegeError
+
+            course_fields = set(models.Course.database_fields())
+            data['fields'] = PsycoJson(data.get('fields', {}))
+            data['event_id'] = event_id
+            course_data = {k: v for k, v in data.items() if k in course_fields}
+            new_id = vtypes.CourseID(
+                vtypes.ID(
+                    self.sql_insert(rs, models.Course.database_table, course_data)
+                )
+            )
+            self.event_log(
+                rs,
+                const.EventLogCodes.course_created,
+                event_id,
+                change_note=data['title'],
+            )
+
+            course = self.get_course(rs, new_id)
+            self._set_course_segments(rs, data['segments'], course)
         return new_id
 
     @access("event")
-    def delete_course_blockers(self, rs: RequestState,
-                               course_id: int) -> DeletionBlockers:
+    def delete_course_blockers(
+        self, rs: RequestState, course_id: vtypes.CourseID
+    ) -> DeletionBlockers:
         """Determine what keeps a course from beeing deleted.
 
         Possible blockers:
@@ -251,55 +319,70 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
         blockers = {}
 
         attendees = self.sql_select(
-            rs, "event.registration_tracks", ("id",), (course_id,),
-            entity_key="course_id")
+            rs,
+            "event.registration_tracks",
+            ("id",),
+            (course_id,),
+            entity_key="course_id",
+        )
         if attendees:
             blockers["attendees"] = [e["id"] for e in attendees]
 
         instructors = self.sql_select(
-            rs, "event.registration_tracks", ("id",), (course_id,),
-            entity_key="course_instructor")
+            rs,
+            "event.registration_tracks",
+            ("id",),
+            (course_id,),
+            entity_key="course_instructor",
+        )
         if instructors:
             blockers["instructors"] = [e["id"] for e in instructors]
 
         course_choices = self.sql_select(
-            rs, "event.course_choices", ("id",), (course_id,),
-            entity_key="course_id")
+            rs, "event.course_choices", ("id",), (course_id,), entity_key="course_id"
+        )
         if course_choices:
             blockers["course_choices"] = [e["id"] for e in course_choices]
 
         course_segments = self.sql_select(
-            rs, "event.course_segments", ("id",), (course_id,),
-            entity_key="course_id")
+            rs, "event.course_segments", ("id",), (course_id,), entity_key="course_id"
+        )
         if course_segments:
             blockers["course_segments"] = [e["id"] for e in course_segments]
 
         return blockers
 
     @access("event")
-    def delete_course(self, rs: RequestState, course_id: int,
-                      cascade: Optional[Collection[str]] = None) -> DefaultReturnCode:
+    def delete_course(
+        self,
+        rs: RequestState,
+        course_id: vtypes.CourseID,
+        cascade: Collection[str] | None = None,
+    ) -> DefaultReturnCode:
         """Remove a course organized via DB from the DB.
 
         :param cascade: Specify which deletion blockers to cascadingly remove
             or ignore. If None or empty, cascade none.
         """
-        course_id = affirm(vtypes.ID, course_id)
+        course_id = affirm(vtypes.CourseID, course_id)
         current = self.sql_select_one(
-            rs, "event.courses", ("title", "event_id"), course_id)
+            rs, "event.courses", ("title", "event_id"), course_id
+        )
         assert current is not None
         if not is_privileged(rs, EventPrivileges.courses_write, current['event_id']):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_lock(rs, event_id=current['event_id'])
 
         blockers = self.delete_course_blockers(rs, course_id)
-        cascade = affirm_set(str, cascade or set()) & blockers.keys()
+        cascade = affirm(set[str], cascade or set()) & blockers.keys()
         if blockers.keys() - cascade:
-            raise ValueError(n_("Deletion of %(type)s blocked by %(block)s."),
-                             {
-                                 "type": "course",
-                                 "block": blockers.keys() - cascade,
-                             })
+            raise ValueError(
+                n_("Deletion of %(type)s blocked by %(block)s."),
+                {
+                    "type": "course",
+                    "block": blockers.keys() - cascade,
+                },
+            )
 
         ret = 1
         with Atomizer(rs):
@@ -311,31 +394,35 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
                             'course_id': None,
                             'id': anid,
                         }
-                        ret *= self.sql_update(
-                            rs, "event.registration_tracks", deletor)
+                        ret *= self.sql_update(rs, "event.registration_tracks", deletor)
                 if "instructors" in cascade:
                     for anid in blockers["instructors"]:
                         deletor = {
                             'course_instructor': None,
                             'id': anid,
                         }
-                        ret *= self.sql_update(
-                            rs, "event.registration_tracks", deletor)
+                        ret *= self.sql_update(rs, "event.registration_tracks", deletor)
                 if "course_choices" in cascade:
                     # Get the data of the affected choices grouped by track.
                     data = self.sql_select(
-                        rs, "event.course_choices",
+                        rs,
+                        "event.course_choices",
                         ("track_id", "registration_id"),
-                        blockers["course_choices"])
+                        blockers["course_choices"],
+                    )
                     data_by_tracks = {
-                        track_id: [e["registration_id"] for e in data
-                                   if e["track_id"] == track_id]
+                        track_id: [
+                            e["registration_id"]
+                            for e in data
+                            if e["track_id"] == track_id
+                        ]
                         for track_id in set(e["track_id"] for e in data)
                     }
 
                     # Delete choices of the deletable course.
                     ret *= self.sql_delete(
-                        rs, "event.course_choices", blockers["course_choices"])
+                        rs, "event.course_choices", blockers["course_choices"]
+                    )
 
                     # Construct list of inserts.
                     choices: list[CdEDBObject] = []
@@ -365,18 +452,100 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
                     self.sql_insert_many(rs, "event.course_choices", choices)
 
                 if "course_segments" in cascade:
-                    ret *= self.sql_delete(rs, "event.course_segments",
-                                           blockers["course_segments"])
+                    ret *= self.sql_delete(
+                        rs, "event.course_segments", blockers["course_segments"]
+                    )
 
                 # check if course is deletable after cascading
                 blockers = self.delete_course_blockers(rs, course_id)
 
             if not blockers:
                 ret *= self.sql_delete_one(rs, "event.courses", course_id)
-                self.event_log(rs, const.EventLogCodes.course_deleted,
-                               current['event_id'], change_note=current['title'])
+                self.event_log(
+                    rs,
+                    const.EventLogCodes.course_deleted,
+                    current['event_id'],
+                    change_note=current['title'],
+                )
             else:
                 raise ValueError(
                     n_("Deletion of %(type)s blocked by %(block)s."),
-                    {"type": "course", "block": blockers.keys()})
+                    {"type": "course", "block": blockers.keys()},
+                )
         return ret
+
+    @access("event")
+    def get_attendee_stats(
+        self, rs: RequestState, course_id: vtypes.CourseID
+    ) -> models.CourseAttendees:
+        """Retrieve a list of personas assigned to the given course in each track.
+
+        This is only available for instrcutors of the given course.
+        """
+        course_id = affirm(vtypes.CourseID, course_id)
+
+        with Atomizer(rs):
+            query = f"""
+                SELECT reg.id
+                FROM
+                    {models.Registration.database_table} AS reg
+                    JOIN {models.RegistrationTrack.database_table} AS rt
+                        ON rt.registration_id = reg.id
+                WHERE
+                    reg.persona_id = %(persona_id)s
+                    AND rt.course_instructor = %(course_id)s
+            """
+            params: ParamDict = {
+                "persona_id": rs.user.persona_id,
+                "course_id": course_id,
+            }
+            if not self.query_one(rs, query, params):
+                raise PrivilegeError(
+                    n_("Only available for instructors of this course.")
+                )
+            query = f"""
+                SELECT
+                    reg.persona_id,
+                    rt.track_id,
+                    COALESCE(rt.course_id = rt.course_instructor, False) AS is_instructor
+                FROM
+                    {models.RegistrationTrack.database_table} AS rt
+                    JOIN {models.CourseTrack.database_table} AS ct
+                        ON rt.track_id = ct.id
+                    JOIN {models.RegistrationPart.database_table} AS rp
+                        ON rt.registration_id = rp.registration_id AND ct.part_id = rp.part_id
+                    JOIN {models.Registration.database_table} AS reg
+                        ON rt.registration_id = reg.id
+                WHERE
+                    rt.course_id = %(course_id)s
+                    AND rp.status = ANY(%(stati)s)
+            """
+            params = {
+                "course_id": course_id,
+                "stati": const.RegistrationPartStati.involved_states(),
+            }
+            persona_ids = set()
+            attendees_by_track = collections.defaultdict(set)
+            instructors_by_track = collections.defaultdict(set)
+            for e in self.query_all(rs, query, params):
+                persona_ids.add(e["persona_id"])
+                if e["is_instructor"]:
+                    instructors_by_track[e["track_id"]].add(e["persona_id"])
+                else:
+                    attendees_by_track[e["track_id"]].add(e["persona_id"])
+            personas = self.core.get_personas(rs, persona_ids)
+            return models.CourseAttendees({
+                track_id: models.CourseSegmentAttendees(
+                    learners=[
+                        persona.as_dict()
+                        for persona in personas.values()
+                        if persona.id in attendees_by_track[track_id]
+                    ],
+                    instructors=[
+                        persona.as_dict()
+                        for persona in personas.values()
+                        if persona.id in instructors_by_track[track_id]
+                    ],
+                )
+                for track_id in attendees_by_track.keys() | instructors_by_track.keys()
+            })

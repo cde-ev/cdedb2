@@ -21,7 +21,7 @@ Kontoinhaber:     {{ meta_info.membership_fee_account.get_account_holder() }}
 IBAN:             {{ meta_info.membership_fee_account.get_iban()|iban }}
 BIC:              {{ meta_info.membership_fee_account.get_bic() }}
 Kreditinstitut:   {{ meta_info.membership_fee_account.get_bank() }}
-Verwendungszweck: {{ transaction_subject }}
+Verwendungszweck: {{ persona.membership_fee_reference }}
 
 Alternativ könntest Du dem CdE auch die Erlaubnis erteilen, jährlich
 *per Lastschrift* von Deinem Konto den Mitgliedsbeitrag und eine Spende

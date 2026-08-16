@@ -1,7 +1,11 @@
 """Central facility for more fine-grained privilege checks per realm."""
+
 from enum import Flag, auto
 
 from cdedb.common import RequestState, User
+from cdedb.config import Config
+
+_CONF = Config()
 
 
 class EventPrivileges(Flag):
@@ -20,6 +24,7 @@ class EventPrivileges(Flag):
     Generally, this is not adapted in a way to work reliably if you have write, but
     no read permissions, and the frontend might have slight malfunctions for novel
     privilege combinations."""
+
     basic_read = auto()
     basic_write = auto()
     free_texts_write = auto()
@@ -36,18 +41,33 @@ class EventPrivileges(Flag):
     participant_list = _participant_list_dummy | registrations_read_internal
     # Reading registrations includes reading the associated data (in the frontend)
     _registrations_read_dummy = auto()
-    registrations_read = (_registrations_read_dummy | courses_read | lodgements_read
-                          | registrations_read_internal | participant_list)
+    registrations_read = (
+        _registrations_read_dummy
+        | courses_read
+        | lodgements_read
+        | registrations_read_internal
+        | participant_list
+    )
     registrations_write = auto()
     payment_write = auto()
     token = auto()
     log_read = auto()
-    # send_email = auto()  #: api only? tool suggested recently
+
+    # This privilege allows reading all registration data except for custom fields not
+    # visible on the checkin page, as well as editing these registrations and their
+    # checkin data.
+    # TODO This granting partial registrations_read/write access is confusing and
+    # should be refactored.
+    checkin = auto()
+
     # create = auto()
     conclude = auto()
     balance = auto()
     lock = auto()
     delete = auto()
+    orgas_change = auto()
+    caretakers_change = auto()
+    approve_registration = auto()
 
     # Shorthands for import / export
     all_read = basic_read | registrations_read | log_read
@@ -55,26 +75,31 @@ class EventPrivileges(Flag):
 
     # Used to determine which actions are blocked by event being locked.
     all_write = (
-            basic_write
-            | entities_write
-            | free_texts_write
-            | payment_write  # Notably does not include writing of payments via cde realm.
-            # token  # Do not block token management via event lock, so tokens can still be revoked.
-            | conclude
-            | balance
-            # lock  # Do not block (un)locking via event lock, so event can be unlocked.
-            | delete
+        basic_write
+        | entities_write
+        | free_texts_write
+        | payment_write  # Notably does not include writing of payments via cde realm.
+        # token  # Do not block token management via event lock, so tokens can still be revoked.
+        | conclude
+        | balance
+        # lock  # Do not block (un)locking via event lock, so event can be unlocked.
+        | delete
     )
 
 
-def is_privileged_event(rs: RequestState, required_privilege: EventPrivileges,
-                        event_id: int) -> bool:
+def is_event_access_limited(event_id: int) -> bool:
+    return event_id <= _CONF["EVENT_LIMITED_ACCESS_CUTOFF_ID"]
 
+
+def is_privileged_event(
+    rs: RequestState, required_privilege: EventPrivileges, event_id: int
+) -> bool:
     return is_privileged_event_user(rs.user, required_privilege, event_id)
 
 
-def is_privileged_event_user(user: User, required_privilege: EventPrivileges,
-                             event_id: int) -> bool:
+def is_privileged_event_user(
+    user: User, required_privilege: EventPrivileges, event_id: int
+) -> bool:
     """Check whether `user` has `required_privilege` relative to a given `event_id`.
 
     This also encodes which permission each (generalized) role is supposed to have
@@ -82,35 +107,90 @@ def is_privileged_event_user(user: User, required_privilege: EventPrivileges,
     from templates.
     """
     EP = EventPrivileges
+
+    # Limit access to really old events as configured based on id.
+    # Any action requiring _any_ of these privileges will be disallowed.
+    # TODO checkin is granting partial registrations_read/write access: not great.
+    limited_access_disallow = (
+        EP._registrations_read_dummy | EP.registrations_write | EP.checkin
+    )
+
+    if (
+        is_event_access_limited(event_id)
+        and required_privilege & limited_access_disallow
+    ):
+        return False
+
     admin_privileges = ~(EP.conclude | EP.balance)
-    orga_privileges = ~(EP.conclude | EP.balance | EP.delete)
-    event_helper_privileges = (EP.basic_read | EP.courses_read | EP.lodgements_read
-                               | EP.registrations_stats | EP.registrations_read_internal
-                               | EP.participant_list)
+    event_helper_privileges = (
+        EP.basic_read
+        | EP.courses_read
+        | EP.lodgements_read
+        | EP.registrations_stats
+        | EP.registrations_read_internal
+        | EP.participant_list
+    )
+    orga_privileges = (
+        event_helper_privileges
+        | EP.registrations_read
+        | EP.log_read
+        | EP.checkin
+        | EP.entities_write
+        | EP.basic_write
+        | EP.free_texts_write
+        | EP.payment_write
+        | EP.lock
+        | EP.token
+    )
+    caretaker_privileges = orga_privileges | EP.orgas_change | EP.approve_registration
+    checkin_helper_privileges = event_helper_privileges | EP.checkin
     auditor_privileges = EP.basic_read | EP.log_read
-    finance_admin_privileges = (EP.basic_read | EP.registrations_read_internal
-                                | EP.registrations_stats | EP.payment_write | EP.balance)
+    finance_admin_privileges = (
+        EP.basic_read
+        | EP.registrations_read_internal
+        | EP.lodgements_read
+        | EP.log_read
+        | EP.registrations_stats
+        | EP.payment_write
+        | EP.balance
+    )
 
     return (
         # Special case for conclude which requires two admin privileges.
-        {"event_admin", "cde_admin"} <= user.roles and required_privilege == EP.conclude
-        or "event_admin" in user.roles and required_privilege in admin_privileges
-        or event_id in user.orga and required_privilege in orga_privileges
+        (
+            {"event_admin", "cde_admin"} <= user.roles
+            and required_privilege == EP.conclude
+        )
+        or ("event_admin" in user.roles and required_privilege in admin_privileges)
+        or (event_id in user.orga and required_privilege in orga_privileges)
+        or (event_id in user.caretaker and required_privilege in caretaker_privileges)
+        or (
+            event_id in user.checkin_helper
+            and required_privilege in checkin_helper_privileges
+        )
         # Due to use in ml realm, users without event realm might come across this
-        or ("event_helper" in user.realm_roles.get('event', {})
-            and required_privilege in event_helper_privileges)
+        or (
+            "event_helper" in user.realm_roles.get('event', {})
+            and required_privilege in event_helper_privileges
+        )
         # finance_admins may book fees and balance events.
-        or ("finance_admin" in user.roles
-            and required_privilege in finance_admin_privileges)
-        or "auditor" in user.roles and required_privilege in auditor_privileges
+        or (
+            "finance_admin" in user.roles
+            and required_privilege in finance_admin_privileges
+        )
+        or ("auditor" in user.roles and required_privilege in auditor_privileges)
         # ml_admins are allowed to do this to be able to manage
         # subscribers of event mailinglists.
-        or ("ml_admin" in user.roles
+        or (
+            "ml_admin" in user.roles
             and required_privilege == EP.registrations_read_internal
         )
-        or ("droid_quick_partial_export" in user.roles
-            and required_privilege in EP.basic_read | EP.registrations_read)
-        # or ("droid_orga" in user.roles
-        #     and required_privilege in OrgaTokenGrants.implied_privileges())
+        or (
+            "droid_quick_partial_export" in user.roles
+            and required_privilege in EP.basic_read | EP.registrations_read
+        )
+        # or (
+        #     "droid_orga" in user.roles
+        #     and required_privilege in OrgaTokenGrants.implied_privileges()
         # )
     )

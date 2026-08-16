@@ -1484,9 +1484,9 @@
             "is_core_admin": true,
             "is_cde_admin": true,
             "is_finance_admin": true,
-            "is_event_admin": true,
-            "is_ml_admin": true,
-            "is_assembly_admin": true,
+            "is_event_admin": false,
+            "is_ml_admin": false,
+            "is_assembly_admin": false,
             "is_cdelokal_admin": false,
             "is_complaint_admin": false,
             "is_auditor": false,
@@ -1845,7 +1845,7 @@
             "pronouns_profile": false,
             "gender": 10,
             "birthday": "2019-12-28",
-            "telephone": "+81314159263",
+            "telephone": "+81314159265",
             "mobile": null,
             "address_supplement": null,
             "address": "Kasumigaseki 1-3-2",
@@ -3391,9 +3391,9 @@
             "is_core_admin": true,
             "is_cde_admin": true,
             "is_finance_admin": true,
-            "is_event_admin": true,
-            "is_ml_admin": true,
-            "is_assembly_admin": true,
+            "is_event_admin": false,
+            "is_ml_admin": false,
+            "is_assembly_admin": false,
             "is_cdelokal_admin": false,
             "is_complaint_admin": false,
             "is_auditor": false,
@@ -3705,7 +3705,7 @@
             "pronouns_nametag": false,
             "pronouns_profile": false,
             "birthday": "2019-12-28",
-            "telephone": "+81314159263",
+            "telephone": "+81314159265",
             "mobile": null,
             "address_supplement": null,
             "address": "Kasumigaseki 1-3-2",
@@ -4255,9 +4255,9 @@
             "is_core_admin": true,
             "is_cde_admin": true,
             "is_finance_admin": true,
-            "is_event_admin": true,
-            "is_ml_admin": true,
-            "is_assembly_admin": true,
+            "is_event_admin": false,
+            "is_ml_admin": false,
+            "is_assembly_admin": false,
             "is_cdelokal_admin": false,
             "is_complaint_admin": false,
             "is_auditor": false,
@@ -4631,6 +4631,38 @@
             "parent_id": 7,
             "concerned_id": null,
             "is_revoked": false
+        },
+        {
+            "id": 9,
+            "case_id": 1,
+            "entry_type": 311,
+            "parent_id": 4,
+            "concerned_id": 2,
+            "is_revoked": false
+        },
+        {
+            "id": 10,
+            "case_id": 1,
+            "entry_type": 101,
+            "parent_id": null,
+            "concerned_id": null,
+            "is_revoked": false
+        },
+        {
+            "id": 11,
+            "case_id": 1,
+            "entry_type": 401,
+            "parent_id": null,
+            "concerned_id": null,
+            "is_revoked": false
+        },
+        {
+            "id": 12,
+            "case_id": 1,
+            "entry_type": 411,
+            "parent_id": 11,
+            "concerned_id": 4,
+            "is_revoked": false
         }
     ],
     "complaint.entry_versions": [
@@ -4643,9 +4675,15 @@
             "ctime": "---now---",
             "timestamp": "2025-05-28T14:00:00+00:00",
             "etime": null,
+            "attachment_hash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
             "dtime": null,
             "dreason": null,
-            "deleted_by": null
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
         },
         {
             "id": 2,
@@ -4656,9 +4694,15 @@
             "ctime": "---now---",
             "timestamp": "2025-05-28T14:00:00+00:00",
             "etime": null,
+            "attachment_hash": "d28c1a205a1dfb4fd6f655d0e69e6512c676c9cd675f760ec41b6e8a57bde89d313f521d4fafc2f294a28bd8aff4a106032e904470b3249f9436f68ea1ec8020",
+            "attachment_title": "Aussage von Charly",
+            "attachment_filename": "aussage_charly.pdf",
             "dtime": null,
             "dreason": null,
-            "deleted_by": null
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
         },
         {
             "id": 3,
@@ -4669,9 +4713,15 @@
             "ctime": "---now---",
             "timestamp": "2025-05-28T15:00:00+00:00",
             "etime": null,
+            "attachment_hash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
             "dtime": null,
             "dreason": null,
-            "deleted_by": null
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
         },
         {
             "id": 4,
@@ -4682,9 +4732,15 @@
             "ctime": "---now---",
             "timestamp": "2025-05-28T16:00:00+00:00",
             "etime": null,
+            "attachment_hash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
             "dtime": "---now---",
             "dreason": "Ungünstige Wortwahl.",
-            "deleted_by": 1
+            "deleted_by": 1,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
         },
         {
             "id": 5,
@@ -4695,9 +4751,15 @@
             "ctime": "---now---",
             "timestamp": "2025-05-28T16:00:00+00:00",
             "etime": null,
+            "attachment_hash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
             "dtime": null,
             "dreason": null,
-            "deleted_by": null
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
         },
         {
             "id": 6,
@@ -4708,9 +4770,15 @@
             "ctime": "---now---",
             "timestamp": "2025-05-28T16:00:00+00:00",
             "etime": null,
+            "attachment_hash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
             "dtime": null,
             "dreason": null,
-            "deleted_by": null
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
         },
         {
             "id": 7,
@@ -4721,9 +4789,15 @@
             "ctime": "---now---",
             "timestamp": "2025-05-31T23:06:25+00:00",
             "etime": "2025-06-08T06:06:25+00:00",
+            "attachment_hash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
             "dtime": null,
             "dreason": null,
-            "deleted_by": null
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
         },
         {
             "id": 8,
@@ -4734,9 +4808,15 @@
             "ctime": "---now---",
             "timestamp": "2025-06-09T12:00:00+00:00",
             "etime": null,
+            "attachment_hash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
             "dtime": null,
             "dreason": null,
-            "deleted_by": null
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
         },
         {
             "id": 9,
@@ -4747,9 +4827,91 @@
             "ctime": "---now---",
             "timestamp": "2025-06-10T12:00:00+00:00",
             "etime": null,
+            "attachment_hash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
             "dtime": null,
             "dreason": null,
-            "deleted_by": null
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
+        },
+        {
+            "id": 10,
+            "entry_id": 9,
+            "submitted_by": 1,
+            "description": "Für eine Zukunft ohne Schnarcher.",
+            "length": 33,
+            "ctime": "---now---",
+            "timestamp": "3000-01-01T00:00:00+00:00",
+            "etime": null,
+            "attachment_hash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
+            "dtime": null,
+            "dreason": null,
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
+        },
+        {
+            "id": 11,
+            "entry_id": 10,
+            "submitted_by": 1,
+            "description": null,
+            "length": null,
+            "ctime": "---now---",
+            "timestamp": null,
+            "etime": null,
+            "attachment_hash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
+            "dtime": "---now---",
+            "dreason": null,
+            "deleted_by": 1,
+            "marked_for_purge": "---now---",
+            "purged_by": 1,
+            "is_purged": true
+        },
+        {
+            "id": 12,
+            "entry_id": 11,
+            "submitted_by": 1,
+            "description": "Umquartierung für eine Nacht.",
+            "length": 29,
+            "ctime": "---now---",
+            "timestamp": "2025-05-28T15:30:00+00:00",
+            "etime": null,
+            "attachment_hash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
+            "dtime": null,
+            "dreason": null,
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
+        },
+        {
+            "id": 13,
+            "entry_id": 12,
+            "submitted_by": 1,
+            "description": "Erholungsurlaub.",
+            "length": 16,
+            "ctime": "---now---",
+            "timestamp": "2025-05-28T15:45:00+00:00",
+            "etime": "2025-05-29T07:00:00+00:00",
+            "attachment_hash": null,
+            "attachment_title": null,
+            "attachment_filename": null,
+            "dtime": null,
+            "dreason": null,
+            "deleted_by": null,
+            "marked_for_purge": null,
+            "purged_by": null,
+            "is_purged": false
         }
     ],
     "complaint.authors": [
@@ -4797,6 +4959,21 @@
             "id": 9,
             "entry_version_id": 9,
             "persona_id": 3
+        },
+        {
+            "id": 10,
+            "entry_version_id": 10,
+            "persona_id": 3
+        },
+        {
+            "id": 11,
+            "entry_version_id": 12,
+            "persona_id": 7
+        },
+        {
+            "id": 12,
+            "entry_version_id": 13,
+            "persona_id": 7
         }
     ],
     "complaint.involved": [
@@ -4804,14 +4981,14 @@
             "id": 1,
             "case_id": 1,
             "persona_id": 2,
-            "involved_type": 21,
+            "involvement_type": 21,
             "is_informed": false
         },
         {
             "id": 2,
             "case_id": 1,
             "persona_id": 4,
-            "involved_type": 1,
+            "involvement_type": 1,
             "is_informed": true
         }
     ],
@@ -4819,7 +4996,6 @@
         {
             "id": 1,
             "case_id": 1,
-            "involved_persona_id": 2,
             "involved_id": 1,
             "companion_persona_id": 3,
             "is_withdrawn": true
@@ -4827,7 +5003,6 @@
         {
             "id": 2,
             "case_id": 1,
-            "involved_persona_id": 4,
             "involved_id": 2,
             "companion_persona_id": 7,
             "is_withdrawn": false
@@ -4840,7 +5015,6 @@
             "persona_id": 10
         }
     ],
-    "complaint.monitors": [],
     "complaint.log": [
         {
             "id": 1,
@@ -5014,7 +5188,7 @@
             "submitted_by": 1,
             "persona_id": 2,
             "iban": "DE12500105170648489890",
-            "account_owner": "Dagobert Anatidae",
+            "account_owner": "Dagobert Anatidae & Co. KG",
             "account_address": "Im Geldspeicher 1",
             "granted_at": "2002-02-22T20:22:22.222222+00:00",
             "revoked_at": null,
@@ -5203,72 +5377,89 @@
         {
             "persona_id": 2,
             "pevent_id": 1,
-            "pcourse_id": 1,
-            "is_instructor": true,
-            "is_orga": false
+            "orga_status": 0,
+            "music_status": 0
         },
         {
             "persona_id": 3,
             "pevent_id": 1,
-            "pcourse_id": null,
-            "is_instructor": false,
-            "is_orga": false
+            "orga_status": 0,
+            "music_status": 1
         },
         {
             "persona_id": 4,
             "pevent_id": 1,
-            "pcourse_id": 2,
-            "is_instructor": false,
-            "is_orga": false
+            "orga_status": 0,
+            "music_status": 0
         },
         {
             "persona_id": 5,
             "pevent_id": 1,
-            "pcourse_id": 2,
-            "is_instructor": false,
-            "is_orga": false
+            "orga_status": 0,
+            "music_status": 2
         },
         {
             "persona_id": 6,
             "pevent_id": 1,
-            "pcourse_id": 2,
-            "is_instructor": false,
-            "is_orga": true
+            "orga_status": 1,
+            "music_status": 0
         },
         {
             "persona_id": 100,
             "pevent_id": 1,
-            "pcourse_id": 2,
-            "is_instructor": false,
-            "is_orga": false
+            "orga_status": 0,
+            "music_status": 0
         },
         {
             "persona_id": 3,
             "pevent_id": 4,
-            "pcourse_id": null,
-            "is_instructor": false,
-            "is_orga": true
+            "orga_status": 1,
+            "music_status": 0
         },
         {
             "persona_id": 5,
             "pevent_id": 4,
-            "pcourse_id": null,
-            "is_instructor": false,
-            "is_orga": true
+            "orga_status": 4,
+            "music_status": 0
         },
         {
             "persona_id": 6,
             "pevent_id": 4,
-            "pcourse_id": null,
-            "is_instructor": false,
-            "is_orga": true
+            "orga_status": 2,
+            "music_status": 0
         },
         {
             "persona_id": 7,
             "pevent_id": 4,
-            "pcourse_id": null,
-            "is_instructor": false,
-            "is_orga": false
+            "orga_status": 0,
+            "music_status": 0
+        }
+    ],
+    "past_event.course_participants": [
+        {
+            "participant_id": 1,
+            "pcourse_id": 1,
+            "instructor_status": 1
+        },
+        {
+            "participant_id": 3,
+            "pcourse_id": 2,
+            "instructor_status": 0
+        },
+        {
+            "participant_id": 4,
+            "pcourse_id": 2,
+            "instructor_status": 0
+        },
+        {
+            "participant_id": 5,
+            "pcourse_id": 2,
+            "instructor_status": 0
+        },
+        {
+            "participant_id": 6,
+            "pcourse_id": 2,
+            "instructor_status": 0
         }
     ],
     "past_event.log": [],
@@ -5285,12 +5476,13 @@
             "registration_hard_limit": "2221-10-30T00:00:00+00:00",
             "iban": "DE26370205000008068900",
             "orga_address": "aka@example.cde",
-            "registration_text": null,
+            "registration_status_text": null,
             "mail_text": "Wir verwenden ein neues Kristallkugel-basiertes Kurszuteilungssystem; bis wir das ordentlich ans Laufen gebracht haben, müsst ihr leider etwas auf die Teilnehmerliste warten.",
             "participant_info": "Die Kristallkugel hat gute Dienste geleistet, nicht wahr?",
             "use_additional_questionnaire": false,
             "notes": "Todoliste ... just kidding ;)",
             "field_definition_notes": "Die Sortierung der Felder bitte nicht ändern!",
+            "questionnaire_notes": null,
             "is_locked": false,
             "is_visible": true,
             "is_course_list_visible": true,
@@ -5300,6 +5492,7 @@
             "is_archived": false,
             "is_cancelled": false,
             "is_balanced": false,
+            "is_registration_approved": true,
             "notify_on_registration": -1,
             "reimbursement_iban_field_id": null,
             "lodge_field_id": 3
@@ -5316,12 +5509,13 @@
             "registration_hard_limit": "2049-12-31T00:00:00+00:00",
             "iban": "DE23830654080005374499",
             "orga_address": "",
-            "registration_text": null,
+            "registration_status_text": null,
             "mail_text": "",
             "participant_info": null,
             "use_additional_questionnaire": false,
             "notes": "Wird anstrengend …",
             "field_definition_notes": null,
+            "questionnaire_notes": null,
             "is_locked": false,
             "is_visible": false,
             "is_course_list_visible": true,
@@ -5331,6 +5525,7 @@
             "is_archived": false,
             "is_cancelled": false,
             "is_balanced": false,
+            "is_registration_approved": true,
             "notify_on_registration": -1,
             "reimbursement_iban_field_id": null,
             "lodge_field_id": null
@@ -5347,12 +5542,13 @@
             "registration_hard_limit": null,
             "iban": "DE23830654080005374499",
             "orga_address": null,
-            "registration_text": null,
+            "registration_status_text": null,
             "mail_text": null,
             "participant_info": null,
             "use_additional_questionnaire": false,
             "notes": null,
             "field_definition_notes": null,
+            "questionnaire_notes": null,
             "is_locked": false,
             "is_visible": true,
             "is_course_list_visible": true,
@@ -5362,6 +5558,7 @@
             "is_archived": false,
             "is_cancelled": false,
             "is_balanced": false,
+            "is_registration_approved": true,
             "notify_on_registration": -1,
             "reimbursement_iban_field_id": null,
             "lodge_field_id": null
@@ -5378,12 +5575,13 @@
             "registration_hard_limit": null,
             "iban": "DE23830654080005374499",
             "orga_address": null,
-            "registration_text": null,
+            "registration_status_text": null,
             "mail_text": null,
             "participant_info": null,
             "use_additional_questionnaire": false,
             "notes": null,
             "field_definition_notes": null,
+            "questionnaire_notes": null,
             "is_locked": false,
             "is_visible": true,
             "is_course_list_visible": true,
@@ -5393,6 +5591,7 @@
             "is_archived": false,
             "is_cancelled": false,
             "is_balanced": false,
+            "is_registration_approved": true,
             "notify_on_registration": -1,
             "reimbursement_iban_field_id": null,
             "lodge_field_id": null
@@ -6140,7 +6339,7 @@
             "id": 3,
             "event_id": 1,
             "field_name": "lodge",
-            "kind": 1,
+            "kind": 50,
             "association": 1,
             "title": "Zimmerwünsche",
             "description": null,
@@ -6243,6 +6442,32 @@
             "sortkey": 0,
             "checkin": false,
             "entries": null
+        },
+        {
+            "id": 10,
+            "event_id": 1,
+            "field_name": "arrival_date",
+            "kind": 5,
+            "association": 1,
+            "title": "Anreisetag",
+            "description": null,
+            "sort_group": null,
+            "sortkey": 0,
+            "checkin": false,
+            "entries": [
+                [
+                    null,
+                    "gar nicht"
+                ],
+                [
+                    "2025-12-31",
+                    "Sylvester"
+                ],
+                [
+                    "2026-01-01",
+                    "Neujahr"
+                ]
+            ]
         },
         {
             "id": 101,
@@ -6682,6 +6907,14 @@
             "event_id": 4
         }
     ],
+    "event.caretakers": [],
+    "event.checkin_helpers": [
+        {
+            "id": 1,
+            "persona_id": 38,
+            "event_id": 1
+        }
+    ],
     "event.helpers": [
         {
             "id": 1,
@@ -6801,6 +7034,13 @@
                 "1": "573.99",
                 "5": "-20.00"
             },
+            "amount_owed_by_category": {
+                "1": "573.99",
+                "3": "-20.00"
+            },
+            "amount_owed_by_budget": {
+                "1": "553.99"
+            },
             "parental_agreement": true,
             "mixed_lodging": true,
             "list_consent": true,
@@ -6825,6 +7065,13 @@
             "amount_owed_by_kind": {
                 "1": "461.49",
                 "3": "5.00"
+            },
+            "amount_owed_by_category": {
+                "1": "466.49"
+            },
+            "amount_owed_by_budget": {
+                "1": "461.49",
+                "10": "5.00"
             },
             "parental_agreement": true,
             "mixed_lodging": true,
@@ -6853,6 +7100,14 @@
                 "5": "-30.00",
                 "10": "-0.01"
             },
+            "amount_owed_by_category": {
+                "1": "534.48",
+                "3": "-30.00"
+            },
+            "amount_owed_by_budget": {
+                "1": "504.49",
+                "2": "-0.01"
+            },
             "parental_agreement": true,
             "mixed_lodging": true,
             "list_consent": false,
@@ -6874,6 +7129,12 @@
             "amount_paid": "548.48",
             "amount_owed": "431.99",
             "amount_owed_by_kind": {
+                "1": "431.99"
+            },
+            "amount_owed_by_category": {
+                "1": "431.99"
+            },
+            "amount_owed_by_budget": {
                 "1": "431.99"
             },
             "parental_agreement": false,
@@ -6902,6 +7163,13 @@
                 "1": "584.49",
                 "10": "-0.01"
             },
+            "amount_owed_by_category": {
+                "1": "584.48"
+            },
+            "amount_owed_by_budget": {
+                "1": "584.49",
+                "2": "-0.01"
+            },
             "parental_agreement": true,
             "mixed_lodging": false,
             "list_consent": true,
@@ -6923,6 +7191,12 @@
             "amount_paid": "10.50",
             "amount_owed": "10.50",
             "amount_owed_by_kind": {
+                "1": "10.50"
+            },
+            "amount_owed_by_category": {
+                "1": "10.50"
+            },
+            "amount_owed_by_budget": {
                 "1": "10.50"
             },
             "parental_agreement": true,
@@ -6947,6 +7221,8 @@
             "amount_paid": "0.00",
             "amount_owed": "0.00",
             "amount_owed_by_kind": {},
+            "amount_owed_by_category": {},
+            "amount_owed_by_budget": {},
             "parental_agreement": false,
             "mixed_lodging": false,
             "list_consent": false,
@@ -6964,6 +7240,8 @@
             "amount_paid": "0.00",
             "amount_owed": "0.00",
             "amount_owed_by_kind": {},
+            "amount_owed_by_category": {},
+            "amount_owed_by_budget": {},
             "parental_agreement": false,
             "mixed_lodging": false,
             "list_consent": false,
@@ -6981,6 +7259,8 @@
             "amount_paid": "0.00",
             "amount_owed": "0.00",
             "amount_owed_by_kind": {},
+            "amount_owed_by_category": {},
+            "amount_owed_by_budget": {},
             "parental_agreement": false,
             "mixed_lodging": false,
             "list_consent": false,
@@ -6998,6 +7278,12 @@
             "amount_paid": "0.00",
             "amount_owed": "4.20",
             "amount_owed_by_kind": {
+                "1": "4.20"
+            },
+            "amount_owed_by_category": {
+                "1": "4.20"
+            },
+            "amount_owed_by_budget": {
                 "1": "4.20"
             },
             "parental_agreement": false,
@@ -7696,90 +7982,342 @@
             "amount": "-30.00"
         }
     ],
-    "event.questionnaire_rows": [
+    "event.questionnaire_text_rows": [
         {
-            "id": 1,
             "event_id": 1,
-            "field_id": 7,
+            "kind": 2,
             "pos": 0,
-            "title": "Ich bin unter 13 Jahre alt.",
-            "info": null,
-            "input_size": null,
-            "readonly": false,
-            "default_value": null,
-            "kind": 1
-        },
-        {
-            "id": 2,
-            "event_id": 1,
-            "field_id": null,
-            "pos": 0,
+            "role": 2,
             "title": "Unterüberschrift",
-            "info": "mit Text darunter",
-            "input_size": null,
-            "readonly": null,
-            "default_value": null,
-            "kind": 2
+            "text": null,
+            "panel_kind": null
         },
         {
-            "id": 3,
             "event_id": 1,
-            "field_id": 1,
+            "kind": 2,
             "pos": 1,
-            "title": "Bälle",
-            "info": "Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.",
-            "input_size": null,
-            "readonly": false,
-            "default_value": "True",
-            "kind": 2
-        },
-        {
-            "id": 4,
-            "event_id": 1,
-            "field_id": null,
-            "pos": 2,
+            "role": 1,
             "title": null,
-            "info": "nur etwas Text",
-            "input_size": null,
-            "readonly": null,
-            "default_value": null,
-            "kind": 2
+            "text": "mit Text darunter",
+            "panel_kind": null
         },
         {
-            "id": 5,
             "event_id": 1,
-            "field_id": null,
+            "kind": 2,
             "pos": 3,
-            "title": "Weitere Überschrift",
-            "info": null,
-            "input_size": null,
-            "readonly": null,
-            "default_value": null,
-            "kind": 2
+            "role": 1,
+            "title": null,
+            "text": "nur etwas Text",
+            "panel_kind": null
         },
         {
-            "id": 6,
             "event_id": 1,
-            "field_id": 2,
+            "kind": 2,
             "pos": 4,
-            "title": "Vehikel",
-            "info": null,
-            "input_size": null,
-            "readonly": false,
-            "default_value": "etc",
-            "kind": 2
+            "role": 2,
+            "title": "Weitere Überschrift",
+            "text": null,
+            "panel_kind": null
         },
         {
-            "id": 7,
             "event_id": 1,
-            "field_id": 3,
-            "pos": 5,
-            "title": "Hauswunsch",
-            "info": null,
-            "input_size": 3,
+            "kind": 1,
+            "pos": 4,
+            "role": 2,
+            "title": "Weitere Angaben",
+            "text": null,
+            "panel_kind": null
+        },
+        {
+            "event_id": 2,
+            "kind": 1,
+            "pos": 4,
+            "role": 2,
+            "title": "Weitere Angaben",
+            "text": null,
+            "panel_kind": null
+        },
+        {
+            "event_id": 3,
+            "kind": 1,
+            "pos": 4,
+            "role": 2,
+            "title": "Weitere Angaben",
+            "text": null,
+            "panel_kind": null
+        },
+        {
+            "event_id": 4,
+            "kind": 1,
+            "pos": 4,
+            "role": 2,
+            "title": "Weitere Angaben",
+            "text": null,
+            "panel_kind": null
+        }
+    ],
+    "event.questionnaire_field_rows": [
+        {
+            "event_id": 1,
+            "kind": 2,
+            "pos": 2,
+            "role": 5,
+            "label": "Bälle",
+            "info": "Du bringst genug Bälle mit um einen ganzen Kurs abzuwerfen.",
+            "field_id": 1,
             "readonly": false,
-            "default_value": null,
-            "kind": 2
+            "default_value": "true"
+        },
+        {
+            "event_id": 1,
+            "kind": 2,
+            "pos": 5,
+            "role": 5,
+            "label": "Vehikel",
+            "info": null,
+            "field_id": 2,
+            "readonly": false,
+            "default_value": "etc"
+        },
+        {
+            "event_id": 1,
+            "kind": 2,
+            "pos": 6,
+            "role": 5,
+            "label": "Hauswunsch",
+            "info": null,
+            "field_id": 3,
+            "readonly": false,
+            "default_value": null
+        },
+        {
+            "event_id": 1,
+            "kind": 1,
+            "pos": 6,
+            "role": 5,
+            "label": "Ich bin unter 13 Jahre alt.",
+            "info": "Denk daran, deine Eltern mitzubringen!",
+            "field_id": 7,
+            "readonly": false,
+            "default_value": ""
+        }
+    ],
+    "event.questionnaire_magic_rows": [
+        {
+            "event_id": 1,
+            "kind": 1,
+            "pos": 0,
+            "role": 90
+        },
+        {
+            "event_id": 1,
+            "kind": 1,
+            "pos": 1,
+            "role": 20
+        },
+        {
+            "event_id": 1,
+            "kind": 1,
+            "pos": 2,
+            "role": 30
+        },
+        {
+            "event_id": 1,
+            "kind": 1,
+            "pos": 3,
+            "role": 10
+        },
+        {
+            "event_id": 1,
+            "kind": 1,
+            "pos": 5,
+            "role": 40
+        },
+        {
+            "event_id": 1,
+            "kind": 1,
+            "pos": 7,
+            "role": 50
+        },
+        {
+            "event_id": 1,
+            "kind": 1,
+            "pos": 8,
+            "role": 60
+        },
+        {
+            "event_id": 1,
+            "kind": 1,
+            "pos": 9,
+            "role": 70
+        },
+        {
+            "event_id": 1,
+            "kind": 1,
+            "pos": 10,
+            "role": 30
+        },
+        {
+            "event_id": 2,
+            "kind": 1,
+            "pos": 0,
+            "role": 90
+        },
+        {
+            "event_id": 2,
+            "kind": 1,
+            "pos": 1,
+            "role": 20
+        },
+        {
+            "event_id": 2,
+            "kind": 1,
+            "pos": 2,
+            "role": 30
+        },
+        {
+            "event_id": 2,
+            "kind": 1,
+            "pos": 3,
+            "role": 10
+        },
+        {
+            "event_id": 2,
+            "kind": 1,
+            "pos": 5,
+            "role": 40
+        },
+        {
+            "event_id": 2,
+            "kind": 1,
+            "pos": 6,
+            "role": 50
+        },
+        {
+            "event_id": 2,
+            "kind": 1,
+            "pos": 7,
+            "role": 60
+        },
+        {
+            "event_id": 2,
+            "kind": 1,
+            "pos": 8,
+            "role": 70
+        },
+        {
+            "event_id": 2,
+            "kind": 1,
+            "pos": 9,
+            "role": 30
+        },
+        {
+            "event_id": 3,
+            "kind": 1,
+            "pos": 0,
+            "role": 90
+        },
+        {
+            "event_id": 3,
+            "kind": 1,
+            "pos": 1,
+            "role": 20
+        },
+        {
+            "event_id": 3,
+            "kind": 1,
+            "pos": 2,
+            "role": 30
+        },
+        {
+            "event_id": 3,
+            "kind": 1,
+            "pos": 3,
+            "role": 10
+        },
+        {
+            "event_id": 3,
+            "kind": 1,
+            "pos": 5,
+            "role": 40
+        },
+        {
+            "event_id": 3,
+            "kind": 1,
+            "pos": 6,
+            "role": 50
+        },
+        {
+            "event_id": 3,
+            "kind": 1,
+            "pos": 7,
+            "role": 60
+        },
+        {
+            "event_id": 3,
+            "kind": 1,
+            "pos": 8,
+            "role": 70
+        },
+        {
+            "event_id": 3,
+            "kind": 1,
+            "pos": 9,
+            "role": 30
+        },
+        {
+            "event_id": 4,
+            "kind": 1,
+            "pos": 0,
+            "role": 90
+        },
+        {
+            "event_id": 4,
+            "kind": 1,
+            "pos": 1,
+            "role": 20
+        },
+        {
+            "event_id": 4,
+            "kind": 1,
+            "pos": 2,
+            "role": 30
+        },
+        {
+            "event_id": 4,
+            "kind": 1,
+            "pos": 3,
+            "role": 10
+        },
+        {
+            "event_id": 4,
+            "kind": 1,
+            "pos": 5,
+            "role": 40
+        },
+        {
+            "event_id": 4,
+            "kind": 1,
+            "pos": 6,
+            "role": 50
+        },
+        {
+            "event_id": 4,
+            "kind": 1,
+            "pos": 7,
+            "role": 60
+        },
+        {
+            "event_id": 4,
+            "kind": 1,
+            "pos": 8,
+            "role": 70
+        },
+        {
+            "event_id": 4,
+            "kind": 1,
+            "pos": 9,
+            "role": 30
         }
     ],
     "event.stored_queries": [
@@ -7787,6 +8325,7 @@
             "id": 1,
             "event_id": 1,
             "query_name": "Test-Query",
+            "query_group": "Test",
             "scope": 30,
             "serialized_query": {
                 "is_search": true,
@@ -7938,6 +8477,15 @@
             "event_id": 1,
             "persona_id": 2,
             "change_note": "23.02.2022, 10:00:00"
+        },
+        {
+            "ctime": "---now---",
+            "code": 800,
+            "submitted_by": 7,
+            "droid_id": null,
+            "event_id": 1,
+            "persona_id": 38,
+            "change_note": null
         }
     ],
     "assembly.assemblies": [
@@ -9330,6 +9878,7 @@
             "title": "Rechenschaftsbericht",
             "authors": "Farin",
             "filename": "rechen.pdf",
+            "changenotes": null,
             "ctime": "---now---",
             "dtime": null,
             "file_hash": "72a0e2bdc75fd5a95cae07120e4034ad364786e04b6a9fffeb9c168f3dba11e49d6f422322899a9de6d0a03a2ae81f81e22d2751a405160e6bea06748a91e3d6"
@@ -9341,6 +9890,7 @@
             "title": "Kassenprüferbericht",
             "authors": "Berta",
             "filename": "kassen.pdf",
+            "changenotes": null,
             "ctime": "---now---",
             "dtime": null,
             "file_hash": "68c602823ad8538ee0bedea06ad9d962a608b55f2a1bd62bacee414d3f3c1bfb3486f1fcc9274d2ff4245ece18b69a9182a7bdcc5329b49ce9ccd04edb7de58e"
@@ -9352,6 +9902,7 @@
             "title": null,
             "authors": null,
             "filename": null,
+            "changenotes": null,
             "ctime": "---now---",
             "dtime": "---now---",
             "file_hash": "del"
@@ -9363,6 +9914,7 @@
             "title": "Kassenprüferbericht 2",
             "authors": "Garcia",
             "filename": "kasse.pdf",
+            "changenotes": null,
             "ctime": "---now---",
             "dtime": null,
             "file_hash": "2007baadffb25f5fb1756a8cb3f69f833318d3d28a517df2c51350200ec4ece3d4b1d11202fb154d3dc6ce630068c22d2a71658b4ad2be3879d73e05937c5aa1"
@@ -9374,6 +9926,7 @@
             "title": "Liste der Kandidaten",
             "authors": "Wahlleitung",
             "filename": "kandidaten.pdf",
+            "changenotes": null,
             "ctime": "1990-01-01T00:00:00+00:00",
             "dtime": null,
             "file_hash": "c093aa42d1dd7117fbbbc46e027b35b651400b03e5969f9c6ee875c7b0715d5bf02ad0b3e49d43a97afb49a8f6ca3f0d501fffc35417085c51507dc9d372a425"
@@ -9397,6 +9950,7 @@
             "code": 30,
             "submitted_by": 1,
             "assembly_id": 2,
+            "ballot_id": null,
             "persona_id": 18,
             "change_note": null
         },
@@ -9405,6 +9959,7 @@
             "code": 30,
             "submitted_by": 1,
             "assembly_id": 2,
+            "ballot_id": null,
             "persona_id": 1,
             "change_note": null
         },
@@ -9413,6 +9968,7 @@
             "code": 30,
             "submitted_by": 3,
             "assembly_id": 2,
+            "ballot_id": null,
             "persona_id": 3,
             "change_note": null
         },
@@ -9421,6 +9977,7 @@
             "code": 30,
             "submitted_by": 32,
             "assembly_id": 2,
+            "ballot_id": null,
             "persona_id": 32,
             "change_note": null
         },
@@ -9429,6 +9986,7 @@
             "code": 30,
             "submitted_by": 7,
             "assembly_id": 2,
+            "ballot_id": null,
             "persona_id": 7,
             "change_note": null
         },
@@ -9437,6 +9995,7 @@
             "code": 30,
             "submitted_by": 9,
             "assembly_id": 2,
+            "ballot_id": null,
             "persona_id": 9,
             "change_note": null
         },
@@ -9445,6 +10004,7 @@
             "code": 30,
             "submitted_by": 1,
             "assembly_id": 2,
+            "ballot_id": null,
             "persona_id": 17,
             "change_note": null
         },
@@ -9453,6 +10013,7 @@
             "code": 30,
             "submitted_by": 1,
             "assembly_id": 2,
+            "ballot_id": null,
             "persona_id": 22,
             "change_note": null
         }

@@ -214,7 +214,7 @@ CREATE INDEX personas_is_ml_realm_idx ON core.personas(is_ml_realm);
 CREATE INDEX personas_is_assembly_realm_idx ON core.personas(is_assembly_realm);
 CREATE INDEX personas_is_member_idx ON core.personas(is_member);
 CREATE INDEX personas_is_searchable_idx ON core.personas(is_searchable);
-GRANT SELECT (id, username, password_hash, is_active, is_meta_admin, is_core_admin, is_complaint_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_auditor, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, is_purged) ON core.personas TO cdb_anonymous, cdb_ldap;
+GRANT SELECT (id, username, password_hash, foto, is_active, is_meta_admin, is_core_admin, is_complaint_admin, is_cde_admin, is_finance_admin, is_event_admin, is_ml_admin, is_assembly_admin, is_cdelokal_admin, is_auditor, is_cde_realm, is_event_realm, is_ml_realm, is_assembly_realm, is_member, is_searchable, is_archived, is_purged) ON core.personas TO cdb_anonymous, cdb_ldap;
 GRANT SELECT (given_names, family_name, title, name_supplement) ON core.personas TO cdb_ldap;
 -- required for _changelog_resolve_change_unsafe
 GRANT SELECT ON core.personas TO cdb_persona;
@@ -511,11 +511,11 @@ GRANT SELECT, UPDATE ON core.anonymous_messages_id_seq TO cdb_persona;
 -- Read-Only table translating german postal codes into coordinates for nearby search.
 DROP TABLE IF EXISTS core.postal_code_locations;
 CREATE TABLE core.postal_code_locations (
-        postal_code     varchar PRIMARY KEY,
-        name            varchar,
-        earth_location  earth,
-        lat             float8,
-        long            float8
+        postal_code             varchar PRIMARY KEY,
+        name                    varchar,
+        earth_location          earth,
+        lat                     float8,
+        long                    float8
 );
 GRANT SELECT ON core.postal_code_locations TO cdb_persona;
 
@@ -527,98 +527,127 @@ CREATE SCHEMA complaint;
 GRANT USAGE ON SCHEMA complaint TO cdb_persona;
 
 CREATE TABLE complaint.cases (
-    id         serial PRIMARY KEY,
-    kind       integer NOT NULL, -- database.constants.ComplaintKind
-    is_grave   boolean DEFAULT FALSE,
-    summary    varchar NOT NULL,
-    notes      varchar,
-    start_date date,
-    end_date   date
+        id                      serial PRIMARY KEY,
+        kind                    integer NOT NULL, -- database.constants.ComplaintKind
+        is_grave                boolean DEFAULT FALSE,
+        summary                 varchar NOT NULL,
+        notes                   varchar,
+        start_date              date,
+        end_date                date
 );
 GRANT SELECT ON complaint.cases TO cdb_persona;
 GRANT INSERT, UPDATE, DELETE ON complaint.cases TO cdb_admin;
 GRANT SELECT, UPDATE ON complaint.cases_id_seq TO cdb_admin;
 
 CREATE TABLE complaint.access_log (
-    id              bigserial PRIMARY KEY,
-    persona_id      integer NOT NULL REFERENCES core.personas(id),
-    case_id         integer NOT NULL REFERENCES complaint.cases(id),
-    ctime           timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
-    atime           timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
-    UNIQUE (persona_id, case_id)
+        id                      bigserial PRIMARY KEY,
+        persona_id              integer NOT NULL REFERENCES core.personas(id),
+        case_id                 integer NOT NULL REFERENCES complaint.cases(id),
+        ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
+        atime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
+        UNIQUE (persona_id, case_id)
 );
 GRANT SELECT, INSERT, UPDATE(ctime, atime), DELETE ON complaint.access_log TO cdb_persona;
 GRANT SELECT, UPDATE ON complaint.access_log_id_seq TO cdb_persona;
 
 CREATE TABLE complaint.entries (
-    id            serial PRIMARY KEY,
-    case_id       integer NOT NULL REFERENCES complaint.cases(id),
-    entry_type    integer DEFAULT NULL, -- database.constants.ComplaintEntryType
-    parent_id     integer REFERENCES complaint.entries(id) DEFAULT NULL, -- only for some types
-    concerned_id  integer REFERENCES core.personas(id) DEFAULT NULL,  -- maybe reference involved_id instead
-    is_revoked    boolean NOT NULL DEFAULT FALSE
+        id                      serial PRIMARY KEY,
+        case_id                 integer NOT NULL REFERENCES complaint.cases(id),
+        entry_type              integer DEFAULT NULL, -- database.constants.ComplaintEntryType
+        parent_id               integer REFERENCES complaint.entries(id) DEFAULT NULL, -- only for some types
+        concerned_id            integer REFERENCES core.personas(id) DEFAULT NULL,  -- maybe reference involved_id instead
+        is_revoked              boolean NOT NULL DEFAULT FALSE
 );
 GRANT SELECT, INSERT, UPDATE (is_revoked) ON complaint.entries TO cdb_persona;
 GRANT SELECT, UPDATE ON complaint.entries_id_seq TO cdb_persona;
 
 CREATE TABLE complaint.entry_versions (
-    id            serial PRIMARY KEY,
-    entry_id      integer NOT NULL REFERENCES complaint.entries(id),
-    submitted_by  integer NOT NULL REFERENCES core.personas(id),
-    description   bytea, -- encrypted
-    length        integer,
-    CONSTRAINT complaint_entry_empty_description_length
-        CHECK ((description IS NULL) = (length IS NULL)),
-    ctime         timestamp WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    timestamp     timestamp WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    etime         timestamp WITH TIME ZONE DEFAULT NULL,
-    -- is_shared     boolean NOT NULL DEFAULT TRUE, -- with companions with shared involved personas
-    dtime         timestamp WITH TIME ZONE DEFAULT NULL,  -- to be updated on deletion
-    dreason       varchar DEFAULT NULL,
-    deleted_by    integer REFERENCES core.personas(id) DEFAULT NULL,
-    UNIQUE(entry_id, dtime),
-    CONSTRAINT complaint_entry_deletion_reason
-        CHECK ((dtime IS NULL) = (dreason IS NULL)),
-    CONSTRAINT complaint_entry_deletion_by
-        CHECK ((dtime IS NULL) = (deleted_by IS NULL))
+        id                      serial PRIMARY KEY,
+        entry_id                integer NOT NULL REFERENCES complaint.entries(id),
+        submitted_by            integer NOT NULL REFERENCES core.personas(id),
+        description             bytea, -- encrypted
+        length                  integer,
+        CONSTRAINT complaint_entry_empty_description_length
+            CHECK ((description IS NULL) = (length IS NULL)),
+        ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        timestamp               timestamp WITH TIME ZONE DEFAULT NOW(),
+        etime                   timestamp WITH TIME ZONE DEFAULT NULL,
+        -- attachment contents are stored encrypted. Metadata is not.
+        attachment_hash         varchar DEFAULT NULL,
+        attachment_title        varchar DEFAULT NULL,
+        attachment_filename     varchar DEFAULT NULL,
+        CONSTRAINT complaint_entry_attachment_title
+            CHECK ((attachment_hash IS NULL) = (attachment_title IS NULL)),
+        CONSTRAINT complaint_entry_attachment_filename
+            CHECK ((attachment_hash IS NULL) = (attachment_filename IS NULL)),
+        -- is_shared     boolean NOT NULL DEFAULT TRUE, -- with companions with shared involved personas
+        dtime                   timestamp WITH TIME ZONE DEFAULT NULL,  -- to be updated on deletion
+        dreason                 varchar DEFAULT NULL,
+        deleted_by              integer REFERENCES core.personas(id) DEFAULT NULL,
+        UNIQUE(entry_id, dtime),
+        CONSTRAINT complaint_entry_deletion_reason
+            CHECK ((dtime IS NULL) = (dreason IS NULL) OR is_purged),
+        CONSTRAINT complaint_entry_deletion_by
+            CHECK ((dtime IS NULL) = (deleted_by IS NULL) OR is_purged),
+        -- indicated that the entry version was purged.
+        marked_for_purge        timestamp WITH TIME ZONE DEFAULT NULL,
+        purged_by               integer REFERENCES core.personas(id),
+        CONSTRAINT complaint_entry_version_marked_for_purge_by
+            CHECK ((marked_for_purge IS NULL) = (purged_by IS NULL)),
+        is_purged               boolean NOT NULL DEFAULT False,
+        CONSTRAINT complaint_entry_purged
+            CHECK (
+                is_purged = (timestamp IS NULL)
+                AND NOT is_purged OR (description IS NULL)
+                AND NOT is_purged OR (length IS NULL)
+                AND NOT is_purged OR (dreason IS NULL)
+                AND NOT is_purged OR (attachment_hash IS NULL)
+                AND NOT is_purged OR (attachment_title IS NULL)
+                AND NOT is_purged OR (attachment_filename IS NULL)
+            )
 );
 CREATE UNIQUE INDEX entry_versions_id_current ON complaint.entry_versions(entry_id) WHERE dtime IS NULL;
-GRANT SELECT, INSERT, UPDATE (dtime, dreason, deleted_by) ON complaint.entry_versions TO cdb_persona;
-GRANT SELECT, UPDATE ON complaint.entry_versions_id_seq TO cdb_persona;
+CREATE INDEX entry_versions_attachment_hash ON complaint.entry_versions(attachment_hash);
+GRANT SELECT ON complaint.entry_versions TO cdb_persona;
+GRANT INSERT, UPDATE (dtime, dreason, deleted_by, marked_for_purge, purged_by) ON complaint.entry_versions TO cdb_admin;
+-- This UPDATE should technically only be allowed for cron.
+GRANT UPDATE (is_purged, description, length, timestamp, dreason, attachment_hash, attachment_title, attachment_filename) ON complaint.entry_versions TO cdb_admin;
+GRANT SELECT, UPDATE ON complaint.entry_versions_id_seq TO cdb_admin;
 
 CREATE TABLE complaint.authors (
-    id                      serial PRIMARY KEY,
-    entry_version_id        integer NOT NULL REFERENCES complaint.entry_versions(id),
-    persona_id              integer NOT NULL REFERENCES core.personas(id),
-    UNIQUE(entry_version_id, persona_id)
+        id                      serial PRIMARY KEY,
+        entry_version_id        integer NOT NULL REFERENCES complaint.entry_versions(id),
+        persona_id              integer NOT NULL REFERENCES core.personas(id),
+        UNIQUE(entry_version_id, persona_id)
 );
-GRANT SELECT, INSERT ON complaint.authors TO cdb_persona;
-GRANT SELECT, UPDATE ON complaint.authors_id_seq TO cdb_persona;
+GRANT SELECT ON complaint.authors TO cdb_persona;
+GRANT INSERT ON complaint.authors TO cdb_admin;
+-- This DELETE should technically only be allowed for cron.
+GRANT DELETE ON complaint.authors TO cdb_admin;
+GRANT SELECT, UPDATE ON complaint.authors_id_seq TO cdb_admin;
 
 CREATE TABLE complaint.involved (
-    id            serial PRIMARY KEY,
-    case_id       int NOT NULL REFERENCES complaint.cases(id),
-    persona_id    int NOT NULL REFERENCES core.personas(id),
-    UNIQUE(case_id, persona_id),
-    involved_type integer NOT NULL, -- database.constants.ComplaintInvolvementType
-    is_informed   boolean NOT NULL DEFAULT FALSE
+        id                      serial PRIMARY KEY,
+        case_id                 int NOT NULL REFERENCES complaint.cases(id),
+        persona_id              int REFERENCES core.personas(id),
+        UNIQUE(case_id, persona_id),
+        involvement_type        integer NOT NULL, -- database.constants.ComplaintInvolvementType
+        is_informed             boolean NOT NULL DEFAULT FALSE
 );
 GRANT SELECT ON complaint.involved TO cdb_persona;
-GRANT INSERT, UPDATE (is_informed), DELETE ON complaint.involved TO cdb_admin;
+GRANT INSERT, UPDATE (persona_id, involvement_type, is_informed), DELETE ON complaint.involved TO cdb_admin;
 GRANT SELECT, UPDATE ON complaint.involved_id_seq TO cdb_admin;
 
 -- very limited access per case and persona
 CREATE TABLE complaint.companions (
-    id                      serial PRIMARY KEY,
-    -- Who is being accompanied in which case.
-    case_id                 int NOT NULL REFERENCES complaint.cases(id),
-    involved_persona_id     int NOT NULL REFERENCES core.personas(id),
-    -- This is duplicating the info from above, but this ensures integrity to the other table.
-    involved_id             int NOT NULL REFERENCES complaint.involved(id) ON DELETE CASCADE,
-    -- Who is doing the accompanying.
-    companion_persona_id    int NOT NULL REFERENCES core.personas(id),
-    UNIQUE(involved_id, companion_persona_id),
-    is_withdrawn  boolean NOT NULL DEFAULT FALSE
+        id                      serial PRIMARY KEY,
+        -- Who is being accompanied in which case.
+        case_id                 int NOT NULL REFERENCES complaint.cases(id),
+        involved_id             int NOT NULL REFERENCES complaint.involved(id) ON DELETE CASCADE,
+        -- Who is doing the accompanying.
+        companion_persona_id    int NOT NULL REFERENCES core.personas(id),
+        UNIQUE(involved_id, companion_persona_id),
+        is_withdrawn            boolean NOT NULL DEFAULT FALSE
 );
 GRANT SELECT ON complaint.companions TO cdb_persona;
 GRANT INSERT, UPDATE (is_withdrawn), DELETE ON complaint.companions TO cdb_admin;
@@ -626,30 +655,21 @@ GRANT SELECT, UPDATE ON complaint.companions_id_seq TO cdb_admin;
 
 -- people, who are blocked from "meeting" within the complaint process
 CREATE TABLE complaint.companion_incompatibles (
-    id            serial PRIMARY KEY,
-    blocker_id    int NOT NULL REFERENCES core.personas(id),
-    blocked_id    int NOT NULL REFERENCES core.personas(id),
-    UNIQUE(blocker_id, blocked_id)
+        id                      serial PRIMARY KEY,
+        blocker_id              int NOT NULL REFERENCES core.personas(id),
+        blocked_id              int NOT NULL REFERENCES core.personas(id),
+        UNIQUE(blocker_id, blocked_id)
 );
 GRANT SELECT, INSERT, DELETE ON complaint.companion_incompatibles TO cdb_persona;
 
 -- like event helpers, may access limited information on measures
 CREATE TABLE complaint.enforcers (
-    id                      serial PRIMARY KEY,
-    persona_id              integer UNIQUE NOT NULL REFERENCES core.personas(id)
+        id                      serial PRIMARY KEY,
+        persona_id              integer UNIQUE NOT NULL REFERENCES core.personas(id)
 );
 GRANT SELECT ON complaint.enforcers TO cdb_persona;
 GRANT INSERT, DELETE ON complaint.enforcers TO cdb_admin;
 GRANT SELECT, UPDATE ON complaint.enforcers_id_seq TO cdb_admin;
-
--- like event helpers, may access limited information on involved parties
-CREATE TABLE complaint.monitors (
-    id                      serial PRIMARY KEY,
-    persona_id              integer UNIQUE NOT NULL REFERENCES core.personas(id)
-);
-GRANT SELECT ON complaint.monitors TO cdb_persona;
-GRANT INSERT, DELETE ON complaint.monitors TO cdb_admin;
-GRANT SELECT, UPDATE ON complaint.monitors_id_seq TO cdb_admin;
 
 -- logs changes and decryption
 CREATE TABLE complaint.log (
@@ -842,8 +862,7 @@ CREATE TABLE past_event.events (
         participant_info        varchar
 );
 CREATE INDEX past_events_institution_idx ON past_event.events(institution);
-GRANT SELECT (id, title, shortname, tempus) ON past_event.events TO cdb_persona;
-GRANT SELECT ON past_event.events to cdb_member;
+GRANT SELECT ON past_event.events TO cdb_persona;
 GRANT UPDATE, DELETE, INSERT ON past_event.events TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.events_id_seq TO cdb_admin;
 
@@ -855,8 +874,8 @@ CREATE TABLE past_event.courses (
         description             varchar
 );
 CREATE INDEX courses_pevent_id_idx ON past_event.courses(pevent_id);
-GRANT SELECT, INSERT, UPDATE ON past_event.courses TO cdb_persona;
-GRANT DELETE ON past_event.courses TO cdb_admin;
+GRANT SELECT ON past_event.courses TO cdb_persona;
+GRANT UPDATE, DELETE, INSERT ON past_event.courses TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.courses_id_seq TO cdb_persona;
 
 -- create previously impossible reference
@@ -867,16 +886,26 @@ CREATE TABLE past_event.participants (
         id                      serial PRIMARY KEY,
         persona_id              integer NOT NULL REFERENCES core.personas(id),
         pevent_id               integer NOT NULL REFERENCES past_event.events(id),
-        pcourse_id              integer REFERENCES past_event.courses(id),
-        is_instructor           boolean NOT NULL,
-        is_orga                 boolean NOT NULL,
-        UNIQUE (persona_id, pevent_id, pcourse_id)
+        orga_status             integer NOT NULL DEFAULT 0, -- const.PastOrgaKind
+        music_status            integer NOT NULL DEFAULT 0, -- const.PastMusicKind
+        UNIQUE (persona_id, pevent_id)
 );
 CREATE INDEX participants_pevent_id_idx ON past_event.participants(pevent_id);
-CREATE INDEX participants_pcourse_id_idx ON past_event.participants(pcourse_id);
 GRANT SELECT ON past_event.participants TO cdb_persona;
 GRANT INSERT, UPDATE, DELETE ON past_event.participants TO cdb_admin;
 GRANT SELECT, UPDATE ON past_event.participants_id_seq TO cdb_admin;
+
+CREATE TABLE past_event.course_participants (
+        id                      serial PRIMARY KEY,
+        participant_id          integer NOT NULL REFERENCES past_event.participants(id),
+        pcourse_id              integer NOT NULL REFERENCES past_event.courses(id),
+        instructor_status       integer NOT NULL DEFAULT 0, -- const.PastInstructorKind
+        UNIQUE (participant_id, pcourse_id)
+);
+CREATE INDEX course_participants_pcourse_id_idx ON past_event.course_participants(pcourse_id);
+GRANT SELECT ON past_event.course_participants TO cdb_persona;
+GRANT INSERT, UPDATE, DELETE ON past_event.course_participants TO cdb_admin;
+GRANT SELECT, UPDATE ON past_event.course_participants_id_seq TO cdb_admin;
 
 CREATE TABLE past_event.log (
         id                      bigserial PRIMARY KEY,
@@ -885,6 +914,7 @@ CREATE TABLE past_event.log (
         code                    integer NOT NULL,
         submitted_by            integer REFERENCES core.personas(id),
         pevent_id               integer REFERENCES past_event.events(id),
+        pcourse_id              integer REFERENCES past_event.courses(id),
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
         change_note             varchar
@@ -924,14 +954,15 @@ CREATE TABLE event.events (
         registration_hard_limit      timestamp WITH TIME ZONE,
         iban                         varchar,
         orga_address                 varchar,
-        registration_text            varchar,
+        registration_status_text     varchar,
         mail_text                    varchar,
         -- the next one is only visible to participants
-        participant_info            varchar,
+        participant_info             varchar,
         use_additional_questionnaire boolean NOT NULL DEFAULT False,
         -- orga remarks
         notes                        varchar,
         field_definition_notes       varchar,
+        questionnaire_notes          varchar,
         is_locked                    boolean NOT NULL DEFAULT False,
         is_visible                   boolean NOT NULL DEFAULT False, -- this is purely cosmetical
         is_course_list_visible       boolean NOT NULL DEFAULT False, -- this is purely cosmetical
@@ -943,6 +974,7 @@ CREATE TABLE event.events (
         is_cancelled                 boolean NOT NULL DEFAULT False,
         -- whether the event is financially concluded.
         is_balanced                  boolean NOT NULL DEFAULT False,
+        is_registration_approved     boolean NOT NULL DEFAULT False,
         -- `const.NotifyOnRegistration`:
         notify_on_registration       integer NOT NULL DEFAULT 0,
         -- reference to special purpose custom data fields
@@ -963,6 +995,8 @@ CREATE TABLE event.event_fees (
         -- see cdedb.database.constants.EventFeeType
         kind                         integer NOT NULL DEFAULT 1,
         title                        varchar NOT NULL,
+        CONSTRAINT event_fee_title_constraint
+            UNIQUE (event_id, title) DEFERRABLE INITIALLY IMMEDIATE,
         amount                       numeric(8, 2),
         condition                    varchar,
         CONSTRAINT event_fee_amount_condition
@@ -1144,9 +1178,31 @@ CREATE TABLE event.orgas (
         UNIQUE (persona_id, event_id)
 );
 CREATE INDEX orgas_event_id_idx ON event.orgas(event_id);
-GRANT INSERT, UPDATE, DELETE ON event.orgas TO cdb_admin;
-GRANT SELECT, UPDATE ON event.orgas_id_seq TO cdb_admin;
+GRANT INSERT, DELETE ON event.orgas TO cdb_persona;
+GRANT SELECT, UPDATE ON event.orgas_id_seq TO cdb_persona;
 GRANT SELECT ON event.orgas TO cdb_anonymous, cdb_ldap;
+
+CREATE TABLE event.caretakers (
+        id                      serial PRIMARY KEY,
+        persona_id              integer NOT NULL REFERENCES core.personas(id),
+        event_id                integer NOT NULL REFERENCES event.events(id),
+        UNIQUE (persona_id, event_id)
+);
+CREATE INDEX caretakers_event_id_idx ON event.caretakers(event_id);
+GRANT INSERT, DELETE ON event.caretakers TO cdb_admin;
+GRANT SELECT, UPDATE ON event.caretakers_id_seq TO cdb_admin;
+GRANT SELECT ON event.caretakers TO cdb_anonymous, cdb_ldap;
+
+CREATE TABLE event.checkin_helpers (
+        id                      serial PRIMARY KEY,
+        persona_id              integer NOT NULL REFERENCES core.personas(id),
+        event_id                integer NOT NULL REFERENCES event.events(id),
+        UNIQUE (persona_id, event_id)
+);
+CREATE INDEX checkin_helpers_id_idx ON event.checkin_helpers(event_id);
+GRANT INSERT, DELETE ON event.checkin_helpers TO cdb_persona;
+GRANT SELECT, UPDATE ON event.checkin_helpers_id_seq TO cdb_persona;
+GRANT SELECT ON event.checkin_helpers TO cdb_anonymous, cdb_ldap;
 
 CREATE TABLE event.helpers (
         id                      serial PRIMARY KEY,
@@ -1226,6 +1282,8 @@ CREATE TABLE event.registrations (
         amount_paid             numeric(8, 2) NOT NULL DEFAULT 0,
         amount_owed             numeric(8, 2) NOT NULL DEFAULT 0,
         amount_owed_by_kind     jsonb NOT NULL DEFAULT '{}'::jsonb,
+        amount_owed_by_category jsonb NOT NULL DEFAULT '{}'::jsonb,
+        amount_owed_by_budget   jsonb NOT NULL DEFAULT '{}'::jsonb,
         -- parental consent for minors (defaults to True for non-minors)
         parental_agreement      boolean NOT NULL DEFAULT False,
         mixed_lodging           boolean NOT NULL,
@@ -1310,31 +1368,70 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON event.personalized_fees TO cdb_persona;
 GRANT SELECT, UPDATE ON event.personalized_fees_id_seq TO cdb_persona;
 GRANT SELECT ON event.personalized_fees TO cdb_anonymous;
 
-CREATE TABLE event.questionnaire_rows (
+CREATE TABLE event.questionnaire_text_rows (
         id                      bigserial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events(id),
-        -- This is NULL for text-only entries.
-        field_id                integer REFERENCES event.field_definitions(id),
+        -- The specific questionnaire variant where this row will be used. See cdedb.constants.QuestionnaireUsages.
+        kind                    integer NOT NULL,
+        -- The position at which this element is shown in the questionnaire.
         pos                     integer NOT NULL,
+        -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowRole.
+        -- For entries in this table this will always be 'text_only'.
+        role                    integer NOT NULL,
+        -- A customized heading for this element.
         title                   varchar,
-        info                    varchar,
-        input_size              integer,
-        -- This must be NULL exactly for text-only entries.
-        readonly                boolean,
-        CONSTRAINT questionnaire_row_readonly_field
-            CHECK ((field_id IS NULL) = (readonly IS NULL)),
-        default_value           varchar,
-        -- Where the row will be used (registration, questionnaire). See cdedb.constants.QuestionnaireUsages.
-        kind                    integer NOT NULL
+        -- Additional formatted text that is displayed below the heading if any.
+        text                    varchar,
+        -- For panel rows: The kind of panel ("info", "warning", "danger", etc.). See cdedb.constants.QuestionnairePanelKind.
+        panel_kind              integer
 );
-CREATE INDEX questionnaire_rows_event_id_idx ON event.questionnaire_rows(event_id);
-GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_rows TO cdb_persona;
-GRANT SELECT, UPDATE ON event.questionnaire_rows_id_seq TO cdb_persona;
+CREATE INDEX questionnaire_text_rows_event_id_kind_idx ON event.questionnaire_text_rows(event_id, kind);
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_text_rows TO cdb_persona;
+GRANT SELECT, UPDATE ON event.questionnaire_text_rows_id_seq TO cdb_persona;
+
+CREATE TABLE event.questionnaire_field_rows (
+        id                      bigserial PRIMARY KEY,
+        event_id                integer NOT NULL REFERENCES event.events(id),
+        -- The specific questionnaire variant where this row will be used. See cdedb.constants.QuestionnaireUsages.
+        kind                    integer NOT NULL,
+        -- The position at which this element is shown in the questionnaire.
+        pos                     integer NOT NULL,
+        -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowRole.
+        -- For entries in this table this will always be 'event_field'.
+        role                    integer NOT NULL,
+        -- A customized label for this element.
+        label                   varchar,
+        -- Additional information that is displayed below the field input.
+        info                    varchar,
+        field_id                integer REFERENCES event.field_definitions(id),
+        -- If set, the value for the linked field can no longer be changed.
+        readonly                boolean NOT NULL DEFAULT FALSE,
+        -- If set, a value that is prefilled into the form if there is no stored value.
+        default_value           varchar
+);
+CREATE INDEX questionnaire_field_rows_event_id_kind_idx ON event.questionnaire_field_rows(event_id, kind);
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_field_rows TO cdb_persona;
+GRANT SELECT, UPDATE ON event.questionnaire_field_rows_id_seq TO cdb_persona;
+
+CREATE TABLE event.questionnaire_magic_rows (
+        id                      bigserial PRIMARY KEY,
+        event_id                integer NOT NULL REFERENCES event.events(id),
+        -- The specific questionnaire variant where this row will be used. See cdedb.constants.QuestionnaireUsages.
+        kind                    integer NOT NULL,
+        -- The position at which this element is shown in the questionnaire.
+        pos                     integer NOT NULL,
+        -- The role that this magic row serves. See cdedb.constants.QuestionnaireRowRole.
+        role                    integer NOT NULL
+);
+CREATE INDEX questionnaire_magic_rows_event_id_kind_idx ON event.questionnaire_magic_rows(event_id, kind);
+GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_magic_rows TO cdb_persona;
+GRANT SELECT, UPDATE ON event.questionnaire_magic_rows_id_seq TO cdb_persona;
 
 CREATE TABLE event.stored_queries (
         id                      bigserial PRIMARY KEY,
         event_id                integer NOT NULL REFERENCES event.events,
         query_name              varchar NOT NULL,
+        query_group             varchar,
         -- See cdedb.common.query.QueryScope:
         scope                   integer NOT NULL,
         serialized_query        jsonb NOT NULL DEFAULT '{}'::jsonb,
@@ -1470,8 +1567,11 @@ CREATE TABLE assembly.candidates (
         id                      serial PRIMARY KEY,
         ballot_id               integer NOT NULL REFERENCES assembly.ballots(id),
         title                   varchar NOT NULL,
+        CONSTRAINT candidate_title_constraint
+            UNIQUE (ballot_id, title) DEFERRABLE INITIALLY IMMEDIATE,
         shortname               varchar NOT NULL,
-        CONSTRAINT candidate_shortname_constraint UNIQUE (ballot_id, shortname) DEFERRABLE INITIALLY IMMEDIATE
+        CONSTRAINT candidate_shortname_constraint
+            UNIQUE (ballot_id, shortname) DEFERRABLE INITIALLY IMMEDIATE
 );
 GRANT SELECT ON assembly.candidates TO cdb_member;
 GRANT INSERT, UPDATE, DELETE ON assembly.candidates TO cdb_member;
@@ -1535,6 +1635,7 @@ CREATE TABLE assembly.attachment_versions (
         title                   varchar,
         authors                 varchar,
         filename                varchar,
+        changenotes             varchar,
         ctime                   timestamp WITH TIME ZONE NOT NULL DEFAULT now(),
         dtime                   timestamp WITH TIME ZONE DEFAULT NULL,
         -- Store the hash of the file for comparison and proof.
@@ -1542,7 +1643,7 @@ CREATE TABLE assembly.attachment_versions (
         UNIQUE (attachment_id, version_nr)
 );
 GRANT SELECT, INSERT, DELETE ON assembly.attachment_versions TO cdb_member;
-GRANT UPDATE (title, authors, filename, dtime) ON assembly.attachment_versions TO cdb_member;
+GRANT UPDATE (title, authors, filename, changenotes, dtime) ON assembly.attachment_versions TO cdb_member;
 GRANT SELECT, UPDATE on assembly.attachment_versions_id_seq TO cdb_member;
 
 CREATE TABLE assembly.attachment_ballot_links (
@@ -1562,6 +1663,7 @@ CREATE TABLE assembly.log (
         code                    integer NOT NULL,
         submitted_by            integer REFERENCES core.personas(id),
         assembly_id             integer REFERENCES assembly.assemblies(id),
+        ballot_id               integer REFERENCES assembly.ballots(id) ON DELETE SET NULL,
         -- affected user
         persona_id              integer REFERENCES core.personas(id),
         change_note             varchar
@@ -1628,7 +1730,7 @@ CREATE TABLE ml.mailinglists (
         -- assembly_id is not NULL if associated to an assembly
         assembly_id             integer REFERENCES assembly.assemblies(id)
 );
-GRANT SELECT (id, address, title) ON ml.mailinglists TO cdb_ldap;
+GRANT SELECT (id, address, title, ml_type, is_active) ON ml.mailinglists TO cdb_ldap;
 GRANT INSERT, SELECT, UPDATE ON ml.mailinglists TO cdb_persona;
 GRANT DELETE ON ml.mailinglists TO cdb_admin;
 GRANT SELECT, UPDATE ON ml.mailinglists_id_seq TO cdb_persona;

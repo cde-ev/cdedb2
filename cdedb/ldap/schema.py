@@ -1,6 +1,5 @@
 """Process information about ldap schemas from specification files."""
 
-
 from ldaptor.schema import AttributeTypeDescription, ObjectClassDescription
 
 
@@ -11,6 +10,7 @@ class SchemaDescription:
     RFC ldap schema definitions from files. Those files are for example provided by the
     openldap project.
     """
+
     attribute_types: list[bytes]
     matching_rules: list[bytes]
     object_classes: list[bytes]

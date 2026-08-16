@@ -7,10 +7,11 @@ from tests.config.base import *  # noqa: F403
 # temporary directory created during the test run for this test thread
 _TMP_DIR = pathlib.Path("/tmp/cdedb-test-ldap")
 
-LOG_DIR = _TMP_DIR / "logs"  # May not be inside STORAGE_DIR
 STORAGE_DIR = _TMP_DIR / "storage"
 
 CDB_DATABASE_NAME = "cdb_test_ldap"
+
+CDEDB_TEST = True
 
 # switch the port, so we do not collide with the real ldap server at port 636
 LDAP_PORT = 20636

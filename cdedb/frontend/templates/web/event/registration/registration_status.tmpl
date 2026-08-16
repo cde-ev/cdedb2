@@ -78,14 +78,14 @@
         </p>
     {% endif %}
 
-    {% if ambience['event']['registration_text'] %}
+    {% if ambience['event'].registration_status_text %}
         {% set button = None %}
-        {% if ambience['event'].id in user.orga or "event_orga" in user.admin_views %}
-            {% set button = generic_event.edit_free_text_button("registration_text") %}
+        {% if orga_view %}
+            {% set button = generic_event.edit_free_text_button("registration_status_text") %}
         {% endif %}
         {% call util.bootstrap_panel(gettext("Note of the Orga Team"), button=button,
                                      icon="info-circle", aclass="panel-info") %}
-            {{ ambience['event']['registration_text']|md }}
+            {{ ambience['event']['registration_status_text']|md }}
         {% endcall %}
     {% endif %}
     {% if not ambience['event']['iban'] and not fee %}
@@ -99,7 +99,7 @@
                 {% trans %}
                     Your fee consists of:
                 {% endtrans %}
-            {{ generic_event.fee_breakdown_by_kind() }}
+            {{ generic_event.fee_breakdown_by_kind(complex_fee) }}
             </p>
         {% else %}
             <p>
@@ -132,17 +132,8 @@
             </p>
         {% endif %}
         {% if ambience['event']['iban'] and to_pay > 0 %}
-            {{ util.href(cdedblink('event/registration_fee_qr'), label=gettext("QR"), icon='qrcode',
-                         aclass="btn btn-xs btn-default pull-right", anid="show-registration-fee-qr",
-                         title=gettext("Bank transfer data as QR code")) }}
+            {{ generic_event.registration_fee_qr(registration['id']) }}
             {{ util.h(n_("Bank Transfer"), underline=true, level=4) }}
-            <script nonce="{{ csp_nonce }}">
-                $("#show-registration-fee-qr").cdedbQRCodeModal(
-                    {{ {'title': ambience['event']['title'],
-                        'loading': gettext("Loading..."),
-                        'note': "",
-                        'close': gettext("Close") }|tojson }})
-            </script>
 
             <p>
                 {% trans to_pay=to_pay|money(lang=lang) %}
@@ -262,7 +253,7 @@
                           anchor="cco-" + cco['id']|string, translate=False, level=4) }}
             {% endif %}
 
-            {% if ambience['event']['is_course_assignment_visible'] %}
+            {% if ambience['event'].is_course_assignment_visible %}
                 <dl class="dl-horizontal" id="course-assignment-{{ id_suffix }}">
                     {% if cco.is_complex() %}
                         {% for track in sorted_tracks if track.id in cco['tracks'] %}
@@ -282,13 +273,6 @@
                 </dl>
             {% endif %}
             <dl class="dl-horizontal" id="course-choices-{{ id_suffix }}">
-                {% if reg_track['course_instructor'] %}
-                    <dt title="{% trans %}Instructor of{% endtrans %}">{% trans %}Instructor of{% endtrans %}</dt>
-                    <dd><em>
-                        {{ courses[reg_track['course_instructor']]['nr'] }}.
-                        {{ courses[reg_track['course_instructor']]['title'] }}
-                    </em></dd>
-                {% endif %}
                 {% for i in range(track['num_choices']) %}
                     <dt title="{{ gettext("{}. choice").format(i + 1) }}">
                         {{ gettext("{}. choice").format(i + 1) }}
@@ -303,6 +287,22 @@
                         {% endif %}
                     </dd>
                 {% endfor %}
+                {% if reg_track['course_instructor'] %}
+                    <dt title="{% trans %}Instructor of{% endtrans %}">{% trans %}Instructor of{% endtrans %}</dt>
+                    <dd>
+                        <i>
+                            {{ courses[reg_track['course_instructor']]['nr'] }}.
+                            {{ courses[reg_track['course_instructor']]['title'] -}}
+                        </i>
+                    </dd>
+                    {%- if ambience['event'].is_course_assignment_visible -%}
+                        <dt></dt>
+                        <dd style="margin-top: 2px;">
+                            {{ util.href(cdedblink("event/show_instructed_courses") + "#track" + track.id|string,
+                                         label=gettext("Show Course Assignments"), aclass="btn btn-xs btn-info", icon="user-friends") }}
+                        </dd>
+                    {% endif %}
+                {% endif %}
             </dl>
         </div>
         {% endfor %}
@@ -339,17 +339,14 @@
 
     {% if reg_questionnaire %}
         <dl class="dl-horizontal" id="questionnaire_results">
-        {% for entry in reg_questionnaire %}
-            {% if entry['field_id'] %}
-                {% with FIELD = ambience['event']['fields'][entry['field_id']] %}
-                    <div id="questionnaire_field_result_{{ FIELD['field_name'] }}">
-                        <dt title="{{ entry['title'] }}">{{ entry['title'] }}</dt>
-                        <dd>
-                            {{ generic_event.display_field(FIELD, registration['fields'].get(FIELD['field_name'])) }}
-                        </dd>
-                    </div>
-                {% endwith %}
-            {% endif %}
+        {% for entry in reg_questionnaire if entry.field %}
+            <div id="questionnaire_field_result_{{ entry.field.field_name }}">
+                <dt title="{{ entry.get_label() }}">{{ entry.get_label() }}</dt>
+                <dd>
+                    {{ generic_event.display_field(entry.field, registration['fields'].get(entry.field.field_name)) }}
+                    {{ util.output_info(entry.info) }}
+                </dd>
+            </div>
         {% endfor %}
         </dl>
     {% endif %}

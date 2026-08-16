@@ -31,7 +31,7 @@
                 {{ util.anti_csrf_token('assembly/external_signup') }}
                 <div class="row">
                     <div class="col-sm-7 {% if 'persona_id' in errors %}has-error{% endif %}">
-                        {{ util.input_text(name="persona_id", placeholder="DB-XXXX-X",
+                        {{ util.input_text(type="search", name="persona_id", placeholder="DB-XXXX-X",
                                 anid="input-add-attendee", aclass="form-control input-sm",
                                 arialabel=gettext("User-ID of the new participant")) }}
                         {{ util.output_errors('persona_id') }}

@@ -71,7 +71,7 @@
     }}\hskip 0pt\relax}
 <<% endblock %>>
 <<% block content %>>
-    <<% for part in ambience['event']['parts'].values()|sort -%>>
+    <<% for part in ambience['event'].parts.values() -%>>
         <<< part.title|te >>>
         \begin{itemize}
             <<% for age_class, registrations in registrations_by_part_by_age[part.id].items() if registrations %>>
@@ -103,27 +103,27 @@
                         <<%- if mycourses -%>>
                             <<%- for track_id, course_id in mycourses -%>>
                                 <<%- if (course_id == registration['tracks'][track_id]['course_instructor']) -%>>
-                                    \emph{<<< courses[course_id]['title']|te >>>}
+                                    \emph{<<< courses[course_id].title|te >>>}
                                 <<%- else -%>>
-                                    <<< courses[course_id]['title']|te >>>
+                                    <<< courses[course_id].title|te >>>
                                 <<%- endif -%>>
                                 <<%- if not loop.last -%>>
                                     \\
                                 <<%- endif -%>>
                             <<%- endfor -%>>
-                        <<%- elif registration['persona_id'] in ambience['event']['orgas'] -%>>
+                        <<%- elif registration['persona_id'] in ambience['event'].orgas -%>>
                             \emph{<<% trans %>> Orga <<% endtrans %>>}
                         <<%- endif -%>>
                     }{
                         <<%- if registration['parts'][part.id]['lodgement_id'] -%>>
-                            <<< lodgements[registration['parts'][part.id]['lodgement_id']]['title']|te >>>
+                            <<< lodgements[registration['parts'][part.id]['lodgement_id']].title|te >>>
                         <<%- endif -%>>
                     }{
                         <<%- if mycourses|length == 1 -%>>
                             ./logo-<<< mycourses[0][1]|te >>>
                         <<%- elif mycourses|length > 1 -%>>
                             ./multicourse-logo
-                        <<%- elif registration['persona_id'] in ambience['event']['orgas'] -%>>
+                        <<%- elif registration['persona_id'] in ambience['event'].orgas -%>>
                             ./orga-logo
                         <<%- endif -%>>
                     }{

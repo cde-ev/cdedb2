@@ -11,6 +11,11 @@ from cdedb.frontend.cde.semester import CdESemesterMixin
 __all__ = ['CdEFrontend']
 
 
-class CdEFrontend(CdELastschriftMixin, CdEPastEventMixin, CdEParseMixin,
-                  CdESemesterMixin, CdEBaseFrontend):
+class CdEFrontend(
+    CdELastschriftMixin,
+    CdEPastEventMixin,
+    CdEParseMixin,
+    CdESemesterMixin,
+    CdEBaseFrontend,
+):
     pass

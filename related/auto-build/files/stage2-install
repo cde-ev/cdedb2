@@ -11,7 +11,7 @@ echo "--------------------------------------------"
 # dPROD different ssh keys
 mkdir -p /etc/ssh
 chmod 755 /etc/ssh
-cp /media/cdrom0/ssh_host* /etc/ssh
+cp /media/cdrom0/ssh_host/* /etc/ssh/
 chmod 600 /etc/ssh/ssh_host*
 chmod 644 /etc/ssh/ssh_host*.pub
 
@@ -32,17 +32,17 @@ echo "Getting the system up to date..."
 echo "--------------------------------------------"
 # dPROD only main, no backports (less choice necessary)
 cat > /etc/apt/sources.list <<EOF
-deb http://deb.debian.org/debian bookworm main contrib non-free
-deb-src http://deb.debian.org/debian bookworm main contrib non-free
+deb http://deb.debian.org/debian trixie main contrib non-free
+deb-src http://deb.debian.org/debian trixie main contrib non-free
 
-deb http://deb.debian.org/debian-security/ bookworm-security main contrib non-free
-deb-src http://deb.debian.org/debian-security/ bookworm-security main contrib non-free
+deb http://deb.debian.org/debian-security/ trixie-security main contrib non-free
+deb-src http://deb.debian.org/debian-security/ trixie-security main contrib non-free
 
-deb http://deb.debian.org/debian bookworm-updates main contrib non-free
-deb-src http://deb.debian.org/debian bookworm-updates main contrib non-free
+deb http://deb.debian.org/debian trixie-updates main contrib non-free
+deb-src http://deb.debian.org/debian trixie-updates main contrib non-free
 
-deb http://deb.debian.org/debian bookworm-backports main contrib non-free
-deb-src http://deb.debian.org/debian bookworm-backports main contrib non-free
+deb http://deb.debian.org/debian trixie-backports main contrib non-free
+deb-src http://deb.debian.org/debian trixie-backports main contrib non-free
 EOF
 
 sleep 3
@@ -57,12 +57,17 @@ echo "--------------------------------------------"
 # this is categorized into
 # - devtools
 # - runtime dependencies (app, postgres, latex)
-# - python libraries (libraries, tools)
-# - playwright dependencies
+# - python package dependencies:
+#   - building/running pyicu: g++ pkg-config python3-dev libicu-dev
+#   - building/running graphviz: graphviz
+#   - building/running python-magic: libmagic1
+#   - building/running python-systemd: libsystemd-dev
 apt-get install --yes --no-install-recommends                       \
     openssh-server sudo git file mc emacs-nox vim htop make gettext \
     \
-    apache2 python3 gunicorn fail2ban tzdata                        \
+    moreutils                                                       \
+    \
+    apache2 python3 fail2ban tzdata                                 \
     \
     ldap-utils                                                      \
     \
@@ -71,59 +76,41 @@ apt-get install --yes --no-install-recommends                       \
     texlive texlive-plain-generic texlive-latex-extra               \
     texlive-lang-german texlive-luatex                              \
     \
-    python3-psycopg2 python3-dateutil python3-babel                 \
-    python3-icu python3-jinja2 python3-sphinx                       \
-    python3-lxml python3-pil python3-werkzeug       \
-    python3-ldap3 python3-passlib python3-bleach python3-magic      \
-    python3-sphinx-rtd-theme python3-zxcvbn python3-markdown        \
-    python3-requests python3-graphviz python3-phonenumbers          \
-    python3-tabulate python3-mailmanclient python3-pyparsing        \
-    python3-psycopg python3-psycopg-pool                            \
+    python3-pip                                                     \
     \
-    python3-pip python3-click python3-freezegun                     \
-    python3-coverage python3-cssselect                              \
+    g++ pkg-config python3-dev libicu-dev                           \
     \
-    libasound2 libatk-bridge2.0-0 libatk1.0-0 libatomic1            \
-    libatspi2.0-0 libcups2 libdrm2 libenchant-2-2 libgbm1 libgles2  \
-    libgstreamer-gl1.0-0 libharfbuzz-icu0 libhyphen0                \
-    libmanette-0.2-0 libnspr4 libnss3 libopengl0 libwayland-client0 \
-    libwoff1 libxcomposite1 libxdamage1 libxfixes3 libxkbcommon0    \
-    libxrandr2
+    graphviz                                                        \
+    \
+    libmagic1                                                       \
+    \
+    libsystemd-dev
 
-# runtime dependencies
-python3 -m pip install --no-cache-dir --break-system-packages \
-    ldaptor==21.2.0 \
-    schulze_condorcet==2.0.1 \
-    subman==0.1.1 \
-    segno==1.5.2 \
-    webtest==3.0.6
+python3 -m pip install "uv>=0.11.8" --break-system-packages
 
-# devtools
-# dPROD not present
-python3 -m pip install --no-cache-dir --break-system-packages \
-    mypy==1.14.0 \
-    ruff==0.8.4 \
-    types-python-dateutil \
-    types-bleach \
-    types-Markdown \
-    types-tabulate \
-    lxml-stubs \
-    types-Pillow \
-    types-ldap3 \
-    types-passlib \
-    types-psycopg2 \
-    types-zxcvbn \
-    'playwright>=1.37.0'
+echo "Setting up uv shell-completion and python directory for root"
+cat /media/cdrom0/root-bashrc >> /root/.bashrc
+
+echo "Setting up uv shell-completion and python directory for root"
+cat /media/cdrom0/root-bashrc >> /root/.bashrc
+
+echo "Creating global uv config"
+mkdir -p /etc/uv
+cp /media/cdrom0/etc-uv.toml /etc/uv/uv.toml
+
+echo "Creating root uv config"
+mkdir -p /root/.config/uv
+cp /media/cdrom0/root-uv.toml /root/.config/uv/uv.toml
 
 for file in /var/cache/apt/archives/*.deb
 do
-  shred --iteration=0 --zero --remove $file
+  shred --iteration=0 --zero --remove "$file"
 done
 
 echo ""
 echo "We do not initialize playwright as this consumes lots of space."
 echo "To do so later run the following command as user cdedb:"
-echo "/usr/local/bin/playwright install"
+echo "sudo uv run playwright install --with-deps"
 echo "This matters only when executing the test suite and in that case"
 echo "will fail with a helpful error message."
 
@@ -142,18 +129,33 @@ useradd -s /bin/bash -m cdedb
 # dPROD locked password instead of none
 passwd --delete cdedb
 groupadd --system www-cde
-useradd --system -g www-cde -d /var/lib/cdedb -M www-cde
+useradd --system -g www-cde --create-home www-cde
 
 # dPROD allow empty passwords
-echo "\nPermitEmptyPasswords yes" >> /etc/ssh/sshd_config
+echo -e "\nPermitEmptyPasswords yes" >> /etc/ssh/sshd_config
 
 sudo -u cdedb touch /home/cdedb/.bashrc
-echo "" >> /home/cdedb/.bashrc
-echo "export EDITOR=nano" >> /home/cdedb/.bashrc
-echo "" >> /home/cdedb/.bashrc
+cat >> /home/cdedb/.bashrc << 'EOF'
+
+eval "$(uv generate-shell-completion bash)"
+eval "$(uvx --generate-shell-completion bash)"
+EOF
+
 sudo -u cdedb touch /home/cdedb/.bash_profile
-echo "cd /cdedb2" >> /home/cdedb/.bash_profile
-echo "" >> /home/cdedb/.bash_profile
+cat >> /home/cdedb/.bash_profile << EOF
+
+if [ -f ~/.bashrc ]; then
+  . ~/.bashrc
+fi
+cd /cdedb2
+EOF
+sudo -u cdedb touch /home/cdedb/.bash_aliases
+cat >> /home/cdedb/.bash_aliases << EOF
+
+if [ -f /cdedb2/related/dev-setup/.bash_aliases ]; then
+    . /cdedb2/related/dev-setup/.bash_aliases
+fi
+EOF
 # dPROD no sudo privileges (personalized accounts instead)
 echo "%cdedb ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
 
@@ -175,11 +177,9 @@ echo "--------------------------"
 mkdir -p /home/cdedb/.ssh
 chmod 755 /home/cdedb/.ssh
 # dPROD different ssh keys
-cp /media/cdrom0/ssh_user_rsa_key /home/cdedb/.ssh/id_rsa
-cp /media/cdrom0/ssh_user_rsa_key.pub /home/cdedb/.ssh/id_rsa.pub
-cp /media/cdrom0/ssh_user_known_hosts /home/cdedb/.ssh/known_hosts
-chmod 600 /home/cdedb/.ssh/id_rsa
-chmod 644 /home/cdedb/.ssh/id_rsa.pub
+cp /media/cdrom0/ssh_user/* /home/cdedb/.ssh/
+chmod 600 /home/cdedb/.ssh/id_*
+chmod 644 /home/cdedb/.ssh/id_*.pub
 chown -R cdedb:cdedb /home/cdedb/.ssh/
 
 echo ""

@@ -22,6 +22,7 @@ doc/source/Handbuch_Email_Templates.rst
 
 # cache data
 .mypy_cache/
+.dmypy.json
 .coverage
 
 # ide data
@@ -40,6 +41,7 @@ i18n/*/LC_MESSAGES/cdedb.mo
 i18n/*/LC_MESSAGES/cdedb.spellcheck
 messages.mo
 i18n-output/
+cdedb/.i18n_additional.py
 
 # virtual environment
 .venv
@@ -47,5 +49,10 @@ i18n-output/
 # bin processing data
 bin/**/*.json
 
+# auto generated release note templates
+related/release/
+
 # internal wiki - separate git repository
 /wiki/
+
+mkosi/

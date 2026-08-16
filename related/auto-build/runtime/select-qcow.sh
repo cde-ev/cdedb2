@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2012
 NUM=$(ls -1 ./*.qcow2 | wc -l)
 
 if (( NUM == 0 )); then
@@ -9,4 +10,4 @@ elif (( NUM > 1 )); then
     exit 2
 fi
 
-echo "$(ls -1 ./*.qcow2)"
+ls -1 ./*.qcow2

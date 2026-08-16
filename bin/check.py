@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#! /usr/bin/env -S uv run
 """Calling this script is the canonical way to run the test suite."""
 
 import argparse
@@ -33,13 +33,13 @@ from cdedb.cli.database import (
     stop_services,
 )
 from cdedb.cli.storage import (
-    create_log,
     create_storage,
     populate_sample_event_keepers,
     populate_storage,
 )
 from cdedb.cli.util import is_docker
-from cdedb.config import SecretsConfig, TestConfig, set_configpath
+from cdedb.config import SecretsConfig, Config
+from cdedb.logging_ import setup_root_logger
 from tests.common import BasicTest
 
 
@@ -48,6 +48,7 @@ class CdEDBTestLock:
     Simple lock mechanism to prevent multiple tests accessing the same
     test database and files simultaneously.
     """
+
     # Identifiers of existing test threads. Only truthy values allowed, and a
     # corresponding config file in tests/config/ must exist.
     # Use the returned configpath to prepare the test environment properly.
@@ -102,17 +103,21 @@ class CdEDBTestLock:
     def __enter__(self) -> "CdEDBTestLock":
         self.acquire()
         print(f"Using thread {self.thread}", file=sys.stderr)
-        set_configpath(self.configpath)
+        Config.set_config_paths(self.configpath)
         return self
 
-    def __exit__(self, exc_type: Optional[Type[BaseException]],
-                 exc_val: Optional[BaseException],
-                 exc_tb: Optional[TracebackType]) -> None:
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
         self.release()
 
 
-def _load_tests(testpatterns: Optional[List[str]],
-                test_modules: Optional[List[ModuleType]] = None) -> TestSuite:
+def _load_tests(
+    testpatterns: Optional[List[str]], test_modules: Optional[List[ModuleType]] = None
+) -> TestSuite:
     """Load all tests from test_modules matching one of testpatterns."""
     test_modules = test_modules or list()
 
@@ -131,8 +136,9 @@ def _load_tests(testpatterns: Optional[List[str]],
     return test_suite
 
 
-def run_application_tests(testpatterns: Optional[List[str]] = None, *,
-                          verbose: bool = False) -> int:
+def run_application_tests(
+    testpatterns: Optional[List[str]] = None, *, verbose: bool = False
+) -> int:
     # load all tests which are not meant to be run separately (f.e. the ldap tests)
     test_modules = [backend_tests, frontend_tests, other_tests]
     test_suite = _load_tests(testpatterns, test_modules)
@@ -141,14 +147,15 @@ def run_application_tests(testpatterns: Optional[List[str]] = None, *,
         print("No tests to run.")
         return 1
 
+    print(f"Running {test_suite.countTestCases()} tests.")
+
     with CdEDBTestLock():
-        conf = TestConfig()
+        conf = Config()
         secrets = SecretsConfig()
 
         # prepare the translations
         subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
 
-        create_log(conf)
         create_database(conf, secrets)
         populate_database(conf, secrets)
 
@@ -165,12 +172,11 @@ def run_application_tests(testpatterns: Optional[List[str]] = None, *,
 
 def run_xss_tests(*, verbose: bool = False) -> int:
     with CdEDBTestLock("xss"):
-        conf = TestConfig()
+        conf = Config()
         secrets = SecretsConfig()
         # prepare the translations
         subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
 
-        create_log(conf)
         create_storage(conf)
         populate_storage(conf)
         populate_sample_event_keepers(conf)
@@ -178,14 +184,18 @@ def run_xss_tests(*, verbose: bool = False) -> int:
         populate_database(conf, secrets, xss=True)
 
         ret = xss_check(
-            conf["XSS_OUTDIR"], verbose=verbose, payload=conf["XSS_PAYLOAD"],
-            secondary_payload=conf["XSS_PAYLOAD_SECONDARY"]
+            conf["XSS_OUTDIR"],
+            verbose=verbose,
+            payload=conf["XSS_PAYLOAD"],
+            secondary_payload=conf["XSS_PAYLOAD_SECONDARY"],
         )
 
     return ret
 
 
-def run_ldap_tests(testpatterns: Optional[List[str]] = None, *, verbose: bool = False) -> int:
+def run_ldap_tests(
+    testpatterns: Optional[List[str]] = None, *, verbose: bool = False
+) -> int:
     test_suite = _load_tests(testpatterns, [ldap_tests])
 
     if not test_suite.countTestCases():
@@ -193,12 +203,11 @@ def run_ldap_tests(testpatterns: Optional[List[str]] = None, *, verbose: bool = 
         return 1
 
     with CdEDBTestLock("ldap"):
-        conf = TestConfig()
+        conf = Config()
         secrets = SecretsConfig()
         # prepare the translations
         subprocess.run(["make", "i18n-compile"], check=True, stdout=subprocess.DEVNULL)
 
-        create_log(conf)
         if is_docker():
             # the database is already initialized, since it is needed to start the
             # ldap container in the first place
@@ -216,7 +225,8 @@ def run_ldap_tests(testpatterns: Optional[List[str]] = None, *, verbose: bool = 
             for attempt in range(max_attempts):
                 try:
                     socket.create_connection(
-                        (conf["LDAP_HOST"], conf["LDAP_PORT"]), timeout=0.5)
+                        (conf["LDAP_HOST"], conf["LDAP_PORT"]), timeout=0.5
+                    )
                     break
                 except OSError:
                     time.sleep(0.5)
@@ -230,49 +240,80 @@ def run_ldap_tests(testpatterns: Optional[List[str]] = None, *, verbose: bool = 
             descriptions=False,
         )
         ran_tests = test_runner.run(test_suite)
-        stop_services("cde-ldap-test")
+        if not is_docker():
+            stop_services("cde-ldap-test")
     return 0 if ran_tests.wasSuccessful() else 1
 
 
 if __name__ == '__main__':
     # parse arguments
     parser = argparse.ArgumentParser(
-        description="Entry point to CdEDB's testing facilities.")
-    parser.add_argument('testpatterns', default=[], nargs="*",
-                        help="patterns matched against full qualified test name")
-    parser.add_argument('--verbose', '-v', action='store_true',
-                        help="more detailed output")
+        description="Entry point to CdEDB's testing facilities."
+    )
+    parser.add_argument(
+        'testpatterns',
+        default=[],
+        nargs="*",
+        help="patterns matched against full qualified test name",
+    )
+    parser.add_argument(
+        '--verbose', '-v', action='store_true', help="more detailed output"
+    )
 
     presets = parser.add_argument_group(
-        "pattern presets for running application tests in parallel")
-    presets.add_argument('--first', '-1', action='store_true',
-                         help="run first half of the frontend tests"
-                              " (everything before event tests)")
-    presets.add_argument('--second', '-2', action='store_true',
-                         help="run second half of the frontend tests (event"
-                              " tests and following)")
-    presets.add_argument('--third', '-3', action='store_true',
-                         help="run third part of application tests (everything except"
-                              " for the frontend tests)")
+        "pattern presets for running application tests in parallel"
+    )
+    presets.add_argument(
+        '--first',
+        '-1',
+        action='store_true',
+        help="run first half of the frontend tests (everything before event tests)",
+    )
+    presets.add_argument(
+        '--second',
+        '-2',
+        action='store_true',
+        help="run second half of the frontend tests (event tests and following)",
+    )
+    presets.add_argument(
+        '--third',
+        '-3',
+        action='store_true',
+        help="run third part of application tests (everything except"
+        " for the frontend tests)",
+    )
 
     # if we specify 'default=["application"]', the application tests are always in parts
     # therefore, we defer the default handling after the args have been parsed
-    parser.add_argument("--parts", action="extend", nargs="*", default=list(),
-                        choices=["application", "ldap", "xss"],
-                        help="choose which parts of the testsuite to run"
-                             " (application tests are default)")
+    parser.add_argument(
+        "--parts",
+        action="extend",
+        nargs="*",
+        default=list(),
+        choices=["application", "ldap", "xss"],
+        help="choose which parts of the testsuite to run"
+        " (application tests are default)",
+    )
 
     pattern_overrides = parser.add_argument_group(
-        "override given testpatterns for parts of the testsuite")
-    pattern_overrides.add_argument('--all', action='store_true',
-                                   help="run _all_ tests regardless of testpatterns")
-    pattern_overrides.add_argument('--all-ldap', action='store_true',
-                                   help="run all ldap tests regardless of testpatterns")
-    pattern_overrides.add_argument('--all-application', action='store_true',
-                                   help="run all application tests regardless of"
-                                        " testpatterns")
+        "override given testpatterns for parts of the testsuite"
+    )
+    pattern_overrides.add_argument(
+        '--all', action='store_true', help="run _all_ tests regardless of testpatterns"
+    )
+    pattern_overrides.add_argument(
+        '--all-ldap',
+        action='store_true',
+        help="run all ldap tests regardless of testpatterns",
+    )
+    pattern_overrides.add_argument(
+        '--all-application',
+        action='store_true',
+        help="run all application tests regardless of testpatterns",
+    )
 
     args = parser.parse_args()
+    setup_root_logger(test=True, replace=True)
 
     # Set the promised default value if no parts were specified
     if not args.parts and not args.all_ldap:
@@ -280,9 +321,9 @@ if __name__ == '__main__':
 
     # Set args for presets.
     if args.first:
-        args.testpatterns.append('tests.frontend_tests.[abcd]*')
+        args.testpatterns.append('tests.frontend_tests.[e]*')
     if args.second:
-        args.testpatterns.append('tests.frontend_tests.[!abcd]*')
+        args.testpatterns.append('tests.frontend_tests.[!e]*')
     if args.third:
         args.testpatterns.append('tests.backend_tests.*')
         args.testpatterns.append('tests.other_tests.*')
@@ -308,7 +349,8 @@ if __name__ == '__main__':
             testpatterns = args.testpatterns
 
         return_code += run_application_tests(
-            testpatterns=testpatterns, verbose=args.verbose)
+            testpatterns=testpatterns, verbose=args.verbose
+        )
 
     if do_ldap:
         # Override testpatterns to run all tests.
@@ -317,8 +359,7 @@ if __name__ == '__main__':
         else:
             testpatterns = args.testpatterns
 
-        return_code += run_ldap_tests(
-            testpatterns=testpatterns, verbose=args.verbose)
+        return_code += run_ldap_tests(testpatterns=testpatterns, verbose=args.verbose)
 
     if do_xss:
         return_code += run_xss_tests(verbose=args.verbose)

@@ -1,0 +1,11 @@
+BEGIN;
+    ALTER TABLE core.changelog ALTER column is_finance_admin DROP DEFAULT;
+    ALTER TABLE event.events ADD UNIQUE (shortname);
+    REVOKE UPDATE ON assembly.assemblies FROM cdb_admin;
+    REVOKE INSERT, UPDATE, DELETE ON assembly.ballots FROM cdb_admin;
+    REVOKE INSERT, UPDATE, DELETE ON assembly.candidates FROM cdb_admin;
+    REVOKE DELETE ON assembly.voter_register FROM cdb_admin;
+    REVOKE INSERT, UPDATE, DELETE ON assembly.attachments FROM cdb_admin;
+    REVOKE INSERT, UPDATE, DELETE ON assembly.attachment_versions FROM cdb_admin;
+    REVOKE SELECT ON assembly.log FROM cdb_admin;
+COMMIT;

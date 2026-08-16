@@ -11,7 +11,7 @@ from cdedb.script import Script
 
 script = Script(dbuser="cdb_persona")
 rs = script.rs()
-core: CoreBackend = script.make_backend("core")
+core = script.make_core_backend(proxy=True)
 
 # Execution
 
@@ -20,21 +20,22 @@ with script:
     total_errors = 0
     while True:
         persona_id = core.next_persona(
-            rs, persona_id=persona_id, is_member=None, is_archived=False)
+            rs, persona_id=persona_id, is_member=None, is_archived=False
+        )
         errors: List[Tuple[Optional[str], Exception]] = []
 
         if not persona_id:
             break
 
         # Validate ml data
-        persona = core.get_ml_user(rs, persona_id)
+        persona = core.get_ml_user(rs, persona_id).as_dict()
 
         _, errs = check(vtypes.Persona, persona, ignore_warnings=True)
         errors.extend(errs)
 
         # Validate event data if applicable
         if persona['is_event_realm']:
-            persona = core.get_event_user(rs, persona_id)
+            persona = core.get_event_user(rs, persona_id).as_dict()
             _, errs = check(vtypes.Persona, persona, ignore_warnings=True)
             errors.extend(errs)
 
@@ -47,12 +48,13 @@ with script:
         # Validate consistency of changelog with core.persona
         inconsistencies = core.get_changelog_inconsistencies(rs, persona_id)
         if inconsistencies is None:
-            errors.append(("Changelog", RuntimeError(
-                f"No committed state found.")))
+            errors.append(("Changelog", RuntimeError(f"No committed state found.")))
         elif inconsistencies is not []:
             for key in inconsistencies:
-                errors.append(("Changelog", RuntimeError(
-                    f"Changelog inconsistent for field {key}")))
+                errors.append((
+                    "Changelog",
+                    RuntimeError(f"Changelog inconsistent for field {key}"),
+                ))
 
         # Print all errors for this persona
         if errors:

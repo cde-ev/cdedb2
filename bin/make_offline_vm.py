@@ -9,29 +9,33 @@ provided exported event. The VM is then put into offline mode.
 import argparse
 import collections.abc
 import copy
+import itertools
 import json
 import pathlib
 import subprocess
 import sys
 from typing import Collection
 
+from cdedb.common.query.log_filter import EventLogFilter
 from psycopg2.extras import Json, RealDictCursor
 
 import cdedb.models.event as models
+import cdedb.models.core as models_core
+from cdedb.cli.__main__ import apply_sample_data, populate_event_keeper_cmd
+from cdedb.cli.storage import populate_event_keeper
+from cdedb.cli.util import switch_user
 from cdedb.common import EVENT_SCHEMA_VERSION, CdEDBObject
 from cdedb.config import (
-    DEFAULT_CONFIGPATH,
     Config,
-    TestConfig,
-    get_configpath,
-    set_configpath,
 )
 from cdedb.models.droid import OrgaToken
 from cdedb.script import Script
 
 # This is 'secret' the hashed
-PHASH = ("$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/"
-         "S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/")
+PHASH = (
+    "$6$rounds=60000$uvCUTc5OULJF/kT5$CNYWFoGXgEwhrZ0nXmbw0jlWvqi/"
+    "S6TDc1KJdzZzekFANha68XkgFFsw92Me8a2cVcK3TwSxsRPb91TLHF/si/"
+)
 
 
 # Add some default values for specific tables
@@ -65,7 +69,7 @@ def update_defaults(table: str, entry: CdEDBObject) -> CdEDBObject:
         'free_form': None,
         'foto': None,
         'fulltext': '',
-        'notes': 'This is just a copy, changes to profiles will not be persisted.'
+        'notes': 'This is just a copy, changes to profiles will not be persisted.',
     }
     return {**defaults, **entry}
 
@@ -82,14 +86,18 @@ def populate_table(cur: RealDictCursor, table: str, data: CdEDBObject) -> None:
                     entry[k] = Json(v)
             keys = tuple(key for key in entry)
             query = "INSERT INTO {table} ({keys}) VALUES ({placeholders})"
-            query = query.format(table=table, keys=", ".join(keys),
-                                 placeholders=", ".join(("%s",) * len(keys)))
+            query = query.format(
+                table=table,
+                keys=", ".join(keys),
+                placeholders=", ".join(("%s",) * len(keys)),
+            )
             params = tuple(entry[key] for key in keys)
             cur.execute(query, params)
         # include a small buffer of 1000 (mainly to allow for the log
         # messages of locking the event if somebody gets the ordering wrong)
         query = "ALTER SEQUENCE {}_id_seq RESTART WITH {}".format(
-            table, max(map(int, data)) + 1000)
+            table, max(map(int, data)) + 1000
+        )
         cur.execute(query)
     else:
         print("No data for table found")
@@ -123,8 +131,7 @@ def shift_existing_ids(tables: list[str], shift_amount: int) -> None:
             cur.execute(query, ())
             for x in list(cur.fetchall()):
                 cur.execute(
-                    f"ALTER TABLE {x['tablename']}"
-                    f" DROP CONSTRAINT {x['conname']}",
+                    f"ALTER TABLE {x['tablename']} DROP CONSTRAINT {x['conname']}",
                 )
                 cur.execute(
                     f"ALTER TABLE {x['tablename']}"
@@ -158,10 +165,15 @@ def update_tracks(cur: RealDictCursor, tracks: Collection[CdEDBObject]) -> None:
 
 
 def work(
-        data_path: pathlib.Path, conf: Config, is_interactive: bool = True,
-        extra_packages: bool = False, no_extra_packages: bool = False,
-        dev_mode: bool = False, keep_data: bool = False, sample_data: bool = False,
-        offline_mode: bool = True,
+    data_path: pathlib.Path,
+    conf: Config,
+    is_interactive: bool = True,
+    extra_packages: bool = False,
+    no_extra_packages: bool = False,
+    dev_mode: bool = False,
+    keep_data: bool = False,
+    sample_data: bool = False,
+    offline_mode: bool = True,
 ) -> None:
     repo_path: pathlib.Path = conf["REPOSITORY_PATH"]
 
@@ -173,8 +185,11 @@ def work(
         raise RuntimeError("Version mismatch -- aborting.")
     if data["kind"] != "full":
         raise RuntimeError("Not a full export -- aborting.")
-    print("Found data for event '{}' exported {}.".format(
-        data['event.events'][str(data['id'])]['title'], data['timestamp']))
+    print(
+        "Found data for event '{}' exported {}.".format(
+            data['event.events'][str(data['id'])]['title'], data['timestamp']
+        )
+    )
 
     if dev_mode and sample_data:
         print("Clean current instance (deleting all data)")
@@ -182,13 +197,14 @@ def work(
             if input("Are you sure (type uppercase YES)? ").strip() != "YES":
                 print("Aborting.")
                 sys.exit()
-        cmd = ['sudo', '-E', 'python3', '-m', 'cdedb', 'dev', 'apply-sample-data']
-        if not args.test:
-            cmd.append('--owner')
-            cmd.append('www-cde')
-            cmd.append('--group')
-            cmd.append('www-data')
-        subprocess.run(cmd, check=True)
+        try:
+            apply_sample_data(conf)
+        except PermissionError:
+            try:
+                with switch_user(user="www-cde", group="www-data"):
+                    apply_sample_data(conf)
+            except PermissionError as e:
+                raise PermissionError("Unable to apply sample data. Might need to be run as root.") from e
 
     # connect to the database, using elevated access
     connection = Script(dbuser="cdb", check_system_user=False).rs().conn
@@ -209,21 +225,29 @@ def work(
             subprocess.run(["sudo", "rm", "-r", str(thing)], check=True)
 
     print("Setup the eventkeeper git repository.")
-    cmd = ['sudo', '-E', 'python3', '-m', 'cdedb', 'filesystem', 'storage',
-           'populate-event-keeper', str(data['id'])]
-    if not args.test:
-        cmd.insert(6, '--owner')
-        cmd.insert(7, 'www-cde')
-        cmd.insert(8, '--group')
-        cmd.insert(9, 'www-data')
-    subprocess.run(cmd, check=True)
+    try:
+        populate_event_keeper(conf, event_ids=[data['id']])
+    except PermissionError:
+        try:
+            with switch_user(user="www-cde", group="www-data"):
+                populate_event_keeper(conf, event_ids=[data['id']])
+        except PermissionError as e:
+            raise PermissionError("Unable to setup event keeper. Might need to be run as root.") from e
 
     print("Make orgas into admins")
     orgas = {e['persona_id'] for e in data['event.orgas'].values()}
     for persona in data['core.personas'].values():
         if persona['id'] in orgas:
-            bits = ["is_active", "is_core_admin", "is_cde_admin", "is_event_admin",
-                    "is_cde_realm", "is_event_realm", "is_ml_realm", "is_assembly_realm"]
+            bits = [
+                "is_active",
+                "is_core_admin",
+                "is_cde_admin",
+                "is_event_admin",
+                "is_cde_realm",
+                "is_event_realm",
+                "is_ml_realm",
+                "is_assembly_realm",
+            ]
             for bit in bits:
                 persona[bit] = True
 
@@ -244,17 +268,27 @@ def work(
 
     # Order matters here:
     tables = (
-        'core.personas', 'event.events', 'event.event_parts',
-        models.PartGroup.database_table, 'event.part_group_parts',
-        'event.courses', 'event.course_tracks', 'event.course_segments',
-        'event.orgas', 'event.field_definitions', 'event.event_fees',
-        'event.lodgement_groups', 'event.lodgements', 'event.registrations',
-        models.CheckinPeriod.database_table,
-        'event.registration_parts', 'event.registration_tracks',
-        'event.course_choices', 'event.questionnaire_rows', 'event.log',
-        'event.stored_queries', 'event.track_groups', 'event.track_group_tracks',
-        models.PersonalizedFee.database_table,
+        models_core.Persona.database_table,
+        # Gather all tables in order of class definition.
+        # Use a dict to remove duplicates while preserving order.
+        *{
+            cls.database_table: None
+            for name, cls in itertools.chain(
+                vars(models).items(),
+                vars(models.questionnaire).items()
+            )
+            if not name.startswith("__")
+                and isinstance(cls, type)
+                and issubclass(cls, models.EventDataclass)
+                and hasattr(cls, "database_table")
+        }.keys(),
+        *(
+            member
+            for name, member in vars(models.OtherDatabaseTables).items()
+            if not name.startswith("__")
+        ),
         OrgaToken.database_table,
+        EventLogFilter.log_table,
     )
 
     print("Connect to database")
@@ -296,8 +330,10 @@ def work(
                 datum['code'] = 2  # PersonaChangeStati.committed
                 datum['persona_id'] = persona['id']
                 keys = tuple(key for key in datum)
-                query = (f"INSERT INTO core.changelog ({', '.join(keys)})"
-                         f" VALUES ({', '.join(('%s',) * len(keys))})")
+                query = (
+                    f"INSERT INTO core.changelog ({', '.join(keys)})"
+                    f" VALUES ({', '.join(('%s',) * len(keys))})"
+                )
                 params = tuple(datum[key] for key in keys)
                 cur.execute(query, params)
 
@@ -312,8 +348,11 @@ def work(
                     cur.execute(query)
                     real_count = (cur.fetchone() or {'count': 0})['count']
                     if target_count != real_count:
-                        fails.append("Table {} has {} not {} entries".format(
-                            table, real_count, target_count))
+                        fails.append(
+                            "Table {} has {} not {} entries".format(
+                                table, real_count, target_count
+                            )
+                        )
         if fails:
             print("Errors detected.")
             for fail in fails:
@@ -328,18 +367,18 @@ def work(
                     cur.execute("INSERT INTO cde.expuls_period (id) VALUES (42)")
 
     # Adjust config.
-    config_path = get_configpath()
+    config_path = conf.get_config_paths()[0]
 
     if not dev_mode:
         print("Enabling offline mode")
         # make sure to unset the development vm config option, so we do not clash
-        subprocess.run(
-            [
-                "sudo", "sed", "-i", "-e", "s/CDEDB_DEV = True/CDEDB_DEV = False/",
-                str(config_path),
-            ],
-            check=True,
-        )
+        with config_path.open("a", encoding="utf-8") as f:
+            f.write("CDEDB_DEV = False\n")
+
+        conf.clear_config_cache()
+
+        if conf["CDEDB_DEV"]:
+            raise RuntimeError("Failed to disable CDEDB_DEV mode.")
 
         print("Protecting data from accidental reset")
         subprocess.run(["sudo", "touch", "/OFFLINEVM"], check=True)
@@ -347,19 +386,13 @@ def work(
     if not dev_mode or offline_mode:
         # mark the config as offline vm
         offline_deploy_key = "CDEDB_OFFLINE_DEPLOYMENT"
-        if not Config()[offline_deploy_key]:
-            # Try replacing config entry.
-            subprocess.run(
-                [
-                    "sudo", "sed", "-i", "-e",
-                    f"s/{offline_deploy_key} = False/{offline_deploy_key} = True/",
-                    str(config_path),
-                ], check=True,
-            )
-            # If that didn't work, add a new one.
-            if not Config()[offline_deploy_key]:
-                with open(str(config_path), 'a', encoding='UTF-8') as conf_file:
-                    conf_file.write(f"\n{offline_deploy_key} = True\n")
+        with config_path.open("a", encoding="utf-8") as f:
+            f.write(f"{offline_deploy_key} = True\n")
+
+        conf.clear_config_cache()
+
+        if not conf[offline_deploy_key]:
+            raise RuntimeError(f"Failed to enable {offline_deploy_key} mode.")
 
     if no_extra_packages:
         print("Skipping installation of fonts for template renderer.")
@@ -370,15 +403,17 @@ def work(
     else:
         print("Installation of fonts for template renderer.")
         print("If you confirm this will download 500MB of data.")
-        print("You can also do this later with"
-              " 'sudo apt-get install texlive-fonts-extra'.")
+        print(
+            "You can also do this later with"
+            " 'sudo apt-get install texlive-fonts-extra'."
+        )
         print("Without this the template renderer will obviously not work.")
         decision = input("Do you want to install the fonts (y/n)?")
         install_fonts = decision.strip().lower() in {'y', 'yes', 'j', 'ja'}
     if install_fonts:
         subprocess.run(
-            ["sudo", "apt-get", "-y", "install", "texlive-fonts-extra"],
-            check=True)
+            ["sudo", "apt-get", "-y", "install", "texlive-fonts-extra"], check=True
+        )
 
     print("Restarting application to make offline mode effective")
     subprocess.run(["make", "reload"], check=True, cwd=repo_path)
@@ -387,47 +422,65 @@ def work(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description='Prepare for offline usage.')
+    parser = argparse.ArgumentParser(description='Prepare for offline usage.')
     parser.add_argument('data_path', help="Path to exported event data")
-    parser.add_argument('-t', '--test', action="store_true",
-                        help="Operate on test database")
-    parser.add_argument('--not-interactive', action="store_true",
-                        help="Supress confirmation prompt before irreversible changes.")
-    parser.add_argument('-e', '--extra-packages', action="store_true",
-                        help="Unconditionally install additional packages.")
-    parser.add_argument('-E', '--no-extra-packages', action="store_true",
-                        help="Never install additional packages.")
-    parser.add_argument('--dev', action="store_true",
-                        help="Setup offline VM for development/manual testing.")
-    parser.add_argument('--no-offline-flag', action="store_true",
-                        help="Do not set the config flag for offline mode."
-                             " Only available with '--dev'.")
-    parser.add_argument('--keep-data', action="store_true",
-                        help="Do not remove existing data. May cause this to fail."
-                             " Only available with '--dev'.")
-    parser.add_argument('--sample-data', action="store_true",
-                        help="Also populate with sample data."
-                             " Could conceivably cause this to fail."
-                             " Only available with '--dev'.")
+    parser.add_argument(
+        '--not-interactive',
+        action="store_true",
+        help="Supress confirmation prompt before irreversible changes.",
+    )
+    parser.add_argument(
+        '-e',
+        '--extra-packages',
+        action="store_true",
+        help="Unconditionally install additional packages.",
+    )
+    parser.add_argument(
+        '-E',
+        '--no-extra-packages',
+        action="store_true",
+        help="Never install additional packages.",
+    )
+    parser.add_argument(
+        '--dev',
+        action="store_true",
+        help="Setup offline VM for development/manual testing.",
+    )
+    parser.add_argument(
+        '--no-offline-flag',
+        action="store_true",
+        help="Do not set the config flag for offline mode."
+        " Only available with '--dev'.",
+    )
+    parser.add_argument(
+        '--keep-data',
+        action="store_true",
+        help="Do not remove existing data. May cause this to fail."
+        " Only available with '--dev'.",
+    )
+    parser.add_argument(
+        '--sample-data',
+        action="store_true",
+        help="Also populate with sample data."
+        " Could conceivably cause this to fail."
+        " Only available with '--dev'.",
+    )
     args = parser.parse_args()
     if args.extra_packages and args.no_extra_packages:
         parser.error("Confliction options for (no) additional packages.")
 
     data_path = pathlib.Path(args.data_path)
 
-    config: Config
-    if args.test:
-        # the configpath is already set and intended to be used here
-        config = TestConfig()
-    else:
-        # otherwise, we want to use the default configpath of the real world
-        set_configpath(DEFAULT_CONFIGPATH)
-        config = Config()
+    config = Config()
 
     work(
-        data_path, config, is_interactive=not args.not_interactive,
-        extra_packages=args.extra_packages, no_extra_packages=args.no_extra_packages,
-        dev_mode=args.dev, keep_data=args.keep_data, sample_data=args.sample_data,
+        data_path,
+        config,
+        is_interactive=not args.not_interactive,
+        extra_packages=args.extra_packages,
+        no_extra_packages=args.no_extra_packages,
+        dev_mode=args.dev,
+        keep_data=args.keep_data,
+        sample_data=args.sample_data,
         offline_mode=not args.no_offline_flag,
     )

@@ -27,6 +27,7 @@ following steps to deploy a new revision.
   execute the `cdedb-update.sh <https://tracker.cde-ev.de/gitea/cdedb/cdedb-deploy>`_ script::
 
     ssh cde-db2 # replace with your alias from your ssh config
+    sudo cdedb-deploy-meta-update.sh # if there were changes in the deploy scripts
     sudo cdedb-update.sh
 
   Note that to connect to the database in interactive mode, or to run a script,

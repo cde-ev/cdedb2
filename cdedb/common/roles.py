@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING, Any
 
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS, Realm, Role
 from cdedb.common.n_ import n_
-from cdedb.config import LazyConfig
+from cdedb.config import Config
 
-_CONF = LazyConfig()
+_CONF = Config()
 
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = dict[str, Any]
@@ -18,8 +18,8 @@ CdEDBObject = dict[str, Any]
 AdminView = str
 
 
-def extract_roles(session: CdEDBObject, introspection_only: bool = False,
-                  ) -> set[Role]:
+# TODO move to PersonaStatus datclass
+def extract_roles(session: CdEDBObject, introspection_only: bool = False) -> set[Role]:
     """Associate some roles to a data set.
 
     The data contains the relevant portion of attributes from the
@@ -97,6 +97,7 @@ def droid_roles(identity: str) -> set[Role]:
 #
 # This dict is not evaluated recursively, so recursively implied realms must
 # be added manually to make the implication transitive.
+# TODO move to Persona dataclass
 REALM_INHERITANCE: dict[Realm, set[Role]] = {
     'cde': {'event', 'assembly', 'ml'},
     'event': {'ml'},
@@ -105,20 +106,7 @@ REALM_INHERITANCE: dict[Realm, set[Role]] = {
 }
 
 
-def extract_realms(roles: set[Role]) -> set[Realm]:
-    """Get the set of realms from a set of user roles.
-
-    When checking admin privileges, we must often check, if the user's realms
-    are a subset of some other set of realms. To help with this, this function
-    helps with this task, by extracting only the actual realms from a user's
-    set of roles.
-
-    :param roles: All roles of a user
-    :return: The realms the user is member of
-    """
-    return roles & REALM_INHERITANCE.keys()
-
-
+# TODO move to Persona dataclass
 def implied_realms(realm: Realm) -> set[Realm]:
     """Get additional realms implied by membership in one realm
 
@@ -128,6 +116,7 @@ def implied_realms(realm: Realm) -> set[Realm]:
     return REALM_INHERITANCE.get(realm, set())
 
 
+# TODO move to Persona dataclass
 def implying_realms(realm: Realm) -> set[Realm]:
     """Get all realms where membership implies the given realm.
 
@@ -137,12 +126,11 @@ def implying_realms(realm: Realm) -> set[Realm]:
     :param realm: The realm to search implying realms for
     :return: A set of all realms implying
     """
-    return set(r for r, implied in REALM_INHERITANCE.items()
-               if realm in implied)
+    return set(r for r, implied in REALM_INHERITANCE.items() if realm in implied)
 
 
-def privilege_tier(roles: set[Role], conjunctive: bool = False,
-                   ) -> list[set[Role]]:
+# TODO move to PersonaStatus dataclass
+def privilege_tier(roles: set[Role], conjunctive: bool = False) -> list[set[Role]]:
     """Required admin privilege relative to a persona (signified by its roles)
 
     Basically this answers the question: If a user has access to the passed
@@ -166,12 +154,10 @@ def privilege_tier(roles: set[Role], conjunctive: bool = False,
     # Get primary user realms (those, that don't imply other realms)
     relevant = roles & REALM_INHERITANCE.keys()
     if relevant:
-        implied_roles = set.union(*(
-            REALM_INHERITANCE.get(k, set()) for k in relevant))
+        implied_roles = set.union(*(REALM_INHERITANCE.get(k, set()) for k in relevant))
         relevant -= implied_roles
     if conjunctive:
-        ret = [{realm + "_admin" for realm in relevant},
-               {"core_admin"}]
+        ret = [{realm + "_admin" for realm in relevant}, {"core_admin"}]
     else:
         ret = list({realm + "_admin"} for realm in relevant)
         ret += [{"core_admin"}]
@@ -182,6 +168,7 @@ def privilege_tier(roles: set[Role], conjunctive: bool = False,
 #: although in some realms they are meaningless. Here we provide a base skeleton
 #: which can be used, so that these realms do not need to have any knowledge of
 #: these fields.
+# TODO move to Persona dataclass
 PERSONA_DEFAULTS = {
     'is_cde_realm': False,
     'is_event_realm': False,
@@ -243,6 +230,7 @@ else:
 #: List of all roles we consider admin roles. Changes in these roles must be
 #: approved by two meta admins in total. Values are required roles.
 #: Translation of keys is needed for the privilege change page.
+# TODO move to PersonaStatus dataclass
 ADMIN_KEYS = {
     n_("is_meta_admin"): "is_cde_realm",
     n_("is_core_admin"): "is_cde_realm",
@@ -257,13 +245,23 @@ ADMIN_KEYS = {
 }
 
 #: List of all admin roles who actually have a corresponding realm with a user role.
+# TODO move to PersonaStatus dataclass
 REALM_ADMINS = {"core_admin", "cde_admin", "event_admin", "ml_admin", "assembly_admin"}
 
 #: All admin roles. Have privileged access to user data.
-ALL_ADMINS = {*REALM_ADMINS, "meta_admin", "finance_admin", "cdelokal_admin",
-              "complaint_admin", "auditor"}
+# TODO move to PersonaStatus dataclass
+ALL_ADMINS = {
+    *REALM_ADMINS,
+    "meta_admin",
+    "finance_admin",
+    "cdelokal_admin",
+    "complaint_admin",
+    "auditor",
+}
 
+# TODO move to PersonaStatus dataclass
 DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
+    # admin
     ("meta_admin", "cdb_admin"),
     ("core_admin", "cdb_admin"),
     ("cde_admin", "cdb_admin"),
@@ -273,27 +271,29 @@ DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
     ("finance_admin", "cdb_admin"),
     ("cdelokal_admin", "cdb_admin"),
     ("complaint_admin", "cdb_admin"),
-
+    # member
     ("searchable", "cdb_member"),
     ("member", "cdb_member"),
     ("cde", "cdb_member"),
     ("assembly", "cdb_member"),
     ("auditor", "cdb_member"),
-
+    # persona
     ("event", "cdb_persona"),
     ("ml", "cdb_persona"),
     ("persona", "cdb_persona"),
     ("droid", "cdb_persona"),
-
+    # anonymous
     ("anonymous", "cdb_anonymous"),
 ))
 
 
 # All roles available to non-driod users. Can be used to create dummy users
 # with all roles, like for `cdedb.script` or `cdedb.frontend.cron`.
+# TODO move to PersonaStatus dataclass
 ALL_ROLES: set[Role] = set(DB_ROLE_MAPPING) - {"droid"}
 
 
+# TODO move to PersonaStatus dataclass
 def roles_to_db_role(roles: set[Role]) -> str:
     """Convert a set of application level roles into a database level role."""
     for role in DB_ROLE_MAPPING:
@@ -306,6 +306,7 @@ def roles_to_db_role(roles: set[Role]) -> str:
 ADMIN_VIEWS_COOKIE_NAME = "enabled_admin_views"
 
 #: every admin view with one admin role per row (except of genesis)
+# TODO move to PersonaStatus dataclass
 ALL_ADMIN_VIEWS: set[AdminView] = {
     "meta_admin",
     "core_user", "core", "user_review", "ml_mgmt_core", "ml_mod_core",
@@ -320,28 +321,46 @@ ALL_ADMIN_VIEWS: set[AdminView] = {
     "ml_mgmt_assembly", "ml_mod_assembly",
     "auditor",
     "genesis",
-}
+}  # fmt: skip
 
+# TODO move to PersonaStatus dataclass
 ALL_MOD_ADMIN_VIEWS: set[AdminView] = {
-    "ml_mod", "ml_mod_core", "ml_mod_cde", "ml_mod_event", "ml_mod_cdelokal",
+    "ml_mod",
+    "ml_mod_core",
+    "ml_mod_cde",
+    "ml_mod_event",
+    "ml_mod_cdelokal",
     "ml_mod_assembly",
 }
 
+# TODO move to PersonaStatus dataclass
 ALL_MGMT_ADMIN_VIEWS: set[AdminView] = {
-    "ml_mgmt", "ml_mgmt_core", "ml_mgmt_cde", "ml_mgmt_event", "ml_mgmt_cdelokal",
+    "ml_mgmt",
+    "ml_mgmt_core",
+    "ml_mgmt_cde",
+    "ml_mgmt_event",
+    "ml_mgmt_cdelokal",
     "ml_mgmt_assembly",
 }
 
 
+# TODO move to PersonaStatus dataclass
 def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
-    """ Get the set of available admin views for a user with given roles."""
+    """Get the set of available admin views for a user with given roles."""
     result: set[Role] = set()
     if "meta_admin" in roles:
         result |= {"meta_admin"}
     if "core_admin" in roles:
         result |= {
-            "core", "core_user", "cde_user", "event_user", "assembly_user",
-            "ml_user", "user_review", "ml_mgmt_core", "ml_mod_core",
+            "core",
+            "core_user",
+            "cde_user",
+            "event_user",
+            "assembly_user",
+            "ml_user",
+            "user_review",
+            "ml_mgmt_core",
+            "ml_mod_core",
         }
     if {"complaint_admin", "complaint.enforcer"} & roles:
         result |= {"complaint"}
@@ -350,8 +369,15 @@ def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
     if "finance_admin" in roles:
         result |= {"finance", "event_orga"}
     if "event_admin" in roles:
-        result |= {"event_user", "user_review", "event_mgmt", "event_list",
-                   "event_orga", "ml_mgmt_event", "ml_mod_event"}
+        result |= {
+            "event_user",
+            "user_review",
+            "event_mgmt",
+            "event_list",
+            "event_orga",
+            "ml_mgmt_event",
+            "ml_mod_event",
+        }
     if "event.event_helper" in roles:
         result |= {"event_orga", "event_list"}
     if "ml_admin" in roles:
@@ -359,12 +385,18 @@ def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
     if "cdelokal_admin" in roles:
         result |= {"ml_mgmt_cdelokal", "ml_mod_cdelokal"}
     if "assembly_admin" in roles:
-        result |= {"assembly_user", "assembly_mgmt", "assembly_presider",
-                   "ml_mgmt_assembly", "ml_mod_assembly"}
+        result |= {
+            "assembly_user",
+            "assembly_mgmt",
+            "assembly_presider",
+            "ml_mgmt_assembly",
+            "ml_mod_assembly",
+        }
     if "auditor" in roles:
         result |= {"auditor", "event_orga"}
-    if roles & ({'core_admin'} | set(
-            f"{realm}_admin"
-            for realm in REALM_SPECIFIC_GENESIS_FIELDS)):
+    if roles & (
+        {'core_admin'}
+        | set(f"{realm}_admin" for realm in REALM_SPECIFIC_GENESIS_FIELDS)
+    ):
         result |= {"genesis"}
     return result

@@ -6,7 +6,7 @@
     {% endtrans %}
 {% endblock %}
 {% block content %}
-    <div>
-        {{ emailtext|linebreaks }}
-    </div>
+    <pre>
+        {{- emailtext -}}
+    </pre>
 {% endblock %}

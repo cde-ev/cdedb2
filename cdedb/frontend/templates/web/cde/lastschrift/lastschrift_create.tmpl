@@ -42,7 +42,7 @@
             class="form-horizontal">
         {{ util.anti_csrf_token('cde/lastschrift_create') }}
         {% if not ambience['persona'] %}
-            {{ util.form_input_text(name="persona_id", label=gettext("CdEDB-ID"), anid="input-persona_id",
+            {{ util.form_input_text(type="search", name="persona_id", label=gettext("CdEDB-ID"), anid="input-persona_id",
                                     placeholder=gettext("DB-XXXX-X")) }}
             <script nonce="{{ csp_nonce }}">
                 $('#input-persona_id').cdedbSearchPerson(

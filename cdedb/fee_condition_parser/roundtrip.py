@@ -41,12 +41,12 @@ def _serialize(result: pp.ParseResults, outer_operator: str | None, ps: dict[str
 
 
 def visual_debug(
-        result: pp.ParseResults,
-        *,
-        data: EvaluationData,
-        outer_operator: str | None = None,
-        top_level: bool = True,
-        condition_only: bool = False,
+    result: pp.ParseResults,
+    *,
+    data: EvaluationData,
+    outer_operator: str | None = None,
+    top_level: bool = True,
+    condition_only: bool = False,
 ) -> str:
     name = result.get_name()
     operator = name if name in {'and', 'or', 'xor'} else ('' if name == 'not' else None)
@@ -63,10 +63,7 @@ def visual_debug(
         text = name
     else:
         sub_results = [
-            visual_debug(
-                token, data=data, outer_operator=operator, top_level=False,
-                condition_only=condition_only,
-            )
+            visual_debug(token, data=data, outer_operator=operator, top_level=False, condition_only=condition_only)
             for token in result
         ]
         if name in {"and", "or", "xor"}:

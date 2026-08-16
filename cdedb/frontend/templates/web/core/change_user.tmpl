@@ -20,7 +20,7 @@
             $('#changedataform').cdedbProtectChanges();
         });
     </script>
-    <form action="{{ cdedblink('core/change_user') }}" method="POST" id="changedataform" class="form-horizontal">
+    <form action="{{ cdedblink('core/change_user') }}" method="POST" id="changedataform" class="form-horizontal" autocomplete="off">
         {{ util.anti_csrf_token('core/change_user') }}
         {{ util.input_hidden(name="generation") }}
 
@@ -35,7 +35,8 @@
         {% if 'show_legal_given_names' in shown_fields %}
             {{ util.form_input_checkbox(name="show_legal_given_names", label=gettext("Show legal given names for member search")) }}
         {% endif %}
-        {{ util.form_input_text(name="nickname", label=gettext("Nickname"),
+        {# Set type="search" as a workaround for LastPass Extension insisting on autofilling this with the user name. #}
+        {{ util.form_input_text(type="search", name="nickname", label=gettext("Nickname"),
             info=gettext("For nametags and event notices.")) }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
         {% if "birth_name" in shown_fields %}

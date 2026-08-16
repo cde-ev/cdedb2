@@ -4,7 +4,7 @@ from cdedb.script import Script
 
 script = Script(dbuser="cdb")
 rs = script.rs()
-assembly = script.make_backend("assembly", proxy=False)
+assembly = script.make_assembly_backend(proxy=False)
 
 with script:
     print("Adding NOT NULL constraint to `assembly.attachment_versions.attachment_id`.")

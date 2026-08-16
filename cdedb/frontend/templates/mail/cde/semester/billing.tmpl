@@ -63,7 +63,7 @@ Kontoinhaber:     {{ meta_info.membership_fee_account.get_account_holder() }}
 IBAN:             {{ meta_info.membership_fee_account.get_iban()|iban }}
 BIC:              {{ meta_info.membership_fee_account.get_bic() }}
 Kreditinstitut:   {{ meta_info.membership_fee_account.get_bank() }}
-Verwendungszweck: {{ transaction_subject }}
+Verwendungszweck: {{ persona.membership_fee_reference }}
 
 Alternativ würden wir uns sehr darüber freuen, wenn Du dem CdE die
 Erlaubnis erteilst, jährlich *per Lastschrift* von Deinem Konto den
@@ -72,15 +72,15 @@ Weitere Informationen sowie das Formular für die Lastschrift findest Du unter:
 {{ cdedblink("cde/i25p_index") }}
 {% elif persona['balance'] < fee %}
 
-=== Achtung: neues Konto! ===
+=== Achtung: Seit 2025 neues Konto! ===
 
-Das Konto für Mitgliedsbeiträge hat sich geändert.
+Das Konto für Mitgliedsbeiträge hat sich Anfang 2025 geändert.
 Bitte überweise deinen Mitgliedsbeitrag künftig an das unten angegebene neue Konto.
 Falls du einen Dauerauftrag für die Überweisung des Mitgliedsbeitrags
 eingerichtet hast, aktualisiere diesen bitte.
 
 Überweisungen auf das alte Konto bei der Sozialbank kommen ebenfalls noch an,
-jedoch soll das alte Konto perspektivisch geschlossen werden.
+jedoch soll das alte Konto demnächst geschlossen werden.
 
 
 == Zu geringes Guthaben ==
@@ -96,7 +96,7 @@ Kontoinhaber:     {{ meta_info.membership_fee_account.get_account_holder() }}
 IBAN:             {{ meta_info.membership_fee_account.get_iban()|iban }}
 BIC:              {{ meta_info.membership_fee_account.get_bic() }}
 Kreditinstitut:   {{ meta_info.membership_fee_account.get_bank() }}
-Verwendungszweck: {{ transaction_subject }}
+Verwendungszweck: {{ persona.membership_fee_reference }}
 
 (Falls Du erst kürzlich noch Geld auf das CdE-Konto überwiesen hast,
 so ist dies hier möglicherweise noch nicht berücksichtigt.)
@@ -115,15 +115,15 @@ du später wieder Interesse am CdE haben, kannst du jederzeit wieder
 Mitglied werden, indem du erneut den Mitgliedsbeitrag überweist.
 {% elif persona['balance'] >= fee %}
 
-=== Achtung: neues Konto! ===
+=== Achtung: Seit 2025 neues Konto! ===
 
-Das Konto für Mitgliedsbeiträge hat sich geändert.
+Das Konto für Mitgliedsbeiträge hat sich Anfang 2025 geändert.
 Bitte überweise deinen Mitgliedsbeitrag künftig an das unten angegebene neue Konto.
 Falls du einen Dauerauftrag für die Überweisung des Mitgliedsbeitrags
 eingerichtet hast, aktualisiere diesen bitte.
 
 Überweisungen auf das alte Konto bei der Sozialbank kommen ebenfalls noch an,
-jedoch soll das alte Konto perspektivisch geschlossen werden.
+jedoch soll das alte Konto demnächst geschlossen werden.
 
 
 == Genügend Guthaben vorhanden ==
@@ -140,7 +140,7 @@ Kontoinhaber:     {{ meta_info.membership_fee_account.get_account_holder() }}
 IBAN:             {{ meta_info.membership_fee_account.get_iban()|iban }}
 BIC:              {{ meta_info.membership_fee_account.get_bic() }}
 Kreditinstitut:   {{ meta_info.membership_fee_account.get_bank() }}
-Verwendungszweck: {{ transaction_subject }}
+Verwendungszweck: {{ persona.membership_fee_reference }}
 
 (Falls Du erst kürzlich noch Geld auf das CdE-Konto überwiesen hast,
 so ist dies hier möglicherweise noch nicht berücksichtigt.)
@@ -191,8 +191,8 @@ Die Mitgliederverwaltung des CdE
 
 
 P.S.: Weitere Infos zur Mitgliedschaft findest Du unter
-    https://www.cde-ev.de/faq/mitglied/
+    https://www.cde-ev.de/wir/mitglied/faq/
 
 P.P.S.: Du möchtest selbst im CdE aktiv werden, zum Beispiel einen Kurs
 leiten, dich in einem Team engagieren oder Akademie-Orga werden? Schau mal auf
-        https://www.cde-ev.de/vereinsleben/teams/
+        https://www.cde-ev.de/teams/uebersicht/
