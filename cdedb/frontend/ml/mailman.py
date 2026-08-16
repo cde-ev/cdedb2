@@ -160,7 +160,7 @@ kontaktieren und über den Grund der Unzustellbarkeit zu informieren.
 Die Zustellbenachrichtigung, falls vorhanden, ist angehängt.
 Bei Fragen dazu wende dich an das Adminteam:
     <{self.conf["TROUBLESHOOTING_ADDRESS"]}>
-Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Empfänger mit
+Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Personen mit
 ähnlichen Email-Anbietern, kontaktiere bitte auch das Adminteam.
 
 Als Workaround kannst du den Account manuell von der Mailingliste entfernen,
@@ -184,7 +184,7 @@ kontaktieren und über den Grund der Unzustellbarkeit zu informieren.
 Die Zustellbenachrichtigung, falls vorhanden, ist angehängt.
 Bei Fragen dazu wende dich an das Adminteam:
     <{self.conf["TROUBLESHOOTING_ADDRESS"]}>
-Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Empfänger mit
+Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Personen mit
 ähnlichen Email-Anbietern, kontaktiere bitte auch das Adminteam.
 """.strip(),
         }

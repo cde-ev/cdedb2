@@ -3,12 +3,12 @@ Hallo {{ user.given_names }},
 Deine Nachricht über das Kontaktformular ist angekommen.
 
 {% if anonymous %}
-Die Empfänger können auf deine Nachricht antworten, ohne dabei Aufschluss
+Die Empfänger:innen können auf deine Nachricht antworten, ohne dabei Aufschluss
 über deine Identität zu erhalten.
 
 {% endif %}
 Betreff: {{ subject }}
-Empfänger: {{ to }}
+Empfänger:in: {{ to }}
 Anonym: {{ "Ja" if anonymous else "Nein" }}
 Text:
 
