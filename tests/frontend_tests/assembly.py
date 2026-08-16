@@ -1260,7 +1260,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence(
             "Kassenprüferbericht 2 (Version 3)", div="attachment2_version3"
         )
-        self.assertPresence("Liste der Optionen", div="attachment3_version1")
+        self.assertPresence("Liste der Kandidaten", div="attachment3_version1")
 
         # Check file content.
         saved_response = self.response
@@ -1283,7 +1283,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             "Kassenprüferbericht (Version 1)", div="attachment2_version1"
         )
         self.assertPresence(
-            "Liste der Optionen (Version 1)", div="attachment3_version1"
+            "Liste der Kandidaten (Version 1)", div="attachment3_version1"
         )
 
         # remove Kassenprüferbericht:
