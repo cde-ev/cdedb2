@@ -889,13 +889,14 @@ class CoreBaseBackend(AbstractBackend):
         self,
         rs: RequestState,
         persona_ids: Collection[int],
-        columns: list[str],
+        columns: Collection[str],
     ) -> CdEDBObjectMap:
         """Helper to access a persona dataset.
 
         Most of the time a higher level function like
         :py:meth:`get_personas` should be used.
         """
+        columns = list(columns)
         if "id" not in columns:
             columns += ["id"]
         data = self.sql_select(rs, "core.personas", columns, persona_ids)
@@ -911,7 +912,7 @@ class CoreBaseBackend(AbstractBackend):
             self,
             rs: RequestState,
             persona_id: int,
-            columns: list[str],
+            columns: Collection[str],
         ) -> CdEDBObject: ...
 
     retrieve_persona: _RetrievePersonaProtocol = singularize(

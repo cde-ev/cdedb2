@@ -412,7 +412,9 @@ class CorePersona(Persona, PersonaName):
         return ret
 
     @classmethod
-    def from_database(cls, data: CdEDBObject, filter_fields: bool = False) -> "Self":
+    def from_database(
+        cls, data: CdEDBObject, allow_superfluous: bool = False
+    ) -> "Self":
         """Create an instance from the dict returned from the database.
 
         The ideomatic approach is to retrieve the database fields via
@@ -421,9 +423,9 @@ class CorePersona(Persona, PersonaName):
 
         For `query_all`, see `many_from_database`.
 
-        :param filter_fields: If true, filter data to be a subset of `database_fields`.
+        :param allow_superfluous: If true, filter `data` to be a subset of `database_fields`.
         """
-        if filter_fields:
+        if allow_superfluous:
             database_fields = set(cls.database_fields())
             data = {k: v for k, v in data.items() if k in database_fields}
         return super().from_database(data)

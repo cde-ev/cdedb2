@@ -27,7 +27,6 @@ from cdedb.common import (
     CdEDBObject,
     CdEDBObjectMap,
     DefaultReturnCode,
-    Realm,
     RequestState,
     get_mandatory_form_fields,
     make_persona_name,
@@ -1360,11 +1359,11 @@ class CoreBaseFrontend(AbstractFrontend):
         :param data: The latest changelog version of the user.
         """
         status = self.coreproxy.get_persona_status(rs, persona_id)
-        status_bits = status.get_status_bits()
+        status_bits_to_be_redacted = status.get_status_bits()
 
         persona: models.CorePersona
         if status.is_cde_realm:
-            persona = models.CdEPersona.from_database(data, filter_fields=True)
+            persona = models.CdEPersona.from_database(data, allow_superfluous=True)
             persona.balance = persona.REDACTED
             persona.bub_search = persona.REDACTED
             persona.decided_search = persona.REDACTED
@@ -1375,24 +1374,24 @@ class CoreBaseFrontend(AbstractFrontend):
             if not self.cdeproxy.list_lastschrift(rs, [persona_id], active=True):
                 persona.donation = persona.REDACTED
             if admin_access:
-                status_bits.remove("is_searchable")
+                status_bits_to_be_redacted.remove("is_searchable")
             if not admin_access:
                 persona.birthday = persona.REDACTED
         elif status.is_event_realm:
-            persona = models.EventPersona.from_database(data, filter_fields=True)
+            persona = models.EventPersona.from_database(data, allow_superfluous=True)
             if not admin_access:
                 persona.birthday = persona.REDACTED
         elif status.is_assembly_realm:
-            persona = models.AssemblyPersona.from_database(data, filter_fields=True)
+            persona = models.AssemblyPersona.from_database(data, allow_superfluous=True)
         elif status.is_ml_realm:
-            persona = models.MlPersona.from_database(data, filter_fields=True)
+            persona = models.MlPersona.from_database(data, allow_superfluous=True)
         else:
-            persona = models.CorePersona.from_database(data, filter_fields=True)
+            persona = models.CorePersona.from_database(data, allow_superfluous=True)
 
         # Ignore that we initialized the persona with the id of the changelog.
         persona.id = persona.REDACTED
         persona.username = persona.REDACTED
-        for bit in status_bits:
+        for bit in status_bits_to_be_redacted:
             setattr(persona, bit, persona.REDACTED)
 
         return persona
@@ -1406,32 +1405,30 @@ class CoreBaseFrontend(AbstractFrontend):
         data = self.coreproxy.changelog_get_one_history(rs, persona_id, generation)
         if data['code'] == const.PersonaChangeStati.pending:
             rs.notify("info", n_("Change pending."))
-        persona = self._get_redacted_persona(rs, persona_id, data)
-        # The url does not contain the users id, so the ambience dict doesn't contain
-        #  the unchanged persona.
-        ambience_persona = self.coreproxy.get_persona(rs, persona_id)
+        pending_persona = self._get_redacted_persona(rs, persona_id, data)
+        committed_persona = self.coreproxy.get_persona(rs, persona_id)
 
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
         max_donation = self.conf["MAXIMAL_LASTSCHRIFT_DONATION"]
-        has_special_donation = persona.has("donation") and not (
-            min_donation <= getattr(persona, "donation") <= max_donation
+        has_special_donation = pending_persona.has("donation") and not (
+            min_donation <= getattr(pending_persona, "donation") <= max_donation
         )
 
-        merge_dicts(rs.values, persona.as_dict())
+        merge_dicts(rs.values, pending_persona.as_dict())
 
-        mandatory_fields = persona.mandatory_form_fields(creation=False)
+        mandatory_fields = pending_persona.mandatory_form_fields(creation=False)
         # we enforce this by hand in change_user
-        if persona.hasattr("address"):
+        if pending_persona.hasattr("address"):
             mandatory_fields.add("address")
-        if persona.hasattr("location"):
+        if pending_persona.hasattr("location"):
             mandatory_fields.add("location")
 
         return self.render(
             rs,
             "change_user",
             {
-                'persona': persona,
-                'ambience_persona': ambience_persona,
+                'pending_persona': pending_persona,
+                'committed_persona': committed_persona,
                 'generation': generation,
                 'min_donation': min_donation,
                 'max_donation': max_donation,
@@ -1575,20 +1572,6 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.create_user_form(rs)
         return self.redirect(rs, realm + "/create_user")
 
-    @staticmethod
-    def admin_bits(rs: RequestState) -> set[Realm]:
-        """Determine realms this admin can see.
-
-        This is somewhat involved due to realm inheritance.
-        """
-        ret = {"persona"}
-        if "core_admin" in rs.user.roles:
-            ret |= REALM_INHERITANCE.keys()
-        for realm in REALM_INHERITANCE:
-            if f"{realm}_admin" in rs.user.roles:
-                ret |= {realm} | implied_realms(realm)
-        return ret
-
     @access(*REALM_ADMINS)
     def admin_change_user_form(self, rs: RequestState, persona_id: int) -> Response:
         """Render form."""
@@ -1603,10 +1586,12 @@ class CoreBaseFrontend(AbstractFrontend):
         if data['code'] == const.PersonaChangeStati.pending:
             rs.notify("info", n_("Change pending."))
 
-        persona = self._get_redacted_persona(rs, persona_id, data, admin_access=True)
-        merge_dicts(rs.values, persona.as_dict())
+        pending_persona = self._get_redacted_persona(
+            rs, persona_id, data, admin_access=True
+        )
+        merge_dicts(rs.values, pending_persona.as_dict())
 
-        mandatory_fields = persona.mandatory_form_fields(creation=False)
+        mandatory_fields = pending_persona.mandatory_form_fields(creation=False)
         # We have users with an unknown birthday (this shouldn't
         # be a blocker for admins to edit those users at all) and want to
         # be able to correct wrong birthdays into missing ones.
@@ -1616,8 +1601,8 @@ class CoreBaseFrontend(AbstractFrontend):
             rs,
             "change_user",
             {
-                'persona': persona,
-                'ambience_persona': rs.ambience['persona'],
+                'pending_persona': pending_persona,
+                'committed_persona': rs.ambience['persona'],
                 'generation': generation,
                 'code': data['code'],
                 'is_admin_variant': True,

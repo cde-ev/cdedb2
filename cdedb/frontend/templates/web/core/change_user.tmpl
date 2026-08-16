@@ -1,4 +1,6 @@
-{% if not is_admin_variant %}
+{% if is_admin_variant %}
+    {% set sidenav_active='core_manage_users' %}
+{% else %}
     {% set sidenav_active='core_mydata'%}
 {% endif %}
 {% extends "web/core/base.tmpl" %}
@@ -9,7 +11,7 @@
 
 {% block title %}
     {% if is_admin_variant %}
-        {% trans name=ambience_persona.get_name() %}Edit {{ name }}{% endtrans %}
+        {% trans name=committed_persona.get_name() %}Edit {{ name }}{% endtrans %}
     {% else %}
         {% trans %}Edit Your Data{%endtrans%}
     {% endif %}
@@ -17,7 +19,7 @@
 
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(show_user_link(user, ambience_persona.id), ambience_persona.get_name(), icon="user") }}
+    {{ util.breadcrumb_link(show_user_link(user, committed_persona.id), committed_persona.get_name(), icon="user") }}
     {% if is_admin_variant %}
         {{ util.breadcrumb_link(cdedblink("core/admin_change_user_form"), gettext("Edit Userdata"), active=True) }}
     {% else %}
@@ -25,11 +27,11 @@
     {% endif %}
 {% endblock %}
 
-{% if is_admin_variant %}
-    {% block heading %}
-        {{ util.context_heading(gettext("Edit Userdata"), ambience_persona|persona_name, 'user', gettext("User")) }}
-    {% endblock %}
-{% endif %}
+{% block heading%}
+    {% if is_admin_variant %}
+        {{ util.context_heading(gettext("Edit Userdata"), committed_persona|persona_name, 'user', gettext("User")) }}
+    {% endif %}
+{% endblock %}
 
 {% block content %}
     <script nonce="{{ csp_nonce }}">
@@ -49,38 +51,38 @@
         {{ util.form_input_text(name="legal_given_names", label=gettext("Legal Given Names"),
             info=gettext("(If different from given names) For direct debits and donation receipts. Only visible to %(orgas_and_admins)s.")|format(
                     orgas_and_admins=util.href(docurl("Realm_Core_Privacy"), gettext("Orgas and Admins")))|s) }}
-        {% if persona.hasattr('show_legal_given_names') %}
+        {% if pending_persona.hasattr('show_legal_given_names') %}
             {{ util.form_input_checkbox(name="show_legal_given_names", label=gettext("Show legal given names for member search")) }}
         {% endif %}
         {{ util.form_input_text(name="nickname", label=gettext("Nickname"), info=gettext("For nametags and event notices.")) }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
-        {% if persona.hasattr("birth_name") %}
+        {% if pending_persona.hasattr("birth_name") %}
             {{ util.form_input_text(name="birth_name", label=gettext("Birth Name"),
                 info=gettext("Original family name after the current family name has changed, for example through marriage.")) }}
         {% endif %}
         {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix"), info=gettext("Suffixed academic degree or similar.")) }}
 
-        {% if persona.hasattr('gender') %}
+        {% if pending_persona.hasattr('gender') %}
             {{ util.form_input_select(
                 name="gender", entries=enums['Genders']|enum_entries(processing=gettext), label=gettext("Gender"),
                 info=gettext("For lodgement assignment at events. Only visible to %(orgas_and_admins)s.")|format(
                     orgas_and_admins=util.href(docurl("Realm_Core_Privacy"), gettext("Orgas and Admins")))|s) }}
         {% endif %}
-        {% if persona.hasattr("pronouns") %}
+        {% if pending_persona.hasattr("pronouns") %}
             {{ util.form_input_text(name="pronouns", label=gettext("Pronouns"), placeholder=gettext("he/him, she/her, they/them, …")) }}
             {{ util.form_input_checkbox(name="pronouns_nametag", label=gettext("Show pronouns on nametags")) }}
             {{ util.form_input_checkbox(name="pronouns_profile", label=gettext("Show pronouns on profile")) }}
         {% endif %}
-        {% if persona.hasattr("birthday") %}
+        {% if pending_persona.hasattr("birthday") %}
             {{ util.form_input_text(name="birthday", label=gettext("Birthday"), type="date") }}
         {% endif %}
 
         {% if is_admin_variant %}
             {{ util.h(n_("Account & Membership"), level=4, underline=True)}}
-        {% elif (persona.hasattr("paper_expuls") or persona.hasattr("donation")) %}
+        {% elif (pending_persona.hasattr("paper_expuls") or pending_persona.hasattr("donation")) %}
             {{ util.h(n_("Membership"), level=4, underline=True) }}
         {% endif %}
-        {% if persona.hasattr("donation") %}
+        {% if pending_persona.hasattr("donation") %}
             {% if is_admin_variant %}
                 {{ util.form_input_text(name="donation", label=gettext("Annual Donation"), type="number", attributes='min="0" step="0.01"'|s, addon="€") }}
             {% else %}
@@ -100,10 +102,10 @@
                 {% endif %}
             {% endif %}
         {% endif %}
-        {% if persona.hasattr("is_searchable") %}
+        {% if pending_persona.hasattr("is_searchable") %}
             {{ util.form_input_checkbox(name="is_searchable", label=gettext("Searchable")) }}
         {% endif %}
-        {% if persona.hasattr("paper_expuls") %}
+        {% if pending_persona.hasattr("paper_expuls") %}
             {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls"),
                                         info=gettext("The exPuls is published semi-anually printed and online. "
                                                      "You can find further information about the online version at %(link)s.")|format(
@@ -116,21 +118,21 @@
         {% endif %}
 
         {{ util.h(n_("Contact Information"), level=4, underline=True) }}
-        {{ util.form_input_static(label=gettext("E-Mail"), value=ambience_persona.username,
+        {{ util.form_input_static(label=gettext("E-Mail"), value=committed_persona.username,
                 info=gettext("To Change Your email address, use the button on Your Profile Page.")) }}
-        {% if persona.hasattr("telephone") %}
+        {% if pending_persona.hasattr("telephone") %}
             {{ util.form_input_text(name="telephone", label=gettext("Phone"), type="tel") }}
         {% endif %}
-        {% if persona.hasattr("mobile") %}
+        {% if pending_persona.hasattr("mobile") %}
             {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel") }}
         {% endif %}
-        {% if persona.hasattr("weblink") %}
+        {% if pending_persona.hasattr("weblink") %}
             {{ util.form_input_text(name="weblink", label=gettext("WWW"), markdown=True) }}
         {% endif %}
 
-        {% if persona.hasattr("address") %}
+        {% if pending_persona.hasattr("address") %}
             {{ util.h(n_("Address"), level=4, underline=True) }}
-            {% if persona.hasattr("paper_expuls") %}
+            {% if pending_persona.hasattr("paper_expuls") %}
                 <p>
                 {% trans %}
                     This should be your primary address. The exPuls will be sent here.
@@ -139,7 +141,7 @@
             {% endif %}
             {{ util.form_input_text(name="address", label=gettext("Street and House Number")) }}
             {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
-            {% if persona.hasattr('show_address') %}
+            {% if pending_persona.hasattr('show_address') %}
                 {{ util.form_input_checkbox(name="show_address", label=gettext("Show precise address for member search")) }}
             {% endif %}
             {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}
@@ -147,7 +149,7 @@
             {{ util.form_input_select(name="country", label=gettext("Country"), entries=COUNTRY_CODES, defaultvalue=DEFAULT_COUNTRY) }}
         {% endif %}
 
-        {% if persona.hasattr("address2") %}
+        {% if pending_persona.hasattr("address2") %}
             {{ util.h(n_("Second Address"), level=4, underline=True) }}
             <p>
             {% trans %}
@@ -157,7 +159,7 @@
             </p>
             {{ util.form_input_text(name="address2", label=gettext("Street and House Number")) }}
             {{ util.form_input_text(name="address_supplement2", label=gettext("Address Supplement")) }}
-            {% if persona.hasattr('show_address') %}
+            {% if pending_persona.hasattr('show_address') %}
                 {{ util.form_input_checkbox(name="show_address2", label=gettext("Show precise address for member search")) }}
             {% endif %}
             {{ util.form_input_text(name="postal_code2", label=gettext("Zipcode")) }}
@@ -165,7 +167,7 @@
             {{ util.form_input_select(name="country2", label=gettext("Country"), entries=COUNTRY_CODES, defaultvalue=DEFAULT_COUNTRY) }}
         {% endif %}
 
-        {% if persona.hasattr("specialisation") %}
+        {% if pending_persona.hasattr("specialisation") %}
             {{ util.h(n_("Miscellaneous"), level=4, underline=True) }}
             {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation"), markdown=True) }}
             {{ util.form_input_textarea(name="affiliation", label=gettext("School, University, …"), markdown=True) }}
@@ -179,9 +181,9 @@
                 {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes")) }}
             {% endcall %}
             {% if code == enums['PersonaChangeStati'].pending %}
-                {{ util.form_input_submit(label=gettext("Save (including pending changes)"), cancellink=show_user_link(user, ambience_persona.id)) }}
+                {{ util.form_input_submit(label=gettext("Save (including pending changes)"), cancellink=show_user_link(user, committed_persona.id)) }}
             {% else %}
-                {{ util.form_input_submit(label=gettext("Save"), cancellink=show_user_link(user, ambience_persona.id)) }}
+                {{ util.form_input_submit(label=gettext("Save"), cancellink=show_user_link(user, committed_persona.id)) }}
             {% endif %}
         {% else %}
             {{ util.form_input_submit(label=gettext("Save"), cancellink=show_user_link(user, user.persona_id)) }}
