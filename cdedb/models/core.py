@@ -349,6 +349,14 @@ class Persona(CdEDataclass):
                 ret.add(field.name)
         return ret
 
+    @classmethod
+    def get_field_defaults(cls) -> CdEDBObject:
+        return {
+            field.name: field.default
+            for field in dataclasses.fields(cls)
+            if field.default is not dataclasses.MISSING
+        }
+
 
 @dataclasses.dataclass(kw_only=True)
 class PersonaStatus(Persona):
@@ -724,7 +732,9 @@ class GenesisCase(CdEDataclass):
     def from_database(cls, data: CdEDBObject) -> "Self":
         realm = data.get("realm")
         # Dispatch data to correct dataclass based on realm.
-        if realm == "ml":
+        if data["is_upgrade"]:
+            return GenesisUpgrade.from_database(data)  # type: ignore[return-value]
+        elif realm == "ml":
             return GenesisCaseMl.from_database(data)  # type: ignore[return-value]
         elif realm == "event":
             return GenesisCaseEvent.from_database(data)  # type: ignore[return-value]
@@ -844,3 +854,31 @@ class GenesisCaseCdE(GenesisCase):
 
     def get_persona_creation(self) -> CdEPersona:
         return copy.deepcopy(self.persona)
+
+
+@dataclasses.dataclass(kw_only=True)
+class GenesisUpgrade(GenesisCase):
+    """Record the desire of an existing user to become a member.
+
+    This enables event users to request cde realm.
+    """
+
+    notes: str = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+    realm: vtypes.Realm = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+    persona_id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+
+    @classmethod
+    def from_database(cls, data: CdEDBObject) -> "Self":
+        meta_data = {
+            k: v for k, v in data.items() if k in cls.database_fields(only_meta=True)
+        }
+        persona_data = {
+            k: v for k, v in data.items() if k in cls.database_fields(only_persona=True)
+        }
+        persona_data["id"] = meta_data["persona_id"]
+        meta_data["persona"] = cls.get_persona_class().from_database(persona_data)
+        # Skip the dataclass dispatching in GenesisCase.
+        return super(GenesisCase, cls).from_database(meta_data)
+
+    def get_persona_creation(self) -> CorePersona:
+        raise NotImplementedError

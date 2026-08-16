@@ -28,15 +28,26 @@
     <form action="{{ cdedblink('core/genesis_modify') }}" method="POST" id="genesismodifyform" class="form-horizontal" autocomplete="off">
         {{ util.anti_csrf_token('core/genesis_modify') }}
         <div>
-            {{ util.form_input_text(name="given_names", label=gettext("Given Names"), small=True) }}
-            {{ util.form_input_text(name="family_name", label=gettext("Family Name"), small=True) }}
+            {% if ambience['genesis_case'].is_upgrade %}
+                {{ util.input_hidden("given_names", value=persona["given_names"]) }}
+                {{ util.input_hidden("family_name", value=persona["family_name"]) }}
+            {% else %}
+                {{ util.form_input_text(name="given_names", label=gettext("Given Names"), small=True) }}
+                {{ util.form_input_text(name="family_name", label=gettext("Family Name"), small=True) }}
+            {% endif %}
             {% if persona|hasattr("birth_name") %}
                 {{ util.form_input_text(name="birth_name", label=gettext("Birth Name"), small=True) }}
             {% endif %}
-            {{ util.form_input_text(name="username", label=gettext("E-Mail"), small=True, type="email") }}
+            {% if ambience['genesis_case'].is_upgrade %}
+                {{ util.input_hidden("username", value=persona["username"]) }}
+            {% else %}
+                {{ util.form_input_text(name="username", label=gettext("E-Mail"), small=True, type="email") }}
+            {% endif %}
             {{ util.form_input_static(label=gettext("Realm"), small=True,
                 value=util.realm_icon("is_" + ambience['genesis_case']['realm'] + "_realm", desc=True)) }}
-            {{ util.form_input_textarea(name="notes", label=gettext("Rationale"), small=True) }}
+            {% if not ambience['genesis_case'].is_upgrade %}
+                {{ util.form_input_textarea(name="notes", label=gettext("Rationale"), small=True) }}
+            {% endif %}
             {% if persona|hasattr("gender") %}
                 {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
                                         label=gettext("Gender"), small=True) }}

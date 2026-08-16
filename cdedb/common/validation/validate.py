@@ -1878,6 +1878,24 @@ def _genesis_case(
     return val
 
 
+@_create_dataclass_validator(models_core.GenesisUpgrade)
+def _genesis_upgrade(
+    val: CdEDBObject,
+    argname: str = "genesis_upgrade",
+    *,
+    creation: bool,
+    **kwargs: Any,
+) -> CdEDBObject:
+    errs = ValidationSummary()
+    if creation and val["attachment_hash"] is None and val["pevent_id"] is None:
+        msg = n_("Must provide at least one of an attachment and a past event.")
+        errs.append(ValueError("attachment", msg))
+        errs.append(ValueError("pevent_id", msg))
+    if errs:
+        raise errs
+    return val
+
+
 PRIVILEGE_CHANGE_COMMON_FIELDS: TypeMapping = {
     'persona_id': ID,
     'submitted_by': ID,

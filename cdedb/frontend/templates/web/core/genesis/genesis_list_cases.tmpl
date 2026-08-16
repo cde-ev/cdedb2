@@ -47,10 +47,8 @@
                     <div class="col-sm-4 button-par">
                         {{ util.href(cdedblink('core/genesis_show_case', {'genesis_case_id': genesis_case_id}), gettext("Details"),
                             aclass="btn btn-info btn-sm", icon="user") }}
-                        {% if not entry['is_upgrade'] %}
-                            {{ util.href(cdedblink('core/genesis_modify_form', {'genesis_case_id': genesis_case_id}), gettext("Edit"),
-                                aclass="btn btn-warning btn-sm", icon="pen") }}
-                        {% endif %}
+                        {{ util.href(cdedblink('core/genesis_modify_form', {'genesis_case_id': genesis_case_id}), gettext("Edit"),
+                            aclass="btn btn-warning btn-sm", icon="pen") }}
                     </div>
                 </div>
                 {% if not loop.last %}

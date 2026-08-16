@@ -33,6 +33,10 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.roles import (
     PERSONA_DEFAULTS,
+    implied_realms,
+)
+from cdedb.common.validation.validate import (
+    PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
 )
 from cdedb.database.connection import Atomizer
 from cdedb.models.common import CdEDataclassMap
@@ -84,18 +88,17 @@ class CoreGenesisBackend(CoreBaseBackend):
         rs: RequestState,
         data: CdEDBObject,
     ) -> DefaultReturnCode:
-        """Log a request to upgrade an existing account."""
-        realm = affirm(vtypes.Realm, data["realm"], supports_genesis=True)
-        case_model = models.GenesisCase.get_model_by_realm(realm)
-        data = affirm(case_model, data, creation=True, is_upgrade=True)
+        """Record the desire of an existing event user to aquire cde realm."""
+        data = affirm(models.GenesisUpgrade, data, creation=True)
 
-        data['case_status'] = const.GenesisStati.to_review
+        data["realm"] = "cde"
+        data["status"] = const.GenesisStati.to_review
         data['persona_id'] = rs.user.persona_id
         data['is_upgrade'] = True
-        if data.get('attachment_hash') and not self.get_genesis_attachment_store(
-            rs
-        ).is_available(data['attachment_hash']):
-            raise RuntimeError(n_("File has been lost."))
+
+        if attachment_hash := data.get("attachment_hash"):
+            if not self.get_genesis_attachment_store(rs).is_available(attachment_hash):
+                raise RuntimeError(n_("File has been lost."))
 
         with Atomizer(rs):
             ret = self.sql_insert(rs, "core.genesis_cases", data)
@@ -493,8 +496,23 @@ class CoreGenesisBackend(CoreBaseBackend):
                 data["notes"] = case.notes
                 data = affirm(vtypes.Persona, data, creation=True)
                 ret = self.create_persona(rs, data, submitted_by=case.reviewer)
-            # internal upgrade requests use the existing data, do not reapply it
-            elif decision.is_update() and not case.is_upgrade:
+            elif case.is_upgrade:
+                assert case.persona_id is not None
+                persona = self.get_event_user(rs, case.persona_id).as_dict()
+                merge_dicts(persona, models.CdEPersona.get_field_defaults())
+                for key in tuple(persona.keys()):
+                    if key not in CDE_TRANSITION_FIELDS and key != 'id':
+                        del persona[key]
+                persona["is_cde_realm"] = True
+                for realm in implied_realms("cde"):
+                    persona[f'is_{realm}_realm'] = True
+                # TODO formulate change note
+                change_note = "..."
+                code = self.core.change_persona_realms(rs, persona, change_note)
+                if not code:  # pragma: no cover
+                    raise RuntimeError(n_("Granting CdE realm failed."))
+                ret = case.persona_id
+            elif decision.is_update():
                 assert case.persona_id is not None
                 persona = self.get_persona(rs, case.persona_id)
                 persona_status = self.get_persona_status(rs, case.persona_id)

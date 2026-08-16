@@ -208,7 +208,6 @@ class CoreGenesisMixin(CoreBaseFrontend):
             {
                 "pevent_entries": models_past_event.PastEvent.get_entries(pevents),
             },
-            mandatory_fields={},
         )
 
     @access("event", modi={"POST"})
@@ -219,8 +218,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
         rs: RequestState,
         attachment: werkzeug.datastructures.FileStorage | None,
         attachment_hash: vtypes.Identifier | None = None,
-        pevent_id: int | None = None,
         attachment_filename: str | None = None,
+        pevent_id: int | None = None,
     ) -> Response:
         """Request an upgrade to a higher realm.
 
@@ -237,28 +236,30 @@ class CoreGenesisMixin(CoreBaseFrontend):
                 is_mandatory=False,
             )
         )
-        attachment_hash = rs.values['attachment_hash']
 
-        # mock data for the genesis case
-        persona = self.coreproxy.get_event_user(rs, rs.user.persona_id)
-        data: CdEDBObject = {"realm": "cde"}
-        for field in models.GenesisCaseEvent.database_fields(only_persona=True):
-            data[field] = getattr(persona, field)
-        if attachment_hash:
-            data["attachment_hash"] = attachment_hash
-        if pevent_id:
-            pevents = self.pasteventproxy.list_persona_events(rs, rs.user.persona_id)
-            if pevent_id not in pevents:
-                msg = ValueError(n_("You didn't participate at this event."))
-                rs.append_validation_error(("pevent_id", msg))
-                return self.genesis_upgrade_form(rs)
-            data["pevent_id"] = pevent_id
+        data: CdEDBObject = {
+            "attachment_hash": rs.values['attachment_hash'],
+            "pevent_id": pevent_id,
+        }
 
-        data = check(rs, models.GenesisCaseCdE, data, creation=True, is_upgrade=True)  # type: ignore[assignment]
+        # We need to mock some data so our usual logik works.
+        persona = self.coreproxy.get_persona(rs, rs.user.persona_id)
+        data["username"] = persona.username
+        data["given_names"] = persona.given_names
+        data["family_name"] = persona.family_name
+
+        pevents = self.pasteventproxy.list_persona_events(rs, rs.user.persona_id)
+        if pevent_id and pevent_id not in pevents:
+            msg = ValueError(n_("You didn't participate at this event."))
+            rs.append_validation_error(("pevent_id", msg))
+            return self.genesis_upgrade_form(rs)
+
+        data = check(rs, models.GenesisUpgrade, data, creation=True)  # type: ignore[assignment]
         if rs.has_validation_errors():
             return self.genesis_upgrade_form(rs)
 
         ret = self.coreproxy.genesis_upgrade(rs, data)
+        # TODO adjust success return code
         rs.notify_return_code(ret)
         return self.redirect(rs, "core/index")
 
@@ -488,9 +489,6 @@ class CoreGenesisMixin(CoreBaseFrontend):
         case = rs.ambience['genesis_case']
         if not self.is_admin(rs) and case.relative_admin not in rs.user.roles:
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        if case.is_upgrade:
-            rs.notify("error", n_("Modification of upgrade request is not possible."))
-            return self.genesis_list_cases(rs)
         if case.status != const.GenesisStati.to_review:
             rs.notify("error", n_("Case not to review."))
             return self.genesis_list_cases(rs)
@@ -523,6 +521,8 @@ class CoreGenesisMixin(CoreBaseFrontend):
         """Edit a case to fix potential issues before creation."""
         case = rs.ambience['genesis_case']
         case_model = models.GenesisCase.get_model_by_realm(case.realm)
+        if case.is_upgrade:
+            case_model = models.GenesisUpgrade
         data = extract_and_check_dataclass(
             rs, case_model, creation=False, additional_data={"id": genesis_case_id}
         )
@@ -607,7 +607,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             return self.redirect(rs, "core/genesis_show_case")
 
         # We use a simplified UI with less buttons.
-        if persona_id:
+        if persona_id or case.is_upgrade:
             if decision == GenesisDecision.approve:
                 decision = GenesisDecision.update
             elif decision == GenesisDecision.approve_grant_trial_membership:
@@ -619,10 +619,14 @@ class CoreGenesisMixin(CoreBaseFrontend):
         ):
             rs.notify("error", n_("Email address already taken."))
             return self.redirect(rs, "core/genesis_show_case")
-        if decision.is_update() and not self.coreproxy.verify_persona(
-            rs,
-            persona_id,  # type: ignore[arg-type]
-            (case.realm,),
+        if (
+            decision.is_update()
+            and not self.coreproxy.verify_persona(
+                rs,
+                persona_id,  # type: ignore[arg-type]
+                (case.realm,),
+            )
+            and not case.is_upgrade
         ):
             msg = n_(
                 "Invalid persona for update. Add additional realm first: %(realm)s."

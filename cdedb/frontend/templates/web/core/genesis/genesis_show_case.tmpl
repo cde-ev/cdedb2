@@ -48,7 +48,7 @@
         </dt>
         <dd id="realm">
             {{ util.realm_icon("is_" + ambience['genesis_case']['realm'] + "_realm", desc=True) }}
-            {% if ambience["genesis_case"].realm != "ml" %}
+            {% if ambience["genesis_case"].realm != "ml" and not ambience["genesis_case"].is_upgrade %}
                 {% set icon = "chalkboard-teacher" if ambience["genesis_case"].realm == "cde" else "graduation-cap" %}
                 {% set label = gettext("Change Realm to Event") if ambience["genesis_case"].realm == "cde" else gettext("Change Realm to CdE")%}
                 <form action="{{ cdedblink('core/genesis_modify_realm') }}" method="POST" id="genesismodifyrealmform" style="display: inline-block">
@@ -240,10 +240,8 @@
                 {{ util.input_submit(
                     name="decision", value = enums['GenesisDecision'].deny,
                     label=gettext("Reject"), aclass="btn btn-danger", icon="ban") }}
-                {% if not ambience['genesis_case']['is_upgrade'] %}
-                    {{ util.href(cdedblink('core/genesis_modify_form'), label=gettext("Edit Account Request"),
-                                           aclass="btn btn-warning", icon="pen") }}
-                {% endif %}
+                {{ util.href(cdedblink('core/genesis_modify_form'), label=gettext("Edit Account Request"),
+                             aclass="btn btn-warning", icon="pen") }}
                 &emsp;
                 {{ util.href(cdedblink("core/genesis_list_cases"), gettext("Cancel"),
                              aclass="btn btn btn-default", icon="times-circle") }}
