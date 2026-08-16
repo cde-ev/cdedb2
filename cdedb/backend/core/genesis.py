@@ -458,7 +458,7 @@ class CoreGenesisBackend(CoreBaseBackend):
             if case.is_upgrade and not decision.is_update():
                 raise ValueError(n_("Decision must be 'update'."))
             if decision.is_create():
-                status = const.GenesisStati.approved
+                status = const.GenesisStati.successful
             elif decision.is_update():
                 case.persona_id = persona_id
                 status = const.GenesisStati.existing_updated
@@ -473,8 +473,26 @@ class CoreGenesisBackend(CoreBaseBackend):
             )
             if not ret_code:
                 raise RuntimeError(n_("Genesis modification failed."))
+
+            ret = 0
             if decision.is_create():
-                return self.genesis(rs, case_id)
+                if self.verify_existence(
+                    rs, case.persona.username, include_genesis=False
+                ):
+                    raise ValueError(n_("Email address already taken."))
+                data = case.get_persona_creation().as_dict()
+                data.pop("id")
+                # TODO remove those after adjusting the validation of personas for dataclasses
+                merge_dicts(data, PERSONA_DEFAULTS)
+                for admin_bit in case.persona.get_admin_bits():
+                    del data[admin_bit]
+                del data["is_archived"]
+                del data["is_purged"]
+                if "balance" in data:
+                    del data["balance"]
+                data["notes"] = case.notes
+                data = affirm(vtypes.Persona, data, creation=True)
+                ret = self.create_persona(rs, data, submitted_by=case.reviewer)
             # internal upgrade requests use the existing data, do not reapply it
             elif decision.is_update() and not case.is_upgrade:
                 assert case.persona_id is not None
@@ -508,41 +526,9 @@ class CoreGenesisBackend(CoreBaseBackend):
                     force_review=True,
                     change_note="Daten aus Accountanfrage übernommen.",
                 )
-                return case.persona_id
+                ret = case.persona_id
             # Special return value for rejected cases.
             else:
                 return -1
 
-    @internal
-    @access("core_admin", *models.GenesisCase.all_admins)
-    def genesis(self, rs: RequestState, case_id: int) -> DefaultReturnCode:
-        """Create a new user account upon request.
-
-        This is the final step in the genesis process and actually creates
-        the account.
-        """
-        case_id = affirm(vtypes.ID, case_id)
-        with Atomizer(rs):
-            case = self.genesis_get_case(rs, case_id)
-            if self.verify_existence(rs, case.persona.username, include_genesis=False):
-                raise ValueError(n_("Email address already taken."))
-
-            data = case.get_persona_creation().as_dict()
-            data.pop("id")
-            # TODO remove those after adjusting the validation of personas for dataclasses
-            merge_dicts(data, PERSONA_DEFAULTS)
-            for admin_bit in case.persona.get_admin_bits():
-                del data[admin_bit]
-            del data["is_archived"]
-            del data["is_purged"]
-            if "balance" in data:
-                del data["balance"]
-            data["notes"] = case.notes
-            data = affirm(vtypes.Persona, data, creation=True)
-            if case.status != const.GenesisStati.approved:
-                raise ValueError(n_("Invalid genesis state."))
-            new_id = self.create_persona(rs, data, submitted_by=case.reviewer)
-            self.genesis_modify_case_meta(
-                rs, case_id, status=const.GenesisStati.successful, persona_id=new_id
-            )
-        return new_id
+            return ret
