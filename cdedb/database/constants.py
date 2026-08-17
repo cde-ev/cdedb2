@@ -241,7 +241,7 @@ class QuestionnaireRowRole(CdEIntEnum):
             self.panel: n_("Text"),
             self.table_of_contents: n_("Text"),
             self.event_field: n_("Custom Fields"),
-        }.get(self, n_("Special"))
+        }.get(self, n_("Special_[[QuestionnaireRowRoles]]"))
 
 
 @enum.unique
