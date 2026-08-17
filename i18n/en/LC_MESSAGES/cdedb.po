@@ -176,7 +176,7 @@ msgstr "Panel"
 
 #: cdedb/.i18n_additional.py:42
 msgid "QuestionnaireRowRole.table_of_contents"
-msgstr "TableOfContents"
+msgstr "Table of Contents"
 
 #: cdedb/.i18n_additional.py:43
 msgid "QuestionnaireRowRole.event_field"
