@@ -3,7 +3,7 @@ import collections
 import dataclasses
 import enum
 import itertools
-from collections.abc import Callable, Collection, Iterable, Mapping
+from collections.abc import Collection, Iterable, Mapping
 from typing import Any, ClassVar, Self, cast
 
 import cdedb.common.validation.types as vtypes
@@ -28,6 +28,18 @@ class QuestionnaireFrequency(enum.Enum):
         if self == self.mandatory:
             return num > 0
         return True
+
+
+@dataclasses.dataclass(kw_only=True)
+class _QuestionnaireHeading:
+    title: str
+
+    level: int = 3
+    translate: bool = True
+
+    @property
+    def anchor(self) -> str:
+        return "_".join(self.title.split())
 
 
 @dataclasses.dataclass
@@ -81,12 +93,8 @@ class QuestionnaireRow(EventDataclass, abc.ABC):
     def get_icon(cls) -> str:
         return cls._icon
 
-    def get_toc_entries(self, g: Callable[[str], str]) -> list[tuple[str, str]]:
-        """Return ToC-entries resulting from this row.
-
-        First tuple element is the (translated by g) display text, second element is
-        the HTML id to link to (usually the untranslated title).
-        """
+    def get_toc_entries(self) -> list[_QuestionnaireHeading]:
+        """Return ToC-entries resulting from this row."""
         return []
 
     @staticmethod
@@ -147,9 +155,9 @@ class QuestionnaireTextRowMeta(QuestionnaireRow):
     def from_database(cls, data: CdEDBObject) -> Self:
         return super(QuestionnaireRow, cls).from_database(data)
 
-    def get_toc_entries(self, g: Callable[[str], str]) -> list[tuple[str, str]]:
+    def get_toc_entries(self) -> list[_QuestionnaireHeading]:
         if self.title:
-            return [(self.title, self.title)]
+            return [_QuestionnaireHeading(title=self.title, translate=False)]
         return []
 
 
@@ -241,8 +249,8 @@ class QuestionnaireMagicRow(QuestionnaireRow):
     _heading_level: ClassVar[int] = 3
     _toc_entries: ClassVar[list[str]] = []
 
-    def get_toc_entries(self, g: Callable[[str], str]) -> list[tuple[str, str]]:
-        return [(g(entry), entry) for entry in self._toc_entries]
+    def get_toc_entries(self) -> list[_QuestionnaireHeading]:
+        return [_QuestionnaireHeading(title=entry) for entry in self._toc_entries]
 
     @classmethod
     def from_database(cls, data: "CdEDBObject") -> "QuestionnaireMagicRow":
@@ -361,8 +369,8 @@ class Questionnaire(list[QuestionnaireRow]):
     def text_rows(self) -> list[QuestionnaireTextRowMeta]:
         return [row for row in self if isinstance(row, QuestionnaireTextRowMeta)]
 
-    def get_toc_entries(self, g: Callable[[str], str]) -> Iterable[tuple[str, str]]:
-        return itertools.chain.from_iterable(row.get_toc_entries(g) for row in self)
+    def get_toc_entries(self) -> Iterable[_QuestionnaireHeading]:
+        return itertools.chain.from_iterable(row.get_toc_entries() for row in self)
 
     def get_field_ids(self) -> set[int]:
         return {row.field_id for row in self if isinstance(row, QuestionnaireFieldRow)}
