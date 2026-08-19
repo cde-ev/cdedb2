@@ -60,20 +60,16 @@
                             <li>
                                 {% trans %}Matched User{% endtrans %}:
                                 {{ util.persona_anchor(persona, include_nickname=True) }}
-                                {%- if persona|hasattr('birth_name') and persona['birth_name'] %}
-                                    ({{ persona['birth_name'] }})
-                                {%- endif %}
                                 {% if persona['is_archived'] %}
                                     (<i>{{ gettext("archived") }}</i>)
+                                {% else %}
+                                    &lt;{{ persona['username'] }}&gt;
+                                {% endif %}
+                                {%- if persona['birthday'] %}
+                                    ({{ gettext("born") }}
+                                    {{ persona['birthday']|date(lang=lang) or "-" }})
                                 {% endif %}
                                 {{ persona['id']|cdedbid }}
-                                {%- if persona["is_cde_realm"] %}
-                                    {%- if not persona['is_member'] %}
-                                        {{ gettext("(not a member)") }}
-                                    {%- elif persona['trial_member'] %}
-                                        {{ gettext("(trial member)") -}}
-                                    {% endif -%}
-                                {% endif -%}
                             </li>
                         {% endif %}
                         {% if event %}
