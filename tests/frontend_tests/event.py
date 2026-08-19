@@ -497,6 +497,22 @@ class TestEventFrontend(FrontendTest):
             log_expectation, "event", event_id=1, offset=self.EVENT_LOG_OFFSET
         )
 
+        with self.switch_user("annika"):
+            self.traverse(
+                "Veranstaltungen", "Große Testakademie 2222", "Betreuer verwalten"
+            )
+            f = self.response.forms['removecaretakerform3']
+            f["ack_delete"] = True
+            self.submit(f)
+            log_expectation.append({
+                "code": const.EventLogCodes.caretaker_removed,
+                "persona_id": USER_DICT['charly']['id'],
+                "submitted_by": USER_DICT['annika']['id'],
+            })
+            self.assertLogEqual(
+                log_expectation, "event", event_id=1, offset=self.EVENT_LOG_OFFSET
+            )
+
     @as_users(
         "annika",
         "emilia",

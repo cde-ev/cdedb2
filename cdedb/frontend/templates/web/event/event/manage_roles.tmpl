@@ -129,9 +129,9 @@
                         {{ util.persona_anchor(caretaker, include_nickname=True) }}
                         {% if is_privileged_for("event/remove_caretaker", admin_view_to_consider="event_mgmt") %}
                             <form action="{{ cdedblink("event/remove_caretaker") }}" method="POST"
-                                  id="removcaretakerform{{ persona_id }}" class="hide-hover display-inline">
+                                  id="removecaretakerform{{ persona_id }}" class="hide-hover display-inline">
                                 {{ util.anti_csrf_token("event/remove_caretaker") }}
-                                {{ util.input_hidden(name="caretaker_id", value=persona_id) }}
+                                {{ util.input_hidden(name="caretaker_id", value=persona_id|cdedbid) }}
                                 {{ util.input_submit(title=gettext("Remove Caretaker"), icon="minus", label="",
                                                      aclass="btn btn-xs btn-danger list-button-float") }}
                                 {{ util.ack_delete("The caretaker will be removed from the event.") }}
