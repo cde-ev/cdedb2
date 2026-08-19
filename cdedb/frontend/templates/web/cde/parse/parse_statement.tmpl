@@ -65,7 +65,7 @@
                                 {% else %}
                                     &lt;{{ persona['username'] }}&gt;
                                 {% endif %}
-                                {%- if persona['birthday'] %}
+                                {%- if persona|hasattr('birthday') and persona['birthday'] %}
                                     ({{ gettext("born") }}
                                     {{ persona['birthday']|date(lang=lang) or "-" }})
                                 {% endif %}
