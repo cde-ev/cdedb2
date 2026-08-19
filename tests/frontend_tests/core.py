@@ -2005,15 +2005,11 @@ class TestCoreFrontend(FrontendTest):
         with self.switch_user("vera"):
             self.traverse({'description': 'Änderungen prüfen'})
             self.assertTitle("Zu prüfende Profiländerungen [1]")
-            self.traverse(
-                {'description': 'Ganondorf'}, {'description': 'Änderungen bearbeiten'}
-            )
+            self.traverse('Bertå Beispiel', 'Änderungen bearbeiten')
             self.assertTitle("Bertå Beispiel bearbeiten")
             f = self.response.forms["changedataform"]
             self.assertEqual("Ganondorf", f["family_name"].value)
-            self.traverse(
-                {'description': 'Änderungen prüfen'}, {'description': 'Ganondorf'}
-            )
+            self.traverse('Änderungen prüfen', 'Bertå Beispiel')
             f = self.response.forms['ackchangeform']
             self.submit(f)
             self.assertTitle("Zu prüfende Profiländerungen [0]")
@@ -2068,9 +2064,7 @@ class TestCoreFrontend(FrontendTest):
         def _quintus_displace_change(family_name: str) -> None:
             self.traverse({'description': 'Änderungen prüfen'})
             self.assertTitle("Zu prüfende Profiländerungen [1]")
-            self.traverse(
-                {'description': 'Ganondorf'}, {'description': 'Änderungen bearbeiten'}
-            )
+            self.traverse('Bertå Beispiel', 'Änderungen bearbeiten')
             self.assertTitle("Bertå Beispiel bearbeiten")
             self.assertPresence("Speichern (inklusive zu prüfender Änderungen)")
             f = self.response.forms['changedataform']

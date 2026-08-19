@@ -2046,7 +2046,11 @@ class TestCdEFrontend(FrontendTest):
         # now, lets check the reviews exists
         self.traverse({"description": "Index"}, {"description": "Änderungen prüfen"})
         self.assertPresence("Daniel Dino")
-        self.assertPresence("Jens")
+        self.assertPresence("Janis Jalapeño")
+        self.traverse("Janis Jalapeño", "Änderungen bearbeiten")
+        self.assertTitle("Janis Jalapeño bearbeiten")
+        f = self.response.forms["changedataform"]
+        self.assertEqual("Jens", f["given_names"].value)
 
         # take special care that no fields were silently updated during realm transition
         self.admin_view_profile("janis")
