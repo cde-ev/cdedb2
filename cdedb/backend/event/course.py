@@ -8,7 +8,7 @@ for managing courses belonging to an event.
 import abc
 import collections
 from collections.abc import Collection
-from typing import Protocol
+from typing import Protocol, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -41,12 +41,14 @@ from cdedb.database.query import DatabaseValue_s, ParamDict
 
 class EventCourseBackend(EventBaseBackend, abc.ABC):
     @access("anonymous")
-    def list_courses(self, rs: RequestState, event_id: int) -> dict[int, str]:
+    def list_courses(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> dict[vtypes.CourseID, str]:
         """List all courses organized via DB.
 
         :returns: Mapping of course ids to titles.
         """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         data = self.sql_select(
             rs, "event.courses", ("id", "title"), (event_id,), entity_key="event_id"
         )
@@ -56,16 +58,16 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
     def get_courses(
         self,
         rs: RequestState,
-        course_ids: Collection[int],
+        course_ids: Collection[vtypes.CourseID],
         *,
         _event: models.Event | None = None,
-    ) -> models.CdEDataclassMap[models.Course]:
+    ) -> models.CourseMap:
         """Retrieve data for some courses organized via DB.
 
         They must be associated to the same event. This contains additional
         information on the parts in which the course takes place.
         """
-        course_ids = affirm(set[vtypes.ID], course_ids)
+        course_ids = affirm(set[vtypes.CourseID], course_ids)
         with Atomizer(rs):
             course_data = {
                 e["id"]: e
@@ -92,16 +94,21 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
             for segment in segment_data:
                 course_data[segment["course_id"]]["segments"].append(segment)
 
-        return models.Course.many_from_database(course_data.values())
+        return cast(
+            models.CourseMap,
+            models.Course.many_from_database(course_data.values()),
+        )
 
     class _GetCourseProtocol(Protocol):
-        def __call__(self, rs: RequestState, course_id: int) -> models.Course: ...
+        def __call__(
+            self, rs: RequestState, course_id: vtypes.CourseID
+        ) -> models.Course: ...
 
     get_course: _GetCourseProtocol = singularize(get_courses, "course_ids", "course_id")
 
     @access("event")
     def set_course(
-        self, rs: RequestState, course_id: int, data: CdEDBObject
+        self, rs: RequestState, course_id: vtypes.CourseID, data: CdEDBObject
     ) -> DefaultReturnCode:
         """Update some keys of a course linked to an event organized via DB.
 
@@ -113,7 +120,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
         list of active tracks. This has to be a subset of the segments of
         the course.
         """
-        course_id = affirm(vtypes.ID, course_id)
+        course_id = affirm(vtypes.CourseID, course_id)
         ret = 1
         with Atomizer(rs):
             current = self.get_course(rs, course_id)
@@ -258,10 +265,10 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
 
     @access("event")
     def create_course(
-        self, rs: RequestState, event_id: int, data: CdEDBObject
-    ) -> DefaultReturnCode:
+        self, rs: RequestState, event_id: vtypes.EventID, data: CdEDBObject
+    ) -> vtypes.CourseID:
         """Make a new course organized via DB."""
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         event = self.get_event(rs, event_id)
         data = affirm(models.Course, data, creation=True, event=event)
 
@@ -274,7 +281,11 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
             data['fields'] = PsycoJson(data.get('fields', {}))
             data['event_id'] = event_id
             course_data = {k: v for k, v in data.items() if k in course_fields}
-            new_id = self.sql_insert(rs, models.Course.database_table, course_data)
+            new_id = vtypes.CourseID(
+                vtypes.ID(
+                    self.sql_insert(rs, models.Course.database_table, course_data)
+                )
+            )
             self.event_log(
                 rs,
                 const.EventLogCodes.course_created,
@@ -288,7 +299,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
 
     @access("event")
     def delete_course_blockers(
-        self, rs: RequestState, course_id: int
+        self, rs: RequestState, course_id: vtypes.CourseID
     ) -> DeletionBlockers:
         """Determine what keeps a course from beeing deleted.
 
@@ -345,7 +356,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
     def delete_course(
         self,
         rs: RequestState,
-        course_id: int,
+        course_id: vtypes.CourseID,
         cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Remove a course organized via DB from the DB.
@@ -353,7 +364,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
         :param cascade: Specify which deletion blockers to cascadingly remove
             or ignore. If None or empty, cascade none.
         """
-        course_id = affirm(vtypes.ID, course_id)
+        course_id = affirm(vtypes.CourseID, course_id)
         current = self.sql_select_one(
             rs, "event.courses", ("title", "event_id"), course_id
         )
@@ -465,13 +476,13 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
 
     @access("event")
     def get_attendee_stats(
-        self, rs: RequestState, course_id: int
+        self, rs: RequestState, course_id: vtypes.CourseID
     ) -> models.CourseAttendees:
         """Retrieve a list of personas assigned to the given course in each track.
 
         This is only available for instrcutors of the given course.
         """
-        course_id = affirm(vtypes.ID, course_id)
+        course_id = affirm(vtypes.CourseID, course_id)
 
         with Atomizer(rs):
             query = f"""

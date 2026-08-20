@@ -21,7 +21,9 @@ table_query = """
             -- A customized heading for this element.
             title                   varchar,
             -- Additional formatted text that is displayed below the heading if any.
-            text                    varchar
+            text                    varchar,
+            -- For panel rows: The kind of panel ("info", "warning", "danger", etc.). See cdedb.constants.QuestionnairePanelKind.
+            panel_kind              integer
     );
     CREATE INDEX questionnaire_text_rows_event_id_kind_idx ON event.questionnaire_text_rows(event_id, kind);
     GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_text_rows TO cdb_persona;
@@ -79,9 +81,9 @@ migration_query_text = """
 """
 
 migration_query_fields = """
-    INSERT INTO event.questionnaire_field_rows (event_id, kind, pos, role, field_id, label, info) (
+    INSERT INTO event.questionnaire_field_rows (event_id, kind, pos, role, field_id, label, info, default_value) (
         SELECT
-            event_id, kind, pos, 5, field_id, title, info
+            event_id, kind, pos, 5, field_id, title, info, default_value
         FROM
             event.questionnaire_rows
         WHERE
@@ -115,16 +117,60 @@ with s:
 
         all_questionnaires = event_backend.get_all_questionnaires(rs, event.id)
 
+        new_additional_questionnaire = []
+        for row in all_questionnaires[const.QuestionnaireUsages.additional].as_dicts():
+            if row['role'] in {
+                const.QuestionnaireRowRole.text,
+                const.QuestionnaireRowRole.heading,
+            }:
+                if row.get('title'):
+                    new_additional_questionnaire.append({
+                        'role': const.QuestionnaireRowRole.heading,
+                        'title': row['title'],
+                    })
+                if row.get('text'):
+                    new_additional_questionnaire.append({
+                        'role': const.QuestionnaireRowRole.text,
+                        'text': row['text'],
+                    })
+            else:
+                new_additional_questionnaire.append(row)
+
+        event_backend.set_questionnaire(
+            rs,
+            event.id,
+            const.QuestionnaireUsages.additional,
+            new_additional_questionnaire,
+        )
+
         default_questionnaire = models.questionnaire.make_default_questionnaire(event)[
             const.QuestionnaireUsages.registration
         ]
-        new_reg_questionnaire = (
+        new_reg_questionnaire = []
+        for row in (
             default_questionnaire[:-1]
             + all_questionnaires[const.QuestionnaireUsages.registration].as_dicts()
             + default_questionnaire[-1:]
-        )
+        ):
+            if row['role'] in {
+                const.QuestionnaireRowRole.text,
+                const.QuestionnaireRowRole.heading,
+            }:
+                if row.get('title'):
+                    new_reg_questionnaire.append({
+                        'role': const.QuestionnaireRowRole.heading,
+                        'title': row['title'],
+                    })
+                if row.get('text'):
+                    new_reg_questionnaire.append({
+                        'role': const.QuestionnaireRowRole.text,
+                        'text': row['text'],
+                    })
+            else:
+                new_reg_questionnaire.append(row)
 
         event_backend.set_questionnaire(
             rs, event.id, const.QuestionnaireUsages.registration, new_reg_questionnaire
         )
+
         print("done")

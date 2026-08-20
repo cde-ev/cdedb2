@@ -211,7 +211,7 @@ class MlBackend(AbstractBackend):
         elif mailinglist:
             affirm(get_ml_type(mailinglist.ml_type), mailinglist)
 
-        persona_id = affirm(vtypes.ID, persona_id)
+        persona_id = affirm(vtypes.PersonaID, persona_id)
         assert mailinglist is not None
 
         if not (
@@ -1305,6 +1305,11 @@ class MlBackend(AbstractBackend):
         mrv = const.MailinglistRosterVisibility
         assert rs.user.persona_id is not None
 
+        may_subscribe = self.get_subscription_policy(
+            rs, rs.user.persona_id, mailinglist=ml
+        ).may_subscribe()
+        is_subscribed = self.is_subscribed(rs, rs.user.persona_id, ml.id)
+
         if not ml.is_active:
             return False
         elif self.is_moderator(rs, ml.id):
@@ -1316,17 +1321,11 @@ class MlBackend(AbstractBackend):
         elif ml.roster_visibility == mrv.none:
             return False
         elif ml.roster_visibility == mrv.subscribable:
-            return self.get_subscription_policy(
-                rs, rs.user.persona_id, mailinglist=ml
-            ).may_subscribe() or self.is_subscribed(rs, rs.user.persona_id, ml.id)
+            return may_subscribe or is_subscribed
+        elif ml.roster_visibility == mrv.members:
+            return ("member" in rs.user.roles) or may_subscribe or is_subscribed
         elif ml.roster_visibility == mrv.viewers:
-            return (
-                self.may_view(rs, ml)
-                or self.get_subscription_policy(
-                    rs, rs.user.persona_id, mailinglist=ml
-                ).may_subscribe()
-                or self.is_subscribed(rs, rs.user.persona_id, ml.id)
-            )
+            return self.may_view(rs, ml) or may_subscribe or is_subscribed
         else:
             raise RuntimeError
 
@@ -1691,7 +1690,9 @@ class MlBackend(AbstractBackend):
                 # the list or if `get_subscription_policy` says so.
                 delete = []
                 policies = ml.get_subscription_policies(
-                    rs, self.backends, persona_ids=old_subscribers[mailinglist_id]
+                    rs,
+                    self.backends,
+                    persona_ids=old_subscribers[mailinglist_id],  # type: ignore[arg-type]
                 )
                 for persona_id in old_subscribers[mailinglist_id]:
                     old_state = old_subscribers[mailinglist_id][persona_id]

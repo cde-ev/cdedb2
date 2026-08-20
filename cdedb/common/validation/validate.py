@@ -686,6 +686,9 @@ def _id(val: Any, argname: str | None = None, **kwargs: Any) -> ID:
 
 
 _add_typed_validator(_id, InvolvedID)
+_add_typed_validator(_id, RegistrationID)
+_add_typed_validator(_id, EventID)
+_add_typed_validator(_id, CourseID)
 
 
 @_add_typed_validator
@@ -3117,7 +3120,11 @@ def _by_field_datatype(
     return ByFieldDatatype(val)
 
 
-@_create_dataclass_validator(models_event.questionnaire.QuestionnaireTextRow)
+@_create_dataclass_validator(
+    models_event.questionnaire.QuestionnaireTextRow,
+    models_event.questionnaire.QuestionnaireHeadingRow,
+    models_event.questionnaire.QuestionnairePanelRow,
+)
 def _questionnaire_text_row(
     val: CdEDBObject, argname: str = "", **kwargs: Any
 ) -> CdEDBObject:
@@ -3190,6 +3197,7 @@ def _questionnaire_field_row(
     models_event.questionnaire.FotoNotice,
     models_event.questionnaire.RegistrationNotes,
     models_event.questionnaire.TableOfContents,
+    models_event.questionnaire.MyData,
 )
 def _questionnaire_magic_row(
     val: CdEDBObject,
@@ -3212,7 +3220,7 @@ def _questionnaire_magic_row(
 
 
 @_create_dataclass_validator(
-    models_event.questionnaire.QuestionnaireRow,  # type: ignore[type-abstract]
+    models_event.questionnaire.QuestionnaireRow,
     allow_superfluous=True,
     pass_superfluous=True,
 )

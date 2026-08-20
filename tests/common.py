@@ -50,6 +50,7 @@ import webtest
 import webtest.utils
 from psycopg2.extras import RealDictCursor
 
+import cdedb.common.validation.types as vtypes
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
@@ -2529,7 +2530,9 @@ def make_cron_backend_proxy[B: AbstractBackend](cron: CronFrontend, backend: B) 
             attr = getattr(backend, name)
 
             @functools.wraps(attr)
-            def wrapper(persona_id: int | None, *args: Any, **kwargs: Any) -> Any:
+            def wrapper(
+                persona_id: vtypes.PersonaID | None, *args: Any, **kwargs: Any
+            ) -> Any:
                 rs = cron.make_request_state()
                 rs.user.persona_id = persona_id
                 return attr(rs, *args, **kwargs)

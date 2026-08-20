@@ -9,6 +9,7 @@ import collections
 import collections.abc
 import copy
 import csv
+import dataclasses
 import datetime
 import decimal
 import email
@@ -379,15 +380,37 @@ class CdEDBUndefined(jinja2.StrictUndefined):
 
     This matches our needs to catch `{{ undefined }}`, while still allowing
     comfortable `if` checks as well as `sidenav_active` comparisons.
+
+    For dataclasses, this behaves as the StrictUndefined and barks on everything,
+    so we do not miss errors like `{% if foo.bar %}` where foo does not have
+    a bar attribute.
     """
 
     # The parent class has incompatible type signatures
     # which strictly speaking would break the substitution principle.
     # It would be cleaner to subclass jinja2.Undefined instead
     # but this is more concise.
-    __eq__ = jinja2.Undefined.__eq__  # type: ignore[assignment]
-    __ne__ = jinja2.Undefined.__ne__  # type: ignore[assignment]
-    __bool__ = jinja2.Undefined.__bool__  # type: ignore[assignment]
+
+    def __eq__(self, other: Any) -> bool:  # type: ignore[override]
+        if self._undefined_obj is not jinja2.utils.missing and dataclasses.is_dataclass(
+            self._undefined_obj
+        ):
+            return super().__eq__(other)
+        return jinja2.Undefined.__eq__(self, other)
+
+    def __ne__(self, other: Any) -> bool:  # type: ignore[override]
+        if self._undefined_obj is not jinja2.utils.missing and dataclasses.is_dataclass(
+            self._undefined_obj
+        ):
+            return super().__ne__(other)
+        return jinja2.Undefined.__ne__(self, other)
+
+    def __bool__(self) -> bool:  # type: ignore[override]
+        if self._undefined_obj is not jinja2.utils.missing and dataclasses.is_dataclass(
+            self._undefined_obj
+        ):
+            return super().__bool__()
+        return jinja2.Undefined.__bool__(self)
 
 
 class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
@@ -2941,7 +2964,7 @@ def assembly_guard[F: Callable[..., Any]](fun: F) -> F:
 
 
 def ack_delete[F: Callable[..., Any]](
-    name: str = "ack_delete", passthrough: bool = False
+    name: str = "ack_delete", omit_error: bool = False, passthrough: bool = False
 ) -> Callable[[F], F]:
     """
     Check that an 'ack_delete' field was submitted before proceeding.
@@ -2949,6 +2972,7 @@ def ack_delete[F: Callable[..., Any]](
     The wrapped endpoint needs to check `rs.has_validation_errors()`.
 
     :param name: name of the 'ack_delete' field. Defaults to 'ack_delete'.
+    :param omit_error: If True, do not add an error on missing ack.
     :param passthrough: If True, the 'ack_delete' value is passed to the endpoint.
         Use this if you need to perform more involved checking of differentiate between
         validation errors due to missing ack and other validation errors.
@@ -2962,7 +2986,7 @@ def ack_delete[F: Callable[..., Any]](
             obj: AbstractFrontend, rs: RequestState, *args: Any, **kwargs: Any
         ) -> Any:
             ack = request_extractor(rs, {name: bool})[name]
-            if not ack:
+            if not ack and not omit_error:
                 rs.append_validation_error((name, ValueError(n_("Must be checked."))))
             if passthrough:
                 kwargs[name] = ack

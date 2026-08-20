@@ -98,9 +98,12 @@
     "questionnaire": {
         "QuestionnaireUsages.additional": [
             {
-                "text": "Bitte gib hier Deine Kleidungsw\u00fcnsche an.",
-                "title": "Akademiekleidung",
-                "role": 1
+                "role": 2,
+                "title": "Akademiekleidung"
+            },
+            {
+                "role": 1,
+                "text": "Bitte gib hier Deine Kleidungsw\u00fcnsche an."
             },
             {
                 "default_value": null,

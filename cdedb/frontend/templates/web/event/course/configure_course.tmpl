@@ -52,7 +52,7 @@
                                     info=gettext(
                                         "If checked, the description will be publicly visible on the course list."
                                         " Instructors will only be visible to logged in users."
-                                    ) if ambience['event'].course_list_visibility else gettext(
+                                    ) if ambience['event'].is_course_list_visible else gettext(
                                         "Once courselist visibility is activated, the description will be publicly"
                                         " visible if this is checked. Instructors will only be visible to logged in users."
                                     )) }}

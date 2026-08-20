@@ -664,16 +664,8 @@ class MlBaseFrontend(AbstractUserFrontend):
 
     @access("ml", modi={"POST"})
     @mailinglist_guard(allow_moderators=False)
-    @REQUESTdata("ack_delete")
-    def delete_mailinglist(
-        self, rs: RequestState, mailinglist_id: int, ack_delete: bool
-    ) -> Response:
+    def delete_mailinglist(self, rs: RequestState, mailinglist_id: int) -> Response:
         """Remove a mailinglist."""
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.show_mailinglist(rs, mailinglist_id)
 

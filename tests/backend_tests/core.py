@@ -1524,7 +1524,9 @@ class TestCoreBackend(BackendTest):
         self.login("anton")
         admin_key = self.key
         self.event.delete_registration(
-            self.key, 7, ("registration_parts", "course_choices", "registration_tracks")
+            self.key,
+            vtypes.RegistrationID(vtypes.ID(7)),
+            ("registration_parts", "course_choices", "registration_tracks"),
         )
         for u in USER_DICT.values():
             self.login("vera")

@@ -48,6 +48,7 @@ from cdedb.frontend.common import (
     REQUESTdata,
     REQUESTdatadict,
     access,
+    ack_delete,
     assembly_guard,
     check_validation as check,
     drow_name,
@@ -938,16 +939,14 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
 
     @access("assembly", modi={"POST"})
     @assembly_guard
-    @REQUESTdata("ack_delete")
+    @ack_delete()
     def delete_ballot(
-        self, rs: RequestState, assembly_id: int, ballot_id: int, ack_delete: bool
+        self,
+        rs: RequestState,
+        assembly_id: int,
+        ballot_id: int,
     ) -> Response:
         """Remove a ballot."""
-        if not ack_delete:
-            rs.append_validation_error((
-                "ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.show_ballot(rs, assembly_id, ballot_id)
         blockers = self.assemblyproxy.delete_ballot_blockers(rs, ballot_id)

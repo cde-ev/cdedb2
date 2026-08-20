@@ -139,7 +139,7 @@ def event(context: Context) -> int:
         'is_participant_list_visible': True,
         'is_course_assignment_visible': True,
         'is_cancelled': False,
-        'registration_text': make_counter(context, 'Veranstaltungsanmeldungstext'),
+        'registration_status_text': make_counter(context, 'Veranstaltungsanmeldungstext'),
         'orga_address': make_counter(context, 'OrgaEmail', suffix='@aka.cde-ev.de'),
         'participant_info': make_counter(context, 'Teilnehmerinformation'),
         'orgas': [persona(context) for _ in range(1 if context.quick else 10)],
@@ -303,12 +303,18 @@ def event(context: Context) -> int:
     fields = event.get_event(rs, ret).fields
     additional_questionnaire = [
         {
-            'role': const.QuestionnaireRowRole.text_only,
+            'role': const.QuestionnaireRowRole.heading,
             'title': make_counter(context, 'FragebogenÜberschrift'),
+        },
+        {
+            'role': const.QuestionnaireRowRole.text,
             'text': make_counter(context, 'FragebogenText'),
-        }
+        },
     ]
     registration_questionnaire: list[dict[str, Any]] = [
+        {
+            'role': const.QuestionnaireRowRole.my_data,
+        },
         {
             'role': const.QuestionnaireRowRole.part_selection,
         },
@@ -331,10 +337,13 @@ def event(context: Context) -> int:
             'role': const.QuestionnaireRowRole.registration_notes,
         },
         {
-            'role': const.QuestionnaireRowRole.text_only,
+            'role': const.QuestionnaireRowRole.heading,
             'title': make_counter(context, 'FragebogenÜberschrift'),
+        },
+        {
+            'role': const.QuestionnaireRowRole.text,
             'text': make_counter(context, 'FragebogenText'),
-        }
+        },
     ]
     event.set_questionnaire(rs, ret, const.QuestionnaireUsages.additional, additional_questionnaire)
     event.set_questionnaire(rs, ret, const.QuestionnaireUsages.registration, registration_questionnaire)

@@ -17,6 +17,7 @@ import lxml.etree
 import webtest
 from subman import SubscriptionError
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models
 import cdedb.models.event.constraint_violations as models_cv
@@ -65,12 +66,16 @@ from tests.common import (
     storage,
 )
 
+EventID = lambda x: vtypes.EventID(vtypes.ID(x))
+CourseID = lambda x: vtypes.CourseID(vtypes.ID(x))
+RegistrationID = lambda x: vtypes.RegistrationID(vtypes.ID(x))
+
 
 class TestEventFrontend(FrontendTest):
     def _set_payment_info(
         self,
-        reg_id: int,
-        event_id: int,
+        reg_id: vtypes.RegistrationID,
+        event_id: vtypes.EventID,
         amount_paid: decimal.Decimal,
         payment: datetime.date | None = None,
     ) -> None:
@@ -492,6 +497,62 @@ class TestEventFrontend(FrontendTest):
             log_expectation, "event", event_id=1, offset=self.EVENT_LOG_OFFSET
         )
 
+        with self.switch_user("annika"):
+            self.traverse(
+                "Veranstaltungen", "Große Testakademie 2222", "Betreuer verwalten"
+            )
+            f = self.response.forms['removecaretakerform3']
+            f["ack_delete"] = True
+            self.submit(f)
+            log_expectation.append({
+                "code": const.EventLogCodes.caretaker_removed,
+                "persona_id": USER_DICT['charly']['id'],
+                "submitted_by": USER_DICT['annika']['id'],
+            })
+
+        with self.switch_user("garcia"):
+            helper = "berta"
+            self.traverse(
+                "Veranstaltungen", "Große Testakademie 2222", "Rollen verwalten"
+            )
+            f = self.response.forms["addcheckinhelpersform"]
+            f["checkin_helper_ids"] = USER_DICT[helper]["DB-ID"]
+            self.submit(f)
+
+            log_expectation.append({
+                "code": const.EventLogCodes.checkin_helper_added,
+                "persona_id": USER_DICT[helper]['id'],
+                "submitted_by": USER_DICT['garcia']['id'],
+            })
+
+            with self.switch_user(helper):
+                self.traverse("Veranstaltungen", "Große Testakademie 2222", "Checkin")
+                f = self.response.forms["checkinform1"]
+                self.submit(f)
+
+                log_expectation.append({
+                    "code": const.EventLogCodes.checkin_added,
+                    "persona_id": USER_DICT["anton"]['id'],
+                    "submitted_by": USER_DICT[helper]['id'],
+                })
+
+            self.traverse(
+                "Veranstaltungen", "Große Testakademie 2222", "Rollen verwalten"
+            )
+            f = self.response.forms[f"removecheckinhelperform{USER_DICT[helper]['id']}"]
+            f["ack_delete"] = True
+            self.submit(f)
+
+            log_expectation.append({
+                "code": const.EventLogCodes.checkin_helper_removed,
+                "persona_id": USER_DICT[helper]['id'],
+                "submitted_by": USER_DICT['garcia']['id'],
+            })
+
+            self.assertLogEqual(
+                log_expectation, "event", event_id=1, offset=self.EVENT_LOG_OFFSET
+            )
+
     @as_users(
         "annika",
         "emilia",
@@ -678,7 +739,9 @@ class TestEventFrontend(FrontendTest):
         f = self.response.forms['coursefilterform']
         self.assertNotIn("active_only", f.fields)
         if self.user_in('annika'):
-            self.event.set_event(self.key, 1, {"is_course_state_visible": True})
+            self.event.set_event(
+                self.key, EventID(1), {"is_course_state_visible": True}
+            )
             self.traverse("Kursliste")
             f = self.response.forms['coursefilterform']
             f['track_ids'] = [2]
@@ -1313,7 +1376,7 @@ etc;anything else""",
         # so it can be deleted
         self.get("/event/event/1/questionnaire/config")
         f = self.response.forms['configurequestionnaireform']
-        f['delete_5'].checked = True
+        f['delete_6'].checked = True
         self.submit(f)
         self.get("/event/event/1/change")
         f = self.response.forms['changeeventform']
@@ -2047,7 +2110,7 @@ etc;anything else""",
         self.traverse("QR")
         self.response = save
 
-        event = self.event.get_event(self.key, 1)
+        event = self.event.get_event(self.key, EventID(1))
         persona = self.core.get_event_user(self.key, self.user['id'])
 
         qr_expectation = b"""\
@@ -2097,16 +2160,22 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("353,99 € auf folgendes Konto")
 
         # Payment checks with iban
-        self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("0"))
+        self._set_payment_info(
+            RegistrationID(1), event_id=EventID(1), amount_paid=decimal.Decimal("0")
+        )
         self.traverse({'href': '/event/event/1/registration/status'})
         self.assertPresence("Du musst noch den übrigen Betrag von 553,99 € bezahlen.")
         self.assertPresence("Bitte überweise 553,99 € auf folgendes Konto")
-        self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("100"))
+        self._set_payment_info(
+            RegistrationID(1), event_id=EventID(1), amount_paid=decimal.Decimal("100")
+        )
         self.traverse("Meine Anmeldung")
         self.assertPresence("Bitte überweise 453,99 € auf folgendes Konto")
         self.assertPresence("Du hast bereits 100,00 € bezahlt.")
         self.assertPresence("Du musst noch den übrigen Betrag von 453,99 € bezahlen.")
-        self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("1000"))
+        self._set_payment_info(
+            RegistrationID(1), event_id=EventID(1), amount_paid=decimal.Decimal("1000")
+        )
         self.traverse("Meine Anmeldung")
         self.assertNonPresence("Überweisung")
         self.assertNonPresence("Konto")
@@ -2114,7 +2183,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence(
             "Du hast 446,01 € mehr bezahlt als deinen Teilnahmebeitrag von 553,99 €."
         )
-        self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("200"))
+        self._set_payment_info(
+            RegistrationID(1), event_id=EventID(1), amount_paid=decimal.Decimal("200")
+        )
 
         # Payment checks without iban
         self.traverse({'href': '/event/event/1/change'})
@@ -2188,7 +2259,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['part2.status'] = const.RegistrationPartStati.not_applied
         f['part3.status'] = const.RegistrationPartStati.participant
         self.submit(f)
-        self._set_payment_info(1, event_id=1, amount_paid=decimal.Decimal("0"))
+        self._set_payment_info(
+            RegistrationID(1), event_id=EventID(1), amount_paid=decimal.Decimal("0")
+        )
         self.traverse("Meine Anmeldung")
         self.assertPresence("430,99 €")
         self.assertNonPresence("bereits bezahlt")
@@ -2279,7 +2352,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @event_keeper
     @as_users("annika")
     def test_registration_questionnaire(self) -> None:
-        event_id = 2
+        event_id = EventID(2)
         # Create new boolean registration fields
         event_update = {
             "registration_start": now(),
@@ -2348,6 +2421,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             event_id,
             const.QuestionnaireUsages.registration,
             [
+                {
+                    "role": const.QuestionnaireRowRole.my_data,
+                },
                 {
                     "role": const.QuestionnaireRowRole.part_selection,
                 },
@@ -2685,7 +2761,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         self.event.set_event(
             self.key,
-            1,
+            EventID(1),
             {
                 'parts': {
                     part_id: {
@@ -3078,7 +3154,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         with self.switch_user("garcia"):
             self.event.set_event(
                 self.key,
-                1,
+                EventID(1),
                 {
                     'is_participant_list_visible': True,
                     'use_additional_questionnaire': True,
@@ -3114,7 +3190,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         with self.switch_user("garcia"):
             reg_id = unwrap(
                 self.event.list_registrations(
-                    self.key, event_id=1, persona_id=self.user['id']
+                    self.key, event_id=EventID(1), persona_id=self.user['id']
                 ).keys()
             )
             self.event.set_registration(self.key, {'id': reg_id, 'list_consent': True})
@@ -3764,7 +3840,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @event_keeper
     @as_users("garcia")
     def test_multiedit_course_instructors(self) -> None:
-        event_id = 3
+        event_id = EventID(3)
         event = self.event.get_event(self.key, event_id)
         track_id = unwrap(event.tracks.keys())
         course_id = 8
@@ -4544,7 +4620,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     @as_users("garcia")
     def test_stats_matches(self) -> None:
         # Create a statistic part group containing all event parts
-        event_id = 1
+        event_id = EventID(1)
         self.get('/event/event/1/part/summary')
         self.traverse("Gruppen", "Veranstaltungsteilgruppe hinzufügen")
         f = self.response.forms['configurepartgroupform']
@@ -5522,32 +5598,32 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
 
         f = self.response.forms['configurequestionnaireform']
-        self.assertEqual("3", f['field_id_5'].value)
-        self.assertEqual("2", f['field_id_4'].value)
-        self.assertEqual("Weitere Überschrift", f['title_3'].value)
-        self.assertEqual("mit Text darunter", f['text_0'].value)
+        self.assertEqual("3", f['field_id_6'].value)
+        self.assertEqual("2", f['field_id_5'].value)
+        self.assertEqual("Weitere Überschrift", f['title_4'].value)
+        self.assertEqual("mit Text darunter", f['text_1'].value)
 
-        f['title_3'] = "Immernoch Überschrift"
-        f['text_0'] = "mehr Text darunter\nviel mehr"
+        f['title_4'] = "Immernoch Überschrift"
+        f['text_1'] = "mehr Text darunter\nviel mehr"
         self.submit(f)
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
 
         f = self.response.forms['configurequestionnaireform']
-        self.assertEqual("3", f['field_id_5'].value)
-        self.assertEqual("Hauswunsch", f['label_5'].value)
-        self.assertEqual("Immernoch Überschrift", f['title_3'].value)
-        self.assertEqual("mehr Text darunter\nviel mehr", f['text_0'].value)
+        self.assertEqual("3", f['field_id_6'].value)
+        self.assertEqual("Hauswunsch", f['label_6'].value)
+        self.assertEqual("Immernoch Überschrift", f['title_4'].value)
+        self.assertEqual("mehr Text darunter\nviel mehr", f['text_1'].value)
 
         f['delete_4'].checked = True
         self.submit(f)
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
 
         f = self.response.forms['configurequestionnaireform']
-        self.assertNotIn("field_id_5", f.fields)
+        self.assertNotIn("field_id_6", f.fields)
         self.assertEqual("Unterüberschrift", f['title_0'].value)
-        self.assertEqual("nur etwas Text", f['text_2'].value)
-        self.assertEqual("3", f['field_id_4'].value)
-        self.assertEqual("Hauswunsch", f['label_4'].value)
+        self.assertEqual("nur etwas Text", f['text_3'].value)
+        self.assertEqual("3", f['field_id_5'].value)
+        self.assertEqual("Hauswunsch", f['label_5'].value)
 
         f['create_-1'].checked = True
         f['role_-1'] = const.QuestionnaireRowRole.event_field
@@ -5565,9 +5641,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.traverse("Fragebogen konfigurieren")
 
         f = self.response.forms['configurequestionnaireform']
-        self.assertIn("field_id_5", f.fields)
-        self.assertEqual("4", f['field_id_5'].value)
-        self.assertEqual("Input", f['label_5'].value)
+        self.assertIn("field_id_6", f.fields)
+        self.assertEqual("4", f['field_id_6'].value)
+        self.assertEqual("Input", f['label_6'].value)
 
         # Add a row with a datetime field and check that the default value works.
         f['create_-1'] = True
@@ -5576,7 +5652,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['default_value_-1'] = expectation = "2025-05-24 23:47:32"
         self.submit(f)
         f = self.response.forms['configurequestionnaireform']
-        self.assertEqual(expectation + "+02:00", f['default_value_6'].value)
+        self.assertEqual(expectation + "+02:00", f['default_value_7'].value)
 
         execsql("UPDATE event.registrations SET fields = '{}';")
         self.traverse("Fragebogen")
@@ -5592,20 +5668,20 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             {'href': '/event/event/1/questionnaire/reorder'},
         )
         f = self.response.forms['reorderquestionnaireform']
-        self.assertEqual(f['order'].value, "0,1,2,3,4,5")
+        self.assertEqual(f['order'].value, "0,1,2,3,4,5,6")
         f['order'] = "Hallo, Kekse"
         self.submit(f, check_notification=False)
         self.assertValidationError('order', "Ungültige Eingabe für eine Ganzzahl.")
         # row index out of range
         f = self.response.forms['reorderquestionnaireform']
-        f['order'] = "-1,6"
+        f['order'] = "-1,100"
         self.submit(f, check_notification=False)
         self.assertValidationError(
             "order", "Jede Zeile darf nur genau einmal vorkommen."
         )
         # row included twice
         f = self.response.forms['reorderquestionnaireform']
-        f['order'] = "0,1,1,3,4,5"
+        f['order'] = "0,1,1,3,4,5,6"
         self.submit(f, check_notification=False)
         self.assertValidationError(
             "order", "Jede Zeile darf nur genau einmal vorkommen."
@@ -5619,13 +5695,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         )
         f = self.response.forms['reorderquestionnaireform']
         f['order'] = '5,3,1,0,2,4'
+        f['order'] = '6,4,2,0,1,3,5'
         self.submit(f)
         self.assertTitle("Fragebogen umordnen (Große Testakademie 2222)")
         self.traverse({'description': 'Fragebogen konfigurieren'})
         f = self.response.forms['configurequestionnaireform']
         self.assertTitle("Fragebogen konfigurieren (Große Testakademie 2222)")
         self.assertEqual("3", f['field_id_0'].value)
-        self.assertEqual("2", f['field_id_5'].value)
+        self.assertEqual("2", f['field_id_6'].value)
         self.assertEqual("1", f['field_id_2'].value)
         self.assertEqual("", f['field_id_3'].value)
 
@@ -6733,9 +6810,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Check that questionnaire is readonly
         self.traverse({'href': '/event/event/1/questionnaire/config'})
         f = self.response.forms['configurequestionnaireform']
-        self.assertTrue(f['readonly_1'].checked)
-        self.assertTrue(f['readonly_4'].checked)
+        self.assertTrue(f['readonly_2'].checked)
         self.assertTrue(f['readonly_5'].checked)
+        self.assertTrue(f['readonly_6'].checked)
 
         # Check visibility but un-modifiability for participants
         self.logout()
@@ -6884,7 +6961,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             self.traverse(
                 "Veranstaltungen", "Große Testakademie 2222", "Teilnahmebeiträge"
             )
-            for fee_id, fee in self.event.get_event(self.key, 1).fees.items():
+            for fee_id, fee in self.event.get_event(self.key, EventID(1)).fees.items():
                 if fee.title == "Externenzusatzbeitrag":
                     continue
                 f = self.response.forms[f'deleteeventfeeform{fee_id}']
@@ -7095,12 +7172,12 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         # Fifth: Reset Questionnaire and fields and try the full import again:
         self.event.set_questionnaire(
-            self.key, 1, const.QuestionnaireUsages.additional, []
+            self.key, EventID(1), const.QuestionnaireUsages.additional, []
         )
-        event = self.event.get_event(self.key, 1)
+        event = self.event.get_event(self.key, EventID(1))
         self.event.set_event(
             self.key,
-            1,
+            EventID(1),
             {
                 'fields': {id_: None for id_ in event.fields if id_ > 1000},
             },
@@ -7127,7 +7204,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
     @as_users("emilia")
     def test_part_groups(self) -> None:
-        event_id = 4
+        event_id = EventID(4)
         event = self.event.get_event(self.key, event_id)
         log_expectation = []
         offset = self.event.retrieve_log(self.key, EventLogFilter(event_id=event_id))[0]
@@ -7347,7 +7424,9 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
     @as_users("garcia")
     def test_questionnaire_csrf(self) -> None:
-        self.event.set_event(self.key, 1, {'use_additional_questionnaire': True})
+        self.event.set_event(
+            self.key, EventID(1), {'use_additional_questionnaire': True}
+        )
         self.traverse("Veranstaltungen", "Große Testakademie 2222", "Fragebogen")
         f = self.response.forms['questionnaireform']
         f['fields.lodge'] = "Test"
@@ -7484,7 +7563,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         self.assertPresence("Findet nicht statt", div="track8-attendees")
 
         # Cancel all other courses:
-        event = self.event.get_event(self.key, 4)
+        event = self.event.get_event(self.key, EventID(4))
         course_ids = self.event.list_courses(self.key, event.id)
         for course_id, title in course_ids.items():
             if title == "Akrobatik für Anfangende":
@@ -7779,7 +7858,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         test_events_shown()
 
         with self.switch_user("farin"):
-            self.event.balance_event(self.key, 2)
+            self.event.balance_event(self.key, EventID(2))
         self.submit(f, check_notification=False)
         test_events_shown(2)
 
@@ -7788,7 +7867,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         test_events_shown(1, 4)
 
         with self.switch_user("farin"):
-            self.event.unbalance_event(self.key, 2)
+            self.event.unbalance_event(self.key, EventID(2))
         self.submit(f, check_notification=False)
         test_events_shown(1, 2, 4)
 
@@ -7803,7 +7882,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         test_events_shown()
 
         with self.switch_user("anton"):
-            self.event.set_event_archived(self.key, 3)
+            self.event.set_event_archived(self.key, EventID(3))
         self.submit(f, check_notification=False)
         test_events_shown(3)
 
@@ -7812,8 +7891,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         test_events_shown()
 
         with self.switch_user("farin"):
-            self.event.balance_event(self.key, 1)
-            self.event.balance_event(self.key, 3)
+            self.event.balance_event(self.key, EventID(1))
+            self.event.balance_event(self.key, EventID(3))
         self.submit(f, check_notification=False)
         test_events_shown(3)
 
@@ -8116,8 +8195,8 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         )
 
         # Check that choices are correctly synced for each track group.
-        registration = self.event.get_registration(self.key, 1001)
-        event = self.event.get_event(self.key, 4)
+        registration = self.event.get_registration(self.key, RegistrationID(1001))
+        event = self.event.get_event(self.key, EventID(4))
         for tg in event.track_groups.values():
             choices_set = set()
             for track_id in tg.tracks.keys():
@@ -8130,7 +8209,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['track_num_choices_8'] = 10
         f['track_min_choices_8'] = 9
         self.submit(f)
-        event = self.event.get_event(self.key, 4)
+        event = self.event.get_event(self.key, EventID(4))
         for track in event.track_groups[1].tracks.values():
             self.assertEqual(track.num_choices, 10)
             self.assertEqual(track.min_choices, 9)
@@ -8274,7 +8353,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
         # Check that a CCS group can be recreated after being deleted, while
         #  compatible choices exist.
-        event_id = 4
+        event_id = EventID(4)
         event = self.event.get_event(self.key, event_id)
         self.get(f'/event/event/{event_id}/part/summary')
         self.traverse("Gruppen")
@@ -8325,14 +8404,14 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
     def test_ccs_cancelled_courses(self) -> None:
         self.event.set_event(
             self.key,
-            4,
+            EventID(4),
             {
                 'is_course_state_visible': True,
                 'is_participant_list_visible': True,
                 'is_course_assignment_visible': True,
             },
         )
-        course_id = 9
+        course_id = CourseID(9)
         course = self.event.get_course(self.key, course_id)
         self.event.set_course(
             self.key,
@@ -8381,7 +8460,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 },
             },
         }
-        self.event.set_event(self.key, 2, event_update)
+        self.event.set_event(self.key, EventID(2), event_update)
         self.traverse("Veranstaltungen", "CdE-Party", "Anmeldung konfigurieren")
         f = self.response.forms['configurequestionnaireform']
         f['create_-1'] = True
@@ -8489,7 +8568,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
                 'entries': None,
             },
         }
-        self.event.set_event(self.key, 1, {'fields': new_fields})
+        self.event.set_event(self.key, EventID(1), {'fields': new_fields})
         new_filter = models.CustomQueryFilter(
             id=-1,  # type: ignore[arg-type]
             event_id=1,  # type: ignore[arg-type]
@@ -8615,7 +8694,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
     @as_users("anton")
     def test_event_fee_stats(self) -> None:
-        event_id = 2
+        event_id = EventID(2)
         reg_ids = []
         reg_data: CdEDBObject = {
             "event_id": event_id,
@@ -8945,7 +9024,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         # Test subscribability of limited and limited exclusive lists.
         with self.switch_user("emilia"):
             persona_id = self.user['id']
-            event_id = 4
+            event_id = EventID(4)
             part_group_id = 10
             limited_ml = self.ml.get_mailinglist(self.key, 68)
             exclusive_ml = self.ml.get_mailinglist(self.key, 69)
@@ -9451,7 +9530,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
 
     @as_users("garcia")
     def test_change_instructor_no_choices(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         self.event.set_event(
             self.key,
             event_id,

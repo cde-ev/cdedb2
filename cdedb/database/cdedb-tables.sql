@@ -951,14 +951,15 @@ CREATE TABLE event.events (
         registration_hard_limit      timestamp WITH TIME ZONE,
         iban                         varchar,
         orga_address                 varchar,
-        registration_text            varchar,
+        registration_status_text     varchar,
         mail_text                    varchar,
         -- the next one is only visible to participants
-        participant_info            varchar,
+        participant_info             varchar,
         use_additional_questionnaire boolean NOT NULL DEFAULT False,
         -- orga remarks
         notes                        varchar,
         field_definition_notes       varchar,
+        questionnaire_notes          varchar,
         is_locked                    boolean NOT NULL DEFAULT False,
         is_visible                   boolean NOT NULL DEFAULT False, -- this is purely cosmetical
         is_course_list_visible       boolean NOT NULL DEFAULT False, -- this is purely cosmetical
@@ -1377,7 +1378,9 @@ CREATE TABLE event.questionnaire_text_rows (
         -- A customized heading for this element.
         title                   varchar,
         -- Additional formatted text that is displayed below the heading if any.
-        text                    varchar
+        text                    varchar,
+        -- For panel rows: The kind of panel ("info", "warning", "danger", etc.). See cdedb.constants.QuestionnairePanelKind.
+        panel_kind              integer
 );
 CREATE INDEX questionnaire_text_rows_event_id_kind_idx ON event.questionnaire_text_rows(event_id, kind);
 GRANT SELECT, INSERT, UPDATE, DELETE ON event.questionnaire_text_rows TO cdb_persona;

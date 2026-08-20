@@ -208,16 +208,24 @@ class QuestionnaireUsages(CdEIntEnum):
 
 @enum.unique
 class QuestionnaireRowRole(CdEIntEnum):
-    text_only = 1
+    # Text Rows.
+    text = 1
+    heading = 2
+    panel = 3
+    table_of_contents = 80
+
+    # Field Rows.
     event_field = 5
-    course_choices = 10
+
+    # Magic Rows.
+    my_data = 90
     part_selection = 20
     fee_preview = 30
+    course_choices = 10
     list_consent = 40
     mixed_lodging = 50
     foto_notice = 60
     registration_notes = 70
-    table_of_contents = 80
 
     def get_class(self) -> type["QuestionnaireRow"]:
         from cdedb.models.event.questionnaire import (  # noqa: PLC0415
@@ -225,6 +233,39 @@ class QuestionnaireRowRole(CdEIntEnum):
         )
 
         return QuestionnaireRow.get_class(self)
+
+    def optgroup_label(self) -> str:
+        return {
+            self.text: n_("Text"),
+            self.heading: n_("Text"),
+            self.panel: n_("Text"),
+            self.table_of_contents: n_("Text"),
+            self.event_field: n_("Custom Fields"),
+        }.get(self, n_("Special_[[QuestionnaireRowRoles]]"))
+
+
+@enum.unique
+class QuestionnairePanelKind(CdEIntEnum):
+    default = 10
+    info = 20
+    warning = 30
+    danger = 40
+
+    def get_icon(self) -> str:
+        return {
+            self.default: "tag",
+            self.info: "info-circle",
+            self.warning: "exclamation-triangle",
+            self.danger: "exclamation-circle",
+        }[self]
+
+    def get_panel_class(self) -> str:
+        return {
+            self.default: "panel-default",
+            self.info: "panel-info",
+            self.warning: "panel-warning",
+            self.danger: "panel-danger",
+        }[self]
 
 
 @enum.unique
@@ -559,6 +600,7 @@ class MailinglistRosterVisibility(CdEIntEnum):
 
     none = 1
     subscribable = 10
+    members = 15
     viewers = 20
 
 

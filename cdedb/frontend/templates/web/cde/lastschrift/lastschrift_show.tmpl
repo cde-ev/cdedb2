@@ -130,6 +130,12 @@
 
         <h2>{% trans %}Active Direct Debit Authorization{% endtrans %}</h2>
         {{ print_permit(lastschrifts[active_permit]) }}
+        <p>
+            {{ util.make_icon('info-circle') }}{{ nbsp -}}
+            {% trans management=util.href(util.mailto(MANAGEMENT_ADDRESS), gettext("member management team")) %}
+                In order to change the bank account or revoke the direct debit authorization, contact the {{ management }}.
+            {% endtrans %}
+        </p>
     {% else %}
         {% trans %}No active Direct Debit Authorization{% endtrans %}
         {% if "finance" in user.admin_views %} – {{ util.href(cdedblink('cde/lastschrift_create_form'), gettext("Create")) }}{% endif %}

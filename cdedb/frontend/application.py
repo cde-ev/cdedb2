@@ -18,6 +18,7 @@ import werkzeug.wrappers
 import werkzeug.wsgi
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+import cdedb.common.validation.types as vtypes
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.complaint import ComplaintBackend
 from cdedb.backend.core import CoreBackend
@@ -340,9 +341,9 @@ class Application(BaseApp):
                 user.realm_roles = realm_roles
 
                 # Insert orga and moderator status context
-                orga: set[int] = set()
-                caretaker: set[int] = set()
-                checkin_helper: set[int] = set()
+                orga: set[vtypes.EventID] = set()
+                caretaker: set[vtypes.EventID] = set()
+                checkin_helper: set[vtypes.EventID] = set()
                 if "event" in user.roles:
                     orga = self.eventproxy.orga_info(rs, user.persona_id)
                     caretaker = self.eventproxy.caretaker_info(rs, user.persona_id)

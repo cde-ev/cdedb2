@@ -100,7 +100,9 @@ class Mailinglist(CdEDataclass):
     roster_visibility: MailinglistRosterVisibility
     is_active: bool
 
-    moderators: set[vtypes.ID] = dataclasses.field(metadata=Meta.io_exclude.as_dict)
+    moderators: set[vtypes.PersonaID] = dataclasses.field(
+        metadata=Meta.io_exclude.as_dict
+    )
     whitelist: set[vtypes.Email] = dataclasses.field(
         metadata=(Meta.io_exclude | Meta.validate_creation_optional).as_dict
     )
@@ -326,13 +328,16 @@ class Mailinglist(CdEDataclass):
         )
 
     def get_subscription_policy(
-        self, rs: RequestState, bc: BackendContainer, persona_id: int
+        self, rs: RequestState, bc: BackendContainer, persona_id: vtypes.PersonaID
     ) -> SubscriptionPolicy:
         """Singularized wrapper for `get_subscription_policies`."""
         return self.get_subscription_policies(rs, bc, (persona_id,))[persona_id]
 
     def get_subscription_policies(
-        self, rs: RequestState, bc: BackendContainer, persona_ids: Collection[int]
+        self,
+        rs: RequestState,
+        bc: BackendContainer,
+        persona_ids: Collection[vtypes.PersonaID],
     ) -> SubscriptionPolicyMap:
         """Determine the SubscriptionPolicy for each given persona with the mailinglist.
 
@@ -425,7 +430,7 @@ class EventAssociatedMeta(GeneralMailinglist):
     """Metaclass for all event associated mailinglists."""
 
     # Allow empty event_id to mark legacy event-lists.
-    event_id: vtypes.ID | None = None
+    event_id: vtypes.EventID | None = None
 
     def periodic_cleanup(self, rs: RequestState) -> bool:
         """Disable periodic cleanup to freeze legacy event-lists."""
@@ -592,7 +597,10 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         return basic_restriction or additional_restriction
 
     def get_subscription_policies(
-        self, rs: RequestState, bc: BackendContainer, persona_ids: Collection[int]
+        self,
+        rs: RequestState,
+        bc: BackendContainer,
+        persona_ids: Collection[vtypes.PersonaID],
     ) -> SubscriptionPolicyMap:
         """Determine the SubscriptionPolicy for each given persona with the mailinglist.
 
@@ -668,7 +676,10 @@ class EventAssociatedExclusiveMailinglist(EventAssociatedMailinglist):
     """
 
     def get_subscription_policies(
-        self, rs: RequestState, bc: BackendContainer, persona_ids: Collection[int]
+        self,
+        rs: RequestState,
+        bc: BackendContainer,
+        persona_ids: Collection[vtypes.PersonaID],
     ) -> SubscriptionPolicyMap:
         """Determine the SubscriptionPolicy for each given persona with the mailinglist.
 

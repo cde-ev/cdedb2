@@ -134,8 +134,13 @@
 
             {{ util.form_input_select(
                 name="roster_visibility", label=gettext("Roster Visibility"),
-                entries=enums["MailinglistRosterVisibility"]|enum_entries(
-                        processing=gettext), actualreadonly=readonly) }}
+                entries=enums["MailinglistRosterVisibility"]|enum_entries(processing=gettext),
+                actualreadonly=readonly, info=gettext(
+                    "'%(subscribable)s' means everyone who can freely subscribe to this list."
+                    " For lists with moderated opt-in this means only the current subscribers."
+                )|format(
+                    subscribable=gettext(enums["MailinglistRosterVisibility"].subscribable|string)
+                )) }}
 
             {% if 'event_id' in additional_fields %}
                 {{ util.form_input_select(

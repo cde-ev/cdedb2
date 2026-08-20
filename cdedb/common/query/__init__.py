@@ -17,7 +17,7 @@ import enum
 import itertools
 import re
 from collections.abc import Callable, Collection, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, RequestState, unwrap
@@ -36,7 +36,6 @@ _CONFIG = Config()
 # The maximal number of sorting criteria that can be used for queries
 MAX_QUERY_ORDERS = 20
 
-type CourseMap = models.CdEDataclassMap[models.Course]
 type LodgementMap = models.CdEDataclassMap[models.Lodgement]
 type LodgementGroupMap = models.CdEDataclassMap[models.LodgementGroup]
 
@@ -364,8 +363,8 @@ class QueryScope(CdEIntEnum):
             return ret.split(".", 1)[1]
         return ret
 
-    def get_spec(self, *, event: Optional["models.Event"] = None,
-                 courses: CourseMap | None = None,
+    def get_spec(self, *, event: "models.Event | None" = None,
+                 courses: "models.CourseMap | None" = None,
                  lodgements: LodgementMap | None = None,
                  lodgement_groups: LodgementGroupMap | None = None,
                  ) -> QuerySpec:
@@ -1101,7 +1100,7 @@ def _combine_specs(spec_map: dict[int, QuerySpec], entity_ids: Collection[int],
     return ret
 
 
-def _get_course_choices(courses: CourseMap | None) -> QueryChoices:
+def _get_course_choices(courses: "models.CourseMap | None") -> QueryChoices:
     if courses is None:
         return {}
     return dict((c.id, c.label) for c in xsorted(courses.values()))
@@ -1121,7 +1120,7 @@ def _get_lodgement_group_choices(lodgement_groups: LodgementGroupMap | None,
 
 
 def make_registration_query_spec(event: "models.Event",
-                                 courses: CourseMap | None = None,
+                                 courses: "models.CourseMap | None" = None,
                                  lodgements: LodgementMap | None = None,
                                  lodgement_groups: LodgementGroupMap | None = None,
                                  ) -> QuerySpec:
@@ -1426,7 +1425,8 @@ def make_registration_query_spec(event: "models.Event",
     return spec
 
 
-def make_course_query_spec(event: "models.Event", courses: CourseMap | None = None,
+def make_course_query_spec(event: "models.Event",
+                           courses: "models.CourseMap | None" = None,
                            lodgements: LodgementMap | None = None,
                            lodgement_groups: LodgementGroupMap | None = None,
                            ) -> QuerySpec:
@@ -1572,7 +1572,7 @@ def make_course_query_spec(event: "models.Event", courses: CourseMap | None = No
 
 
 def make_lodgement_query_spec(event: "models.Event",
-                              courses: CourseMap | None = None,
+                              courses: "models.CourseMap | None" = None,
                               lodgements: LodgementMap | None = None,
                               lodgement_groups: LodgementGroupMap | None = None,
                               ) -> QuerySpec:

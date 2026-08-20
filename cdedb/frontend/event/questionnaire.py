@@ -49,7 +49,9 @@ if TYPE_CHECKING:
 class EventQuestionnaireMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.basic_read)
-    def configure_registration_form(self, rs: RequestState, event_id: int) -> Response:
+    def configure_registration_form(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         """Render form."""
         return self.configure_questionnaire_form(
             rs,
@@ -60,7 +62,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.basic_read)
     def configure_additional_questionnaire_form(
-        self, rs: RequestState, event_id: int
+        self, rs: RequestState, event_id: vtypes.EventID
     ) -> Response:
         """Render form."""
         return self.configure_questionnaire_form(
@@ -70,7 +72,10 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         )
 
     def _prepare_questionnaire_form(
-        self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        kind: const.QuestionnaireUsages,
     ) -> tuple[
         models.questionnaire.QuestionnaireContainer,
         models.questionnaire.Questionnaire,
@@ -91,7 +96,10 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         return (full_questionnaire, questionnaire, checksum)
 
     def configure_questionnaire_form(
-        self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        kind: const.QuestionnaireUsages,
     ) -> Response:
         full_questionnaire, questionnaire, checksum = self._prepare_questionnaire_form(
             rs, event_id, kind
@@ -126,7 +134,9 @@ class EventQuestionnaireMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
-    def configure_registration(self, rs: RequestState, event_id: int) -> Response:
+    def configure_registration(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         """Manipulate the questionnaire form.
 
         This allows the orgas to design a form without interaction with an
@@ -142,7 +152,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     def configure_additional_questionnaire(
-        self, rs: RequestState, event_id: int
+        self, rs: RequestState, event_id: vtypes.EventID
     ) -> Response:
         """Manipulate the additional questionnaire form.
 
@@ -179,7 +189,10 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         return {key: data[drow_name(key, drow_id)] for key, _ in spec} | {"id": drow_id}
 
     def _set_questionnaire(
-        self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        kind: const.QuestionnaireUsages,
     ) -> DefaultReturnCode:
         """Deduplicated code to set questionnaire rows of one kind."""
         checksum = request_extractor(rs, {"checksum": str | None})["checksum"]
@@ -241,7 +254,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
     def additional_questionnaire_form(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         preview: bool = False,
         internal: bool = False,
     ) -> Response:
@@ -295,7 +308,9 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         )
 
     @access("event", modi={"POST"})
-    def additional_questionnaire(self, rs: RequestState, event_id: int) -> Response:
+    def additional_questionnaire(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         """Fill in additional fields.
 
         Save data submitted in the additional questionnaire.
@@ -333,7 +348,10 @@ class EventQuestionnaireMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("kind")
     def reorder_questionnaire_form(
-        self, rs: RequestState, event_id: int, kind: const.QuestionnaireUsages
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        kind: const.QuestionnaireUsages,
     ) -> Response:
         """Render form."""
         if rs.has_validation_errors():
@@ -389,7 +407,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
     def reorder_questionnaire(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         kind: const.QuestionnaireUsages,
         order: list[int],
     ) -> Response:

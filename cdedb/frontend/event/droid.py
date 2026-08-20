@@ -7,6 +7,7 @@ endpoints related to managing orga apitokens.
 
 from werkzeug import Response
 
+import cdedb.common.validation.types as vtypes
 from cdedb.common import CdEDBObject, RequestState, merge_dicts, n_
 from cdedb.common.privileges import EventPrivileges
 from cdedb.frontend.common import (
@@ -22,7 +23,10 @@ class EventDroidMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.basic_read)
     def orga_token_summary(
-        self, rs: RequestState, event_id: int, new_token: str | None = None
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        new_token: str | None = None,
     ) -> Response:
         """
         Show an overview of existing orga tokens.
@@ -42,7 +46,9 @@ class EventDroidMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(EventPrivileges.token)
-    def create_orga_token_form(self, rs: RequestState, event_id: int) -> Response:
+    def create_orga_token_form(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         """Display the form for creating a new orga token."""
         return self.render(
             rs,
@@ -55,7 +61,7 @@ class EventDroidMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.token)
     @REQUESTdatadict(*OrgaToken.requestdict_fields(creation=True))
     def create_orga_token(
-        self, rs: RequestState, event_id: int, data: CdEDBObject
+        self, rs: RequestState, event_id: vtypes.EventID, data: CdEDBObject
     ) -> Response:
         """Create a new orga token. The new token will be displayed after a redirect."""
         data['event_id'] = event_id
@@ -73,7 +79,7 @@ class EventDroidMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.token)
     def change_orga_token_form(
-        self, rs: RequestState, event_id: int, orga_token_id: int
+        self, rs: RequestState, event_id: vtypes.EventID, orga_token_id: int
     ) -> Response:
         """Display the form for changing an existing orga token."""
         merge_dicts(rs.values, rs.ambience['orga_token'].to_database())
@@ -88,7 +94,11 @@ class EventDroidMixin(EventBaseFrontend):
     @event_guard(EventPrivileges.token)
     @REQUESTdatadict(*OrgaToken.requestdict_fields(creation=False))
     def change_orga_token(
-        self, rs: RequestState, event_id: int, orga_token_id: int, data: CdEDBObject
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        orga_token_id: vtypes.ID,
+        data: CdEDBObject,
     ) -> Response:
         """Change an existing orga token."""
         data['id'] = orga_token_id
@@ -104,7 +114,7 @@ class EventDroidMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.token)
     def delete_orga_token(
-        self, rs: RequestState, event_id: int, orga_token_id: int
+        self, rs: RequestState, event_id: vtypes.EventID, orga_token_id: vtypes.ID
     ) -> Response:
         """Delete an existing orga token.
 
@@ -124,7 +134,7 @@ class EventDroidMixin(EventBaseFrontend):
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.token)
     def revoke_orga_token(
-        self, rs: RequestState, event_id: int, orga_token_id: int
+        self, rs: RequestState, event_id: vtypes.EventID, orga_token_id: vtypes.ID
     ) -> Response:
         """Revoke an existing orga token, making it unusable."""
         code = self.eventproxy.revoke_orga_token(rs, orga_token_id)

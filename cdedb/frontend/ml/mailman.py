@@ -217,7 +217,7 @@ The original message as received by Mailman is attached.
             }
 
         # Special case admin mailinglist due to existence of many aliases
-        if db_list.address == 'admin@lists.cde-ev.de':
+        if db_list.address in self.conf["MAILMAN_NON_EXPLICIT_DESTINATION_LISTS"]:
             desired_settings['require_explicit_destination'] = False
 
         # Second, update values to mailman if changed
