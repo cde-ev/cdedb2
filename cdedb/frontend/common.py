@@ -2410,7 +2410,6 @@ class AntiCSRFMarker(NamedTuple):
 
 
 class FrontendEndpoint(Protocol):
-    access_list: AbstractSet[Role]
     anti_csrf: AntiCSRFMarker
     modi: AbstractSet[str]
 
@@ -2420,7 +2419,7 @@ class FrontendEndpoint(Protocol):
 
 
 def access[F: Callable[..., Any]](
-    *roles: Role,
+    *roles: Role | Roles,
     modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
     check_anti_csrf: bool | None = None,
     anti_csrf_token_name: str | None = None,
@@ -2439,19 +2438,28 @@ def access[F: Callable[..., Any]](
     :param anti_csrf_token_payload: If given, use this as the payload of the anti csrf
         token. Otherwise a sensible default will be used.
     """
-    access_list = set(roles)
 
     def decorator(fun: F) -> F:
         @functools.wraps(fun)
         def new_fun(
             obj: AbstractFrontend, rs: RequestState, *args: Any, **kwargs: Any
         ) -> werkzeug.Response:
-            if rs.user.all_roles & access_list:
+            if any(
+                role in rs.user.new_roles
+                if isinstance(role, Roles)
+                else role in rs.user.all_roles
+                for role in roles
+            ):
                 rs.ambience = reconnoitre_ambience(obj, rs)
                 return fun(obj, rs, *args, **kwargs)
             else:
-                expects_persona = any('droid' not in role for role in access_list)
-                if rs.user.all_roles == {"anonymous"} and expects_persona:
+                expects_persona = any(
+                    role & ~Roles.all_droid_roles()
+                    if isinstance(role, Roles)
+                    else 'droid' not in role
+                    for role in roles
+                )
+                if rs.user.new_roles == Roles.anonymous and expects_persona:
                     # Validation errors do not matter on session expiration,
                     # since we redirect to get anyway.
                     # In practice, this is mostly relevant for the anti csrf error.
@@ -2480,7 +2488,6 @@ def access[F: Callable[..., Any]](
                 _LOGGER.error(log_msg)
                 raise werkzeug.exceptions.Forbidden(rs.gettext(msg).format(**params))
 
-        new_fun.access_list = access_list  # type: ignore[attr-defined]
         new_fun.modi = modi  # type: ignore[attr-defined]
         new_fun.anti_csrf = AntiCSRFMarker(  # type: ignore[attr-defined]
             check_anti_csrf
