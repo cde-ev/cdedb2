@@ -1883,8 +1883,6 @@ PRIVILEGE_CHANGE_COMMON_FIELDS: TypeMapping = {
     'notes': str,
 }
 
-PRIVILEGE_CHANGE_OPTIONAL_FIELDS: TypeMapping = {k: bool | None for k in ADMIN_KEYS}
-
 
 @_add_typed_validator
 def _privilege_change(
@@ -1893,7 +1891,10 @@ def _privilege_change(
     val = _mapping(val, argname, **kwargs)
 
     val = _examine_dictionary_fields(
-        val, PRIVILEGE_CHANGE_COMMON_FIELDS, PRIVILEGE_CHANGE_OPTIONAL_FIELDS, **kwargs
+        val,
+        PRIVILEGE_CHANGE_COMMON_FIELDS,
+        {k: bool | None for k in Roles.all_admin_roles().markers()},
+        **kwargs,
     )
 
     return PrivilegeChange(val)

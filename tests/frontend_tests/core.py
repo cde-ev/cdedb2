@@ -24,7 +24,7 @@ from cdedb.common.exceptions import CryptographyError, ParameterInvalidError
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query import QueryOperators
 from cdedb.common.query.log_filter import ChangelogLogFilter
-from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, Realms
+from cdedb.common.roles import Realms, Roles, extract_roles
 from cdedb.filter import iban_filter
 from tests.common import (
     ANONYMOUS,
@@ -1334,12 +1334,8 @@ class TestCoreFrontend(FrontendTest):
         admin2 = USER_DICT["martin"]
         new_admin1 = USER_DICT["garcia"]
         new_admin2 = USER_DICT["berta"]
-        new_privileges1 = {
-            'is_ml_admin': True,
-        }
-        new_privileges2 = {
-            'is_assembly_admin': True,
-        }
+        new_privileges1 = Roles.ml_admin
+        new_privileges2 = Roles.assembly_admin
         # Grant new admin privileges.
         self._approve_privilege_change(admin1, admin2, new_admin1, new_privileges1)
         self.logout()
@@ -1371,28 +1367,13 @@ class TestCoreFrontend(FrontendTest):
     def test_privilege_change(self) -> None:
         # Grant new admin privileges.
         new_admin = USER_DICT["berta"]
-        new_privileges = {
-            'is_event_admin': True,
-            'is_assembly_admin': True,
-            'is_cdelokal_admin': True,
-        }
-        old_privileges = {
-            'is_meta_admin': False,
-            'is_core_admin': False,
-            'is_cde_admin': False,
-            'is_finance_admin': False,
-            'is_event_admin': False,
-            'is_assembly_admin': False,
-            'is_ml_admin': False,
-            'is_cdelokal_admin': False,
-        }
+        new_privileges = Roles.event_admin | Roles.assembly_admin | Roles.cdelokal_admin
         new_password = "ihsokdmfsod"
         new_admin_copy = self._approve_privilege_change(
             USER_DICT["martin"],
             USER_DICT["anton"],
             new_admin,
             new_privileges,
-            old_privileges,
             new_password=new_password,
         )
         user_mail = self.fetch_mail_content(0)
@@ -1405,14 +1386,11 @@ class TestCoreFrontend(FrontendTest):
         self.assertIn("Versammlungs-Admin", admins_mail)
         self.assertIn("CdElokal-Admin", admins_mail)
         # Check success.
-        self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
-        self.assertTitle(
-            "Privilegien ändern für {}".format(new_admin['default_name_format'])
-        )
-        f = self.response.forms['privilegechangeform']
-        old_privileges.update(new_privileges)
-        for k, v in old_privileges.items():
-            self.assertEqual(f[k].checked, v)
+        f = self.response.forms["quickpersonasearch"]
+        f["phrase"] = new_admin["DB-ID"]
+        self.submit(f)
+        for role in new_privileges:
+            self.assertPresence(self.gettext(str(role)), div="admin-realms")
 
         # Check that we can login with new credentials but not with old.
         self.logout()
@@ -1425,55 +1403,39 @@ class TestCoreFrontend(FrontendTest):
     @as_users("anton")
     def test_change_privileges_dependency_error(self) -> None:
         new_admin = USER_DICT["berta"]
-        self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
-        self.assertTitle(
-            "Privilegien ändern für {}".format(new_admin["default_name_format"])
-        )
+        self.get(f"/core/persona/{new_admin["id"]}/privileges")
+        self.assertTitle(f"Privilegien ändern für {new_admin["default_name_format"]}")
         f = self.response.forms['privilegechangeform']
-        f['is_finance_admin'] = True
-        f['notes'] = "Berta ist jetzt Praktikant der Finanz Vorstände."
+        f["roles"] = [Roles.finance_admin]
+        f["notes"] = "Berta ist jetzt Praktikant der Finanzvorstände."
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            "is_finance_admin",
+            "roles",
             "Diese Rolle kann nicht an nicht-CdE-Admin vergeben werden.",
+            index=list(Roles.all_admin_roles()).index(Roles.finance_admin),
         )
-        f['is_cde_admin'] = True
-        f['notes'] = "Dann ist Berta jetzt eben CdE und Finanz Admin."
+        f["roles"] = [Roles.cde_admin, Roles.finance_admin]
+        f["notes"] = "Dann ist Berta jetzt eben CdE- und Finanz-Admin."
         self.submit(f)
 
     def test_privilege_change_reject(self) -> None:
         # Grant new admin privileges.
         new_admin = USER_DICT["berta"]
-        new_privileges = {
-            'is_event_admin': True,
-            'is_assembly_admin': True,
-        }
-        old_privileges = {
-            'is_meta_admin': False,
-            'is_core_admin': False,
-            'is_cde_admin': False,
-            'is_finance_admin': False,
-            'is_event_admin': False,
-            'is_assembly_admin': False,
-            'is_ml_admin': False,
-        }
+        new_privileges = Roles.event_admin | Roles.assembly_admin
         self._reject_privilege_change(
             USER_DICT["anton"],
             USER_DICT["martin"],
             new_admin,
             new_privileges,
-            old_privileges,
         )
         self.assertNonPresence("E-Mail")
         # Check success.
-        self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
-        self.assertTitle(
-            "Privilegien ändern für {}".format(new_admin["default_name_format"])
-        )
-        f = self.response.forms['privilegechangeform']
-        # Check that old privileges are still active.
-        for k, v in old_privileges.items():
-            self.assertEqual(f[k].checked, v)
+
+        f = self.response.forms["quickpersonasearch"]
+        f["phrase"] = new_admin["DB-ID"]
+        self.submit(f)
+        for role in new_privileges:
+            self.assertNonPresence(self.gettext(str(role)), div="admin-realms")
 
     @as_users("anton")
     def test_privilege_change_realm_restrictions(self) -> None:
@@ -1514,10 +1476,7 @@ class TestCoreFrontend(FrontendTest):
     def test_archival_admin_requirement(self) -> None:
         # First grant admin privileges to new admin.
         new_admin = USER_DICT["berta"]
-        new_privileges = {
-            'is_core_admin': True,
-            'is_cde_admin': True,
-        }
+        new_privileges = Roles.core_admin | Roles.cde_admin
         new_password = "ponsdfsidnsdgj"
         new_admin_copy = self._approve_privilege_change(
             USER_DICT["anton"],
@@ -1537,10 +1496,16 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Der Benutzer ist archiviert.", div='archived')
 
     def test_privilege_change_self_approval(self) -> None:
-        user = USER_DICT["anton"]
-        new_privileges = {
-            'is_event_admin': False,
-        }
+        user = get_user("anton")
+        with self.switch_user(user):
+            current_roles = (
+                extract_roles(
+                    self.core.get_persona_status(self.key, user["id"]).as_dict(),
+                    introspection_only=True,
+                )
+                & Roles.all_admin_roles()
+            )
+        new_privileges = current_roles & ~Roles.event_admin
         self._initialize_privilege_change(user, user, user, new_privileges)
         self.login(user)
         self.traverse(
@@ -1570,26 +1535,19 @@ class TestCoreFrontend(FrontendTest):
         admin1: UserIdentifier,
         admin2: UserIdentifier,
         new_admin: UserObject,
-        new_privileges: dict[str, bool],
-        old_privileges: dict[str, bool] | None = None,
+        new_privileges: Roles,
         note: str = "For testing.",
     ) -> None:
         """Helper to initialize a privilege change."""
         self.login(admin1)
-        f = self.response.forms['quickpersonasearch']
-        f['phrase'] = new_admin["DB-ID"]
+        f = self.response.forms["quickpersonasearch"]
+        f["phrase"] = new_admin["DB-ID"]
         self.submit(f)
-        self.traverse({'href': '/core/persona/{}/privileges'.format(new_admin["id"])})
-        self.assertTitle(
-            "Privilegien ändern für {}".format(new_admin["default_name_format"])
-        )
-        f = self.response.forms['privilegechangeform']
-        if old_privileges:
-            for k, v in old_privileges.items():
-                self.assertEqual(v, f[k].checked)
-        for k, v in new_privileges.items():
-            f[k].checked = v
-        f['notes'] = note
+        self.traverse({"href": f"/core/persona/{new_admin["id"]}/privileges"})
+        self.assertTitle(f"Privilegien ändern für {new_admin["default_name_format"]}")
+        f = self.response.forms["privilegechangeform"]
+        f["roles"] = list(new_privileges)
+        f["notes"] = note
         self.submit(f)
         self.logout()
 
@@ -1598,15 +1556,12 @@ class TestCoreFrontend(FrontendTest):
         admin1: UserIdentifier,
         admin2: UserIdentifier,
         new_admin: UserObject,
-        new_privileges: dict[str, bool],
-        old_privileges: dict[str, bool] | None = None,
+        new_privileges: Roles,
         note: str = "For testing.",
         new_password: str | None = None,
     ) -> UserObject:
         """Helper to make a user an admin."""
-        self._initialize_privilege_change(
-            admin1, admin2, new_admin, new_privileges, old_privileges
-        )
+        self._initialize_privilege_change(admin1, admin2, new_admin, new_privileges)
         # Confirm privilege change.
         self.login(admin2)
         self.traverse(
@@ -1637,14 +1592,11 @@ class TestCoreFrontend(FrontendTest):
         admin1: UserIdentifier,
         admin2: UserIdentifier,
         new_admin: UserObject,
-        new_privileges: dict[str, bool],
-        old_privileges: dict[str, bool] | None = None,
+        new_privileges: Roles,
         note: str = "For testing.",
     ) -> None:
         """Helper to reject a privilege change."""
-        self._initialize_privilege_change(
-            admin1, admin2, new_admin, new_privileges, old_privileges
-        )
+        self._initialize_privilege_change(admin1, admin2, new_admin, new_privileges)
         # Confirm privilege change.
         self.login(admin2)
         self.traverse(
@@ -2252,25 +2204,12 @@ class TestCoreFrontend(FrontendTest):
 
     def test_admin_overview(self) -> None:
         # Makes Berta Event + CdE Admin
-        new_privileges = {
-            'is_event_admin': True,
-            'is_assembly_admin': True,
-        }
-        old_privileges = {
-            'is_meta_admin': False,
-            'is_core_admin': False,
-            'is_cde_admin': False,
-            'is_finance_admin': False,
-            'is_event_admin': False,
-            'is_assembly_admin': False,
-            'is_ml_admin': False,
-        }
+        new_privileges = Roles.event_admin | Roles.assembly_admin
         self._approve_privilege_change(
             USER_DICT["anton"],
             USER_DICT["martin"],
             USER_DICT["berta"],
             new_privileges,
-            old_privileges,
         )
         self.logout()
 

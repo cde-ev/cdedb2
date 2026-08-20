@@ -315,8 +315,8 @@
                             {% trans %}Admin Privileges{% endtrans %}
                         </dt>
                         <dd id="admin-realms">
-                            {% for key in admin_bits %}
-                                {{ util.privilege_icon(key) }}
+                            {% for admin_role in admin_bits %}
+                                {{ util.privilege_icon(admin_role) }}
                             {% else %}
                                 <i>{% trans %}None{% endtrans %}</i>
                             {% endfor %}

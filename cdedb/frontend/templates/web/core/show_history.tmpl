@@ -217,9 +217,9 @@
         {% endcall %}
 
         {% call history_field(gettext("Admin Privileges")) %}
-            {% call(entry) print_multifield_history(ADMIN_KEYS) %}
-                {% for key in ADMIN_KEYS if entry[key] %}
-                    {{ util.privilege_icon(key, desc=True) }}
+            {% call(entry) print_multifield_history(enums["Roles"].all_admin_roles().markers()) %}
+                {% for admin_role in enums["Roles"].all_admin_roles() if entry[admin_role.marker] %}
+                    {{ util.privilege_icon(admin_role, desc=True) }}
                 {% else %}
                     <i>{{ gettext("None") }}</i>
                 {% endfor %}

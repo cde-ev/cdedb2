@@ -25,7 +25,7 @@ from cdedb.common.exceptions import (
 )
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
-from cdedb.common.roles import Roles
+from cdedb.common.roles import Roles, extract_roles
 from cdedb.common.validation.validate import PERSONA_CDE_CREATION
 from tests.common import (
     ANONYMOUS,
@@ -1381,8 +1381,8 @@ class TestCoreBackend(BackendTest):
         data = {
             "persona_id": new_admin["id"],
             "notes": "Granting admin privileges for testing.",
-            "is_cde_admin": True,
-            "is_finance_admin": True,
+            Roles.cde_admin.marker: True,
+            Roles.finance_admin.marker: True,
         }
 
         change_id = self.core.initialize_privilege_change(self.key, data)
@@ -1391,6 +1391,9 @@ class TestCoreBackend(BackendTest):
         persona = self.core.get_persona_status(self.key, new_admin["id"])
         self.assertFalse(persona.is_cde_admin)
         self.assertFalse(persona.is_finance_admin)
+        persona_roles = extract_roles(persona.as_dict())
+        self.assertNotIn(Roles.cde_admin, persona_roles)
+        self.assertNotIn(Roles.finance_admin, persona_roles)
 
         self.login(admin2)
         self.core.finalize_privilege_change(
@@ -1400,6 +1403,9 @@ class TestCoreBackend(BackendTest):
         persona = self.core.get_persona_status(self.key, new_admin["id"])
         self.assertTrue(persona.is_cde_admin)
         self.assertTrue(persona.is_finance_admin)
+        persona_roles = extract_roles(persona.as_dict())
+        self.assertIn(Roles.cde_admin, persona_roles)
+        self.assertIn(Roles.finance_admin, persona_roles)
 
         self.login(admin1)
         core_log_expectation = [
@@ -1452,7 +1458,7 @@ class TestCoreBackend(BackendTest):
     def test_invalid_privilege_change(self) -> None:
         data = {
             "persona_id": USER_DICT["janis"]["id"],
-            "is_meta_admin": True,
+            Roles.meta_admin.marker: True,
             "notes": "For testing.",
         }
         with self.assertRaises(ValueError):
@@ -1460,7 +1466,7 @@ class TestCoreBackend(BackendTest):
 
         data = {
             "persona_id": USER_DICT["emilia"]["id"],
-            "is_core_admin": True,
+            Roles.core_admin.marker: True,
             "notes": "For testing.",
         }
         with self.assertRaises(ValueError):
@@ -1468,7 +1474,7 @@ class TestCoreBackend(BackendTest):
 
         data = {
             "persona_id": USER_DICT["berta"]["id"],
-            "is_finance_admin": True,
+            Roles.finance_admin.marker: True,
             "notes": "For testing.",
         }
         with self.assertRaises(ValueError):
@@ -1476,8 +1482,7 @@ class TestCoreBackend(BackendTest):
 
         data = {
             "persona_id": USER_DICT["ferdinand"]["id"],
-            "is_finance_admin": True,
-            "is_cde_admin": False,
+            Roles.cde_admin.marker: False,
             "notes": "For testing.",
         }
         with self.assertRaises(ValueError):

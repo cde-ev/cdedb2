@@ -2735,6 +2735,15 @@ def REQUESTdata[F: Callable[..., Any]](
                             kwargs[name] = vals
                         else:
                             kwargs[name] = check_validation(rs, type_, vals, name)
+                    elif isinstance(type_, type) and issubclass(type_, CdEIntFlag):
+                        vals = rs.request.values.getlist(name)
+                        rs.values.setlist(name, vals)
+                        combined = type_.union(
+                            validated
+                            for val in vals
+                            if (validated := check_validation(rs, type_, val, name))
+                        )
+                        kwargs[name] = combined
                     else:
                         rs.values[name] = val
                         if _postpone_validation:

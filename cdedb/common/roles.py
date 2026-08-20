@@ -36,10 +36,10 @@ class Roles(_Roles):
     ml_admin = "is_ml_admin", "ml"
     assembly_admin = "is_assembly_admin", "assembly"
 
+    finance_admin = "is_finance_admin", "cde_admin"
     auditor = "is_auditor", "cde"
     complaint_admin = "is_complaint_admin", "event"
     cdelokal_admin = "is_cdelokal_admin", "ml"
-    finance_admin = "is_finance_admin", "cde_admin"
 
     member = "is_member", "cde"
     searchable = "is_searchable", "member"

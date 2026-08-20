@@ -1093,10 +1093,12 @@ class CoreBaseBackend(AbstractBackend):
             or not {"realms", "purge"} & set(allow_specials)
         ):
             raise PrivilegeError(n_("Realm modification prevented."))
-        if set(data) & ADMIN_KEYS.keys() and (
+        if set(data) & set(Roles.all_admin_roles().markers()) and (
             "meta_admin" not in rs.user.roles or "admins" not in allow_specials
         ):
-            if any(data[key] for key in ADMIN_KEYS):
+            # TODO: check for actual modification?
+            #  This currently allows removal of admin bits.
+            if any(data[key] for key in Roles.all_admin_roles().markers()):
                 raise PrivilegeError(n_("Admin privilege modification prevented."))
         if set(data) & {"is_member", "trial_member", "honorary_member"} and (
             not ({"cde_admin", "core_admin"} & rs.user.roles)
@@ -1309,6 +1311,7 @@ class CoreBaseBackend(AbstractBackend):
                 raise ValueError(n_("Pending privilege change."))
 
             persona = self.get_total_persona(rs, data['persona_id'])
+            persona_roles = extract_roles(persona, introspection_only=True)
 
             # see also cdedb.frontend.templates.core.change_privileges
             # and change_privileges in cdedb.frontend.core
@@ -1316,11 +1319,12 @@ class CoreBaseBackend(AbstractBackend):
             errormsg = n_(
                 "User does not fit the requirements for this admin privilege."
             )
-            for admin, required in ADMIN_KEYS.items():
-                if data.get(admin):
-                    if data.get(required) is False:
-                        raise ValueError(errormsg)
-                    if not persona[required] and not data.get(required):
+            for admin_role in Roles.all_admin_roles():
+                if data.get(admin_role.marker, admin_role in persona_roles):
+                    if any(
+                        not data.get(required.marker, required in persona_roles)
+                        for required in admin_role.required_roles
+                    ):
                         raise ValueError(errormsg)
 
             self.core_log(

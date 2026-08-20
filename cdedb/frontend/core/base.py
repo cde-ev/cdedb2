@@ -2122,30 +2122,24 @@ class CoreBaseFrontend(AbstractFrontend):
             )
 
         status = self.coreproxy.get_persona_status(rs, rs.ambience['persona'].id)
-        merge_dicts(rs.values, status.as_dict())
+        persona_roles = extract_roles(status.as_dict(), introspection_only=True)
+        if "roles" not in rs.values:
+            rs.values.setlist("roles", list(persona_roles))
+
         return self.render(
             rs,
             "change_privileges",
-            {},
+            {"persona_roles": persona_roles},
             get_mandatory_form_fields(self.change_privileges),
         )
 
     @access("meta_admin", modi={"POST"})
-    @REQUESTdata(*ADMIN_KEYS, "notes")
+    @REQUESTdata("roles", "notes")
     def change_privileges(
         self,
         rs: RequestState,
         persona_id: int,
-        is_meta_admin: bool,
-        is_core_admin: bool,
-        is_cde_admin: bool,
-        is_finance_admin: bool,
-        is_event_admin: bool,
-        is_ml_admin: bool,
-        is_assembly_admin: bool,
-        is_cdelokal_admin: bool,
-        is_complaint_admin: bool,
-        is_auditor: bool,
+        roles: Roles,
         notes: str,
     ) -> Response:
         """Grant or revoke admin bits."""
@@ -2162,43 +2156,49 @@ class CoreBaseFrontend(AbstractFrontend):
             )
 
         reason_map = {
-            "is_cde_realm": rs.gettext("non-cde user"),
-            "is_event_realm": rs.gettext("non-event user"),
-            "is_ml_realm": rs.gettext("non-ml user"),
-            "is_assembly_realm": rs.gettext("non-assembly user"),
-            "is_cde_admin": rs.gettext("non-cde admin"),
+            Roles.cde: rs.gettext("non-cde user"),
+            Roles.event: rs.gettext("non-event user"),
+            Roles.ml: rs.gettext("non-ml user"),
+            Roles.assembly: rs.gettext("non-assembly user"),
+            Roles.cde_admin: rs.gettext("non-cde admin"),
         }
         persona = self.coreproxy.get_persona_status(rs, persona_id).as_dict()
+        persona_roles = extract_roles(persona, introspection_only=True)
         data = {
             "persona_id": persona_id,
             "notes": notes,
         }
-        for admin, required in ADMIN_KEYS.items():
-            if locals()[admin] != persona[admin]:
-                data[admin] = locals()[admin]
-            if data.get(admin):
-                err = (
-                    admin,
-                    ValueError(
-                        n_("Cannot grant this privilege to %(reason)s."),
-                        {"reason": reason_map.get(required, n_("this user"))},
-                    ),
-                )
-                if data.get(required) is False:
-                    rs.append_validation_error(err)
-                if not persona[required] and not data.get(required):
-                    rs.append_validation_error(err)
+        for admin_role in Roles.all_admin_roles():
+            if (admin_role in roles) != (admin_role in persona_roles):
+                data[admin_role.marker] = admin_role in roles
 
-        if "is_meta_admin" in data and data["persona_id"] == rs.user.persona_id:
+            if data.get(admin_role.marker, admin_role in persona_roles):
+                if any(
+                    not data.get(required.marker, required in persona_roles)
+                    for required in admin_role.required_roles
+                ):
+                    rs.append_validation_error((
+                        admin_role.marker,
+                        ValueError(
+                            n_("Cannot grant this privilege to %(reason)s."),
+                            {
+                                "reason": reason_map.get(
+                                    admin_role.required_roles, n_("this user")
+                                )
+                            },
+                        ),
+                    ))
+
+        if Roles.meta_admin in data and persona_id == rs.user.persona_id:
             rs.append_validation_error((
-                "is_meta_admin",
+                Roles.meta_admin.marker,
                 ValueError(n_("Cannot modify own meta admin privileges.")),
             ))
 
         if rs.has_validation_errors():
             return self.change_privileges_form(rs, persona_id)
 
-        if ADMIN_KEYS & data.keys():
+        if data.keys() & set(Roles.all_admin_roles().markers()):
             code = self.coreproxy.initialize_privilege_change(rs, data)
             rs.notify_return_code(
                 code,
@@ -2272,7 +2272,6 @@ class CoreBaseFrontend(AbstractFrontend):
                 "persona": personas[change["persona_id"]],
                 "submitter": personas[change["submitted_by"]],
                 "reviewer": personas[reviewer_id] if reviewer_id else None,
-                "admin_keys": ADMIN_KEYS,
             },
         )
 
@@ -2330,16 +2329,16 @@ class CoreBaseFrontend(AbstractFrontend):
                 self.do_mail(rs, "privilege_change_finalized", headers, params)
                 submitter = self.coreproxy.get_persona(rs, change["submitted_by"])
                 to = {"vorstand@cde-ev.de", self.conf["META_ADMIN_ADDRESS"]}
-                gained_privileges = [
+                gained_privileges = Roles.union(
                     privilege
-                    for privilege in ADMIN_KEYS
-                    if rs.ambience['privilege_change'].get(privilege) is True
-                ]
-                lost_privileges = [
+                    for privilege in Roles.all_admin_roles()
+                    if rs.ambience['privilege_change'].get(privilege.marker) is True
+                )
+                lost_privileges = Roles.union(
                     privilege
-                    for privilege in ADMIN_KEYS
-                    if rs.ambience['privilege_change'].get(privilege) is False
-                ]
+                    for privilege in Roles.all_admin_roles()
+                    if rs.ambience['privilege_change'].get(privilege.marker) is False
+                )
                 self.do_mail(
                     rs,
                     "privilege_change_notification",

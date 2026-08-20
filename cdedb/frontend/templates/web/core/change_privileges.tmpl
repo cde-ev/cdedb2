@@ -29,24 +29,10 @@
             {{ util.form_input_static(label=gettext("User"), small=True,
                                       value=ambience['persona']|persona_name) }}
             {# see also change_privileges in cdedb.frontend.core and initialize_privilege_change in cdedb.backend.core #}
-            {% if ambience['persona']['is_cde_realm'] %}
-                {{ util.form_input_checkbox(name="is_meta_admin", label=gettext("Meta admin"), small=True) }}
-                {{ util.form_input_checkbox(name="is_core_admin", label=gettext("Core admin"), small=True) }}
-                {{ util.form_input_checkbox(name="is_cde_admin", label=gettext("CdE admin"), small=True) }}
-                {{ util.form_input_checkbox(name="is_finance_admin", label=gettext("Finance admin"), small=True) }}
-                {{ util.form_input_checkbox(name="is_auditor", label=gettext("Auditor"), small=True) }}
-            {% endif %}
-            {% if ambience['persona']['is_event_realm'] %}
-                {{ util.form_input_checkbox(name="is_event_admin", label=gettext("Event admin"), small=True) }}
-                {{ util.form_input_checkbox(name="is_complaint_admin", label=gettext("Case archive admin"), small=True) }}
-            {% endif %}
-            {% if ambience['persona']['is_ml_realm'] %}
-                {{ util.form_input_checkbox(name="is_ml_admin", label=gettext("Mailinglist admin"), small=True) }}
-                {{ util.form_input_checkbox(name="is_cdelokal_admin", label=gettext("CdElokal admin"), small=True) }}
-            {% endif %}
-            {% if ambience['persona']['is_assembly_realm'] %}
-                {{ util.form_input_checkbox(name="is_assembly_admin", label=gettext("Assembly admin"), small=True) }}
-            {% endif %}
+            {% set admin_roles = enums["Roles"].all_admin_roles() %}
+            {% for admin_role in admin_roles if admin_role.required_roles in persona_roles or admin_role.required_roles in admin_roles %}
+                {{ util.form_input_checkbox(name="roles", value=admin_role, label=gettext(admin_role|string), small=True, errorname=admin_role.marker) }}
+            {% endfor %}
         </div>
         <div class="row">
             {{ util.form_input_textarea(name="notes", label=gettext("Notes"), small=True) }}
