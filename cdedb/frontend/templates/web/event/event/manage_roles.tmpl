@@ -187,9 +187,9 @@
                         {{ util.persona_anchor(checkin_helper, include_nickname=True) }}
                         {% if is_privileged_for("event/remove_checkin_helper", admin_view_to_consider="event_mgmt") %}
                             <form action="{{ cdedblink("event/remove_checkin_helper") }}" method="POST"
-                                  id="removcheckinhelperform{{ persona_id }}" class="hide-hover display-inline">
+                                  id="removecheckinhelperform{{ persona_id }}" class="hide-hover display-inline">
                                 {{ util.anti_csrf_token("event/remove_checkin_helper") }}
-                                {{ util.input_hidden(name="checkin_helper_id", value=persona_id) }}
+                                {{ util.input_hidden(name="checkin_helper_id", value=persona_id|cdedbid) }}
                                 {{ util.input_submit(title=gettext("Remove Checkin Helper"), icon="minus", label="",
                                                      aclass="btn btn-xs btn-danger list-button-float") }}
                                 {{ util.ack_delete("The checkin helper will be removed from the event.") }}

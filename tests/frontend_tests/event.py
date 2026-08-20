@@ -509,6 +509,46 @@ class TestEventFrontend(FrontendTest):
                 "persona_id": USER_DICT['charly']['id'],
                 "submitted_by": USER_DICT['annika']['id'],
             })
+
+        with self.switch_user("garcia"):
+            helper = "berta"
+            self.traverse(
+                "Veranstaltungen", "Große Testakademie 2222", "Rollen verwalten"
+            )
+            f = self.response.forms["addcheckinhelpersform"]
+            f["checkin_helper_ids"] = USER_DICT[helper]["DB-ID"]
+            self.submit(f)
+
+            log_expectation.append({
+                "code": const.EventLogCodes.checkin_helper_added,
+                "persona_id": USER_DICT[helper]['id'],
+                "submitted_by": USER_DICT['garcia']['id'],
+            })
+
+            with self.switch_user(helper):
+                self.traverse("Veranstaltungen", "Große Testakademie 2222", "Checkin")
+                f = self.response.forms["checkinform1"]
+                self.submit(f)
+
+                log_expectation.append({
+                    "code": const.EventLogCodes.checkin_added,
+                    "persona_id": USER_DICT["anton"]['id'],
+                    "submitted_by": USER_DICT[helper]['id'],
+                })
+
+            self.traverse(
+                "Veranstaltungen", "Große Testakademie 2222", "Rollen verwalten"
+            )
+            f = self.response.forms[f"removecheckinhelperform{USER_DICT[helper]['id']}"]
+            f["ack_delete"] = True
+            self.submit(f)
+
+            log_expectation.append({
+                "code": const.EventLogCodes.checkin_helper_removed,
+                "persona_id": USER_DICT[helper]['id'],
+                "submitted_by": USER_DICT['garcia']['id'],
+            })
+
             self.assertLogEqual(
                 log_expectation, "event", event_id=1, offset=self.EVENT_LOG_OFFSET
             )
