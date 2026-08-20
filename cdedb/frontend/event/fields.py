@@ -152,34 +152,30 @@ class EventFieldMixin(EventBaseFrontend):
 
     @access("event", modi={"POST"})
     @event_guard(EventPrivileges.basic_write | EventPrivileges.entities_write)
-    @REQUESTdata("field_ids", "reg_field_ids", "course_field_ids", "lodge_field_ids")
+    @REQUESTdata("reg_field_ids", "course_field_ids", "lodge_field_ids")
     @ack_delete()
     def prune_fields(
         self,
         rs: RequestState,
         event_id: vtypes.ID,
-        field_ids: Collection[vtypes.ID],
         reg_field_ids: Collection[vtypes.ID],
         course_field_ids: Collection[vtypes.ID],
         lodge_field_ids: Collection[vtypes.ID],
     ) -> Response:
 
-        field_ids = (
-            set(field_ids)
-            | set(reg_field_ids)
-            | set(course_field_ids)
-            | set(lodge_field_ids)
-        )
+        field_ids = set(reg_field_ids) | set(course_field_ids) | set(lodge_field_ids)
 
         if not field_ids <= rs.ambience['event'].fields.keys():
-            rs.append_validation_error((
-                "field_ids",
-                ValueError(n_("Unknown event field(s).")),
-            ))
+            err = ValueError(n_("Unknown event field(s)."))
+            if not reg_field_ids <= rs.ambience['event'].fields.keys():
+                rs.append_validation_error(("reg_field_ids", err))
+            if not course_field_ids <= rs.ambience['event'].fields.keys():
+                rs.append_validation_error(("course_field_ids", err))
+            if not lodge_field_ids <= rs.ambience['event'].fields.keys():
+                rs.append_validation_error(("lodge_field_ids", err))
 
         if not field_ids:
             for name in (
-                "field_ids",
                 "reg_field_ids",
                 "course_field_ids",
                 "lodge_field_ids",
