@@ -532,6 +532,9 @@ class TestEventFrontend(FrontendTest):
 
                 log_expectation.append({
                     "code": const.EventLogCodes.checkin_added,
+                    "change_note": self.event.retrieve_log(self.key, EventLogFilter())[
+                        1
+                    ][-1]["change_note"],
                     "persona_id": USER_DICT["anton"]['id'],
                     "submitted_by": USER_DICT[helper]['id'],
                 })
