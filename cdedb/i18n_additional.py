@@ -28,8 +28,12 @@ def main() -> None:
             if hasattr(enum_cls, "__subclasses__"):
                 subclasses.extend(enum_cls.__subclasses__())
             if enum_cls not in cdedb.enums.NON_TRANSLATED_ENUMS:
-                for enum_member in enum_cls:
-                    enum_strings.append(str(enum_member))
+                if hasattr(enum_cls, "_translated_members"):
+                    for enum_member in enum_cls._translated_members():
+                        enum_strings.append(str(enum_member))
+                else:
+                    for enum_member in enum_cls:
+                        enum_strings.append(str(enum_member))
 
     abstract, nonabstract = ConstraintViolation._get_subclasses()
     for cv_cls in abstract:

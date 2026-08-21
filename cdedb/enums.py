@@ -74,5 +74,5 @@ NON_TRANSLATED_ENUMS = {
     ConfidenceLevel,
     GenesisDecision,
     EventPrivileges,
-    Roles,
+    AdminViews,
 }

@@ -118,6 +118,10 @@ class Roles(_Roles):
             return DBRole.persona
         return DBRole.anonymous
 
+    @classmethod
+    def _translated_members(cls) -> Self:
+        return cls.all_admin_roles()
+
 
 class Realms(_Realms):
     """
