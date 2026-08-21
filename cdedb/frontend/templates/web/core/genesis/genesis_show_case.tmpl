@@ -63,16 +63,6 @@
         <dd>
             {{ ambience['genesis_case']['ctime']|datetime(formatstr="%d.%m.%Y %H:%M:%S") }}
         </dd>
-        <dt title="{% trans %}Rationale{% endtrans %}">
-            {% trans %}Rationale{% endtrans %}
-        </dt>
-        <dd id="notes">
-            {% if ambience['genesis_case']['is_upgrade'] %}
-                <i>{% trans %}Account upgrade requested by existing user. Please check for eligibility.{% endtrans %}</i>
-            {% else %}
-               {{ ambience['genesis_case']['notes'] }}
-            {% endif %}
-        </dd>
         <dt title="{% trans %}Reviewer{% endtrans %}">
             {% trans %}Reviewer{% endtrans %}
         </dt>
@@ -95,6 +85,19 @@
             </dd>
         </dt>
     </dl>
+
+    {% if ambience['genesis_case']['is_upgrade'] %}
+        <p class="text-muted">
+            {{ util.make_icon("info-circle") }}
+            {% trans %}
+                Account upgrade requested by existing user. Please check for eligibility.
+            {% endtrans %}
+        </p>
+    {% else %}
+        {% call util.bootstrap_panel(title=gettext("Rationale"), anid="notes") %}
+            {{ ambience['genesis_case']['notes']|linebreaks }}
+        {% endcall %}
+    {% endif %}
 
     <h4 class="heading-underline">{% trans %}Persona Information{% endtrans %}</h4>
     {% set persona = ambience['genesis_case'].persona %}

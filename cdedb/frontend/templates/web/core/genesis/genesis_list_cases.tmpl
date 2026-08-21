@@ -39,7 +39,7 @@
                     </div>
                     <div class="col-sm-5">
                         {% if entry['is_upgrade'] %}
-                            <p>{% trans %}Account upgrade requested by existing user. Please check for eligibility.{% endtrans %}</p>
+                            <p class="text-muted">{% trans %}Account upgrade requested by existing user. Please check for eligibility.{% endtrans %}</p>
                         {% elif entry['notes'] %}
                             <p class="textbox">{{ entry['notes'] }}</p>
                         {% endif %}
