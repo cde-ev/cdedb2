@@ -12817,7 +12817,7 @@ msgid ""
 "below)."
 msgstr ""
 "Da Du kein CdE-Mitglied bist, musst Du einen zusätzlichen "
-"\"Externenbeitrag\" in Höhe von %(additional_fee)s bezahlen (ereits in der "
+"\"Externenbeitrag\" in Höhe von %(additional_fee)s bezahlen (bereits in der "
 "folgenden Summe enthalten)."
 
 #: cdedb/frontend/event/registration.py:561

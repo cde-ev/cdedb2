@@ -233,18 +233,49 @@
         {% endcall %}
     {% elif row.name == "FeePreview" %}
         {% call fee_preview_panel() %}
-            <p class="text-info fw-bold" id="nonmember-surcharge">
-                {% if not persona["is_member"] %}
-                    {% trans %}
-                        Because you are not a CdE-Member, you might have to pay an additional "External Fee".
-                    {% endtrans %}
-                    {% if persona["is_cde_realm"] %}
-                        {% trans %}
-                            If you pay your membership fee before your registration fee, the additional fee will be waived.
-                        {% endtrans %}
+            {% if has_external_fees %}
+                <div id="nonmember-surcharge">
+                    {% if preview %}
+                        <p>
+                            <i>{% trans %}For former members:{% endtrans %}</i><br />
+                            {% trans %}
+                                Because you are not a CdE-Member, you might have to pay an additional "External Fee".
+                            {% endtrans %}
+                            {% trans %}
+                                If you pay your membership fee before your registration fee, the additional fee will be waived.
+                            {% endtrans %}
+                        </p>
+                        <p>
+                            <i>{% trans %}For externals:{% endtrans %}</i><br />
+                            {% trans %}
+                                Because you are not a CdE-Member, you might have to pay an additional "External Fee".
+                            {% endtrans %}
+                            <br />
+                            {% trans link=util.href(cdedblink("core/genesis_upgrade"), gettext("request a CdE membership")) %}
+                                You can also {{ link }} instead. Note that it can take a couple of days before we can process your request.
+                            {% endtrans %}
+                        </p>
+                    {% else %}
+                        <p>
+                            {% if not persona["is_member"] %}
+                                {% trans %}
+                                    Because you are not a CdE-Member, you might have to pay an additional "External Fee".
+                                {% endtrans %}
+                                {% if persona["is_cde_realm"] %}
+                                    {% trans %}
+                                        If you pay your membership fee before your registration fee, the additional fee will be waived.
+                                    {% endtrans %}
+                                {% else %}
+                                    <br />
+                                    {% trans link=util.href(cdedblink("core/genesis_upgrade"), gettext("request a CdE membership")) %}
+                                        You can also {{ link }} instead. Note that it can take a couple of days before we can process your request.
+                                    {% endtrans %}
+                                {% endif %}
+                            {% endif %}
+                        </p>
                     {% endif %}
-                {% endif %}
-            </p>
+                </div>
+            {% endif %}
         {% endcall %}
     {% elif row.name == "CourseChoices" %}
         {% if choice_objects %}

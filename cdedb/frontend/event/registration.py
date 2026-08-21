@@ -78,6 +78,7 @@ class RegisterParams(typing.TypedDict):
     involved_tracks: Collection[int] | None
     payment_parts: Collection[int] | None
     part_options: list[tuple[vtypes.ID, str]] | None
+    has_external_fees: bool
 
 
 class PaymentData(typing.TypedDict):
@@ -385,6 +386,12 @@ class EventRegistrationMixin(EventBaseFrontend):
                 for part in xsorted(rs.ambience['event'].parts.values())
             ]
 
+        # check if there are any external fees
+        has_external_fees = any(
+            fee.kind == const.EventFeeType.external and fee.amount
+            for fee in rs.ambience['event'].fees.values()
+        )
+
         return {
             "registration": registration,
             "persona": persona,
@@ -393,6 +400,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             "involved_tracks": involved_tracks,
             "payment_parts": payment_parts,
             "part_options": part_options,
+            "has_external_fees": has_external_fees,
         }
 
     @access("event")
@@ -548,23 +556,6 @@ class EventRegistrationMixin(EventBaseFrontend):
             age=age,
         )
 
-        msg = rs.gettext(
-            'Because you are not a CdE-Member, you will have to pay'
-            ' an additional "External Fee" of %(additional_fee)s'
-            ' (already included in the figure below).'
-        )
-        nonmember_msg = msg % {
-            'additional_fee': money_filter(
-                complex_fee.nonmember_surcharge, lang=rs.lang
-            )
-            or "",
-        }
-        if persona_id and self.coreproxy.verify_persona(rs, persona_id, "is_cde_realm"):
-            nonmember_msg += " " + rs.gettext(
-                "If you pay your membership fee before your registration fee,"
-                " the additional fee will be waived."
-            )
-
         fee_breakdown_template = """
 {%- import "web/event/generic.tmpl" as generic_event with context -%}
 {{- generic_event.fee_breakdown_by_kind(complex_fee) -}}
@@ -580,7 +571,6 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         ret = {
             'fee': fee_preview,
-            'nonmember': nonmember_msg,
             'show_nonmember': bool(complex_fee.nonmember_surcharge),
             'active_fees': complex_fee.active_fees,
             'visual_debug': complex_fee.visual_debug,
