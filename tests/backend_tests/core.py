@@ -25,7 +25,7 @@ from cdedb.common.exceptions import (
 )
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
-from cdedb.common.roles import Roles
+from cdedb.common.roles import Realms, Roles
 from cdedb.common.validation.validate import PERSONA_CDE_CREATION
 from tests.common import (
     ANONYMOUS,
@@ -722,7 +722,7 @@ class TestCoreBackend(BackendTest):
             "family_name": "Zeruda-Hime",
             "given_names": "Zelda",
             "username": 'zelda@example.cde',
-            "realm": "ml",
+            "realm": Realms.ml,
             "notes": "Some blah",
         }
         # Create the request anonymously.
@@ -795,7 +795,7 @@ class TestCoreBackend(BackendTest):
             is_event_realm=True,
         )
         case_data = {
-            'realm': "event",
+            'realm': Realms.event,
             'notes': "Some blah",
             'attachment_hash': None,
             'pevent_id': None,
@@ -813,7 +813,7 @@ class TestCoreBackend(BackendTest):
             1,
             len(
                 self.core.genesis_list_cases(
-                    self.key, realms=["event"], stati=(const.GenesisStati.to_review,)
+                    self.key, realms=Realms.event, stati=(const.GenesisStati.to_review,)
                 )
             ),
         )
@@ -821,12 +821,14 @@ class TestCoreBackend(BackendTest):
         assert case_id is not None
         expectation.id = case_id  # type: ignore[assignment]
         self.assertGreater(case_id, 0)
-        self.assertEqual((1, 'event'), self.core.genesis_verify(ANONYMOUS, case_id))
+        self.assertEqual(
+            (1, Realms.event), self.core.genesis_verify(ANONYMOUS, case_id)
+        )
         self.assertEqual(
             2,
             len(
                 self.core.genesis_list_cases(
-                    self.key, realms=["event"], stati=(const.GenesisStati.to_review,)
+                    self.key, realms=Realms.event, stati=(const.GenesisStati.to_review,)
                 )
             ),
         )
@@ -889,7 +891,7 @@ class TestCoreBackend(BackendTest):
             is_ml_realm=True,
         )
         case_data = {
-            'realm': "ml",
+            'realm': Realms.ml,
             'notes': "Some blah",
             'attachment_hash': None,
             'pevent_id': None,
@@ -907,7 +909,7 @@ class TestCoreBackend(BackendTest):
             1,
             len(
                 self.core.genesis_list_cases(
-                    self.key, realms=["ml"], stati=(const.GenesisStati.to_review,)
+                    self.key, realms=Realms.ml, stati=(const.GenesisStati.to_review,)
                 )
             ),
         )
@@ -915,17 +917,17 @@ class TestCoreBackend(BackendTest):
         assert case_id is not None
         expectation.id = case_id  # type: ignore[assignment]
         self.assertGreater(case_id, 0)
-        self.assertEqual((1, "ml"), self.core.genesis_verify(ANONYMOUS, case_id))
+        self.assertEqual((1, Realms.ml), self.core.genesis_verify(ANONYMOUS, case_id))
         self.assertEqual(
             2,
             len(
                 self.core.genesis_list_cases(
-                    self.key, realms=["ml"], stati=(const.GenesisStati.to_review,)
+                    self.key, realms=Realms.ml, stati=(const.GenesisStati.to_review,)
                 )
             ),
         )
         with self.assertRaises(RuntimeError):
-            self.core.genesis_modify_case_realm(self.key, case_id, "event")
+            self.core.genesis_modify_case_realm(self.key, case_id, Realms.event)
         value = self.core.genesis_get_case(self.key, case_id)
         value.ctime = ctime
         self.assertEqual(expectation, value)
@@ -982,7 +984,7 @@ class TestCoreBackend(BackendTest):
             is_cde_realm=True,
         )
         case_data = {
-            'realm': "cde",
+            'realm': Realms.cde,
             'notes': "Some blah",
             'attachment_hash': "really_cool_filename",
             'pevent_id': None,
@@ -1000,7 +1002,7 @@ class TestCoreBackend(BackendTest):
             1,
             len(
                 self.core.genesis_list_cases(
-                    self.key, realms=["cde"], stati=(const.GenesisStati.to_review,)
+                    self.key, realms=Realms.cde, stati=(const.GenesisStati.to_review,)
                 )
             ),
         )
@@ -1018,12 +1020,12 @@ class TestCoreBackend(BackendTest):
         expectation.id = case_id  # type: ignore[assignment]
         expectation.attachment_hash = case_data['attachment_hash']  # type: ignore[assignment]
         self.assertLess(0, case_id)
-        self.assertEqual((1, 'cde'), self.core.genesis_verify(ANONYMOUS, case_id))
+        self.assertEqual((1, Realms.cde), self.core.genesis_verify(ANONYMOUS, case_id))
         self.assertEqual(
             2,
             len(
                 self.core.genesis_list_cases(
-                    self.key, realms=["cde"], stati=(const.GenesisStati.to_review,)
+                    self.key, realms=Realms.cde, stati=(const.GenesisStati.to_review,)
                 )
             ),
         )
@@ -1073,11 +1075,11 @@ class TestCoreBackend(BackendTest):
         )
 
     def test_genesis_verify_multiple(self) -> None:
-        self.assertEqual((0, "core"), self.core.genesis_verify(ANONYMOUS, 123))
+        self.assertEqual((0, Realms.none()), self.core.genesis_verify(ANONYMOUS, 123))
         genesis_data = {
             "given_names": "Max",
             "family_name": "Mailschreiber",
-            "realm": "ml",
+            "realm": Realms.ml,
             "username": "max@mailschreiber.de",
             "notes": "Max möchte Mails mitbekommen.",
         }
@@ -1629,7 +1631,7 @@ class TestCoreBackend(BackendTest):
             "family_name": "Zeruda-Hime",
             "given_names": "Zelda",
             "username": 'zeldax@example.cde',
-            'realm': "ml",
+            'realm': Realms.ml,
             "notes": "Some blah",
         }
         case_id = self.core.genesis_request(ANONYMOUS, genesis_data)

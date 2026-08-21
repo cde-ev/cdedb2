@@ -2385,8 +2385,8 @@ class TestCoreFrontend(FrontendTest):
         self.get("/core/genesis/request")
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
-        self.assertEqual(f['realm'].value, "cde")
-        f['realm'] = "event"
+        self.assertEqual(f['realm'].value, str(Realms.cde))
+        f['realm'] = Realms.event
         f['given_names'] = "Zelda"
         f['family_name'] = "Zeruda-Hime"
         f['username'] = "zelda@example.cde"
@@ -2422,16 +2422,16 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesisdecisionform']
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
 
-    def _genesis_request(self, data: CdEDBObject, realm: str | None = None) -> None:
+    def _genesis_request(self, data: CdEDBObject, realm: Realms | None = None) -> None:
         if realm:
-            self.get('/core/genesis/request?realm=' + realm)
+            self.get('/core/genesis/request?realm=' + str(realm))
         else:
             self.get('/core/genesis/request')
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
         for field, entry in data.items():
             f[field] = entry
-        if data.get("realm") == "cde":
+        if data.get("realm") == Realms.cde:
             with open(self.testfile_dir / "form.pdf", 'rb') as datafile:
                 attachment_data = datafile.read()
             f['attachment'] = webtest.Upload(
@@ -2446,12 +2446,12 @@ class TestCoreFrontend(FrontendTest):
         'family_name': "Zeruda-Hime",
         'username': "zelda@example.cde",
         'notes': "Gimme!",
-        'realm': "ml",
+        'realm': Realms.ml,
     }
 
     EVENT_GENESIS_DATA = ML_GENESIS_DATA.copy()
     EVENT_GENESIS_DATA.update({
-        'realm': "event",
+        'realm': Realms.event,
         'gender': const.Genders.other,
         'birthday': "1987-06-05",
         'address': "An der Eiche",
@@ -2462,7 +2462,7 @@ class TestCoreFrontend(FrontendTest):
 
     CDE_GENESIS_DATA = EVENT_GENESIS_DATA.copy()
     CDE_GENESIS_DATA.update({
-        'realm': "cde",
+        'realm': Realms.cde,
     })
 
     def test_genesis_event(self) -> None:
@@ -2545,7 +2545,7 @@ class TestCoreFrontend(FrontendTest):
         self.logout()
         data = self.ML_GENESIS_DATA.copy()
         del data["realm"]
-        self._genesis_request(data, realm='ml')
+        self._genesis_request(data, realm=Realms.ml)
         self.login(test_user)
         self.traverse('Accountanfragen')
         self.assertTitle("Accountanfragen")
@@ -2911,7 +2911,7 @@ class TestCoreFrontend(FrontendTest):
         f['family_name'] = "Beispiel"
         f['username'] = "berta@example.cde"
         f['notes'] = "Gimme!"
-        f['realm'] = "ml"
+        f['realm'] = Realms.ml
         # Submit once
         self.submit(f, check_notification=False)
         self.assertPresence("E-Mail-Adresse bereits vorhanden.", div="notifications")
@@ -3031,18 +3031,18 @@ class TestCoreFrontend(FrontendTest):
     def _create_genesis_doppelganger(
         self,
         user: UserIdentifier | None = None,
-        realm: str = "ml",
+        realm: Realms = Realms.ml,
         unique_username: bool = False,
     ) -> UserObject:
         # Create a new request almost identical to the current or given user.
         user = get_user(user or self.user)
 
         # Decide on data fields depending on realm.
-        if realm == "ml":
+        if realm == Realms.ml:
             data_fields = self.ML_GENESIS_DATA
-        elif realm == "event":
+        elif realm == Realms.event:
             data_fields = self.EVENT_GENESIS_DATA
-        elif realm == "cde":  # pragma: no cover
+        elif realm == Realms.cde:  # pragma: no cover
             data_fields = self.CDE_GENESIS_DATA
         else:
             self.fail(f"Doppelganger test-helper not implemented for {realm!r}-realm.")
@@ -3208,7 +3208,7 @@ class TestCoreFrontend(FrontendTest):
         )
         self.assertPresence(
             "Ungültiger Benutzer für Aktualisierung."
-            " Füge zunächst folgenden Bereich hinzu: cde.",
+            " Füge zunächst folgenden Bereich hinzu: CdE.",
             div="notifications",
         )
         # Repair the request.
@@ -3350,7 +3350,9 @@ class TestCoreFrontend(FrontendTest):
     def test_genesis_insufficient_admin(self) -> None:
         existing_user = get_user("berta")
         with self.switch_user("anton"):
-            dg_data_1 = self._create_genesis_doppelganger(existing_user, realm="ml")
+            dg_data_1 = self._create_genesis_doppelganger(
+                existing_user, realm=Realms.ml
+            )
             self.traverse("Accountanfragen")
             self.traverse({"href": "/core/genesis/1001/show"})
             self.assertTitle(
@@ -3360,7 +3362,7 @@ class TestCoreFrontend(FrontendTest):
             self.assertPresence(dg_data_1["username"])
             self._decide_genesis_case(GenesisDecision.approve)
             dg_data_2 = self._create_genesis_doppelganger(
-                existing_user, realm="event", unique_username=True
+                existing_user, realm=Realms.event, unique_username=True
             )
             self.traverse("Accountanfragen")
             self.traverse({"href": "/core/genesis/1002/show"})
@@ -3371,7 +3373,7 @@ class TestCoreFrontend(FrontendTest):
             self.assertPresence(dg_data_2["username"])
             self._decide_genesis_case(GenesisDecision.approve)
         dg_data_3 = self._create_genesis_doppelganger(
-            existing_user, realm="event", unique_username=True
+            existing_user, realm=Realms.event, unique_username=True
         )
         self.traverse("Accountanfragen")
         self.traverse({"href": "/core/genesis/1003/show"})

@@ -35,7 +35,7 @@
             {% endif %}
             {{ util.form_input_text(name="username", label=gettext("E-Mail"), small=True, type="email") }}
             {{ util.form_input_static(label=gettext("Realm"), small=True,
-                value=util.realm_icon("is_" + ambience['genesis_case']['realm'] + "_realm", desc=True)) }}
+                value=util.realm_icon(ambience['genesis_case'].realm.realm_marker, desc=True)) }}
             {{ util.form_input_textarea(name="notes", label=gettext("Rationale"), small=True) }}
             {% if persona|hasattr("gender") %}
                 {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
@@ -68,7 +68,7 @@
                 {{ util.form_input_select(name="country", label=gettext("Country"), entries=COUNTRY_CODES, small=True,
                                           defaultvalue=DEFAULT_COUNTRY) }}
             {% endif %}
-            {% if ambience['genesis_case'].realm == "cde" %}
+            {% if ambience['genesis_case'].realm == enums["Realms"].cde %}
                 {{ generic.past_course_select(small=True) }}
             {% endif %}
             {{ util.form_input_submit(label=gettext("Save"), small=True, cancellink=cdedblink("core/genesis_show_case")) }}

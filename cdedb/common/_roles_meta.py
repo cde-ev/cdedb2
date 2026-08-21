@@ -68,9 +68,12 @@ class _Realms(CdEIntFlag, metaclass=_RealmsMeta):
     _implied_realms: Self
 
     def __new__(
-        cls, realm_role: RealmRole, admin_role: "Roles", *implied_realms: str
+        cls,
+        value: int,
+        realm_role: RealmRole,
+        admin_role: "Roles",
+        *implied_realms: str,
     ) -> Self:
-        value = 2 ** len(cls.__members__)
         obj = int.__new__(cls, value)
         obj._value_ = value
         obj.role = realm_role

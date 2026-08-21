@@ -169,10 +169,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 return basic_redirect(rs, wants)
 
             # genesis cases
-            genesis_realms = []
-            for realm in models.GenesisCase.available_realms:
-                if {"core_admin", f"{realm}_admin"} & rs.user.roles:
-                    genesis_realms.append(realm)
+            genesis_realms = rs.user.new_roles.get_genesis_realms()
             if genesis_realms and AdminViews.genesis in rs.user.admin_views:
                 data = self.coreproxy.genesis_list_cases(
                     rs, stati=(const.GenesisStati.to_review,), realms=genesis_realms

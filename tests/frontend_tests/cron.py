@@ -15,6 +15,7 @@ import cdedb.database.constants as const
 import cdedb.models.complaint as models_complaint
 from cdedb.common import CdEDBObject, RequestState, nearly_now, now
 from cdedb.common.query.log_filter import EventLogFilter
+from cdedb.common.roles import Realms
 from cdedb.common.sorting import xsorted
 from tests.common import CronTest, event_keeper, execsql, prepsql, storage
 
@@ -68,7 +69,7 @@ def format_insert_sql(table: str, data: SQL_DATA) -> str:
 def genesis_template(**kwargs: Any) -> str:
     defaults: SQL_DATA = {
         'ctime': now(),
-        'realm': "ml",
+        'realm': Realms.ml,
         # This seems like a mypy bug:
         'status': const.GenesisStati.to_review.value,
         'username': "zaphod@example.cde",

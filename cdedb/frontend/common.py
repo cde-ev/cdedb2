@@ -128,7 +128,6 @@ from cdedb.common.exceptions import (
     PrivilegeError,
     ValidationWarning,
 )
-from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts, TransactionType
@@ -479,13 +478,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'DEFAULT_COUNTRY': self.conf["DEFAULT_COUNTRY"],
             'AdminViews': AdminViews,
             'EntitySorter': EntitySorter,
-            'roles_allow_genesis_management': lambda roles: (
-                roles
-                & (
-                    {'core_admin'}
-                    | set(f"{realm}_admin" for realm in REALM_SPECIFIC_GENESIS_FIELDS)
-                )
-            ),
             'unwrap': unwrap,
             'MANAGEMENT_ADDRESS': self.conf['MANAGEMENT_ADDRESS'],
             'MAX_QUERY_ORDERS': query_mod.MAX_QUERY_ORDERS,
