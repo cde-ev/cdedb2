@@ -24,6 +24,7 @@ import cdedb.models.event.constraint_violations as models_cv
 from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME,
     IGNORE_WARNINGS_NAME,
+    AdminViews,
     CdEDBObject,
     now,
     unwrap,
@@ -32,7 +33,6 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
-from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.common.sorting import xsorted
 from cdedb.filter import datetime_filter, iban_filter
 from cdedb.frontend.common import (
@@ -278,7 +278,7 @@ class TestEventFrontend(FrontendTest):
 
     @as_users("anton")
     def test_event_admin_views(self) -> None:
-        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
+        self.app.set_cookie(AdminViews.cookie_name(), "")
 
         self.traverse({'href': '/event'})
         self._click_admin_view_button(

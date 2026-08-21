@@ -128,11 +128,11 @@
 
 {% block adminviews %}
     {{ util.admin_views_toggle((
-            (gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user"], ["core_user"]),
-            (gettext("User Review"), ["user_review", "genesis"], None),
-            (gettext("Admin Administration"), ["meta_admin"], None),
-            (gettext("Core Administration"), ["core"], None),
-            (gettext("Auditor"), ["auditor"], None),
-            (gettext("Complaints"), ["complaint"], None),
+            (gettext("User Administration"), AdminViews.all_user_views(), AdminViews.core_user),
+            (gettext("User Review"), AdminViews.user_review.__or__(AdminViews.genesis), None),
+            (gettext("Admin Administration"), AdminViews.meta_admin, None),
+            (gettext("Core Administration"), AdminViews.core, None),
+            (gettext("Auditor"), AdminViews.auditor, None),
+            (gettext("Complaints"), AdminViews.complaint, None),
         )) }}
 {% endblock %}

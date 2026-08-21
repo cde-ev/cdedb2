@@ -463,14 +463,14 @@
 {% block adminviews %}
     {% if ambience['event'].id in (user.orga.union(user.caretaker)) %}
         {{ util.admin_views_toggle((
-                (gettext("Event Administration"), ["event_mgmt", "event_list"], ["event_mgmt"]),
-                (gettext("Finance Administration"), ["finance"], None),
+                (gettext("Event Administration"), AdminViews.event_mgmt.__or__(AdminViews.event_list), AdminViews.event_mgmt),
+                (gettext("Finance Administration"), AdminViews.finance, None),
             )) }}
     {% else %}
         {{ util.admin_views_toggle((
-                (gettext("Event Administration"), ["event_mgmt", "event_list"], ["event_mgmt"]),
-                (gettext("Orga Controls"), ["event_orga"], None),
-                (gettext("Finance Administration"), ["finance"], None),
+                (gettext("Event Administration"), AdminViews.event_mgmt.__or__(AdminViews.event_list), AdminViews.event_mgmt),
+                (gettext("Orga Controls"), AdminViews.event_orga, None),
+                (gettext("Finance Administration"), AdminViews.finance, None),
             )) }}
     {% endif %}
 {% endblock %}

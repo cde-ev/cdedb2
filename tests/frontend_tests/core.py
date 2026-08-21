@@ -13,6 +13,7 @@ import cdedb.models.droid as model_droid
 import cdedb.models.event as models_event
 from cdedb.common import (
     IGNORE_WARNINGS_NAME,
+    AdminViews,
     CdEDBObject,
     GenesisDecision,
     PrivilegeError,
@@ -427,7 +428,7 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("vera")
     def test_toggle_admin_views(self) -> None:
-        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
+        self.app.set_cookie(AdminViews.cookie_name(), "")
         # Core Administration
         self.get('/')
         self.assertNoLink("/core/meta")

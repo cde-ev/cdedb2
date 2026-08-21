@@ -27,6 +27,7 @@ from cdedb.backend.ml import MlBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
     IGNORE_WARNINGS_NAME,
+    AdminViews,
     CdEDBObject,
     Realm,
     RequestState,
@@ -41,7 +42,6 @@ from cdedb.common.exceptions import (
     QuotaException,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, roles_to_db_role
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -362,7 +362,7 @@ class Application(BaseApp):
                 user.moderator = moderator
                 user.presider = presider
                 user.init_admin_views_from_cookie(
-                    request.cookies.get(ADMIN_VIEWS_COOKIE_NAME, '')
+                    request.cookies.get(AdminViews.cookie_name(), "")
                 )
 
             try:

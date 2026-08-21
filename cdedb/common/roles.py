@@ -379,180 +379,107 @@ PERSONA_DEFAULTS = {
     'donation': None,
 }
 
-#: Map of available privilege levels to those present in the SQL database
-#: (where we have less differentiation for the sake of simplicity).
-#:
-#: This is an ordered dict, so that we can select the highest privilege
-#: level.
-if TYPE_CHECKING:
-    role_map_type = collections.OrderedDict[Role, str]
-else:
-    role_map_type = collections.OrderedDict
 
-#: List of all roles we consider admin roles. Changes in these roles must be
-#: approved by two meta admins in total. Values are required roles.
-#: Translation of keys is needed for the privilege change page.
-# TODO move to PersonaStatus dataclass
-ADMIN_KEYS = {
-    n_("is_meta_admin"): "is_cde_realm",
-    n_("is_core_admin"): "is_cde_realm",
-    n_("is_cde_admin"): "is_cde_realm",
-    n_("is_finance_admin"): "is_cde_admin",
-    n_("is_event_admin"): "is_event_realm",
-    n_("is_ml_admin"): "is_ml_realm",
-    n_("is_assembly_admin"): "is_assembly_realm",
-    n_("is_cdelokal_admin"): "is_ml_realm",
-    n_("is_complaint_admin"): "is_event_realm",
-    n_("is_auditor"): "is_cde_realm",
-}
+class AdminViews(_AdminViews):
+    @classmethod
+    def cookie_name(cls) -> str:
+        return "enabled_admin_views"
 
-#: List of all admin roles who actually have a corresponding realm with a user role.
-# TODO move to PersonaStatus dataclass
-REALM_ADMINS = {"core_admin", "cde_admin", "event_admin", "ml_admin", "assembly_admin"}
+    user_review = Roles.core_admin, Roles.cde_admin, Roles.event_admin
+    genesis = tuple(Roles.all_genesis_roles())
 
-#: All admin roles. Have privileged access to user data.
-# TODO move to PersonaStatus dataclass
-ALL_ADMINS = {
-    *REALM_ADMINS,
-    "meta_admin",
-    "finance_admin",
-    "cdelokal_admin",
-    "complaint_admin",
-    "auditor",
-}
+    core_user = Roles.core_admin
+    cde_user = Roles.cde_admin, Roles.core_admin
+    event_user = Roles.event_admin, Roles.core_admin
+    ml_user = Roles.ml_admin, Roles.core_admin
+    assembly_user = Roles.assembly_admin, Roles.core_admin
 
-# TODO move to PersonaStatus dataclass
-DB_ROLE_MAPPING: role_map_type = collections.OrderedDict((
-    # admin
-    ("meta_admin", "cdb_admin"),
-    ("core_admin", "cdb_admin"),
-    ("cde_admin", "cdb_admin"),
-    ("ml_admin", "cdb_admin"),
-    ("assembly_admin", "cdb_admin"),
-    ("event_admin", "cdb_admin"),
-    ("finance_admin", "cdb_admin"),
-    ("cdelokal_admin", "cdb_admin"),
-    ("complaint_admin", "cdb_admin"),
-    # member
-    ("searchable", "cdb_member"),
-    ("member", "cdb_member"),
-    ("cde", "cdb_member"),
-    ("assembly", "cdb_member"),
-    ("auditor", "cdb_member"),
-    # persona
-    ("event", "cdb_persona"),
-    ("ml", "cdb_persona"),
-    ("persona", "cdb_persona"),
-    ("droid", "cdb_persona"),
-    # anonymous
-    ("anonymous", "cdb_anonymous"),
-))
+    meta_admin = Roles.meta_admin
 
+    core = Roles.core_admin
+    ml_mgmt_core = Roles.core_admin
+    ml_mod_core = Roles.core_admin
 
-# TODO move to PersonaStatus dataclass
-def roles_to_db_role(roles: set[Role]) -> str:
-    """Convert a set of application level roles into a database level role."""
-    for role in DB_ROLE_MAPPING:
-        if role in roles:
-            return DB_ROLE_MAPPING[role]
+    complaint = Roles.complaint_admin  # , RealmRoles.complaint_enforcer
 
-    raise RuntimeError(n_("Could not determine any db role."))
+    past_event = Roles.cde_admin
+    ml_mgmt_cde = Roles.cde_admin
+    ml_mod_cde = Roles.cde_admin
 
+    finance = Roles.finance_admin
 
-ADMIN_VIEWS_COOKIE_NAME = "enabled_admin_views"
+    event_mgmt = Roles.event_admin
+    event_list = Roles.event_admin  # , RealmRoles.event_helper
+    event_orga = (
+        Roles.event_admin,
+        Roles.finance_admin,
+        Roles.auditor,
+    )  # , RealmRoles.event_helper
+    ml_mgmt_event = Roles.event_admin
+    ml_mod_event = Roles.event_admin
 
-#: every admin view with one admin role per row (except of genesis)
-# TODO move to PersonaStatus dataclass
-ALL_ADMIN_VIEWS: set[AdminView] = {
-    "meta_admin",
-    "core_user", "core", "user_review", "ml_mgmt_core", "ml_mod_core",
-    "complaint",
-    "cde_user", "past_event", "ml_mgmt_cde", "ml_mod_cde",
-    "finance",
-    "event_user", "event_mgmt", "event_list", "event_orga",
-    "ml_mgmt_event", "ml_mod_event",
-    "ml_user", "ml_mgmt", "ml_mod",
-    "ml_mgmt_cdelokal", "ml_mod_cdelokal",
-    "assembly_user", "assembly_mgmt", "assembly_presider",
-    "ml_mgmt_assembly", "ml_mod_assembly",
-    "auditor",
-    "genesis",
-}  # fmt: skip
+    ml_mgmt = Roles.ml_admin
+    ml_mod = Roles.ml_admin
 
-# TODO move to PersonaStatus dataclass
-ALL_MOD_ADMIN_VIEWS: set[AdminView] = {
-    "ml_mod",
-    "ml_mod_core",
-    "ml_mod_cde",
-    "ml_mod_event",
-    "ml_mod_cdelokal",
-    "ml_mod_assembly",
-}
+    ml_mgmt_cdelokal = Roles.cdelokal_admin
+    ml_mod_cdelokal = Roles.cdelokal_admin
 
-# TODO move to PersonaStatus dataclass
-ALL_MGMT_ADMIN_VIEWS: set[AdminView] = {
-    "ml_mgmt",
-    "ml_mgmt_core",
-    "ml_mgmt_cde",
-    "ml_mgmt_event",
-    "ml_mgmt_cdelokal",
-    "ml_mgmt_assembly",
-}
+    assembly_mgmt = Roles.assembly_admin
+    assembly_presider = Roles.assembly_admin
+    ml_mgmt_assembly = Roles.assembly_admin
+    ml_mod_assembly = Roles.assembly_admin
 
+    auditor = Roles.auditor
 
-# TODO move to PersonaStatus dataclass
-def roles_to_admin_views(roles: set[Role]) -> set[AdminView]:
-    """Get the set of available admin views for a user with given roles."""
-    result: set[Role] = set()
-    if "meta_admin" in roles:
-        result |= {"meta_admin"}
-    if "core_admin" in roles:
-        result |= {
-            "core",
-            "core_user",
-            "cde_user",
-            "event_user",
-            "assembly_user",
-            "ml_user",
-            "user_review",
-            "ml_mgmt_core",
-            "ml_mod_core",
-        }
-    if {"complaint_admin", "complaint.enforcer"} & roles:
-        result |= {"complaint"}
-    if "cde_admin" in roles:
-        result |= {"cde_user", "user_review", "past_event", "ml_mgmt_cde", "ml_mod_cde"}
-    if "finance_admin" in roles:
-        result |= {"finance", "event_orga"}
-    if "event_admin" in roles:
-        result |= {
-            "event_user",
-            "user_review",
-            "event_mgmt",
-            "event_list",
-            "event_orga",
-            "ml_mgmt_event",
-            "ml_mod_event",
-        }
-    if "event.event_helper" in roles:
-        result |= {"event_orga", "event_list"}
-    if "ml_admin" in roles:
-        result |= {"ml_user", "ml_mgmt", "ml_mod"}
-    if "cdelokal_admin" in roles:
-        result |= {"ml_mgmt_cdelokal", "ml_mod_cdelokal"}
-    if "assembly_admin" in roles:
-        result |= {
-            "assembly_user",
-            "assembly_mgmt",
-            "assembly_presider",
-            "ml_mgmt_assembly",
-            "ml_mod_assembly",
-        }
-    if "auditor" in roles:
-        result |= {"auditor", "event_orga"}
-    if roles & (
-        {'core_admin'}
-        | set(f"{realm}_admin" for realm in REALM_SPECIFIC_GENESIS_FIELDS)
-    ):
-        result |= {"genesis"}
-    return result
+    @classmethod
+    def all_user_views(cls) -> Self:
+        return (
+            cls.core_user
+            | cls.cde_user
+            | cls.event_user
+            | cls.ml_user
+            | cls.assembly_user
+        )
+
+    @classmethod
+    def all_mod_views(cls) -> Self:
+        return (
+            cls.ml_mod
+            | cls.ml_mod_core
+            | cls.ml_mod_cde
+            | cls.ml_mod_event
+            | cls.ml_mod_cdelokal
+            | cls.ml_mod_assembly
+        )
+
+    @classmethod
+    def all_mgmt_views(cls) -> Self:
+        return (
+            cls.ml_mgmt
+            | cls.ml_mgmt_core
+            | cls.ml_mgmt_cde
+            | cls.ml_mgmt_event
+            | cls.ml_mgmt_cdelokal
+            | cls.ml_mgmt_assembly
+        )
+
+    def is_any_mod(self) -> bool:
+        return bool(self & self.all_mod_views())
+
+    def is_any_mgmt(self) -> bool:
+        return bool(self & self.all_mgmt_views())
+
+    @classmethod
+    def from_roles(cls, roles: Roles) -> Self:
+        return cls.union(
+            admin_view
+            for admin_view in cls
+            if any(role in roles for role in admin_view.required_roles)
+        )
+
+    @classmethod
+    def from_cookie(cls, cookie: str) -> Self:
+        try:
+            return cls(int(cookie))  # type: ignore[arg-type]
+        except ValueError:
+            return cls.none()

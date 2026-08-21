@@ -80,3 +80,17 @@ class _Realms(CdEIntFlag, metaclass=_RealmsMeta):
     @property
     def implied_realms(self) -> Self:
         return self.__class__.union(realm._implied_realms for realm in self)
+
+
+class _AdminViews(CdEIntFlag):
+    required_roles: tuple["Roles", ...]
+
+    def __new__(cls, *required_roles: "Roles") -> Self:
+        value = 2 ** len(cls.__members__)
+        obj = int.__new__(cls, value)
+        obj._value_ = value
+        obj.required_roles = required_roles
+        return obj
+
+    def as_set(self) -> set[str]:
+        return {str(admin_view.name) for admin_view in self}

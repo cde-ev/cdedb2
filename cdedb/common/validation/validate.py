@@ -137,7 +137,7 @@ from cdedb.common.query import (
     QuerySpec,
 )
 from cdedb.common.query.log_filter import ALL_LOG_FILTERS, GenericLogFilter
-from cdedb.common.roles import ADMIN_KEYS, Roles, extract_roles
+from cdedb.common.roles import Roles, extract_roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.data import COUNTRY_CODES, FREQUENCY_LISTS, IBAN_LENGTHS
 from cdedb.common.validation.types import *  # noqa: F403

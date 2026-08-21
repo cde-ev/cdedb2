@@ -16,6 +16,7 @@ import cdedb.database.constants as const
 import cdedb.models.core as models
 from cdedb.common import (
     IGNORE_WARNINGS_NAME,
+    AdminViews,
     CdEDBObject,
     LineResolutions,
     RequestState,
@@ -27,7 +28,7 @@ from cdedb.common.i18n import (
     get_localized_country_codes,
 )
 from cdedb.common.query import QueryOperators
-from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, Roles, extract_roles
+from cdedb.common.roles import Roles, extract_roles
 from cdedb.frontend.common import Worker
 from tests.common import (
     USER_DICT,
@@ -351,7 +352,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_cde_admin_views(self) -> None:
-        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
+        self.app.set_cookie(AdminViews.cookie_name(), "")
 
         self.traverse({'href': '/cde'})
         self._click_admin_view_button(

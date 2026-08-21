@@ -52,14 +52,14 @@
     {% else %}
         <h3 class="heading-sidebar">Mailinglisten</h3>
         <div class="list-group tear-down">
-            {% if user.admin_views.intersection(ALL_MGMT_ADMIN_VIEWS) or user.moderator %}
+            {% if user.new_admin_views.is_any_mgmt() or user.moderator %}
                 {{ util.href(cdedblink("ml/index"), gettext("Active Mailinglists"), icon="caret-right",
                              aclass="list-group-item", active=(sidenav_active == 'ml_index')) }}
             {% else %}
                 {{ util.href(cdedblink("ml/index"), gettext("Overview"), icon="caret-right", aclass="list-group-item",
                         active=(sidenav_active == 'ml_index')) }}
             {% endif %}
-            {% if user.admin_views.intersection(ALL_MGMT_ADMIN_VIEWS) %}
+            {% if user.new_admin_views.is_any_mgmt() %}
                 {% if 'ml_admin' in user.roles %}
                     {% set overview=gettext("All Mailinglists") %}
                 {% else %}
@@ -80,14 +80,14 @@
                         icon="user-friends", aclass="list-group-item", active=(sidenav_active == 'ml_merger')) }}
             </div>
         {% endif %}
-        {% if user.moderator or user.admin_views.intersection(ALL_MGMT_ADMIN_VIEWS)
-                or user.admin_views.intersection(('ml_user', 'auditor')) %}
+        {% if user.moderator or user.new_admin_views.is_any_mgmt()
+                or user.new_admin_views.__and__(AdminViews.ml_user.__or__(AdminViews.auditor)) %}
             <div class="list-group tear-down">
                 {% if 'ml_user' in user.admin_views %}
                     {{ util.href(cdedblink("ml/user_search"), gettext("Manage Users"),
                             icon="users", aclass="list-group-item", active=(sidenav_active == 'ml_users')) }}
                 {% endif %}
-                {% if user.moderator or user.admin_views.intersection(ALL_MGMT_ADMIN_VIEWS|list + ['auditor']) %}
+                {% if user.moderator or user.new_admin_views.is_any_mgmt() or AdminViews.auditor in user.new_admin_views %}
                     {{ util.href(cdedblink("ml/view_log"), gettext("Log"), icon="far fa-list-alt", aclass="list-group-item",
                             active=(sidenav_active == 'ml_log')) }}
                 {% endif %}
@@ -102,22 +102,22 @@
     {% if ambience['mailinglist'] %}
         {% if user.persona_id in ambience['mailinglist']['moderators'] %}
             {{ util.admin_views_toggle([
-                    (gettext("Mailinglist Administration"), ALL_MGMT_ADMIN_VIEWS,
-                    ambience['mailinglist'].management_admin_views()|list),
+                    (gettext("Mailinglist Administration"), AdminViews.all_mgmt_views(),
+                     ambience['mailinglist'].management_admin_views()),
                 ]) }}
         {% else %}
             {{ util.admin_views_toggle((
-                    (gettext("Mailinglist Administration"), ALL_MGMT_ADMIN_VIEWS,
-                     ambience['mailinglist'].management_admin_views()|list),
-                    (gettext("Moderator Controls"), ALL_MOD_ADMIN_VIEWS,
-                     ambience['mailinglist'].moderator_admin_views()|list),
+                    (gettext("Mailinglist Administration"), AdminViews.all_mgmt_views(),
+                     ambience['mailinglist'].management_admin_views()),
+                    (gettext("Moderator Controls"), AdminViews.all_mod_views(),
+                     ambience['mailinglist'].moderator_admin_views()),
                 )) }}
         {% endif %}
     {% else %}
         {{ util.admin_views_toggle((
-                (gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user"], ["ml_user"]),
-                (gettext("Mailinglist Administration"), ALL_MGMT_ADMIN_VIEWS, None),
-                (gettext("Auditor"), ["auditor"], None),
+                (gettext("User Administration"), AdminViews.all_user_views(), AdminViews.ml_user),
+                (gettext("Mailinglist Administration"), AdminViews.all_mgmt_views(), None),
+                (gettext("Auditor"), AdminViews.auditor, None),
             )) }}
     {% endif %}
 {% endblock %}

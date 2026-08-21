@@ -468,8 +468,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'I18N_LANGUAGES': self.conf["I18N_LANGUAGES"],
             'I18N_ADVERTISED_LANGUAGES': self.conf["I18N_ADVERTISED_LANGUAGES"],
             'DEFAULT_COUNTRY': self.conf["DEFAULT_COUNTRY"],
-            'ALL_MOD_ADMIN_VIEWS': ALL_MOD_ADMIN_VIEWS,
-            'ALL_MGMT_ADMIN_VIEWS': ALL_MGMT_ADMIN_VIEWS,
+            'AdminViews': AdminViews,
             'EntitySorter': EntitySorter,
             'roles_allow_genesis_management': lambda roles: (
                 roles

@@ -427,9 +427,9 @@ class CoreBaseFrontend(AbstractFrontend):
         return response
 
     @access("persona", modi={"POST"}, check_anti_csrf=False)
-    @REQUESTdata("view_specifier", "#wants")
+    @REQUESTdata("add", "remove", "#wants")
     def modify_active_admin_views(
-        self, rs: RequestState, view_specifier: vtypes.PrintableASCII, wants: str | None
+        self, rs: RequestState, add: AdminViews, remove: AdminViews, wants: str | None
     ) -> Response:
         """
         Enable or disable admin views for the current user.
@@ -437,9 +437,6 @@ class CoreBaseFrontend(AbstractFrontend):
         A list of possible admin views for the current user is returned by
         User.available_admin_views. The user may enable or disable any of them.
 
-        :param view_specifier: A "+" or "-", followed by a commaseperated string
-            of admin view names. If prefixed by "+", they are enabled, otherwise
-            they are disabled.
         :param wants: URL to redirect to (typically URL of the previous page)
         """
         if wants:
@@ -451,18 +448,18 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.has_validation_errors():
             return response
 
-        enabled_views = set(
-            rs.request.cookies.get(ADMIN_VIEWS_COOKIE_NAME, "").split(',')
+        enabled_views = AdminViews.from_cookie(
+            rs.request.cookies.get(AdminViews.cookie_name(), "")
         )
-        changed_views = set(view_specifier[1:].split(','))
-        enable = view_specifier[0] == "+"
-        if enable:
-            enabled_views.update(changed_views)
-        else:
-            enabled_views -= changed_views
+
+        if add:
+            enabled_views |= add
+        if remove:
+            enabled_views &= ~remove
+
         response.set_cookie(
-            ADMIN_VIEWS_COOKIE_NAME,
-            ",".join(enabled_views & ALL_ADMIN_VIEWS),
+            AdminViews.cookie_name(),
+            str(enabled_views.value),
             expires=now() + datetime.timedelta(days=10 * 365),
         )
         return response

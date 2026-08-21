@@ -77,9 +77,9 @@
 
 {% block adminviews %}
     {{ util.admin_views_toggle((
-            (gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user"], ["cde_user"]),
-            (gettext("Past Event Administration"), ["past_event"], None),
-            (gettext("Finance Administration"), ["finance"], None),
-            (gettext("Auditor"), ["auditor"], None),
+            (gettext("User Administration"), AdminViews.all_user_views(), AdminViews.cde_user),
+            (gettext("Past Event Administration"), AdminViews.past_event, None),
+            (gettext("Finance Administration"), AdminViews.finance, None),
+            (gettext("Auditor"), AdminViews.auditor, None),
         )) }}
 {% endblock %}

@@ -50,7 +50,7 @@ import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import Realm, Role
 from cdedb.common.n_ import n_
-from cdedb.common.roles import Roles, roles_to_admin_views
+from cdedb.common.roles import AdminViews, Roles
 from cdedb.config import Config
 from cdedb.database.connection import ConnectionContainer
 from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
@@ -142,11 +142,15 @@ class User:
         )
         self.moderator: set[int] = set(moderator) if moderator else set()
         self.presider: set[int] = set(presider) if presider else set()
-        self.admin_views: set[AdminView] = set()
+        self.new_admin_views: AdminViews = AdminViews.none()
 
     @property
     def roles(self) -> set[Role]:
         return self.new_roles.as_set()
+
+    @property
+    def admin_views(self) -> set[AdminView]:
+        return self.new_admin_views.as_set()
 
     @property
     def all_roles(self) -> set[Role]:
@@ -157,12 +161,16 @@ class User:
         )
 
     @property
+    def new_available_admin_views(self) -> AdminViews:
+        return AdminViews.from_roles(self.new_roles)
+
+    @property
     def available_admin_views(self) -> set[AdminView]:
-        return roles_to_admin_views(self.all_roles)
+        return self.new_available_admin_views.as_set()
 
     def init_admin_views_from_cookie(self, enabled_views_cookie: str) -> None:
-        enabled_views = enabled_views_cookie.split(',')
-        self.admin_views = self.available_admin_views & set(enabled_views)
+        enabled_views = AdminViews.from_cookie(enabled_views_cookie)
+        self.new_admin_views = self.new_available_admin_views & enabled_views
 
     def persona_name(self, include_nickname: bool = False) -> str:
         return make_persona_name(

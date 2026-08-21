@@ -13,7 +13,7 @@ import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.common.roles import Roles, extract_roles
+from cdedb.common.roles import AdminViews, Roles, extract_roles
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.database.constants import (
     MailinglistDomain,
@@ -283,28 +283,28 @@ class Mailinglist(CdEDataclass):
     role_map: ClassVar[Mapping[Roles, SubscriptionPolicy]] = {}
 
     @classmethod
-    def moderator_admin_views(cls) -> set[str]:
+    def moderator_admin_views(cls) -> AdminViews:
         """All admin views which toggle the moderator view for this mailinglist.
 
         This is must be only used for cosmetic changes, similar to
         core.is_relative_admin_view.
         """
-        return {
-            "ml_mod_" + str(admin.name).replace("_admin", "")
-            for admin in cls.relevant_admins
-        } | {"ml_mod"}
+        return (
+            AdminViews.from_roles(cls.relevant_admins | Roles.ml_admin)
+            & AdminViews.all_mod_views()
+        )
 
     @classmethod
-    def management_admin_views(cls) -> set[str]:
+    def management_admin_views(cls) -> AdminViews:
         """All admin views which toggle the management view for this mailinglist.
 
         This is must be only used for cosmetic changes, similar to
         core.is_relative_admin_view.
         """
-        return {
-            "ml_mgmt_" + str(admin.name).replace("_admin", "")
-            for admin in cls.relevant_admins
-        } | {"ml_mgmt"}
+        return (
+            AdminViews.from_roles(cls.relevant_admins | Roles.ml_admin)
+            & AdminViews.all_mgmt_views()
+        )
 
     @classmethod
     def has_moderator_view(cls, user: User) -> bool:
@@ -314,7 +314,7 @@ class Mailinglist(CdEDataclass):
         core.is_relative_admin_view.
         """
         return cls.is_relevant_admin(user) and bool(
-            cls.moderator_admin_views() & user.admin_views
+            cls.moderator_admin_views() & user.new_admin_views
         )
 
     @classmethod
@@ -325,7 +325,7 @@ class Mailinglist(CdEDataclass):
         core.is_relative_admin_view.
         """
         return cls.is_relevant_admin(user) and bool(
-            cls.management_admin_views() & user.admin_views
+            cls.management_admin_views() & user.new_admin_views
         )
 
     def get_subscription_policy(

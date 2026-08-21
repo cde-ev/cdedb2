@@ -96,9 +96,7 @@ from cdedb.common.query.log_filter import (
     PastEventLogFilter,
 )
 from cdedb.common.roles import (
-    ADMIN_VIEWS_COOKIE_NAME,
-    ALL_ADMIN_VIEWS,
-    roles_to_db_role,
+    AdminViews,
 )
 from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
@@ -1055,13 +1053,13 @@ def as_users(
     return wrapper
 
 
-def admin_views[F: Callable[..., Any]](*views: str) -> Callable[[F], F]:
+def admin_views[F: Callable[..., Any]](views: AdminViews) -> Callable[[F], F]:
     """Decorate a test to set different initial admin views."""
 
     def decorator(fun: F) -> F:
         @functools.wraps(fun)
         def new_fun(self: FrontendTest, *args: Any, **kwargs: Any) -> Any:
-            self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(views))
+            self.app.set_cookie(AdminViews.cookie_name(), str(views.value))
             return fun(self, *args, **kwargs)
 
         return cast(F, new_fun)
@@ -1161,7 +1159,7 @@ class FrontendTest(BackendTest):
         super().setUp()
         self.app.reset()
         # Make sure all available admin views are enabled.
-        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
+        self.app.set_cookie(AdminViews.cookie_name(), str(AdminViews.all().value))
         if prepsql:
             execsql(prepsql)
         self.response = None
@@ -2479,7 +2477,7 @@ class MultiAppFrontendTest(FrontendTest):
         super().setUp(*args, **kwargs)
         for app in self.apps:
             app.reset()
-            app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
+            app.set_cookie(AdminViews.cookie_name(), str(AdminViews.all().value))
         self.current_app = 0
 
     def get_response(self) -> webtest.TestResponse:

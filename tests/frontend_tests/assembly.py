@@ -14,12 +14,12 @@ from cdedb.common import (
     ANTI_CSRF_TOKEN_NAME,
     ASSEMBLY_BAR_SHORTNAME,
     IGNORE_WARNINGS_NAME,
+    AdminViews,
     CdEDBObject,
     NearlyNow,
     now,
 )
 from cdedb.common.query import QueryOperators
-from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
 from cdedb.common.validation.validate import parse_datetime
 from cdedb.database.constants import AssemblyLogCodes
 from cdedb.filter import datetime_filter
@@ -278,7 +278,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     @storage
     @as_users("anton")
     def test_assembly_admin_views(self) -> None:
-        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
+        self.app.set_cookie(AdminViews.cookie_name(), "")
 
         self.traverse({'href': '/assembly/'})
         self._click_admin_view_button(

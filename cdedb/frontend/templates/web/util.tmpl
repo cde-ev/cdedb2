@@ -965,10 +965,10 @@ attribute to each field of a dynamic row. #}
    The properties of the individual buttons are specified through the `views` argument, which is an iterable of
    3-tuples. Each tuple defines (label, view_names, relevant_views) of one button:
      * `label` (1st tuple entry) defines the caption of the button. Should be internationalized.
-     * `view_names` (2nd tuple entry) defines a list of admin_views to be toggled by this button together.
-     * `relevant_views` (3rd tuple entry) defines a list of views, which are the subset of `view_names` that is relevant
-       in the current page's context. The button is only displayed, if one of those views is available to the user.
-       For convenience, `relevant_views` may be set to none, in which case all `view_names` are considered relevant.
+     * `toggleable_views` (2nd tuple entry) defines a collection of admin_views to be toggled by this button together.
+     * `relevant_views` (3rd tuple entry) defines the subset of `toggleable_views` that is relevant in the current
+       page's context. The button is only displayed, if one of those views is available to the user. For convenience,
+       `relevant_views` may be set to none, in which case all `toggleable_views` are considered relevant.
        Example: A button in the Core realm may toggle all user admin views (`core_user`, `cde_user, `event_user`, ...),
        but should only be shown to core admins, i.e. users who have the `core_user` view available.
  #}
@@ -989,16 +989,16 @@ attribute to each field of a dynamic row. #}
 {# Un-inlined part of admin_views_toggle() to allow detection of empty list of views with the limited capabilities of
    jinja #}
 {% macro _admin_views_toggle_inner(views) -%}
-    {% for label, view_names, relevant_views in views -%}
-        {% set relevant_views = relevant_views if relevant_views is not none else view_names -%}
-        {% if (relevant_views|set).intersection(user.available_admin_views) %}
+    {% for label, toggleable_views, relevant_views in views -%}
+        {% set relevant_views = relevant_views if relevant_views is not none else toggleable_views -%}
+        {% if relevant_views.__and__(user.new_available_admin_views) %}
             {# The button is "deactivated" as long as there are more "relevant views" which are available for the
                user but are not enabled yet. #}
-            {% set active = not (relevant_views|set).intersection(user.available_admin_views - user.admin_views) -%}
+            {% set active = relevant_views.__and__(user.new_available_admin_views) in user.new_admin_views -%}
             <button{{ dict(
                 type="submit",
-                name="view_specifier",
-                value=("-" if active else "+") + view_names|join(','),
+                name="remove" if active else "add",
+                value=toggleable_views.value,
                 class="list-group-item list-group-item-info" + (" active" if active else ""),
                 title=(gettext("Hide %(label)s") if active else gettext("Show %(label)s"))|format(label=label)
             )|xmlattr }}>
