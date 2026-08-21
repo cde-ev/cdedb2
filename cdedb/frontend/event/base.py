@@ -268,7 +268,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             event_id: vtypes.EventID | None = None,
             admin_view_to_consider: str | None = "event_orga",
         ) -> bool:
-            endpoint = endpoint.removeprefix(f"{self.realm}/")
+            endpoint = endpoint.removeprefix(f"{self.realm_str()}/")
             privileges = getattr(getattr(self, endpoint), "event_required_privileges")
 
             if event_id is None and 'event' in rs.ambience:
