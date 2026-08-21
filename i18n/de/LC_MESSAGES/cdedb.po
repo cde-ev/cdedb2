@@ -76,7 +76,7 @@ msgstr "Offen"
 
 #: cdedb/.i18n_additional.py:17
 msgid "RegistrationPartStati.participant"
-msgstr "Teilnehmend"
+msgstr "Teilnahme"
 
 #: cdedb/.i18n_additional.py:18
 msgid "RegistrationPartStati.waitlist"
@@ -17687,7 +17687,7 @@ msgstr "Kurssuche"
 msgid "The course statistics, shown below, include only approved participants."
 msgstr ""
 "Die untenstehenden Kursstatistiken enthalten nur Anmeldungen mit Status "
-"“Teilnehmend”."
+"“Teilnahme”."
 
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:64
 msgid ""
@@ -17695,7 +17695,7 @@ msgid ""
 "(registration status “Participant”, “Guest”, “Waitlist” and “Applied”)."
 msgstr ""
 "Die Kursteilnehmenden- und Kurswahl-Statistiken enthalten alle aktiven "
-"Anmeldungen (Anmeldestatus “Teilnehmend”, “Gast”, “Warteliste” und “Offen”)."
+"Anmeldungen (Anmeldestatus “Teilnahme”, “Gast”, “Warteliste” und “Offen”)."
 
 #: cdedb/frontend/templates/web/event/course/course_stats.tmpl:71
 msgid "Only show participants"

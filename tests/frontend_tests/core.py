@@ -270,14 +270,12 @@ class TestCoreFrontend(FrontendTest):
 
         self.traverse("Veranstaltungs-Daten")
         self.assertTitle("Garcia Generalis – Veranstaltungs-Daten")
-        self.assertPresence("CyberTestAkademie Teilnehmend", div="registration-list")
+        self.assertPresence("CyberTestAkademie Teilnahme", div="registration-list")
         # part names not shown for one-part events
-        self.assertNonPresence(
-            "CyberTestAkademie: Teilnehmend", div="registration-list"
-        )
+        self.assertNonPresence("CyberTestAkademie: Teilnahme", div="registration-list")
         self.assertPresence("Große Testakademie", div="registration-list")
         self.assertPresence(
-            "Warmup: Teilnehmend, Erste Hälfte: Teilnehmend, Zweite Hälfte: Teilnehmend",
+            "Warmup: Teilnahme, Erste Hälfte: Teilnahme, Zweite Hälfte: Teilnahme",
             div="registration-list",
         )
 

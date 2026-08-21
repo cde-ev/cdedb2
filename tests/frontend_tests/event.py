@@ -3701,7 +3701,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             {
                 'persona_id': 5,
                 'code': const.EventLogCodes.registration_status_changed,
-                'change_note': "2.H.: Teilnehmend -> Abgemeldet",
+                'change_note': "2.H.: Teilnahme -> Abgemeldet",
             },
             {
                 'persona_id': 5,
@@ -3711,7 +3711,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             {
                 'persona_id': 7,
                 'code': const.EventLogCodes.registration_status_changed,
-                'change_note': "2.H.: Teilnehmend -> Abgemeldet",
+                'change_note': "2.H.: Teilnahme -> Abgemeldet",
             },
             {
                 'persona_id': 7,

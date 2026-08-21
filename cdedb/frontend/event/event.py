@@ -1534,7 +1534,7 @@ class EventEventMixin(EventBaseFrontend):
             descr = (
                 f"Dieser Liste kannst Du nur beitreten, indem Du Dich zu "
                 f"unserer [Veranstaltung anmeldest]({link}) und den Status "
-                f"*Teilnehmend* erhälst. Auf dieser Liste stehen alle "
+                f"*Teilnahme* erhälst. Auf dieser Liste stehen alle "
                 f"Teilnehmenden unserer Veranstaltung; sie kann im Vorfeld "
                 f"zum Austausch untereinander genutzt werden."
             )
