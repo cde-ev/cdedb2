@@ -160,7 +160,7 @@ kontaktieren und über den Grund der Unzustellbarkeit zu informieren.
 Die Zustellbenachrichtigung, falls vorhanden, ist angehängt.
 Bei Fragen dazu wende dich an das Adminteam:
     <{self.conf["TROUBLESHOOTING_ADDRESS"]}>
-Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Personen mit
+Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Empfänger:innen mit
 ähnlichen Email-Anbietern, kontaktiere bitte auch das Adminteam.
 
 Als Workaround kannst du den Account manuell von der Mailingliste entfernen,
@@ -172,7 +172,7 @@ Eine Email auf der Mailingliste
     $listname
 konnte an $member nicht zugestellt werden.
 Gegebenenfalls ist es sinnvoll, sie außerhalb der Mailingliste an die
-Person weiterzuleiten.
+Empfänger:in weiterzuleiten.
 Diese Fehlermeldung wird höchstens einmal pro Tag, Account und Liste versendet,
 auch wenn mehrere Emails unzustellbar waren.
 
@@ -184,7 +184,7 @@ kontaktieren und über den Grund der Unzustellbarkeit zu informieren.
 Die Zustellbenachrichtigung, falls vorhanden, ist angehängt.
 Bei Fragen dazu wende dich an das Adminteam:
     <{self.conf["TROUBLESHOOTING_ADDRESS"]}>
-Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Personen mit
+Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Empfänger:innen mit
 ähnlichen Email-Anbietern, kontaktiere bitte auch das Adminteam.
 """.strip(),
         }

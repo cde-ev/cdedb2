@@ -1372,7 +1372,7 @@ class CoreBaseBackend(AbstractBackend):
                     raise PrivilegeError(n_("Cannot modify own meta admin privileges."))
                 if change['submitted_by'] == rs.user.persona_id:
                     msg = n_(
-                        "Only a different admin may approve a privilege change which you submitted."
+                        "Only a different admin may approve a privilege change you submitted."
                     )
                     raise PrivilegeError(msg)
 

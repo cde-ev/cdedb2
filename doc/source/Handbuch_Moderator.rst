@@ -17,8 +17,8 @@ aussieht, schaut euch am Besten die :doc:`Realm_Mailinglist_Management` Seite an
 Nachrichtenmoderation
 ---------------------
 
-Mailinglisten können eingehende Nachrichten von Nichtabonnenten oder sogar
-von allen Personen zurückhalten, sodass diese erst durch die Moderation
+Mailinglisten können alle eingehenden Nachrichten oder eingehende Nachrichten
+von Nichtabonnenten zurückhalten, sodass diese erst durch die Moderation
 genehmigt werden müssen.
 
 Wenn eine eine Nachricht für eine Liste zu moderieren ist, so bekomment ihr

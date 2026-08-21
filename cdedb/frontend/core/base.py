@@ -2312,12 +2312,10 @@ class CoreBaseFrontend(AbstractFrontend):
                     n_("Cannot modify own meta admin privileges.")
                 )
             if rs.user.persona_id == change["submitted_by"]:
-                raise werkzeug.exceptions.Forbidden(
-                    n_(
-                        "Only a different admin may approve a privilege "
-                        "change which you submitted."
-                    )
+                msg = n_(
+                    "Only a different admin may approve a privilege change you submitted."
                 )
+                raise werkzeug.exceptions.Forbidden(msg)
         code = self.coreproxy.finalize_privilege_change(rs, change_id, change_status)
         success = n_("Change committed.") if ack else n_("Change rejected.")
         info = n_("Password reset issued for new admin.")

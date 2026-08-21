@@ -4194,7 +4194,7 @@ msgstr "Ungültiger Status für Änderung der Admin-Privilegien: %(status)s."
 
 #: cdedb/backend/core/base.py:1375 cdedb/frontend/core/base.py:2317
 msgid ""
-"Only a different admin may approve a privilege change which you submitted."
+"Only a different admin may approve a privilege change you submitted."
 msgstr ""
 "Nur ein anderer Admin kann eine Änderung bestätigen die du gestellt hast."
 
@@ -6184,7 +6184,7 @@ msgstr "Status"
 
 #: cdedb/common/query/__init__.py:1227
 msgid "camping mat user"
-msgstr "Isomattenschläfer"
+msgstr "Isomattenschläfer:in"
 
 #: cdedb/common/query/__init__.py:1229 cdedb/common/query/__init__.py:1597
 msgid "lodgement"
@@ -7014,15 +7014,15 @@ msgstr "Wartelistenfeld muss vom Typ 'Zahl' sein."
 
 #: cdedb/common/validation/validate.py:2484
 msgid "Unknown camping mat field."
-msgstr "Unbekanntes Isomattenschläfer:innen-Feld."
+msgstr "Unbekanntes Isomattenfeld."
 
 #: cdedb/common/validation/validate.py:2494
 msgid "Camping mat field must be a registration field."
-msgstr "Isomattenschläfer:innen-Feld muss ein Anmeldungsfeld sein."
+msgstr "Isomattenfeld muss ein Anmeldungsfeld sein."
 
 #: cdedb/common/validation/validate.py:2503
 msgid "Camping mat field must have type 'Yes/No'."
-msgstr "Isomattenschläfer:innen-Feld muss vom Typ 'Ja/Nein' sein."
+msgstr "Isomattenfeld muss vom Typ 'Ja/Nein' sein."
 
 #: cdedb/common/validation/validate.py:2524
 msgid "Unknown part."
@@ -19244,7 +19244,7 @@ msgstr "Teil bearbeiten"
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:94
 #: cdedb/frontend/templates/web/event/event/part_summary.tmpl:95
 msgid "Camping mat field"
-msgstr "Isomattenschläfer:innen-Feld"
+msgstr "Isomattenfeld"
 
 #: cdedb/frontend/templates/web/event/event/show_event.tmpl:26
 #: cdedb/frontend/templates/web/event/registration/register.tmpl:60
@@ -20972,7 +20972,7 @@ msgstr ""
 #: cdedb/frontend/templates/web/event/registration/change_registrations.tmpl:144
 #: cdedb/frontend/templates/web/event/registration/show_registration.tmpl:224
 msgid "Uses Camping Mat"
-msgstr "Isomattenschläfer"
+msgstr "Isomattenschläfer:in"
 
 #: cdedb/frontend/templates/web/event/registration/change_registration.tmpl:102
 msgid "Summary to be added to the log entry."
@@ -22178,8 +22178,8 @@ msgstr ""
 
 #: cdedb/frontend/templates/web/ml/change_ml_type.tmpl:54
 #: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:155
-msgid "Event Audience"
-msgstr "Veranstaltungs Publikum"
+msgid "Receiving Stati"
+msgstr "Empfangende Stati"
 
 #: cdedb/frontend/templates/web/ml/change_ml_type.tmpl:59
 #: cdedb/frontend/templates/web/ml/configure_mailinglist.tmpl:180

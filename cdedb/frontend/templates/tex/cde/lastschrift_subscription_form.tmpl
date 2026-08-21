@@ -6,7 +6,7 @@
     \def\@mysignature{%
         \begin{tabular}{ll}
         \makebox[5cm]{\dotfill} & \makebox[10cm]{\dotfill} \\
-        \,Ort, Datum & \,Unterschrift Kontoinhaber/-in\\
+        \,Ort, Datum & \,Unterschrift Kontoinhaber:in\\
         \end{tabular}}
     \setkomavar{signature}{\@mysignature}
     \makeatother
@@ -79,7 +79,7 @@
                 <<% else %>>
                     \makebox[10cm]{\dotfill}\\
                 <<% endif %>>
-            Kontoinhaber/-in (falls abweichend) &
+            Kontoinhaber:in (falls abweichend) &
                 <<% if data["account_holder"] %>>
                     <<< data["account_holder"]|te >>>\\
                 <<% else %>>
