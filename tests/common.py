@@ -95,7 +95,7 @@ from cdedb.common.query.log_filter import (
     MlLogFilter,
     PastEventLogFilter,
 )
-from cdedb.common.roles import AdminViews, Realms, Roles
+from cdedb.common.roles import AdminViews, Roles
 from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
