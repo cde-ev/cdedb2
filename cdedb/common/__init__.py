@@ -114,7 +114,6 @@ class User:
         persona_id: vtypes.PersonaID | None = None,
         droid: "APIToken | None" = None,
         roles: Roles | None = None,
-        realm_roles: dict[Realm, set[str]] | None = None,
         given_names: str = "",
         nickname: str = "",
         family_name: str = "",
@@ -130,7 +129,6 @@ class User:
         if self.persona_id and self.droid:
             raise ValueError("Cannot be both droid and persona.")
         self.new_roles = roles or Roles.anonymous
-        self.realm_roles = realm_roles or {}
         self.username = username
         self.given_names = given_names
         self.nickname = nickname
@@ -151,14 +149,6 @@ class User:
     @property
     def admin_views(self) -> set[AdminView]:
         return self.new_admin_views.as_set()
-
-    @property
-    def all_roles(self) -> set[Role]:
-        return self.roles.union(
-            f"{realm}.{realm_role}"
-            for realm, realm_roles in self.realm_roles.items()
-            for realm_role in realm_roles
-        )
 
     @property
     def new_available_admin_views(self) -> AdminViews:

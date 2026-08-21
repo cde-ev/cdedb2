@@ -76,6 +76,7 @@ from cdedb.common import (
     NearlyNow,
     PathLike,
     RequestState,
+    Roles,
     merge_dicts,
     nearly_now,
     now,
@@ -256,7 +257,7 @@ def _make_backend_shim[B: AbstractBackend](
         rs.conn = rs._conn
         if hasattr(backend, "list_enforcers"):
             if rs.user.persona_id in backend.list_enforcers(rs):
-                rs.user.realm_roles["complaint"] = {"enforcer"}
+                rs.user.new_roles |= Roles.complaint_enforcer
         if "event" in rs.user.roles:
             if hasattr(backend, "orga_info"):
                 rs.user.orga = backend.orga_info(rs, rs.user.persona_id)
@@ -266,6 +267,9 @@ def _make_backend_shim[B: AbstractBackend](
                 rs.user.checkin_helper = backend.checkin_helper_info(
                     rs, rs.user.persona_id
                 )
+            if hasattr(backend, "get_event_helpers"):
+                if rs.user.persona_id in backend.get_event_helpers(rs):
+                    rs.user.new_roles |= Roles.event_helper
         if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
             rs.user.moderator = backend.moderator_info(rs, rs.user.persona_id)
         if "assembly" in rs.user.roles and hasattr(backend, "presider_info"):
@@ -2415,7 +2419,10 @@ class FrontendTest(BackendTest):
             else:
                 self.assertNotIn("active", button['class'])
         self.submit(
-            f, button='view_specifier', check_button_attrs=False, value=button['value']
+            f,
+            button=button.attrs["name"],
+            check_button_attrs=False,
+            value=button['value'],
         )
         return button
 

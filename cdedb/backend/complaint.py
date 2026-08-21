@@ -1338,7 +1338,7 @@ class ComplaintBackend(AbstractBackend):
         concerned_id = affirm(vtypes.ID, concerned_id)
         is_active = affirm(bool | None, is_active)
         if not (
-            {"complaint_admin", "complaint.enforcer"} & rs.user.all_roles
+            {"complaint_admin", "complaint_enforcer"} & rs.user.roles
             or concerned_id == rs.user.persona_id
         ):
             raise PrivilegeError
@@ -1374,7 +1374,7 @@ class ComplaintBackend(AbstractBackend):
         )
         return entries, descriptions
 
-    @access("complaint_admin", "complaint.enforcer")
+    @access("complaint_admin", "complaint_enforcer")
     def get_measures(
         self, rs: RequestState
     ) -> tuple[models.CdEDataclassMap[models.ComplaintEntry], dict[int, str]]:

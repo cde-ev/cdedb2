@@ -42,6 +42,7 @@ from cdedb.common.exceptions import (
     QuotaException,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.roles import Roles
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -199,6 +200,19 @@ class Application(BaseApp):
                 f"HTTP {error.code}: {error.name}\n{error.description}", status=status
             )
 
+    def resolve_realm_roles(self, rs: RequestState) -> Roles:
+        assert rs.user.persona_id is not None
+        ret = Roles.none()
+
+        if rs.user.persona_id in self.complaintproxy.list_enforcers(rs):
+            ret |= Roles.complaint_enforcer
+
+        if Roles.event in rs.user.new_roles:
+            if rs.user.persona_id in self.eventproxy.get_event_helpers(rs):
+                ret |= Roles.event_helper
+
+        return ret
+
     @werkzeug.wrappers.Request.application  # type: ignore[arg-type]
     def __call__(  # type: ignore[misc]
         self, request: werkzeug.wrappers.Request
@@ -331,14 +345,7 @@ class Application(BaseApp):
             # The session backend takes care of this for droids.
             if user.persona_id:
                 # Roles that are managed via the realms internally
-                realms = {"core", "complaint", "cde", "event", "assembly", "ml"}
-                realm_roles: dict[Realm, set[str]] = {realm: set() for realm in realms}
-                if user.persona_id in self.complaintproxy.list_enforcers(rs):
-                    realm_roles['complaint'].add('enforcer')
-                if "event" in rs.user.roles:
-                    if user.persona_id in self.eventproxy.get_event_helpers(rs):
-                        realm_roles['event'].add('event_helper')
-                user.realm_roles = realm_roles
+                user.new_roles |= self.resolve_realm_roles(rs)
 
                 # Insert orga and moderator status context
                 orga: set[vtypes.EventID] = set()

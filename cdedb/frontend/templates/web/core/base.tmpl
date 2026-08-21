@@ -104,7 +104,7 @@
                     {{ util.href(cdedblink("core/complaint_index"), gettext("Case Archive"), aclass="list-group-item",
                                  icon="gavel", active=(sidenav_active=='complaint_index')) }}
                 {% endif %}
-                {% if user.all_roles.intersection(["complaint_admin", "complaint.enforcer"]) %}
+                {% if user.roles.intersection(["complaint_admin", "complaint_enforcer"]) %}
                     {{ util.href(cdedblink("core/measures"), gettext("Measure Overview"), aclass="list-group-item",
                                  icon="shield-halved", active=(sidenav_active=='show_measures')) }}
                 {% endif %}

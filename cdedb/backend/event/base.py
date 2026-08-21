@@ -407,7 +407,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         # Update session helper status
         if rs.user.persona_id in persona_ids:
-            rs.user.realm_roles['event'].add('event_helper')
+            rs.user.new_roles |= Roles.event_helper
 
         return ret
 
@@ -430,7 +430,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
             # Update session helper status
             if rs.user.persona_id == persona_id:
-                rs.user.realm_roles['event'].remove('event_helper')
+                rs.user.new_roles &= ~Roles.event_helper
 
         return ret
 

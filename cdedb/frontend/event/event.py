@@ -135,7 +135,7 @@ class EventEventMixin(EventBaseFrontend):
         events = self.eventproxy.get_events(rs, event_ids)
 
         events_registrations: dict[vtypes.ID, int] = {}
-        if self.is_admin(rs) or 'event_helper' in rs.user.realm_roles.get('event', {}):
+        if self.is_admin(rs) or 'event_helper' in rs.user.roles:
             for event in events.values():
                 regs = self.eventproxy.list_registrations(rs, event.id)
                 events_registrations[event.id] = len(regs)

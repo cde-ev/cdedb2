@@ -170,7 +170,7 @@ def is_privileged_event_user(
         )
         # Due to use in ml realm, users without event realm might come across this
         or (
-            "event_helper" in user.realm_roles.get('event', {})
+            "event_helper" in user.roles
             and required_privilege in event_helper_privileges
         )
         # finance_admins may book fees and balance events.

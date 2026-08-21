@@ -1157,7 +1157,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         )
         return store
 
-    @access("complaint_admin", "complaint.enforcer")
+    @access("complaint_admin", "complaint_enforcer")
     def measures(self, rs: RequestState) -> Response:
         """Search for active measures against a persona."""
         entries, descriptions = self.complaintproxy.get_measures(rs)
@@ -1183,7 +1183,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
     def show_user_measures(self, rs: RequestState, persona_id: int) -> Response:
         """View active measures against a persona."""
         if (
-            not {"complaint_admin", "complaint.enforcer"} & rs.user.all_roles
+            not {"complaint_admin", "complaint_enforcer"} & rs.user.roles
             and persona_id != rs.user.persona_id
         ):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
@@ -1212,7 +1212,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         }
         return self.render(rs, "complaint/show_user_measures", params)
 
-    @access("complaint_admin", "complaint.enforcer", "complaint.monitor")
+    @access("complaint_admin", "complaint_enforcer")
     def list_complaint_helpers(self, rs: RequestState) -> Response:
         """View list of enforcers and monitors."""
         enforcer_ids = self.complaintproxy.list_enforcers(rs)

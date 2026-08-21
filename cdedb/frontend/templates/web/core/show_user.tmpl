@@ -122,7 +122,7 @@
                                  gettext("Show Assembly Data"), aclass="btn btn-info btn-sm",
                                  icon="bullhorn") }}
                 {% endif %}
-                {% if "complaint" in user.admin_views and user.all_roles.intersection(["complaint_admin", "complaint.enforcer"]) %}
+                {% if "complaint" in user.admin_views and user.roles.intersection(["complaint_admin", "complaint_enforcer"]) %}
                     {{ util.href(cdedblink("core/show_user_measures", {'persona_id': data['id']}),
                                  gettext("Show Measures"), aclass="btn btn-info btn-sm", icon="shield-halved") }}
                 {% endif %}

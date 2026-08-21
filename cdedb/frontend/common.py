@@ -2444,7 +2444,7 @@ def access[F: Callable[..., Any]](
             if any(
                 role in rs.user.new_roles
                 if isinstance(role, Roles)
-                else role in rs.user.all_roles
+                else role in rs.user.roles
                 for role in roles
             ):
                 rs.ambience = reconnoitre_ambience(obj, rs)
@@ -2481,7 +2481,7 @@ def access[F: Callable[..., Any]](
                     'realm': obj.__class__.__name__,
                     'endpoint': fun.__name__,
                 }
-                log_msg = msg.format(**params) + f" Roles: {rs.user.all_roles}."
+                log_msg = msg.format(**params) + f" Roles: {rs.user.roles}."
                 _LOGGER.error(log_msg)
                 raise werkzeug.exceptions.Forbidden(rs.gettext(msg).format(**params))
 

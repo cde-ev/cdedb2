@@ -904,7 +904,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             },
         )
 
-    @access("event.event_helper", "event_admin", "finance_admin")
+    @access("event_helper", "event_admin", "finance_admin")
     @REQUESTdata(
         "event_ids",
         "violation_classes",

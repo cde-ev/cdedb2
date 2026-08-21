@@ -42,6 +42,10 @@ class Roles(_Roles):
     member = "is_member", "cde"
     searchable = "is_searchable", "member"
 
+    # realm roles, granted manually.
+    complaint_enforcer = ()
+    event_helper = ()
+
     cron = ()
 
     droid = ()
@@ -419,7 +423,7 @@ class AdminViews(_AdminViews):
     ml_mgmt_core = Roles.core_admin
     ml_mod_core = Roles.core_admin
 
-    complaint = Roles.complaint_admin  # , RealmRoles.complaint_enforcer
+    complaint = Roles.complaint_admin, Roles.complaint_enforcer
 
     past_event = Roles.cde_admin
     ml_mgmt_cde = Roles.cde_admin
@@ -428,12 +432,13 @@ class AdminViews(_AdminViews):
     finance = Roles.finance_admin
 
     event_mgmt = Roles.event_admin
-    event_list = Roles.event_admin  # , RealmRoles.event_helper
+    event_list = Roles.event_admin, Roles.event_helper
     event_orga = (
         Roles.event_admin,
         Roles.finance_admin,
         Roles.auditor,
-    )  # , RealmRoles.event_helper
+        Roles.event_helper,
+    )
     ml_mgmt_event = Roles.event_admin
     ml_mod_event = Roles.event_admin
 

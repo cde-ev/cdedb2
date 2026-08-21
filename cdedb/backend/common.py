@@ -124,7 +124,7 @@ def access[F: Callable[..., Any]](*roles: Role | Roles) -> Callable[[F], F]:
             if not any(
                 role in rs.user.new_roles
                 if isinstance(role, Roles)
-                else role in rs.user.all_roles
+                else role in rs.user.roles
                 for role in roles
             ):
                 raise PrivilegeError(
@@ -132,7 +132,7 @@ def access[F: Callable[..., Any]](*roles: Role | Roles) -> Callable[[F], F]:
                         "%(user_roles)s is disjoint from %(roles)s for method %(method)s."
                     ),
                     {
-                        "user_roles": rs.user.all_roles,
+                        "user_roles": rs.user.roles,
                         "roles": roles,
                         "method": function.__name__,
                     },
