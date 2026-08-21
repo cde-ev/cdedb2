@@ -277,8 +277,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             return self.genesis_upgrade_form(rs)
 
         ret = self.coreproxy.genesis_upgrade(rs, data)
-        # TODO adjust success return code
-        rs.notify_return_code(ret)
+        rs.notify_return_code(ret, success=n_("Your request has been submitted."))
         return self.redirect(rs, "core/index")
 
     @access("anonymous")
@@ -691,8 +690,11 @@ class CoreGenesisMixin(CoreBaseFrontend):
             self.send_welcome_mail(rs, persona, status, is_trial_member=trial_member)
             rs.notify("success", n_("Case approved."))
         elif case.is_upgrade:
-            # TODO send email notification?
-            pass
+            persona = self.coreproxy.get_persona(rs, persona_id)
+            status = self.coreproxy.get_persona_status(rs, persona_id)
+            trial_member = self.coreproxy.get_cde_user(rs, persona_id).trial_member
+            self.send_welcome_mail(rs, persona, status, is_trial_member=trial_member)
+            rs.notify("success", n_("Account upgraded."))
         elif decision.is_update():
             persona = self.coreproxy.get_persona(rs, persona_id)
             reset_link = self._password_reset_link(rs, persona_id)

@@ -528,7 +528,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                 for realm in implied_realms("cde"):
                     persona[f'is_{realm}_realm'] = True
                 # TODO formulate change note
-                change_note = "..."
+                change_note = "CdE Bereich hinzugefügt nach Account Upgrade Anfrage."
                 code = self.core.change_persona_realms(rs, persona, change_note)
                 if not code:  # pragma: no cover
                     raise RuntimeError(n_("Granting CdE realm failed."))

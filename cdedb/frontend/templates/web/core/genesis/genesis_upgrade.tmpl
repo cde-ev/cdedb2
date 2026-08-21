@@ -21,8 +21,14 @@
     </div>
     <div class="row">
         <p class="col-md-9">
+            <b>
+                {% trans %}
+                    If you participated at a DSA, DJA etc.:
+                {% endtrans %}
+            </b>
+            <br />
             {% trans %}
-                If you participated at a DSA, DJA etc.: Upload your participation certificate below.
+                Upload your participation certificate below.
                 You can select your DSA, DJA etc. in the dropdown below, but you can also leave it empty.
                 After we reviewed your request, you will be granted a trial membership.
             {% endtrans %}
@@ -30,20 +36,25 @@
     </div>
     <div class="row">
         <p class="col-md-9">
+            <b>
             {% trans %}
-                If you participated at a CdE event: Select your event in the dropdown below.
-                Take care that the selected event makes you elegible to become a CdE member. TODO insert link
+                If you participated at a CdE event:
+            {% endtrans %}
+            </b>
+            <br />
+            {% trans %}
+                Select your event in the dropdown below.
+                Take care that the selected event makes you elegible to become a CdE member, i.e. is a longer CdE event.
                 After we reviewed you request, you need to transfer the membership fee to become a member.
             {% endtrans %}
         </p>
     </div>
-    <form action="{{ cdedblink('core/genesis_upgrade') }}" method="POST" class="form-horizontal">
+    <form action="{{ cdedblink('core/genesis_upgrade') }}" method="POST" class="form-horizontal" enctype="multipart/form-data">
         {{ util.anti_csrf_token("core/genesis_upgrade") }}
         {% set attachment_info = gettext("Please upload a participation certificate from your DSA, DJA, etc. here.") %}
         {% set attachment_restrictions = " " + gettext("The file must be a PDF. The maximum allowed filesize is 8 MB.") %}
         {{ util.form_input_attachment(link=cdedblink("core/genesis_get_attachment", {'attachment_hash': values.get('attachment_hash') }),
-                                        small=True, accept="text/*,application/pdf",
-                                        info=attachment_info + attachment_restrictions, enforce_required=false) }}
+                                        small=True, accept="text/*,application/pdf", info=attachment_info + attachment_restrictions) }}
         {{ util.form_input_select(name="pevent_id", entries=pevent_entries, aclass="pcourse-pevent-input",
                                     nulloption=nbsp, label=gettext("Past Event"), selectize=True, small=True,
                                     info=gettext("Select one of your past events which entitles you to become a CdE member."
