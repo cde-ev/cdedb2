@@ -2715,7 +2715,7 @@ class CoreBaseBackend(AbstractBackend):
         quota = self.quota(rs, ids=ids, num=num)  # type: ignore[call-overload]
         return (
             quota > self.conf["QUOTA_VIEWS_PER_DAY"]
-            and not Roles.cde_admin | Roles.core_admin & rs.user.new_roles
+            and not (Roles.cde_admin | Roles.core_admin) & rs.user.new_roles
         )
 
     @access(Roles.cde)
