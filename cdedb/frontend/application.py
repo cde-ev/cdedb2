@@ -325,7 +325,7 @@ class Application(BaseApp):
 
             # Store database connection as private attribute.
             # It will be made accessible for the backends by the make_proxy.
-            rs._conn = self.connpool[roles_to_db_role(user.roles)]
+            rs._conn = self.connpool[user.new_roles.get_db_role()]
 
             # Retrieve entity related privileges for personas.
             # The session backend takes care of this for droids.

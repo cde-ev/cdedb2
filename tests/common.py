@@ -254,7 +254,7 @@ def _make_backend_shim[B: AbstractBackend](
             lang="de",
             translations=translations,
         )
-        rs._conn = connpool[roles_to_db_role(rs.user.roles)]
+        rs._conn = connpool[rs.user.new_roles.get_db_role()]
         rs.conn = rs._conn
         if hasattr(backend, "list_enforcers"):
             if rs.user.persona_id in backend.list_enforcers(rs):

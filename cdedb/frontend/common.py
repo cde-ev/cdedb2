@@ -2044,7 +2044,7 @@ class Worker(threading.Thread):
             conf["DB_HOST"],
             conf["DB_PORT"],
         )
-        rrs._conn = connpool[roles_to_db_role(rs.user.roles)]
+        rrs._conn = connpool[rs.user.new_roles.get_db_role()]
         logger = logging.getLogger("cdedb.frontend.worker")
 
         def get_doc(task: WorkerTarget) -> str:

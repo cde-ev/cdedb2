@@ -21,6 +21,7 @@ from cdedb.common.crypt import verify_password
 from cdedb.common.exceptions import APITokenError
 from cdedb.common.roles import extract_roles
 from cdedb.config import Config, SecretsConfig
+from cdedb.database import DBRole
 from cdedb.database.connection import connection_pool_factory
 from cdedb.models.core import CorePersona, PersonaStatus
 from cdedb.models.droid import (
@@ -61,7 +62,7 @@ class SessionBackend:
         # since the competing write will be pretty similar).
         self.connpool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"],
-            ("cdb_anonymous", "cdb_persona"),
+            (DBRole.anonymous, DBRole.persona),
             secrets,
             self.conf["DB_HOST"],
             self.conf["DB_PORT"],
@@ -73,7 +74,7 @@ class SessionBackend:
         if self.conf["LOCKDOWN"]:
             return True
         # we do not have the core backend, so we have to query meta info by hand
-        with self.connpool["cdb_anonymous"] as conn:
+        with self.connpool[DBRole.anonymous] as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT info FROM core.meta_info LIMIT 1")
                 data = dict(cur.fetchone() or {})
@@ -97,7 +98,7 @@ class SessionBackend:
                 FROM core.sessions
                 WHERE sessionkey = %s
             """
-            with self.connpool["cdb_anonymous"] as conn:
+            with self.connpool[DBRole.anonymous] as conn:
                 with conn.cursor() as cur:
                     cur.execute(query, (sessionkey,))
                     if cur.rowcount == 1:
@@ -127,7 +128,7 @@ class SessionBackend:
                     SET is_active = False
                     WHERE sessionkey = %s
                 """
-                with self.connpool["cdb_anonymous"] as conn:
+                with self.connpool[DBRole.anonymous] as conn:
                     with conn.cursor() as cur:
                         cur.execute(query, (sessionkey,))
 
@@ -135,7 +136,7 @@ class SessionBackend:
             return User()
 
         query = "UPDATE core.sessions SET atime = now() WHERE sessionkey = %s"
-        with self.connpool["cdb_persona"] as conn:
+        with self.connpool[DBRole.persona] as conn:
             with conn.cursor() as cur:
                 cur.execute(query, (sessionkey,))
 
@@ -218,7 +219,7 @@ class SessionBackend:
         if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
             raise APITokenError(n_("This API is not available in offline mode."))
 
-        with self.connpool["cdb_anonymous"] as conn:
+        with self.connpool[DBRole.anonymous] as conn:
             with conn.cursor() as cur:
                 query = f"""
                     SELECT

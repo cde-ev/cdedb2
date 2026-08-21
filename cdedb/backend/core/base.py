@@ -82,7 +82,7 @@ from cdedb.common.roles import (
 )
 from cdedb.common.sorting import xsorted
 from cdedb.config import SecretsConfig
-from cdedb.database import DATABASE_ROLES
+from cdedb.database import DATABASE_ROLES, DBRole
 from cdedb.database.connection import Atomizer, connection_pool_factory
 from cdedb.database.query import ParamDict
 from cdedb.models.common import CdEDataclassMap
@@ -2977,9 +2977,9 @@ class CoreBaseBackend(AbstractBackend):
             self.sql_select_one(rs, "core.personas", ("is_cde_realm",), data["id"])
         )
         if is_cde:
-            rs.conn = self.connpool['cdb_member']
+            rs.conn = self.connpool[DBRole.member]
         else:
-            rs.conn = self.connpool['cdb_persona']
+            rs.conn = self.connpool[DBRole.persona]
         # Necessary to keep the mechanics happy.
         rs._conn = rs.conn
 
@@ -3322,7 +3322,7 @@ class CoreBaseBackend(AbstractBackend):
                 if rs.conn.is_contaminated:
                     raise RuntimeError(n_("Atomized – impossible to escalate."))
                 orig_conn = rs.conn
-                rs.conn = self.connpool['cdb_persona']
+                rs.conn = self.connpool[DBRole.persona]
             # do not use set_persona since it doesn't operate on password
             # hashes by design
             query = """
@@ -3386,7 +3386,7 @@ class CoreBaseBackend(AbstractBackend):
                 if rs.conn.is_contaminated:
                     raise RuntimeError(n_("Atomized – impossible to escalate."))
                 orig_conn = rs.conn
-                rs.conn = self.connpool['cdb_persona']
+                rs.conn = self.connpool[DBRole.persona]
             persona = self.sql_select_one(
                 rs, "core.personas", columns_of_interest, persona_id
             )

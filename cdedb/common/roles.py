@@ -9,6 +9,7 @@ from cdedb.common._roles_meta import _Realms, _Roles
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS, Role
 from cdedb.common.n_ import n_
 from cdedb.config import Config
+from cdedb.database.connection import DBRole
 
 _CONF = Config()
 
@@ -92,6 +93,15 @@ class Roles(_Roles):
     def get_admin_realms(self) -> "Realms":
         """See 'Realms.from_admin_roles'."""
         return Realms.from_admin_roles(self)
+
+    def get_db_role(self) -> "DBRole":
+        if self.is_any_admin():
+            return DBRole.admin
+        if (self.cde | self.assembly) & self:
+            return DBRole.member
+        if (self.persona | self.droid) & self:
+            return DBRole.persona
+        return DBRole.anonymous
 
 
 class Realms(_Realms):

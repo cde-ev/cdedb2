@@ -14,7 +14,7 @@ from cdedb.common import RequestState, User, now
 from cdedb.common.n_ import n_
 from cdedb.common.roles import Roles
 from cdedb.config import SecretsConfig
-from cdedb.database import DATABASE_ROLES
+from cdedb.database import DATABASE_ROLES, DBRole
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.cde import CdEFrontend
@@ -78,7 +78,7 @@ class CronFrontend(BaseApp):
             lang=lang,
             translations=self.translations,
         )
-        rs._conn = self.connpool['cdb_admin']
+        rs._conn = self.connpool[DBRole.admin]
         return rs
 
     def execute(self, jobs: Collection[str] | None = None) -> bool:
