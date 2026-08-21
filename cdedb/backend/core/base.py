@@ -73,8 +73,6 @@ from cdedb.common.query.log_filter import (
     CoreLogFilter,
 )
 from cdedb.common.roles import (
-    ADMIN_KEYS,
-    REALM_ADMINS,
     Realms,
     Roles,
     extract_roles,
@@ -352,7 +350,7 @@ class CoreBaseBackend(AbstractBackend):
                 )
             return self.sql_insert(rs, "cde.finance_log", data)
 
-    @access(*REALM_ADMINS)
+    @access(*Roles.all_user_admin_roles())
     def redact_log(
         self,
         rs: RequestState,
@@ -1124,7 +1122,7 @@ class CoreBaseBackend(AbstractBackend):
             # Allow setting balance to 0 or None during archival or membership change.
             if not (
                 (data["balance"] is None or data["balance"] == 0)
-                and REALM_ADMINS & rs.user.roles
+                and rs.user.new_roles & Roles.all_user_admin_roles()
                 and {"archive", "purge", "membership"} & set(allow_specials)
             ):
                 raise PrivilegeError(n_("Modification of balance prevented."))
@@ -1136,7 +1134,9 @@ class CoreBaseBackend(AbstractBackend):
             raise PrivilegeError(n_("Own activation prevented."))
 
         # check for permission to edit
-        allow_meta_admin = data.keys() <= ADMIN_KEYS.keys() | {"id"}
+        allow_meta_admin = data.keys() <= (
+            set(Roles.all_admin_roles().markers()) | {"id"}
+        )
         if rs.user.persona_id != data['id'] and not self.is_relative_admin(
             rs, data['id'], allow_meta_admin
         ):
@@ -1917,7 +1917,7 @@ class CoreBaseBackend(AbstractBackend):
 
         return True
 
-    @access(*REALM_ADMINS)
+    @access(*Roles.all_user_admin_roles())
     def archive_persona(
         self, rs: RequestState, persona_id: int, note: str
     ) -> DefaultReturnCode:
@@ -1959,7 +1959,7 @@ class CoreBaseBackend(AbstractBackend):
 
             # Disallow archival of admins. Admin privileges should be unset
             # by two meta admins before.
-            if any(persona[key] for key in ADMIN_KEYS):
+            if extract_roles(persona, introspection_only=True).is_any_admin():
                 raise ArchiveError(n_("Cannot archive admins."))
 
             # Disallow archival of realm helpers.
@@ -2268,7 +2268,7 @@ class CoreBaseBackend(AbstractBackend):
             #
             return ret
 
-    @access(*REALM_ADMINS)
+    @access(*Roles.all_user_admin_roles())
     def dearchive_persona(
         self, rs: RequestState, persona_id: int, new_username: str
     ) -> DefaultReturnCode:
@@ -2814,7 +2814,7 @@ class CoreBaseBackend(AbstractBackend):
         get_total_personas, "persona_ids", "persona_id"
     )
 
-    @access(*REALM_ADMINS)
+    @access(*Roles.all_user_admin_roles())
     def create_persona(
         self, rs: RequestState, data: CdEDBObject, submitted_by: int | None = None
     ) -> DefaultReturnCode:
@@ -2830,7 +2830,7 @@ class CoreBaseBackend(AbstractBackend):
         submitted_by = affirm(vtypes.ID | None, submitted_by)
         # zap any admin attempts
         data.update({'is_archived': False, 'is_purged': False})
-        data.update({k: False for k in ADMIN_KEYS})
+        data.update({role.marker: False for role in Roles.all_admin_roles()})
         # Check if admin has rights to create the user in its realms
         user_realms = extract_user_realms(data)
         if not any(
@@ -3374,9 +3374,11 @@ class CoreBaseBackend(AbstractBackend):
         password = affirm(str, password)
         persona_id = affirm(vtypes.ID, persona_id)
 
+        # TODO: select a real persona instead.
         columns_of_interest = [
-            *ADMIN_KEYS, "username", "given_names", "family_name", "nickname", "title",
-            "name_supplement", "birthday", "legal_given_names",
+            *(role.marker for role in Roles.all_admin_roles()),
+            "username", "given_names", "family_name", "nickname",
+            "title", "name_supplement", "birthday", "legal_given_names",
         ]  # fmt: skip
 
         # escalate db privilege role in case of resetting passwords
@@ -3397,7 +3399,6 @@ class CoreBaseBackend(AbstractBackend):
             if orig_conn:
                 rs.conn = orig_conn
 
-        admin = any(persona[admin] for admin in ADMIN_KEYS)
         inputs = (
             persona['username'].split('@')
             + persona['given_names'].replace('-', ' ').split()
@@ -3417,7 +3418,7 @@ class CoreBaseBackend(AbstractBackend):
             vtypes.PasswordStrength,
             password,
             argname="new_password",
-            admin=admin,
+            admin=any(persona[role.marker] for role in Roles.all_admin_roles()),
             inputs=inputs,
         )
 

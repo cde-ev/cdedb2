@@ -62,11 +62,7 @@ from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.roles import (
-    ADMIN_KEYS,
-    ADMIN_VIEWS_COOKIE_NAME,
-    ALL_ADMIN_VIEWS,
-    ALL_ADMINS,
-    REALM_ADMINS,
+    AdminViews,
     Realms,
     Roles,
     extract_roles,
@@ -98,7 +94,6 @@ from cdedb.frontend.common import (
     periodic,
     request_dict_extractor,
 )
-from cdedb.models.core import CdEPersona
 from cdedb.uncommon.submanshim import SubscriptionPolicy
 
 # Name of each realm
@@ -832,7 +827,7 @@ class CoreBaseFrontend(AbstractFrontend):
             # This is a bit involved to not contaminate the data dict
             # with keys which are not applicable to the requested persona
             total = self.coreproxy.get_total_persona(rs, persona_id)
-            admin_bits = {bit for bit in CdEPersona.get_admin_bits() if total[bit]}
+            admin_bits = extract_roles(total, introspection_only=True) & Roles.all_admin_roles()
             persona.username = total['username']
             if is_relative_or_meta_admin and is_relative_or_meta_admin_view:
                 # This is not shown to the persona themselves
@@ -1056,7 +1051,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, "core/show_user_assemblies", {"persona_id": rs.user.persona_id}
         )
 
-    @access(*REALM_ADMINS)
+    @access(*Roles.all_user_admin_roles())
     def show_history(self, rs: RequestState, persona_id: int) -> Response:
         """Display user history."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
@@ -1144,7 +1139,6 @@ class CoreBaseFrontend(AbstractFrontend):
                 'pending': pending,
                 'eventual_status': eventual_status,
                 'personas': personas,
-                'ADMIN_KEYS': ADMIN_KEYS,
                 'inconsistencies': inconsistencies or [],
                 'committed': committed,
             },
@@ -1354,7 +1348,7 @@ class CoreBaseFrontend(AbstractFrontend):
         data: tuple[CdEDBObject, ...] | None = None
 
         # Allow admins to search by (CdEDB)ID
-        if ALL_ADMINS & rs.user.roles:
+        if rs.user.new_roles.is_any_admin():
             anid: vtypes.ID | None
             personas = {}
             anid, errs = inspect(vtypes.PersonaID, phrase, argname="phrase")
@@ -1660,7 +1654,7 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.create_user_form(rs)
         return self.redirect(rs, realm + "/create_user")
 
-    @access(*REALM_ADMINS)
+    @access(*Roles.all_user_admin_roles())
     def admin_change_user_form(
         self, rs: RequestState, persona_id: vtypes.PersonaID
     ) -> Response:
@@ -1697,7 +1691,7 @@ class CoreBaseFrontend(AbstractFrontend):
             get_mandatory_form_fields(PERSONA_COMMON_FIELDS) - {'birthday'},
         )
 
-    @access(*REALM_ADMINS, modi={"POST"})
+    @access(*Roles.all_user_admin_roles(), modi={"POST"})
     @REQUESTdata("generation", "change_note")
     def admin_change_user(
         self,
@@ -2863,7 +2857,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.notify("success", success_msg)
         return self.redirect(rs, "core/index")
 
-    @access(*REALM_ADMINS, modi={"POST"})
+    @access(*Roles.all_user_admin_roles(), modi={"POST"})
     def admin_send_password_reset_link(
         self, rs: RequestState, persona_id: int
     ) -> Response:
@@ -3049,7 +3043,7 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.redirect(rs, "core/change_username_form")
         else:
             # Warn management of possible privilege escalation
-            if rs.user.roles & ALL_ADMINS:
+            if rs.user.new_roles.is_any_admin():
                 to = (
                     self.conf["MANAGEMENT_ADDRESS"],
                     self.conf["TROUBLESHOOTING_ADDRESS"],
@@ -3071,7 +3065,7 @@ class CoreBaseFrontend(AbstractFrontend):
             )
             return self.redirect(rs, "core/index")
 
-    @access(*REALM_ADMINS)
+    @access(*Roles.all_user_admin_roles())
     def admin_username_change_form(self, rs: RequestState, persona_id: int) -> Response:
         """Render form."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
@@ -3086,7 +3080,7 @@ class CoreBaseFrontend(AbstractFrontend):
             get_mandatory_form_fields(self.admin_username_change),
         )
 
-    @access(*REALM_ADMINS, modi={"POST"})
+    @access(*Roles.all_user_admin_roles(), modi={"POST"})
     @REQUESTdata("new_username")
     def admin_username_change(
         self, rs: RequestState, persona_id: int, new_username: vtypes.Email
@@ -3119,7 +3113,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 )
             return self.redirect_show_user(rs, persona_id)
 
-    @access(*REALM_ADMINS, modi={"POST"})
+    @access(*Roles.all_user_admin_roles(), modi={"POST"})
     @REQUESTdata("activity")
     def toggle_activity(
         self, rs: RequestState, persona_id: int, activity: bool
@@ -3229,7 +3223,7 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify_return_code(code, success=message)
         return self.redirect(rs, "core/list_pending_changes")
 
-    @access(*REALM_ADMINS, modi={"POST"})
+    @access(*Roles.all_user_admin_roles(), modi={"POST"})
     @REQUESTdata("note")
     @ack_delete()
     def archive_persona(self, rs: RequestState, persona_id: int, note: str) -> Response:
@@ -3266,7 +3260,7 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
-    @access(*REALM_ADMINS)
+    @access(*Roles.all_user_admin_roles())
     def dearchive_persona_form(self, rs: RequestState, persona_id: int) -> Response:
         """Render form."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
@@ -3278,7 +3272,7 @@ class CoreBaseFrontend(AbstractFrontend):
             get_mandatory_form_fields(self.dearchive_persona),
         )
 
-    @access(*REALM_ADMINS, modi={"POST"})
+    @access(*Roles.all_user_admin_roles(), modi={"POST"})
     @REQUESTdata("new_username")
     def dearchive_persona(
         self, rs: RequestState, persona_id: int, new_username: vtypes.Email

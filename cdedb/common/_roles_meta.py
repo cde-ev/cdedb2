@@ -26,19 +26,23 @@ class _RolesMeta(enum.EnumType):
 
 
 class _Roles(CdEIntFlag, metaclass=_RolesMeta):
-    marker: str | None
+    # TODO: This is actually str | None currently.
+    marker: str
     required_roles: Self
 
     def __new__(cls, marker: str | None = None, *required_roles: str) -> Self:
         value = 2 ** len(cls.__members__)
         obj = int.__new__(cls, value)
         obj._value_ = value
-        obj.marker = marker
+        obj.marker = marker  # type: ignore[assignment]
         obj._required_roles = required_roles  # type: ignore[attr-defined]
         return obj
 
     def as_set(self) -> set[str]:
         return {str(role.name) for role in self}
+
+    def markers(self) -> list[str]:
+        return [role.marker for role in self]
 
 
 class _RealmsMeta(enum.EnumType):

@@ -1531,7 +1531,7 @@ def _persona(
             **kwargs,
         )
         temp.update({'is_archived': False, 'is_purged': False})
-        temp.update({k: False for k in ADMIN_KEYS})
+        temp.update({k: False for k in Roles.all_admin_roles().markers()})
         roles = extract_roles(temp)
         optional_fields: TypeMapping = {}
         mandatory_fields: dict[str, Any] = {

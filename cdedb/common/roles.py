@@ -2,12 +2,9 @@
 
 """Everything regarding the role model of the CdEDB."""
 
-import collections
-from typing import TYPE_CHECKING, Any, Self
+from typing import Any, Self
 
-from cdedb.common._roles_meta import _Realms, _Roles
-from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS, Role
-from cdedb.common.n_ import n_
+from cdedb.common._roles_meta import _AdminViews, _Realms, _Roles
 from cdedb.config import Config
 from cdedb.database.connection import DBRole
 
@@ -81,6 +78,20 @@ class Roles(_Roles):
             | cls.cdelokal_admin
             | cls.finance_admin
         )
+
+    @classmethod
+    def all_realm_admin_roles(cls) -> Self:
+        """All roles of admins responsible for any realm."""
+        return Realms.all_realm_admins()
+
+    @classmethod
+    def all_user_admin_roles(cls) -> Self:
+        """All roles of admins responsible for any users."""
+        return cls.core_admin | cls.all_realm_admin_roles()
+
+    @classmethod
+    def all_genesis_roles(cls) -> Self:
+        return cls.core_admin | cls.cde_admin | cls.event_admin | cls.ml_admin
 
     def is_any_admin(self) -> bool:
         """Whether there is any admin role in this set of roles."""
@@ -240,6 +251,14 @@ class Realms(_Realms):
         assert self.admin_role.marker is not None
         return self.admin_role.marker
 
+    @classmethod
+    def all_realm_admins(cls) -> Roles:
+        """
+        >>> Realms.all_realm_admins()
+        Roles.cde_admin|event_admin|ml_admin|assembly_admin
+        """
+        return Roles.union(realm.admin_role for realm in cls)
+
 
 # TODO move to PersonaStatus datclass
 def extract_roles(session: CdEDBObject, introspection_only: bool = False) -> Roles:
@@ -295,7 +314,7 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False) -> Rol
     # Iterate manually to be able to subsequently apply the 'required roles' checks.
     for possible_role in Roles:
         if possible_role.marker is None:
-            continue
+            continue  # type: ignore[unreachable]
         if session.get(possible_role.marker) and possible_role.required_roles in ret:
             ret |= possible_role
 

@@ -23,7 +23,7 @@ from cdedb.common.query import (
     QueryOrder,
     QueryScope,
 )
-from cdedb.common.roles import ADMIN_KEYS
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import xsorted
 
 
@@ -302,10 +302,15 @@ DEFAULT_QUERIES = {
         _make_stored_query(
             QueryScope.all_core_users,
             n_("10_query_core_any_admin"),
-            fields_of_interest=_default_fields_of_interest + list(ADMIN_KEYS),
+            fields_of_interest=_default_fields_of_interest
+            + list(Roles.all_admin_roles().markers()),
             constraints=[
                 _not_archived_constraint,
-                (",".join(ADMIN_KEYS), QueryOperators.equal, True),
+                (
+                    ",".join(Roles.all_admin_roles().markers()),
+                    QueryOperators.equal,
+                    True,
+                ),
             ],
             order=_default_sort,
         ),

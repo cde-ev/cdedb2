@@ -137,11 +137,9 @@ from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.roles import (
-    ADMIN_KEYS,
-    ALL_MGMT_ADMIN_VIEWS,
-    ALL_MOD_ADMIN_VIEWS,
     PERSONA_DEFAULTS,
-    roles_to_db_role,
+    AdminViews,
+    Roles,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation import validate
@@ -162,6 +160,7 @@ from cdedb.filter import (
 from cdedb.models.common import CdEDataclass
 from cdedb.models.core import EmailAddressReport
 from cdedb.models.event import CustomQueryFilter
+from cdedb.uncommon.intenum import CdEIntFlag
 
 
 class Attachment(typing.TypedDict, total=False):
@@ -1247,7 +1246,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'default_queries': default_queries,
             'query': query,
             'scope': scope,
-            'ADMIN_KEYS': ADMIN_KEYS,
         }
         # Tricky logic: In case of no validation errors we perform a query
         if not rs.has_validation_errors() and is_search and query:
