@@ -32,15 +32,13 @@ from cdedb.common import (
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
-from cdedb.common.roles import (
-    PERSONA_DEFAULTS,
-)
+from cdedb.common.roles import PERSONA_DEFAULTS, Roles
 from cdedb.database.connection import Atomizer
 from cdedb.models.common import CdEDataclassMap
 
 
 class CoreGenesisBackend(CoreBaseBackend):
-    @access("anonymous")
+    @access(Roles.anonymous)
     def genesis_request(
         self, rs: RequestState, data: CdEDBObject
     ) -> DefaultReturnCode | None:
@@ -79,7 +77,7 @@ class CoreGenesisBackend(CoreBaseBackend):
             )
         return ret
 
-    @access("core_admin", *models.GenesisCase.all_admins)
+    @access(*models.GenesisCase.all_admins)
     def delete_genesis_case_blockers(
         self, rs: RequestState, case_id: int
     ) -> DeletionBlockers:
@@ -110,7 +108,7 @@ class CoreGenesisBackend(CoreBaseBackend):
 
         return blockers
 
-    @access("core_admin", *models.GenesisCase.all_admins)
+    @access(*models.GenesisCase.all_admins)
     def delete_genesis_case(
         self, rs: RequestState, case_id: int, cascade: Collection[str] | None = None
     ) -> DefaultReturnCode:
@@ -171,7 +169,7 @@ class CoreGenesisBackend(CoreBaseBackend):
 
         return ret
 
-    @access("core_admin", "cde_admin")
+    @access(Roles.core_admin, Roles.cde_admin)
     def get_genesis_attachment_usage(
         self, rs: RequestState, attachment_hash: str
     ) -> bool:
@@ -180,7 +178,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         query = "SELECT COUNT(*) FROM core.genesis_cases WHERE attachment_hash = %s"
         return bool(unwrap(self.query_one(rs, query, (attachment_hash,))))
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def genesis_case_by_email(self, rs: RequestState, email: str) -> int | None:
         """Get the id of an unconfirmed or unreviewed genesis case for a given email.
 
@@ -205,7 +203,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         # Pylint does not understand, that unwrap(data) cannot be None here.
         return -unwrap(data) if data else None
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def genesis_verify(
         self, rs: RequestState, case_id: int
     ) -> tuple[DefaultReturnCode, str]:
@@ -249,7 +247,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                 )
         return ret, data["realm"]
 
-    @access("core_admin", *models.GenesisCase.all_admins)
+    @access(*models.GenesisCase.all_admins)
     def genesis_list_cases(
         self,
         rs: RequestState,
@@ -288,7 +286,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         data = self.query_all(rs, query, params)
         return {e['id']: e for e in data}
 
-    @access("core_admin", *models.GenesisCase.all_admins)
+    @access(*models.GenesisCase.all_admins)
     def genesis_get_cases(
         self, rs: RequestState, genesis_case_ids: Collection[int]
     ) -> CdEDataclassMap[models.GenesisCase]:
@@ -313,7 +311,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         genesis_get_cases, "genesis_case_ids", "genesis_case_id"
     )
 
-    @access("core_admin", *models.GenesisCase.all_admins)
+    @access(*models.GenesisCase.all_admins)
     def genesis_modify_case(
         self, rs: RequestState, data: CdEDBObject
     ) -> DefaultReturnCode:
@@ -333,7 +331,7 @@ class CoreGenesisBackend(CoreBaseBackend):
             )
         return ret
 
-    @access("core_admin", *models.GenesisCase.all_admins)
+    @access(*models.GenesisCase.all_admins)
     def genesis_modify_case_realm(
         self, rs: RequestState, case_id: int, realm: str
     ) -> DefaultReturnCode:
@@ -361,7 +359,7 @@ class CoreGenesisBackend(CoreBaseBackend):
             )
         return ret
 
-    @access("core_admin", *models.GenesisCase.all_admins)
+    @access(*models.GenesisCase.all_admins)
     @internal
     def genesis_modify_case_meta(
         self,
@@ -407,7 +405,7 @@ class CoreGenesisBackend(CoreBaseBackend):
             )
         return ret
 
-    @access("core_admin", *models.GenesisCase.all_admins)
+    @access(*models.GenesisCase.all_admins)
     def genesis_decide(
         self,
         rs: RequestState,
@@ -484,7 +482,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                 return -1
 
     @internal
-    @access("core_admin", *models.GenesisCase.all_admins)
+    @access(*models.GenesisCase.all_admins)
     def genesis(self, rs: RequestState, case_id: int) -> DefaultReturnCode:
         """Create a new user account upon request.
 

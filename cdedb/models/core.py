@@ -8,6 +8,7 @@ import datetime
 import decimal
 import logging
 import re
+from collections.abc import Iterable
 from enum import auto
 from secrets import token_urlsafe
 from typing import TYPE_CHECKING, Any, ClassVar, cast
@@ -765,7 +766,7 @@ class GenesisCase(CdEDataclass):
     def model(self) -> type["GenesisCase"]:
         return self.get_model_by_realm(self.realm)
 
-    all_admins: ClassVar[set[str]] = {f"{realm}_admin" for realm in available_realms}
+    all_admins: ClassVar[Iterable[Roles]] = tuple(Roles.all_genesis_roles())
 
     @property
     def relative_admin(self) -> str:

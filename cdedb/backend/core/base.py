@@ -116,11 +116,11 @@ class CoreBaseBackend(AbstractBackend):
             self.conf['STORAGE_DIR'] / 'genesis_attachment'
         )
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def get_foto_store(self, rs: RequestState) -> AttachmentStore:
         return self._foto_store
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def get_genesis_attachment_store(self, rs: RequestState) -> AttachmentStore:
         return self._genesis_attachment_store
 
@@ -128,7 +128,7 @@ class CoreBaseBackend(AbstractBackend):
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
-    @access("persona")
+    @access(Roles.persona)
     def is_relative_admin(
         self, rs: RequestState, persona_id: int, allow_meta_admin: bool = False
     ) -> bool:
@@ -163,7 +163,7 @@ class CoreBaseBackend(AbstractBackend):
             for admin_roles in user_realms.get_required_admin_roles()
         )
 
-    @access("persona")
+    @access(Roles.persona)
     def is_relative_admin_view(
         self, rs: RequestState, persona_id: int, allow_meta_admin: bool = False
     ) -> bool:
@@ -260,7 +260,7 @@ class CoreBaseBackend(AbstractBackend):
         }
         return self.query_exec(rs, query, params)
 
-    @access("persona")
+    @access(Roles.persona)
     def log_quota_violation(self, rs: RequestState) -> DefaultReturnCode:
         """Log a quota violation.
 
@@ -273,7 +273,7 @@ class CoreBaseBackend(AbstractBackend):
             rs, const.CoreLogCodes.quota_violation, rs.user.persona_id, atomized=False
         )
 
-    @access("persona")
+    @access(Roles.persona)
     def log_contact_reply(self, rs: RequestState, recipient: str) -> DefaultReturnCode:
         """Log who sent a reply to an anonymous message originally sent to whom."""
         recipient = affirm(vtypes.Email, recipient)
@@ -285,7 +285,7 @@ class CoreBaseBackend(AbstractBackend):
         )
 
     @internal
-    @access("cde")
+    @access(Roles.cde)
     def finance_log(
         self,
         rs: RequestState,
@@ -378,7 +378,7 @@ class CoreBaseBackend(AbstractBackend):
         )
         return self.sql_update(rs, log_table, update)
 
-    @access("core_admin", "auditor")
+    @access(Roles.core_admin, Roles.auditor)
     def retrieve_log(self, rs: RequestState, log_filter: CoreLogFilter) -> CdEDBLog:
         """Get recorded activity.
 
@@ -388,7 +388,7 @@ class CoreBaseBackend(AbstractBackend):
         log_filter = affirm(CoreLogFilter, log_filter)
         return self.generic_retrieve_log(rs, log_filter)
 
-    @access("core_admin", "auditor")
+    @access(Roles.core_admin, Roles.auditor)
     def retrieve_changelog_meta(
         self, rs: RequestState, log_filter: ChangelogLogFilter
     ) -> CdEDBLog:
@@ -416,7 +416,7 @@ class CoreBaseBackend(AbstractBackend):
             raise RuntimeError(n_("Given changelog generation must be committed."))
         return [key for key in persona if persona[key] != generation[key]]
 
-    @access("persona")
+    @access(Roles.persona)
     def get_changelog_inconsistencies(
         self, rs: RequestState, persona_id: int
     ) -> list[str] | None:
@@ -763,7 +763,7 @@ class CoreBaseBackend(AbstractBackend):
                     raise RuntimeError(n_("Modification failed."))
         return ret
 
-    @access("core_admin", "cde_admin", "event_admin")
+    @access(Roles.core_admin, Roles.cde_admin, Roles.event_admin)
     def changelog_resolve_change(
         self, rs: RequestState, persona_id: int, generation: int, ack: bool
     ) -> DefaultReturnCode:
@@ -771,7 +771,7 @@ class CoreBaseBackend(AbstractBackend):
             raise PrivilegeError(n_("Not a relative admin."))
         return self._changelog_resolve_change_unsafe(rs, persona_id, generation, ack)
 
-    @access("persona")
+    @access(Roles.persona)
     def changelog_get_generations(
         self, rs: RequestState, ids: Collection[int], committed_only: bool = False
     ) -> dict[int, int]:
@@ -809,7 +809,7 @@ class CoreBaseBackend(AbstractBackend):
         changelog_get_generations
     )
 
-    @access("core_admin", "cde_admin", "event_admin")
+    @access(Roles.core_admin, Roles.cde_admin, Roles.event_admin)
     def changelog_get_pending_changes(self, rs: RequestState) -> CdEDBObjectMap:
         """Retrieve pending changes in the changelog.
 
@@ -833,7 +833,7 @@ class CoreBaseBackend(AbstractBackend):
         data = self.query_all(rs, query, {"code": const.PersonaChangeStati.pending})
         return {e['persona_id']: e for e in data}
 
-    @access("persona")
+    @access(Roles.persona)
     def changelog_get_history(
         self, rs: RequestState, persona_id: int, generations: Collection[int] | None
     ) -> CdEDBObjectMap:
@@ -879,7 +879,7 @@ class CoreBaseBackend(AbstractBackend):
         return ret
 
     @internal
-    @access("persona", "droid")
+    @access(Roles.persona, Roles.droid)
     def retrieve_personas(
         self,
         rs: RequestState,
@@ -914,7 +914,7 @@ class CoreBaseBackend(AbstractBackend):
     )
 
     @internal
-    @access("ml")
+    @access(Roles.ml)
     def list_all_personas(self, rs: RequestState, is_active: bool = False) -> set[int]:
         query = "SELECT id from core.personas WHERE is_archived = False"
         if is_active:
@@ -923,7 +923,7 @@ class CoreBaseBackend(AbstractBackend):
         return {e["id"] for e in data}
 
     @internal
-    @access("ml")
+    @access(Roles.ml)
     def list_current_members(
         self, rs: RequestState, is_active: bool = False
     ) -> set[int]:
@@ -938,7 +938,7 @@ class CoreBaseBackend(AbstractBackend):
         return {e["id"] for e in data}
 
     @internal
-    @access("ml")
+    @access(Roles.ml)
     def list_all_moderators(
         self,
         rs: RequestState,
@@ -968,7 +968,7 @@ class CoreBaseBackend(AbstractBackend):
         data = self.query_all(rs, query, params)
         return {e["persona_id"] for e in data}
 
-    @access("core_admin")
+    @access(Roles.core_admin)
     def next_persona(
         self,
         rs: RequestState,
@@ -1034,7 +1034,7 @@ class CoreBaseBackend(AbstractBackend):
         return num
 
     @internal
-    @access("persona")
+    @access(Roles.persona)
     def set_persona(
         self,
         rs: RequestState,
@@ -1165,7 +1165,7 @@ class CoreBaseBackend(AbstractBackend):
                 raise RuntimeError(n_("Special change not committed."))
         return ret
 
-    @access("persona")
+    @access(Roles.persona)
     def change_persona(
         self,
         rs: RequestState,
@@ -1199,7 +1199,7 @@ class CoreBaseBackend(AbstractBackend):
             force_review=force_review,
         )
 
-    @access("core_admin")
+    @access(Roles.core_admin)
     def change_persona_realms(
         self, rs: RequestState, data: CdEDBObject, change_note: str
     ) -> DefaultReturnCode:
@@ -1244,7 +1244,7 @@ class CoreBaseBackend(AbstractBackend):
                 )
         return ret
 
-    @access("cde")
+    @access(Roles.cde)
     def get_foto_usage(self, rs: RequestState, file_hash: str) -> bool:
         file_hash = affirm(vtypes.RestrictiveIdentifier, file_hash)
         query = """
@@ -1252,7 +1252,7 @@ class CoreBaseBackend(AbstractBackend):
         """
         return bool(unwrap(self.query_one(rs, query, [file_hash])))
 
-    @access("cde")
+    @access(Roles.cde)
     def change_foto(
         self, rs: RequestState, persona_id: int, new_hash: vtypes.Identifier | None
     ) -> DefaultReturnCode:
@@ -1285,7 +1285,7 @@ class CoreBaseBackend(AbstractBackend):
             self.get_foto_store(rs).forget_one(rs, self.get_foto_usage, old_hash)
         return ret * indicator
 
-    @access("meta_admin")
+    @access(Roles.meta_admin)
     def initialize_privilege_change(
         self, rs: RequestState, data: CdEDBObject
     ) -> DefaultReturnCode:
@@ -1335,7 +1335,7 @@ class CoreBaseBackend(AbstractBackend):
 
         return ret
 
-    @access("meta_admin")
+    @access(Roles.meta_admin)
     def finalize_privilege_change(
         self,
         rs: RequestState,
@@ -1436,7 +1436,7 @@ class CoreBaseBackend(AbstractBackend):
 
         return ret
 
-    @access("meta_admin")
+    @access(Roles.meta_admin)
     def list_privilege_changes(
         self,
         rs: RequestState,
@@ -1470,7 +1470,7 @@ class CoreBaseBackend(AbstractBackend):
         data = self.query_all(rs, query, params)
         return {e["id"]: e for e in data}
 
-    @access("meta_admin")
+    @access(Roles.meta_admin)
     def get_privilege_changes(
         self, rs: RequestState, change_ids: Collection[int]
     ) -> CdEDBObjectMap:
@@ -1492,7 +1492,7 @@ class CoreBaseBackend(AbstractBackend):
         get_privilege_changes, "change_ids", "change_id"
     )
 
-    @access("persona")
+    @access(Roles.persona)
     def list_admins(self, rs: RequestState, realm: str) -> list[int]:
         """List all personas with admin privilidges in a given realm."""
         realm = affirm(str, realm)
@@ -1521,7 +1521,7 @@ class CoreBaseBackend(AbstractBackend):
 
         return [e["id"] for e in result]
 
-    @access("core_admin", "cde_admin")
+    @access(Roles.core_admin, Roles.cde_admin)
     def change_persona_balance(
         self,
         rs: RequestState,
@@ -1568,7 +1568,7 @@ class CoreBaseBackend(AbstractBackend):
             else:
                 return 0
 
-    @access("core_admin", "cde_admin")
+    @access(Roles.core_admin, Roles.cde_admin)
     def change_membership_easy_mode(
         self,
         rs: RequestState,
@@ -1667,7 +1667,7 @@ class CoreBaseBackend(AbstractBackend):
                 self.finance_log(rs, code, persona_id, delta=None, new_balance=None)
         return ret
 
-    @access("core_admin", "meta_admin")
+    @access(Roles.core_admin, Roles.meta_admin)
     def invalidate_password(
         self, rs: RequestState, persona_id: int
     ) -> DefaultReturnCode:
@@ -1711,7 +1711,7 @@ class CoreBaseBackend(AbstractBackend):
 
         return ret
 
-    @access("core_admin")
+    @access(Roles.core_admin)
     def get_persona_latest_session(
         self, rs: RequestState, persona_id: int
     ) -> datetime.datetime | None:
@@ -1726,7 +1726,7 @@ class CoreBaseBackend(AbstractBackend):
         """
         return unwrap(self.query_one(rs, query, [persona_id]))
 
-    @access("core_admin")
+    @access(Roles.core_admin)
     def is_persona_automatically_archivable(
         self,
         rs: RequestState,
@@ -2300,7 +2300,7 @@ class CoreBaseBackend(AbstractBackend):
             self.core_log(rs, const.CoreLogCodes.persona_dearchived, persona_id)
         return code
 
-    @access("core_admin")
+    @access(Roles.core_admin)
     def purge_persona(self, rs: RequestState, persona_id: int) -> DefaultReturnCode:
         """Delete all infos about this persona.
 
@@ -2400,7 +2400,7 @@ class CoreBaseBackend(AbstractBackend):
             self.core_log(rs, const.CoreLogCodes.persona_purged, persona_id)
             return ret
 
-    @access("persona")
+    @access(Roles.persona)
     def change_username(
         self,
         rs: RequestState,
@@ -2448,7 +2448,7 @@ class CoreBaseBackend(AbstractBackend):
                     return True, new_username
         return False, n_("Failed.")
 
-    @access("persona")
+    @access(Roles.persona)
     def foto_usage(self, rs: RequestState, foto: str) -> int:
         """Retrieve usage number for a specific foto.
 
@@ -2461,7 +2461,7 @@ class CoreBaseBackend(AbstractBackend):
         # TODO: `persona_id` is actually not optional, but it produces a lot of errors.
         def __call__(self, rs: RequestState, persona_id: int | None) -> CdEDBObject: ...
 
-    @access("persona")
+    @access(Roles.persona)
     def get_personas(
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> CdEDataclassMap[models.CorePersona]:
@@ -2503,7 +2503,7 @@ class CoreBaseBackend(AbstractBackend):
         get_personas_status, "persona_ids", "persona_id"
     )
 
-    @access("event", "droid_quick_partial_export", "droid_orga")
+    @access(Roles.event, Roles.droid_quick_partial_export, Roles.droid_orga)
     def get_event_users(
         self,
         rs: RequestState,
@@ -2572,7 +2572,7 @@ class CoreBaseBackend(AbstractBackend):
         get_event_users, "persona_ids", "persona_id"
     )
 
-    @access("event")
+    @access(Roles.event)
     def get_past_event_users(
         self,
         rs: RequestState,
@@ -2608,7 +2608,7 @@ class CoreBaseBackend(AbstractBackend):
     def quota(self, rs: RequestState) -> int: ...
 
     @internal
-    @access("persona")
+    @access(Roles.persona)
     def quota(
         self,
         rs: RequestState,
@@ -2695,7 +2695,7 @@ class CoreBaseBackend(AbstractBackend):
     def check_quota(self, rs: RequestState) -> bool: ...
 
     @internal
-    @access("persona")
+    @access(Roles.persona)
     def check_quota(
         self,
         rs: RequestState,
@@ -2716,7 +2716,7 @@ class CoreBaseBackend(AbstractBackend):
             and not {"cde_admin", "core_admin"} & rs.user.roles
         )
 
-    @access("cde")
+    @access(Roles.cde)
     def get_cde_users(
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> CdEDataclassMap[models.CdEPersona]:
@@ -2749,7 +2749,7 @@ class CoreBaseBackend(AbstractBackend):
         get_cde_users, "persona_ids", "persona_id"
     )
 
-    @access("ml")
+    @access(Roles.ml)
     def get_ml_users(
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> CdEDataclassMap[models.MlPersona]:
@@ -2770,7 +2770,7 @@ class CoreBaseBackend(AbstractBackend):
         get_ml_users, "persona_ids", "persona_id"
     )
 
-    @access("assembly")
+    @access(Roles.assembly)
     def get_assembly_users(
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> CdEDataclassMap[models.AssemblyPersona]:
@@ -2791,7 +2791,7 @@ class CoreBaseBackend(AbstractBackend):
         get_assembly_users, "persona_ids", "persona_id"
     )
 
-    @access("persona")
+    @access(Roles.persona)
     def get_total_personas(
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> CdEDBObjectMap:
@@ -2878,7 +2878,7 @@ class CoreBaseBackend(AbstractBackend):
                 self.change_membership_easy_mode(rs, new_id, **stash)
         return new_id
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def login(
         self, rs: RequestState, username: str, password: str, ip: str | None
     ) -> str | None:
@@ -2996,7 +2996,7 @@ class CoreBaseBackend(AbstractBackend):
 
         return sessionkey
 
-    @access("persona")
+    @access(Roles.persona)
     def logout(
         self, rs: RequestState, this_session: bool = True, other_sessions: bool = False
     ) -> DefaultReturnCode:
@@ -3017,7 +3017,7 @@ class CoreBaseBackend(AbstractBackend):
         query += " WHERE " + " AND ".join(constraints)
         return self.query_exec(rs, query, params)
 
-    @access("persona")
+    @access(Roles.persona)
     def count_active_sessions(self, rs: RequestState) -> int:
         """Retrieve number of currently active sessions"""
         query = """
@@ -3029,7 +3029,7 @@ class CoreBaseBackend(AbstractBackend):
         count = unwrap(self.query_one(rs, query, params)) or 0
         return count
 
-    @access("core_admin")
+    @access(Roles.core_admin)
     def deactivate_old_sessions(self, rs: RequestState) -> DefaultReturnCode:
         """Deactivate old leftover sessions."""
         query = """
@@ -3043,7 +3043,7 @@ class CoreBaseBackend(AbstractBackend):
         params = {"cutoff": now() - self.conf['SESSION_SAVETIME']}
         return self.query_exec(rs, query, params)
 
-    @access("core_admin")
+    @access(Roles.core_admin)
     def clean_session_log(self, rs: RequestState) -> DefaultReturnCode:
         """Delete old entries from the sessionlog."""
         query = """
@@ -3060,7 +3060,7 @@ class CoreBaseBackend(AbstractBackend):
         params = {"cutoff": now() - self.conf['SESSION_SAVETIME']}
         return self.query_exec(rs, query, params)
 
-    @access("persona")
+    @access(Roles.persona)
     def verify_ids(
         self,
         rs: RequestState,
@@ -3097,7 +3097,7 @@ class CoreBaseBackend(AbstractBackend):
     )
 
     @internal
-    @access("anonymous")
+    @access(Roles.anonymous)
     def get_roles_multi(
         self,
         rs: RequestState,
@@ -3123,7 +3123,7 @@ class CoreBaseBackend(AbstractBackend):
 
     get_roles_single: _GetRolesSingleProtocol = singularize(get_roles_multi)
 
-    @access("persona")
+    @access(Roles.persona)
     def verify_personas(
         self,
         rs: RequestState,
@@ -3167,7 +3167,7 @@ class CoreBaseBackend(AbstractBackend):
         verify_personas, "persona_ids", "persona_id", passthrough=True
     )
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def verify_existence(
         self, rs: RequestState, email: str, include_genesis: bool = True
     ) -> bool:
@@ -3191,7 +3191,7 @@ class CoreBaseBackend(AbstractBackend):
             num += unwrap(self.query_one(rs, query, params)) or 0
         return bool(num)
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def resolve_username(self, rs: RequestState, username: str) -> int | None:
         """Retrieve the persona id associated with the given username.
 
@@ -3340,7 +3340,7 @@ class CoreBaseBackend(AbstractBackend):
                 rs.conn = orig_conn
         return ret
 
-    @access("persona")
+    @access(Roles.persona)
     def change_password(
         self, rs: RequestState, old_password: str, new_password: str
     ) -> DefaultReturnCode:
@@ -3354,7 +3354,7 @@ class CoreBaseBackend(AbstractBackend):
             self.core_log(rs, const.CoreLogCodes.password_change, rs.user.persona_id)
         return ret
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def check_password_strength(
         self,
         rs: RequestState,
@@ -3420,7 +3420,7 @@ class CoreBaseBackend(AbstractBackend):
 
         return errs
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def make_reset_cookie(
         self,
         rs: RequestState,
@@ -3440,7 +3440,7 @@ class CoreBaseBackend(AbstractBackend):
             self.core_log(rs, const.CoreLogCodes.password_reset_cookie, persona_id)
         return ret
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def check_reset_cookie(
         self, rs: RequestState, persona_id: int, cookie: str
     ) -> Literal[True]:
@@ -3449,7 +3449,7 @@ class CoreBaseBackend(AbstractBackend):
         cookie = affirm(str, cookie)
         return self.verify_reset_cookie(rs, persona_id, cookie)
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def reset_password(
         self, rs: RequestState, persona_id: int, new_password: str, cookie: str
     ) -> DefaultReturnCode:
@@ -3473,7 +3473,7 @@ class CoreBaseBackend(AbstractBackend):
         self.core_log(rs, const.CoreLogCodes.password_reset, persona_id, atomized=False)
         return ret
 
-    @access("core_admin", *models.GenesisCase.all_admins)
+    @access(*models.GenesisCase.all_admins)
     def find_doppelgangers(
         self, rs: RequestState, persona: CdEDBObject
     ) -> CdEDBObjectMap:
@@ -3563,7 +3563,7 @@ class CoreBaseBackend(AbstractBackend):
             persona_['may_be_edited'] = self._is_relative_admin(rs, status)
         return ret
 
-    @access("persona")
+    @access(Roles.persona)
     def log_anonymous_message(
         self, rs: RequestState, message: models.AnonymousMessageData
     ) -> str | None:
@@ -3585,7 +3585,7 @@ class CoreBaseBackend(AbstractBackend):
                 return data["message_id"]
         return None
 
-    @access("persona")
+    @access(Roles.persona)
     def get_anonymous_message(
         self, rs: RequestState, message_id: str
     ) -> models.AnonymousMessageData:
@@ -3613,7 +3613,7 @@ class CoreBaseBackend(AbstractBackend):
 
         return models.AnonymousMessageData.from_database(message_data)
 
-    @access("persona")
+    @access(Roles.persona)
     def rotate_anonymous_message(
         self, rs: RequestState, message: models.AnonymousMessageData
     ) -> str | None:
@@ -3641,7 +3641,7 @@ class CoreBaseBackend(AbstractBackend):
                 return message.message_id
         return None
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def get_meta_info(self, rs: RequestState) -> models.MetaInfo:
         """Retrieve changing info about the DB and the CdE e.V.
 
@@ -3654,7 +3654,7 @@ class CoreBaseBackend(AbstractBackend):
         ret = models.MetaInfo.from_database(data)
         return ret
 
-    @access("core_admin")
+    @access(Roles.core_admin)
     def set_meta_info(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
         """Change infos about the DB and the CdE e.V.
 
@@ -3667,12 +3667,12 @@ class CoreBaseBackend(AbstractBackend):
             query = "UPDATE core.meta_info SET info = %s"
             return self.query_exec(rs, query, [PsycoJson(meta_info)])
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def is_locked_down(self, rs: RequestState) -> bool:
         """Helper to determine whether the CdEDB is currently locked."""
         return bool(self.conf["LOCKDOWN"] or self.get_meta_info(rs).lockdown_web)
 
-    @access("core_admin")
+    @access(Roles.core_admin)
     def get_cron_store(self, rs: RequestState, name: str) -> CdEDBObject:
         """Retrieve the persistent store of a cron job.
 
@@ -3683,7 +3683,7 @@ class CoreBaseBackend(AbstractBackend):
         )
         return unwrap(ret) or {}
 
-    @access("core_admin")
+    @access(Roles.core_admin)
     def set_cron_store(
         self, rs: RequestState, name: str, data: CdEDBObject
     ) -> DefaultReturnCode:
@@ -3714,9 +3714,11 @@ class CoreBaseBackend(AbstractBackend):
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query, aggregate=aggregate)
 
-    submit_general_query = access("core_admin", "meta_admin")(_submit_general_query)
+    submit_general_query = access(Roles.core_admin, Roles.meta_admin)(
+        _submit_general_query
+    )
 
-    @access("persona")
+    @access(Roles.persona)
     def submit_select_persona_query(
         self, rs: RequestState, query: Query
     ) -> tuple[CdEDBObject, ...]:
@@ -3729,7 +3731,7 @@ class CoreBaseBackend(AbstractBackend):
         query = affirm(Query, query)
         return self._submit_general_query(rs, query)
 
-    @access("droid_resolve")
+    @access(Roles.droid_resolve)
     def submit_resolve_api_query(
         self, rs: RequestState, query: Query
     ) -> tuple[CdEDBObject, ...]:
@@ -3741,7 +3743,7 @@ class CoreBaseBackend(AbstractBackend):
         query = affirm(Query, query)
         return self.general_query(rs, query)
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def list_email_states(
         self,
         rs: RequestState,
@@ -3768,7 +3770,7 @@ class CoreBaseBackend(AbstractBackend):
         data = self.query_all(rs, query, params)
         return {e['address']: e['status'] for e in data}
 
-    @access("ml")
+    @access(Roles.ml)
     def get_defect_address_reports(
         self,
         rs: RequestState,
@@ -3779,7 +3781,7 @@ class CoreBaseBackend(AbstractBackend):
             rs, persona_ids, const.EmailStatus.defect_states()
         )
 
-    @access("ml")
+    @access(Roles.ml)
     def get_email_reports(
         self,
         rs: RequestState,
@@ -3848,7 +3850,7 @@ class CoreBaseBackend(AbstractBackend):
         ret = EmailAddressReport.many_from_database(data.values())
         return {val.address: val for val in ret.values()}
 
-    @access("core_admin", "ml_admin")
+    @access(Roles.core_admin, Roles.ml_admin)
     def mark_email_status(
         self,
         rs: RequestState,
@@ -3874,7 +3876,7 @@ class CoreBaseBackend(AbstractBackend):
             )
             return code
 
-    @access("core_admin", "ml_admin")
+    @access(Roles.core_admin, Roles.ml_admin)
     def remove_email_status(self, rs: RequestState, address: str) -> DefaultReturnCode:
         address = affirm(vtypes.Email, address)
         with Atomizer(rs):

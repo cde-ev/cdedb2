@@ -46,6 +46,7 @@ from cdedb.common.privileges import (
     EventPrivileges,
     is_privileged_event as is_privileged,
 )
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.query import DatabaseValue_s, ParamDict
 
@@ -922,7 +923,7 @@ class EventLowLevelBackend(AbstractBackend):
         if self.query_all(rs, query, params):
             raise ValueError(n_("Incompatible course choices present."))
 
-    @access("event")
+    @access(Roles.event)
     def may_create_ccs_group(
         self,
         rs: RequestState,
@@ -1218,7 +1219,7 @@ class EventLowLevelBackend(AbstractBackend):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def has_registrations(self, rs: RequestState, event_id: vtypes.EventID) -> bool:
         """Determine whether there exist registrations for an event.
 

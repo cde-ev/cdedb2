@@ -32,7 +32,6 @@ from cdedb.common import (
     CdEDBObject,
     Error,
     RequestState,
-    Role,
     diacritic_patterns,
     make_proxy,
     unwrap,
@@ -106,14 +105,13 @@ def singularize[T](
     return singularized
 
 
-def access[F: Callable[..., Any]](*roles: Role | Roles) -> Callable[[F], F]:
+def access[F: Callable[..., Any]](*roles: Roles) -> Callable[[F], F]:
     """The @access decorator marks a function of a backend for publication.
 
     Think of this as an RPC interface, only published functions are
     accessible (and only by users with the necessary roles).
 
-    Any of the specfied roles suffices. To require more than one role, you can
-    chain two decorators together.
+    Any of the specfied roles suffices. Combined roles need to be fulfilled entirely.
     """
 
     def decorator(function: F) -> F:
@@ -121,12 +119,7 @@ def access[F: Callable[..., Any]](*roles: Role | Roles) -> Callable[[F], F]:
         def wrapper(
             self: "AbstractBackend", rs: RequestState, *args: Any, **kwargs: Any
         ) -> Any:
-            if not any(
-                role in rs.user.new_roles
-                if isinstance(role, Roles)
-                else role in rs.user.roles
-                for role in roles
-            ):
+            if not any(role in rs.user.new_roles for role in roles):
                 raise PrivilegeError(
                     n_(
                         "%(user_roles)s is disjoint from %(roles)s for method %(method)s."

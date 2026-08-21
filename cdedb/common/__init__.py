@@ -51,7 +51,7 @@ import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.fields import Role
 from cdedb.common.n_ import n_
-from cdedb.common.roles import AdminViews, Roles
+from cdedb.common.roles import AdminViews, Roles as _Roles
 from cdedb.config import Config
 from cdedb.database.connection import ConnectionContainer
 from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
@@ -115,7 +115,7 @@ class User:
         *,
         persona_id: vtypes.PersonaID | None = None,
         droid: "APIToken | None" = None,
-        roles: Roles | None = None,
+        roles: _Roles | None = None,
         given_names: str = "",
         nickname: str = "",
         family_name: str = "",
@@ -130,7 +130,7 @@ class User:
         self.droid = droid
         if self.persona_id and self.droid:
             raise ValueError("Cannot be both droid and persona.")
-        self.new_roles = roles or Roles.anonymous
+        self.new_roles = roles or _Roles.anonymous
         self.username = username
         self.given_names = given_names
         self.nickname = nickname
