@@ -30,6 +30,7 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts, TransactionType
 from cdedb.common.privileges import EventPrivileges
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import xsorted
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
@@ -48,7 +49,7 @@ from cdedb.frontend.event import EventFrontend
 
 
 class CdEParseMixin(CdEBaseFrontend):
-    @access("finance_admin")
+    @access(Roles.finance_admin)
     def parse_statement_form(
         self,
         rs: RequestState,
@@ -146,7 +147,7 @@ class CdEParseMixin(CdEBaseFrontend):
                 params["memberships"] += 1
         return data, params
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     @REQUESTfile("statement_file")
     def parse_statement(
         self, rs: RequestState, statement_file: FileStorage
@@ -211,7 +212,7 @@ class CdEParseMixin(CdEBaseFrontend):
 
         return self.parse_statement_form(rs, data, params)
 
-    @access("finance_admin", modi={"POST"}, check_anti_csrf=False)
+    @access(Roles.finance_admin, modi={"POST"}, check_anti_csrf=False)
     @REQUESTdata("count", "date", "validate", "excel", "db_import", "ignore_warnings")
     def parse_download(
         self,
@@ -287,7 +288,7 @@ class CdEParseMixin(CdEBaseFrontend):
         )
         return self.send_csv_file(rs, "text/csv", filename, data=csv_data)
 
-    @access("finance_admin")
+    @access(Roles.finance_admin)
     def money_transfers_form(
         self,
         rs: RequestState,
@@ -311,7 +312,7 @@ class CdEParseMixin(CdEBaseFrontend):
             get_mandatory_form_fields(self.money_transfers),
         )
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     @REQUESTfile("transfers_file")
     @REQUESTdata("send_notifications", "transfers", "checksum")
     def money_transfers(

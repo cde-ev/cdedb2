@@ -140,7 +140,7 @@ class CoreBaseFrontend(AbstractFrontend):
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     @REQUESTdata("#wants")
     def index(self, rs: RequestState, wants: str | None = None) -> Response:
         """Basic entry point.
@@ -284,7 +284,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 rs, "index", {'meta_info': meta_info, 'dashboard': dashboard}
             )
 
-    @access("core_admin")
+    @access(Roles.core_admin)
     def meta_info_form(self, rs: RequestState) -> Response:
         """Render form."""
         info = self.coreproxy.get_meta_info(rs)
@@ -304,7 +304,7 @@ class CoreBaseFrontend(AbstractFrontend):
             },
         )
 
-    @access("core_admin", modi={"POST"})
+    @access(Roles.core_admin, modi={"POST"})
     @REQUESTdatadict(*models.MetaInfo.requestdict_fields(creation=None))
     def change_meta_info(self, rs: RequestState, data: CdEDBObject) -> Response:
         """Change the meta info constants."""
@@ -316,7 +316,7 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "core/meta_info_form")
 
-    @access("anonymous", modi={"POST"})
+    @access(Roles.anonymous, modi={"POST"})
     @REQUESTdata("username", "password", "#wants")
     def login(
         self, rs: RequestState, username: vtypes.Email, password: str, wants: str | None
@@ -355,7 +355,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return response
 
     # We don't check anti CSRF tokens here, since logging does not harm anyone.
-    @access("persona", modi={"POST"}, check_anti_csrf=False)
+    @access(Roles.persona, modi={"POST"}, check_anti_csrf=False)
     def logout(self, rs: RequestState) -> Response:
         """Invalidate the current session."""
         self.coreproxy.logout(rs)
@@ -364,7 +364,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return response
 
     # Check for anti CSRF here, since this affects multiple sessions.
-    @access("persona", modi={"POST"})
+    @access(Roles.persona, modi={"POST"})
     def logout_all(self, rs: RequestState) -> Response:
         """Invalidate all sessions for the current user."""
         if rs.has_validation_errors():  # pragma: no cover
@@ -395,7 +395,7 @@ class CoreBaseFrontend(AbstractFrontend):
         store["total"] = store.get("total", 0) + count
         return store
 
-    @access("anonymous", modi={"POST"})
+    @access(Roles.anonymous, modi={"POST"})
     @REQUESTdata("locale", "#wants")
     def change_locale(
         self, rs: RequestState, locale: vtypes.PrintableASCII, wants: str | None
@@ -419,7 +419,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.notify("error", n_("Unsupported locale"))
         return response
 
-    @access("persona", modi={"POST"}, check_anti_csrf=False)
+    @access(Roles.persona, modi={"POST"}, check_anti_csrf=False)
     @REQUESTdata("add", "remove", "#wants")
     def modify_active_admin_views(
         self, rs: RequestState, add: AdminViews, remove: AdminViews, wants: str | None
@@ -457,7 +457,7 @@ class CoreBaseFrontend(AbstractFrontend):
         )
         return response
 
-    @access("ml", modi={"POST"}, check_anti_csrf=False)
+    @access(Roles.ml, modi={"POST"}, check_anti_csrf=False)
     @REQUESTdata("md_str")
     def markdown_parse(self, rs: RequestState, md_str: str) -> Response:
         if rs.has_validation_errors():
@@ -465,7 +465,7 @@ class CoreBaseFrontend(AbstractFrontend):
         html_str = markdown_parse_safe(md_str)
         return Response(html_str, mimetype='text/plain')
 
-    @access("searchable")
+    @access(Roles.searchable)
     @REQUESTdata("#confirm_id")
     def download_vcard(
         self, rs: RequestState, persona_id: int, confirm_id: int
@@ -481,7 +481,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, data=vcard, mimetype='text/vcard', filename=f'{filename}.vcf'
         )
 
-    @access("searchable")
+    @access(Roles.searchable)
     @REQUESTdata("#confirm_id")
     def qr_vcard(self, rs: RequestState, persona_id: int, confirm_id: int) -> Response:
         if persona_id != confirm_id or rs.has_validation_errors():
@@ -577,7 +577,7 @@ class CoreBaseFrontend(AbstractFrontend):
         vcard = self._make_vcard_data(rs, persona, include_foto)
         return vcard
 
-    @access("persona")
+    @access(Roles.persona)
     def mydata(self, rs: RequestState) -> Response:
         """Convenience entry point for own data."""
         assert rs.user.persona_id is not None
@@ -621,7 +621,7 @@ class CoreBaseFrontend(AbstractFrontend):
         moderator = enum.auto()
         any_admin = enum.auto()
 
-    @access("persona")
+    @access(Roles.persona)
     @REQUESTdata("#confirm_id", "quote_me", "event_id", "ml_id")
     def show_user(
         self,
@@ -887,7 +887,7 @@ class CoreBaseFrontend(AbstractFrontend):
         }, mandatory_fields)
 
     # fmt: on
-    @access("member")
+    @access(Roles.member)
     def my_lastschrift(self, rs: RequestState) -> Response:
         """Convenience entry point to view own lastschrift.
 
@@ -897,7 +897,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, "cde/lastschrift_show", {"persona_id": rs.user.persona_id}
         )
 
-    @access("event")
+    @access(Roles.event)
     def show_user_events(
         self, rs: RequestState, persona_id: vtypes.PersonaID
     ) -> Response:
@@ -949,14 +949,14 @@ class CoreBaseFrontend(AbstractFrontend):
             },
         )
 
-    @access("event")
+    @access(Roles.event)
     def show_user_events_self(self, rs: RequestState) -> Response:
         """Shorthand to view event registrations for oneself."""
         return self.redirect(
             rs, "core/show_user_events", {'persona_id': rs.user.persona_id}
         )
 
-    @access("ml")
+    @access(Roles.ml)
     def show_user_mailinglists(
         self, rs: RequestState, persona_id: vtypes.ID
     ) -> Response:
@@ -1003,14 +1003,14 @@ class CoreBaseFrontend(AbstractFrontend):
             ),
         )
 
-    @access("ml")
+    @access(Roles.ml)
     def show_user_mailinglists_self(self, rs: RequestState) -> Response:
         """Redirect to use `self` instead of persona_id to make ambience work."""
         return self.redirect(
             rs, "core/show_user_mailinglists", {'persona_id': rs.user.persona_id}
         )
 
-    @access("assembly")
+    @access(Roles.assembly)
     def show_user_assemblies(
         self, rs: RequestState, persona_id: vtypes.PersonaID
     ) -> Response:
@@ -1042,7 +1042,7 @@ class CoreBaseFrontend(AbstractFrontend):
             ),
         )
 
-    @access("assembly")
+    @access(Roles.assembly)
     def show_user_assemblies_self(self, rs: RequestState) -> Response:
         """Redirect to use `self` instead of persona_id to make ambience work."""
         return self.redirect(
@@ -1142,7 +1142,7 @@ class CoreBaseFrontend(AbstractFrontend):
             },
         )
 
-    @access("core_admin", "meta_admin")
+    @access(Roles.core_admin, Roles.meta_admin)
     @REQUESTdata("phrase", "include_archived")
     def admin_show_user(
         self, rs: RequestState, phrase: str, include_archived: bool
@@ -1207,7 +1207,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.notify("warning", n_("No account found."))
             return self.index(rs)
 
-    @access("persona")
+    @access(Roles.persona)
     @REQUESTdata("phrase", "kind", "aux")
     def select_persona(
         self, rs: RequestState, phrase: str, kind: str, aux: vtypes.ID | None
@@ -1487,7 +1487,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
         return ret
 
-    @access("persona")
+    @access(Roles.persona)
     def change_user_form(self, rs: RequestState) -> Response:
         """Render form."""
         assert rs.user.persona_id is not None
@@ -1525,7 +1525,7 @@ class CoreBaseFrontend(AbstractFrontend):
             mandatory_fields,
         )
 
-    @access("persona", modi={"POST"})
+    @access(Roles.persona, modi={"POST"})
     @REQUESTdata("generation")
     def change_user(self, rs: RequestState, generation: int) -> Response:
         """Change own data set."""
@@ -1594,7 +1594,7 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, rs.user.persona_id)
 
-    @access("core_admin")
+    @access(Roles.core_admin)
     @REQUESTdata("download", "is_search")
     def user_search(
         self,
@@ -1630,7 +1630,7 @@ class CoreBaseFrontend(AbstractFrontend):
             query=query,
         )
 
-    @access("core_admin")
+    @access(Roles.core_admin)
     def create_user_form(self, rs: RequestState) -> Response:
         realms = USER_REALM_NAMES.copy()
         if self.conf["CDEDB_OFFLINE_DEPLOYMENT"]:
@@ -1643,7 +1643,7 @@ class CoreBaseFrontend(AbstractFrontend):
             get_mandatory_form_fields(self.create_user),
         )
 
-    @access("core_admin")
+    @access(Roles.core_admin)
     @REQUESTdata("realm")
     def create_user(self, rs: RequestState, realm: str) -> Response:
         if realm not in USER_REALM_NAMES.keys():
@@ -1745,7 +1745,7 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
-    @access("persona")
+    @access(Roles.persona)
     def view_admins(self, rs: RequestState) -> Response:
         """Render list of all admins of the users realms."""
 
@@ -1775,7 +1775,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
         return self.render(rs, "view_admins", {"admins": admins})
 
-    @access("core_admin", "ml_admin")
+    @access(Roles.core_admin, Roles.ml_admin)
     @REQUESTdata("address", "notes")
     def email_status_overview(
         self,
@@ -1809,7 +1809,7 @@ class CoreBaseFrontend(AbstractFrontend):
             mandatory_fields,
         )
 
-    @access("core_admin", "ml_admin", modi={"POST"})
+    @access(Roles.core_admin, Roles.ml_admin, modi={"POST"})
     @REQUESTdata("address", "notes", "status")
     def set_email_status(
         self,
@@ -1825,7 +1825,7 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "core/email_status_overview")
 
-    @access("core_admin", "ml_admin", modi={"POST"})
+    @access(Roles.core_admin, Roles.ml_admin, modi={"POST"})
     @REQUESTdata("address")
     def delete_email_status(self, rs: RequestState, address: vtypes.Email) -> Response:
         """Remove the status entry of an email address."""
@@ -1835,7 +1835,7 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "core/email_status_overview")
 
-    @access("persona")
+    @access(Roles.persona)
     @REQUESTdata("to")
     def contact_form(self, rs: RequestState, to: str | None = None) -> Response:
         """Render form."""
@@ -1850,7 +1850,7 @@ class CoreBaseFrontend(AbstractFrontend):
             get_mandatory_form_fields(self.contact),
         )
 
-    @access("persona", modi={"POST"})
+    @access(Roles.persona, modi={"POST"})
     @REQUESTdata("to", "anonymous", "subject", "msg")
     def contact(
         self, rs: RequestState, to: str, anonymous: str, subject: str, msg: str
@@ -1941,7 +1941,7 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify("success", n_("Message sent!"))
         return self.redirect(rs, "core/index")
 
-    @access("persona")
+    @access(Roles.persona)
     @REQUESTdata("secret")
     def contact_reply_form(
         self, rs: RequestState, secret: vtypes.Base64 | None = None
@@ -1954,7 +1954,7 @@ class CoreBaseFrontend(AbstractFrontend):
             mandatory_fields=get_mandatory_form_fields(self.contact_reply),
         )
 
-    @access("persona", modi={"POST"})
+    @access(Roles.persona, modi={"POST"})
     @REQUESTdata("secret", "reply_message")
     def contact_reply(
         self, rs: RequestState, secret: vtypes.Base64, reply_message: str
@@ -2032,7 +2032,7 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.ignore_validation_errors()
         return self.render(rs, "contact_reply")
 
-    @access("persona")
+    @access(Roles.persona)
     @REQUESTdata("secret")
     def rotate_anonymous_message(
         self, rs: RequestState, secret: vtypes.Base64
@@ -2094,7 +2094,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.notify("error", n_("Something went wrong."))
         return self.redirect(rs, "core/index")
 
-    @access("meta_admin")
+    @access(Roles.meta_admin)
     def change_privileges_form(self, rs: RequestState, persona_id: int) -> Response:
         """Render form."""
         if rs.ambience['persona'].is_archived:
@@ -2122,7 +2122,7 @@ class CoreBaseFrontend(AbstractFrontend):
             get_mandatory_form_fields(self.change_privileges),
         )
 
-    @access("meta_admin", modi={"POST"})
+    @access(Roles.meta_admin, modi={"POST"})
     @REQUESTdata("roles", "notes")
     def change_privileges(
         self,
@@ -2201,7 +2201,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.notify("info", n_("No changes were made."))
         return self.redirect_show_user(rs, persona_id)
 
-    @access("meta_admin")
+    @access(Roles.meta_admin)
     def list_privilege_changes(self, rs: RequestState) -> Response:
         """Show list of privilege changes pending review."""
         change_ids = self.coreproxy.list_privilege_changes(
@@ -2222,7 +2222,7 @@ class CoreBaseFrontend(AbstractFrontend):
             {"changes": sorted_changes, "personas": personas},
         )
 
-    @access("meta_admin")
+    @access(Roles.meta_admin)
     def show_privilege_change(self, rs: RequestState, change_id: int) -> Response:
         """Show detailed infromation about pending privilege change."""
         change = rs.ambience['privilege_change']
@@ -2264,7 +2264,7 @@ class CoreBaseFrontend(AbstractFrontend):
             },
         )
 
-    @access("meta_admin", modi={"POST"})
+    @access(Roles.meta_admin, modi={"POST"})
     @REQUESTdata("ack")
     def decide_privilege_change(
         self, rs: RequestState, change_id: int, ack: bool
@@ -2380,7 +2380,7 @@ class CoreBaseFrontend(AbstractFrontend):
             }
         return store
 
-    @access("core_admin")
+    @access(Roles.core_admin)
     @REQUESTdata("target_realm")
     def promote_user_form(
         self,
@@ -2440,7 +2440,7 @@ class CoreBaseFrontend(AbstractFrontend):
             mandatory_fields,
         )
 
-    @access("core_admin", modi={"POST"})
+    @access(Roles.core_admin, modi={"POST"})
     @REQUESTdatadict(*CDE_TRANSITION_FIELDS)
     @REQUESTdata(
         "target_realm",
@@ -2532,7 +2532,7 @@ class CoreBaseFrontend(AbstractFrontend):
             )
         return self.redirect_show_user(rs, persona_id)
 
-    @access("cde_admin")
+    @access(Roles.cde_admin)
     def modify_membership_form(self, rs: RequestState, persona_id: int) -> Response:
         """Render form."""
         if rs.ambience['persona'].is_archived:
@@ -2541,7 +2541,7 @@ class CoreBaseFrontend(AbstractFrontend):
         persona = self.coreproxy.get_cde_user(rs, persona_id)
         return self.render(rs, "modify_membership", {'persona': persona})
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @REQUESTdata("is_member", "trial_member", "honorary_member", _omit_missing=True)
     def modify_membership(
         self,
@@ -2592,7 +2592,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
         return self.redirect_show_user(rs, persona_id)
 
-    @access("finance_admin")
+    @access(Roles.finance_admin)
     def modify_balance_form(self, rs: RequestState, persona_id: int) -> Response:
         """Serve form to manually modify a personas balance."""
         if rs.ambience['persona'].is_archived:
@@ -2608,7 +2608,7 @@ class CoreBaseFrontend(AbstractFrontend):
             get_mandatory_form_fields(self.modify_balance),
         )
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     @REQUESTdata("new_balance", "change_note")
     def modify_balance(
         self,
@@ -2637,7 +2637,7 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def get_foto(self, rs: RequestState, foto: vtypes.Identifier) -> Response:
         """Retrieve profile picture."""
         mimetype = self.coreproxy.get_foto_store(rs).get_mime_type(foto)
@@ -2647,7 +2647,7 @@ class CoreBaseFrontend(AbstractFrontend):
         path = self.coreproxy.get_foto_store(rs).get_path(foto)
         return self.send_file(rs, path=path, mimetype=mimetype)
 
-    @access("cde")
+    @access(Roles.cde)
     def set_foto_form(self, rs: RequestState, persona_id: int) -> Response:
         """Render form."""
         if rs.user.persona_id != persona_id and not self.is_admin(rs):
@@ -2658,7 +2658,7 @@ class CoreBaseFrontend(AbstractFrontend):
         foto = self.coreproxy.get_cde_user(rs, persona_id).foto
         return self.render(rs, "set_foto", {'foto': foto})
 
-    @access("cde", modi={"POST"})
+    @access(Roles.cde, modi={"POST"})
     @REQUESTfile("foto")
     @REQUESTdata("delete")
     def set_foto(
@@ -2689,7 +2689,7 @@ class CoreBaseFrontend(AbstractFrontend):
         self.coreproxy.get_foto_store(rs).forget(rs, self.coreproxy.get_foto_usage)
         return store
 
-    @access("core_admin", modi={"POST"})
+    @access(Roles.core_admin, modi={"POST"})
     @REQUESTdata("confirm_username")
     def invalidate_password(
         self, rs: RequestState, persona_id: int, confirm_username: str
@@ -2726,14 +2726,14 @@ class CoreBaseFrontend(AbstractFrontend):
         else:
             return self.redirect_show_user(rs, persona_id)
 
-    @access("persona")
+    @access(Roles.persona)
     def change_password_form(self, rs: RequestState) -> Response:
         """Render form."""
         return self.render(
             rs, "change_password", {}, get_mandatory_form_fields(self.change_password)
         )
 
-    @access("persona", modi={"POST"})
+    @access(Roles.persona, modi={"POST"})
     @REQUESTdata("old_password", "new_password", "new_password2")
     def change_password(
         self, rs: RequestState, old_password: str, new_password: str, new_password2: str
@@ -2788,7 +2788,7 @@ class CoreBaseFrontend(AbstractFrontend):
             )
             return self.redirect_show_user(rs, rs.user.persona_id)
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def reset_password_form(self, rs: RequestState) -> Response:
         """Render form.
 
@@ -2801,7 +2801,7 @@ class CoreBaseFrontend(AbstractFrontend):
             get_mandatory_form_fields(self.send_password_reset_link),
         )
 
-    @access("anonymous", modi={"POST"})
+    @access(Roles.anonymous, modi={"POST"})
     @REQUESTdata("email")
     def send_password_reset_link(
         self, rs: RequestState, email: vtypes.Email
@@ -2885,7 +2885,7 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify("success", n_("Email sent."))
         return self.redirect_show_user(rs, persona_id)
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     @REQUESTdata("persona_id", "confirm")
     def do_password_reset_form(
         self, rs: RequestState, persona_id: int, confirm: str, internal: bool = False
@@ -2910,7 +2910,7 @@ class CoreBaseFrontend(AbstractFrontend):
             get_mandatory_form_fields(self.do_password_reset),
         )
 
-    @access("anonymous", modi={"POST"})
+    @access(Roles.anonymous, modi={"POST"})
     @REQUESTdata("persona_id", "confirm", "new_password", "new_password2")
     def do_password_reset(
         self,
@@ -2957,7 +2957,7 @@ class CoreBaseFrontend(AbstractFrontend):
         else:
             return self.redirect(rs, "core/index")
 
-    @access("persona")
+    @access(Roles.persona)
     def change_username_form(self, rs: RequestState) -> Response:
         """Render form."""
         return self.render(
@@ -2967,7 +2967,7 @@ class CoreBaseFrontend(AbstractFrontend):
             get_mandatory_form_fields(self.send_username_change_link),
         )
 
-    @access("persona")
+    @access(Roles.persona)
     @REQUESTdata("new_username")
     def send_username_change_link(
         self, rs: RequestState, new_username: vtypes.Email
@@ -3006,7 +3006,7 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify("success", "Email sent.")
         return self.redirect(rs, "core/index")
 
-    @access("persona")
+    @access(Roles.persona)
     @REQUESTdata("#new_username")
     def do_username_change_form(
         self, rs: RequestState, new_username: vtypes.Email
@@ -3024,7 +3024,7 @@ class CoreBaseFrontend(AbstractFrontend):
             get_mandatory_form_fields(self.do_username_change),
         )
 
-    @access("persona", modi={"POST"})
+    @access(Roles.persona, modi={"POST"})
     @REQUESTdata("#new_username", "password")
     def do_username_change(
         self, rs: RequestState, new_username: vtypes.Email, password: str
@@ -3137,7 +3137,7 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
-    @access("core_admin", "cde_admin", "event_admin")
+    @access(Roles.core_admin, Roles.cde_admin, Roles.event_admin)
     def list_pending_changes(self, rs: RequestState) -> Response:
         """List non-committed changelog entries."""
         pending = self.coreproxy.changelog_get_pending_changes(rs)
@@ -3181,7 +3181,7 @@ class CoreBaseFrontend(AbstractFrontend):
             }
         return store
 
-    @access("core_admin", "cde_admin", "event_admin")
+    @access(Roles.core_admin, Roles.cde_admin, Roles.event_admin)
     def inspect_change(self, rs: RequestState, persona_id: int) -> Response:
         """Look at a pending change."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
@@ -3205,7 +3205,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs, "inspect_change", {'pending': pending, 'current': current, 'diff': diff}
         )
 
-    @access("core_admin", "cde_admin", "event_admin", modi={"POST"})
+    @access(Roles.core_admin, Roles.cde_admin, Roles.event_admin, modi={"POST"})
     @REQUESTdata("generation", "ack")
     def resolve_change(
         self, rs: RequestState, persona_id: int, generation: int, ack: bool
@@ -3289,7 +3289,7 @@ class CoreBaseFrontend(AbstractFrontend):
         rs.notify_return_code(code)
         return self.redirect_show_user(rs, persona_id)
 
-    @access("core_admin", modi={"POST"})
+    @access(Roles.core_admin, modi={"POST"})
     @ack_delete()
     def purge_persona(self, rs: RequestState, persona_id: int) -> Response:
         """Delete all identifying information for a persona."""
@@ -3301,7 +3301,7 @@ class CoreBaseFrontend(AbstractFrontend):
         return self.redirect_show_user(rs, persona_id)
 
     @REQUESTdata("query_name", "scope")
-    @access("persona")
+    @access(Roles.persona)
     def query_by_name(
         self, rs: RequestState, query_name: str, scope: QueryScope
     ) -> Response:
@@ -3326,7 +3326,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
     @REQUESTdatadict(*ChangelogLogFilter.requestdict_fields())
     @REQUESTdata("download")
-    @access("core_admin", "auditor")
+    @access(Roles.core_admin, Roles.auditor)
     def view_changelog_meta(
         self,
         rs: RequestState,
@@ -3345,7 +3345,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
     @REQUESTdatadict(*CoreLogFilter.requestdict_fields())
     @REQUESTdata("download")
-    @access("core_admin", "auditor")
+    @access(Roles.core_admin, Roles.auditor)
     def view_log(self, rs: RequestState, data: CdEDBObject, download: bool) -> Response:
         """View activity."""
         return self.generic_view_log(
@@ -3357,7 +3357,7 @@ class CoreBaseFrontend(AbstractFrontend):
             template="view_log",
         )
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def debug_email(self, rs: RequestState, token: str) -> Response:
         """Debug functionality to view emails stored to HDD.
 
@@ -3391,7 +3391,7 @@ class CoreBaseFrontend(AbstractFrontend):
     ) -> DefaultReturnCode:
         return self.coreproxy.set_cron_store(rs, name, data)
 
-    @access("droid_resolve")
+    @access(Roles.droid_resolve)
     @REQUESTdata("username")
     def api_resolve_username(
         self, rs: RequestState, username: vtypes.Email

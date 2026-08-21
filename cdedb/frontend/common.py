@@ -108,7 +108,6 @@ from cdedb.common import (
     NotificationType,
     PathLike,
     RequestState,
-    Role,
     User,
     _tdelta,
     asciificator,
@@ -1868,7 +1867,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
-    # @access("realm_admin")
+    # @access(Roles.realm_admin)
     @abc.abstractmethod
     def create_user_form(self, rs: RequestState) -> werkzeug.Response:
         """Render form."""
@@ -1876,7 +1875,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             rs, "create_user", {}, get_mandatory_form_fields(PERSONA_COMMON_FIELDS)
         )
 
-    # @access("realm_admin", modi={"POST"})
+    # @access(Roles.realm_admin, modi={"POST"})
     # @REQUESTdatadict(...)
     @abc.abstractmethod
     def create_user(self, rs: RequestState, data: CdEDBObject) -> werkzeug.Response:
@@ -2419,7 +2418,7 @@ class FrontendEndpoint(Protocol):
 
 
 def access[F: Callable[..., Any]](
-    *roles: Role | Roles,
+    *roles: Roles,
     modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
     check_anti_csrf: bool | None = None,
     anti_csrf_token_name: str | None = None,
@@ -2444,21 +2443,11 @@ def access[F: Callable[..., Any]](
         def new_fun(
             obj: AbstractFrontend, rs: RequestState, *args: Any, **kwargs: Any
         ) -> werkzeug.Response:
-            if any(
-                role in rs.user.new_roles
-                if isinstance(role, Roles)
-                else role in rs.user.roles
-                for role in roles
-            ):
+            if any(role in rs.user.new_roles for role in roles):
                 rs.ambience = reconnoitre_ambience(obj, rs)
                 return fun(obj, rs, *args, **kwargs)
             else:
-                expects_persona = any(
-                    role & ~Roles.all_droid_roles()
-                    if isinstance(role, Roles)
-                    else 'droid' not in role
-                    for role in roles
-                )
+                expects_persona = any(role & ~Roles.all_droid_roles() for role in roles)
                 if rs.user.new_roles == Roles.anonymous and expects_persona:
                     # Validation errors do not matter on session expiration,
                     # since we redirect to get anyway.
@@ -2492,7 +2481,10 @@ def access[F: Callable[..., Any]](
         new_fun.anti_csrf = AntiCSRFMarker(  # type: ignore[attr-defined]
             check_anti_csrf
             if check_anti_csrf is not None
-            else not modi <= {'GET', 'HEAD'} and "anonymous" not in roles,
+            else (
+                not modi <= {'GET', 'HEAD'}
+                and not any(Roles.anonymous in role for role in roles)
+            ),
             anti_csrf_token_name or ANTI_CSRF_TOKEN_NAME,
             anti_csrf_token_payload or ANTI_CSRF_TOKEN_PAYLOAD,
         )

@@ -21,7 +21,7 @@ from cdedb.common import (
 )
 from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.n_ import n_
-from cdedb.common.roles import Realms
+from cdedb.common.roles import Realms, Roles
 from cdedb.frontend.common import (
     REQUESTdata,
     REQUESTfile,
@@ -34,7 +34,7 @@ from cdedb.frontend.core.base import CoreBaseFrontend
 
 
 class CoreGenesisMixin(CoreBaseFrontend):
-    @access("anonymous")
+    @access(Roles.anonymous)
     @REQUESTdata("realm")
     def genesis_request_form(
         self, rs: RequestState, realm: str | None = None
@@ -65,7 +65,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             mandatory_fields=mandatory_fields,
         )
 
-    @access("anonymous", modi={"POST"})
+    @access(Roles.anonymous, modi={"POST"})
     @REQUESTfile("attachment")
     @REQUESTdata("realm", "attachment_filename", "attachment_hash")
     def genesis_request(
@@ -196,7 +196,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         )
         return self.redirect(rs, "core/index")
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     @REQUESTdata("#genesis_case_id")
     def genesis_verify(self, rs: RequestState, genesis_case_id: int) -> Response:
         """Verify the email address entered in :py:meth:`genesis_request`.
@@ -307,7 +307,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
         return store
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def genesis_get_attachment(
         self, rs: RequestState, attachment_hash: str
     ) -> Response:
@@ -317,7 +317,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             raise werkzeug.exceptions.NotFound(n_("File does not exist."))
         return self.send_file(rs, path=path, mimetype='application/pdf')
 
-    @access("core_admin", *models.GenesisCase.all_admins)
+    @access(*models.GenesisCase.all_admins)
     def genesis_list_cases(self, rs: RequestState) -> Response:
         """Compile a list of genesis cases to review."""
         realms = [
@@ -361,7 +361,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             },
         )
 
-    @access("core_admin", *models.GenesisCase.all_admins)
+    @access(*models.GenesisCase.all_admins)
     def genesis_show_case(self, rs: RequestState, genesis_case_id: int) -> Response:
         """View a specific case."""
         case = rs.ambience['genesis_case']
@@ -418,7 +418,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             },
         )
 
-    @access("core_admin", *models.GenesisCase.all_admins)
+    @access(*models.GenesisCase.all_admins)
     def genesis_modify_form(self, rs: RequestState, genesis_case_id: int) -> Response:
         """Edit a specific case it."""
         case = rs.ambience['genesis_case']
@@ -451,7 +451,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
         return self.render(rs, "genesis/genesis_modify_form", params, mandatory_fields)
 
-    @access("core_admin", *models.GenesisCase.all_admins, modi={"POST"})
+    @access(*models.GenesisCase.all_admins, modi={"POST"})
     def genesis_modify(self, rs: RequestState, genesis_case_id: int) -> Response:
         """Edit a case to fix potential issues before creation."""
         case = rs.ambience['genesis_case']
@@ -489,7 +489,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "core/genesis_show_case")
 
-    @access("core_admin", *models.GenesisCase.all_admins, modi={"POST"})
+    @access(*models.GenesisCase.all_admins, modi={"POST"})
     def genesis_modify_realm(self, rs: RequestState, genesis_case_id: int) -> Response:
         """Change the target realm of a genesis case.
 
@@ -513,7 +513,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "core/genesis_show_case")
 
-    @access("core_admin", *models.GenesisCase.all_admins, modi={"POST"})
+    @access(*models.GenesisCase.all_admins, modi={"POST"})
     @REQUESTdata("decision", "persona_id")
     def genesis_decide(
         self,

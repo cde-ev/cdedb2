@@ -24,6 +24,7 @@ from cdedb.common.exceptions import AdverseCompanionError
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import ComplaintLogFilter
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import xsorted
 from cdedb.filter import cdedbid_filter
 from cdedb.frontend.common import (
@@ -64,7 +65,7 @@ def entry_link(rs: RequestState, entry_id: int) -> str:
 
 
 class CoreComplaintMixin(CoreBaseFrontend):
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     @REQUESTdata("is_search", "last_entry_after", "last_entry_before")
     def complaint_index(
         self,
@@ -223,7 +224,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             'age_classes': age_classes,
         }
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     @REQUESTdata("show_log_entries")
     def show_case(
         self, rs: RequestState, case_id: int, show_log_entries: bool = False
@@ -255,7 +256,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             },
         )
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def case_history(self, rs: RequestState, case_id: int) -> Response:
         """Show all entry versions for a case."""
         case_data = self._get_case_data(
@@ -270,7 +271,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
         return self.render(rs, "complaint/case_history", case_data)
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def export_case(self, rs: RequestState, case_id: int) -> Response:
         case_data = self._get_case_data(
             rs,
@@ -291,7 +292,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
         return self.render(rs, "complaint/export_case", {"export": export})
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def create_case_form(self, rs: RequestState) -> Response:
         """Render form."""
         mandatory_fields = models.Case.mandatory_form_fields(creation=True)
@@ -308,7 +309,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 ret.add(name2)
         return ret
 
-    @access("complaint_admin", modi={"POST"})
+    @access(Roles.complaint_admin, modi={"POST"})
     @REQUESTdatadict(*models.Case.requestdict_fields(creation=True))
     @REQUESTdata("timestamp", "info")
     def create_case(
@@ -363,7 +364,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs.notify_return_code(ret * bool(new_case))
         return self.redirect(rs, "core/show_case", {"case_id": new_case.id})
 
-    @access("complaint_admin", modi={"POST"})
+    @access(Roles.complaint_admin, modi={"POST"})
     @REQUESTdata("involvement_type", "persona_ids")
     def add_involved(
         self,
@@ -425,7 +426,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         )
         return self.redirect(rs, "core/show_case")
 
-    @access("complaint_admin", modi={"POST"})
+    @access(Roles.complaint_admin, modi={"POST"})
     def remove_involved(
         self, rs: RequestState, case_id: int, involved_id: vtypes.InvolvedID
     ) -> Response:
@@ -435,7 +436,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs.notify_return_code(ret, info=n_("This user was not involved."))
         return self.redirect(rs, "core/show_case")
 
-    @access("complaint_admin", modi={"POST"})
+    @access(Roles.complaint_admin, modi={"POST"})
     def inform_involved(
         self, rs: RequestState, case_id: int, involved_id: vtypes.InvolvedID
     ) -> Response:
@@ -452,7 +453,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             )
         return self.redirect(rs, "core/show_case")
 
-    @access("complaint_admin", modi={"POST"})
+    @access(Roles.complaint_admin, modi={"POST"})
     def uninform_involved(
         self, rs: RequestState, case_id: int, involved_id: vtypes.InvolvedID
     ) -> Response:
@@ -470,7 +471,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             )
         return self.redirect(rs, "core/show_case")
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def manage_companions_form(
         self, rs: RequestState, case_id: int, involved_id: vtypes.InvolvedID
     ) -> Response:
@@ -479,7 +480,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         involved = rs.ambience['case'].involved[involved_id]
         return self.render(rs, "complaint/manage_companions", {"involved": involved})
 
-    @access("complaint_admin", modi={"POST"})
+    @access(Roles.complaint_admin, modi={"POST"})
     @REQUESTdata("companion_ids")
     def add_companions(
         self,
@@ -523,7 +524,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         )
         return self.redirect(rs, "core/manage_companions_form")
 
-    @access("complaint_admin", modi={"POST"})
+    @access(Roles.complaint_admin, modi={"POST"})
     def remove_companion(
         self,
         rs: RequestState,
@@ -539,7 +540,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs.notify_return_code(ret, info=n_("This user was no companion."))
         return self.redirect(rs, "core/manage_companions_form")
 
-    @access("complaint_admin", modi={"POST"})
+    @access(Roles.complaint_admin, modi={"POST"})
     def withdraw_companion(
         self,
         rs: RequestState,
@@ -560,7 +561,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             )
         return self.redirect(rs, "core/manage_companions_form")
 
-    @access("complaint_admin", modi={"POST"})
+    @access(Roles.complaint_admin, modi={"POST"})
     def reinstate_companion(
         self,
         rs: RequestState,
@@ -584,7 +585,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             )
         return self.redirect(rs, "core/manage_companions_form")
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def change_case_form(self, rs: RequestState, case_id: int) -> Response:
         """Render form."""
         if not rs.ambience['case'].is_visible_for(rs.user):
@@ -593,7 +594,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         mandatory_fields = models.Case.mandatory_form_fields(creation=False)
         return self.render(rs, "complaint/configure_case", {}, mandatory_fields)
 
-    @access("complaint_admin", modi={"POST"})
+    @access(Roles.complaint_admin, modi={"POST"})
     @REQUESTdatadict(*models.Case.requestdict_fields(creation=False))
     def change_case(
         self, rs: RequestState, case_id: int, data: dict[str, Any]
@@ -606,7 +607,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs.notify_return_code(ret)
         return self.redirect(rs, "core/show_case")
 
-    @access("complaint_admin", modi={"POST"})
+    @access(Roles.complaint_admin, modi={"POST"})
     @REQUESTdata("reason", "show_log_entries")
     def unlock_case(
         self, rs: RequestState, case_id: int, reason: str, show_log_entries: bool
@@ -619,7 +620,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs, "core/show_case", {"show_log_entries": show_log_entries}
         )
 
-    @access("complaint_admin", modi={"POST"})
+    @access(Roles.complaint_admin, modi={"POST"})
     @REQUESTdata("show_log_entries")
     def lock_case(
         self, rs: RequestState, case_id: int, show_log_entries: bool
@@ -632,7 +633,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs, "core/show_case", {"show_log_entries": show_log_entries}
         )
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     @REQUESTdata("entry_type")
     def add_entry_form(
         self,
@@ -682,7 +683,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             msg = n_("Should not include involved people.")
             rs.append_validation_error(('authors', ValidationWarning(msg)))
 
-    @access("complaint_admin", modi={"POST"})
+    @access(Roles.complaint_admin, modi={"POST"})
     @REQUESTfile("attachment")
     @REQUESTdata("entry_type", "attachment_hash", "attachment_filename")
     def add_entry(
@@ -747,7 +748,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs.notify_return_code(entry_id)
         return self.redirect(rs, "core/show_case", anchor="entry" + str(entry_id))
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def replace_entry_form(
         self,
         rs: RequestState,
@@ -811,7 +812,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             models.ComplaintEntry.mandatory_form_fields(creation=False),
         )
 
-    @access("complaint_admin", modi={"POST"})
+    @access(Roles.complaint_admin, modi={"POST"})
     @REQUESTfile("attachment")
     @REQUESTdata("dreason", "attachment_hash", "attachment_filename")
     def replace_entry(
@@ -865,7 +866,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             anchor = f"entry{entry_id}"
         return self.redirect(rs, "core/show_case", anchor=anchor)
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def revoke_entry_form(
         self,
         rs: RequestState,
@@ -906,7 +907,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             models.ComplaintEntry.mandatory_form_fields(creation=False),
         )
 
-    @access("complaint_admin", modi={"POST"})
+    @access(Roles.complaint_admin, modi={"POST"})
     def revoke_entry(
         self,
         rs: RequestState,
@@ -948,7 +949,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs.notify_return_code(new_entry_id)
         return self.redirect(rs, "core/show_case", anchor=f"entry{entry_id}")
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def remove_entry_form(
         self, rs: RequestState, case_id: int, entry_id: int, internal: bool = False
     ) -> Response:
@@ -999,7 +1000,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             {"dreason"},
         )
 
-    @access("complaint_admin", modi={"POST"})
+    @access(Roles.complaint_admin, modi={"POST"})
     @REQUESTdata("dreason")
     def remove_entry(
         self, rs: RequestState, case_id: int, entry_id: int, dreason: str
@@ -1022,7 +1023,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs.notify_return_code(ret)
         return self.redirect(rs, "core/show_case")
 
-    @access("complaint_admin", modi={"POST"})
+    @access(Roles.complaint_admin, modi={"POST"})
     def mark_entry_version_for_purge(
         self, rs: RequestState, case_id: int, entry_id: int, entry_version_id: int
     ) -> Response:
@@ -1046,7 +1047,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "core/case_history", anchor=f"entry{entry_id}")
 
-    @access("complaint_admin", modi={"POST"})
+    @access(Roles.complaint_admin, modi={"POST"})
     def unmark_entry_version_for_purge(
         self, rs: RequestState, case_id: int, entry_id: int, entry_version_id: int
     ) -> Response:
@@ -1101,7 +1102,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
         return state
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def get_complaint_attachment(
         self, rs: RequestState, case_id: int, entry_id: int, version_idx: int
     ) -> Response:
@@ -1132,7 +1133,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             filename=rs.ambience["entry_version"].attachment_filename,
         )
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def get_cached_complaint_attachment(
         self, rs: RequestState, case_id: int, attachment_hash: str
     ) -> Response:
@@ -1157,7 +1158,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         )
         return store
 
-    @access("complaint_admin", "complaint_enforcer")
+    @access(Roles.complaint_admin, Roles.complaint_enforcer)
     def measures(self, rs: RequestState) -> Response:
         """Search for active measures against a persona."""
         entries, descriptions = self.complaintproxy.get_measures(rs)
@@ -1179,7 +1180,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         }
         return self.render(rs, "complaint/measures", params)
 
-    @access("persona")
+    @access(Roles.persona)
     def show_user_measures(self, rs: RequestState, persona_id: int) -> Response:
         """View active measures against a persona."""
         if (
@@ -1212,7 +1213,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         }
         return self.render(rs, "complaint/show_user_measures", params)
 
-    @access("complaint_admin", "complaint_enforcer")
+    @access(Roles.complaint_admin, Roles.complaint_enforcer)
     def list_complaint_helpers(self, rs: RequestState) -> Response:
         """View list of enforcers and monitors."""
         enforcer_ids = self.complaintproxy.list_enforcers(rs)
@@ -1225,7 +1226,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             },
         )
 
-    @access("complaint_admin", modi={"POST"})
+    @access(Roles.complaint_admin, modi={"POST"})
     @REQUESTdata("persona_id")
     def add_enforcer(self, rs: RequestState, persona_id: vtypes.PersonaID) -> Response:
         """Grant enforcer privileges to a persona."""
@@ -1243,7 +1244,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
         rs.notify_return_code(ret, info=n_("Nothing changed."))
         return self.redirect(rs, "core/list_complaint_helpers")
 
-    @access("complaint_admin", modi={"POST"})
+    @access(Roles.complaint_admin, modi={"POST"})
     @REQUESTdata("persona_id")
     def remove_enforcer(self, rs: RequestState, persona_id: vtypes.ID) -> Response:
         """Remove enforcer privileges of a persona."""
@@ -1259,7 +1260,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
     @REQUESTdatadict(*ComplaintLogFilter.requestdict_fields())
     @REQUESTdata("download")
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def view_complaint_log(
         self, rs: RequestState, data: CdEDBObject, download: bool
     ) -> Response:

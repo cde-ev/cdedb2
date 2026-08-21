@@ -69,7 +69,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
-    @access("assembly")
+    @access(Roles.assembly)
     def index(self, rs: RequestState) -> Response:
         """Render start page."""
         assemblies = self.assemblyproxy.list_assemblies(rs, restrictive=True)
@@ -105,7 +105,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             },
         )
 
-    @access("core_admin", "assembly_admin")
+    @access(Roles.core_admin, Roles.assembly_admin)
     def create_user_form(self, rs: RequestState) -> Response:
         defaults = {
             'is_member': False,
@@ -116,7 +116,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             rs, "base/create_user", {}, get_mandatory_form_fields(PERSONA_COMMON_FIELDS)
         )
 
-    @access("core_admin", "assembly_admin", modi={"POST"})
+    @access(Roles.core_admin, Roles.assembly_admin, modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['assembly']))
     def create_user(self, rs: RequestState, data: CdEDBObject) -> Response:
         defaults = {
@@ -129,7 +129,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         data.update(defaults)
         return super().create_user(rs, data)
 
-    @access("core_admin", "assembly_admin")
+    @access(Roles.core_admin, Roles.assembly_admin)
     @REQUESTdata("download", "is_search")
     def user_search(
         self, rs: RequestState, download: str | None, is_search: bool
@@ -145,7 +145,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
 
     @REQUESTdatadict(*AssemblyLogFilter.requestdict_fields())
     @REQUESTdata("download")
-    @access("assembly_admin", "auditor")
+    @access(Roles.assembly_admin, Roles.auditor)
     def view_log(self, rs: RequestState, data: CdEDBObject, download: bool) -> Response:
         """View activities."""
         all_assemblies = self.assemblyproxy.list_assemblies(rs)
@@ -168,7 +168,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
 
     @REQUESTdatadict(*AssemblyLogFilter.requestdict_fields())
     @REQUESTdata("download")
-    @access("assembly")
+    @access(Roles.assembly)
     def view_assembly_log(
         self, rs: RequestState, assembly_id: int, data: CdEDBObject, download: bool
     ) -> Response:
@@ -190,7 +190,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             template_kwargs={'ballots': ballots},
         )
 
-    @access("assembly")
+    @access(Roles.assembly)
     def show_assembly(self, rs: RequestState, assembly_id: int) -> Response:
         """Present an assembly."""
         if not self.assemblyproxy.may_assemble(
@@ -238,7 +238,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
 
         return self.render(rs, "base/show_assembly", params)
 
-    @access("assembly_admin", modi={"POST"})
+    @access(Roles.assembly_admin, modi={"POST"})
     @REQUESTdata("presider_ids")
     def add_presiders(
         self, rs: RequestState, assembly_id: int, presider_ids: list[vtypes.PersonaID]
@@ -265,7 +265,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         rs.notify_return_code(code, error=n_("Action had no effect."))
         return self.redirect(rs, "assembly/show_assembly")
 
-    @access("assembly_admin", modi={"POST"})
+    @access(Roles.assembly_admin, modi={"POST"})
     @REQUESTdata("presider_id")
     @ack_delete()
     def remove_presider(
@@ -284,7 +284,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         rs.notify_return_code(code, error=n_("Action had no effect."))
         return self.redirect(rs, "assembly/show_assembly")
 
-    @access("assembly")
+    @access(Roles.assembly)
     @assembly_guard
     def change_assembly_form(self, rs: RequestState, assembly_id: int) -> Response:
         """Render form."""
@@ -299,7 +299,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             rs, "base/configure_assembly", mandatory_fields=mandatory_fields
         )
 
-    @access("assembly", modi={"POST"})
+    @access(Roles.assembly, modi={"POST"})
     @assembly_guard
     @REQUESTdatadict(*ASSEMBLY_COMMON_FIELDS)
     @REQUESTdata("presider_address")
@@ -325,7 +325,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "assembly/show_assembly")
 
-    @access("assembly_admin")
+    @access(Roles.assembly_admin)
     def create_assembly_form(self, rs: RequestState) -> Response:
         """Render form."""
         mandatory_fields = get_mandatory_form_fields(
@@ -395,7 +395,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             )
             return attendee_ml_data
 
-    @access("assembly", modi={"POST"})
+    @access(Roles.assembly, modi={"POST"})
     @assembly_guard
     @REQUESTdata("presider_list")
     def create_assembly_mailinglist(
@@ -431,7 +431,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             )
         return self.redirect(rs, "assembly/show_assembly")
 
-    @access("assembly_admin", modi={"POST"})
+    @access(Roles.assembly_admin, modi={"POST"})
     @REQUESTdatadict(*ASSEMBLY_COMMON_FIELDS)
     @REQUESTdata(
         "presider_ids",
@@ -522,7 +522,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         rs.notify_return_code(new_id, success=n_("Assembly created."))
         return self.redirect(rs, "assembly/show_assembly", {'assembly_id': new_id})
 
-    @access("assembly_admin", modi={"POST"})
+    @access(Roles.assembly_admin, modi={"POST"})
     @ack_delete()
     def delete_assembly(self, rs: RequestState, assembly_id: int) -> Response:
         if rs.has_validation_errors():
@@ -582,7 +582,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         else:
             rs.notify("info", n_("Already signed up."))
 
-    @access("member", modi={"POST"})
+    @access(Roles.member, modi={"POST"})
     def signup(self, rs: RequestState, assembly_id: int) -> Response:
         """Join an assembly."""
         if rs.has_validation_errors():
@@ -593,7 +593,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         self.process_signup(rs, assembly_id)
         return self.redirect(rs, "assembly/show_assembly")
 
-    @access("assembly", modi={"POST"})
+    @access(Roles.assembly, modi={"POST"})
     @assembly_guard
     @REQUESTdata("persona_id")
     def external_signup(
@@ -626,7 +626,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
         self.process_signup(rs, assembly_id, persona_id)
         return self.redirect(rs, "assembly/list_attendees")
 
-    @access("assembly")
+    @access(Roles.assembly)
     def list_attendees(self, rs: RequestState, assembly_id: int) -> Response:
         """Provide a online list of who is/was present."""
         if not self.assemblyproxy.may_assemble(
@@ -640,7 +640,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             rs.values['cutoff'] = max(b['vote_begin'] for b in ballots.values())
         return self.render(rs, "base/list_attendees", {"attendees": attendees})
 
-    @access("assembly")
+    @access(Roles.assembly)
     @assembly_guard
     @REQUESTdata("cutoff")
     def download_list_attendees(
@@ -663,7 +663,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             filename=f"Anwesenheitsliste ({rs.ambience['assembly']['shortname']}).tex",
         )
 
-    @access("assembly_admin", modi={"POST"})
+    @access(Roles.assembly_admin, modi={"POST"})
     @REQUESTdata("ack_conclude")
     def conclude_assembly(
         self, rs: RequestState, assembly_id: int, ack_conclude: bool
@@ -729,7 +729,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             with open(output, 'rb') as f:
                 return f.read()
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def download_verify_result_script(self, rs: RequestState) -> Response:
         """Download the script to verify the vote result files."""
         result = self.bundle_verify_result_zipapp()

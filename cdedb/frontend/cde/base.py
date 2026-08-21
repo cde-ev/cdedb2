@@ -38,7 +38,7 @@ from cdedb.common.i18n import get_country_code_from_country, get_localized_count
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryConstraint, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import FinanceLogFilter
-from cdedb.common.roles import PERSONA_DEFAULTS
+from cdedb.common.roles import PERSONA_DEFAULTS, Roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.validate import (
     PERSONA_FULL_CREATION,
@@ -92,7 +92,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
-    @access("cde")
+    @access(Roles.cde)
     def index(self, rs: RequestState) -> Response:
         """Render start page."""
         meta_info = self.coreproxy.get_meta_info(rs)
@@ -121,7 +121,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             },
         )
 
-    @access("cde")
+    @access(Roles.cde)
     def membership_qr(self, rs: RequestState) -> Response:
         meta_info = self.coreproxy.get_meta_info(rs)
         user = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
@@ -130,7 +130,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         )
         return self.serve_qrcode(rs, qr)
 
-    @access("member")
+    @access(Roles.member)
     def consent_decision_form(self, rs: RequestState) -> Response:
         """After login ask cde members for decision about searchability. Do
         this only if no decision has been made in the past.
@@ -143,7 +143,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             rs, "consent_decision", {'decided_search': user.decided_search}
         )
 
-    @access("member", modi={"POST"})
+    @access(Roles.member, modi={"POST"})
     @REQUESTdata("ack")
     def consent_decision(self, rs: RequestState, ack: bool) -> Response:
         """Record decision."""
@@ -169,7 +169,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             return self.redirect(rs, "core/index")
         return self.redirect(rs, "cde/index")
 
-    @access("cde_admin", "member")
+    @access(Roles.cde_admin, Roles.member)
     def member_stats(self, rs: RequestState) -> Response:
         """Display stats about our members."""
         simple_stats, other_stats, year_stats, institution_stats = (
@@ -188,7 +188,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             },
         )
 
-    @access("persona")
+    @access(Roles.persona)
     @REQUESTdata("is_search")
     def member_search(self, rs: RequestState, is_search: bool) -> Response:
         """Search for members."""
@@ -373,7 +373,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         if appraised:
             rs.ignore_validation_errors()
 
-    @access("core_admin", "cde_admin")
+    @access(Roles.core_admin, Roles.cde_admin)
     @REQUESTdata("download", "is_search")
     def user_search(
         self, rs: RequestState, download: str | None, is_search: bool
@@ -406,7 +406,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             choices=choices,
         )
 
-    @access("core_admin", "cde_admin")
+    @access(Roles.core_admin, Roles.cde_admin)
     def create_user_form(self, rs: RequestState) -> Response:
         defaults = {
             'is_member': True,
@@ -419,7 +419,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, defaults)
         return super().create_user_form(rs)
 
-    @access("core_admin", "cde_admin", modi={"POST"})
+    @access(Roles.core_admin, Roles.cde_admin, modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['cde']))
     def create_user(self, rs: RequestState, data: CdEDBObject) -> Response:
         defaults = {
@@ -434,7 +434,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         data.update(defaults)
         return super().create_user(rs, data)
 
-    @access("cde_admin")
+    @access(Roles.cde_admin)
     def batch_admission_form(
         self,
         rs: RequestState,
@@ -765,7 +765,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         else:
             return "low"
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @REQUESTfile("accounts_file")
     @REQUESTdata(
         "membership", "trial_membership", "consent", "sendmail", "finalized", "accounts"
@@ -966,7 +966,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         )
         return set(lastschrift_ids) - set(transaction_ids.values())
 
-    @access("member", "cde_admin")
+    @access(Roles.member, Roles.cde_admin)
     def view_misc(self, rs: RequestState) -> Response:
         """View miscellaneos things."""
         meta_data = self.coreproxy.get_meta_info(rs)
@@ -975,7 +975,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
 
     @REQUESTdatadict(*FinanceLogFilter.requestdict_fields())
     @REQUESTdata("download")
-    @access("cde_admin", "auditor")
+    @access(Roles.cde_admin, Roles.auditor)
     def view_finance_log(
         self, rs: RequestState, data: CdEDBObject, download: bool
     ) -> Response:

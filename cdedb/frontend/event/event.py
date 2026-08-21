@@ -41,6 +41,7 @@ from cdedb.common.query import (
     QuerySpecEntry,
 )
 from cdedb.common.query.log_filter import EventLogFilter
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import xsorted
 from cdedb.filter import cdedbid_filter, iban_filter
 from cdedb.frontend.common import (
@@ -68,7 +69,7 @@ from cdedb.models.ml import (
 
 
 class EventEventMixin(EventBaseFrontend):
-    @access("anonymous")
+    @access(Roles.anonymous)
     def index(self, rs: RequestState) -> Response:
         """Render start page."""
         current_event_list = self.eventproxy.list_events(
@@ -128,7 +129,7 @@ class EventEventMixin(EventBaseFrontend):
             },
         )
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def list_events(self, rs: RequestState) -> Response:
         """List all events organized via DB."""
         event_ids = self.eventproxy.list_events(rs)
@@ -162,7 +163,7 @@ class EventEventMixin(EventBaseFrontend):
             },
         )
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def show_event(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Display event organized via DB."""
         params: CdEDBObject = {}
@@ -198,7 +199,7 @@ class EventEventMixin(EventBaseFrontend):
             raise werkzeug.exceptions.Forbidden(n_("The event is not published yet."))
         return self.render(rs, "event/show_event", params)
 
-    @access("event")
+    @access(Roles.event)
     @REQUESTdata("event_id", "endpoint", "args")
     def redirect_event(
         self, rs: RequestState, event_id: vtypes.EventID, endpoint: str, args: str
@@ -237,7 +238,7 @@ class EventEventMixin(EventBaseFrontend):
                 rs.notify("info", n_("Could not redirect to entity page."))
             return self.redirect(rs, default_endpoint, params)
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_read)
     def change_event_form(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Render form."""
@@ -260,7 +261,7 @@ class EventEventMixin(EventBaseFrontend):
             models.Event.mandatory_form_fields(creation=False),
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdatadict(
         *models._EventConfigurationMixin.requestdict_fields(creation=False)
@@ -297,7 +298,7 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_event")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_read)
     @REQUESTdata("edit")
     def show_free_texts(
@@ -306,7 +307,7 @@ class EventEventMixin(EventBaseFrontend):
         rs.ignore_validation_errors()
         return self.render(rs, "event/show_free_texts", {'edit': edit})
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.free_texts_write)
     @REQUESTdata("free_text_key", "free_text_value")
     def change_free_text(
@@ -340,7 +341,7 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_free_texts")
 
-    @access("event")
+    @access(Roles.event)
     def get_minor_form(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Retrieve minor form."""
         is_registered = bool(
@@ -358,7 +359,7 @@ class EventEventMixin(EventBaseFrontend):
             filename=f"Elternbrief CdE {rs.ambience['event'].shortname}.pdf",
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTfile("minor_form")
     @REQUESTdata("delete")
@@ -398,7 +399,7 @@ class EventEventMixin(EventBaseFrontend):
         )
         return self.redirect(rs, "event/show_event")
 
-    @access("event")
+    @access(Roles.event)
     def list_event_helpers(self, rs: RequestState) -> Response:
         event_helper_ids = self.eventproxy.get_event_helpers(rs)
         event_helpers = self.coreproxy.get_personas(rs, event_helper_ids)
@@ -406,7 +407,7 @@ class EventEventMixin(EventBaseFrontend):
             rs, 'event/list_event_helpers', {'event_helpers': event_helpers}
         )
 
-    @access("event_admin", modi={"POST"})
+    @access(Roles.event_admin, modi={"POST"})
     @REQUESTdata("persona_id")
     def add_event_helper(
         self, rs: RequestState, persona_id: vtypes.PersonaID
@@ -425,7 +426,7 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(code, error=n_("Action had no effect."))
         return self.redirect(rs, "event/list_event_helpers")
 
-    @access("event_admin", modi={"POST"})
+    @access(Roles.event_admin, modi={"POST"})
     @REQUESTdata("persona_id")
     def remove_event_helper(
         self, rs: RequestState, persona_id: vtypes.PersonaID
@@ -440,7 +441,7 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(code, error=n_("Action had no effect."))
         return self.redirect(rs, "event/list_event_helpers")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(
         EventPrivileges.orgas_change,
         EventPrivileges.caretakers_change,
@@ -454,7 +455,7 @@ class EventEventMixin(EventBaseFrontend):
             )
         return self.render(rs, 'event/manage_roles', params)
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.orgas_change)
     @REQUESTdata("orga_ids")
     def add_orgas(
@@ -465,7 +466,7 @@ class EventEventMixin(EventBaseFrontend):
     ) -> Response:
         return self._add_event_roles(rs, event_id, orga_ids, role='orga')
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.caretakers_change)
     @REQUESTdata("caretaker_ids")
     def add_caretakers(
@@ -476,7 +477,7 @@ class EventEventMixin(EventBaseFrontend):
     ) -> Response:
         return self._add_event_roles(rs, event_id, caretaker_ids, role='caretaker')
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("checkin_helper_ids")
     def add_checkin_helpers(
@@ -578,7 +579,7 @@ class EventEventMixin(EventBaseFrontend):
             self.logger.info(f"Removed {count} checkin helpers.")
         return state
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.orgas_change)
     @REQUESTdata("orga_id")
     @ack_delete()
@@ -615,7 +616,7 @@ class EventEventMixin(EventBaseFrontend):
             )
         return self.redirect(rs, "event/manage_roles")
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.caretakers_change)
     @REQUESTdata("caretaker_id")
     @ack_delete()
@@ -653,7 +654,7 @@ class EventEventMixin(EventBaseFrontend):
             )
         return self.redirect(rs, "event/manage_roles")
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("checkin_helper_id")
     @ack_delete()
@@ -675,7 +676,7 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(code, info=n_("Action had no effect."))
         return self.redirect(rs, "event/manage_roles")
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("orgalist", "part_group_id")
     def create_event_mailinglist(
@@ -764,7 +765,7 @@ class EventEventMixin(EventBaseFrontend):
             blocked_tracks.update(tg.tracks)
         return blocked_tracks
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_read)
     def part_summary(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Display a comprehensive overview of all parts of a given event."""
@@ -782,7 +783,7 @@ class EventEventMixin(EventBaseFrontend):
             },
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @ack_delete()
     def delete_part(
@@ -818,7 +819,7 @@ class EventEventMixin(EventBaseFrontend):
                 ]
         return ret
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_write)
     def add_part_form(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         if rs.ambience['event'].is_balanced:
@@ -841,7 +842,7 @@ class EventEventMixin(EventBaseFrontend):
             mandatory_fields=mandatory_fields,
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("fee")
     @REQUESTdatadict(*models.EventPart.requestdict_fields(creation=True))
@@ -884,7 +885,7 @@ class EventEventMixin(EventBaseFrontend):
 
         return self.redirect(rs, "event/part_summary")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_write)
     def change_part_form(
         self, rs: RequestState, event_id: vtypes.EventID, part_id: int
@@ -936,7 +937,7 @@ class EventEventMixin(EventBaseFrontend):
             mandatory_fields=mandatory_fields,
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdatadict(*models.EventPart.requestdict_fields(creation=False))
     def change_part(
@@ -1075,7 +1076,7 @@ class EventEventMixin(EventBaseFrontend):
             ]
         return self._get_payment_query_base(event, constraints, fee, kind)
 
-    @access("event")
+    @access(Roles.event)
     # TODO Be more lenient here (for finance_admins and auditors)
     @event_guard(EventPrivileges.registrations_stats)
     def fee_summary(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
@@ -1098,7 +1099,7 @@ class EventEventMixin(EventBaseFrontend):
             },
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_stats)
     def fee_stats(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Show stats for existing fees."""
@@ -1142,7 +1143,7 @@ class EventEventMixin(EventBaseFrontend):
             },
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("personalized")
     def configure_fee_form(
@@ -1180,7 +1181,7 @@ class EventEventMixin(EventBaseFrontend):
             mandatory_fields=mandatory_fields,
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write | EventPrivileges.registrations_write)
     @REQUESTdata("personalized")
     @REQUESTdatadict(*models.EventFee.requestdict_fields(creation=None))
@@ -1217,7 +1218,7 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/fee_summary")
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write | EventPrivileges.registrations_write)
     def delete_fee(
         self, rs: RequestState, event_id: vtypes.EventID, fee_id: vtypes.ID
@@ -1235,7 +1236,7 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/fee_summary")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_read)
     def group_summary(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         non_existing_mailinglists = {
@@ -1259,7 +1260,7 @@ class EventEventMixin(EventBaseFrontend):
             },
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_write)
     def add_part_group_form(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -1271,7 +1272,7 @@ class EventEventMixin(EventBaseFrontend):
             models.PartGroup.mandatory_form_fields(creation=True),
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdatadict(*models.PartGroup.requestdict_fields(creation=True))
     def add_part_group(
@@ -1287,7 +1288,7 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/group_summary")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_write)
     def change_part_group_form(
         self, rs: RequestState, event_id: vtypes.EventID, part_group_id: int
@@ -1302,7 +1303,7 @@ class EventEventMixin(EventBaseFrontend):
             models.PartGroup.mandatory_form_fields(creation=False),
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdatadict(*models.PartGroup.requestdict_fields(creation=False))
     def change_part_group(
@@ -1321,7 +1322,7 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/group_summary")
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     def delete_part_group(
         self, rs: RequestState, event_id: vtypes.EventID, part_group_id: vtypes.ID
@@ -1332,7 +1333,7 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/group_summary")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_write)
     def add_track_group_form(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -1344,7 +1345,7 @@ class EventEventMixin(EventBaseFrontend):
             models.TrackGroup.mandatory_form_fields(creation=True),
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdatadict(*models.TrackGroup.requestdict_fields(creation=True))
     def add_track_group(
@@ -1373,7 +1374,7 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/group_summary")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_write)
     def change_track_group_form(
         self, rs: RequestState, event_id: vtypes.EventID, track_group_id: vtypes.ID
@@ -1388,7 +1389,7 @@ class EventEventMixin(EventBaseFrontend):
             models.TrackGroup.mandatory_form_fields(creation=False),
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdatadict(*models.TrackGroup.requestdict_fields(creation=False))
     def change_track_group(
@@ -1407,7 +1408,7 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/group_summary")
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @ack_delete()
     def delete_track_group(
@@ -1561,7 +1562,7 @@ class EventEventMixin(EventBaseFrontend):
             )
             return participant_ml_data
 
-    @access("event_admin")
+    @access(Roles.event_admin)
     def create_event_form(self, rs: RequestState) -> Response:
         """Render form."""
         accounts = [
@@ -1578,7 +1579,7 @@ class EventEventMixin(EventBaseFrontend):
             mandatory_fields=mandatory_fields,
         )
 
-    @access("event_admin", modi={"POST"})
+    @access(Roles.event_admin, modi={"POST"})
     @REQUESTdata(
         "part_begin",
         "part_end",
@@ -1738,7 +1739,7 @@ class EventEventMixin(EventBaseFrontend):
         rs.notify_return_code(new_id, success=n_("Event created."))
         return self.redirect(rs, "event/show_event", {"event_id": new_id})
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.lock)
     def lock_event(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Lock an event."""
@@ -1751,7 +1752,7 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify_return_code(code)
         return self.redirect(rs, "event/show_event")
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.lock)
     def unlock_event(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Unlock an event."""
@@ -1764,7 +1765,7 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify_return_code(code)
         return self.redirect(rs, "event/show_event")
 
-    @access("event_admin", modi={"POST"})
+    @access(Roles.event_admin, modi={"POST"})
     @event_guard(EventPrivileges.conclude)
     @REQUESTdata("ack_archive", "create_past_event")
     def archive_event(
@@ -1850,7 +1851,7 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify("info", n_("Created multiple past events."))
             return self.redirect(rs, "event/show_event")
 
-    @access("event_admin", modi={"POST"})
+    @access(Roles.event_admin, modi={"POST"})
     @event_guard(EventPrivileges.delete)
     @ack_delete()
     def delete_event(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
@@ -1878,7 +1879,7 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify("success", n_("Event deleted."))
             return self.redirect(rs, "event/index")
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     @event_guard(EventPrivileges.balance)
     def balance_event(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Balance an event."""
@@ -1889,7 +1890,7 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify_return_code(code)
         return self.redirect(rs, "event/show_event")
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     @event_guard(EventPrivileges.balance)
     def unbalance_event(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Unbalance an event."""
@@ -1900,7 +1901,7 @@ class EventEventMixin(EventBaseFrontend):
             rs.notify_return_code(code)
         return self.redirect(rs, "event/show_event")
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.approve_registration)
     def approve_registration(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -1925,7 +1926,7 @@ class EventEventMixin(EventBaseFrontend):
             )
         return self.redirect(rs, "event/show_event")
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.approve_registration)
     def unapprove_registration(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -1950,7 +1951,7 @@ class EventEventMixin(EventBaseFrontend):
             )
         return self.redirect(rs, "event/show_event")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_read, EventPrivileges.checkin)
     @REQUESTdata("phrase")
     def quick_show_registration(
