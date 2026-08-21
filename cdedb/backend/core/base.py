@@ -3550,7 +3550,7 @@ class CoreBaseBackend(AbstractBackend):
         persona_ids = tuple(k for k, v in scores.items() if v > cutoff)
         persona_ids = xsorted(persona_ids, key=lambda k: -scores.get(k, 0))
         persona_ids = persona_ids[:max_entries]
-        columns = xsorted(
+        columns = (
             set(models.CorePersona.database_fields())
             | set(models.PersonaStatus.database_fields())
             | {"birthday"}

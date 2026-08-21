@@ -15,7 +15,8 @@
         {# Already sorted #}
         {% for persona in personas.values() %}
            <li>
-               {{ util.href(cdedblink('core/inspect_change', {'persona_id': persona.id}), persona.get_name()) }}
+                {# We use the committed name here, not the pending name from the change request. #}
+                {{ util.href(cdedblink('core/inspect_change', {'persona_id': persona.id}), persona.get_name()) }}
            </li>
         {% endfor %}
    </ul>

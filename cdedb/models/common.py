@@ -258,7 +258,7 @@ class CdEDataclass:
         """Create an instance from the dict returned from the database.
 
         The ideomatic approach is to retrieve the database fields via
-        `query_one`, using `get_sql_select_query` to construct the query,
+        `query_one`, using `get_select_query` to construct the query,
         and put the return value in this function.
 
         For `query_all`, see `many_from_database`.
