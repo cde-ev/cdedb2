@@ -19,6 +19,7 @@ from cdedb.backend.common import inspect_validation as inspect
 from cdedb.common import User, n_, now
 from cdedb.common.crypt import verify_password
 from cdedb.common.exceptions import APITokenError
+from cdedb.common.roles import Roles
 from cdedb.config import Config, SecretsConfig
 from cdedb.database import DBRole
 from cdedb.database.connection import connection_pool_factory
@@ -200,7 +201,7 @@ class SessionBackend:
             raise
 
         # Prevent non-infrastructure droids from access during lockdown.
-        if self._is_locked_down() and 'droid_infra' not in ret.roles:
+        if self._is_locked_down() and Roles.droid_infra not in ret.new_roles:
             ret = User()
 
         return ret

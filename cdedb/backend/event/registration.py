@@ -657,7 +657,7 @@ class EventRegistrationBackend(EventBaseBackend):
         ret = {anid: False for anid in persona_ids}
 
         # First, rule out people who can not participate at any event.
-        if persona_ids == {rs.user.persona_id} and "event" not in rs.user.roles:
+        if persona_ids == {rs.user.persona_id} and Roles.event not in rs.user.new_roles:
             return ret
 
         # Check if eligible to check registration status for other users.

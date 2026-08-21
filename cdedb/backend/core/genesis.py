@@ -262,7 +262,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         realms = affirm(set[str], realms)
         stati = stati or set()
         stati = affirm(set[const.GenesisStati], stati)
-        if not realms and "core_admin" not in rs.user.roles:
+        if not realms and Roles.core_admin not in rs.user.new_roles:
             raise PrivilegeError(n_("Not privileged."))
         elif not all(
             {f"{realm}_admin", "core_admin"} & rs.user.roles for realm in realms

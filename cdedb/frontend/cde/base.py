@@ -100,7 +100,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         deadline = None
         annual_fee = self.cdeproxy.annual_membership_fee(rs)
         has_lastschrift = False
-        if "member" in rs.user.roles:
+        if Roles.member in rs.user.new_roles:
             assert rs.user.persona_id is not None
             has_lastschrift = bool(
                 self.cdeproxy.list_lastschrift(
@@ -192,7 +192,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
     @REQUESTdata("is_search")
     def member_search(self, rs: RequestState, is_search: bool) -> Response:
         """Search for members."""
-        if "searchable" not in rs.user.roles:
+        if Roles.searchable not in rs.user.new_roles:
             # As this is linked externally, show a meaningful error message to
             # unprivileged users.
             rs.ignore_validation_errors()

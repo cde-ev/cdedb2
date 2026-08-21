@@ -331,7 +331,7 @@ class MlBackend(AbstractBackend):
         log_filter = affirm(MlLogFilter, log_filter)
         ml_ids = log_filter.mailinglist_ids()
 
-        if self.is_admin(rs) or "auditor" in rs.user.roles:
+        if self.is_admin(rs) or Roles.auditor in rs.user.new_roles:
             pass
         elif not ml_ids:
             # Limit global log to managed lists for non-admins/non-auditors.
@@ -1327,7 +1327,7 @@ class MlBackend(AbstractBackend):
         elif ml.roster_visibility == mrv.subscribable:
             return may_subscribe or is_subscribed
         elif ml.roster_visibility == mrv.members:
-            return ("member" in rs.user.roles) or may_subscribe or is_subscribed
+            return (Roles.member in rs.user.new_roles) or may_subscribe or is_subscribed
         elif ml.roster_visibility == mrv.viewers:
             return self.may_view(rs, ml) or may_subscribe or is_subscribed
         else:

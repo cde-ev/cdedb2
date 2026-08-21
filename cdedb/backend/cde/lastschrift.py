@@ -110,7 +110,7 @@ class CdELastschriftBackend(CdEBaseBackend):
         :returns: Mapping of lastschrift_ids to their respecive persona_ids.
         """
         persona_ids = affirm(set[vtypes.ID], persona_ids or set())
-        if not ({"cde_admin", "core_admin"} & rs.user.roles) and (
+        if not (Roles.cde_admin | Roles.core_admin & rs.user.new_roles) and (
             not persona_ids or any(p_id != rs.user.persona_id for p_id in persona_ids)
         ):
             raise PrivilegeError(n_("Not privileged."))
@@ -137,7 +137,7 @@ class CdELastschriftBackend(CdEBaseBackend):
         data = self.sql_select(
             rs, "cde.lastschrift", LASTSCHRIFT_FIELDS, lastschrift_ids
         )
-        if "cde_admin" not in rs.user.roles and any(
+        if Roles.cde_admin not in rs.user.new_roles and any(
             e['persona_id'] != rs.user.persona_id for e in data
         ):
             raise PrivilegeError(n_("Not privileged."))
@@ -322,7 +322,7 @@ class CdELastschriftBackend(CdEBaseBackend):
         :returns: Mapping of transaction ids to direct debit permit ids.
         """
         lastschrift_ids = affirm(set[vtypes.ID], lastschrift_ids or set())
-        if "cde_admin" not in rs.user.roles:
+        if Roles.cde_admin not in rs.user.new_roles:
             if lastschrift_ids is None:
                 # Don't allow None for non-admins.
                 raise PrivilegeError(n_("Not privileged."))

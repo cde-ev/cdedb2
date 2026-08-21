@@ -144,7 +144,7 @@ class CoreBaseBackend(AbstractBackend):
         # Shortcuts to avoid having to retrieve the persona in easy cases.
         if self.is_admin(rs):
             return True
-        if allow_meta_admin and "meta_admin" in rs.user.roles:
+        if allow_meta_admin and Roles.meta_admin in rs.user.new_roles:
             return True
         return self._is_relative_admin(rs, self.get_persona_status(rs, persona_id))
 
@@ -1085,37 +1085,37 @@ class CoreBaseBackend(AbstractBackend):
             'is_assembly_realm',
         }
         if set(data) & realm_keys and (
-            "core_admin" not in rs.user.roles
+            Roles.core_admin not in rs.user.new_roles
             or not {"realms", "purge"} & set(allow_specials)
         ):
             raise PrivilegeError(n_("Realm modification prevented."))
         if set(data) & set(Roles.all_admin_roles().markers()) and (
-            "meta_admin" not in rs.user.roles or "admins" not in allow_specials
+            Roles.meta_admin not in rs.user.new_roles or "admins" not in allow_specials
         ):
             # TODO: check for actual modification?
             #  This currently allows removal of admin bits.
             if any(data[key] for key in Roles.all_admin_roles().markers()):
                 raise PrivilegeError(n_("Admin privilege modification prevented."))
         if set(data) & {"is_member", "trial_member", "honorary_member"} and (
-            not ({"cde_admin", "core_admin"} & rs.user.roles)
+            not (Roles.cde_admin | Roles.core_admin & rs.user.new_roles)
             or not {"membership", "purge"} & set(allow_specials)
         ):
             raise PrivilegeError(n_("Membership modification prevented."))
         if (
             current['decided_search']
             and not data.get("is_searchable", True)
-            and (not ({"cde_admin", "core_admin"} & rs.user.roles))
+            and (not (Roles.cde_admin | Roles.core_admin & rs.user.new_roles))
         ):
             raise PrivilegeError(n_("Hiding prevented."))
         if "is_archived" in data:
             if (
                 not self.is_relative_admin(rs, data['id'], allow_meta_admin=False)
-                and "ml_admin" not in rs.user.roles
+                and Roles.ml_admin not in rs.user.new_roles
                 or "archive" not in allow_specials
             ):
                 raise PrivilegeError(n_("Archive modification prevented."))
         if "balance" in data and (
-            "cde_admin" not in rs.user.roles or "finance" not in allow_specials
+            Roles.cde_admin not in rs.user.new_roles or "finance" not in allow_specials
         ):
             # Allow setting balance to 0 or None during archival or membership change.
             if not (
@@ -2525,8 +2525,13 @@ class CoreBaseBackend(AbstractBackend):
         )
         ret = models.EventPersona.many_from_database(persona_data)
         if persona_ids != {rs.user.persona_id} and not (
-            rs.user.roles
-            & {"event_admin", "cde_admin", "complaint_admin", "core_admin"}
+            (
+                Roles.event_admin
+                | Roles.cde_admin
+                | Roles.complaint_admin
+                | Roles.core_admin
+            )
+            & rs.user.new_roles
         ):
             # Accessing the event scheme from the core backend is a bit of a
             # transgression, but we value the added security higher than correctness.
@@ -2713,7 +2718,7 @@ class CoreBaseBackend(AbstractBackend):
         quota = self.quota(rs, ids=ids, num=num)  # type: ignore[call-overload]
         return (
             quota > self.conf["QUOTA_VIEWS_PER_DAY"]
-            and not {"cde_admin", "core_admin"} & rs.user.roles
+            and not Roles.cde_admin | Roles.core_admin & rs.user.new_roles
         )
 
     @access(Roles.cde)
@@ -2729,8 +2734,8 @@ class CoreBaseBackend(AbstractBackend):
                 rs, *models.CdEPersona.get_select_query(persona_ids)
             )
             ret = models.CdEPersona.many_from_database(persona_data)
-            if not {"cde_admin", "core_admin"} & rs.user.roles and (
-                "searchable" not in rs.user.roles
+            if not Roles.cde_admin | Roles.core_admin & rs.user.new_roles and (
+                Roles.searchable not in rs.user.new_roles
                 and any(
                     (e.id != rs.user.persona_id and not e.is_searchable)
                     for e in ret.values()
@@ -3314,7 +3319,7 @@ class CoreBaseBackend(AbstractBackend):
         # escalate db privilege role in case of resetting passwords
         orig_conn = None
         try:
-            if reset_cookie and "persona" not in rs.user.roles:
+            if reset_cookie and Roles.persona not in rs.user.new_roles:
                 if rs.conn.is_contaminated:
                     raise RuntimeError(n_("Atomized – impossible to escalate."))
                 orig_conn = rs.conn
@@ -3380,7 +3385,7 @@ class CoreBaseBackend(AbstractBackend):
         # escalate db privilege role in case of resetting passwords
         orig_conn = None
         try:
-            if "persona" not in rs.user.roles:
+            if Roles.persona not in rs.user.new_roles:
                 if rs.conn.is_contaminated:
                     raise RuntimeError(n_("Atomized – impossible to escalate."))
                 orig_conn = rs.conn
@@ -3797,9 +3802,10 @@ class CoreBaseBackend(AbstractBackend):
             stati = tuple(const.EmailStatus)
         stati = affirm(list[const.EmailStatus], stati or [])
 
-        if not {"ml_admin", "core_admin"} & rs.user.roles and persona_ids != {
-            rs.user.persona_id
-        }:
+        if (
+            not Roles.ml_admin | Roles.core_admin & rs.user.new_roles
+            and persona_ids != {rs.user.persona_id}
+        ):
             relative_admin = False
             if len(persona_ids) == 1:
                 relative_admin = self.is_relative_admin(rs, unwrap(persona_ids))

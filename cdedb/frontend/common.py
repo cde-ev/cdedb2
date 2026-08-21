@@ -944,7 +944,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             msg = n_(
                 "The CdE database is currently under maintenance and is unavailable."
             )
-            if {'core_admin', 'meta_admin'} & rs.user.roles:
+            if (Roles.core_admin | Roles.meta_admin) & rs.user.new_roles:
                 rs.notify('warning', admin_msg)
             else:
                 rs.notify("info", msg)
@@ -2473,7 +2473,7 @@ def access[F: Callable[..., Any]](
                     'realm': obj.__class__.__name__,
                     'endpoint': fun.__name__,
                 }
-                log_msg = msg.format(**params) + f" Roles: {rs.user.roles}."
+                log_msg = msg.format(**params) + f" Roles: {rs.user.new_roles}."
                 _LOGGER.error(log_msg)
                 raise werkzeug.exceptions.Forbidden(rs.gettext(msg).format(**params))
 

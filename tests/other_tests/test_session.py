@@ -8,6 +8,7 @@ from typing import NamedTuple, cast
 import cdedb.models.droid as model_droid
 from cdedb.common import RequestState, User, nearly_now, now
 from cdedb.common.exceptions import APITokenError
+from cdedb.common.roles import Roles
 from tests.common import (
     USER_DICT,
     BackendTest,
@@ -59,7 +60,7 @@ class TestSessionBackend(BackendTest):
     def test_sessionlookup(self) -> None:
         user = self.session.lookupsession("random key", "127.0.0.0")
         self.assertIsNone(user.persona_id)
-        self.assertEqual({"anonymous"}, user.roles)
+        self.assertEqual(Roles.anonymous, user.new_roles)
         key = self.login(USER_DICT["anton"])
         user = self.session.lookupsession(key, "127.0.0.0")
         self.assertIsInstance(user, User)
@@ -90,7 +91,8 @@ class TestSessionBackend(BackendTest):
         assert isinstance(user.droid, model_droid.ResolveToken)
         self.assertIsNone(user.droid.id)
         self.assertEqual(
-            {"anonymous", "droid", "droid_resolve", "droid_infra"}, user.roles
+            Roles.anonymous | Roles.droid | Roles.droid_resolve | Roles.droid_infra,
+            user.new_roles,
         )
 
         # "resolve" droid api token with invalid secret.
@@ -109,7 +111,8 @@ class TestSessionBackend(BackendTest):
         assert isinstance(user.droid, model_droid.QuickPartialExportToken)
         self.assertIsNone(user.droid.id)
         self.assertEqual(
-            {"anonymous", "droid", "droid_quick_partial_export"}, user.roles
+            Roles.anonymous | Roles.droid | Roles.droid_quick_partial_export,
+            user.new_roles,
         )
 
         # "quick_partial_export" with invalid secret.
@@ -132,7 +135,9 @@ class TestSessionBackend(BackendTest):
         assert isinstance(user.droid, model_droid.OrgaToken)
         self.assertEqual(user.droid.id, 1)
         self.assertIn(1, user.orga)
-        self.assertEqual({"anonymous", "droid", "droid_orga"}, user.roles)
+        self.assertEqual(
+            Roles.anonymous | Roles.droid | Roles.droid_orga, user.new_roles
+        )
 
         last_valid_access = self.event.get_orga_token(persona_sessionkey, 1).atime
         self.assertEqual(nearly_now(), last_valid_access)
@@ -170,7 +175,7 @@ class TestSessionBackend(BackendTest):
             self.assertIsInstance(users[-1], User)
             self.assertTrue(users[-1].persona_id)
         for i, user in enumerate(users[:-1]):
-            self.assertNotEqual({"anonymous"}, user.roles)
+            self.assertTrue(~Roles.anonymous & user.new_roles)
             self.assertNotEqual(user, users[i + 1])
             self.assertEqual(user.__dict__, users[i + 1].__dict__)
 
@@ -178,7 +183,7 @@ class TestSessionBackend(BackendTest):
         self.core.logout(cast(RequestState, keys[0]))
         # Check termination.
         self.assertEqual(
-            {"anonymous"}, self.session.lookupsession(keys[0], ips[0]).roles
+            Roles.anonymous, self.session.lookupsession(keys[0], ips[0]).new_roles
         )
         # Check that other sessions are untouched.
         for i in (1, 2):
@@ -191,7 +196,7 @@ class TestSessionBackend(BackendTest):
         # Check that all sessions have been terminated.
         for i in (0, 1, 2):
             self.assertEqual(
-                {"anonymous"}, self.session.lookupsession(keys[i], ips[i]).roles
+                Roles.anonymous, self.session.lookupsession(keys[i], ips[i]).new_roles
             )
 
     def test_max_active_sessions(self) -> None:
@@ -206,16 +211,16 @@ class TestSessionBackend(BackendTest):
             with self.subTest(i=i, key=key):
                 user = self.session.lookupsession(key, ip=ip)
                 self.assertEqual(user.persona_id, user_data['id'])
-                self.assertLess({"anonymous"}, user.roles)
+                self.assertTrue(~Roles.anonymous & user.new_roles)
         # Create another session and check it.
         keys.append(self.login(user_data, ip=ip))
         user = self.session.lookupsession(keys[-1], ip=ip)
         self.assertEqual(user.persona_id, user_data['id'])
-        self.assertLess({"anonymous"}, user.roles)
+        self.assertTrue(~Roles.anonymous & user.new_roles)
         # Check that the oldest session has now been terminated.
         user = self.session.lookupsession(keys[0], ip=ip)
         self.assertIsNone(user.persona_id)
-        self.assertEqual({"anonymous"}, user.roles)
+        self.assertEqual(Roles.anonymous, user.new_roles)
 
     def test_logout_everywhere(self) -> None:
         ip = "1.2.3.4."
@@ -230,7 +235,7 @@ class TestSessionBackend(BackendTest):
             with self.subTest(user=u, key=key):
                 user = self.session.lookupsession(key, ip)
                 self.assertEqual(user.persona_id, USER_DICT[u]["id"])
-                self.assertLess({"anonymous"}, user.roles)
+                self.assertTrue(~Roles.anonymous & user.new_roles)
 
         # Create a new session and do a "logout everywhere" with it.
         logout_user = "anton"
@@ -244,10 +249,10 @@ class TestSessionBackend(BackendTest):
                 user = self.session.lookupsession(key, ip)
                 if u == logout_user:
                     self.assertIsNone(user.persona_id)
-                    self.assertEqual({"anonymous"}, user.roles)
+                    self.assertEqual(Roles.anonymous, user.new_roles)
                 else:
                     self.assertEqual(user.persona_id, USER_DICT[u]["id"])
-                    self.assertLess({"anonymous"}, user.roles)
+                    self.assertTrue(~Roles.anonymous & user.new_roles)
 
     def test_old_sessions(self) -> None:
         old_time = now() - datetime.timedelta(days=50)

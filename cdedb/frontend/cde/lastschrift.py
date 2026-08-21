@@ -139,7 +139,9 @@ class CdELastschriftMixin(CdEBaseFrontend):
 
         Especially all permits and transactions.
         """
-        if not (persona_id == rs.user.persona_id or "finance_admin" in rs.user.roles):
+        if not (
+            persona_id == rs.user.persona_id or Roles.finance_admin in rs.user.new_roles
+        ):
             raise werkzeug.exceptions.Forbidden()
         lastschrift_ids = self.cdeproxy.list_lastschrift(
             rs, persona_ids=(persona_id,), active=None
@@ -833,7 +835,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         """Show information about 'Lastschriftinitiative' (former 'Initiative 25+')."""
         annual_fee = self.cdeproxy.annual_membership_fee(rs)
         has_lastschrift = False
-        if "member" in rs.user.roles:
+        if Roles.member in rs.user.new_roles:
             assert rs.user.persona_id is not None
             has_lastschrift = bool(
                 self.cdeproxy.list_lastschrift(

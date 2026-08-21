@@ -225,7 +225,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     k: v for k, v in moderator.items() if v['is_active']
                 }
             # visible and open events
-            if "event" in rs.user.roles:
+            if Roles.event in rs.user.new_roles:
                 event_ids = self.eventproxy.list_events(
                     rs, current=True, archived=False
                 )
@@ -266,7 +266,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 dashboard['events_registration'] = events_registration
                 dashboard['events_payment_pending'] = events_payment_pending
             # open assemblies
-            if "assembly" in rs.user.roles:
+            if Roles.assembly in rs.user.new_roles:
                 assembly_ids = self.assemblyproxy.list_assemblies(
                     rs, is_active=True, restrictive=True
                 )
@@ -341,7 +341,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
         if wants:
             response = basic_redirect(rs, wants)
-        elif "member" in rs.user.roles:
+        elif Roles.member in rs.user.new_roles:
             user = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
             if not user.decided_search:
                 response = self.redirect(rs, "cde/consent_decision_form")
@@ -563,11 +563,14 @@ class CoreBaseFrontend(AbstractFrontend):
 
         :return: The serialized vCard (as in a vcf file)
         """
-        if not {'searchable', 'cde_admin'} & rs.user.roles:
+        if not (Roles.searchable | Roles.cde_admin) & rs.user.new_roles:
             raise werkzeug.exceptions.Forbidden(n_("No cde access to profile."))
 
-        if "cde_admin" not in rs.user.roles and not self.coreproxy.verify_persona(
-            rs, persona_id, required_roles=Roles.searchable
+        if (
+            Roles.cde_admin not in rs.user.new_roles
+            and not self.coreproxy.verify_persona(
+                rs, persona_id, required_roles=Roles.searchable
+            )
         ):
             raise werkzeug.exceptions.Forbidden(
                 n_("Access to non-searchable member data.")
@@ -673,7 +676,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
         # Check whether profile is currently searchable to viewer
         status = self.coreproxy.get_persona_status(rs, rs.ambience['persona'].id)
-        is_searchable_to_you = ("searchable" in rs.user.roles
+        is_searchable_to_you = (Roles.searchable in rs.user.new_roles
                                 and status.is_member
                                 and status.is_searchable)
 
@@ -687,11 +690,11 @@ class CoreBaseFrontend(AbstractFrontend):
             access_realms |= self.AccessRealm.all
             access_levels |= self.AccessLevel.full
         # Core admins see everything
-        if ("core_admin" in rs.user.roles and "core_user" in rs.user.admin_views):
+        if (Roles.core_admin in rs.user.new_roles and "core_user" in rs.user.admin_views):
             access_realms |= self.AccessRealm.all
             access_levels |= self.AccessLevel.full
         # Meta admins see the status bits
-        if ("meta_admin" in rs.user.roles and "meta_admin" in rs.user.admin_views):
+        if (Roles.meta_admin in rs.user.new_roles and "meta_admin" in rs.user.admin_views):
             access_levels |= self.AccessLevel.meta
         # Other admins see their realm if they are relative admin
         if is_relative_admin:
@@ -705,7 +708,10 @@ class CoreBaseFrontend(AbstractFrontend):
                     access_levels |= self.AccessLevel.full
         # Admins with special buttons (like viewing account requests in the nav, or
         #  links to realm-related info pages) which shall change their admin view.
-        if {"core_admin", "cde_admin", "event_admin", "ml_admin"} & rs.user.roles:
+        if (
+            (Roles.core_admin | Roles.cde_admin | Roles.event_admin | Roles.ml_admin)
+            & rs.user.new_roles
+        ):
             access_mode |= self.AccessMode.any_admin
         # Members see other members (modulo quota)
         if quote_me and self.AccessRealm.cde not in access_realms:
@@ -716,7 +722,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     "Access to non-searchable member data."))
         # Orgas see their participants
         if event_id:
-            is_admin = "event_admin" in rs.user.roles
+            is_admin = Roles.event_admin in rs.user.new_roles
             is_viewing_admin = is_admin and "event_orga" in rs.user.admin_views
             is_orgalike = event_id in rs.user.orga | rs.user.caretaker
             if is_orgalike or is_admin:
@@ -854,7 +860,7 @@ class CoreBaseFrontend(AbstractFrontend):
         # Check for email trouble
         email_report = None
         if (rs.user.persona_id == persona_id
-                or ({"core_admin", "ml_admin"} & rs.user.roles)):
+                or ((Roles.core_admin | Roles.ml_admin) & rs.user.new_roles)):
             # the username may be masked by admin views, but then we also
             # don't need the email report
             if persona.username != REDACTED:
@@ -904,7 +910,7 @@ class CoreBaseFrontend(AbstractFrontend):
         """Render overview which events a given user is registered for."""
         if not (
             self.coreproxy.is_relative_admin(rs, persona_id)
-            or "event_admin" in rs.user.roles
+            or Roles.event_admin in rs.user.new_roles
             or rs.user.persona_id == persona_id
         ):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
@@ -963,7 +969,7 @@ class CoreBaseFrontend(AbstractFrontend):
         """Render overview of mailinglist data of a certain user."""
         if not (
             self.coreproxy.is_relative_admin(rs, persona_id)
-            or "ml_admin" in rs.user.roles
+            or Roles.ml_admin in rs.user.new_roles
             or rs.user.persona_id == persona_id
         ):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
@@ -1016,7 +1022,7 @@ class CoreBaseFrontend(AbstractFrontend):
     ) -> Response:
         if not (
             self.coreproxy.is_relative_admin(rs, persona_id)
-            or "assembly_admin" in rs.user.roles
+            or Roles.assembly_admin in rs.user.new_roles
             or rs.user.persona_id == persona_id
         ):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
@@ -1258,42 +1264,52 @@ class CoreBaseFrontend(AbstractFrontend):
         mailinglist = None
         len_preview = (
             self.conf["NUM_PREVIEW_PERSONAS_PRIVILEGED"]
-            if {"core_admin"} & rs.user.roles
+            if Roles.core_admin & rs.user.new_roles
             else self.conf["NUM_PREVIEW_PERSONAS"]
         )
         if kind == "admin_persona":
-            if not (
-                {"core_admin", "cde_admin", "complaint_admin", "ml_admin", "meta_admin",
-                 "auditor"}
-                & rs.user.roles
-            ):  # fmt: skip
+            relevant_admin_roles = (
+                Roles.core_admin
+                | Roles.cde_admin
+                | Roles.complaint_admin
+                | Roles.ml_admin
+                | Roles.meta_admin
+                | Roles.auditor
+            )
+            if not (relevant_admin_roles & rs.user.new_roles):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append("username")
         elif kind == "admin_all_users":
-            if not {"core_admin", "ml_admin", "complaint_admin"} & rs.user.roles:
+            if (
+                not (Roles.core_admin | Roles.ml_admin | Roles.complaint_admin)
+                & rs.user.new_roles
+            ):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append("username")
             scope = QueryScope.all_core_users
         elif kind == "cde_user":
-            if not {"cde_admin", "auditor"} & rs.user.roles:
+            if not (Roles.cde_admin | Roles.auditor) & rs.user.new_roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append("username")
             constraints.append(("is_cde_realm", QueryOperators.equal, True))
         elif kind == "past_event_user":
-            if not {"cde_admin", "auditor"} & rs.user.roles:
+            if not (Roles.cde_admin | Roles.auditor) & rs.user.new_roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             # adding archived users to past events is a common task
             scope = QueryScope.all_core_users
             constraints.append(("is_event_realm", QueryOperators.equal, True))
         elif kind == "pure_assembly_user":
             # No check by assembly, as this behaves identical for each assembly.
-            if not rs.user.presider and "assembly_admin" not in rs.user.roles:
+            if not rs.user.presider and Roles.assembly_admin not in rs.user.new_roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             constraints.append(("is_assembly_realm", QueryOperators.equal, True))
             constraints.append(("is_member", QueryOperators.equal, False))
         elif kind == "assembly_user":
             # No check by assembly, as this behaves identical for each assembly.
-            if not (rs.user.presider or {"assembly_admin", "auditor"} & rs.user.roles):
+            if not (
+                rs.user.presider
+                or (Roles.assembly_admin | Roles.auditor) & rs.user.new_roles
+            ):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             constraints.append(("is_assembly_realm", QueryOperators.equal, True))
         elif kind == "event_user":
@@ -1303,26 +1319,26 @@ class CoreBaseFrontend(AbstractFrontend):
             if not (
                 rs.user.orga
                 or rs.user.caretaker
-                or {"event_admin", "auditor"} & rs.user.roles
+                or (Roles.event_admin | Roles.auditor) & rs.user.new_roles
             ):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             constraints.append(("is_event_realm", QueryOperators.equal, True))
         elif kind == "ml_user":
-            relevant_admin_roles = {
-                "core_admin",
-                "cde_admin",
-                "event_admin",
-                "auditor",
-                "assembly_admin",
-                "cdelokal_admin",
-                "ml_admin",
-            }
+            relevant_admin_roles = (
+                Roles.core_admin
+                | Roles.cde_admin
+                | Roles.event_admin
+                | Roles.assembly_admin
+                | Roles.ml_admin
+                | Roles.cdelokal_admin
+                | Roles.auditor
+            )
             # No check by mailinglist, as this behaves identical for each list.
-            if not (rs.user.moderator or relevant_admin_roles & rs.user.roles):
+            if not (rs.user.moderator or relevant_admin_roles & rs.user.new_roles):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             constraints.append(("is_ml_realm", QueryOperators.equal, True))
         elif kind == "pure_ml_user":
-            if "ml_admin" not in rs.user.roles:
+            if Roles.ml_admin not in rs.user.new_roles:
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append("username")
             constraints.extend((
@@ -1460,14 +1476,14 @@ class CoreBaseFrontend(AbstractFrontend):
             }
         ) - {"is_searchable"}
         roles_to_fields = {
-            "persona": (set(PERSONA_CORE_FIELDS) | {"notes"}) - hidden_fields,
-            "ml": set(PERSONA_ML_FIELDS) - hidden_fields,
-            "assembly": set(PERSONA_ASSEMBLY_FIELDS) - hidden_fields,
-            "event": set(PERSONA_EVENT_FIELDS) - hidden_fields,
-            "cde": (set(PERSONA_CDE_FIELDS) - hidden_cde_fields),
+            Roles.persona: (set(PERSONA_CORE_FIELDS) | {"notes"}) - hidden_fields,
+            Roles.ml: set(PERSONA_ML_FIELDS) - hidden_fields,
+            Roles.assembly: set(PERSONA_ASSEMBLY_FIELDS) - hidden_fields,
+            Roles.event: set(PERSONA_EVENT_FIELDS) - hidden_fields,
+            Roles.cde: (set(PERSONA_CDE_FIELDS) - hidden_cde_fields),
         }
         for role, fields in roles_to_fields.items():
-            if role in user.roles:
+            if role in user.new_roles:
                 ret |= fields
 
         # hide the donation property if no active lastschrift exists, to avoid confusion
@@ -1478,7 +1494,7 @@ class CoreBaseFrontend(AbstractFrontend):
 
         # hide the member search toggles if no cde realm
         for key in ret & {"show_legal_given_names", "show_address", "show_address2"}:
-            if "cde" not in user.roles:
+            if Roles.cde not in user.new_roles:
                 ret.remove(key)
 
         restricted_fields = {"notes", "birthday", "is_searchable"}

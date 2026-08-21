@@ -255,7 +255,7 @@ def _make_backend_shim[B: AbstractBackend](
         if hasattr(backend, "list_enforcers"):
             if rs.user.persona_id in backend.list_enforcers(rs):
                 rs.user.new_roles |= Roles.complaint_enforcer
-        if "event" in rs.user.roles:
+        if Roles.event in rs.user.new_roles:
             if hasattr(backend, "orga_info"):
                 rs.user.orga = backend.orga_info(rs, rs.user.persona_id)
             if hasattr(backend, "caretaker_info"):
@@ -267,9 +267,9 @@ def _make_backend_shim[B: AbstractBackend](
             if hasattr(backend, "get_event_helpers"):
                 if rs.user.persona_id in backend.get_event_helpers(rs):
                     rs.user.new_roles |= Roles.event_helper
-        if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
+        if Roles.ml in rs.user.new_roles and hasattr(backend, "moderator_info"):
             rs.user.moderator = backend.moderator_info(rs, rs.user.persona_id)
-        if "assembly" in rs.user.roles and hasattr(backend, "presider_info"):
+        if Roles.assembly in rs.user.new_roles and hasattr(backend, "presider_info"):
             rs.user.presider = backend.presider_info(rs, rs.user.persona_id)
         return rs
 

@@ -726,7 +726,7 @@ class PastEventBackend(AbstractBackend):
             return participants
 
         # if the user is neither admin nor participant, we filter the data
-        if "searchable" in rs.user.roles:
+        if Roles.searchable in rs.user.new_roles:
             for persona in personas.values():
                 if not persona.is_member or not persona.is_searchable:
                     del participants[persona.id]
@@ -852,10 +852,10 @@ class PastEventBackend(AbstractBackend):
         persona = self.core.get_past_event_user(rs, persona_id)
         if not (
             self.is_admin(rs)
-            or "core_admin" in rs.user.roles
+            or Roles.core_admin in rs.user.new_roles
             or persona_id == rs.user.persona_id
             or (
-                "searchable" in rs.user.roles
+                Roles.searchable in rs.user.new_roles
                 and persona.is_member
                 and persona.is_searchable
             )
@@ -1071,7 +1071,10 @@ class PastEventBackend(AbstractBackend):
           If there were complications, the second entry is an error message.
         """
         event_id = affirm(vtypes.EventID, event_id)
-        if "cde_admin" not in rs.user.roles or "event_admin" not in rs.user.roles:
+        if (
+            Roles.cde_admin not in rs.user.new_roles
+            or Roles.event_admin not in rs.user.new_roles
+        ):
             raise PrivilegeError(n_("Needs both admin privileges."))
         with Atomizer(rs):
             event = self.event.get_event(rs, event_id)

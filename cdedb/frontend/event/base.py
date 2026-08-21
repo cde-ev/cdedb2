@@ -297,7 +297,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         params = params or {}
         if 'event' in rs.ambience:
             params['is_locked'] = self.is_locked(rs.ambience['event'])
-            if rs.user.persona_id and "event" in rs.user.roles:
+            if rs.user.persona_id and Roles.event in rs.user.new_roles:
                 reg_list = self.eventproxy.list_registrations(
                     rs, rs.ambience['event'].id, rs.user.persona_id
                 )

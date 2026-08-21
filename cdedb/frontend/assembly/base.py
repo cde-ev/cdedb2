@@ -230,7 +230,7 @@ class AssemblyBaseFrontend(AbstractUserFrontend):
             "presiders": presiders,
         }
 
-        if "ml" in rs.user.roles:
+        if Roles.ml in rs.user.new_roles:
             ml_data = self._get_mailinglist_setter(rs, rs.ambience['assembly'])
             params['attendee_list_exists'] = self.mlproxy.verify_existence(
                 rs, ml_data.address

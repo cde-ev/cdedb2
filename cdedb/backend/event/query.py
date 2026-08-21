@@ -373,7 +373,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
             query.constraints.append(("event_id", QueryOperators.equal, event_id))
             query.spec['event_id'] = QuerySpecEntry("bool", "")
         elif query.scope in {QueryScope.event_user, QueryScope.all_event_users}:
-            if not self.is_admin(rs) and "core_admin" not in rs.user.roles:
+            if not self.is_admin(rs) and Roles.core_admin not in rs.user.new_roles:
                 raise PrivilegeError(n_("Admin only."))
 
             # Include only (un)archived users, depending on query scope.

@@ -1339,7 +1339,7 @@ class ComplaintBackend(AbstractBackend):
         concerned_id = affirm(vtypes.ID, concerned_id)
         is_active = affirm(bool | None, is_active)
         if not (
-            {"complaint_admin", "complaint_enforcer"} & rs.user.roles
+            Roles.complaint_admin | Roles.complaint_enforcer & rs.user.new_roles
             or concerned_id == rs.user.persona_id
         ):
             raise PrivilegeError

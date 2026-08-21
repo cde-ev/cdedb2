@@ -81,7 +81,7 @@ class EventEventMixin(EventBaseFrontend):
 
         events_registration: dict[int, bool | None] = {}
         events_payment_pending: dict[int, bool] = {}
-        if "event" in rs.user.roles:
+        if Roles.event in rs.user.new_roles:
             for event_id in current_event_list:
                 events_registration[event_id], events_payment_pending[event_id] = (
                     self.eventproxy.get_registration_payment_info(rs, event_id)
@@ -136,7 +136,7 @@ class EventEventMixin(EventBaseFrontend):
         events = self.eventproxy.get_events(rs, event_ids)
 
         events_registrations: dict[vtypes.ID, int] = {}
-        if self.is_admin(rs) or 'event_helper' in rs.user.roles:
+        if self.is_admin(rs) or Roles.event_helper in rs.user.new_roles:
             for event in events.values():
                 regs = self.eventproxy.list_registrations(rs, event.id)
                 events_registrations[event.id] = len(regs)
@@ -168,7 +168,7 @@ class EventEventMixin(EventBaseFrontend):
         """Display event organized via DB."""
         params: CdEDBObject = {}
         is_registered = False
-        if "event" in rs.user.roles:
+        if Roles.event in rs.user.new_roles:
             params['orgas'] = self.coreproxy.get_personas(
                 rs, rs.ambience['event'].orgas
             )
@@ -178,7 +178,7 @@ class EventEventMixin(EventBaseFrontend):
             is_registered = bool(
                 self.eventproxy.list_registrations(rs, event_id, rs.user.persona_id)
             )
-        if "ml" in rs.user.roles:
+        if Roles.ml in rs.user.new_roles:
             ml_data = self._get_mailinglist_setter(rs, rs.ambience['event'])
             params['participant_list'] = self.mlproxy.verify_existence(
                 rs, ml_data.address

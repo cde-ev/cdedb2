@@ -232,9 +232,9 @@ class AssemblyBackend(AbstractBackend):
 
         Exactly one of assembly_id, ballot_id and attachment_id has to be provided.
         """
-        if "assembly" not in rs.user.roles:
+        if Roles.assembly not in rs.user.new_roles:
             return False
-        if "member" in rs.user.roles or self.is_presider(
+        if Roles.member in rs.user.new_roles or self.is_presider(
             rs,
             assembly_id=assembly_id,
             ballot_id=ballot_id,
@@ -366,7 +366,7 @@ class AssemblyBackend(AbstractBackend):
         log_filter = affirm(AssemblyLogFilter, log_filter)
         assembly_ids = log_filter.assembly_ids()
 
-        if self.is_admin(rs) or "auditor" in rs.user.roles:
+        if self.is_admin(rs) or Roles.auditor in rs.user.new_roles:
             pass
         elif not assembly_ids:
             raise PrivilegeError(n_("Must be admin to access global log."))
@@ -498,7 +498,7 @@ class AssemblyBackend(AbstractBackend):
 
         # Rule out people who can not participate at any assembly to prevent
         # privilege errors
-        if persona_id == rs.user.persona_id and "assembly" not in rs.user.roles:
+        if persona_id == rs.user.persona_id and Roles.assembly not in rs.user.new_roles:
             return False
 
         with Atomizer(rs):
@@ -568,7 +568,8 @@ class AssemblyBackend(AbstractBackend):
         """
         assembly_id = affirm(vtypes.ID, assembly_id)
         if not (
-            self.may_access(rs, assembly_id=assembly_id) or "ml_admin" in rs.user.roles
+            self.may_access(rs, assembly_id=assembly_id)
+            or Roles.ml_admin in rs.user.new_roles
         ):
             raise PrivilegeError(n_("Not privileged."))
         attendees = self.sql_select(
@@ -1035,7 +1036,10 @@ class AssemblyBackend(AbstractBackend):
             )
         else:
             # The latter two need this for AssemblyFrontend.view_log
-            if not {'member', 'auditor', 'assembly_admin'} & rs.user.roles:
+            if (
+                not (Roles.member | Roles.auditor | Roles.assembly_admin)
+                & rs.user.new_roles
+            ):
                 raise PrivilegeError
             query = "SELECT id, title FROM assembly.ballots"
             data = self.query_all(rs, query, tuple())

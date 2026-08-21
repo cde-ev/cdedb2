@@ -3,6 +3,7 @@
 from enum import Flag, auto
 
 from cdedb.common import RequestState, User
+from cdedb.common.roles import Roles
 from cdedb.config import Config
 
 _CONF = Config()
@@ -158,10 +159,13 @@ def is_privileged_event_user(
     return (
         # Special case for conclude which requires two admin privileges.
         (
-            {"event_admin", "cde_admin"} <= user.roles
+            (Roles.event_admin | Roles.cde_admin) in user.new_roles
             and required_privilege == EP.conclude
         )
-        or ("event_admin" in user.roles and required_privilege in admin_privileges)
+        or (
+            Roles.event_admin in user.new_roles
+            and required_privilege in admin_privileges
+        )
         or (event_id in user.orga and required_privilege in orga_privileges)
         or (event_id in user.caretaker and required_privilege in caretaker_privileges)
         or (
@@ -170,27 +174,29 @@ def is_privileged_event_user(
         )
         # Due to use in ml realm, users without event realm might come across this
         or (
-            "event_helper" in user.roles
+            Roles.event_helper in user.new_roles
             and required_privilege in event_helper_privileges
         )
         # finance_admins may book fees and balance events.
         or (
-            "finance_admin" in user.roles
+            Roles.finance_admin in user.new_roles
             and required_privilege in finance_admin_privileges
         )
-        or ("auditor" in user.roles and required_privilege in auditor_privileges)
+        or (
+            Roles.auditor in user.new_roles and required_privilege in auditor_privileges
+        )
         # ml_admins are allowed to do this to be able to manage
         # subscribers of event mailinglists.
         or (
-            "ml_admin" in user.roles
+            Roles.ml_admin in user.new_roles
             and required_privilege == EP.registrations_read_internal
         )
         or (
-            "droid_quick_partial_export" in user.roles
+            Roles.droid_quick_partial_export in user.new_roles
             and required_privilege in EP.basic_read | EP.registrations_read
         )
         # or (
-        #     "droid_orga" in user.roles
+        #     Roles.droid_orga in user.new_roles
         #     and required_privilege in OrgaTokenGrants.implied_privileges()
         # )
     )
