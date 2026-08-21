@@ -1,4 +1,4 @@
-{% set sidenav_active='event_fees' if ambience['fee'] else 'event_registration' %}
+{% set sidenav_active='event_fees' if 'fee' in ambience else 'event_registration' %}
 {% extends "web/event/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block scripts %}
@@ -9,7 +9,7 @@
 {% set jshint='weak' %}
 
 {% block title %}
-    {% if ambience['fee'] %}
+    {% if 'fee' in ambience %}
         {% trans fee_title=ambience['fee'].title, event_title=ambience['event'].title %}
             Set Personalized Fees for {{ fee_title }} ({{ event_title }})
         {% endtrans %}
@@ -23,7 +23,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event'].title, icon="chalkboard-teacher") }}
-    {% if ambience['fee'] %}
+    {% if 'fee' in ambience %}
         {{ util.breadcrumb_link(cdedblink("event/fee_summary"), gettext("Fees")) }}
         {{ util.breadcrumb_link("", ambience['fee'].title, icon="coins", readonly=True) }}
     {% else %}
@@ -34,7 +34,7 @@
 
 {% block heading %}
     {{ util.doclink_("Handbuch_Orga_Teilnahmebeitraege") }}
-    {% if ambience['fee'] %}
+    {% if 'fee' in ambience %}
         {{ util.context_heading(gettext("Set Personalized Fees for %(fee_title)s")|format(fee_title=ambience['fee'].title),
                                 ambience['event'].title, 'chalkboard-teacher') }}
     {% else %}
@@ -45,7 +45,7 @@
 
 {% block content %}
 
-    {% if ambience['fee'] %}
+    {% if 'fee' in ambience %}
 
         <form action="{{ cdedblink('event/personalized_fee_multiset') }}" method="POST"
               id="personalizedfeemultisetform" class="form-horizontal">

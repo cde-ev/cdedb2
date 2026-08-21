@@ -3553,7 +3553,7 @@ class CoreBaseBackend(AbstractBackend):
         columns = (
             set(models.CorePersona.database_fields())
             | set(models.PersonaStatus.database_fields())
-            | {"birthday"}
+            | {"birthday", "birth_name", "trial_member"}
         )
         # Circumvent privilege check, since this is a rather special case.
         ret = self.retrieve_personas(rs, persona_ids, columns)

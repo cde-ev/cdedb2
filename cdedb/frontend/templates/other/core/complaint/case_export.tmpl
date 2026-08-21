@@ -44,7 +44,8 @@
 
 # {% trans %}Events_[[in a complaint]]{% endtrans %}
 {% for entry in all_entries %}
-{%- if entry.entry_type %}
+{#- Differentiate between dataclass and log entries, where the latter lack the "entry_type" #}
+{%- if entry|hasattr("entry_type") %}
 ## {% trans %}Entry{% endtrans %} ({{ entry.id }}): {{ gettext(entry.entry_type|string) }}
 {%- if entry.is_revoked -%}
 {# #} ({% trans %}revoked{% endtrans %})

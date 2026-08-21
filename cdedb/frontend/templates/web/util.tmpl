@@ -1019,15 +1019,16 @@ mailto:
 {%- endmacro %}
 
 {% macro username_mailto(persona, email=none) -%}
+    {% set email = email or (persona["username"] if persona|hasattr("username")) or (persona["persona.username"] if persona|hasattr("persona.username")) or "" %}
     {{ href(
         mailto(
-            address=email or persona["username"] or persona["persona.username"] or "",
+            address=email,
             name="{} {}".format(
-                persona["given_names"] or persona["persona.given_names"] or "",
-                persona["family_name"] or persona["persona.family_name"] or ""
+                (persona["given_names"] if persona|hasattr("given_names")) or (persona["persona.given_names"] if persona|hasattr("persona.given_names")) or "",
+                (persona["family_name"] if persona|hasattr("family_name")) or (persona["persona.family_name"] if persona|hasattr("persona.family_name")) or "",
             )
         ),
-        email or persona["username"] or persona["persona.username"] or ""
+        email
     ) }}
 {%- endmacro %}
 
