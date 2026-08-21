@@ -125,7 +125,7 @@ def access[F: Callable[..., Any]](*roles: Roles) -> Callable[[F], F]:
                         "%(user_roles)s is disjoint from %(roles)s for method %(method)s."
                     ),
                     {
-                        "user_roles": rs.user.roles,
+                        "user_roles": rs.user.new_roles,
                         "roles": roles,
                         "method": function.__name__,
                     },
