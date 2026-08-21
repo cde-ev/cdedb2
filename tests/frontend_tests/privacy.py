@@ -3,7 +3,8 @@
 import datetime
 import urllib.parse
 
-from cdedb.common import AdminViews, CdEDBObject
+from cdedb.common import CdEDBObject
+from cdedb.common.roles import AdminViews
 from tests.common import (
     USER_DICT,
     FrontendTest,

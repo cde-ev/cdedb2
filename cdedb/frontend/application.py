@@ -27,9 +27,7 @@ from cdedb.backend.ml import MlBackend
 from cdedb.backend.session import SessionBackend
 from cdedb.common import (
     IGNORE_WARNINGS_NAME,
-    AdminViews,
     CdEDBObject,
-    Realm,
     RequestState,
     User,
     make_proxy,
@@ -42,7 +40,7 @@ from cdedb.common.exceptions import (
     QuotaException,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.roles import Roles
+from cdedb.common.roles import AdminViews, Roles
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory

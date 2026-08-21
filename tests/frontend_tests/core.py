@@ -13,7 +13,6 @@ import cdedb.models.droid as model_droid
 import cdedb.models.event as models_event
 from cdedb.common import (
     IGNORE_WARNINGS_NAME,
-    AdminViews,
     CdEDBObject,
     GenesisDecision,
     PrivilegeError,
@@ -25,7 +24,7 @@ from cdedb.common.exceptions import CryptographyError, ParameterInvalidError
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query import QueryOperators
 from cdedb.common.query.log_filter import ChangelogLogFilter
-from cdedb.common.roles import Realms, Roles, extract_roles
+from cdedb.common.roles import AdminViews, Realms, Roles, extract_roles
 from cdedb.filter import iban_filter
 from tests.common import (
     ANONYMOUS,

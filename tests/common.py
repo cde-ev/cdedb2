@@ -76,7 +76,6 @@ from cdedb.common import (
     NearlyNow,
     PathLike,
     RequestState,
-    Roles,
     merge_dicts,
     nearly_now,
     now,
@@ -96,9 +95,7 @@ from cdedb.common.query.log_filter import (
     MlLogFilter,
     PastEventLogFilter,
 )
-from cdedb.common.roles import (
-    AdminViews,
-)
+from cdedb.common.roles import AdminViews, Roles
 from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory

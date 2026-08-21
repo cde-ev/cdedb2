@@ -48,7 +48,7 @@ from typing_extensions import TypeForm
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
-from cdedb.common.fields import Realm, Role
+from cdedb.common.fields import Role
 from cdedb.common.n_ import n_
 from cdedb.common.roles import AdminViews, Roles
 from cdedb.config import Config

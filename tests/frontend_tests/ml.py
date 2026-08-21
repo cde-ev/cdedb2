@@ -8,8 +8,9 @@ from typing import Any
 import webtest
 
 import cdedb.database.constants as const
-from cdedb.common import AdminViews, CdEDBObject, get_hash
+from cdedb.common import CdEDBObject, get_hash
 from cdedb.common.query import QueryOperators
+from cdedb.common.roles import AdminViews
 from cdedb.devsamples import HELD_MESSAGE_SAMPLE, MockHeldMessage
 from cdedb.frontend.common import CustomCSVDialect
 from cdedb.models.ml import CdeLokalMailinglist

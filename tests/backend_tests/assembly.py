@@ -14,13 +14,13 @@ from cdedb.common import (
     CdEDBObjectMap,
     PrivilegeError,
     RequestState,
-    Roles,
     get_hash,
     nearly_now,
     now,
 )
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import AssemblyLogFilter
+from cdedb.common.roles import Roles
 from tests.common import (
     USER_DICT,
     BackendTest,

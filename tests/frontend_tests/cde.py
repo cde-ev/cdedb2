@@ -16,7 +16,6 @@ import cdedb.database.constants as const
 import cdedb.models.core as models
 from cdedb.common import (
     IGNORE_WARNINGS_NAME,
-    AdminViews,
     CdEDBObject,
     LineResolutions,
     RequestState,
@@ -28,7 +27,7 @@ from cdedb.common.i18n import (
     get_localized_country_codes,
 )
 from cdedb.common.query import QueryOperators
-from cdedb.common.roles import Roles, extract_roles
+from cdedb.common.roles import AdminViews, Roles, extract_roles
 from cdedb.frontend.common import Worker
 from tests.common import (
     USER_DICT,
