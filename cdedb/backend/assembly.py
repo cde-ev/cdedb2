@@ -122,7 +122,7 @@ class GroupedBallots:
 class AssemblyBackend(AbstractBackend):
     """This is an entirely unremarkable backend."""
 
-    realm = "assembly"
+    realm = Realms.assembly
 
     def __init__(self) -> None:
         super().__init__()
@@ -130,10 +130,6 @@ class AssemblyBackend(AbstractBackend):
             self.conf['STORAGE_DIR'] / "assembly_attachment"
         )
         self.ballot_result_base_path: Path = self.conf['STORAGE_DIR'] / 'ballot_result'
-
-    @classmethod
-    def is_admin(cls, rs: RequestState) -> bool:
-        return super().is_admin(rs)
 
     @access(Roles.assembly)
     def get_attachment_store(self, rs: RequestState) -> AttachmentStore:

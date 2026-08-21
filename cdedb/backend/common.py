@@ -40,7 +40,7 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import VALID_QUERY_OPERATORS, Query, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import GenericLogFilter
-from cdedb.common.roles import Roles
+from cdedb.common.roles import Realms, Roles
 from cdedb.common.validation import validate
 from cdedb.config import Config
 from cdedb.database.constants import FieldDatatypes, LockType
@@ -165,14 +165,20 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
     which is sufficient for some cases).
     """
 
-    #: abstract str to be specified by children
-    realm: ClassVar[str]
+    realm: ClassVar[str | Realms]
+    admin_role: ClassVar[Roles | None] = None
+
+    @classmethod
+    def realm_str(cls) -> str:
+        if isinstance(cls.realm, str):
+            return cls.realm
+        return str(cls.realm.name)
 
     def __init__(self) -> None:
         self.conf = Config()
         # initialize logging
         # logger are thread-safe!
-        self.logger = logging.getLogger(f"cdedb.backend.{self.realm}")
+        self.logger = logging.getLogger(f"cdedb.backend.{self.realm_str()}")
         self.logger.debug(f"Instantiated {self} with config {self.conf}.")
         # make the logger available to the query mixin
         super().__init__(self.logger)
@@ -193,14 +199,19 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
     affirm_atomized_context = staticmethod(_affirm_atomized_context)
 
     @classmethod
-    @abc.abstractmethod
     def is_admin(cls, rs: RequestState) -> bool:
         """We abstract away the admin privilege.
 
         Maybe this can be beefed up to check for orgas and moderators too,
         but for now it only checks the admin role.
         """
-        return f"{cls.realm}_admin" in rs.user.roles
+        if cls.admin_role:
+            admin_role = cls.admin_role
+        elif isinstance(cls.realm, Realms):
+            admin_role = cls.realm.admin_role
+        else:
+            raise RuntimeError
+        return admin_role in rs.user.new_roles
 
     # coverage: We do not expect to trigger an exception to be logged by this.
     def cgitb_log(self) -> None:  # pragma: no cover

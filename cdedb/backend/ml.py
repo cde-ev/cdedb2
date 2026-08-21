@@ -58,7 +58,7 @@ class MlBackend(AbstractBackend):
     """Take note of the fact that some personas are moderators and thus have
     additional actions available."""
 
-    realm = "ml"
+    realm = Realms.ml
 
     def __init__(self) -> None:
         super().__init__()
@@ -74,10 +74,6 @@ class MlBackend(AbstractBackend):
         self.subman = subman.SubscriptionManager(
             unwritten_states=(const.SubscriptionState.none,)
         )
-
-    @classmethod
-    def is_admin(cls, rs: RequestState) -> bool:
-        return super().is_admin(rs)
 
     @access(Roles.ml)
     def get_ml_types(

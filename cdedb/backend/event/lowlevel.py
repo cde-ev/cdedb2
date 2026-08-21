@@ -46,7 +46,7 @@ from cdedb.common.privileges import (
     EventPrivileges,
     is_privileged_event as is_privileged,
 )
-from cdedb.common.roles import Roles
+from cdedb.common.roles import Realms, Roles
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.query import DatabaseValue_s, ParamDict
 
@@ -56,15 +56,11 @@ class _GetEventProtocol(Protocol):
 
 
 class EventLowLevelBackend(AbstractBackend):
-    realm = "event"
+    realm = Realms.event
 
     def __init__(self) -> None:
         super().__init__()
         self.minor_form_dir: Path = self.conf['STORAGE_DIR'] / 'minor_form'
-
-    @classmethod
-    def is_admin(cls, rs: RequestState) -> bool:
-        return super().is_admin(rs)
 
     @internal
     def event_log(

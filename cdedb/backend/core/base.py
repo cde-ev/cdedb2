@@ -90,6 +90,7 @@ class CoreBaseBackend(AbstractBackend):
     ``@internal`` quite often."""
 
     realm = "core"
+    admin_role = Roles.core_admin
 
     def __init__(self) -> None:
         super().__init__()
@@ -123,10 +124,6 @@ class CoreBaseBackend(AbstractBackend):
     @access(Roles.anonymous)
     def get_genesis_attachment_store(self, rs: RequestState) -> AttachmentStore:
         return self._genesis_attachment_store
-
-    @classmethod
-    def is_admin(cls, rs: RequestState) -> bool:
-        return super().is_admin(rs)
 
     @access(Roles.persona)
     def is_relative_admin(

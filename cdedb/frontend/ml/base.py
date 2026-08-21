@@ -26,7 +26,7 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.query.log_filter import MlLogFilter
-from cdedb.common.roles import Roles
+from cdedb.common.roles import Realms, Roles
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import keydictsort_filter
@@ -53,7 +53,7 @@ from cdedb.uncommon.submanshim import SubscriptionAction
 
 
 class MlBaseFrontend(AbstractUserFrontend):
-    realm = "ml"
+    realm = Realms.ml
 
     def render(
         self,
@@ -71,10 +71,6 @@ class MlBaseFrontend(AbstractUserFrontend):
         return super().render(
             rs, templatename, params=params, mandatory_fields=mandatory_fields
         )
-
-    @classmethod
-    def is_admin(cls, rs: RequestState) -> bool:
-        return super().is_admin(rs)
 
     @access(Roles.ml)
     def index(self, rs: RequestState) -> Response:

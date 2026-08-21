@@ -95,7 +95,7 @@ from cdedb.common.query.log_filter import (
     MlLogFilter,
     PastEventLogFilter,
 )
-from cdedb.common.roles import AdminViews, Roles
+from cdedb.common.roles import AdminViews, Realms, Roles
 from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -2620,7 +2620,7 @@ class CronTest(CdEDBTest):
                 def mail_wrapper(
                     rs: RequestState, name: str, *args: Any, **kwargs: Any
                 ) -> str | None:
-                    self.mails.append(MailTrace(front.realm, name, args, kwargs))
+                    self.mails.append(MailTrace(front.realm_str(), name, args, kwargs))
                     return fun(rs, name, *args, **kwargs)
 
                 return cast(F, mail_wrapper)

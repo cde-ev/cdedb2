@@ -128,7 +128,7 @@ from cdedb.common.exceptions import (
     PrivilegeError,
     ValidationWarning,
 )
-from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
+from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS, Realm
 from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts, TransactionType
@@ -138,6 +138,7 @@ from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.roles import (
     PERSONA_DEFAULTS,
     AdminViews,
+    Realms,
     Roles,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
@@ -205,14 +206,21 @@ class BaseApp(metaclass=abc.ABCMeta):
     inherited by :py:class:`cdedb.frontend.application.Application`.
     """
 
-    realm: ClassVar[str]
+    realm: ClassVar[str | Realms]
+    admin_role: ClassVar[Roles | None] = None
+
+    @classmethod
+    def realm_str(cls) -> str:
+        if isinstance(cls.realm, str):
+            return cls.realm
+        return str(cls.realm.name)
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.conf = Config()
         secrets = SecretsConfig()
         # initialize logging
         if hasattr(self, 'realm') and self.realm:
-            logger_name = f"cdedb.frontend.{self.realm}"
+            logger_name = f"cdedb.frontend.{self.realm_str()}"
         else:
             logger_name = "cdedb.frontend"
         self.logger = logging.getLogger(logger_name)  # logger are thread-safe!
@@ -517,12 +525,17 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         )
 
     @classmethod
-    @abc.abstractmethod
     def is_admin(cls, rs: RequestState) -> bool:
         """Since each realm may have its own application level roles, it may
         also have additional roles with elevated privileges.
         """
-        return f"{cls.realm}_admin" in rs.user.roles
+        if cls.admin_role:
+            admin_role = cls.admin_role
+        elif isinstance(cls.realm, Realms):
+            admin_role = cls.realm.admin_role
+        else:
+            raise RuntimeError
+        return admin_role in rs.user.new_roles
 
     def fill_template(
         self, rs: RequestState, modus: str, templatename: str, params: CdEDBObject
@@ -695,7 +708,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             raise NotImplementedError(
                 n_("Requested modus does not exists: %(modus)s"), {'modus': modus}
             )
-        tmpl = pathlib.Path(modus, self.realm, f"{templatename}.tmpl")
+        tmpl = pathlib.Path(modus, self.realm_str(), f"{templatename}.tmpl")
         # sadly, jinja does not catch nicely if the template exists, so we do this here
         if not (self.template_dir / tmpl).is_file():
             raise ValueError(n_("Template not found: %(file)s"), {'file': tmpl})
@@ -1570,7 +1583,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             return n_("Anti CSRF token is required for this form.")
         # noinspection PyProtectedMember
         timeout, val = self.decode_parameter(
-            f"{self.realm}/{action}", token_name, val, rs.user.persona_id
+            f"{self.realm_str()}/{action}", token_name, val, rs.user.persona_id
         )
         if not val:
             if timeout:
@@ -1861,11 +1874,6 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
 
     This is basically every frontend with exception of 'core'.
     """
-
-    @classmethod
-    @abc.abstractmethod
-    def is_admin(cls, rs: RequestState) -> bool:
-        return super().is_admin(rs)
 
     # @access(Roles.realm_admin)
     @abc.abstractmethod
@@ -2710,7 +2718,7 @@ def REQUESTdata[F: Callable[..., Any]](
                         # only decode if exists
                         # noinspection PyProtectedMember
                         timeout, val = obj.decode_parameter(
-                            f"{obj.realm}/{fun.__name__}",
+                            f"{obj.realm_str()}/{fun.__name__}",
                             name,
                             val,
                             persona_id=rs.user.persona_id,

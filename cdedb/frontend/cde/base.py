@@ -38,7 +38,7 @@ from cdedb.common.i18n import get_country_code_from_country, get_localized_count
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryConstraint, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import FinanceLogFilter
-from cdedb.common.roles import PERSONA_DEFAULTS, Roles
+from cdedb.common.roles import PERSONA_DEFAULTS, Realms, Roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.validate import (
     PERSONA_FULL_CREATION,
@@ -86,11 +86,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
     """This offers services to the members as well as facilities for managing
     the organization."""
 
-    realm = "cde"
-
-    @classmethod
-    def is_admin(cls, rs: RequestState) -> bool:
-        return super().is_admin(rs)
+    realm = Realms.cde
 
     @access(Roles.cde)
     def index(self, rs: RequestState) -> Response:

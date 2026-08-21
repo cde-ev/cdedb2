@@ -51,7 +51,7 @@ from cdedb.common.privileges import (
 )
 from cdedb.common.query import QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
-from cdedb.common.roles import Roles
+from cdedb.common.roles import Realms, Roles
 from cdedb.common.sorting import EntitySorter, KeyFunction, Sortkey, xsorted
 from cdedb.common.validation.validate import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import enum_entries_filter, keydictsort_filter
@@ -246,7 +246,7 @@ def event_associated_fields_to_request_multi(
 class EventBaseFrontend(AbstractUserFrontend):
     """Provide the base for event frontend mixins."""
 
-    realm = "event"
+    realm = Realms.event
 
     def render(
         self,
@@ -340,10 +340,6 @@ class EventBaseFrontend(AbstractUserFrontend):
         return super().render(
             rs, templatename, params=params, mandatory_fields=mandatory_fields
         )
-
-    @classmethod
-    def is_admin(cls, rs: RequestState) -> bool:
-        return super().is_admin(rs)
 
     def is_privileged(
         self,

@@ -135,10 +135,7 @@ class CoreBaseFrontend(AbstractFrontend):
     anonymous access and personas."""
 
     realm = "core"
-
-    @classmethod
-    def is_admin(cls, rs: RequestState) -> bool:
-        return super().is_admin(rs)
+    admin_role = Roles.core_admin
 
     @access(Roles.anonymous)
     @REQUESTdata("#wants")

@@ -69,8 +69,6 @@ ASSEMBLY_BAR_ABBREVIATION = "#"
 class AssemblyBallotMixin(AssemblyBaseFrontend):
     """Organize congregations and vote on ballots."""
 
-    realm = "assembly"
-
     def _group_ballots(
         self, rs: RequestState, assembly_id: int
     ) -> GroupedBallots | None:

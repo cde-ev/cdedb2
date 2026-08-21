@@ -55,14 +55,11 @@ class PastEventBackend(AbstractBackend):
     """
 
     realm = "past_event"
+    admin_role = Roles.cde_admin
 
     def __init__(self) -> None:
         super().__init__()
         self.event = make_proxy(EventBackend(), internal=True)
-
-    @classmethod
-    def is_admin(cls, rs: RequestState) -> bool:
-        return "cde_admin" in rs.user.roles
 
     def past_event_log(
         self,

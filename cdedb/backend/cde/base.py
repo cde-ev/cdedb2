@@ -81,16 +81,12 @@ class CdEBaseBackend(AbstractBackend):
     .. note:: The changelog functionality is to be found in the core backend.
     """
 
-    realm = "cde"
+    realm = Realms.cde
 
     def __init__(self) -> None:
         super().__init__()
         self.pastevent = make_proxy(PastEventBackend(), internal=True)
         self.event = make_proxy(EventBackend(), internal=True)
-
-    @classmethod
-    def is_admin(cls, rs: RequestState) -> bool:
-        return super().is_admin(rs)
 
     def cde_log(
         self,

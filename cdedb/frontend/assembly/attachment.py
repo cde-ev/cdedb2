@@ -16,7 +16,7 @@ from cdedb.common import (
     merge_dicts,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.roles import Roles
+from cdedb.common.roles import Realms, Roles
 from cdedb.common.sorting import xsorted
 from cdedb.frontend.assembly.base import AssemblyBaseFrontend
 from cdedb.frontend.common import (
@@ -38,8 +38,6 @@ ASSEMBLY_BAR_ABBREVIATION = "#"
 
 class AssemblyAttachmentMixin(AssemblyBaseFrontend):
     """Organize congregations and vote on ballots."""
-
-    realm = "assembly"
 
     @access(Roles.assembly)
     def list_attachments(self, rs: RequestState, assembly_id: int) -> Response:

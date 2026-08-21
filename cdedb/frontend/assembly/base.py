@@ -28,7 +28,7 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryScope
 from cdedb.common.query.log_filter import AssemblyLogFilter
-from cdedb.common.roles import Roles
+from cdedb.common.roles import Realms, Roles
 from cdedb.common.sorting import EntitySorter
 from cdedb.common.validation.validate import (
     ASSEMBLY_COMMON_FIELDS,
@@ -63,11 +63,7 @@ ASSEMBLY_BAR_ABBREVIATION = "#"
 class AssemblyBaseFrontend(AbstractUserFrontend):
     """Organize congregations and vote on ballots."""
 
-    realm = "assembly"
-
-    @classmethod
-    def is_admin(cls, rs: RequestState) -> bool:
-        return super().is_admin(rs)
+    realm = Realms.assembly
 
     @access(Roles.assembly)
     def index(self, rs: RequestState) -> Response:

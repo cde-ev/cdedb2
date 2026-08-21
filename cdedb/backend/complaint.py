@@ -54,6 +54,7 @@ def _format_date_change_note(
 
 class ComplaintBackend(AbstractBackend):
     realm = "complaint"
+    admin_role = Roles.complaint_admin
 
     def __init__(self) -> None:
         super().__init__()
@@ -69,10 +70,6 @@ class ComplaintBackend(AbstractBackend):
             self.conf['STORAGE_DIR'] / "complaint_attachment",
             secret=complaint_secret,
         )
-
-    @classmethod
-    def is_admin(cls, rs: RequestState) -> bool:
-        return super().is_admin(rs)
 
     @access(Roles.complaint_admin)
     def get_attachment_store(self, rs: RequestState) -> EncryptedAttachmentStore:
