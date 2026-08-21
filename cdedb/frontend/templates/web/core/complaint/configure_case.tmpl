@@ -1,4 +1,4 @@
-{% if ambience['case'] %}
+{% if 'case' in ambience %}
     {% set action_target = "core/change_case" %}
     {% set sidenav_active='complaint_index' %}
 {% else %}
@@ -13,7 +13,7 @@
 {% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% if ambience["case"] %}
+    {% if "case" in ambience %}
         {% trans id=ambience["case"].id|string %}
             Edit Case {{ id }}
         {% endtrans %}
@@ -24,7 +24,7 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("core/complaint_index"), gettext("Cases")) }}
-    {% if ambience["case"] %}
+    {% if "case" in ambience %}
         {{ util.breadcrumb_link(cdedblink("core/show_case"), gettext("Case %s")|format(ambience['case']['id']),
                                 icon="gavel") }}
         {{ util.breadcrumb_link(cdedblink(action_target), gettext("Change"), active=True) }}
@@ -49,7 +49,7 @@
         {{ util.form_input_text(name="end_date", label=gettext("End Date"), type="date",
                                 info=gettext("All events covered by this complaint are known to have happened before this date.")) }}
 
-        {% if ambience["case"] %}
+        {% if "case" in ambience %}
             {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("core/show_case")) }}
         {% else %}
             <h3 class="heading-underline">{% trans %}Involved{% endtrans %}</h3>

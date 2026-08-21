@@ -1,4 +1,4 @@
-{% if ambience['mailinglist'] %}
+{% if 'mailinglist' in ambience %}
     {% set sidenav_active='ml_change' %}
 {% else %}
     {% set sidenav_active='ml_index' %}
@@ -12,7 +12,7 @@
 {% endblock %}
 {% set jshint='strong' %}
 {% block title %}
-    {% if ambience['mailinglist'] %}
+    {% if 'mailinglist' in ambience %}
         {% trans title=ambience['mailinglist']['title'] %}
             {{ title }} – Configuration
         {% endtrans %}
@@ -22,7 +22,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {% if ambience['mailinglist'] %}
+    {% if 'mailinglist' in ambience %}
         {% if is_admin %}
             {{ util.breadcrumb_link(cdedblink("ml/list_mailinglists"), gettext("All Mailinglists")) }}
         {% endif %}
@@ -33,7 +33,7 @@
     {% endif %}
 {% endblock %}
 {% block heading %}
-    {% if ambience['mailinglist'] %}
+    {% if 'mailinglist' in ambience %}
         {{ util.context_heading(gettext("Configuration"), ambience['mailinglist']['title'], 'envelope',
                                 gettext("Mailinglist")) }}
     {% else %}
@@ -41,7 +41,7 @@
     {% endif %}
 {% endblock %}
 {% block static_notifications %}
-    {% if ambience['mailinglist'] %}
+    {% if 'mailinglist' in ambience %}
         {% if restricted %}
             {% call util.notification('info') %}
                 {% trans link = util.href(docurl("Handbuch_Moderator", anchor="eingeschränkte-moderatoren"),
@@ -74,7 +74,7 @@
     {% endif %}
 {% endblock %}
 {% block content %}
-    {% if not ambience['mailinglist'] and ml_type is none %}
+    {% if 'mailinglist' not in ambience and ml_type is none %}
         <form action="{{ cdedblink('ml/create_mailinglist_form') }}" method="GET" id="selectmltypeform"
               class="form-horizontal">
             {{ util.form_input_select(name="ml_type", label=gettext("Mailinglist Type"),
@@ -83,7 +83,7 @@
                                       icon="chevron-right") }}
         </form>
     {% else %}
-        {% if ambience['mailinglist'] %}
+        {% if 'mailinglist' in ambience %}
             {% set target = 'ml/change_mailinglist' %}
         {% else %}
             {% set target = 'ml/create_mailinglist' %}
@@ -98,7 +98,7 @@
                                     actualreadonly=readonly) }}
 
             {% set addon = "@" %}
-            {% if ambience['mailinglist'] %}
+            {% if 'mailinglist' in ambience %}
                 {% set addon = addon + enums['MailinglistDomain'](ambience['mailinglist']['domain']).display_str() %}
             {% endif %}
             {{ util.form_input_text(
@@ -115,11 +115,11 @@
                                       entries=enums['ModerationPolicy']|enum_entries(processing=gettext)) }}
 
             {# Needed for the javascript stuff to work #}
-            {% if ambience['mailinglist'] %}
+            {% if 'mailinglist' in ambience %}
                 {% set ml_type = ambience['mailinglist'].ml_type %}
             {% endif %}
             {{ util.input_hidden(name="ml_type", value=ml_type) }}
-            {% if not ambience['mailinglist'] or readonly %}
+            {% if 'mailinglist' not in ambience or readonly %}
                 {{ util.form_input_static(
                     label=gettext("Mailinglist Type"),
                     value=gettext(enums['MailinglistTypes'](ml_type)|string)) }}
@@ -158,7 +158,7 @@
             {% endif %}
 
             {% if 'event_part_group_id' in additional_fields %}
-                {% if ambience['mailinglist'] %}
+                {% if 'mailinglist' in ambience %}
                     {{ util.form_input_select(
                             name="event_part_group_id", label=gettext("Part Group"),
                             entries=part_groups|entries('id', 'title'), nulloption="",
@@ -181,7 +181,7 @@
                                  " of this mailinglist. (Opt-Out)")) }}
             {% endif %}
 
-            {% if not ambience['mailinglist'] %}
+            {% if 'mailinglist' not in ambience %}
                 <h3 class="heading-underline">{% trans %}Moderators{% endtrans %}</h3>
                 {{ util.form_input_text(
                     type="search", name="moderators", label=gettext("Moderators"), placeholder="DB-XXXX-X,DB-XXXX-X,…",
@@ -216,8 +216,8 @@
                                         info=gettext("Larger messages will be held for moderation.")) }}
                 {{ util.form_input_textarea(name="additional_footer", label=gettext("Additional Footer"), rows="5") }}
                 {{ util.form_input_submit(
-                    label=gettext("Save") if ambience['mailinglist'] else gettext("Create"),
-                    cancellink=cdedblink('ml/show_mailinglist' if ambience['mailinglist'] else 'ml/index')) }}
+                    label=gettext("Save") if 'mailinglist' in ambience else gettext("Create"),
+                    cancellink=cdedblink('ml/show_mailinglist' if 'mailinglist' in ambience else 'ml/index')) }}
         </form>
 
         <script nonce="{{ csp_nonce }}">

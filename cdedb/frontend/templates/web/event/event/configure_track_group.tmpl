@@ -3,7 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 
 {% block title %}
-    {% if ambience['track_group'] %}
+    {% if 'track_group' in ambience %}
         {% trans event_title=ambience['event']['title'] %}
             Change track group ({{ event_title }})
         {% endtrans %}
@@ -15,7 +15,7 @@
 {% endblock %}
 
 {% block heading %}
-    {% if ambience['track_group'] %}
+    {% if 'track_group' in ambience %}
         {{ util.context_heading(gettext("Change track group"),
                                 ambience['event']['title'], 'chalkboard-teacher', gettext("Event"),
                                 ambience['track_group']['title'], 'bullseye', gettext('Track Group')) }}
@@ -31,7 +31,7 @@
     {{ util.breadcrumb_link(cdedblink("event/change_event"), gettext("Configuration")) }}
     {{ util.breadcrumb_link(cdedblink("event/part_summary"), gettext("Event Parts")) }}
     {{ util.breadcrumb_link(cdedblink("event/group_summary"), gettext("Groups_[[part or track]]")) }}
-    {% if ambience['track_group'] %}
+    {% if 'track_group' in ambience %}
         {{ util.breadcrumb_link("", ambience['track_group']['title'], icon="bullseye", readonly=True) }}
         {{ util.breadcrumb_link(cdedblink("event/change_track_group_form"), gettext("Change"), active=True) }}
     {% else %}
@@ -40,7 +40,7 @@
 {% endblock %}
 
 {% block content %}
-    {% if ambience['track_group'] %}
+    {% if 'track_group' in ambience %}
         {% set action = 'event/change_track_group' %}
     {% else %}
         {% set action = 'event/add_track_group' %}
@@ -52,7 +52,7 @@
                                 info=gettext("For course choice sync groups, this will be shown to Orgas when editing registrations.")) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes")) }}
         {{ util.form_input_text(name="sortkey", label=gettext("Sortkey"), type="number", defaultvalue="0") }}
-        {% if ambience['track_group'] %}
+        {% if 'track_group' in ambience %}
             {{ util.form_input_static(
                     label=gettext("Type"), value=util.make_icon(ambience['track_group']['constraint_type'].get_icon())
                                                                 + nbsp + gettext(ambience['track_group']['constraint_type']|string)) }}

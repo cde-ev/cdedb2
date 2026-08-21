@@ -37,7 +37,7 @@
     {{ util.breadcrumb_link(cdedblink("assembly/index"), gettext("Assemblies")) }}
 {% endblock %}
 {% block navigation %}
-    {% if ambience['assembly'] %}
+    {% if 'assembly' in ambience %}
         <p>
             {{ util.href(cdedblink("assembly/index"), gettext("Assembly-Overview"), icon="arrow-circle-up") }}
         </p>
@@ -69,7 +69,7 @@
 {% endblock %}
 
 {% block adminviews %}
-    {% if ambience['assembly'] %}
+    {% if 'assembly' in ambience %}
         {% if user.persona_id in ambience['assembly']['presiders'] %}
             {{ util.admin_views_toggle((
                     (gettext("Assembly Administration"), ["assembly_mgmt"], None),
