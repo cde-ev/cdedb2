@@ -200,6 +200,15 @@ class CoreGenesisMixin(CoreBaseFrontend):
         """Render form."""
         rs.ignore_validation_errors()
         assert rs.user.persona_id is not None
+        if "cde" in rs.user.roles:
+            rs.notify("info", rs.gettext("You already have CdE realm."))
+            return self.redirect(rs, "core/index")
+        if self.coreproxy.genesis_has_upgrade_request(rs, rs.user.persona_id):
+            rs.notify(
+                "info",
+                rs.gettext("You already have a pending account upgrade request."),
+            )
+            return self.redirect(rs, "core/index")
         participated = self.pasteventproxy.list_persona_events(rs, rs.user.persona_id)
         pevents = {int(p.pevent_id): p.pevent for p in participated.values()}
         return self.render(
@@ -226,6 +235,15 @@ class CoreGenesisMixin(CoreBaseFrontend):
         Currently, only upgrades from event to cde realm are supported.
         """
         assert rs.user.persona_id is not None
+        if "cde" in rs.user.roles:
+            rs.notify("error", rs.gettext("You already have CdE realm."))
+            return self.redirect(rs, "core/index")
+        if self.coreproxy.genesis_has_upgrade_request(rs, rs.user.persona_id):
+            rs.notify(
+                "error",
+                rs.gettext("You already have a pending account upgrade request."),
+            )
+            return self.redirect(rs, "core/index")
         rs.values['attachment_hash'], rs.values['attachment_filename'] = (
             self.locate_or_store_attachment(
                 rs,

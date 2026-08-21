@@ -82,13 +82,18 @@ class CoreGenesisBackend(CoreBaseBackend):
             )
         return ret
 
-    @access("persona")
+    @access("event")
     def genesis_upgrade(
         self,
         rs: RequestState,
         data: CdEDBObject,
     ) -> DefaultReturnCode:
         """Record the desire of an existing event user to aquire cde realm."""
+        assert rs.user.persona_id is not None
+        if "cde" in rs.user.roles or self.genesis_has_upgrade_request(
+            rs, rs.user.persona_id
+        ):
+            raise ValueError(n_("Invalid account for upgrade request."))
         data = affirm(models.GenesisUpgrade, data, creation=True)
 
         data["realm"] = "cde"
@@ -108,6 +113,22 @@ class CoreGenesisBackend(CoreBaseBackend):
                 persona_id=rs.user.persona_id,
             )
         return ret
+
+    @access("event")
+    def genesis_has_upgrade_request(self, rs: RequestState, persona_id: int) -> bool:
+        """Does the persona has a pending account upgrade request?"""
+        persona_id = affirm(vtypes.PersonaID, persona_id)
+        query = """
+            SELECT id
+            FROM core.genesis_cases
+            WHERE persona_id = %(persona_id)s AND status = %(status)s
+        """
+        params: CdEDBObject = {
+            "persona_id": persona_id,
+            "status": const.GenesisStati.to_review,
+        }
+        data = self.query_one(rs, query, params)
+        return bool(data)
 
     @access("core_admin", *models.GenesisCase.all_admins)
     def delete_genesis_case_blockers(
