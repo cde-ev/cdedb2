@@ -88,7 +88,7 @@ Diese lassen sich in die folgenden Kategorien einteilen (Mehrfachnennung möglic
 
 Darüber hinaus gibt es die sogenannte ``Änderungshistorie`` eines Benutzers.
 In dieser werden die Änderungen an einem Benutzerprofil gespeichert.
-Diese ist lediglich den relativen Administratoren des jeweiligen Bereichs zugänglich.
+Diese ist lediglich den relativen Admins des jeweiligen Bereichs zugänglich.
 
 
 Welche Arten von Benutzern gibt es?
