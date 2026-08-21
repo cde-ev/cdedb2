@@ -26,3 +26,5 @@ alias all-logs="sudo journalctl --no-hostname -u cdedb-app -u cde-ldap -p info"
 
 alias test-logs="sudo journalctl --no-hostname -t cdedb-test -p info"
 alias test-logs-ldap="sudo journalctl --no-hostname -u cde-ldap-test -p info"
+
+alias doctest="uv run --directory=/cdedb2 --with pytest pytest --doctest-modules cdedb --ignore cdedb/database/evolutions --ignore cdedb/.i18n_additional.py"
