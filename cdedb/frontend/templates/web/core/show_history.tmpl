@@ -218,11 +218,13 @@
 
         {% call history_field(gettext("Admin Privileges")) %}
             {% call(entry) print_multifield_history(enums["Roles"].all_admin_roles().markers()) %}
-                {% for admin_role in enums["Roles"].all_admin_roles() if entry[admin_role.marker] %}
-                    {{ util.privilege_icon(admin_role, desc=True) }}
-                {% else %}
-                    <i>{{ gettext("None") }}</i>
-                {% endfor %}
+                <ul class="list-unstyled nosp">
+                    {% for admin_role in enums["Roles"].all_admin_roles() if entry[admin_role.marker] %}
+                        <li>{{ util.privilege_icon(admin_role, desc=True) }}</li>
+                    {% else %}
+                        <li>{{ gettext("None") }}</li>
+                    {% endfor %}
+                </ul>
             {% endcall %}
         {% endcall %}
 
