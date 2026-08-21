@@ -758,7 +758,7 @@ def dict_entries_filter[S](
     Example::
 
         >>> items = [(1, {'id': 1, 'name': 'a', 'active': True}),
-                     (2, {'id': 2, 'name': 'b', 'active': False})]
+        ...          (2, {'id': 2, 'name': 'b', 'active': False})]
         >>> dict_entries_filter(items, 'name', 'active')
         [('a', True), ('b', False)]
 
@@ -786,13 +786,6 @@ def entries_filter(
     include: Container[int] | None = None,
 ) -> list[tuple[Any, ...]] | dict[Any, list[tuple[Any, ...]]]:
     """Transform a dict of dataclasses into a list of tuples of specified fields.
-
-    Example::
-
-        >>> entities = {1: Dataclass(id=1, name=a, active=True),
-                        2: Dataclass(id=2, name=b, active=False)}
-        >>> entries_filter(entities, 'name', 'active')
-        [('a', True), ('b', False)]
 
     :param entities: A dict of CdEDataclasses.
     :param args: Additional positional arguments describing which keys of
