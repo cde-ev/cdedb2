@@ -13,7 +13,7 @@ import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.common.roles import AdminViews, Roles, extract_roles
+from cdedb.common.roles import AdminViews, Roles
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.database.constants import (
     MailinglistDomain,
@@ -356,7 +356,7 @@ class Mailinglist(CdEDataclass):
 
         ret: SubscriptionPolicyMap = {}
         for persona in personas.values():
-            roles = extract_roles(persona.as_dict(), introspection_only=True)
+            roles = persona.get_user_roles()
             for role, pol in self.role_map.items():
                 if role in roles:
                     ret[persona.id] = pol

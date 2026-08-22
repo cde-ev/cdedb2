@@ -19,7 +19,6 @@ from cdedb.backend.common import inspect_validation as inspect
 from cdedb.common import User, n_, now
 from cdedb.common.crypt import verify_password
 from cdedb.common.exceptions import APITokenError
-from cdedb.common.roles import extract_roles
 from cdedb.config import Config, SecretsConfig
 from cdedb.database import DBRole
 from cdedb.database.connection import connection_pool_factory
@@ -161,14 +160,7 @@ class SessionBackend:
             self.logger.warning(f"Found inactive user {persona_id}")
             return User()
 
-        return User(
-            roles=extract_roles(status.as_dict()),
-            persona_id=persona.id,
-            username=persona.username,
-            given_names=persona.given_names,
-            nickname=persona.nickname or "",
-            family_name=persona.family_name,
-        )
+        return User.from_persona(status=status, persona=persona)
 
     def lookuptoken(self, apitoken: str | None, ip: str | None) -> User:
         """Raison d'etre deux.

@@ -24,7 +24,7 @@ from cdedb.common.exceptions import CryptographyError, ParameterInvalidError
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query import QueryOperators
 from cdedb.common.query.log_filter import ChangelogLogFilter
-from cdedb.common.roles import AdminViews, Realms, Roles, extract_roles
+from cdedb.common.roles import AdminViews, Realms, Roles
 from cdedb.filter import iban_filter
 from tests.common import (
     ANONYMOUS,
@@ -1499,10 +1499,7 @@ class TestCoreFrontend(FrontendTest):
         user = get_user("anton")
         with self.switch_user(user):
             current_roles = (
-                extract_roles(
-                    self.core.get_persona_status(self.key, user["id"]).as_dict(),
-                    introspection_only=True,
-                )
+                self.core.get_persona_status(self.key, user["id"]).get_user_roles()
                 & Roles.all_admin_roles()
             )
         new_privileges = current_roles & ~Roles.event_admin

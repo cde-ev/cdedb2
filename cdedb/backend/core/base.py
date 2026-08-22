@@ -61,7 +61,6 @@ from cdedb.common.fields import (
     PERSONA_ALL_FIELDS,
     PERSONA_CDE_FIELDS,
     PERSONA_CORE_FIELDS,
-    PERSONA_STATUS_FIELDS,
     PRIVILEGE_CHANGE_FIELDS,
 )
 from cdedb.common.n_ import n_
@@ -76,7 +75,6 @@ from cdedb.common.roles import (
     Realms,
     Roles,
     extract_roles,
-    extract_user_realms,
 )
 from cdedb.common.sorting import xsorted
 from cdedb.config import SecretsConfig
@@ -159,7 +157,7 @@ class CoreBaseBackend(AbstractBackend):
         Apart from meta admins, the only difference to `is_relative_admin` is that
         this accepts a full persona, rather than a persona id.
         """
-        user_realms = extract_user_realms(persona.as_dict())
+        user_realms = persona.get_user_realms()
         return any(
             admin_roles in rs.user.new_roles
             for admin_roles in user_realms.get_required_admin_roles()
@@ -181,7 +179,7 @@ class CoreBaseBackend(AbstractBackend):
         if allow_meta_admin and "meta_admin" in rs.user.admin_views:
             return True
         persona_status = self.get_persona_status(rs, persona_id)
-        user_realms = extract_user_realms(persona_status.as_dict())
+        user_realms = persona_status.get_user_realms()
         return any(
             admin_views.as_set()
             <= {v.replace('_user', '_admin') for v in rs.user.admin_views}
@@ -1310,8 +1308,8 @@ class CoreBaseBackend(AbstractBackend):
             ):
                 raise ValueError(n_("Pending privilege change."))
 
-            persona = self.get_total_persona(rs, data['persona_id'])
-            persona_roles = extract_roles(persona, introspection_only=True)
+            persona = self.get_persona_status(rs, data['persona_id'])
+            persona_roles = persona.get_user_roles()
 
             # see also cdedb.frontend.templates.core.change_privileges
             # and change_privileges in cdedb.frontend.core
@@ -1395,10 +1393,12 @@ class CoreBaseBackend(AbstractBackend):
                 old_status = self.get_persona_status(rs, change["persona_id"])
                 persona_change = {
                     "id": change["persona_id"],
+                    **{
+                        admin_role.marker: change[admin_role.marker]
+                        for admin_role in Roles.all_admin_roles()
+                        if change.get(admin_role.marker) is not None
+                    },
                 }
-                for key in models.PersonaStatus.get_admin_bits():
-                    if change[key] is not None:
-                        persona_change[key] = change[key]
 
                 persona_change = affirm(vtypes.Persona, persona_change)
                 ret *= self.set_persona(
@@ -1948,18 +1948,19 @@ class CoreBaseBackend(AbstractBackend):
         note = affirm(str, note)
         with Atomizer(rs):
             persona = self.get_total_persona(rs, persona_id)
+            persona_status = self.get_persona_status(rs, persona_id)
             #
             # 1. Do some sanity checks.
             #
             if not self.is_relative_admin(rs, persona_id, allow_meta_admin=False):
                 raise ArchiveError(n_("You are not allowed to archive this user."))
 
-            if persona['is_archived']:
+            if persona_status.is_archived:
                 return 0
 
             # Disallow archival of admins. Admin privileges should be unset
             # by two meta admins before.
-            if extract_roles(persona, introspection_only=True).is_any_admin():
+            if persona_status.is_any_admin:
                 raise ArchiveError(n_("Cannot archive admins."))
 
             # Disallow archival of realm helpers.
@@ -2832,7 +2833,7 @@ class CoreBaseBackend(AbstractBackend):
         data.update({'is_archived': False, 'is_purged': False})
         data.update({role.marker: False for role in Roles.all_admin_roles()})
         # Check if admin has rights to create the user in its realms
-        user_realms = extract_user_realms(data)
+        user_realms = extract_roles(data, introspection_only=True).get_user_realms()
         if not any(
             admin in rs.user.new_roles
             for admin in user_realms.get_required_admin_roles(conjunctive=True)
@@ -2916,6 +2917,8 @@ class CoreBaseBackend(AbstractBackend):
         ):
             # Short circuit in case of lockdown
             return None
+        persona_id: vtypes.PersonaID = data["id"]
+
         sessionkey = token_hex()
 
         with Atomizer(rs):
@@ -2932,7 +2935,7 @@ class CoreBaseBackend(AbstractBackend):
                     AND (ctime < %(ctime_cutoff)s OR atime < %(atime_cutoff)s)
             """
             params = {
-                "persona_id": data["id"],
+                "persona_id": persona_id,
                 "ctime_cutoff": ctime_cutoff,
                 "atime_cutoff": atime_cutoff,
             }
@@ -2943,7 +2946,7 @@ class CoreBaseBackend(AbstractBackend):
                     VALUES (%(persona_id)s, %(ip)s, %(sessionkey)s)
             """
             params = {
-                "persona_id": data["id"],
+                "persona_id": persona_id,
                 "ip": ip,
                 "sessionkey": sessionkey,
             }
@@ -2957,7 +2960,7 @@ class CoreBaseBackend(AbstractBackend):
                 ORDER BY atime DESC OFFSET %(offset)s
             """
             params = {
-                "persona_id": data["id"],
+                "persona_id": persona_id,
                 "offset": self.conf["MAX_ACTIVE_SESSIONS"],
             }
             old_sessions = self.query_all(rs, query, params)
@@ -3101,19 +3104,15 @@ class CoreBaseBackend(AbstractBackend):
         self,
         rs: RequestState,
         persona_ids: Collection[vtypes.PersonaID],
-        introspection_only: bool = False,
     ) -> dict[vtypes.PersonaID, Roles]:
-        """Resolve ids into roles.
-
-        :param introspection_only: If True, returns limited roles for inactive users.
-        """
-        if set(persona_ids) == {rs.user.persona_id}:
-            return {cast(vtypes.PersonaID, rs.user.persona_id): rs.user.new_roles}
-        bits = PERSONA_STATUS_FIELDS + ("id",)
-        data = self.sql_select(rs, "core.personas", bits, persona_ids)
+        """Resolve ids into roles."""
+        if rs.user.persona_id is not None and set(persona_ids) == {rs.user.persona_id}:
+            return {
+                rs.user.persona_id: rs.user.new_roles,
+            }
         return {
-            vtypes.PersonaID(d['id']): extract_roles(d, introspection_only)
-            for d in data
+            p.id: p.get_user_roles()
+            for p in self.get_personas_status(rs, persona_ids).values()
         }
 
     class _GetRolesSingleProtocol(Protocol):
@@ -3133,7 +3132,6 @@ class CoreBaseBackend(AbstractBackend):
         persona_ids: Collection[int],
         required_roles: Roles = Roles.none(),
         allowed_roles: Roles = Roles.all_persona_roles(),
-        introspection_only: bool = True,
     ) -> bool:
         """Check whether certain ids map to actual (active) personas.
 
@@ -3150,7 +3148,7 @@ class CoreBaseBackend(AbstractBackend):
         # add always allowed roles for personas
         allowed_roles |= Roles.persona | Roles.anonymous
 
-        roles = self.get_roles_multi(rs, persona_ids, introspection_only)
+        roles = self.get_roles_multi(rs, persona_ids)
         return (
             len(roles) == len(persona_ids)
             and all(required_roles in value for value in roles.values())

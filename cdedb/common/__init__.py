@@ -30,6 +30,7 @@ from types import UnionType
 from typing import (
     TYPE_CHECKING,
     Any,
+    Self,
     Union,
     cast,
     get_args,
@@ -56,6 +57,7 @@ from cdedb.database.connection import ConnectionContainer
 from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
 
 if TYPE_CHECKING:
+    import cdedb.models.core as models_core
     import cdedb.models.event as models_event
     from cdedb.models.common import CdEDataclassMap
 
@@ -170,6 +172,19 @@ class User:
                 'family_name': self.family_name,
             },
             include_nickname=include_nickname,
+        )
+
+    @classmethod
+    def from_persona(
+        cls, status: "models_core.PersonaStatus", persona: "models_core.CorePersona"
+    ) -> Self:
+        return cls(
+            roles=status.get_user_roles(),
+            persona_id=persona.id,
+            username=persona.username,
+            given_names=persona.given_names,
+            nickname=persona.nickname or "",
+            family_name=persona.family_name,
         )
 
 

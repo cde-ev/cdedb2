@@ -254,6 +254,10 @@ class Realms(_Realms):
         return self.role.marker
 
     @property
+    def realm_markers(self) -> list[str]:
+        return [realm.realm_marker for realm in self]
+
+    @property
     def admin_marker(self) -> str:
         """Shortcut to the marker of the associated admin for better type inference."""
         assert self.admin_role.marker is not None
@@ -268,7 +272,6 @@ class Realms(_Realms):
         return Roles.union(realm.admin_role for realm in cls)
 
 
-# TODO move to PersonaStatus datclass
 def extract_roles(session: CdEDBObject, introspection_only: bool = False) -> Roles:
     """Determine user roles from a persona data set.
 
@@ -327,15 +330,6 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False) -> Rol
             ret |= possible_role
 
     return ret
-
-
-def extract_user_realms(user: CdEDBObject) -> Realms:
-    """Extract the Realms the user belongs to from the user dataset.
-
-    This can be used to determine the admin privileges required to
-    create and/or edit such a user.
-    """
-    return extract_roles(user, introspection_only=True).get_user_realms()
 
 
 def droid_roles(identity: str) -> Roles:

@@ -65,8 +65,6 @@ from cdedb.common.roles import (
     AdminViews,
     Realms,
     Roles,
-    extract_roles,
-    extract_user_realms,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
@@ -758,7 +756,7 @@ class CoreBaseFrontend(AbstractFrontend):
         #
         # This is the basic mechanism for restricting access, since we only
         # add attributes for which an access level is provided.
-        target_realms = extract_user_realms(status.as_dict())
+        target_realms = status.get_user_realms()
         persona: models.CorePersona
         if self.AccessRealm.cde in access_realms and Realms.cde in target_realms:
             persona = self.coreproxy.get_cde_user(rs, persona_id)
@@ -827,7 +825,7 @@ class CoreBaseFrontend(AbstractFrontend):
             # This is a bit involved to not contaminate the data dict
             # with keys which are not applicable to the requested persona
             total = self.coreproxy.get_total_persona(rs, persona_id)
-            admin_bits = extract_roles(total, introspection_only=True) & Roles.all_admin_roles()
+            admin_bits = status.get_user_roles() & Roles.all_admin_roles()
             persona.username = total['username']
             if is_relative_or_meta_admin and is_relative_or_meta_admin_view:
                 # This is not shown to the persona themselves
@@ -1675,7 +1673,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if data['code'] == const.PersonaChangeStati.pending:
             rs.notify("info", n_("Change pending."))
         status = self.coreproxy.get_persona_status(rs, rs.ambience['persona'].id)
-        roles = extract_roles(status.as_dict(), introspection_only=True)
+        roles = status.get_user_roles()
         user = User(persona_id=persona_id, roles=roles)
         shown_fields = self._changeable_persona_fields(rs, user, restricted=False)
         return self.render(
@@ -1705,7 +1703,7 @@ class CoreBaseFrontend(AbstractFrontend):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
         # Assure we don't accidently change the original.
         status = self.coreproxy.get_persona_status(rs, rs.ambience['persona'].id)
-        roles = extract_roles(status.as_dict(), introspection_only=True)
+        roles = status.get_user_roles()
         user = User(persona_id=persona_id, roles=roles)
         attributes = self._changeable_persona_fields(rs, user, restricted=False)
         data = request_dict_extractor(rs, attributes)
@@ -2113,7 +2111,7 @@ class CoreBaseFrontend(AbstractFrontend):
             )
 
         status = self.coreproxy.get_persona_status(rs, rs.ambience['persona'].id)
-        persona_roles = extract_roles(status.as_dict(), introspection_only=True)
+        persona_roles = status.get_user_roles()
         if "roles" not in rs.values:
             rs.values.setlist("roles", list(persona_roles))
 
@@ -2153,8 +2151,8 @@ class CoreBaseFrontend(AbstractFrontend):
             Roles.assembly: rs.gettext("non-assembly user"),
             Roles.cde_admin: rs.gettext("non-cde admin"),
         }
-        persona = self.coreproxy.get_persona_status(rs, persona_id).as_dict()
-        persona_roles = extract_roles(persona, introspection_only=True)
+        persona_status = self.coreproxy.get_persona_status(rs, persona_id)
+        persona_roles = persona_status.get_user_roles()
         data = {
             "persona_id": persona_id,
             "notes": notes,
@@ -2406,7 +2404,7 @@ class CoreBaseFrontend(AbstractFrontend):
             rs.notify("error", n_("Persona is archived."))
             return self.redirect_show_user(rs, persona_id)
         merge_dicts(rs.values, rs.ambience['persona'].as_dict())
-        user_realms = extract_user_realms(rs.ambience["persona"].as_dict())
+        user_realms = rs.ambience["persona"].get_user_realms()
         if target_realm and target_realm in user_realms:
             rs.notify("warning", n_("No promotion necessary."))
             return self.redirect_show_user(rs, persona_id)
@@ -3099,8 +3097,7 @@ class CoreBaseFrontend(AbstractFrontend):
         else:
             # Warn management of possible privilege escalation
             status = self.coreproxy.get_persona_status(rs, rs.ambience['persona'].id)
-            user_roles = extract_roles(status.as_dict(), introspection_only=True)
-            if user_roles.is_any_admin():
+            if status.is_any_admin:
                 to = (
                     self.conf["MANAGEMENT_ADDRESS"],
                     self.conf["TROUBLESHOOTING_ADDRESS"],

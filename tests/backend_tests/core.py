@@ -25,7 +25,7 @@ from cdedb.common.exceptions import (
 )
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
-from cdedb.common.roles import Roles, extract_roles
+from cdedb.common.roles import Roles
 from cdedb.common.validation.validate import PERSONA_CDE_CREATION
 from tests.common import (
     ANONYMOUS,
@@ -1391,7 +1391,7 @@ class TestCoreBackend(BackendTest):
         persona = self.core.get_persona_status(self.key, new_admin["id"])
         self.assertFalse(persona.is_cde_admin)
         self.assertFalse(persona.is_finance_admin)
-        persona_roles = extract_roles(persona.as_dict())
+        persona_roles = persona.get_user_roles()
         self.assertNotIn(Roles.cde_admin, persona_roles)
         self.assertNotIn(Roles.finance_admin, persona_roles)
 
@@ -1403,7 +1403,7 @@ class TestCoreBackend(BackendTest):
         persona = self.core.get_persona_status(self.key, new_admin["id"])
         self.assertTrue(persona.is_cde_admin)
         self.assertTrue(persona.is_finance_admin)
-        persona_roles = extract_roles(persona.as_dict())
+        persona_roles = persona.get_user_roles()
         self.assertIn(Roles.cde_admin, persona_roles)
         self.assertIn(Roles.finance_admin, persona_roles)
 

@@ -25,6 +25,7 @@ from cdedb.common import (
     DeletionBlockers,
     GenesisDecision,
     RequestState,
+    Roles,
     merge_dicts,
     now,
     unwrap,
@@ -500,8 +501,8 @@ class CoreGenesisBackend(CoreBaseBackend):
             data.pop("id")
             # TODO remove those after adjusting the validation of personas for dataclasses
             merge_dicts(data, PERSONA_DEFAULTS)
-            for admin_bit in case.persona.get_admin_bits():
-                del data[admin_bit]
+            for admin_role in Roles.all_admin_roles():
+                data.pop(admin_role.marker, None)
             del data["is_archived"]
             del data["is_purged"]
             if "balance" in data:

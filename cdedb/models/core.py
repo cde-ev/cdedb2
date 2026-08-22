@@ -6,7 +6,6 @@ import copy
 import dataclasses
 import datetime
 import decimal
-import functools
 import logging
 import re
 from enum import auto
@@ -21,6 +20,7 @@ from cdedb.common.exceptions import CryptographyError
 from cdedb.common.i18n import format_country_code
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
+from cdedb.common.roles import Realms, Roles, extract_roles
 from cdedb.common.sorting import Sortkey
 from cdedb.config import Config
 from cdedb.filter import cdedbid_filter
@@ -331,23 +331,19 @@ class Persona(CdEDataclass):
                 ret.add(field.name)
         return ret
 
-    @classmethod
-    def get_realm_bits(cls) -> set[str]:
-        ret = set()
-        for field in dataclasses.fields(cls):
-            if field.name.startswith("is_") and field.name.endswith("_realm"):
-                ret.add(field.name)
-        return ret
+    def _get_user_roles(self) -> Roles:
+        """Determine the users roles from their data bits.
 
-    @classmethod
-    def get_admin_bits(cls) -> set[str]:
-        ret = set()
-        for field in dataclasses.fields(cls):
-            if field.name.startswith("is_") and field.name.endswith("_admin"):
-                ret.add(field.name)
-            elif field.name == "is_auditor":
-                ret.add(field.name)
-        return ret
+        BEWARE! This cannot take admin roles into account, unless called on
+        the 'PersonaStatus' subclass.
+
+        BEWARE! This must not be used to determine the acting users privileges, only
+        to determine the roles of a user to be acted upon.
+        """
+        return extract_roles(self.as_dict(), introspection_only=True)
+
+    def get_user_realms(self) -> Realms:
+        return Realms.from_user_roles(self._get_user_roles())
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -372,10 +368,26 @@ class PersonaStatus(Persona):
     is_finance_admin: bool = False
     is_auditor: bool = False
 
-    @functools.cached_property
+    def get_user_roles(self) -> Roles:
+        """
+        Unlike the method of the parent class this has all the information it needs to
+        fully determine the users roles.
+
+        BEWARE! This still must not be used to determine the acting users privileges.
+        """
+        return self._get_user_roles()
+
+    def get_session_roles(self) -> Roles:
+        """
+        Determine the roles of the acting user.
+
+        Unlike 'get_user_roles' this is to be used for user sessions.
+        """
+        return extract_roles(self.as_dict(), introspection_only=False)
+
+    @property
     def is_any_admin(self) -> bool:
-        "Persona has any admin privilege."
-        return any(getattr(self, bit) for bit in self.get_admin_bits())
+        return self.get_user_roles().is_any_admin()
 
     def get_sortkey(self) -> Sortkey:
         return (self.id,)
