@@ -2968,33 +2968,31 @@ class CoreBaseBackend(AbstractBackend):
                 query = "UPDATE core.sessions SET is_active = FALSE WHERE id = ANY(%s)"
                 self.query_exec(rs, query, [[e["id"] for e in old_sessions]])
 
+        # retrieve persona status
+        data = self.query_one(rs, *models.PersonaStatus.get_select_query([persona_id]))
+        assert data is not None
+        status = models.PersonaStatus.from_database(data)
+
         # Escalate db privilege role in case of successful login.
         # This will not be deescalated.
         if rs.conn.is_contaminated:
             raise RuntimeError(n_("Atomized – impossible to escalate."))
 
-        # TODO: This is needed because of an implementation detail of the login in the
-        #  frontend. Namely wanting to check consent decision status for cde users.
-        #  Maybe rework this somehow.
-        is_cde = unwrap(
-            self.sql_select_one(rs, "core.personas", ("is_cde_realm",), data["id"])
-        )
-        if is_cde:
+        if status.is_cde_realm:
+            # This is needed because of an implementation detail of the login in the
+            #  frontend. Namely wanting to check consent decision status for cde users.
             rs.conn = self.connpool[DBRole.member]
         else:
             rs.conn = self.connpool[DBRole.persona]
         # Necessary to keep the mechanics happy.
         rs._conn = rs.conn
 
-        # Get more information about user (for immediate use in frontend)
-        data = self.sql_select_one(rs, "core.personas", PERSONA_CORE_FIELDS, data["id"])
-        if data is None:
-            raise RuntimeError(n_("Impossible."))
-        vals = {
-            k: data[k] for k in ('username', 'given_names', 'nickname', 'family_name')
-        }
-        vals['persona_id'] = data['id']
-        rs.user = User(roles=extract_roles(data), **vals)
+        # retrieve the persona
+        data = self.query_one(rs, *models.CorePersona.get_select_query([persona_id]))
+        assert data is not None
+        persona = models.CorePersona.from_database(data)
+
+        rs.user = User.from_persona(status=status, persona=persona)
 
         return sessionkey
 
