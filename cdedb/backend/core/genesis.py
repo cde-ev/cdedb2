@@ -481,29 +481,14 @@ class CoreGenesisBackend(CoreBaseBackend):
                 raise ValueError(n_("Case not to review."))
             if case.is_upgrade and not decision.is_update():
                 raise ValueError(n_("Decision must be 'update'."))
-            if decision.is_create():
-                status = const.GenesisStati.successful
-            elif decision.is_update():
-                case.persona_id = persona_id
-                status = const.GenesisStati.existing_updated
-            else:
-                status = const.GenesisStati.rejected
-            ret_code = self.genesis_modify_case_meta(
-                rs,
-                case_id,
-                status=status,
-                reviewer_id=rs.user.persona_id,
-                persona_id=persona_id,
-            )
-            if not ret_code:
-                raise RuntimeError(n_("Genesis modification failed."))
 
-            ret = 0
             if decision.is_create():
                 if self.verify_existence(
                     rs, case.persona.username, include_genesis=False
                 ):
                     raise ValueError(n_("Email address already taken."))
+                status = const.GenesisStati.successful
+
                 data = case.get_persona_creation().as_dict()
                 data.pop("id")
                 # TODO remove those after adjusting the validation of personas for dataclasses
@@ -516,9 +501,15 @@ class CoreGenesisBackend(CoreBaseBackend):
                     del data["balance"]
                 data["notes"] = case.notes
                 data = affirm(vtypes.Persona, data, creation=True)
-                ret = self.create_persona(rs, data, submitted_by=case.reviewer)
+                persona_id = self.create_persona(
+                    rs, data, submitted_by=rs.user.persona_id
+                )
+
             elif case.is_upgrade:
                 assert case.persona_id is not None
+                status = const.GenesisStati.existing_updated
+                persona_id = case.persona_id
+
                 persona = self.get_event_user(rs, case.persona_id).as_dict()
                 merge_dicts(persona, models.CdEPersona.get_field_defaults())
                 for key in tuple(persona.keys()):
@@ -527,31 +518,48 @@ class CoreGenesisBackend(CoreBaseBackend):
                 persona["is_cde_realm"] = True
                 for realm in implied_realms("cde"):
                     persona[f'is_{realm}_realm'] = True
-                # TODO formulate change note
                 change_note = "CdE Bereich hinzugefügt nach Account Upgrade Anfrage."
                 code = self.core.change_persona_realms(rs, persona, change_note)
                 if not code:  # pragma: no cover
                     raise RuntimeError(n_("Granting CdE realm failed."))
-                ret = case.persona_id
+
             elif decision.is_update():
-                assert case.persona_id is not None
-                persona = self.get_persona(rs, case.persona_id)
-                persona_status = self.get_persona_status(rs, case.persona_id)
+                status = const.GenesisStati.existing_updated
+                case.persona_id = persona_id
+                # we can not handle username changes due to conflicts with
+                # the existing genesis case, so we postpone the changes after
+                # the case is marked as finished
+            else:
+                status = const.GenesisStati.rejected
+                persona_id = None
+
+            # finalize the genesis case
+            code = self.genesis_modify_case_meta(
+                rs,
+                case_id,
+                status=status,
+                reviewer_id=rs.user.persona_id,
+                persona_id=persona_id,
+            )
+            if not code:
+                raise RuntimeError(n_("Genesis modification failed."))
+
+            # handle the promised case of updating an account
+            if decision.is_update():
+                assert persona_id is not None
+                persona = self.get_persona(rs, persona_id)
+                persona_status = self.get_persona_status(rs, persona_id)
                 if not self._is_relative_admin(rs, persona_status):
                     raise PrivilegeError(n_("Not privileged."))
+                username = case.persona.username
                 if persona.is_archived:
-                    code = self.dearchive_persona(
-                        rs, case.persona_id, case.persona.username
-                    )
+                    code = self.dearchive_persona(rs, persona_id, username)
                     if not code:  # pragma: no cover
                         raise RuntimeError(n_("Dearchival failed."))
-                elif case.persona.username != persona.username:
-                    code, _ = self.change_username(
-                        rs, case.persona_id, case.persona.username, None
-                    )
+                elif username != persona.username:
+                    code, _ = self.change_username(rs, persona_id, username, None)
                     if not code:  # pragma: no cover
                         raise RuntimeError(n_("Username change failed."))
-
                 # Set force_review, so that all changes can be reviewed and adjusted
                 # manually and we don't just overwrite existing data blindly.
                 self.change_persona(
@@ -560,16 +568,14 @@ class CoreGenesisBackend(CoreBaseBackend):
                     force_review=True,
                     change_note="Daten aus Accountanfrage übernommen.",
                 )
-                ret = case.persona_id
-            # Special return value for rejected cases.
-            else:
-                return -1
 
             if decision.grants_trial_membership() and case.realm == "cde":
-                persona_status = self.get_persona_status(rs, ret)
+                assert persona_id is not None
+                persona_status = self.get_persona_status(rs, persona_id)
                 if not persona_status.is_member:
                     self.change_membership_easy_mode(
-                        rs, ret, is_member=True, trial_member=True
+                        rs, persona_id, is_member=True, trial_member=True
                     )
 
-            return ret
+            # Special return value for rejected cases.
+            return persona_id or -1
