@@ -2482,7 +2482,7 @@ class CoreBaseBackend(AbstractBackend):
         get_personas, "persona_ids", "persona_id"
     )
 
-    @access("ml")
+    @access(Roles.anonymous)
     def get_personas_status(
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> CdEDataclassMap[models.PersonaStatus]:
@@ -3218,7 +3218,7 @@ class CoreBaseBackend(AbstractBackend):
             raise ValueError(n_("Persona does not exist."))
 
         if not self.is_admin(rs) and Roles.meta_admin not in rs.user.new_roles:
-            if self.get_roles_single(rs, persona_id).is_any_admin():
+            if self.get_persona_status(rs, persona_id).is_any_admin:
                 raise AdminPasswordResetError(n_("Preventing reset of admin."))
 
         # This defines a specific account/password combination as purpose
