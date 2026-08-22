@@ -234,7 +234,7 @@ class Realms(_Realms):
         is controlled by the conjunctive parameter, if it is True the operation
         lies in the intersection of all realms.
 
-        Note that core admins and are always allowed access.
+        Note that core admins are always allowed access.
 
         :returns: List admin role flags. Any of these "sets" is sufficient.
         """
