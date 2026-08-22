@@ -18,7 +18,6 @@ import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
     CdEDBObject,
-    CdEDBObjectMap,
     RequestState,
     get_mandatory_form_fields,
     json_serialize,
@@ -406,7 +405,7 @@ class EventImportMixin(EventBaseFrontend):
         rs: RequestState,
         event: models.Event,
         courses: dict[vtypes.CourseID, CdEDBObject],
-        lodgements: CdEDBObjectMap,
+        lodgements: dict[vtypes.LodgementID, CdEDBObject],
     ) -> tuple[CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject]:
         """Helper method, similar to make_registration_query_aux(), to
         generate human readable field names and values for the diff presentation

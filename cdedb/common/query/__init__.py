@@ -36,9 +36,6 @@ _CONFIG = Config()
 # The maximal number of sorting criteria that can be used for queries
 MAX_QUERY_ORDERS = 20
 
-type LodgementMap = models.CdEDataclassMap[models.Lodgement]
-type LodgementGroupMap = models.CdEDataclassMap[models.LodgementGroup]
-
 
 @enum.unique
 class QueryOperators(CdEIntEnum):
@@ -365,8 +362,8 @@ class QueryScope(CdEIntEnum):
 
     def get_spec(self, *, event: "models.Event | None" = None,
                  courses: "models.CourseMap | None" = None,
-                 lodgements: LodgementMap | None = None,
-                 lodgement_groups: LodgementGroupMap | None = None,
+                 lodgements: "models.LodgementMap | None" = None,
+                 lodgement_groups: "models.LodgementGroupMap | None" = None,
                  ) -> QuerySpec:
         """Return the query spec for this scope.
 
@@ -1106,13 +1103,13 @@ def _get_course_choices(courses: "models.CourseMap | None") -> QueryChoices:
     return dict((c.id, c.label) for c in xsorted(courses.values()))
 
 
-def _get_lodgement_choices(lodgements: LodgementMap | None) -> QueryChoices:
+def _get_lodgement_choices(lodgements: "models.LodgementMap | None") -> QueryChoices:
     if lodgements is None:
         return {}
     return dict((lodge.id, lodge.title) for lodge in xsorted(lodgements.values()))
 
 
-def _get_lodgement_group_choices(lodgement_groups: LodgementGroupMap | None,
+def _get_lodgement_group_choices(lodgement_groups: "models.LodgementGroupMap | None",
                                  ) -> QueryChoices:
     if lodgement_groups is None:
         return {}
@@ -1121,8 +1118,8 @@ def _get_lodgement_group_choices(lodgement_groups: LodgementGroupMap | None,
 
 def make_registration_query_spec(event: "models.Event",
                                  courses: "models.CourseMap | None" = None,
-                                 lodgements: LodgementMap | None = None,
-                                 lodgement_groups: LodgementGroupMap | None = None,
+                                 lodgements: "models.LodgementMap | None" = None,
+                                 lodgement_groups: "models.LodgementGroupMap | None" = None,
                                  ) -> QuerySpec:
     """Helper to generate ``QueryScope.registration``'s spec.
 
@@ -1427,8 +1424,8 @@ def make_registration_query_spec(event: "models.Event",
 
 def make_course_query_spec(event: "models.Event",
                            courses: "models.CourseMap | None" = None,
-                           lodgements: LodgementMap | None = None,
-                           lodgement_groups: LodgementGroupMap | None = None,
+                           lodgements: "models.LodgementMap | None" = None,
+                           lodgement_groups: "models.LodgementGroupMap | None" = None,
                            ) -> QuerySpec:
     """Helper to generate ``QueryScope.event_course``'s spec.
 
@@ -1573,8 +1570,8 @@ def make_course_query_spec(event: "models.Event",
 
 def make_lodgement_query_spec(event: "models.Event",
                               courses: "models.CourseMap | None" = None,
-                              lodgements: LodgementMap | None = None,
-                              lodgement_groups: LodgementGroupMap | None = None,
+                              lodgements: "models.LodgementMap | None" = None,
+                              lodgement_groups: "models.LodgementGroupMap | None" = None,
                               ) -> QuerySpec:
     """Helper to generate ``QueryScope.lodgement``'s spec.
 
