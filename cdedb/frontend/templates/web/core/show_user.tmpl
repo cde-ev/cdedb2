@@ -284,17 +284,11 @@
                         {% trans %}Realms{% endtrans %}
                     </dt>
                     <dd id="has-realm">
-                        {% set vars = {'any_realm_not': False} %}
-                        {% for bit in data.get_realm_bits() %}
-                            {% if data.is_true(bit) %}
-                                {{ util.realm_icon(bit) }}
-                            {% else %}
-                                {# Dirty hack to workaround Jinjas set drawbacks #}
-                                {% do vars.update({'any_realm_not': True}) %}
-                            {% endif %}
+                        {% for realm in data.get_user_realms() %}
+                            {{ util.realm_icon(realm.realm_marker) }}
                         {% endfor %}
                         {% if 'core_user' in user.admin_views
-                                and vars['any_realm_not']
+                                and data.get_user_realms().__invert__()
                                 and not ambience['persona']['is_archived'] %}
                             {{ util.href(cdedblink("core/promote_user_form"), gettext("Add Realm"), icon="pen",
                                     aclass="btn btn-xs btn-warning") }}
@@ -316,11 +310,9 @@
                         </dt>
                         <dd id="admin-realms">
                             {% if admin_bits %}
-                                <ul class="nosp list-unstyled">
                                 {% for admin_role in admin_bits %}
-                                    <li>{{ util.privilege_icon(admin_role) }}</li>
+                                    {{ util.privilege_icon(admin_role) }}
                                 {% endfor %}
-                                </ul>
                             {% else %}
                                 <i>{% trans %}None{% endtrans %}</i>
                             {% endif %}

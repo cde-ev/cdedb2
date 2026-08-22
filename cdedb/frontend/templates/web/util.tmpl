@@ -1168,9 +1168,11 @@ mailto:
         "is_auditor": "search-dollar",
         } %}
 
-        {{ make_icon(icon_map[privilege.marker]) }}
-        {{- nbsp -}}
-        {{ gettext(privilege|string) }}
+        {{ make_icon(icon_map[privilege.marker], title=gettext(privilege|string)) }}
+        {%- if desc %}
+            {{- nbsp -}}
+            {{ gettext(privilege|string) }}
+        {% endif %}
     {% endwith %}
 {% endmacro %}
 
