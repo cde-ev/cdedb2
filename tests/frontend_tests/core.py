@@ -2834,7 +2834,11 @@ class TestCoreFrontend(FrontendTest):
         # accidently correct for the personas table.
         execsql("SELECT setval('core.personas_id_seq', 2000);")
 
-        self.submit(f, button="decision", value=str(GenesisDecision.approve))
+        self.submit(
+            f,
+            button="decision",
+            value=str(GenesisDecision.approve_grant_trial_membership),
+        )
 
         # check for correct welcome mail
         mail = self.fetch_mail_content()
@@ -3209,10 +3213,6 @@ class TestCoreFrontend(FrontendTest):
         new_persona_id = 1001
         log_expectation.extend([
             {
-                'code': const.CoreLogCodes.genesis_change,
-                'change_note': self.EVENT_GENESIS_DATA['username'],
-            },
-            {
                 'code': const.CoreLogCodes.persona_creation,
                 'persona_id': new_persona_id,
             },
@@ -3549,7 +3549,6 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
         logs.append(const.CoreLogCodes.genesis_change)
         logs.append(const.CoreLogCodes.genesis_change)
-        logs.append(const.CoreLogCodes.genesis_change)
         logs.append(const.CoreLogCodes.persona_creation)
         logs.append(const.CoreLogCodes.genesis_approved)
         logs.append(const.CoreLogCodes.password_reset_cookie)
@@ -3557,7 +3556,6 @@ class TestCoreFrontend(FrontendTest):
         self.traverse("Details")
         f = self.response.forms['genesisdecisionform']
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
-        logs.append(const.CoreLogCodes.genesis_change)
         logs.append(const.CoreLogCodes.persona_creation)
         logs.append(const.CoreLogCodes.genesis_approved)
         logs.append(const.CoreLogCodes.password_reset_cookie)

@@ -800,12 +800,11 @@ class TestCoreBackend(BackendTest):
             'pevent_id': None,
             'pcourse_id': None,
         }
-        ctime = now()
         expectation = models.GenesisCaseEvent(
             id=-1,  # type: ignore[arg-type]
             **case_data,  # type: ignore[arg-type]
             status=const.GenesisStati.to_review,
-            ctime=ctime,
+            ctime=now(),
             persona=expectation_persona,
         )
         self.assertEqual(
@@ -830,7 +829,7 @@ class TestCoreBackend(BackendTest):
             ),
         )
         value = self.core.genesis_get_case(self.key, case_id)
-        value.ctime = ctime
+        expectation.ctime = value.ctime
         self.assertEqual(expectation, value)
 
         # Just update the genesis request
@@ -841,7 +840,6 @@ class TestCoreBackend(BackendTest):
         self.assertEqual(1, self.core.genesis_modify_case(self.key, update))
         expectation.persona.address = "An dem Elche"
         value = self.core.genesis_get_case(self.key, case_id)
-        value.ctime = ctime
         self.assertEqual(expectation, value)
         if self.user_in("vera"):
             log_entry_expectation = {
@@ -852,25 +850,13 @@ class TestCoreBackend(BackendTest):
             }
             self.assertLogEqual([log_entry_expectation], realm='core', offset=2)
 
-        update = {
-            'status': const.GenesisStati.approved,
-            'reviewer_id': 1,
-        }
-        self.assertEqual(
-            1,
-            self.core.genesis_modify_case_meta(
-                self.key,
-                case_id=case_id,
-                **update,  # type: ignore[arg-type]
-            ),
-        )
-        expectation.status = const.GenesisStati.approved
-        expectation.reviewer = 1  # type: ignore[assignment]
-        value = self.core.genesis_get_case(self.key, case_id)
-        value.ctime = ctime
-        self.assertEqual(expectation, value)
-        new_id = self.core.genesis(self.key, case_id)
+        expectation.status = const.GenesisStati.successful
+        expectation.reviewer = self.user['id']
+        new_id = self.core.genesis_decide(self.key, case_id, GenesisDecision.approve)
         self.assertLess(0, new_id)
+        expectation.persona_id = vtypes.PersonaID(vtypes.ID(new_id))
+        self.assertEqual(expectation, self.core.genesis_get_case(self.key, case_id))
+
         value = self.core.get_event_user(self.key, new_id)
         expectation.persona.id = vtypes.PersonaID(vtypes.ID(new_id))
         self.assertEqual(expectation.persona, value)
@@ -894,12 +880,11 @@ class TestCoreBackend(BackendTest):
             'pevent_id': None,
             'pcourse_id': None,
         }
-        ctime = now()
         expectation = models.GenesisCaseMl(
             id=-1,  # type: ignore[arg-type]
             **case_data,  # type: ignore[arg-type]
             status=const.GenesisStati.to_review,
-            ctime=ctime,
+            ctime=now(),
             persona=expectation_persona,
         )
         self.assertEqual(
@@ -926,27 +911,15 @@ class TestCoreBackend(BackendTest):
         with self.assertRaises(RuntimeError):
             self.core.genesis_modify_case_realm(self.key, case_id, "event")
         value = self.core.genesis_get_case(self.key, case_id)
-        value.ctime = ctime
+        expectation.ctime = value.ctime
         self.assertEqual(expectation, value)
-        update = {
-            'status': const.GenesisStati.approved,
-            'reviewer_id': 1,
-        }
-        self.assertEqual(
-            1,
-            self.core.genesis_modify_case_meta(
-                self.key,
-                case_id=case_id,
-                **update,  # type: ignore[arg-type]
-            ),
-        )
-        expectation.status = const.GenesisStati.approved
-        expectation.reviewer = 1  # type: ignore[assignment]
-        value = self.core.genesis_get_case(self.key, case_id)
-        value.ctime = ctime
-        self.assertEqual(expectation, value)
-        new_id = self.core.genesis(self.key, case_id)
+
+        expectation.status = const.GenesisStati.successful
+        expectation.reviewer = self.user['id']
+        new_id = self.core.genesis_decide(self.key, case_id, GenesisDecision.approve)
         self.assertLess(0, new_id)
+        expectation.persona_id = vtypes.PersonaID(vtypes.ID(new_id))
+        self.assertEqual(expectation, self.core.genesis_get_case(self.key, case_id))
         value = self.core.get_ml_user(self.key, new_id)
         persona_expectation = expectation.persona
         persona_expectation.id = vtypes.PersonaID(vtypes.ID(new_id))
@@ -987,12 +960,11 @@ class TestCoreBackend(BackendTest):
             'pevent_id': None,
             'pcourse_id': None,
         }
-        ctime = now()
         expectation = models.GenesisCaseCdE(
             id=-1,  # type: ignore[arg-type]
             **case_data,  # type: ignore[arg-type]
             status=const.GenesisStati.to_review,
-            ctime=ctime,
+            ctime=now(),
             persona=expectation_persona,
         )
         self.assertEqual(
@@ -1028,19 +1000,17 @@ class TestCoreBackend(BackendTest):
         )
         expectation.status = const.GenesisStati.to_review
         value = self.core.genesis_get_case(self.key, case_id)
-        value.ctime = ctime
+        expectation.ctime = value.ctime
         self.assertEqual(expectation, value)
-        update = {
-            'status': const.GenesisStati.approved,
-            'reviewer_id': self.user['id'],
-        }
-        self.assertEqual(
-            1, self.core.genesis_modify_case_meta(self.key, case_id=case_id, **update)
-        )
-        expectation.status = const.GenesisStati.approved
+
+        expectation.status = const.GenesisStati.successful
         expectation.reviewer = self.user['id']
-        new_id = self.core.genesis(self.key, case_id)
+        new_id = self.core.genesis_decide(
+            self.key, case_id, GenesisDecision.approve_grant_trial_membership
+        )
         self.assertLess(0, new_id)
+        expectation.persona_id = vtypes.PersonaID(vtypes.ID(new_id))
+        self.assertEqual(expectation, self.core.genesis_get_case(self.key, case_id))
         value = self.core.get_cde_user(self.key, new_id).as_dict()
         persona_expectation = expectation.persona.as_dict()
         persona_expectation.update({
@@ -1645,10 +1615,6 @@ class TestCoreBackend(BackendTest):
                 'code': const.CoreLogCodes.genesis_verified,
                 'change_note': genesis_data['username'],
                 'submitted_by': None,
-            },
-            {
-                'code': const.CoreLogCodes.genesis_change,
-                'change_note': genesis_data['username'],
             },
             {
                 'code': const.CoreLogCodes.persona_creation,

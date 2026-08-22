@@ -1001,6 +1001,9 @@ msgstr "Accountanfrage zusammengeführt"
 msgid "CoreLogCodes.genesis_change"
 msgstr "Accountanfrage geändert"
 
+msgid "CoreLogCodes.genesis_upgrade_requested"
+msgstr "Accountupgrade beantragt"
+
 #: cdedb/.i18n_additional.py:199 cdedb/.i18n_additional.py:200
 #: cdedb/.i18n_additional.py:203 cdedb/.i18n_additional.py:206
 msgid "CoreLogCodes.privilege_change_pending"
