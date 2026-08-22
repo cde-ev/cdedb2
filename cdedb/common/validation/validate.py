@@ -295,6 +295,8 @@ class ValidatorStorage(dict[TypeForm[Any], Callable[..., Any]]):
             raise NameError(
                 f"Failed to resolve forward Reference {type_} from model namespaces {model_namespaces}"
             )
+        elif isinstance(type_, typing.TypeAliasType):
+            return self[type_.__value__]  # type: ignore[unreachable]
 
         return super().__getitem__(type_)
 
