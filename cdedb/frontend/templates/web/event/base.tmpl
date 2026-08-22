@@ -1,5 +1,5 @@
 {% set mainnav_active='event' %}
-{% if ambience['event'] %}
+{% if 'event' in ambience %}
     {% if is_privileged_for('quick_show_registration') %}
         {% if not jshint %}
             {% set jshint='weak' %}
@@ -293,7 +293,7 @@ This will result in:
 {% endmacro %}
 
 {% block base_scripts %}
-    {% if ambience['event'] %}
+    {% if 'event' in ambience %}
         {% if is_privileged_for('quick_show_registration') %}
             {% if not jshint %}
                 {% set jshint='weak' %}
@@ -314,7 +314,7 @@ This will result in:
 {% endblock %}
 
 {% block static_notifications %}
-    {% if ambience['event'] %}
+    {% if 'event' in ambience %}
         {% if ambience['event'].is_archived or ambience['event'].is_cancelled or access_is_limited %}
             {% call util.notification('info') %}
                 {% if ambience['event'].is_archived and ambience['event'].is_cancelled %}
@@ -354,7 +354,7 @@ This will result in:
 {% endblock %}
 
 {% block navigation %}
-    {% if ambience['event'] %}
+    {% if 'event' in ambience %}
         <p>
             {{ util.href(cdedblink("event/index"), gettext("Event-Overview"), icon="arrow-alt-circle-up") }}
         </p>
@@ -413,7 +413,7 @@ This will result in:
 {% endblock %}
 
 {% block adminviews %}
-    {% if ambience['event'] %}
+    {% if 'event' in ambience %}
         {% if ambience['event'].id in (user.orga.union(user.caretaker)) %}
             {{ util.admin_views_toggle((
                     (gettext("Event Administration"), ["event_mgmt", "event_list"], ["event_mgmt"]),

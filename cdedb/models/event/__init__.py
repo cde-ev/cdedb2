@@ -1256,18 +1256,22 @@ class CourseSegment(EventDataclass):
 # get_lodgement_group + get_lodgement
 #
 
+type LodgementGroupMap = dict[vtypes.LodgementGroupID, LodgementGroup]
+
 
 @dataclasses.dataclass
 class LodgementGroup(EventDataclass):
     database_table = "event.lodgement_groups"
 
-    id: vtypes.ID = dataclasses.field(metadata=(Meta.input_exclude).as_dict)
+    id: vtypes.LodgementGroupID = dataclasses.field(
+        metadata=(Meta.input_exclude).as_dict
+    )
 
     # event: Event
     event_id: vtypes.EventID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
     title: str
 
-    lodgement_ids: set[int] = dataclasses.field(
+    lodgement_ids: set[vtypes.LodgementID] = dataclasses.field(
         default_factory=set, metadata=Meta.io_exclude.as_dict
     )
     regular_capacity: int = dataclasses.field(
@@ -1309,12 +1313,15 @@ class LodgementGroup(EventDataclass):
 LODGEMENT_GROUP_PLACEHOLDER_ID = vtypes.ID(1)
 
 
+type LodgementMap = dict[vtypes.LodgementID, Lodgement]
+
+
 @dataclasses.dataclass
 class Lodgement(EventDataclass):
     database_table = "event.lodgements"
     entity_key = "id"
 
-    id: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+    id: vtypes.LodgementID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
 
     event: Event = dataclasses.field(
         init=False,
@@ -1325,7 +1332,7 @@ class Lodgement(EventDataclass):
     )
     event_id: vtypes.EventID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
     group: LodgementGroup
-    group_id: vtypes.ID
+    group_id: vtypes.LodgementGroupID
 
     title: str
     regular_capacity: vtypes.NonNegativeInt

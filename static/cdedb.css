@@ -789,6 +789,15 @@ tr.drow-delete>td, tr.drow-delete1>td {
 .panel.questionnaire-row-config {
     & .panel-heading {
         background-color: #e8e8e8;
+        & .panel-title {
+            margin: 5px 0 0;
+        }
+        & .form-group:has(.input-role) {
+            width: 75%;
+        }
+    }
+    & .panel-heading,.panel-body {
+        padding: 10px 10px 10px 15px;
     }
     &.questionnaire-row-magic .panel-body {
         display: none;

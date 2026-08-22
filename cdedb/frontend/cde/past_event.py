@@ -126,7 +126,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         total_num, participants = self.pasteventproxy.get_course_assignments(
             rs, pcourse_id, honor_admins="past_event" in rs.user.admin_views
         )
-        personas = self.coreproxy.get_personas(rs, participants.keys())
+        personas = self.coreproxy.get_past_event_users(rs, participants.keys())
         return self.render(
             rs,
             "past_event/show_past_course",

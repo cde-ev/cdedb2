@@ -25,7 +25,7 @@
     <strong>
         {{ util.make_icon(entry.entry_type.get_icon(), title=gettext(entry.entry_type|string)) }}
         <span class="{{ entry.status.heading_styles() }}">
-            {%- if entry.parent -%}
+            {%- if entry|hasattr("parent") and entry.parent is not none -%}
                 {{ util.href("#entry" + entry.parent.id|string, gettext(entry.parent.entry_type.left_shortname)) }}:
                 {{ gettext(entry.entry_type.right_shortname) }}
             {%- else -%}
@@ -38,9 +38,9 @@
             </span>
         {% endif %}
     </strong>
-    {% if entry.concerned_id and (not ambience['persona'] or ambience['persona']['id'] != entry.concerned_id) %}
+    {% if entry.concerned_id and ('persona' not in ambience or ambience['persona']['id'] != entry.concerned_id) %}
         {# On measure pages, the case (and thus its personas) is not available, thus they are supplied separately to the template. #}
-        {% set personas = entry.case.personas if entry.case else personas %}
+        {% set personas = entry.case.personas if entry|hasattr("case") else personas %}
         {% trans concerned=util.persona_anchor(personas[entry.concerned_id], icon='user') %}
              (for {{ concerned }})
         {% endtrans %}
