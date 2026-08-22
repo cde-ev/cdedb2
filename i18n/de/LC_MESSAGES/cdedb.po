@@ -19924,6 +19924,89 @@ msgstr "Adresse für Mitgliedersuche versteckt"
 msgid "Copy-Paste Template"
 msgstr "Copy/Paste-Vorlage"
 
+msgid "Must provide at least one of an attachment and a past event."
+msgstr "Eine Datei muss hochgeladen oder eine Vergangene Veranstaltung angegeben werden."
+
+msgid "You already have a pending account upgrade request."
+msgstr "Du hast bereits eine laufende Account Upgrade Anfrage."
+
+msgid ""
+"Account upgrade requested by existing user. Please check for eligibility."
+msgstr "Account Upgrade eines bereits bestehenden Accounts beantragt. Bitte auf Legitimität überprüfen."
+
+msgid ""
+"With the following form you can voice your desire to become a CdE member."
+msgstr "Mit diesem Formular kannst du deinen Wunsch äußern CdE Mitglied zu werden."
+
+msgid "If you participated at a DSA, DJA etc.:"
+msgstr "Wenn du an einer DSA, DJA o.ä. teilgenommen hast:"
+
+msgid ""
+"Upload your participation certificate below. After we "
+"reviewed your request, you will be granted a trial membership."
+msgstr "Lade unten deine Teilnahmeurkunde hoch. Nachdem wir deine Anfrage überprüft haben, erhältst du eine Probemitgliedschaft im CdE."
+
+msgid ""
+"Select your event in the dropdown below. Take care that the selected event "
+"makes you elegible to become a CdE member, i.e. is a longer CdE event. After "
+"we reviewed you request, you need to transfer the membership fee to become a "
+"member."
+msgstr "Wähle die entsprechende Veranstaltung im Dropdown Menü unten aus. Achte darauf, dass die Teilnahme an der Veranstaltung dich zur Aufnahme in den CdE berechtigt, in der Regel sind dies längere CdE Akademien. Nachdem wir deine Anfrage überprüft haben, musst du den Mitgliedsbeitrag überweisen um Mitglied im CdE zu werden."
+
+msgid ""
+"Select one of your past events which entitles you to become a CdE member."
+msgstr "Wähle eine deiner Vergangenen Veranstaltungen aus, die dich zur Mitgliedschaft im CdE berechtigt."
+
+msgid "For externals:"
+msgstr "Für Externe:"
+
+msgid ""
+"You can also %(link)s instead. Note that it can take a couple of days before "
+"we can process your request."
+msgstr "Du kannst stattdessen auch %(link)s. Beachte das es ein paar Tage dauern kann bis wir deinen Antrag bearbeiten."
+
+msgid "Invalid account for upgrade request."
+msgstr "Ungültiger Account für eine Account Upgrade Anfrage."
+
+msgid "Decision must be 'update'."
+msgstr "Die Entscheidung muss 'Update' sein."
+
+msgid "Granting CdE realm failed."
+msgstr "CdE-Bereich Hinzufügung ist fehlgeschlagen."
+
+msgid "You already have CdE realm."
+msgstr "Du bist bereits zur Mitgliedschaft im CdE berechtigt."
+
+msgid "You didn't participate at this event."
+msgstr "Du hast an dieser Veranstaltung nicht teilgenommen."
+
+msgid "Your request has been submitted."
+msgstr "Deine Anfrage wurde abgeschickt."
+
+msgid "Account upgraded."
+msgstr "Account Upgrade durchgeführt."
+
+msgid "Upgrade Request of %(name)s"
+msgstr "Account Upgrade Anfrage von %(name)s"
+
+msgid "Approve (grant trial membership)"
+msgstr "Genehmigen (Probemitgliedschaft)"
+
+msgid "Request CdE Membership"
+msgstr "CdE-Mitgliedschaft beantragen"
+
+msgid "If you participated at a CdE event:"
+msgstr "Wenn du an einer CdE Veranstaltung teilgenommen hast:"
+
+msgid "Request membership"
+msgstr "Mitgliedschaft beantragen"
+
+msgid "For former members:"
+msgstr "Für ehemalige Mitglieder:"
+
+msgid "request a CdE membership"
+msgstr "deine Mitgliedschaft im CdE beantragen"
+
 #: cdedb/frontend/templates/web/core/show_user.tmpl:698
 #: cdedb/frontend/templates/web/core/show_user.tmpl:703
 msgid "Send Password Reset Link"

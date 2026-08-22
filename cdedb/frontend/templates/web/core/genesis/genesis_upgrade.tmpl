@@ -29,7 +29,6 @@
             <br />
             {% trans %}
                 Upload your participation certificate below.
-                You can select your DSA, DJA etc. in the dropdown below, but you can also leave it empty.
                 After we reviewed your request, you will be granted a trial membership.
             {% endtrans %}
         </p>
@@ -57,8 +56,7 @@
                                         small=True, accept="text/*,application/pdf", info=attachment_info + attachment_restrictions) }}
         {{ util.form_input_select(name="pevent_id", entries=pevent_entries, aclass="pcourse-pevent-input",
                                     nulloption=nbsp, label=gettext("Past Event"), selectize=True, small=True,
-                                    info=gettext("Select one of your past events which entitles you to become a CdE member."
-                                                " This could be a DSA, DJA, etc., or a longer CdE event.")) }}
+                                    info=gettext("Select one of your past events which entitles you to become a CdE member.")) }}
         {{ util.form_input_submit(label=gettext("Confirm Request"), small=True) }}
     </form>
 {% endblock %}
