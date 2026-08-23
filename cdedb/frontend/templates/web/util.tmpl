@@ -991,10 +991,10 @@ attribute to each field of a dynamic row. #}
 {% macro _admin_views_toggle_inner(views) -%}
     {% for label, toggleable_views, relevant_views in views -%}
         {% set relevant_views = relevant_views if relevant_views is not none else toggleable_views -%}
-        {% if relevant_views.__and__(user.new_available_admin_views) %}
+        {% if relevant_views.__and__(user.available_admin_views) %}
             {# The button is "deactivated" as long as there are more "relevant views" which are available for the
                user but are not enabled yet. #}
-            {% set active = relevant_views.__and__(user.new_available_admin_views) in user.new_admin_views -%}
+            {% set active = relevant_views.__and__(user.available_admin_views) in user.admin_views -%}
             <button{{ dict(
                 type="submit",
                 name="remove" if active else "add",

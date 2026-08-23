@@ -11,7 +11,7 @@
 
 {% macro print_attachment_version_for_overview(version, add=False, delete=False, delete_attachment=False) %}
     {% set edit_right = ambience['assembly']['is_active'] and (
-            user.new_admin_views.has(AdminViews.assembly_presider)
+            user.admin_views.has(AdminViews.assembly_presider)
             or ambience['assembly']['id'] in user.presider
         ) %}
     {% if not version["dtime"] %}

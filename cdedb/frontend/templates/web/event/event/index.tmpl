@@ -29,7 +29,7 @@
 {%- endmacro %}
 
 {% block content %}
-    {% if user.new_admin_views.has(AdminViews.event_mgmt) %}
+    {% if user.admin_views.has(AdminViews.event_mgmt) %}
         <div class="p button-par">
         {{ util.href(cdedblink("event/create_event_form"), gettext("Create Event"), icon="plus",
                 aclass="btn btn-sm btn-success") }}

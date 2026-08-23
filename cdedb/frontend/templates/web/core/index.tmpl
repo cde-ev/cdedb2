@@ -23,7 +23,7 @@
     {{ util.meta_info_banner('banner_after_login') }}
 
     <div class="row">
-        {% if user.new_admin_views.has(AdminViews.core_user) %}
+        {% if user.admin_views.has(AdminViews.core_user) %}
             <div class="col-md-6">
             {% call util.bootstrap_panel(title=gettext("Manage Users"), icon='users',
                                          aclass="panel-warning", anid="adminshowuser-box") %}

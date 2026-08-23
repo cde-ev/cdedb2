@@ -21,7 +21,7 @@
 {% endmacro %}
 
 {% block content %}
-    {% if user.new_admin_views.is_any_mgmt() %}
+    {% if user.admin_views.is_any_mgmt() %}
         {{ generic_ml.index_buttons() }}
     {% endif %}
     <p>

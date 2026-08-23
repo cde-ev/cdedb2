@@ -23,7 +23,7 @@
             Caretakers have the same access as orgas, for specific events.
         {% endtrans %}
     </p>
-    {% if user.new_admin_views.has(AdminViews.event_mgmt) %}
+    {% if user.admin_views.has(AdminViews.event_mgmt) %}
         <form action="{{ cdedblink('event/add_event_helper') }}" method="POST"
               id="addeventhelperform" class="p">
             {{ util.anti_csrf_token('event/add_event_helper') }}
@@ -54,7 +54,7 @@
                     {% for persona in list %}
                         <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(persona) }}
-                            {% if user.new_admin_views.has(AdminViews.event_mgmt) %}
+                            {% if user.admin_views.has(AdminViews.event_mgmt) %}
                                 <form action="{{ cdedblink('event/remove_event_helper') }}"
                                       method="POST"
                                       id="removeeventhelperform{{ persona.id }}"

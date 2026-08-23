@@ -4,12 +4,12 @@
 {% import "web/event/generic.tmpl" as generic with context %}
 {% block scripts %}
     {{ super() }}
-    {% if orga_view or user.new_admin_views.has(AdminViews.event_mgmt) %}
+    {% if orga_view or user.admin_views.has(AdminViews.event_mgmt) %}
         {{ util.cdedb_script('cdedb_searchpersona.js') }}
         {{ util.cdedb_script('cdedb_helper.js') }}
     {% endif %}
 {% endblock %}
-{% if orga_view or user.new_admin_views.has(AdminViews.event_mgmt) %}
+{% if orga_view or user.admin_views.has(AdminViews.event_mgmt) %}
     {% set jshint = 'strong' %}
 {% endif %}
 {% block title %}
@@ -151,7 +151,7 @@
             </dd>
         {% endif %}
     </dl>
-    {% if orga_view or user.new_admin_views.has(AdminViews.event_mgmt) %}
+    {% if orga_view or user.admin_views.has(AdminViews.event_mgmt) %}
         <dl class="dl-horizontal">
             <dt title="{% trans %}Shortname{% endtrans %}">{% trans %}Shortname{% endtrans %}</dt>
             <dd id="shortname">{{ ambience['event']['shortname'] }}</dd>
@@ -365,7 +365,7 @@
                     </div>
                 </div>
             {% endif %}
-            {% if user.new_admin_views.has(AdminViews.event_mgmt) %}
+            {% if user.admin_views.has(AdminViews.event_mgmt) %}
                 {% if "cde_admin" in user.roles and not ambience['event']['is_archived'] %}
                 <div class="row" id="archive-event">
                     <div class="col-sm-4">
@@ -421,7 +421,7 @@
                     </div>
                 </div>
             {% endif %}
-            {% if user.new_admin_views.has(AdminViews.finance) %}
+            {% if user.admin_views.has(AdminViews.finance) %}
                 <div class="row" id="balance-event">
                     <div class="col-sm-4">
                         <div class="p">

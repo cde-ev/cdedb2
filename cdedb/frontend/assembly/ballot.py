@@ -372,7 +372,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
 
         # Get ids of managed assemblies.
         assembly_ids = set(self.assemblyproxy.list_assemblies(rs, is_active=True))
-        if AdminViews.assembly_presider not in rs.user.new_admin_views:
+        if AdminViews.assembly_presider not in rs.user.admin_views:
             assembly_ids &= rs.user.presider
 
         return self.render(

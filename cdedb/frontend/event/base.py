@@ -283,16 +283,16 @@ class EventBaseFrontend(AbstractUserFrontend):
             if (
                 event_id in rs.user.orga | rs.user.caretaker | rs.user.checkin_helper
                 or admin_view_to_consider is None
-                or admin_view_to_consider not in rs.user.new_available_admin_views
+                or admin_view_to_consider not in rs.user.available_admin_views
             ):
                 return is_privileged
-            return is_privileged and admin_view_to_consider in rs.user.new_admin_views
+            return is_privileged and admin_view_to_consider in rs.user.admin_views
 
         if 'event' in rs.ambience:
             event_id = rs.ambience['event'].id
             orga_view = (
                 event_id in rs.user.orga | rs.user.caretaker | rs.user.checkin_helper
-                or AdminViews.event_orga in rs.user.new_admin_views
+                or AdminViews.event_orga in rs.user.admin_views
             )
             access_is_limited = orga_view and is_event_access_limited(event_id)
         else:

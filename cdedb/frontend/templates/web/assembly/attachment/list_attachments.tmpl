@@ -26,7 +26,7 @@
 
 {% block content %}
     {% set edit_right = ambience['assembly']['is_active'] and (
-            user.new_admin_views.has(AdminViews.assembly_presider)
+            user.admin_views.has(AdminViews.assembly_presider)
             or ambience['assembly']['id'] in user.presider
         ) %}
     {% if attachments %}

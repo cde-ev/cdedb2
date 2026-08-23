@@ -171,14 +171,14 @@ class CoreBaseBackend(AbstractBackend):
             access where they should not normally have it. This is to allow that
             override.
         """
-        if allow_meta_admin and AdminViews.meta_admin in rs.user.new_admin_views:
+        if allow_meta_admin and AdminViews.meta_admin in rs.user.admin_views:
             return True
 
         persona_status = self.get_persona_status(rs, persona_id)
         user_realms = persona_status.get_user_realms()
 
         return any(
-            admin_views in rs.user.new_admin_views
+            admin_views in rs.user.admin_views
             for admin_views in user_realms.get_required_user_views()
         )
 

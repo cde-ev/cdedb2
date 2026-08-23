@@ -16,7 +16,7 @@
 {% endblock %}
 {% block content %}
     {% if ambience['assembly']['is_active'] and (
-            user.new_admin_views.has(AdminViews.assembly_presider)
+            user.admin_views.has(AdminViews.assembly_presider)
             or ambience['assembly']['id'] in user.presider
         ) %}
         <div class="p">
@@ -46,7 +46,7 @@
                         <span class="text-danger">{{ gettext("Not yet voted") }}</span>
                     {%- endif -%})
                     {% endif %}
-                    {% if (user.new_admin_views.has(AdminViews.assembly_presider) or ambience['assembly']['id'] in user.presider)
+                    {% if (user.admin_views.has(AdminViews.assembly_presider) or ambience['assembly']['id'] in user.presider)
                             and now() < ballot['vote_begin'] %}
                         {{ util.href(cdedblink("assembly/change_ballot", {'ballot_id': ballot_id}), gettext("Edit"),
                                      aclass="btn btn-xs btn-warning list-button-float hide-hover", icon="pen") }}

@@ -173,17 +173,17 @@ class CoreBaseFrontend(AbstractFrontend):
             for realm in models.GenesisCase.available_realms:
                 if {"core_admin", f"{realm}_admin"} & rs.user.roles:
                     genesis_realms.append(realm)
-            if genesis_realms and AdminViews.genesis in rs.user.new_admin_views:
+            if genesis_realms and AdminViews.genesis in rs.user.admin_views:
                 data = self.coreproxy.genesis_list_cases(
                     rs, stati=(const.GenesisStati.to_review,), realms=genesis_realms
                 )
                 dashboard['genesis_cases'] = len(data)
             # pending changes
-            if AdminViews.user_review in rs.user.new_admin_views:
+            if AdminViews.user_review in rs.user.admin_views:
                 data = self.coreproxy.changelog_get_pending_changes(rs)
                 dashboard['pending_changes'] = len(data)
             # pending privilege changes
-            if AdminViews.meta_admin in rs.user.new_admin_views:
+            if AdminViews.meta_admin in rs.user.admin_views:
                 stati = (const.PrivilegeChangeStati.pending,)
                 data = self.coreproxy.list_privilege_changes(rs, stati=stati)
                 dashboard['privilege_changes'] = len(data)
@@ -674,14 +674,14 @@ class CoreBaseFrontend(AbstractFrontend):
         # Core admins see everything
         if (
             Roles.core_admin in rs.user.new_roles
-            and AdminViews.core_user in rs.user.new_admin_views
+            and AdminViews.core_user in rs.user.admin_views
         ):
             access_realms |= Realms.all()
             access_levels |= self.AccessLevel.full
         # Meta admins see the status bits
         if (
             Roles.meta_admin in rs.user.new_roles
-            and AdminViews.meta_admin in rs.user.new_admin_views
+            and AdminViews.meta_admin in rs.user.admin_views
         ):
             access_levels |= self.AccessLevel.meta
         # Other admins see their realm if they are relative admin
@@ -689,7 +689,7 @@ class CoreBaseFrontend(AbstractFrontend):
             access_mode |= self.AccessMode.any_admin
             for realm in Realms:
                 if any(
-                    admin_view in rs.user.new_admin_views
+                    admin_view in rs.user.admin_views
                     for admin_view in realm.get_required_user_views()
                 ):
                     access_realms |= realm
@@ -712,7 +712,7 @@ class CoreBaseFrontend(AbstractFrontend):
         # Orgas see their participants
         if event_id:
             is_admin = Roles.event_admin in rs.user.new_roles
-            is_viewing_admin = is_admin and AdminViews.event_user in rs.user.new_admin_views
+            is_viewing_admin = is_admin and AdminViews.event_user in rs.user.admin_views
             is_orgalike = event_id in rs.user.orga | rs.user.caretaker
             if is_orgalike or is_admin:
                 is_participant = self.eventproxy.list_registrations(

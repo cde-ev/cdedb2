@@ -6,7 +6,7 @@
 {% endblock %}
 
 {% block base_scripts %}
-    {% if user.new_admin_views.has_any(AdminViews.core_user, AdminViews.meta_admin) %}
+    {% if user.admin_views.has_any(AdminViews.core_user, AdminViews.meta_admin) %}
         {{ util.cdedb_script('cdedb_searchpersona.js') }}
     {% endif %}
 {% endblock %}
@@ -65,35 +65,35 @@
             {{ util.href(cdedblink("core/contact"), gettext("Contact"), aclass="list-group-item",
                     icon="at", active=(sidenav_active=='core_contact')) }}
         </div>
-        {% if user.new_admin_views.has_any(
+        {% if user.admin_views.has_any(
                 AdminViews.core_user, AdminViews.user_review, AdminViews.ml_user,
                 AdminViews.genesis, AdminViews.meta_admin, AdminViews.auditor
             ) %}
-            {% if user.new_admin_views.has_any(AdminViews.core_user, AdminViews.meta_admin) %}
+            {% if user.admin_views.has_any(AdminViews.core_user, AdminViews.meta_admin) %}
                 {{ persona_quicksearch() }}
             {% endif %}
             <div class="list-group tear-down">
-            {% if user.new_admin_views.has(AdminViews.core_user) %}
+            {% if user.admin_views.has(AdminViews.core_user) %}
                 {{ util.href(cdedblink("core/user_search"), gettext("Manage Users"), aclass="list-group-item",
                         icon="users", active=(sidenav_active=='core_manage_users')) }}
             {% endif %}
-            {% if user.new_admin_views.has_any(AdminViews.core_user, AdminViews.ml_user) %}
+            {% if user.admin_views.has_any(AdminViews.core_user, AdminViews.ml_user) %}
                 {{ util.href(cdedblink("core/email_status_overview"), gettext("Defect Addresses"),
                         icon="user-friends", aclass="list-group-item", active=(sidenav_active == 'defect_addresses')) }}
             {% endif %}
-            {% if user.new_admin_views.has(AdminViews.user_review) %}
+            {% if user.admin_views.has(AdminViews.user_review) %}
                 {{ util.href(cdedblink("core/list_pending_changes"), gettext("Pending Changes"), aclass="list-group-item",
                         icon="check-square", active=(sidenav_active=='core_pending_changes')) }}
             {% endif %}
-            {% if user.new_admin_views.has(AdminViews.genesis) %}
+            {% if user.admin_views.has(AdminViews.genesis) %}
                 {{ util.href(cdedblink("core/genesis_list_cases"), gettext("Account Requests"), aclass="list-group-item",
                         icon="door-open", active=(sidenav_active=='core_genesis_list')) }}
             {% endif %}
-            {% if user.new_admin_views.has(AdminViews.meta_admin) %}
+            {% if user.admin_views.has(AdminViews.meta_admin) %}
                 {{ util.href(cdedblink("core/list_privilege_changes"), gettext("Privilege Changes"), aclass="list-group-item",
                         icon="wrench", active=(sidenav_active=='core_privilege_changes')) }}
             {% endif %}
-            {% if user.new_admin_views.has_any(AdminViews.core_user, AdminViews.auditor) %}
+            {% if user.admin_views.has_any(AdminViews.core_user, AdminViews.auditor) %}
                 {{ util.href(cdedblink("core/view_log"), gettext("Account Log"), aclass="list-group-item",
                         icon="far fa-list-alt", active=(sidenav_active=='core_log')) }}
                 {{ util.href(cdedblink("core/view_changelog_meta"), gettext("Userdata Log"), aclass="list-group-item",
@@ -101,7 +101,7 @@
             {% endif %}
             </div>
         {% endif %}
-        {% if user.new_admin_views.has(AdminViews.complaint) %}
+        {% if user.admin_views.has(AdminViews.complaint) %}
             <div class="list-group tear-down">
                 {% if "complaint_admin" in user.roles %}
                     {{ util.href(cdedblink("core/complaint_index"), gettext("Case Archive"), aclass="list-group-item",
@@ -119,7 +119,7 @@
                 {% endif %}
             </div>
         {% endif %}
-        {% if user.new_admin_views.has(AdminViews.core) %}
+        {% if user.admin_views.has(AdminViews.core) %}
             <div class="list-group tear-down">
                 {{ util.href(cdedblink("core/meta_info_form"), gettext("Metadata"), aclass="list-group-item",
                              icon="tags", active=(sidenav_active=='core_meta')) }}

@@ -12,7 +12,7 @@
                         readonly=not (ambience['event'].is_visible_for(user, is_registered, privileged=False)
                                       or ambience['event'].id in user.orga
                                       or ambience['event'].id in user.caretaker
-                                      or user.new_admin_views.has_any(AdminViews.event_orga, AdminViews.event_mgmt))) }}
+                                      or user.admin_views.has_any(AdminViews.event_orga, AdminViews.event_mgmt))) }}
 {{ util.breadcrumb_link(cdedblink("event/course_list"), gettext("Courselist"), active=True) }}
 {% endblock %}
 {% block heading %}

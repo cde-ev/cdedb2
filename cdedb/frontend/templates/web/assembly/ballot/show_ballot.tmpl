@@ -31,7 +31,7 @@
 {% endblock %}
 
 {% block content %}
-    {% set is_privileged = (user.new_admin_views.has(AdminViews.assembly_presider)
+    {% set is_privileged = (user.admin_views.has(AdminViews.assembly_presider)
                             or ambience['assembly']['id'] in user.presider) %}
     {% set edit_mode = now() < ambience['ballot']['vote_begin'] and is_privileged %}
     {% set is_classical = ambience['ballot']['votes'] %}

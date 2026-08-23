@@ -27,12 +27,12 @@
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("cde/lastschrift_index"), gettext("Direct Debit Authorizations"),
-                            readonly=not user.new_admin_views.has(AdminViews.finance)) }}
+                            readonly=not user.admin_views.has(AdminViews.finance)) }}
     {% if 'persona' in ambience %}
         {{ util.breadcrumb_link(cdedblink("cde/lastschrift_show", {'persona_id': values['persona_id']}),
                                 ambience['persona']|persona_name,
                                 icon="euro-sign",
-                                readonly=not user.new_admin_views.has(AdminViews.finance)) }}
+                                readonly=not user.admin_views.has(AdminViews.finance)) }}
     {% endif %}
     {{ util.breadcrumb_link(cdedblink("cde/lastschrift_create"), gettext("Create"), active=True) }}
 {% endblock %}

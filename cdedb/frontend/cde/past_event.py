@@ -106,7 +106,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         course_ids = self.pasteventproxy.list_past_courses(rs, pevent_id)
         courses = self.pasteventproxy.get_past_courses(rs, course_ids)
         total_num, participants = self.pasteventproxy.list_event_participants(
-            rs, pevent_id, honor_admins=AdminViews.past_event in rs.user.new_admin_views
+            rs, pevent_id, honor_admins=AdminViews.past_event in rs.user.admin_views
         )
         orgas = [p for p in participants.values() if p.orga_status]
         return self.render(
@@ -128,7 +128,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         total_num, participants = self.pasteventproxy.get_course_assignments(
             rs,
             pcourse_id,
-            honor_admins=AdminViews.past_event in rs.user.new_admin_views,
+            honor_admins=AdminViews.past_event in rs.user.admin_views,
         )
         personas = self.coreproxy.get_past_event_users(rs, participants.keys())
         return self.render(

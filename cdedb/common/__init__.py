@@ -97,9 +97,6 @@ Error = tuple[str | None, Exception]
 NotificationType = str
 Notification = tuple[NotificationType, str, CdEDBObject]
 
-# Admin views a user may activate/deactivate.
-AdminView = str
-
 CdEDBLog = tuple[int, tuple[CdEDBObject, ...]]
 
 PathLike = pathlib.Path | str
@@ -142,27 +139,19 @@ class User:
         )
         self.moderator: set[int] = set(moderator) if moderator else set()
         self.presider: set[int] = set(presider) if presider else set()
-        self.new_admin_views: AdminViews = AdminViews.none()
+        self.admin_views: AdminViews = AdminViews.none()
 
     @property
     def roles(self) -> set[Role]:
         return self.new_roles.as_set()
 
     @property
-    def admin_views(self) -> set[AdminView]:
-        return self.new_admin_views.as_set()
-
-    @property
-    def new_available_admin_views(self) -> AdminViews:
+    def available_admin_views(self) -> AdminViews:
         return AdminViews.from_roles(self.new_roles)
-
-    @property
-    def available_admin_views(self) -> set[AdminView]:
-        return self.new_available_admin_views.as_set()
 
     def init_admin_views_from_cookie(self, enabled_views_cookie: str) -> None:
         enabled_views = AdminViews.from_cookie(enabled_views_cookie)
-        self.new_admin_views = self.new_available_admin_views & enabled_views
+        self.admin_views = self.available_admin_views & enabled_views
 
     def persona_name(self, include_nickname: bool = False) -> str:
         return make_persona_name(

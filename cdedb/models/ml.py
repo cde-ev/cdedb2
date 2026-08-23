@@ -314,7 +314,7 @@ class Mailinglist(CdEDataclass):
         core.is_relative_admin_view.
         """
         return cls.is_relevant_admin(user) and bool(
-            cls.moderator_admin_views() & user.new_admin_views
+            cls.moderator_admin_views() & user.admin_views
         )
 
     @classmethod
@@ -325,7 +325,7 @@ class Mailinglist(CdEDataclass):
         core.is_relative_admin_view.
         """
         return cls.is_relevant_admin(user) and bool(
-            cls.management_admin_views() & user.new_admin_views
+            cls.management_admin_views() & user.admin_views
         )
 
     def get_subscription_policy(
