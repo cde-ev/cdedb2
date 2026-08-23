@@ -1840,13 +1840,11 @@ def _genesis_case(
     argname: str = "genesis_case",
     *,
     ignore_warnings: bool = False,
-    is_upgrade: bool = False,
     **kwargs: Any,
 ) -> CdEDBObject:
     """
     :param creation: If ``True`` test the data set on fitness for creation
       of a new entity.
-    :param is_upgrade: Whether the genesis_case was requested by an existing user.
     """
     errs = ValidationSummary()
 

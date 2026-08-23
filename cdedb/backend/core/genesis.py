@@ -12,6 +12,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.core as models
 from cdedb.backend.common import (
+    Silencer,
     access,
     affirm_validation as affirm,
     internal,
@@ -440,9 +441,8 @@ class CoreGenesisBackend(CoreBaseBackend):
 
             log_code = const.CoreLogCodes.genesis_change
             if status and status != current.status:
+                # Only internal marker used with Silencer to generate no log message
                 if status == const.GenesisStati.approved:
-                    # TODO this case was not logged until now, and there is
-                    #  no meaningful log code for this.
                     pass
                 elif status == const.GenesisStati.successful:
                     log_code = const.CoreLogCodes.genesis_approved
@@ -482,10 +482,17 @@ class CoreGenesisBackend(CoreBaseBackend):
             if case.is_upgrade and not decision.is_update():
                 raise ValueError(n_("Decision must be 'update'."))
 
+            # Set the case as finalized without generating a log message.
+            # This is necessary to sooth username checks for f.e. dearchival.
+            with Silencer(rs):
+                self.genesis_modify_case_meta(
+                    rs,
+                    case_id,
+                    status=const.GenesisStati.approved,
+                )
+
             if decision.is_create():
-                if self.verify_existence(
-                    rs, case.persona.username, include_genesis=False
-                ):
+                if self.verify_existence(rs, case.persona.username):
                     raise ValueError(n_("Email address already taken."))
                 status = const.GenesisStati.successful
 
@@ -524,29 +531,10 @@ class CoreGenesisBackend(CoreBaseBackend):
                     raise RuntimeError(n_("Granting CdE realm failed."))
 
             elif decision.is_update():
+                assert persona_id is not None
                 status = const.GenesisStati.existing_updated
                 case.persona_id = persona_id
-                # we can not handle username changes due to conflicts with
-                # the existing genesis case, so we postpone the changes after
-                # the case is marked as finished
-            else:
-                status = const.GenesisStati.rejected
-                persona_id = None
 
-            # finalize the genesis case
-            code = self.genesis_modify_case_meta(
-                rs,
-                case_id,
-                status=status,
-                reviewer_id=rs.user.persona_id,
-                persona_id=persona_id,
-            )
-            if not code:
-                raise RuntimeError(n_("Genesis modification failed."))
-
-            # handle the promised case of updating an account
-            if decision.is_update():
-                assert persona_id is not None
                 persona = self.get_persona(rs, persona_id)
                 persona_status = self.get_persona_status(rs, persona_id)
                 if not self._is_relative_admin(rs, persona_status):
@@ -568,6 +556,21 @@ class CoreGenesisBackend(CoreBaseBackend):
                     force_review=True,
                     change_note="Daten aus Accountanfrage übernommen.",
                 )
+
+            else:
+                status = const.GenesisStati.rejected
+                persona_id = None
+
+            # finalize the genesis case, now with the correct log message
+            code = self.genesis_modify_case_meta(
+                rs,
+                case_id,
+                status=status,
+                reviewer_id=rs.user.persona_id,
+                persona_id=persona_id,
+            )
+            if not code:
+                raise RuntimeError(n_("Genesis modification failed."))
 
             if decision.grants_trial_membership() and case.realm == "cde":
                 assert persona_id is not None
