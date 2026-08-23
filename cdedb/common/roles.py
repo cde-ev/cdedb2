@@ -18,10 +18,34 @@ AdminView = str
 
 
 class Roles(_Roles):
+    """
+    Roles a user (persona or droid) can have, that determine their privileges.
+
+    This is an 'IntEnumFlag' with some custom behaviour.
+
+    Members are defined as a tuple of:
+        - An implicit 'enum.auto()' to generate the numerical value.
+        - Optionally a "marker", that is a boolean column in the 'core.personas' table
+            which if True, results in the user being granted that role.
+        - Optionally any number of other roles (given as their name as a string), which
+            are required in order for the user to be granted that role.
+            This restriction applies both for extracting the roles during session
+            creation, and (for the admin privileges) during privilege change operations.
+
+            See 'extract_roles' below for further remarks, most notably that roles
+            should only require roles that are come earlier in the definition order.
+
+    A role that has no marker, may not require any other roles. It is created with an
+    empty tuple as the value.
+    """
+
+    # Special role, that is granted to everyone.
     anonymous = ()
 
+    # Special treatment in 'extraxt_roles'.
     persona = ()
 
+    # "Regular" roles, that are granted automatically based on these definitions.
     cde = "is_cde_realm"
     event = "is_event_realm"
     ml = "is_ml_realm"
@@ -42,12 +66,14 @@ class Roles(_Roles):
     member = "is_member", "cde"
     searchable = "is_searchable", "member"
 
-    # realm roles, granted manually.
+    # Realm roles, granted manually.
     complaint_enforcer = ()
     event_helper = ()
 
+    # Special cron role.
     cron = ()
 
+    # Roles for droids. All other roles are meant for personas.
     droid = ()
     droid_infra = ()
     droid_orga = ()
@@ -94,8 +120,8 @@ class Roles(_Roles):
         return cls.core_admin | cls.all_realm_admin_roles()
 
     @classmethod
-    def all_genesis_roles(cls) -> Self:
-        return cls.core_admin | cls.cde_admin | cls.event_admin | cls.ml_admin
+    def all_genesis_realm_roles(cls) -> tuple[Self, ...]:
+        return (cls.core_admin, cls.cde_admin, cls.event_admin, cls.ml_admin)
 
     def is_any_admin(self) -> bool:
         """Whether there is any admin role in this set of roles."""
@@ -120,6 +146,10 @@ class Roles(_Roles):
 
     @classmethod
     def _translated_members(cls) -> Self:
+        """Mark subset of members that need translations.
+
+        This is automatically handled by the i18n automation.
+        """
         return cls.all_admin_roles()
 
 
@@ -175,6 +205,7 @@ class Realms(_Realms):
         """Determine the realms of a user with the given roles."""
         return cls.union(realm for realm in cls if realm.role in roles)
 
+    # TODO: get rid of this once the change_user PR is merged.
     @classmethod
     def from_admin_roles(cls, roles: Roles) -> Self:
         """
@@ -407,7 +438,7 @@ class AdminViews(_AdminViews):
         return "enabled_admin_views"
 
     user_review = Roles.core_admin, Roles.cde_admin, Roles.event_admin
-    genesis = tuple(Roles.all_genesis_roles())
+    genesis = Roles.all_genesis_realm_roles()
 
     core_user = Roles.core_admin
     cde_user = Roles.cde_admin, Roles.core_admin
