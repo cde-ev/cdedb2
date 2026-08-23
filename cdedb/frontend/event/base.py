@@ -104,9 +104,9 @@ class ConstraintViolationsData(typing.TypedDict):
     courses: models.CourseMap
     choice_stats: models.ChoiceStats
     attendee_stats: models.AttendeeStats
-    all_lodgements: CdEDataclassMap[models.Lodgement]
-    lodgements: CdEDataclassMap[models.Lodgement]
-    inhabitants: dict[int, dict[int, LodgementInhabitants]]
+    all_lodgements: models.LodgementMap
+    lodgements: models.LodgementMap
+    inhabitants: dict[vtypes.LodgementID, dict[int, LodgementInhabitants]]
 
 
 def event_guard[F: Callable[..., Any]](
@@ -837,7 +837,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             rs, self.eventproxy.list_lodgements(rs, event.id), _event=event
         )
         if lodgement_id is None:
-            lodgements = all_lodgements
+            lodgements: models.LodgementMap = all_lodgements
         elif lodgement_id < 0:
             lodgements = {}
         else:

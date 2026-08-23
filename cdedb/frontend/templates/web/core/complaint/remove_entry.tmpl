@@ -24,7 +24,7 @@
 {% block content %}
     {% set entry_type = ambience['entry'].entry_type %}
     <form action="{{ cdedblink("core/remove_entry") }}" method="POST" id="removeentryform" class="form-horizontal">
-        {% if ambience['entry'] %}
+        {% if 'entry' in ambience %}
             {{ util.input_hidden(name="id", value=ambience['entry'].id) }}
         {% endif %}
         {{ util.anti_csrf_token("core/remove_entry") }}

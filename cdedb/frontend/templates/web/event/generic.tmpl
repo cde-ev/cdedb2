@@ -454,7 +454,7 @@
                                     "data-basename": "readonly_",
                                     "data-show_for_role": get_roles_with_field("readonly")|map("string")|list,
                                 }|xmlattr,
-                                readonly=(not values["readonly_" ~ part_id] and (kind and not kind.allow_readonly()))
+                                readonly=(("readonly_" ~ part_id not in values or not values["readonly_" ~ part_id]) and (kind and not kind.allow_readonly()))
                             ) }}
                         {{ util.output_errors("readonly_" ~ part_id, wrapper=True) }}
                     </div>
@@ -701,7 +701,7 @@
                         <td></td>
                     {% endif %}
                 {% elif js_preview %}
-                    {% if ambience['registration'] and fee.id in ambience['registration']['personalized_fees'] %}
+                    {% if 'registration' in ambience and fee.id in ambience['registration']['personalized_fees'] %}
                         {{ _fee_amount_td(ambience['registration']['personalized_fees'][fee.id], fee.id) }}
                     {% else %}
                         {{ _fee_amount_td(None, fee.id) }}

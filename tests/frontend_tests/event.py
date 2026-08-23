@@ -1973,9 +1973,18 @@ etc;anything else""",
         self.assertPresence("Kein Teilnehmer der Veranstaltung.", div='notifications')
 
         # now, start registration testing
-        surcharge = "Da Du kein CdE-Mitglied bist, musst Du "
+
+        # Ensure that at least one part is selected.
         self.traverse("Anmelden")
         self.assertTitle("Anmeldung für Große Testakademie 2222")
+        f = self.response.forms["registerform"]
+        f["parts"] = []
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            "parts", "Keine Veranstaltungsteile ausgewählt.", index=-1
+        )
+
+        surcharge = "Da Du kein CdE-Mitglied bist, musst Du "
         if self.user_in('charly'):
             self.assertNonPresence(surcharge)
             self.assertPresence("13.05.1984")

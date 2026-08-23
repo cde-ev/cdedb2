@@ -936,7 +936,7 @@ class EventBaseBackend(EventLowLevelBackend):
     @access("event")
     def create_lodgement_group(
         self, rs: RequestState, event_id: vtypes.EventID, data: CdEDBObject
-    ) -> DefaultReturnCode:
+    ) -> vtypes.LodgementGroupID:
         """Make a new lodgement group."""
         event_id = affirm(vtypes.EventID, event_id)
         data = affirm(models.LodgementGroup, data, creation=True)
@@ -953,7 +953,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 data['event_id'],
                 change_note=data['title'],
             )
-        return new_id
+        return vtypes.LodgementGroupID(vtypes.ID(new_id))
 
     @access("event")
     def add_part_group(

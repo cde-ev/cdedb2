@@ -1,4 +1,4 @@
-{% if ambience["assembly"] %}
+{% if "assembly" in ambience %}
     {% set action_target = "assembly/change_assembly" %}
     {% set sidenav_active='assembly_config' %}
 {% else %}
@@ -13,7 +13,7 @@
 {% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% if ambience["assembly"] %}
+    {% if "assembly" in ambience %}
         {% trans title=ambience["assembly"]["title"] %}
             Edit {{ title }}
         {% endtrans %}
@@ -22,7 +22,7 @@
     {% endif %}
 {% endblock %}
 {% block heading %}
-    {% if ambience["assembly"] %}
+    {% if "assembly" in ambience %}
         {{ util.context_heading(gettext("Configuration"), ambience['assembly']['title'],
                                 'bullhorn', gettext("Assembly")) }}
     {% else %}
@@ -31,7 +31,7 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
-    {% if ambience["assembly"] %}
+    {% if "assembly" in ambience %}
         {{ util.breadcrumb_link(cdedblink("assembly/show_assembly"), ambience['assembly']['title'], icon="bullhorn") }}
         {{ util.breadcrumb_link(cdedblink(action_target), gettext("Configuration"), active=True) }}
     {% else %}
@@ -54,7 +54,7 @@
 
         {# Display a warning and submit buttons.
            For creation additionally allow specifying presiders and creating mailinglists. #}
-        {% if ambience["assembly"] %}
+        {% if "assembly" in ambience %}
             {{ util.form_input_static(aclass='text-info', icon='info-circle',
                                       value=gettext("Warning: All changes will be immediately "
                                                     "visible to all CdE-Members and Assembly-Participants.")) }}

@@ -42,6 +42,8 @@ InvolvedID = _NewType("InvolvedID", ID)
 RegistrationID = _NewType("RegistrationID", ID)
 EventID = _NewType("EventID", ID)
 CourseID = _NewType("CourseID", ID)
+LodgementID = _NewType("LodgementID", ID)
+LodgementGroupID = _NewType("LodgementGroupID", ID)
 
 PartialImportID = _NewType("PartialImportID", int)
 SingleDigitInt = _NewType("SingleDigitInt", int)

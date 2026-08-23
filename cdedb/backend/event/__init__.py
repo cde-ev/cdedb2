@@ -678,11 +678,14 @@ class EventBackend(
             # noinspection PyPep8Naming
             IDMap = dict[int, int]
 
+            current: CdEDBObject | None
+
             gmap: IDMap = {}
             gdelta: CdEDBOptionalMap = {}
             gprevious: CdEDBOptionalMap = {}
+            group_id: vtypes.LodgementGroupID
             for group_id in mes(data.get('lodgement_groups', {}).keys()):
-                new_group = data['lodgement_groups'][group_id]
+                new_group: CdEDBObject | None = data['lodgement_groups'][group_id]
                 current = all_current_data['lodgement_groups'].get(group_id)
                 if group_id > 0 and current is None:
                     # group was deleted online in the meantime
@@ -693,7 +696,7 @@ class EventBackend(
                     gprevious[group_id] = current
                     if not dryrun:
                         self.delete_lodgement_group(rs, group_id, ("lodgements",))
-                elif group_id < 0:
+                elif group_id < 0 or current is None:
                     gdelta[group_id] = new_group
                     gprevious[group_id] = None
                     if not dryrun:
@@ -714,7 +717,7 @@ class EventBackend(
             ldelta: CdEDBOptionalMap = {}
             lprevious: CdEDBOptionalMap = {}
             for lodgement_id in mes(data.get('lodgements', {}).keys()):
-                new_lodgement = data['lodgements'][lodgement_id]
+                new_lodgement: CdEDBObject | None = data['lodgements'][lodgement_id]
                 current = all_current_data['lodgements'].get(lodgement_id)
                 if lodgement_id > 0 and current is None:
                     # lodgement was deleted online in the meantime
@@ -763,7 +766,7 @@ class EventBackend(
                 )
 
             for course_id in mes(data.get('courses', {}).keys()):
-                new_course = data['courses'][course_id]
+                new_course: CdEDBObject | None = data['courses'][course_id]
                 current = all_current_data['courses'].get(course_id)
                 if course_id > 0 and current is None:
                     # course was deleted online in the meantime
@@ -779,7 +782,7 @@ class EventBackend(
                             course_id,
                             ("instructors", "course_choices", "course_segments"),
                         )
-                elif course_id < 0:
+                elif course_id < 0 or current is None:
                     cdelta[course_id] = new_course
                     cprevious[course_id] = None
                     if not dryrun:
@@ -822,8 +825,12 @@ class EventBackend(
 
             data_regs = data.get('registrations', {})
             for registration_id in mes(data_regs.keys()):
-                new_registration = data_regs[registration_id]
-                if registration_id < 0 and dup.get(new_registration.get('persona_id')):
+                new_registration: CdEDBObject | None = data_regs[registration_id]
+                if (
+                    registration_id < 0
+                    and new_registration is not None
+                    and dup.get(new_registration.get('persona_id'))
+                ):
                     # the process got out of sync and the registration was
                     # already created, so we fix this
                     registration_id = dup[new_registration.get('persona_id')]
@@ -843,7 +850,7 @@ class EventBackend(
                             "course_choices",
                         )  # fmt: skip
                         self.delete_registration(rs, registration_id, reg_cascade)
-                elif registration_id < 0:
+                elif registration_id < 0 or current is None:
                     rdelta[registration_id] = new_registration
                     rprevious[registration_id] = None
                     if not dryrun:
