@@ -72,6 +72,7 @@ from cdedb.common.query.log_filter import (
     CoreLogFilter,
 )
 from cdedb.common.roles import (
+    AdminViews,
     Realms,
     Roles,
     extract_roles,
@@ -131,17 +132,14 @@ class CoreBaseBackend(AbstractBackend):
     ) -> bool:
         """Check whether the user is privileged with respect to a persona.
 
-        A mailinglist admin may not edit cde users, but the other way
-        round it should work.
-
         :param allow_meta_admin: In some cases we need to allow meta admins
             access where they should not normally have it. This is to allow that
             override.
         """
-        # Shortcuts to avoid having to retrieve the persona in easy cases.
-        if self.is_admin(rs):
-            return True
         if allow_meta_admin and Roles.meta_admin in rs.user.new_roles:
+            return True
+        # Shortcut to avoid having to retrieve the persona in the easy case.
+        if self.is_admin(rs):
             return True
         return self._is_relative_admin(rs, self.get_persona_status(rs, persona_id))
 
@@ -173,14 +171,15 @@ class CoreBaseBackend(AbstractBackend):
             access where they should not normally have it. This is to allow that
             override.
         """
-        if allow_meta_admin and "meta_admin" in rs.user.admin_views:
+        if allow_meta_admin and AdminViews.meta_admin in rs.user.new_admin_views:
             return True
+
         persona_status = self.get_persona_status(rs, persona_id)
         user_realms = persona_status.get_user_realms()
+
         return any(
-            admin_views.as_set()
-            <= {v.replace('_user', '_admin') for v in rs.user.admin_views}
-            for admin_views in user_realms.get_required_admin_roles()
+            admin_views in rs.user.new_admin_views
+            for admin_views in user_realms.get_required_user_views()
         )
 
     def verify_persona_password(

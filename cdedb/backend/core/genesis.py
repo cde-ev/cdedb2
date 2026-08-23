@@ -25,7 +25,6 @@ from cdedb.common import (
     DeletionBlockers,
     GenesisDecision,
     RequestState,
-    Roles,
     merge_dicts,
     now,
     unwrap,

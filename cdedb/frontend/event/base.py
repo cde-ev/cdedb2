@@ -34,6 +34,7 @@ import cdedb.models.event.constraint_violations as models_cv
 from cdedb.backend.event.lodgement import LodgementInhabitants
 from cdedb.common import (
     EVENT_SCHEMA_VERSION,
+    AdminViews,
     CdEDBObject,
     CdEDBObjectMap,
     Notification,
@@ -266,8 +267,12 @@ class EventBaseFrontend(AbstractUserFrontend):
             endpoint: str,
             *,
             event_id: vtypes.EventID | None = None,
-            admin_view_to_consider: str | None = "event_orga",
+            admin_view_to_consider: AdminViews | None = AdminViews.event_orga,
         ) -> bool:
+            if admin_view_to_consider is not None:
+                if not isinstance(admin_view_to_consider, AdminViews):
+                    raise TypeError
+
             endpoint = endpoint.removeprefix(f"{self.realm_str()}/")
             privileges = getattr(getattr(self, endpoint), "event_required_privileges")
 
@@ -278,16 +283,16 @@ class EventBaseFrontend(AbstractUserFrontend):
             if (
                 event_id in rs.user.orga | rs.user.caretaker | rs.user.checkin_helper
                 or admin_view_to_consider is None
-                or admin_view_to_consider not in rs.user.available_admin_views
+                or admin_view_to_consider not in rs.user.new_available_admin_views
             ):
                 return is_privileged
-            return is_privileged and admin_view_to_consider in rs.user.admin_views
+            return is_privileged and admin_view_to_consider in rs.user.new_admin_views
 
         if 'event' in rs.ambience:
             event_id = rs.ambience['event'].id
             orga_view = (
                 event_id in rs.user.orga | rs.user.caretaker | rs.user.checkin_helper
-                or 'event_orga' in rs.user.admin_views
+                or AdminViews.event_orga in rs.user.new_admin_views
             )
             access_is_limited = orga_view and is_event_access_limited(event_id)
         else:

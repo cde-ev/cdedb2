@@ -36,7 +36,7 @@ from cdedb.common import (
     unwrap,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.roles import Roles
+from cdedb.common.roles import AdminViews, Roles
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
     BALLOT_CANDIDATE_COMMON_FIELDS,
@@ -372,7 +372,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
 
         # Get ids of managed assemblies.
         assembly_ids = set(self.assemblyproxy.list_assemblies(rs, is_active=True))
-        if "assembly_presider" not in rs.user.admin_views:
+        if AdminViews.assembly_presider not in rs.user.new_admin_views:
             assembly_ids &= rs.user.presider
 
         return self.render(

@@ -173,17 +173,17 @@ class CoreBaseFrontend(AbstractFrontend):
             for realm in models.GenesisCase.available_realms:
                 if {"core_admin", f"{realm}_admin"} & rs.user.roles:
                     genesis_realms.append(realm)
-            if genesis_realms and "genesis" in rs.user.admin_views:
+            if genesis_realms and AdminViews.genesis in rs.user.new_admin_views:
                 data = self.coreproxy.genesis_list_cases(
                     rs, stati=(const.GenesisStati.to_review,), realms=genesis_realms
                 )
                 dashboard['genesis_cases'] = len(data)
             # pending changes
-            if "user_review" in rs.user.admin_views:
+            if AdminViews.user_review in rs.user.new_admin_views:
                 data = self.coreproxy.changelog_get_pending_changes(rs)
                 dashboard['pending_changes'] = len(data)
             # pending privilege changes
-            if "meta_admin" in rs.user.admin_views:
+            if AdminViews.meta_admin in rs.user.new_admin_views:
                 stati = (const.PrivilegeChangeStati.pending,)
                 data = self.coreproxy.list_privilege_changes(rs, stati=stati)
                 dashboard['privilege_changes'] = len(data)

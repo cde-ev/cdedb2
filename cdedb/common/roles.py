@@ -268,6 +268,28 @@ class Realms(_Realms):
         Note that core admins are always allowed access.
 
         :returns: List admin role flags. Any of these "sets" is sufficient.
+
+        >>> (Realms.ml).get_required_admin_roles()
+        [Roles.core_admin, Roles.ml_admin]
+        >>> (Realms.event|Realms.ml).get_required_admin_roles()
+        [Roles.core_admin, Roles.event_admin]
+        >>> (Realms.ml|Realms.assembly).get_required_admin_roles()
+        [Roles.core_admin, Roles.assembly_admin]
+        >>> (Realms.event|Realms.ml|Realms.assembly).get_required_admin_roles()
+        [Roles.core_admin, Roles.event_admin, Roles.assembly_admin]
+        >>> (Realms.cde|Realms.event|Realms.ml|Realms.assembly).get_required_admin_roles()
+        [Roles.core_admin, Roles.cde_admin]
+
+        >>> (Realms.ml).get_required_admin_roles(conjunctive=True)
+        [Roles.core_admin, Roles.ml_admin]
+        >>> (Realms.event|Realms.ml).get_required_admin_roles(conjunctive=True)
+        [Roles.core_admin, Roles.event_admin]
+        >>> (Realms.ml|Realms.assembly).get_required_admin_roles(conjunctive=True)
+        [Roles.core_admin, Roles.assembly_admin]
+        >>> (Realms.event|Realms.ml|Realms.assembly).get_required_admin_roles(conjunctive=True)
+        [Roles.core_admin, Roles.event_admin|assembly_admin]
+        >>> (Realms.cde|Realms.event|Realms.ml|Realms.assembly).get_required_admin_roles(conjunctive=True)
+        [Roles.core_admin, Roles.cde_admin]
         """
         ret = [Roles.core_admin]
         relevant = self.highest_realms
@@ -277,6 +299,37 @@ class Realms(_Realms):
             for realm in relevant:
                 ret.append(realm.admin_role)
         return ret
+
+    def get_required_user_views(self, conjunctive: bool = False) -> list["AdminViews"]:
+        """
+        What user views do you need to be acting as a relative admin to a user?
+
+        >>> (Realms.ml).get_required_user_views()
+        [AdminViews.core_user, AdminViews.ml_user]
+        >>> (Realms.event|Realms.ml).get_required_user_views()
+        [AdminViews.core_user, AdminViews.event_user]
+        >>> (Realms.assembly|Realms.ml).get_required_user_views()
+        [AdminViews.core_user, AdminViews.assembly_user]
+        >>> (Realms.event|Realms.ml|Realms.assembly).get_required_user_views()
+        [AdminViews.core_user, AdminViews.event_user, AdminViews.assembly_user]
+        >>> (Realms.cde|Realms.event|Realms.ml|Realms.assembly).get_required_user_views()
+        [AdminViews.core_user, AdminViews.cde_user]
+
+        >>> (Realms.ml).get_required_user_views(conjunctive=True)
+        [AdminViews.core_user, AdminViews.ml_user]
+        >>> (Realms.event|Realms.ml).get_required_user_views(conjunctive=True)
+        [AdminViews.core_user, AdminViews.event_user]
+        >>> (Realms.assembly|Realms.ml).get_required_user_views(conjunctive=True)
+        [AdminViews.core_user, AdminViews.assembly_user]
+        >>> (Realms.event|Realms.ml|Realms.assembly).get_required_user_views(conjunctive=True)
+        [AdminViews.core_user, AdminViews.event_user|assembly_user]
+        >>> (Realms.cde|Realms.event|Realms.ml|Realms.assembly).get_required_user_views(conjunctive=True)
+        [AdminViews.core_user, AdminViews.cde_user]
+        """
+        return [
+            AdminViews.user_views_from_admin_roles(roles)
+            for roles in self.get_required_admin_roles(conjunctive)
+        ]
 
     @property
     def realm_marker(self) -> str:
@@ -522,13 +575,23 @@ class AdminViews(_AdminViews):
     def is_any_mgmt(self) -> bool:
         return bool(self & self.all_mgmt_views())
 
+    def _is_available_to(self, roles: Roles) -> bool:
+        return all(
+            any(role in roles for role in admin_view.required_roles)
+            for admin_view in self
+        )
+
     @classmethod
     def from_roles(cls, roles: Roles) -> Self:
         return cls.union(
-            admin_view
-            for admin_view in cls
-            if any(role in roles for role in admin_view.required_roles)
+            admin_view for admin_view in cls if admin_view._is_available_to(roles)
         )
+
+    @classmethod
+    def user_views_from_admin_roles(cls, roles: Roles) -> Self:
+        if Roles.core_admin in roles:
+            return cls.core_user
+        return cls.from_roles(roles) & cls.all_user_views()
 
     @classmethod
     def from_cookie(cls, cookie: str) -> Self:
