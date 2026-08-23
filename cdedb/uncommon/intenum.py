@@ -53,3 +53,35 @@ class CdEIntFlag(CdEEnumMeta, enum.IntFlag):
         for f in flags:
             ret |= f
         return ret
+
+    def has(self, flag: Self) -> bool:
+        """
+        "Convenience" method with similar syntax to 'has_any' and 'has_all'.
+        """
+        return flag in self
+
+    def has_any(self, *flags: Self) -> bool:
+        """Convenience method.
+
+        'some_flags.has_any(Flag.a, Flag.b, Flag.c)'
+        is equivalent to
+        'Flag.a|Flag.b|Flag.c & some_flags'.
+
+        However
+        'some_flags.has_any(Flag.a, Flag.b|Flag.c)'
+        does not have a direct equivalent.
+        """
+        return any(flag in self for flag in flags)
+
+    def has_all(self, *flags: Self) -> bool:
+        """Convenience method.
+
+        'some_flags.has_all(Flag.a, Flag.b, Flag.c)'
+        is equivalent to
+        'some_flags.has_all(Flag.a, Flag.b|Flag.c)'
+        and
+        'Flag.a|Flag.b|Flag.c in some_flags'.
+
+        Note that this means it behaves slightly different than 'has_any'.
+        """
+        return any(flag in self for flag in flags)

@@ -4,12 +4,12 @@
 {% import "web/event/generic.tmpl" as generic with context %}
 {% block scripts %}
     {{ super() }}
-    {% if orga_view or 'event_mgmt' in user.admin_views %}
+    {% if orga_view or user.new_admin_views.has(AdminViews.event_mgmt) %}
         {{ util.cdedb_script('cdedb_searchpersona.js') }}
         {{ util.cdedb_script('cdedb_helper.js') }}
     {% endif %}
 {% endblock %}
-{% if orga_view or 'event_mgmt' in user.admin_views %}
+{% if orga_view or user.new_admin_views.has(AdminViews.event_mgmt) %}
     {% set jshint = 'strong' %}
 {% endif %}
 {% block title %}
@@ -34,12 +34,12 @@
 {% endblock %}
 {% block content %}
     {% if "event" in user.roles %}
-        {% if orga_view or is_privileged_for("event/remove_orga", admin_view_to_consider="event_mgmt") or is_privileged_for("event/remove_caretaker", admin_view_to_consider="event_mgmt") %}
+        {% if orga_view or is_privileged_for("event/remove_orga", admin_view_to_consider=AdminViews.event_mgmt) or is_privileged_for("event/remove_caretaker", admin_view_to_consider=AdminViews.event_mgmt) %}
             <div class="p button-par">
                 {% if orga_view %}
                     {{ generic.edit_free_text_button("description", label=gettext("Edit description"), small=False, pull_right=False) }}
                 {% endif %}
-                {% if is_privileged_for("event/manage_roles", admin_view_to_consider="event_mgmt") %}
+                {% if is_privileged_for("event/manage_roles", admin_view_to_consider=AdminViews.event_mgmt) %}
                     {{ util.href(cdedblink("event/manage_roles"), gettext("Manage Roles"), aclass="btn btn-warning btn-sm", icon="user-friends") }}
                 {% endif %}
                 {% if orga_view and ambience['event'].iban %}
@@ -130,7 +130,7 @@
                         {% trans %}None{% endtrans %}
                     {% endfor %}
                 </span>
-                {% if is_privileged_for("event/remove_orga", admin_view_to_consider="event_mgmt") %}
+                {% if is_privileged_for("event/remove_orga", admin_view_to_consider=AdminViews.event_mgmt) %}
                     {{ util.href(cdedblink("event/manage_roles") + "#orgas", gettext("Manage Orgas"), aclass="btn btn-warning btn-xs", icon="user-friends") }}
                 {% endif %}
             </dd>
@@ -145,13 +145,13 @@
                         {% trans %}None{% endtrans %}
                     {% endfor %}
                 </span>
-                {% if is_privileged_for("event/remove_caretaker", admin_view_to_consider="event_mgmt") %}
+                {% if is_privileged_for("event/remove_caretaker", admin_view_to_consider=AdminViews.event_mgmt) %}
                     {{ util.href(cdedblink("event/manage_roles") + "#caretakers", gettext("Manage Caretakers"), aclass="btn btn-warning btn-xs", icon="hands-holding-circle") }}
                 {% endif %}
             </dd>
         {% endif %}
     </dl>
-    {% if orga_view or 'event_mgmt' in user.admin_views %}
+    {% if orga_view or user.new_admin_views.has(AdminViews.event_mgmt) %}
         <dl class="dl-horizontal">
             <dt title="{% trans %}Shortname{% endtrans %}">{% trans %}Shortname{% endtrans %}</dt>
             <dd id="shortname">{{ ambience['event']['shortname'] }}</dd>
@@ -329,7 +329,7 @@
                     </div>
                 </div>
             {% endif %}
-            {% if is_privileged_for("event/approve_registration", admin_view_to_consider="event_mgmt") %}
+            {% if is_privileged_for("event/approve_registration", admin_view_to_consider=AdminViews.event_mgmt) %}
                 <div class="row" id="approve-registration">
                     <div class="col-sm-4">
                         <div class="p">
@@ -365,7 +365,7 @@
                     </div>
                 </div>
             {% endif %}
-            {% if "event_mgmt" in user.admin_views %}
+            {% if user.new_admin_views.has(AdminViews.event_mgmt) %}
                 {% if "cde_admin" in user.roles and not ambience['event']['is_archived'] %}
                 <div class="row" id="archive-event">
                     <div class="col-sm-4">
@@ -421,7 +421,7 @@
                     </div>
                 </div>
             {% endif %}
-            {% if "finance" in user.admin_views %}
+            {% if user.new_admin_views.has(AdminViews.finance) %}
                 <div class="row" id="balance-event">
                     <div class="col-sm-4">
                         <div class="p">

@@ -67,7 +67,7 @@
         {% endif %}
     </dl>
 
-    {% if "assembly_mgmt" in user.admin_views and ambience['assembly']['is_active'] %}
+    {% if user.new_admin_views.has(AdminViews.assembly_presider) and ambience['assembly']['is_active'] %}
         <div class="row">
         <div class="col-md-6" id="manage-presiders">
             {% call util.bootstrap_panel(title=gettext("Presiders"), icon='user-friends') %}
@@ -113,8 +113,10 @@
         </div>
     {% endif %}
 
-    {% if ambience['assembly']['notes'] and ("assembly_presider" in user.admin_views
-                                             or ambience['assembly']['id'] in user.presider) %}
+    {% if ambience['assembly']['notes'] and (
+            user.new_admin_views.has(AdminViews.assembly_presider)
+            or ambience['assembly']['id'] in user.presider
+        ) %}
         {% call util.bootstrap_panel(title=gettext("Admin Notes"), icon="tag", aclass="panel-default panel-condensed") %}
             <div id="notes">
                 {{ ambience['assembly']['notes']|md }}
@@ -142,9 +144,11 @@
         {% endcall %}
     {% endif %}
 
-    {% if "assembly_mgmt" in user.admin_views or (
+    {% if user.new_admin_views.has(AdminViews.assembly_mgmt) or (
             values['assembly_id'] in user.presider and ambience['assembly']['is_active'] and (
-                not ambience['assembly']['presider_address'] or not attendee_list_exists)) %}
+                not ambience['assembly']['presider_address'] or not attendee_list_exists
+            )
+        ) %}
         {# This ensures no empty box is shown for presiders. #}
         {% if ambience['assembly']['is_active'] or "ballot_is_locked" not in delete_blockers %}
             {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}

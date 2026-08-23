@@ -60,7 +60,7 @@
                     <div class="col-md-8">
                         <p>
                             {% trans lastschriften=util.href(cdedblink('cde/lastschrift_index'), gettext("Direct Debits"),
-                                                    readonly="finance" not in user.admin_views) %}
+                                                    readonly=not user.new_admin_views.has(AdminViews.finance)) %}
                                 The payment request is sent to all members.
                                 You may also include the semiannual address check in this mail.
                                 Make sure to initialize the {{ lastschriften }} after this.
@@ -103,13 +103,14 @@
                             {{ util.anti_csrf_token('cde/semester_bill') }}
                             <div class="checkbox">
                                 {{ util.input_checkbox("testrun", label=gettext("Only one Test-Mail"),
-                                    readonly="finance" not in user.admin_views) }}
+                                    readonly=not user.new_admin_views.has(AdminViews.finance)) }}
                             </div>
                             <div class="checkbox">
                                 {{ util.input_checkbox("addresscheck", label=gettext("Include Address-Check"),
-                                    readonly="finance" not in user.admin_views) }}
+                                    readonly=not user.new_admin_views.has(AdminViews.finance)) }}
                             </div>
-                            {{ util.input_submit(label=gettext("Send Mails"), icon="paper-plane", readonly="finance" not in user.admin_views,
+                            {{ util.input_submit(label=gettext("Send Mails"), icon="paper-plane",
+                                readonly=not user.new_admin_views.has(AdminViews.finance),
                                 aclass="btn btn-default" if during_step_1 else "btn btn-primary") }}
                         </form>
                     {% else %}
@@ -148,7 +149,7 @@
                         </p>
                         <p>
                             {% trans lastschriften=util.href(cdedblink('cde/lastschrift_index'), gettext("Direct Debits"),
-                                                    readonly="finance" not in user.admin_views) %}
+                                                    readonly=not user.new_admin_views.has(AdminViews.finance)) %}
                                 Eject all members whose balance is lower than the membership fee and who are not a trial member.
                                 Make sure to finalize all pending {{ lastschriften }} beforehand.
                             {% endtrans %}
@@ -216,7 +217,7 @@
                         {% endif %}
                         <form action="{{ cdedblink('cde/semester_eject') }}" method="POST" id="ejectform">
                             {{ util.anti_csrf_token('cde/semester_eject') }}
-                            {{ util.input_submit(label=gettext("Process Accounts"), readonly="finance" not in user.admin_views,
+                            {{ util.input_submit(label=gettext("Process Accounts"), readonly=not user.new_admin_views.has(AdminViews.finance),
                                 aclass="btn btn-default" if during_step_2 else "btn btn-primary") }}
                         </form>
                     {% elif in_step_1 %}
@@ -293,7 +294,7 @@
                         {% endif %}
                         <form action="{{ cdedblink('cde/semester_balance_update') }}" method="POST" id="balanceform">
                             {{ util.anti_csrf_token('cde/semester_balance_update') }}
-                            {{ util.input_submit(label=gettext("Update Balances"), readonly="finance" not in user.admin_views,
+                            {{ util.input_submit(label=gettext("Update Balances"), readonly=not user.new_admin_views.has(AdminViews.finance),
                                 aclass="btn btn-default" if during_step_3 else "btn btn-primary") }}
                         </form>
                     {% endif %}
@@ -398,11 +399,11 @@
                             {{ util.anti_csrf_token('cde/expuls_addresscheck') }}
                             <div class="checkbox">
                                 {{ util.input_checkbox("testrun", label=gettext("Only one Test-Mail"),
-                                    readonly="finance" not in user.admin_views) }}
+                                    readonly=not user.new_admin_views.has(AdminViews.finance)) }}
                             </div>
                             <div class="form-group">
                             {{ util.input_submit(label=gettext("Send Mails"), icon="paper-plane",
-                                readonly="finance" not in user.admin_views) }}
+                                readonly=not user.new_admin_views.has(AdminViews.finance)) }}
                             </div>
                         </form>
                         <form action="{{ cdedblink('cde/expuls_addresscheck') }}" method="POST"
@@ -410,7 +411,7 @@
                             {{ util.anti_csrf_token('cde/expuls_addresscheck') }}
                             {{ util.input_hidden("skip", value=True) }}
                             {{ util.input_submit(label=gettext("Mark as done"), aclass="btn btn-warning",
-                                    icon="check-square", readonly="finance" not in user.admin_views) }}
+                                    icon="check-square", readonly=not user.new_admin_views.has(AdminViews.finance)) }}
                         </form>
                     {% endif %}
                 </div>
@@ -425,7 +426,7 @@
                     {% if expuls['addresscheck_done'] %}
                         <form action="{{ cdedblink('cde/expuls_advance') }}" method="POST" id="proceedexpulsform">
                             {{ util.anti_csrf_token('cde/expuls_advance') }}
-                            {{ util.input_submit(label=gettext("Next exPuls"), readonly="finance" not in user.admin_views) }}
+                            {{ util.input_submit(label=gettext("Next exPuls"), readonly=not user.new_admin_views.has(AdminViews.finance)) }}
                         </form>
                     {% else %}
                         <span class="text-muted">{% trans %}To be done later.{% endtrans %}</span>

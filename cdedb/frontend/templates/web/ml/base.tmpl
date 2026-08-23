@@ -74,7 +74,7 @@
             {% endif %}
         </div>
         {# This functionality is only available for true mailinglist admins. #}
-        {% if 'ml_user' in user.admin_views and 'ml_admin' in user.roles %}
+        {% if user.new_admin_views.has(AdminViews.ml_user) and 'ml_admin' in user.roles %}
             <div class="list-group tear-down">
                 {{ util.href(cdedblink("ml/merge_accounts_form"), gettext("Merge Accounts"),
                         icon="user-friends", aclass="list-group-item", active=(sidenav_active == 'ml_merger')) }}
@@ -83,7 +83,7 @@
         {% if user.moderator or user.new_admin_views.is_any_mgmt()
                 or user.new_admin_views.__and__(AdminViews.ml_user.__or__(AdminViews.auditor)) %}
             <div class="list-group tear-down">
-                {% if 'ml_user' in user.admin_views %}
+                {% if user.new_admin_views.has(AdminViews.ml_user) %}
                     {{ util.href(cdedblink("ml/user_search"), gettext("Manage Users"),
                             icon="users", aclass="list-group-item", active=(sidenav_active == 'ml_users')) }}
                 {% endif %}
