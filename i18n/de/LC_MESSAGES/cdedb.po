@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-08-21 12:57+0200\n"
+"POT-Creation-Date: 2026-08-23 20:24+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -17,9 +17,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 "Generated-By: Babel 2.6.0\n"
-
-msgid "Initial import."
-msgstr "Ursprünglicher Import."
 
 msgid "Genders.female"
 msgstr "weiblich"
@@ -8823,6 +8820,9 @@ msgstr "Transaktionstyp"
 msgid "Matched User"
 msgstr "Zugeordneter Benutzer"
 
+msgid "archived"
+msgstr "archiviert"
+
 msgid "Matched Event"
 msgstr "Zugeordnete Veranstaltung"
 
@@ -15555,9 +15555,6 @@ msgstr "Warnung!"
 
 msgid "Permanent link"
 msgstr "Direktlink"
-
-msgid "archived"
-msgstr "archiviert"
 
 msgid "(not a member)"
 msgstr "(kein Mitglied)"
