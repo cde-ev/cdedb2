@@ -46,7 +46,7 @@ from cdedb.common.privileges import (
     EventPrivileges,
     is_privileged_event as is_privileged,
 )
-from cdedb.common.sorting import mixed_existence_sorter, xsorted
+from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import DatabaseValue_s, ParamDict
 
@@ -1286,7 +1286,7 @@ class EventLowLevelBackend(AbstractBackend):
             ):
                 raise PrivilegeError
 
-            fields = xsorted(event.fields[field_id] for field_id in field_ids)
+            fields = [event.fields[field_id] for field_id in field_ids]
 
             self._cast_field_values(rs, *fields, target_kind=const.FieldDatatypes.bool)
             ret = self._cast_field_values(rs, *fields)
