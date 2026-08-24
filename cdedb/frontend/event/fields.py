@@ -167,6 +167,9 @@ class EventFieldMixin(EventBaseFrontend):
         lodge_field_ids: Collection[vtypes.ID],
     ) -> Response:
 
+        if rs.has_validation_errors():  # ack delete not set or no field ids.
+            return self.prune_field_select(rs, event_id)
+
         reg_field_ids = set(reg_field_ids)
         course_field_ids = set(course_field_ids)
         lodge_field_ids = set(lodge_field_ids)
@@ -190,7 +193,7 @@ class EventFieldMixin(EventBaseFrontend):
             ):
                 rs.append_validation_error((name, ValueError(n_("Nothing selected."))))
 
-        if rs.has_validation_errors():  # ack delete not set or no field ids.
+        if rs.has_validation_errors():
             return self.prune_field_select(rs, event_id)
 
         self.eventproxy.event_keeper_commit(
