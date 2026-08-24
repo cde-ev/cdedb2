@@ -40,7 +40,6 @@ import cdedb.models.event as models
 from cdedb.common import (
     AgeClasses,
     CdEDBObject,
-    determine_age_class,
     make_persona_name,
     n_,
     now,
@@ -603,17 +602,6 @@ class RegistrationConstraintViolation(ConstraintViolation, abc.ABC):
             persona = aux.personas[registration_['persona_id']]
             # TODO use dataclass after converting regestrations to dataclass
             registration_['persona'] = persona.as_dict()
-            registration_['age'] = determine_age_class(
-                persona.birthday, aux.event.begin
-            )
-            registration_['remaining_owed'] = (
-                registration_['amount_owed'] - registration_['amount_paid']
-            )
-
-            for part in aux.event.parts.values():
-                registration_['parts'][part.id]['age'] = determine_age_class(
-                    persona.birthday, part.part_begin
-                )
 
         return [
             context.add(registration=registration)
