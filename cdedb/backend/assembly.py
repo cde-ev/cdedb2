@@ -1152,7 +1152,9 @@ class AssemblyBackend(AbstractBackend):
                 rs, "assembly.ballots", BALLOT_FIELDS + ('comment',), ballot_ids
             )
             eligible_voters = None
-            are_voting = self.are_ballots_voting(rs, ballot_ids)
+            are_voting = {}
+            if include_is_voting:
+                are_voting = self.are_ballots_voting(rs, ballot_ids)
             ret = {}
             for e in data:
                 if e["quorum"] is None:
