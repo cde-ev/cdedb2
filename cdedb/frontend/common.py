@@ -159,7 +159,7 @@ from cdedb.filter import (
 from cdedb.models.common import CdEDataclass
 from cdedb.models.core import EmailAddressReport
 from cdedb.models.event import CustomQueryFilter
-from cdedb.uncommon.intenum import CdEIntFlag
+from cdedb.uncommon.intenum import CdEFlag
 
 
 class Attachment(typing.TypedDict, total=False):
@@ -2727,7 +2727,7 @@ def REQUESTdata[F: Callable[..., Any]](
                             kwargs[name] = vals
                         else:
                             kwargs[name] = check_validation(rs, type_, vals, name)
-                    elif isinstance(type_, type) and issubclass(type_, CdEIntFlag):
+                    elif isinstance(type_, type) and issubclass(type_, CdEFlag):
                         vals = rs.request.values.getlist(name)
                         rs.values.setlist(name, vals)
                         combined = type_.union(

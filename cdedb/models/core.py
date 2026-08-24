@@ -731,7 +731,7 @@ class GenesisCase(CdEDataclass):
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
-        realm: Realms = data["realm"]
+        realm = Realms(data["realm"])  # type: ignore[call-arg]
         # Dispatch data to correct dataclass based on realm.
         if realm == Realms.ml:
             return GenesisCaseMl.from_database(data)  # type: ignore[return-value]

@@ -5,7 +5,7 @@ This module contains some helper classes required for the Flags in 'cdedb.common
 import enum
 from typing import TYPE_CHECKING, Any, Literal, Self
 
-from cdedb.uncommon.intenum import CdEIntFlag
+from cdedb.uncommon.intenum import CdEFlag
 
 if TYPE_CHECKING:
     from cdedb.common.roles import Roles
@@ -25,14 +25,14 @@ class _RolesMeta(enum.EnumType):
         return cls
 
 
-class _Roles(CdEIntFlag, metaclass=_RolesMeta):
+class _Roles(CdEFlag, metaclass=_RolesMeta):
     # TODO: This is actually str | None currently.
     marker: str
     required_roles: Self
 
     def __new__(cls, marker: str | None = None, *required_roles: str) -> Self:
         value = 2 ** len(cls.__members__)
-        obj = int.__new__(cls, value)
+        obj = object.__new__(cls)
         obj._value_ = value
         obj.marker = marker  # type: ignore[assignment]
         obj._required_roles = required_roles  # type: ignore[attr-defined]
@@ -62,7 +62,7 @@ class _RealmsMeta(enum.EnumType):
 type RealmRole = Literal[Roles.cde, Roles.event, Roles.assembly, Roles.ml]
 
 
-class _Realms(CdEIntFlag, metaclass=_RealmsMeta):
+class _Realms(CdEFlag, metaclass=_RealmsMeta):
     role: RealmRole
     admin_role: "Roles"
     _implied_realms: Self
@@ -74,7 +74,7 @@ class _Realms(CdEIntFlag, metaclass=_RealmsMeta):
         admin_role: "Roles",
         *implied_realms: str,
     ) -> Self:
-        obj = int.__new__(cls, value)
+        obj = object.__new__(cls)
         obj._value_ = value
         obj.role = realm_role
         obj.admin_role = admin_role
@@ -89,12 +89,12 @@ class _Realms(CdEIntFlag, metaclass=_RealmsMeta):
         return self.__class__.union(realm._implied_realms for realm in self)
 
 
-class _AdminViews(CdEIntFlag):
+class _AdminViews(CdEFlag):
     required_roles: tuple["Roles", ...]
 
     def __new__(cls, *required_roles: "Roles") -> Self:
         value = 2 ** len(cls.__members__)
-        obj = int.__new__(cls, value)
+        obj = object.__new__(cls)
         obj._value_ = value
         obj.required_roles = required_roles
         return obj

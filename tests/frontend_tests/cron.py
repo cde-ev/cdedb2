@@ -3,6 +3,7 @@
 import collections.abc
 import datetime
 import decimal
+import enum
 import json
 import numbers
 import unittest.mock
@@ -34,7 +35,8 @@ SQL_DATA = dict[
     | decimal.Decimal
     | int
     | bool
-    | dict[str, Any],
+    | dict[str, Any]
+    | enum.Enum,
 ]
 
 RS = cast(RequestState, None)
@@ -58,6 +60,8 @@ def format_insert_sql(table: str, data: SQL_DATA) -> str:
             tmp[key] = f"{value}"
         elif isinstance(value, collections.abc.Mapping):
             tmp[key] = f"'{json.dumps(value)}'::jsonb"
+        elif isinstance(value, enum.Enum):
+            tmp[key] = f"{value.value}"
         else:
             raise ValueError(f"Unknown datum {key} -> {value}")  # pragma: no cover
     keys = tuple(tmp)

@@ -38,7 +38,7 @@ class CdEEnum(CdEEnumMeta, enum.Enum):
     pass
 
 
-class CdEIntFlag(CdEEnumMeta, enum.IntFlag):
+class CdEFlag(CdEEnumMeta, enum.Flag):
     @classmethod
     def none(cls) -> Self:
         return cls(0)

@@ -260,7 +260,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         """
         realms = affirm(Realms, realms or Realms.all())
         stati = affirm(set[const.GenesisStati], stati or set())
-        if not realms <= rs.user.new_roles.get_genesis_realms():
+        if realms not in rs.user.new_roles.get_genesis_realms():
             raise PrivilegeError(n_("Not privileged."))
         query = """
             SELECT id, ctime, username, given_names, family_name, status
@@ -292,8 +292,8 @@ class CoreGenesisBackend(CoreBaseBackend):
             )
         )
         if (
-            not Realms.union(case.realm for case in cases.values())
-            <= rs.user.new_roles.get_genesis_realms()
+            Realms.union(case.realm for case in cases.values())
+            not in rs.user.new_roles.get_genesis_realms()
         ):
             raise PrivilegeError(n_("Not privileged."))
         return cases
