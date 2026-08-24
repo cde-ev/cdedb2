@@ -32,7 +32,8 @@
     <div>
     {% for entry in all_entries %}
         <div class="list-group list-group-hover nosp">
-        {% if entry.entry_type %}
+        {# Differentiate between dataclass and log entries, where the latter lack the "entry_type" #}
+        {% if entry|hasattr("entry_type") %}
             <div id="entry{{ entry.id }}" class="list-group-item {{ entry.status.list_group_item_styles() }}">
                 <div class="float-right text-right">
                     {% trans count=entry.all_versions|length %}

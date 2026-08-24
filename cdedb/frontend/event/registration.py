@@ -888,6 +888,10 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs.notify("error", n_("Already registered."))
             return self.redirect(rs, "event/registration_status")
         registration = self.new_process_registration_input(rs, orga_input=False)
+        if not any(
+            part["status"].is_involved() for part in registration["parts"].values()
+        ):
+            rs.append_validation_error(("parts", ValueError(n_("No parts selected."))))
         if rs.has_validation_errors():
             return self.register_form(rs, event_id)
         registration['event_id'] = event_id

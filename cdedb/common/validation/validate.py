@@ -689,6 +689,8 @@ _add_typed_validator(_id, InvolvedID)
 _add_typed_validator(_id, RegistrationID)
 _add_typed_validator(_id, EventID)
 _add_typed_validator(_id, CourseID)
+_add_typed_validator(_id, LodgementID)
+_add_typed_validator(_id, LodgementGroupID)
 
 
 @_add_typed_validator
@@ -3220,7 +3222,7 @@ def _questionnaire_magic_row(
 
 
 @_create_dataclass_validator(
-    models_event.questionnaire.QuestionnaireRow,  # type: ignore[type-abstract]
+    models_event.questionnaire.QuestionnaireRow,
     allow_superfluous=True,
     pass_superfluous=True,
 )

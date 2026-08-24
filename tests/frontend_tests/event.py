@@ -496,6 +496,65 @@ class TestEventFrontend(FrontendTest):
             log_expectation, "event", event_id=1, offset=self.EVENT_LOG_OFFSET
         )
 
+        with self.switch_user("annika"):
+            self.traverse(
+                "Veranstaltungen", "Große Testakademie 2222", "Betreuer verwalten"
+            )
+            f = self.response.forms['removecaretakerform3']
+            f["ack_delete"] = True
+            self.submit(f)
+            log_expectation.append({
+                "code": const.EventLogCodes.caretaker_removed,
+                "persona_id": USER_DICT['charly']['id'],
+                "submitted_by": USER_DICT['annika']['id'],
+            })
+
+        with self.switch_user("garcia"):
+            helper = "berta"
+            self.traverse(
+                "Veranstaltungen", "Große Testakademie 2222", "Rollen verwalten"
+            )
+            f = self.response.forms["addcheckinhelpersform"]
+            f["checkin_helper_ids"] = USER_DICT[helper]["DB-ID"]
+            self.submit(f)
+
+            log_expectation.append({
+                "code": const.EventLogCodes.checkin_helper_added,
+                "persona_id": USER_DICT[helper]['id'],
+                "submitted_by": USER_DICT['garcia']['id'],
+            })
+
+            with self.switch_user(helper):
+                self.traverse("Veranstaltungen", "Große Testakademie 2222", "Checkin")
+                f = self.response.forms["checkinform1"]
+                self.submit(f)
+
+                log_expectation.append({
+                    "code": const.EventLogCodes.checkin_added,
+                    "change_note": self.event.retrieve_log(self.key, EventLogFilter())[
+                        1
+                    ][-1]["change_note"],
+                    "persona_id": USER_DICT["anton"]['id'],
+                    "submitted_by": USER_DICT[helper]['id'],
+                })
+
+            self.traverse(
+                "Veranstaltungen", "Große Testakademie 2222", "Rollen verwalten"
+            )
+            f = self.response.forms[f"removecheckinhelperform{USER_DICT[helper]['id']}"]
+            f["ack_delete"] = True
+            self.submit(f)
+
+            log_expectation.append({
+                "code": const.EventLogCodes.checkin_helper_removed,
+                "persona_id": USER_DICT[helper]['id'],
+                "submitted_by": USER_DICT['garcia']['id'],
+            })
+
+            self.assertLogEqual(
+                log_expectation, "event", event_id=1, offset=self.EVENT_LOG_OFFSET
+            )
+
     @as_users(
         "annika",
         "emilia",
@@ -1915,9 +1974,18 @@ etc;anything else""",
         )
 
         # now, start registration testing
-        surcharge = "Da Du kein CdE-Mitglied bist, musst Du "
+
+        # Ensure that at least one part is selected.
         self.traverse("Anmelden")
         self.assertTitle("Anmeldung für Große Testakademie 2222")
+        f = self.response.forms["registerform"]
+        f["parts"] = []
+        self.submit(f, check_notification=False)
+        self.assertValidationError(
+            "parts", "Keine Veranstaltungsteile ausgewählt.", index=-1
+        )
+
+        surcharge = "Da Du kein CdE-Mitglied bist, musst Du "
         if self.user_in('charly'):
             self.assertNonPresence(surcharge)
             self.assertPresence("13.05.1984")

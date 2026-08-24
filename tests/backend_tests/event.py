@@ -56,6 +56,8 @@ EventID = lambda x: vtypes.EventID(vtypes.ID(x))
 CourseID = lambda x: vtypes.CourseID(vtypes.ID(x))
 PersonaID = lambda x: vtypes.PersonaID(vtypes.ID(x))
 RegistrationID = lambda x: vtypes.RegistrationID(vtypes.ID(x))
+LodgementID = lambda x: vtypes.LodgementID(vtypes.ID(x))
+LodgementGroupID = lambda x: vtypes.LodgementGroupID(vtypes.ID(x))
 
 
 class TestEventBackend(BackendTest):
@@ -1934,26 +1936,26 @@ class TestEventBackend(BackendTest):
 
         expectation_groups = {
             1: models.LodgementGroup(
-                id=vtypes.ID(1),
+                id=LodgementGroupID(1),
                 event_id=event_id,
                 title="Haupthaus",
-                lodgement_ids={2, 4},
+                lodgement_ids={LodgementID(2), LodgementID(4)},
                 camping_mat_capacity=2,
                 regular_capacity=11,
             ),
             2: models.LodgementGroup(
-                id=vtypes.ID(2),
+                id=LodgementGroupID(2),
                 event_id=event_id,
                 title="AußenWohnGruppe",
-                lodgement_ids={1},
+                lodgement_ids={LodgementID(1)},
                 camping_mat_capacity=1,
                 regular_capacity=5,
             ),
             3: models.LodgementGroup(
-                id=vtypes.ID(3),
+                id=LodgementGroupID(3),
                 event_id=event_id,
                 title="Sonstige",
-                lodgement_ids={3},
+                lodgement_ids={LodgementID(3)},
                 camping_mat_capacity=100,
                 regular_capacity=0,
             ),
@@ -2053,7 +2055,7 @@ class TestEventBackend(BackendTest):
         groups = self.event.get_lodgement_groups(self.key, new_event_id)
         groups_expectation = {
             1002: models.LodgementGroup(
-                id=vtypes.ID(1002),
+                id=LodgementGroupID(1002),
                 event_id=new_event_id,
                 title=new_event_title,
             ),
@@ -2074,15 +2076,15 @@ class TestEventBackend(BackendTest):
         )
         expectation_get = {
             1: models.Lodgement(
-                id=vtypes.ID(1),
+                id=LodgementID(1),
                 event_id=event_id,
                 title='Warme Stube',
-                group_id=vtypes.ID(2),
+                group_id=LodgementGroupID(2),
                 group=models.LodgementGroup(
-                    id=vtypes.ID(2),
+                    id=LodgementGroupID(2),
                     event_id=event_id,
                     title="AußenWohnGruppe",
-                    lodgement_ids={1},
+                    lodgement_ids={LodgementID(1)},
                     regular_capacity=5,
                     camping_mat_capacity=1,
                 ),
@@ -2092,15 +2094,15 @@ class TestEventBackend(BackendTest):
                 fields=vtypes.EventAssociatedFields({'contamination': 'high'}),
             ),
             4: models.Lodgement(
-                id=vtypes.ID(4),
+                id=LodgementID(4),
                 event_id=event_id,
                 title='Einzelzelle',
-                group_id=vtypes.ID(1),
+                group_id=LodgementGroupID(1),
                 group=models.LodgementGroup(
-                    id=vtypes.ID(1),
+                    id=LodgementGroupID(1),
                     event_id=event_id,
                     title="Haupthaus",
-                    lodgement_ids={2, 4},
+                    lodgement_ids={LodgementID(2), LodgementID(4)},
                     regular_capacity=11,
                     camping_mat_capacity=2,
                 ),
@@ -2146,7 +2148,10 @@ class TestEventBackend(BackendTest):
         self.assertLess(0, self.event.delete_lodgement(self.key, new_id))
         del expectation_list[new_id]
         self.assertLess(
-            0, self.event.delete_lodgement(self.key, 1, cascade={"inhabitants"})
+            0,
+            self.event.delete_lodgement(
+                self.key, LodgementID(1), cascade={"inhabitants"}
+            ),
         )
         del expectation_list[1]
         self.assertEqual(

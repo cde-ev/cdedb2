@@ -411,7 +411,9 @@ class EventFieldMixin(EventBaseFrontend):
                         rs, vtypes.CourseID(vtypes.ID(anid)), update
                     )
                 elif kind == const.FieldAssociations.lodgement:
-                    self.eventproxy.set_lodgement(rs, anid, update)
+                    self.eventproxy.set_lodgement(
+                        rs, vtypes.LodgementID(vtypes.ID(anid)), update
+                    )
                 else:
                     # this can not happen, since kind was validated successfully
                     raise RuntimeError(f"Unknown kind {kind}.")

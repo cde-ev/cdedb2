@@ -25,7 +25,7 @@
 {% endblock %}
 
 {% macro ba_submit_button() %}
-    {% if values['finalized'] %}
+    {% if 'finalized' in values and values['finalized'] %}
         {{ util.form_input_submit(label=gettext("Create"), horizontal=False) }}
     {% else %}
         {% if data %}
