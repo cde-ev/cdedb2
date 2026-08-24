@@ -161,13 +161,17 @@ class EventFieldMixin(EventBaseFrontend):
     def prune_fields(
         self,
         rs: RequestState,
-        event_id: vtypes.ID,
+        event_id: vtypes.EventID,
         reg_field_ids: Collection[vtypes.ID],
         course_field_ids: Collection[vtypes.ID],
         lodge_field_ids: Collection[vtypes.ID],
     ) -> Response:
 
-        field_ids = set(reg_field_ids) | set(course_field_ids) | set(lodge_field_ids)
+        reg_field_ids = set(reg_field_ids)
+        course_field_ids = set(course_field_ids)
+        lodge_field_ids = set(lodge_field_ids)
+
+        field_ids = reg_field_ids | course_field_ids | lodge_field_ids
 
         if not field_ids <= rs.ambience['event'].fields.keys():
             err = ValueError(n_("Unknown event field(s)."))
