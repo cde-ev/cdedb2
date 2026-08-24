@@ -498,7 +498,7 @@ class TestEventFrontend(FrontendTest):
 
         with self.switch_user("annika"):
             self.traverse(
-                "Veranstaltungen", "Große Testakademie 2222", "Betreuer verwalten"
+                "Veranstaltungen", "Große Testakademie 2222", "Betreuer:innen verwalten"
             )
             f = self.response.forms['removecaretakerform3']
             f["ack_delete"] = True

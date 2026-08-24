@@ -3668,7 +3668,7 @@ LG Emilia
             self.assertIn("Emilia", receipt_anonymous)
             self.assertIn("Anonym: Ja", receipt_anonymous)
             self.assertIn(
-                "Die Empfänger:innen können auf deine Nachricht antworten",
+                "Die Empfänger können auf deine Nachricht antworten",
                 receipt_anonymous,
             )
 
