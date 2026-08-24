@@ -8,7 +8,6 @@ import datetime
 import decimal
 import logging
 import re
-from collections.abc import Iterable
 from enum import auto
 from secrets import token_urlsafe
 from typing import TYPE_CHECKING, Any, ClassVar, cast
@@ -749,22 +748,12 @@ class GenesisCase(CdEDataclass):
             return NotImplemented
         return self._lt_inner(other)
 
-    available_realms: ClassVar[dict[Realms, str]] = {
-        Realms.cde: n_("CdE membership & events"),
-        Realms.event: n_("CdE events"),
-        Realms.ml: n_("CdE mailinglist"),
-    }
-
     @classmethod
     def get_model_by_realm(cls, realm: Realms) -> type["GenesisCase"]:
         for subclass in cls.__subclasses__():
             if subclass._realm == realm:
                 return subclass
         raise KeyError(realm)
-
-    all_admins: ClassVar[Iterable[Roles]] = tuple(
-        Roles.union(realm.admin_role for realm in available_realms) | Roles.core_admin
-    )
 
     @property
     def relative_admin(self) -> Roles:
@@ -793,7 +782,7 @@ class GenesisCase(CdEDataclass):
                     only_persona=True
                 )
             }
-            for realm in cls.available_realms
+            for realm in Realms.get_available_genesis_realms()
         }
 
 

@@ -44,7 +44,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         )
         realm_options = [
             (realm, rs.gettext(description))
-            for realm, description in models.GenesisCase.available_realms.items()
+            for realm, description in Realms.get_available_genesis_realms().items()
         ]
         meta_info = self.coreproxy.get_meta_info(rs)
         mandatory_fields = models.GenesisCaseCdE.mandatory_form_fields(creation=True)
@@ -79,7 +79,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         This initiates the genesis process.
         """
         self.logger.warning(realm)
-        if realm not in models.GenesisCase.available_realms:
+        if realm not in Realms.get_available_genesis_realms():
             rs.append_validation_error((
                 "realm",
                 ValueError(n_("Invalid realm for genesis.")),
@@ -321,11 +321,11 @@ class CoreGenesisMixin(CoreBaseFrontend):
             raise werkzeug.exceptions.NotFound(n_("File does not exist."))
         return self.send_file(rs, path=path, mimetype='application/pdf')
 
-    @access(*models.GenesisCase.all_admins)
+    @access(*Roles.all_genesis_realm_roles())
     def genesis_list_cases(self, rs: RequestState) -> Response:
         """Compile a list of genesis cases to review."""
         realms = rs.user.new_roles.get_genesis_realms() & Realms.union(
-            models.GenesisCase.available_realms
+            Realms.get_available_genesis_realms()
         )
         data = self.coreproxy.genesis_list_cases(
             rs,
@@ -363,7 +363,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             },
         )
 
-    @access(*models.GenesisCase.all_admins)
+    @access(*Roles.all_genesis_realm_roles())
     def genesis_show_case(self, rs: RequestState, genesis_case_id: int) -> Response:
         """View a specific case."""
         case = rs.ambience['genesis_case']
@@ -418,7 +418,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             },
         )
 
-    @access(*models.GenesisCase.all_admins)
+    @access(*Roles.all_genesis_realm_roles())
     def genesis_modify_form(self, rs: RequestState, genesis_case_id: int) -> Response:
         """Edit a specific case it."""
         case = rs.ambience['genesis_case']
@@ -451,7 +451,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
         return self.render(rs, "genesis/genesis_modify_form", params, mandatory_fields)
 
-    @access(*models.GenesisCase.all_admins, modi={"POST"})
+    @access(*Roles.all_genesis_realm_roles(), modi={"POST"})
     def genesis_modify(self, rs: RequestState, genesis_case_id: int) -> Response:
         """Edit a case to fix potential issues before creation."""
         case = rs.ambience['genesis_case']
@@ -489,7 +489,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "core/genesis_show_case")
 
-    @access(*models.GenesisCase.all_admins, modi={"POST"})
+    @access(*Roles.all_genesis_realm_roles(), modi={"POST"})
     def genesis_modify_realm(self, rs: RequestState, genesis_case_id: int) -> Response:
         """Change the target realm of a genesis case.
 
@@ -509,7 +509,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "core/genesis_show_case")
 
-    @access(*models.GenesisCase.all_admins, modi={"POST"})
+    @access(*Roles.all_genesis_realm_roles(), modi={"POST"})
     @REQUESTdata("decision", "persona_id")
     def genesis_decide(
         self,

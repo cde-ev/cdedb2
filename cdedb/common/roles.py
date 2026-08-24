@@ -5,6 +5,7 @@
 from typing import Any, Self
 
 from cdedb.common._roles_meta import _AdminViews, _Realms, _Roles
+from cdedb.common.n_ import n_
 from cdedb.config import Config
 from cdedb.database.connection import DBRole
 
@@ -121,7 +122,10 @@ class Roles(_Roles):
 
     @classmethod
     def all_genesis_realm_roles(cls) -> tuple[Self, ...]:
-        return (cls.core_admin, cls.cde_admin, cls.event_admin, cls.ml_admin)
+        return (
+            cls.core_admin,
+            *(realm.admin_role for realm in Realms.get_available_genesis_realms()),
+        )
 
     def is_any_admin(self) -> bool:
         """Whether there is any admin role in this set of roles."""
@@ -236,6 +240,14 @@ class Realms(_Realms):
         return cls.union(
             realm | realm.implied_realms for realm in cls if realm.admin_role in roles
         )
+
+    @classmethod
+    def get_available_genesis_realms(cls) -> dict[Self, str]:
+        return {
+            cls.cde: n_("CdE membership & events"),
+            cls.event: n_("CdE events"),
+            cls.ml: n_("CdE mailinglist"),
+        }
 
     @classmethod
     def genesis_realms_from_admin_roles(cls, roles: Roles) -> Self:

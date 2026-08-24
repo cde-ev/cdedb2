@@ -76,7 +76,7 @@ class CoreGenesisBackend(CoreBaseBackend):
             )
         return ret
 
-    @access(*models.GenesisCase.all_admins)
+    @access(*Roles.all_genesis_realm_roles())
     def delete_genesis_case_blockers(
         self, rs: RequestState, case_id: int
     ) -> DeletionBlockers:
@@ -107,7 +107,7 @@ class CoreGenesisBackend(CoreBaseBackend):
 
         return blockers
 
-    @access(*models.GenesisCase.all_admins)
+    @access(*Roles.all_genesis_realm_roles())
     def delete_genesis_case(
         self, rs: RequestState, case_id: int, cascade: Collection[str] | None = None
     ) -> DefaultReturnCode:
@@ -247,7 +247,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                 )
         return ret, realm
 
-    @access(*models.GenesisCase.all_admins)
+    @access(*Roles.all_genesis_realm_roles())
     def genesis_list_cases(
         self,
         rs: RequestState,
@@ -280,7 +280,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         data = self.query_all(rs, query, params)
         return {e['id']: e for e in data}
 
-    @access(*models.GenesisCase.all_admins)
+    @access(*Roles.all_genesis_realm_roles())
     def genesis_get_cases(
         self, rs: RequestState, genesis_case_ids: Collection[int]
     ) -> CdEDataclassMap[models.GenesisCase]:
@@ -307,7 +307,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         genesis_get_cases, "genesis_case_ids", "genesis_case_id"
     )
 
-    @access(*models.GenesisCase.all_admins)
+    @access(*Roles.all_genesis_realm_roles())
     def genesis_modify_case(
         self, rs: RequestState, data: CdEDBObject
     ) -> DefaultReturnCode:
@@ -327,7 +327,7 @@ class CoreGenesisBackend(CoreBaseBackend):
             )
         return ret
 
-    @access(*models.GenesisCase.all_admins)
+    @access(*Roles.all_genesis_realm_roles())
     def genesis_modify_case_realm(
         self, rs: RequestState, case_id: int, realm: Realms
     ) -> DefaultReturnCode:
@@ -351,7 +351,7 @@ class CoreGenesisBackend(CoreBaseBackend):
             )
         return ret
 
-    @access(*models.GenesisCase.all_admins)
+    @access(*Roles.all_genesis_realm_roles())
     @internal
     def genesis_modify_case_meta(
         self,
@@ -397,7 +397,7 @@ class CoreGenesisBackend(CoreBaseBackend):
             )
         return ret
 
-    @access(*models.GenesisCase.all_admins)
+    @access(*Roles.all_genesis_realm_roles())
     def genesis_decide(
         self,
         rs: RequestState,
@@ -474,7 +474,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                 return -1
 
     @internal
-    @access(*models.GenesisCase.all_admins)
+    @access(*Roles.all_genesis_realm_roles())
     def genesis(self, rs: RequestState, case_id: int) -> DefaultReturnCode:
         """Create a new user account upon request.
 

@@ -3474,7 +3474,7 @@ class CoreBaseBackend(AbstractBackend):
         self.core_log(rs, const.CoreLogCodes.password_reset, persona_id, atomized=False)
         return ret
 
-    @access(*models.GenesisCase.all_admins)
+    @access(*Roles.all_genesis_realm_roles())
     def find_doppelgangers(
         self, rs: RequestState, persona: CdEDBObject
     ) -> CdEDBObjectMap:

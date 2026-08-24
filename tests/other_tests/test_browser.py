@@ -12,7 +12,6 @@ from typing import Any
 
 from playwright.sync_api import Browser, Page, expect, sync_playwright
 
-import cdedb.models.core as models_core
 from cdedb.common.roles import Realms
 from tests.common import BrowserTest, event_keeper, storage
 
@@ -421,7 +420,7 @@ class TestBrowser(BrowserTest):
             },
             "cde": {"#input-file-attachment"},
         }
-        for realm in models_core.GenesisCase.available_realms:
+        for realm in Realms.get_available_genesis_realms():
             with self.subTest(realm=realm):
                 page.goto("http://localhost:5000/")
                 page.get_by_role("link", name="Account anfordern").click()
