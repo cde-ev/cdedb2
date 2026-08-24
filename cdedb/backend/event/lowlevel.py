@@ -386,6 +386,10 @@ class EventLowLevelBackend(AbstractBackend):
         if not fields:
             return {}
 
+        event_id = fields[0].event_id
+        if not all(field.event_id == event_id for field in fields):
+            raise ValueError
+
         grouped: dict[const.FieldAssociations, list[models.EventField]] = {}
         for field in fields:
             grouped.setdefault(field.association, []).append(field)
@@ -396,8 +400,8 @@ class EventLowLevelBackend(AbstractBackend):
                 rs,
                 association.database_table,
                 ("id", "fields"),
-                [fields[0].event_id],
-                entity_key='event_id',
+                [event_id],
+                entity_key=models.EventDataclass.entity_key,
             )
             ret[association] = 0
             for entry in data:
