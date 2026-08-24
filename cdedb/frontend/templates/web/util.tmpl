@@ -991,14 +991,14 @@ attribute to each field of a dynamic row. #}
 {% macro _admin_views_toggle_inner(views) -%}
     {% for label, toggleable_views, relevant_views in views -%}
         {% set relevant_views = relevant_views if relevant_views is not none else toggleable_views -%}
-        {% if relevant_views.__and__(user.available_admin_views) %}
+        {% if user.available_admin_views.has_any(*relevant_views) %}
             {# The button is "deactivated" as long as there are more "relevant views" which are available for the
                user but are not enabled yet. #}
-            {% set active = relevant_views.__and__(user.available_admin_views) in user.admin_views -%}
+            {% set active = user.admin_views.has_all(*user.available_admin_views.__and__(AdminViews.union(relevant_views))) -%}
             <button{{ dict(
                 type="submit",
                 name="remove" if active else "add",
-                value=toggleable_views.value,
+                value=AdminViews.union(toggleable_views).value,
                 class="list-group-item list-group-item-info" + (" active" if active else ""),
                 title=(gettext("Hide %(label)s") if active else gettext("Show %(label)s"))|format(label=label)
             )|xmlattr }}>

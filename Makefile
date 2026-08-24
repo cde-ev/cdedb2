@@ -110,7 +110,7 @@ i18n-extract: i18n-output-dirs venv
 	$(PYTHONBIN) cdedb/i18n_additional.py > cdedb/.i18n_additional.py
 	$(UV) run pybabel extract --msgid-bugs-address="cdedb@lists.cde-ev.de" \
 		--mapping=./babel.cfg --keywords="rs.gettext rs.ngettext n_" \
-		--output=$(I18NOUTDIR)/cdedb.pot --input-dirs="bin,cdedb"
+		--output=$(I18NOUTDIR)/cdedb.pot --input-dirs="cdedb" 2> /dev/null
 
 i18n-update: $(foreach lang, $(I18N_LANGUAGES), $(I18NDIR)/$(lang)/LC_MESSAGES/cdedb.po)
 

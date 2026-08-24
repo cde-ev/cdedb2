@@ -29,7 +29,6 @@ from cdedb.common import (
     CdEDBObject,
     DefaultReturnCode,
     RequestState,
-    User,
     get_mandatory_form_fields,
     make_persona_name,
     merge_dicts,
@@ -46,14 +45,6 @@ from cdedb.common.exceptions import (
     PrivilegeError,
     ValidationWarning,
 )
-from cdedb.common.fields import (
-    PERSONA_ASSEMBLY_FIELDS,
-    PERSONA_CDE_FIELDS,
-    PERSONA_CORE_FIELDS,
-    PERSONA_EVENT_FIELDS,
-    PERSONA_ML_FIELDS,
-    PERSONA_STATUS_FIELDS,
-)
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
@@ -69,7 +60,6 @@ from cdedb.common.roles import (
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
-    PERSONA_COMMON_FIELDS,
     PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
 )
 from cdedb.filter import (
@@ -840,8 +830,9 @@ class CoreBaseFrontend(AbstractFrontend):
 
         # Check for email trouble
         email_report = None
-        if (rs.user.persona_id == persona_id
-                or ((Roles.core_admin | Roles.ml_admin) & rs.user.new_roles)):
+        if rs.user.persona_id == persona_id or rs.user.new_roles.has_any(
+            Roles.core_admin, Roles.ml_admin
+        ):
             # the username may be masked by admin views, but then we also
             # don't need the email report
             if persona.username != REDACTED:
@@ -1249,43 +1240,42 @@ class CoreBaseFrontend(AbstractFrontend):
         mailinglist = None
         len_preview = (
             self.conf["NUM_PREVIEW_PERSONAS_PRIVILEGED"]
-            if Roles.core_admin & rs.user.new_roles
+            if Roles.core_admin in rs.user.new_roles
             else self.conf["NUM_PREVIEW_PERSONAS"]
         )
         if kind == "admin_persona":
             relevant_admin_roles = (
-                Roles.core_admin
-                | Roles.cde_admin
-                | Roles.complaint_admin
-                | Roles.ml_admin
-                | Roles.meta_admin
-                | Roles.auditor
+                Roles.core_admin,
+                Roles.cde_admin,
+                Roles.complaint_admin,
+                Roles.ml_admin,
+                Roles.meta_admin,
+                Roles.auditor,
             )
-            if not (relevant_admin_roles & rs.user.new_roles):
+            if not rs.user.new_roles.has_any(*relevant_admin_roles):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append("username")
         elif kind == "admin_all_users":
-            if (
-                not (Roles.core_admin | Roles.ml_admin | Roles.complaint_admin)
-                & rs.user.new_roles
+            if not rs.user.new_roles.has_any(
+                Roles.core_admin, Roles.ml_admin, Roles.complaint_admin
             ):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append("username")
             scope = QueryScope.all_core_users
         elif kind == "cde_user":
-            if not (Roles.cde_admin | Roles.auditor) & rs.user.new_roles:
+            if not rs.user.new_roles.has_any(Roles.cde_admin, Roles.auditor):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append("username")
             constraints.append(("is_cde_realm", QueryOperators.equal, True))
         elif kind == "past_event_user":
-            if not (Roles.cde_admin | Roles.auditor) & rs.user.new_roles:
+            if not rs.user.new_roles.has_any(Roles.cde_admin, Roles.auditor):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             # adding archived users to past events is a common task
             scope = QueryScope.all_core_users
             constraints.append(("is_event_realm", QueryOperators.equal, True))
         elif kind == "pure_assembly_user":
             # No check by assembly, as this behaves identical for each assembly.
-            if not rs.user.presider and Roles.assembly_admin not in rs.user.new_roles:
+            if not (rs.user.presider or rs.user.new_roles.has(Roles.assembly_admin)):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             constraints.append(("is_assembly_realm", QueryOperators.equal, True))
             constraints.append(("is_member", QueryOperators.equal, False))
@@ -1293,7 +1283,7 @@ class CoreBaseFrontend(AbstractFrontend):
             # No check by assembly, as this behaves identical for each assembly.
             if not (
                 rs.user.presider
-                or (Roles.assembly_admin | Roles.auditor) & rs.user.new_roles
+                or rs.user.new_roles.has_any(Roles.assembly_admin, Roles.auditor)
             ):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             constraints.append(("is_assembly_realm", QueryOperators.equal, True))
@@ -1304,26 +1294,28 @@ class CoreBaseFrontend(AbstractFrontend):
             if not (
                 rs.user.orga
                 or rs.user.caretaker
-                or (Roles.event_admin | Roles.auditor) & rs.user.new_roles
+                or rs.user.new_roles.has_any(Roles.event_admin, Roles.auditor)
             ):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             constraints.append(("is_event_realm", QueryOperators.equal, True))
         elif kind == "ml_user":
             relevant_admin_roles = (
-                Roles.core_admin
-                | Roles.cde_admin
-                | Roles.event_admin
-                | Roles.assembly_admin
-                | Roles.ml_admin
-                | Roles.cdelokal_admin
-                | Roles.auditor
+                Roles.core_admin,
+                Roles.cde_admin,
+                Roles.event_admin,
+                Roles.assembly_admin,
+                Roles.ml_admin,
+                Roles.cdelokal_admin,
+                Roles.auditor,
             )
             # No check by mailinglist, as this behaves identical for each list.
-            if not (rs.user.moderator or relevant_admin_roles & rs.user.new_roles):
+            if not (
+                rs.user.moderator or rs.user.new_roles.has_any(*relevant_admin_roles)
+            ):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             constraints.append(("is_ml_realm", QueryOperators.equal, True))
         elif kind == "pure_ml_user":
-            if Roles.ml_admin not in rs.user.new_roles:
+            if not rs.user.new_roles.has(Roles.ml_admin):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append("username")
             constraints.extend((
@@ -1437,91 +1429,96 @@ class CoreBaseFrontend(AbstractFrontend):
             ret.append(result)
         return self.send_json(rs, {'personas': ret})
 
-    def _changeable_persona_fields(
-        self, rs: RequestState, user: User, restricted: bool = True
-    ) -> set[str]:
-        """Helper to retrieve the appropriate fields for (admin_)change_user.
+    def _get_redacted_persona(
+        self,
+        rs: RequestState,
+        persona_id: int,
+        data: CdEDBObject,
+        admin_access: bool = False,
+    ) -> models.CorePersona:
+        """Helper to retrieve the persona for (admin_)change_user.
 
-        :param restricted: If True, only return fields the user may change
-            themselves, i.e. remove the restricted fields.
+        Since some persona attributes are not meant to be changed there, we use
+        the REDACT mechanic to remove them from the dataset.
+
+        :param data: The latest changelog version of the user.
         """
-        assert user.persona_id is not None
-        ret: set[str] = set()
-        # some fields are of no interest here.
-        hidden_fields = set(PERSONA_STATUS_FIELDS) | {"id", "username"}
-        hidden_cde_fields = (
-            hidden_fields
-            | {
-                "balance",
-                "bub_search",
-                "decided_search",
-                "foto",
-                "trial_member",
-                "honorary_member",
-            }
-        ) - {"is_searchable"}
-        roles_to_fields = {
-            Roles.persona: (set(PERSONA_CORE_FIELDS) | {"notes"}) - hidden_fields,
-            Roles.ml: set(PERSONA_ML_FIELDS) - hidden_fields,
-            Roles.assembly: set(PERSONA_ASSEMBLY_FIELDS) - hidden_fields,
-            Roles.event: set(PERSONA_EVENT_FIELDS) - hidden_fields,
-            Roles.cde: (set(PERSONA_CDE_FIELDS) - hidden_cde_fields),
-        }
-        for role, fields in roles_to_fields.items():
-            if role in user.new_roles:
-                ret |= fields
+        status = self.coreproxy.get_persona_status(rs, persona_id)
+        status_bits_to_be_redacted = status.get_status_bits()
 
-        # hide the donation property if no active lastschrift exists, to avoid confusion
-        if "donation" in ret and not self.cdeproxy.list_lastschrift(
-            rs, [user.persona_id], active=True
-        ):
-            ret.remove("donation")
+        persona: models.CorePersona
+        if status.is_cde_realm:
+            persona = models.CdEPersona.from_database(data, allow_superfluous=True)
+            persona.balance = persona.REDACTED
+            persona.bub_search = persona.REDACTED
+            persona.decided_search = persona.REDACTED
+            persona.foto = persona.REDACTED
+            persona.trial_member = persona.REDACTED
+            persona.honorary_member = persona.REDACTED
+            # hide the donation property if no active lastschrift exists, to avoid confusion
+            if not self.cdeproxy.list_lastschrift(rs, [persona_id], active=True):
+                persona.donation = persona.REDACTED
+            if admin_access:
+                status_bits_to_be_redacted.remove("is_searchable")
+            if not admin_access:
+                persona.birthday = persona.REDACTED
+        elif status.is_event_realm:
+            persona = models.EventPersona.from_database(data, allow_superfluous=True)
+            if not admin_access:
+                persona.birthday = persona.REDACTED
+        elif status.is_assembly_realm:
+            persona = models.AssemblyPersona.from_database(data, allow_superfluous=True)
+        elif status.is_ml_realm:
+            persona = models.MlPersona.from_database(data, allow_superfluous=True)
+        else:
+            persona = models.CorePersona.from_database(data, allow_superfluous=True)
 
-        # hide the member search toggles if no cde realm
-        for key in ret & {"show_legal_given_names", "show_address", "show_address2"}:
-            if Roles.cde not in user.new_roles:
-                ret.remove(key)
+        # Ignore that we initialized the persona with the id of the changelog.
+        persona.id = persona.REDACTED
+        persona.username = persona.REDACTED
+        for bit in status_bits_to_be_redacted:
+            setattr(persona, bit, persona.REDACTED)
 
-        restricted_fields = {"notes", "birthday", "is_searchable"}
-        if restricted:
-            ret -= restricted_fields
-
-        return ret
+        return persona
 
     @access(Roles.persona)
     def change_user_form(self, rs: RequestState) -> Response:
         """Render form."""
         assert rs.user.persona_id is not None
-        generation = self.coreproxy.changelog_get_generation(rs, rs.user.persona_id)
-        data = unwrap(
-            self.coreproxy.changelog_get_history(rs, rs.user.persona_id, (generation,))
-        )
+        persona_id = rs.user.persona_id
+        generation = self.coreproxy.changelog_get_generation(rs, persona_id)
+        data = self.coreproxy.changelog_get_one_history(rs, persona_id, generation)
         if data['code'] == const.PersonaChangeStati.pending:
             rs.notify("info", n_("Change pending."))
-        del data['change_note']
-        shown_fields = self._changeable_persona_fields(rs, rs.user, restricted=True)
+        pending_persona = self._get_redacted_persona(rs, persona_id, data)
+        committed_persona = self.coreproxy.get_persona(rs, persona_id)
 
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
         max_donation = self.conf["MAXIMAL_LASTSCHRIFT_DONATION"]
-        has_special_donation = (
-            "donation" in shown_fields
-            and not min_donation <= data["donation"] <= max_donation
+        has_special_donation = pending_persona.has("donation") and not (
+            min_donation <= getattr(pending_persona, "donation") <= max_donation
         )
 
-        merge_dicts(rs.values, data)
-        mandatory_fields = (
-            get_mandatory_form_fields(PERSONA_COMMON_FIELDS)
-            | {'address', 'location'}  # we enforce this by hand in change_user
-        )
+        merge_dicts(rs.values, pending_persona.as_dict())
+
+        mandatory_fields = pending_persona.mandatory_form_fields(creation=False)
+        # we enforce this by hand in change_user
+        if pending_persona.hasattr("address"):
+            mandatory_fields.add("address")
+        if pending_persona.hasattr("location"):
+            mandatory_fields.add("location")
+
         return self.render(
             rs,
             "change_user",
             {
-                'username': data['username'],
-                'shown_fields': shown_fields,
+                'pending_persona': pending_persona,
+                'committed_persona': committed_persona,
+                'generation': generation,
                 'min_donation': min_donation,
                 'max_donation': max_donation,
                 'has_special_donation': has_special_donation,
+                'is_admin_variant': False,
             },
             mandatory_fields,
         )
@@ -1531,20 +1528,27 @@ class CoreBaseFrontend(AbstractFrontend):
     def change_user(self, rs: RequestState, generation: int) -> Response:
         """Change own data set."""
         assert rs.user.persona_id is not None
-        attributes = self._changeable_persona_fields(rs, rs.user, restricted=True)
-        data = request_dict_extractor(rs, attributes)
-        data['id'] = rs.user.persona_id
+        persona_id = rs.user.persona_id
+        generation = self.coreproxy.changelog_get_generation(rs, persona_id)
+        data = self.coreproxy.changelog_get_one_history(rs, persona_id, generation)
+        persona = self._get_redacted_persona(rs, persona_id, data)
+        fields = {
+            k: v
+            for k, v in persona.requestdict_fields(creation=False)
+            if getattr(persona, k) != persona.REDACTED
+        }
+        data = request_dict_extractor(rs, fields)
+        data['id'] = persona_id
         data = check(rs, vtypes.Persona, data, "persona")
         if not data:
             rs.ignore_validation_errors()
             return self.change_user_form(rs)
+
         # take special care for annual donations in combination with lastschrift
         if "donation" in data and (
-            lastschrift_ids := self.cdeproxy.list_lastschrift(
-                rs, [rs.user.persona_id], active=True
-            )
+            l_ids := self.cdeproxy.list_lastschrift(rs, [persona_id], active=True)
         ):
-            current = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+            current = self.coreproxy.get_cde_user(rs, persona_id)
             min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
             max_donation = self.conf["MAXIMAL_LASTSCHRIFT_DONATION"]
             # The user may specify only donations between a specific minimal and maximal
@@ -1564,9 +1568,7 @@ class CoreBaseFrontend(AbstractFrontend):
                         },
                     ),
                 ))
-            lastschrift = self.cdeproxy.get_lastschrift(
-                rs, unwrap(lastschrift_ids.keys())
-            )
+            lastschrift = self.cdeproxy.get_lastschrift(rs, unwrap(l_ids.keys()))
             # "Enforce" consent of the account holder if the user changed his donation.
             if (
                 current.donation != data["donation"]
@@ -1578,6 +1580,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     " the owner agreed to the change before submitting it here."
                 )
                 rs.append_validation_error(("donation", ValidationWarning(msg)))
+
         # Gender and primary address may not be unset
         if data.get('gender') == const.Genders.not_specified:
             rs.append_validation_error(('gender', ValueError(n_("Must not be empty."))))
@@ -1586,14 +1589,15 @@ class CoreBaseFrontend(AbstractFrontend):
             if address_row in data.keys():
                 if not data[address_row]:
                     rs.append_validation_error((address_row, e))
+
         if rs.has_validation_errors():
             return self.change_user_form(rs)
-        change_note = "Normale Änderung."
+
         code = self.coreproxy.change_persona(
-            rs, data, generation=generation, change_note=change_note
+            rs, data, generation=generation, change_note="Normale Änderung."
         )
         rs.notify_return_code(code)
-        return self.redirect_show_user(rs, rs.user.persona_id)
+        return self.redirect_show_user(rs, persona_id)
 
     @access(Roles.core_admin)
     @REQUESTdata("download", "is_search")
@@ -1665,29 +1669,32 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.redirect_show_user(rs, persona_id)
 
         generation = self.coreproxy.changelog_get_generation(rs, persona_id)
-        data = unwrap(
-            self.coreproxy.changelog_get_history(rs, persona_id, (generation,))
-        )
-        del data['change_note']
-        merge_dicts(rs.values, data)
-
+        data = self.coreproxy.changelog_get_one_history(rs, persona_id, generation)
         if data['code'] == const.PersonaChangeStati.pending:
             rs.notify("info", n_("Change pending."))
-        status = self.coreproxy.get_persona_status(rs, rs.ambience['persona'].id)
-        roles = status.get_user_roles()
-        user = User(persona_id=persona_id, roles=roles)
-        shown_fields = self._changeable_persona_fields(rs, user, restricted=False)
+
+        pending_persona = self._get_redacted_persona(
+            rs, persona_id, data, admin_access=True
+        )
+        merge_dicts(rs.values, pending_persona.as_dict())
+
+        mandatory_fields = pending_persona.mandatory_form_fields(creation=False)
+        # We have users with an unknown birthday (this shouldn't
+        # be a blocker for admins to edit those users at all) and want to
+        # be able to correct wrong birthdays into missing ones.
+        mandatory_fields -= {"birthday"}
+
         return self.render(
             rs,
-            "admin_change_user",
+            "change_user",
             {
-                'admin_bits': rs.user.new_roles.get_admin_realms().as_set(),
-                'shown_fields': shown_fields,
+                'pending_persona': pending_persona,
+                'committed_persona': rs.ambience['persona'],
+                'generation': generation,
+                'code': data['code'],
+                'is_admin_variant': True,
             },
-            # We have users with an unknown birthday (this shouldn't
-            #  be a blocker for admins to edit those users at all) and want to
-            #  be able to correct wrong birthdays into missing ones.
-            get_mandatory_form_fields(PERSONA_COMMON_FIELDS) - {'birthday'},
+            mandatory_fields,
         )
 
     @access(*Roles.all_user_admin_roles(), modi={"POST"})
@@ -1702,12 +1709,20 @@ class CoreBaseFrontend(AbstractFrontend):
         """Privileged edit of data set."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
+        if rs.ambience['persona'].is_archived:
+            rs.notify("error", n_("Persona is archived."))
+            return self.redirect_show_user(rs, persona_id)
+
         # Assure we don't accidently change the original.
-        status = self.coreproxy.get_persona_status(rs, rs.ambience['persona'].id)
-        roles = status.get_user_roles()
-        user = User(persona_id=persona_id, roles=roles)
-        attributes = self._changeable_persona_fields(rs, user, restricted=False)
-        data = request_dict_extractor(rs, attributes)
+        generation = self.coreproxy.changelog_get_generation(rs, persona_id)
+        data = self.coreproxy.changelog_get_one_history(rs, persona_id, generation)
+        persona = self._get_redacted_persona(rs, persona_id, data, admin_access=True)
+        fields = {
+            k: v
+            for k, v in persona.requestdict_fields(creation=False)
+            if getattr(persona, k) != persona.REDACTED
+        }
+        data = request_dict_extractor(rs, fields)
         data['id'] = persona_id
         data = check(rs, vtypes.Persona, data)
         # take special care for annual donations in combination with lastschrift
@@ -2157,12 +2172,23 @@ class CoreBaseFrontend(AbstractFrontend):
         data = {
             "persona_id": persona_id,
             "notes": notes,
+            **{
+                admin_role.marker: admin_role in roles
+                for admin_role in Roles.all_admin_roles()
+                # Check if this admin roles has changed.
+                #  Left side of the comparison is the new state, right is the old state.
+                #  Collect only the actually changed admin bits in 'data'.
+                if (admin_role in roles) != (admin_role in persona_roles)
+            },
         }
-        for admin_role in Roles.all_admin_roles():
-            if (admin_role in roles) != (admin_role in persona_roles):
-                data[admin_role.marker] = admin_role in roles
 
+        for admin_role in Roles.all_admin_roles():
+            # Check if this role is currently being granted or
+            #  (is already in effect and is not currently being revoked).
             if data.get(admin_role.marker, admin_role in persona_roles):
+                # If so, check that requirements are (still) met.
+                #  Again: Consider (roles that are currently being granted) and
+                #  (roles that are already in effect and are not being revoked).
                 if any(
                     not data.get(required.marker, required in persona_roles)
                     for required in admin_role.required_roles
@@ -3141,8 +3167,10 @@ class CoreBaseFrontend(AbstractFrontend):
     @access(Roles.core_admin, Roles.cde_admin, Roles.event_admin)
     def list_pending_changes(self, rs: RequestState) -> Response:
         """List non-committed changelog entries."""
-        pending = self.coreproxy.changelog_get_pending_changes(rs)
-        return self.render(rs, "list_pending_changes", {'pending': pending})
+        pending_personas = self.coreproxy.changelog_get_pending_changes(rs)
+        # its ensured that there is up to one pending changelog entry per persona
+        personas = self.coreproxy.get_personas(rs, pending_personas.keys())
+        return self.render(rs, "list_pending_changes", {'personas': personas})
 
     @periodic("pending_changelog_remind")
     def pending_changelog_remind(

@@ -504,7 +504,7 @@ class TestPrivacyFrontend(FrontendTest):
         #                                        check_div=False)
 
     @as_users("annika", "ludwig", "nina", "quintus", "viktor", maintain_data=True)
-    @admin_views(AdminViews.all_mod_views())
+    @admin_views(AdminViews.union(AdminViews.all_mod_views()))
     def test_profile_as_relevant_ml_admin(self) -> None:
         ml_admin = 'nina'
         all_ml = (
