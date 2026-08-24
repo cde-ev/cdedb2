@@ -1318,7 +1318,12 @@ class CoreBaseBackend(AbstractBackend):
                 "User does not fit the requirements for this admin privilege."
             )
             for admin_role in Roles.all_admin_roles():
+                # Check if this role is currently being granted or
+                #  (is already in effect and is not currently being revoked).
                 if data.get(admin_role.marker, admin_role in persona_roles):
+                    # If so, check that requirements are (still) met.
+                    #  Again: Consider (roles that are currently being granted) and
+                    #  (roles that are already in effect and are not being revoked).
                     if any(
                         not data.get(required.marker, required in persona_roles)
                         for required in admin_role.required_roles
