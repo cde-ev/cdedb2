@@ -163,7 +163,7 @@ class TestCoreBackend(BackendTest):
         new_name = "Zelda"
         self.core.set_persona(self.key, {'id': self.user['id'], 'nickname': new_name})
         self.assertEqual(
-            new_name, self.core.retrieve_persona(self.key, self.user['id'])['nickname']
+            new_name, self.core.get_persona(self.key, self.user['id']).nickname
         )
 
     @as_users("anton", "berta", "janis", maintain_data=True)
@@ -556,7 +556,7 @@ class TestCoreBackend(BackendTest):
 
         def persona_membership(rs: RequestState, persona_id: int) -> CdEDBObject:
             return self.core.retrieve_persona(
-                rs, persona_id, ("is_member", "trial_member")
+                rs, persona_id, ["is_member", "trial_member"]
             )
 
         def log_entry(code: const.FinanceLogCodes, members: int) -> CdEDBObject:
@@ -681,7 +681,7 @@ class TestCoreBackend(BackendTest):
 
         def persona_finances(rs: RequestState, persona_id: int) -> CdEDBObject:
             return self.core.retrieve_persona(
-                rs, persona_id, ("balance", "trial_member")
+                rs, persona_id, ["balance", "trial_member"]
             )
 
         persona_id = 2
