@@ -130,7 +130,7 @@ class ConditionParserTest(unittest.TestCase):
     def test_parse_evaluate_check(self) -> None:
         for expectedResult, formula in self.CASES:
             with self.subTest(formula=formula):
-                parse_result = parse(formula, parse_all=True)
+                parse_result = parse(formula)
                 check(parse_result, self.FIELDS.keys(), self.PARTS.keys())
                 evaluation_result = evaluate(
                     parse_result,
@@ -164,10 +164,10 @@ class ConditionParserTest(unittest.TestCase):
     def test_roundtrip(self) -> None:
         for expectedResult, formula in self.CASES:
             with self.subTest(formula=formula):
-                parse_result = parse(formula, parse_all=True)
+                parse_result = parse(formula)
                 serialized = serialize(parse_result)
                 # Test that serialization is stable (re-parse + re-serialize + check string equality)
-                parse_result2 = parse(serialized, parse_all=True)
+                parse_result2 = parse(serialized)
                 serialized2 = serialize(parse_result2)
                 self.assertEqual(serialized, serialized2)
 
@@ -194,7 +194,7 @@ class ConditionParserTest(unittest.TestCase):
         ]
         for formula, expectedSerialized in CASES2:
             with self.subTest(formula=formula):
-                parse_result = parse(formula, parse_all=True)
+                parse_result = parse(formula)
                 serialized = serialize(parse_result)
                 self.assertEqual(expectedSerialized, serialized)
 
@@ -210,7 +210,7 @@ class ConditionParserTest(unittest.TestCase):
         ]
         for formula, expected_exception in CASES3:
             with self.subTest(formula=formula):
-                parse_result = parse(formula, parse_all=True)
+                parse_result = parse(formula)
                 with self.assertRaises(RuntimeError) as ctx:
                     check(parse_result, self.FIELDS.keys(), self.PARTS.keys())
                 self.assertIn(expected_exception, str(ctx.exception))
@@ -244,7 +244,7 @@ class ErrorTest(unittest.TestCase):
         for formula, expected_exception in self.CASES:
             with self.subTest(formula=formula):
                 with self.assertRaises(pp.ParseBaseException) as ctx:
-                    self.parser.parse_string(formula, parse_all=True)
+                    self.parser.parse_string(formula)
                 self.assertIn(expected_exception, str(ctx.exception))
 
 
@@ -255,7 +255,7 @@ class ModificationTest(unittest.TestCase):
         rename_parts = {'🗷': 'foo'}
         expected_result = "(field.___ and part.foo) or not (field.x xor true)"
 
-        result = parse(formula, parse_all=True)
+        result = parse(formula)
         rename(result, rename_fields, rename_parts)
         serialized = serialize(result)
         self.assertEqual(expected_result, serialized)

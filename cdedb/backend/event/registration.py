@@ -1810,6 +1810,7 @@ class EventRegistrationBackend(EventBaseBackend):
         for fee in event.fees.values():
             if fee.is_conditional():
                 assert fee.amount is not None
+                assert fee.condition is not None
                 parse_result = fcp_parsing.parse(fee.condition)
                 data: fcp_evaluation.EvaluationData = {
                     'field_values': reg_bool_fields,

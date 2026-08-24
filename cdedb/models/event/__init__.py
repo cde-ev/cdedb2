@@ -714,6 +714,7 @@ class EventFee(EventDataclass):
     def visual_debug(self) -> str:
         if not self.is_conditional():
             return ""
+        assert self.condition is not None
         parse_result = fcp_parsing.parse(self.condition)
         return fcp_roundtrip.visual_debug(
             parse_result,
