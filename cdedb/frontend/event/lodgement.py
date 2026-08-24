@@ -78,7 +78,7 @@ class EventLodgementMixin(EventBaseFrontend):
             registration_id=None,
         )
         lodgements = violation_data['lodgements']
-        inhabitants = violation_data['inhabitants']
+        inhabitants = violation_data['involved_inhabitants']
         groups = self.eventproxy.get_lodgement_groups(rs, event_id)
 
         # Sum inhabitants per group, part and status.
@@ -225,16 +225,11 @@ class EventLodgementMixin(EventBaseFrontend):
         """Display details of one lodgement."""
         params: dict[str, Any] = {}
 
-        involved_inhabitants = self.eventproxy.get_grouped_inhabitants(
-            rs, event_id, lodgement_ids=(lodgement_id,), involved=True
-        )[lodgement_id]
-        uninvolved_inhabitants = self.eventproxy.get_grouped_inhabitants(
-            rs, event_id, lodgement_ids=(lodgement_id,), involved=False
-        )[lodgement_id]
-
         violation_data = self.get_constraint_violations(
             rs, rs.ambience['event'], lodgement_id=lodgement_id, registration_id=None
         )
+        involved_inhabitants = violation_data['involved_inhabitants'][lodgement_id]
+        uninvolved_inhabitants = violation_data['uninvolved_inhabitants'][lodgement_id]
 
         lodgements = violation_data['all_lodgements']
         params["groups"] = self.eventproxy.get_lodgement_groups(rs, event_id)

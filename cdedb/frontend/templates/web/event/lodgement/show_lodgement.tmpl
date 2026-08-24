@@ -116,8 +116,8 @@
                                                 {% if registration['parts'][part.id]['status'] != enums['RegistrationPartStati'].participant %}
                                                     <small>({{ gettext(registration['parts'][part.id]['status']|string) }})</small>
                                                 {% endif -%}
-                                                {% if registrations[registration.id]['parts'][part.id]['age'] != enums['AgeClasses'].full %}
-                                                    <small>({{ gettext(registrations[registration.id]['parts'][part.id]['age']|string) }})</small>
+                                                {% if registration['parts'][part.id]['age'] != enums['AgeClasses'].full %}
+                                                    <small>({{ gettext(registration['parts'][part.id]['age']|string) }})</small>
                                                 {% endif %}
                                                 <small>{{- generic_event.camping_mat_icon(
                                                     registration['parts'][part.id]['is_camping_mat'],

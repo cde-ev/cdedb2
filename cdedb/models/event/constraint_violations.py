@@ -334,7 +334,12 @@ class ViolationAux:
 
     attendee_data: models.AttendeeStats
     choices_data: models.ChoiceStats
-    inhabitants_data: "dict[vtypes.LodgementID, dict[int, LodgementInhabitants]]"
+    involved_inhabitants_data: (
+        "dict[vtypes.LodgementID, dict[int, LodgementInhabitants]]"
+    )
+    uninvolved_inhabitants_data: (
+        "dict[vtypes.LodgementID, dict[int, LodgementInhabitants]]"
+    )
 
     def evaluate_all(self) -> ViolationList:
         ret = ConstraintViolation.dispatch(self, ViolationContext())
@@ -2083,7 +2088,7 @@ class IncorrectNumInhabitantsCV(LodgementPartConstraintViolation):
         lodgement = context.lodgement
         part = context.part
 
-        inhabitants = aux.inhabitants_data[lodgement.id][part.id]
+        inhabitants = aux.involved_inhabitants_data[lodgement.id][part.id]
         event_over = now().date() > aux.event.end
         severity = None
 
@@ -2214,7 +2219,7 @@ class IllegalMixedLodgementCV(LodgementPartConstraintViolation):
         lodgement = context.lodgement
         part = context.part
 
-        inhabitants = aux.inhabitants_data[lodgement.id][part.id]
+        inhabitants = aux.involved_inhabitants_data[lodgement.id][part.id]
         non_mixing_regs = [reg for reg in inhabitants.all if not reg['mixed_lodging']]
         if not non_mixing_regs:
             return None
