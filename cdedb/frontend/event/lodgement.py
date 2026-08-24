@@ -247,28 +247,19 @@ class EventLodgementMixin(EventBaseFrontend):
             lodgements[sorted_ids[i + 1]] if i + 1 < len(sorted_ids) else None
         )
 
+        params['involved_inhabitants'] = involved_inhabitants
+        params['uninvolved_inhabitants'] = uninvolved_inhabitants
+
         EP = EventPrivileges
-        if self.is_privileged(rs, EP.registrations_read, EP.checkin):
-            params['involved_inhabitants'] = involved_inhabitants
-            params['uninvolved_inhabitants'] = uninvolved_inhabitants
-            params['registrations'] = violation_data['all_registrations']
+        params["show_registrations"] = self.is_privileged(
+            rs, EP.registrations_read, EP.checkin
+        )
+        if params["show_registrations"]:
             params['violations'] = violation_data['violations']
         else:
             params['violations'] = violation_data['violations'].get(
                 registration_id=None
             )
-
-        params['inhabitant_numbers'] = {
-            part_id: (
-                len(involved_inhabitants.get(part_id, LodgementInhabitants()).regular),
-                len(
-                    involved_inhabitants.get(
-                        part_id, LodgementInhabitants()
-                    ).camping_mat
-                ),
-            )
-            for part_id in rs.ambience['event'].parts
-        }
 
         if not any(inhabitants.all for inhabitants in involved_inhabitants.values()):
             merge_dicts(rs.values, {'ack_delete': True})

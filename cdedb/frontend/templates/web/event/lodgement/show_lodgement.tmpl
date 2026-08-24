@@ -77,7 +77,7 @@
             <div class="col-md-4" id="inhabitants-{{ part.id }}">
                 <div class="panel panel-info panel-condensed">
                     <div class="panel-heading">
-                        <div class="pull-right">{{ inhabitant_numbers[part.id][0] }}&nbsp;+&nbsp;{{ inhabitant_numbers[part.id][1] }}</div>
+                        <div class="pull-right">{{ involved_inhabitants[part.id].regular|length }}&nbsp;+&nbsp;{{ involved_inhabitants[part.id].camping_mat|length }}</div>
                         <h3 class="panel-title">
                             {% if ambience['event']['parts']|length > 1 %}
                                 {{ part['title'] }}
@@ -102,8 +102,8 @@
                             {% endfor %}
                         </div>
 
-                        {%- if inhabitant_numbers[part.id][0] or inhabitant_numbers[part.id][1] %}
-                            {%- if involved_inhabitants or uninvolved_inhabitants -%}
+                        {%- if involved_inhabitants[part.id].all or uninvolved_inhabitants[part.id].all %}
+                            {%- if show_registrations -%}
                                 <ul class="slim">
                                     {% for involved, inhabitants in [(True, involved_inhabitants), (False, uninvolved_inhabitants)] %}
                                         {% for registration in inhabitants[part.id].all|keysort(EntitySorter.registration_with_persona) %}
@@ -134,7 +134,7 @@
                             <p class="text-muted"><i>{% trans %}No inhabitants.{% endtrans %}</i></p>
                         {%- endif -%}
                     </div>
-                    {% if inhabitant_numbers[part.id][0] or inhabitant_numbers[part.id][1] %}
+                    {% if involved_inhabitants[part.id].all or uninvolved_inhabitants[part.id].all %}
                         <div class="panel-footer">
                             {{ util.href(cdedblink('event/registration_query',
                                                    make_inhabitants_query(part.id).serialize_to_url()) + "#query-results",
