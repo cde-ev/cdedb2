@@ -3,7 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 
 {% block title %}
-    {% if ambience['orga_token'] %}
+    {% if 'orga_token' in ambience %}
         {% trans event_title=ambience['event']['title'] %}
             Change Orga Token ({{ event_title }})
         {% endtrans %}
@@ -15,7 +15,7 @@
 {% endblock %}
 
 {% block heading %}
-    {% if ambience['orga_token'] %}
+    {% if 'orga_token' in ambience %}
         {{ util.context_heading(gettext("Change Orga Token"),
                                 ambience['orga_token']['title'], 'robot', gettext('Orga Token'),
                                 ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
@@ -30,7 +30,7 @@
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/downloads"), gettext("Downloads & Import")) }}
     {{ util.breadcrumb_link(cdedblink("event/orga_token_summary"), gettext("Orga Tokens")) }}
-    {% if ambience['orga_token'] %}
+    {% if 'orga_token' in ambience %}
         {{ util.breadcrumb_link("", ambience['orga_token']['title'], icon="robot", readonly=True) }}
         {{ util.breadcrumb_link(cdedblink("event/change_orga_token"), gettext("Change"), active=True) }}
     {% else %}
@@ -39,7 +39,7 @@
 {% endblock %}
 
 {% block content %}
-    {% if ambience['orga_token'] %}
+    {% if 'orga_token' in ambience %}
         {% set action = 'event/change_orga_token' %}
     {% else %}
         {% set action = 'event/create_orga_token' %}
@@ -55,7 +55,7 @@
         {{ util.anti_csrf_token(action) }}
         {{ util.form_input_text(name="title", label=gettext("Title")) }}
         {{ util.form_input_textarea(name="notes", label=gettext("Notes")) }}
-        {% if ambience['orga_token'] %}
+        {% if 'orga_token' in ambience %}
             {{ util.form_input_static(
                     label=gettext("Expiration"), value=ambience['orga_token'].etime|datetime(lang=lang)) }}
         {% else %}

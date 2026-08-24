@@ -403,6 +403,29 @@ class CorePersona(Persona, PersonaName):
             raise RuntimeError
         return ret
 
+    @classmethod
+    def from_database(
+        cls, data: CdEDBObject, allow_superfluous: bool = False
+    ) -> "Self":
+        """Create an instance from the dict returned from the database.
+
+        The ideomatic approach is to retrieve the database fields via
+        `query_one`, using `get_select_query` to construct the query,
+        and put the return value in this function.
+
+        For `query_all`, see `many_from_database`.
+
+        :param allow_superfluous: If true, filter `data` to be a subset of `database_fields`.
+        """
+        if allow_superfluous:
+            database_fields = set(cls.database_fields())
+            data = {k: v for k, v in data.items() if k in database_fields}
+        return super().from_database(data)
+
+    def as_dict(self) -> dict[str, Any]:
+        data = super().as_dict()
+        return {k: v for k, v in data.items() if v != self.REDACTED}
+
 
 @dataclasses.dataclass(kw_only=True)
 class MlPersona(CorePersona):

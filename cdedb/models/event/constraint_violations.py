@@ -52,6 +52,7 @@ from cdedb.models.core import EventPersona
 from cdedb.uncommon.intenum import CdEEnum
 
 if TYPE_CHECKING:
+    import cdedb.common.validation.types as vtypes
     from cdedb.frontend.event.lodgement import LodgementInhabitants
 
 
@@ -327,13 +328,13 @@ class ViolationAux:
     all_courses: models.CourseMap
     # Violations are only checked for these courses.
     courses: models.CourseMap
-    all_lodgements: CdEDataclassMap[models.Lodgement]
+    all_lodgements: models.LodgementMap
     # Violations are only checked for these lodgements.
-    lodgements: CdEDataclassMap[models.Lodgement]
+    lodgements: models.LodgementMap
 
     attendee_data: models.AttendeeStats
     choices_data: models.ChoiceStats
-    inhabitants_data: "dict[int, dict[int, LodgementInhabitants]]"
+    inhabitants_data: "dict[vtypes.LodgementID, dict[int, LodgementInhabitants]]"
 
     def evaluate_all(self) -> ViolationList:
         ret = ConstraintViolation.dispatch(self, ViolationContext())

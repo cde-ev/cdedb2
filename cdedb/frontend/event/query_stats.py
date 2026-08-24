@@ -122,13 +122,13 @@ def merge_constraints(*constraints: QueryConstraint) -> QueryConstraint | None:
     same value. All differing constraint fields are joined together, respecting order.
 
     >>> merge_constraints(("part1.status", "=", 1), ("part2.status", "=", 1))
-    QueryConstraint(field='part1.status,part2.status', op='=', value=1)
+    ('part1.status,part2.status', '=', 1)
     >>> merge_constraints(("part2.status", "=", 1), ("part1.status", "=", 1))
-    QueryConstraint(field='part2.status,part1.status', op='=', value=1)
+    ('part2.status,part1.status', '=', 1)
     >>> merge_constraints(("part1.status", "=", 1), ("part1.status", "=", 1))
-    QueryConstraint(field='part1.status', op='=', value=1)
+    ('part1.status', '=', 1)
     >>> merge_constraints(("a", "=", 1), ("a", "=", 1), ("b", "=", 1))
-    QueryConstraint(field='a,b', op='=', value=1)
+    ('a,b', '=', 1)
     >>> merge_constraints(("part1.status", "=", 1), ("part1.status", "!=", 1))
 
     >>> merge_constraints(("part1.status", "=", 1), ("part1.status", "=", 2))

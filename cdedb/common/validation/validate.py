@@ -689,6 +689,8 @@ _add_typed_validator(_id, InvolvedID)
 _add_typed_validator(_id, RegistrationID)
 _add_typed_validator(_id, EventID)
 _add_typed_validator(_id, CourseID)
+_add_typed_validator(_id, LodgementID)
+_add_typed_validator(_id, LodgementGroupID)
 
 
 @_add_typed_validator

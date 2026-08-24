@@ -2,7 +2,7 @@
 # setup
 
 import cdedb.database.constants as const
-from cdedb.common import PERSONA_CORE_FIELDS
+from cdedb.models.core import CorePersona
 from cdedb.script import Script, make_backend, setup
 
 core = make_backend("core", proxy=False)
@@ -25,7 +25,7 @@ with Script(rs, dry_run=DRY_RUN):
     query = "SELECT id FROM core.personas WHERE is_archived = True"
     persona_ids = {e['id'] for e in core.query_all(rs, query, tuple())}
     personas = core.retrieve_personas(
-        rs, persona_ids, PERSONA_CORE_FIELDS + ("notes",))
+        rs, persona_ids, CorePersona.database_fields() + ["notes"])
     for persona in personas.values():
         if all(not persona[realm] for realm in REALM_BITS):
             print(f"Fixing realms, gender, balance and paper_expuls for"

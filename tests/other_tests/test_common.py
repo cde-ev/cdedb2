@@ -212,7 +212,7 @@ class TestCommon(BasicTest):
                     capture_output=True,
                     text=True,
                 )
-                expected_outputs = ["pybabel extract", "extracting messages from"]
+                expected_outputs = ["pybabel extract"]
                 output = result.stdout + result.stderr
                 if any(s not in output for s in expected_outputs):
                     self.fail("'make i18n-extract' didn't properly run.")

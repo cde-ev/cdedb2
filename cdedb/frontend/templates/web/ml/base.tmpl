@@ -36,7 +36,7 @@
 {% endblock %}
 
 {% block navigation %}
-    {% if ambience['mailinglist'] %}
+    {% if 'mailinglist' in ambience %}
         <p>
             {% if not ambience['mailinglist']['is_active'] and ambience['mailinglist'].has_management_view(user) %}
                 {{ util.href(cdedblink("ml/list_mailinglists"), gettext("Mailinglist-Overview"),
@@ -99,7 +99,7 @@
 {% endblock %}
 
 {% block adminviews %}
-    {% if ambience['mailinglist'] %}
+    {% if 'mailinglist' in ambience %}
         {% if user.persona_id in ambience['mailinglist']['moderators'] %}
             {{ util.admin_views_toggle([
                     (gettext("Mailinglist Administration"), ALL_MGMT_ADMIN_VIEWS,

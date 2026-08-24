@@ -1,22 +1,16 @@
 #!/bin/bash
 #
 # pre-commit hook to help ensure that:
-#   - python files are formatted according to ruff isort.
-#   - translation catalogues are recompiled after a merge to reduce diff size.
+#   - translation catalogues are recompiled before commits to reduce diff size.
 #
 
-# If we are performing a merge commit...
-if [ -f .git/MERGE_MSG ]; then
+# If we are performing a commit in which some translation file changed ...
+if [ -n "$( git diff --cached --name-only --diff-filter=ACM | grep "LC_MESSAGES/cdedb.po" )" ]; then
 
-    # ... in which some translation file changed ...
-    if [ -n "$( git diff --cached --name-only --diff-filter=ACM | grep "LC_MESSAGES/cdedb.po" )" ]; then
-
-        # ...recompile the catalogue.
-        echo "Detected change in translations after merge commit. Recompiling translation catalogues..."
-        make i18n-refresh 1&> /dev/null
-        git add i18n/*/LC_MESSAGES/cdedb.po
-        echo "... done"
-
-    fi
+    # ...recompile the catalogue.
+    echo "Detected changes in translations. Recompiling translation catalogues..."
+    make i18n-refresh 1&> /dev/null
+    git add i18n/*/LC_MESSAGES/cdedb.po
+    echo "... done"
 
 fi

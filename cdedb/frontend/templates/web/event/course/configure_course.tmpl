@@ -8,7 +8,7 @@
 {% endblock %}
 {% set jshint='weak' %}
 {% block title %}
-    {% if ambience['course'] %}
+    {% if 'course' in ambience %}
         {% trans course=ambience['course']['shortname'], event=ambience['event']['title'] %}
             Edit {{ course }} ({{ event }})
         {% endtrans %}
@@ -22,7 +22,7 @@
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
     {{ util.breadcrumb_link(cdedblink("event/course_stats"), gettext("Courses")) }}
-    {% if ambience['course'] %}
+    {% if 'course' in ambience %}
         {{ util.breadcrumb_link(cdedblink("event/show_course"), ambience['course']['shortname'], icon='book') }}
         {{ util.breadcrumb_link(cdedblink("event/change_course"), gettext("Edit"), active=True) }}
     {% else %}
@@ -30,7 +30,7 @@
     {% endif %}
 {% endblock %}
 {% block heading %}
-    {% if ambience['course'] %}
+    {% if 'course' in ambience %}
         {{ util.context_heading(gettext("Edit course %(course)s")|format(course=ambience['course']['shortname']),
                                 ambience['event']['title'], 'chalkboard-teacher', gettext("Event")) }}
     {% else %}
@@ -40,7 +40,7 @@
 {% endblock %}
 
 {% block content %}
-    {% set target = 'event/change_course' if ambience['course'] else 'event/create_course' %}
+    {% set target = 'event/change_course' if 'course' in ambience else 'event/create_course' %}
     <form action="{{ cdedblink(target) }}" method="POST" id="configurecourseform" class="form-horizontal">
         {{ util.anti_csrf_token(target) }}
         {{ util.h(n_("Meta"), level=3, underline=True) }}
@@ -85,16 +85,16 @@
                 {{ util.h(track.title, level=4, underline=True, translate=False) }}
             {% endif %}
             {{ util.form_input_checkbox(
-                    "segment" + track.id|string, label=gettext("Is offered"), defaultvalue="True" if not ambience['course'] else "",
+                    "segment" + track.id|string, label=gettext("Is offered"), defaultvalue="True" if 'course' not in ambience else "",
                     aclass="segment-offered", attributes='data-track_id={}'.format(track.id)) }}
             {{ util.form_input_checkbox(
-                    "segment" + track.id|string + ".is_active", label=gettext("Takes place"), defaultvalue="True" if not ambience['course'] else "",
+                    "segment" + track.id|string + ".is_active", label=gettext("Takes place"), defaultvalue="True" if 'course' not in ambience else "",
                     aclass="segment-" + track.id|string, info=cancel_info if not multitrack else "") }}
         {% endfor %}
 
         {{ generic_event.print_field_inputs(enums['FieldAssociations'].course) }}
 
-        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/show_course" if ambience['course'] else "event/course_stats")) }}
+        {{ util.form_input_submit(label=gettext("Save"), cancellink=cdedblink("event/show_course" if 'course' in ambience else "event/course_stats")) }}
     </form>
     <script nonce="{{ csp_nonce }}">
         function update($inputs, disabled) {

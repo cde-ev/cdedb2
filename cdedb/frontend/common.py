@@ -381,9 +381,9 @@ class CdEDBUndefined(jinja2.StrictUndefined):
     This matches our needs to catch `{{ undefined }}`, while still allowing
     comfortable `if` checks as well as `sidenav_active` comparisons.
 
-    For dataclasses, this behaves as the StrictUndefined and barks on everything,
-    so we do not miss errors like `{% if foo.bar %}` where foo does not have
-    a bar attribute.
+    For dataclasses and dicts, this behaves as the StrictUndefined and barks on
+    everything, so we do not miss errors like `{% if foo.bar %}` where foo does
+    not have an attribute / item "bar".
     """
 
     # The parent class has incompatible type signatures
@@ -392,22 +392,25 @@ class CdEDBUndefined(jinja2.StrictUndefined):
     # but this is more concise.
 
     def __eq__(self, other: Any) -> bool:  # type: ignore[override]
-        if self._undefined_obj is not jinja2.utils.missing and dataclasses.is_dataclass(
-            self._undefined_obj
+        if self._undefined_obj is not jinja2.utils.missing and (
+            dataclasses.is_dataclass(self._undefined_obj)
+            or isinstance(self._undefined_obj, dict)
         ):
             return super().__eq__(other)
         return jinja2.Undefined.__eq__(self, other)
 
     def __ne__(self, other: Any) -> bool:  # type: ignore[override]
-        if self._undefined_obj is not jinja2.utils.missing and dataclasses.is_dataclass(
-            self._undefined_obj
+        if self._undefined_obj is not jinja2.utils.missing and (
+            dataclasses.is_dataclass(self._undefined_obj)
+            or isinstance(self._undefined_obj, dict)
         ):
             return super().__ne__(other)
         return jinja2.Undefined.__ne__(self, other)
 
     def __bool__(self) -> bool:  # type: ignore[override]
-        if self._undefined_obj is not jinja2.utils.missing and dataclasses.is_dataclass(
-            self._undefined_obj
+        if self._undefined_obj is not jinja2.utils.missing and (
+            dataclasses.is_dataclass(self._undefined_obj)
+            or isinstance(self._undefined_obj, dict)
         ):
             return super().__bool__()
         return jinja2.Undefined.__bool__(self)
