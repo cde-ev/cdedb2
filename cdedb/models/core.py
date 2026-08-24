@@ -766,7 +766,7 @@ class GenesisCase(CdEDataclass):
     def model(self) -> type["GenesisCase"]:
         return self.get_model_by_realm(self.realm)
 
-    all_admins: ClassVar[Iterable[Roles]] = tuple(Roles.all_genesis_roles())
+    all_admins: ClassVar[Iterable[Roles]] = tuple(Roles.all_genesis_realm_roles())
 
     @property
     def relative_admin(self) -> str:
