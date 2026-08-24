@@ -1093,14 +1093,14 @@ class CoreBaseBackend(AbstractBackend):
             if any(data[key] for key in Roles.all_admin_roles().markers()):
                 raise PrivilegeError(n_("Admin privilege modification prevented."))
         if set(data) & {"is_member", "trial_member", "honorary_member"} and (
-            not (Roles.cde_admin | Roles.core_admin & rs.user.new_roles)
+            not rs.user.new_roles.has_any(Roles.cde_admin, Roles.core_admin)
             or not {"membership", "purge"} & set(allow_specials)
         ):
             raise PrivilegeError(n_("Membership modification prevented."))
         if (
             current['decided_search']
             and not data.get("is_searchable", True)
-            and (not (Roles.cde_admin | Roles.core_admin & rs.user.new_roles))
+            and not rs.user.new_roles.has_any(Roles.cde_admin, Roles.core_admin)
         ):
             raise PrivilegeError(n_("Hiding prevented."))
         if "is_archived" in data:
@@ -2521,13 +2521,12 @@ class CoreBaseBackend(AbstractBackend):
         )
         ret = models.EventPersona.many_from_database(persona_data)
         if persona_ids != {rs.user.persona_id} and not (
-            (
-                Roles.event_admin
-                | Roles.cde_admin
-                | Roles.complaint_admin
-                | Roles.core_admin
+            rs.user.new_roles.has_any(
+                Roles.event_admin,
+                Roles.cde_admin,
+                Roles.complaint_admin,
+                Roles.core_admin,
             )
-            & rs.user.new_roles
         ):
             # Accessing the event scheme from the core backend is a bit of a
             # transgression, but we value the added security higher than correctness.
@@ -2712,10 +2711,9 @@ class CoreBaseBackend(AbstractBackend):
         if num is None and ids is not None and set(ids) == {rs.user.persona_id}:
             return False
         quota = self.quota(rs, ids=ids, num=num)  # type: ignore[call-overload]
-        return (
-            quota > self.conf["QUOTA_VIEWS_PER_DAY"]
-            and not (Roles.cde_admin | Roles.core_admin) & rs.user.new_roles
-        )
+        return quota > self.conf[
+            "QUOTA_VIEWS_PER_DAY"
+        ] and not rs.user.new_roles.has_any(Roles.cde_admin, Roles.core_admin)
 
     @access(Roles.cde)
     def get_cde_users(
@@ -2730,7 +2728,7 @@ class CoreBaseBackend(AbstractBackend):
                 rs, *models.CdEPersona.get_select_query(persona_ids)
             )
             ret = models.CdEPersona.many_from_database(persona_data)
-            if not Roles.cde_admin | Roles.core_admin & rs.user.new_roles and (
+            if not (Roles.cde_admin | Roles.core_admin & rs.user.new_roles) and (
                 Roles.searchable not in rs.user.new_roles
                 and any(
                     (e.id != rs.user.persona_id and not e.is_searchable)
@@ -3798,10 +3796,9 @@ class CoreBaseBackend(AbstractBackend):
             stati = tuple(const.EmailStatus)
         stati = affirm(list[const.EmailStatus], stati or [])
 
-        if (
-            not Roles.ml_admin | Roles.core_admin & rs.user.new_roles
-            and persona_ids != {rs.user.persona_id}
-        ):
+        if not rs.user.new_roles.has_any(
+            Roles.ml_admin, Roles.core_admin
+        ) and persona_ids != {rs.user.persona_id}:
             relative_admin = False
             if len(persona_ids) == 1:
                 relative_admin = self.is_relative_admin(rs, unwrap(persona_ids))

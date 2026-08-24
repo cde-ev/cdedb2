@@ -1045,7 +1045,7 @@ class PastEventBackend(AbstractBackend):
 
         return new_id
 
-    @access(Roles.cde_admin, Roles.event_admin)
+    @access(Roles.cde_admin | Roles.event_admin)
     def archive_event(
         self, rs: RequestState, event_id: vtypes.EventID, create_past_event: bool = True
     ) -> list[int] | None:
@@ -1068,11 +1068,6 @@ class PastEventBackend(AbstractBackend):
           If there were complications, the second entry is an error message.
         """
         event_id = affirm(vtypes.EventID, event_id)
-        if (
-            Roles.cde_admin not in rs.user.new_roles
-            or Roles.event_admin not in rs.user.new_roles
-        ):
-            raise PrivilegeError(n_("Needs both admin privileges."))
         with Atomizer(rs):
             event = self.event.get_event(rs, event_id)
             if not event.is_cancelled and event.end >= now().date():

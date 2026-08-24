@@ -548,32 +548,32 @@ class AdminViews(_AdminViews):
         )
 
     @classmethod
-    def all_mod_views(cls) -> Self:
+    def all_mod_views(cls) -> tuple[Self, ...]:
         return (
-            cls.ml_mod
-            | cls.ml_mod_core
-            | cls.ml_mod_cde
-            | cls.ml_mod_event
-            | cls.ml_mod_cdelokal
-            | cls.ml_mod_assembly
+            cls.ml_mod,
+            cls.ml_mod_core,
+            cls.ml_mod_cde,
+            cls.ml_mod_event,
+            cls.ml_mod_cdelokal,
+            cls.ml_mod_assembly,
         )
 
     @classmethod
-    def all_mgmt_views(cls) -> Self:
+    def all_mgmt_views(cls) -> tuple[Self, ...]:
         return (
-            cls.ml_mgmt
-            | cls.ml_mgmt_core
-            | cls.ml_mgmt_cde
-            | cls.ml_mgmt_event
-            | cls.ml_mgmt_cdelokal
-            | cls.ml_mgmt_assembly
+            cls.ml_mgmt,
+            cls.ml_mgmt_core,
+            cls.ml_mgmt_cde,
+            cls.ml_mgmt_event,
+            cls.ml_mgmt_cdelokal,
+            cls.ml_mgmt_assembly,
         )
 
-    def is_any_mod(self) -> bool:
-        return bool(self & self.all_mod_views())
+    def has_any_mod(self) -> bool:
+        return self.has_any(*self.all_mod_views())
 
-    def is_any_mgmt(self) -> bool:
-        return bool(self & self.all_mgmt_views())
+    def has_any_mgmt(self) -> bool:
+        return self.has_any(*self.all_mgmt_views())
 
     def _is_available_to(self, roles: Roles) -> bool:
         return all(

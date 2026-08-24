@@ -52,14 +52,14 @@
     {% else %}
         <h3 class="heading-sidebar">Mailinglisten</h3>
         <div class="list-group tear-down">
-            {% if user.admin_views.is_any_mgmt() or user.moderator %}
+            {% if user.admin_views.has_any_mgmt() or user.moderator %}
                 {{ util.href(cdedblink("ml/index"), gettext("Active Mailinglists"), icon="caret-right",
                              aclass="list-group-item", active=(sidenav_active == 'ml_index')) }}
             {% else %}
                 {{ util.href(cdedblink("ml/index"), gettext("Overview"), icon="caret-right", aclass="list-group-item",
                         active=(sidenav_active == 'ml_index')) }}
             {% endif %}
-            {% if user.admin_views.is_any_mgmt() %}
+            {% if user.admin_views.has_any_mgmt() %}
                 {% if 'ml_admin' in user.roles %}
                     {% set overview=gettext("All Mailinglists") %}
                 {% else %}
@@ -80,14 +80,13 @@
                         icon="user-friends", aclass="list-group-item", active=(sidenav_active == 'ml_merger')) }}
             </div>
         {% endif %}
-        {% if user.moderator or user.admin_views.is_any_mgmt()
-                or user.admin_views.__and__(AdminViews.ml_user.__or__(AdminViews.auditor)) %}
+        {% if user.moderator or user.admin_views.has_any(AdminViews.ml_user, AdminViews.auditor, *AdminViews.all_mgmt_views()) %}
             <div class="list-group tear-down">
                 {% if user.admin_views.has(AdminViews.ml_user) %}
                     {{ util.href(cdedblink("ml/user_search"), gettext("Manage Users"),
                             icon="users", aclass="list-group-item", active=(sidenav_active == 'ml_users')) }}
                 {% endif %}
-                {% if user.moderator or user.admin_views.is_any_mgmt() or AdminViews.auditor in user.admin_views %}
+                {% if user.moderator or user.admin_views.has_any(AdminViews.auditor, *AdminViews.all_mgmt_views()) %}
                     {{ util.href(cdedblink("ml/view_log"), gettext("Log"), icon="far fa-list-alt", aclass="list-group-item",
                             active=(sidenav_active == 'ml_log')) }}
                 {% endif %}

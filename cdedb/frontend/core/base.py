@@ -843,8 +843,9 @@ class CoreBaseFrontend(AbstractFrontend):
 
         # Check for email trouble
         email_report = None
-        if (rs.user.persona_id == persona_id
-                or ((Roles.core_admin | Roles.ml_admin) & rs.user.new_roles)):
+        if rs.user.persona_id == persona_id or rs.user.new_roles.has_any(
+            Roles.core_admin, Roles.ml_admin
+        ):
             # the username may be masked by admin views, but then we also
             # don't need the email report
             if persona.username != REDACTED:
@@ -1252,43 +1253,42 @@ class CoreBaseFrontend(AbstractFrontend):
         mailinglist = None
         len_preview = (
             self.conf["NUM_PREVIEW_PERSONAS_PRIVILEGED"]
-            if Roles.core_admin & rs.user.new_roles
+            if Roles.core_admin in rs.user.new_roles
             else self.conf["NUM_PREVIEW_PERSONAS"]
         )
         if kind == "admin_persona":
             relevant_admin_roles = (
-                Roles.core_admin
-                | Roles.cde_admin
-                | Roles.complaint_admin
-                | Roles.ml_admin
-                | Roles.meta_admin
-                | Roles.auditor
+                Roles.core_admin,
+                Roles.cde_admin,
+                Roles.complaint_admin,
+                Roles.ml_admin,
+                Roles.meta_admin,
+                Roles.auditor,
             )
-            if not (relevant_admin_roles & rs.user.new_roles):
+            if not rs.user.new_roles.has_any(*relevant_admin_roles):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append("username")
         elif kind == "admin_all_users":
-            if (
-                not (Roles.core_admin | Roles.ml_admin | Roles.complaint_admin)
-                & rs.user.new_roles
+            if not rs.user.new_roles.has_any(
+                Roles.core_admin, Roles.ml_admin, Roles.complaint_admin
             ):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append("username")
             scope = QueryScope.all_core_users
         elif kind == "cde_user":
-            if not (Roles.cde_admin | Roles.auditor) & rs.user.new_roles:
+            if not rs.user.new_roles.has_any(Roles.cde_admin, Roles.auditor):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append("username")
             constraints.append(("is_cde_realm", QueryOperators.equal, True))
         elif kind == "past_event_user":
-            if not (Roles.cde_admin | Roles.auditor) & rs.user.new_roles:
+            if not rs.user.new_roles.has_any(Roles.cde_admin, Roles.auditor):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             # adding archived users to past events is a common task
             scope = QueryScope.all_core_users
             constraints.append(("is_event_realm", QueryOperators.equal, True))
         elif kind == "pure_assembly_user":
             # No check by assembly, as this behaves identical for each assembly.
-            if not rs.user.presider and Roles.assembly_admin not in rs.user.new_roles:
+            if not (rs.user.presider or rs.user.new_roles.has(Roles.assembly_admin)):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             constraints.append(("is_assembly_realm", QueryOperators.equal, True))
             constraints.append(("is_member", QueryOperators.equal, False))
@@ -1296,7 +1296,7 @@ class CoreBaseFrontend(AbstractFrontend):
             # No check by assembly, as this behaves identical for each assembly.
             if not (
                 rs.user.presider
-                or (Roles.assembly_admin | Roles.auditor) & rs.user.new_roles
+                or rs.user.new_roles.has_any(Roles.assembly_admin, Roles.auditor)
             ):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             constraints.append(("is_assembly_realm", QueryOperators.equal, True))
@@ -1307,26 +1307,28 @@ class CoreBaseFrontend(AbstractFrontend):
             if not (
                 rs.user.orga
                 or rs.user.caretaker
-                or (Roles.event_admin | Roles.auditor) & rs.user.new_roles
+                or rs.user.new_roles.has_any(Roles.event_admin, Roles.auditor)
             ):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             constraints.append(("is_event_realm", QueryOperators.equal, True))
         elif kind == "ml_user":
             relevant_admin_roles = (
-                Roles.core_admin
-                | Roles.cde_admin
-                | Roles.event_admin
-                | Roles.assembly_admin
-                | Roles.ml_admin
-                | Roles.cdelokal_admin
-                | Roles.auditor
+                Roles.core_admin,
+                Roles.cde_admin,
+                Roles.event_admin,
+                Roles.assembly_admin,
+                Roles.ml_admin,
+                Roles.cdelokal_admin,
+                Roles.auditor,
             )
             # No check by mailinglist, as this behaves identical for each list.
-            if not (rs.user.moderator or relevant_admin_roles & rs.user.new_roles):
+            if not (
+                rs.user.moderator or rs.user.new_roles.has_any(*relevant_admin_roles)
+            ):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             constraints.append(("is_ml_realm", QueryOperators.equal, True))
         elif kind == "pure_ml_user":
-            if Roles.ml_admin not in rs.user.new_roles:
+            if not rs.user.new_roles.has(Roles.ml_admin):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             search_additions.append("username")
             constraints.extend((

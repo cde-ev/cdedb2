@@ -685,7 +685,7 @@ class CdEBaseBackend(AbstractBackend):
             QueryScope.past_event_user,
             QueryScope.all_cde_users,
         }:
-            if not Roles.core_admin | Roles.cde_admin & rs.user.new_roles:
+            if not rs.user.new_roles.has_any(Roles.core_admin, Roles.cde_admin):
                 raise PrivilegeError(n_("Admin only."))
 
             # Potentially restrict to non-archived users.

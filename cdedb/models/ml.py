@@ -283,27 +283,27 @@ class Mailinglist(CdEDataclass):
     role_map: ClassVar[Mapping[Roles, SubscriptionPolicy]] = {}
 
     @classmethod
-    def moderator_admin_views(cls) -> AdminViews:
+    def moderator_admin_views(cls) -> tuple[AdminViews, ...]:
         """All admin views which toggle the moderator view for this mailinglist.
 
         This is must be only used for cosmetic changes, similar to
         core.is_relative_admin_view.
         """
-        return (
+        return tuple(
             AdminViews.from_roles(cls.relevant_admins | Roles.ml_admin)
-            & AdminViews.all_mod_views()
+            & AdminViews.union(AdminViews.all_mod_views())
         )
 
     @classmethod
-    def management_admin_views(cls) -> AdminViews:
+    def management_admin_views(cls) -> tuple[AdminViews, ...]:
         """All admin views which toggle the management view for this mailinglist.
 
         This is must be only used for cosmetic changes, similar to
         core.is_relative_admin_view.
         """
-        return (
+        return tuple(
             AdminViews.from_roles(cls.relevant_admins | Roles.ml_admin)
-            & AdminViews.all_mgmt_views()
+            & AdminViews.union(AdminViews.all_mgmt_views())
         )
 
     @classmethod
@@ -313,8 +313,8 @@ class Mailinglist(CdEDataclass):
         This is must be only used for cosmetic changes, similar to
         core.is_relative_admin_view.
         """
-        return cls.is_relevant_admin(user) and bool(
-            cls.moderator_admin_views() & user.admin_views
+        return cls.is_relevant_admin(user) and user.admin_views.has_any(
+            *cls.moderator_admin_views()
         )
 
     @classmethod
@@ -324,8 +324,8 @@ class Mailinglist(CdEDataclass):
         This is must be only used for cosmetic changes, similar to
         core.is_relative_admin_view.
         """
-        return cls.is_relevant_admin(user) and bool(
-            cls.management_admin_views() & user.admin_views
+        return cls.is_relevant_admin(user) and user.admin_views.has_any(
+            *cls.management_admin_views()
         )
 
     def get_subscription_policy(

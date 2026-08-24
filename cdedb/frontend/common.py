@@ -2451,7 +2451,7 @@ def access[F: Callable[..., Any]](
         def new_fun(
             obj: AbstractFrontend, rs: RequestState, *args: Any, **kwargs: Any
         ) -> werkzeug.Response:
-            if any(role in rs.user.new_roles for role in roles):
+            if rs.user.new_roles.has_any(*roles):
                 rs.ambience = reconnoitre_ambience(obj, rs)
                 return fun(obj, rs, *args, **kwargs)
             else:
