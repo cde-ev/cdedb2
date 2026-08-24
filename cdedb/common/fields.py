@@ -2,13 +2,6 @@
 
 """SQL field names of all entities."""
 
-# A set of roles a user may have.
-Role = str
-
-# A set of realms a persona belongs to.
-Realm = str
-
-
 #: Fields of a pending privilege change.
 PRIVILEGE_CHANGE_FIELDS = (
     "id",
