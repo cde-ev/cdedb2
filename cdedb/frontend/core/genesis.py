@@ -78,7 +78,6 @@ class CoreGenesisMixin(CoreBaseFrontend):
 
         This initiates the genesis process.
         """
-        self.logger.warning(realm)
         if realm not in Realms.get_available_genesis_realms():
             rs.append_validation_error((
                 "realm",
@@ -496,7 +495,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         Currently, only switching between event and cde realm is supported.
         """
         case = rs.ambience['genesis_case']
-        if case.realm == Realms.ml:
+        if not (Realms.cde | Realms.event).has(case.realm):
             rs.notify("error", "Realm modification forbidden.")
             return self.redirect(rs, "core/genesis_show_case")
         if case.realm not in rs.user.new_roles.get_genesis_realms():

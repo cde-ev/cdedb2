@@ -337,7 +337,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         with Atomizer(rs):
             # Get case already checks privilege and existence for the current data set.
             current = self.genesis_get_case(rs, case_id)
-            if Realms.ml in (current.realm | realm):
+            if not (Realms.cde | Realms.event).has_all(realm, current.realm):
                 raise RuntimeError("Realm modification forbidden.")
             if current.realm not in rs.user.new_roles.get_genesis_realms():
                 raise PrivilegeError(n_("Not privileged."))
