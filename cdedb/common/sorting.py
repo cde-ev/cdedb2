@@ -169,14 +169,6 @@ class EntitySorter:
     def transaction(transaction: CdEDBObject) -> Sortkey:
         return (transaction['issued_at'], transaction['id'])
 
-    @staticmethod
-    def changelog(changelog_entry: CdEDBObject) -> Sortkey:
-        return (
-            changelog_entry['ctime'],
-            changelog_entry['generation'],
-            changelog_entry['persona_id'],
-        )
-
 
 def mixed_existence_sorter[T: int](
     iterable: Collection[T] | KeysView[T],

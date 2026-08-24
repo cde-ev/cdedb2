@@ -58,9 +58,6 @@ from cdedb.common.exceptions import (
     QuotaException,
 )
 from cdedb.common.fields import (
-    PERSONA_ALL_FIELDS,
-    PERSONA_CDE_FIELDS,
-    PERSONA_CORE_FIELDS,
     PRIVILEGE_CHANGE_FIELDS,
 )
 from cdedb.common.n_ import n_
@@ -84,6 +81,8 @@ from cdedb.database.connection import Atomizer, connection_pool_factory
 from cdedb.database.query import ParamDict
 from cdedb.models.common import CdEDataclassMap
 from cdedb.models.core import EmailAddressReport
+
+PERSONA_ALL_FIELDS = models.CdEPersona.database_fields() + ["notes"]
 
 
 class CoreBaseBackend(AbstractBackend):
@@ -874,21 +873,28 @@ class CoreBaseBackend(AbstractBackend):
             ret[d['generation']] = d
         return ret
 
+    @access(Roles.persona)
+    def changelog_get_one_history(
+        self, rs: RequestState, persona_id: int, generation: int
+    ) -> CdEDBObject:
+        return unwrap(self.changelog_get_history(rs, persona_id, [generation]))
+
     @internal
     @access(Roles.persona, Roles.droid)
     def retrieve_personas(
         self,
         rs: RequestState,
         persona_ids: Collection[int],
-        columns: tuple[str, ...] = PERSONA_CORE_FIELDS,
+        columns: Collection[str],
     ) -> CdEDBObjectMap:
         """Helper to access a persona dataset.
 
         Most of the time a higher level function like
         :py:meth:`get_personas` should be used.
         """
+        columns = list(columns)
         if "id" not in columns:
-            columns += ("id",)
+            columns += ["id"]
         data = self.sql_select(rs, "core.personas", columns, persona_ids)
         ret = {}
         for d in data:
@@ -902,7 +908,7 @@ class CoreBaseBackend(AbstractBackend):
             self,
             rs: RequestState,
             persona_id: int,
-            columns: tuple[str, ...] = PERSONA_CORE_FIELDS,
+            columns: Collection[str],
         ) -> CdEDBObject: ...
 
     retrieve_persona: _RetrievePersonaProtocol = singularize(
@@ -1020,7 +1026,9 @@ class CoreBaseBackend(AbstractBackend):
             num = self.sql_update(rs, "core.personas", data)
             if not num:
                 raise ValueError(n_("Nonexistent user."))
-            current = self.retrieve_persona(rs, data['id'], columns=PERSONA_CDE_FIELDS)
+            current = self.retrieve_persona(
+                rs, data['id'], columns=models.CdEPersona.database_fields()
+            )
             fulltext = self.create_fulltext(current)
             fulltext_update = {
                 'id': data['id'],
@@ -1314,7 +1322,12 @@ class CoreBaseBackend(AbstractBackend):
                 "User does not fit the requirements for this admin privilege."
             )
             for admin_role in Roles.all_admin_roles():
+                # Check if this role is currently being granted or
+                #  (is already in effect and is not currently being revoked).
                 if data.get(admin_role.marker, admin_role in persona_roles):
+                    # If so, check that requirements are (still) met.
+                    #  Again: Consider (roles that are currently being granted) and
+                    #  (roles that are already in effect and are not being revoked).
                     if any(
                         not data.get(required.marker, required in persona_roles)
                         for required in admin_role.required_roles
@@ -1538,7 +1551,7 @@ class CoreBaseBackend(AbstractBackend):
         }
         with Atomizer(rs):
             current = self.retrieve_persona(
-                rs, persona_id, ("balance", "is_cde_realm", "trial_member")
+                rs, persona_id, ["balance", "is_cde_realm", "trial_member"]
             )
             if not current['is_cde_realm']:
                 raise RuntimeError(n_("Tried to credit balance to non-cde person."))
@@ -3545,13 +3558,13 @@ class CoreBaseBackend(AbstractBackend):
         persona_ids = tuple(k for k, v in scores.items() if v > cutoff)
         persona_ids = xsorted(persona_ids, key=lambda k: -scores.get(k, 0))
         persona_ids = persona_ids[:max_entries]
-        columns = xsorted(
+        columns = (
             set(models.CorePersona.database_fields())
             | set(models.PersonaStatus.database_fields())
             | {"birthday", "birth_name", "trial_member"}
         )
         # Circumvent privilege check, since this is a rather special case.
-        ret = self.retrieve_personas(rs, persona_ids, tuple(columns))
+        ret = self.retrieve_personas(rs, persona_ids, columns)
         for persona_ in ret.values():
             # TODO refactor this whole function
             status = models.PersonaStatus(**{

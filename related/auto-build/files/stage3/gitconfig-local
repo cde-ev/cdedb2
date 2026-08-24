@@ -7,6 +7,8 @@
 [merge "pomerge"]
         name = Gettext merge driver
         driver = i18n/git-merge-po.sh %O %A %B
+[filter "pofilter"]
+        clean = i18n/git-filter-po-clean.sh
 [alias]
         fwl = push --force-with-lease
 
