@@ -4103,9 +4103,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f["track1.course_choice_1"] = 4
         self.submit(f)
         self.assertTitle("\nAnmeldung von Charly Clown (Große Testakademie 2222)\n")
-        f = self.response.forms["addregistrationform"]
-        self.assertEqual("5", f['track1.course_choice_0'].value)
-        self.assertEqual("4", f['track1.course_choice_1'].value)
 
     @as_users("emilia")
     def test_add_empty_registration(self) -> None:

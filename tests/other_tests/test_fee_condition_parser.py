@@ -1,3 +1,4 @@
+import re
 import unittest
 from datetime import date
 from typing import Any
@@ -228,24 +229,23 @@ class ErrorTest(unittest.TestCase):
             "",
         ),  # current exception: "Expected end of text, found 'a'". Can we do better?
         ("not", "Expected expression, found end of text"),
-        ("()", "Expected expression, found ')'"),
+        ("()", re.escape("Expected expression, found ')'")),
         ("field.", "Expected field name, found end of text"),
         ("field.x and field.", "Expected field name, found end of text"),
         ("field. and field.x", "Expected field name, found ' '"),
         ("part.", "Expected part shortname, found end of text"),
         ("part.x and part.", "Expected part shortname, found end of text"),
-        ("(part.x and part.)", "Expected part shortname, found ')'"),
+        ("(part.x and part.)", re.escape("Expected part shortname, found ')'")),
         ("part. and part.x", "Expected part shortname, found ' '"),
-        ("(part.x and part.y", "Expected ')', found end of text"),
-        ("(part.x and (True)", "Expected ')', found end of text"),
+        ("(part.x and part.y", re.escape("Expected ')', found end of text")),
+        ("(part.x and (True)", re.escape("Expected ')', found end of text")),
     ]
 
     def test_parse_errors(self) -> None:
         for formula, expected_exception in self.CASES:
             with self.subTest(formula=formula):
-                with self.assertRaises(pp.ParseBaseException) as ctx:
-                    self.parser.parse_string(formula)
-                self.assertIn(expected_exception, str(ctx.exception))
+                with self.assertRaisesRegex(pp.ParseBaseException, expected_exception):
+                    parse(formula)
 
 
 class ModificationTest(unittest.TestCase):
