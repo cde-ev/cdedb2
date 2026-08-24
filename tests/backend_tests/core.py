@@ -1731,3 +1731,31 @@ class TestCoreBackend(BackendTest):
                     tuple(self.get_sample_data(table, keys=keys).values()),
                     realm=log_realm,
                 )
+
+    def test_searchable(self) -> None:
+        err = "Improper access to member data."
+
+        # Searchable user.
+        with self.switch_user("berta"):
+            # Retrieve self.
+            self.core.get_cde_user(self.key, 2)
+
+            # Retrieve searchable user.
+            self.core.get_cde_user(self.key, 1)
+
+            # Retrieve non-searchable user.
+            with self.assertRaisesRegex(RuntimeError, err):
+                self.core.get_cde_user(self.key, 3)
+
+        # Non-searchable user.
+        with self.switch_user("garcia"):
+            # Retrieve self.
+            self.core.get_cde_user(self.key, 7)
+
+            # Retrieve searchable user.
+            with self.assertRaisesRegex(RuntimeError, err):
+                self.core.get_cde_user(self.key, 1)
+
+            # Retrieve non-searchable user.
+            with self.assertRaisesRegex(RuntimeError, err):
+                self.core.get_cde_user(self.key, 3)

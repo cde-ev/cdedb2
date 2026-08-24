@@ -571,7 +571,8 @@ class BackendTest(CdEDBTest):
         self.login(new_user)
         yield
         self.logout(allow_anonymous=True)
-        self.login(old_user)
+        if old_user["id"]:
+            self.login(old_user)
 
     def user_in(self, *identifiers: UserIdentifier) -> bool:
         """Check whether the current user is any of the given users."""

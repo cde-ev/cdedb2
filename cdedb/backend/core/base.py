@@ -2728,13 +2728,15 @@ class CoreBaseBackend(AbstractBackend):
                 rs, *models.CdEPersona.get_select_query(persona_ids)
             )
             ret = models.CdEPersona.many_from_database(persona_data)
-            if not (Roles.cde_admin | Roles.core_admin & rs.user.new_roles) and (
-                Roles.searchable not in rs.user.new_roles
-                and any(
-                    (e.id != rs.user.persona_id and not e.is_searchable)
-                    for e in ret.values()
-                )
+            if persona_ids == {rs.user.persona_id}:
+                pass
+            elif rs.user.new_roles.has_any(Roles.cde_admin, Roles.core_admin):
+                pass
+            elif rs.user.new_roles.has(Roles.searchable) and all(
+                e.is_searchable for e in ret.values()
             ):
+                pass
+            else:
                 raise RuntimeError(n_("Improper access to member data."))
         return ret
 
