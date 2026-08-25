@@ -732,7 +732,7 @@ class EventLodgementMixin(EventBaseFrontend):
             return self.manage_inhabitants_form(rs, event_id, lodgement_id)
         # Iterate all registrations to find changed ones
         reg_data = []
-        change_note = f"Bewohner von {rs.ambience['lodgement'].title} geändert."
+        change_note = f"Bewohnende von {rs.ambience['lodgement'].title} geändert."
         for reg_id, reg in registrations.items():
             new_reg: CdEDBObject = {
                 'id': reg_id,
@@ -812,7 +812,7 @@ class EventLodgementMixin(EventBaseFrontend):
                     new_reg['parts'][part_id] = {'lodgement_id': lodgement_id}
                     new_regs[reg_id] = new_reg
                 change_notes.append(
-                    f"Bewohner von {lodgements[lodgement_id]} und"
+                    f"Bewohnende von {lodgements[lodgement_id]} und"
                     f" {lodgements[swap_lodgement_id]} für"
                     f" {rs.ambience['event'].parts[part_id].title} getauscht"
                 )

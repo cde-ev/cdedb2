@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-08-23 20:24+0200\n"
+"POT-Creation-Date: 2026-08-24 20:35+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -2794,7 +2794,7 @@ msgid "Unable to modify active ballot."
 msgstr ""
 
 #, fuzzy
-msgid "Non-existing candidates specified."
+msgid "Non-existing option specified."
 msgstr "non dictum"
 
 msgid "Must have privileged access to create ballot."
@@ -2849,7 +2849,7 @@ msgstr ""
 msgid "Could not determine secret."
 msgstr ""
 
-msgid "Must attend the ballot."
+msgid "You are no attendee of this assembly."
 msgstr ""
 
 msgid "May not access result for this ballot."
@@ -3278,8 +3278,7 @@ msgstr ""
 msgid "Invalid privilege change state: %(status)s."
 msgstr ""
 
-msgid ""
-"Only a different admin than the submitter may approve a privilege change."
+msgid "Only a different admin may approve a privilege change you submitted."
 msgstr ""
 
 msgid "Invalid new privilege change status."
@@ -3618,8 +3617,9 @@ msgstr "Annuntiationes"
 msgid "Only registrations from exactly one event allowed."
 msgstr "epistula electronica ad verificandum mitte"
 
-msgid "No participant of event."
-msgstr ""
+#, fuzzy
+msgid "You do not participate at this event."
+msgstr "haec videri non possit."
 
 msgid "Cannot alter `amount_paid` via `set_registration`."
 msgstr ""
@@ -3766,9 +3766,6 @@ msgstr ""
 
 #, python-format
 msgid "Both users are related to the same mailinglists: %(mls)s"
-msgstr ""
-
-msgid "This past event participant is no event user."
 msgstr ""
 
 #, fuzzy
@@ -5472,7 +5469,7 @@ msgstr "inscriptio electronica nova"
 msgid "Ballot has not been tallied."
 msgstr "epistula electronica ad verificandum mitte"
 
-msgid "Against all Candidates"
+msgid "\"Against all\" option"
 msgstr ""
 
 msgid "Rejection limit"
@@ -7016,8 +7013,9 @@ msgstr "vestigium novum crea"
 msgid "Source persona must be a ml-only user and no admin."
 msgstr ""
 
-msgid "User is no moderator."
-msgstr ""
+#, fuzzy
+msgid "Not a moderator."
+msgstr "consocii"
 
 msgid "Not allowed to remove yourself as moderator."
 msgstr ""
@@ -7260,7 +7258,7 @@ msgstr "vestigium novum crea"
 msgid "This ballot and all its data will be permanently deleted."
 msgstr ""
 
-msgid "Deletes the ballot and all associated settings and candidates."
+msgid "Deletes the ballot and all associated settings and options."
 msgstr ""
 
 msgid "Quorum"
@@ -7307,7 +7305,7 @@ msgstr ""
 msgid "Period"
 msgstr ""
 
-msgid "Admins can still make changes to description, files and candidates."
+msgid "Admins can still make changes to description, files and options."
 msgstr ""
 
 msgid ""
@@ -7369,8 +7367,9 @@ msgstr ""
 msgid "Ranking"
 msgstr ""
 
-msgid "Candidates"
-msgstr ""
+#, fuzzy
+msgid "Options"
+msgstr "documentatio"
 
 msgid "Pro-Votes"
 msgstr ""
@@ -7379,9 +7378,6 @@ msgid "Contra-Votes"
 msgstr ""
 
 msgid "and"
-msgstr ""
-
-msgid "Against all Candidates."
 msgstr ""
 
 msgid "Rejection limit."
@@ -7398,14 +7394,14 @@ msgid "Classical vote"
 msgstr ""
 
 msgid ""
-"Pro votes are the sum of all votes in favor of this candidate. Votes against "
-"single candidates are not possible in this voting system."
+"Pro votes are the sum of all votes in favor of this option. Votes against "
+"single options are not possible in this voting system."
 msgstr ""
 
 msgid ""
-"Using the \"Against all candidates\" option it is possible to vote against "
-"all candidates. This option can only be exclusively chosen, potential other "
-"votes expire."
+"By using the \"Against all\" option it is possible to vote against all "
+"options. This option can only be exclusively chosen, potential other votes "
+"expire."
 msgstr ""
 
 msgid "Preferential vote"
@@ -7413,11 +7409,11 @@ msgstr ""
 
 msgid ""
 "Pro votes and Contra votes are valid for the given position and are relative "
-"to the next lower position. Multiple candidates can share the same position "
-"in the ranking."
+"to the next lower position. Multiple options can share the same position in "
+"the ranking."
 msgstr ""
 
-msgid "With this option you reject all candidates."
+msgid "Choose this option to reject all other options."
 msgstr ""
 
 msgid "Vote_[[to vote in a ballot]]"
@@ -7443,8 +7439,8 @@ msgstr ""
 
 #, python-format
 msgid ""
-"This vote is a preferential vote. You can arrange the candidates in the "
-"field above according to your personal preference. The preferences of all "
+"This vote is a preferential vote. You can arrange the options in the field "
+"above according to your personal preference. The preferences of all "
 "participants will be evaluated using the %(link)s, to determine the option "
 "with the most votes."
 msgstr ""
@@ -7452,25 +7448,24 @@ msgstr ""
 #, python-format
 msgid ""
 "To enter your preferencelist, use the shortnames given in the list of "
-"candidates and the %(gt)s and %(eq)s characters. Use the greater-than "
-"character %(gt)s to give the candidates left of the character higher "
-"preference than those on the right. Use the equals character to give two "
-"candidates the same preference. You need to have all candidates in your "
-"preferencelist."
+"options and the %(gt)s and %(eq)s characters. Use the greater-than character "
+"%(gt)s to give the options left of the character higher preference than "
+"those on the right. Use the equals character to give two options the same "
+"preference. You need to have all options in your preferencelist."
 msgstr ""
 
 #, python-format
 msgid ""
 "Additionally you need to use the rejection bar %(abm)s in your "
-"preferencelist. Use it in your preferencelist like you would a candidate. "
-"Put all candidates you deem suitable higher than %(abm)s and all candidates "
-"you reject lower, i. e. to the right of %(abm)s."
+"preferencelist. Use it in your preferencelist like you would use an option. "
+"Put all options you deem suitable higher than %(abm)s and all options you "
+"reject lower, i. e. to the right of %(abm)s."
 msgstr ""
 
 msgid "Examples"
 msgstr ""
 
-msgid "Take the following examplatory candidate list:"
+msgid "Take the following examplatory list of options:"
 msgstr ""
 
 msgid "Luke Skywalker, short: [Luke]"
@@ -7489,8 +7484,8 @@ msgid "Your Vote could look like this:"
 msgstr ""
 
 msgid ""
-"You deem all candidates suitable, but you like Leia the best, with no "
-"difference between the other candidates."
+"You deem all options suitable, but you like Leia the best, with no "
+"difference between the other options."
 msgstr ""
 
 msgid ""
@@ -7515,10 +7510,10 @@ msgid ""
 msgstr ""
 
 msgid ""
-"To arrange the candidates, place them into one of the shaded boxes. The "
-"higher up the box, the higher your preference for that candidate. Candidates "
-"within the same box will be evaluated with the same preference. Place a "
-"candidate in the space between two boxes to create a new box there."
+"To arrange the options, place them into one of the shaded boxes. The higher "
+"up the box, the higher your preference for that option. Options within the "
+"same box will be evaluated with the same preference. Place an option in the "
+"space between two boxes to create a new box there."
 msgstr ""
 
 msgid "TAB"
@@ -7526,10 +7521,10 @@ msgstr ""
 
 #, python-format
 msgid ""
-"There are three ways of placing candidates: Drag’n’Drop them into a "
-"different box or click on a candidate and then on a box. Or you can select a "
-"candidate with %(tab)s, confirm it with %(enter)s or %(space)s, then select "
-"a box with %(tab)s and confirm the selection with %(enter)s or %(space)s."
+"There are three ways of placing options: Drag’n’Drop them into a different "
+"box or click on an option and then on a box. Or you can select an option "
+"with %(tab)s, confirm it with %(enter)s or %(space)s, then select a box with "
+"%(tab)s and confirm the selection with %(enter)s or %(space)s."
 msgstr ""
 
 msgid "ENTER"
@@ -7539,15 +7534,15 @@ msgid "Space"
 msgstr ""
 
 msgid ""
-"One of the boxes is marked as “Neutral”. Please place candidates cou deem "
-"suitable above this box (they will be highlighted in green) and candidates "
-"you want to reject below this box (they will be highlighted in red)."
+"One of the boxes is marked as “Neutral”. Please place options you deem "
+"suitable above this box (they will be highlighted in green) and options you "
+"want to reject below this box (they will be highlighted in red)."
 msgstr ""
 
-msgid "To abstain, place all candidates in the neutral box."
+msgid "To abstain, place all options in the neutral box."
 msgstr ""
 
-msgid "To abstain, place all candidates in the same box."
+msgid "To abstain, place all options in the same box."
 msgstr ""
 
 msgid "Text-based Voting"
@@ -7607,8 +7602,9 @@ msgstr ""
 msgid "Add"
 msgstr ""
 
-msgid "Add Candidate"
-msgstr ""
+#, fuzzy
+msgid "Add Option"
+msgstr "documentatio"
 
 #, fuzzy
 msgid "Delete line"
@@ -7751,7 +7747,7 @@ msgid ""
 msgstr ""
 
 msgid ""
-"For the whole page, the candidates are addressed with the following "
+"For the whole page, the options are addressed with the following "
 "abbreviations."
 msgstr ""
 
@@ -7762,10 +7758,10 @@ msgstr ""
 
 #, python-format
 msgid ""
-"The greater-than character %(gt)s means that the candidate, represented by "
+"The greater-than character %(gt)s means that the option, represented by "
 "their shortname, on the left has higher overall preference than the one on "
-"the right. The equals character %(eq)s means that two or more candidates "
-"have the same overall preference across all participants."
+"the right. The equals character %(eq)s means that two or more options have "
+"the same overall preference across all participants."
 msgstr ""
 
 msgid "Verify the result"
@@ -7844,13 +7840,13 @@ msgid "Cross Table of Preferences"
 msgstr ""
 
 msgid ""
-"The following table contains the pairwise preferences over all candidates. "
-"It can be read as"
+"The following table contains the pairwise preferences over all options. It "
+"can be read as"
 msgstr ""
 
 msgid ""
-"the candidate of the xth row is preferred by y voters over the candidate of "
-"the zth column."
+"the option of the xth row is preferred by y voters over the option of the "
+"zth column."
 msgstr ""
 
 msgid "Votes"
@@ -7875,10 +7871,10 @@ msgstr ""
 msgid "You abstained."
 msgstr ""
 
-msgid "You voted against all candidates."
+msgid "You voted against all options."
 msgstr ""
 
-msgid "You voted for the following candidates:"
+msgid "You voted for the following options:"
 msgstr ""
 
 msgid "You voted in the following preference:"
@@ -9752,7 +9748,7 @@ msgid "Account Log"
 msgstr "vestigium novum crea"
 
 #, fuzzy
-msgid "Userdata Log"
+msgid "Change Log"
 msgstr "data utentis tracta"
 
 #, fuzzy
@@ -10394,7 +10390,7 @@ msgid "This restores the archived Account. It will be usable again."
 msgstr ""
 
 #, fuzzy
-msgid "Dearchive user"
+msgid "Account"
 msgstr "vestigium novum crea"
 
 #, fuzzy
@@ -10559,10 +10555,6 @@ msgstr "documentatio"
 
 msgid "Reviewer"
 msgstr ""
-
-#, fuzzy
-msgid "Account"
-msgstr "vestigium novum crea"
 
 #, fuzzy
 msgid "Persona Information"
@@ -13344,10 +13336,6 @@ msgid "Datatype"
 msgstr ""
 
 #, fuzzy
-msgid "Options"
-msgstr "documentatio"
-
-#, fuzzy
 msgid "Display at Checkin"
 msgstr "ostende facultatum indicem principalem"
 
@@ -15159,8 +15147,8 @@ msgid ""
 msgstr ""
 
 #, fuzzy
-msgid "Event Audience"
-msgstr "administrator eventuum"
+msgid "Receiving Stati"
+msgstr "Annuntiationes"
 
 msgid ""
 "The participants of this assembly will be subscribers of this mailinglist. "

@@ -371,7 +371,7 @@ class TestLDAP(BasicTest):
         group_cn = "is_cdelokal_admin"
         expectation: dict[str, list[str] | list[NearlyNow]] = {
             'cn': ['is_cdelokal_admin'],
-            'description': ['CdELokal-Administratoren'],
+            'description': ['CdELokal-Admins'],
             'ipaUniqueID': ['status_groups/is_cdelokal_admin'],
             'uniqueMember': [
                 'uid=1,ou=users,dc=cde-ev,dc=de',

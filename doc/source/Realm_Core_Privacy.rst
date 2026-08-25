@@ -88,7 +88,7 @@ Diese lassen sich in die folgenden Kategorien einteilen (Mehrfachnennung möglic
 
 Darüber hinaus gibt es die sogenannte ``Änderungshistorie`` eines Benutzers.
 In dieser werden die Änderungen an einem Benutzerprofil gespeichert.
-Diese ist lediglich den relativen Administratoren des jeweiligen Bereichs zugänglich.
+Diese ist lediglich den relativen Admins des jeweiligen Bereichs zugänglich.
 
 
 Welche Arten von Benutzern gibt es?
@@ -153,7 +153,7 @@ besitzt (das maximale Element der Bereiche):
     Besitzt ein Benutzer den CdE Bereich, ist automatisch nur der CdE-Admin
     relativer Admin.
 
-Alle User mit Admin-Rechten sind unter ``Index/Administratorenübersicht``
+Alle User mit Admin-Rechten sind unter ``Index/Admin-Übersicht``
 aufgelistet.
 
 
@@ -184,17 +184,17 @@ auf den Profilen anderer Benutzer sehen darf.
 
       * Jeder aktive Benutzer: "Grundlegend"
 
-* Orgas und Moderatoren
+* Orgas und Moderator:innen
     Ist der Benutzer bei einer Veranstaltung registriert bzw auf einer
-    Mailingliste eingeschrieben, haben die jeweiligen Orgas bzw Moderatoren
+    Mailingliste eingeschrieben, haben die jeweiligen Orgas bzw Moderator:innen
     Zugriff auf folgende Kategorien:
 
       * Orgas: "Veranstaltungsbezogen"
-      * Moderatoren: Das Feld "E-Mail"
+      * Moderator:innen: Das Feld "E-Mail"
 
     Veranstaltungs-Admins haben vollen Zugriff auf alle Veranstaltungen, als
     wären sie Orgas. Mailinglisten-Admins haben vollen Zugriff auf alle
-    Mailinglisten, als wären sie Moderatoren.
+    Mailinglisten, als wären sie Moderator:in.
 
     Darüber hinaus haben einige Admins vollen Zugriff auf alle ihnen
     zugeordneten Mailinglisten. Für Veranstaltungs-, bzw. Versammlungs-Admins

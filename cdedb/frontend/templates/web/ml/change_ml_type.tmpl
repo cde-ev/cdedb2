@@ -51,7 +51,7 @@
                                       nulloption=nbsp, label=gettext("Event"), sort=True,
                                       info=gettext("The participants of this event will be subscribers of this "
                                                    "mailinglist. (Opt-Out)")) }}
-            {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Event Audience"), readonly=readonly,
+            {{ util.form_input_checkboxes(name="registration_stati", label=gettext("Receiving Stati"), readonly=readonly,
                                           entries=enums['RegistrationPartStati']|enum_entries(processing=gettext),
                                           outerclass="event-specific") }}
             {{ util.form_input_select(name="assembly_id", entries=assemblies|dictsort|dict_entries('id', 'title'),

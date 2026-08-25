@@ -119,7 +119,7 @@ class AssemblyTestHelpers(FrontendTest):
 
     def _external_signup(self, user: UserIdentifier) -> str:
         user = get_user(user)
-        self.traverse({'description': 'Teilnehmer'})
+        self.traverse({'description': 'Teilnehmende'})
         f = self.response.forms['addattendeeform']
         f['persona_id'] = user['DB-ID']
         self.submit(f)
@@ -182,11 +182,11 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertPresence("Geleitete Versammlungen")
             self.assertPresence("Archiv-Sammlung", div='presided-assemblies')
             self.assertPresence("Internationaler Kongress", div='presided-assemblies')
-            self.assertPresence("6 Teilnehmer")
-            self.assertPresence("0 Teilnehmer")
+            self.assertPresence("6 Teilnehmende")
+            self.assertPresence("0 Teilnehmende")
         else:
             self.assertNonPresence("Geleitete Versammlungen")
-            self.assertNonPresence("Teilnehmer")
+            self.assertNonPresence("Teilnehmende")
         self.assertPresence("Inaktive Versammlungen")
 
     @as_users(
@@ -199,19 +199,19 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # not assembly admins
         if self.user_in("annika", "martin", "werner"):
             ins = everyone
-            out = {"Nutzer verwalten", "Log"}
+            out = {"Accounts verwalten", "Log"}
         # core admins
         elif self.user_in("vera"):
-            ins = everyone | {"Nutzer verwalten"}
+            ins = everyone | {"Accounts verwalten"}
             out = {"Log"}
         # assembly admins
         elif self.user_in("anton"):
-            ins = everyone | {"Nutzer verwalten", "Log"}
+            ins = everyone | {"Accounts verwalten", "Log"}
             out = set()
         # auditors
         elif self.user_in("katarina"):
             ins = everyone | {"Log"}
-            out = {"Nutzer verwalten"}
+            out = {"Accounts verwalten"}
         else:
             self.fail("Please adjust users for this tests.")
 
@@ -257,9 +257,9 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     @as_users("paul", "viktor", maintain_data=True)
     def test_user_search(self) -> None:
         self.traverse(
-            {'description': 'Versammlungen'}, {'description': 'Nutzer verwalten'}
+            {'description': 'Versammlungen'}, {'description': 'Accounts verwalten'}
         )
-        self.assertTitle("Versammlungsnutzerverwaltung")
+        self.assertTitle("Versammlungsaccountverwaltung")
         f = self.response.forms['queryform']
         f['qop_username'] = QueryOperators.match.value
         f['qval_username'] = 'f@'
@@ -267,7 +267,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Versammlungsnutzerverwaltung")
+        self.assertTitle("Versammlungsaccountverwaltung")
         self.assertPresence("Ergebnis [1]", div="query-results")
         self.assertPresence("Karabatschi", div="result-container")
 
@@ -282,7 +282,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
 
         self.traverse({'href': '/assembly/'})
         self._click_admin_view_button(
-            re.compile(r"Benutzer-Administration"), current_state=False
+            re.compile(r"Account-Administration"), current_state=False
         )
 
         # Test Assembly Administration Admin View
@@ -383,7 +383,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         attendee = {
             "Versammlungs-Übersicht",
             "Übersicht",
-            "Teilnehmer",
+            "Teilnehmende",
             "Abstimmungen",
             "Zusammenfassung",
             "Dateien",
@@ -455,7 +455,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             }
         )
         self.assertNotification("Versammlungsleitungs-Mailingliste angelegt.")
-        self.assertNotification("Versammlungsteilnehmer-Mailingliste angelegt.")
+        self.assertNotification("Versammlungsteilnehmenden-Mailingliste angelegt.")
         self.assertNotification(
             "Angegebene Versammlungsleitungs-E-Mail-Adresse durch"
             " Adresse der neuen Mailingliste ersetzt.",
@@ -481,8 +481,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             'presider_ids',
             "Darf nicht leer sein, damit eine Mailingliste erstellt werden kann",
         )
-        user_archived = "Einige dieser Nutzer existieren nicht oder sind archiviert."
-        user_no_realm = "Einige dieser Nutzer sind keine Versammlungsnutzer."
+        user_archived = "Einige dieser Accounts existieren nicht oder sind archiviert."
+        user_no_realm = "Einige dieser Accounts sind keine Versammlungsaccounts."
         f['presider_ids'] = USER_DICT['hades']['DB-ID']  # archived
         self.submit(f, check_notification=False)
         self.assertValidationError('presider_ids', user_archived)
@@ -588,7 +588,8 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.response.forms['createpresiderlistform'], check_notification=False
         )
         self.assertNotification(
-            "Mailingliste kann nur mit Versammlungsleitern erstellt werden.", 'error'
+            "Mailingliste kann nur angelegt werden, wenn es eine Versammlungsleitung gibt.",
+            'error',
         )
         f = self.response.forms['addpresidersform']
         f['presider_ids'] = USER_DICT['werner']['DB-ID']
@@ -665,7 +666,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     @as_users("werner", "ferdinand")
     def test_external_signup(self) -> None:
         self.get("/assembly/assembly/3/show")
-        self.traverse({'description': "Teilnehmer"})
+        self.traverse({'description': "Teilnehmende"})
         self.assertTitle("Anwesenheitsliste (Archiv-Sammlung)")
         self.assertNonPresence("Kalif", div='attendees-list')
         # Valid request
@@ -678,7 +679,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f['persona_id'] = USER_DICT['hades']['DB-ID']
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            "persona_id", "Dieser Benutzer existiert nicht oder ist archiviert."
+            "persona_id", "Dieser Account existiert nicht oder ist archiviert."
         )
         # Member
         f['persona_id'] = USER_DICT['berta']['DB-ID']
@@ -690,13 +691,13 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f['persona_id'] = USER_DICT['emilia']['DB-ID']
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            "persona_id", "Dieser Nutzer ist kein Versammlungsnutzer."
+            "persona_id", "Dieser Account ist kein Versammlungsaccount."
         )
         # Nonexistent user
         f['persona_id'] = "DB-1000-6"
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            'persona_id', "Dieser Benutzer existiert nicht oder ist archiviert."
+            'persona_id', "Dieser Account existiert nicht oder ist archiviert."
         )
         # Invalid DB-ID
         f['persona_id'] = "DB-1000-X"
@@ -718,7 +719,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.traverse(
             {'description': 'Versammlungen'},
             {'description': 'Internationaler Kongress'},
-            {'description': 'Teilnehmer'},
+            {'description': 'Teilnehmende'},
         )
         self.assertTitle("Anwesenheitsliste (Internationaler Kongress)")
         attendees = ["Anton", "Akira", "Bertå", "Kalif", "Inga", "Werner"]
@@ -772,7 +773,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f' VALUES ({USER_DICT["vera"]["id"]}, 1);'
     )
     def test_attendee_list_download(self) -> None:
-        self.traverse("Versammlungen", "Internationaler Kongress", "Teilnehmer")
+        self.traverse("Versammlungen", "Internationaler Kongress", "Teilnehmende")
         f = self.response.forms['downloadattendeesform']
         f['cutoff'] = "2020-02-03T23:59:59"
         self.submit(f)
@@ -1614,14 +1615,14 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         # invalid candidates - test validation errors
         f['vote'] = "Werner>Anton"
         self.submit(f, check_notification=False)
-        self.assertValidationError('vote', "Nicht alle Kandidaten vorhanden.")
+        self.assertValidationError('vote', "Nicht alle Optionen vorhanden.")
         f['vote'] = "_bar_=Akira=Anton>Berta>Willi"
         self.submit(f, check_notification=False)
-        self.assertValidationError('vote', "Unerwarteten Kandidaten gefunden.")
+        self.assertValidationError('vote', "Unerwartete Option gefunden.")
         f['vote'] = "_bar_=Akira=Anton>Berta>Anton"
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            'vote', "Jeder Kandidat muss genau einmal vorhanden sein."
+            'vote', "Jede Option muss genau einmal vorhanden sein."
         )
 
     @storage
@@ -1791,7 +1792,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                     self.assertPresence("A = Arthur Dent")
                     self.assertPresence("B = Ford Prefect")
                     self.assertPresence(
-                        "Du hast für die folgenden Kandidaten gestimmt: A = B",
+                        "Du hast für die folgenden Optionen gestimmt: A = B",
                         div='own-vote',
                         exact=True,
                     )
@@ -1949,7 +1950,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence("A = Baum & Blätter")
         self.assertPresence("B = CdE Glühbirne")
         self.assertPresence("C = CdE Wappen")
-        self.assertPresence("# = Gegen alle Kandidaten")
+        self.assertPresence('# = "Gegen alle"-Option')
 
         # test if the overall result is displayed correctly
         self.assertPresence("C > B = A = #", div='combined-preference', exact=True)
@@ -2243,7 +2244,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             self.assertPresence("A = Ja")
             self.assertPresence("B = Nein")
             self.assertPresence(
-                "Du hast für die folgenden Kandidaten gestimmt: A",
+                "Du hast für die folgenden Optionen gestimmt: A",
                 div='own-vote',
                 exact=True,
             )
@@ -2286,10 +2287,10 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
             )
             s = (
                 "Die Versammlung wurde beendet. Das Abstimmungsverhalten einzelner"
-                " Nutzer ist nicht mehr aus der Datenbank auslesbar."
+                " Personen ist nicht mehr aus der Datenbank auslesbar."
             )
             self.assertPresence(s)
-            self.assertNonPresence("Du hast für die folgenden Kandidaten gestimmt:")
+            self.assertNonPresence("Du hast für die folgenden Optionen gestimmt:")
 
             # Provide the secret to retrieve the vote.
             f = self.response.forms['showoldvoteform']
@@ -2306,7 +2307,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
                 "Die Versammlung wurde beendet und die Stimmen sind nun verschlüsselt."
             )
             self.assertPresence(
-                "Du hast für die folgenden Kandidaten gestimmt: A",
+                "Du hast für die folgenden Optionen gestimmt: A",
                 div='own-vote',
                 exact=True,
             )
@@ -2445,13 +2446,13 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         self.assertPresence(
             '10.02.2000, 21:22:22 – 11.02.2222, 21:22:22'
             ' Bester Hof (Klassische Abstimmung mit 1 Stimme und'
-            ' "Gegen alle Kanididaten"-Option.)',
+            ' "Gegen alle"-Option.)',
             div="running-ballots",
         )
         self.assertPresence(
             ' – 01.01.2222, 21:22:22'
             ' Akademie-Nachtisch (Klassische Abstimmung mit 2 Stimmen'
-            ' und "Gegen alle Kandidaten"-Option.)'
+            ' und "Gegen alle"-Option.)'
             ' Lieblingszahl (Präferenzwahl ohne Ablehnungsoption.)',
             div="running-ballots",
         )
@@ -2534,7 +2535,7 @@ class TestMultiAssemblyFrontend(MultiAppFrontendTest, AssemblyTestHelpers):
         self.assertNotIn(form_id, self.response.forms)
         self.submit(f, check_notification=False)
         self.assertNotification(
-            "Dieser Nutzer ist kein Versammlungsleiter für diese Versammlung."
+            "Dieser Account ist nicht Teil der Versammlungsleitung von dieser Versammlung."
         )
         self.assertNonPresence(
             "Werner Wahlleitung", div='assembly-presiders', check_div=False
@@ -2561,20 +2562,20 @@ class TestMultiAssemblyFrontend(MultiAppFrontendTest, AssemblyTestHelpers):
         self.submit(f, check_notification=False)
         self.assertValidationError(
             "presider_ids",
-            "Einige dieser Nutzer existieren nicht oder sind archiviert.",
+            "Einige dieser Accounts existieren nicht oder sind archiviert.",
         )
         # Try archived user.
         f['presider_ids'] = USER_DICT["hades"]['DB-ID']
         self.submit(f, check_notification=False)
         self.assertValidationError(
             "presider_ids",
-            "Einige dieser Nutzer existieren nicht oder sind archiviert.",
+            "Einige dieser Accounts existieren nicht oder sind archiviert.",
         )
         # Try non-assembly user.
         f['presider_ids'] = USER_DICT["emilia"]['DB-ID']
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            "presider_ids", "Einige dieser Nutzer sind keine Versammlungsnutzer."
+            "presider_ids", "Einige dieser Accounts sind keine Versammlungsaccounts."
         )
         # Proceed with a valid user.
         f['presider_ids'] = USER_DICT["werner"]['DB-ID']

@@ -779,7 +779,7 @@ class CoreBaseFrontend(AbstractFrontend):
             persona.username = REDACTED
             persona.legal_given_names = REDACTED
         else:
-            raise RuntimeError("Impossible")
+            raise RuntimeError("Impossible.")
 
         has_lastschrift = REDACTED
         if isinstance(persona, models.CdEPersona):
@@ -2310,12 +2310,10 @@ class CoreBaseFrontend(AbstractFrontend):
                     n_("Cannot modify own meta admin privileges.")
                 )
             if rs.user.persona_id == change["submitted_by"]:
-                raise werkzeug.exceptions.Forbidden(
-                    n_(
-                        "Only a different admin than the submitter"
-                        " may approve a privilege change."
-                    )
+                msg = n_(
+                    "Only a different admin may approve a privilege change you submitted."
                 )
+                raise werkzeug.exceptions.Forbidden(msg)
         code = self.coreproxy.finalize_privilege_change(rs, change_id, change_status)
         success = n_("Change committed.") if ack else n_("Change rejected.")
         info = n_("Password reset issued for new admin.")

@@ -323,9 +323,7 @@ class TestPastEventBackend(BackendTest):
         # mailinglist user can not be added to past event
         with self.assertRaises(ValueError) as cm:
             self.pastevent.set_participant(self.key, pevent_id=1, persona_id=10)
-        self.assertIn(
-            "This past event participant is no event user.", cm.exception.args[0]
-        )
+        self.assertIn("This user is not an event user.", cm.exception.args[0])
 
     @as_users("vera")
     def test_past_log(self) -> None:

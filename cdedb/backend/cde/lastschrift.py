@@ -488,7 +488,7 @@ class CdELastschriftBackend(CdEBaseBackend):
             elif status == const.LastschriftTransactionStati.failure:
                 tally = -self.conf["SEPA_ROLLBACK_FEE"]
             else:
-                raise RuntimeError(n_("Impossible"))
+                raise RuntimeError(n_("Impossible."))
             update = {
                 'id': transaction_id,
                 'processed_at': now(),

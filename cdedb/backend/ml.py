@@ -1847,7 +1847,7 @@ class MlBackend(AbstractBackend):
                 return 0
 
             code = 1
-            msg = f"Nutzer {source_persona_id} ist in diesem Account aufgegangen."
+            msg = f"Account {source_persona_id} ist in diesem Account aufgegangen."
 
             for ml_id, state in source_subscriptions.items():
                 # state=None is only possible, if we handle a set of mailinglists
@@ -1898,7 +1898,7 @@ class MlBackend(AbstractBackend):
 
             # at last, archive the source user
             # this will delete all subscriptions and remove all moderator rights
-            msg = f"Dieser Account ist in Nutzer {target_persona_id} aufgegangen."
+            msg = f"Dieser Account ist in Account {target_persona_id} aufgegangen."
             code *= self.core.archive_persona(
                 rs, persona_id=source_persona_id, note=msg
             )

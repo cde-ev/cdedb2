@@ -321,7 +321,7 @@ class EventEventMixin(EventBaseFrontend):
             "notes": "Orga-Notizen geändert.",
             "registration_status_text": 'Freitext "Meine Anmeldung" geändert.',
             "mail_text": 'Freitext "Anmeldebestätigung" geändert.',
-            "participant_info": "Teilnehmer-Infos geändert.",
+            "participant_info": "Teilnehmenden-Infos geändert.",
             "field_definition_notes": "Notizen zu Datenfeldern geändert.",
             "questionnaire_notes": "Notizen zu Fragebögen geändert.",
         }
@@ -507,7 +507,7 @@ class EventEventMixin(EventBaseFrontend):
             if not self.is_privileged(rs, EventPrivileges.basic_write):
                 raise werkzeug.exceptions.Forbidden()
         else:
-            raise RuntimeError(n_("Impossible"))
+            raise RuntimeError(n_("Impossible."))
 
         if rs.has_validation_errors():
             # Shortcircuit if we have got no workable ids.
@@ -1515,7 +1515,7 @@ class EventEventMixin(EventBaseFrontend):
         else:
             if part_group_id:
                 title = (
-                    f"{event.title} Teilnehmer"
+                    f"{event.title} Teilnehmende"
                     f" ({event.part_groups[part_group_id].title})"
                 )
                 local_part = (
@@ -1527,15 +1527,15 @@ class EventEventMixin(EventBaseFrontend):
                     f"{event.shortname}-{event.part_groups[part_group_id].shortname}"
                 )
             else:
-                title = f"{event.title} Teilnehmer"
+                title = f"{event.title} Teilnehmende"
                 local_part = f"{event.shortname.lower()}-all"
                 subject_prefix = event.shortname
             link = cdedburl(rs, "event/register", {'event_id': event.id})
             descr = (
                 f"Dieser Liste kannst Du nur beitreten, indem Du Dich zu "
                 f"unserer [Veranstaltung anmeldest]({link}) und den Status "
-                f"*Teilnehmer* erhälst. Auf dieser Liste stehen alle "
-                f"Teilnehmer unserer Veranstaltung; sie kann im Vorfeld "
+                f"*Teilnahme* erhälst. Auf dieser Liste stehen alle "
+                f"Teilnehmenden unserer Veranstaltung; sie kann im Vorfeld "
                 f"zum Austausch untereinander genutzt werden."
             )
             participant_ml_data = EventAssociatedMailinglist(

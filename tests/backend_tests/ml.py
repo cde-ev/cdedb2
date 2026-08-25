@@ -91,7 +91,7 @@ class TestMlBackend(BackendTest):
         # check the logs
         expectation = (
             {
-                'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
+                'change_note': 'Account 10 ist in diesem Account aufgegangen.',
                 'code': const.MlLogCodes.subscribed,
                 'ctime': nearly_now(),
                 'id': 1001,
@@ -118,7 +118,7 @@ class TestMlBackend(BackendTest):
                 'submitted_by': 1,
             },
             {
-                'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
+                'change_note': 'Account 10 ist in diesem Account aufgegangen.',
                 'code': const.MlLogCodes.marked_override,
                 'ctime': nearly_now(),
                 'id': 1004,
@@ -136,7 +136,7 @@ class TestMlBackend(BackendTest):
                 'submitted_by': 1,
             },
             {
-                'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
+                'change_note': 'Account 10 ist in diesem Account aufgegangen.',
                 'code': const.MlLogCodes.subscribed,
                 'ctime': nearly_now(),
                 'id': 1006,
@@ -154,7 +154,7 @@ class TestMlBackend(BackendTest):
                 'submitted_by': 1,
             },
             {
-                'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
+                'change_note': 'Account 10 ist in diesem Account aufgegangen.',
                 'code': const.MlLogCodes.subscribed,
                 'ctime': nearly_now(),
                 'id': 1008,
@@ -172,7 +172,7 @@ class TestMlBackend(BackendTest):
                 'submitted_by': 1,
             },
             {
-                'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
+                'change_note': 'Account 10 ist in diesem Account aufgegangen.',
                 'code': const.MlLogCodes.moderator_added,
                 'ctime': nearly_now(),
                 'id': 1010,
@@ -181,7 +181,7 @@ class TestMlBackend(BackendTest):
                 'submitted_by': 1,
             },
             {
-                'change_note': 'Nutzer 10 ist in diesem Account aufgegangen.',
+                'change_note': 'Account 10 ist in diesem Account aufgegangen.',
                 'code': const.MlLogCodes.moderator_added,
                 'ctime': nearly_now(),
                 'id': 1011,

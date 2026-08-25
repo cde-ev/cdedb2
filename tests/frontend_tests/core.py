@@ -62,7 +62,7 @@ class TestCoreFrontend(FrontendTest):
         f["password"] = user["password"]
         self.submit(f, check_notification=False)
         self.assertLogin(user["given_names"])
-        self.assertTitle("Administratorenübersicht")
+        self.assertTitle("Admin-Übersicht")
 
     @as_users("vera", "berta", "emilia", maintain_data=True)
     def test_logout(self) -> None:
@@ -75,7 +75,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("vera")
     def test_change_locale(self) -> None:
         # Test for german locale
-        self.traverse({'description': 'Nutzer verwalten'})
+        self.traverse({'description': 'Accounts verwalten'})
         self.assertPresence("Suchmaske", div='qf_title')
         self.assertNonPresence("Search Mask")
         # Test changing locale to english
@@ -102,7 +102,7 @@ class TestCoreFrontend(FrontendTest):
             if self.user_in("berta"):
                 self.assertNonPresence("Log")
                 self.assertNonPresence("Admin-Änderungen")
-                self.assertNonPresence("Nutzer verwalten")
+                self.assertNonPresence("Accounts verwalten")
                 self.assertNonPresence("Aktivenforum 2000")
                 self.assertPresence("Aktivenforum 2001", div='moderator-box')
                 # Check if there is actually the correct request
@@ -116,8 +116,8 @@ class TestCoreFrontend(FrontendTest):
             else:
                 self.assertPresence("Account-Log", div='sidebar')
                 self.assertPresence("Admin-Änderungen", div='sidebar')
-                self.assertPresence("Nutzer verwalten", div='sidebar')
-                self.assertPresence("Nutzer verwalten", div='adminshowuser-box')
+                self.assertPresence("Accounts verwalten", div='sidebar')
+                self.assertPresence("Accounts verwalten", div='adminshowuser-box')
                 self.assertPresence("Platin-Lounge", div='moderator-box')
                 # Check moderation notification
                 self.assertPresence("Moderatoren-Liste", div='moderator-box')
@@ -166,17 +166,17 @@ class TestCoreFrontend(FrontendTest):
             "Index",
             "Übersicht",
             "Meine Daten",
-            "Administratorenübersicht",
+            "Admin-Übersicht",
             "Kontakt",
         }
         genesis = {"Accountanfragen"}
         pending = {"Änderungen prüfen"}
         defect_email = {"Defekte Email-Adressen"}
-        core_admin = {"Nutzer verwalten", "Metadaten"}
+        core_admin = {"Accounts verwalten", "Metadaten"}
         meta_admin = {"Admin-Änderungen"}
-        log = {"Account-Log", "Nutzerdaten-Log"}
+        log = {"Account-Log", "Änderungs-Log"}
         complaint_admin = {"Fallarchiv", "Fall-Log"}
-        complaint_enforcer = {"Maßnahmenübersicht", "Fall-Unterstützer"}
+        complaint_enforcer = {"Maßnahmenübersicht", "Fall-Unterstützer:innen"}
         complaint = complaint_admin | complaint_enforcer
 
         # admin of a realm without genesis cases
@@ -270,18 +270,18 @@ class TestCoreFrontend(FrontendTest):
 
         self.traverse("Veranstaltungs-Daten")
         self.assertTitle("Garcia Generalis – Veranstaltungs-Daten")
-        self.assertPresence("CyberTestAkademie Teilnehmer", div="registration-list")
+        self.assertPresence("CyberTestAkademie Teilnahme", div="registration-list")
         # part names not shown for one-part events
-        self.assertNonPresence("CyberTestAkademie: Teilnehmer", div="registration-list")
+        self.assertNonPresence("CyberTestAkademie: Teilnahme", div="registration-list")
         self.assertPresence("Große Testakademie", div="registration-list")
         self.assertPresence(
-            "Warmup: Teilnehmer, Erste Hälfte: Teilnehmer, Zweite Hälfte: Teilnehmer",
+            "Warmup: Teilnahme, Erste Hälfte: Teilnahme, Zweite Hälfte: Teilnahme",
             div="registration-list",
         )
 
         self.assertPresence("Große Testakademie 2222: Orga", div="event-roles-list")
-        self.assertPresence("CdE-Party 2050: Betreuer", div="event-roles-list")
-        self.assertPresence("TripelAkademie: Checkin-Helfer", div="event-roles-list")
+        self.assertPresence("CdE-Party 2050: Betreuer:in", div="event-roles-list")
+        self.assertPresence("TripelAkademie: Checkin-Helfer:in", div="event-roles-list")
 
     @as_users("nina", "paul", "quintus", maintain_data=True)
     def test_showuser_mailinglists(self) -> None:
@@ -340,16 +340,16 @@ class TestCoreFrontend(FrontendTest):
         # The history is available
         self.get('/core/persona/8/history')
         self.assertTitle("Änderungshistorie von Hades Hell")
-        self.assertPresence("Benutzer ist archiviert.", div='static-notifications')
+        self.assertPresence("Account ist archiviert.", div='static-notifications')
         self.get('/core/persona/8/events')
         self.assertTitle("Hades Hell – Veranstaltungs-Daten")
-        self.assertPresence("Benutzer ist archiviert.", div='static-notifications')
+        self.assertPresence("Account ist archiviert.", div='static-notifications')
         self.get('/core/persona/8/mailinglists')
         self.assertTitle("Hades Hell – Mailinglisten-Daten")
-        self.assertPresence("Benutzer ist archiviert.", div='static-notifications')
+        self.assertPresence("Account ist archiviert.", div='static-notifications')
         self.get('/core/persona/8/assemblies')
         self.assertTitle("Hades Hell – Versammlungs-Daten")
-        self.assertPresence("Benutzer ist archiviert.", div='static-notifications')
+        self.assertPresence("Account ist archiviert.", div='static-notifications')
         self.get('/core/persona/8/adminchange')
         _check_redirected_profile()
         self.get('/core/persona/8/privileges')
@@ -452,7 +452,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertNoLink('/core/genesis/list')
         self.assertNoLink('/core/changelog/list')
         self._click_admin_view_button(
-            re.compile(r"Benutzer-Review"), current_state=False
+            re.compile(r"Account-Review"), current_state=False
         )
         self.traverse({'href': '/core/genesis/list'}, {'href': '/core/changelog/list'})
 
@@ -462,7 +462,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertNoLink('/core/changelog/view')
 
         self._click_admin_view_button(
-            re.compile(r"Benutzer-Administration"), current_state=False
+            re.compile(r"Account-Administration"), current_state=False
         )
         self.traverse(
             {'href': '/core/changelog/view'},
@@ -478,7 +478,7 @@ class TestCoreFrontend(FrontendTest):
         self.response.click(href='/membership/change')
         # Disable the User admin view. No buttons should be present anymore
         self._click_admin_view_button(
-            re.compile(r"Benutzer-Administration"), current_state=True
+            re.compile(r"Account-Administration"), current_state=True
         )
         self.assertNoLink('/username/adminchange')
         self.assertNoLink(re.compile(r'\d+/adminchange'))
@@ -504,7 +504,7 @@ class TestCoreFrontend(FrontendTest):
 
         self.admin_view_profile('hades')
         self.assertTitle(USER_DICT['hades']['default_name_format'])
-        self.assertNotification("Der Benutzer ist archiviert", 'info', static=True)
+        self.assertNotification("Der Account ist archiviert", 'info', static=True)
 
     @as_users("berta")
     def test_member_profile_past_events(self) -> None:
@@ -790,7 +790,7 @@ class TestCoreFrontend(FrontendTest):
         f['phrase'] = "ad"
         f['include_archived'].checked = False
         self.submit(f)
-        self.assertTitle("Allgemeine Nutzerverwaltung")
+        self.assertTitle("Allgemeine Accountverwaltung")
         self.assertPresence("Anton", div='query-result')
         self.assertPresence("Beispiel", div='query-result')
         self.assertPresence("Charly", div='query-result')
@@ -807,7 +807,7 @@ class TestCoreFrontend(FrontendTest):
         f['phrase'] = "ad"
         f['include_archived'].checked = True
         self.submit(f)
-        self.assertTitle("Allgemeine Nutzerverwaltung")
+        self.assertTitle("Allgemeine Accountverwaltung")
         self.assertPresence("Anton", div='query-result')
         self.assertPresence("Beispiel", div='query-result')
         self.assertPresence("Charly", div='query-result')
@@ -1499,7 +1499,7 @@ class TestCoreFrontend(FrontendTest):
         f["confirm_username"] = "something else"
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            'confirm_username', "Bitte gib die Emailadresse des Nutzers an."
+            'confirm_username', "Bitte gib die Emailadresse des Accounts an."
         )
         f["confirm_username"] = USER_DICT[other_user_name]["username"]
         self.submit(f)
@@ -1534,7 +1534,7 @@ class TestCoreFrontend(FrontendTest):
         f["note"] = "Archived for testing."
         f["ack_delete"].checked = True
         self.submit(f)
-        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        self.assertPresence("Der Account ist archiviert.", div='archived')
 
     def test_privilege_change_self_approval(self) -> None:
         user = USER_DICT["anton"]
@@ -1562,7 +1562,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence(
             "Admins können nicht archiviert werden.", div="notifications"
         )
-        self.assertNonPresence("Benutzer ist archiviert", div="notifications")
+        self.assertNonPresence("Account ist archiviert", div="notifications")
         self.assertPresence(USER_DICT["martin"]["username"])
 
     def _initialize_privilege_change(
@@ -1673,7 +1673,7 @@ class TestCoreFrontend(FrontendTest):
                 self.admin_view_profile(u)
                 f = self.response.forms['activitytoggleform']
                 self.submit(f)
-                msg = "Benutzer ist deaktiviert."
+                msg = "Account ist deaktiviert."
                 if u in {"olaf"}:
                     self.assertNonPresence(msg)
                     self.assertPresence("Ja", div='account-active')
@@ -1748,8 +1748,8 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("vera")
     def test_user_search(self) -> None:
-        self.traverse({'description': 'Nutzer verwalten'})
-        self.assertTitle("Allgemeine Nutzerverwaltung")
+        self.traverse({'description': 'Accounts verwalten'})
+        self.assertTitle("Allgemeine Accountverwaltung")
         f = self.response.forms['queryform']
         f['qop_username'] = QueryOperators.match.value
         f['qval_username'] = 'n'
@@ -1757,7 +1757,7 @@ class TestCoreFrontend(FrontendTest):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Allgemeine Nutzerverwaltung")
+        self.assertTitle("Allgemeine Accountverwaltung")
         self.assertPresence("Ergebnis [15]", div='query-results')
         self.assertPresence("Jalapeño", div='query-result')
 
@@ -1765,8 +1765,8 @@ class TestCoreFrontend(FrontendTest):
     def test_create_user(self) -> None:
 
         def _traverse_to_realm(realm: str | None = None) -> webtest.Form:
-            self.traverse('Index', 'Nutzer verwalten', 'Nutzer anlegen')
-            self.assertTitle("Nutzer anlegen")
+            self.traverse('Index', 'Accounts verwalten', 'Account anlegen')
+            self.assertTitle("Account anlegen")
             f = self.response.forms['selectrealmform']
             if realm:
                 f['realm'] = realm
@@ -1775,11 +1775,11 @@ class TestCoreFrontend(FrontendTest):
         self.submit(_traverse_to_realm('cde'))
         self.assertTitle("Neues Mitglied anlegen")
         self.submit(_traverse_to_realm('event'))
-        self.assertTitle("Neuen Veranstaltungsnutzer anlegen")
+        self.assertTitle("Neuen Veranstaltungsaccount anlegen")
         self.submit(_traverse_to_realm('assembly'))
-        self.assertTitle("Neuen Versammlungsnutzer anlegen")
+        self.assertTitle("Neuen Versammlungsaccount anlegen")
         self.submit(_traverse_to_realm('ml'))
-        self.assertTitle("Neuen Mailinglistennutzer anlegen ")
+        self.assertTitle("Neuen Mailinglistenaccount anlegen ")
         # There is no kind "Core user"
         f = _traverse_to_realm()
         f['realm'].force_value('core')
@@ -1788,8 +1788,8 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("vera")
     def test_archived_user_search(self) -> None:
-        self.traverse("Nutzer verwalten")
-        self.assertTitle("Allgemeine Nutzerverwaltung")
+        self.traverse("Accounts verwalten")
+        self.assertTitle("Allgemeine Accountverwaltung")
         f = self.response.forms['queryform']
         f['qop_is_archived'] = QueryOperators.equal.value
         f['qval_is_archived'] = True
@@ -1812,7 +1812,7 @@ class TestCoreFrontend(FrontendTest):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("Allgemeine Nutzerverwaltung")
+        self.assertTitle("Allgemeine Accountverwaltung")
         self.assertPresence("Ergebnis [1]", div='query-results')
         self.assertPresence("Hell", div='query-result')
 
@@ -1820,7 +1820,7 @@ class TestCoreFrontend(FrontendTest):
     def test_show_archived_user(self) -> None:
         self.admin_view_profile('hades', check=False)
         self.assertTitle("Hades Hell")
-        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        self.assertPresence("Der Account ist archiviert.", div='archived')
 
     @as_users("paul", "quintus")
     def test_archive_user(self) -> None:
@@ -1829,14 +1829,14 @@ class TestCoreFrontend(FrontendTest):
         else:
             self.realm_admin_view_profile('charly', realm='cde')
         self.assertTitle("Charly Clown")
-        self.assertNonPresence("Der Benutzer ist archiviert.")
+        self.assertNonPresence("Der Account ist archiviert.")
         self.assertPresence("Zirkusstadt", div='address')
         f = self.response.forms['archivepersonaform']
         f['ack_delete'].checked = True
         self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError("note", "Darf nicht leer sein")
         self.assertTitle("Charly Clown")
-        self.assertNonPresence("Der Benutzer ist archiviert.")
+        self.assertNonPresence("Der Account ist archiviert.")
         self.assertPresence("Zirkusstadt", div='address')
         f = self.response.forms['archivepersonaform']
         f['ack_delete'].checked = False
@@ -1846,7 +1846,7 @@ class TestCoreFrontend(FrontendTest):
         f['ack_delete'].checked = True
         self.submit(f)
         self.assertTitle("Charly Clown")
-        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        self.assertPresence("Der Account ist archiviert.", div='archived')
         self.assertNonPresence("Zirkusstadt")
         saved_response = self.response
         self.traverse("Veranstaltungs-Daten")
@@ -1856,13 +1856,13 @@ class TestCoreFrontend(FrontendTest):
         f['new_username'] = "charly@example.cde"
         self.submit(f)
         self.assertTitle("Charly Clown")
-        self.assertNonPresence("Der Benutzer ist archiviert.")
+        self.assertNonPresence("Der Account ist archiviert.")
 
     @as_users("vera")
     def test_purge_user(self) -> None:
         self.admin_view_profile('hades', check=False)
         self.assertTitle("Hades Hell")
-        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        self.assertPresence("Der Account ist archiviert.", div='archived')
         f = self.response.forms['purgepersonaform']
         self.submit(f, check_notification=False)
         f = self.response.forms['purgepersonaform']
@@ -1878,7 +1878,7 @@ class TestCoreFrontend(FrontendTest):
             exact=True,
         )
         self.assertNonPresence("archiviert")
-        self.assertPresence("Der Benutzer wurde geleert.", div='purged')
+        self.assertPresence("Der Account wurde geleert.", div='purged')
         self.assertNotIn('dearchivepersonaform', self.response.forms)
         self.assertNotIn('purgepersonaform', self.response.forms)
 
@@ -1945,7 +1945,7 @@ class TestCoreFrontend(FrontendTest):
         f['lockdown_web'].checked = True
         self.submit(f)
         self.assertNotification("nur, wenn du weißt, warum", 'warning')
-        self.traverse("Index", "Nutzer verwalten")  # test that admins can access
+        self.traverse("Index", "Accounts verwalten")  # test that admins can access
         self.logout()
         self.assertNotification("Wartungsarbeiten", 'info')
         self.assertNotification("leider nicht verfügbar", 'info')
@@ -2013,11 +2013,11 @@ class TestCoreFrontend(FrontendTest):
             f = self.response.forms['ackchangeform']
             self.submit(f)
             self.assertTitle("Zu prüfende Profiländerungen [0]")
-            self.traverse({'description': 'Nutzerdaten-Log'})
+            self.traverse({'description': 'Änderungs-Log'})
             f = self.response.forms['logshowform']
             f['reviewed_by'] = 'DB-22-1'
             self.submit(f)
-            self.assertTitle('Nutzerdaten-Log [1–1 von 1]')
+            self.assertTitle('Änderungs-Log [1–1 von 1]')
             self.assertPresence("Bertå Ganondorf")
         self.traverse(self.user['given_names'])
         self.assertNonPresence(self.user['family_name'])
@@ -2227,7 +2227,7 @@ class TestCoreFrontend(FrontendTest):
     def test_inconsistent_history(self) -> None:
         self.admin_view_profile("lisa")
         self.traverse("Änderungshistorie")
-        self.assertPresence("Der Benutzer ist archiviert.", div="static-notifications")
+        self.assertPresence("Der Account ist archiviert.", div="static-notifications")
         self.assertPresence("Gen 1", div="is_member-1")
         self.assertPresence("Probemitglied", div="is_member-1")
         self.assertPresence("Aktuell", div="is_member-panic")
@@ -2273,7 +2273,7 @@ class TestCoreFrontend(FrontendTest):
         # Check the overview.
         self.login(USER_DICT['inga'])
         self.traverse({"href": "/core/admins"})
-        self.assertTitle("Administratorenübersicht")
+        self.assertTitle("Admin-Übersicht")
         self.assertPresence("Anton Administrator", div="meta")
         self.assertPresence("Martin Meiste", div="meta")
         self.assertPresence("Anton Administrator", div="core")
@@ -2293,8 +2293,8 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Bertå Beispiel", div="assembly")
         self.logout()
         self.login(USER_DICT["janis"])
-        self.traverse({'description': 'Administratorenübersicht'})
-        self.assertTitle("Administratorenübersicht")
+        self.traverse({'description': 'Admin-Übersicht'})
+        self.assertTitle("Admin-Übersicht")
         self.assertPresence("Anton Administrator", div="core")
         self.assertNonPresence("Bertå Beispiel")
 
@@ -2562,7 +2562,7 @@ class TestCoreFrontend(FrontendTest):
 
         self.login('annika')  # event-only admin
         self.traverse("Accountanfragen")
-        self.assertPresence("Veranstaltungs-Account-Anfragen")
+        self.assertPresence("Veranstaltungs-Accountanfragen")
         self.assertPresence("zorro@example.cde", div='request-1001')
         self.traverse({'href': '/core/genesis/1001/show'})
         self.assertTitle("Accountanfrage von Zelda Zeruda-Hime")
@@ -2693,16 +2693,16 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("zelda@example.cde")
         self.assertNonPresence("zorro@example.cde")
         if self.user_in('paul'):
-            self.assertPresence("Mailinglisten-Account-Anfragen")
+            self.assertPresence("Mailinglisten-Accountanfragen")
             self.assertPresence("Michaela Mailcrawler")
-            self.assertPresence("Veranstaltungs-Account-Anfragen")
+            self.assertPresence("Veranstaltungs-Accountanfragen")
             self.assertPresence("Wolfgang Weihnacht")
         else:
-            self.assertNonPresence("Mailinglisten-Account-Anfragen")
+            self.assertNonPresence("Mailinglisten-Accountanfragen")
             self.assertNonPresence("Michaela Mailcrawler")
-            self.assertNonPresence("Veranstaltungs-Account-Anfragen")
+            self.assertNonPresence("Veranstaltungs-Accountanfragen")
             self.assertNonPresence("Wolfgang Weihnacht")
-        self.assertPresence("CdE-Mitglieds-Account-Anfragen")
+        self.assertPresence("CdE-Mitglieds-Accountanfragen")
         self.assertPresence("Kristin Zeder")
 
         # modify genesis request
@@ -2884,7 +2884,7 @@ class TestCoreFrontend(FrontendTest):
 
         def assert_account_presence(ml: bool, event: bool, cde: bool) -> None:
             self.assertTitle("Accountanfragen")
-            ml_msg = "keine Mailinglisten-Account-Anfragen zur Bestätigung aus."
+            ml_msg = "keine Mailinglisten-Accountanfragen zur Bestätigung aus."
             if ml:
                 self.assertPresence("Michaela Mailcrawler", div="current-cases")
                 self.assertNonPresence("Michaela Mailcrawler", div="concluded-cases")
@@ -2893,7 +2893,7 @@ class TestCoreFrontend(FrontendTest):
                 self.assertNonPresence("Michaele Mailcrawler", div="current-cases")
                 self.assertPresence("Michaela Mailcrawler", div="concluded-cases")
                 self.assertPresence(ml_msg)
-            event_msg = "keine Veranstaltungs-Account-Anfragen zur Bestätigung aus."
+            event_msg = "keine Veranstaltungs-Accountanfragen zur Bestätigung aus."
             if event:
                 self.assertPresence("Wolfgang Weihnacht", div="current-cases")
                 self.assertNonPresence("Wolfgang Weihnacht", div="concluded-cases")
@@ -2902,7 +2902,7 @@ class TestCoreFrontend(FrontendTest):
                 self.assertNonPresence("Wolfgang Weihnacht", div="current-cases")
                 self.assertPresence("Wolfgang Weihnacht", div="concluded-cases")
                 self.assertPresence(event_msg)
-            cde_msg = "keine CdE-Mitglieds-Account-Anfragen zur Bestätigung aus."
+            cde_msg = "keine CdE-Mitglieds-Accountanfragen zur Bestätigung aus."
             if cde:
                 self.assertPresence("Kristin Zeder", div="current-cases")
                 self.assertNonPresence("Kristin Zeder", div="concluded-cases")
@@ -2988,7 +2988,7 @@ class TestCoreFrontend(FrontendTest):
         f['new_username'] = self.ML_GENESIS_DATA['username']
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            'new_username', "Ein Benutzer mit dieser E-Mail-Adresse existiert bereits."
+            'new_username', "Ein Account mit dieser E-Mail-Adresse existiert bereits."
         )
 
     def test_genesis_verification_mail_resend(self) -> None:
@@ -3267,7 +3267,7 @@ class TestCoreFrontend(FrontendTest):
             check_notification=False,
         )
         self.assertPresence(
-            "Ungültiger Benutzer für Aktualisierung."
+            "Account kann nicht aktualisiert werden."
             " Füge zunächst folgenden Bereich hinzu: cde.",
             div="notifications",
         )
@@ -3280,7 +3280,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesisdecisionform']
         f['persona_id'] = f['persona_id'].options[1][0]
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
-        self.assertPresence("Benutzer aktualisiert", div="notifications")
+        self.assertPresence("Account aktualisiert", div="notifications")
         log_expectation.extend([
             {
                 'code': const.CoreLogCodes.genesis_change,
@@ -3347,7 +3347,7 @@ class TestCoreFrontend(FrontendTest):
         f["note"] = "Archived for testing."
         f["ack_delete"].checked = True
         self.submit(f)
-        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        self.assertPresence("Der Account ist archiviert.", div='archived')
 
         # issue a new genesis request with almost identical data
         alternate_username = f"asdf{self.CDE_GENESIS_DATA['username']}"
@@ -3393,7 +3393,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesisdecisionform']
         f['persona_id'] = hades['id']
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
-        self.assertPresence("Benutzer aktualisiert.", div="notifications")
+        self.assertPresence("Account aktualisiert.", div="notifications")
 
     def _decide_genesis_case(
         self,
@@ -3457,7 +3457,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertFalse(self.core.is_relative_admin(self.key, 1001))
         self._decide_genesis_case(GenesisDecision.approve, persona_id=1001, check=False)
         self.assertPresence(
-            "Ungültiger Benutzer für Aktualisierung.", div="notifications"
+            "Account kann nicht aktualisiert werden.", div="notifications"
         )
 
         # The event user. This option should work.
@@ -3594,7 +3594,7 @@ class TestCoreFrontend(FrontendTest):
     @as_users("katarina")
     def test_auditor(self) -> None:
         realm_logs = {
-            "Index": ("Account-Log", "Nutzerdaten-Log"),
+            "Index": ("Account-Log", "Änderungs-Log"),
             "Mitglieder": ("CdE-Log", "Finanz-Log", "Verg.-Veranstaltungen-Log"),
             "Veranstaltungen": ("Log",),
             "Mailinglisten": ("Log",),
@@ -3811,8 +3811,8 @@ LG Emilia
     def test_defect_email_profile(self) -> None:
         self.traverse(
             {'description': 'Mailinglisten'},
-            {'description': 'Nutzer verwalten'},
-            {'description': r'Alle \(nicht-archivierten\) Nutzer'},
+            {'description': 'Accounts verwalten'},
+            {'description': r'Alle \(nicht-archivierten\) Account'},
             {'description': 'DB-10-8'},
         )
         self.assertTitle('Janis Jalapeño')
@@ -3829,8 +3829,8 @@ LG Emilia
 
         self.traverse(
             {'description': 'Mailinglisten'},
-            {'description': 'Nutzer verwalten'},
-            {'description': r'Alle \(nicht-archivierten\) Nutzer'},
+            {'description': 'Accounts verwalten'},
+            {'description': r'Alle \(nicht-archivierten\) Account'},
             {'description': 'DB-10-8'},
         )
         self.assertTitle('Janis Jalapeño')
