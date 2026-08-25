@@ -84,4 +84,4 @@ class CdEFlag(CdEEnumMeta, enum.Flag):
 
         Note that this means it behaves slightly different than 'has_any'.
         """
-        return any(flag in self for flag in flags)
+        return all(flag in self for flag in flags)
