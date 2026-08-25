@@ -337,7 +337,7 @@ class EventQuestionnaireMixin(EventBaseFrontend):
         if rs.has_validation_errors():
             return self.additional_questionnaire_form(rs, event_id, internal=True)
 
-        change_note = "Fragebogen durch Teilnehmer bearbeitet."
+        change_note = "Fragebogen durch Teilnehmer:in bearbeitet."
         code = self.eventproxy.set_registration(
             rs, {'id': registration_id, 'fields': data}, change_note, orga_input=False
         )

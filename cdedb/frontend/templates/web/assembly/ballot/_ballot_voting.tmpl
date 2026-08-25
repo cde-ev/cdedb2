@@ -2,7 +2,7 @@
 
 {# Classical voting: Presentation of candidates #}
 {% macro show_classical_candidates() -%}
-    {{ util.h(n_("Candidates")) }}
+    {{ util.h(n_("Options")) }}
     <ul id="classical-candidates">
         {% for candidate_id, candidate in ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates) %}
             <li>
@@ -19,15 +19,15 @@
     {{ util.h(n_("Ballot")) }}
     <form action="{{ cdedblink('assembly/vote') }}" method="POST" id="voteform" class="form-horizontal">
         {{ util.anti_csrf_token('assembly/vote') }}
-        {{ util.form_input_checkboxes("vote", label=gettext("Candidates"),
+        {{ util.form_input_checkboxes("vote", label=gettext("Options"),
                                       entries=ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates)|dict_entries('shortname', 'title'),
                                       radio=(ambience['ballot']['votes'] == 1), small=True) }}
         {% if ambience['ballot']['use_bar'] %}
             <div style="margin-top: 13px">
                 {{ util.form_input_checkboxes(
-                   "vote", label='', entries=[(ASSEMBLY_BAR_SHORTNAME, gettext("Against all Candidates"))],
+                   "vote", label='', entries=[(ASSEMBLY_BAR_SHORTNAME, gettext("\"Against all\" option"))],
                    small=True, radio=(ambience['ballot']['votes'] == 1),
-                   info=gettext("With this option you reject all candidates.")) }}
+                   info=gettext("Choose this option to reject all other options.")) }}
             </div>
 
         {% endif %}
@@ -61,7 +61,7 @@
 
 {# Preferential voting: Presentation of candidates #}
 {% macro show_preferential_candidates() -%}
-    {{ util.h(n_("Candidates")) }}
+    {{ util.h(n_("Options")) }}
     <ul id="preferential-candidates">
         {% for candidate_id, candidate in ambience['ballot']['candidates']|keydictsort(EntitySorter.candidates) %}
             <li>
@@ -83,34 +83,34 @@
     {% call util.bootstrap_panel(title=gettext("Help for voting"), icon='info-circle', aclass='panel-default panel-condensed mosp') %}
         <p>
             {% trans link=gettext("<a href='https://en.wikipedia.org/w/index.php?curid=680729'>Schulze method</a>")|s %}
-                This vote is a preferential vote. You can arrange the candidates in the field above
+                This vote is a preferential vote. You can arrange the options in the field above
                 according to your personal preference. The preferences of all participants will be
                 evaluated using the {{ link }}, to determine the option with the most votes.
             {% endtrans %}
         </p>
         <p>
             {% trans  gt="<code>></code>"|s, eq="<code>=</code>"|s %}
-                To enter your preferencelist, use the shortnames given in the list of candidates and the
+                To enter your preferencelist, use the shortnames given in the list of options and the
                 {{ gt }} and {{ eq }} characters. Use the greater-than character {{ gt }}
-                to give the candidates left of the character higher preference than those on the right.
-                Use the equals character to give two candidates the same preference. You need to have all
-                candidates in your preferencelist.
+                to give the options left of the character higher preference than those on the right.
+                Use the equals character to give two options the same preference. You need to have all
+                options in your preferencelist.
             {% endtrans %}
         </p>
         {% if ambience['ballot']['use_bar'] %}
             <p>
                 {% trans abm="<code>%(abm)s</code>"|s|format(abm=ASSEMBLY_BAR_SHORTNAME) %}
                     Additionally you need to use the rejection bar {{ abm }} in your preferencelist.
-                    Use it in your preferencelist like you would a candidate. Put all
-                    candidates you deem suitable higher than {{ abm }} and all
-                    candidates you reject lower, i. e. to the right of {{ abm }}.
+                    Use it in your preferencelist like you would use an option. Put all
+                    options you deem suitable higher than {{ abm }} and all
+                    options you reject lower, i. e. to the right of {{ abm }}.
                 {% endtrans %}
             </p>
         {% endif %}
         <p>
             <strong>{% trans %}Examples{% endtrans %}:</strong>
             {% trans %}
-                Take the following examplatory candidate list:
+                Take the following examplatory list of options:
             {% endtrans %}
         </p>
         <ul>
@@ -125,8 +125,8 @@
         {% if ambience['ballot']['use_bar'] %}
             <ul>
                 <li>{% trans %}
-                        You deem all candidates suitable, but you like Leia the best,
-                        with no difference between the other candidates.
+                        You deem all options suitable, but you like Leia the best,
+                        with no difference between the other options.
                     {% endtrans %}<br />
                     <code>Leia&gt;Luke=Han=ObiWan&gt;{{ ASSEMBLY_BAR_SHORTNAME }}</code></li>
                 <li>{% trans %}
@@ -174,16 +174,16 @@
     {% call util.bootstrap_panel(title=gettext("Help for voting"), icon='info-circle', aclass='panel-default panel-condensed mosp') %}
         <p>
             {% trans link=gettext("<a href='https://en.wikipedia.org/w/index.php?curid=680729'>Schulze method</a>")|s %}
-                This vote is a preferential vote. You can arrange the candidates in the field above
+                This vote is a preferential vote. You can arrange the options in the field above
                 according to your personal preference. The preferences of all participants will be
                 evaluated using the {{ link }}, to determine the option with the most votes.
             {% endtrans %}
         </p>
         <p>
             {% trans %}
-                To arrange the candidates, place them into one of the shaded boxes. The higher up the box,
-                the higher your preference for that candidate. Candidates within the same box will be
-                evaluated with the same preference. Place a candidate in the space between two boxes to
+                To arrange the options, place them into one of the shaded boxes. The higher up the box,
+                the higher your preference for that option. Options within the same box will be
+                evaluated with the same preference. Place an option in the space between two boxes to
                 create a new box there.
             {% endtrans %}
         </p>
@@ -191,8 +191,8 @@
             {% trans tab="<kbd>%(key)s</kbd>"|s|format(key=gettext("TAB")),
                      enter="<kbd>%(key)s</kbd>"|s|format(key=gettext("ENTER")),
                      space="<kbd>%(key)s</kbd>"|s|format(key=gettext("Space")) -%}
-                There are three ways of placing candidates: Drag’n’Drop them into a different box or
-                click on a candidate and then on a box. Or you can select a candidate with {{ tab }},
+                There are three ways of placing options: Drag’n’Drop them into a different box or
+                click on an option and then on a box. Or you can select an option with {{ tab }},
                 confirm it with {{ enter }} or {{ space }}, then select a box with {{ tab }}
                 and confirm the selection with {{ enter }} or {{ space }}.
             {% endtrans %}
@@ -200,17 +200,17 @@
         {% if ambience['ballot']['use_bar'] %}
             <p>
                 {% trans %}
-                    One of the boxes is marked as “Neutral”. Please place candidates cou deem suitable
-                    above this box (they will be highlighted in green) and candidates you want to reject
+                    One of the boxes is marked as “Neutral”. Please place options you deem suitable
+                    above this box (they will be highlighted in green) and options you want to reject
                     below this box (they will be highlighted in red).
                 {% endtrans %}
             </p>
             <p>
-                {% trans %}To abstain, place all candidates in the neutral box.{% endtrans %}
+                {% trans %}To abstain, place all options in the neutral box.{% endtrans %}
             </p>
         {% else %}
             <p>
-                {% trans %}To abstain, place all candidates in the same box.{% endtrans %}
+                {% trans %}To abstain, place all options in the same box.{% endtrans %}
             </p>
         {% endif %}
     {% endcall %}
@@ -318,7 +318,7 @@
 
 
 {% macro add_candidate_form() -%}
-    {{ util.h(n_("Candidates")) }}
+    {{ util.h(n_("Options")) }}
 
     <form action="{{ cdedblink('assembly/edit_candidates') }}" method="POST" id="candidatessummaryform">
         {{ util.anti_csrf_token('assembly/edit_candidates') }}
@@ -363,7 +363,7 @@
 
         <p>
             <button type="button" class="btn btn-success softhide pull-right" id="drow-addbutton">
-                {{ util.make_icon('plus') }} {% trans %}Add Candidate{% endtrans %}
+                {{ util.make_icon('plus') }} {% trans %}Add Option{% endtrans %}
             </button>
         </p>
         {{ util.input_submit(label=gettext("Save")) }}

@@ -447,7 +447,7 @@ class AssemblyBallotMixin(AssemblyBaseFrontend):
         if ballot['use_bar']:
             if ballot['votes']:
                 candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext(
-                    "Against all Candidates"
+                    "\"Against all\" option"
                 )
             else:
                 candidates[ASSEMBLY_BAR_SHORTNAME] = rs.gettext("Rejection limit")
