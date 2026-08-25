@@ -46,7 +46,7 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence("Daniel Dino (informiert)", div='involved_affected')
         self.assertPresence("Fallbegleitung: Garcia Generalis", div='involved_affected')
         self.assertNonPresence(
-            "Beschwerdeführer", div='involved_appellant', check_div=False
+            "Beschwerdeführende", div='involved_appellant', check_div=False
         )
         f = self.response.forms['addinvolvedform']
         f['persona_ids'] = "DB-4-3"
@@ -54,7 +54,7 @@ class TestComplaintFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertNotification("waren bereits beteiligt", 'info')
 
-        self.assertPresence("Beschwerdeführer", div='involved_appellant')
+        self.assertPresence("Beschwerdeführende", div='involved_appellant')
         self.assertPresence("Daniel Dino (informiert)", div='involved_appellant')
         self.assertPresence(
             "Fallbegleitung: Garcia Generalis", div='involved_appellant'
@@ -71,7 +71,7 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence("Daniel Dino", div='involved_affected')
         self.assertPresence("Fallbegleitung: Garcia Generalis", div='involved_affected')
         self.assertNonPresence(
-            "Beschwerdeführer", div='involved_appellant', check_div=False
+            "Beschwerdeführende", div='involved_appellant', check_div=False
         )
         # self.assertNotification("1 Personen sind nun nicht mehr informiert.", "info")
 
@@ -158,7 +158,9 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence(
             "Beteiligten hinzugefügt: Anton Administrator", div='logentry1007'
         )
-        self.assertPresence("von Simon Struktur; Beschwerdeführer", div='logentry1007')
+        self.assertPresence(
+            "von Simon Struktur; Beschwerdeführende", div='logentry1007'
+        )
         # self.assertPresence(date_filter(now().date(), lang="de"), div='logentry1001')
         self.assertNoLink('/core/complaint/case/1/history')
 
@@ -622,13 +624,13 @@ class TestComplaintFrontend(FrontendTest):
             },
             {
                 'case_id': 1,
-                'change_note': 'Beschwerdeführer',
+                'change_note': 'Beschwerdeführende',
                 'code': const.ComplaintLogCodes.involved_added,
                 'persona_id': 4,
             },
             {
                 'case_id': 1,
-                'change_note': 'Beschwerdeführer',
+                'change_note': 'Beschwerdeführende',
                 'code': const.ComplaintLogCodes.involved_removed,
                 'persona_id': 4,
             },
@@ -640,7 +642,7 @@ class TestComplaintFrontend(FrontendTest):
             },
             {
                 'case_id': 1,
-                'change_note': 'Beschwerdeführer',
+                'change_note': 'Beschwerdeführende',
                 'code': const.ComplaintLogCodes.involved_added,
                 'persona_id': 1,
             },
@@ -676,7 +678,7 @@ class TestComplaintFrontend(FrontendTest):
             },
             {
                 'case_id': 1,
-                'change_note': 'Beschwerdeführer',
+                'change_note': 'Beschwerdeführende',
                 'code': const.ComplaintLogCodes.involved_removed,
                 'persona_id': 1,
             },
@@ -893,8 +895,8 @@ class TestComplaintFrontend(FrontendTest):
 
     @as_users("simon")
     def test_enforcers(self) -> None:
-        self.traverse("Fall-Unterstützer")
-        self.assertTitle("Fall-Unterstützer")
+        self.traverse("Fall-Unterstützer:innen")
+        self.assertTitle("Fall-Unterstützer:innen")
         self.assertPresence("Janis", div="enforcer-list")
         self.assertNonPresence("Kalif", div="enforcer-list")
 
@@ -904,7 +906,7 @@ class TestComplaintFrontend(FrontendTest):
         self.assertPresence("Checksumme stimmt nicht", div='addenforcerform')
         f['persona_id'] = "DB-999-7"
         self.submit(f, check_notification=False)
-        self.assertPresence("Benutzer existiert nicht", div='addenforcerform')
+        self.assertPresence("Account existiert nicht", div='addenforcerform')
         f['persona_id'] = USER_DICT['kalif']['DB-ID']
         self.submit(f)
         self.assertPresence("Janis", div="enforcer-list")
@@ -917,7 +919,7 @@ class TestComplaintFrontend(FrontendTest):
         f['persona_id'] = "999"
         self.submit(f, check_notification=False)
         self.assertNotification(
-            "Benutzer existiert nicht oder ist kein Maßnahmenmanager", 'error'
+            "Account existiert nicht oder ist kein:e Maßnahmenmanager:in", 'error'
         )
         f = self.response.forms[remove_form_id]
         self.submit(f)
@@ -925,7 +927,7 @@ class TestComplaintFrontend(FrontendTest):
         self.assertNonPresence("Janis", div="enforcer-list")
         self.submit(f, check_notification=False)
         self.assertNotification(
-            "Benutzer existiert nicht oder ist kein Maßnahmenmanager", 'error'
+            "Account existiert nicht oder ist kein:e Maßnahmenmanager:in", 'error'
         )
 
     _fake_ctime = datetime.datetime(
