@@ -15,7 +15,7 @@
             </div>
             <div class="col-sm-8">
                 <p class="text-muted">
-                    {% trans %}Deletes the ballot and all associated settings and candidates.{% endtrans %}
+                    {% trans %}Deletes the ballot and all associated settings and options.{% endtrans %}
                 </p>
             </div>
         </div>
@@ -131,7 +131,7 @@
         <dd id="status">
             {% if now() < ambience['ballot']['vote_begin'] %}
                 <strong>{% trans %}This ballot has not yet begun.{% endtrans %}</strong><br />
-                {% trans %}Admins can still make changes to description, files and candidates.{% endtrans %}
+                {% trans %}Admins can still make changes to description, files and options.{% endtrans %}
                 {% if "assembly_presider" in user.admin_views or ambience['assembly']['id'] in user.presider %}
                     {% trans %}
                         All CdE-Members and external assembly participants can already

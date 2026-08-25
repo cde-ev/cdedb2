@@ -691,7 +691,7 @@ class TestPrivacyFrontend(FrontendTest):
 
                 if self.user_in(*core):
                     self.get('/core/search/user')
-                    self.assertTitle("Allgemeine Nutzerverwaltung")
+                    self.assertTitle("Allgemeine Accountverwaltung")
                 else:
                     self.get(
                         '/core/search/user',
@@ -701,7 +701,7 @@ class TestPrivacyFrontend(FrontendTest):
 
                 if self.user_in(*(core | cde)):
                     self.get('/cde/search/user')
-                    self.assertTitle("CdE-Nutzerverwaltung")
+                    self.assertTitle("CdE-Accountverwaltung")
                 else:
                     self.get(
                         '/cde/search/user',
@@ -711,7 +711,7 @@ class TestPrivacyFrontend(FrontendTest):
 
                 if self.user_in(*(core | event)):
                     self.get('/event/search/user')
-                    self.assertTitle("Veranstaltungsnutzerverwaltung")
+                    self.assertTitle("Veranstaltungsaccountverwaltung")
                 else:
                     self.get(
                         '/event/search/user',
@@ -721,7 +721,7 @@ class TestPrivacyFrontend(FrontendTest):
 
                 if self.user_in(*(core | ml)):
                     self.get('/ml/search/user')
-                    self.assertTitle("Mailinglistennutzerverwaltung")
+                    self.assertTitle("Mailinglistenaccountverwaltung")
                 else:
                     self.get(
                         '/ml/search/user',
@@ -731,7 +731,7 @@ class TestPrivacyFrontend(FrontendTest):
 
                 if self.user_in(*(core | assembly)):
                     self.get('/assembly/search/user')
-                    self.assertTitle("Versammlungsnutzerverwaltung")
+                    self.assertTitle("Versammlungsaccountverwaltung")
                 else:
                     self.get(
                         '/assembly/search/user',
