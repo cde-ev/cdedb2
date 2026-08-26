@@ -84,54 +84,92 @@ class Roles(_Roles):
     droid_quick_partial_export = ()
 
     @classmethod
-    def all_droid_roles(cls) -> Self:
-        return (
-            cls.droid
-            | cls.droid_infra
-            | cls.droid_orga
-            | cls.droid_resolve
-            | cls.droid_quick_partial_export
-        )
+    def all_droid_roles(cls) -> "RoleSet":
+        return RoleSet({
+            cls.droid,
+            cls.droid_infra,
+            cls.droid_orga,
+            cls.droid_resolve,
+            cls.droid_quick_partial_export,
+        })
 
     @classmethod
-    def all_persona_roles(cls) -> Self:
+    def all_persona_roles(cls) -> "RoleSet":
         return ~cls.all_droid_roles() & ~cls.cron
 
     @classmethod
-    def all_admin_roles(cls) -> Self:
-        return (
-            cls.meta_admin
-            | cls.core_admin
-            | cls.cde_admin
-            | cls.event_admin
-            | cls.ml_admin
-            | cls.assembly_admin
-            | cls.auditor
-            | cls.complaint_admin
-            | cls.cdelokal_admin
-            | cls.finance_admin
-        )
+    def all_admin_roles(cls) -> "RoleSet":
+        return RoleSet({
+            cls.meta_admin,
+            cls.core_admin,
+            cls.cde_admin,
+            cls.event_admin,
+            cls.ml_admin,
+            cls.assembly_admin,
+            cls.auditor,
+            cls.complaint_admin,
+            cls.cdelokal_admin,
+            cls.finance_admin,
+        })
 
     @classmethod
-    def all_realm_admin_roles(cls) -> Self:
+    def all_realm_admin_roles(cls) -> "RoleSet":
         """All roles of admins responsible for any realm."""
         return Realms.all_realm_admins()
 
     @classmethod
-    def all_user_admin_roles(cls) -> Self:
+    def all_user_admin_roles(cls) -> "RoleSet":
         """All roles of admins responsible for any users."""
         return cls.core_admin | cls.all_realm_admin_roles()
 
     @classmethod
-    def all_genesis_realm_roles(cls) -> tuple[Self, ...]:
+    def all_genesis_realm_roles(cls) -> tuple["RoleSet", ...]:
         return (
-            cls.core_admin,
-            *(realm.admin_role for realm in Realms.get_available_genesis_realms()),
+            RoleSet({cls.core_admin}),
+            *(
+                RoleSet({realm.admin_role})
+                for realm in Realms.get_available_genesis_realms()
+            ),
         )
 
     def is_any_admin(self) -> bool:
         """Whether there is any admin role in this set of roles."""
-        return bool(self & self.all_admin_roles())
+        return self.all_admin_roles().has(self)
+
+    def get_db_role(self) -> "DBRole":
+        return RoleSet({self}).get_db_role()
+
+    @classmethod
+    def _translated_members(cls) -> "RoleSet":
+        """Mark subset of members that need translations.
+
+        This is automatically handled by the i18n automation.
+        """
+        return cls.all_admin_roles()
+
+    def __or__(self, other: Self) -> "RoleSet":
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+        return RoleSet({self, other})
+
+    def __invert__(self) -> "RoleSet":
+        return ~RoleSet({self})
+
+    def __lt__(self, other: Self) -> bool:
+        return self.value < other.value
+
+    @classmethod
+    def none(cls) -> "RoleSet":
+        return RoleSet({})
+
+
+class RoleSet(FlagSet[Roles]):
+    def is_any_admin(self) -> bool:
+        """Whether there is any admin role in this set of roles."""
+        return self.has_any(*Roles.all_admin_roles())
+
+    def is_anonymous(self) -> bool:
+        return self == self.__class__({Roles.anonymous})
 
     def get_user_realms(self) -> "RealmSet":
         """Determine the realms of a user with these roles."""
@@ -148,19 +186,20 @@ class Roles(_Roles):
     def get_db_role(self) -> "DBRole":
         if self.is_any_admin():
             return DBRole.admin
-        if (self.cde | self.assembly) & self:
+        if self.has_any(Roles.cde, Roles.assembly):
             return DBRole.member
-        if (self.persona | self.droid) & self:
+        if self.has_any(Roles.persona, Roles.droid):
             return DBRole.persona
         return DBRole.anonymous
 
-    @classmethod
-    def _translated_members(cls) -> Self:
-        """Mark subset of members that need translations.
+    def as_strings(self) -> set[str]:
+        return {role.name for role in self}
 
-        This is automatically handled by the i18n automation.
-        """
-        return cls.all_admin_roles()
+    def markers(self) -> list[str]:
+        return [role.marker for role in self]
+
+    def __invert__(self) -> Self:
+        return self.__class__(Roles) - self
 
 
 class Realms(_Realms):
@@ -211,9 +250,9 @@ class Realms(_Realms):
     assembly = 8, Roles.assembly, Roles.assembly_admin, "ml"
 
     @classmethod
-    def from_user_roles(cls, roles: Roles) -> "RealmSet":
+    def from_user_roles(cls, roles: RoleSet) -> "RealmSet":
         """Determine the realms of a user with the given roles."""
-        return RealmSet(realm for realm in cls if realm.role in roles)
+        return RealmSet(realm for realm in cls if roles.has(realm.role))
 
     @property
     def implying_realms(self) -> "RealmSet":
@@ -243,7 +282,7 @@ class Realms(_Realms):
 
     # TODO: get rid of this once the change_user PR is merged.
     @classmethod
-    def from_admin_roles(cls, roles: Roles) -> "RealmSet":
+    def from_admin_roles(cls, roles: RoleSet | Roles) -> "RealmSet":
         """
         Determine all realms which may be administrated by a user with the given roles.
 
@@ -262,14 +301,16 @@ class Realms(_Realms):
         >>> Realms.from_admin_roles(Roles.ml_admin)
         Realms.ml
         """
-        if Roles.core_admin in roles:
+        if isinstance(roles, Roles):
+            roles = RoleSet({roles})
+
+        if roles.has(Roles.core_admin):
             return RealmSet(cls)
 
         ret = RealmSet()
         for realm in cls:
-            if realm.admin_role in roles:
-                ret.add(realm)
-                ret.update(realm.implying_realms)
+            if roles.has(realm.admin_role):
+                ret |= realm | realm.implied_realms
         return ret
 
     @classmethod
@@ -281,7 +322,7 @@ class Realms(_Realms):
         }
 
     @classmethod
-    def genesis_realms_from_admin_roles(cls, roles: Roles) -> "RealmSet":
+    def genesis_realms_from_admin_roles(cls, roles: RoleSet | Roles) -> "RealmSet":
         """
         Determine all genesis realms which may be handled by a user with the given roles.
 
@@ -301,10 +342,13 @@ class Realms(_Realms):
         >>> Realms.genesis_realms_from_admin_roles(Roles.ml_admin)
         Realms.ml
         """
-        if Roles.core_admin in roles:
+        if isinstance(roles, Roles):
+            roles = RoleSet({roles})
+
+        if roles.has(Roles.core_admin):
             return RealmSet(cls)
 
-        return RealmSet(realm for realm in cls if realm.admin_role in roles)
+        return RealmSet(realm for realm in cls if roles.has(realm.admin_role))
 
     def get_required_user_views(
         self, conjunctive: bool = False
@@ -324,12 +368,12 @@ class Realms(_Realms):
         return self.admin_role.marker
 
     @classmethod
-    def all_realm_admins(cls) -> Roles:
+    def all_realm_admins(cls) -> RoleSet:
         """
         >>> Realms.all_realm_admins()
         Roles.cde_admin|event_admin|ml_admin|assembly_admin
         """
-        return Roles.union(realm.admin_role for realm in cls)
+        return RoleSet(realm.admin_role for realm in cls)
 
     def __or__(self, other: Self) -> "RealmSet":
         if not isinstance(other, self.__class__):
@@ -372,7 +416,7 @@ class RealmSet(FlagSet[Realms]):
     def realm_markers(self) -> list[str]:
         return [realm.realm_marker for realm in self]
 
-    def get_required_admin_roles(self, conjunctive: bool = False) -> list[Roles]:
+    def get_required_admin_roles(self, conjunctive: bool = False) -> list[RoleSet]:
         """Required admin privilege relative to a persona (signified by its roles)
 
         Basically this answers the question: If a user has access to the given
@@ -415,13 +459,13 @@ class RealmSet(FlagSet[Realms]):
         >>> (Realms.cde|Realms.event|Realms.ml|Realms.assembly).get_required_admin_roles(conjunctive=True)
         [Roles.core_admin, Roles.cde_admin]
         """
-        ret = [Roles.core_admin]
+        ret = [RoleSet({Roles.core_admin})]
         relevant = self.highest_realms
         if conjunctive:
-            ret.append(Roles.union(realm.admin_role for realm in relevant))
+            ret.append(RoleSet(realm.admin_role for realm in relevant))
         else:
-            for realm in relevant:
-                ret.append(realm.admin_role)
+            for realm in sorted(relevant):
+                ret.append(RoleSet({realm.admin_role}))
         return ret
 
     def get_required_user_views(
@@ -464,7 +508,7 @@ class RealmSet(FlagSet[Realms]):
         return self.__class__(Realms) - self
 
 
-def extract_roles(session: CdEDBObject, introspection_only: bool = False) -> Roles:
+def extract_roles(session: CdEDBObject, introspection_only: bool = False) -> RoleSet:
     """Determine user roles from a persona data set.
 
     The data contains the relevant portion of attributes from the core.personas table.
@@ -508,7 +552,7 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False) -> Rol
     >>> extract_roles(user_data)
     Roles.anonymous|persona|cde|ml|core_admin|ml_admin
     """
-    ret = Roles.anonymous
+    ret = RoleSet({Roles.anonymous})
     if session['is_active'] or introspection_only:
         ret |= Roles.persona
     elif not introspection_only:
@@ -518,13 +562,15 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False) -> Rol
     for possible_role in Roles:
         if possible_role.marker is None:
             continue  # type: ignore[unreachable]
-        if session.get(possible_role.marker) and possible_role.required_roles in ret:
+        if session.get(possible_role.marker) and ret.has_all(
+            *possible_role.required_roles
+        ):
             ret |= possible_role
 
     return ret
 
 
-def droid_roles(identity: str) -> Roles:
+def droid_roles(identity: str) -> RoleSet:
     """Resolve droid identity to a complete set of roles.
 
     Currently this is rather trivial, but could be more involved in the
@@ -599,7 +645,7 @@ class AdminViews(_AdminViews):
         return "enabled_admin_views"
 
     user_review = Roles.core_admin, Roles.cde_admin, Roles.event_admin
-    genesis = Roles.all_genesis_realm_roles()
+    genesis = tuple(Roles.all_genesis_realm_roles())
 
     core_user = Roles.core_admin
     cde_user = Roles.cde_admin, Roles.core_admin
@@ -677,18 +723,18 @@ class AdminViews(_AdminViews):
             cls.ml_mgmt_assembly,
         })
 
-    def _is_available_to(self, roles: Roles) -> bool:
-        return any(role in roles for role in self.required_roles)
+    def _is_available_to(self, roles: RoleSet) -> bool:
+        return roles.has_any(*self.required_roles)
 
     @classmethod
-    def from_roles(cls, roles: Roles) -> "AdminViewSet":
+    def from_roles(cls, roles: RoleSet) -> "AdminViewSet":
         return AdminViewSet({
             admin_view for admin_view in cls if admin_view._is_available_to(roles)
         })
 
     @classmethod
-    def user_views_from_admin_roles(cls, roles: Roles) -> "AdminViewSet":
-        if Roles.core_admin in roles:
+    def user_views_from_admin_roles(cls, roles: RoleSet) -> "AdminViewSet":
+        if roles.has(Roles.core_admin):
             return AdminViewSet({cls.core_user})
         return cls.from_roles(roles) & cls.all_user_views()
 

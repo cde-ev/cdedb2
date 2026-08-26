@@ -24,7 +24,7 @@ from cdedb.common.exceptions import CryptographyError, ParameterInvalidError
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query import QueryOperators
 from cdedb.common.query.log_filter import ChangelogLogFilter
-from cdedb.common.roles import AdminViews, Realms, Roles
+from cdedb.common.roles import AdminViews, Realms, Roles, RoleSet
 from cdedb.filter import iban_filter
 from tests.common import (
     ANONYMOUS,
@@ -1532,7 +1532,7 @@ class TestCoreFrontend(FrontendTest):
         admin1: UserIdentifier,
         admin2: UserIdentifier,
         new_admin: UserObject,
-        new_privileges: Roles,
+        new_privileges: RoleSet | Roles,
         note: str = "For testing.",
     ) -> None:
         """Helper to initialize a privilege change."""
@@ -1543,7 +1543,11 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({"href": f"/core/persona/{new_admin["id"]}/privileges"})
         self.assertTitle(f"Privilegien ändern für {new_admin["default_name_format"]}")
         f = self.response.forms["privilegechangeform"]
-        f["roles"] = list(new_privileges)
+        f["roles"] = (
+            list(new_privileges)
+            if isinstance(new_privileges, RoleSet)
+            else [new_privileges]
+        )
         f["notes"] = note
         self.submit(f)
         self.logout()
@@ -1553,7 +1557,7 @@ class TestCoreFrontend(FrontendTest):
         admin1: UserIdentifier,
         admin2: UserIdentifier,
         new_admin: UserObject,
-        new_privileges: Roles,
+        new_privileges: RoleSet | Roles,
         note: str = "For testing.",
         new_password: str | None = None,
     ) -> UserObject:
@@ -1589,7 +1593,7 @@ class TestCoreFrontend(FrontendTest):
         admin1: UserIdentifier,
         admin2: UserIdentifier,
         new_admin: UserObject,
-        new_privileges: Roles,
+        new_privileges: RoleSet | Roles,
         note: str = "For testing.",
     ) -> None:
         """Helper to reject a privilege change."""

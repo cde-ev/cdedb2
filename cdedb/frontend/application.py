@@ -40,7 +40,7 @@ from cdedb.common.exceptions import (
     QuotaException,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.roles import AdminViews, Roles
+from cdedb.common.roles import AdminViews, Roles, RoleSet
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -198,7 +198,7 @@ class Application(BaseApp):
                 f"HTTP {error.code}: {error.name}\n{error.description}", status=status
             )
 
-    def resolve_realm_roles(self, rs: RequestState) -> Roles:
+    def resolve_realm_roles(self, rs: RequestState) -> RoleSet:
         assert rs.user.persona_id is not None
         ret = Roles.none()
 

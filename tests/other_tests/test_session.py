@@ -60,7 +60,7 @@ class TestSessionBackend(BackendTest):
     def test_sessionlookup(self) -> None:
         user = self.session.lookupsession("random key", "127.0.0.0")
         self.assertIsNone(user.persona_id)
-        self.assertEqual(Roles.anonymous, user.new_roles)
+        self.assertTrue(user.new_roles.is_anonymous())
         key = self.login(USER_DICT["anton"])
         user = self.session.lookupsession(key, "127.0.0.0")
         self.assertIsInstance(user, User)
@@ -175,15 +175,15 @@ class TestSessionBackend(BackendTest):
             self.assertIsInstance(users[-1], User)
             self.assertTrue(users[-1].persona_id)
         for i, user in enumerate(users[:-1]):
-            self.assertTrue(~Roles.anonymous & user.new_roles)
+            self.assertFalse(user.new_roles.is_anonymous())
             self.assertNotEqual(user, users[i + 1])
             self.assertEqual(user.__dict__, users[i + 1].__dict__)
 
         # Terminate a single session.
         self.core.logout(cast(RequestState, keys[0]))
         # Check termination.
-        self.assertEqual(
-            Roles.anonymous, self.session.lookupsession(keys[0], ips[0]).new_roles
+        self.assertTrue(
+            self.session.lookupsession(keys[0], ips[0]).new_roles.is_anonymous()
         )
         # Check that other sessions are untouched.
         for i in (1, 2):
@@ -195,8 +195,8 @@ class TestSessionBackend(BackendTest):
         self.core.logout(cast(RequestState, keys[2]), other_sessions=True)
         # Check that all sessions have been terminated.
         for i in (0, 1, 2):
-            self.assertEqual(
-                Roles.anonymous, self.session.lookupsession(keys[i], ips[i]).new_roles
+            self.assertTrue(
+                self.session.lookupsession(keys[i], ips[i]).new_roles.is_anonymous()
             )
 
     def test_max_active_sessions(self) -> None:
@@ -211,16 +211,16 @@ class TestSessionBackend(BackendTest):
             with self.subTest(i=i, key=key):
                 user = self.session.lookupsession(key, ip=ip)
                 self.assertEqual(user.persona_id, user_data['id'])
-                self.assertTrue(~Roles.anonymous & user.new_roles)
+                self.assertFalse(user.new_roles.is_anonymous())
         # Create another session and check it.
         keys.append(self.login(user_data, ip=ip))
         user = self.session.lookupsession(keys[-1], ip=ip)
         self.assertEqual(user.persona_id, user_data['id'])
-        self.assertTrue(~Roles.anonymous & user.new_roles)
+        self.assertFalse(user.new_roles.is_anonymous())
         # Check that the oldest session has now been terminated.
         user = self.session.lookupsession(keys[0], ip=ip)
         self.assertIsNone(user.persona_id)
-        self.assertEqual(Roles.anonymous, user.new_roles)
+        self.assertTrue(user.new_roles.is_anonymous())
 
     def test_logout_everywhere(self) -> None:
         ip = "1.2.3.4."
@@ -235,7 +235,7 @@ class TestSessionBackend(BackendTest):
             with self.subTest(user=u, key=key):
                 user = self.session.lookupsession(key, ip)
                 self.assertEqual(user.persona_id, USER_DICT[u]["id"])
-                self.assertTrue(~Roles.anonymous & user.new_roles)
+                self.assertFalse(user.new_roles.is_anonymous())
 
         # Create a new session and do a "logout everywhere" with it.
         logout_user = "anton"
@@ -249,10 +249,10 @@ class TestSessionBackend(BackendTest):
                 user = self.session.lookupsession(key, ip)
                 if u == logout_user:
                     self.assertIsNone(user.persona_id)
-                    self.assertEqual(Roles.anonymous, user.new_roles)
+                    self.assertTrue(user.new_roles.is_anonymous())
                 else:
                     self.assertEqual(user.persona_id, USER_DICT[u]["id"])
-                    self.assertTrue(~Roles.anonymous & user.new_roles)
+                    self.assertFalse(user.new_roles.is_anonymous())
 
     def test_old_sessions(self) -> None:
         old_time = now() - datetime.timedelta(days=50)

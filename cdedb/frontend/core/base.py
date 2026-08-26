@@ -12,6 +12,7 @@ import operator
 import pathlib
 import quopri
 import tempfile
+from collections.abc import Collection
 from typing import Any, TypedDict
 
 import segno.helpers
@@ -57,6 +58,7 @@ from cdedb.common.roles import (
     Realms,
     RealmSet,
     Roles,
+    RoleSet,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
@@ -2146,13 +2148,14 @@ class CoreBaseFrontend(AbstractFrontend):
         self,
         rs: RequestState,
         persona_id: int,
-        roles: Roles,
+        roles: Collection[Roles],
         notes: str,
     ) -> Response:
         """Grant or revoke admin bits."""
         if rs.has_validation_errors():
             return self.change_privileges_form(rs, persona_id)
 
+        roles = RoleSet(roles)
         stati = (const.PrivilegeChangeStati.pending,)
         change_ids = self.coreproxy.list_privilege_changes(rs, persona_id, stati)
         if change_ids:
@@ -2163,11 +2166,11 @@ class CoreBaseFrontend(AbstractFrontend):
             )
 
         reason_map = {
-            Roles.cde: rs.gettext("non-cde user"),
-            Roles.event: rs.gettext("non-event user"),
-            Roles.ml: rs.gettext("non-ml user"),
-            Roles.assembly: rs.gettext("non-assembly user"),
-            Roles.cde_admin: rs.gettext("non-cde admin"),
+            RoleSet({Roles.cde}): rs.gettext("non-cde user"),
+            RoleSet({Roles.event}): rs.gettext("non-event user"),
+            RoleSet({Roles.ml}): rs.gettext("non-ml user"),
+            RoleSet({Roles.assembly}): rs.gettext("non-assembly user"),
+            RoleSet({Roles.cde_admin}): rs.gettext("non-cde admin"),
         }
         persona_status = self.coreproxy.get_persona_status(rs, persona_id)
         persona_roles = persona_status.get_user_roles()
@@ -2175,12 +2178,12 @@ class CoreBaseFrontend(AbstractFrontend):
             "persona_id": persona_id,
             "notes": notes,
             **{
-                admin_role.marker: admin_role in roles
+                admin_role.marker: roles.has(admin_role)
                 for admin_role in Roles.all_admin_roles()
                 # Check if this admin roles has changed.
                 #  Left side of the comparison is the new state, right is the old state.
                 #  Collect only the actually changed admin bits in 'data'.
-                if (admin_role in roles) != (admin_role in persona_roles)
+                if roles.has(admin_role) != persona_roles.has(admin_role)
             },
         }
 
@@ -2345,12 +2348,12 @@ class CoreBaseFrontend(AbstractFrontend):
                 self.do_mail(rs, "privilege_change_finalized", headers, params)
                 submitter = self.coreproxy.get_persona(rs, change["submitted_by"])
                 to = {"vorstand@cde-ev.de", self.conf["META_ADMIN_ADDRESS"]}
-                gained_privileges = Roles.union(
+                gained_privileges = xsorted(
                     privilege
                     for privilege in Roles.all_admin_roles()
                     if rs.ambience['privilege_change'].get(privilege.marker) is True
                 )
-                lost_privileges = Roles.union(
+                lost_privileges = xsorted(
                     privilege
                     for privilege in Roles.all_admin_roles()
                     if rs.ambience['privilege_change'].get(privilege.marker) is False

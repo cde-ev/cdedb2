@@ -5,10 +5,10 @@ This module contains some helper classes required for the Flags in 'cdedb.common
 import enum
 from typing import TYPE_CHECKING, Any, Literal, Self
 
-from cdedb.uncommon.intenum import CdEEnum, CdEFlag
+from cdedb.uncommon.intenum import CdEEnum
 
 if TYPE_CHECKING:
-    from cdedb.common.roles import RealmSet, Roles
+    from cdedb.common.roles import RealmSet, Roles, RoleSet
 
 
 class _RolesMeta(enum.EnumType):
@@ -17,32 +17,35 @@ class _RolesMeta(enum.EnumType):
     def __new__(metacls, *args: Any, **kwargs: Any) -> "_RolesMeta":
         cls = super().__new__(metacls, *args, **kwargs)
         for member in cls:  # type: ignore[var-annotated]
-            member.required_roles = cls(0)
-            for role in member._required_roles:
-                member.required_roles |= cls[role]
-            del member._required_roles
+            required_roles = member._required_roles
+            member._required_roles = {
+                # pyrefly: ignore [bad-index]
+                cls[role]
+                for role in required_roles
+            }
 
         return cls
 
 
-class _Roles(CdEFlag, metaclass=_RolesMeta):
+class _Roles(CdEEnum, metaclass=_RolesMeta):
     # TODO: This is actually str | None currently.
     marker: str
-    required_roles: Self
+    _required_roles: "RoleSet"
 
     def __new__(cls, marker: str | None = None, *required_roles: str) -> Self:
         value = 2 ** len(cls.__members__)
         obj = object.__new__(cls)
         obj._value_ = value
         obj.marker = marker  # type: ignore[assignment]
-        obj._required_roles = required_roles  # type: ignore[attr-defined]
+        obj._required_roles = required_roles  # type: ignore[assignment]
         return obj
 
-    def as_set(self) -> set[str]:
-        return {str(role.name) for role in self}
+    @property
+    def required_roles(self) -> "RoleSet":
+        # ruff: ignore[import-outside-top-level]
+        from cdedb.common.roles import RoleSet
 
-    def markers(self) -> list[str]:
-        return [role.marker for role in self]
+        return RoleSet(self._required_roles)
 
 
 class _RealmsMeta(enum.EnumType):
@@ -92,9 +95,9 @@ class _Realms(CdEEnum, metaclass=_RealmsMeta):
 
 
 class _AdminViews(CdEEnum):
-    required_roles: tuple["Roles", ...]
+    required_roles: tuple["RoleSet | Roles", ...]
 
-    def __new__(cls, *required_roles: "Roles") -> Self:
+    def __new__(cls, *required_roles: "RoleSet | Roles") -> Self:
         value = 2 ** len(cls.__members__)
         obj = object.__new__(cls)
         obj._value_ = value

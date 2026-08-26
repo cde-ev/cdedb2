@@ -72,6 +72,7 @@ from cdedb.common.roles import (
     AdminViews,
     Realms,
     Roles,
+    RoleSet,
     extract_roles,
 )
 from cdedb.common.sorting import xsorted
@@ -152,10 +153,7 @@ class CoreBaseBackend(AbstractBackend):
         this accepts a full persona, rather than a persona id.
         """
         user_realms = persona.get_user_realms()
-        return any(
-            admin_roles in rs.user.new_roles
-            for admin_roles in user_realms.get_required_admin_roles()
-        )
+        return rs.user.new_roles.has_any(*user_realms.get_required_admin_roles())
 
     @access(Roles.persona)
     def is_relative_admin_view(
@@ -1321,12 +1319,12 @@ class CoreBaseBackend(AbstractBackend):
             for admin_role in Roles.all_admin_roles():
                 # Check if this role is currently being granted or
                 #  (is already in effect and is not currently being revoked).
-                if data.get(admin_role.marker, admin_role in persona_roles):
+                if data.get(admin_role.marker, persona_roles.has(admin_role)):
                     # If so, check that requirements are (still) met.
                     #  Again: Consider (roles that are currently being granted) and
                     #  (roles that are already in effect and are not being revoked).
                     if any(
-                        not data.get(required.marker, required in persona_roles)
+                        not data.get(required.marker, persona_roles.has(required))
                         for required in admin_role.required_roles
                     ):
                         raise ValueError(errormsg)
@@ -2843,9 +2841,8 @@ class CoreBaseBackend(AbstractBackend):
         data.update({role.marker: False for role in Roles.all_admin_roles()})
         # Check if admin has rights to create the user in its realms
         user_realms = extract_roles(data, introspection_only=True).get_user_realms()
-        if not any(
-            admin in rs.user.new_roles
-            for admin in user_realms.get_required_admin_roles(conjunctive=True)
+        if not rs.user.new_roles.has_any(
+            *user_realms.get_required_admin_roles(conjunctive=True)
         ):
             raise PrivilegeError(n_("Unable to create this sort of persona."))
         # modified version of hash for 'secret' and thus safe/unknown plaintext
@@ -3111,7 +3108,7 @@ class CoreBaseBackend(AbstractBackend):
         self,
         rs: RequestState,
         persona_ids: Collection[vtypes.PersonaID],
-    ) -> dict[vtypes.PersonaID, Roles]:
+    ) -> dict[vtypes.PersonaID, RoleSet]:
         """Resolve ids into roles."""
         if rs.user.persona_id is not None and set(persona_ids) == {rs.user.persona_id}:
             return {
@@ -3128,7 +3125,7 @@ class CoreBaseBackend(AbstractBackend):
             rs: RequestState,
             persona_id: int | None,
             introspection_only: bool = False,
-        ) -> Roles: ...
+        ) -> RoleSet: ...
 
     get_roles_single: _GetRolesSingleProtocol = singularize(get_roles_multi)
 
@@ -3137,8 +3134,8 @@ class CoreBaseBackend(AbstractBackend):
         self,
         rs: RequestState,
         persona_ids: Collection[int],
-        required_roles: Roles = Roles.none(),
-        allowed_roles: Roles = Roles.all_persona_roles(),
+        required_roles: RoleSet | Roles = Roles.none(),
+        allowed_roles: RoleSet | Roles = Roles.all_persona_roles(),
     ) -> bool:
         """Check whether certain ids map to actual (active) personas.
 
@@ -3150,16 +3147,28 @@ class CoreBaseBackend(AbstractBackend):
         """
         persona_ids = affirm(set[vtypes.PersonaID], persona_ids)
         persona_ids = cast(set[vtypes.PersonaID], persona_ids)  # mypy bug
-        required_roles = affirm(Roles, required_roles)
-        allowed_roles = affirm(Roles, allowed_roles)
+        required_roles = RoleSet(
+            affirm(
+                set[Roles],
+                [required_roles]
+                if isinstance(required_roles, Roles)
+                else required_roles,
+            )
+        )
+        allowed_roles = RoleSet(
+            affirm(
+                set[Roles],
+                [allowed_roles] if isinstance(allowed_roles, Roles) else allowed_roles,
+            )
+        )
         # add always allowed roles for personas
         allowed_roles |= Roles.persona | Roles.anonymous
 
         roles = self.get_roles_multi(rs, persona_ids)
         return (
             len(roles) == len(persona_ids)
-            and all(required_roles in value for value in roles.values())
-            and all(value in allowed_roles for value in roles.values())
+            and all(value.has(required_roles) for value in roles.values())
+            and all(allowed_roles.has(value) for value in roles.values())
         )
 
     class _VerifyPersonaProtocol(Protocol):
@@ -3167,8 +3176,8 @@ class CoreBaseBackend(AbstractBackend):
             self,
             rs: RequestState,
             anid: int,
-            required_roles: Roles = Roles.none(),
-            allowed_roles: Roles = Roles.all_persona_roles(),
+            required_roles: RoleSet | Roles = Roles.none(),
+            allowed_roles: RoleSet | Roles = Roles.all_persona_roles(),
             introspection_only: bool = True,
         ) -> bool: ...
 

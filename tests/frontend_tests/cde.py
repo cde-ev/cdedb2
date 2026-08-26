@@ -27,7 +27,7 @@ from cdedb.common.i18n import (
     get_localized_country_codes,
 )
 from cdedb.common.query import QueryOperators
-from cdedb.common.roles import AdminViews, Roles
+from cdedb.common.roles import AdminViews, Roles, RoleSet
 from cdedb.frontend.common import Worker
 from tests.common import (
     USER_DICT,
@@ -441,7 +441,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("garcia")
     def test_consent_decline(self) -> None:
 
-        def _roles(user: UserIdentifier) -> Roles:
+        def _roles(user: UserIdentifier) -> RoleSet:
             return self.core.get_persona_status(
                 self.key, get_user(user)['id']
             ).get_user_roles()

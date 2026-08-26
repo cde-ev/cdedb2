@@ -50,7 +50,12 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.n_ import n_
-from cdedb.common.roles import AdminViews, AdminViewSet, Roles as _Roles
+from cdedb.common.roles import (
+    AdminViews,
+    AdminViewSet,
+    Roles as _Roles,
+    RoleSet as _RoleSet,
+)
 from cdedb.config import Config
 from cdedb.database.connection import ConnectionContainer
 from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
@@ -111,7 +116,7 @@ class User:
         *,
         persona_id: vtypes.PersonaID | None = None,
         droid: "APIToken | None" = None,
-        roles: _Roles | None = None,
+        roles: _RoleSet | None = None,
         given_names: str = "",
         nickname: str = "",
         family_name: str = "",
@@ -126,7 +131,7 @@ class User:
         self.droid = droid
         if self.persona_id and self.droid:
             raise ValueError("Cannot be both droid and persona.")
-        self.new_roles = roles or _Roles.anonymous
+        self.new_roles = roles or _RoleSet({_Roles.anonymous})
         self.username = username
         self.given_names = given_names
         self.nickname = nickname
@@ -142,7 +147,7 @@ class User:
 
     @property
     def roles(self) -> set[str]:
-        return self.new_roles.as_set()
+        return self.new_roles.as_strings()
 
     @property
     def available_admin_views(self) -> AdminViewSet:
@@ -167,7 +172,7 @@ class User:
         cls, status: "models_core.PersonaStatus", persona: "models_core.CorePersona"
     ) -> Self:
         return cls(
-            roles=status.get_user_roles(),
+            roles=status.get_session_roles(),
             persona_id=persona.id,
             username=persona.username,
             given_names=persona.given_names,
