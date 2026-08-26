@@ -1235,7 +1235,7 @@ class TestComplaintBackend(BackendTest):
             {
                 "code": const.ComplaintLogCodes.involved_added,
                 "persona_id": appellant_id,
-                "change_note": "Beschwerdeführer",
+                "change_note": "Beschwerdeführende",
             },
             {
                 "code": const.ComplaintLogCodes.companion_added,
@@ -1285,7 +1285,7 @@ class TestComplaintBackend(BackendTest):
             {
                 "code": const.ComplaintLogCodes.involved_added,
                 "persona_id": appellant_companion_id,
-                "change_note": "Beschwerdeführer",
+                "change_note": "Beschwerdeführende",
             },
         ]
         self.assertLogEqual(
