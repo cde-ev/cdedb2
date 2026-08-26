@@ -50,7 +50,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
 from cdedb.common.n_ import n_
-from cdedb.common.roles import AdminViews, Roles as _Roles
+from cdedb.common.roles import AdminViews, AdminViewSet, Roles as _Roles
 from cdedb.config import Config
 from cdedb.database.connection import ConnectionContainer
 from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
@@ -138,18 +138,18 @@ class User:
         )
         self.moderator: set[int] = set(moderator) if moderator else set()
         self.presider: set[int] = set(presider) if presider else set()
-        self.admin_views: AdminViews = AdminViews.none()
+        self.admin_views: AdminViewSet = AdminViewSet()
 
     @property
     def roles(self) -> set[str]:
         return self.new_roles.as_set()
 
     @property
-    def available_admin_views(self) -> AdminViews:
+    def available_admin_views(self) -> AdminViewSet:
         return AdminViews.from_roles(self.new_roles)
 
     def init_admin_views_from_cookie(self, enabled_views_cookie: str) -> None:
-        enabled_views = AdminViews.from_cookie(enabled_views_cookie)
+        enabled_views = AdminViews.deserialize(enabled_views_cookie)
         self.admin_views = self.available_admin_views & enabled_views
 
     def persona_name(self, include_nickname: bool = False) -> str:

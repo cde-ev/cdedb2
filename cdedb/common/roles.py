@@ -2,12 +2,14 @@
 
 """Everything regarding the role model of the CdEDB."""
 
+from collections.abc import Collection
 from typing import Any, Self
 
 from cdedb.common._roles_meta import _AdminViews, _Realms, _Roles
 from cdedb.common.n_ import n_
 from cdedb.config import Config
 from cdedb.database.connection import DBRole
+from cdedb.uncommon.intenum import FlagSet
 
 _CONF = Config()
 
@@ -342,7 +344,9 @@ class Realms(_Realms):
                 ret.append(realm.admin_role)
         return ret
 
-    def get_required_user_views(self, conjunctive: bool = False) -> list["AdminViews"]:
+    def get_required_user_views(
+        self, conjunctive: bool = False
+    ) -> list["AdminViewSet"]:
         """
         What user views do you need to be acting as a relative admin to a user?
 
@@ -580,64 +584,78 @@ class AdminViews(_AdminViews):
     auditor = Roles.auditor
 
     @classmethod
-    def all_user_views(cls) -> Self:
-        return (
-            cls.core_user
-            | cls.cde_user
-            | cls.event_user
-            | cls.ml_user
-            | cls.assembly_user
-        )
+    def all_user_views(cls) -> "AdminViewSet":
+        return AdminViewSet({
+            cls.core_user,
+            cls.cde_user,
+            cls.event_user,
+            cls.ml_user,
+            cls.assembly_user,
+        })
 
     @classmethod
-    def all_mod_views(cls) -> tuple[Self, ...]:
-        return (
+    def all_mod_views(cls) -> "AdminViewSet":
+        return AdminViewSet({
             cls.ml_mod,
             cls.ml_mod_core,
             cls.ml_mod_cde,
             cls.ml_mod_event,
             cls.ml_mod_cdelokal,
             cls.ml_mod_assembly,
-        )
+        })
 
     @classmethod
-    def all_mgmt_views(cls) -> tuple[Self, ...]:
-        return (
+    def all_mgmt_views(cls) -> "AdminViewSet":
+        return AdminViewSet({
             cls.ml_mgmt,
             cls.ml_mgmt_core,
             cls.ml_mgmt_cde,
             cls.ml_mgmt_event,
             cls.ml_mgmt_cdelokal,
             cls.ml_mgmt_assembly,
-        )
-
-    def has_any_mod(self) -> bool:
-        return self.has_any(*self.all_mod_views())
-
-    def has_any_mgmt(self) -> bool:
-        return self.has_any(*self.all_mgmt_views())
+        })
 
     def _is_available_to(self, roles: Roles) -> bool:
-        return all(
-            any(role in roles for role in admin_view.required_roles)
-            for admin_view in self
-        )
+        return any(role in roles for role in self.required_roles)
 
     @classmethod
-    def from_roles(cls, roles: Roles) -> Self:
-        return cls.union(
+    def from_roles(cls, roles: Roles) -> "AdminViewSet":
+        return AdminViewSet({
             admin_view for admin_view in cls if admin_view._is_available_to(roles)
-        )
+        })
 
     @classmethod
-    def user_views_from_admin_roles(cls, roles: Roles) -> Self:
+    def user_views_from_admin_roles(cls, roles: Roles) -> "AdminViewSet":
         if Roles.core_admin in roles:
-            return cls.core_user
+            return AdminViewSet({cls.core_user})
         return cls.from_roles(roles) & cls.all_user_views()
 
     @classmethod
-    def from_cookie(cls, cookie: str) -> Self:
+    def serialize(cls, admin_views: Collection[Self] | Self) -> str:
+        if isinstance(admin_views, cls):
+            return str(admin_views)
+        return ",".join(map(str, admin_views))  # type: ignore[arg-type] # mypy bug
+
+    @classmethod
+    def deserialize(cls, cookie: str) -> "AdminViewSet":
         try:
-            return cls(int(cookie))  # type: ignore[arg-type]
-        except ValueError:
-            return cls.none()
+            return AdminViewSet({
+                cls[admin_view.removeprefix(f"{cls.__name__}.")]
+                for admin_view in cookie.split(",")
+            })
+        except (ValueError, KeyError):
+            return AdminViewSet()
+
+    def or_(self, other: Self) -> "AdminViewSet":
+        return AdminViewSet({self, other})
+
+    def __or__(self, other: Self) -> "AdminViewSet":
+        return self.or_(other)
+
+
+class AdminViewSet(FlagSet[AdminViews]):
+    def has_any_mod(self) -> bool:
+        return self.has_any(*AdminViews.all_mod_views())
+
+    def has_any_mgmt(self) -> bool:
+        return self.has_any(*AdminViews.all_mgmt_views())

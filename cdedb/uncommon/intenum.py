@@ -4,8 +4,8 @@ Segregated into its own file to break cyclic imports.
 """
 
 import enum
-from collections.abc import Iterable
-from typing import Self
+from collections.abc import Iterable, Set
+from typing import Self, cast
 
 
 class CdEEnumMeta:
@@ -30,12 +30,67 @@ class CdEEnumMeta:
         return super().__format__(format_spec)
 
 
-class CdEIntEnum(CdEEnumMeta, enum.IntEnum):
+class CdEEnumNonFlagMeta(CdEEnumMeta):
     pass
 
 
-class CdEEnum(CdEEnumMeta, enum.Enum):
+class CdEIntEnum(CdEEnumNonFlagMeta, enum.IntEnum):
     pass
+
+
+class CdEEnum(CdEEnumNonFlagMeta, enum.Enum):
+    pass
+
+
+class FlagSet[T: CdEEnumNonFlagMeta](set[T]):
+    def has(self, flag: T | Self) -> bool:
+        """
+        "Convenience" method with similar syntax to 'has_any' and 'has_all'.
+        """
+        if isinstance(flag, self.__class__):
+            return bool(self & flag)
+        return flag in self
+
+    def has_any(self, *flags: T | Self) -> bool:
+        """Convenience method.
+
+        'some_flags.has_any(Flag.a, Flag.b, Flag.c)'
+        is equivalent to
+        '{Flag.a, Flag.b, Flag.c} & some_flags'.
+
+        However
+        'some_flags.has_any(Flag.a, {Flag.b, Flag.c})'
+        does not have a direct equivalent.
+        """
+        ret = any(self.has(flag) for flag in flags)
+        return ret
+
+    def has_all(self, *flags: T | Self) -> bool:
+        """Convenience method.
+
+        'some_flags.has_all(Flag.a, Flag.b, Flag.c)'
+        is equivalent to
+        'some_flags.has_all(Flag.a, {Flag.b, Flag.c})'
+        and
+        '{Flag.a, Flag.b, Flag.c} in some_flags'.
+
+        Note that this means it behaves slightly different than 'has_any'.
+        """
+        return all(self.has(flag) for flag in flags)
+
+    def __and__(self, value: Set[object], /) -> Self:
+        return self.__class__(super().__and__(value))
+
+    def __repr__(self) -> str:
+        if not self:
+            return f"{self.__class__.__name__}({{}})"
+        cls = list(self)[0].__class__
+        present_members: list[str] = [
+            member.name  # type: ignore[attr-defined]
+            for member in cast(Iterable[T], cls)
+            if member in self
+        ]
+        return f"{cls.__name__}.{'|'.join(present_members)}"
 
 
 class CdEFlag(CdEEnumMeta, enum.Flag):

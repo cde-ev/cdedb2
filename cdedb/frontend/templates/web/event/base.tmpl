@@ -416,18 +416,18 @@ This will result in:
     {% if 'event' in ambience %}
         {% if ambience['event'].id in (user.orga.union(user.caretaker)) %}
             {{ util.admin_views_toggle((
-                    (gettext("Event Administration"), AdminViews.event_mgmt.__or__(AdminViews.event_list), AdminViews.event_mgmt),
+                    (gettext("Event Administration"), AdminViews.event_mgmt.or_(AdminViews.event_list), AdminViews.event_mgmt),
                 )) }}
         {% else %}
             {{ util.admin_views_toggle((
-                    (gettext("Event Administration"), AdminViews.event_mgmt.__or__(AdminViews.event_list), AdminViews.event_mgmt),
+                    (gettext("Event Administration"), AdminViews.event_mgmt.or_(AdminViews.event_list), AdminViews.event_mgmt),
                     (gettext("Orga Controls"), AdminViews.event_orga, None),
                 )) }}
         {% endif %}
     {% else %}
         {{ util.admin_views_toggle((
                 (gettext("User Administration"), AdminViews.all_user_views(), AdminViews.event_user),
-                (gettext("Event Administration"), AdminViews.event_mgmt.__or__(AdminViews.event_list), None),
+                (gettext("Event Administration"), AdminViews.event_mgmt.or_(AdminViews.event_list), None),
                 (gettext("Auditor"), AdminViews.auditor, None),
             )) }}
     {% endif %}

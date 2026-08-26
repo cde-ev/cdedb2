@@ -406,7 +406,11 @@ class CoreBaseFrontend(AbstractFrontend):
     @access(Roles.persona, modi={"POST"}, check_anti_csrf=False)
     @REQUESTdata("add", "remove", "#wants")
     def modify_active_admin_views(
-        self, rs: RequestState, add: AdminViews, remove: AdminViews, wants: str | None
+        self,
+        rs: RequestState,
+        add: str | None,
+        remove: str | None,
+        wants: str | None,
     ) -> Response:
         """
         Enable or disable admin views for the current user.
@@ -425,18 +429,18 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.has_validation_errors():
             return response
 
-        enabled_views = AdminViews.from_cookie(
+        enabled_views = AdminViews.deserialize(
             rs.request.cookies.get(AdminViews.cookie_name(), "")
         )
 
         if add:
-            enabled_views |= add
+            enabled_views |= AdminViews.deserialize(add)
         if remove:
-            enabled_views &= ~remove
+            enabled_views -= AdminViews.deserialize(remove)
 
         response.set_cookie(
             AdminViews.cookie_name(),
-            str(enabled_views.value),
+            AdminViews.serialize(enabled_views),
             expires=now() + datetime.timedelta(days=10 * 365),
         )
         return response
@@ -675,10 +679,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if is_relative_admin:
             access_mode |= self.AccessMode.any_admin
             for realm in Realms:
-                if any(
-                    admin_view in rs.user.admin_views
-                    for admin_view in realm.get_required_user_views()
-                ):
+                if rs.user.admin_views.has_any(*realm.get_required_user_views()):
                     access_realms |= realm
                     # Relative admins can see all data
                     access_levels |= self.AccessLevel.full

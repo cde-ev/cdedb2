@@ -1054,13 +1054,13 @@ def as_users(
     return wrapper
 
 
-def admin_views[F: Callable[..., Any]](views: AdminViews) -> Callable[[F], F]:
+def admin_views[F: Callable[..., Any]](*views: AdminViews) -> Callable[[F], F]:
     """Decorate a test to set different initial admin views."""
 
     def decorator(fun: F) -> F:
         @functools.wraps(fun)
         def new_fun(self: FrontendTest, *args: Any, **kwargs: Any) -> Any:
-            self.app.set_cookie(AdminViews.cookie_name(), str(views.value))
+            self.app.set_cookie(AdminViews.cookie_name(), AdminViews.serialize(views))
             return fun(self, *args, **kwargs)
 
         return cast(F, new_fun)
@@ -1160,7 +1160,7 @@ class FrontendTest(BackendTest):
         super().setUp()
         self.app.reset()
         # Make sure all available admin views are enabled.
-        self.app.set_cookie(AdminViews.cookie_name(), str(AdminViews.all().value))
+        self.app.set_cookie(AdminViews.cookie_name(), AdminViews.serialize(AdminViews))
         if prepsql:
             execsql(prepsql)
         self.response = None
@@ -2481,7 +2481,7 @@ class MultiAppFrontendTest(FrontendTest):
         super().setUp(*args, **kwargs)
         for app in self.apps:
             app.reset()
-            app.set_cookie(AdminViews.cookie_name(), str(AdminViews.all().value))
+            app.set_cookie(AdminViews.cookie_name(), AdminViews.serialize(AdminViews))
         self.current_app = 0
 
     def get_response(self) -> webtest.TestResponse:

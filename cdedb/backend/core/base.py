@@ -176,10 +176,7 @@ class CoreBaseBackend(AbstractBackend):
         persona_status = self.get_persona_status(rs, persona_id)
         user_realms = persona_status.get_user_realms()
 
-        return any(
-            admin_views in rs.user.admin_views
-            for admin_views in user_realms.get_required_user_views()
-        )
+        return rs.user.admin_views.has_any(*user_realms.get_required_user_views())
 
     def verify_persona_password(
         self, rs: RequestState, password: str, persona_id: int

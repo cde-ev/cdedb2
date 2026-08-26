@@ -5,7 +5,7 @@ This module contains some helper classes required for the Flags in 'cdedb.common
 import enum
 from typing import TYPE_CHECKING, Any, Literal, Self
 
-from cdedb.uncommon.intenum import CdEFlag
+from cdedb.uncommon.intenum import CdEEnum, CdEFlag
 
 if TYPE_CHECKING:
     from cdedb.common.roles import Roles
@@ -89,7 +89,7 @@ class _Realms(CdEFlag, metaclass=_RealmsMeta):
         return self.__class__.union(realm._implied_realms for realm in self)
 
 
-class _AdminViews(CdEFlag):
+class _AdminViews(CdEEnum):
     required_roles: tuple["Roles", ...]
 
     def __new__(cls, *required_roles: "Roles") -> Self:
@@ -98,6 +98,3 @@ class _AdminViews(CdEFlag):
         obj._value_ = value
         obj.required_roles = required_roles
         return obj
-
-    def as_set(self) -> set[str]:
-        return {str(admin_view.name) for admin_view in self}

@@ -13,7 +13,7 @@ import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.common.roles import AdminViews, Roles
+from cdedb.common.roles import AdminViews, AdminViewSet, Roles
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.database.constants import (
     MailinglistDomain,
@@ -283,27 +283,27 @@ class Mailinglist(CdEDataclass):
     role_map: ClassVar[Mapping[Roles, SubscriptionPolicy]] = {}
 
     @classmethod
-    def moderator_admin_views(cls) -> tuple[AdminViews, ...]:
+    def moderator_admin_views(cls) -> AdminViewSet:
         """All admin views which toggle the moderator view for this mailinglist.
 
         This is must be only used for cosmetic changes, similar to
         core.is_relative_admin_view.
         """
-        return tuple(
+        return (
             AdminViews.from_roles(cls.relevant_admins | Roles.ml_admin)
-            & AdminViews.union(AdminViews.all_mod_views())
+            & AdminViews.all_mod_views()
         )
 
     @classmethod
-    def management_admin_views(cls) -> tuple[AdminViews, ...]:
+    def management_admin_views(cls) -> AdminViewSet:
         """All admin views which toggle the management view for this mailinglist.
 
         This is must be only used for cosmetic changes, similar to
         core.is_relative_admin_view.
         """
-        return tuple(
+        return (
             AdminViews.from_roles(cls.relevant_admins | Roles.ml_admin)
-            & AdminViews.union(AdminViews.all_mgmt_views())
+            & AdminViews.all_mgmt_views()
         )
 
     @classmethod
