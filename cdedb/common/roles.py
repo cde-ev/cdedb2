@@ -133,15 +133,15 @@ class Roles(_Roles):
         """Whether there is any admin role in this set of roles."""
         return bool(self & self.all_admin_roles())
 
-    def get_user_realms(self) -> "Realms":
+    def get_user_realms(self) -> "RealmSet":
         """Determine the realms of a user with these roles."""
         return Realms.from_user_roles(self)
 
-    def get_admin_realms(self) -> "Realms":
+    def get_admin_realms(self) -> "RealmSet":
         """See 'Realms.from_admin_roles'."""
         return Realms.from_admin_roles(self)
 
-    def get_genesis_realms(self) -> "Realms":
+    def get_genesis_realms(self) -> "RealmSet":
         """See 'Realms.genesis_realms_from_admin_roles'."""
         return Realms.genesis_realms_from_admin_roles(self)
 
@@ -211,13 +211,39 @@ class Realms(_Realms):
     assembly = 8, Roles.assembly, Roles.assembly_admin, "ml"
 
     @classmethod
-    def from_user_roles(cls, roles: Roles) -> Self:
+    def from_user_roles(cls, roles: Roles) -> "RealmSet":
         """Determine the realms of a user with the given roles."""
-        return cls.union(realm for realm in cls if realm.role in roles)
+        return RealmSet(realm for realm in cls if realm.role in roles)
+
+    @property
+    def implying_realms(self) -> "RealmSet":
+        """Determine all realms which would imply this realm.
+
+        >>> Realms.ml.implied_realms
+        Realms.None
+        >>> Realms.event.implied_realms
+        Realms.ml
+        >>> Realms.assembly.implied_realms
+        Realms.ml
+        >>> Realms.cde.implied_realms
+        Realms.event|ml|assembly
+
+        >>> Realms.ml.implying_realms
+        Realms.cde|event|assembly
+        >>> Realms.event.implying_realms
+        Realms.cde
+        >>> Realms.assembly.implying_realms
+        Realms.cde
+        >>> Realms.cde.implying_realms
+        Realms.None
+        """
+        return RealmSet(
+            realm for realm in self.__class__ if realm.implied_realms.has(self)
+        )
 
     # TODO: get rid of this once the change_user PR is merged.
     @classmethod
-    def from_admin_roles(cls, roles: Roles) -> Self:
+    def from_admin_roles(cls, roles: Roles) -> "RealmSet":
         """
         Determine all realms which may be administrated by a user with the given roles.
 
@@ -237,11 +263,14 @@ class Realms(_Realms):
         Realms.ml
         """
         if Roles.core_admin in roles:
-            return cls.all()
+            return RealmSet(cls)
 
-        return cls.union(
-            realm | realm.implied_realms for realm in cls if realm.admin_role in roles
-        )
+        ret = RealmSet()
+        for realm in cls:
+            if realm.admin_role in roles:
+                ret.add(realm)
+                ret.update(realm.implying_realms)
+        return ret
 
     @classmethod
     def get_available_genesis_realms(cls) -> dict[Self, str]:
@@ -252,7 +281,7 @@ class Realms(_Realms):
         }
 
     @classmethod
-    def genesis_realms_from_admin_roles(cls, roles: Roles) -> Self:
+    def genesis_realms_from_admin_roles(cls, roles: Roles) -> "RealmSet":
         """
         Determine all genesis realms which may be handled by a user with the given roles.
 
@@ -273,15 +302,62 @@ class Realms(_Realms):
         Realms.ml
         """
         if Roles.core_admin in roles:
-            return cls.all()
+            return RealmSet(cls)
 
-        return cls.union(realm for realm in cls if realm.admin_role in roles)
+        return RealmSet(realm for realm in cls if realm.admin_role in roles)
+
+    def get_required_user_views(
+        self, conjunctive: bool = False
+    ) -> list["AdminViewSet"]:
+        return RealmSet([self]).get_required_user_views(conjunctive=conjunctive)
+
+    @property
+    def realm_marker(self) -> str:
+        """Shortcut to the marker of the associated role for better type inference."""
+        assert self.role.marker is not None
+        return self.role.marker
+
+    @property
+    def admin_marker(self) -> str:
+        """Shortcut to the marker of the associated admin for better type inference."""
+        assert self.admin_role.marker is not None
+        return self.admin_role.marker
+
+    @classmethod
+    def all_realm_admins(cls) -> Roles:
+        """
+        >>> Realms.all_realm_admins()
+        Roles.cde_admin|event_admin|ml_admin|assembly_admin
+        """
+        return Roles.union(realm.admin_role for realm in cls)
+
+    def __or__(self, other: Self) -> "RealmSet":
+        if not isinstance(other, self.__class__):
+            return NotImplemented
+        return RealmSet({self, other})
+
+    def __lt__(self, other: Self) -> bool:
+        return self.value < other.value
+
+    @classmethod
+    def all(cls) -> "RealmSet":
+        return RealmSet(cls)
+
+    @classmethod
+    def none(cls) -> "RealmSet":
+        return ~cls.all()
+
+
+class RealmSet(FlagSet[Realms]):
+    @property
+    def implied_realms(self) -> Self:
+        return self.__class__(x for realm in self for x in realm.implied_realms)
 
     @property
     def implying_realms(self) -> Self:
         """Determine all realms which would (each) imply all realms in a given set."""
-        return self.__class__.union(
-            realm for realm in ~self if self in realm.implied_realms
+        return self.__class__(
+            realm for realm in Realms if realm.implied_realms.has_all(self)
         )
 
     @property
@@ -290,7 +366,11 @@ class Realms(_Realms):
 
         I.e. all realms which are not implied by other realms in the set.
         """
-        return self & ~self.implied_realms
+        return self - self.implied_realms
+
+    @property
+    def realm_markers(self) -> list[str]:
+        return [realm.realm_marker for realm in self]
 
     def get_required_admin_roles(self, conjunctive: bool = False) -> list[Roles]:
         """Required admin privilege relative to a persona (signified by its roles)
@@ -313,7 +393,7 @@ class Realms(_Realms):
 
         :returns: List admin role flags. Any of these "sets" is sufficient.
 
-        >>> (Realms.ml).get_required_admin_roles()
+        >>> RealmSet({Realms.ml}).get_required_admin_roles()
         [Roles.core_admin, Roles.ml_admin]
         >>> (Realms.event|Realms.ml).get_required_admin_roles()
         [Roles.core_admin, Roles.event_admin]
@@ -324,7 +404,7 @@ class Realms(_Realms):
         >>> (Realms.cde|Realms.event|Realms.ml|Realms.assembly).get_required_admin_roles()
         [Roles.core_admin, Roles.cde_admin]
 
-        >>> (Realms.ml).get_required_admin_roles(conjunctive=True)
+        >>> RealmSet({Realms.ml}).get_required_admin_roles(conjunctive=True)
         [Roles.core_admin, Roles.ml_admin]
         >>> (Realms.event|Realms.ml).get_required_admin_roles(conjunctive=True)
         [Roles.core_admin, Roles.event_admin]
@@ -377,29 +457,11 @@ class Realms(_Realms):
             for roles in self.get_required_admin_roles(conjunctive)
         ]
 
-    @property
-    def realm_marker(self) -> str:
-        """Shortcut to the marker of the associated role for better type inference."""
-        assert self.role.marker is not None
-        return self.role.marker
+    def as_strings(self) -> set[str]:
+        return {realm.name for realm in self}
 
-    @property
-    def realm_markers(self) -> list[str]:
-        return [realm.realm_marker for realm in self]
-
-    @property
-    def admin_marker(self) -> str:
-        """Shortcut to the marker of the associated admin for better type inference."""
-        assert self.admin_role.marker is not None
-        return self.admin_role.marker
-
-    @classmethod
-    def all_realm_admins(cls) -> Roles:
-        """
-        >>> Realms.all_realm_admins()
-        Roles.cde_admin|event_admin|ml_admin|assembly_admin
-        """
-        return Roles.union(realm.admin_role for realm in cls)
+    def __invert__(self) -> Self:
+        return self.__class__(Realms) - self
 
 
 def extract_roles(session: CdEDBObject, introspection_only: bool = False) -> Roles:

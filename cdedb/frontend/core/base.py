@@ -55,6 +55,7 @@ from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.roles import (
     AdminViews,
     Realms,
+    RealmSet,
     Roles,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
@@ -653,21 +654,21 @@ class CoreBaseFrontend(AbstractFrontend):
                                 and status.is_member
                                 and status.is_searchable)
 
-        access_realms = Realms.none()
+        access_realms = RealmSet()
         access_levels = self.AccessLevel(0)
         access_mode = self.AccessMode(0)
         REDACTED = models.CorePersona.REDACTED
 
         # Let users see themselves
         if persona_id == rs.user.persona_id:
-            access_realms |= Realms.all()
+            access_realms |= RealmSet(Realms)
             access_levels |= self.AccessLevel.full
         # Core admins see everything
         if (
             Roles.core_admin in rs.user.new_roles
             and AdminViews.core_user in rs.user.admin_views
         ):
-            access_realms |= Realms.all()
+            access_realms |= RealmSet(Realms)
             access_levels |= self.AccessLevel.full
         # Meta admins see the status bits
         if (
@@ -744,16 +745,16 @@ class CoreBaseFrontend(AbstractFrontend):
         if Realms.cde in (access_realms & target_realms):
             persona = self.coreproxy.get_cde_user(rs, persona_id)
         # event and assembly are independent realms, users may have both at the same time
-        elif Realms.event | Realms.assembly in (access_realms & target_realms):
+        elif (access_realms & target_realms).has(Realms.event | Realms.assembly):
             persona = models.EventAssemblyPersona(**{
                 **self.coreproxy.get_assembly_user(rs, persona_id).as_dict(),
                 **self.coreproxy.get_event_user(rs, persona_id, event_id).as_dict(),
             })
-        elif Realms.event in (access_realms & target_realms):
+        elif (access_realms & target_realms).has(Realms.event):
             persona = self.coreproxy.get_event_user(rs, persona_id, event_id)
-        elif Realms.assembly in (access_realms & target_realms):
+        elif (access_realms & target_realms).has(Realms.assembly):
             persona = self.coreproxy.get_assembly_user(rs, persona_id)
-        elif Realms.ml in (access_realms & target_realms):
+        elif (access_realms & target_realms).has(Realms.ml):
             persona = self.coreproxy.get_ml_user(rs, persona_id)
         else:
             persona = self.coreproxy.get_persona(rs, persona_id)
@@ -1773,7 +1774,7 @@ class CoreBaseFrontend(AbstractFrontend):
             "complaint": self.coreproxy.list_admins(rs, "complaint"),
         }
 
-        display_realms = rs.user.new_roles.get_user_realms().as_set()
+        display_realms = rs.user.new_roles.get_user_realms().as_strings()
         if "cde" in display_realms:
             display_realms.add("finance")
             display_realms.add("auditor")
@@ -2458,7 +2459,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 "target_realm": target_realm,
                 "missing_realms": ~user_realms,
                 "missing_target_realms": (
-                    (target_realm | target_realm.implied_realms) & ~user_realms
+                    (target_realm.implied_realms | {target_realm}) & ~user_realms
                     if target_realm is not None
                     else None
                 ),

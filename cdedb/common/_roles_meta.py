@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Literal, Self
 from cdedb.uncommon.intenum import CdEEnum, CdEFlag
 
 if TYPE_CHECKING:
-    from cdedb.common.roles import Roles
+    from cdedb.common.roles import RealmSet, Roles
 
 
 class _RolesMeta(enum.EnumType):
@@ -52,9 +52,11 @@ class _RealmsMeta(enum.EnumType):
         cls = super().__new__(metacls, *args, **kwargs)
         for member in cls:  # type: ignore[var-annotated]
             implied_realms = member._implied_realms
-            member._implied_realms = cls(0)
-            for realm in implied_realms:
-                member._implied_realms |= cls[realm]
+            member._implied_realms = {
+                # pyrefly: ignore [bad-index]
+                cls[realm]
+                for realm in implied_realms
+            }
 
         return cls
 
@@ -62,10 +64,10 @@ class _RealmsMeta(enum.EnumType):
 type RealmRole = Literal[Roles.cde, Roles.event, Roles.assembly, Roles.ml]
 
 
-class _Realms(CdEFlag, metaclass=_RealmsMeta):
+class _Realms(CdEEnum, metaclass=_RealmsMeta):
     role: RealmRole
     admin_role: "Roles"
-    _implied_realms: Self
+    _implied_realms: "RealmSet"
 
     def __new__(
         cls,
@@ -81,12 +83,12 @@ class _Realms(CdEFlag, metaclass=_RealmsMeta):
         obj._implied_realms = implied_realms  # type: ignore[assignment]
         return obj
 
-    def as_set(self) -> set[str]:
-        return {str(realm.name) for realm in self}
-
     @property
-    def implied_realms(self) -> Self:
-        return self.__class__.union(realm._implied_realms for realm in self)
+    def implied_realms(self) -> "RealmSet":
+        # ruff: ignore[import-outside-top-level]
+        from cdedb.common.roles import RealmSet
+
+        return RealmSet(self._implied_realms)
 
 
 class _AdminViews(CdEEnum):

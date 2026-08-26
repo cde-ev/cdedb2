@@ -212,7 +212,7 @@ class BaseApp(metaclass=abc.ABCMeta):
     def realm_str(cls) -> str:
         if isinstance(cls.realm, str):
             return cls.realm
-        return str(cls.realm.name)
+        return cls.realm.name
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.conf = Config()

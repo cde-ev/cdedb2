@@ -20,7 +20,7 @@ from cdedb.common.exceptions import CryptographyError
 from cdedb.common.i18n import format_country_code
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
-from cdedb.common.roles import Realms, Roles, extract_roles
+from cdedb.common.roles import Realms, RealmSet, Roles, extract_roles
 from cdedb.common.sorting import Sortkey
 from cdedb.config import Config
 from cdedb.filter import cdedbid_filter
@@ -342,7 +342,7 @@ class Persona(CdEDataclass):
         """
         return extract_roles(self.as_dict(), introspection_only=True)
 
-    def get_user_realms(self) -> Realms:
+    def get_user_realms(self) -> RealmSet:
         return Realms.from_user_roles(self._get_user_roles())
 
 

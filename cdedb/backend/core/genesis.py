@@ -205,7 +205,7 @@ class CoreGenesisBackend(CoreBaseBackend):
     @access(Roles.anonymous)
     def genesis_verify(
         self, rs: RequestState, case_id: int
-    ) -> tuple[DefaultReturnCode, Realms]:
+    ) -> tuple[DefaultReturnCode, Realms | None]:
         """Confirm the new email address and proceed to the next stage.
 
         Returning the realm is a conflation caused by lazyness, but before
@@ -223,7 +223,7 @@ class CoreGenesisBackend(CoreBaseBackend):
             )
             # These should be displayed as useful errors in the frontend.
             if not data:
-                return 0, Realms.none()
+                return 0, None
             realm = Realms(data["realm"])  # type: ignore[call-arg]
             if not data["status"] == const.GenesisStati.unconfirmed:
                 return -1, realm
@@ -252,15 +252,17 @@ class CoreGenesisBackend(CoreBaseBackend):
         self,
         rs: RequestState,
         stati: Collection[const.GenesisStati] | None = None,
-        realms: Realms | None = None,
+        realms: Collection[Realms] | Realms | None = None,
     ) -> CdEDBObjectMap:
         """List persona creation cases.
 
         Restrict to certain stati and certain target realms.
         """
-        realms = affirm(Realms, realms or Realms.all())
+        if isinstance(realms, Realms):
+            realms = [realms]
+        realms = affirm(set[Realms], realms or set(Realms))
         stati = affirm(set[const.GenesisStati], stati or set())
-        if realms not in rs.user.new_roles.get_genesis_realms():
+        if not rs.user.new_roles.get_genesis_realms().has_all(*realms):
             raise PrivilegeError(n_("Not privileged."))
         query = """
             SELECT id, ctime, username, given_names, family_name, status
@@ -268,7 +270,7 @@ class CoreGenesisBackend(CoreBaseBackend):
         """
         conditions = []
         params: CdEDBObject = {}
-        if realms != Realms.all():
+        if realms != set(Realms):
             conditions.append("realm = ANY(%(realms)s)")
             params["realms"] = list(realms)
         if stati:
@@ -291,9 +293,8 @@ class CoreGenesisBackend(CoreBaseBackend):
                 rs, *models.GenesisCase.get_select_query(genesis_case_ids, "id")
             )
         )
-        if (
-            Realms.union(case.realm for case in cases.values())
-            not in rs.user.new_roles.get_genesis_realms()
+        if not rs.user.new_roles.get_genesis_realms().has_all(
+            *(case.realm for case in cases.values())
         ):
             raise PrivilegeError(n_("Not privileged."))
         return cases

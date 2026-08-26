@@ -1075,7 +1075,7 @@ class TestCoreBackend(BackendTest):
         )
 
     def test_genesis_verify_multiple(self) -> None:
-        self.assertEqual((0, Realms.none()), self.core.genesis_verify(ANONYMOUS, 123))
+        self.assertEqual((0, None), self.core.genesis_verify(ANONYMOUS, 123))
         genesis_data = {
             "given_names": "Max",
             "family_name": "Mailschreiber",

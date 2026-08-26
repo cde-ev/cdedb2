@@ -4,6 +4,7 @@ Segregated into its own file to break cyclic imports.
 """
 
 import enum
+import typing
 from collections.abc import Iterable, Set
 from typing import Self, cast
 
@@ -42,13 +43,13 @@ class CdEEnum(CdEEnumNonFlagMeta, enum.Enum):
     pass
 
 
-class FlagSet[T: CdEEnumNonFlagMeta](set[T]):
+class FlagSet[T: CdEEnumNonFlagMeta](frozenset[T]):
     def has(self, flag: T | Self) -> bool:
         """
         "Convenience" method with similar syntax to 'has_any' and 'has_all'.
         """
         if isinstance(flag, self.__class__):
-            return bool(self & flag)
+            return self.has_all(*flag)
         return flag in self
 
     def has_any(self, *flags: T | Self) -> bool:
@@ -78,19 +79,35 @@ class FlagSet[T: CdEEnumNonFlagMeta](set[T]):
         """
         return all(self.has(flag) for flag in flags)
 
-    def __and__(self, value: Set[object], /) -> Self:
-        return self.__class__(super().__and__(value))
+    def __and__(self, value: Set[object] | T, /) -> Self:
+        if not isinstance(value, Iterable):
+            value = {value}
+        return self.__class__(super().__and__(set(value)))
+
+    def __rand__(self, value: Set[object] | T, /) -> Self:
+        return self & value
+
+    def __sub__(self, value: Set[object], /) -> Self:
+        return self.__class__(super().__sub__(set(value)))
+
+    def __or__(self, value: Set[T] | T, /) -> Self:  # type: ignore[override]
+        if not isinstance(value, Iterable):
+            value = {value}
+        return self.__class__(super().__or__(set(value)))
+
+    def __ror__(self, value: Set[T] | T, /) -> Self:
+        return self | value
 
     def __repr__(self) -> str:
+        enum_cls = typing.get_args(self.__orig_bases__[0])[0]  # type: ignore[attr-defined]
         if not self:
-            return f"{self.__class__.__name__}({{}})"
-        cls = list(self)[0].__class__
+            return f"{enum_cls.__name__}.None"
         present_members: list[str] = [
             member.name  # type: ignore[attr-defined]
-            for member in cast(Iterable[T], cls)
+            for member in cast(Iterable[T], enum_cls)
             if member in self
         ]
-        return f"{cls.__name__}.{'|'.join(present_members)}"
+        return f"{enum_cls.__name__}.{'|'.join(present_members)}"
 
 
 class CdEFlag(CdEEnumMeta, enum.Flag):
