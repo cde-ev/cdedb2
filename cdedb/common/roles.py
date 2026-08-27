@@ -69,7 +69,7 @@ class Roles(_Roles):
     member = "is_member", "cde"
     searchable = "is_searchable", "member"
 
-    # Realm roles, granted manually.
+    # Realm roles, granted manually, not dependent on the 'core.personas' table.
     complaint_enforcer = ()
     event_helper = ()
 
@@ -206,8 +206,8 @@ class Realms(_Realms):
     Each realm is associated with (in this order):
         - a role, that signifies that a user belongs to the realm.
         - a role, that signifies that a user may administrate the realm.
-        - optionnally, a list of implied realms.
-            This signifies that a user of this reals must also have these other realms.
+        - optionally, a list of implied realms.
+            This signifies that a user of this realm must also have these other realms.
 
             For technical reasons, these realms need to be given as a sequence of
             strings. It is possible to refer to a realms further below in the definition

@@ -1317,12 +1317,14 @@ class CoreBaseBackend(AbstractBackend):
                 "User does not fit the requirements for this admin privilege."
             )
             for admin_role in Roles.all_admin_roles():
-                # Check if this role is currently being granted or
-                #  (is already in effect and is not currently being revoked).
+                # For every admin role we check if this role
+                #  - (is currently being granted) or
+                #  - (is already in effect and is not currently being revoked).
                 if data.get(admin_role.marker, persona_roles.has(admin_role)):
-                    # If so, check that requirements are (still) met.
-                    #  Again: Consider (roles that are currently being granted) and
-                    #  (roles that are already in effect and are not being revoked).
+                    # If so, we check that requirements are (still) met.
+                    #  Again: Consider
+                    #  - (roles that are currently being granted) and
+                    #  - (roles that are already in effect and are not being revoked).
                     if any(
                         not data.get(required.marker, persona_roles.has(required))
                         for required in admin_role.required_roles
@@ -3111,9 +3113,7 @@ class CoreBaseBackend(AbstractBackend):
     ) -> dict[vtypes.PersonaID, RoleSet]:
         """Resolve ids into roles."""
         if rs.user.persona_id is not None and set(persona_ids) == {rs.user.persona_id}:
-            return {
-                rs.user.persona_id: rs.user.new_roles,
-            }
+            return {rs.user.persona_id: rs.user.new_roles}
         return {
             p.id: p.get_user_roles()
             for p in self.get_personas_status(rs, persona_ids).values()
