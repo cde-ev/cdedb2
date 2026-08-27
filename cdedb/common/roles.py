@@ -148,18 +148,23 @@ class Roles(_Roles):
         return cls.all_admin_roles()
 
     def __or__(self, other: Self) -> "RoleSet":
+        """Alllows combining 'Roles' into a 'RoleSet' using 'Roles.a | Roles.b'."""
         if not isinstance(other, self.__class__):
             return NotImplemented
         return RoleSet({self, other})
 
     def __invert__(self) -> "RoleSet":
+        """Shortcut to get a 'RoleSet' with "all roles except this one"."""
         return ~RoleSet({self})
 
-    def __lt__(self, other: Self) -> bool:
-        return self.value < other.value
+    @classmethod
+    def all(cls) -> "RoleSet":
+        """Shortcut to get a 'RoleSet' of all roles."""
+        return RoleSet(cls)
 
     @classmethod
     def none(cls) -> "RoleSet":
+        """Shortcut to get an empty 'RoleSet'."""
         return RoleSet({})
 
 
@@ -169,15 +174,12 @@ class RoleSet(FlagSet[Roles]):
         return self.has_any(*Roles.all_admin_roles())
 
     def is_anonymous(self) -> bool:
+        """Whether this 'RoleSet' contains _only_ the anonymous role."""
         return self == self.__class__({Roles.anonymous})
 
     def get_user_realms(self) -> "RealmSet":
         """Determine the realms of a user with these roles."""
         return Realms.from_user_roles(self)
-
-    def get_admin_realms(self) -> "RealmSet":
-        """See 'Realms.from_admin_roles'."""
-        return Realms.from_admin_roles(self)
 
     def get_genesis_realms(self) -> "RealmSet":
         """See 'Realms.genesis_realms_from_admin_roles'."""
@@ -192,14 +194,9 @@ class RoleSet(FlagSet[Roles]):
             return DBRole.persona
         return DBRole.anonymous
 
-    def as_strings(self) -> set[str]:
-        return {role.name for role in self}
-
     def markers(self) -> list[str]:
-        return [role.marker for role in self]
-
-    def __invert__(self) -> Self:
-        return self.__class__(Roles) - self
+        """Return a stably sorted list of markers in this 'RoleSet'."""
+        return sorted(role.marker for role in self)
 
 
 class Realms(_Realms):
@@ -229,19 +226,19 @@ class Realms(_Realms):
 
     >>> user_realms = Realms.event | Realms.ml | Realms.assembly
     >>> [user_realms.implying_realms, user_realms.implied_realms, user_realms.highest_realms]
-    [Realms.cde, Realms.ml, Realms.event|assembly]
+    [RealmSet.cde, RealmSet.ml, RealmSet.event|assembly]
 
     >>> user_realms = Realms.cde | Realms.event | Realms.ml | Realms.assembly
     >>> [user_realms.implying_realms, user_realms.implied_realms, user_realms.highest_realms]
-    [Realms.None, Realms.event|ml|assembly, Realms.cde]
+    [RealmSet.None, RealmSet.event|ml|assembly, RealmSet.cde]
 
     >>> user_realms = Realms.event | Realms.ml
     >>> [user_realms.implying_realms, user_realms.implied_realms, user_realms.highest_realms]
-    [Realms.cde, Realms.ml, Realms.event]
+    [RealmSet.cde, RealmSet.ml, RealmSet.event]
 
     >>> user_realms = Realms.assembly | Realms.ml
     >>> [user_realms.implying_realms, user_realms.implied_realms, user_realms.highest_realms]
-    [Realms.cde, Realms.ml, Realms.assembly]
+    [RealmSet.cde, RealmSet.ml, RealmSet.assembly]
     """
 
     cde = 1, Roles.cde, Roles.cde_admin, "ml", "assembly", "event"
@@ -259,59 +256,26 @@ class Realms(_Realms):
         """Determine all realms which would imply this realm.
 
         >>> Realms.ml.implied_realms
-        Realms.None
+        RealmSet.None
         >>> Realms.event.implied_realms
-        Realms.ml
+        RealmSet.ml
         >>> Realms.assembly.implied_realms
-        Realms.ml
+        RealmSet.ml
         >>> Realms.cde.implied_realms
-        Realms.event|ml|assembly
+        RealmSet.event|ml|assembly
 
         >>> Realms.ml.implying_realms
-        Realms.cde|event|assembly
+        RealmSet.cde|event|assembly
         >>> Realms.event.implying_realms
-        Realms.cde
+        RealmSet.cde
         >>> Realms.assembly.implying_realms
-        Realms.cde
+        RealmSet.cde
         >>> Realms.cde.implying_realms
-        Realms.None
+        RealmSet.None
         """
         return RealmSet(
             realm for realm in self.__class__ if realm.implied_realms.has(self)
         )
-
-    # TODO: get rid of this once the change_user PR is merged.
-    @classmethod
-    def from_admin_roles(cls, roles: RoleSet | Roles) -> "RealmSet":
-        """
-        Determine all realms which may be administrated by a user with the given roles.
-
-        Note that core admins may administrate all realms.
-
-        >>> Realms.from_admin_roles(Roles.core_admin)
-        Realms.cde|event|ml|assembly
-        >>> Realms.from_admin_roles(Roles.cde_admin)
-        Realms.cde|event|ml|assembly
-        >>> Realms.from_admin_roles(Roles.event_admin | Roles.assembly_admin)
-        Realms.event|ml|assembly
-        >>> Realms.from_admin_roles(Roles.event_admin)
-        Realms.event|ml
-        >>> Realms.from_admin_roles(Roles.assembly_admin)
-        Realms.ml|assembly
-        >>> Realms.from_admin_roles(Roles.ml_admin)
-        Realms.ml
-        """
-        if isinstance(roles, Roles):
-            roles = RoleSet({roles})
-
-        if roles.has(Roles.core_admin):
-            return RealmSet(cls)
-
-        ret = RealmSet()
-        for realm in cls:
-            if roles.has(realm.admin_role):
-                ret |= realm | realm.implied_realms
-        return ret
 
     @classmethod
     def get_available_genesis_realms(cls) -> dict[Self, str]:
@@ -330,17 +294,17 @@ class Realms(_Realms):
         genesis for implied realms..
 
         >>> Realms.genesis_realms_from_admin_roles(Roles.core_admin)
-        Realms.cde|event|ml|assembly
+        RealmSet.cde|event|ml|assembly
         >>> Realms.genesis_realms_from_admin_roles(Roles.cde_admin)
-        Realms.cde
+        RealmSet.cde
         >>> Realms.genesis_realms_from_admin_roles(Roles.event_admin | Roles.assembly_admin)
-        Realms.event|assembly
+        RealmSet.event|assembly
         >>> Realms.genesis_realms_from_admin_roles(Roles.event_admin)
-        Realms.event
+        RealmSet.event
         >>> Realms.genesis_realms_from_admin_roles(Roles.assembly_admin)
-        Realms.assembly
+        RealmSet.assembly
         >>> Realms.genesis_realms_from_admin_roles(Roles.ml_admin)
-        Realms.ml
+        RealmSet.ml
         """
         if isinstance(roles, Roles):
             roles = RoleSet({roles})
@@ -371,25 +335,29 @@ class Realms(_Realms):
     def all_realm_admins(cls) -> RoleSet:
         """
         >>> Realms.all_realm_admins()
-        Roles.cde_admin|event_admin|ml_admin|assembly_admin
+        RoleSet.cde_admin|event_admin|ml_admin|assembly_admin
         """
         return RoleSet(realm.admin_role for realm in cls)
 
     def __or__(self, other: Self) -> "RealmSet":
+        """Alllows combining 'Realms' into a 'RealmSet' using 'Realms.a | Realms.b'."""
         if not isinstance(other, self.__class__):
             return NotImplemented
         return RealmSet({self, other})
 
-    def __lt__(self, other: Self) -> bool:
-        return self.value < other.value
+    def __invert__(self) -> "RealmSet":
+        """Shortcut to get a 'RealmSet' with "all realms except this one"."""
+        return ~RealmSet({self})
 
     @classmethod
     def all(cls) -> "RealmSet":
+        """Shortcut to get a 'RealmSet' of all realms."""
         return RealmSet(cls)
 
     @classmethod
     def none(cls) -> "RealmSet":
-        return ~cls.all()
+        """Shortcut to get an empty 'RoleSet'."""
+        return RealmSet({})
 
 
 class RealmSet(FlagSet[Realms]):
@@ -438,26 +406,26 @@ class RealmSet(FlagSet[Realms]):
         :returns: List admin role flags. Any of these "sets" is sufficient.
 
         >>> RealmSet({Realms.ml}).get_required_admin_roles()
-        [Roles.core_admin, Roles.ml_admin]
+        [RoleSet.core_admin, RoleSet.ml_admin]
         >>> (Realms.event|Realms.ml).get_required_admin_roles()
-        [Roles.core_admin, Roles.event_admin]
+        [RoleSet.core_admin, RoleSet.event_admin]
         >>> (Realms.ml|Realms.assembly).get_required_admin_roles()
-        [Roles.core_admin, Roles.assembly_admin]
+        [RoleSet.core_admin, RoleSet.assembly_admin]
         >>> (Realms.event|Realms.ml|Realms.assembly).get_required_admin_roles()
-        [Roles.core_admin, Roles.event_admin, Roles.assembly_admin]
+        [RoleSet.core_admin, RoleSet.event_admin, RoleSet.assembly_admin]
         >>> (Realms.cde|Realms.event|Realms.ml|Realms.assembly).get_required_admin_roles()
-        [Roles.core_admin, Roles.cde_admin]
+        [RoleSet.core_admin, RoleSet.cde_admin]
 
         >>> RealmSet({Realms.ml}).get_required_admin_roles(conjunctive=True)
-        [Roles.core_admin, Roles.ml_admin]
+        [RoleSet.core_admin, RoleSet.ml_admin]
         >>> (Realms.event|Realms.ml).get_required_admin_roles(conjunctive=True)
-        [Roles.core_admin, Roles.event_admin]
+        [RoleSet.core_admin, RoleSet.event_admin]
         >>> (Realms.ml|Realms.assembly).get_required_admin_roles(conjunctive=True)
-        [Roles.core_admin, Roles.assembly_admin]
+        [RoleSet.core_admin, RoleSet.assembly_admin]
         >>> (Realms.event|Realms.ml|Realms.assembly).get_required_admin_roles(conjunctive=True)
-        [Roles.core_admin, Roles.event_admin|assembly_admin]
+        [RoleSet.core_admin, RoleSet.event_admin|assembly_admin]
         >>> (Realms.cde|Realms.event|Realms.ml|Realms.assembly).get_required_admin_roles(conjunctive=True)
-        [Roles.core_admin, Roles.cde_admin]
+        [RoleSet.core_admin, RoleSet.cde_admin]
         """
         ret = [RoleSet({Roles.core_admin})]
         relevant = self.highest_realms
@@ -475,37 +443,31 @@ class RealmSet(FlagSet[Realms]):
         What user views do you need to be acting as a relative admin to a user?
 
         >>> (Realms.ml).get_required_user_views()
-        [AdminViews.core_user, AdminViews.ml_user]
+        [AdminViewSet.core_user, AdminViewSet.ml_user]
         >>> (Realms.event|Realms.ml).get_required_user_views()
-        [AdminViews.core_user, AdminViews.event_user]
+        [AdminViewSet.core_user, AdminViewSet.event_user]
         >>> (Realms.assembly|Realms.ml).get_required_user_views()
-        [AdminViews.core_user, AdminViews.assembly_user]
+        [AdminViewSet.core_user, AdminViewSet.assembly_user]
         >>> (Realms.event|Realms.ml|Realms.assembly).get_required_user_views()
-        [AdminViews.core_user, AdminViews.event_user, AdminViews.assembly_user]
+        [AdminViewSet.core_user, AdminViewSet.event_user, AdminViewSet.assembly_user]
         >>> (Realms.cde|Realms.event|Realms.ml|Realms.assembly).get_required_user_views()
-        [AdminViews.core_user, AdminViews.cde_user]
+        [AdminViewSet.core_user, AdminViewSet.cde_user]
 
         >>> (Realms.ml).get_required_user_views(conjunctive=True)
-        [AdminViews.core_user, AdminViews.ml_user]
+        [AdminViewSet.core_user, AdminViewSet.ml_user]
         >>> (Realms.event|Realms.ml).get_required_user_views(conjunctive=True)
-        [AdminViews.core_user, AdminViews.event_user]
+        [AdminViewSet.core_user, AdminViewSet.event_user]
         >>> (Realms.assembly|Realms.ml).get_required_user_views(conjunctive=True)
-        [AdminViews.core_user, AdminViews.assembly_user]
+        [AdminViewSet.core_user, AdminViewSet.assembly_user]
         >>> (Realms.event|Realms.ml|Realms.assembly).get_required_user_views(conjunctive=True)
-        [AdminViews.core_user, AdminViews.event_user|assembly_user]
+        [AdminViewSet.core_user, AdminViewSet.event_user|assembly_user]
         >>> (Realms.cde|Realms.event|Realms.ml|Realms.assembly).get_required_user_views(conjunctive=True)
-        [AdminViews.core_user, AdminViews.cde_user]
+        [AdminViewSet.core_user, AdminViewSet.cde_user]
         """
         return [
             AdminViews.user_views_from_admin_roles(roles)
             for roles in self.get_required_admin_roles(conjunctive)
         ]
-
-    def as_strings(self) -> set[str]:
-        return {realm.name for realm in self}
-
-    def __invert__(self) -> Self:
-        return self.__class__(Realms) - self
 
 
 def extract_roles(session: CdEDBObject, introspection_only: bool = False) -> RoleSet:
@@ -542,15 +504,15 @@ def extract_roles(session: CdEDBObject, introspection_only: bool = False) -> Rol
     ...     "is_ml_realm": True,
     ... }
     >>> extract_roles(user_data)
-    Roles.anonymous
+    RoleSet.anonymous
     >>> extract_roles(user_data, introspection_only=True)
-    Roles.anonymous|persona|ml|ml_admin
+    RoleSet.anonymous|persona|ml|ml_admin
     >>> user_data["is_active"] = True
     >>> extract_roles(user_data)
-    Roles.anonymous|persona|ml|ml_admin
+    RoleSet.anonymous|persona|ml|ml_admin
     >>> user_data[Realms.cde.realm_marker] = True
     >>> extract_roles(user_data)
-    Roles.anonymous|persona|cde|ml|core_admin|ml_admin
+    RoleSet.anonymous|persona|cde|ml|core_admin|ml_admin
     """
     ret = RoleSet({Roles.anonymous})
     if session['is_active'] or introspection_only:

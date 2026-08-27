@@ -4,6 +4,7 @@ Segregated into its own file to break cyclic imports.
 """
 
 import enum
+import types
 import typing
 from collections.abc import Iterable, Set
 from typing import Self, cast
@@ -31,25 +32,27 @@ class CdEEnumMeta:
         return super().__format__(format_spec)
 
 
-class CdEEnumNonFlagMeta(CdEEnumMeta):
+class CdEIntEnum(CdEEnumMeta, enum.IntEnum):
     pass
 
 
-class CdEIntEnum(CdEEnumNonFlagMeta, enum.IntEnum):
+class CdEEnum(CdEEnumMeta, enum.Enum):
     pass
 
 
-class CdEEnum(CdEEnumNonFlagMeta, enum.Enum):
-    pass
-
-
-class FlagSet[T: CdEEnumNonFlagMeta](frozenset[T]):
+class FlagSet[T: (CdEEnum | CdEIntEnum)](frozenset[T]):
     def has(self, flag: T | Self) -> bool:
         """
         "Convenience" method with similar syntax to 'has_any' and 'has_all'.
+
+        'some_flags.has(Flag.a)'
+        is equivalent to
+        'Flag.a in some_flags'.
+
+        'some_flags.has({Flag.a, Flag.b})'
+        is equivalent to
+        '{Flag.a, Flag.b} <= some_flags'.
         """
-        if isinstance(flag, self.__class__):
-            return self.has_all(*flag)
         return flag in self
 
     def has_any(self, *flags: T | Self) -> bool:
@@ -61,7 +64,8 @@ class FlagSet[T: CdEEnumNonFlagMeta](frozenset[T]):
 
         However
         'some_flags.has_any(Flag.a, {Flag.b, Flag.c})'
-        does not have a direct equivalent.
+        is equivalent to
+        '{Flag.a} & some_flags or {Flag.b, Flag.c} <= some_flags'.
         """
         ret = any(self.has(flag) for flag in flags)
         return ret
@@ -73,41 +77,159 @@ class FlagSet[T: CdEEnumNonFlagMeta](frozenset[T]):
         is equivalent to
         'some_flags.has_all(Flag.a, {Flag.b, Flag.c})'
         and
-        '{Flag.a, Flag.b, Flag.c} in some_flags'.
+        '{Flag.a, Flag.b, Flag.c} <= some_flags'.
 
         Note that this means it behaves slightly different than 'has_any'.
         """
         return all(self.has(flag) for flag in flags)
 
-    def __and__(self, value: Set[object] | T, /) -> Self:
+    @classmethod
+    def enum_cls(cls) -> type[T]:
+        """Retrieve the generic argument of the class.
+
+        >>> from cdedb.common.roles import RoleSet, RealmSet, AdminViewSet
+        >>> RoleSet.enum_cls()
+        <enum 'Roles'>
+        >>> RealmSet.enum_cls()
+        <enum 'Realms'>
+        >>> AdminViewSet.enum_cls()
+        <enum 'AdminViews'>
+
+        This only works correctly for actual subclasses:
+
+        >>> FlagSet[int].enum_cls()
+        T
+        """
+        return typing.get_args(types.get_original_bases(cls)[0])[0]
+
+    def __and__(self, value: Self | Set[T] | T, /) -> Self:  # type: ignore[override]
+        """Allow intersecting with other instances or single enum members.
+
+        Additionally restrict to intersecting with Self or Set[T], rather than any set.
+
+        >>> from cdedb.common.roles import RoleSet, Roles
+        >>> RoleSet({Roles.persona, Roles.anonymous}) & RoleSet({Roles.persona})
+        RoleSet.persona
+        >>> RoleSet({Roles.persona, Roles.anonymous}) & Roles.persona
+        RoleSet.persona
+        """
         if not isinstance(value, Iterable):
-            value = {value}
-        return self.__class__(super().__and__(set(value)))
+            # pyrefly: ignore [redundant-cast]
+            value = self.__class__({cast(T, value)})
+        if not isinstance(value, self.__class__):
+            value = self.__class__(value)
+        return self.__class__(super().__and__(value))
 
-    def __rand__(self, value: Set[object] | T, /) -> Self:
-        return self & value
+    def __rand__(self, value: T, /) -> Self:
+        """Allow the reverse intersection with enum members.
 
-    def __sub__(self, value: Set[object], /) -> Self:
-        return self.__class__(super().__sub__(set(value)))
+        >>> from cdedb.common.roles import RoleSet, Roles
+        >>> Roles.persona & RoleSet({Roles.persona, Roles.anonymous})
+        RoleSet.persona
+        """
+        return self.__and__(value)
 
-    def __or__(self, value: Set[T] | T, /) -> Self:  # type: ignore[override]
+    def __sub__(self, value: Self | Set[T] | T, /) -> Self:  # type: ignore[override]
+        """Allow substracting other instances or single enum members.
+
+        Additionally restrict to substracting Self or Set[T], rather than any set.
+
+        >>> from cdedb.common.roles import RoleSet, Roles
+        >>> RoleSet({Roles.persona, Roles.anonymous, Roles.cde}) - RoleSet({Roles.anonymous, Roles.cde})
+        RoleSet.persona
+        >>> RoleSet({Roles.persona, Roles.anonymous, Roles.cde}) - Roles.anonymous
+        RoleSet.persona|cde
+        """
         if not isinstance(value, Iterable):
-            value = {value}
+            # pyrefly: ignore [redundant-cast]
+            value = self.__class__({cast(T, value)})
+        if not isinstance(value, self.__class__):
+            value = self.__class__(value)
+        return self.__class__(super().__sub__(value))
+
+    def __or__(self, value: Self | Set[T] | T, /) -> Self:  # type: ignore[override]
+        """Allow union with instances or single enum members.
+
+        Additionally restrict to unions with Self, rather than any set.
+
+        >>> from cdedb.common.roles import RoleSet, Roles
+        >>> RoleSet({Roles.persona, Roles.anonymous}) | RoleSet({Roles.anonymous, Roles.cde})
+        RoleSet.anonymous|persona|cde
+        >>> RoleSet({Roles.persona}) | Roles.cde
+        RoleSet.persona|cde
+        """
+        if not isinstance(value, Iterable):
+            # pyrefly: ignore [redundant-cast]
+            value = self.__class__({cast(T, value)})
+        if not isinstance(value, self.__class__):
+            value = self.__class__(value)
         return self.__class__(super().__or__(set(value)))
 
-    def __ror__(self, value: Set[T] | T, /) -> Self:
-        return self | value
+    def __ror__(self, value: T, /) -> Self:
+        """Allow the reverse union with enum members.
+
+        >>> from cdedb.common.roles import RoleSet, Roles
+        >>> Roles.cde | RoleSet({Roles.persona})
+        RoleSet.persona|cde
+        """
+        return self.__or__(value)
+
+    def __contains__(self, o: T | Self, /) -> bool:  # type: ignore[override]
+        """Modify containment checks to work with instances of self.
+
+        >>> from cdedb.common.roles import RoleSet, Roles
+        >>> Roles.cde in RoleSet({Roles.persona})
+        False
+        >>> Roles.cde in RoleSet({Roles.persona, Roles.cde})
+        True
+        >>> RoleSet({Roles.cde}) in RoleSet({Roles.persona})
+        False
+        >>> RoleSet({Roles.cde}) in RoleSet({Roles.persona, Roles.cde})
+        True
+        >>> RoleSet({Roles.persona, Roles.cde}) in RoleSet({Roles.persona, Roles.cde})
+        True
+        >>>
+        """
+        if isinstance(o, self.__class__):
+            return self.has_all(*o)
+        return super().__contains__(o)
+
+    def __invert__(self) -> Self:
+        """Allow inverting self, by returning the complement based on the enum.
+
+        >>> from cdedb.common.roles import RealmSet, Realms
+        >>> ~RealmSet({Realms.cde, Realms.event})
+        RealmSet.ml|assembly
+        >>> ~Realms.all()
+        RealmSet.None
+        """
+        return self.__class__(self.enum_cls()) - self  # type: ignore[call-overload]
 
     def __repr__(self) -> str:
-        enum_cls = typing.get_args(self.__orig_bases__[0])[0]  # type: ignore[attr-defined]
+        """Print the FlagSet similar to a combined EnumFlag.
+
+        >>> from cdedb.common.roles import RoleSet, Roles
+        >>> repr(Roles.cde)
+        'Roles.cde'
+        >>> repr(RoleSet({Roles.cde}))
+        'RoleSet.cde'
+        >>> repr(RoleSet())
+        'RoleSet.None'
+        >>> repr(RoleSet({Roles.persona, Roles.anonymous, Roles.cde}))
+        'RoleSet.anonymous|persona|cde'
+        """
+        enum_cls = self.enum_cls()
         if not self:
-            return f"{enum_cls.__name__}.None"
+            return f"{self.__class__.__name__}.None"
+        # Gather the member names in enum iteration order.
         present_members: list[str] = [
-            member.name  # type: ignore[attr-defined]
-            for member in cast(Iterable[T], enum_cls)
-            if member in self
+            member.name for member in cast(Iterable[T], enum_cls) if member in self
         ]
-        return f"{enum_cls.__name__}.{'|'.join(present_members)}"
+        return f"{self.__class__.__name__}.{'|'.join(present_members)}"
+
+    def as_strings(self) -> set[str]:
+        """Return set of member names, mostly for backwards compatibility."""
+        return {member.name for member in self}
 
 
 class CdEFlag(CdEEnumMeta, enum.Flag):
@@ -125,35 +247,3 @@ class CdEFlag(CdEEnumMeta, enum.Flag):
         for f in flags:
             ret |= f
         return ret
-
-    def has(self, flag: Self) -> bool:
-        """
-        "Convenience" method with similar syntax to 'has_any' and 'has_all'.
-        """
-        return flag in self
-
-    def has_any(self, *flags: Self) -> bool:
-        """Convenience method.
-
-        'some_flags.has_any(Flag.a, Flag.b, Flag.c)'
-        is equivalent to
-        'Flag.a|Flag.b|Flag.c & some_flags'.
-
-        However
-        'some_flags.has_any(Flag.a, Flag.b|Flag.c)'
-        does not have a direct equivalent.
-        """
-        return any(flag in self for flag in flags)
-
-    def has_all(self, *flags: Self) -> bool:
-        """Convenience method.
-
-        'some_flags.has_all(Flag.a, Flag.b, Flag.c)'
-        is equivalent to
-        'some_flags.has_all(Flag.a, Flag.b|Flag.c)'
-        and
-        'Flag.a|Flag.b|Flag.c in some_flags'.
-
-        Note that this means it behaves slightly different than 'has_any'.
-        """
-        return all(flag in self for flag in flags)

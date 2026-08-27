@@ -93,6 +93,10 @@ class _Realms(CdEEnum, metaclass=_RealmsMeta):
 
         return RealmSet(self._implied_realms)
 
+    # Allow sorting.
+    def __lt__(self, other: Self) -> bool:
+        return self.value < other.value
+
 
 class _AdminViews(CdEEnum):
     required_roles: tuple["RoleSet | Roles", ...]
