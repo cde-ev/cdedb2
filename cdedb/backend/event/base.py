@@ -25,6 +25,7 @@ from typing import TYPE_CHECKING, Literal, Protocol, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.core as models_core
 import cdedb.models.event as models
 from cdedb.backend.common import (
     access,
@@ -54,7 +55,6 @@ from cdedb.common.crypt import encrypt_password
 from cdedb.common.exceptions import EventIsBalancedError, PrivilegeError
 from cdedb.common.fields import (
     EVENT_ROLE_FIELDS,
-    PERSONA_EVENT_FIELDS,
     REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS,
     REGISTRATION_TRACK_FIELDS,
@@ -1688,8 +1688,12 @@ class EventBaseBackend(EventLowLevelBackend):
                     entries = cast_field_entries(entries, kind)
                     entries = normalize_field_entries(entries, kind, coalesce="") or {}
                     e["entries"] = list(map(list, entries.items()))
+            columns = xsorted(
+                set(models_core.PersonaStatus.database_fields())
+                | set(EventPersona.database_fields())
+            )
             ret['core.personas'] = list_to_dict(
-                self.sql_select(rs, "core.personas", PERSONA_EVENT_FIELDS, personas)
+                self.sql_select(rs, "core.personas", columns, personas)
             )
         return ret
 

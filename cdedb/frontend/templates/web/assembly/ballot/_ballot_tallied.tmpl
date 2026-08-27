@@ -7,7 +7,7 @@
                     {{ util.make_icon('sort-amount-down-alt', title=gettext("Ranking"), fixed_width=False) }}
                 </th>
                 <th class="col-sm-{% if is_classical %}10{% else %}9{% endif %}">
-                    {% trans %}Candidates{% endtrans %}
+                    {% trans %}Options{% endtrans %}
                 </th>
                 <th class="col-sm-1 text-right">
                     {{ util.make_icon('plus', title=gettext("Pro-Votes"), fixed_width=False) }}
@@ -97,7 +97,7 @@
                 <td class="text-info">
                     {% if is_classical %}
                         {% trans %}
-                            Against all Candidates.
+                            "Against all" option
                         {% endtrans %}
                     {% else %}
                         {% trans %}
@@ -198,14 +198,14 @@
         {% if classical %}
             <p>
                 {% trans %}
-                    Pro votes are the sum of all votes in favor of this candidate.
-                    Votes against single candidates are not possible in this voting system.
+                    Pro votes are the sum of all votes in favor of this option.
+                    Votes against single options are not possible in this voting system.
                 {% endtrans %}
             </p>
             {% if use_bar %}
                 <p>
                     {% trans %}
-                        Using the "Against all candidates" option it is possible to vote against all candidates.
+                        By using the "Against all" option it is possible to vote against all options.
                         This option can only be exclusively chosen, potential other votes expire.
                     {% endtrans %}
                 </p>
@@ -220,7 +220,7 @@
             <p>
                 {% trans %}
                     Pro votes and Contra votes are valid for the given position and are relative to
-                    the next lower position. Multiple candidates can share the same position in the ranking.
+                    the next lower position. Multiple options can share the same position in the ranking.
                 {% endtrans %}
             </p>
         {% endif %}

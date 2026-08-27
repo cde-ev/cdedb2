@@ -516,7 +516,7 @@ class PastEventBackend(AbstractBackend):
         with Atomizer(rs):
             # Validate data consistency
             if not self.core.verify_persona(rs, persona_id, {"event"}):
-                raise ValueError(n_("This past event participant is no event user."))
+                raise ValueError(n_("This user is not an event user."))
 
             data = {
                 "pevent_id": pevent_id,
@@ -579,7 +579,7 @@ class PastEventBackend(AbstractBackend):
         with Atomizer(rs):
             # Validate data consistency
             if not self.core.verify_persona(rs, persona_id, {"event"}):
-                raise ValueError(n_("This past event participant is no event user."))
+                raise ValueError(n_("This user is not an event user."))
 
             pevent_id: int = unwrap(  # type: ignore[assignment]
                 self.sql_select_one(rs, "past_event.courses", ["pevent_id"], pcourse_id)

@@ -34,7 +34,7 @@ sudo -u cdedb git clone ssh://gitea@tracker.cde-ev.de:20009/cdedb/cdedb2.git /cd
 cd /cdedb2
 # custom git config
 # dPROD not present
-sudo -u cdedb cp /media/cdrom0/gitconfig-local | sudo -u cdedb tee /cdedb2/.git/config > /dev/null
+sudo -u cdedb cp /media/cdrom0/gitconfig-local /cdedb2/.git/config
 # set upstream URL in git config
 sudo -u cdedb git remote add origin ssh://gitea@tracker.cde-ev.de:20009/cdedb/cdedb2.git
 sudo -u cdedb git branch -u origin/master master

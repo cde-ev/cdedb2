@@ -899,7 +899,7 @@ class MlBaseFrontend(AbstractUserFrontend):
         if moderator_id not in ml.moderators:
             rs.append_validation_error((
                 "moderator_id",
-                ValueError(n_("User is no moderator.")),
+                ValueError(n_("Not a moderator.")),
             ))
         if rs.has_validation_errors():
             return self.management(rs, mailinglist_id)

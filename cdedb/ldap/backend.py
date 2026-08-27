@@ -913,21 +913,21 @@ class LDAPsqlBackend:
         return cls._is_entry_dn(dn, cls.status_groups_dn, "cn")
 
     STATUS_GROUPS = {
-        "is_active": "Aktive Nutzer.",
-        "is_member": "Nutzer, die aktuell Mitglied im CdE sind.",
-        "is_searchable": "Nutzer, die aktuell Mitglied im CdE und in der Datenbank suchbar sind.",
-        "is_ml_realm": "Nutzer, die auf Mailinglisten stehen dürfen.",
-        "is_event_realm": "Nutzer, die an Veranstaltungen teilnehmen dürfen.",
-        "is_assembly_realm": "Nutzer, die an Versammlungen teilnehmen dürfen.",
-        "is_cde_realm": "Nutzer, die jemals Mitglied im CdE waren oder sind.",
-        "is_ml_admin": "Mailinglisten-Administratoren",
-        "is_event_admin": "Veranstaltungs-Administratoren",
-        "is_assembly_admin": "Versammlungs-Administratoren",
-        "is_cde_admin": "CdE-Administratoren",
-        "is_core_admin": "Core-Administratoren",
-        "is_finance_admin": "Finanz-Administratoren",
-        "is_cdelokal_admin": "CdELokal-Administratoren",
-        "is_complaint_admin": "Fallarchiv-Administratoren",
+        "is_active": "Aktive Accounts.",
+        "is_member": "Accounts, die aktuell Mitglied im CdE sind.",
+        "is_searchable": "Accounts, die aktuell Mitglied im CdE und in der Datenbank suchbar sind.",
+        "is_ml_realm": "Accounts, die auf Mailinglisten stehen dürfen.",
+        "is_event_realm": "Accounts, die an Veranstaltungen teilnehmen dürfen.",
+        "is_assembly_realm": "Accounts, die an Versammlungen teilnehmen dürfen.",
+        "is_cde_realm": "Accounts, die jemals Mitglied im CdE waren oder sind.",
+        "is_ml_admin": "Mailinglisten-Admins",
+        "is_event_admin": "Veranstaltungs-Admins",
+        "is_assembly_admin": "Versammlungs-Admins",
+        "is_cde_admin": "CdE-Admins",
+        "is_core_admin": "Core-Admins",
+        "is_finance_admin": "Finanz-Admins",
+        "is_cdelokal_admin": "CdELokal-Admins",
+        "is_complaint_admin": "Fallarchiv-Admins",
     }
 
     async def list_status_groups(self) -> list[DN]:
