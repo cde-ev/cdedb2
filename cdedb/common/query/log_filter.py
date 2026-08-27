@@ -5,7 +5,7 @@ import datetime
 import decimal
 import enum
 from collections.abc import Collection
-from typing import Any, ClassVar, Optional, cast
+from typing import Any, ClassVar, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -65,19 +65,19 @@ class GenericLogFilter:
     additional_persona_columns: ClassVar[tuple[str, ...]] = ()
 
     # Pagination parameters.
-    offset: Optional[int] = None  # How many entries to skip at the start.
-    _offset: Optional[int] = None  # Unmodified offset.
+    offset: int | None = None  # How many entries to skip at the start.
+    _offset: int | None = None  # Unmodified offset.
     length: int = 0  # How many entries to list. Set default in post_init.
     _length: int = 0  # Unmodified length.
 
     # Generic attributes available for all logs.
     codes: list[int] = dataclasses.field(default_factory=list)  # Log codes to filter.
-    persona_id: Optional[int] = None  # ID of the affected user.
-    submitted_by: Optional[int] = None  # ID of the active user.
-    change_note: Optional[str] = None  # Additional notes.
+    persona_id: int | None = None  # ID of the affected user.
+    submitted_by: int | None = None  # ID of the active user.
+    change_note: str | None = None  # Additional notes.
     # Range for the log timestamp.
-    ctime_from: Optional[datetime.datetime] = None
-    ctime_to: Optional[datetime.datetime] = None
+    ctime_from: datetime.datetime | None = None
+    ctime_to: datetime.datetime | None = None
 
     def __post_init__(self) -> None:
         """Do a little processing on the data.
@@ -176,10 +176,10 @@ class GenericLogFilter:
             field.name: cast(type[Any], field.type) for field in dataclasses.fields(cls)
         }
         # allow empty strings to be validated as None and replaced by the default length
-        optional['length'] = Optional[int]
+        optional['length'] = int | None
         optional['codes'] = list[cls.log_code_class]  # type: ignore[name-defined]
         for k in cls.get_persona_columns():
-            optional[k] = Optional[vtypes.CdedbID]
+            optional[k] = vtypes.PersonaID | None
         return mandatory, optional
 
     @classmethod
@@ -215,7 +215,7 @@ class ChangelogLogFilter(GenericLogFilter):
     additional_columns = ("reviewed_by", "generation", "automated_change")
     additional_persona_columns = ("reviewed_by",)
 
-    reviewed_by: Optional[int] = None  # ID of the reviewer.
+    reviewed_by: int | None = None  # ID of the reviewer.
 
     def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
         conditions, params = super()._get_sql_conditions()
@@ -270,9 +270,9 @@ class AssemblyLogFilter(GenericLogFilter):
     log_code_class = const.AssemblyLogCodes
     additional_columns = ("assembly_id", "ballot_id")
 
-    assembly_id: Optional[int] = None
+    assembly_id: int | None = None
     _assembly_ids: list[int] = dataclasses.field(default_factory=list)
-    ballot_id: Optional[int] = None
+    ballot_id: int | None = None
     _ballot_ids: list[int] = dataclasses.field(default_factory=list)
 
     def assembly_ids(self) -> list[int]:
@@ -304,9 +304,9 @@ class EventLogFilter(GenericLogFilter):
     log_code_class = const.EventLogCodes
     additional_columns = ("event_id", "droid_id")
 
-    event_id: Optional[int] = None
+    event_id: int | None = None
     _event_ids: list[int] = dataclasses.field(default_factory=list)
-    droid_id: Optional[int] = None
+    droid_id: int | None = None
 
     def event_ids(self) -> list[int]:
         if self.event_id:
@@ -332,7 +332,7 @@ class MlLogFilter(GenericLogFilter):
     log_code_class = const.MlLogCodes
     additional_columns = ("mailinglist_id",)
 
-    mailinglist_id: Optional[int] = None
+    mailinglist_id: int | None = None
     _mailinglist_ids: list[int] = dataclasses.field(default_factory=list)
 
     def mailinglist_ids(self) -> list[int]:
@@ -356,7 +356,7 @@ class PastEventLogFilter(GenericLogFilter):
     log_code_class = const.PastEventLogCodes
     additional_columns = ("pevent_id", "pcourse_id")
 
-    pevent_id: Optional[int] = None
+    pevent_id: int | None = None
     _pevent_ids: list[int] = dataclasses.field(default_factory=list)
     pcourse_id: int | None = None
     _pcourse_ids: list[int] = dataclasses.field(default_factory=list)
@@ -397,23 +397,23 @@ class FinanceLogFilter(GenericLogFilter):
         "member_total",
     )
 
-    delta_from: Optional[decimal.Decimal] = None
-    delta_to: Optional[decimal.Decimal] = None
+    delta_from: decimal.Decimal | None = None
+    delta_to: decimal.Decimal | None = None
 
-    new_balance_from: Optional[decimal.Decimal] = None
-    new_balance_to: Optional[decimal.Decimal] = None
+    new_balance_from: decimal.Decimal | None = None
+    new_balance_to: decimal.Decimal | None = None
 
-    transaction_date_from: Optional[datetime.date] = None
-    transaction_date_to: Optional[datetime.date] = None
+    transaction_date_from: datetime.date | None = None
+    transaction_date_to: datetime.date | None = None
 
-    total_from: Optional[decimal.Decimal] = None
-    total_to: Optional[decimal.Decimal] = None
+    total_from: decimal.Decimal | None = None
+    total_to: decimal.Decimal | None = None
 
-    member_total_from: Optional[decimal.Decimal] = None
-    member_total_to: Optional[decimal.Decimal] = None
+    member_total_from: decimal.Decimal | None = None
+    member_total_to: decimal.Decimal | None = None
 
-    members_from: Optional[int] = None
-    members_to: Optional[int] = None
+    members_from: int | None = None
+    members_to: int | None = None
 
     def _get_sql_conditions(self) -> tuple[list[str], list[DatabaseValue_s]]:
         conditions, params = super()._get_sql_conditions()

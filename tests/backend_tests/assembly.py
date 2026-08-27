@@ -3,7 +3,7 @@
 import datetime
 import json
 from collections.abc import Collection
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 import freezegun
 
@@ -55,7 +55,7 @@ class TestAssemblyBackend(BackendTest):
         return self.assembly.add_attachment(self.key, data)
 
     def _get_attachment_content(
-        self, rs: RequestState, attachment_id: int, version_nr: Optional[int] = None
+        self, rs: RequestState, attachment_id: int, version_nr: int | None = None
     ) -> bytes | None:
         """Get the content of an attachment. Defaults to most recent version."""
         if version_nr is None:
@@ -81,15 +81,16 @@ class TestAssemblyBackend(BackendTest):
     @as_users("kalif")
     def test_basics(self) -> None:
         data = self.core.get_assembly_user(self.key, self.user['id'])
-        data['nickname'] = "Z."
-        data['given_names'] = "Zelda"
-        data['legal_given_names'] = "Zelda Z."
-        data['family_name'] = "Lord von und zu Hylia"
+        data.nickname = "Z."
+        data.given_names = "Zelda"
+        data.legal_given_names = "Zelda Z."
+        data.family_name = "Lord von und zu Hylia"
         setter = {
-            k: v
-            for k, v in data.items()
-            if k
-            in {'id', 'given_names', 'legal_given_names', 'nickname', 'family_name'}
+            "id": data.id,
+            "nickname": data.nickname,
+            "given_names": data.given_names,
+            "legal_given_names": data.legal_given_names,
+            "family_name": data.family_name,
         }
         self.core.change_persona(self.key, setter)
         new_data = self.core.get_assembly_user(self.key, self.user['id'])
@@ -232,7 +233,7 @@ class TestAssemblyBackend(BackendTest):
         })
         expectation.update(data)
         self.assertEqual(expectation, self.assembly.get_assembly(self.key, 1))
-        new_assembly = {
+        new_assembly: CdEDBObject = {
             'description': 'Beschluss über die Anzahl anzuschaffender Schachsets',
             'notes': None,
             'signup_end': now(),
@@ -247,18 +248,20 @@ class TestAssemblyBackend(BackendTest):
             "submitted_by": self.user['id'],
             "assembly_id": new_id,
         })
-        for p_id in new_assembly['presiders']:  # type: ignore[union-attr]
+        for p_id in new_assembly['presiders']:
             log.append({
                 "code": const.AssemblyLogCodes.assembly_presider_added,
                 "submitted_by": self.user['id'],
                 "assembly_id": new_id,
                 "persona_id": p_id,
             })
-        expectation: CdEDBObject = new_assembly
-        expectation['id'] = new_id
-        expectation['presider_address'] = None
-        expectation['is_active'] = True
-        self.assertEqual(expectation, self.assembly.get_assembly(self.key, new_id))
+        assembly_expectation = new_assembly
+        assembly_expectation['id'] = new_id
+        assembly_expectation['presider_address'] = None
+        assembly_expectation['is_active'] = True
+        self.assertEqual(
+            assembly_expectation, self.assembly.get_assembly(self.key, new_id)
+        )
         self.assertTrue(
             self.assembly.remove_assembly_presider(self.key, new_id, presider_id)
         )
@@ -281,13 +284,16 @@ class TestAssemblyBackend(BackendTest):
         self.assertEqual(
             0, self.assembly.add_assembly_presiders(self.key, new_id, {presider_id})
         )
-        expectation['presiders'] = {1, presider_id}
-        self.assertEqual(expectation, self.assembly.get_assembly(self.key, new_id))
+        assembly_expectation['presiders'] = {1, presider_id}
+        self.assertEqual(
+            assembly_expectation, self.assembly.get_assembly(self.key, new_id)
+        )
         attachment_data = {
             "assembly_id": new_id,
             "title": "Rechenschaftsbericht",
             "authors": "Farin",
             "filename": "rechen.pdf",
+            "changenotes": None,
         }
         self.assertTrue(self._add_attachment(attachment_data, "picture.pdf"))
         log.append({
@@ -315,7 +321,7 @@ class TestAssemblyBackend(BackendTest):
                 "assembly_id": None,
                 "code": const.AssemblyLogCodes.assembly_deleted,
                 "submitted_by": self.user['id'],
-                "change_note": expectation["title"],
+                "change_note": assembly_expectation["title"],
             }
         ]
         self.assertLogEqual(log, realm="assembly", offset=log_offset)
@@ -460,14 +466,14 @@ class TestAssemblyBackend(BackendTest):
             },
         }
         self.assertEqual(expectation, self.assembly.get_ballots(self.key, (1, 4)))
-        data = {
+        update = {
             'id': 4,
             'notes': "Won't work",
         }
         with self.assertRaises(ValueError):
-            self.assembly.set_ballot(self.key, data)
+            self.assembly.set_ballot(self.key, update)
         ballot_id = 2
-        expectation: CdEDBObject = {
+        ballot_expectation: CdEDBObject = {
             'assembly_id': assembly_id,
             'use_bar': False,
             'candidates': {
@@ -517,7 +523,9 @@ class TestAssemblyBackend(BackendTest):
             ),
             'votes': None,
         }
-        self.assertEqual(expectation, self.assembly.get_ballot(self.key, ballot_id))
+        self.assertEqual(
+            ballot_expectation, self.assembly.get_ballot(self.key, ballot_id)
+        )
         data: CdEDBObject = {
             'id': ballot_id,
             'use_bar': True,
@@ -552,31 +560,33 @@ class TestAssemblyBackend(BackendTest):
                 "code": const.AssemblyLogCodes.candidate_updated,
                 "assembly_id": assembly_id,
                 "ballot_id": ballot_id,
-                "change_note": expectation['candidates'][6]['shortname'],
+                "change_note": ballot_expectation['candidates'][6]['shortname'],
             },
             {
                 "code": const.AssemblyLogCodes.candidate_removed,
                 "assembly_id": assembly_id,
                 "ballot_id": ballot_id,
-                "change_note": expectation['candidates'][7]['shortname'],
+                "change_note": ballot_expectation['candidates'][7]['shortname'],
             },
         ))
         for key in ('use_bar', 'notes', 'vote_extension_end', 'rel_quorum'):
-            expectation[key] = data[key]
-        expectation['abs_quorum'] = 0
-        expectation['quorum'] = self._get_sample_quorum(assembly_id)
-        expectation['candidates'][6]['title'] = data['candidates'][6]['title']
-        expectation['candidates'][6]['shortname'] = data['candidates'][6]['shortname']
-        del expectation['candidates'][7]
-        expectation['candidates'][1001] = {
+            ballot_expectation[key] = data[key]
+        ballot_expectation['abs_quorum'] = 0
+        ballot_expectation['quorum'] = self._get_sample_quorum(assembly_id)
+        ballot_expectation['candidates'][6]['title'] = data['candidates'][6]['title']
+        ballot_expectation['candidates'][6]['shortname'] = data['candidates'][6][
+            'shortname'
+        ]
+        del ballot_expectation['candidates'][7]
+        ballot_expectation['candidates'][1001] = {
             'id': 1001,
             'ballot_id': 2,
             'title': 'Aquamarin',
             'shortname': 'aqua',
         }
-        self.assertEqual(expectation, self.assembly.get_ballot(self.key, 2))
+        self.assertEqual(ballot_expectation, self.assembly.get_ballot(self.key, 2))
 
-        data: CdEDBObject = {
+        data = {
             'assembly_id': assembly_id,
             'use_bar': False,
             'candidates': {
@@ -652,6 +662,7 @@ class TestAssemblyBackend(BackendTest):
                 "title": "Rechenschaftsbericht" + str(n),
                 "authors": "Farin",
                 "filename": "rechen.pdf",
+                "changenotes": "",
             }
             for n in range(4)
         ]
@@ -1159,6 +1170,7 @@ class TestAssemblyBackend(BackendTest):
             "assembly_id": assembly_id,
             "title": "Rechenschaftsbericht",
             "authors": "Farin",
+            "changenotes": "",
             "filename": "rechen.pdf",
         }
         new_id = self._add_attachment(data, "picture.pdf")
@@ -1222,20 +1234,21 @@ class TestAssemblyBackend(BackendTest):
         )
 
         # Check version data.
-        expectation = {
+        version_expectation = {
             1: {
                 "attachment_id": new_id,
                 "version_nr": 1,
                 "title": "Rechenschaftsbericht",
                 "authors": "Farin",
                 "filename": "rechen.pdf",
+                "changenotes": None,
                 "ctime": nearly_now(),
                 "dtime": None,
                 "file_hash": self._get_hash("picture.pdf"),
             },
         }
         self.assertEqual(
-            expectation, self.assembly.get_attachment_versions(self.key, new_id)
+            version_expectation, self.assembly.get_attachment_versions(self.key, new_id)
         )
         with self.assertRaises(ValueError) as e:
             self.assembly.remove_attachment_version(self.key, new_id, version_nr=1)
@@ -1250,6 +1263,7 @@ class TestAssemblyBackend(BackendTest):
             "title": "Rechenschaftsbericht",
             "authors": "Farin",
             "filename": "rechen_v2.pdf",
+            "changenotes": None,
         }
         self.assertTrue(self._add_attachment_version(data, "kassen.pdf"))
         update = {
@@ -1258,6 +1272,7 @@ class TestAssemblyBackend(BackendTest):
             "title": "Verrechnungsbericht",
             "authors": "Farina",
             "filename": "alles_falsch.pdf",
+            "changenotes": None,
         }
         self.assertTrue(self.assembly.change_attachment_version(self.key, update))
         self.assertTrue(self._add_attachment_version(data, "kassen2.pdf"))
@@ -1367,6 +1382,7 @@ class TestAssemblyBackend(BackendTest):
             "version_nr": 2,
             "ctime": nearly_now(),
             "dtime": None,
+            "changenotes": None,
             "file_hash": self._get_hash("kassen.pdf"),
         })
         updated_data = data.copy()
@@ -1377,6 +1393,7 @@ class TestAssemblyBackend(BackendTest):
             "title": None,
             "authors": None,
             "filename": None,
+            "changenotes": None,
             "ctime": nearly_now(),
             "dtime": nearly_now(),
             "file_hash": self._get_hash("picture.pdf"),
@@ -1396,7 +1413,7 @@ class TestAssemblyBackend(BackendTest):
         )
 
         # Create more attachments and check the histories of all attachments.
-        history_expectation = {
+        history_expectations = {
             new_id: history_expectation,
         }
         data = {
@@ -1404,6 +1421,7 @@ class TestAssemblyBackend(BackendTest):
             "title": "Verfassung des Staates der CdEler",
             "authors": "Anton",
             "filename": "verf.pdf",
+            "changenotes": None,
         }
         new_id = self._add_attachment(data, "form.pdf")
         attachment_ids.append(new_id)
@@ -1420,13 +1438,14 @@ class TestAssemblyBackend(BackendTest):
             "dtime": None,
             "file_hash": self._get_hash("form.pdf"),
         })
-        history_expectation[new_id] = {1: data}
+        history_expectations[new_id] = {1: data}
 
         data = {
             "assembly_id": assembly_id,
             "title": "Beschlussvorlage",
             "authors": "Berta",
             "filename": "beschluss.pdf",
+            "changenotes": None,
         }
         new_id = self._add_attachment(data, "dsa.pdf")
         attachment_ids.append(new_id)
@@ -1452,7 +1471,7 @@ class TestAssemblyBackend(BackendTest):
             "dtime": None,
             "file_hash": self._get_hash("dsa.pdf"),
         })
-        history_expectation[new_id] = {1: data}
+        history_expectations[new_id] = {1: data}
 
         self.assertEqual(
             set(attachment_ids),
@@ -1462,7 +1481,7 @@ class TestAssemblyBackend(BackendTest):
             {new_id}, self.assembly.list_attachments(self.key, ballot_id=ballot_id)
         )
 
-        expectation = {
+        attachments_expectation = {
             attachment_ids[0]: {
                 'assembly_id': assembly_id,
                 'ballot_ids': [],
@@ -1486,13 +1505,14 @@ class TestAssemblyBackend(BackendTest):
             },
         }
         self.assertEqual(
-            expectation, self.assembly.get_attachments(self.key, attachment_ids)
+            attachments_expectation,
+            self.assembly.get_attachments(self.key, attachment_ids),
         )
         self.assertEqual(
-            history_expectation,
+            history_expectations,
             self.assembly.get_attachments_versions(self.key, attachment_ids),
         )
-        history_expectation = {
+        history_expectations = {
             attachment_ids[0]: {
                 1: {
                     'attachment_id': attachment_ids[0],
@@ -1503,6 +1523,7 @@ class TestAssemblyBackend(BackendTest):
                     'filename': None,
                     'title': None,
                     'version_nr': 1,
+                    'changenotes': None,
                 },
                 2: {
                     'attachment_id': attachment_ids[0],
@@ -1513,6 +1534,7 @@ class TestAssemblyBackend(BackendTest):
                     'filename': 'alles_falsch.pdf',
                     'title': 'Verrechnungsbericht',
                     'version_nr': 2,
+                    'changenotes': None,
                 },
                 3: {
                     'attachment_id': attachment_ids[0],
@@ -1523,6 +1545,7 @@ class TestAssemblyBackend(BackendTest):
                     'filename': None,
                     'title': None,
                     'version_nr': 3,
+                    'changenotes': None,
                 },
                 4: {
                     'attachment_id': attachment_ids[0],
@@ -1533,6 +1556,7 @@ class TestAssemblyBackend(BackendTest):
                     'filename': 'rechen_v2.pdf',
                     'title': 'Rechenschaftsbericht',
                     'version_nr': 4,
+                    'changenotes': None,
                 },
             },
             attachment_ids[1]: {
@@ -1545,6 +1569,7 @@ class TestAssemblyBackend(BackendTest):
                     'filename': 'verf.pdf',
                     'title': 'Verfassung des Staates der CdEler',
                     'version_nr': 1,
+                    'changenotes': None,
                 },
             },
             attachment_ids[2]: {
@@ -1557,11 +1582,12 @@ class TestAssemblyBackend(BackendTest):
                     'filename': 'beschluss.pdf',
                     'title': 'Beschlussvorlage',
                     'version_nr': 1,
+                    'changenotes': None,
                 },
             },
         }
         self.assertEqual(
-            history_expectation,
+            history_expectations,
             self.assembly.get_attachments_versions(self.key, attachment_ids),
         )
         cascade = {"versions", "ballots"}
@@ -1574,9 +1600,10 @@ class TestAssemblyBackend(BackendTest):
             "assembly_id": assembly_id,
             "change_note": data['title'],
         })
-        del expectation[new_id]
+        del attachments_expectation[new_id]
         self.assertEqual(
-            expectation, self.assembly.get_attachments(self.key, attachment_ids)
+            attachments_expectation,
+            self.assembly.get_attachments(self.key, attachment_ids),
         )
         self.assertLogEqual(
             log, realm="assembly", offset=log_offset, assembly_id=assembly_id
@@ -1600,6 +1627,7 @@ class TestAssemblyBackend(BackendTest):
                 "assembly_id": assembly_id,
                 "title": "Unabhängigkeitserklärung des Freistaates CdE",
                 "authors": "AbCdE",
+                "changenotes": None,
                 "filename": "Freiheit.pdf",
             }
             attachment_id = self._add_attachment(attachment_data, "empty.pdf")
@@ -1625,6 +1653,7 @@ class TestAssemblyBackend(BackendTest):
                 "authors": attachment_data["authors"],
                 "title": attachment_data["title"],
                 "filename": attachment_data["filename"],
+                "changenotes": None,
                 "ctime": base_time,
                 "dtime": None,
                 "file_hash": self._get_hash("empty.pdf"),
@@ -1694,6 +1723,7 @@ class TestAssemblyBackend(BackendTest):
                     "title": attachment_data["title"],
                     "authors": attachment_data["authors"],
                     "filename": attachment_data["filename"],
+                    "changenotes": None,
                     "file_hash": hashes[i + 1],
                 }
                 self.assertTrue(
@@ -1948,6 +1978,7 @@ class TestAssemblyBackend(BackendTest):
         new_attachment_data = {
             'title': "New Attachment",
             'filename': "attachment.pdf",
+            'changenotes': "",
             'authors': None,
         }
 
@@ -2162,11 +2193,6 @@ class TestAssemblyBackend(BackendTest):
                                 attachment_id,
                             ),
                         )
-
-            with self.assertRaises(PrivilegeError):
-                self.assembly.retrieve_log(
-                    self.key, AssemblyLogFilter(assembly_id=attended_assembly_id)
-                )
             with self.assertRaises(PrivilegeError):
                 self.assembly.retrieve_log(
                     self.key, AssemblyLogFilter(assembly_id=non_attended_assembly_id)
@@ -2214,11 +2240,6 @@ class TestAssemblyBackend(BackendTest):
 
                 with self.assertRaises(PrivilegeError):
                     self.assembly.set_assembly(self.key, {'id': assembly_id})
-
-                with self.assertRaises(PrivilegeError):
-                    self.assembly.retrieve_log(
-                        self.key, AssemblyLogFilter(assembly_id=assembly_id)
-                    )
 
         with self.switch_user(unprivileged):
             for assembly_id in assembly_ids:

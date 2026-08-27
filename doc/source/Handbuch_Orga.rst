@@ -23,7 +23,7 @@ Orgas
 .. todo:: Referenz Datenmodell von Veranstaltungsteilen, Kursschienen und Datenfeldern,
           Referenz Überweisungen eintragen, Referenz Kurszuteilungsmagie, Mailingliste
 
-Eure Veranstaltung wird von den Administratoren (das :doc:`Handbuch_Akademieteam`)
+Eure Veranstaltung wird von den Admins (das :doc:`Handbuch_Akademieteam`)
 angelegt und kann danach von euch weitestgehend über das Webinterface konfiguriert
 werden.
 

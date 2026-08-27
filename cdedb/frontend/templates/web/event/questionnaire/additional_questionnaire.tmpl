@@ -6,6 +6,7 @@
 {% block scripts %}
     {{ super() }}
     {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_register.js') }}
 {% endblock %}
 {% block title %}
     {% if preview %}
@@ -47,7 +48,7 @@
 {% block content %}
     {% if preview %}
         {{ button_par() }}
-        <div class="form-horizontal">
+        <div class="form-horizontal" id="questionnaireform">
     {% else %}
         {% if is_privileged_for("event/configure_additional_questionnaire") %}
             <div class="p button-par">
@@ -74,6 +75,19 @@
         <hr />
         {{ button_par() }}
     {% endif %}
+    <script nonce="{{ csp_nonce }}">
+        var $form = $('#questionnaireform');
+
+        feePreviewConstants = {
+            'endpoint': '{{ cdedblink('event/precompute_fee') }}',
+            'persona_id': {{ user.persona_id if not preview else "null" }},
+            'is_member': {{ persona['is_member']|tojson }},
+            'is_orga': {{ (ambience['event']['id'] in user.orga)|tojson }},
+            'age': {{ persona_age }},
+            'part_ids': {{ payment_parts|tojson if not preview else []|tojson }},
+        }
+        $('#questionnaireform').cdedbFeePreview(feePreviewConstants);
+    </script>
     {% if lodgement_wishes %}
         <hr />
         {% call util.bootstrap_panel(gettext("Lodgement Wishes"), aclass="panel-info", icon="home", anid="lodgement-wishes") %}

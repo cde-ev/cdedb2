@@ -311,6 +311,9 @@
                         {% if scope.supports_storing() %}
                             <h4 class="filter-title">
                                 {{ util.make_icon('far fa-bookmark') }} {% trans %}Store query{% endtrans %}</h4>
+                            <div style="margin-bottom: 4px">
+                                {{ util.input_text("query_group", placeholder=gettext("query group"), anid="query_group_input") }}
+                            </div>
                             <div class="input-group">
                                 {{ util.input_text("query_name", placeholder=gettext("query name"), anid="query_name_input") }}
                                 {{ util.input_hidden("query_scope", scope) }}
@@ -373,41 +376,62 @@
 {% macro place_default_queries(scope, queries, num_columns) %}
     {% if queries %}
         {% call util.bootstrap_panel(title=gettext("Default Queries"), anid="default_queries_container") %}
+            {% set grouped_queries = queries if queries is mapping else {"": queries} %}
+            {% for title, group_list in grouped_queries.items() %}
             <div class="row">
-                {% for list in queries | sort | slice(num_columns) %}
+                {% if grouped_queries|length > 1 %}
+                    <h5 style="padding-left: 15px; {% if loop.first %}margin-top: 0; {% endif %}">
+                        {{ title or gettext("Other") }}
+                    </h5>
+                {% endif %}
+                {% for list in group_list | slice(num_columns) %}
                 <div class="col-sm-{{ 12 // num_columns }}">
                     <ul class="slim {% if not loop.last %}nosp{% endif %}">
-                        {% for query_name in list %}
-                            {% with query = queries[query_name] -%}
-                                <li>
-                                    {{ util.href(cdedblink(scope.get_target(), query.serialize_to_url()) + '#query-results',
-                                            query.name if query.name else gettext(query_name), aclass="default-query") }}
-                                    {% if query.query_id %}
-                                        <form action="{{ cdedblink('event/delete_event_query') }}" method="post" class="display-inline" id="deletequeryform{{ query.query_id }}">
-                                            {{ util.anti_csrf_token('event/delete_event_query') }}
-                                            {{ util.input_hidden("query_id", value=query.query_id) }}
-                                            {{ util.input_hidden("query_scope", value=query.scope) }}
-                                            {{ util.input_submit(label="", aclass='btn btn-xs btn-danger', icon="trash-alt", title=gettext('Delete query')) }}
-                                        </form>
-                                    {% endif %}
-                                </li>
-                            {%- endwith %}
+                        {% for stored_query in list %}
+                            {% set query = stored_query.query %}
+                            {% set name = stored_query.query_name %}
+                            {% set name = gettext(name) if not stored_query.user_created else name %}
+                            <li>
+                                {% if query %}
+                                    {{ util.href(
+                                            cdedblink(*stored_query.query_by_name()), name, aclass="default-query",
+                                            attributes={"data-query": stored_query.serialize_to_url()|tojson|forceescape}|xmlattr) }}
+                                {% else %}
+                                    {% set title -%}
+                                        {% trans %}Invalid stored query:{% endtrans %}{{ "\n" }}
+                                        {%- for name, err in stored_query.errors -%}
+                                            {{ name }}: {{ util.format_error(err, newline="\n") }}
+                                        {%- endfor %}
+                                    {%- endset %}
+                                    {{ util.href("", name, readonly=True, title=title) }}
+                                {% endif %}
+                                {% if stored_query.user_created %}
+                                    <form action="{{ cdedblink('event/delete_event_query') }}" method="post" class="display-inline" id="deletequeryform{{ stored_query.id }}">
+                                        {{ util.anti_csrf_token('event/delete_event_query') }}
+                                        {{ util.input_hidden("query_id", value=stored_query.id) }}
+                                        {{ util.input_hidden("query_scope", value=scope) }}
+                                        {{ util.input_submit(label="", aclass='btn btn-xs btn-danger', icon="trash-alt", title=gettext('Delete query'),
+                                                             readonly=not is_privileged_for('event/delete_event_query')) }}
+                                    </form>
+                                {% endif %}
+                            </li>
                         {% endfor %}
                     </ul>
                 </div>
                 {% endfor %}
             </div>
+            {% endfor %}
         {% endcall %}
         <script nonce="{{ csp_nonce }}">
             $('.default-query').each(function(){
-                var url = $(this).attr('href');
+                var params = $(this).data("query");
                 var $link = $('<a></a>', {'href':'#',
                                           'title':'{% trans %}show in search mask{% endtrans %}',
                                           'aria-label':'{% trans %}show in search mask{% endtrans %}',
                                           'class': 'btn btn-default btn-xs'})
                     .append($('<span></span>',{'class':'fas fa-eye', 'aria-hidden':'true'}))
                     .click(function(){
-                        $('#queryform').data('cdedbQueryForm').queryFromURL(url);
+                        $('#queryform').data('cdedbQueryForm').queryFromParameters(params);
                         return false;
                     });
                 $(this).after($link).after(' ');
@@ -483,17 +507,17 @@
                                 {{ query.spec[field].get_title(gettext) }}
                                 {% if values.get("qop_{}".format(field)) %}
                                     <span class="label label-default" title="{% trans %}filtered column{% endtrans %}">
-                                        {{ util.make_icon('filter') }}
+                                        {{- util.make_icon('filter') -}}
                                     </span>
                                 {% endif %}
                                 {% for i in range(MAX_QUERY_ORDERS) %}
                                     {% if values.get("qord_" + i|string) == field %}
                                         <span id="queryresult-sorted-column-marker" class="label label-default" title="{% trans %}sorted column{% endtrans %}">
-                                        {% if values.get("qord_" + i|string + "_ascending") == "False" %}
-                                            {{ util.make_icon('sort-alpha-down') }}
-                                        {% else %}
-                                            {{ util.make_icon('sort-alpha-down-alt') }}
-                                        {% endif %}
+                                        {%- if values.get("qord_" + i|string + "_ascending") == "False" -%}
+                                            {{- util.make_icon('sort-alpha-down') -}}
+                                        {%- else -%}
+                                            {{- util.make_icon('sort-alpha-down-alt') -}}
+                                        {%- endif -%}
                                         </span>
                                         {% break %}
                                     {% endif %}

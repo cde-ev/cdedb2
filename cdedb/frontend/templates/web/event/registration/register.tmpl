@@ -85,91 +85,14 @@
         {{ util.anti_csrf_token('event/register') }}
     {% endif %}
 
-        {% if ambience['event']['registration_text'] %}
-        {% set button = None %}
-        {% if orga_view %}
-            {% set button = generic_event.edit_free_text_button("registration_text") %}
-        {% endif %}
-        {% call util.bootstrap_panel(gettext("Note of the Orga Team"), button=button,
-                                     icon="info-circle", aclass="panel-info") %}
-            {{ ambience['event']['registration_text']|md }}
-        {% endcall %}
-        {% endif %}
-
-        {{ util.h(n_("My Data"), underline=true) }}
-        <dl class="dl-horizontal">
-            <dt title="{% trans %}Full Name{% endtrans %}">{% trans %}Full Name{% endtrans %}</dt>
-            <dd>
-                {{ persona|persona_name(include_nickname=True, with_titles=True) }}
-            </dd>
-
-            <dt title="{% trans %}Birthday{% endtrans %}">{% trans %}Birthday{% endtrans %}</dt>
-            <dd>{{ persona['birthday']|date(lang=lang) }}</dd>
-            <dt title="{% trans %}Gender{% endtrans %}">{% trans %}Gender{% endtrans %}</dt>
-            <dd>{{ gettext(enums['Genders'](persona['gender'])|string) }}</dd>
-            <dt title="{% trans %}Pronouns{% endtrans %}">{% trans %}Pronouns{% endtrans %}</dt>
-            <dd>{{ persona['pronouns'] }}</dd>
-            <dt title="{% trans %}Show pronouns on nametags{% endtrans %}">{% trans %}Pronouns on nametags{% endtrans %}</dt>
-            <dd>{{ util.deko_checkbox(persona['pronouns_nametag']) }}</dd>
-            <dt title="{% trans %}E-Mail{% endtrans %}">{% trans %}E-Mail{% endtrans %}</dt>
-            <dd> {{ persona['username'] }} </dd>
-            <dt title="{% trans %}Phone{% endtrans %}">{% trans %}Phone{% endtrans %}</dt>
-            <dd>{{ persona['telephone']|phone }}</dd>
-            <dt title="{% trans %}Mobile Phone{% endtrans %}">{% trans %}Mobile Phone{% endtrans %}</dt>
-            <dd>{{ persona['mobile']|phone }}</dd>
-            <dt title="{% trans %}Address{% endtrans %}">{% trans %}Address{% endtrans %}</dt>
-            <dd>{{ persona['address'] }}</dd>
-            <dt title="{% trans %}Address Supplement{% endtrans %}">{% trans %}Address Supplement{% endtrans %}</dt>
-            <dd>{{ persona['address_supplement'] }}</dd>
-            <dt title="{% trans %}City{% endtrans %}">{% trans %}City{% endtrans %}</dt>
-            <dd>{{ persona['postal_code'] }} {{ persona['location'] }}</dd>
-            <dt title="{% trans %}Country{% endtrans %}">{% trans %}Country{% endtrans %}</dt>
-            <dd>{{ util.gettext_country(persona['country']) }}</dd>
-        </dl>
-        <p>
-            {% trans link=util.href(cdedblink('core/change_user'), gettext("form to edit your profile")) %}
-            	This data is taken from your personal profile. To change it, use this {{ link }}.
-            {% endtrans %}
-        </p>
-
-        {% if ambience['event']['parts']|length > 1 %}
-            {{ util.h(n_("Registration"), underline=true) }}
-        {% endif %}
-
-        {% if ambience['event']['parts']|length > 1 %}
-            {{ util.form_input_checkboxes(name="parts", label=gettext("Event Parts"),
-                                          entries=part_options) }}
-            {{ generic_event.fee_preview_panel() }}
-
-        {% elif ambience['event']['parts']|length == 1 %}
-            {{ util.input_hidden(name="parts", value=(ambience['event']['parts']|list)[0]) }}
-        {% endif %}
-
-        {% if not persona["is_member"] %}
-            <div class="heading-underline text-info" style="font-weight: bold;">
-                <p id="nonmember-surcharge">
-                {% trans %}
-                    Because you are not a CdE-Member, you might have to pay an additional fee.
-                {% endtrans %}
-                {% if persona["is cde_realm"] %}
-                    {% trans %}
-                        If you pay your membership fee before your registration fee, the additional fee will be waived.
-                    {% endtrans %}
-                {% endif %}
-                </p>
-            </div>
-        {% endif %}
-
-        {% if choice_objects %}
-            {{ util.h(n_("Course Choices"), underline=true) }}
-            {{ generic_event.select_all_course_choices() }}
-        {% endif %}
-
-        {{ util.h(n_("Additional Information"), underline=true) }}
-        {{ generic_event.additional_registration_choices(age_class, reg_questionnaire) }}
+        <div id="registrationquestionnaire">
+            {% for entry in reg_questionnaire %}
+                {{ generic_event.print_questionnaire_entry(entry) }}
+            {% endfor %}
+        </div>
 
         {% call util.form_input_general(displayerrors=False) %}
-            {% if ambience['event']['use_additional_questionnaire'] %}
+            {% if ambience['event'].use_additional_questionnaire %}
                 <p class="text-info nosp">
                     {{ util.make_icon('info-circle') }}
                     {% trans %}
@@ -187,20 +110,21 @@
             {% endif %}
         {% endcall %}
 
-        {% call generic_event.fee_preview_panel(show_composition=preview) %}
-            {% if preview %}
+        {% if preview %}
+            {% call generic_event.fee_preview_panel(show_composition=preview) %}
                 {{ util.form_input_checkbox("is_orga", gettext("Is Orga"), anid="fee-precompute-is-orga") }}
                 {{ util.form_input_checkbox("is_member", gettext("Is Member"), anid="fee-precompute-is-member",
                                             defaultvalue="True") }}
                 {{ util.form_input_text("age", gettext("Age"), type="number", anid="fee-precompute-age",
                                         defaultvalue=persona_age) }}
-            {% endif %}
-        {% endcall %}
+            {% endcall %}
+        {% endif %}
 
         {% if not preview %}
             {% if age_class.with_guardian() %}
-                {{ util.form_input_static(aclass='text-info', icon='info-circle',
-                    value=gettext("I confirm that I will attend the event only under the supervision of a parent who will attend the same event.")) }}
+                {{ util.form_input_static(
+                        aclass='text-info', icon='info-circle', anid="minor-with-guardian",
+                        value=gettext("I confirm that I will attend the event only under the supervision of a parent who will attend the same event.")) }}
             {% endif %}
             {{ util.form_input_submit(label=gettext("Register"), cancellink=cdedblink('event/show_event')) }}
         {% endif %}
@@ -219,7 +143,7 @@
 
         feePreviewConstants = {
             'endpoint': '{{ cdedblink('event/precompute_fee') }}',
-            'persona_id': {{ user.persona_id if not preview else "null" }},
+            'persona_id': '{{ user.persona_id|cdedbid if not preview else "" }}',
             'is_member': {{ persona['is_member']|tojson }},
             'is_orga': {{ (ambience['event']['id'] in user.orga)|tojson }},
             'age': {{ persona_age }},

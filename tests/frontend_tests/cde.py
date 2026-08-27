@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import copy
 import datetime
 import decimal
 import itertools
@@ -10,7 +11,9 @@ from typing import cast
 
 import webtest
 
+import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.core as models
 from cdedb.common import (
     IGNORE_WARNINGS_NAME,
     CdEDBObject,
@@ -26,7 +29,7 @@ from cdedb.common.i18n import (
 )
 from cdedb.common.query import QueryOperators
 from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, extract_roles
-from cdedb.frontend.common import Worker, make_postal_address
+from cdedb.frontend.common import Worker
 from tests.common import (
     USER_DICT,
     FrontendTest,
@@ -69,57 +72,39 @@ PERSONA_TEMPLATE = {
 }
 
 
+RegistrationID = lambda x: vtypes.RegistrationID(vtypes.ID(x))
+
+
 class TestCdEFrontend(FrontendTest):
     @as_users("vera", "berta", maintain_data=True)
     def test_index(self) -> None:
         self.traverse({'description': 'Mitglieder'})
 
     def test_ejection_date(self) -> None:
-        def _calculate_ejection_deadline(
-            persona_data: CdEDBObject, period: CdEDBObject
-        ) -> datetime.datetime:
-            """Clone of `CdEFrontend._calculate_ejection_deadline`."""
-            periods_left = int(persona_data['balance'] // decimal.Decimal("2.50"))
-            if persona_data['trial_member']:
-                periods_left += 1
-            if period['balance_done']:
-                periods_left += 1
-            deadline = period["semester_start"].date().replace(day=1)
-            # There are 3 semesters within any year with different deadlines.
-            if deadline.month in range(5, 11):
-                # We are in the summer semester.
-                if periods_left % 2:
-                    deadline = deadline.replace(year=deadline.year + 1, month=2)
-                else:
-                    deadline = deadline.replace(month=8)
-            else:
-                # We are in a winter semester.
-                if deadline.month in range(1, 5):
-                    # We are in the first semester of the year.
-                    deadline = deadline.replace(month=2)
-                else:
-                    # We are in the last semester of the year.
-                    deadline = deadline.replace(year=deadline.year + 1, month=2)
-                if periods_left % 2:
-                    deadline = deadline.replace(month=8)
-            return deadline.replace(year=deadline.year + periods_left // 2)
-
         def _assert_ejection_deadline(
-            date_str: str, persona: CdEDBObject, period: CdEDBObject
+            date_str: str, persona: models.CdEPersona, period: CdEDBObject
         ) -> None:
             self.assertEqual(
                 datetime.date.fromisoformat(date_str),
-                _calculate_ejection_deadline(persona, period),
+                persona.calculate_ejection_deadline(period),
             )
 
-        member = {
-            'balance': 0,
-            'trial_member': False,
-        }
-        trial_member = {
-            'balance': 0,
-            'trial_member': True,
-        }
+        member = models.CdEPersona(
+            id=vtypes.PersonaID(vtypes.ID(-1)),
+            given_names="",
+            family_name="",
+            username=vtypes.Email(""),
+            gender=const.Genders.not_specified,
+            birthday=vtypes.Birthday(datetime.date.fromisoformat("2000-01-01")),
+            is_ml_realm=True,
+            is_assembly_realm=True,
+            is_event_realm=True,
+            is_cde_realm=True,
+            balance=decimal.Decimal(0),
+            trial_member=False,
+        )
+        trial_member = copy.deepcopy(member)
+        trial_member.trial_member = True
 
         period = {
             "semester_start": datetime.datetime.fromisoformat("2020-01-01"),
@@ -180,7 +165,7 @@ class TestCdEFrontend(FrontendTest):
         member = {"Linksammlung", "Datenschutzerklärung"}
         searchable = {"CdE-Mitglied suchen"}
         cde_admin_or_member = {"Mitglieder-Statistik"}
-        cde_admin = {"Nutzer verwalten", "Semesterverwaltung"}
+        cde_admin = {"Accounts verwalten", "Semesterverwaltung"}
         cde_admin_or_auditor = {"Finanz-Log", "CdE-Log"}
         finance_admin = {
             "Einzugsermächtigungen",
@@ -323,8 +308,8 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         self.assertValidationWarning(
             'donation',
-            "Die Spende der Lastschrift ist außerhalb von 2,00 € und 1.000,00 €. Der"
-            " Nutzer wird nicht in der Lage sein, den Betrag selbstständig zu ändern.",
+            "Die Spende der Lastschrift ist außerhalb von 2,00 € und 1.000,00 €. Die"
+            " Person wird nicht in der Lage sein, den Betrag selbstständig zu ändern.",
         )
         f = self.response.forms['changedataform']
         f[IGNORE_WARNINGS_NAME].checked = True
@@ -349,7 +334,7 @@ class TestCdEFrontend(FrontendTest):
 
         self.traverse({'href': '/cde'})
         self._click_admin_view_button(
-            re.compile(r"Benutzer-Administration"), current_state=False
+            re.compile(r"Account-Administration"), current_state=False
         )
 
         # Test Finance Admin View
@@ -381,7 +366,7 @@ class TestCdEFrontend(FrontendTest):
         f['given_names'] = "Zelda"
         f['birthday'] = "garbage"
         self.submit(f, check_notification=False)
-        self.assertTitle("Zelda Beispiel bearbeiten")
+        self.assertTitle("Bertå Beispiel bearbeiten")
         self.assertValidationError("birthday", "Ungültige Eingabe für ein Datum")
         f = self.response.forms['changedataform']
         self.assertEqual("Zelda", f['given_names'].value)
@@ -407,8 +392,9 @@ class TestCdEFrontend(FrontendTest):
     def test_consent_decline(self) -> None:
 
         def _roles(user: UserIdentifier) -> set[Role]:
-            user = get_user(user)
-            return extract_roles(self.core.get_persona(self.key, user['id']))
+            return extract_roles(
+                self.core.get_persona_status(self.key, get_user(user)['id']).as_dict()
+            )
 
         # First, do not change anything
         self.assertTitle("Einwilligung zur Mitgliedersuche")
@@ -874,9 +860,9 @@ class TestCdEFrontend(FrontendTest):
     @as_users("paul", "quintus", maintain_data=True)
     def test_user_search(self) -> None:
         self.traverse(
-            {'description': 'Mitglieder'}, {'description': 'Nutzer verwalten'}
+            {'description': 'Mitglieder'}, {'description': 'Accounts verwalten'}
         )
-        self.assertTitle("CdE-Nutzerverwaltung")
+        self.assertTitle("CdE-Accountverwaltung")
         self.assertPresence('Massenaufnahme')
         f = self.response.forms['queryform']
         f['qop_address'] = QueryOperators.match.value
@@ -885,7 +871,7 @@ class TestCdEFrontend(FrontendTest):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("CdE-Nutzerverwaltung")
+        self.assertTitle("CdE-Accountverwaltung")
         self.assertPresence("Ergebnis [1]", div='query-results')
         self.assertEqual(
             "2",
@@ -893,7 +879,7 @@ class TestCdEFrontend(FrontendTest):
         )
         self.assertPresence("Vereinigtes Königreich")
         # check that null aggregate counts correctly
-        self.traverse("Nutzer verwalten")
+        self.traverse("Accounts verwalten")
         f = self.response.forms['queryform']
         f['qsel_address_supplement'].checked = True
         self.submit(f)
@@ -909,9 +895,9 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera")
     def test_user_search_csv(self) -> None:
         self.traverse(
-            {'description': 'Mitglieder'}, {'description': 'Nutzer verwalten'}
+            {'description': 'Mitglieder'}, {'description': 'Accounts verwalten'}
         )
-        self.assertTitle("CdE-Nutzerverwaltung")
+        self.assertTitle("CdE-Accountverwaltung")
         f = self.response.forms['queryform']
         f['qop_address'] = QueryOperators.regex.value
         f['qval_address'] = '[aA][rm]'
@@ -938,9 +924,9 @@ class TestCdEFrontend(FrontendTest):
     @as_users("vera")
     def test_user_search_json(self) -> None:
         self.traverse(
-            {'description': 'Mitglieder'}, {'description': 'Nutzer verwalten'}
+            {'description': 'Mitglieder'}, {'description': 'Accounts verwalten'}
         )
-        self.assertTitle("CdE-Nutzerverwaltung")
+        self.assertTitle("CdE-Accountverwaltung")
         f = self.response.forms['queryform']
         f['qop_address'] = QueryOperators.regex.value
         f['qval_address'] = '[aA][rm]'
@@ -1147,8 +1133,8 @@ class TestCdEFrontend(FrontendTest):
     def test_create_user(self) -> None:
         self.traverse(
             {'description': 'Mitglieder'},
-            {'description': 'Nutzer verwalten'},
-            {'description': 'Nutzer anlegen'},
+            {'description': 'Accounts verwalten'},
+            {'description': 'Account anlegen'},
         )
         self.assertTitle("Neues Mitglied anlegen")
         data = PERSONA_TEMPLATE.copy()
@@ -1209,8 +1195,8 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("vera")
     def test_archived_user_search(self) -> None:
-        self.traverse({'href': '/cde/$'}, "Nutzer verwalten")
-        self.assertTitle("CdE-Nutzerverwaltung")
+        self.traverse({'href': '/cde/$'}, "Accounts verwalten")
+        self.assertTitle("CdE-Accountverwaltung")
         f = self.response.forms['queryform']
         f['qop_is_archived'] = QueryOperators.equal.value
         f['qval_is_archived'] = True
@@ -1220,7 +1206,7 @@ class TestCdEFrontend(FrontendTest):
             if field and field.startswith('qsel_'):
                 f[field].checked = True
         self.submit(f)
-        self.assertTitle("CdE-Nutzerverwaltung")
+        self.assertTitle("CdE-Accountverwaltung")
         self.assertPresence("Ergebnis [2]", div='query-results')
         self.assertNonPresence("Anton", div='query-result')
         self.assertPresence("Hell", div='query-result')
@@ -1260,9 +1246,7 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Einzugsermächtigung'})
         self.assertTitle("Einzugsermächtigung Bertå Beispiel")
         self.assertPresence("Dagobert Anatidae & Co. KG", div='active-permit')
-        self.assertPresence(
-            "Das Mitglied ist der Kontoinhaber.", div='inactive-permits'
-        )
+        self.assertPresence("Das Mitglied ist Kontoinhaber:in.", div='inactive-permits')
         if self.user_in("farin"):
             self.assertIn("revokeform", self.response.forms)
         else:
@@ -1595,7 +1579,10 @@ class TestCdEFrontend(FrontendTest):
         f['telephone'] = ""
         f['donation'] = "3"
         self.submit(f, check_notification=False)
-        self.assertValidationWarning('donation', "Du bist nicht der Eigentümer des")
+        self.assertValidationWarning(
+            'donation',
+            "Der von dir hinterlegte Bankaccount läuft nicht auf deinen Namen.",
+        )
         f = self.response.forms['changedataform']
         f[IGNORE_WARNINGS_NAME] = True
         self.submit(f, check_notification=False)
@@ -1666,7 +1653,7 @@ class TestCdEFrontend(FrontendTest):
     def test_batch_admission(self) -> None:
         self.traverse(
             {'description': 'Mitglieder'},
-            {'description': 'Nutzer verwalten'},
+            {'description': 'Accounts verwalten'},
             {'description': 'Massenaufnahme'},
         )
         self.assertTitle("Accounts anlegen")
@@ -1780,7 +1767,7 @@ class TestCdEFrontend(FrontendTest):
             output.append(head)
         head, _ = content.split("Erneut validieren")
         output.append(head)
-        expectation: tuple[tuple[str, ...], ...] = (
+        expectation = (
             tuple(),
             tuple(),
             tuple(),
@@ -1865,7 +1852,7 @@ class TestCdEFrontend(FrontendTest):
             output.append(head)
         head, _ = content.split("Erneut validieren")
         output.append(head)
-        expectation: tuple[tuple[str, ...], ...] = (
+        expectation = (
             tuple(),
             tuple(),
             tuple(),
@@ -1887,7 +1874,7 @@ class TestCdEFrontend(FrontendTest):
                 self.assertTrue(
                     re.search(piece, out), msg=f"{piece} not found in {out}"
                 )
-        nonexpectation: tuple[tuple[str, ...], ...] = (
+        nonexpectation = (
             tuple(),
             tuple(),
             tuple(),
@@ -1971,8 +1958,8 @@ class TestCdEFrontend(FrontendTest):
         self.core.changelog_resolve_change(self.key, persona_id, generation, ack=True)
         # Check that both legal_given_names and given_names have changed.
         persona = self.core.get_persona(self.key, persona_id)
-        self.assertEqual("Berta B.", persona["legal_given_names"])
-        self.assertEqual("Bertie", persona["given_names"])
+        self.assertEqual("Berta B.", persona.legal_given_names)
+        self.assertEqual("Bertie", persona.given_names)
 
     @as_users("vera")
     def test_batch_admission_review(self) -> None:
@@ -1984,7 +1971,7 @@ class TestCdEFrontend(FrontendTest):
 
         self.traverse(
             {'description': 'Mitglieder'},
-            {'description': 'Nutzer verwalten'},
+            {'description': 'Accounts verwalten'},
             {'description': 'Massenaufnahme'},
         )
         self.assertTitle("Accounts anlegen")
@@ -2009,7 +1996,11 @@ class TestCdEFrontend(FrontendTest):
         # now, lets check the reviews exists
         self.traverse({"description": "Index"}, {"description": "Änderungen prüfen"})
         self.assertPresence("Daniel Dino")
-        self.assertPresence("Jens")
+        self.assertPresence("Janis Jalapeño")
+        self.traverse("Janis Jalapeño", "Änderungen bearbeiten")
+        self.assertTitle("Janis Jalapeño bearbeiten")
+        f = self.response.forms["changedataform"]
+        self.assertEqual("Jens", f["given_names"].value)
 
         # take special care that no fields were silently updated during realm transition
         self.admin_view_profile("janis")
@@ -2028,7 +2019,7 @@ class TestCdEFrontend(FrontendTest):
 
         self.traverse(
             {'description': 'Mitglieder'},
-            {'description': 'Nutzer verwalten'},
+            {'description': 'Accounts verwalten'},
             {'description': 'Massenaufnahme'},
         )
         self.assertTitle("Accounts anlegen")
@@ -2081,7 +2072,7 @@ class TestCdEFrontend(FrontendTest):
 
         self.traverse(
             {'description': 'Mitglieder'},
-            {'description': 'Nutzer verwalten'},
+            {'description': 'Accounts verwalten'},
             {'description': 'Massenaufnahme'},
         )
         self.assertTitle("Accounts anlegen")
@@ -2112,11 +2103,11 @@ class TestCdEFrontend(FrontendTest):
         data = "pa14;;Hell;Hades;;;;;;;;;;;;;hades@example.cde;10.11.1977"
 
         self.admin_view_profile("hades")
-        self.assertPresence("Der Benutzer ist archiviert.", div="static-notifications")
+        self.assertPresence("Der Account ist archiviert.", div="static-notifications")
         self.assertPresence("—", div="contact-email")
         self.assertNonPresence("@", div="contact-email")
 
-        self.traverse("Mitglieder", "Nutzer verwalten", "Massenaufnahme")
+        self.traverse("Mitglieder", "Accounts verwalten", "Massenaufnahme")
         f = self.response.forms['admissionform']
         f['accounts'] = data
         self.submit(f, check_notification=False)
@@ -2134,10 +2125,10 @@ class TestCdEFrontend(FrontendTest):
 
         self.admin_view_profile("hades")
         self.assertNonPresence(
-            "Der Benutzer ist archiviert.", div="static-notifications"
+            "Der Account ist archiviert.", div="static-notifications"
         )
         self.assertNonPresence(
-            "Der Benutzer ist deaktiviert.", div="static-notifications"
+            "Der Account ist deaktiviert.", div="static-notifications"
         )
         self.assertPresence("hades@example.cde", div="contact-email")
 
@@ -2148,7 +2139,7 @@ class TestCdEFrontend(FrontendTest):
             "pa14;Ω;Dino;Daniel;;;;;;;;;;;;;daniel@example.cde;19.02.1963"
         )
 
-        self.traverse("Mitglieder", "Nutzer verwalten", "Massenaufnahme")
+        self.traverse("Mitglieder", "Accounts verwalten", "Massenaufnahme")
         f = self.response.forms['admissionform']
         f['accounts'] = data
         self.submit(f, check_notification=False)
@@ -2218,6 +2209,7 @@ class TestCdEFrontend(FrontendTest):
             ),
             (
                 "date: Ungültige Eingabe für ein Datum.",
+                "amount: Ungültige Eingabe für einen Betrag.",
                 "persona_id: Falsches Format.",
             ),
             (
@@ -2225,19 +2217,23 @@ class TestCdEFrontend(FrontendTest):
                 "category: Unzulässige Kategorie.",
             ),
             ("amount: Ungültige Eingabe für einen Betrag.",),
+            ("persona_id: Person ist nicht für diese Veranstaltung angemeldet.",),
             (
                 "amount: Muss größer als Null sein.",
                 "given_names: Rufnamen passen nicht zusammen.",
             ),
-            ("persona_id: Benutzer ist nicht für diese Veranstaltung angemeldet.",),
             (
-                "date: Zahlungseingang vor Anmeldezeitpunkt.",
-                "amount: Zu viel Geld.",
-                r"Mehrere Überweisungen für diesen Account \(Zeilen 7 und 8\).",
+                "persona_id: Person ist nicht für diese Veranstaltung angemeldet.",
+                "given_names: Rufnamen passen nicht zusammen.",
             ),
             (
                 "date: Zahlungseingang vor Anmeldezeitpunkt.",
-                r"Mehrere Überweisungen für diesen Account \(Zeilen 7 und 8\).",
+                "amount: Zu viel Geld.",
+                r"Mehrere Überweisungen für diesen Account \(Zeilen 8 und 9\).",
+            ),
+            (
+                "date: Zahlungseingang vor Anmeldezeitpunkt.",
+                r"Mehrere Überweisungen für diesen Account \(Zeilen 8 und 9\).",
             ),
         )
         for ex, out in zip(expectation, output, strict=True):
@@ -2248,25 +2244,11 @@ class TestCdEFrontend(FrontendTest):
         lines = f['transfers'].value.split('\n')
         inputdata = (
             '\n'
-            .join(
-                lines[4:],
-            )
-            .replace(
-                '-12.34',
-                '12.34',
-            )
-            .replace(
-                'Party50',
-                'Mitgliedsbeitrag',
-            )
-            .replace(
-                'Charles',
-                'Charly',
-            )
-            .replace(
-                'Daniel D.',
-                'Daniel',
-            )
+            .join(lines[5:])
+            .replace('-12.34', '12.34')
+            .replace('Party50', 'Mitgliedsbeitrag')
+            .replace('Charles', 'Charly')
+            .replace('Daniel D.', 'Daniel')
         )
         f['transfers'] = inputdata
         self.submit(f, check_notification=False)
@@ -2292,6 +2274,19 @@ class TestCdEFrontend(FrontendTest):
             div="notifications",
         )
 
+        mails = self._fetch_mail()
+        self.assertEqual(
+            [
+                "[CdE] Mitgliedsbeitrag eingegangen",
+                "[CdE] Mitgliedsbeitrag eingegangen",
+                "[CdE] Überweisung für Große Testakademie 2222 eingetroffen",
+                "Neue Überweisungen für Eure Veranstaltung",
+                "[CdE] Erstattung für Große Testakademie 2222 ausgeführt",
+                "Erstattungen für Eure Veranstaltung durchgeführt",
+                "Überweisungen eingetragen",
+            ],
+            [mail.get("Subject") for mail in mails],
+        )
         finance_admin_mail = self.fetch_mail_content(-1)
         self.assertIn(
             "4 Überweisungen eingetragen. Insgesamt 486,33\xa0€:",
@@ -2419,21 +2414,28 @@ class TestCdEFrontend(FrontendTest):
     @storage
     @as_users("farin")
     def test_money_transfers_file(self) -> None:
-        self.traverse(
-            {'description': 'Mitglieder'}, {'description': 'Überweisungen eintragen'}
-        )
-        f = self.response.forms['transfersform']
+        for sep in ('comma', 'tab'):
+            with self.subTest(f"Separator: {sep}"):
+                self.traverse(
+                    {'description': 'Mitglieder'},
+                    {'description': 'Überweisungen eintragen'},
+                )
+                f = self.response.forms['transfersform']
 
-        with open(self.testfile_dir / "money_transfers_valid.csv", 'rb') as datafile:
-            data = datafile.read().replace(b"\r", b"").replace(b"\n", b"\r\n")
+                with open(
+                    self.testfile_dir / "money_transfers_valid.csv", 'rb'
+                ) as datafile:
+                    data = datafile.read().replace(b"\r", b"").replace(b"\n", b"\r\n")
+                    if sep == 'tab':
+                        data = data.replace(b";", b"\t")
 
-        self.assertIn(b"\r\n", data)
-        f['transfers_file'] = webtest.Upload(
-            "money_transfers_valid.csv", data, "text/csv"
-        )
-        self.submit(f, check_notification=False)
-        f = self.response.forms['transfersform']
-        self.submit(f)
+                self.assertIn(b"\r\n", data)
+                f['transfers_file'] = webtest.Upload(
+                    "money_transfers_valid.csv", data, "text/csv"
+                )
+                self.submit(f, check_notification=False)
+                f = self.response.forms['transfersform']
+                self.submit(f)
 
     @as_users("farin")
     def test_money_transfer_low_balance(self) -> None:
@@ -2448,6 +2450,15 @@ class TestCdEFrontend(FrontendTest):
         self.submit(f, check_notification=False)
         f = self.response.forms["transfersform"]
         self.submit(f, verbose=True)
+        notification_mail = self._fetch_mail()[0]
+        self.assertEqual(
+            "[CdE] Überweisung eingegangen – Guthaben zu gering!",
+            notification_mail.get("Subject"),
+        )
+        self.assertIn(
+            "Leider reicht dein Guthaben nicht aus",
+            self._get_mail_content(notification_mail),
+        )
         self.admin_view_profile("daniel")
         self.assertNonPresence("CdE-Mitglied", div='membership')
 
@@ -2485,7 +2496,7 @@ class TestCdEFrontend(FrontendTest):
                 'change_note': "338,99 € am 01.03.2025 gezahlt.",
             },
         ]
-        self.assertLogEqual(log_expectation, "event", offset=11)
+        self.assertLogEqual(log_expectation, "event", offset=self.EVENT_LOG_OFFSET)
 
     @as_users("anton")
     def test_money_transfers_waived_fee(self) -> None:
@@ -2546,21 +2557,21 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("461,49 €", div='amount-owed')
         self.assertEqual(
             decimal.Decimal("461.49"),
-            self.event.get_registration(self.key, 2)['amount_owed'],
+            self.event.get_registration(self.key, RegistrationID(2))['amount_owed'],
         )
         self.get('/event/event/1/registration/1001/fee/summary')
         self.assertNonPresence("Externenbeitrag", div='amount-owed')
         self.assertPresence("584,48 €", div='amount-owed')
         self.assertEqual(
             decimal.Decimal("584.48"),
-            self.event.get_registration(self.key, 1001)['amount_owed'],
+            self.event.get_registration(self.key, RegistrationID(1001))['amount_owed'],
         )
         self.get('/event/event/1/registration/1002/fee/summary')
         self.assertPresence("Externenbeitrag", div='amount-owed')
         self.assertPresence("589,48 €", div='amount-owed')
         self.assertEqual(
             decimal.Decimal("589.48"),
-            self.event.get_registration(self.key, 1002)['amount_owed'],
+            self.event.get_registration(self.key, RegistrationID(1002))['amount_owed'],
         )
 
     @prepsql(
@@ -2609,7 +2620,7 @@ class TestCdEFrontend(FrontendTest):
         self.assertPresence("Erledigt am", div='payment-request')
         self.assertPresence("Erledigt am", div='eject-members')
         self.assertPresence("2 Mitgliedschaften beendet.", div="eject-members")
-        self.assertPresence("1 Benutzer archiviert.", div="eject-members")
+        self.assertPresence("1 Accounts archiviert.", div="eject-members")
 
         self.assertPresence("Insgesamt 7 Mitglieder.", div='balance-update')
         self.assertPresence("Davon 2 Probemitglieder.", div='balance-update')
@@ -2877,23 +2888,24 @@ class TestCdEFrontend(FrontendTest):
 
         # Overview
         self.assertPresence(
-            "PfingstAkademie 2014 [pa14] (CdE) 2 Kurse, 6 Teilnehmer", div='events-2014'
+            "PfingstAkademie 2014 [pa14] (CdE) 2 Kurse, 6 Teilnehmende",
+            div='events-2014',
         )
         self.assertPresence(
-            "Geburtstagsfete [gebi] (VAN) 0 Kurse, 0 Teilnehmer", div='events-2019'
+            "Geburtstagsfete [gebi] (VAN) 0 Kurse, 0 Teilnehmende", div='events-2019'
         )
 
         # Institution CdE
         self.traverse({'description': '^CdE$'})
         self.assertPresence(
-            "PfingstAkademie 2014 [pa14] 2 Kurse, 6 Teilnehmer", div='events-2014'
+            "PfingstAkademie 2014 [pa14] 2 Kurse, 6 Teilnehmende", div='events-2014'
         )
         self.assertNonPresence("Geburtstagsfete")
 
         # Institution VAN
         self.traverse({'description': '^VAN'})
         self.assertPresence(
-            "Geburtstagsfete [gebi] 0 Kurse, 0 Teilnehmer", div='events-2019'
+            "Geburtstagsfete [gebi] 0 Kurse, 0 Teilnehmende", div='events-2019'
         )
         self.assertNonPresence("PfingstAkademie")
 
@@ -2928,13 +2940,13 @@ class TestCdEFrontend(FrontendTest):
         self.assertTitle("PfingstAkademie 2014")
         if self.user_in(22):
             self.assertPresence(
-                "Du bist kein Teilnehmer dieser vergangenen Veranstaltung und "
+                "Du hast an dieser vergangenen Veranstaltung nicht teilgenommen und "
                 "kannst diesen Link nur in Deiner Eigenschaft als Admin sehen.",
                 div='gallery-admin-info',
             )
         else:
             self.assertNonPresence(
-                "Du bist kein Teilnehmer dieser vergangenen Veranstaltung und "
+                "Du hast an dieser vergangenen Veranstaltung nicht teilgenommen und "
                 "kannst diesen Link nur in Deiner Eigenschaft als Admin sehen."
             )
         # inga is no participant nor admin
@@ -2961,11 +2973,11 @@ class TestCdEFrontend(FrontendTest):
         # Check list privacy
         # non-searchable non-participants can not see anything interesting
         if self.user_in("garcia"):
-            self.assertPresence("6 Teilnehmer", div='count-extra-participants')
+            self.assertPresence("6 Teilnehmende", div='count-extra-participants')
             self.assertNonPresence("Bert")
             self.assertNonPresence("Ferdinand")
         else:
-            self.assertNonPresence("6 Teilnehmer")
+            self.assertNonPresence("6 Teilnehmende")
             self.assertPresence("Bertå", div='list-participants')
             self.assertPresence("Ferdinand", div='list-participants')
 
@@ -3013,7 +3025,7 @@ class TestCdEFrontend(FrontendTest):
     @as_users("berta")
     def test_past_course_counting(self) -> None:
         self.get("/cde/past/event/4/course/3/show")
-        self.assertPresence("Keine Teilnehmer eingetragen.")
+        self.assertPresence("Dieser Kurs hat keine Teilnehmenden.")
 
     @as_users("berta", "charly", maintain_data=True)
     def test_show_past_event_own_link(self) -> None:
@@ -3218,14 +3230,14 @@ class TestCdEFrontend(FrontendTest):
         f['persona_ids'] = "DB-7-8, DB-33-7"
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            'persona_ids', "Einige dieser Nutzer existieren nicht."
+            'persona_ids', "Einige dieser Accounts existieren nicht."
         )
         self.assertTitle("Swish -- und alles ist gut (PfingstAkademie 2014)")
         f = self.response.forms['addparticipantform']
         f['persona_ids'] = "DB-7-8, DB-10-8"
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            'persona_ids', "Einige dieser Nutzer sind keine Veranstaltungsnutzer."
+            'persona_ids', "Einige dieser Accounts sind keine Veranstaltungsaccounts."
         )
         f = self.response.forms['addparticipantform']
         f['persona_ids'] = "DB-7-8, DB-8-6, DB-5-1, DB-3-5"
@@ -3504,17 +3516,17 @@ class TestCdEFrontend(FrontendTest):
         fake_rs = cast(RequestState, types.SimpleNamespace())
         fake_rs.translations = self.translations
         persona_id = None
-        t = lambda g, p: g(format_country_code(p['country']))
+        t = lambda g, p: g(format_country_code(p.country))
         while persona_id := self.core.next_persona(
             self.key, persona_id, is_member=None, is_archived=False
         ):
-            p = self.core.get_total_persona(self.key, persona_id)
-            if p['country']:
-                address = make_postal_address(fake_rs, p)
+            if self.core.get_total_persona(self.key, persona_id)['country']:
+                p = self.core.get_event_user(self.key, persona_id)
+                address = p.get_postal_address(fake_rs)
                 if address is None:
                     self.assertIn(persona_id, personas_without_address)
                 else:
-                    self.assertNotIn(p['country'], address)
+                    self.assertNotIn(p.country, address)
                     self.assertIn(t(self.translations["de"].gettext, p), address)
 
     def test_country_code_from_country(self) -> None:

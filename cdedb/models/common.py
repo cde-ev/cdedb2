@@ -1,10 +1,12 @@
 """Base definition of CdEDB models using dataclasses."""
 
 import abc
+import collections
 import copy
 import dataclasses
 import functools
 import inspect
+import sys
 import typing
 from collections.abc import Collection
 from dataclasses import dataclass
@@ -15,7 +17,6 @@ from typing import (
     ClassVar,
     Literal,
     Self,
-    TypeVar,
     cast,
     get_args,
     get_origin,
@@ -24,26 +25,30 @@ from typing import (
 import cdedb.common.validation.types as vtypes
 from cdedb.common import (
     CdEDBObject,
+    Error,
     get_mandatory_form_fields,
     get_mandatory_type,
     is_optional_type,
+    json_serialize,
 )
+from cdedb.common.query import Query, QueryScope, QuerySpec
 from cdedb.common.sorting import Sortkey, collate, xsorted
 from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
 
 if TYPE_CHECKING:
-    from typing import Self
-
     from cdedb.database.query import DatabaseValue_s
 
-T = TypeVar("T")
 # Should actually be a vtypes.ID instead of an int
-CdEDataclassMap = dict[int, T]
+type CdEDataclassMap[T] = dict[int, T]
 
 
 def requestdict_field_spec(field: dataclasses.Field[Any]) -> Literal["str", "[str]"]:
     """The spec of this field, expected by the REQUESTdatadict extractor."""
     if get_origin(field.type) in {list, tuple, set}:
+        if get_args(field.type) == (vtypes.PersonaID,):
+            # For fields annotated as `list[vtypes.PersonaId]` we want to extract them
+            #  as a CSV-string, rather than as a list from the multi dict.
+            return "str"
         return "[str]"
     else:
         return "str"
@@ -70,7 +75,7 @@ class AbstractFlag(AbstractMetaData, Flag):
         """Hide boilerplate of turning the flag into a dict expected by `dataclasses.field`."""
         return {self.get_metadata_name(): self}
 
-    def in_field(self, field: dataclasses.Field[T]) -> bool:
+    def in_field(self, field: dataclasses.Field[Any]) -> bool:
         """Hide boilerplate of extracting the flag information from `dataclasses.Field.metadata`."""
         return self in field.metadata.get(self.get_metadata_name(), self.__class__(0))
 
@@ -109,7 +114,7 @@ class MetaFlag(AbstractFlag):
     """Validate this field as `Any` in `cls.validation_fields(creation=False)`.
     Can be used for fields that are validated manually."""
     validate_skip = validate_creation_skip | validate_update_skip
-    """Validate this field as `Any` in `cls.validation_fields(creation=False)`.
+    """Validate this field as `Any` in `cls.validation_fields(creation=None)`.
     Can be used for fields that are validated manually."""
 
     # request
@@ -191,6 +196,8 @@ class MetaFlag(AbstractFlag):
         # like dict[_, type_]
         if origin is dict:
             _, type_ = typing.get_args(type_)
+        if origin is CdEDataclassMap:
+            type_ = typing.get_args(type_)[0]
         # like "type_"
         if isinstance(type_, typing.ForwardRef):
             type_ = type_.__forward_arg__
@@ -248,6 +255,14 @@ class CdEDataclass:
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
+        """Create an instance from the dict returned from the database.
+
+        The ideomatic approach is to retrieve the database fields via
+        `query_one`, using `get_select_query` to construct the query,
+        and put the return value in this function.
+
+        For `query_all`, see `many_from_database`.
+        """
         for field in cls.dataclass_fields():
             # Convert some values after extracting them from the database.
             type_ = field.type
@@ -262,6 +277,11 @@ class CdEDataclass:
                 if issubclass(type_, (CdEEnum, CdEIntEnum)):
                     if data.get(name) is not None:
                         data[name] = type_(data[name])
+
+            # Convert literal types.
+            if get_origin(type_) == Literal:
+                if len(set(get_args(type_))) == 1:
+                    data[name] = get_args(type_)[0]
 
             # Convert array types.
             for array_type in {list, tuple, set}:
@@ -283,8 +303,14 @@ class CdEDataclass:
     def many_from_database(
         cls, list_of_data: Collection[CdEDBObject], sort: bool = True
     ) -> CdEDataclassMap["Self"]:
-        sort = xsorted if sort else list
-        return {obj.id: obj for obj in sort(map(cls.from_database, list_of_data))}
+        sorter = xsorted if sort else list
+        return {obj.id: obj for obj in sorter(map(cls.from_database, list_of_data))}
+
+    @classmethod
+    def many_from_database_list(
+        cls, list_of_data: Collection[CdEDBObject]
+    ) -> list["Self"]:
+        return xsorted(map(cls.from_database, list_of_data))
 
     @classmethod
     def get_select_query(
@@ -521,3 +547,87 @@ class CdEDataclass:
             return NotImplemented
 
         return self._lt_inner(other)
+
+
+@dataclasses.dataclass
+class StoredQuery(CdEDataclass):
+    id: vtypes.ID = dataclasses.field(metadata=MetaFlag.input_creation_exclude.as_dict)
+
+    query_name: str
+
+    scope: QueryScope = dataclasses.field(metadata=MetaFlag.request_exclude.as_dict)
+    serialized_query: vtypes.QueryInput = dataclasses.field(
+        metadata=MetaFlag.request_exclude.as_dict
+    )
+    errors: list["Error"] = dataclasses.field(
+        default_factory=list,
+        compare=False,
+        repr=False,
+        metadata=MetaFlag.exclude.as_dict,
+    )
+
+    query_group: str | None = None
+
+    @property
+    def user_created(self) -> bool:
+        return bool(self.id and self.id > 0)
+
+    def _get_spec(self) -> QuerySpec:
+        return self.scope.get_spec()
+
+    @functools.cached_property
+    def query(self) -> Query:
+        spec = self._get_spec()
+        from cdedb.common.validation.validate import validate_check  # noqa: PLC0415
+
+        query: Query | None
+        query, errs = validate_check(
+            vtypes.QueryInput,
+            self.serialized_query,
+            ignore_warnings=True,
+            spec=spec,
+        )
+        if not query:
+            self.errors = errs
+            return cast(Query, None)
+        query.query_id = self.id
+        return query
+
+    def serialize_to_url(self) -> CdEDBObject:
+        ret: CdEDBObject = {}
+        if self.query:
+            ret |= self.query.serialize_to_url()
+        if self.user_created:
+            ret |= {"query_name": self.query_name, "query_group": self.query_group}
+        return ret
+
+    def query_by_name(self) -> tuple[str, CdEDBObject]:
+        if self.scope in {
+            QueryScope.registration,
+            QueryScope.lodgement,
+            QueryScope.event_course,
+        }:
+            return "event/event_query_by_name", {"query_name": self.query_name}
+        else:
+            return "core/query_by_name", {
+                "query_name": self.query_name,
+                "scope": self.scope,
+            }
+
+    def to_database(self) -> CdEDBObject:
+        ret = super().to_database()
+        ret["serialized_query"] = json_serialize(self.serialized_query)
+        return ret
+
+    def get_sortkey(self) -> Sortkey:
+        return (
+            self.query_group or chr(sys.maxunicode),  # Sort empty group last.
+            self.query_name,
+        )
+
+    @classmethod
+    def group_queries(cls, queries: list[Self]) -> dict[str, list[Self]]:
+        ret = collections.defaultdict(list)
+        for q in xsorted(queries):
+            ret[q.query_group or ""].append(q)
+        return ret

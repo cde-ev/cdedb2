@@ -10,7 +10,7 @@ import mailmanclient as mmc
 
 import cdedb.database.constants as const
 from cdedb.backend.common import DatabaseLock
-from cdedb.common import RequestState, make_persona_name
+from cdedb.common import RequestState
 from cdedb.database.constants import EmailStatus, LockType
 from cdedb.frontend.common import cdedburl
 from cdedb.frontend.ml.base import MlBaseFrontend
@@ -152,18 +152,18 @@ Das Abonnement von $member auf der Mailingliste
     $listname
 wurde deaktiviert, da zu viele Mails nicht zugestellt werden konnten.
 
-Dies bedeutet, dass keine weiteren Mails dieser Liste an den Abonnenten versendet
+Dies bedeutet, dass keine weiteren Mails dieser Liste an die Abonnent:in versendet
 werden. Diese Einschränkung ist momentan *nicht* in der CdEDB sichtbar.
 
-Als Moderator kannst du versuchen, den Abonnenten auf einem anderen Weg zu
+Als Moderator kannst du versuchen, die Abonnent:in auf einem anderen Weg zu
 kontaktieren und über den Grund der Unzustellbarkeit zu informieren.
 Die Zustellbenachrichtigung, falls vorhanden, ist angehängt.
 Bei Fragen dazu wende dich an das Adminteam:
     <{self.conf["TROUBLESHOOTING_ADDRESS"]}>
-Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Empfänger mit
+Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Empfänger:innen mit
 ähnlichen Email-Anbietern, kontaktiere bitte auch das Adminteam.
 
-Als Workaround kannst du den Nutzer manuell von der Mailingliste entfernen,
+Als Workaround kannst du den Account manuell von der Mailingliste entfernen,
 15 Minuten warten, und ihn danach wieder auf die Liste abonnieren.
 Dadurch wird das Abonnement vorerst wieder aktiviert.
 """.strip(),
@@ -171,20 +171,20 @@ Dadurch wird das Abonnement vorerst wieder aktiviert.
 Eine Email auf der Mailingliste
     $listname
 konnte an $member nicht zugestellt werden.
-Gegebenenfalls ist es sinnvoll, sie außerhalb der Mailingliste an den
-Nutzer weiterzuleiten.
-Diese Fehlermeldung wird höchstens einmal pro Tag, Nutzer und Liste versendet,
+Gegebenenfalls ist es sinnvoll, sie außerhalb der Mailingliste an die
+Empfänger:in weiterzuleiten.
+Diese Fehlermeldung wird höchstens einmal pro Tag, Account und Liste versendet,
 auch wenn mehrere Emails unzustellbar waren.
 
-Bei Wiederholung wird dies dazu führen, dass dem Nutzer keine Malis dieser Liste
+Bei Wiederholung wird dies dazu führen, dass dem Account keine Mails dieser Liste
 mehr gesendet werden.
 
-Als Moderator kannst du versuchen, den Abonnenten auf einem anderen Weg zu
+Als Moderator kannst du versuchen, die Abonnent:in auf einem anderen Weg zu
 kontaktieren und über den Grund der Unzustellbarkeit zu informieren.
 Die Zustellbenachrichtigung, falls vorhanden, ist angehängt.
 Bei Fragen dazu wende dich an das Adminteam:
     <{self.conf["TROUBLESHOOTING_ADDRESS"]}>
-Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Empfänger mit
+Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Empfänger:innen mit
 ähnlichen Email-Anbietern, kontaktiere bitte auch das Adminteam.
 """.strip(),
         }
@@ -217,7 +217,7 @@ The original message as received by Mailman is attached.
             }
 
         # Special case admin mailinglist due to existence of many aliases
-        if db_list.address == 'admin@lists.cde-ev.de':
+        if db_list.address in self.conf["MAILMAN_NON_EXPLICIT_DESTINATION_LISTS"]:
             desired_settings['require_explicit_destination'] = False
 
         # Second, update values to mailman if changed
@@ -312,7 +312,7 @@ The original message as received by Mailman is attached.
             )
 
         db_subscribers = {
-            address: make_persona_name(personas[pid])
+            address: personas[pid].get_name()
             for pid, address in db_addresses.items()
             if address
         }
@@ -342,9 +342,9 @@ The original message as received by Mailman is attached.
     ) -> None:
         personas = self.coreproxy.get_personas(rs, db_list.moderators)
         db_moderators = {
-            persona['username']: make_persona_name(persona)
+            persona.username: persona.get_name()
             for persona in personas.values()
-            if persona['username']
+            if persona.username
         }
         mm_moderators = {m.email: m for m in mm_list.moderators}
 

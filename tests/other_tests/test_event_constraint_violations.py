@@ -6,7 +6,7 @@ from unittest.mock import Mock
 from cdedb.common import CdEDBObject
 from cdedb.database.constants import RegistrationPartStati
 from cdedb.models import event as models
-from cdedb.models.event_constraint_violations import (
+from cdedb.models.event.constraint_violations import (
     AbsentCheckedinCV,
     ConstraintViolation,
     PresentNeverCheckedinCV,
@@ -103,7 +103,7 @@ class TestEventConstraintViolations(unittest.TestCase):
             self.assertEqual(violation.severity, ViolationSeverity.INFO)
 
         # basic test case for one-part event
-        reg = copy.deepcopy(single_part_registration)
+        reg: CdEDBObject = copy.deepcopy(single_part_registration)
         self.assertIsNone(check(onePartAka, reg))
         reg['checkin_periods'][0].checkin_time += day
         self.assertIsNone(check(onePartAka, reg))
@@ -129,7 +129,7 @@ class TestEventConstraintViolations(unittest.TestCase):
         self.assertIsNone(check(onePartAka, reg))
 
         # complex test case for multipart event
-        reg: CdEDBObject = {
+        reg = {
             'parts': {
                 1: {
                     'status': RPS.not_applied,

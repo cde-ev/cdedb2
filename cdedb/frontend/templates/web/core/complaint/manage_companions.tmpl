@@ -8,7 +8,7 @@
 {% set jshint='weak' %}
 
 {% block title %}
-    {% trans involved=involved|persona_name, title=gettext("Case %s")|format(ambience['case'].id) %}
+    {% trans involved=involved.persona|persona_name, title=gettext("Case %s")|format(ambience['case'].id) %}
         Manage Companions for {{ involved }} ({{ title }})
     {% endtrans %}
 {% endblock %}
@@ -16,39 +16,37 @@
 {% block heading %}
     {{ util.context_heading(
         gettext("Manage Companions"),
-        involved|persona_name, ambience['case'].all_involved[involved['id']].get_icon(), "",
-        gettext("Case %s")|format(ambience['case'].id), 'gavel', "",
+        involved.persona|persona_name, involved.involvement_type.get_icon(), "",
+        gettext("Case %s")|format(ambience['case'].id), 'gavel', ""
     ) }}
 {% endblock %}
 
 {% block breadcrumb %}
     {{ super() }}
     {{ util.breadcrumb_link(cdedblink("core/complaint_index"), gettext("Cases")) }}
-    {{ util.breadcrumb_link(cdedblink("core/show_case"), gettext("Case %s")|format(ambience['case'].id),
-                            icon="gavel") }}
+    {{ util.breadcrumb_link(cdedblink("core/show_case"), gettext("Case %s")|format(ambience['case'].id), icon="gavel") }}
     {{ util.breadcrumb_link(
         "",
-        involved|persona_name,
-        icon=ambience['case'].all_involved[involved['id']].get_icon(),
+        involved.persona|persona_name,
+        icon=involved.involvement_type.get_icon(),
         active=True) }}
     {{ util.breadcrumb_link("", gettext("Manage Companions"), active=True) }}
 {% endblock %}
 
 {% block content %}
-    <form action="{{ cdedblink('core/add_companions') }}" method="POST"
-          id="addcompanionform" class="p">
+    <form action="{{ cdedblink('core/add_companions') }}" method="POST" id="addcompanionform" class="p">
         {{ util.anti_csrf_token('core/add_companions') }}
         <div class="input-group has-success">
             <span class="input-group-addon">{{ util.make_icon('plus') }}</span>
-            {{ util.input_text(type="search", name="companion_ids", anid="input-add-involved",
+            {{ util.input_text(type="search", name="companion_ids", anid="input-companion_ids",
                                placeholder="DB-XXXX-X,DB-XXXX-X,…",
-                               arialabel=gettext("IDs of the new involved people")) }}
+                               arialabel=gettext("IDs of the new companions")) }}
             <script nonce="{{ csp_nonce }}">
-                $('#input-add-involved').cdedbSearchPerson(
+                $('#input-companion_ids').cdedbSearchPerson(
                     '{{ cdedblink('core/select_persona') }}', {'kind': 'admin_all_users'},
-                    {{ (ambience['case'].companions_by_involved.get(involved['id'], [])|list
-                        + ambience['case'].adverse_companions(ambience['case'].all_involved[involved['id']])|list
-                        + ambience['case'].all_involved.keys()|list)|tojson }},
+                    {{ (involved.get_companions(is_active=None)|list
+                        + ambience['case'].adverse_companions(involved.involvement_type)|list
+                        + ambience['case'].involved_persona_ids|list)|tojson }},
                     false, true, "{{ gettext("CdEDB-ID, Name or E-Mail") }}"
                 );
             </script>
@@ -58,47 +56,48 @@
         </div>
         {{ util.output_errors('companion_ids', wrapper=True) }}
     </form>
-    {% if companions %}
+    {% if involved.get_companions(is_active=None) %}
         <div class="row">
-        {% for list in companions.values()|slice(2) %}
+        {% for list in involved.get_companions(is_active=None).items()|slice(2) %}
             <div class="col-md-6">
             <ul class="slim">
-            {% for companion in list %}
+            {% for companion_id, is_active in list %}
+                {% set companion = ambience['case'].personas[companion_id] %}
                 <li class="hide-hover-container clearfix-after">
-                    {{ util.strike(util.persona_anchor(companion), companion['id'] not in ambience['case'].withdrawn_companions) }}
+                    {{ util.strike(util.persona_anchor(ambience['case'].personas[companion_id]), is_active) }}
                     <div class="list-button-float hide-hover">
-                        {% if companion['id'] not in ambience['case'].withdrawn_companions %}
-                        <form action="{{ cdedblink('core/withdraw_companion', {'persona_id': involved['id'], 'companion_id': companion['id']}) }}"
-                              method="POST"
-                              id="withdrawcompanionform{{ companion.id }}"
-                              class=" display-inline"
-                        >
-                            {{ util.anti_csrf_token('core/withdraw_companion') }}
-                            {{ util.input_submit(
-                                label='',
-                                aclass="btn btn-xs btn-danger",
-                                icon="person-walking-arrow-right",
-                                title=gettext("Withdraw %(name)s as companion")|format(name=companion|persona_name)|s
-                            ) }}
-                        </form>
+                        {% if is_active %}
+                            <form action="{{ cdedblink('core/withdraw_companion', {'involved_id': involved.id, 'companion_id': companion_id}) }}"
+                                  method="POST"
+                                  id="withdrawcompanionform{{ companion_id }}"
+                                  class=" display-inline"
+                            >
+                                {{ util.anti_csrf_token('core/withdraw_companion') }}
+                                {{ util.input_submit(
+                                    label='',
+                                    aclass="btn btn-xs btn-danger",
+                                    icon="person-walking-arrow-right",
+                                    title=gettext("Withdraw %(name)s as companion")|format(name=companion|persona_name)|s
+                                ) }}
+                            </form>
                         {% else %}
-                        <form action="{{ cdedblink('core/reinstate_companion', {'persona_id': involved['id'], 'companion_id': companion['id']}) }}"
-                              method="POST"
-                              id="reinstatecompanionform{{ companion.id }}"
-                              class="display-inline"
-                        >
-                            {{ util.anti_csrf_token('core/reinstate_companion') }}
-                            {{ util.input_submit(
-                                label='',
-                                aclass="btn btn-xs btn-primary",
-                                icon="person-walking-arrow-loop-left",
-                                title=gettext("Reinstate %(name)s as companion")|format(name=companion|persona_name)|s
-                            ) }}
-                        </form>
+                            <form action="{{ cdedblink('core/reinstate_companion', {'involved_id': involved.id, 'companion_id': companion_id}) }}"
+                                  method="POST"
+                                  id="reinstatecompanionform{{ companion_id }}"
+                                  class="display-inline"
+                            >
+                                {{ util.anti_csrf_token('core/reinstate_companion') }}
+                                {{ util.input_submit(
+                                    label='',
+                                    aclass="btn btn-xs btn-primary",
+                                    icon="person-walking-arrow-loop-left",
+                                    title=gettext("Reinstate %(name)s as companion")|format(name=companion|persona_name)|s
+                                ) }}
+                            </form>
                         {% endif %}
-                        <form action="{{ cdedblink('core/remove_companion', {'persona_id': involved['id'], 'companion_id': companion['id']}) }}"
+                        <form action="{{ cdedblink('core/remove_companion', {'involved_id': involved.id, 'companion_id': companion_id}) }}"
                               method="POST"
-                              id="removecompanionform{{ companion.id }}"
+                              id="removecompanionform{{ companion_id }}"
                               class="display-inline"
                         >
                             {{ util.anti_csrf_token('core/remove_companion') }}

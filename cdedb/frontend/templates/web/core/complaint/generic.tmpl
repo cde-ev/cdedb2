@@ -23,28 +23,46 @@
 
 {% macro pretty_entry_heading(entry) %}
     <strong>
-        {{ util.make_icon(entry.entry_type.get_icon()) }}
-        {% if entry.parent %}
-            {{ util.href("#entry" + entry.parent.id|string, gettext(entry.parent.entry_type.left_shortname)) }}:
-            {{ gettext(entry.entry_type.right_shortname) }}
-        {% else %}
-            {{ gettext(entry.entry_type|string) }}
+        {{ util.make_icon(entry.entry_type.get_icon(), title=gettext(entry.entry_type|string)) }}
+        <span class="{{ entry.status.heading_styles() }}">
+            {%- if entry|hasattr("parent") and entry.parent is not none -%}
+                {{ util.href("#entry" + entry.parent.id|string, gettext(entry.parent.entry_type.left_shortname)) }}:
+                {{ gettext(entry.entry_type.right_shortname) }}
+            {%- else -%}
+                {{ gettext(entry.entry_type|string) }}
+            {%- endif -%}
+        </span>
+        {% if entry.status.get_label() %}
+            <span class="{{ entry.status.label_styles() }}">
+                {{- "(" + gettext(entry.status.get_label()) + ")" -}}
+            </span>
         {% endif %}
     </strong>
-    {% if entry.concerned_id %}
+    {% if entry.concerned_id and ('persona' not in ambience or ambience['persona']['id'] != entry.concerned_id) %}
+        {# On measure pages, the case (and thus its personas) is not available, thus they are supplied separately to the template. #}
+        {% set personas = entry.case.personas if entry|hasattr("case") else personas %}
         {% trans concerned=util.persona_anchor(personas[entry.concerned_id], icon='user') %}
              (for {{ concerned }})
         {% endtrans %}
     {% endif %}
 {% endmacro %}
 
+{% macro entry_version_timespan(entry_version) %}
+    <div class="float-right text-right {{ entry_version.entry.status.timespan_styles() }}" style="margin-bottom: 5px;">
+        {{ entry_version.timestamp|datetime(lang=lang) -}}
+        {% if entry_version.etime %}
+            – {{ entry_version.etime|datetime(lang=lang) }}
+        {% endif %}
+    </div>
+{% endmacro %}
+
 {% macro entry_status(entry) %}
     {{ pretty_entry_heading(entry) }}
     <br />
     {{ gettext("by") }}
-    {% for author_id in entry.active_version.authors -%}
+    {% for author in entry.active_version.author_personas -%}
         {%- if not loop.first -%}, {% endif -%}
-        {{ util.persona_anchor(personas[author_id]) -}}
+        {{ util.persona_anchor(author) -}}
     {% endfor %}
     <br />
     <span class="text-muted">
@@ -61,15 +79,15 @@
         ) }}
         <br />
         {% trans mtime=entry.active_version.ctime|datetime(lang=lang),
-                 submitted_by=util.persona_anchor(personas[entry.active_version.submitted_by]),
+                 submitted_by=util.persona_anchor(entry.case.personas[entry.active_version.submitted_by]),
                  ctime=entry.all_versions[0].ctime|datetime(lang=lang),
-                 first_submitted_by=util.persona_anchor(personas[entry.all_versions[0].submitted_by]) %}
+                 first_submitted_by=util.persona_anchor(entry.case.personas[entry.all_versions[0].submitted_by]) %}
             Created at {{ ctime }} by {{ first_submitted_by }};
             last changed at {{ mtime }} by {{ submitted_by }}.
         {% endtrans %}
     {% else %}
         {% trans ctime=entry.active_version.ctime|datetime(lang=lang),
-                 submitted_by=util.persona_anchor(personas[entry.active_version.submitted_by]) %}
+                 submitted_by=util.persona_anchor(entry.case.personas[entry.active_version.submitted_by]) %}
             Created at {{ ctime }} by {{ submitted_by }}.
         {% endtrans %}
     {% endif %}

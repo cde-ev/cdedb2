@@ -3,7 +3,7 @@
 import copy
 import datetime
 import decimal
-from typing import Optional, cast
+from typing import cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -116,7 +116,7 @@ class TestCoreBackend(BackendTest):
 
     @as_users("anton")
     def test_entity_persona(self) -> None:
-        persona_id: Optional[int] = -1
+        persona_id: int | None = -1
         while True:
             persona_id = self.core.next_persona(
                 self.key, persona_id=persona_id, is_member=None, is_archived=False
@@ -126,14 +126,14 @@ class TestCoreBackend(BackendTest):
                 break
 
             # Validate ml data
-            persona = self.core.get_ml_user(self.key, persona_id)
-            affirm(vtypes.Persona, persona)
+            ml_persona = self.core.get_ml_user(self.key, persona_id)
+            affirm(vtypes.Persona, ml_persona.as_dict())
 
             # Validate event data if applicable
-            if not persona['is_event_realm']:
+            if not ml_persona.is_event_realm:
                 continue
 
-            persona = self.core.get_event_user(self.key, persona_id)
+            persona = self.core.get_event_user(self.key, persona_id).as_dict()
             if persona_id != USER_DICT["inga"]["id"]:
                 affirm(vtypes.Persona, persona)
             else:
@@ -162,7 +162,7 @@ class TestCoreBackend(BackendTest):
         new_name = "Zelda"
         self.core.set_persona(self.key, {'id': self.user['id'], 'nickname': new_name})
         self.assertEqual(
-            new_name, self.core.retrieve_persona(self.key, self.user['id'])['nickname']
+            new_name, self.core.get_persona(self.key, self.user['id']).nickname
         )
 
     @as_users("anton", "berta", "janis", maintain_data=True)
@@ -250,12 +250,13 @@ class TestCoreBackend(BackendTest):
         new_hash = self.core.get_foto_store(self.key).store(new_foto)
         self.assertLess(0, self.core.change_foto(self.key, persona_id, new_hash))
         cde_user = self.core.get_cde_user(self.key, persona_id)
-        self.assertEqual(get_hash(new_foto), cde_user['foto'])
+        self.assertEqual(get_hash(new_foto), cde_user.foto)
+        assert cde_user.foto is not None
         self.assertEqual(
-            new_foto, self.core.get_foto_store(self.key).get(cde_user['foto'])
+            new_foto, self.core.get_foto_store(self.key).get(cde_user.foto)
         )
         self.assertGreater(0, self.core.change_foto(self.key, persona_id, None))
-        self.assertIsNone(self.core.get_cde_user(self.key, persona_id)['foto'])
+        self.assertIsNone(self.core.get_cde_user(self.key, persona_id).foto)
 
     def test_verify_existence(self) -> None:
         self.assertTrue(self.core.verify_existence(self.key, "anton@example.cde"))
@@ -554,7 +555,7 @@ class TestCoreBackend(BackendTest):
 
         def persona_membership(rs: RequestState, persona_id: int) -> CdEDBObject:
             return self.core.retrieve_persona(
-                rs, persona_id, ("is_member", "trial_member")
+                rs, persona_id, ["is_member", "trial_member"]
             )
 
         def log_entry(code: const.FinanceLogCodes, members: int) -> CdEDBObject:
@@ -679,7 +680,7 @@ class TestCoreBackend(BackendTest):
 
         def persona_finances(rs: RequestState, persona_id: int) -> CdEDBObject:
             return self.core.retrieve_persona(
-                rs, persona_id, ("balance", "trial_member")
+                rs, persona_id, ["balance", "trial_member"]
             )
 
         persona_id = 2
@@ -871,9 +872,8 @@ class TestCoreBackend(BackendTest):
         new_id = self.core.genesis(self.key, case_id)
         self.assertLess(0, new_id)
         value = self.core.get_event_user(self.key, new_id)
-        persona_expectation = expectation.persona.as_dict()
-        persona_expectation["id"] = new_id
-        self.assertEqual(persona_expectation, value)
+        expectation.persona.id = vtypes.PersonaID(vtypes.ID(new_id))
+        self.assertEqual(expectation.persona, value)
 
     @as_users("anton")
     def test_genesis_ml(self) -> None:
@@ -948,8 +948,8 @@ class TestCoreBackend(BackendTest):
         new_id = self.core.genesis(self.key, case_id)
         self.assertLess(0, new_id)
         value = self.core.get_ml_user(self.key, new_id)
-        persona_expectation = expectation.persona.as_dict()
-        persona_expectation["id"] = new_id
+        persona_expectation = expectation.persona
+        persona_expectation.id = vtypes.PersonaID(vtypes.ID(new_id))
         self.assertEqual(persona_expectation, value)
         # make sure the notes attribute is carried over
         notes = self.core.get_total_persona(self.key, new_id)["notes"]
@@ -1041,7 +1041,7 @@ class TestCoreBackend(BackendTest):
         expectation.reviewer = self.user['id']
         new_id = self.core.genesis(self.key, case_id)
         self.assertLess(0, new_id)
-        value = self.core.get_cde_user(self.key, new_id)
+        value = self.core.get_cde_user(self.key, new_id).as_dict()
         persona_expectation = expectation.persona.as_dict()
         persona_expectation.update({
             "id": new_id,
@@ -1133,23 +1133,32 @@ class TestCoreBackend(BackendTest):
             'is_cde_realm': True,
             'username': 'berta@example.cde',
         }
-        # TODO check again after adjusting get_persona function
-        # self.assertEqual(expectation, self.core.get_persona(self.key, 2))
+        self.assertEqual(
+            models.CorePersona(**expectation),  # type: ignore[arg-type]
+            self.core.get_persona(self.key, 2),
+        )
         expectation.update({
             'is_ml_admin': False,
             'is_cdelokal_admin': False,
         })
-        self.assertEqual(expectation, self.core.get_ml_user(self.key, 2))
+        self.assertEqual(
+            models.MlPersona(**expectation),  # type: ignore[arg-type]
+            self.core.get_ml_user(self.key, 2),
+        )
         expectation_assembly = expectation.copy()
         expectation_assembly.update({
             'is_assembly_admin': False,
         })
-        self.assertEqual(expectation_assembly, self.core.get_assembly_user(self.key, 2))
+        self.assertEqual(
+            models.AssemblyPersona(**expectation_assembly),  # type: ignore[arg-type]
+            self.core.get_assembly_user(self.key, 2),
+        )
         expectation_event = expectation.copy()
         expectation_event.update({
             'is_event_admin': False,
             'is_complaint_admin': False,
             'is_member': True,
+            'is_searchable': True,
             'address': 'Im Garten 77',
             'address_supplement': 'bei Spielmanns',
             'birthday': datetime.date(1981, 2, 11),
@@ -1165,7 +1174,10 @@ class TestCoreBackend(BackendTest):
             'telephone': '+495432987654321',
             'title': 'Dr.',
         })
-        self.assertEqual(expectation_event, self.core.get_event_user(self.key, 2))
+        self.assertEqual(
+            models.EventPersona(**expectation_event),  # type: ignore[arg-type]
+            self.core.get_event_user(self.key, 2),
+        )
         expectation.update({**expectation_event, **expectation_assembly})
         expectation.update({
             'is_cde_admin': False,
@@ -1202,7 +1214,10 @@ class TestCoreBackend(BackendTest):
             'username': 'berta@example.cde',
             'weblink': '<https://www.bundestag.cde>',
         })
-        self.assertEqual(expectation, self.core.get_cde_user(self.key, 2))
+        self.assertEqual(
+            models.CdEPersona(**expectation),  # type: ignore[arg-type]
+            self.core.get_cde_user(self.key, 2),
+        )
         expectation['notes'] = 'Beispielhaft, Besser, Baum.'
         self.assertEqual(expectation, self.core.get_total_persona(self.key, 2))
         # self.fail("Reminder to check get_personas")
@@ -1365,21 +1380,21 @@ class TestCoreBackend(BackendTest):
             "is_finance_admin": True,
         }
 
-        case_id = self.core.initialize_privilege_change(self.key, data)
-        self.assertLess(0, case_id)
+        change_id = self.core.initialize_privilege_change(self.key, data)
+        self.assertLess(0, change_id)
 
-        persona = self.core.get_persona(self.key, new_admin["id"])
-        self.assertFalse(persona["is_cde_admin"])
-        self.assertFalse(persona["is_finance_admin"])
+        persona = self.core.get_persona_status(self.key, new_admin["id"])
+        self.assertFalse(persona.is_cde_admin)
+        self.assertFalse(persona.is_finance_admin)
 
         self.login(admin2)
         self.core.finalize_privilege_change(
-            self.key, case_id, const.PrivilegeChangeStati.approved
+            self.key, change_id, const.PrivilegeChangeStati.approved
         )
 
-        persona = self.core.get_persona(self.key, new_admin["id"])
-        self.assertTrue(persona["is_cde_admin"])
-        self.assertTrue(persona["is_finance_admin"])
+        persona = self.core.get_persona_status(self.key, new_admin["id"])
+        self.assertTrue(persona.is_cde_admin)
+        self.assertTrue(persona.is_finance_admin)
 
         self.login(admin1)
         core_log_expectation = [
@@ -1509,7 +1524,9 @@ class TestCoreBackend(BackendTest):
         self.login("anton")
         admin_key = self.key
         self.event.delete_registration(
-            self.key, 7, ("registration_parts", "course_choices", "registration_tracks")
+            self.key,
+            vtypes.RegistrationID(vtypes.ID(7)),
+            ("registration_parts", "course_choices", "registration_tracks"),
         )
         for u in USER_DICT.values():
             self.login("vera")

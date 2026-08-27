@@ -1,21 +1,21 @@
 <<# This is just a part of a tex document, so we do not inherit the base template. -#>>
 
 % All attendees:
-<<% for id, attendee in attendees.all|keydictsort(EntitySorter.persona) -%>>
+<<% for attendee in attendees.all.values() -%>>
 \participant{<<< attendee|persona_name()|te >>>}
 <<% endfor %>>
 
 % Early attendees (cutoff: <<< attendees.cutoff|datetime >>>):
-<<% for id, attendee in attendees.early|keydictsort(EntitySorter.persona) -%>>
+<<% for attendee in attendees.early.values() -%>>
 \participant{<<< attendee|persona_name()|te >>>}
 <<% endfor %>>
 
 % Late attendees (cutoff: <<< attendees.cutoff|datetime >>>):
-<<% for id, attendee in attendees.late|keydictsort(EntitySorter.persona) -%>>
+<<% for attendee in attendees.late.values() -%>>
 \participant{<<< attendee|persona_name()|te >>>}
 <<% endfor %>>
 
 % Other attendees:
-<<% for id, attendee in attendees.undetermined|keydictsort(EntitySorter.persona) -%>>
+<<% for attendee in attendees.undetermined.values() -%>>
 \participant{<<< attendee|persona_name()|te >>>}
 <<% endfor %>>

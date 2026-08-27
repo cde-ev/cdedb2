@@ -25,11 +25,8 @@
         {{ util.href(cdedblink("event/show_free_texts"), gettext("Free Texts"), icon='bars', aclass='btn btn-info btn-sm') }}
         {{ util.href(cdedblink("event/part_summary"), gettext("Event Parts"), icon='clock', aclass='btn btn-info btn-sm') }}
         {{ util.href(cdedblink("event/orga_token_summary"), gettext("Orga Tokens"), icon="robot", aclass="btn btn-sm btn-default") }}
-        {% if is_privileged_for("event/remove_orga", admin_view_to_consider="event_mgmt") %}
-            {{ util.href(cdedblink("event/manage_orgas") + "#orgas", gettext("Manage Orgas"), aclass="btn btn-default btn-sm", icon="user-friends") }}
-        {% endif %}
-        {% if is_privileged_for("event/remove_caretaker", admin_view_to_consider="event_mgmt") %}
-            {{ util.href(cdedblink("event/manage_orgas") + "#caretakers", gettext("Manage Caretakers"), aclass="btn btn-default btn-sm", icon="hands-holding-circle") }}
+        {% if is_privileged_for("event/manage_roles", admin_view_to_consider="event_mgmt") %}
+            {{ util.href(cdedblink("event/manage_roles"), gettext("Manage Roles"), aclass="btn btn-default btn-sm", icon="user-friends") }}
         {% endif %}
     </div>
 

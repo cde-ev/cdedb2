@@ -34,7 +34,7 @@ import math
 from collections.abc import Collection, Iterator
 from pathlib import Path
 from secrets import token_urlsafe
-from typing import NamedTuple, Optional, Protocol
+from typing import NamedTuple, Protocol, cast
 
 from schulze_condorcet import schulze_evaluate
 
@@ -79,22 +79,24 @@ from cdedb.common.roles import implying_realms
 from cdedb.common.sorting import EntitySorter, mixed_existence_sorter, xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import DatabaseValue_s, Params
+from cdedb.models.common import CdEDataclassMap
+from cdedb.models.core import AssemblyPersona
 
 
 class BallotConfiguration(NamedTuple):
     vote_begin: datetime.datetime
     vote_end: datetime.datetime
-    vote_extension_end: Optional[datetime.datetime]
+    vote_extension_end: datetime.datetime | None
     abs_quorum: int
     rel_quorum: int
 
 
 @dataclasses.dataclass
-class AssembyAttendees:
-    all: CdEDBObjectMap
-    early: CdEDBObjectMap
-    late: CdEDBObjectMap
-    undetermined: CdEDBObjectMap
+class AssemblyAttendees:
+    all: CdEDataclassMap[AssemblyPersona]
+    early: CdEDataclassMap[AssemblyPersona]
+    late: CdEDataclassMap[AssemblyPersona]
+    undetermined: CdEDataclassMap[AssemblyPersona]
     cutoff: datetime.datetime
 
 
@@ -190,9 +192,9 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         *,
-        assembly_id: Optional[int] = None,
-        ballot_id: Optional[int] = None,
-        attachment_id: Optional[int] = None,
+        assembly_id: int | None = None,
+        ballot_id: int | None = None,
+        attachment_id: int | None = None,
     ) -> bool:
         """Determine if a user has privileged acces to the given assembly.
 
@@ -214,9 +216,9 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         *,
-        assembly_id: Optional[int] = None,
-        ballot_id: Optional[int] = None,
-        attachment_id: Optional[int] = None,
+        assembly_id: int | None = None,
+        ballot_id: int | None = None,
+        attachment_id: int | None = None,
     ) -> bool:
         """Helper to check authorization.
 
@@ -251,9 +253,9 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         *,
-        assembly_id: Optional[int] = None,
-        ballot_id: Optional[int] = None,
-        attachment_id: Optional[int] = None,
+        assembly_id: int | None = None,
+        ballot_id: int | None = None,
+        attachment_id: int | None = None,
     ) -> bool:
         """Check authorization of this persona.
 
@@ -316,11 +318,11 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         code: const.AssemblyLogCodes,
-        assembly_id: Optional[int],
+        assembly_id: int | None,
         *,
-        ballot_id: Optional[int] = None,
-        persona_id: Optional[int] = None,
-        change_note: Optional[str] = None,
+        ballot_id: int | None = None,
+        persona_id: int | None = None,
+        change_note: str | None = None,
     ) -> DefaultReturnCode:
         """Make an entry in the log.
 
@@ -368,7 +370,7 @@ class AssemblyBackend(AbstractBackend):
             pass
         elif not assembly_ids:
             raise PrivilegeError(n_("Must be admin to access global log."))
-        elif all(self.is_presider(rs, assembly_id=id_) for id_ in assembly_ids):
+        elif all(self.may_assemble(rs, assembly_id=id_) for id_ in assembly_ids):
             pass
         else:
             raise PrivilegeError(n_("Not privileged."))
@@ -410,8 +412,8 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         *,
-        ballot_ids: Optional[Collection[int]] = None,
-        attachment_ids: Optional[Collection[int]] = None,
+        ballot_ids: Collection[int] | None = None,
+        attachment_ids: Collection[int] | None = None,
     ) -> set[int]:
         """Helper to retrieve a corresponding assembly id."""
         ballot_ids = affirm(set[vtypes.ID], ballot_ids or set())
@@ -435,8 +437,8 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         *,
-        ballot_id: Optional[int] = None,
-        attachment_id: Optional[int] = None,
+        ballot_id: int | None = None,
+        attachment_id: int | None = None,
     ) -> int:
         """Singular version of `get_assembly_ids`.
 
@@ -467,10 +469,10 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         *,
-        assembly_id: Optional[int] = None,
-        ballot_id: Optional[int] = None,
-        attachment_id: Optional[int] = None,
-        persona_id: Optional[int] = None,
+        assembly_id: int | None = None,
+        ballot_id: int | None = None,
+        attachment_id: int | None = None,
+        persona_id: int | None = None,
     ) -> bool:
         """Check whether a persona attends a specific assembly/ballot.
 
@@ -512,8 +514,8 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         *,
-        assembly_id: Optional[int] = None,
-        ballot_id: Optional[int] = None,
+        assembly_id: int | None = None,
+        ballot_id: int | None = None,
     ) -> bool:
         """Check whether this persona attends a specific assembly/ballot.
 
@@ -525,6 +527,28 @@ class AssemblyBackend(AbstractBackend):
         assembly_id = affirm(vtypes.ID | None, assembly_id)
         ballot_id = affirm(vtypes.ID | None, ballot_id)
         return self.check_attendance(rs, assembly_id=assembly_id, ballot_id=ballot_id)
+
+    @access("assembly")
+    def list_attended_assemblies(
+        self, rs: RequestState, persona_id: vtypes.PersonaID
+    ) -> set[int]:
+        persona_id = affirm(vtypes.PersonaID, persona_id)
+        if not (
+            self.is_admin(rs)
+            or self.core.is_relative_admin(rs, persona_id)
+            or rs.user.persona_id == persona_id
+        ):
+            raise PrivilegeError
+        return {
+            e["assembly_id"]
+            for e in self.sql_select(
+                rs,
+                "assembly.attendees",
+                ["assembly_id"],
+                [persona_id],
+                entity_key="persona_id",
+            )
+        }
 
     @access("assembly", "ml_admin")
     def list_attendees(self, rs: RequestState, assembly_id: int) -> set[int]:
@@ -555,14 +579,14 @@ class AssemblyBackend(AbstractBackend):
     @access("assembly")
     def get_attendees(
         self, rs: RequestState, assembly_id: int, cutoff: datetime.datetime
-    ) -> AssembyAttendees:
+    ) -> AssemblyAttendees:
         assembly_id = affirm(vtypes.ID, assembly_id)
         cutoff = affirm(datetime.datetime, cutoff)
 
         if not self.may_access(rs, assembly_id=assembly_id):
             raise PrivilegeError()
 
-        all_attendees = {
+        all_attendees_ids = {
             e['persona_id']
             for e in self.sql_select(
                 rs,
@@ -572,13 +596,7 @@ class AssemblyBackend(AbstractBackend):
                 entity_key="assembly_id",
             )
         }
-        attendee_data = {
-            e['id']: e
-            for e in xsorted(
-                self.core.get_assembly_users(rs, all_attendees).values(),
-                key=EntitySorter.persona,
-            )
-        }
+        all_attendees = self.core.get_assembly_users(rs, all_attendees_ids)
 
         q = """
             SELECT persona_id FROM assembly.log
@@ -589,36 +607,31 @@ class AssemblyBackend(AbstractBackend):
             "code": const.AssemblyLogCodes.new_attendee,
             "ctime": cutoff,
         }
-        early_list = [
-            attendee_data[e['persona_id']] for e in self.query_all(rs, q, params)
-        ]
-        early_attendees = {
-            e['id']: e for e in xsorted(early_list, key=EntitySorter.persona)
+        early_attendees_ids = {e['persona_id'] for e in self.query_all(rs, q, params)}
+        early_attendees: CdEDataclassMap[AssemblyPersona] = {
+            e.id: e for e in all_attendees.values() if e.id in early_attendees_ids
         }
+
         q = """
             SELECT persona_id FROM assembly.log
             WHERE assembly_id = %(assembly_id)s AND code = %(code)s AND ctime >= %(ctime)s
         """
-        late_list = [
-            attendee_data[e['persona_id']] for e in self.query_all(rs, q, params)
-        ]
-        late_attendees = {
-            e['id']: e for e in xsorted(late_list, key=EntitySorter.persona)
-        }
-        if early_attendees.keys() & late_attendees.keys():  # pragma: no cover
-            raise ValueError("Unexpected overlap in early and late attendees.")
-        undetermined_list = [
-            attendee_data[persona_id]
-            for persona_id in (
-                all_attendees - early_attendees.keys() - late_attendees.keys()
-            )
-        ]
-        undetermined_attendees = {
-            e['id']: e for e in xsorted(undetermined_list, key=EntitySorter.persona)
+        late_attendees_ids = {e['persona_id'] for e in self.query_all(rs, q, params)}
+        late_attendees: CdEDataclassMap[AssemblyPersona] = {
+            e.id: e for e in all_attendees.values() if e.id in late_attendees_ids
         }
 
-        return AssembyAttendees(
-            all=attendee_data,
+        if early_attendees_ids & late_attendees_ids:  # pragma: no cover
+            raise ValueError("Unexpected overlap in early and late attendees.")
+        undetermined_attendee_ids = (
+            all_attendees_ids - early_attendees_ids - late_attendees_ids
+        )
+        undetermined_attendees: CdEDataclassMap[AssemblyPersona] = {
+            e.id: e for e in all_attendees.values() if e.id in undetermined_attendee_ids
+        }
+
+        return AssemblyAttendees(
+            all=all_attendees,
             early=early_attendees,
             late=late_attendees,
             undetermined=undetermined_attendees,
@@ -629,7 +642,7 @@ class AssemblyBackend(AbstractBackend):
     def list_assemblies(
         self,
         rs: RequestState,
-        is_active: Optional[bool] = None,
+        is_active: bool | None = None,
         restrictive: bool = False,
     ) -> CdEDBObjectMap:
         """List all assemblies.
@@ -695,7 +708,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def set_assembly(
-        self, rs: RequestState, data: CdEDBObject, change_note: Optional[str] = None
+        self, rs: RequestState, data: CdEDBObject, change_note: str | None = None
     ) -> DefaultReturnCode:
         """Update some keys of an assembly.
 
@@ -918,7 +931,7 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         assembly_id: int,
-        cascade: Optional[Collection[str]] = None,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Remove an assembly.
 
@@ -1229,7 +1242,7 @@ class AssemblyBackend(AbstractBackend):
                 existing = set(current['candidates'].keys())
                 if not (existing >= {x for x in data['candidates'] if x > 0}):
                     raise ValueError(
-                        n_("Non-existing candidates specified.")
+                        n_("Non-existing option specified.")
                     )  # TODO: coverage
                 new = {x for x in data['candidates'] if x < 0}
                 updated = {
@@ -1340,7 +1353,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def comment_concluded_ballot(
-        self, rs: RequestState, ballot_id: int, comment: Optional[str] = None
+        self, rs: RequestState, ballot_id: int, comment: str | None = None
     ) -> DefaultReturnCode:
         """Add a comment to a concluded ballot.
 
@@ -1434,7 +1447,7 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         ballot_id: int,
-        cascade: Optional[Collection[str]] = None,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Remove a ballot.
 
@@ -1635,7 +1648,7 @@ class AssemblyBackend(AbstractBackend):
 
     @access("assembly")
     def vote(
-        self, rs: RequestState, ballot_id: int, vote: str, secret: Optional[str]
+        self, rs: RequestState, ballot_id: int, vote: str, secret: str | None
     ) -> DefaultReturnCode:
         """Submit a vote.
 
@@ -1706,7 +1719,7 @@ class AssemblyBackend(AbstractBackend):
         ballot_id = affirm(vtypes.ID, ballot_id)
 
         if not self.check_attendance(rs, ballot_id=ballot_id):
-            raise PrivilegeError(n_("Must attend the ballot."))
+            raise PrivilegeError(n_("You are no attendee of this assembly."))
 
         query = """
             SELECT has_voted FROM assembly.voter_register
@@ -1747,7 +1760,7 @@ class AssemblyBackend(AbstractBackend):
         secret = affirm(vtypes.PrintableASCII | None, secret)
 
         if not self.check_attendance(rs, ballot_id=ballot_id):
-            raise PrivilegeError(n_("Must attend the ballot."))
+            raise PrivilegeError(n_("You are no attendee of this assembly."))
 
         with Atomizer(rs):
             has_voted = self.has_voted(rs, ballot_id)
@@ -1770,7 +1783,7 @@ class AssemblyBackend(AbstractBackend):
         return vote['vote']
 
     @access("assembly")
-    def get_ballot_result(self, rs: RequestState, ballot_id: int) -> Optional[bytes]:
+    def get_ballot_result(self, rs: RequestState, ballot_id: int) -> bytes | None:
         """Retrieve the content of a result file for a ballot.
 
         Returns None if the ballot is not tallied yet or if the file is missing.
@@ -1793,7 +1806,7 @@ class AssemblyBackend(AbstractBackend):
             return ret
 
     @access("assembly")
-    def tally_ballot(self, rs: RequestState, ballot_id: int) -> Optional[bytes]:
+    def tally_ballot(self, rs: RequestState, ballot_id: int) -> bytes | None:
         """Evaluate the result of a ballot.
 
         After voting has finished all votes are tallied and a result
@@ -1862,12 +1875,13 @@ class AssemblyBackend(AbstractBackend):
                 SELECT persona_id FROM assembly.voter_register
                 WHERE ballot_id = %(ballot_id)s and has_voted = True
             """
-            voter_ids = self.query_all(rs, query, {"ballot_id": ballot_id})
-            voters = self.core.get_personas(rs, tuple(unwrap(e) for e in voter_ids))
-            voter_names = list(
-                f"{e['given_names']} {e['family_name']}"
-                for e in xsorted(voters.values(), key=EntitySorter.persona)
-            )
+            voter_ids = [
+                e['persona_id']
+                for e in self.query_all(rs, query, {"ballot_id": ballot_id})
+            ]
+            voters = [
+                v.get_name() for v in self.core.get_personas(rs, voter_ids).values()
+            ]
             vote_list = xsorted(votes, key=json_serialize)
             result = {
                 "assembly": assembly['title'],
@@ -1875,7 +1889,7 @@ class AssemblyBackend(AbstractBackend):
                 "result": vote_result,
                 "candidates": candidates,
                 "use_bar": ballot['use_bar'],
-                "voters": voter_names,
+                "voters": voters,
                 "votes": vote_list,
             }
             path = self.get_ballot_file_path(rs, ballot_id)
@@ -1928,7 +1942,7 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         assembly_id: int,
-        cascade: Optional[set[str]] = None,
+        cascade: set[str] | None = None,
     ) -> DefaultReturnCode:
         """Do housekeeping after an assembly has ended.
 
@@ -2085,7 +2099,7 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         attachment_id: int,
-        cascade: Optional[Collection[str]] = None,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Remove an attachment."""
         attachment_id = affirm(vtypes.ID, attachment_id)
@@ -2261,6 +2275,8 @@ class AssemblyBackend(AbstractBackend):
         """
         ballot_id = affirm(vtypes.ID, ballot_id)
         attachment_ids = affirm(set[vtypes.ID], attachment_ids)
+        attachment_ids = cast(set[vtypes.ID], attachment_ids)  # mypy bug.
+
         with Atomizer(rs):
             ret = 1
             current_attachments = self.list_attachments(rs, ballot_id=ballot_id)
@@ -2332,7 +2348,7 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         attachment_ids: Collection[int],
-        timestamp: Optional[datetime.datetime] = None,
+        timestamp: datetime.datetime | None = None,
     ) -> CdEDBObjectMap:
         """Helper to get only the latest (non-deleted) version of attachments.
 
@@ -2633,8 +2649,8 @@ class AssemblyBackend(AbstractBackend):
         self,
         rs: RequestState,
         *,
-        assembly_id: Optional[int] = None,
-        ballot_id: Optional[int] = None,
+        assembly_id: int | None = None,
+        ballot_id: int | None = None,
     ) -> set[int]:
         """List all files attached to an assembly/ballot.
 

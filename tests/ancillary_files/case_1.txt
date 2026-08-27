@@ -48,6 +48,26 @@ Ich war mit Berta in einem Haus und konnte durch das Schnarchen so wenig schlafe
     - Charly Clown
 - Zeitstempel: 28.05.2025, 17:00:00
 
+## Eintrag (11): Vorläufiges Anrufen des Schiedsgerichts
+- von:
+    - Garcia Generalis
+- Zeitstempel: 28.05.2025, 17:30:00
+- Kindeinträge:
+    - Vorläufige Maßnahme (12) 28.05.2025, 17:45:00
+- Beschreibung (29 Zeichen):
+
+Umquartierung für eine Nacht.
+
+## Eintrag (12): Vorläufige Maßnahme
+- Elterneintrag: Schiedsgericht (vorläufig) (11) 28.05.2025, 17:30:00
+- Betrifft: Daniel Dino
+- von:
+    - Garcia Generalis
+- Zeitstempel: 28.05.2025, 17:45:00
+- Beschreibung (16 Zeichen):
+
+Erholungsurlaub.
+
 ## Eintrag (4): Übereinkunft
 - von:
     - Charly Clown

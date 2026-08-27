@@ -59,7 +59,17 @@
                         {% if persona %}
                             <li>
                                 {% trans %}Matched User{% endtrans %}:
-                                {{ util.print_doppelganger(persona, link=True) }}
+                                {{ util.persona_anchor(persona, include_nickname=True) }}
+                                {% if persona['is_archived'] %}
+                                    (<i>{{ gettext("archived") }}</i>)
+                                {% else %}
+                                    &lt;{{ persona['username'] }}&gt;
+                                {% endif %}
+                                {%- if persona|hasattr('birthday') and persona['birthday'] %}
+                                    ({{ gettext("born") }}
+                                    {{ persona['birthday']|date(lang=lang) or "-" }})
+                                {% endif %}
+                                {{ persona['id']|cdedbid }}
                             </li>
                         {% endif %}
                         {% if event %}
@@ -150,7 +160,7 @@
                 <a class="btn btn-default btn-sm" href="#transaction-container{{ params["jump_order"][t_id] }}">
                     {{ util.make_icon('arrow-down') }}
                     {% trans %}
-                        Go to next Error.
+                        Go to next Error / Warning.
                     {% endtrans %}
                 </a>
             {% else %}
@@ -171,7 +181,7 @@
         <form action="{{ cdedblink('cde/parse_statement') }}" method="POST" id="statementform" enctype="multipart/form-data">
             {{ util.anti_csrf_token('cde/parse_statement') }}
             {{ util.form_input_file(name="statement_file", label=gettext("Statement"), horizontal=False, accept="text/csv,.csv",
-                    info=gettext("Directly paste the Bank Statement from Bank für Sozialwirtschaft or Skatbank here.")) }}
+                    info=gettext("Directly paste the Bank Statement from SozialBank or Skatbank here.")) }}
 
             {{ util.form_input_submit(label=gettext("Parse"), icon="chevron-right", horizontal=False) }}
         </form>
@@ -199,11 +209,11 @@
             {% endif %}
             </div>
             <div class="p button-par">
-            {% if params["jump_order"][None] %}
+            {% if None in params["jump_order"] %}
                 <a class="btn btn-default btn-sm" href="#transaction-container{{ params["jump_order"][None] }}">
                     {{ util.make_icon('arrow-down') }}
                     {% trans %}
-                        Go to first Error.
+                        Go to first Error / Warning.
                     {% endtrans %}
                 </a>
             {% endif %}

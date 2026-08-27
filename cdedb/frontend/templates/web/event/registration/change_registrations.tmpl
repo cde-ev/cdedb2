@@ -82,7 +82,7 @@
                                 "registrations. Fields that are equal in all registrations are already "
                                 "selected.")) }}
 
-    <form action="{{ cdedblink('event/change_registrations') }}" method="POST" id="changeregistrationsform"
+    <form action="{{ cdedblink('event/change_registrations') }}" method="POST" id="changeregistrationsform" autocomplete="off"
           class="form-horizontal">
         {{ util.anti_csrf_token('event/change_registrations') }}
         {{ util.input_hidden("reg_ids", value=registrations.keys()|join(',')) }}
@@ -93,7 +93,7 @@
             {% endfor %}
         {% endcall %}
 
-        {% if values['enable.gender'] %}
+        {% if 'enable_reg.gender' in values and values['enable_reg.gender'] %}
             {{ util.form_input_static(label=gettext("Gender"), value=gettext(enums['Genders'](values['reg.gender'])|string)) }}
         {% else %}
             {{ util.form_input_static(label=gettext("Gender"), value="unterschiedlich") }}

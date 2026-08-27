@@ -26,7 +26,7 @@ from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import IncludeEmpty
 from cdedb.database.constants import *  # noqa: F403
-from cdedb.models.event_constraint_violations import (
+from cdedb.models.event.constraint_violations import (
     ViolationKind,
     ViolationSeverity,
 )

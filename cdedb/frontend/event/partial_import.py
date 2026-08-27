@@ -8,9 +8,9 @@ both the partial import and the questionnaire import.
 import collections.abc
 import json
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any
 
-import werkzeug.exceptions
+import werkzeug.datastructures
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
@@ -18,7 +18,6 @@ import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
     CdEDBObject,
-    CdEDBObjectMap,
     RequestState,
     get_mandatory_form_fields,
     json_serialize,
@@ -41,7 +40,9 @@ from cdedb.models.event import ReducedCheckinPeriod
 class EventImportMixin(EventBaseFrontend):
     @access("event")
     @event_guard(EventPrivileges.basic_write)
-    def questionnaire_import_form(self, rs: RequestState, event_id: int) -> Response:
+    def questionnaire_import_form(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         """Render form for uploading questionnaire data."""
         return self.render(
             rs,
@@ -57,11 +58,11 @@ class EventImportMixin(EventBaseFrontend):
     def questionnaire_import(
         self,
         rs: RequestState,
-        event_id: int,
-        json_file: Optional[werkzeug.datastructures.FileStorage],
+        event_id: vtypes.EventID,
+        json_file: werkzeug.datastructures.FileStorage | None,
         extend_questionnaire: bool,
         skip_existing_fields: bool,
-        token: Optional[str],
+        token: str | None,
     ) -> Response:
         """Import questionnaire rows and custom datafields.
 
@@ -72,15 +73,9 @@ class EventImportMixin(EventBaseFrontend):
             Otherwise, duplicate field names will cause an error and prevent the import.
         """
         kwargs: CdEDBObject = {
-            'field_definitions': {
-                f.id: f.as_dict() for f in rs.ambience['event'].fields.values()
-            },
-            'fees_by_field': self.eventproxy.get_event_fees_per_entity(
-                rs, event_id
-            ).fields,
-            'questionnaire': self.eventproxy.get_questionnaire(rs, event_id),
             'extend_questionnaire': extend_questionnaire,
             'skip_existing_fields': skip_existing_fields,
+            'all_questionnaires': self.eventproxy.get_all_questionnaires(rs, event_id),
         }
         data = check(rs, vtypes.SerializedEventQuestionnaireUpload, json_file, **kwargs)
         if rs.has_validation_errors():
@@ -88,7 +83,7 @@ class EventImportMixin(EventBaseFrontend):
         assert data is not None
 
         code = self.eventproxy.questionnaire_import(
-            rs, event_id, fields=data['fields'], questionnaire=data['questionnaire']
+            rs, event_id, fields=data['fields'], questionnaires=data['questionnaire']
         )
 
         rs.notify_return_code(code)
@@ -96,7 +91,9 @@ class EventImportMixin(EventBaseFrontend):
 
     @access("event")
     @event_guard(EventPrivileges.entities_write)
-    def partial_import_form(self, rs: RequestState, event_id: int) -> Response:
+    def partial_import_form(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> Response:
         """First step of partial import process: Render form to upload file"""
         return self.render(
             rs,
@@ -112,10 +109,10 @@ class EventImportMixin(EventBaseFrontend):
     def partial_import(
         self,
         rs: RequestState,
-        event_id: int,
-        json_file: Optional[werkzeug.datastructures.FileStorage],
-        partial_import_data: Optional[Any],
-        token: Optional[str],
+        event_id: vtypes.EventID,
+        json_file: werkzeug.datastructures.FileStorage | None,
+        partial_import_data: Any | None,
+        token: str | None,
     ) -> Response:
         """Further steps of partial import process
 
@@ -407,8 +404,8 @@ class EventImportMixin(EventBaseFrontend):
     def _make_partial_import_diff_aux(
         rs: RequestState,
         event: models.Event,
-        courses: CdEDBObjectMap,
-        lodgements: CdEDBObjectMap,
+        courses: dict[vtypes.CourseID, CdEDBObject],
+        lodgements: dict[vtypes.LodgementID, CdEDBObject],
     ) -> tuple[CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject]:
         """Helper method, similar to make_registration_query_aux(), to
         generate human readable field names and values for the diff presentation

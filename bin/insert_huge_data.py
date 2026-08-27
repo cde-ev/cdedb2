@@ -7,6 +7,7 @@ import datetime
 import decimal
 import pathlib
 import pprint
+from typing import Any
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -138,7 +139,7 @@ def event(context: Context) -> int:
         'is_participant_list_visible': True,
         'is_course_assignment_visible': True,
         'is_cancelled': False,
-        'registration_text': make_counter(context, 'Veranstaltungsanmeldungstext'),
+        'registration_status_text': make_counter(context, 'Veranstaltungsanmeldungstext'),
         'orga_address': make_counter(context, 'OrgaEmail', suffix='@aka.cde-ev.de'),
         'participant_info': make_counter(context, 'Teilnehmerinformation'),
         'orgas': [persona(context) for _ in range(1 if context.quick else 10)],
@@ -186,7 +187,7 @@ def event(context: Context) -> int:
                 'field_name': make_counter(context, 'VeranstaltungsfeldIntern'),
                 'title': make_counter(context, 'Veranstaltungsfeld'),
                 'sortkey': 0,
-                'kind': const.FieldDatatypes.str,
+                'kind': const.FieldDatatypes.str_multiline,
                 'entries': None,
                 'checkin': False,
             },
@@ -300,29 +301,52 @@ def event(context: Context) -> int:
         for t in tracks
     }
     fields = event.get_event(rs, ret).fields
-    questionnaire = {
-        const.QuestionnaireUsages.additional: [
-            {
-                'field_id': None,
-                'default_value': None,
-                'info': make_counter(context, 'FragebogenText'),
-                'readonly': None,
-                'input_size': None,
-                'title': make_counter(context, 'FragebogenÜberschrift'),
-            }
-        ],
-        const.QuestionnaireUsages.registration: [
-            {
-                'field_id': None,
-                'default_value': None,
-                'info': make_counter(context, 'FragebogenText'),
-                'readonly': None,
-                'input_size': None,
-                'title': make_counter(context, 'FragebogenÜberschrift'),
-            }
-        ],
-    }
-    event.set_questionnaire(rs, ret, questionnaire)
+    additional_questionnaire = [
+        {
+            'role': const.QuestionnaireRowRole.heading,
+            'title': make_counter(context, 'FragebogenÜberschrift'),
+        },
+        {
+            'role': const.QuestionnaireRowRole.text,
+            'text': make_counter(context, 'FragebogenText'),
+        },
+    ]
+    registration_questionnaire: list[dict[str, Any]] = [
+        {
+            'role': const.QuestionnaireRowRole.my_data,
+        },
+        {
+            'role': const.QuestionnaireRowRole.part_selection,
+        },
+        {
+            'role': const.QuestionnaireRowRole.fee_preview,
+        },
+        {
+            'role': const.QuestionnaireRowRole.course_choices,
+        },
+        {
+            'role': const.QuestionnaireRowRole.list_consent,
+        },
+        {
+            'role': const.QuestionnaireRowRole.mixed_lodging,
+        },
+        {
+            'role': const.QuestionnaireRowRole.foto_notice,
+        },
+        {
+            'role': const.QuestionnaireRowRole.registration_notes,
+        },
+        {
+            'role': const.QuestionnaireRowRole.heading,
+            'title': make_counter(context, 'FragebogenÜberschrift'),
+        },
+        {
+            'role': const.QuestionnaireRowRole.text,
+            'text': make_counter(context, 'FragebogenText'),
+        },
+    ]
+    event.set_questionnaire(rs, ret, const.QuestionnaireUsages.additional, additional_questionnaire)
+    event.set_questionnaire(rs, ret, const.QuestionnaireUsages.registration, registration_questionnaire)
     parts = event.get_event(rs, ret).parts
     for _ in range(1 if context.quick else 100):
         event.create_registration(

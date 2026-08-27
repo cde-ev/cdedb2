@@ -6,8 +6,6 @@ for querying information about an event aswell as storing and retrieving such qu
 """
 
 import abc
-from collections.abc import Collection
-from typing import Optional
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -20,17 +18,14 @@ from cdedb.backend.common import (
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
     CdEDBObject,
-    CdEDBObjectMap,
     DefaultReturnCode,
     RequestState,
-    json_serialize,
     merge_dicts,
 )
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.fields import (
     REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS,
-    STORED_EVENT_QUERY_FIELDS,
 )
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import (
@@ -45,7 +40,6 @@ from cdedb.common.query import (
 )
 from cdedb.common.roles import implying_realms
 from cdedb.database.connection import Atomizer
-from cdedb.database.query import DatabaseValue_s
 from cdedb.models.event import CustomQueryFilter
 
 
@@ -68,7 +62,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
         self,
         rs: RequestState,
         query: Query,
-        event_id: Optional[int] = None,
+        event_id: vtypes.EventID | None = None,
         aggregate: bool = False,
     ) -> tuple[CdEDBObject, ...]:
         """Realm specific wrapper around
@@ -80,7 +74,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
         aggregate = affirm(bool, aggregate)
         view = None
         if query.scope == QueryScope.registration:
-            event_id = affirm(vtypes.ID, event_id)
+            event_id = affirm(vtypes.EventID, event_id)
             assert event_id is not None
             if not is_privileged(
                 rs, EventPrivileges.registrations_read_internal, event_id=event_id
@@ -297,7 +291,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
                 """
 
             # Step 4.2: Template for the final course choices table for a track.
-            def course_choices_track_table(track: models.CourseTrack) -> Optional[str]:
+            def course_choices_track_table(track: models.CourseTrack) -> str | None:
                 if track.num_choices <= 0:
                     return None
                 # noinspection PyUnboundLocalVariable
@@ -371,10 +365,10 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
             # Step 7: Construct the final view.
             view = registration_view_template()
         elif query.scope == QueryScope.quick_registration:
-            event_id = affirm(vtypes.ID, event_id)
+            event_id = affirm(vtypes.EventID, event_id)
             if not is_privileged(
                 rs, EventPrivileges.registrations_read, event_id=event_id
-            ):
+            ) and not is_privileged(rs, EventPrivileges.checkin, event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
             query.constraints.append(("event_id", QueryOperators.equal, event_id))
             query.spec['event_id'] = QuerySpecEntry("bool", "")
@@ -400,7 +394,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
                 ))
                 query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
         elif query.scope == QueryScope.event_course:
-            event_id = affirm(vtypes.ID, event_id)
+            event_id = affirm(vtypes.EventID, event_id)
             assert event_id is not None
             if not is_privileged(rs, EventPrivileges.courses_read, event_id=event_id):
                 raise PrivilegeError(n_("Not privileged."))
@@ -594,7 +588,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
 
             view = course_view()
         elif query.scope == QueryScope.lodgement:
-            event_id = affirm(vtypes.ID, event_id)
+            event_id = affirm(vtypes.EventID, event_id)
             assert event_id is not None
             if not is_privileged(
                 rs, EventPrivileges.lodgements_read, event_id=event_id
@@ -702,7 +696,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
 
             # Step 4.2: Template for counting inhabitants.
             def registration_part_count_table(
-                p_id: int, is_camping_mat: Optional[bool]
+                p_id: int, is_camping_mat: bool | None
             ) -> str:
                 if is_camping_mat is None:
                     param_name = 'total_inhabitants'
@@ -779,80 +773,21 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
             raise RuntimeError(n_("Bad scope."), query.scope)
         return self.general_query(rs, query, view=view, aggregate=aggregate)
 
-    @access("event")
+    @access("event", "droid_quick_partial_export", "droid_orga")
     def get_event_queries(
-        self,
-        rs: RequestState,
-        event_id: int,
-        scopes: Optional[Collection[QueryScope]] = None,
-        query_ids: Optional[Collection[int]] = None,
-    ) -> dict[str, Query]:
-        """Retrieve all stored queries for the given event and scope.
-
-        If no scopes are given, all queries are returned instead.
-
-        If a stored query references a custom datafield, that has been deleted, it can
-        still be retrieved, and the reference to the field remains, it will just be
-        omitted, so if the field is added again, it will appear in the query again.
-        """
-        event_id = affirm(vtypes.ID, event_id)
-        scopes = affirm(set[QueryScope], scopes or set())
-        query_ids = affirm(set[vtypes.ID], query_ids or set())
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> models.CdEDataclassMap[models.StoredEventQuery]:
+        event_id = affirm(vtypes.EventID, event_id)
         if not is_privileged(rs, EventPrivileges.basic_read, event_id=event_id):
             raise PrivilegeError(n_("Must be orga to retrieve stored queries."))
-        try:
-            with Atomizer(rs):
-                event = self.get_event(rs, event_id)
-                select = f"""
-                    SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}
-                    FROM event.stored_queries
-                    WHERE event_id = %s
-                """
-                params: list[DatabaseValue_s] = [event_id]
-                if scopes:
-                    select += " AND scope = ANY(%s)"
-                    params.append(scopes)
-                if query_ids:
-                    select += " AND id = ANY(%s)"
-                    params.append(query_ids)
-                query_data = self.query_all(rs, select, params)
-                ret = {}
-                count = fail_count = 0
-                for qd in query_data:
-                    qd["serialized_query"]["query_id"] = qd["id"]
-                    scope = affirm(QueryScope, qd["scope"])
-                    spec = scope.get_spec(event=event)
-                    try:
-                        # The QueryInput takes care of deserialization.
-                        q: Query = affirm(
-                            vtypes.QueryInput,
-                            qd["serialized_query"],
-                            spec=spec,
-                            allow_empty=False,
-                        )
-                        assert q.name is not None and q.query_id is not None
-                    except (ValueError, TypeError):
-                        fail_count += 1
-                        continue
-                    ret[q.name] = q
-                    count += 1
-        except PrivilegeError:
-            raise
-        # Failsafe in case something very unexpected goes wrong, so we don't break
-        # the query pages.
-        except Exception:
-            self.logger.exception(
-                f"Fatal error during retrieval of stored event queries for"
-                f" event_id={event_id} and scopes={scopes}."
+        with Atomizer(rs):
+            event = self.get_event(rs, event_id)
+            data = self.query_all(
+                rs, *models.StoredEventQuery.get_select_query([event_id])
             )
-            return {}
-        if fail_count:
-            rs.notify(
-                "info",
-                n_("%(count)s stored queries could not be retrieved."),
-                {'count': fail_count},
-            )
-        return ret
+            for datum in data:
+                datum['event'] = event
+            return models.StoredEventQuery.many_from_database(data)
 
     @access("event")
     def delete_event_query(self, rs: RequestState, query_id: int) -> DefaultReturnCode:
@@ -860,7 +795,10 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
         query_id = affirm(vtypes.ID, query_id)
         with Atomizer(rs):
             q = self.sql_select_one(
-                rs, "event.stored_queries", ("event_id", "query_name"), query_id
+                rs,
+                models.StoredEventQuery.database_table,
+                ("event_id", "query_name"),
+                query_id,
             )
             if q is None:
                 return 0
@@ -869,7 +807,9 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
             ):
                 raise PrivilegeError(n_("Must be orga to delete queries for an event."))
 
-            ret = self.sql_delete_one(rs, "event.stored_queries", query_id)
+            ret = self.sql_delete_one(
+                rs, models.StoredEventQuery.database_table, query_id
+            )
             if ret:
                 self.event_log(
                     rs,
@@ -881,84 +821,58 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
 
     @access("event")
     def store_event_query(
-        self, rs: RequestState, event_id: int, query: Query
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        scope: QueryScope,
+        data: CdEDBObject,
     ) -> DefaultReturnCode:
         """Store a single event query in the database."""
-        event_id = affirm(vtypes.ID, event_id)
-        query = affirm(Query, query)
+        event_id = affirm(vtypes.EventID, event_id)
+        scope = affirm(QueryScope, scope, argname="scope")
 
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Must be orga to store queries for an event."))
-        if not query.scope.supports_storing():
+        if not scope.supports_storing():
             raise ValueError(n_("Cannot store this kind of query."))
-        if not query.name:
-            rs.notify("error", n_("Query must have a name"))
-            return 0
-        data = {
-            'event_id': event_id,
-            'query_name': query.name,
-            'scope': query.scope,
-            'serialized_query': json_serialize(query.serialize(timezone_aware=True)),
-        }
         with Atomizer(rs):
+            event = self.get_event(rs, event_id)
+            spec = scope.get_spec(event=event)
+            data["scope"] = scope
+            data["event_id"] = event_id
+            data = affirm(models.StoredEventQuery, data, spec=spec, creation=True)
+            stored_query = models.StoredEventQuery(id=vtypes.ID(-1), **data)
+
             new_id = self.sql_insert(
-                rs, "event.stored_queries", data, drop_on_conflict=True
+                rs,
+                models.StoredEventQuery.database_table,
+                stored_query.to_database(),
+                drop_on_conflict=True,
             )
             if not new_id:
                 rs.notify(
                     "error",
                     n_("Query with name '%(query)s' already exists for this event."),
-                    {"query": query.name},
+                    {"query": stored_query.query_name},
                 )
                 return 0
             self.event_log(
                 rs,
                 const.EventLogCodes.query_stored,
                 event_id=event_id,
-                change_note=query.name,
+                change_note=stored_query.query_name,
             )
         return new_id
-
-    @access("event")
-    def get_invalid_stored_event_queries(
-        self, rs: RequestState, event_id: int
-    ) -> CdEDBObjectMap:
-        """Retrieve raw data for stored event queries that cannot be deserialized."""
-        if not is_privileged(rs, EventPrivileges.basic_read, event_id=event_id):
-            raise PrivilegeError(n_("Not privileged."))
-        q = f"""
-            SELECT {', '.join(STORED_EVENT_QUERY_FIELDS)}
-            FROM event.stored_queries
-            WHERE event_id = %s AND NOT(id = ANY(%s))
-        """
-        with Atomizer(rs):
-            retrievable_queries = self.get_event_queries(rs, event_id)
-            params = (event_id, [q.query_id for q in retrievable_queries.values()])
-            data = self.query_all(rs, q, params)
-            return {e["id"]: e for e in data}
-
-    @access("event")
-    def delete_invalid_stored_event_queries(
-        self, rs: RequestState, event_id: int
-    ) -> int:
-        """Delete invalid stored event queries."""
-        if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
-            raise PrivilegeError(n_("Not privileged."))
-        invalid_queries = self.get_invalid_stored_event_queries(rs, event_id)
-        self.logger.warning(
-            f"Invalid stored queries were automatically deleted: {invalid_queries}"
-        )
-        return self.sql_delete(rs, "event.stored_queries", invalid_queries.keys())
 
     @access("event")
     def add_custom_query_filter(
         self,
         rs: RequestState,
         scope: QueryScope,
-        event_id: int,
+        event_id: vtypes.EventID,
         data: CdEDBObject,
     ) -> DefaultReturnCode:
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         scope = affirm(QueryScope, scope)
         data["event_id"] = event_id
         data["scope"] = scope

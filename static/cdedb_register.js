@@ -174,10 +174,10 @@
                      */
                     if (result["show_nonmember"]) {
                         nonmember_surcharge.html(result["nonmember"]);
-                        nonmember_surcharge.parent().show();
+                        nonmember_surcharge.show();
                     }
                     else {
-                        nonmember_surcharge.parent().hide();
+                        nonmember_surcharge.hide();
                     }
                     /**
                      * If the more advanced summary exists, show the respective returned visual debug string in every line.

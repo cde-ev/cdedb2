@@ -45,19 +45,19 @@
     {% endif %}
 
     <div class="row" id="enforcer-list">
-        {% for list in enforcers | keydictsort(EntitySorter.persona) | slice(2 if enforcers|length > 5 else 1) %}
+        {% for list in enforcers.values() | slice(2 if enforcers|length > 5 else 1) %}
             <div class="col-sm-6">
                 <ul class="nosp slim">
-                    {% for enforcer_id, enforcer in list %}
+                    {% for enforcer in list %}
                         <li class="hide-hover-container clearfix-after">
                             {{ util.persona_anchor(enforcer) }}
                             {% if 'complaint_admin' in user.roles %}
                                 <form action="{{ cdedblink('core/remove_enforcer') }}"
                                       method="POST"
-                                      id="removeenforcerform{{ enforcer_id }}"
+                                      id="removeenforcerform{{ enforcer.id }}"
                                       class="hide-hover display-inline">
                                     {{ util.anti_csrf_token('core/remove_enforcer') }}
-                                    {{ util.input_hidden(name="persona_id", value=enforcer_id) }}
+                                    {{ util.input_hidden(name="persona_id", value=enforcer.id) }}
                                     {{ util.input_submit(label="", icon="minus", aclass="btn btn-xs btn-danger list-button-float",
                                             title=gettext("Remove %(name)s as enforcer")|format(name=enforcer|persona_name)|s) }}
                                 </form>

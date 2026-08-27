@@ -5,7 +5,6 @@
 import email.parser
 import urllib.error
 from collections.abc import Collection, Mapping
-from typing import Optional
 
 from werkzeug import Response
 
@@ -42,7 +41,7 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
         rs: RequestState,
         request_ids: Collection[int],
         action: str,
-        reason: Optional[str] = None,
+        reason: str | None = None,
     ) -> Response:
         """Helper to take care of the communication with mailman."""
         dblist = rs.ambience['mailinglist']
@@ -153,7 +152,7 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
         request_id: int,
         action: str,
         sender: str,
-        reason: Optional[str],
+        reason: str | None,
     ) -> Response:
         """Moderate a held message.
 

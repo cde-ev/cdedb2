@@ -58,8 +58,9 @@
                 {% trans %}Presiders{% endtrans %}
             </dt>
             <dd id="assembly-presiders">
-                {% for anid, entry in presiders|keydictsort(EntitySorter.persona) %}
-                    {{ util.persona_anchor(entry, with_titles=True) }}
+                {# The dict is already sorted. #}
+                {% for presider in presiders.values() %}
+                    {{ util.persona_anchor(presider, with_titles=True) }}
                     {%- if not loop.last %},{% endif %}
                 {% endfor %}
             </dd>
@@ -71,14 +72,15 @@
         <div class="col-md-6" id="manage-presiders">
             {% call util.bootstrap_panel(title=gettext("Presiders"), icon='user-friends') %}
             <ul>
-                {% for anid, entry in presiders|keydictsort(EntitySorter.persona) %}
+                {# The dict is already sorted. #}
+                {% for presider in presiders.values() %}
                     <li class="hide-hover-container clearfix-after">
-                        {{ util.persona_anchor(entry, with_titles=True) }}
-                        ({{ anid|cdedbid }})
+                        {{ util.persona_anchor(presider, with_titles=True) }}
+                        ({{ presider.id|cdedbid }})
                         <form action="{{ cdedblink('assembly/remove_presider') }}" method="POST"
-                                id="removepresiderform{{ anid }}" class="hide-hover display-inline">
+                                id="removepresiderform{{ presider.id }}" class="hide-hover display-inline">
                             {{ util.anti_csrf_token('assembly/remove_presider') }}
-                            {{ util.input_hidden(name="presider_id", value=anid) }}
+                            {{ util.input_hidden(name="presider_id", value=presider.id) }}
                             {{ util.ack_delete(gettext("The presider will be removed from the assembly.")) }}
                             {{ util.input_submit(label="", title=gettext("Remove Presider"), icon='minus',
                                                  aclass='btn btn-xs btn-danger list-button-float') }}

@@ -10,12 +10,3 @@ _TMP_DIR = pathlib.Path("/tmp/cdedb-test-xss")
 STORAGE_DIR = _TMP_DIR / "storage"
 
 CDB_DATABASE_NAME = "cdb_test_xss"
-
-
-# test config
-XSS_OUTDIR = pathlib.Path("./out")
-XSS_PAYLOAD = "<script>abcdef</script>"
-XSS_PAYLOAD_SECONDARY = [
-    "&amp;lt;",
-    "&amp;gt;",
-]

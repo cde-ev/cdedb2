@@ -14,6 +14,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.complaint as models_complaint
 from cdedb.common import CdEDBObject, RequestState, nearly_now, now
+from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import xsorted
 from tests.common import CronTest, event_keeper, execsql, prepsql, storage
 
@@ -36,6 +37,9 @@ SQL_DATA = dict[
 ]
 
 RS = cast(RequestState, None)
+
+
+EventID = lambda x: vtypes.EventID(vtypes.ID(x))
 
 
 def format_insert_sql(table: str, data: SQL_DATA) -> str:
@@ -451,10 +455,6 @@ class TestCron(CronTest):
         # We just want to test that no exception is raised.
         self.execute('deactivate_old_sessions', 'clean_session_log')
 
-    def test_validate_stored_event_queries(self) -> None:
-        # We just want to test that no exception is raised.
-        self.execute('validate_stored_event_queries')
-
     @event_keeper
     def test_event_keeper(self) -> None:
         # We just want to test that no exception is raised.
@@ -628,6 +628,32 @@ class TestCron(CronTest):
         self.assertFalse(store.is_available(new_attachment_hash))
         self.assertTrue(store.is_available(old_attachment_hash))
 
+    def test_cleanup_event_checkin_helpers(self) -> None:
+        event_id = EventID(1)
+        log_filter = EventLogFilter(
+            event_id=event_id,
+            codes=[
+                const.EventLogCodes.checkin_helper_added,
+                const.EventLogCodes.checkin_helper_removed,
+            ],
+        )
+        event = self.event.get_event(RS, event_id)
+        self.assertEqual(event.checkin_helpers, {38})
+        log_len, _ = self.event.retrieve_log(RS, log_filter)
+        self.assertEqual(log_len, 1)
+        self.execute('cleanup_event_checkin_helpers')
+        event = self.event.get_event(RS, event_id)
+        self.assertEqual(event.checkin_helpers, {38})
+        log_len, _ = self.event.retrieve_log(RS, log_filter)
+        self.assertEqual(log_len, 1)
+        with freezegun.freeze_time(now()) as frozen_time:
+            frozen_time.tick(self.conf["EVENT_CHECKIN_HELPER_DURATION"])
+            self.execute('cleanup_event_checkin_helpers')
+            event = self.event.get_event(RS, event_id)
+            self.assertEqual(event.checkin_helpers, set())
+            log_len, _ = self.event.retrieve_log(RS, log_filter)
+            self.assertEqual(log_len, 2)
+
     @storage
     def test_purge_complaint_entry_versions(self) -> None:
         case_id, entry_id, version_id = 1, 4, 4
@@ -693,14 +719,14 @@ class TestCron(CronTest):
                 length=None,
                 timestamp=None,
                 ctime=ctime,
-                submitted_by=vtypes.ID(1),
+                submitted_by=cast(vtypes.PersonaID, 1),
                 dtime=ctime,
-                deleted_by=vtypes.ID(1),
+                deleted_by=cast(vtypes.PersonaID, 1),
                 dreason=None,
                 marked_for_purge=marked_for_purge,
-                purged_by=cast(vtypes.ID, user_id),
+                purged_by=cast(vtypes.PersonaID, user_id),
                 is_purged=True,
-                authors=cast(vtypes.CdedbIDList, set()),
+                authors=set(),
             )
 
             case = self.complaint.get_case(RS, case_id)

@@ -27,4 +27,4 @@ update_event = {
 # Execution
 
 with script:
-    event.set_event(script.rs(), int(sys.argv[1]), update_event)
+    event.set_event(script.rs(), int(sys.argv[1]), update_event)  # type: ignore[arg-type]

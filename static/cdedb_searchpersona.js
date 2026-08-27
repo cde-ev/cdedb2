@@ -69,11 +69,18 @@
 
     function refocus(selectize, value) {
         if (value) {
-            selectize.clear();
-            selectize.clearOptions();
-            selectize.open();
-            selectize.setTextboxValue(value);
-            selectize.onSearchChange(value);
+            if (selectize.maxItems === 1) {
+                selectize.clear();
+                selectize.clearOptions();
+                selectize.open();
+                selectize.setTextboxValue(value);
+                selectize.onSearchChange(value);
+            } else {
+                selectize.clearOptions();
+                for (const item of value.split(",")) {
+                    selectize.createItem(item);
+                }
+            }
         }
     }
     /**

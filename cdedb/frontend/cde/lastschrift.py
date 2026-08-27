@@ -12,7 +12,6 @@ import random
 import string
 from collections import OrderedDict
 from collections.abc import Collection
-from typing import Optional
 
 import dateutil.easter
 import werkzeug.exceptions
@@ -28,14 +27,13 @@ from cdedb.common import (
     determine_age_class,
     get_mandatory_form_fields,
     lastschrift_reference,
-    make_persona_name,
     merge_dicts,
     now,
     unwrap,
 )
 from cdedb.common.exceptions import ValidationWarning
 from cdedb.common.n_ import n_
-from cdedb.common.sorting import EntitySorter, Sortkey, xsorted
+from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.common.validation.validate import LASTSCHRIFT_COMMON_FIELDS
 from cdedb.filter import keydictsort_filter, money_filter
 from cdedb.frontend.cde.base import CdEBaseFrontend
@@ -84,25 +82,25 @@ class CdELastschriftMixin(CdEBaseFrontend):
         )
         personas = self.coreproxy.get_cde_users(rs, persona_ids)
         active_lastschrift_donations = sum(
-            personas[p_id]['donation'] for p_id in active_personas
+            personas[p_id].donation for p_id in active_personas
         )
         open_permits = self.determine_open_permits(rs, active_lastschrift_ids)
         for lastschrift in active_lastschrifts.values():
             lastschrift['open'] = lastschrift['id'] in open_permits
         active_last_order = xsorted(
             active_lastschrifts.keys(),
-            key=lambda anid: EntitySorter.persona(
-                personas[active_lastschrifts[anid]['persona_id']]
-            ),
+            key=lambda anid: personas[
+                active_lastschrifts[anid]['persona_id']
+            ].get_sortkey(),
         )
         active_lastschrifts = OrderedDict(
             (anid, active_lastschrifts[anid]) for anid in active_last_order
         )
         inactive_last_order = xsorted(
             inactive_lastschrifts.keys(),
-            key=lambda anid: EntitySorter.persona(
-                personas[inactive_lastschrifts[anid]['persona_id']]
-            ),
+            key=lambda anid: personas[
+                inactive_lastschrifts[anid]['persona_id']
+            ].get_sortkey(),
         )
         inactive_lastschrifts = OrderedDict(
             (anid, inactive_lastschrifts[anid]) for anid in inactive_last_order
@@ -111,7 +109,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         def transaction_sortkey(transaction: CdEDBObject) -> Sortkey:
             lastschrift_id = transaction["lastschrift_id"]
             persona = personas[all_lastschrifts[lastschrift_id]["persona_id"]]
-            return transaction['issued_at'], *EntitySorter.persona(persona)
+            return transaction['issued_at'], *persona.get_sortkey()
 
         sorted_transactions = keydictsort_filter(
             transactions, sortkey=transaction_sortkey
@@ -225,14 +223,14 @@ class CdELastschriftMixin(CdEBaseFrontend):
 
     @access("finance_admin")
     def lastschrift_create_form(
-        self, rs: RequestState, persona_id: Optional[int] = None
+        self, rs: RequestState, persona_id: int | None = None
     ) -> Response:
         """Render form."""
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
         current_donation = None
         if persona_id:
             persona = self.coreproxy.get_cde_user(rs, persona_id)
-            current_donation = persona["donation"] or None
+            current_donation = persona.donation or None
         mandatory_fields = get_mandatory_form_fields(
             LASTSCHRIFT_COMMON_FIELDS, self.lastschrift_create
         )
@@ -249,7 +247,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
     def lastschrift_create(
         self,
         rs: RequestState,
-        persona_id: vtypes.CdedbID,
+        persona_id: vtypes.PersonaID,
         data: CdEDBObject,
         donation: vtypes.PositiveDecimal,
     ) -> Response:
@@ -264,16 +262,12 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 ValueError(n_("Persona must have cde realm.")),
             ))
         persona = self.coreproxy.get_cde_user(rs, persona_id)
-        if (
-            persona["donation"]
-            and persona["donation"] != donation
-            and not rs.ignore_warnings
-        ):
+        if persona.donation and persona.donation != donation and not rs.ignore_warnings:
             rs.append_validation_error((
                 "donation",
                 ValidationWarning(
                     n_("User already set a different donation of %(donation)s."),
-                    {"donation": money_filter(persona["donation"])},
+                    {"donation": money_filter(persona.donation)},
                 ),
             ))
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
@@ -492,9 +486,9 @@ class CdELastschriftMixin(CdEBaseFrontend):
                 'lastschrift_id': lastschrift['id'],
                 'period_id': period,
                 'mandate_reference': lastschrift_reference(
-                    persona['id'], lastschrift['id']
+                    persona.id, lastschrift['id']
                 ),
-                'amount': self.cdeproxy.transaction_amount(rs, persona['id']),
+                'amount': self.cdeproxy.transaction_amount(rs, persona.id),
                 'iban': lastschrift['iban'],
                 'type': "RCUR",  # TODO remove this, hardcode it in template
             }
@@ -508,17 +502,15 @@ class CdELastschriftMixin(CdEBaseFrontend):
             if lastschrift['account_owner']:
                 transaction['account_owner'] = lastschrift['account_owner']
             else:
-                transaction['account_owner'] = make_persona_name(
-                    persona, use_legal_name=True
-                )
+                transaction['account_owner'] = persona.get_name(use_legal_name=True)
             timestamp = f"{now().timestamp():.6f}"
             transaction['unique_id'] = "{}-{}".format(
                 transaction['mandate_reference'], timestamp[-9:]
             )
             # cut off bc of limit
             transaction['subject'] = asciificator(
-                f"{cdedbid_filter(persona['id'])}, {persona['family_name']},"
-                f" {persona['given_names']} LSI Mitgliedsbeitrag u. Spende CdE e.V."
+                f"{cdedbid_filter(persona.id)}, {persona.family_name},"
+                f" {persona.given_names} LSI Mitgliedsbeitrag u. Spende CdE e.V."
                 " z. Foerderung der Volks- u. Berufsbildung u. Studentenhilfe"
             )[:140]
 
@@ -538,7 +530,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
     @access("finance_admin", modi={"POST"})
     @REQUESTdata("lastschrift_id")
     def lastschrift_generate_transactions(
-        self, rs: RequestState, lastschrift_id: Optional[vtypes.ID]
+        self, rs: RequestState, lastschrift_id: vtypes.ID | None
     ) -> Response:
         """Issue direct debit transactions.
 
@@ -588,7 +580,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             self.do_mail(
                 rs,
                 "lastschrift/sepa_pre-notification",
-                {'To': (persona['username'],), 'Subject': subject},
+                {'To': (persona.username,), 'Subject': subject},
                 {'data': data},
             )
         rs.notify(
@@ -601,7 +593,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
     @access("finance_admin", modi={"POST"})
     @REQUESTdata("persona_id")
     def lastschrift_skip(
-        self, rs: RequestState, lastschrift_id: int, persona_id: Optional[vtypes.ID]
+        self, rs: RequestState, lastschrift_id: int, persona_id: vtypes.ID | None
     ) -> Response:
         """Do not do a direct debit transaction for this year.
 
@@ -629,7 +621,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         lastschrift_id: int,
         transaction_id: int,
         status: const.LastschriftTransactionStati,
-        persona_id: Optional[vtypes.ID],
+        persona_id: vtypes.ID | None,
     ) -> Response:
         """Finish one transaction.
 
@@ -654,9 +646,9 @@ class CdELastschriftMixin(CdEBaseFrontend):
         self,
         rs: RequestState,
         transaction_ids: Collection[vtypes.ID],
-        success: Optional[bool],
-        cancelled: Optional[bool],
-        failure: Optional[bool],
+        success: bool | None,
+        cancelled: bool | None,
+        failure: bool | None,
     ) -> Response:
         """Finish many transaction."""
         if sum(1 for s in (success, cancelled, failure) if s) != 1:
@@ -690,7 +682,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         rs: RequestState,
         lastschrift_id: int,
         transaction_id: int,
-        persona_id: Optional[vtypes.ID],
+        persona_id: vtypes.ID | None,
     ) -> Response:
         """Revert a successful transaction.
 
@@ -734,7 +726,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         if rs.user.persona_id:
             persona = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
             not_minor = not determine_age_class(
-                persona['birthday'], now().date()
+                persona.birthday, now().date()
             ).is_minor()
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
         typical_donation = self.conf["TYPICAL_LASTSCHRIFT_DONATION"]
@@ -758,17 +750,17 @@ class CdELastschriftMixin(CdEBaseFrontend):
     def lastschrift_subscription_form(
         self,
         rs: RequestState,
-        full_name: Optional[str],
-        db_id: Optional[vtypes.CdedbID],
-        username: Optional[vtypes.Email],
-        address_supplement: Optional[str],
-        address: Optional[str],
-        postal_code: Optional[vtypes.GermanPostalCode],
-        location: Optional[str],
-        country: Optional[str],
-        iban: Optional[vtypes.IBAN],
-        account_holder: Optional[str],
-        donation: Optional[vtypes.PositiveDecimal],
+        full_name: str | None,
+        db_id: vtypes.PersonaID | None,
+        username: vtypes.Email | None,
+        address_supplement: str | None,
+        address: str | None,
+        postal_code: vtypes.GermanPostalCode | None,
+        location: str | None,
+        country: str | None,
+        iban: vtypes.IBAN | None,
+        account_holder: str | None,
+        donation: vtypes.PositiveDecimal | None,
     ) -> Response:
         """Fill the direct debit authorization template with information."""
 

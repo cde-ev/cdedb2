@@ -15,7 +15,6 @@ import copy
 import dataclasses
 import decimal
 from collections import OrderedDict
-from typing import Optional
 
 import psycopg2.extensions
 
@@ -97,8 +96,8 @@ class CdEBaseBackend(AbstractBackend):
         self,
         rs: RequestState,
         code: const.CdeLogCodes,
-        persona_id: Optional[int] = None,
-        change_note: Optional[str] = None,
+        persona_id: int | None = None,
+        change_note: str | None = None,
     ) -> DefaultReturnCode:
         """Make an entry in the log.
 
@@ -159,9 +158,9 @@ class CdEBaseBackend(AbstractBackend):
             with Atomizer(rs):
                 result = models_finance.MoneyTransfersResult()
                 persona_ids = {t['persona_id'] for t in transfers}
-                event_personas = self.core.get_event_users(rs, persona_ids)
+                personas = self.core.get_personas(rs, persona_ids)
                 cde_personas = self.core.get_cde_users(
-                    rs, {p["id"] for p in event_personas.values() if p["is_cde_realm"]}
+                    rs, {p.id for p in personas.values() if p.is_cde_realm}
                 )
                 for index, transfer in enumerate(transfers):
                     amount, date = transfer['amount'], transfer['date']
@@ -169,7 +168,7 @@ class CdEBaseBackend(AbstractBackend):
                         if transfer["persona_id"] not in cde_personas:
                             raise ValueError(n_("Persona is not in CdE realm."))
                         cde_persona = cde_personas[transfer["persona_id"]]
-                        new_balance = cde_persona['balance'] + amount
+                        new_balance = cde_persona.balance + amount
                         change_note = changelog_note_template.format(
                             amount=money_filter(amount),
                             new_balance=money_filter(new_balance),
@@ -179,7 +178,7 @@ class CdEBaseBackend(AbstractBackend):
                         # Increase balance.
                         self.core.change_persona_balance(
                             rs,
-                            cde_persona['id'],
+                            cde_persona.id,
                             new_balance,
                             const.FinanceLogCodes.increase_balance,
                             change_note=change_note,
@@ -189,37 +188,39 @@ class CdEBaseBackend(AbstractBackend):
                         # Grant membership if necessary.
                         if (
                             new_balance >= self.conf["MEMBERSHIP_FEE"]
-                            and not cde_persona['is_member']
+                            and not cde_persona.is_member
                         ):
                             code = self.core.change_membership_easy_mode(
-                                rs, cde_persona['id'], is_member=True
+                                rs, cde_persona.id, is_member=True
                             )
                             result.new_members += bool(code)
-                            cde_persona['is_member'] = bool(code)
-                            event_personas[cde_persona["id"]]["is_member"] = bool(code)
+                            cde_persona.is_member = bool(code)
+
+                        # Adjust balance for further steps (multiple payments, emails).
+                        cde_persona.balance = new_balance
 
                         # Add to tally.
                         result.membership_fees.append(
-                            models_finance.MoneyTransfer(
+                            models_finance.MoneyTransferMember(
                                 persona=cde_persona, amount=amount, date=date
                             )
                         )
-
-                        # Remember the changed balance in case of multiple transfers.
-                        cde_persona['balance'] = new_balance
                     else:
-                        event_persona = event_personas[transfer['persona_id']]
+                        persona = personas[transfer['persona_id']]
+                        is_member = False
+                        if persona.id in cde_personas:
+                            is_member = cde_personas[persona.id].is_member
                         registration = self.event.book_registration_payment(
                             rs,
                             registration_id=transfer['registration_id'],
                             amount=amount,
                             date=date,
                             by_orga=False,
-                            is_member=event_persona['is_member'],
+                            is_member=is_member,
                         )
                         event_id = registration['event_id']
-                        ret = models_finance.MoneyTransfer(
-                            persona=event_persona,
+                        ret = models_finance.MoneyTransferEvent(
+                            persona=persona,
                             amount=amount,
                             date=date,
                             registration=registration,
@@ -259,7 +260,7 @@ class CdEBaseBackend(AbstractBackend):
     @access("member", "cde_admin")
     def get_member_stats(
         self, rs: RequestState
-    ) -> tuple[CdEDBObject, CdEDBObject, CdEDBObject]:
+    ) -> tuple[CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject]:
         """Retrieve some generic statistics about members."""
         # Simple stats first.
         query = """SELECT
@@ -421,7 +422,39 @@ class CdEBaseBackend(AbstractBackend):
             )
         )
 
-        return simple_stats, other_stats, year_stats
+        query = """
+            SELECT
+                e.institution,
+                COUNT(*)
+            FROM (
+                SELECT DISTINCT
+                    pa.persona_id,
+                    FIRST_VALUE(e.id) OVER(
+                        PARTITION BY pa.persona_id
+                        ORDER BY e.tempus, e.institution, e.id
+                    ) AS first_event_id
+                FROM past_event.participants pa
+                JOIN past_event.events e
+                    ON pa.pevent_id = e.id
+            ) AS personas
+            JOIN past_event.events e
+                ON personas.first_event_id = e.id
+            JOIN past_event.participants p
+                ON personas.persona_id = p.persona_id
+                AND e.id = p.pevent_id
+            GROUP BY e.institution;
+        """
+
+        institution_query_outputs = self.query_all(rs, query, ())
+        assert institution_query_outputs is not None
+
+        institution_stats: CdEDBObject = {}
+        for result in institution_query_outputs:
+            institution_stats[
+                const.PastInstitutions(result["institution"]).shortname
+            ] = result["count"]
+
+        return simple_stats, other_stats, year_stats, institution_stats
 
     def _perform_one_batch_admission(
         self,
@@ -429,7 +462,7 @@ class CdEBaseBackend(AbstractBackend):
         datum: CdEDBObject,
         trial_membership: bool,
         consent: bool,
-    ) -> Optional[int]:
+    ) -> int | None:
         """Uninlined code from perform_batch_admission().
 
         :returns: The affected persona_id, or None if the entry was skipped.
@@ -460,7 +493,8 @@ class CdEBaseBackend(AbstractBackend):
             )
         elif datum['resolution'].is_modification():
             persona_id = datum['doppelganger_id']
-            current = self.core.get_persona(rs, persona_id)
+            # TODO migrate upgrade logic to dataclass
+            current = self.core.get_persona(rs, persona_id).as_dict()
             if current['is_archived']:
                 if current['is_purged']:
                     raise RuntimeError(n_("Cannot restore purged account."))
@@ -515,7 +549,8 @@ class CdEBaseBackend(AbstractBackend):
                     for field in mandatory_fields:
                         promotion[field] = datum['persona'][field]
                 else:
-                    current = self.core.get_event_user(rs, persona_id)
+                    # TODO migrate upgrade logic to dataclasses
+                    current = self.core.get_event_user(rs, persona_id).as_dict()
                     # take care that we do not override existent data
                     current_fields = {
                         field
@@ -533,7 +568,7 @@ class CdEBaseBackend(AbstractBackend):
                     rs, promotion, change_note="Datenübernahme nach Massenaufnahme"
                 )
             if datum['resolution'].do_trial():
-                if current['is_member']:
+                if self.core.get_persona_status(rs, persona_id).is_member:
                     raise RuntimeError(n_("May not grant trial membership to member."))
                 self.core.change_membership_easy_mode(
                     rs, datum['doppelganger_id'], is_member=True, trial_member=True

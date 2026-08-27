@@ -2,6 +2,7 @@
 """Tests for functionality executed in the users's browser, manly JavaScript."""
 
 import functools
+import logging
 import os
 import pathlib
 import re
@@ -12,6 +13,8 @@ from typing import Any
 from playwright.sync_api import Browser, Page, expect, sync_playwright
 
 from tests.common import BrowserTest, event_keeper, storage
+
+_LOGGER = logging.getLogger(__file__)
 
 
 def make_page(*args: Any, headless: bool = True, timeout: float = 5000) -> Callable:  # type: ignore[type-arg]
@@ -35,10 +38,12 @@ def make_page(*args: Any, headless: bool = True, timeout: float = 5000) -> Calla
                 for name in ['chromium']:
                     browser: Browser = getattr(pw, name).launch(headless=headless)
                     video_dir = (
-                        f"tests/playwright/{func.__name__}_{browser}"
+                        f"tests/playwright/{func.__name__}_{name}"
                         if not os.environ.get("CI")
                         else None
                     )
+                    if video_dir:  # pragma: no cover
+                        pathlib.Path(video_dir).mkdir(parents=True, exist_ok=True)
                     context = browser.new_context(
                         record_video_dir=video_dir, locale="de-DE"
                     )
@@ -51,21 +56,21 @@ def make_page(*args: Any, headless: bool = True, timeout: float = 5000) -> Calla
                             func(self, *fargs, **fkwargs)
                         except Exception:  # pragma: no cover
                             if page.video:
-                                print(
+                                _LOGGER.info(
                                     f"Saved video of failed test at {page.video.path()!r}."
                                 )
                                 path = pathlib.Path(page.video.path()).with_suffix(
                                     ".png"
                                 )
                                 page.screenshot(full_page=True, path=path)
-                                print(
+                                _LOGGER.info(
                                     f"Saved screenshot at point of failure to '{path}'."
                                 )
                             raise
                         else:
                             if page.video:  # pragma: no cover
                                 pathlib.Path(page.video.path()).unlink()
-                                print(f"Removed '{page.video.path()}'.")
+                                _LOGGER.info(f"Removed '{page.video.path()}'.")
                     context.close()
                     browser.close()
 
@@ -154,11 +159,11 @@ class TestBrowser(BrowserTest):
         page.get_by_role("button", name="Anmelden").click()
         page.wait_for_url("http://localhost:5000/")
 
-        page.get_by_role("button", name="Benutzer-Administration").click()
+        page.get_by_role("button", name="Account-Administration").click()
         page.wait_for_url("http://localhost:5000/")
         page.locator("#adminshowuserform .selectize-input").click()
         page.locator("#adminshowuserform .selectize-input input").type("emi")
-        page.get_by_text("Emilia EventisDB-5-1 • emilia@example.cde").click()
+        page.get_by_text("Emilia (Emmy) EventisDB-5-1 • emilia@example.cde").click()
         page.press("#adminshowuserform .selectize-input", key="Enter")
         page.wait_for_url("http://localhost:5000/core/persona/5/show?*")
 
@@ -246,9 +251,9 @@ class TestBrowser(BrowserTest):
 
         page.get_by_role("link", name="Mitglieder").click()
         page.wait_for_url("http://localhost:5000/cde/")
-        page.get_by_role("button", name="Benutzer-Administration").click()
+        page.get_by_role("button", name="Account-Administration").click()
         page.wait_for_url("http://localhost:5000/cde/")
-        page.get_by_role("link", name="Nutzer verwalten", exact=True).click()
+        page.get_by_role("link", name="Accounts verwalten", exact=True).click()
         page.wait_for_url("http://localhost:5000/cde/search/user")
 
         page.get_by_placeholder("– Filter hinzufügen –").click()
@@ -377,7 +382,7 @@ class TestBrowser(BrowserTest):
         ).get_by_text("Gast").click()
         page.locator("#tab_qf_js").get_by_text("Wu: Status").locator(
             ".selectize-dropdown"
-        ).get_by_text("Teilnehmer").click()
+        ).get_by_text("Teilnahme").click()
         page.locator("#tab_qf_js .filterfield-list").get_by_text(
             "Familienname"
         ).locator("button").click()
@@ -387,7 +392,7 @@ class TestBrowser(BrowserTest):
         page.screenshot(path="/tmp/screenshot.png", full_page=True)
         expect(page.locator('#query-results')).to_contain_text('Ergebnis [4]')
         expect(page.locator('.filterfield-list')).to_contain_text('Warteliste')
-        expect(page.locator('.filterfield-list')).to_contain_text('Teilnehmer')
+        expect(page.locator('.filterfield-list')).to_contain_text('Teilnahme')
         expect(page.locator('.filterfield-list')).to_contain_text('Gast')
 
     @storage

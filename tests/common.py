@@ -40,8 +40,6 @@ from typing import (
     Any,
     ClassVar,
     NamedTuple,
-    Optional,
-    TypeVar,
     cast,
     no_type_check,
 )
@@ -52,6 +50,7 @@ import webtest
 import webtest.utils
 from psycopg2.extras import RealDictCursor
 
+import cdedb.common.validation.types as vtypes
 from cdedb.backend.assembly import AssemblyBackend
 from cdedb.backend.cde import CdEBackend
 from cdedb.backend.common import AbstractBackend
@@ -77,7 +76,6 @@ from cdedb.common import (
     NearlyNow,
     PathLike,
     RequestState,
-    make_persona_name,
     merge_dicts,
     nearly_now,
     now,
@@ -102,7 +100,7 @@ from cdedb.common.roles import (
     ALL_ADMIN_VIEWS,
     roles_to_db_role,
 )
-from cdedb.config import SecretsConfig, TestConfig, get_configpath, set_configpath
+from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.application import Application
@@ -139,11 +137,8 @@ def create_mock_image(file_type: str = "png") -> bytes:
     return afile.read()
 
 
-T = TypeVar("T")
-
-
 @no_type_check
-def json_keys_to_int(obj: T) -> T:
+def json_keys_to_int[T](obj: T) -> T:
     """Convert dict keys to integers if possible.
 
     This is a restriction of the JSON format allowing only string keys.
@@ -177,7 +172,7 @@ def _read_sample_data(
         data: CdEDBObjectMap = {}
         _id = 1
         for e in table_data:
-            _id = e.get('id', _id)
+            _id = cast(int, e.get('id', _id))
             assert _id not in data
             e['id'] = _id
             data[_id] = e
@@ -188,10 +183,8 @@ def _read_sample_data(
 
 _SAMPLE_DATA = _read_sample_data()
 
-B = TypeVar("B", bound=AbstractBackend)
 
-
-def _make_backend_shim(
+def _make_backend_shim[B: AbstractBackend](
     backend: B,
     internal: bool = False,
     allow_private: bool = False,
@@ -220,7 +213,7 @@ def _make_backend_shim(
     translations = setup_translations(backend.conf)
 
     def setup_requeststate(
-        key: Optional[str],
+        key: str | None,
         ip: str = "127.0.0.0",
     ) -> RequestState:
         """
@@ -235,7 +228,7 @@ def _make_backend_shim(
         # we only use one slot to transport the key (for simplicity and
         # probably for historic reasons); the following lookup process
         # mimicks the one in frontend/application.py
-        if key == CRON:
+        if key == cast(str, CRON):
             rs = CronFrontend().make_request_state()
             rs.conn = rs._conn
             return rs
@@ -271,6 +264,10 @@ def _make_backend_shim(
                 rs.user.orga = backend.orga_info(rs, rs.user.persona_id)
             if hasattr(backend, "caretaker_info"):
                 rs.user.caretaker = backend.caretaker_info(rs, rs.user.persona_id)
+            if hasattr(backend, "checkin_helper_info"):
+                rs.user.checkin_helper = backend.checkin_helper_info(
+                    rs, rs.user.persona_id
+                )
         if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
             rs.user.moderator = backend.moderator_info(rs, rs.user.persona_id)
         if "assembly" in rs.user.roles and hasattr(backend, "presider_info"):
@@ -297,7 +294,7 @@ def _make_backend_shim(
                 raise PrivilegeError(f"Attribute {name} not public")  # pragma: no cover
 
             @functools.wraps(attr)
-            def wrapper(key: Optional[str], *args: Any, **kwargs: Any) -> Any:
+            def wrapper(key: str | None, *args: Any, **kwargs: Any) -> Any:
                 rs = setup_requeststate(key)
                 try:
                     return attr(rs, *args, **kwargs)
@@ -325,18 +322,15 @@ class BasicTest(unittest.TestCase):
 
     storage_dir: ClassVar[pathlib.Path]
     testfile_dir: ClassVar[pathlib.Path]
-    configpath: ClassVar[pathlib.Path]
-    _orig_configpath: ClassVar[pathlib.Path]
-    conf: ClassVar[TestConfig]
+    _orig_config_paths: ClassVar[list[pathlib.Path]]
+    conf: ClassVar[Config]
     secrets: ClassVar[SecretsConfig]
 
     @classmethod
     def setUpClass(cls) -> None:
-        configpath = get_configpath()
-        cls.configpath = configpath
         # save the configpath in an extra variable to reset it after each test
-        cls._orig_configpath = configpath
-        cls.conf = TestConfig()
+        cls.conf = Config()
+        cls._orig_config_paths = cls.conf.get_config_paths()
         cls.secrets = SecretsConfig()
         cls.storage_dir = cls.conf['STORAGE_DIR']
         cls.testfile_dir = cls.storage_dir / "testfiles"
@@ -355,13 +349,13 @@ class BasicTest(unittest.TestCase):
             shutil.rmtree(self.storage_dir)
         # reset the configpath after each test. This prevents interference between tests
         # playing around with this.
-        set_configpath(self._orig_configpath)
+        self.conf.set_config_paths(*self._orig_config_paths)
 
     @staticmethod
     def get_sample_data(
         table: str,
-        ids: Optional[Iterable[int]] = None,
-        keys: Optional[Iterable[str]] = None,
+        ids: Iterable[int] | None = None,
+        keys: Iterable[str] | None = None,
     ) -> CdEDBObjectMap:
         """This mocks a select request against the sample data.
 
@@ -431,6 +425,8 @@ class BasicTest(unittest.TestCase):
 
     def get_sample_datum(self, table: str, id_: int) -> CdEDBObject:
         return self.get_sample_data(table, [id_])[id_]
+
+    EVENT_LOG_OFFSET = len(get_sample_data("event.log"))
 
 
 class AsyncBasicTest(unittest.IsolatedAsyncioTestCase, BasicTest):
@@ -532,7 +528,7 @@ class BackendTest(CdEDBTest):
         self.user = USER_DICT["anonymous"]
         self.key = ANONYMOUS
 
-    def login(self, user: UserIdentifier, *, ip: str = "127.0.0.0") -> Optional[str]:
+    def login(self, user: UserIdentifier, *, ip: str = "127.0.0.0") -> str | None:
         user = get_user(user)
         if user["id"] is None:
             raise RuntimeError(
@@ -674,11 +670,11 @@ class BackendTest(CdEDBTest):
         return backendcls()
 
     @classmethod
-    def initialize_backend(cls, backendcls: type[B]) -> B:
+    def initialize_backend[B: AbstractBackend](cls, backendcls: type[B]) -> B:
         return _make_backend_shim(backendcls(), internal=True, allow_private=False)
 
     @classmethod
-    def initialze_private_backend(cls, backendcls: type[B]) -> B:
+    def initialze_private_backend[B: AbstractBackend](cls, backendcls: type[B]) -> B:
         return _make_backend_shim(backendcls(), internal=True, allow_private=True)
 
 
@@ -695,11 +691,11 @@ class BrowserTest(CdEDBTest):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        # pass the cdedb config path to the subprocess
+        # pass config environment to subprocess.
         cls.serverProcess = subprocess.Popen(
-            ['python3', '-m', 'cdedb', 'dev', 'serve', '--test'],
+            ['python3', '-m', 'cdedb', 'dev', 'serve'],
             stderr=subprocess.DEVNULL,
-            env=os.environ.copy(),
+            env=os.environ.copy() | cls.conf.get_config_env(),
         )
         for _ in range(42):
             try:
@@ -1029,9 +1025,6 @@ def get_user(user: UserIdentifier) -> UserObject:
     return user
 
 
-F = TypeVar("F", bound=Callable[..., Any])
-
-
 def as_users(
     *users: UserIdentifier,
     maintain_data: bool = False,
@@ -1062,7 +1055,7 @@ def as_users(
     return wrapper
 
 
-def admin_views(*views: str) -> Callable[[F], F]:
+def admin_views[F: Callable[..., Any]](*views: str) -> Callable[[F], F]:
     """Decorate a test to set different initial admin views."""
 
     def decorator(fun: F) -> F:
@@ -1076,7 +1069,7 @@ def admin_views(*views: str) -> Callable[[F], F]:
     return decorator
 
 
-def prepsql(sql: str, verbose: int = 0) -> Callable[[F], F]:
+def prepsql[F: Callable[..., Any]](sql: str, verbose: int = 0) -> Callable[[F], F]:
     """Decorate a test to run some arbitrary SQL-code beforehand."""
 
     def decorator(fun: F) -> F:
@@ -1090,13 +1083,13 @@ def prepsql(sql: str, verbose: int = 0) -> Callable[[F], F]:
     return decorator
 
 
-def storage(fun: F) -> F:
+def storage[F: Callable[..., Any]](fun: F) -> F:
     """Decorate a test which needs some of the test files on the local drive."""
     setattr(fun, BasicTest.needs_storage_marker, True)
     return fun
 
 
-def event_keeper(fun: F) -> F:
+def event_keeper[F: Callable[..., Any]](fun: F) -> F:
     """Decorate a test which needs an event keeper setup."""
     setattr(fun, BasicTest.needs_event_keeper_marker, True)
     return storage(fun)
@@ -1104,7 +1097,7 @@ def event_keeper(fun: F) -> F:
 
 def execsql(sql: str, verbose: int = 0) -> None:
     """Execute arbitrary SQL-code on the test database."""
-    execute_sql_script(TestConfig(), SecretsConfig(), sql, verbose=verbose)
+    execute_sql_script(Config(), SecretsConfig(), sql, verbose=verbose)
 
 
 class FrontendTest(BackendTest):
@@ -1159,7 +1152,7 @@ class FrontendTest(BackendTest):
             for file in folder.iterdir():
                 file.chmod(0o0644)  # 0644/-rw-r--r--
 
-    def setUp(self, *, prepsql: Optional[str] = None) -> None:
+    def setUp(self, *, prepsql: str | None = None) -> None:
         """Reset web application.
 
         :param prepsql: Similar to the @prepsql decorator this executes a raw
@@ -1200,7 +1193,7 @@ class FrontendTest(BackendTest):
 
     def _log_generation_time(
         self,
-        response: Optional[webtest.TestResponse] = None,
+        response: webtest.TestResponse | None = None,
     ) -> None:
         if response is None:
             response = self.response
@@ -1285,7 +1278,7 @@ class FrontendTest(BackendTest):
         check_notification: bool = True,
         check_button_attrs: bool = False,
         verbose: bool = False,
-        value: Optional[str] = None,
+        value: str | None = None,
         check_mandatory_filled: bool = True,
     ) -> None:
         """Submit a form.
@@ -1364,7 +1357,7 @@ class FrontendTest(BackendTest):
         """
         for link in links:
             if isinstance(link, str):
-                link = {'description': html.escape(link)}
+                link = cast(CdEDBObject, {'description': html.escape(link)})
             if 'index' not in link:
                 link['index'] = 0
             try:
@@ -1377,7 +1370,7 @@ class FrontendTest(BackendTest):
 
     def login(
         self, user: UserIdentifier, *, ip: str = "", verbose: bool = False
-    ) -> Optional[str]:
+    ) -> str | None:
         """Log in as the given user.
 
         :param verbose: If True display additional debug information.
@@ -1495,7 +1488,7 @@ class FrontendTest(BackendTest):
             "//div[@class='alert alert-info']/span/text()"
         )
 
-        def _extract_path(s: str) -> Optional[str]:
+        def _extract_path(s: str) -> str | None:
             regex = r"E-Mail als (.*) auf der Festplatte gespeichert."
             result = re.match(regex, s.strip())
             if not result:
@@ -1513,6 +1506,9 @@ class FrontendTest(BackendTest):
 
     def fetch_mail_content(self, index: int = 0) -> str:
         mail = self._fetch_mail()[index]
+        return self._get_mail_content(mail)
+
+    def _get_mail_content(self, mail: email.message.EmailMessage) -> str:
         body = mail.get_body()
         assert isinstance(body, email.message.EmailMessage)
         return body.get_content()
@@ -1630,7 +1626,7 @@ class FrontendTest(BackendTest):
         div: str = "content",
         regex: bool = False,
         exact: bool = False,
-        msg: Optional[str] = None,
+        msg: str | None = None,
     ) -> None:
         """Assert that a string is present in the element with the given id.
 
@@ -1648,7 +1644,7 @@ class FrontendTest(BackendTest):
             self.assertIn(s.strip(), content, msg=msg)
 
     def assertNonPresence(
-        self, s: Optional[str], *, div: str = "content", check_div: bool = True
+        self, s: str | None, *, div: str = "content", check_div: bool = True
     ) -> None:
         """Assert that a string is not present in the element with the given id.
 
@@ -1837,11 +1833,11 @@ class FrontendTest(BackendTest):
 
     def assertNotification(
         self,
-        ntext: Optional[str] = None,
-        ntype: Optional[str] = None,
+        ntext: str | None = None,
+        ntype: str | None = None,
         *,
         static: bool = False,
-        msg: Optional[str] = None,
+        msg: str | None = None,
     ) -> None:
         """Check for a notification containing `ntext` under all `ntype` notifications.
 
@@ -1872,17 +1868,21 @@ class FrontendTest(BackendTest):
                     for node in other_notifications
                 )
                 if errors := self.get_content("debug-data-errors", check_exists=False):
-                    msg += " I found these errors in the debug data: " + errors
+                    msg += "\nI found these errors in the debug data: " + errors
             else:
                 msg += " (There were no notifications)."
-            if errors := self.get_content("debug-data-errors", check_exists=False):
-                msg += "\nI found these errors in the debug data:\n\t" + errors
+                if errors := self.get_content("debug-data-errors", check_exists=False):
+                    msg += "\nI found these errors in the debug data:\n\t" + errors
             self.fail(msg)
         if ntext is not None:
             # joining them this way is useful for meaningful failure message
             all_texts = " | ".join(
                 self._normalize_whitespace(n.text_content()) for n in notifications
             )
+            if errors := self.get_content("debug-data-errors", check_exists=False):
+                if msg is None:
+                    msg = ""
+                msg += "\nI found these errors in the debug data:\n\t" + errors
             self.assertIn(ntext, all_texts, msg=msg)
 
     def assertLogin(self, name: str) -> None:
@@ -1893,8 +1893,8 @@ class FrontendTest(BackendTest):
         self,
         fieldname: str,
         message: str = "",
-        index: Optional[int] = None,
-        notification: Optional[str] = "Validierung fehlgeschlagen",
+        index: int | None = None,
+        notification: str | None = "Validierung fehlgeschlagen",
     ) -> None:
         """
         Check for a specific form input field to be highlighted as .has-error
@@ -1923,8 +1923,8 @@ class FrontendTest(BackendTest):
         self,
         fieldname: str,
         message: str = "",
-        index: Optional[int] = None,
-        notification: Optional[str] = "Eingaben scheinen fehlerhaft",
+        index: int | None = None,
+        notification: str | None = "Eingaben scheinen fehlerhaft",
     ) -> None:
         """
         Check for a specific form input field to be highlighted as .has-warning
@@ -1954,8 +1954,8 @@ class FrontendTest(BackendTest):
         kind: str,
         fieldname: str,
         message: str,
-        index: Optional[int],
-        notification: Optional[str],
+        index: int | None,
+        notification: str | None,
     ) -> None:
         """Common helper for assertValidationError and assertValidationWarning."""
         if kind == "error":
@@ -2005,10 +2005,10 @@ class FrontendTest(BackendTest):
 
     def assertNoLink(
         self,
-        href_pattern: Optional[str | Pattern[str]] = None,
+        href_pattern: str | Pattern[str] | None = None,
         tag: str = 'a',
         href_attr: str = 'href',
-        content: Optional[str] = None,
+        content: str | None = None,
         verbose: bool = False,
     ) -> None:
         """Assert that no tag that matches specific criteria is found. Possible
@@ -2122,11 +2122,8 @@ class FrontendTest(BackendTest):
             self.assertPresence(entry['change_note'] or "", div=f"{i}-{log_id}")
             self.assertPresence(self.gettext(str(entry['code'])), div=f"{i}-{log_id}")
             if entry['persona_id']:
-                name1 = make_persona_name(personas[entry['persona_id']])
-                name2 = make_persona_name(
-                    personas[entry['persona_id']],
-                    include_nickname=True,
-                )
+                name1 = personas[entry['persona_id']].get_name()
+                name2 = personas[entry['persona_id']].get_name(include_nickname=True)
                 self.assertPresence(
                     f'({re.escape(name1)}|{re.escape(name2)})',
                     regex=True,
@@ -2301,7 +2298,7 @@ class FrontendTest(BackendTest):
     def check_create_archive_user(
         self,
         realm: str,
-        data: Optional[CdEDBObject] = None,
+        data: CdEDBObject | None = None,
     ) -> None:
         """Basic check for the user creation and archival functionality of each realm.
 
@@ -2358,24 +2355,24 @@ class FrontendTest(BackendTest):
         f['note'] = "Archived for testing."
         self.submit(f)
         self.assertTitle("Zelda Zeruda-Hime")
-        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        self.assertPresence("Der Account ist archiviert.", div='archived')
         _check_deleted_data()
         # 2. Find user via archived search
         self.traverse({'href': '/' + realm + '/$'})
-        self.traverse("Nutzer verwalten")
-        self.assertTitle("utzerverwaltung", exact=False)
+        self.traverse("Accounts verwalten")
+        self.assertTitle("ccountverwaltung", exact=False)
         f = self.response.forms['queryform']
         f['qop_is_archived'] = ""
         f['qop_given_names'] = QueryOperators.match.value
         f['qval_given_names'] = 'Zelda'
         self.submit(f)
-        self.assertTitle("utzerverwaltung", exact=False)
+        self.assertTitle("ccountverwaltung", exact=False)
         self.assertPresence("Ergebnis [1]", div='query-results')
         self.assertPresence("Zeruda", div='query-result')
         self.traverse({'description': 'Profil', 'href': '/core/persona/1001/show'})
         # 3: Dearchive user
         self.assertTitle("Zelda Zeruda-Hime")
-        self.assertPresence("Der Benutzer ist archiviert.", div='archived')
+        self.assertPresence("Der Account ist archiviert.", div='archived')
         self.traverse({'description': "Account wiederherstellen"})
         f = self.response.forms['dearchivepersonaform']
         self.submit(f, check_notification=False, check_mandatory_filled=False)
@@ -2388,7 +2385,7 @@ class FrontendTest(BackendTest):
         _check_deleted_data()
 
     def _click_admin_view_button(
-        self, label: str | Pattern[str], current_state: Optional[bool] = None
+        self, label: str | Pattern[str], current_state: bool | None = None
     ) -> None:
         """
         Helper function for checking the disableable admin views
@@ -2476,7 +2473,7 @@ class MultiAppFrontendTest(FrontendTest):
         cls.responses = [None for _ in range(cls.n)]
         cls.current_app = 0
 
-    def setUp(self, *args: Optional[str], **kwargs: Optional[str]) -> None:
+    def setUp(self, *args: str | None, **kwargs: str | None) -> None:
         """Reset all apps and responses and the current app index."""
         self.responses = [None for _ in range(self.n)]
         super().setUp(*args, **kwargs)
@@ -2527,13 +2524,15 @@ class MailTrace(NamedTuple):
     kwargs: dict[str, Any]
 
 
-def make_cron_backend_proxy(cron: CronFrontend, backend: B) -> B:
+def make_cron_backend_proxy[B: AbstractBackend](cron: CronFrontend, backend: B) -> B:
     class CronBackendProxy:
         def __getattr__(self, name: str) -> Callable[..., Any]:
             attr = getattr(backend, name)
 
             @functools.wraps(attr)
-            def wrapper(persona_id: int | None, *args: Any, **kwargs: Any) -> Any:
+            def wrapper(
+                persona_id: vtypes.PersonaID | None, *args: Any, **kwargs: Any
+            ) -> Any:
                 rs = cron.make_request_state()
                 rs.user.persona_id = persona_id
                 return attr(rs, *args, **kwargs)
@@ -2595,7 +2594,7 @@ class CronTest(CdEDBTest):
         self.stores = []
         self.mails = []
 
-        def store_decorator(fun: F) -> F:
+        def store_decorator[F: Callable[..., Any]](fun: F) -> F:
             @functools.wraps(fun)
             def store_wrapper(
                 rs: RequestState, name: str, data: CdEDBObject
@@ -2611,12 +2610,14 @@ class CronTest(CdEDBTest):
             store_decorator(self.cron.core.set_cron_store),
         )
 
-        def mail_decorator(front: AbstractFrontend) -> Callable[[F], F]:
+        def mail_decorator[F: Callable[..., Any]](
+            front: AbstractFrontend,
+        ) -> Callable[[F], F]:
             def the_decorator(fun: F) -> F:
                 @functools.wraps(fun)
                 def mail_wrapper(
                     rs: RequestState, name: str, *args: Any, **kwargs: Any
-                ) -> Optional[str]:
+                ) -> str | None:
                     self.mails.append(MailTrace(front.realm, name, args, kwargs))
                     return fun(rs, name, *args, **kwargs)
 

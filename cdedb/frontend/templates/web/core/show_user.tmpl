@@ -95,7 +95,7 @@
     {% endif %}
 
     {# Related pages #}
-    {% set show_admin_buttons = is_relative_admin_view or user.admin_views.intersection(["complaint", "event_user", "ml_user"]|set) %}
+    {% set show_admin_buttons = is_relative_admin_view or user.admin_views.intersection(["complaint", "event_user", "ml_user", "assembly_user"]|set) %}
     {% if quoteable or show_admin_buttons %}
         <div class="p button-par">
             {% if quoteable %}
@@ -112,10 +112,15 @@
                                  gettext("Show Event Data"), aclass="btn btn-info btn-sm",
                                  icon="chalkboard-teacher") }}
                 {% endif %}
-                {% if (is_relative_admin_view or "ml_user" in user.admin_views) and not ambience['persona']['is_archived'] %}
+                {% if is_relative_admin_view or "ml_user" in user.admin_views %}
                     {{ util.href(cdedblink("core/show_user_mailinglists", {'persona_id': data['id']}),
                                  gettext("Show Mailinglist Data"), aclass="btn btn-info btn-sm",
                                  icon="envelope") }}
+                {% endif %}
+                {% if is_relative_admin_view or "assembly_user" in user.admin_views %}
+                    {{ util.href(cdedblink("core/show_user_assemblies", {'persona_id': data['id']}),
+                                 gettext("Show Assembly Data"), aclass="btn btn-info btn-sm",
+                                 icon="bullhorn") }}
                 {% endif %}
                 {% if "complaint" in user.admin_views and user.all_roles.intersection(["complaint_admin", "complaint.enforcer"]) %}
                     {{ util.href(cdedblink("core/show_user_measures", {'persona_id': data['id']}),
@@ -305,20 +310,22 @@
                         </dd>
                     {% endif %}
 
-                    <dt title="{% trans %}Admin Privileges{% endtrans %}">
-                        {% trans %}Admin Privileges{% endtrans %}
-                    </dt>
-                    <dd id="admin-realms">
-                        {% for key in data.get_admin_bits() if data.is_true(key) %}
-                            {{ util.privilege_icon(key) }}
-                        {% else %}
-                            <i>{% trans %}None{% endtrans %}</i>
-                        {% endfor %}
-                        {% if 'meta_admin' in user.admin_views and not ambience['persona']['is_archived'] %}
-                            {{ util.href(cdedblink("core/change_privileges_form"), gettext("Edit"), icon="pen",
-                                    aclass="btn btn-xs btn-warning") }}
-                        {% endif %}
-                    </dd>
+                    {% if admin_bits is not none %}
+                        <dt title="{% trans %}Admin Privileges{% endtrans %}">
+                            {% trans %}Admin Privileges{% endtrans %}
+                        </dt>
+                        <dd id="admin-realms">
+                            {% for key in admin_bits %}
+                                {{ util.privilege_icon(key) }}
+                            {% else %}
+                                <i>{% trans %}None{% endtrans %}</i>
+                            {% endfor %}
+                            {% if 'meta_admin' in user.admin_views and not ambience['persona']['is_archived'] %}
+                                {{ util.href(cdedblink("core/change_privileges_form"), gettext("Edit"), icon="pen",
+                                        aclass="btn btn-xs btn-warning") }}
+                            {% endif %}
+                        </dd>
+                    {% endif %}
 
                     {% if notes is not sameas data.REDACTED %}
                         <dt title="{% trans %}Admin Notes{% endtrans %}">
@@ -558,7 +565,7 @@
             {% endif %}
 
             {% if (data.has('address2') or data.has('address_supplement2') or data.has('postal_code2')
-                   or data.has('location2') or data.has('country2')) %}
+                   or data.has('location2')) %} {# not check for country name; it has a default value #}
                 <dl class="dl-horizontal">
                     <dt title="{% trans %}Second Address{% endtrans %}">
                         {% trans %}Second Address{% endtrans %}
@@ -670,7 +677,7 @@ BIC:                {{ meta_info.membership_fee_account.get_bic() }}
 Kreditinstitut:     {{ meta_info.membership_fee_account.get_bank() }}
 Verwendungszweck:   {{ data.membership_fee_reference }}
 
-Bei Überweisungen aus dem Ausland achte bitte darauf, dass der Empfänger
+Bei Überweisungen aus dem Ausland achte bitte darauf, dass die Empfänger:in
 keine Gebühren bezahlen muss.
 
 Nähere Informationen gibt es auf:
@@ -758,10 +765,10 @@ automatisch eine Bestätigung per E-Mail
 
                                     <div class="form-group">
                                         {{ util.input_submit(label=gettext("Archive Account"), icon="eraser",
-                                                aclass="btn btn-danger btn-sm", readonly=data['is_meta_admin'],
+                                                aclass="btn btn-danger btn-sm", readonly=data.is_true('is_meta_admin'),
                                                 title=gettext("Cannot archive meta admins.") if data.is_true('is_meta_admin') else "") }}
-                                        {{ util.ack_delete(gettext("The Account will be archived.")) }}
                                     </div>
+                                    {{ util.ack_delete(gettext("The Account will be archived.")) }}
                                     {{ util.form_input_textarea(name="note", label=gettext("Note"), horizontal=False) }}
                                 </form>
                             </div>

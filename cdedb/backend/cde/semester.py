@@ -16,10 +16,10 @@ For every step "foo" of semester management, there are the following methods:
 
 import dataclasses
 import decimal
-from typing import Optional
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.core as models
 from cdedb.backend.cde import CdELastschriftBackend
 from cdedb.backend.common import access, affirm_validation as affirm
 from cdedb.common import (
@@ -447,7 +447,7 @@ class CdESemesterBackend(CdELastschriftBackend):
         period_id: int,
         addresscheck: bool,
         testrun: bool,
-    ) -> tuple[bool, Optional[CdEDBObject]]:
+    ) -> tuple[bool, models.CdEPersona | None]:
         """Atomized call to bill one persona.
 
         :returns: A tuple consisting of a boolean signalling whether there
@@ -483,7 +483,7 @@ class CdESemesterBackend(CdELastschriftBackend):
     @access("finance_admin")
     def process_for_semester_prearchival(
         self, rs: RequestState, period_id: int, testrun: bool
-    ) -> tuple[bool, Optional[CdEDBObject]]:
+    ) -> tuple[bool, models.CorePersona | None]:
         """Atomized call to warn one persona prior to archival.
 
         :returns: A tuple consisting of a boolean signalling whether there
@@ -527,7 +527,7 @@ class CdESemesterBackend(CdELastschriftBackend):
     @access("finance_admin")
     def process_for_semester_eject(
         self, rs: RequestState, period_id: int
-    ) -> tuple[bool, Optional[CdEDBObject]]:
+    ) -> tuple[bool, models.CdEPersona | None]:
         """Atomized call to eject one (soon to be ex-)member.
 
         :returns: A tuple consisting of a boolean signalling whether there
@@ -551,22 +551,22 @@ class CdESemesterBackend(CdELastschriftBackend):
             }
             persona = self.core.get_cde_user(rs, persona_id)
             do_eject = (
-                persona['balance'] < self.conf["MEMBERSHIP_FEE"]
-                and not persona['trial_member']
-                and not persona['honorary_member']
+                persona.balance < self.conf["MEMBERSHIP_FEE"]
+                and not persona.trial_member
+                and not persona.honorary_member
             )
             if do_eject:
                 self.change_membership(rs, persona_id, is_member=False)
                 period_update['ejection_count'] = period['ejection_count'] + 1
             else:
-                persona = None  # type: ignore[assignment]
+                persona = None
             self.set_period(rs, period_update)
             return True, persona
 
     @access("finance_admin")
     def process_for_semester_archival(
         self, rs: RequestState, period_id: int
-    ) -> tuple[bool, Optional[CdEDBObject]]:
+    ) -> tuple[bool, CdEDBObject | None]:
         """Atomized call to archive one persona.
 
         :returns: A tuple consisting of a boolean signalling whether there
@@ -617,7 +617,7 @@ class CdESemesterBackend(CdELastschriftBackend):
     @access("finance_admin")
     def process_for_semester_balance(
         self, rs: RequestState, period_id: int
-    ) -> tuple[bool, Optional[CdEDBObject]]:
+    ) -> tuple[bool, models.CdEPersona | None]:
         """Atomized call to update the balance of one member.
 
         :returns: A tuple consisting of a boolean signalling whether there
@@ -640,13 +640,13 @@ class CdESemesterBackend(CdELastschriftBackend):
                 'id': period_id,
                 'balance_state': persona_id,
             }
-            if persona['balance'] < self.conf["MEMBERSHIP_FEE"] and not (
-                persona['trial_member'] or persona['honorary_member']
+            if persona.balance < self.conf["MEMBERSHIP_FEE"] and not (
+                persona.trial_member or persona.honorary_member
             ):
                 # TODO maybe fail more gracefully here?
                 # Maybe set balance to 0 and send a mail or something.
                 raise ValueError(n_("Balance too low."))
-            elif persona['trial_member']:
+            elif persona.trial_member:
                 self.core.change_membership_easy_mode(
                     rs, persona_id, trial_member=False
                 )
@@ -654,8 +654,8 @@ class CdESemesterBackend(CdELastschriftBackend):
                     period['balance_trialmembers'] + 1
                 )
             else:
-                if not persona['honorary_member']:
-                    persona['balance'] -= self.conf["MEMBERSHIP_FEE"]
+                if not persona.honorary_member:
+                    persona.balance -= self.conf["MEMBERSHIP_FEE"]
                     period_update['balance_total'] = (
                         period['balance_total'] + self.conf["MEMBERSHIP_FEE"]
                     )
@@ -668,7 +668,7 @@ class CdESemesterBackend(CdELastschriftBackend):
                 self.core.change_persona_balance(
                     rs,
                     persona_id,
-                    persona['balance'],
+                    persona.balance,
                     const.FinanceLogCodes.deduct_membership_fee,
                     change_note=note,
                 )
@@ -678,7 +678,7 @@ class CdESemesterBackend(CdELastschriftBackend):
     @access("finance_admin")
     def process_for_exmember_balance(
         self, rs: RequestState, period_id: int
-    ) -> tuple[bool, Optional[CdEDBObject]]:
+    ) -> tuple[bool, models.CdEPersona | None]:
         """Set the balance of all former members to zero.
 
         We keep the balance of all former members for one semester, so they get their
@@ -705,7 +705,7 @@ class CdESemesterBackend(CdELastschriftBackend):
                 'id': period_id,
                 'exmember_state': persona_id,
             }
-            if persona['balance']:
+            if persona.balance:
                 self.core.change_persona_balance(
                     rs,
                     persona_id,
@@ -714,7 +714,7 @@ class CdESemesterBackend(CdELastschriftBackend):
                     change_note="Guthaben von Exmitglied abgebucht.",
                 )
                 period_update['exmember_balance'] = (
-                    period['exmember_balance'] + persona['balance']
+                    period['exmember_balance'] + persona.balance
                 )
                 period_update['exmember_count'] = period['exmember_count'] + 1
             self.set_period(rs, period_update)
@@ -723,7 +723,7 @@ class CdESemesterBackend(CdELastschriftBackend):
     @access("finance_admin")
     def process_for_expuls_check(
         self, rs: RequestState, expuls_id: int, testrun: bool
-    ) -> tuple[bool, Optional[CdEDBObject]]:
+    ) -> tuple[bool, models.CdEPersona | None]:
         """Atomized call to initiate address check.
 
         :returns: A tuple consisting of a boolean signalling whether there

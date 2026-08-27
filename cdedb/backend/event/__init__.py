@@ -7,7 +7,7 @@ variant for external participants.
 import collections
 import copy
 from collections.abc import Collection, Mapping
-from typing import Any, Optional
+from typing import Any
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -42,6 +42,7 @@ from cdedb.common.privileges import (
     EventPrivileges,
     is_privileged_event as is_privileged,
 )
+from cdedb.common.query.log_filter import EventLogFilter
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.connection import Atomizer
 from cdedb.models.droid import OrgaToken
@@ -59,7 +60,7 @@ class EventBackend(
 ):
     @access("event_admin")
     def delete_event_blockers(
-        self, rs: RequestState, event_id: int
+        self, rs: RequestState, event_id: vtypes.EventID
     ) -> DeletionBlockers:
         """Determine what keeps an event from being deleted.
 
@@ -79,13 +80,16 @@ class EventBackend(
         * track_group_tracks: A link between a course track and a track group.
         * orgas: An orga of the event.
         * caretakers: A caretaker of the event.
+        * checkin_helper: A checkin helper of the event
         * lodgement_groups: A lodgement group associated with the event.
                             This can have it's own blockers.
         * lodgements: A lodgement associated with the event. This can have
                       it's own blockers.
         * registrations: A registration associated with the event. This can
                          have it's own blockers.
-        * questionnaire: A questionnaire row configured for the event.
+        * questionnaire_text_rows: A questionnaire row (text) configured for the event.
+        * questionnaire_field_rows: A questionnaire row (field) configured for the event.
+        * questionnaire_magic_rows: A questionnaire row (magic) configured for the event.
         * stored_queries: A stored query for the event.
         * log: A log entry for the event.
         * mailinglists: A mailinglist associated with the event. This
@@ -98,6 +102,7 @@ class EventBackend(
         event_id = affirm(vtypes.ID, event_id)
         blockers = {}
 
+        # TODO Reduce code duplication
         orga_tokens = self.sql_select(
             rs, OrgaToken.database_table, ("id",), (event_id,), entity_key="event_id"
         )
@@ -174,7 +179,7 @@ class EventBackend(
             blockers["part_groups"] = [e["id"] for e in part_groups]
             part_group_parts = self.sql_select(
                 rs,
-                "event.part_group_parts",
+                models.OtherDatabaseTables.part_group_parts,
                 ("id",),
                 blockers["part_groups"],
                 entity_key="part_group_id",
@@ -193,7 +198,7 @@ class EventBackend(
             blockers["track_groups"] = [e["id"] for e in track_groups]
             track_group_tracks = self.sql_select(
                 rs,
-                "event.track_group_tracks",
+                models.OtherDatabaseTables.track_group_tracks,
                 ("id",),
                 blockers["track_groups"],
                 entity_key="track_group_id",
@@ -202,16 +207,34 @@ class EventBackend(
                 blockers["track_group_tracks"] = [e["id"] for e in track_group_tracks]
 
         orgas = self.sql_select(
-            rs, "event.orgas", ("id",), (event_id,), entity_key="event_id"
+            rs,
+            models.OtherDatabaseTables.orgas,
+            ("id",),
+            (event_id,),
+            entity_key="event_id",
         )
         if orgas:
             blockers["orgas"] = [e["id"] for e in orgas]
 
         caretakers = self.sql_select(
-            rs, "event.caretakers", ("id",), (event_id,), entity_key="event_id"
+            rs,
+            models.OtherDatabaseTables.caretakers,
+            ("id",),
+            (event_id,),
+            entity_key="event_id",
         )
         if caretakers:
             blockers["caretakers"] = [e["id"] for e in caretakers]
+
+        checkin_helpers = self.sql_select(
+            rs,
+            models.OtherDatabaseTables.checkin_helpers,
+            ("id",),
+            (event_id,),
+            entity_key="event_id",
+        )
+        if checkin_helpers:
+            blockers["checkin_helpers"] = [e["id"] for e in checkin_helpers]
 
         lodgement_groups = self.sql_select(
             rs,
@@ -243,24 +266,54 @@ class EventBackend(
         if registrations:
             blockers["registrations"] = [e["id"] for e in registrations]
 
-        questionnaire_rows = self.sql_select(
+        questionnaire_text_rows = self.sql_select(
             rs,
-            models.QuestionnaireRow.database_table,
+            models.questionnaire.QuestionnaireTextRowMeta.database_table,
             ("id",),
             (event_id,),
-            entity_key=models.QuestionnaireRow.entity_key,
+            entity_key=models.questionnaire.QuestionnaireTextRowMeta.entity_key,
         )
-        if questionnaire_rows:
-            blockers["questionnaire"] = [e["id"] for e in questionnaire_rows]
+        if questionnaire_text_rows:
+            blockers["questionnaire_text_rows"] = [
+                e["id"] for e in questionnaire_text_rows
+            ]
+
+        questionnaire_field_rows = self.sql_select(
+            rs,
+            models.questionnaire.QuestionnaireFieldRow.database_table,
+            ("id",),
+            (event_id,),
+            entity_key=models.questionnaire.QuestionnaireFieldRow.entity_key,
+        )
+        if questionnaire_field_rows:
+            blockers["questionnaire_field_rows"] = [
+                e["id"] for e in questionnaire_field_rows
+            ]
+
+        questionnaire_magic_rows = self.sql_select(
+            rs,
+            models.questionnaire.QuestionnaireMagicRow.database_table,
+            ("id",),
+            (event_id,),
+            entity_key=models.questionnaire.QuestionnaireMagicRow.entity_key,
+        )
+        if questionnaire_magic_rows:
+            blockers["questionnaire_magic_rows"] = [
+                e["id"] for e in questionnaire_magic_rows
+            ]
 
         stored_queries = self.sql_select(
-            rs, "event.stored_queries", ("id",), (event_id,), entity_key="event_id"
+            rs,
+            models.StoredEventQuery.database_table,
+            ("id",),
+            (event_id,),
+            entity_key="event_id",
         )
         if stored_queries:
             blockers["stored_queries"] = [e["id"] for e in stored_queries]
 
         log = self.sql_select(
-            rs, "event.log", ("id",), (event_id,), entity_key="event_id"
+            rs, EventLogFilter.log_table, ("id",), (event_id,), entity_key="event_id"
         )
         if log:
             blockers["log"] = [e["id"] for e in log]
@@ -293,14 +346,17 @@ class EventBackend(
 
     @access("event_admin")
     def delete_event(
-        self, rs: RequestState, event_id: int, cascade: Optional[Collection[str]] = None
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Remove event.
 
         :param cascade: Specify which deletion blockers to cascadingly
             remove or ignore. If None or empty, cascade none.
         """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         blockers = self.delete_event_blockers(rs, event_id)
         if not cascade:
             cascade = set()
@@ -327,7 +383,11 @@ class EventBackend(
                     # reg_cascade &= cascade
                     with Silencer(rs):
                         for reg_id in blockers["registrations"]:
-                            ret *= self.delete_registration(rs, reg_id, reg_cascade)
+                            ret *= self.delete_registration(
+                                rs,
+                                vtypes.RegistrationID(vtypes.ID(reg_id)),
+                                reg_cascade,
+                            )
                 if "courses" in cascade:
                     course_cascade = (
                         "attendees", "course_choices", "course_segments", "instructors",
@@ -335,7 +395,11 @@ class EventBackend(
                     # course_cascade &= cascade
                     with Silencer(rs):
                         for course_id in blockers["courses"]:
-                            ret *= self.delete_course(rs, course_id, course_cascade)
+                            ret *= self.delete_course(
+                                rs,
+                                vtypes.CourseID(vtypes.ID(course_id)),
+                                course_cascade,
+                            )
                 if "lodgements" in cascade:
                     ret *= self.sql_delete(
                         rs, models.Lodgement.database_table, blockers["lodgements"]
@@ -368,11 +432,23 @@ class EventBackend(
                     with Silencer(rs):
                         for anid in blockers["track_groups"]:
                             self._delete_track_group(rs, anid, track_group_cascade)
-                if "questionnaire" in cascade:
+                if "questionnaire_text_rows" in cascade:
                     ret *= self.sql_delete(
                         rs,
-                        models.QuestionnaireRow.database_table,
-                        blockers["questionnaire"],
+                        models.questionnaire.QuestionnaireTextRowMeta.database_table,
+                        blockers["questionnaire_text_rows"],
+                    )
+                if "questionnaire_field_rows" in cascade:
+                    ret *= self.sql_delete(
+                        rs,
+                        models.questionnaire.QuestionnaireFieldRow.database_table,
+                        blockers["questionnaire_field_rows"],
+                    )
+                if "questionnaire_magic_rows" in cascade:
+                    ret *= self.sql_delete(
+                        rs,
+                        models.questionnaire.QuestionnaireMagicRow.database_table,
+                        blockers["questionnaire_magic_rows"],
                     )
                 if "field_definitions" in cascade:
                     deletor: CdEDBObject = {
@@ -393,6 +469,10 @@ class EventBackend(
                 if "caretakers" in cascade:
                     ret *= self.sql_delete(
                         rs, "event.caretakers", blockers["caretakers"]
+                    )
+                if "checkin_helpers" in cascade:
+                    ret *= self.sql_delete(
+                        rs, "event.checkin_helpers", blockers["checkin_helpers"]
                     )
                 if "orga_tokens" in cascade:
                     orga_token_cascade = ("atime", "log")
@@ -443,10 +523,10 @@ class EventBackend(
     def partial_import_event(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         data: CdEDBObject,
         dryrun: bool,
-        token: Optional[str] = None,
+        token: str | None = None,
     ) -> tuple[str, CdEDBObject]:
         """Incorporate changes into an event.
 
@@ -482,7 +562,7 @@ class EventBackend(
             return delta, previous
 
         with Atomizer(rs):
-            event_id = affirm(vtypes.ID, event_id)
+            event_id = affirm(vtypes.EventID, event_id)
             dryrun = affirm(bool, dryrun)
 
             self.assert_lock(rs, event_id=event_id)
@@ -568,7 +648,7 @@ class EventBackend(
             if not used_lodgement_ids <= available_lodgement_ids:
                 raise ValueError("Referential integrity of lodgements violated.")
 
-            used_course_ids: set[int] = set()
+            used_course_ids: set[vtypes.CourseID] = set()
             for registration in data.get('registrations', {}).values():
                 if registration:
                     for track in registration.get('tracks', {}).values():
@@ -598,11 +678,14 @@ class EventBackend(
             # noinspection PyPep8Naming
             IDMap = dict[int, int]
 
+            current: CdEDBObject | None
+
             gmap: IDMap = {}
             gdelta: CdEDBOptionalMap = {}
             gprevious: CdEDBOptionalMap = {}
+            group_id: vtypes.LodgementGroupID
             for group_id in mes(data.get('lodgement_groups', {}).keys()):
-                new_group = data['lodgement_groups'][group_id]
+                new_group: CdEDBObject | None = data['lodgement_groups'][group_id]
                 current = all_current_data['lodgement_groups'].get(group_id)
                 if group_id > 0 and current is None:
                     # group was deleted online in the meantime
@@ -613,7 +696,7 @@ class EventBackend(
                     gprevious[group_id] = current
                     if not dryrun:
                         self.delete_lodgement_group(rs, group_id, ("lodgements",))
-                elif group_id < 0:
+                elif group_id < 0 or current is None:
                     gdelta[group_id] = new_group
                     gprevious[group_id] = None
                     if not dryrun:
@@ -634,7 +717,7 @@ class EventBackend(
             ldelta: CdEDBOptionalMap = {}
             lprevious: CdEDBOptionalMap = {}
             for lodgement_id in mes(data.get('lodgements', {}).keys()):
-                new_lodgement = data['lodgements'][lodgement_id]
+                new_lodgement: CdEDBObject | None = data['lodgements'][lodgement_id]
                 current = all_current_data['lodgements'].get(lodgement_id)
                 if lodgement_id > 0 and current is None:
                     # lodgement was deleted online in the meantime
@@ -683,7 +766,7 @@ class EventBackend(
                 )
 
             for course_id in mes(data.get('courses', {}).keys()):
-                new_course = data['courses'][course_id]
+                new_course: CdEDBObject | None = data['courses'][course_id]
                 current = all_current_data['courses'].get(course_id)
                 if course_id > 0 and current is None:
                     # course was deleted online in the meantime
@@ -699,7 +782,7 @@ class EventBackend(
                             course_id,
                             ("instructors", "course_choices", "course_segments"),
                         )
-                elif course_id < 0:
+                elif course_id < 0 or current is None:
                     cdelta[course_id] = new_course
                     cprevious[course_id] = None
                     if not dryrun:
@@ -742,8 +825,12 @@ class EventBackend(
 
             data_regs = data.get('registrations', {})
             for registration_id in mes(data_regs.keys()):
-                new_registration = data_regs[registration_id]
-                if registration_id < 0 and dup.get(new_registration.get('persona_id')):
+                new_registration: CdEDBObject | None = data_regs[registration_id]
+                if (
+                    registration_id < 0
+                    and new_registration is not None
+                    and dup.get(new_registration.get('persona_id'))
+                ):
                     # the process got out of sync and the registration was
                     # already created, so we fix this
                     registration_id = dup[new_registration.get('persona_id')]
@@ -763,7 +850,7 @@ class EventBackend(
                             "course_choices",
                         )  # fmt: skip
                         self.delete_registration(rs, registration_id, reg_cascade)
-                elif registration_id < 0:
+                elif registration_id < 0 or current is None:
                     rdelta[registration_id] = new_registration
                     rprevious[registration_id] = None
                     if not dryrun:

@@ -105,25 +105,25 @@ class ConditionParserTest(unittest.TestCase):
         (True, "not field.not"),
         (False, "field.long_field_name and field.not"),
         # age
-        (True, "U99"),
-        (True, "u99"),
-        (True, "U34"),
-        (False, "U33"),
-        (True, "U34 and not U33"),
-        (False, "U40 and not U35"),
-        (True, "field.1 and U34"),
-        (False, "field.1 and U33"),
+        (True, "age.U99"),
+        (True, "age.u99"),
+        (True, "age.U34"),
+        (False, "age.U33"),
+        (True, "age.U34 and not age.U33"),
+        (False, "age.U40 and not age.U35"),
+        (True, "field.1 and age.U34"),
+        (False, "field.1 and age.U33"),
     ]
 
     AGE_SPECIAL_CASES: list[dict[str, Any]] = [
         dict(
-            formula="U18",
+            formula="age.U18",
             expectedResult=True,
             date=date(2025, 10, 9),
             birthday=date(2007, 10, 10),
         ),
         dict(
-            formula="U18",
+            formula="age.U18",
             expectedResult=False,
             date=date(2025, 10, 10),
             birthday=date(2007, 10, 10),
