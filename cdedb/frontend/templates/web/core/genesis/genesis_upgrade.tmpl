@@ -48,7 +48,7 @@
             {% endtrans %}
         </p>
     </div>
-    <form action="{{ cdedblink('core/genesis_upgrade') }}" method="POST" class="form-horizontal" enctype="multipart/form-data">
+    <form id="genesis-upgrade" action="{{ cdedblink('core/genesis_upgrade') }}" method="POST" class="form-horizontal" enctype="multipart/form-data">
         {{ util.anti_csrf_token("core/genesis_upgrade") }}
         {% set attachment_info = gettext("Please upload a participation certificate from your DSA, DJA, etc. here.") %}
         {% set attachment_restrictions = " " + gettext("The file must be a PDF. The maximum allowed filesize is 8 MB.") %}

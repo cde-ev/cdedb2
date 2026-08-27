@@ -3464,6 +3464,53 @@ class TestCoreFrontend(FrontendTest):
         self.assertTrue(self.core.is_relative_admin(self.key, 1002))
         self._decide_genesis_case(GenesisDecision.approve, persona_id=1002)
 
+    @as_users("simon")
+    @storage
+    def test_genesis_upgrade(self) -> None:
+        # check links to get to the upgrade page
+        self.traverse("Simon", "Mitgliedschaft beantragen")
+        self.assertTitle("CdE-Mitgliedschaft beantragen")
+        self.traverse("Veranstaltungen", "Große Testakademie", "Anmelden")
+        self.assertPresence("kein CdE-Mitglied bist, musst Du möglicherweise einen")
+        self.traverse("deine Mitgliedschaft im CdE beantragen")
+        self.assertTitle("CdE-Mitgliedschaft beantragen")
+
+        # Submit Simons upgrade request
+        f = self.response.forms["genesis-upgrade"]
+        self.submit(f, check_notification=False)
+        msg = "Eine Datei muss hochgeladen oder eine Vergangene Veranstaltung"
+        self.assertValidationError("pevent_id", msg)
+        self.assertValidationError("attachment", msg)
+        f = self.response.forms["genesis-upgrade"]
+        # simon participated at no past event
+        self.assertEqual(f["pevent_id"].options, [('', False, '')])
+        with open(self.testfile_dir / "form.pdf", 'rb') as datafile:
+            data = datafile.read()
+        f["attachment"] = webtest.Upload(
+            "file.pdf", data, content_type="application/pdf"
+        )
+        self.submit(f)
+
+        # Submit Emilias upgrade request
+        with self.switch_user("emilia"):
+            self.traverse("Emilia", "Mitgliedschaft beantragen")
+            self.assertTitle("CdE-Mitgliedschaft beantragen")
+            f = self.response.forms["genesis-upgrade"]
+            f["pevent_id"].select(text="PfingstAkademie 2014")
+            self.submit(f)
+
+        # Submitting an upgrade request multiple times is disallowed
+        self.get("/core/genesis/upgrade")
+        self.assertNotification("Du hast bereits eine laufende Account Upgrade Anfrage.")
+
+        # Approve both upgrade request
+        with self.switch_user("quintus"):
+            self.traverse("Accountanfragen", "Details")
+            self.assertTitle("Account Upgrade Anfrage von Emilia Eventis")
+            self.assertPresence("PfingstAkademie 2014")
+            f = self.response.forms["genesisdecisionform"]
+            f.submit(value=GenesisDecision.approve)
+
     def test_resolve_api(self) -> None:
         at = urllib.parse.quote_plus('@')
         token_key = model_droid.APIToken.request_header_key
