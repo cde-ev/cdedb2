@@ -3297,12 +3297,12 @@ class TestCoreFrontend(FrontendTest):
                 'change_note': alternate_username,
             },
             {
-                'code': const.CoreLogCodes.genesis_merged,
+                'code': const.CoreLogCodes.username_change,
                 'persona_id': new_persona_id,
                 'change_note': alternate_username,
             },
             {
-                'code': const.CoreLogCodes.username_change,
+                'code': const.CoreLogCodes.genesis_merged,
                 'change_note': alternate_username,
                 'persona_id': new_persona_id,
             },
