@@ -101,6 +101,12 @@ class FlagSet[T: (CdEEnum | CdEIntEnum)](frozenset[T]):
         """
         return typing.get_args(types.get_original_bases(cls)[0])[0]
 
+    def __new__(cls, iterable: Iterable[T] = (), /) -> Self:
+        ret = super().__new__(cls, iterable)
+        if not all(isinstance(x, cls.enum_cls()) for x in iterable):
+            raise TypeError
+        return ret
+
     def __and__(self, value: Self | Set[T] | T, /) -> Self:  # type: ignore[override]
         """Allow intersecting with other instances or single enum members.
 
@@ -117,6 +123,8 @@ class FlagSet[T: (CdEEnum | CdEIntEnum)](frozenset[T]):
             value = self.__class__({cast(T, value)})
         if not isinstance(value, self.__class__):
             value = self.__class__(value)
+        if not all(isinstance(x, self.enum_cls()) for x in value):
+            raise TypeError
         return self.__class__(super().__and__(value))
 
     def __rand__(self, value: T, /) -> Self:
@@ -144,6 +152,8 @@ class FlagSet[T: (CdEEnum | CdEIntEnum)](frozenset[T]):
             value = self.__class__({cast(T, value)})
         if not isinstance(value, self.__class__):
             value = self.__class__(value)
+        if not all(isinstance(x, self.enum_cls()) for x in value):
+            raise TypeError
         return self.__class__(super().__sub__(value))
 
     def __or__(self, value: Self | Set[T] | T, /) -> Self:  # type: ignore[override]
@@ -162,6 +172,8 @@ class FlagSet[T: (CdEEnum | CdEIntEnum)](frozenset[T]):
             value = self.__class__({cast(T, value)})
         if not isinstance(value, self.__class__):
             value = self.__class__(value)
+        if not all(isinstance(x, self.enum_cls()) for x in value):
+            raise TypeError
         return self.__class__(super().__or__(set(value)))
 
     def __ror__(self, value: T, /) -> Self:
@@ -173,7 +185,7 @@ class FlagSet[T: (CdEEnum | CdEIntEnum)](frozenset[T]):
         """
         return self.__or__(value)
 
-    def __contains__(self, o: T | Self, /) -> bool:  # type: ignore[override]
+    def __contains__(self, o: T | Self | Set[T], /) -> bool:  # type: ignore[override]
         """Modify containment checks to work with instances of self.
 
         >>> from cdedb.common.roles import RoleSet, Roles
@@ -189,9 +201,15 @@ class FlagSet[T: (CdEEnum | CdEIntEnum)](frozenset[T]):
         True
         >>>
         """
-        if isinstance(o, self.__class__):
-            return self.has_all(*o)
-        return super().__contains__(o)
+        if not isinstance(o, Iterable):
+            if not isinstance(o, self.enum_cls()):
+                raise TypeError
+            return super().__contains__(o)
+        if not isinstance(o, self.__class__):
+            o = self.__class__(o)
+        if not all(isinstance(x, self.enum_cls()) for x in o):
+            raise TypeError
+        return self.has_all(*o)
 
     def __invert__(self) -> Self:
         """Allow inverting self, by returning the complement based on the enum.
@@ -202,7 +220,7 @@ class FlagSet[T: (CdEEnum | CdEIntEnum)](frozenset[T]):
         >>> ~Realms.all()
         RealmSet.None
         """
-        return self.__class__(self.enum_cls()) - self  # type: ignore[call-overload]
+        return self.__class__(self.enum_cls()) - self  # type: ignore[arg-type]
 
     def __repr__(self) -> str:
         """Print the FlagSet similar to a combined EnumFlag.
