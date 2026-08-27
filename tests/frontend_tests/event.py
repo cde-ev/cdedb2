@@ -148,10 +148,15 @@ class TestEventFrontend(FrontendTest):
     )
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
-        everyone = {"Veranstaltungen", "Übersicht", "Veranstaltungshelfer:innen"}
-        past_events = {"Verg. Veranstaltungen", "Kurssuche"}
+        everyone = {
+            "Übersicht",
+            "Alle Veranstaltungen",
+            "Veranstaltungshelfer:innen",
+            "Verg. Veranstaltungen",
+        }
+        past_events = {"Kurssuche"}
         past_event_admin = {"Verg.-Veranstaltungen-Log"}
-        admin = {"Alle Veranstaltungen", "Ungereimtheiten", "Log"}
+        admin = {"Ungereimtheiten", "Log"}
 
         # not event admins (also orgas!)
         if self.user_in('emilia', 'martin', 'werner'):
