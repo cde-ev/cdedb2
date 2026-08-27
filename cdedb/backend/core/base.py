@@ -3176,11 +3176,11 @@ class CoreBaseBackend(AbstractBackend):
                 FROM core.genesis_cases
                 WHERE username = %(username)s AND status = ANY(%(stati)s)
             """
-            # This should be all stati which are not final.
-            # Approved is an intermediate state before finalizing, to disable this check.
+            # Consider only open genesis stati.
             params["stati"] = (
-                set(const.GenesisStati) - const.GenesisStati.finalized_stati()
-            ) - {const.GenesisStati.approved}
+                const.GenesisStati.unconfirmed,
+                const.GenesisStati.to_review,
+            )
             num += unwrap(self.query_one(rs, query, params)) or 0
         return bool(num)
 
