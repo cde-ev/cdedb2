@@ -241,10 +241,18 @@ class Realms(_Realms):
     [RealmSet.cde, RealmSet.ml, RealmSet.assembly]
     """
 
-    cde = 1, Roles.cde, Roles.cde_admin, "ml", "assembly", "event"
-    event = 2, Roles.event, Roles.event_admin, "ml"
+    cde = 1, Roles.cde, Roles.cde_admin
+    event = 2, Roles.event, Roles.event_admin
     ml = 4, Roles.ml, Roles.ml_admin
-    assembly = 8, Roles.assembly, Roles.assembly_admin, "ml"
+    assembly = 8, Roles.assembly, Roles.assembly_admin
+
+    @property
+    def implied_realms(self) -> "RealmSet":
+        return {
+            self.cde: self.ml | self.assembly | self.event,
+            self.event: RealmSet({self.ml}),
+            self.assembly: RealmSet({self.ml}),
+        }.get(self, self.none())
 
     @classmethod
     def from_user_roles(cls, roles: RoleSet) -> "RealmSet":
