@@ -4612,6 +4612,58 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         )
         self.assertPresence("Warme Stube", div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
 
+    @event_keeper
+    @as_users("garcia")
+    def test_field_prune(self) -> None:
+        # check the status quo (Anton and Emilia)
+        registrations = self.event.get_registrations(
+            self.key, self.event.list_registrations(self.key, EventID(1))
+        )
+        self.assertEqual(
+            registrations[RegistrationID(1)]["fields"]["arrival_at"],
+            datetime.datetime(2022, 2, 2, 9, 0, tzinfo=datetime.UTC),
+        )
+        self.assertEqual(
+            registrations[RegistrationID(1)]["fields"]["lodge"],
+            "Die üblichen Verdächtigen, insb. Berta Beispiel und garcia@example.cde :)",
+        )
+        self.assertEqual(
+            registrations[RegistrationID(2)]["fields"]["brings_balls"], True
+        )
+        self.assertEqual(
+            registrations[RegistrationID(2)]["fields"]["transportation"], "pedes"
+        )
+
+        # prune some fields
+        self.traverse(
+            "Veranstaltungen",
+            "Große Testakademie",
+            "Datenfelder konfigurieren",
+            "Datenfeld leeren",
+        )
+        f = self.response.forms["prunefieldsform"]
+        f["reg_field_ids"].select_multiple(
+            texts=["Anreise um", "Bringt Bälle mit", "Reist an mit", "Zimmerwünsche"]
+        )
+        f["course_field_ids"].select_multiple(texts=["Kursraum"])
+        f["ack_delete"].checked = True
+        self.submit(f)
+        self.assertNotification("Daten aus 6 Anmeldungen gelöscht")
+        self.assertNotification("Daten aus 6 Kursen gelöscht")
+
+        # check the results
+        registrations = self.event.get_registrations(
+            self.key, self.event.list_registrations(self.key, EventID(1))
+        )
+        self.assertEqual(registrations[RegistrationID(1)]["fields"]["arrival_at"], None)
+        self.assertEqual(registrations[RegistrationID(1)]["fields"]["lodge"], "True")
+        self.assertEqual(
+            registrations[RegistrationID(2)]["fields"]["brings_balls"], True
+        )
+        self.assertEqual(
+            registrations[RegistrationID(2)]["fields"]["transportation"], "True"
+        )
+
     @as_users("garcia")
     def test_stats(self) -> None:
         self.traverse(
