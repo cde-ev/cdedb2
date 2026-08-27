@@ -67,8 +67,7 @@ class FlagSet[T: (CdEEnum | CdEIntEnum)](frozenset[T]):
         is equivalent to
         '{Flag.a} & some_flags or {Flag.b, Flag.c} <= some_flags'.
         """
-        ret = any(self.has(flag) for flag in flags)
-        return ret
+        return any(self.has(flag) for flag in flags)
 
     def has_all(self, *flags: T | Self) -> bool:
         """Convenience method.
