@@ -637,12 +637,13 @@
 
 {% macro form_input_checkbox(name, label="", value=True, info='', displayerrors=True, readonly=False,
         actualreadonly=False, defaultvalue='', anid=none, horizontal=True, small=False, attributes='', aclass='',
-        outerclass='', title='') %}
+        outerclass='', title='', errorname=none) %}
     {#- This is the version for a single checkbox as opposed to form_input_checkboxes(). #}
     {%- set anid = anid or "input-checkbox-{}".format(name) %}
+    {%- set errorname = errorname or name %}
     <div class="form-group
         {{ outerclass }}
-        {{ ("has-warning" if is_warning(name) else "has-error") if name in errors }}
+        {{ ("has-warning" if is_warning(errorname) else "has-error") if errorname in errors }}
     ">
         <div{% if horizontal %} class="
             {{ "col-sm-6 col-sm-offset-2" if small else "col-sm-8 col-sm-offset-4" }}
@@ -651,7 +652,7 @@
                 {{ input_checkbox(name, label, value, defaultvalue, readonly, actualreadonly, anid,
                                   attributes=attributes, aclass=aclass, title=title) }}
             </div>
-            {{- output_errors(name, displayerrors) }}
+            {{- output_errors(errorname, displayerrors) }}
             {{- output_info(info) }}
         </div>
     </div>
@@ -964,16 +965,16 @@ attribute to each field of a dynamic row. #}
    The properties of the individual buttons are specified through the `views` argument, which is an iterable of
    3-tuples. Each tuple defines (label, view_names, relevant_views) of one button:
      * `label` (1st tuple entry) defines the caption of the button. Should be internationalized.
-     * `view_names` (2nd tuple entry) defines a list of admin_views to be toggled by this button together.
-     * `relevant_views` (3rd tuple entry) defines a list of views, which are the subset of `view_names` that is relevant
-       in the current page's context. The button is only displayed, if one of those views is available to the user.
-       For convenience, `relevant_views` may be set to none, in which case all `view_names` are considered relevant.
+     * `toggleable_views` (2nd tuple entry) defines a collection of admin_views to be toggled by this button together.
+     * `relevant_views` (3rd tuple entry) defines the subset of `toggleable_views` that is relevant in the current
+       page's context. The button is only displayed, if one of those views is available to the user. For convenience,
+       `relevant_views` may be set to none, in which case all `toggleable_views` are considered relevant.
        Example: A button in the Core realm may toggle all user admin views (`core_user`, `cde_user, `event_user`, ...),
        but should only be shown to core admins, i.e. users who have the `core_user` view available.
  #}
 {% macro admin_views_toggle(views) %}
     {% set inner = _admin_views_toggle_inner(views) %}
-    {% if inner %}
+    {% if inner.strip() %}
         <hr />
         <form action="{{ cdedblink('core/modify_active_admin_views') }}" method="post" id="adminviewstoggleform">
             {% if original_request and original_request.url %}
@@ -988,16 +989,17 @@ attribute to each field of a dynamic row. #}
 {# Un-inlined part of admin_views_toggle() to allow detection of empty list of views with the limited capabilities of
    jinja #}
 {% macro _admin_views_toggle_inner(views) -%}
-    {% for label, view_names, relevant_views in views -%}
-        {% set relevant_views = relevant_views if relevant_views is not none else view_names -%}
-        {% if (relevant_views|set).intersection(user.available_admin_views) %}
+    {% for label, toggleable_views, relevant_views in views -%}
+        {% set relevant_views = relevant_views if relevant_views is not none else toggleable_views -%}
+        {% set relevant_views = [relevant_views]|set if relevant_views is not iterable else relevant_views -%}
+        {% if user.available_admin_views.has_any(*relevant_views) %}
             {# The button is "deactivated" as long as there are more "relevant views" which are available for the
                user but are not enabled yet. #}
-            {% set active = not (relevant_views|set).intersection(user.available_admin_views - user.admin_views) -%}
+            {% set active = user.admin_views.has_all(*user.available_admin_views.__and__(relevant_views)) -%}
             <button{{ dict(
                 type="submit",
-                name="view_specifier",
-                value=("-" if active else "+") + view_names|join(','),
+                name="remove" if active else "add",
+                value=AdminViews.serialize(toggleable_views),
                 class="list-group-item list-group-item-info" + (" active" if active else ""),
                 title=(gettext("Hide %(label)s") if active else gettext("Show %(label)s"))|format(label=label)
             )|xmlattr }}>
@@ -1154,22 +1156,23 @@ mailto:
 
 
 {% macro privilege_icon(privilege, desc=False) %}
-    {% with title_icon_map = {
-        "is_meta_admin": (gettext("Meta admin"), "wrench"),
-        "is_core_admin": (gettext("Core admin"), "user"),
-        "is_cde_admin": (gettext("CdE admin"), "graduation-cap"),
-        "is_finance_admin": (gettext("Finance admin"), "euro-sign"),
-        "is_event_admin": (gettext("Event admin"), "chalkboard-teacher"),
-        "is_ml_admin": (gettext("Mailinglist admin"), "envelope"),
-        "is_cdelokal_admin": (gettext("CdElokal admin"), "city"),
-        "is_assembly_admin": (gettext("Assembly admin"), "bullhorn"),
-        "is_complaint_admin": (gettext("Case archive admin"), "gavel"),
-        "is_auditor": (gettext("Auditor"), "search-dollar"),
+    {% with icon_map = {
+        "is_meta_admin": "wrench",
+        "is_core_admin": "user",
+        "is_cde_admin": "graduation-cap",
+        "is_finance_admin": "euro-sign",
+        "is_event_admin": "chalkboard-teacher",
+        "is_ml_admin": "envelope",
+        "is_cdelokal_admin": "city",
+        "is_assembly_admin": "bullhorn",
+        "is_complaint_admin": "gavel",
+        "is_auditor": "search-dollar",
         } %}
-        {% set description, icon = title_icon_map[privilege] %}
-        {{ make_icon(icon, title=description) }}
-        {% if desc %}
-            {{ description }}
+
+        {{ make_icon(icon_map[privilege.marker], title=gettext(privilege|string)) }}
+        {%- if desc %}
+            {{- nbsp -}}
+            {{ gettext(privilege|string) }}
         {% endif %}
     {% endwith %}
 {% endmacro %}

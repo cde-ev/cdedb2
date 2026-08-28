@@ -8,7 +8,7 @@ import io
 import os
 import pathlib
 import pwd
-from collections.abc import Callable, Generator, Iterator
+from collections.abc import Callable, Generator
 from shutil import which
 from typing import Any
 
@@ -18,7 +18,7 @@ import werkzeug.routing
 
 import cdedb.common.validation.types as vtypes
 from cdedb.common import RequestState, User
-from cdedb.common.roles import ALL_ROLES
+from cdedb.common.roles import Roles
 from cdedb.config import Config, SecretsConfig
 from cdedb.database.connection import IrradiatedConnection
 
@@ -176,7 +176,7 @@ def fake_rs(
         apitoken=None,
         user=User(
             persona_id=vtypes.PersonaID(vtypes.ID(persona_id)),
-            roles=ALL_ROLES,
+            roles=Roles.all_persona_roles(),
         ),
         request=None,  # type: ignore[arg-type]
         notifications=[],
@@ -196,7 +196,7 @@ def fake_rs(
 @contextlib.contextmanager
 def redirect_to_file(
     outfile: pathlib.Path | io.StringIO | None, append: bool = False
-) -> Iterator[None]:
+) -> Generator[None]:
     """Context manager to open a file in either append or write mode and redirect both
     stdout and std err into the file.
 

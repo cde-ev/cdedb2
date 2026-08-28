@@ -40,6 +40,7 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import PastEventLogFilter
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import ParamDict
@@ -54,14 +55,11 @@ class PastEventBackend(AbstractBackend):
     """
 
     realm = "past_event"
+    admin_role = Roles.cde_admin
 
     def __init__(self) -> None:
         super().__init__()
         self.event = make_proxy(EventBackend(), internal=True)
-
-    @classmethod
-    def is_admin(cls, rs: RequestState) -> bool:
-        return "cde_admin" in rs.user.roles
 
     def past_event_log(
         self,
@@ -93,7 +91,7 @@ class PastEventBackend(AbstractBackend):
         }
         return self.sql_insert(rs, "past_event.log", data)
 
-    @access("cde_admin", "event_admin", "auditor")
+    @access(Roles.cde_admin, Roles.event_admin, Roles.auditor)
     def retrieve_past_log(
         self, rs: RequestState, log_filter: PastEventLogFilter
     ) -> CdEDBLog:
@@ -105,7 +103,7 @@ class PastEventBackend(AbstractBackend):
         log_filter = affirm(PastEventLogFilter, log_filter)
         return self.generic_retrieve_log(rs, log_filter)
 
-    @access("persona")
+    @access(Roles.persona)
     def list_past_events(self, rs: RequestState) -> dict[int, str]:
         """List all concluded events.
 
@@ -115,7 +113,7 @@ class PastEventBackend(AbstractBackend):
         data = self.query_all(rs, query, tuple())
         return {e['id']: e['title'] for e in data}
 
-    @access("cde")
+    @access(Roles.cde)
     def past_event_stats(self, rs: RequestState) -> CdEDBObjectMap:
         """Returns the number of courses and participants for each past event."""
         query = """
@@ -150,7 +148,7 @@ class PastEventBackend(AbstractBackend):
         """
         return {e['pevent_id']: e for e in self.query_all(rs, query, [])}
 
-    @access("cde", "event")
+    @access(Roles.cde, Roles.event)
     def get_past_events(
         self, rs: RequestState, pevent_ids: Collection[int]
     ) -> CdEDataclassMap[models.PastEvent]:
@@ -167,7 +165,7 @@ class PastEventBackend(AbstractBackend):
         get_past_events, "pevent_ids", "pevent_id"
     )
 
-    @access("cde_admin", "event_admin")
+    @access(Roles.cde_admin, Roles.event_admin)
     def set_past_event(
         self, rs: RequestState, pevent_id: int, data: CdEDBObject
     ) -> DefaultReturnCode:
@@ -182,7 +180,7 @@ class PastEventBackend(AbstractBackend):
             )
         return ret
 
-    @access("cde_admin", "event_admin")
+    @access(Roles.cde_admin, Roles.event_admin)
     def create_past_event(
         self, rs: RequestState, data: CdEDBObject
     ) -> DefaultReturnCode:
@@ -195,7 +193,7 @@ class PastEventBackend(AbstractBackend):
             )
         return ret
 
-    @access("cde_admin")
+    @access(Roles.cde_admin)
     def delete_past_event_blockers(
         self, rs: RequestState, pevent_id: int
     ) -> DeletionBlockers:
@@ -240,7 +238,7 @@ class PastEventBackend(AbstractBackend):
 
         return blockers
 
-    @access("cde_admin")
+    @access(Roles.cde_admin)
     def delete_past_event(
         self,
         rs: RequestState,
@@ -322,7 +320,7 @@ class PastEventBackend(AbstractBackend):
                 )
         return ret
 
-    @access("persona")
+    @access(Roles.persona)
     def list_past_courses(
         self, rs: RequestState, pevent_id: int | None = None
     ) -> dict[int, str]:
@@ -347,7 +345,7 @@ class PastEventBackend(AbstractBackend):
             data = self.query_all(rs, query, tuple())
         return {e['id']: e['title'] for e in data}
 
-    @access("cde", "event")
+    @access(Roles.cde, Roles.event)
     def get_past_courses(
         self, rs: RequestState, pcourse_ids: Collection[int]
     ) -> CdEDataclassMap[models.PastCourse]:
@@ -377,7 +375,7 @@ class PastEventBackend(AbstractBackend):
         get_past_courses, "pcourse_ids", "pcourse_id"
     )
 
-    @access("cde_admin", "event_admin")
+    @access(Roles.cde_admin, Roles.event_admin)
     def set_past_course(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
         """Update some keys of a concluded course."""
         data = affirm(models.PastCourse, data)
@@ -392,7 +390,7 @@ class PastEventBackend(AbstractBackend):
             )
         return ret
 
-    @access("cde_admin", "event_admin")
+    @access(Roles.cde_admin, Roles.event_admin)
     def create_past_course(
         self, rs: RequestState, data: CdEDBObject
     ) -> DefaultReturnCode:
@@ -408,7 +406,7 @@ class PastEventBackend(AbstractBackend):
             )
         return ret
 
-    @access("cde_admin")
+    @access(Roles.cde_admin)
     def delete_past_course_blockers(
         self, rs: RequestState, pcourse_id: int
     ) -> DeletionBlockers:
@@ -443,7 +441,7 @@ class PastEventBackend(AbstractBackend):
 
         return blockers
 
-    @access("cde_admin")
+    @access(Roles.cde_admin)
     def delete_past_course(
         self,
         rs: RequestState,
@@ -499,7 +497,7 @@ class PastEventBackend(AbstractBackend):
                 )
         return ret
 
-    @access("core_admin", "cde_admin", "event_admin")
+    @access(Roles.core_admin, Roles.cde_admin, Roles.event_admin)
     def set_participant(
         self,
         rs: RequestState,
@@ -515,7 +513,7 @@ class PastEventBackend(AbstractBackend):
         music_status = affirm(const.PastMusicKind, music_status)
         with Atomizer(rs):
             # Validate data consistency
-            if not self.core.verify_persona(rs, persona_id, {"event"}):
+            if not self.core.verify_persona(rs, persona_id, Roles.event):
                 raise ValueError(n_("This user is not an event user."))
 
             data = {
@@ -546,7 +544,7 @@ class PastEventBackend(AbstractBackend):
                 )
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def is_participant(self, rs: RequestState, pevent_id: int, persona_id: int) -> bool:
         pevent_id = affirm(vtypes.ID, pevent_id)
         persona_id = affirm(vtypes.ID, persona_id)
@@ -564,7 +562,7 @@ class PastEventBackend(AbstractBackend):
         params: ParamDict = {"pevent_id": pevent_id, "persona_id": persona_id}
         return unwrap(self.query_one(rs, query, params))
 
-    @access("core_admin", "cde_admin", "event_admin")
+    @access(Roles.core_admin, Roles.cde_admin, Roles.event_admin)
     def set_course_assignments(
         self,
         rs: RequestState,
@@ -578,7 +576,7 @@ class PastEventBackend(AbstractBackend):
         instructor_status = affirm(const.PastInstructorKind, instructor_status)
         with Atomizer(rs):
             # Validate data consistency
-            if not self.core.verify_persona(rs, persona_id, {"event"}):
+            if not self.core.verify_persona(rs, persona_id, Roles.event):
                 raise ValueError(n_("This user is not an event user."))
 
             pevent_id: int = unwrap(  # type: ignore[assignment]
@@ -615,7 +613,7 @@ class PastEventBackend(AbstractBackend):
                 )
         return ret
 
-    @access("core_admin", "cde_admin", "event_admin")
+    @access(Roles.core_admin, Roles.cde_admin, Roles.event_admin)
     def remove_participant(
         self,
         rs: RequestState,
@@ -652,7 +650,7 @@ class PastEventBackend(AbstractBackend):
             )
         return ret
 
-    @access("core_admin", "cde_admin", "event_admin")
+    @access(Roles.core_admin, Roles.cde_admin, Roles.event_admin)
     def remove_course_assignment(
         self,
         rs: RequestState,
@@ -725,14 +723,14 @@ class PastEventBackend(AbstractBackend):
             return participants
 
         # if the user is neither admin nor participant, we filter the data
-        if "searchable" in rs.user.roles:
+        if Roles.searchable in rs.user.new_roles:
             for persona in personas.values():
                 if not persona.is_member or not persona.is_searchable:
                     del participants[persona.id]
             return participants
         return {}
 
-    @access("event")
+    @access(Roles.event)
     def list_event_participants(
         self,
         rs: RequestState,
@@ -795,7 +793,7 @@ class PastEventBackend(AbstractBackend):
 
         return total_participants_num, ret
 
-    @access("event")
+    @access(Roles.event)
     def get_course_assignments(
         self, rs: RequestState, pcourse_id: int, honor_admins: bool = True
     ) -> tuple[int, CdEDataclassMap[models.PastCourseAssignment]]:
@@ -840,7 +838,7 @@ class PastEventBackend(AbstractBackend):
 
         return len(data), ret
 
-    @access("event")
+    @access(Roles.event)
     def list_persona_events(
         self,
         rs: RequestState,
@@ -851,10 +849,10 @@ class PastEventBackend(AbstractBackend):
         persona = self.core.get_past_event_user(rs, persona_id)
         if not (
             self.is_admin(rs)
-            or "core_admin" in rs.user.roles
+            or Roles.core_admin in rs.user.new_roles
             or persona_id == rs.user.persona_id
             or (
-                "searchable" in rs.user.roles
+                Roles.searchable in rs.user.new_roles
                 and persona.is_member
                 and persona.is_searchable
             )
@@ -893,7 +891,7 @@ class PastEventBackend(AbstractBackend):
             ret[assignment.pcourse.pevent_id].course_assignments.append(assignment)
         return ret  # type: ignore[return-value]
 
-    @access("cde_admin", "event_admin")
+    @access(Roles.cde_admin, Roles.event_admin)
     def find_past_event(
         self, rs: RequestState, shortname: str
     ) -> tuple[int | None, list[Error], list[Error]]:
@@ -904,7 +902,7 @@ class PastEventBackend(AbstractBackend):
 
         :returns: The id of the past event or None if there were errors.
         """
-        shortname = affirm(str | None, shortname)
+        shortname = affirm(str | None, shortname)  # pyrefly: ignore[bad-assignment]
         if not shortname:
             return None, [], [("pevent_id", ValueError(n_("No input supplied.")))]
         query = """
@@ -936,7 +934,7 @@ class PastEventBackend(AbstractBackend):
         else:
             return unwrap(unwrap(ret)), warnings, []
 
-    @access("cde_admin", "event_admin")
+    @access(Roles.cde_admin, Roles.event_admin)
     def find_past_course(
         self, rs: RequestState, phrase: str, pevent_id: int
     ) -> tuple[int | None, list[Error], list[Error]]:
@@ -948,7 +946,7 @@ class PastEventBackend(AbstractBackend):
         :param pevent_id: Restrict to courses of this past event.
         :returns: The id of the past course or None if there were errors.
         """
-        phrase = affirm(str | None, phrase)
+        phrase = affirm(str | None, phrase)  # pyrefly: ignore[bad-assignment]
         if not phrase:
             return None, [], [("pcourse_id", ValueError(n_("No input supplied.")))]
         pevent_id = affirm(vtypes.ID, pevent_id)
@@ -1047,7 +1045,7 @@ class PastEventBackend(AbstractBackend):
 
         return new_id
 
-    @access("cde_admin", "event_admin")
+    @access(Roles.cde_admin | Roles.event_admin)
     def archive_event(
         self, rs: RequestState, event_id: vtypes.EventID, create_past_event: bool = True
     ) -> list[int] | None:
@@ -1070,8 +1068,6 @@ class PastEventBackend(AbstractBackend):
           If there were complications, the second entry is an error message.
         """
         event_id = affirm(vtypes.EventID, event_id)
-        if "cde_admin" not in rs.user.roles or "event_admin" not in rs.user.roles:
-            raise PrivilegeError(n_("Needs both admin privileges."))
         with Atomizer(rs):
             event = self.event.get_event(rs, event_id)
             if not event.is_cancelled and event.end >= now().date():
@@ -1088,7 +1084,7 @@ class PastEventBackend(AbstractBackend):
                     raise ValueError(n_("No event parts have any participants."))
         return new_ids
 
-    @access("member", "cde_admin")
+    @access(Roles.member, Roles.cde_admin)
     def submit_general_query(
         self, rs: RequestState, query: Query, aggregate: bool = False
     ) -> tuple[CdEDBObject, ...]:

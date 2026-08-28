@@ -27,7 +27,7 @@
         </br>
         {% trans promote=util.href(cdedblink('core/promote_user_form', {"persona_id": doppelganger["id"],
                                    "target_realm": ambience["genesis_case"].realm}), gettext("promote")),
-                 realm=util.realm_icon("is_" + ambience['genesis_case']['realm'] + "_realm", desc=True)%}
+                 realm=util.realm_icon(ambience['genesis_case'].realm.realm_marker, desc=True)%}
             You need to {{ promote }} this account to {{ realm }} realm before merging.
         {% endtrans %}
     {% endif %}
@@ -47,10 +47,10 @@
             {% trans %}Realm{% endtrans %}
         </dt>
         <dd id="realm">
-            {{ util.realm_icon("is_" + ambience['genesis_case']['realm'] + "_realm", desc=True) }}
-            {% if ambience["genesis_case"].realm != "ml" and not ambience["genesis_case"].is_upgrade %}
-                {% set icon = "chalkboard-teacher" if ambience["genesis_case"].realm == "cde" else "graduation-cap" %}
-                {% set label = gettext("Change Realm to Event") if ambience["genesis_case"].realm == "cde" else gettext("Change Realm to CdE")%}
+            {{ util.realm_icon(ambience['genesis_case'].realm.realm_marker, desc=True) }}
+            {% if ambience["genesis_case"].realm != enums["Realms"].ml and not ambience["genesis_case"].is_upgrade %}
+                {% set icon = "chalkboard-teacher" if ambience["genesis_case"].realm == enums["Realms"].cde else "graduation-cap" %}
+                {% set label = gettext("Change Realm to Event") if ambience["genesis_case"].realm == enums["Realms"].cde else gettext("Change Realm to CdE")%}
                 <form action="{{ cdedblink('core/genesis_modify_realm') }}" method="POST" id="genesismodifyrealmform" style="display: inline-block">
                     {{ util.anti_csrf_token('core/genesis_modify_realm') }}
                     {{ util.input_submit(label=label, icon=icon, aclass="btn btn-primary btn-xs") }}
@@ -161,7 +161,7 @@
         {% endif %}
     </dl>
 
-    {% if ambience["genesis_case"].realm == "cde" %}
+    {% if ambience["genesis_case"].realm == enums["Realms"].cde %}
         <h4 class="heading-underline">{% trans %}Academy Information{% endtrans %}</h4>
         <dl class="dl-horizontal">
             <dt title="{% trans %}Past Event{% endtrans %}">{% trans %}Past Event{% endtrans %}</dt>
@@ -237,7 +237,7 @@
                 {{ util.input_submit(
                     name="decision", value = enums['GenesisDecision'].approve,
                     label=gettext("Approve"), aclass="btn btn-success", title=title, readonly=no_approve) }}
-                {% if ambience["genesis_case"].realm == "cde" %}
+                {% if ambience["genesis_case"].realm == enums["Realms"].cde %}
                     {{ util.input_submit(
                         name="decision", value = enums['GenesisDecision'].approve_grant_trial_membership,
                         label=gettext("Approve (grant trial membership)"), aclass="btn btn-success",

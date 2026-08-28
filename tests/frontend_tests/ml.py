@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# pyrefly: ignore-errors[implicit-any-empty-container]
+
+
 import csv
 import re
 import unittest.mock
@@ -10,7 +13,7 @@ import webtest
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, get_hash
 from cdedb.common.query import QueryOperators
-from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
+from cdedb.common.roles import AdminViews
 from cdedb.devsamples import HELD_MESSAGE_SAMPLE, MockHeldMessage
 from cdedb.frontend.common import CustomCSVDialect
 from cdedb.models.ml import CdeLokalMailinglist
@@ -309,7 +312,7 @@ class TestMlFrontend(FrontendTest):
 
     @as_users("anton")
     def test_ml_admin_views(self) -> None:
-        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
+        self.app.set_cookie(AdminViews.cookie_name(), "")
 
         self.traverse({'description': 'Mailinglisten'})
         self._click_admin_view_button(
@@ -1580,8 +1583,8 @@ class TestMlFrontend(FrontendTest):
             {"description": "Mailinglisten"}, {"description": "Mailingliste anlegen"}
         )
         f = self.response.forms['selectmltypeform']
-        f['ml_type'] = const.MailinglistTypes.cdelokal
         self.assertEqual(len(f['ml_type'].options), 2)
+        f['ml_type'] = const.MailinglistTypes.cdelokal
         self.submit(f)
         f = self.response.forms['configuremailinglistform']
         f['title'] = "Little Whinging"
@@ -1590,10 +1593,10 @@ class TestMlFrontend(FrontendTest):
         )
         f['description'] = "If anyone else lives here, please come by, I am lonely."
         f['local_part'] = "littlewhinging"
-        f['domain'] = const.MailinglistDomain.cdelokal
         self.assertEqual(
             len(f['domain'].options), len(CdeLokalMailinglist.available_domains)
         )
+        f['domain'] = const.MailinglistDomain.cdelokal
         moderator = USER_DICT["berta"]
         f['moderators'] = moderator["DB-ID"]
         self.submit(f)

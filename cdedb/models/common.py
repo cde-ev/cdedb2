@@ -33,7 +33,7 @@ from cdedb.common import (
 )
 from cdedb.common.query import Query, QueryScope, QuerySpec
 from cdedb.common.sorting import Sortkey, collate, xsorted
-from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
+from cdedb.uncommon.intenum import CdEEnum, CdEFlag, CdEIntEnum
 
 if TYPE_CHECKING:
     from cdedb.database.query import DatabaseValue_s
@@ -274,7 +274,7 @@ class CdEDataclass:
             # Convert basic types.
             if isinstance(type_, type):
                 # Convert enum fields into enum members.
-                if issubclass(type_, (CdEEnum, CdEIntEnum)):
+                if issubclass(type_, (CdEEnum, CdEIntEnum, CdEFlag)):
                     if data.get(name) is not None:
                         data[name] = type_(data[name])
 
@@ -576,11 +576,10 @@ class StoredQuery(CdEDataclass):
         return self.scope.get_spec()
 
     @functools.cached_property
-    def query(self) -> Query:
+    def query(self) -> Query | None:
         spec = self._get_spec()
         from cdedb.common.validation.validate import validate_check  # noqa: PLC0415
 
-        query: Query | None
         query, errs = validate_check(
             vtypes.QueryInput,
             self.serialized_query,
@@ -589,7 +588,7 @@ class StoredQuery(CdEDataclass):
         )
         if not query:
             self.errors = errs
-            return cast(Query, None)
+            return None
         query.query_id = self.id
         return query
 

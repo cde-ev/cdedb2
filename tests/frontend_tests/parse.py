@@ -262,6 +262,7 @@ class TestParseFrontend(FrontendTest):
         self.assertPresence(
             "cdedbid: Unsicher über Mitgliedszuordnung.", div="transaction9_errors"
         )
+        f = self.response.forms["parsedownloadform"]
         self.assertEqual(f["cdedbid9"].value, "DB-4-3")
         f["persona_confirm9"].checked = True
 

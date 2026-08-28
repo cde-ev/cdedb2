@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# pyrefly: ignore-errors[implicit-any-empty-container]
+
 import copy
 import csv
 import datetime
@@ -14,6 +16,7 @@ from typing import cast
 
 import freezegun
 import lxml.etree
+import lxml.html
 import webtest
 from subman import SubscriptionError
 
@@ -32,7 +35,7 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
-from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
+from cdedb.common.roles import AdminViews
 from cdedb.common.sorting import xsorted
 from cdedb.filter import datetime_filter, iban_filter
 from cdedb.frontend.common import (
@@ -85,13 +88,13 @@ class TestEventFrontend(FrontendTest):
         deltas of amount_paid, we do the additional book keeping here.
         """
         current = self.event.get_registration(self.key, reg_id)
-        data = {
+        data = vtypes.MoneyTransferEntry({
             'registration_id': reg_id,
             'persona_id': current['persona_id'],
             'date': payment or now().date(),
             # used in log entry
             'amount': amount_paid - current['amount_paid'],
-        }
+        })
         self.event.book_fees(self.key, event_id, [data])
 
     @as_users("anton", "emilia", maintain_data=True)
@@ -277,7 +280,7 @@ class TestEventFrontend(FrontendTest):
 
     @as_users("anton")
     def test_event_admin_views(self) -> None:
-        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
+        self.app.set_cookie(AdminViews.cookie_name(), "")
 
         self.traverse({'href': '/event'})
         self._click_admin_view_button(
@@ -752,6 +755,7 @@ class TestEventFrontend(FrontendTest):
             self.assertNonPresence("β. Lustigsein für Fortgeschrittene")
             self.assertPresence("γ. Kurzer Kurs")
             # check that validation converting works and is shown in the form
+            assert self.response.request
             self.get(
                 self.response.request.url.replace(
                     'active_only=True', 'active_only=nonBoolButTrue'
@@ -775,6 +779,7 @@ class TestEventFrontend(FrontendTest):
         else:
             # check that taking place filter not accessible for non-privileged users
             self.assertNonPresence("Zeige nur stattfindende Kurse")
+            assert self.response.request
             self.get(self.response.request.url + '&active_only=True')
             self.assertPresence("β. Lustigsein für Fortgeschrittene")
 
@@ -1026,7 +1031,7 @@ class TestEventFrontend(FrontendTest):
         # Add a new part.
         self.traverse("Teil hinzufügen")
         f = self.response.forms['addpartform']
-        f['title'] = "Cooldown"
+        f['title'] = part_title = "Cooldown"
         f['shortname'] = "cd"
         f['part_begin'] = "2244-4-5"
         f['part_end'] = "2233-6-7"
@@ -1038,11 +1043,11 @@ class TestEventFrontend(FrontendTest):
         log_expectation.extend([
             {
                 'code': const.EventLogCodes.part_created,
-                'change_note': f['title'].value,
+                'change_note': part_title,
             },
             {
                 'code': const.EventLogCodes.event_fee_created,
-                'change_note': f['title'].value,
+                'change_note': part_title,
             },
         ])
 
@@ -1050,7 +1055,7 @@ class TestEventFrontend(FrontendTest):
         self.traverse({"href": "/event/event/2/part/1001/change"})
         f = self.response.forms['changepartform']
         f['track_create_-1'].checked = True
-        f['track_title_-1'] = "Chillout Training"
+        f['track_title_-1'] = track_title = "Chillout Training"
         f['track_shortname_-1'] = "Chillout"
         f['track_num_choices_-1'] = "1"
         f['track_min_choices_-1'] = "1"
@@ -1058,7 +1063,7 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
         log_expectation.append({
             'code': const.EventLogCodes.track_added,
-            'change_note': f['track_title_-1'].value,
+            'change_note': track_title,
         })
 
         # Change the newly added part.
@@ -1067,7 +1072,7 @@ class TestEventFrontend(FrontendTest):
         self.assertEqual("Cooldown", f['title'].value)
         self.assertEqual("cd", f['shortname'].value)
         self.assertEqual("Chillout Training", f['track_title_1001'].value)
-        f['title'] = "Größere Hälfte"
+        f['title'] = part_title = "Größere Hälfte"
         f['part_end'] = "2222-6-7"
         self.submit(f, check_notification=False)
         self.assertValidationError('part_end', "Muss später als Beginn sein")
@@ -1075,7 +1080,7 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
         log_expectation.append({
             'code': const.EventLogCodes.part_changed,
-            'change_note': f['title'].value,
+            'change_note': part_title,
         })
         self.assertTitle("Veranstaltungsteile konfigurieren (CdE-Party 2050)")
 
@@ -1083,7 +1088,7 @@ class TestEventFrontend(FrontendTest):
         self.traverse({"href": "/event/event/2/part/1001/change"})
         f = self.response.forms['changepartform']
         self.assertNotIn('track_1002', f.fields)
-        f['track_title_-1'] = "Spätschicht"
+        f['track_title_-1'] = track_title = "Spätschicht"
         f['track_shortname_-1'] = "Spät"
         f['track_num_choices_-1'] = "3"
         f['track_min_choices_-1'] = "4"
@@ -1098,19 +1103,19 @@ class TestEventFrontend(FrontendTest):
         self.submit(f)
         log_expectation.append({
             'code': const.EventLogCodes.track_added,
-            'change_note': f['track_title_-1'].value,
+            'change_note': track_title,
         })
 
         # Change the new track.
         self.traverse({"href": "/event/event/2/part/1001/change"})
         f = self.response.forms['changepartform']
         self.assertEqual("Spätschicht", f['track_title_1002'].value)
-        f['track_title_1002'] = "Nachtschicht"
+        f['track_title_1002'] = track_title = "Nachtschicht"
         f['track_shortname_1002'] = "Nacht"
         self.submit(f)
         log_expectation.append({
             'code': const.EventLogCodes.track_updated,
-            'change_note': f['track_title_1002'].value,
+            'change_note': track_title,
         })
 
         # delete the track
@@ -4101,8 +4106,6 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f["track1.course_choice_1"] = 4
         self.submit(f)
         self.assertTitle("\nAnmeldung von Charly Clown (Große Testakademie 2222)\n")
-        self.assertEqual("5", f['track1.course_choice_0'].value)
-        self.assertEqual("4", f['track1.course_choice_1'].value)
 
     @as_users("emilia")
     def test_add_empty_registration(self) -> None:
@@ -4243,7 +4246,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         f['notes'] = "oder gleich unter dem Sternenhimmel?"
         f['fields.contamination'] = "low"
         f['group_id'] = ""
-        self.assertEqual("", f['group_id'].value)
+        self.assertEqual("", f['group_id'].value)  # pyrefly: ignore
         f['new_group_title'] = "Draußen"
         self.submit(f)
         self.assertTitle("Unterkunft Zelte (Große Testakademie 2222)")
@@ -4611,6 +4614,58 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
             "Unterkunft geändert", div=str(self.EVENT_LOG_OFFSET + 4) + "-1004"
         )
         self.assertPresence("Warme Stube", div=str(self.EVENT_LOG_OFFSET + 4) + "-1004")
+
+    @event_keeper
+    @as_users("garcia")
+    def test_field_prune(self) -> None:
+        # check the status quo (Anton and Emilia)
+        registrations = self.event.get_registrations(
+            self.key, self.event.list_registrations(self.key, EventID(1))
+        )
+        self.assertEqual(
+            registrations[RegistrationID(1)]["fields"]["arrival_at"],
+            datetime.datetime(2022, 2, 2, 9, 0, tzinfo=datetime.UTC),
+        )
+        self.assertEqual(
+            registrations[RegistrationID(1)]["fields"]["lodge"],
+            "Die üblichen Verdächtigen, insb. Berta Beispiel und garcia@example.cde :)",
+        )
+        self.assertEqual(
+            registrations[RegistrationID(2)]["fields"]["brings_balls"], True
+        )
+        self.assertEqual(
+            registrations[RegistrationID(2)]["fields"]["transportation"], "pedes"
+        )
+
+        # prune some fields
+        self.traverse(
+            "Veranstaltungen",
+            "Große Testakademie",
+            "Datenfelder konfigurieren",
+            "Datenfeld leeren",
+        )
+        f = self.response.forms["prunefieldsform"]
+        f["reg_field_ids"].select_multiple(
+            texts=["Anreise um", "Bringt Bälle mit", "Reist an mit", "Zimmerwünsche"]
+        )
+        f["course_field_ids"].select_multiple(texts=["Kursraum"])
+        f["ack_delete"].checked = True
+        self.submit(f)
+        self.assertNotification("Daten aus 6 Anmeldungen gelöscht")
+        self.assertNotification("Daten aus 6 Kursen gelöscht")
+
+        # check the results
+        registrations = self.event.get_registrations(
+            self.key, self.event.list_registrations(self.key, EventID(1))
+        )
+        self.assertEqual(registrations[RegistrationID(1)]["fields"]["arrival_at"], None)
+        self.assertEqual(registrations[RegistrationID(1)]["fields"]["lodge"], "True")
+        self.assertEqual(
+            registrations[RegistrationID(2)]["fields"]["brings_balls"], True
+        )
+        self.assertEqual(
+            registrations[RegistrationID(2)]["fields"]["transportation"], "True"
+        )
 
     @as_users("garcia")
     def test_stats(self) -> None:
@@ -5280,7 +5335,7 @@ Teilnahmebeitrag Grosse Testakademie 2222, Emilia Eventis, DB-5-1"""
         assert isinstance(node_link, lxml.etree._Element)
         self.assertEqual(
             "/event/event/1/registration/3/show",
-            node_link.attrib['{http://www.w3.org/1999/xlink}href'],
+            node_link.attrib['{http://www.w3.org/1999/xlink}href'],  # pyrefly: ignore
         )
         parts_text_text = node_link.xpath(
             './svg:text/text()', namespaces=xml_namespaces

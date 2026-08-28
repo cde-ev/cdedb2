@@ -45,6 +45,7 @@ ISORT ?= $(RUFF) check --select I
 COVERAGE ?= $(PYTHONBIN) -m coverage
 MYPY ?= $(UV) run --all-groups mypy
 DMYPY ?= $(UV) run --all-groups dmypy
+PYREFLY ?= $(UV) run --all-groups pyrefly
 
 
 #####################
@@ -165,6 +166,10 @@ mypy: venv
 .PHONY: dmypy
 dmypy: venv
 	$(DMYPY) run
+
+.PHONY: pyrefly
+pyrefly: venv
+	$(PYREFLY) check
 
 BANNERLINE := "================================================================================"
 

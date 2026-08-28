@@ -5,7 +5,7 @@
             {% set jshint='weak' %}
         {% endif %}
     {% endif %}
-{% elif "event_list" in user.admin_views %}
+{% elif user.admin_views.has(AdminViews.event_list) %}
     {% if not jshint %}
         {% set jshint='weak' %}
     {% endif %}
@@ -151,13 +151,13 @@ This will result in:
 
 {% macro one_event_links(event) %}
 
-    {% if 'event_list' in user.admin_views %}
+    {% if user.admin_views.has(AdminViews.event_list) %}
         {# Only becomes visible by clicking the heading and only on big screens. #}
         {{ event_quicksearch(hidden=true) }}
     {% endif %}
 
     <div class="list-group tear-down">
-        {% if event.is_visible_for(user, is_registered, privileged=False) or orga_view or 'event_mgmt' in user.admin_views %}
+        {% if event.is_visible_for(user, is_registered, privileged=False) or orga_view or user.admin_views.has(AdminViews.event_mgmt) %}
         {{ util.href(cdedblink("event/show_event", {"event_id": event['id']}), gettext("Overview"),
                      aclass="list-group-item", icon="caret-right", active=(sidenav_active == 'event_show')) }}
         {% endif %}
@@ -213,7 +213,7 @@ This will result in:
         {{ registration_quicksearch() }}
     {% endif %}
 
-    {% if is_privileged() or 'event_orga' in user.admin_views %}
+    {% if is_privileged() or user.admin_views.has(AdminViews.event_orga) %}
         <div class="list-group tear-down">
             {% if is_privileged_for("registration_query") %}
                 {{ util.href(cdedblink("event/registration_query", {"event_id": event['id']}), gettext("Registrations"),
@@ -284,7 +284,7 @@ This will result in:
             {{ registration_quicksearch(mobile=True) }}
         {% endif %}
 
-        {% if 'event_list' in user.admin_views %}
+        {% if user.admin_views.has(AdminViews.event_list) %}
             {# Visible on all screens, but hidden on big screens via js, since the other form is available instead. #}
             {{ event_quicksearch(mobile=None) }}
         {% endif %}
@@ -301,7 +301,7 @@ This will result in:
             {{ util.cdedb_script('cdedb_searchregistration.js') }}
         {% endif %}
     {% endif %}
-    {% if "event_list" in user.admin_views %}
+    {% if user.admin_views.has(AdminViews.event_list) %}
         {% if not jshint %}
             {% set jshint='weak' %}
         {% endif %}
@@ -361,7 +361,7 @@ This will result in:
 
         {% set heading = util.make_icon('chalkboard-teacher', arialabel=gettext("Event")) ~ " " ~ ambience['event']['title'] %}
         <h3 class="heading-sidebar">
-            {% if "event_list" in user.admin_views %}
+            {% if user.admin_views.has(AdminViews.event_list) %}
                 {# This looks strange but is useful to add a "click" event only to the heading for big screens. #}
                 <span class="hidden-xs hidden-sm">
                     {{ heading }}
@@ -379,7 +379,7 @@ This will result in:
         <div class="list-group tear-down">
             {{ util.href(cdedblink("event/index"), gettext("Overview"), aclass="list-group-item",
                              icon="caret-right", active=(sidenav_active == 'event_index')) }}
-            {% if 'event_list' in user.admin_views %}
+            {% if user.admin_views.has(AdminViews.event_list) %}
                 {{ util.href(cdedblink("event/list_events"), gettext("All Events"),
                              aclass="list-group-item", icon="cog", active=(sidenav_active == 'event_list')) }}
                 {{ util.href(cdedblink("event/constraint_violations_summary"), gettext("Inconsistencies"),
@@ -390,22 +390,22 @@ This will result in:
                              icon="handshake-angle", active=(sidenav_active == 'event_helpers')) }}
             {% endif %}
         </div>
-        {% if 'event_list' in user.admin_views %}
+        {% if user.admin_views.has(AdminViews.event_list) %}
             {{ event_quicksearch() }}
         {% endif %}
-        {% if user.admin_views.intersection(('event_mgmt', 'event_user', 'auditor')) %}
+        {% if user.admin_views.has_any(AdminViews.event_mgmt, AdminViews.event_user, AdminViews.auditor) %}
             <div class="list-group tear-down">
-                {% if 'event_user' in user.admin_views %}
+                {% if user.admin_views.has(AdminViews.event_user) %}
                         {{ util.href(cdedblink("event/user_search"), gettext("Manage Users"),
                                      aclass="list-group-item", icon="users", active=(sidenav_active == 'event_users')) }}
                 {% endif %}
-                {% if user.admin_views.intersection(('event_mgmt', 'auditor')) %}
+                {% if user.admin_views.has_any(AdminViews.event_mgmt, AdminViews.auditor) %}
                         {{ util.href(cdedblink("event/view_log"), gettext("Log"), aclass="list-group-item", icon="far fa-list-alt",
                                      active=(sidenav_active == 'event_log')) }}
                 {% endif %}
             </div>
         {% endif %}
-        {% if 'event_list' in user.admin_views %}
+        {% if user.admin_views.has(AdminViews.event_list) %}
             {{ event_quicksearch(mobile=True) }}
         {% endif %}
     {% endif %}
@@ -416,19 +416,19 @@ This will result in:
     {% if 'event' in ambience %}
         {% if ambience['event'].id in (user.orga.union(user.caretaker)) %}
             {{ util.admin_views_toggle((
-                    (gettext("Event Administration"), ["event_mgmt", "event_list"], ["event_mgmt"]),
+                    (gettext("Event Administration"), AdminViews.event_mgmt.or_(AdminViews.event_list), AdminViews.event_mgmt),
                 )) }}
         {% else %}
             {{ util.admin_views_toggle((
-                    (gettext("Event Administration"), ["event_mgmt", "event_list"], ["event_mgmt"]),
-                    (gettext("Orga Controls"), ["event_orga"], None),
+                    (gettext("Event Administration"), AdminViews.event_mgmt.or_(AdminViews.event_list), AdminViews.event_mgmt),
+                    (gettext("Orga Controls"), AdminViews.event_orga, None),
                 )) }}
         {% endif %}
     {% else %}
         {{ util.admin_views_toggle((
-                (gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user"], ["event_user"]),
-                (gettext("Event Administration"), ["event_mgmt", "event_list"], None),
-                (gettext("Auditor"), ["auditor"], None),
+                (gettext("User Administration"), AdminViews.all_user_views(), AdminViews.event_user),
+                (gettext("Event Administration"), AdminViews.event_mgmt.or_(AdminViews.event_list), None),
+                (gettext("Auditor"), AdminViews.auditor, None),
             )) }}
     {% endif %}
 {% endblock %}

@@ -23,10 +23,10 @@
         {% endtrans %}
     </h2>
     <div id="current-cases">
-    {% with REALM_REQUEST_TITLES={'event': gettext('Event Account Requests'),
-                                  'cde': gettext('CdE Account Requests'),
-                                  'assembly': gettext('Assembly Account Requests'),
-                                  'ml': gettext('Mailinglist Account Requests')} %}
+    {% with REALM_REQUEST_TITLES={enums["Realms"].event: gettext('Event Account Requests'),
+                                  enums["Realms"].cde: gettext('CdE Account Requests'),
+                                  enums["Realms"].assembly: gettext('Assembly Account Requests'),
+                                  enums["Realms"].ml: gettext('Mailinglist Account Requests')} %}
         {% for realm, current_cases in current_cases_by_realm.items() %}
             <h3>{{ REALM_REQUEST_TITLES[realm] }}</h3>
             {% for genesis_case_id, entry in current_cases|dictsort(by="value", reverse=True) %}
@@ -97,7 +97,7 @@
                 {% endif %}
             </div>
             <div class="col-sm-3 small">
-                {{ util.realm_icon("is_" + entry['realm'] + "_realm", desc=True) }}<br />
+                {{ util.realm_icon(entry.realm.realm_marker, desc=True) }}<br />
                 {{ entry['ctime']|datetime(formatstr="%d.%m.%Y %H:%M:%S") }}
             </div>
         </div>

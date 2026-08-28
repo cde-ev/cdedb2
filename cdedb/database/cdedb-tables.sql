@@ -244,7 +244,7 @@ CREATE TABLE core.genesis_cases (
         location                varchar,
         country                 varchar,
         -- initial target realm, note that e.g. event implies is_event_realm and is_ml_realm
-        realm                   varchar DEFAULT NULL,
+        realm                   integer NOT NULL,
         -- user-supplied comment (short justification of request)
         -- may be amended during review
         notes                   varchar,

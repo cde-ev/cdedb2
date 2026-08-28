@@ -258,8 +258,8 @@ class Transaction:
 
         :param raw: DictReader line of parse_statement input.
         """
-        data = {}
-        t_id = raw["id"] + 1
+        data: CdEDBObject = {}
+        t_id: int = raw["id"] + 1
         data["t_id"] = t_id
         errors = []
 
@@ -322,7 +322,7 @@ class Transaction:
         data["posting"] = raw[StatementCSVKeys.posting]
 
         data["errors"] = errors
-        data["warnings"] = []
+        data["warnings"] = []  # pyrefly: ignore[implicit-any-empty-container]
 
         return Transaction(data)
 
@@ -541,10 +541,9 @@ class Transaction:
         if self.event:
             return
 
-        if not self.persona:
-            amounts_owed = {}
-        else:
-            amounts_owed = event_backend.list_amounts_owed(rs, self.persona.id)
+        amounts_owed = (
+            event_backend.list_amounts_owed(rs, self.persona.id) if self.persona else {}
+        )
 
         event_matches = [
             match

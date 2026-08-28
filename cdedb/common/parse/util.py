@@ -220,4 +220,4 @@ def number_from_german(number: str) -> str:
 
 def simplify_amount(amt: decimal.Decimal | int | str) -> str:
     """Helper to convert a number to german and strip decimal zeros."""
-    return str(number_to_german(amt)).rstrip("0").rstrip(",")
+    return number_to_german(amt).rstrip("0").rstrip(",")

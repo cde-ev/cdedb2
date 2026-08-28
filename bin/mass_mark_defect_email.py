@@ -57,7 +57,7 @@ with script:
         do_mark = True
         notes = notes or default_notes
         if address in lookup:
-            diff = cutoff
+            diff: datetime.timedelta = cutoff
             if lookup[address]['atime'] is not None:
                 diff = now - lookup[address]['atime']
             if diff >= cutoff:

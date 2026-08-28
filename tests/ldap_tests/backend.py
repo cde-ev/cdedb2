@@ -11,6 +11,7 @@ e.g. `self.assertEqual("123", str(123))`.
 import asyncio
 from typing import Any, cast
 
+import pyparsing
 from ldaptor.ldapfilter import parseFilter
 from ldaptor.protocols import pureber, pureldap
 from ldaptor.protocols.ldap.distinguishedname import DistinguishedName as DN
@@ -25,7 +26,7 @@ from cdedb.ldap.types import AttributeDescriptionList, FilterLike
 from tests.common import AsyncBasicTest, BasicTest
 
 
-def create_filter_object(filter_string: str) -> FilterLike:
+def create_filter_object(filter_string: str) -> FilterLike | None:
     filterdecoder = pureldap.LDAPBERDecoderContext_Filter(
         fallback=pureldap.LDAPBERDecoderContext(
             fallback=pureber.BERDecoderContext(),
@@ -34,7 +35,7 @@ def create_filter_object(filter_string: str) -> FilterLike:
             fallback=pureber.BERDecoderContext(),
         ),
     )
-    parsed_filter = parseFilter(filter_string)
+    parsed_filter = cast(pyparsing.ParseResults, parseFilter(filter_string))
     roundtripped_filter, _ = pureber.berDecodeObject(
         filterdecoder,
         parsed_filter.toWire(),

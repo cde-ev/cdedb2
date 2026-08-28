@@ -33,7 +33,7 @@ def _serialize(result: pp.ParseResults, outer_operator: str | None, ps: dict[str
         'bool': lambda x: f"{x[0]}",
         'age': lambda x: f"age.U{x[0]}",
     }
-    name = result.get_name()
+    name = str(result.get_name())
     if name in {'and', 'or', 'xor'} and outer_operator is not None and name != outer_operator:
         return f"({functions[name](result)})"
     else:
