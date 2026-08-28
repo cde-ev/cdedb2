@@ -1,0 +1,7 @@
+1. Create a secret for the Zammad API:
+
+uv run --project=/cddb2 python -c "from cdedb.models.droid import ZammadResolveToken; print(ZammadResolveToken.get_token_string(ZammadResolveToken.create_secret()))"
+
+2. Store it in the secrets config:
+
+nano /etc/cdedb/secrets.py
