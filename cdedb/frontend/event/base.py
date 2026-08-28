@@ -106,7 +106,8 @@ class ConstraintViolationsData(typing.TypedDict):
     attendee_stats: models.AttendeeStats
     all_lodgements: models.LodgementMap
     lodgements: models.LodgementMap
-    inhabitants: dict[vtypes.LodgementID, dict[int, LodgementInhabitants]]
+    involved_inhabitants: dict[vtypes.LodgementID, dict[int, LodgementInhabitants]]
+    uninvolved_inhabitants: dict[vtypes.LodgementID, dict[int, LodgementInhabitants]]
 
 
 def event_guard[F: Callable[..., Any]](
@@ -845,8 +846,11 @@ class EventBaseFrontend(AbstractUserFrontend):
                 rs, [lodgement_id], _event=event
             )
 
-        inhabitants = self.eventproxy.get_grouped_inhabitants(
+        involved_inhabitants = self.eventproxy.get_grouped_inhabitants(
             rs, event.id, involved=True, _registrations=all_registrations
+        )
+        uninvolved_inhabitants = self.eventproxy.get_grouped_inhabitants(
+            rs, event.id, involved=False, _registrations=all_registrations
         )
 
         violations = models_cv.ViolationAux(
@@ -859,7 +863,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             lodgements=lodgements,
             attendee_data=attendee_stats,
             choices_data=choice_stats,
-            inhabitants_data=inhabitants,
+            involved_inhabitants_data=involved_inhabitants,
+            uninvolved_inhabitants_data=uninvolved_inhabitants,
         ).evaluate_all()
 
         return ConstraintViolationsData(
@@ -873,7 +878,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             attendee_stats=attendee_stats,
             all_lodgements=all_lodgements,
             lodgements=lodgements,
-            inhabitants=inhabitants,
+            involved_inhabitants=involved_inhabitants,
+            uninvolved_inhabitants=uninvolved_inhabitants,
         )
 
     @access("event")
