@@ -102,7 +102,8 @@ class PastEventMixin(EventBaseFrontend):
     @access("event")
     def show_past_event(self, rs: RequestState, pevent_id: int) -> Response:
         """Display concluded event."""
-        # if user is not member or cde_admin bt event user, check if they were a participant, otherwise block the request
+        # If user is not member or cde_admin but event user, check if they were a
+        #  participant, otherwise block the request.
         assert rs.user.persona_id is not None
         if rs.user.roles.isdisjoint([
             "member",
