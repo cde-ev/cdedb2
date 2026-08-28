@@ -232,13 +232,16 @@
             </div>
 
             <div class="button-par">
+                {% set no_approve = (ambience["genesis_case"].is_upgrade and "core_admin" not in user.roles) %}
+                {% set title = gettext("Only core admins may approve upgrade requests.") if no_approve else "" %}
                 {{ util.input_submit(
                     name="decision", value = enums['GenesisDecision'].approve,
-                    label=gettext("Approve"), aclass="btn btn-success") }}
+                    label=gettext("Approve"), aclass="btn btn-success", title=title, readonly=no_approve) }}
                 {% if ambience["genesis_case"].realm == "cde" %}
                     {{ util.input_submit(
                         name="decision", value = enums['GenesisDecision'].approve_grant_trial_membership,
-                        label=gettext("Approve (grant trial membership)"), aclass="btn btn-success") }}
+                        label=gettext("Approve (grant trial membership)"), aclass="btn btn-success",
+                        title=title, readonly=no_approve) }}
                 {% endif %}
                 {{ util.input_submit(
                     name="decision", value = enums['GenesisDecision'].deny,

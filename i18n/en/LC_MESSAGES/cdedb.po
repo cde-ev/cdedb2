@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-08-27 19:39+0200\n"
+"POT-Creation-Date: 2026-08-28 15:08+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -3117,7 +3117,7 @@ msgstr ""
 msgid "Case not to review."
 msgstr ""
 
-msgid "Decision must be 'update'."
+msgid "Decision must be 'update' or 'deny."
 msgstr ""
 
 msgid "Email address already taken."
@@ -5849,6 +5849,9 @@ msgid "Invalid persona for update. Add additional realm first: %(realm)s."
 msgstr ""
 
 msgid "You need to specify a past event for CdE genesis requests."
+msgstr ""
+
+msgid "Only core admins may approve upgrade requests."
 msgstr ""
 
 msgid "Past event attendance could not be established."

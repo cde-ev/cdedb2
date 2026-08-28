@@ -656,6 +656,13 @@ class CoreGenesisMixin(CoreBaseFrontend):
                 n_("You need to specify a past event for CdE genesis requests."),
             )
             return self.redirect(rs, "core/genesis_show_case")
+        if (
+            case.is_upgrade
+            and decision.is_approved()
+            and "core_admin" not in rs.user.roles
+        ):
+            rs.notify("error", n_("Only core admins may approve upgrade requests."))
+            return self.redirect(rs, "core/genesis_show_case")
 
         # Apply the decision.
         persona_id = self.coreproxy.genesis_decide(
@@ -689,7 +696,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                 trial_member = self.coreproxy.get_cde_user(rs, persona_id).trial_member
             self.send_welcome_mail(rs, persona, status, is_trial_member=trial_member)
             rs.notify("success", n_("Case approved."))
-        elif case.is_upgrade:
+        elif case.is_upgrade and decision.is_approved():
             persona = self.coreproxy.get_persona(rs, persona_id)
             status = self.coreproxy.get_persona_status(rs, persona_id)
             trial_member = self.coreproxy.get_cde_user(rs, persona_id).trial_member

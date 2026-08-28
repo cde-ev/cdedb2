@@ -479,8 +479,8 @@ class CoreGenesisBackend(CoreBaseBackend):
             case = self.genesis_get_case(rs, case_id)
             if case.status != const.GenesisStati.to_review:
                 raise ValueError(n_("Case not to review."))
-            if case.is_upgrade and not decision.is_update():
-                raise ValueError(n_("Decision must be 'update'."))
+            if case.is_upgrade and decision.is_approved() and not decision.is_update():
+                raise ValueError(n_("Decision must be 'update' or 'deny."))
 
             # Set the case as finalized without generating a log message.
             # This is necessary to sooth username checks for f.e. dearchival.
@@ -512,7 +512,7 @@ class CoreGenesisBackend(CoreBaseBackend):
                     rs, data, submitted_by=rs.user.persona_id
                 )
 
-            elif case.is_upgrade:
+            elif case.is_upgrade and decision.is_update():
                 assert case.persona_id is not None
                 status = const.GenesisStati.existing_updated
                 persona_id = case.persona_id
