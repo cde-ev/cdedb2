@@ -49,7 +49,13 @@ from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
 from cdedb.common.privileges import EventPrivileges, is_privileged_event
-from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.query import (
+    Query,
+    QueryConstraint,
+    QueryOperators,
+    QueryScope,
+    QuerySpecEntry,
+)
 from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.roles import (
@@ -68,6 +74,7 @@ from cdedb.common.validation.validate import (
     PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
 )
 from cdedb.filter import (
+    cdedbid_filter,
     enum_entries_filter,
     markdown_parse_safe,
     money_filter,
@@ -82,11 +89,14 @@ from cdedb.frontend.common import (
     access,
     ack_delete,
     basic_redirect,
+    cdedburl,
     check_validation as check,
     inspect_validation as inspect,
     periodic,
     request_dict_extractor,
+    request_extractor,
 )
+from cdedb.models.common import CdEDataclassMap
 from cdedb.models.core import CdEPersona
 from cdedb.uncommon.submanshim import SubscriptionPolicy
 
@@ -307,7 +317,6 @@ class CoreBaseFrontend(AbstractFrontend):
         data = check(rs, models.MetaInfo, data)
         if rs.has_validation_errors():  # pragma: no cover
             return self.meta_info_form(rs)
-        assert data is not None
         code = self.coreproxy.set_meta_info(rs, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "core/meta_info_form")
@@ -1076,7 +1085,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 # Basically it's done by the following line, except we
                 # don't want to mask a change that was rejected and then
                 # resubmitted and accepted.
-                is_constant = history[x][f] == history[y][f]
+                is_constant: bool = history[x][f] == history[y][f]
                 if history[x]['code'] == stati.nacked and not already_committed:
                     is_constant = False
                 if is_constant:
@@ -1346,7 +1355,7 @@ class CoreBaseFrontend(AbstractFrontend):
         # Allow admins to search by (CdEDB)ID
         if ALL_ADMINS & rs.user.roles:
             anid: vtypes.ID | None
-            personas = {}
+            personas: CdEDataclassMap[models.CorePersona] = {}
             anid, errs = inspect(vtypes.PersonaID, phrase, argname="phrase")
             if anid and not errs:
                 personas = self.coreproxy.get_personas(rs, [anid])
@@ -2000,7 +2009,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 # noinspection PyUnboundLocalVariable
                 self.logger.error(
                     f"User {rs.user.persona_id} tried to decrypt anonymous message"
-                    f" ({message.id}) with an incorrect decryption key."
+                    f" ({message.id}) with an incorrect decryption key."  # pyrefly: ignore[unbound-name]
                 )
             rs.append_validation_error(("secret", RuntimeError(n_("Invalid secret."))))
         else:
@@ -2077,7 +2086,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 # noinspection PyUnboundLocalVariable
                 self.logger.error(
                     f"User {rs.user.persona_id} tried to rotate anonymous message"
-                    f" ({message.id}) with an incorrect decryption key."
+                    f" ({message.id}) with an incorrect decryption key."  # pyrefly: ignore[unbound-name]
                 )
             rs.notify("error", n_("Invalid secret."))
             return self.redirect(rs, "core/index")
@@ -2429,7 +2438,7 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.redirect_show_user(rs, persona_id)
         pevent_ids = self.pasteventproxy.list_past_events(rs)
         pevents = self.pasteventproxy.get_past_events(rs, pevent_ids)
-        pcourses = {}
+        pcourses: models_past_event.CdEDataclassMap[models_past_event.PastCourse] = {}
         if pevent_id := rs.values.get('pevent_id'):
             pcourse_ids = self.pasteventproxy.list_past_courses(rs, pevent_id)
             pcourses = self.pasteventproxy.get_past_courses(rs, pcourse_ids)
@@ -2484,7 +2493,7 @@ class CoreBaseFrontend(AbstractFrontend):
         persona = self.coreproxy.get_total_persona(rs, persona_id)
         # Specific fixes by target realm
         if target_realm == "cde":
-            reference = {**CDE_TRANSITION_FIELDS}
+            reference: CdEDBObject = {**CDE_TRANSITION_FIELDS}
             persona.update({
                 'trial_member': False,
                 'honorary_member': False,
@@ -2518,7 +2527,6 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.promote_user_form(
                 rs, persona_id, target_realm=target_realm, internal=True
             )
-        assert data is not None
         code = self.coreproxy.change_persona_realms(rs, data, change_note)
         rs.notify_return_code(code)
         if code > 0 and target_realm == "cde":
@@ -2683,12 +2691,12 @@ class CoreBaseFrontend(AbstractFrontend):
         """Set profile picture."""
         if rs.user.persona_id != persona_id and not self.is_admin(rs):
             raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
-        foto = check(rs, vtypes.ProfilePicture | None, foto, "foto")
-        if not foto and not delete:
+        data = check(rs, vtypes.ProfilePicture | None, foto, "foto")
+        if not data and not delete:
             rs.append_validation_error(("foto", ValueError("Must not be empty.")))
         if rs.has_validation_errors():
             return self.set_foto_form(rs, persona_id)
-        new_hash = self.coreproxy.get_foto_store(rs).store(foto) if foto else None
+        new_hash = self.coreproxy.get_foto_store(rs).store(data) if data else None
         code = self.coreproxy.change_foto(rs, persona_id, new_hash=new_hash)
         rs.notify_return_code(
             code, success=n_("Foto updated."), info=n_("Foto removed.")
@@ -3405,26 +3413,84 @@ class CoreBaseFrontend(AbstractFrontend):
     ) -> DefaultReturnCode:
         return self.coreproxy.set_cron_store(rs, name, data)
 
-    @access("droid_resolve")
-    @REQUESTdata("username")
-    def api_resolve_username(
-        self, rs: RequestState, username: vtypes.Email
-    ) -> Response:
+    def _api_resolve_username(
+        self, rs: RequestState, event_only: bool
+    ) -> tuple[CdEDBObject, ...] | None:
         """API to resolve username to that users given names and family name."""
+        username = request_extractor(rs, {"username": vtypes.Email})["username"]
         if rs.has_validation_errors():
-            err = {'error': tuple(map(str, rs.retrieve_validation_errors()))}
-            return self.send_json(rs, err)
+            return None
 
-        constraints = (
+        constraints: list[QueryConstraint] = [
             ('username', QueryOperators.equal, username),
-            ('is_event_realm', QueryOperators.equal, True),
-        )
+        ]
+
+        if event_only:
+            constraints.append(
+                ('is_event_realm', QueryOperators.equal, True),
+            )
+
         query = Query(
             QueryScope.core_user,
             QueryScope.core_user.get_spec(),
             ("given_names", "family_name", "is_member", "username"),
             constraints,
-            (('personas.id', True),),
+            [],
+        )
+        return self.coreproxy.submit_resolve_api_query(rs, query)
+
+    @access("droid_resolve")
+    def api_cyberaka_resolve_username(self, rs: RequestState) -> Response:
+        result = self._api_resolve_username(rs, event_only=True)
+        if result is None:
+            err = {'error': tuple(map(str, rs.retrieve_validation_errors()))}
+            return self.send_json(rs, err)
+        return self.send_json(rs, unwrap(result) if result else {})
+
+    @access("droid_zammad_resolve")
+    def api_zammad_resolve_username(self, rs: RequestState) -> Response:
+        result = self._api_resolve_username(rs, event_only=False)
+        rs.raise_for_validation_errors()
+        if not result:
+            raise werkzeug.exceptions.NotFound("Username not found.")
+        persona_id = unwrap(result)[QueryScope.core_user.get_primary_key()]
+        return self.send_json(rs, {"persona_id": cdedbid_filter(persona_id)})
+
+    @access("droid_zammad_resolve")
+    @REQUESTdata("persona_id")
+    def api_zammad_resolve_persona_id(
+        self, rs: RequestState, persona_id: vtypes.PersonaID
+    ) -> Response:
+        rs.raise_for_validation_errors()
+
+        query = Query(
+            QueryScope.core_user,
+            QueryScope.core_user.get_spec(),
+            ["given_names", "nickname", "family_name", "username", "foto"],
+            [
+                (
+                    QueryScope.core_user.get_primary_key(),
+                    QueryOperators.equal,
+                    persona_id,
+                )
+            ],
+            [],
         )
         result = self.coreproxy.submit_resolve_api_query(rs, query)
-        return self.send_json(rs, unwrap(result) if result else {})
+
+        if not result:
+            raise werkzeug.exceptions.NotFound(f"Persona {persona_id!r} not found.")
+
+        if foto := result[0]["foto"]:
+            result[0]["foto"] = cdedburl(
+                rs, "core/get_foto", {'foto': foto}, force_external=True
+            )
+
+        del result[0][QueryScope.core_user.get_primary_key()]
+
+        return self.send_json(rs, unwrap(result))
+
+    @access("droid_zammad_resolve")
+    def api_zammad_list_subscribers(self, rs: RequestState) -> Response:
+        data = self.mlproxy.list_zammad_subscriptions(rs)
+        return self.send_json(rs, data)

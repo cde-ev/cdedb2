@@ -6,6 +6,7 @@ import email.parser
 import urllib.error
 from collections.abc import Collection, Mapping
 
+import requests
 from werkzeug import Response
 
 import cdedb.database.constants as const
@@ -62,7 +63,7 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
                     held = mmlist.get_held_message(request_id)
                     sender, subject, msg = held.sender, held.subject, held.msg
                     # This destroys the information we just queried.
-                    response = mmlist.moderate_message(
+                    response: requests.Response = mmlist.moderate_message(
                         request_id, action, comment=reason
                     )
                 except urllib.error.HTTPError:

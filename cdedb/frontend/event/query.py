@@ -7,6 +7,7 @@ querying registrations, courses and lodgements.
 
 import collections
 import itertools
+from collections.abc import Collection, Mapping
 from typing import Any
 
 import werkzeug.exceptions
@@ -64,9 +65,9 @@ class EventQueryMixin(EventBaseFrontend):
         """Present an overview of the basic stats."""
         event_parts = rs.ambience['event'].parts
         tracks = rs.ambience['event'].tracks
-        stat_part_groups: dict[int, models.PartGroup] = {
-            part_group_id: part_group
-            for part_group_id, part_group in rs.ambience['event'].part_groups.items()
+        stat_part_groups = {
+            part_group.id: part_group
+            for part_group in rs.ambience['event'].part_groups.values()
             if part_group.constraint_type == const.EventPartGroupType.Statistic
         }
 
@@ -85,22 +86,19 @@ class EventQueryMixin(EventBaseFrontend):
                     reg['birthday'], event_parts[part_id].part_begin
                 )
 
-        per_part_statistics: dict[
-            EventRegistrationPartStatistic, dict[str, dict[int, set[int]]]
-        ]
         per_part_statistics = collections.OrderedDict()
         for reg_stat in EventRegistrationPartStatistic:
-            _parts: dict[int, set[int]] = {
-                part_id: set(
-                    reg['id']
+            _parts = {
+                part.id: set(
+                    vtypes.RegistrationID(vtypes.ID(reg['id']))
                     for reg in registrations.values()
-                    if reg_stat.test(rs.ambience['event'], reg, part_id)
+                    if reg_stat.test(rs.ambience['event'], reg, part.id)
                 )
-                for part_id in event_parts
+                for part in event_parts.values()
             }
-            _part_groups: dict[int, set[int]] = {
+            _part_groups = {
                 part_group.id: set().union(
-                    *(_parts[part_id] for part_id in part_group.parts)
+                    *(_parts[part.id] for part in part_group.parts.values())
                 )
                 for part_group in stat_part_groups.values()
             }
@@ -112,31 +110,31 @@ class EventQueryMixin(EventBaseFrontend):
         # without list comprehension.
         per_part_max_indent = max(stat.indent for stat in per_part_statistics)
 
-        per_track_statistics: dict[
+        per_track_statistics: Mapping[
             EventRegistrationTrackStatistic | EventCourseStatistic,
-            dict[str, dict[int, set[int]]],
+            Mapping[str, Mapping[vtypes.ID, Collection[vtypes.ID]]],
         ]
         per_track_statistics = collections.OrderedDict()
         grouper = None
         if tracks:
             for course_stat in EventCourseStatistic:
-                _tracks: dict[int, set[int]] = {
-                    track_id: set(
+                _tracks = {
+                    track.id: set(
                         course.id
                         for course in courses.values()
-                        if course_stat.test(rs.ambience['event'], course, track_id)
+                        if course_stat.test(rs.ambience['event'], course, track.id)
                     )
-                    for track_id in tracks
+                    for track in tracks.values()
                 }
                 _parts = {
                     part.id: set().union(
-                        *(_tracks[track_id] for track_id in part.tracks)
+                        *(_tracks[track.id] for track in part.tracks.values())
                     )
                     for part in event_parts.values()
                 }
                 _part_groups = {
                     part_group.id: set().union(
-                        *(_parts[part_id] for part_id in part_group.parts)
+                        *(_parts[part.id] for part in part_group.parts.values())
                     )
                     for part_group in stat_part_groups.values()
                 }
@@ -147,22 +145,22 @@ class EventQueryMixin(EventBaseFrontend):
                 }
             for reg_track_stat in EventRegistrationTrackStatistic:
                 _tracks = {
-                    track_id: set(
-                        reg['id']
+                    track.id: set(
+                        vtypes.RegistrationID(vtypes.ID(reg['id']))
                         for reg in registrations.values()
-                        if reg_track_stat.test(rs.ambience['event'], reg, track_id)
+                        if reg_track_stat.test(rs.ambience['event'], reg, track.id)
                     )
-                    for track_id in tracks
+                    for track in tracks.values()
                 }
                 _parts = {
                     part.id: set().union(
-                        *(_tracks[track_id] for track_id in part.tracks)
+                        *(_tracks[track.id] for track in part.tracks.values())
                     )
                     for part in event_parts.values()
                 }
                 _part_groups = {
                     part_group.id: set().union(
-                        *(_parts[part_id] for part_id in part_group.parts)
+                        *(_parts[part.id] for part in part_group.parts.values())
                     )
                     for part_group in stat_part_groups.values()
                 }
@@ -478,10 +476,11 @@ class EventQueryMixin(EventBaseFrontend):
             'event_id': event_id,
         })
         data = check(rs, models.CustomQueryFilter, data, creation=True, query_spec=spec)
-        if data:
+        if not rs.has_validation_errors():
             self._validate_custom_filter_uniqueness(rs, data, custom_filter_id=None)
-        if rs.has_validation_errors() or not data:
+        if rs.has_validation_errors():
             return self.configure_custom_filter_form(rs, event_id, scope)
+
         code = self.eventproxy.add_custom_query_filter(
             rs, scope=scope, event_id=event_id, data=data
         )
@@ -521,9 +520,9 @@ class EventQueryMixin(EventBaseFrontend):
         data['id'] = custom_filter_id
 
         data = check(rs, models.CustomQueryFilter, data, query_spec=spec)
-        if data:
+        if not rs.has_validation_errors():
             self._validate_custom_filter_uniqueness(rs, data, custom_filter_id)
-        if rs.has_validation_errors() or not data:
+        if rs.has_validation_errors():
             return self.change_custom_filter_form(rs, event_id, custom_filter_id)
 
         code = self.eventproxy.change_custom_query_filter(rs, data)
@@ -761,7 +760,7 @@ class EventQueryMixin(EventBaseFrontend):
         else:
             return self.send_json(rs, {})
 
-        data = None
+        data: list[CdEDBObject] | None = None
 
         anid, errs = inspect(vtypes.RegistrationID, phrase, argname="phrase")
         if not errs:

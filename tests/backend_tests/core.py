@@ -36,7 +36,7 @@ from tests.common import (
     storage,
 )
 
-PERSONA_TEMPLATE = {
+PERSONA_TEMPLATE: CdEDBObject = {
     'username': "zelda@example.cde",
     'notes': "Not Link.",
     'is_cde_realm': False,
@@ -1115,7 +1115,7 @@ class TestCoreBackend(BackendTest):
 
     @as_users("vera")
     def test_user_getters(self) -> None:
-        expectation = {
+        expectation: CdEDBObject = {
             'family_name': 'Beispiel',
             'given_names': 'Bertå',
             'legal_given_names': 'Bertålotta',
@@ -1134,7 +1134,7 @@ class TestCoreBackend(BackendTest):
             'username': 'berta@example.cde',
         }
         self.assertEqual(
-            models.CorePersona(**expectation),  # type: ignore[arg-type]
+            models.CorePersona(**expectation),
             self.core.get_persona(self.key, 2),
         )
         expectation.update({
@@ -1142,7 +1142,7 @@ class TestCoreBackend(BackendTest):
             'is_cdelokal_admin': False,
         })
         self.assertEqual(
-            models.MlPersona(**expectation),  # type: ignore[arg-type]
+            models.MlPersona(**expectation),
             self.core.get_ml_user(self.key, 2),
         )
         expectation_assembly = expectation.copy()
@@ -1150,7 +1150,7 @@ class TestCoreBackend(BackendTest):
             'is_assembly_admin': False,
         })
         self.assertEqual(
-            models.AssemblyPersona(**expectation_assembly),  # type: ignore[arg-type]
+            models.AssemblyPersona(**expectation_assembly),
             self.core.get_assembly_user(self.key, 2),
         )
         expectation_event = expectation.copy()
@@ -1175,7 +1175,7 @@ class TestCoreBackend(BackendTest):
             'title': 'Dr.',
         })
         self.assertEqual(
-            models.EventPersona(**expectation_event),  # type: ignore[arg-type]
+            models.EventPersona(**expectation_event),
             self.core.get_event_user(self.key, 2),
         )
         expectation.update({**expectation_event, **expectation_assembly})
@@ -1215,7 +1215,7 @@ class TestCoreBackend(BackendTest):
             'weblink': '<https://www.bundestag.cde>',
         })
         self.assertEqual(
-            models.CdEPersona(**expectation),  # type: ignore[arg-type]
+            models.CdEPersona(**expectation),
             self.core.get_cde_user(self.key, 2),
         )
         expectation['notes'] = 'Beispielhaft, Besser, Baum.'

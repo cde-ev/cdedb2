@@ -82,7 +82,6 @@ class CoreGenesisMixin(CoreBaseFrontend):
         realm = check(rs, vtypes.Realm, realm, supports_genesis=True)
         if rs.has_validation_errors():
             return self.genesis_request_form(rs)
-        assert realm is not None
 
         if attachment or attachment_hash:
             # We need to extract the hash before, and save it to rs.values after the
@@ -427,7 +426,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         merge_dicts(rs.values, case.as_dict(), case.persona.as_dict())
         mandatory_fields = models.GenesisCaseCdE.mandatory_form_fields(creation=True)
 
-        pcourses = {}
+        pcourses: models_past_event.CdEDataclassMap[models_past_event.PastCourse] = {}
         if case.pevent_id:
             pcourse_ids = self.pasteventproxy.list_past_courses(rs, case.pevent_id)
             pcourses = self.pasteventproxy.get_past_courses(rs, pcourse_ids)

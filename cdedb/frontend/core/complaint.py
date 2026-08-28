@@ -6,6 +6,7 @@ from collections.abc import Collection
 from itertools import chain
 from typing import Any
 
+import werkzeug.datastructures
 import werkzeug.exceptions
 from werkzeug import Response
 
@@ -105,7 +106,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
                 allow_empty=True,
             )
 
-            if query:
+            if not rs.has_validation_errors():
                 # Disallow empty search to encourage restrictive search
                 if not query.constraints:
                     rs.notify('error', n_("Need to fill out at least one field."))
@@ -122,7 +123,6 @@ class CoreComplaintMixin(CoreBaseFrontend):
 
             if rs.has_validation_errors():
                 return self.complaint_index(rs, is_search=False)
-            assert query is not None
             query.fields_of_interest = [
                 'cases.id',
                 'status.is_unlocked',
@@ -1032,7 +1032,7 @@ class CoreComplaintMixin(CoreBaseFrontend):
             rs.notify('error', n_("Need to unlock case."))
             return self.redirect(rs, "core/show_case")
         # This is done before to ensure the mail is sent even in error scenarios
-        delay = self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"].days
+        delay: int = self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"].days
         subject = f"Eintragsversion wird in {delay} Tagen unwiderruflich gelöscht"
         self.do_mail(
             rs,
@@ -1072,12 +1072,15 @@ class CoreComplaintMixin(CoreBaseFrontend):
     def purge_complaint_entry_versions(
         self, rs: RequestState, state: CdEDBObject
     ) -> CdEDBObject:
-        cutoff = now() - self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"]
+        cutoff: datetime.datetime = (
+            now() - self.conf["COMPLAINT_ENTRY_VERSION_PURGE_DELAY"]
+        )
         marked_for_purge = self.complaintproxy.list_entry_versions_marked_for_purge(rs)
 
         purged = []
         pending = []
         for entry_version in marked_for_purge:
+            assert entry_version.marked_for_purge is not None
             if entry_version.marked_for_purge < cutoff:
                 self.complaintproxy.purge_entry_version(
                     rs, entry_version.entry_id, entry_version.id

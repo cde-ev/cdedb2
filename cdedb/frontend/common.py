@@ -363,8 +363,8 @@ def periodic(name: str, period: int = 1) -> Callable[[PeriodicMethod], PeriodicJ
       2 means every second invocation of the CronFrontend)
     """
 
-    def decorator(fun: PeriodicMethod) -> PeriodicJob:
-        fun = cast(PeriodicJob, fun)
+    def decorator(fun_: PeriodicMethod) -> PeriodicJob:
+        fun = cast(PeriodicJob, fun_)
         fun.cron = {
             'name': name,
             'period': period,
@@ -442,8 +442,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         )
         self.jinja_env.policies['ext.i18n.trimmed'] = True
         self.jinja_env.policies['json.dumps_kwargs']['cls'] = CustomJSONEncoder
-        self.jinja_env.filters.update(JINJA_FILTERS)
-        self.jinja_env.globals.update({
+        self.jinja_env.filters.update(JINJA_FILTERS)  # pyrefly: ignore[no-matching-overload]
+        self.jinja_env.globals.update({  # pyrefly: ignore[no-matching-overload]
             'now': now,
             'nbsp': "\u00a0",
             'query_mod': query_mod,
@@ -952,7 +952,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             else:
                 rs.notify("info", msg)
 
-        defect_addresses = {}
+        defect_addresses: dict[str, EmailAddressReport] = {}
         if rs.user.persona_id:
             defect_addresses = self.coreproxy.get_defect_address_reports(
                 rs, [rs.user.persona_id]
@@ -1245,7 +1245,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             choices_lists[k] = list(v.items())
             if query and k in query.spec:
                 query.spec[k].choices = v
-        params = {
+        params: CdEDBObject = {
             'spec': spec,
             'choices_lists': choices_lists,
             'default_queries': default_queries,
@@ -1301,7 +1301,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'image': email.mime.image.MIMEImage,
             'text': email.mime.text.MIMEText,
         }
-        ret = factories[maintype](data, _subtype=subtype)
+        ret = factories[maintype](data, _subtype=subtype)  # pyrefly: ignore[bad-argument-type]
         if attachment.get('filename'):
             ret.add_header(
                 'Content-Disposition', 'attachment', filename=attachment['filename']
@@ -1886,12 +1886,12 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
         """Create new user account."""
         merge_dicts(data, PERSONA_DEFAULTS)
         data = check_validation(rs, vtypes.Persona, data, creation=True)
-        if data:
+        if not rs.has_validation_errors():
             exists = self.coreproxy.verify_existence(rs, data['username'])
             if exists:
                 msg = n_("User with this E-Mail exists already.")
                 rs.extend_validation_errors((("username", ValueError(msg)),))
-        if rs.has_validation_errors() or not data:
+        if rs.has_validation_errors():
             return self.create_user_form(rs)
         new_id = self.coreproxy.create_persona(rs, data)
         if new_id:
@@ -1960,7 +1960,10 @@ class CdEMailmanClient(mailmanclient.Client):
             if self.conf["CDEDB_DEV"]:
                 # Some diversity regarding moderation.
                 if dblist.id % 2 == 0:
-                    return HELD_MESSAGE_SAMPLE
+                    return cast(
+                        list[mailmanclient.restobjects.held_message.HeldMessage],
+                        HELD_MESSAGE_SAMPLE,
+                    )
                 else:
                     return []
             return None
@@ -2063,8 +2066,8 @@ class Worker(threading.Thread):
             if len(task_infos) > 1:
                 task_queue = "\n".join(f"'{n}': {doc}" for _, n, doc in task_infos)
                 logger.debug(f"Worker queue started:\n{task_queue}")
-            p_id = rrs.user.persona_id if rrs.user else None
-            username = rrs.user.username if rrs.user else None
+            p_id = rrs.user.persona_id
+            username = rrs.user.username
             for i, task_info in enumerate(task_infos):
                 logger.debug(
                     f"Task `{task_info.name}`{task_info.doc} started by user"
@@ -3001,13 +3004,13 @@ def ack_delete[F: Callable[..., Any]](
 
 
 @overload
-def check_validation(
+def check_validation[T: CdEDataclass](
     rs: RequestState,
-    type_: type[CdEDataclass],
+    type_: TypeForm[T],
     value: Any,
     name: str | None = None,
     **kwargs: Any,
-) -> CdEDBObject | None: ...
+) -> CdEDBObject: ...
 
 
 @overload
@@ -3017,16 +3020,16 @@ def check_validation[T](
     value: Any,
     name: str | None = None,
     **kwargs: Any,
-) -> T | None: ...
+) -> T: ...
 
 
 def check_validation[T](
     rs: RequestState,
-    type_: TypeForm[T] | type[CdEDataclass],
+    type_: TypeForm[T],
     value: Any,
     name: str | None = None,
     **kwargs: Any,
-) -> T | CdEDBObject | None:
+) -> T | CdEDBObject:
     """Wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This performs the check and appends all occurred errors to the RequestState.
@@ -3046,7 +3049,7 @@ def check_validation[T](
             type_, value, ignore_warnings=rs.ignore_warnings, **kwargs
         )
     rs.extend_validation_errors(errs)
-    return cast(None | T | CdEDBObject, ret)
+    return cast(T | CdEDBObject, ret)
 
 
 def extract_and_check_dataclass_validation[DC: CdEDataclass](
@@ -3061,7 +3064,7 @@ def extract_and_check_dataclass_validation[DC: CdEDataclass](
     data = request_dict_extractor(rs, type_.requestdict_fields(creation=creation))
     if additional_data:
         data.update(additional_data)
-    data = check_validation(rs, type_, data, argname=name, creation=creation, **kwargs)
+    data = check_validation(rs, type_, data, name=name, creation=creation, **kwargs)
     return cast(CdEDBObject | None, data)
 
 
@@ -3171,7 +3174,7 @@ def drow_last_index(prefix: str = "") -> str:
 @overload
 def process_dynamic_input[DC: CdEDataclass](
     rs: RequestState,
-    type_: type[DC],
+    type_: TypeForm[DC],
     existing: Collection[int],
     spec: Mapping[str, Literal["str", "[str]"]],
     *,
@@ -3186,7 +3189,7 @@ def process_dynamic_input[DC: CdEDataclass](
 @overload
 def process_dynamic_input[C: CdEDBObject](
     rs: RequestState,
-    type_: type[C],
+    type_: TypeForm[C],
     existing: Collection[int],
     spec: vtypes.TypeMapping,
     *,
@@ -3201,7 +3204,7 @@ def process_dynamic_input[C: CdEDBObject](
 # TODO maybe retrieve the spec from the type_?
 def process_dynamic_input[C: CdEDBObject, DC: CdEDataclass](
     rs: RequestState,
-    type_: type[C | DC],
+    type_: TypeForm[C | DC],
     existing: Collection[int],
     spec: vtypes.TypeMapping | Mapping[str, Literal["str", "[str]"]],
     *,
@@ -3254,7 +3257,7 @@ def process_dynamic_input[C: CdEDBObject, DC: CdEDataclass](
     deletes = {anid for anid in existing if delete_flags[drow_delete(anid, prefix)]}
     non_deleted_existing = {anid for anid in existing if anid not in deletes}
 
-    existing_data_spec: vtypes.TypeMapping = {
+    existing_data_spec: vtypes.TypeMapping = {  # pyrefly: ignore[bad-assignment]
         drow_name(key, anid, prefix): value  # type: ignore[misc]
         for anid in non_deleted_existing
         for key, value in spec.items()
@@ -3285,14 +3288,17 @@ def process_dynamic_input[C: CdEDBObject, DC: CdEDataclass](
             if skip_validation:
                 continue
             # apply the promised validation
-            ret[anid] = check_validation(
-                rs,
-                type_,
-                entry,
-                field_prefix=field_prefix,
-                field_postfix=f"_{anid}",
-                **additional_validation,
-                id_=anid,
+            ret[anid] = cast(
+                CdEDBObject,
+                check_validation(
+                    rs,
+                    type_,
+                    entry,
+                    field_prefix=field_prefix,
+                    field_postfix=f"_{anid}",
+                    **additional_validation,
+                    id_=anid,
+                ),
             )
 
     # extract the new entries which shall be created
@@ -3315,15 +3321,18 @@ def process_dynamic_input[C: CdEDBObject, DC: CdEDataclass](
                 ret[-marker] = entry
                 marker += 1
                 continue
-            ret[-marker] = check_validation(
-                rs,
-                type_,
-                entry,
-                field_prefix=field_prefix,
-                field_postfix=f"_{-marker}",
-                creation=True,
-                **additional_validation,
-                id_=-marker,
+            ret[-marker] = cast(
+                CdEDBObject,
+                check_validation(
+                    rs,
+                    type_,
+                    entry,
+                    field_prefix=field_prefix,
+                    field_postfix=f"_{-marker}",
+                    creation=True,
+                    **additional_validation,
+                    id_=-marker,
+                ),
             )
         else:
             break
@@ -3501,7 +3510,7 @@ class TransactionObserver:
         name: str,
         *,
         description: str = "",
-        recipients: Collection[str] = (),
+        recipients: Collection[str | None] = (),
     ):
         self.rs = rs
         self.frontend = frontend
@@ -3523,8 +3532,8 @@ class TransactionObserver:
 
     def __exit__(
         self,
-        atype: type[Exception] | None,
-        value: Exception | None,
+        atype: type[BaseException] | None,
+        value: BaseException | None,
         tb: TracebackType | None,
     ) -> Literal[False]:
         if value:

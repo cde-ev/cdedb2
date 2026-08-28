@@ -190,7 +190,7 @@ class TestCommon(BasicTest):
                 self.assertIn("Can only unwrap collections.", cmt.exception.args[0])
 
     def test_untranslated_strings(self) -> None:
-        i18n_path = self.conf["REPOSITORY_PATH"] / "i18n"
+        i18n_path: pathlib.Path = self.conf["REPOSITORY_PATH"] / "i18n"
         # list of languages we currently test
         langs = ["en", "de"]
         with tempfile.TemporaryDirectory() as tempdir:

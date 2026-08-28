@@ -118,7 +118,7 @@ with s:
                 # Verzicht is always dated at the end of the event, everything else at
                 #  payment.
                 if verzicht:
-                    donation_date = event_.end
+                    donation_date: datetime.date = event_.end
                 else:
                     donation_date = reg["payment"] or reg["ctime"].date()
 

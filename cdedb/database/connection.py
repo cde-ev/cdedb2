@@ -179,8 +179,8 @@ class Atomizer:
 
     def __exit__(
         self,
-        atype: type[Exception] | None,
-        value: Exception | None,
+        atype: type[BaseException] | None,
+        value: BaseException | None,
         tb: TracebackType | None,
     ) -> None:
         self.rs._conn.decontaminate()

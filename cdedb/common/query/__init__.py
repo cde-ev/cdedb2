@@ -1378,7 +1378,7 @@ def make_registration_query_spec(event: "models.Event",
         if constraint := part_group.get('constraint_type'):
             if constraint != const.EventPartGroupType.Statistic:
                 continue
-        part_ids = part_group['parts'].keys()
+        part_ids: Collection[int] = part_group['parts'].keys()
         prefix = part_group['shortname']
         spec.update(_combine_specs(
             part_specs, part_ids,
@@ -1649,7 +1649,7 @@ def make_lodgement_query_spec(event: "models.Event",
     sorted_part_groups = [pg.as_dict() for pg in xsorted(event.part_groups.values())]
     sorted_part_groups.append({'parts': event.parts, 'shortname': None})
     for part_group in sorted_part_groups:
-        part_ids = part_group['parts'].keys()
+        part_ids: Collection[int] = part_group['parts'].keys()
         prefix = part_group['shortname']
         spec.update(_combine_specs(
             part_specs, part_ids,

@@ -534,7 +534,10 @@ class Silencer:
         self.rs.is_quiet = True
 
     def __exit__(
-        self, atype: type[Exception], value: Exception, tb: TracebackType
+        self,
+        atype: type[BaseException] | None,
+        value: BaseException | None,
+        tb: TracebackType | None,
     ) -> None:
         self.rs.is_quiet = False
 
@@ -613,7 +616,10 @@ class DatabaseLock:
         return self if was_locking_successful else None
 
     def __exit__(
-        self, atype: type[Exception], value: Exception, tb: TracebackType
+        self,
+        atype: type[BaseException] | None,
+        value: BaseException | None,
+        tb: TracebackType | None,
     ) -> Literal[False]:
         if self.rs._conn.status == psycopg2.extensions.STATUS_IN_TRANSACTION:
             # We are not atomized so a commit is always possible
@@ -629,8 +635,8 @@ class DatabaseLock:
 
 
 @overload
-def affirm_validation(
-    assertion: type[CdEDataclass], value: Any, **kwargs: Any
+def affirm_validation[T: CdEDataclass](
+    assertion: TypeForm[T], value: Any, **kwargs: Any
 ) -> CdEDBObject: ...
 
 
@@ -639,7 +645,7 @@ def affirm_validation[T](assertion: TypeForm[T], value: Any, **kwargs: Any) -> T
 
 
 def affirm_validation[T](
-    assertion: TypeForm[T] | type[CdEDataclass], value: Any, **kwargs: Any
+    assertion: TypeForm[T], value: Any, **kwargs: Any
 ) -> T | CdEDBObject:
     """Wrapper to call asserts in :py:mod:`cdedb.validation`.
 
@@ -652,8 +658,8 @@ def affirm_validation[T](
 
 
 @overload
-def inspect_validation(
-    type_: type[CdEDataclass],
+def inspect_validation[T: CdEDataclass](
+    type_: TypeForm[T],
     value: Any,
     *,
     ignore_warnings: bool = True,
@@ -663,7 +669,7 @@ def inspect_validation(
 
 @overload
 def inspect_validation[T](
-    type_: type[T],
+    type_: TypeForm[T],
     value: Any,
     *,
     ignore_warnings: bool = True,
@@ -672,7 +678,7 @@ def inspect_validation[T](
 
 
 def inspect_validation[T](
-    type_: type[T | CdEDataclass],
+    type_: TypeForm[T],
     value: Any,
     *,
     ignore_warnings: bool = True,

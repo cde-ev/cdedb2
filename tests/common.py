@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """General testing utilities for CdEDB2 testsuite"""
 
+# pyrefly: ignore-errors[implicit-any-empty-container]
+
 import collections.abc
 import contextlib
 import copy
@@ -41,7 +43,6 @@ from typing import (
     ClassVar,
     NamedTuple,
     cast,
-    no_type_check,
 )
 
 import lxml.html
@@ -137,7 +138,6 @@ def create_mock_image(file_type: str = "png") -> bytes:
     return afile.read()
 
 
-@no_type_check
 def json_keys_to_int[T](obj: T) -> T:
     """Convert dict keys to integers if possible.
 
@@ -158,7 +158,7 @@ def json_keys_to_int[T](obj: T) -> T:
             ret = [json_keys_to_int(e) for e in obj]
     else:
         ret = obj
-    return ret
+    return ret  # type: ignore[return-value]
 
 
 def _read_sample_data(
@@ -535,11 +535,9 @@ class BackendTest(CdEDBTest):
                 "Anonymous users not supported for backend tests."  # pragma: no cover
                 " Pass `ANONYMOUS` in place of `self.key` instead."
             )
-        self.key = cast(
-            RequestState,
-            self.core.login(ANONYMOUS, user['username'], user['password'], ip),
-        )
-        if self.key:
+        key = self.core.login(ANONYMOUS, user['username'], user['password'], ip)
+        self.key = cast(RequestState, key)
+        if key:
             self.user = user
         else:
             self.user = USER_DICT["anonymous"]
@@ -626,8 +624,8 @@ class BackendTest(CdEDBTest):
 
     def assertDictEqual(
         self,
-        dict1: Mapping[Any, object],
-        dict2: Mapping[Any, object],
+        d1: Mapping[Any, object],
+        d2: Mapping[Any, object],
         msg: str | None = None,
     ) -> None:
         """Helper to get more readable diffs of long dicts.
@@ -637,7 +635,7 @@ class BackendTest(CdEDBTest):
         their numerical values or our NearlyNow() objects and datetimes. Thus, only
         output elements that are considered semantically different by python.
         """
-        super().assertDictEqual(*self._generate_diff_dicts(dict1, dict2), msg)
+        super().assertDictEqual(*self._generate_diff_dicts(d1, d2), msg)
 
     @staticmethod
     def _generate_diff_dicts(
@@ -1113,7 +1111,7 @@ class FrontendTest(BackendTest):
 
     lang = "de"
     app: ClassVar[webtest.TestApp]
-    gettext: "staticmethod[[str], str]"
+    gettext: "Callable[[str], str]"
     do_scrap: ClassVar[bool]
     scrap_path: ClassVar[str]
     response: webtest.TestResponse
@@ -1164,7 +1162,7 @@ class FrontendTest(BackendTest):
         self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
         if prepsql:
             execsql(prepsql)
-        self.response = None
+        self.response = cast(webtest.TestResponse, None)
 
     def basic_validate(self, verbose: bool = False) -> None:
         if self.response.content_type == "text/html":
@@ -1176,6 +1174,7 @@ class FrontendTest(BackendTest):
 
     def _scrap(self) -> None:
         if self.do_scrap and self.response.status_int // 100 == 2:  # pragma: no cover
+            assert self.response.request
             # path without host but with query string - capped at 64 chars
             # To enhance readability, we mark most chars as safe. All special chars are
             # allowed in linux file paths, but sadly windows is more restrictive...
@@ -1197,6 +1196,7 @@ class FrontendTest(BackendTest):
     ) -> None:
         if response is None:
             response = self.response
+        assert response.request
         # record performance information during test runs
         logger = logging.getLogger("cdedb.timing")
         msg = "{} {} {} {}".format(
@@ -1209,7 +1209,7 @@ class FrontendTest(BackendTest):
 
     def get(self, url: str, *args: Any, verbose: bool = False, **kwargs: Any) -> None:
         """Navigate directly to a given URL using GET."""
-        self.response: webtest.TestResponse = self.app.get(url, *args, **kwargs)
+        self.response = self.app.get(url, *args, **kwargs)
         self.follow(**kwargs)
         self.basic_validate(verbose=verbose)
 
@@ -1545,13 +1545,17 @@ class FrontendTest(BackendTest):
         else:
             self.assertIn(title.strip(), normalized)
 
+    class _HTMLNode(lxml.html.HtmlElement):
+        def text_content(self) -> str:
+            return super().text_content()
+
     def _get_nodes(
         self,
         selector: str,
         *,
         check_exists: bool = True,
-        root_node: "lxml.html.Element | None" = None,
-    ) -> list["lxml.html.Element"]:
+        root_node: _HTMLNode | None = None,
+    ) -> list[_HTMLNode]:
         """Retrieve all HTML nodes matching the given css selector."""
         if not self.response.content_type == "text/html":
             raise ValueError("Not a HTML page.")
@@ -2469,7 +2473,7 @@ class MultiAppFrontendTest(FrontendTest):
             for _ in range(cls.n)
         ]
         # The super().setUpClass overwrites the property, so reset it here.
-        cls.app = property(fget=cls.get_app, fset=cls.set_app)
+        cls.app = property(fget=cls.get_app, fset=cls.set_app)  # pyrefly: ignore[bad-assignment]
         cls.responses = [None for _ in range(cls.n)]
         cls.current_app = 0
 
@@ -2488,7 +2492,7 @@ class MultiAppFrontendTest(FrontendTest):
     def set_response(self, value: webtest.TestResponse) -> None:
         self.responses[self.current_app] = value
 
-    response = property(fget=get_response, fset=set_response)
+    response = property(fget=get_response, fset=set_response)  # pyrefly: ignore[bad-override]
 
     def get_app(self) -> webtest.TestApp:
         return self.apps[self.current_app]
@@ -2496,7 +2500,7 @@ class MultiAppFrontendTest(FrontendTest):
     def set_app(self, value: webtest.TestApp) -> None:  # pragma: no cover
         self.apps[self.current_app] = value
 
-    app = property(fget=get_app, fset=set_app)
+    app = property(fget=get_app, fset=set_app)  # pyrefly: ignore[bad-override]
 
     def switch_app(self, i: int) -> None:
         """Switch to a different index.

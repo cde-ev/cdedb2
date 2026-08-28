@@ -713,7 +713,10 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'persona',
         }
         relevant_data = [
-            {k: v for k, v in item.items() if k in relevant_keys} for item in data
+            vtypes.BatchAdmissionEntry({
+                k: v for k, v in item.items() if k in relevant_keys
+            })
+            for item in data
         ]
         with TransactionObserver(rs, self, "perform_batch_admission"):
             success, stats = self.cdeproxy.perform_batch_admission(
@@ -792,15 +795,17 @@ class CdEBaseFrontend(AbstractUserFrontend):
         The internal parameter finalized is used to explicitly signal at
         what point account creation will happen.
         """
-        accounts_file = check(rs, vtypes.CSVFile | None, accounts_file, "accounts_file")
+        validated_accounts_file = check(
+            rs, vtypes.CSVFile | None, accounts_file, "accounts_file"
+        )
         if rs.has_validation_errors():
             return self.batch_admission_form(rs)
 
-        if accounts_file and accounts:
+        if validated_accounts_file and accounts:
             rs.notify("warning", n_("Only one input method allowed."))
             return self.batch_admission_form(rs)
-        elif accounts_file:
-            rs.values["accounts"] = accounts = accounts_file
+        elif validated_accounts_file:
+            rs.values["accounts"] = accounts = validated_accounts_file
             accountlines = accounts.splitlines()
         elif accounts:
             accountlines = accounts.splitlines()

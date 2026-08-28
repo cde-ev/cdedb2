@@ -24,7 +24,6 @@ from cdedb.backend.common import (
 from cdedb.backend.event.base import EventBaseBackend
 from cdedb.common import (
     CdEDBObject,
-    CdEDBObjectMap,
     DefaultReturnCode,
     DeletionBlockers,
     PsycoJson,
@@ -498,7 +497,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         event_id = affirm(vtypes.EventID, event_id)
         lodgement_ids = affirm(set[vtypes.LodgementID] | None, lodgement_ids)
         involved = affirm(bool | None, involved)
-        _registrations = affirm(CdEDBObjectMap | None, _registrations)
+        _registrations = affirm(models.RegistrationMap | None, _registrations)
 
         if not is_privileged(
             rs,

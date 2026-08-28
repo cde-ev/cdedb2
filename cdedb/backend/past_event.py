@@ -904,7 +904,7 @@ class PastEventBackend(AbstractBackend):
 
         :returns: The id of the past event or None if there were errors.
         """
-        shortname = affirm(str | None, shortname)
+        shortname = affirm(str | None, shortname)  # pyrefly: ignore[bad-assignment]
         if not shortname:
             return None, [], [("pevent_id", ValueError(n_("No input supplied.")))]
         query = """
@@ -948,7 +948,7 @@ class PastEventBackend(AbstractBackend):
         :param pevent_id: Restrict to courses of this past event.
         :returns: The id of the past course or None if there were errors.
         """
-        phrase = affirm(str | None, phrase)
+        phrase = affirm(str | None, phrase)  # pyrefly: ignore[bad-assignment]
         if not phrase:
             return None, [], [("pcourse_id", ValueError(n_("No input supplied.")))]
         pevent_id = affirm(vtypes.ID, pevent_id)

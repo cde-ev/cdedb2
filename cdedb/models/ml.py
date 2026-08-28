@@ -641,7 +641,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
         event = bc.event.get_event(rs, self.event_id)
 
-        part_ids = []
+        part_ids: list[int] = []
         if self.event_part_group_id:
             if part_group := event.part_groups.get(self.event_part_group_id):
                 part_ids = xsorted(part_group.parts)

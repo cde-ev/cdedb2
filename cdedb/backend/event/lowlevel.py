@@ -11,7 +11,7 @@ import copy
 import decimal
 from collections.abc import Collection
 from pathlib import Path
-from typing import Protocol, cast
+from typing import Any, Protocol, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -407,7 +407,7 @@ class EventLowLevelBackend(AbstractBackend):
             for entry in data:
                 fdata = entry['fields']
                 for field in association_fields:
-                    value = fdata.get(field.field_name, None)
+                    value: Any = fdata.get(field.field_name, None)
                     if value is None:
                         continue
                     fdata[field.field_name] = cast_field_value(
@@ -1263,7 +1263,7 @@ class EventLowLevelBackend(AbstractBackend):
         If there are no entities of a kind, the number will be indicated as -1.
         """
         field_ids = affirm(set[vtypes.ID], field_ids)
-        field_ids = cast(set[vtypes.ID], field_ids)  # mypy bug.
+        field_ids = cast(set[vtypes.ID], field_ids)  # mypy bug.  # pyrefly: ignore[redundant-cast]
         if not field_ids:
             return {}
 

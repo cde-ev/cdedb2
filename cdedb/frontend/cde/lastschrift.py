@@ -212,7 +212,6 @@ class CdELastschriftMixin(CdEBaseFrontend):
         data = check(rs, vtypes.Lastschrift, data)
         if rs.has_validation_errors():
             return self.lastschrift_change_form(rs, lastschrift_id)
-        assert data is not None
         code = self.cdeproxy.set_lastschrift(rs, data)
         rs.notify_return_code(code)
         return self.redirect(
@@ -281,7 +280,6 @@ class CdELastschriftMixin(CdEBaseFrontend):
             ))
         if rs.has_validation_errors():
             return self.lastschrift_create_form(rs, persona_id)
-        assert data is not None
         if self.cdeproxy.list_lastschrift(rs, persona_ids=(persona_id,), active=True):
             rs.notify("error", n_("Multiple active permits are disallowed."))
             return self.redirect(rs, "cde/lastschrift_show", {'persona_id': persona_id})
@@ -329,7 +327,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         """Helper to calculate a payment date that is a valid TARGET2
         bankday.
         """
-        payment_date = now().date() + self.conf["SEPA_PAYMENT_OFFSET"]
+        payment_date: datetime.date = now().date() + self.conf["SEPA_PAYMENT_OFFSET"]
 
         # Before anything else: check whether we are on special easter days.
         easter = dateutil.easter.easter(payment_date.year)
@@ -472,6 +470,8 @@ class CdELastschriftMixin(CdEBaseFrontend):
             lastschrift_ids = tuple(
                 transaction["lastschrift_id"] for transaction in transactions
             )
+        else:
+            raise RuntimeError("Impossible.")
 
         lastschrifts = self.cdeproxy.get_lastschrifts(rs, lastschrift_ids)
         personas = self.coreproxy.get_personas(
