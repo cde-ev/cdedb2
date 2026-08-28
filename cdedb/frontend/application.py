@@ -104,12 +104,12 @@ class Application(BaseApp):
             autoescape=True,
             auto_reload=self.conf["CDEDB_DEV"],
         )
-        self.jinja_env.globals.update({
+        self.jinja_env.globals.update({  # pyrefly: ignore[no-matching-overload]
             'now': now,
             'staticurl': staticurl,
             'docurl': docurl,
         })
-        self.jinja_env.filters.update(JINJA_FILTERS)
+        self.jinja_env.filters.update(JINJA_FILTERS)  # pyrefly: ignore[no-matching-overload]
         self.jinja_env.policies['ext.i18n.trimmed'] = True
         self.jinja_env.policies['json.dumps_kwargs']['sort_keys'] = False
         self.translations = setup_translations(self.conf)
@@ -145,7 +145,7 @@ class Application(BaseApp):
 
             if isinstance(error, PrivilegeError):
                 if len(error.args) == 1:
-                    description = gettext(error.args[0])
+                    description: str = gettext(error.args[0])
                 elif len(error.args) == 2:
                     description = gettext(error.args[0]) % error.args[1]
                 else:
@@ -170,9 +170,9 @@ class Application(BaseApp):
 
             request_begin = now()
             data = {
-                'ambience': {},
+                'ambience': {},  # pyrefly: ignore[implicit-any-empty-container]
                 'cdedblink': _cdedblink,
-                'errors': {},
+                'errors': {},  # pyrefly: ignore[implicit-any-empty-container]
                 'request_time': lambda: now() - request_begin,
                 'generation_time': lambda: now() - begin,
                 'gettext': gettext,
@@ -180,7 +180,7 @@ class Application(BaseApp):
                 'lang': lang,
                 'notifications': tuple(),
                 'user': user,
-                'values': {},
+                'values': {},  # pyrefly: ignore[implicit-any-empty-container]
                 'nbsp': "\u00a0",
                 'error': error,
                 'help': message,

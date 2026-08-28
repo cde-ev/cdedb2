@@ -13,6 +13,7 @@ backend parts.
 
 import copy
 import dataclasses
+import datetime
 import decimal
 from collections import OrderedDict
 
@@ -141,7 +142,7 @@ class CdEBaseBackend(AbstractBackend):
 
     @access("finance_admin")
     def book_money_transfers(
-        self, rs: RequestState, transfers: list[CdEDBObject]
+        self, rs: RequestState, transfers: list[vtypes.MoneyTransferEntry]
     ) -> models_finance.MoneyTransfersResult:
         transfers = affirm(list[vtypes.MoneyTransferEntry], transfers)
         # This ensures that membership fees are handled before event fees for each day.
@@ -163,7 +164,8 @@ class CdEBaseBackend(AbstractBackend):
                     rs, {p.id for p in personas.values() if p.is_cde_realm}
                 )
                 for index, transfer in enumerate(transfers):
-                    amount, date = transfer['amount'], transfer['date']
+                    amount: decimal.Decimal = transfer['amount']
+                    date: datetime.date = transfer['date']
                     if transfer['registration_id'] is None:
                         if transfer["persona_id"] not in cde_personas:
                             raise ValueError(n_("Persona is not in CdE realm."))
@@ -609,7 +611,7 @@ class CdEBaseBackend(AbstractBackend):
     def perform_batch_admission(
         self,
         rs: RequestState,
-        data: list[CdEDBObject],
+        data: list[vtypes.BatchAdmissionEntry],
         trial_membership: bool,
         consent: bool,
     ) -> tuple[bool, BatchAdmissionStats | int | None]:

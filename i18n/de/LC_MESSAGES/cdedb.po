@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-08-24 20:35+0200\n"
+"POT-Creation-Date: 2026-08-28 16:30+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -9353,98 +9353,6 @@ msgid "Overall Balance (Members only)"
 msgstr "Gesamtguthaben (nur Mitglieder)"
 
 #, python-format
-msgid "Edit %(name)s"
-msgstr "%(name)s bearbeiten"
-
-msgid "Edit Userdata"
-msgstr "Account bearbeiten"
-
-msgid "Prefixed academic degree or similar."
-msgstr "Vorangestellter akademischer Grad o.ä."
-
-msgid ""
-"For salutation, mailing, nametags and event notices. First name usually used."
-msgstr ""
-"Für Anrede, Postversand, Namensschilder und Veranstaltungsaushänge. "
-"Üblicherweise geführter Vorname."
-
-#, python-format
-msgid ""
-"(If different from given names) For direct debits and donation receipts. "
-"Only visible to %(orgas_and_admins)s."
-msgstr ""
-"(Falls abweichend vom Rufnamen) Für Lastschriften und "
-"Spendenbescheinigungen. Nur für %(orgas_and_admins)s sichtbar."
-
-msgid "Orgas and Admins"
-msgstr "Orgas und Admins"
-
-msgid "Show legal given names for member search"
-msgstr "Bürgerliche Vornamen für Mitgliedersuche anzeigen"
-
-msgid "For nametags and event notices."
-msgstr "Für Namensschilder und Veranstaltungsaushänge."
-
-msgid ""
-"Original family name after the current family name has changed, for example "
-"through marriage."
-msgstr ""
-"Ursprünglicher Familienname, nachdem sich der aktuelle Familienname durch "
-"beispielsweise Heirat geändert hat."
-
-msgid "Suffixed academic degree or similar."
-msgstr "Nachgestellter akademischer Grad o.ä."
-
-#, python-format
-msgid ""
-"For lodgement assignment at events. Only visible to %(orgas_and_admins)s."
-msgstr ""
-"Für die Unterkunftseinteilung auf Veranstaltungen. Nur für "
-"%(orgas_and_admins)s sichtbar."
-
-msgid "he/him, she/her, they/them, …"
-msgstr "er/ihm, sie/ihr, they/them, o.ä."
-
-msgid "Show pronouns on nametags"
-msgstr "Pronomen auf Namensschildern anzeigen"
-
-msgid "Show pronouns on profile"
-msgstr "Pronomen auf Profil anzeigen"
-
-msgid "Account & Membership"
-msgstr "Account & Mitgliedschaft"
-
-msgid "Visible to all Admins."
-msgstr "Für alle Admins sichtbar."
-
-msgid "Contact Information"
-msgstr "Kontakt"
-
-msgid "This should be your primary address. The exPuls will be sent here."
-msgstr ""
-"Diese Adresse sollte Deine aktuelle Anschrift sein. An diese wird auch der "
-"exPuls geliefert."
-
-msgid "Show precise address for member search"
-msgstr "Genaue Adresse für Mitgliedersuche anzeigen"
-
-msgid "Second Address"
-msgstr "Zweitadresse"
-
-msgid ""
-"This address is meant to be a “backup”, should the primary address not work. "
-"Please give an address where you can be reached long-term, e.g. your "
-"parents' address."
-msgstr ""
-"Diese Adresse ist dazu gedacht, eine „Notfalladresse“ zu haben, falls die "
-"erste Anschrift nicht mehr funktionieren sollte. Gib hier bitte eine Adresse "
-"an, unter der Du längerfristig erreichbar sein wirst, z. B. die "
-"Heimatanschrift bei den Eltern."
-
-msgid "Save (including pending changes)"
-msgstr "Speichern (inklusive zu prüfender Änderungen)"
-
-#, python-format
 msgid "Edit Email Address for %(name)s"
 msgstr "E-Mail-Adresse für %(name)s bearbeiten"
 
@@ -9581,8 +9489,70 @@ msgstr "CdElokal-Admins"
 msgid "Assembly admin"
 msgstr "Versammlungs-Admins"
 
+#, python-format
+msgid "Edit %(name)s"
+msgstr "%(name)s bearbeiten"
+
 msgid "Edit Your Data"
 msgstr "Eigene Daten bearbeiten"
+
+msgid "Edit Userdata"
+msgstr "Account bearbeiten"
+
+msgid "Prefixed academic degree or similar."
+msgstr "Vorangestellter akademischer Grad o.ä."
+
+msgid ""
+"For salutation, mailing, nametags and event notices. First name usually used."
+msgstr ""
+"Für Anrede, Postversand, Namensschilder und Veranstaltungsaushänge. "
+"Üblicherweise geführter Vorname."
+
+#, python-format
+msgid ""
+"(If different from given names) For direct debits and donation receipts. "
+"Only visible to %(orgas_and_admins)s."
+msgstr ""
+"(Falls abweichend vom Rufnamen) Für Lastschriften und "
+"Spendenbescheinigungen. Nur für %(orgas_and_admins)s sichtbar."
+
+msgid "Orgas and Admins"
+msgstr "Orgas und Admins"
+
+msgid "Show legal given names for member search"
+msgstr "Bürgerliche Vornamen für Mitgliedersuche anzeigen"
+
+msgid "For nametags and event notices."
+msgstr "Für Namensschilder und Veranstaltungsaushänge."
+
+msgid ""
+"Original family name after the current family name has changed, for example "
+"through marriage."
+msgstr ""
+"Ursprünglicher Familienname, nachdem sich der aktuelle Familienname durch "
+"beispielsweise Heirat geändert hat."
+
+msgid "Suffixed academic degree or similar."
+msgstr "Nachgestellter akademischer Grad o.ä."
+
+#, python-format
+msgid ""
+"For lodgement assignment at events. Only visible to %(orgas_and_admins)s."
+msgstr ""
+"Für die Unterkunftseinteilung auf Veranstaltungen. Nur für "
+"%(orgas_and_admins)s sichtbar."
+
+msgid "he/him, she/her, they/them, …"
+msgstr "er/ihm, sie/ihr, they/them, o.ä."
+
+msgid "Show pronouns on nametags"
+msgstr "Pronomen auf Namensschildern anzeigen"
+
+msgid "Show pronouns on profile"
+msgstr "Pronomen auf Profil anzeigen"
+
+msgid "Account & Membership"
+msgstr "Account & Mitgliedschaft"
 
 msgid ""
 "You allow the CdE to withdraw this amount annually via direct debit "
@@ -9607,10 +9577,40 @@ msgstr ""
 "Der exPuls erscheint halbjährlich als Druck- und Online-Ausgabe. Weitere "
 "Informationen zur Online-Ausgabe findest du unter %(link)s."
 
+msgid "Visible to all Admins."
+msgstr "Für alle Admins sichtbar."
+
+msgid "Contact Information"
+msgstr "Kontakt"
+
 msgid "To Change Your email address, use the button on Your Profile Page."
 msgstr ""
 "Um Deine E-Mail-Adresse zu ändern, benutze den entsprechenden Button auf "
 "deiner Profilseite."
+
+msgid "This should be your primary address. The exPuls will be sent here."
+msgstr ""
+"Diese Adresse sollte Deine aktuelle Anschrift sein. An diese wird auch der "
+"exPuls geliefert."
+
+msgid "Show precise address for member search"
+msgstr "Genaue Adresse für Mitgliedersuche anzeigen"
+
+msgid "Second Address"
+msgstr "Zweitadresse"
+
+msgid ""
+"This address is meant to be a “backup”, should the primary address not work. "
+"Please give an address where you can be reached long-term, e.g. your "
+"parents' address."
+msgstr ""
+"Diese Adresse ist dazu gedacht, eine „Notfalladresse“ zu haben, falls die "
+"erste Anschrift nicht mehr funktionieren sollte. Gib hier bitte eine Adresse "
+"an, unter der Du längerfristig erreichbar sein wirst, z. B. die "
+"Heimatanschrift bei den Eltern."
+
+msgid "Save (including pending changes)"
+msgstr "Speichern (inklusive zu prüfender Änderungen)"
 
 msgid "Change Your Email Address"
 msgstr "Eigene E-Mail-Adresse ändern"

@@ -90,7 +90,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
 
             for course in course_data.values():
                 course['event'] = event
-                course["segments"] = []
+                course["segments"] = []  # pyrefly: ignore[implicit-any-empty-container]
             for segment in segment_data:
                 course_data[segment["course_id"]]["segments"].append(segment)
 
@@ -315,7 +315,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
-        course_id = affirm(vtypes.ID, course_id)
+        course_id = affirm(vtypes.CourseID, course_id)
         blockers = {}
 
         attendees = self.sql_select(

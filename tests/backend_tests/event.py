@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# pyrefly: ignore-errors[implicit-any-empty-container]
+
 import collections.abc
 import copy
 import datetime
@@ -361,7 +363,7 @@ class TestEventBackend(BackendTest):
             'checkin': False,
             'entries': None,
         }
-        changed_field = {
+        changed_field: CdEDBObject = {
             'kind': const.FieldDatatypes.date,
             'entries': {
                 datetime.date.fromisoformat("2110-08-15"): "early second coming",
@@ -651,7 +653,7 @@ class TestEventBackend(BackendTest):
         for tg_id in event.track_groups.keys():
             self.assertTrue(self.event.delete_track_group(self.key, tg_id))
 
-        new_track_group = {
+        new_track_group: CdEDBObject = {
             'title': "Test",
             'shortname': "Test",
             'constraint_type': const.CourseTrackGroupType.course_choice_sync,
@@ -819,7 +821,7 @@ class TestEventBackend(BackendTest):
         )
         event = self.event.get_event(self.key, event_id)
 
-        new_track = {
+        new_track: CdEDBObject = {
             'title': "Neue Kursschiene",
             'shortname': "Neu",
             'num_choices': 3,
@@ -913,7 +915,7 @@ class TestEventBackend(BackendTest):
         )
         event = self.event.get_event(self.key, event_id)
 
-        new_part = {
+        new_part: CdEDBObject = {
             'title': "Abreise",
             'shortname': "D",
             'part_begin': datetime.date(2222, 11, 11),
@@ -2150,7 +2152,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(
             expectation_get, self.event.new_get_lodgements(self.key, (1, 4))
         )
-        new = {
+        new: CdEDBObject = {
             'regular_capacity': 42,
             'title': 'HY',
             'notes': "Notizen",
@@ -2923,6 +2925,7 @@ class TestEventBackend(BackendTest):
         queries = self.event.get_event_queries(self.key, event_id)
         for stored_query in queries.values():
             name, query = stored_query.query_name, stored_query.query
+            assert query is not None
             if name != "Test-Query":
                 self.assertIn(name, expectation)
                 q = expectation[name]
@@ -5032,7 +5035,7 @@ class TestEventBackend(BackendTest):
 
         # Check setting of part groups.
 
-        new_part_group = {
+        new_part_group: CdEDBObject = {
             'title': "Everything",
             'shortname': "all",
             'notes': "Let's see what happens",

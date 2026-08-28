@@ -510,7 +510,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['membersearchform']
         save = "/"
 
-        count = self.conf["QUOTA_VIEWS_PER_DAY"] // 2
+        count: int = self.conf["QUOTA_VIEWS_PER_DAY"] // 2
         for search, title in itertools.cycle((
             ("Anton", "Anton Administrator"),
             ("Inga Iota", "Inga Iota"),
@@ -773,14 +773,17 @@ class TestCdEFrontend(FrontendTest):
         f['near_pc'] = "47239"
         self.submit(f, check_notification=False)
         self.assertValidationError('near_radius', "Darf nicht leer sein.")
+        f = self.response.forms["membersearchform"]
         f['near_pc'] = ""
         f['near_radius'] = 5_000
         self.submit(f, check_notification=False)
         self.assertValidationError('near_pc', "Darf nicht leer sein.")
+        f = self.response.forms["membersearchform"]
         f['near_pc'] = "47239"
         f['near_radius'].force_value(22222)
         self.submit(f, check_notification=False)
         self.assertValidationError('near_radius', "Unzulässige Auswahl.")
+        f = self.response.forms["membersearchform"]
         f['near_radius'] = 5_000
         self.submit(f)
         self.assertPresence("2 Mitglieder gefunden", div='result-count')

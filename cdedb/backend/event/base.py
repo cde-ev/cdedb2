@@ -287,13 +287,13 @@ class EventBaseBackend(EventLowLevelBackend):
                 rs, *models.CustomQueryFilter.get_select_query(event_ids)
             )
         for e in event_data.values():
-            e['parts'] = []
-            e['part_groups'] = []
-            e['tracks'] = []
-            e['track_groups'] = []
-            e['fees'] = []
-            e['fields'] = []
-            e['custom_query_filters'] = []
+            e['parts'] = []  # pyrefly: ignore[implicit-any-empty-container]
+            e['part_groups'] = []  # pyrefly: ignore[implicit-any-empty-container]
+            e['tracks'] = []  # pyrefly: ignore[implicit-any-empty-container]
+            e['track_groups'] = []  # pyrefly: ignore[implicit-any-empty-container]
+            e['fees'] = []  # pyrefly: ignore[implicit-any-empty-container]
+            e['fields'] = []  # pyrefly: ignore[implicit-any-empty-container]
+            e['custom_query_filters'] = []  # pyrefly: ignore[implicit-any-empty-container]
         for p in part_data:
             event_data[p['event_id']]['parts'].append(p)
         for pg in part_group_data:
@@ -1067,7 +1067,7 @@ class EventBaseBackend(EventLowLevelBackend):
             )
             track_group['event_id'] = event_id
             track_ids = track_group.pop("track_ids")
-            is_sync = track_group["constraint_type"].is_sync()
+            is_sync: bool = track_group["constraint_type"].is_sync()
             if is_sync and not self.may_create_ccs_group(rs, track_ids):
                 raise ValueError(
                     n_(
@@ -1266,7 +1266,7 @@ class EventBaseBackend(EventLowLevelBackend):
             event = self._event_fee_privilege_check(rs, fee_id=fee_id)
 
             current_fee = event.fees[fee_id]
-            persona_ids = []
+            persona_ids: list[vtypes.PersonaID] = []
             if current_fee.is_personalized():
                 registration_ids = [
                     e["registration_id"]
@@ -1878,9 +1878,12 @@ class EventBaseBackend(EventLowLevelBackend):
                 del track['track_id']
             registration['tracks'] = tracks
             registration['fields'] = cast_fields(registration['fields'], event.fields)
-            registration['personalized_fees'] = {}
-            for fee_id, fee_amount in personalized_fee_lookup[registration_id].items():
-                registration['personalized_fees'][fee_id] = fee_amount
+            registration['personalized_fees'] = {
+                fee_id: fee_amount
+                for fee_id, fee_amount in personalized_fee_lookup[
+                    registration_id
+                ].items()
+            }
             registration["amount_owed_by_kind"] = {
                 kind.name: amount
                 for kind, amount in registration["amount_owed_by_kind"].items()
@@ -1959,7 +1962,7 @@ class EventBaseBackend(EventLowLevelBackend):
         for f in ('lodge_field_id', 'reimbursement_iban_field_id'):
             new_key = f.removesuffix("_id")
             if ret['event'][f]:
-                field = ret['event']['fields'][ret['event'][f]]
+                field: CdEDBObject = ret['event']['fields'][ret['event'][f]]
                 ret['event'][new_key] = field['field_name']
             else:
                 ret['event'][new_key] = None
@@ -2139,7 +2142,7 @@ class EventBaseBackend(EventLowLevelBackend):
             )
             # pad the log code column to a fixed width. 31 chars is the current length
             # of our longest log code.
-            entry["Code"] = str(const.EventLogCodes(entry["code"]).name).ljust(31)
+            entry["Code"] = const.EventLogCodes(entry["code"]).name.ljust(31)
             if entry["submitted_by"]:
                 entry["Verantwortlich"] = personas[entry["submitted_by"]].get_name()
             if entry["persona_id"]:

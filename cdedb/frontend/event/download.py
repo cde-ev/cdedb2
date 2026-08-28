@@ -20,6 +20,7 @@ import cdedb.database.constants as const
 from cdedb.common import (
     AgeClasses,
     CdEDBObjectMap,
+    Notification,
     PrivilegeError,
     RequestState,
     asciificator,
@@ -108,7 +109,7 @@ class EventDownloadMixin(EventBaseFrontend):
             filename = f"{rs.ambience['event'].shortname}_nametags.tex"
             with open(work_dir / filename, 'w', encoding='utf-8') as f:
                 f.write(tex)
-            src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
+            src: pathlib.Path = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
             shutil.copy(src, work_dir / "aka-logo.png")
             shutil.copy(src, work_dir / "orga-logo.png")
             shutil.copy(src, work_dir / "minor-pictogram.png")
@@ -226,6 +227,7 @@ class EventDownloadMixin(EventBaseFrontend):
         lodgements = self.eventproxy.new_get_lodgements(rs, lodgement_ids)
 
         rwish = collections.defaultdict(list)
+        problems: list[Notification]
         if event.lodge_field:
             wishes, problems = detect_lodgement_wishes(
                 registrations, personas, event, None
@@ -340,11 +342,13 @@ class EventDownloadMixin(EventBaseFrontend):
             filename = "{}_course_lists.tex".format(rs.ambience['event'].shortname)
             with open(work_dir / filename, 'w', encoding='utf-8') as f:
                 f.write(tex)
-            src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
+            src: pathlib.Path = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
             shutil.copy(src, work_dir / "event-logo.png")
             for course_id in courses:
                 dest = work_dir / f"course-logo-{course_id}.png"
-                path = self.conf["STORAGE_DIR"] / "course_logo" / str(course_id)
+                path: pathlib.Path = (
+                    self.conf["STORAGE_DIR"] / "course_logo" / str(course_id)
+                )
                 if path.exists():
                     shutil.copy(path, dest)
                 else:
@@ -402,7 +406,7 @@ class EventDownloadMixin(EventBaseFrontend):
             filename = "{}_lodgement_lists.tex".format(rs.ambience['event'].shortname)
             with open(work_dir / filename, 'w', encoding='utf-8') as f:
                 f.write(tex)
-            src = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
+            src: pathlib.Path = self.conf["REPOSITORY_PATH"] / "misc/blank.png"
             shutil.copy(src, work_dir / "aka-logo.png")
             file = self.serve_complex_latex_document(
                 rs,

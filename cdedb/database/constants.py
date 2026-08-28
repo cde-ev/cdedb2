@@ -11,7 +11,7 @@ import builtins
 import collections
 import enum
 from functools import cached_property
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from cdedb.uncommon.intenum import CdEIntEnum
 
@@ -833,7 +833,7 @@ class ComplaintEntryType(CdEIntEnum):
     revocation_explanation = 10001  #: Can be child of everything
 
     @classmethod
-    def measure_types(cls) -> set["ComplaintEntryType"]:
+    def measure_types(cls) -> set[Self]:
         return {cls.agreement_measure, cls.provisional_measure, cls.definite_measure}
 
     @property
@@ -841,21 +841,21 @@ class ComplaintEntryType(CdEIntEnum):
         return self in self.measure_types()
 
     @classmethod
-    def visible_types(cls) -> set["ComplaintEntryType"]:
+    def visible_types(cls) -> set[Self]:
         return cls.measure_types()
 
     @classmethod
-    def hidden_types(cls) -> set["ComplaintEntryType"]:
-        return set(cls) - cls.visible_types()
+    def hidden_types(cls) -> set[Self]:
+        return set(cls)
 
     @property
     def _is_hidden(self) -> bool:
         return self not in self.visible_types()
 
     @classmethod
-    def _get_children_map(cls) -> dict["ComplaintEntryType", set["ComplaintEntryType"]]:
-        et = ComplaintEntryType
-        children: dict[ComplaintEntryType, set[ComplaintEntryType]]
+    def _get_children_map(cls) -> dict[Self, set[Self]]:
+        et = cls
+        children: dict[Self, set[Self]]
         children = collections.defaultdict(set)
         children.update({
             et.provisional_statement_given: {
@@ -885,19 +885,19 @@ class ComplaintEntryType(CdEIntEnum):
         return children
 
     @classmethod
-    def all_children(cls) -> set["ComplaintEntryType"]:
+    def all_children(cls) -> set[Self]:
         ret = set()
         for children in cls._get_children_map().values():
             ret.update(children)
         return ret
 
     @property
-    def possible_children(self) -> set["ComplaintEntryType"]:
+    def possible_children(self) -> set[Self]:
         return self._get_children_map().get(self, set())
 
     @property
     def has_description(self) -> bool:
-        et = ComplaintEntryType
+        et = self.__class__
         return self not in {
             et.statement_signed,
             et.statement_sent,
@@ -910,30 +910,33 @@ class ComplaintEntryType(CdEIntEnum):
 
     @property
     def is_provisional(self) -> bool:
+        et = self.__class__
         return self in {
             # TODO: Clarify why no privisional statement.
-            ComplaintEntryType.provisional_measure,
-            ComplaintEntryType.provisional_to_arbcom,
+            et.provisional_measure,
+            et.provisional_to_arbcom,
         }
 
     @property
     def has_concerned(self) -> bool:
+        et = self.__class__
         return self in {
-            ComplaintEntryType.provisional_statement_given,
-            ComplaintEntryType.provisional_measure,
-            ComplaintEntryType.definite_measure,
-            ComplaintEntryType.agreement_measure,
+            et.provisional_statement_given,
+            et.provisional_measure,
+            et.definite_measure,
+            et.agreement_measure,
         }
 
     @property
     def allows_attachment(self) -> bool:
+        et = self.faction_summary
         return self in {
-            ComplaintEntryType.generic_information,
-            ComplaintEntryType.provisional_statement_given,
+            et.generic_information,
+            et.provisional_statement_given,
         }
 
     def get_icon(self) -> str:
-        et = ComplaintEntryType
+        et = self.__class__
         return {
             et.generic_information: "info",
             et.provisional_statement_given: "file-lines",
@@ -956,7 +959,7 @@ class ComplaintEntryType(CdEIntEnum):
 
     @property
     def right_shortname(self) -> str:
-        et = ComplaintEntryType
+        et = self.__class__
         return {
             et.statement_signed: n_("signed"),
             et.statement_cleared: n_("cleared"),
@@ -972,7 +975,7 @@ class ComplaintEntryType(CdEIntEnum):
 
     @property
     def left_shortname(self) -> str:
-        et = ComplaintEntryType
+        et = self.__class__
         return {
             et.provisional_statement_given: n_("Statement_[[in a case]]"),
             et.agreement: n_("Agreement"),

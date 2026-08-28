@@ -173,11 +173,12 @@ class CdEParseMixin(CdEBaseFrontend):
         assert statement_file.filename is not None
         filename = pathlib.Path(statement_file.filename).parts[-1]
         date = parse.date_from_filename(filename)
-        statement_file = check(rs, vtypes.CSVFile, statement_file, "statement_file")
+        validated_statement_file = check(
+            rs, vtypes.CSVFile, statement_file, "statement_file"
+        )
         if rs.has_validation_errors():
             return self.parse_statement_form(rs)
-        assert statement_file is not None
-        statementlines = statement_file.splitlines()
+        statementlines = validated_statement_file.splitlines()
 
         # This does not use the cde csv dialect, but rather the bank's.
         reader = csv.DictReader(statementlines, delimiter=";", quotechar='"')
@@ -331,17 +332,17 @@ class CdEParseMixin(CdEBaseFrontend):
         corruption and to explicitly signal at what point the data will
         be committed (for the second purpose it works like a boolean).
         """
-        transfers_file = check(
+        validated_transfers_file = check(
             rs, vtypes.CSVFile | None, transfers_file, "transfers_file"
         )
         if rs.has_validation_errors():
             return self.money_transfers_form(rs)
-        if transfers_file and transfers:
+        if validated_transfers_file and transfers:
             rs.notify("warning", n_("Only one input method allowed."))
             return self.money_transfers_form(rs)
-        elif transfers_file:
-            rs.values["transfers"] = transfers = transfers_file.strip()
-            transferlines = transfers_file.splitlines()
+        elif validated_transfers_file:
+            rs.values["transfers"] = transfers = validated_transfers_file.strip()
+            transferlines = validated_transfers_file.splitlines()
         elif transfers:
             transfers = transfers.strip()
             transferlines = transfers.splitlines()
@@ -421,18 +422,18 @@ class CdEParseMixin(CdEBaseFrontend):
             )
 
         # Here validation is finished
-        transfers = [
-            {
+        transfer_data = [
+            vtypes.MoneyTransferEntry({
                 'persona_id': datum['persona_id'],
                 'registration_id': datum['registration_id'],
                 'amount': datum['amount'],
                 'date': datum['date'],
-            }
+            })
             for datum in data
         ]
         recipients = [self.conf['FINANCE_ADMIN_ADDRESS']]
         with TransactionObserver(rs, self, "money_transfers", recipients=recipients):
-            if result := self.cdeproxy.book_money_transfers(rs, transfers):
+            if result := self.cdeproxy.book_money_transfers(rs, transfer_data):
                 result.send_notifications(
                     rs,
                     send_individual_notifications=send_notifications,

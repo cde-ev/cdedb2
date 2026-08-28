@@ -17,7 +17,7 @@ from tests.common import FrontendTest, storage
 class TestOffline(FrontendTest):
     @storage
     def test_offline_vm(self) -> None:
-        repopath = self.conf["REPOSITORY_PATH"]
+        repopath: pathlib.Path = self.conf["REPOSITORY_PATH"]
         user = {
             'username': "garcia@example.cde",
             'password': "notthenormalpassword",

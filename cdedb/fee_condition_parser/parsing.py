@@ -1,4 +1,6 @@
+from collections.abc import Callable
 from functools import lru_cache
+from typing import cast
 
 import pyparsing as pp
 
@@ -87,6 +89,8 @@ def create_parser() -> pp.ParserElement:
 _PARSER = create_parser()
 
 
-@lru_cache
-def parse(s: str) -> pp.ParseResults:
-    return _PARSER.parse_string(s)[0]
+def _parse(s: str) -> pp.ParseResults:
+    return cast(pp.ParseResults, _PARSER.parse_string(s, parse_all=True)[0])
+
+
+parse: Callable[[str], pp.ParseResults] = lru_cache(_parse)

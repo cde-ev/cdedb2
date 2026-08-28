@@ -61,7 +61,7 @@ def xsorted[T](
 
 
 class Comparable(Protocol):
-    def __lt__(self, other: Any) -> bool: ...
+    def __lt__(self, other: Any, /) -> bool: ...
 
 
 Sortkey = tuple[Comparable, ...]
@@ -89,7 +89,7 @@ def _make_persona_sorter(
         forename = make_persona_forename(persona, include_nickname=include_nickname)
 
         forename = forename.lower()
-        family_name = persona["family_name"].lower()
+        family_name: str = persona["family_name"].lower()
         if family_name_first:
             return (family_name, forename, persona["id"])
         else:

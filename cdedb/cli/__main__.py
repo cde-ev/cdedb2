@@ -126,7 +126,7 @@ def populate_event_keeper_cmd(
     config: Config, ownership: dict[str, str], event_id: int
 ) -> None:
     """Populate the event keeper."""
-    path = config['STORAGE_DIR'] / 'event_keeper'
+    path: pathlib.Path = config['STORAGE_DIR'] / 'event_keeper'
     click.echo(f"Populate event keeper at {path}.")
     with switch_user(**ownership):
         path.mkdir(parents=True, exist_ok=True)

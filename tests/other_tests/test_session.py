@@ -81,7 +81,7 @@ class TestSessionBackend(BackendTest):
             self.session.lookuptoken("random token", "127.0.0.0")
 
         # "resolve" droid api token.
-        resolve_secret = self.secrets['API_TOKENS']['resolve']
+        resolve_secret: str = self.secrets['API_TOKENS']['resolve']
         resolve_token = model_droid.CyberAkaResolveToken.get_token_string(
             resolve_secret
         )
@@ -102,7 +102,7 @@ class TestSessionBackend(BackendTest):
             self.session.lookuptoken(invalid_resolve_token, "127.0.1.1")
 
         # "quick_partial_export" droid.
-        qpe_secret = self.secrets['API_TOKENS']['quick_partial_export']
+        qpe_secret: str = self.secrets['API_TOKENS']['quick_partial_export']
         qpe_token = model_droid.QuickPartialExportToken.get_token_string(qpe_secret)
 
         user = self.session.lookuptoken(qpe_token, "127.0.1.2")

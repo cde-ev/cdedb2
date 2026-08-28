@@ -9,6 +9,8 @@ import zoneinfo
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Optional, cast
 
+from typing_extensions import TypeForm
+
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.event as models_event
@@ -47,7 +49,7 @@ class TestValidationBase(unittest.TestCase):
 
     def do_validator_test[T](
         self,
-        type_: type[T],
+        type_: TypeForm[T],
         spec: Iterable[tuple[Any, T, type[Exception] | Exception | None]],
         extraparams: Mapping[str, Any] | None = None,
         ignore_warnings: bool = True,

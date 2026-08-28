@@ -11,7 +11,7 @@ import copy
 import decimal
 from collections.abc import Collection
 from pathlib import Path
-from typing import Protocol
+from typing import Any, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -376,7 +376,7 @@ class EventLowLevelBackend(AbstractBackend):
         )
         for entry in data:
             fdata = entry['fields']
-            value = fdata.get(field.field_name, None)
+            value: Any = fdata.get(field.field_name, None)
             if value is None:
                 continue
             fdata[field.field_name] = cast_field_value(

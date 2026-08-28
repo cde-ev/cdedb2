@@ -10,6 +10,7 @@ about the event to be created. They can be obtained by calling the respective fu
 """
 
 import functools
+from typing import cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -41,13 +42,16 @@ def _make_stored_query(
         id=vtypes.ID(-1),
         query_name=name,
         scope=scope,
-        serialized_query=Query(
-            scope=scope,
-            spec={},
-            fields_of_interest=fields_of_interest,
-            constraints=constraints,
-            order=order,
-        ).serialize(),  # type: ignore[arg-type]
+        serialized_query=cast(
+            vtypes.QueryInput,
+            Query(
+                scope=scope,
+                spec={},
+                fields_of_interest=fields_of_interest,
+                constraints=constraints,
+                order=order,
+            ).serialize(),
+        ),
     )
 
 

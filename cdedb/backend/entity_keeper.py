@@ -14,6 +14,7 @@ individual entity, or for all entities of a specific type.
 
 import datetime
 import logging
+import pathlib
 import shutil
 import subprocess
 import tempfile
@@ -44,7 +45,7 @@ class EntityKeeper:
         """This specifies the base directory where the individual entity repositories
         will be located."""
         self.conf = conf
-        self._dir = self.conf['STORAGE_DIR'] / directory
+        self._dir: pathlib.Path = self.conf['STORAGE_DIR'] / directory
         # Use this keys in this order of the log dict passing in during commits
         self.log_keys = log_keys
         # the key holding the timestamp of log entries

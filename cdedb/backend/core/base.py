@@ -1267,9 +1267,9 @@ class CoreBaseBackend(AbstractBackend):
         :param new_hash: Hash of new foto.
         """
         persona_id = affirm(vtypes.ID, persona_id)
-        old_hash: str = unwrap(
+        old_hash: str | None = unwrap(
             self.sql_select_one(rs, "core.personas", ("foto",), persona_id)
-        )  # type: ignore[assignment]
+        )
 
         change_note = "Profilbild geändert." if new_hash else "Profilbild entfernt."
         # Evaluates to 1 if a new foto was provided, and to -1 otherwise.
@@ -1758,7 +1758,7 @@ class CoreBaseBackend(AbstractBackend):
         persona_id = affirm(vtypes.ID, persona_id)
         reference_date = affirm(datetime.date, reference_date or now().date())
 
-        cutoff = reference_date - self.conf["AUTOMATED_ARCHIVAL_CUTOFF"]
+        cutoff: datetime.date = reference_date - self.conf["AUTOMATED_ARCHIVAL_CUTOFF"]
         with Atomizer(rs):
             persona = self.get_persona_status(rs, persona_id)
 
@@ -2920,8 +2920,8 @@ class CoreBaseBackend(AbstractBackend):
         with Atomizer(rs):
             # Invalidate expired sessions, but keep other around.
             timestamp = now()
-            ctime_cutoff = timestamp - self.conf["SESSION_LIFESPAN"]
-            atime_cutoff = timestamp - self.conf["SESSION_TIMEOUT"]
+            ctime_cutoff: datetime.datetime = timestamp - self.conf["SESSION_LIFESPAN"]
+            atime_cutoff: datetime.datetime = timestamp - self.conf["SESSION_TIMEOUT"]
             query = """
                 UPDATE core.sessions
                 SET is_active = False
@@ -3399,7 +3399,7 @@ class CoreBaseBackend(AbstractBackend):
                 rs.conn = orig_conn
 
         admin = any(persona[admin] for admin in ADMIN_KEYS)
-        inputs = (
+        inputs: list[str] = (
             persona['username'].split('@')
             + persona['given_names'].replace('-', ' ').split()
             + (persona['legal_given_names'] or '').replace('-', ' ').split()

@@ -9,6 +9,7 @@ import inspect
 import pathlib
 from collections.abc import Collection, Iterator
 from datetime import datetime
+from typing import cast
 
 from cdedb.common import RequestState, User, now
 from cdedb.common.n_ import n_
@@ -146,4 +147,4 @@ class CronFrontend(BaseApp):
     def find_periodics(frontend: AbstractFrontend) -> Iterator[PeriodicJob]:
         for _, func in inspect.getmembers(frontend, inspect.ismethod):
             if hasattr(func, "cron"):
-                yield func
+                yield cast(PeriodicJob, func)

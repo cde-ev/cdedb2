@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-08-24 20:35+0200\n"
+"POT-Creation-Date: 2026-08-28 16:30+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -8879,84 +8879,6 @@ msgid "Overall Balance (Members only)"
 msgstr ""
 
 #, python-format
-msgid "Edit %(name)s"
-msgstr ""
-
-msgid "Edit Userdata"
-msgstr ""
-
-msgid "Prefixed academic degree or similar."
-msgstr ""
-
-msgid ""
-"For salutation, mailing, nametags and event notices. First name usually used."
-msgstr ""
-
-#, python-format
-msgid ""
-"(If different from given names) For direct debits and donation receipts. "
-"Only visible to %(orgas_and_admins)s."
-msgstr ""
-
-msgid "Orgas and Admins"
-msgstr ""
-
-msgid "Show legal given names for member search"
-msgstr ""
-
-msgid "For nametags and event notices."
-msgstr ""
-
-msgid ""
-"Original family name after the current family name has changed, for example "
-"through marriage."
-msgstr ""
-
-msgid "Suffixed academic degree or similar."
-msgstr ""
-
-#, python-format
-msgid ""
-"For lodgement assignment at events. Only visible to %(orgas_and_admins)s."
-msgstr ""
-
-msgid "he/him, she/her, they/them, …"
-msgstr ""
-
-msgid "Show pronouns on nametags"
-msgstr ""
-
-msgid "Show pronouns on profile"
-msgstr ""
-
-msgid "Account & Membership"
-msgstr ""
-
-msgid "Visible to all Admins."
-msgstr ""
-
-msgid "Contact Information"
-msgstr ""
-
-msgid "This should be your primary address. The exPuls will be sent here."
-msgstr ""
-
-msgid "Show precise address for member search"
-msgstr ""
-
-msgid "Second Address"
-msgstr ""
-
-msgid ""
-"This address is meant to be a “backup”, should the primary address not work. "
-"Please give an address where you can be reached long-term, e.g. your "
-"parents' address."
-msgstr ""
-
-msgid "Save (including pending changes)"
-msgstr ""
-
-#, python-format
 msgid "Edit Email Address for %(name)s"
 msgstr ""
 
@@ -9084,7 +9006,61 @@ msgstr ""
 msgid "Assembly admin"
 msgstr ""
 
+#, python-format
+msgid "Edit %(name)s"
+msgstr ""
+
 msgid "Edit Your Data"
+msgstr ""
+
+msgid "Edit Userdata"
+msgstr ""
+
+msgid "Prefixed academic degree or similar."
+msgstr ""
+
+msgid ""
+"For salutation, mailing, nametags and event notices. First name usually used."
+msgstr ""
+
+#, python-format
+msgid ""
+"(If different from given names) For direct debits and donation receipts. "
+"Only visible to %(orgas_and_admins)s."
+msgstr ""
+
+msgid "Orgas and Admins"
+msgstr ""
+
+msgid "Show legal given names for member search"
+msgstr ""
+
+msgid "For nametags and event notices."
+msgstr ""
+
+msgid ""
+"Original family name after the current family name has changed, for example "
+"through marriage."
+msgstr ""
+
+msgid "Suffixed academic degree or similar."
+msgstr ""
+
+#, python-format
+msgid ""
+"For lodgement assignment at events. Only visible to %(orgas_and_admins)s."
+msgstr ""
+
+msgid "he/him, she/her, they/them, …"
+msgstr ""
+
+msgid "Show pronouns on nametags"
+msgstr ""
+
+msgid "Show pronouns on profile"
+msgstr ""
+
+msgid "Account & Membership"
 msgstr ""
 
 msgid ""
@@ -9104,7 +9080,31 @@ msgid ""
 "further information about the online version at %(link)s."
 msgstr ""
 
+msgid "Visible to all Admins."
+msgstr ""
+
+msgid "Contact Information"
+msgstr ""
+
 msgid "To Change Your email address, use the button on Your Profile Page."
+msgstr ""
+
+msgid "This should be your primary address. The exPuls will be sent here."
+msgstr ""
+
+msgid "Show precise address for member search"
+msgstr ""
+
+msgid "Second Address"
+msgstr ""
+
+msgid ""
+"This address is meant to be a “backup”, should the primary address not work. "
+"Please give an address where you can be reached long-term, e.g. your "
+"parents' address."
+msgstr ""
+
+msgid "Save (including pending changes)"
 msgstr ""
 
 msgid "Change Your Email Address"

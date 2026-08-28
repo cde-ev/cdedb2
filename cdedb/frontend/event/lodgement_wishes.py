@@ -133,7 +133,7 @@ def detect_lodgement_wishes(
                 continue
             other_registration = registrations[other_registration_id]
 
-            wishes_raw = registration['fields'].get(wish_field_name, '')
+            wishes_raw: str = registration['fields'].get(wish_field_name, '')
             match = pattern.search(wishes_raw)
             if not match:
                 continue

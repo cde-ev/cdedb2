@@ -576,11 +576,10 @@ class StoredQuery(CdEDataclass):
         return self.scope.get_spec()
 
     @functools.cached_property
-    def query(self) -> Query:
+    def query(self) -> Query | None:
         spec = self._get_spec()
         from cdedb.common.validation.validate import validate_check  # noqa: PLC0415
 
-        query: Query | None
         query, errs = validate_check(
             vtypes.QueryInput,
             self.serialized_query,
@@ -589,7 +588,7 @@ class StoredQuery(CdEDataclass):
         )
         if not query:
             self.errors = errs
-            return cast(Query, None)
+            return None
         query.query_id = self.id
         return query
 

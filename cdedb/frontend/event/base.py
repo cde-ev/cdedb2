@@ -483,7 +483,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             part_ids = rs.ambience['event'].parts.keys()
 
         if len(rs.ambience['event'].parts) == 1:
-            part_id = unwrap(rs.ambience['event'].parts.keys())
+            part_id = unwrap(rs.ambience['event'].parts).id
         return self.render(
             rs,
             "base/participant_list",
@@ -615,6 +615,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             self.eventproxy.list_registrations(rs, event_id, rs.user.persona_id).keys()
         )
         registration = self.eventproxy.get_registration(rs, registration_id)
+        wished_personas: list[models_core.EventPersona]
+        problems: list[Notification]
         if registration['list_consent']:
             data = self._get_participant_list_data(rs, event_id)
             wishes, problems = detect_lodgement_wishes(
@@ -710,9 +712,9 @@ class EventBaseFrontend(AbstractUserFrontend):
             entity_id: int, sub_id: int, reg_id: vtypes.RegistrationID
         ) -> bool:
             """The actual check, un-inlined."""
-            instance = registrations[reg_id][aspect][sub_id]
+            instance: CdEDBObject = registrations[reg_id][aspect][sub_id]
             if aspect == 'parts':
-                part = instance
+                part: CdEDBObject = instance
             elif aspect == 'tracks':
                 part = registrations[reg_id]['parts'][tracks[sub_id].part_id]
                 # TODO remove when migrating lodgements to dataclasses here
@@ -799,7 +801,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             rs, self.eventproxy.list_registrations(rs, event.id)
         )
         if registration_id is None:
-            registrations = all_registrations
+            registrations: models.RegistrationMap = all_registrations
         elif registration_id < 0:
             registrations = {}
         else:
@@ -821,7 +823,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             rs, self.eventproxy.list_courses(rs, event.id), _event=event
         )
         if course_id is None:
-            courses = all_courses
+            courses: models.CourseMap = all_courses
         elif course_id < 0:
             courses = {}
         else:
@@ -924,7 +926,7 @@ class EventBaseFrontend(AbstractUserFrontend):
     def constraint_violations_summary(
         self,
         rs: RequestState,
-        event_ids: list[int] | None = None,
+        event_ids: set[int] | None = None,
         violation_classes: list[str] | None = None,
         is_archived: int = -1,
         is_balanced: int = -1,
@@ -934,9 +936,9 @@ class EventBaseFrontend(AbstractUserFrontend):
     ) -> Response:
         rs.ignore_validation_errors()
 
-        is_archived = bool(is_archived) if is_archived != -1 else None
-        is_balanced = bool(is_balanced) if is_balanced != -1 else None
-        is_concluded = bool(is_concluded) if is_concluded != -1 else None
+        is_archived_ = bool(is_archived) if is_archived != -1 else None
+        is_balanced_ = bool(is_balanced) if is_balanced != -1 else None
+        is_concluded_ = bool(is_concluded) if is_concluded != -1 else None
         event_ids = set(event_ids or [])
         min_severity = min_severity or models_cv.ViolationSeverity.INFO  # type: ignore[unreachable]
 
@@ -972,9 +974,9 @@ class EventBaseFrontend(AbstractUserFrontend):
                 'all_events': all_events,
                 'event_options': event_options,
                 'event_ids': event_ids,
-                'is_archived': is_archived,
-                'is_balanced': is_balanced,
-                'is_concluded': is_concluded,
+                'is_archived': is_archived_,
+                'is_balanced': is_balanced_,
+                'is_concluded': is_concluded_,
                 'min_severity': min_severity,
                 'violation_kind': violation_kind,
             },
@@ -990,7 +992,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         if self.is_admin(rs):
             registration_map = self.eventproxy.get_registration_map(rs, event_ids)
         else:
-            registration_map = {}
+            registration_map = {}  # pyrefly: ignore[implicit-any-empty-container]
         return self.generic_view_log(
             rs,
             data,

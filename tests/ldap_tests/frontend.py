@@ -111,7 +111,7 @@ class TestLDAP(BasicTest):
         """
         except_users = except_users or set()
         # by default, all duas are expected to yield some results
-        only_duas = only_duas or self.DUAs
+        only_duas = only_duas or set(self.DUAs)
         for identities, passwords, exceptions in [
             (self.USERS, self.USER_passwords, except_users),
             (self.DUAs, self.DUA_passwords, only_duas),
@@ -743,7 +743,7 @@ class TestLDAP(BasicTest):
             self.assertEqual(['2'], conn.entries[1].entry_attributes_as_dict["uid"])
 
             # second page
-            cookie = conn.result["controls"]["1.2.840.113556.1.4.319"]["value"][
+            cookie: bytes = conn.result["controls"]["1.2.840.113556.1.4.319"]["value"][
                 "cookie"
             ]
             self.assertNotEqual(b"", cookie)
@@ -773,7 +773,9 @@ class TestLDAP(BasicTest):
             cookie = conn.result["controls"]["1.2.840.113556.1.4.319"]["value"][
                 "cookie"
             ]
-            size = conn.result["controls"]["1.2.840.113556.1.4.319"]["value"]["size"]
+            size: int = conn.result["controls"]["1.2.840.113556.1.4.319"]["value"][
+                "size"
+            ]
             self.assertNotEqual(b"", cookie)
             self.assertLess(size, 40)
             conn.search(
