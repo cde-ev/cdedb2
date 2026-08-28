@@ -29,6 +29,7 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.frontend.common import (
     REQUESTdata,
@@ -73,7 +74,7 @@ _HIDDEN_COURSES_QUERY = Query(
 
 
 class EventCourseMixin(EventBaseFrontend):
-    @access("anonymous")
+    @access(Roles.anonymous)
     @REQUESTdata("track_ids", "active_only")
     def course_list(
         self,
@@ -134,7 +135,7 @@ class EventCourseMixin(EventBaseFrontend):
             },
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.courses_read)
     def show_course(
         self, rs: RequestState, event_id: vtypes.EventID, course_id: vtypes.CourseID
@@ -210,7 +211,7 @@ class EventCourseMixin(EventBaseFrontend):
 
         return self.render(rs, "course/show_course", params)
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.courses_write)
     def change_course_form(
         self, rs: RequestState, event_id: vtypes.EventID, course_id: int
@@ -267,7 +268,7 @@ class EventCourseMixin(EventBaseFrontend):
 
         return ret
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.courses_write)
     @REQUESTdatadict(*models.Course.requestdict_fields(creation=False))
     def change_course(
@@ -291,7 +292,7 @@ class EventCourseMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_course")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.courses_write)
     def create_course_form(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -309,7 +310,7 @@ class EventCourseMixin(EventBaseFrontend):
             mandatory_fields=mandatory_fields,
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.courses_write)
     @REQUESTdatadict(*models.Course.requestdict_fields(creation=True))
     def create_course(
@@ -327,7 +328,7 @@ class EventCourseMixin(EventBaseFrontend):
         rs.notify_return_code(new_id, success=n_("Course created."))
         return self.redirect(rs, "event/show_course", {'course_id': new_id})
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.courses_write)
     @ack_delete()
     def delete_course(
@@ -357,7 +358,7 @@ class EventCourseMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/course_stats")
 
-    @access("event")
+    @access(Roles.event)
     def show_instructed_courses(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> Response:
@@ -399,7 +400,7 @@ class EventCourseMixin(EventBaseFrontend):
             },
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("course_id", "track_id", "position", "ids", "include_active")
     def course_choices_form(
@@ -521,7 +522,7 @@ class EventCourseMixin(EventBaseFrontend):
             },
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata(
         "course_id",
@@ -782,7 +783,7 @@ class EventCourseMixin(EventBaseFrontend):
             ),
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.courses_read | EventPrivileges.registrations_stats)
     @REQUESTdata("include_active")
     def course_stats(
@@ -818,7 +819,7 @@ class EventCourseMixin(EventBaseFrontend):
             },
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_write)
     def manage_attendees_form(
         self, rs: RequestState, event_id: vtypes.EventID, course_id: int
@@ -935,7 +936,7 @@ class EventCourseMixin(EventBaseFrontend):
             },
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
     def manage_attendees(
         self, rs: RequestState, event_id: vtypes.EventID, course_id: int

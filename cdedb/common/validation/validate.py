@@ -137,7 +137,7 @@ from cdedb.common.query import (
     QuerySpec,
 )
 from cdedb.common.query.log_filter import ALL_LOG_FILTERS, GenericLogFilter
-from cdedb.common.roles import ADMIN_KEYS, extract_roles
+from cdedb.common.roles import Realms, Roles, extract_roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.data import COUNTRY_CODES, FREQUENCY_LISTS, IBAN_LENGTHS
 from cdedb.common.validation.types import *  # noqa: F403
@@ -947,7 +947,7 @@ def _realm(
     with errs:
         if val not in {"session", "core", "cde", "event", "ml", "assembly"}:
             raise ValidationSummary(ValueError(argname, n_("Not a valid realm.")))
-        if supports_genesis and val not in models_core.GenesisCase.available_realms:
+        if supports_genesis and val not in Realms.get_available_genesis_realms():
             raise ValidationSummary(
                 ValueError(n_("This realm is not supported for genesis."))
             )
@@ -1547,16 +1547,16 @@ def _persona(
             **kwargs,
         )
         temp.update({'is_archived': False, 'is_purged': False})
-        temp.update({k: False for k in ADMIN_KEYS})
-        roles = extract_roles(temp)
+        temp.update({k: False for k in Roles.all_admin_roles().markers()})
+        roles = extract_roles(temp, introspection_only=True)
         optional_fields: TypeMapping = {}
         mandatory_fields: dict[str, Any] = {
             **PERSONA_TYPE_FIELDS,
             **PERSONA_BASE_CREATION,
         }
-        if "cde" in roles:
+        if Roles.cde in roles:
             mandatory_fields.update(PERSONA_CDE_CREATION)
-        if "event" in roles:
+        if Roles.event in roles:
             mandatory_fields.update(PERSONA_EVENT_CREATION)
         # ml and assembly define no custom fields
     elif transition:
@@ -1899,8 +1899,6 @@ PRIVILEGE_CHANGE_COMMON_FIELDS: TypeMapping = {
     'notes': str,
 }
 
-PRIVILEGE_CHANGE_OPTIONAL_FIELDS: TypeMapping = {k: bool | None for k in ADMIN_KEYS}
-
 
 @_add_typed_validator
 def _privilege_change(
@@ -1909,7 +1907,10 @@ def _privilege_change(
     val = _mapping(val, argname, **kwargs)
 
     val = _examine_dictionary_fields(
-        val, PRIVILEGE_CHANGE_COMMON_FIELDS, PRIVILEGE_CHANGE_OPTIONAL_FIELDS, **kwargs
+        val,
+        PRIVILEGE_CHANGE_COMMON_FIELDS,
+        {k: bool | None for k in Roles.all_admin_roles().markers()},
+        **kwargs,
     )
 
     return PrivilegeChange(val)

@@ -10,7 +10,7 @@ from cdedb.backend.core import CoreBackend
 from cdedb.common import RequestState, User, make_proxy, now
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.config import Config, SecretsConfig
-from cdedb.database import DATABASE_ROLES
+from cdedb.database import DATABASE_ROLES, DBRole
 from cdedb.database.connection import connection_pool_factory
 from cdedb.database.constants import LockType
 from cdedb.frontend.common import setup_translations
@@ -56,7 +56,7 @@ def database_lock_job(
             translations=translations,
         )
         # We want to use this in the frontend, so we need to peek
-        rs._conn = connpool['cdb_admin']
+        rs._conn = connpool[DBRole.admin]
         rs.conn = None  # type: ignore[assignment]
         return rs
 

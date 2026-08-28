@@ -5,7 +5,7 @@
 {{ util.breadcrumb_link(cdedblink("assembly/index"), gettext("Assemblies"), active=True) }}
 {% endblock %}
 {% block content %}
-    {% if "assembly_mgmt" in user.admin_views %}
+    {% if user.admin_views.has(AdminViews.assembly_mgmt) %}
         <div class="p button-par">
         {{ util.href(cdedblink("assembly/create_assembly_form"), gettext("Create Assembly"), icon="plus",
                 aclass="btn btn-sm btn-success") }}

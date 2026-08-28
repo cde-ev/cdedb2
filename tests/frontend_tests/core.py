@@ -24,7 +24,7 @@ from cdedb.common.exceptions import CryptographyError, ParameterInvalidError
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query import QueryOperators
 from cdedb.common.query.log_filter import ChangelogLogFilter
-from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
+from cdedb.common.roles import AdminViews, Realms, Roles, RoleSet
 from cdedb.filter import iban_filter
 from tests.common import (
     ANONYMOUS,
@@ -427,7 +427,7 @@ class TestCoreFrontend(FrontendTest):
 
     @as_users("vera")
     def test_toggle_admin_views(self) -> None:
-        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
+        self.app.set_cookie(AdminViews.cookie_name(), "")
         # Core Administration
         self.get('/')
         self.assertNoLink("/core/meta")
@@ -1334,16 +1334,16 @@ class TestCoreFrontend(FrontendTest):
         admin2 = USER_DICT["martin"]
         new_admin1 = USER_DICT["garcia"]
         new_admin2 = USER_DICT["berta"]
-        new_privileges1 = {
-            'is_ml_admin': True,
-        }
-        new_privileges2 = {
-            'is_assembly_admin': True,
-        }
+        new_privileges1 = Roles.ml_admin
+        new_privileges2 = Roles.assembly_admin
         # Grant new admin privileges.
-        self._approve_privilege_change(admin1, admin2, new_admin1, new_privileges1)
+        self._approve_privilege_change(
+            admin1, admin2, new_admin1, new_privileges1, old_privileges=Roles.none()
+        )
         self.logout()
-        self._approve_privilege_change(admin1, admin2, new_admin2, new_privileges2)
+        self._approve_privilege_change(
+            admin1, admin2, new_admin2, new_privileges2, old_privileges=Roles.none()
+        )
         self.logout()
         # Check results of Any Admin query.
         self.login(admin1)
@@ -1371,28 +1371,14 @@ class TestCoreFrontend(FrontendTest):
     def test_privilege_change(self) -> None:
         # Grant new admin privileges.
         new_admin = USER_DICT["berta"]
-        new_privileges = {
-            'is_event_admin': True,
-            'is_assembly_admin': True,
-            'is_cdelokal_admin': True,
-        }
-        old_privileges = {
-            'is_meta_admin': False,
-            'is_core_admin': False,
-            'is_cde_admin': False,
-            'is_finance_admin': False,
-            'is_event_admin': False,
-            'is_assembly_admin': False,
-            'is_ml_admin': False,
-            'is_cdelokal_admin': False,
-        }
+        new_privileges = Roles.event_admin | Roles.assembly_admin | Roles.cdelokal_admin
         new_password = "ihsokdmfsod"
         new_admin_copy = self._approve_privilege_change(
             USER_DICT["martin"],
             USER_DICT["anton"],
             new_admin,
             new_privileges,
-            old_privileges,
+            old_privileges=Roles.none(),
             new_password=new_password,
         )
         user_mail = self.fetch_mail_content(0)
@@ -1405,14 +1391,30 @@ class TestCoreFrontend(FrontendTest):
         self.assertIn("Versammlungs-Admin", admins_mail)
         self.assertIn("CdElokal-Admin", admins_mail)
         # Check success.
-        self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
-        self.assertTitle(
-            "Privilegien ändern für {}".format(new_admin['default_name_format'])
+        f = self.response.forms["quickpersonasearch"]
+        f["phrase"] = new_admin["DB-ID"]
+        self.submit(f)
+        for role in new_privileges:
+            self.assertPresence(self.gettext(str(role)), div="admin-realms")
+        self.logout()
+
+        # Check privilege form for user with fewer realms.
+        new_admin2 = get_user("emilia")
+        self._approve_privilege_change(
+            get_user("martin"),
+            get_user("anton"),
+            new_admin2,
+            Roles.event_admin | Roles.complaint_admin,
+            Roles.none(),
         )
-        f = self.response.forms['privilegechangeform']
-        old_privileges.update(new_privileges)
-        for k, v in old_privileges.items():
-            self.assertEqual(f[k].checked, v)
+        self.logout()
+        self._approve_privilege_change(
+            get_user("martin"),
+            get_user("anton"),
+            new_admin2,
+            Roles.event_admin,
+            Roles.event_admin | Roles.complaint_admin,
+        )
 
         # Check that we can login with new credentials but not with old.
         self.logout()
@@ -1425,55 +1427,40 @@ class TestCoreFrontend(FrontendTest):
     @as_users("anton")
     def test_change_privileges_dependency_error(self) -> None:
         new_admin = USER_DICT["berta"]
-        self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
-        self.assertTitle(
-            "Privilegien ändern für {}".format(new_admin["default_name_format"])
-        )
+        self.get(f"/core/persona/{new_admin["id"]}/privileges")
+        self.assertTitle(f"Privilegien ändern für {new_admin["default_name_format"]}")
         f = self.response.forms['privilegechangeform']
-        f['is_finance_admin'] = True
-        f['notes'] = "Berta ist jetzt Praktikant der Finanz Vorstände."
+        f["roles"] = [Roles.finance_admin]
+        f["notes"] = "Berta ist jetzt Praktikant der Finanzvorstände."
         self.submit(f, check_notification=False)
         self.assertValidationError(
-            "is_finance_admin",
+            "roles",
             "Diese Rolle kann nicht an nicht-CdE-Admin vergeben werden.",
+            index=list(Roles.all_admin_roles()).index(Roles.finance_admin),
         )
-        f['is_cde_admin'] = True
-        f['notes'] = "Dann ist Berta jetzt eben CdE und Finanz Admin."
+        f["roles"] = [Roles.cde_admin, Roles.finance_admin]
+        f["notes"] = "Dann ist Berta jetzt eben CdE- und Finanz-Admin."
         self.submit(f)
 
     def test_privilege_change_reject(self) -> None:
         # Grant new admin privileges.
         new_admin = USER_DICT["berta"]
-        new_privileges = {
-            'is_event_admin': True,
-            'is_assembly_admin': True,
-        }
-        old_privileges = {
-            'is_meta_admin': False,
-            'is_core_admin': False,
-            'is_cde_admin': False,
-            'is_finance_admin': False,
-            'is_event_admin': False,
-            'is_assembly_admin': False,
-            'is_ml_admin': False,
-        }
+        new_privileges = Roles.event_admin | Roles.assembly_admin
         self._reject_privilege_change(
             USER_DICT["anton"],
             USER_DICT["martin"],
             new_admin,
             new_privileges,
-            old_privileges,
+            old_privileges=Roles.none(),
         )
         self.assertNonPresence("E-Mail")
         # Check success.
-        self.get('/core/persona/{}/privileges'.format(new_admin["id"]))
-        self.assertTitle(
-            "Privilegien ändern für {}".format(new_admin["default_name_format"])
-        )
-        f = self.response.forms['privilegechangeform']
-        # Check that old privileges are still active.
-        for k, v in old_privileges.items():
-            self.assertEqual(f[k].checked, v)
+
+        f = self.response.forms["quickpersonasearch"]
+        f["phrase"] = new_admin["DB-ID"]
+        self.submit(f)
+        for role in new_privileges:
+            self.assertNonPresence(self.gettext(str(role)), div="admin-realms")
 
     @as_users("anton")
     def test_privilege_change_realm_restrictions(self) -> None:
@@ -1514,16 +1501,14 @@ class TestCoreFrontend(FrontendTest):
     def test_archival_admin_requirement(self) -> None:
         # First grant admin privileges to new admin.
         new_admin = USER_DICT["berta"]
-        new_privileges = {
-            'is_core_admin': True,
-            'is_cde_admin': True,
-        }
+        new_privileges = Roles.core_admin | Roles.cde_admin
         new_password = "ponsdfsidnsdgj"
         new_admin_copy = self._approve_privilege_change(
             USER_DICT["anton"],
             USER_DICT["martin"],
             new_admin,
             new_privileges,
+            old_privileges=Roles.none(),
             new_password=new_password,
         )
         # Test archival
@@ -1537,15 +1522,18 @@ class TestCoreFrontend(FrontendTest):
         self.assertPresence("Der Account ist archiviert.", div='archived')
 
     def test_privilege_change_self_approval(self) -> None:
-        user = USER_DICT["anton"]
-        new_privileges = {
-            'is_event_admin': False,
-        }
-        self._initialize_privilege_change(user, user, user, new_privileges)
-        self.login(user)
-        self.traverse(
-            {'description': "Admin-Änderungen"}, {'description': "Anton Administrator"}
+        user = get_user("anton")
+        with self.switch_user(user):
+            current_roles = (
+                self.core.get_persona_status(self.key, user["id"]).get_user_roles()
+                & Roles.all_admin_roles()
+            )
+        new_privileges = current_roles - Roles.event_admin
+        self._initialize_privilege_change(
+            user, user, user, new_privileges, current_roles
         )
+        self.login(user)
+        self.traverse("Admin-Änderungen", "Anton Administrator")
         self.assertPresence(
             "Diese Änderung der Admin-Privilegien wurde von Dir angestoßen",
             div="notifications",
@@ -1570,26 +1558,45 @@ class TestCoreFrontend(FrontendTest):
         admin1: UserIdentifier,
         admin2: UserIdentifier,
         new_admin: UserObject,
-        new_privileges: dict[str, bool],
-        old_privileges: dict[str, bool] | None = None,
+        new_privileges: RoleSet | Roles,
+        old_privileges: RoleSet | Roles | None = None,
         note: str = "For testing.",
     ) -> None:
         """Helper to initialize a privilege change."""
         self.login(admin1)
-        f = self.response.forms['quickpersonasearch']
-        f['phrase'] = new_admin["DB-ID"]
+        f = self.response.forms["quickpersonasearch"]
+        f["phrase"] = new_admin["DB-ID"]
         self.submit(f)
-        self.traverse({'href': '/core/persona/{}/privileges'.format(new_admin["id"])})
-        self.assertTitle(
-            "Privilegien ändern für {}".format(new_admin["default_name_format"])
+        self.traverse({"href": f"/core/persona/{new_admin["id"]}/privileges"})
+        self.assertTitle(f"Privilegien ändern für {new_admin["default_name_format"]}")
+        f = self.response.forms["privilegechangeform"]
+        if old_privileges is not None:
+            if isinstance(old_privileges, Roles):
+                old_privileges = RoleSet([old_privileges])  # pragma: no cover
+            admin_roles = Roles.all_admin_roles()
+            persona_roles = self.core.get_roles_single(self.key, new_admin["id"])
+            available_admin_roles = [
+                admin_role
+                for admin_role in admin_roles
+                if persona_roles.has(admin_role.required_roles)
+                or admin_roles.has(admin_role.required_roles)
+            ]
+            if old_privileges not in RoleSet(available_admin_roles):
+                self.fail(
+                    f"Invalid old privileges '{old_privileges}', available: '{RoleSet(available_admin_roles)}'"
+                )
+            for i, admin_role in enumerate(available_admin_roles):
+                checkbox = f.get("roles", index=i)
+                self.assertEqual(str(admin_role), checkbox._value)
+                self.assertEqual(
+                    admin_role in old_privileges, checkbox.checked, admin_role
+                )
+        f["roles"] = (
+            list(new_privileges)
+            if isinstance(new_privileges, RoleSet)
+            else [new_privileges]
         )
-        f = self.response.forms['privilegechangeform']
-        if old_privileges:
-            for k, v in old_privileges.items():
-                self.assertEqual(v, f[k].checked)
-        for k, v in new_privileges.items():
-            f[k].checked = v
-        f['notes'] = note
+        f["notes"] = note
         self.submit(f)
         self.logout()
 
@@ -1598,14 +1605,14 @@ class TestCoreFrontend(FrontendTest):
         admin1: UserIdentifier,
         admin2: UserIdentifier,
         new_admin: UserObject,
-        new_privileges: dict[str, bool],
-        old_privileges: dict[str, bool] | None = None,
+        new_privileges: RoleSet | Roles,
+        old_privileges: RoleSet | Roles | None = None,
         note: str = "For testing.",
         new_password: str | None = None,
     ) -> UserObject:
         """Helper to make a user an admin."""
         self._initialize_privilege_change(
-            admin1, admin2, new_admin, new_privileges, old_privileges
+            admin1, admin2, new_admin, new_privileges, old_privileges, note
         )
         # Confirm privilege change.
         self.login(admin2)
@@ -1637,13 +1644,13 @@ class TestCoreFrontend(FrontendTest):
         admin1: UserIdentifier,
         admin2: UserIdentifier,
         new_admin: UserObject,
-        new_privileges: dict[str, bool],
-        old_privileges: dict[str, bool] | None = None,
+        new_privileges: RoleSet | Roles,
+        old_privileges: RoleSet | Roles | None = None,
         note: str = "For testing.",
     ) -> None:
         """Helper to reject a privilege change."""
         self._initialize_privilege_change(
-            admin1, admin2, new_admin, new_privileges, old_privileges
+            admin1, admin2, new_admin, new_privileges, old_privileges, note
         )
         # Confirm privilege change.
         self.login(admin2)
@@ -2248,25 +2255,13 @@ class TestCoreFrontend(FrontendTest):
 
     def test_admin_overview(self) -> None:
         # Makes Berta Event + CdE Admin
-        new_privileges = {
-            'is_event_admin': True,
-            'is_assembly_admin': True,
-        }
-        old_privileges = {
-            'is_meta_admin': False,
-            'is_core_admin': False,
-            'is_cde_admin': False,
-            'is_finance_admin': False,
-            'is_event_admin': False,
-            'is_assembly_admin': False,
-            'is_ml_admin': False,
-        }
+        new_privileges = Roles.event_admin | Roles.assembly_admin
         self._approve_privilege_change(
             USER_DICT["anton"],
             USER_DICT["martin"],
             USER_DICT["berta"],
             new_privileges,
-            old_privileges,
+            old_privileges=Roles.none(),
         )
         self.logout()
 
@@ -2304,11 +2299,11 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Bereich hinzufügen'})
         self.assertTitle("Bereichsänderung für Emilia Eventis")
         f = self.response.forms['realmselectionform']
-        self.assertNotIn("event", f['target_realm'].options)
-        f['target_realm'].force_value("event")
+        self.assertNotIn(Realms.event, f['target_realm'].options)
+        f['target_realm'].force_value(Realms.event)
         self.submit(f)
         self.assertPresence("Keine Änderung erforderlich.", div='notifications')
-        f['target_realm'] = "cde"
+        f['target_realm'] = Realms.cde
         self.submit(f)
         self.assertTitle("Bereichsänderung für Emilia Eventis")
         f = self.response.forms['promotionform']
@@ -2359,7 +2354,7 @@ class TestCoreFrontend(FrontendTest):
         self.assertTitle("Bereichsänderung für Nina Neubauer")
         f = self.response.forms['realmselectionform']
         self.assertNotIn("event", f['target_realm'].options)
-        f['target_realm'] = "cde"
+        f['target_realm'] = Realms.cde
         self.submit(f)
         self.assertTitle("Bereichsänderung für Nina Neubauer")
         f = self.response.forms['promotionform']
@@ -2392,7 +2387,7 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({'description': 'Bereich hinzufügen'})
         self.assertTitle("Bereichsänderung für Kalif Karabatschi")
         f = self.response.forms['realmselectionform']
-        f['target_realm'] = "event"
+        f['target_realm'] = Realms.event
         self.submit(f)
         self.assertTitle("Bereichsänderung für Kalif Karabatschi")
         f = self.response.forms['promotionform']
@@ -2445,8 +2440,8 @@ class TestCoreFrontend(FrontendTest):
         self.get("/core/genesis/request")
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
-        self.assertEqual(f['realm'].value, "cde")
-        f['realm'] = "event"
+        self.assertEqual(f['realm'].value, str(Realms.cde))
+        f['realm'] = Realms.event
         f['given_names'] = "Zelda"
         f['family_name'] = "Zeruda-Hime"
         f['username'] = "zelda@example.cde"
@@ -2482,16 +2477,16 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms['genesisdecisionform']
         self.submit(f, button="decision", value=str(GenesisDecision.approve))
 
-    def _genesis_request(self, data: CdEDBObject, realm: str | None = None) -> None:
+    def _genesis_request(self, data: CdEDBObject, realm: Realms | None = None) -> None:
         if realm:
-            self.get('/core/genesis/request?realm=' + realm)
+            self.get('/core/genesis/request?realm=' + str(realm))
         else:
             self.get('/core/genesis/request')
         self.assertTitle("Account anfordern")
         f = self.response.forms['genesisform']
         for field, entry in data.items():
             f[field] = entry
-        if data.get("realm") == "cde":
+        if data.get("realm") == Realms.cde:
             with open(self.testfile_dir / "form.pdf", 'rb') as datafile:
                 attachment_data = datafile.read()
             f['attachment'] = webtest.Upload(
@@ -2506,12 +2501,12 @@ class TestCoreFrontend(FrontendTest):
         'family_name': "Zeruda-Hime",
         'username': "zelda@example.cde",
         'notes': "Gimme!",
-        'realm': "ml",
+        'realm': Realms.ml,
     }
 
     EVENT_GENESIS_DATA = ML_GENESIS_DATA.copy()
     EVENT_GENESIS_DATA.update({
-        'realm': "event",
+        'realm': Realms.event,
         'gender': const.Genders.other,
         'birthday': "1987-06-05",
         'address': "An der Eiche",
@@ -2522,7 +2517,7 @@ class TestCoreFrontend(FrontendTest):
 
     CDE_GENESIS_DATA = EVENT_GENESIS_DATA.copy()
     CDE_GENESIS_DATA.update({
-        'realm': "cde",
+        'realm': Realms.cde,
     })
 
     def test_genesis_event(self) -> None:
@@ -2605,7 +2600,7 @@ class TestCoreFrontend(FrontendTest):
         self.logout()
         data = self.ML_GENESIS_DATA.copy()
         del data["realm"]
-        self._genesis_request(data, realm='ml')
+        self._genesis_request(data, realm=Realms.ml)
         self.login(test_user)
         self.traverse('Accountanfragen')
         self.assertTitle("Accountanfragen")
@@ -2971,7 +2966,7 @@ class TestCoreFrontend(FrontendTest):
         f['family_name'] = "Beispiel"
         f['username'] = "berta@example.cde"
         f['notes'] = "Gimme!"
-        f['realm'] = "ml"
+        f['realm'] = Realms.ml
         # Submit once
         self.submit(f, check_notification=False)
         self.assertPresence("E-Mail-Adresse bereits vorhanden.", div="notifications")
@@ -3091,18 +3086,18 @@ class TestCoreFrontend(FrontendTest):
     def _create_genesis_doppelganger(
         self,
         user: UserIdentifier | None = None,
-        realm: str = "ml",
+        realm: Realms = Realms.ml,
         unique_username: bool = False,
     ) -> UserObject:
         # Create a new request almost identical to the current or given user.
         user = get_user(user or self.user)
 
         # Decide on data fields depending on realm.
-        if realm == "ml":
+        if realm == Realms.ml:
             data_fields = self.ML_GENESIS_DATA
-        elif realm == "event":
+        elif realm == Realms.event:
             data_fields = self.EVENT_GENESIS_DATA
-        elif realm == "cde":  # pragma: no cover
+        elif realm == Realms.cde:  # pragma: no cover
             data_fields = self.CDE_GENESIS_DATA
         else:
             self.fail(f"Doppelganger test-helper not implemented for {realm!r}-realm.")
@@ -3268,7 +3263,7 @@ class TestCoreFrontend(FrontendTest):
         )
         self.assertPresence(
             "Account kann nicht aktualisiert werden."
-            " Füge zunächst folgenden Bereich hinzu: cde.",
+            " Füge zunächst folgenden Bereich hinzu: CdE.",
             div="notifications",
         )
         # Repair the request.
@@ -3410,7 +3405,9 @@ class TestCoreFrontend(FrontendTest):
     def test_genesis_insufficient_admin(self) -> None:
         existing_user = get_user("berta")
         with self.switch_user("anton"):
-            dg_data_1 = self._create_genesis_doppelganger(existing_user, realm="ml")
+            dg_data_1 = self._create_genesis_doppelganger(
+                existing_user, realm=Realms.ml
+            )
             self.traverse("Accountanfragen")
             self.traverse({"href": "/core/genesis/1001/show"})
             self.assertTitle(
@@ -3420,7 +3417,7 @@ class TestCoreFrontend(FrontendTest):
             self.assertPresence(dg_data_1["username"])
             self._decide_genesis_case(GenesisDecision.approve)
             dg_data_2 = self._create_genesis_doppelganger(
-                existing_user, realm="event", unique_username=True
+                existing_user, realm=Realms.event, unique_username=True
             )
             self.traverse("Accountanfragen")
             self.traverse({"href": "/core/genesis/1002/show"})
@@ -3431,7 +3428,7 @@ class TestCoreFrontend(FrontendTest):
             self.assertPresence(dg_data_2["username"])
             self._decide_genesis_case(GenesisDecision.approve)
         dg_data_3 = self._create_genesis_doppelganger(
-            existing_user, realm="event", unique_username=True
+            existing_user, realm=Realms.event, unique_username=True
         )
         self.traverse("Accountanfragen")
         self.traverse({"href": "/core/genesis/1003/show"})
@@ -3683,7 +3680,7 @@ class TestCoreFrontend(FrontendTest):
         self.admin_view_profile('janis')
         self.traverse({'description': 'Bereich hinzufügen'})
         f = self.response.forms['realmselectionform']
-        f['target_realm'] = "assembly"
+        f['target_realm'] = Realms.assembly
         self.submit(f)
         f = self.response.forms['promotionform']
         f['change_note'] = promotion_change_note = "trivial promotion"

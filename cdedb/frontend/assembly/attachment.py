@@ -16,6 +16,7 @@ from cdedb.common import (
     merge_dicts,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import xsorted
 from cdedb.frontend.assembly.base import AssemblyBaseFrontend
 from cdedb.frontend.common import (
@@ -38,9 +39,7 @@ ASSEMBLY_BAR_ABBREVIATION = "#"
 class AssemblyAttachmentMixin(AssemblyBaseFrontend):
     """Organize congregations and vote on ballots."""
 
-    realm = "assembly"
-
-    @access("assembly")
+    @access(Roles.assembly)
     def list_attachments(self, rs: RequestState, assembly_id: int) -> Response:
         """Render form."""
         if not self.assemblyproxy.may_assemble(
@@ -90,7 +89,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             },
         )
 
-    @access("assembly")
+    @access(Roles.assembly)
     def get_attachment(
         self, rs: RequestState, assembly_id: int, attachment_id: int
     ) -> Response:
@@ -103,7 +102,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             params={"version_nr": attachment["latest_version_nr"]},
         )
 
-    @access("assembly")
+    @access(Roles.assembly)
     @REQUESTdata("version_nr")
     def get_attachment_version(
         self, rs: RequestState, assembly_id: int, attachment_id: int, version_nr: int
@@ -129,7 +128,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             filename=versions[version_nr]['filename'],
         )
 
-    @access("assembly")
+    @access(Roles.assembly)
     @assembly_guard
     def add_attachment_form(self, rs: RequestState, assembly_id: int) -> Response:
         """Render form."""
@@ -145,7 +144,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             rs, "attachment/add_attachment", mandatory_fields=mandatory_fields
         )
 
-    @access("assembly", modi={"POST"})
+    @access(Roles.assembly, modi={"POST"})
     @assembly_guard
     @REQUESTdata(
         "title", "authors", "filename", "attachment_hash", "attachment_filename"
@@ -207,7 +206,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         rs.notify_return_code(code, success=n_("Attachment added."))
         return self.redirect(rs, "assembly/list_attachments")
 
-    @access("assembly", modi={"POST"})
+    @access(Roles.assembly, modi={"POST"})
     @assembly_guard
     @ack_delete("attachment_ack_delete")
     def delete_attachment(
@@ -235,7 +234,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "assembly/list_attachments")
 
-    @access("assembly")
+    @access(Roles.assembly)
     @assembly_guard
     def add_attachment_version_form(
         self, rs: RequestState, assembly_id: int, attachment_id: int
@@ -274,7 +273,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             mandatory_fields,
         )
 
-    @access("assembly", modi={"POST"})
+    @access(Roles.assembly, modi={"POST"})
     @assembly_guard
     @REQUESTdata(
         "title",
@@ -375,7 +374,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         rs.notify_return_code(code, success=n_("Attachment added."))
         return self.redirect(rs, "assembly/list_attachments")
 
-    @access("assembly")
+    @access(Roles.assembly)
     def get_cached_attachment(
         self, rs: RequestState, assembly_id: int, attachment_hash: vtypes.Identifier
     ) -> Response:
@@ -388,7 +387,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             raise werkzeug.exceptions.NotFound(n_("File does not exist."))
         return self.send_file(rs, path=path, mimetype='application/pdf')
 
-    @access("assembly")
+    @access(Roles.assembly)
     @assembly_guard
     def change_attachment_version_form(
         self, rs: RequestState, assembly_id: int, attachment_id: int, version_nr: int
@@ -413,7 +412,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             get_mandatory_form_fields(self.change_attachment_version),
         )
 
-    @access("assembly", modi={"POST"})
+    @access(Roles.assembly, modi={"POST"})
     @assembly_guard
     @REQUESTdata("title", "authors", "filename", "changenotes")
     def change_attachment_version(
@@ -452,7 +451,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         rs.notify_return_code(code, success=n_("Attachment changed."))
         return self.redirect(rs, "assembly/list_attachments")
 
-    @access("assembly", modi={"POST"})
+    @access(Roles.assembly, modi={"POST"})
     @assembly_guard
     @ack_delete("attachment_ack_delete")
     def delete_attachment_version(

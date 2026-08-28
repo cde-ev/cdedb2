@@ -15,7 +15,8 @@ from typing import cast
 import psycopg2.extensions
 
 from cdedb.common import CdEDBObject, DefaultReturnCode, PsycoJson, unwrap
-from cdedb.database.connection import ConnectionContainer, n_
+from cdedb.common.n_ import n_
+from cdedb.database.connection import ConnectionContainer
 from cdedb.database.conversions import from_db_output, to_db_input
 from cdedb.models.common import CdEDataclass
 

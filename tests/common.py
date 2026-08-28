@@ -96,11 +96,7 @@ from cdedb.common.query.log_filter import (
     MlLogFilter,
     PastEventLogFilter,
 )
-from cdedb.common.roles import (
-    ADMIN_VIEWS_COOKIE_NAME,
-    ALL_ADMIN_VIEWS,
-    roles_to_db_role,
-)
+from cdedb.common.roles import AdminViews, Roles
 from cdedb.config import Config, SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -254,12 +250,12 @@ def _make_backend_shim[B: AbstractBackend](
             lang="de",
             translations=translations,
         )
-        rs._conn = connpool[roles_to_db_role(rs.user.roles)]
+        rs._conn = connpool[rs.user.new_roles.get_db_role()]
         rs.conn = rs._conn
         if hasattr(backend, "list_enforcers"):
             if rs.user.persona_id in backend.list_enforcers(rs):
-                rs.user.realm_roles["complaint"] = {"enforcer"}
-        if "event" in rs.user.roles:
+                rs.user.new_roles |= Roles.complaint_enforcer
+        if Roles.event in rs.user.new_roles:
             if hasattr(backend, "orga_info"):
                 rs.user.orga = backend.orga_info(rs, rs.user.persona_id)
             if hasattr(backend, "caretaker_info"):
@@ -268,9 +264,12 @@ def _make_backend_shim[B: AbstractBackend](
                 rs.user.checkin_helper = backend.checkin_helper_info(
                     rs, rs.user.persona_id
                 )
-        if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
+            if hasattr(backend, "get_event_helpers"):
+                if rs.user.persona_id in backend.get_event_helpers(rs):
+                    rs.user.new_roles |= Roles.event_helper
+        if Roles.ml in rs.user.new_roles and hasattr(backend, "moderator_info"):
             rs.user.moderator = backend.moderator_info(rs, rs.user.persona_id)
-        if "assembly" in rs.user.roles and hasattr(backend, "presider_info"):
+        if Roles.assembly in rs.user.new_roles and hasattr(backend, "presider_info"):
             rs.user.presider = backend.presider_info(rs, rs.user.persona_id)
         return rs
 
@@ -570,7 +569,8 @@ class BackendTest(CdEDBTest):
         self.login(new_user)
         yield
         self.logout(allow_anonymous=True)
-        self.login(old_user)
+        if old_user["id"]:
+            self.login(old_user)
 
     def user_in(self, *identifiers: UserIdentifier) -> bool:
         """Check whether the current user is any of the given users."""
@@ -1053,13 +1053,13 @@ def as_users(
     return wrapper
 
 
-def admin_views[F: Callable[..., Any]](*views: str) -> Callable[[F], F]:
+def admin_views[F: Callable[..., Any]](*views: AdminViews) -> Callable[[F], F]:
     """Decorate a test to set different initial admin views."""
 
     def decorator(fun: F) -> F:
         @functools.wraps(fun)
         def new_fun(self: FrontendTest, *args: Any, **kwargs: Any) -> Any:
-            self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(views))
+            self.app.set_cookie(AdminViews.cookie_name(), AdminViews.serialize(views))
             return fun(self, *args, **kwargs)
 
         return cast(F, new_fun)
@@ -1159,7 +1159,7 @@ class FrontendTest(BackendTest):
         super().setUp()
         self.app.reset()
         # Make sure all available admin views are enabled.
-        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
+        self.app.set_cookie(AdminViews.cookie_name(), AdminViews.serialize(AdminViews))
         if prepsql:
             execsql(prepsql)
         self.response = cast(webtest.TestResponse, None)
@@ -2421,7 +2421,10 @@ class FrontendTest(BackendTest):
             else:
                 self.assertNotIn("active", button['class'])
         self.submit(
-            f, button='view_specifier', check_button_attrs=False, value=button['value']
+            f,
+            button=button.attrs["name"],
+            check_button_attrs=False,
+            value=button['value'],
         )
         return button
 
@@ -2483,7 +2486,7 @@ class MultiAppFrontendTest(FrontendTest):
         super().setUp(*args, **kwargs)
         for app in self.apps:
             app.reset()
-            app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
+            app.set_cookie(AdminViews.cookie_name(), AdminViews.serialize(AdminViews))
         self.current_app = 0
 
     def get_response(self) -> webtest.TestResponse:
@@ -2622,7 +2625,7 @@ class CronTest(CdEDBTest):
                 def mail_wrapper(
                     rs: RequestState, name: str, *args: Any, **kwargs: Any
                 ) -> str | None:
-                    self.mails.append(MailTrace(front.realm, name, args, kwargs))
+                    self.mails.append(MailTrace(front.realm_str(), name, args, kwargs))
                     return fun(rs, name, *args, **kwargs)
 
                 return cast(F, mail_wrapper)

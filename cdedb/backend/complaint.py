@@ -26,6 +26,7 @@ from cdedb.common.exceptions import AdverseCompanionError, PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import ComplaintLogFilter
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import mixed_existence_sorter, xsorted
 from cdedb.config import SecretsConfig
 from cdedb.database.connection import Atomizer
@@ -53,6 +54,7 @@ def _format_date_change_note(
 
 class ComplaintBackend(AbstractBackend):
     realm = "complaint"
+    admin_role = Roles.complaint_admin
 
     def __init__(self) -> None:
         super().__init__()
@@ -69,15 +71,11 @@ class ComplaintBackend(AbstractBackend):
             secret=complaint_secret,
         )
 
-    @classmethod
-    def is_admin(cls, rs: RequestState) -> bool:
-        return super().is_admin(rs)
-
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def get_attachment_store(self, rs: RequestState) -> EncryptedAttachmentStore:
         return self._attachment_store
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def retrieve_attachment(
         self, rs: RequestState, entry_id: int, version_nr: int
     ) -> bytes | None:
@@ -108,7 +106,7 @@ class ComplaintBackend(AbstractBackend):
 
         return self.get_attachment_store(rs).get(attachment_hash)
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def get_attachment_usage(self, rs: RequestState, attachment_hash: str) -> bool:
         attachment_hash = affirm(vtypes.Identifier, attachment_hash)
         query = f"""
@@ -120,13 +118,13 @@ class ComplaintBackend(AbstractBackend):
             unwrap(self.query_one(rs, query, {"attachment_hash": attachment_hash}))
         )
 
-    @access("persona")
+    @access(Roles.persona)
     def list_enforcers(self, rs: RequestState) -> set[vtypes.ID]:
         """List all enforcers."""
         data = self.query_all(rs, "SELECT persona_id FROM complaint.enforcers", [])
         return {e['persona_id'] for e in data}
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def add_enforcer(
         self, rs: RequestState, persona_id: vtypes.ID
     ) -> DefaultReturnCode:
@@ -148,7 +146,7 @@ class ComplaintBackend(AbstractBackend):
                 )
         return ret
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def remove_enforcer(
         self, rs: RequestState, persona_id: vtypes.ID
     ) -> DefaultReturnCode:
@@ -198,7 +196,7 @@ class ComplaintBackend(AbstractBackend):
         }
         return self.sql_insert(rs, "complaint.log", data)
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def complaint_log_case_detected(
         self, rs: RequestState, *, case_id: int, persona_id: int
     ) -> int:
@@ -210,7 +208,7 @@ class ComplaintBackend(AbstractBackend):
                 persona_id=persona_id,
             )
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def retrieve_log(
         self,
         rs: RequestState,
@@ -234,14 +232,14 @@ class ComplaintBackend(AbstractBackend):
 
         return self.generic_retrieve_log(rs, log_filter)
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def get_visible_case_ids(self, rs: RequestState) -> set[int]:
         query = f"SELECT id FROM {models.Case.database_table}"
         case_ids = self.query_all(rs, query, ())
         cases = self.get_cases(rs, [e["id"] for e in case_ids])
         return {case.id for case in cases.values() if case.is_visible_for(rs.user)}
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def get_cases(
         self, rs: RequestState, case_ids: Collection[int]
     ) -> models.CdEDataclassMap[models.Case]:
@@ -289,7 +287,7 @@ class ComplaintBackend(AbstractBackend):
 
     get_case = singularize(get_cases, 'case_ids', 'case_id')
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def get_related_cases(
         self, rs: RequestState, case_id: int
     ) -> dict[int, models.Case | None]:
@@ -313,7 +311,7 @@ class ComplaintBackend(AbstractBackend):
 
         return related_cases
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def set_case(
         self, rs: RequestState, case_id: int, data: CdEDBObject
     ) -> DefaultReturnCode:
@@ -370,7 +368,7 @@ class ComplaintBackend(AbstractBackend):
 
             return ret
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def create_case(self, rs: RequestState, data: CdEDBObject) -> models.Case:
         """Create a new complaint case. Only includes the metadata and not entries."""
         data = affirm(models.Case, data, creation=True)
@@ -458,7 +456,7 @@ class ComplaintBackend(AbstractBackend):
             raise KeyError(n_("Unknown entry."))
         return case_data["case_id"]
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def add_entry(
         self,
         rs: RequestState,
@@ -491,7 +489,7 @@ class ComplaintBackend(AbstractBackend):
             self._insert_entry_version(rs, new_entry_id, version_data)
         return new_entry_id
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def replace_entry_version(
         self,
         rs: RequestState,
@@ -514,7 +512,7 @@ class ComplaintBackend(AbstractBackend):
             self._delete_entry(rs, entry_id=entry_id, dreason=dreason)
             return self._insert_entry_version(rs, entry_id=entry_id, data=data)
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def delete_entry(
         self, rs: RequestState, entry_id: int, dreason: str | None
     ) -> DefaultReturnCode:
@@ -544,7 +542,7 @@ class ComplaintBackend(AbstractBackend):
                     )
             return self._delete_entry(rs, entry_id=entry_id, dreason=dreason)
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def revoke_entry(
         self, rs: RequestState, entry_id: int, version_data: CdEDBObject
     ) -> DefaultReturnCode:
@@ -599,7 +597,7 @@ class ComplaintBackend(AbstractBackend):
             }
             return self.add_entry(rs, case_id, new_entry, version_data)
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def mark_entry_version_for_purge(
         self, rs: RequestState, entry_id: int, entry_version_id: int
     ) -> DefaultReturnCode:
@@ -627,7 +625,7 @@ class ComplaintBackend(AbstractBackend):
             )
         return code
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def unmark_entry_version_for_purge(
         self, rs: RequestState, entry_id: int, entry_version_id: int
     ) -> DefaultReturnCode:
@@ -655,7 +653,7 @@ class ComplaintBackend(AbstractBackend):
             )
         return code
 
-    @access("cron")
+    @access(Roles.cron)
     def purge_entry_version(
         self, rs: RequestState, entry_id: int, entry_version_id: int
     ) -> DefaultReturnCode:
@@ -699,7 +697,7 @@ class ComplaintBackend(AbstractBackend):
             )
         return code
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def list_entry_versions_marked_for_purge(
         self, rs: RequestState
     ) -> list[models.ComplaintEntryVersion]:
@@ -730,7 +728,7 @@ class ComplaintBackend(AbstractBackend):
 
             return ret
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def add_involved(
         self,
         rs: RequestState,
@@ -842,7 +840,7 @@ class ComplaintBackend(AbstractBackend):
 
         return ret
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def remove_involved(
         self,
         rs: RequestState,
@@ -890,7 +888,7 @@ class ComplaintBackend(AbstractBackend):
                     )
         return ret
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def set_involved_informed(
         self,
         rs: RequestState,
@@ -929,7 +927,7 @@ class ComplaintBackend(AbstractBackend):
             )
         return ret
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def add_companions(
         self,
         rs: RequestState,
@@ -983,7 +981,7 @@ class ComplaintBackend(AbstractBackend):
                 )
         return ret
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def remove_companions(
         self,
         rs: RequestState,
@@ -1027,7 +1025,7 @@ class ComplaintBackend(AbstractBackend):
                 )
         return ret
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def set_companion_withdrawn(
         self,
         rs: RequestState,
@@ -1126,7 +1124,7 @@ class ComplaintBackend(AbstractBackend):
             for e in self.query_all(rs, query, params)
         }
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def get_visible_descriptions(
         self,
         rs: RequestState,
@@ -1166,7 +1164,7 @@ class ComplaintBackend(AbstractBackend):
         )
         return ret
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def is_unlocked(self, rs: RequestState, case_id: int) -> bool | None:
         """Determine whether a case is currently unlocked for the active user.
 
@@ -1213,7 +1211,7 @@ class ComplaintBackend(AbstractBackend):
             )
         return ret
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def unlock_case(
         self, rs: RequestState, case_id: int, reason: str
     ) -> DefaultReturnCode:
@@ -1225,7 +1223,7 @@ class ComplaintBackend(AbstractBackend):
         with Atomizer(rs):
             return self._unlock_case(rs, case_id, reason)
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def get_hidden_descriptions(self, rs: RequestState, case_id: int) -> dict[int, str]:
         """Return all descriptions if case already unlocked.
 
@@ -1236,7 +1234,7 @@ class ComplaintBackend(AbstractBackend):
             raise PrivilegeError
         return self._get_descriptions(rs, case_id=case_id, visible=False, deleted=None)
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def lock_case(self, rs: RequestState, case_id: int) -> DefaultReturnCode:
         case_id = affirm(int, case_id)
         with Atomizer(rs):
@@ -1250,7 +1248,7 @@ class ComplaintBackend(AbstractBackend):
                 rs, query, {"case_id": case_id, "persona_id": rs.user.persona_id}
             )
 
-    @access("complaint_admin")
+    @access(Roles.complaint_admin)
     def submit_general_query(
         self, rs: RequestState, query: Query
     ) -> tuple[CdEDBObject, ...]:
@@ -1325,7 +1323,7 @@ class ComplaintBackend(AbstractBackend):
 
         return self.general_query(rs, query, view=view)
 
-    @access("persona")
+    @access(Roles.persona)
     def get_user_measures(
         self, rs: RequestState, concerned_id: int, is_active: bool | None = True
     ) -> tuple[models.CdEDataclassMap[models.ComplaintEntry], dict[int, str]]:
@@ -1340,7 +1338,7 @@ class ComplaintBackend(AbstractBackend):
         concerned_id = affirm(vtypes.ID, concerned_id)
         is_active = affirm(bool | None, is_active)
         if not (
-            {"complaint_admin", "complaint.enforcer"} & rs.user.all_roles
+            (Roles.complaint_admin | Roles.complaint_enforcer) & rs.user.new_roles
             or concerned_id == rs.user.persona_id
         ):
             raise PrivilegeError
@@ -1376,7 +1374,7 @@ class ComplaintBackend(AbstractBackend):
         )
         return entries, descriptions
 
-    @access("complaint_admin", "complaint.enforcer")
+    @access(Roles.complaint_admin, Roles.complaint_enforcer)
     def get_measures(
         self, rs: RequestState
     ) -> tuple[models.CdEDataclassMap[models.ComplaintEntry], dict[int, str]]:

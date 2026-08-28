@@ -34,6 +34,7 @@ import cdedb.models.event.constraint_violations as models_cv
 from cdedb.backend.event.lodgement import LodgementInhabitants
 from cdedb.common import (
     EVENT_SCHEMA_VERSION,
+    AdminViews,
     CdEDBObject,
     CdEDBObjectMap,
     Notification,
@@ -51,6 +52,7 @@ from cdedb.common.privileges import (
 )
 from cdedb.common.query import QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
+from cdedb.common.roles import Realms, Roles
 from cdedb.common.sorting import EntitySorter, KeyFunction, Sortkey, xsorted
 from cdedb.common.validation.validate import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import enum_entries_filter, keydictsort_filter
@@ -246,7 +248,7 @@ def event_associated_fields_to_request_multi(
 class EventBaseFrontend(AbstractUserFrontend):
     """Provide the base for event frontend mixins."""
 
-    realm = "event"
+    realm = Realms.event
 
     def render(
         self,
@@ -266,9 +268,13 @@ class EventBaseFrontend(AbstractUserFrontend):
             endpoint: str,
             *,
             event_id: vtypes.EventID | None = None,
-            admin_view_to_consider: str | None = "event_orga",
+            admin_view_to_consider: AdminViews | None = AdminViews.event_orga,
         ) -> bool:
-            endpoint = endpoint.removeprefix(f"{self.realm}/")
+            if admin_view_to_consider is not None:
+                if not isinstance(admin_view_to_consider, AdminViews):
+                    raise TypeError
+
+            endpoint = endpoint.removeprefix(f"{self.realm_str()}/")
             privileges = getattr(getattr(self, endpoint), "event_required_privileges")
 
             if event_id is None and 'event' in rs.ambience:
@@ -287,7 +293,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             event_id = rs.ambience['event'].id
             orga_view = (
                 event_id in rs.user.orga | rs.user.caretaker | rs.user.checkin_helper
-                or 'event_orga' in rs.user.admin_views
+                or AdminViews.event_orga in rs.user.admin_views
             )
             access_is_limited = orga_view and is_event_access_limited(event_id)
         else:
@@ -297,7 +303,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         params = params or {}
         if 'event' in rs.ambience:
             params['is_locked'] = self.is_locked(rs.ambience['event'])
-            if rs.user.persona_id and "event" in rs.user.roles:
+            if rs.user.persona_id and Roles.event in rs.user.new_roles:
                 reg_list = self.eventproxy.list_registrations(
                     rs, rs.ambience['event'].id, rs.user.persona_id
                 )
@@ -341,10 +347,6 @@ class EventBaseFrontend(AbstractUserFrontend):
             rs, templatename, params=params, mandatory_fields=mandatory_fields
         )
 
-    @classmethod
-    def is_admin(cls, rs: RequestState) -> bool:
-        return super().is_admin(rs)
-
     def is_privileged(
         self,
         rs: RequestState,
@@ -386,7 +388,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         """Shorthand to determine locking state of an event."""
         return event.is_locked and not self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
 
-    @access("core_admin", "event_admin")
+    @access(Roles.core_admin, Roles.event_admin)
     def create_user_form(self, rs: RequestState) -> Response:
         defaults = {
             'is_member': False,
@@ -400,7 +402,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             get_mandatory_form_fields(filter_none(PERSONA_FULL_CREATION['event'])),
         )
 
-    @access("core_admin", "event_admin", modi={"POST"})
+    @access(Roles.core_admin, Roles.event_admin, modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['event']))
     def create_user(self, rs: RequestState, data: CdEDBObject) -> Response:
         defaults = {
@@ -413,7 +415,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         data.update(defaults)
         return super().create_user(rs, data)
 
-    @access("core_admin", "event_admin")
+    @access(Roles.core_admin, Roles.event_admin)
     @REQUESTdata("download", "is_search")
     def user_search(
         self, rs: RequestState, download: str | None, is_search: bool
@@ -441,7 +443,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             choices=choices,
         )
 
-    @access("event")
+    @access(Roles.event)
     @REQUESTdata("part_id", "sortkey", "reverse")
     def participant_list(
         self,
@@ -645,7 +647,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             problems=problems,
         )
 
-    @access("event")
+    @access(Roles.event)
     def participant_info(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Display the `participant_info`, accessible only to participants."""
         if not self.is_privileged(rs, EventPrivileges.basic_read):
@@ -884,7 +886,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             uninvolved_inhabitants=uninvolved_inhabitants,
         )
 
-    @access("event")
+    @access(Roles.event)
     # TODO Be more thoughtful here, considering the constraint violations rework
     @event_guard(EventPrivileges.all_read)
     @REQUESTdata("min_severity", "violation_kind", _omit_missing=True)
@@ -912,7 +914,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             },
         )
 
-    @access("event.event_helper", "event_admin", "finance_admin")
+    @access(Roles.event_helper, Roles.event_admin, Roles.finance_admin)
     @REQUESTdata(
         "event_ids",
         "violation_classes",
@@ -984,7 +986,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
     @REQUESTdatadict(*EventLogFilter.requestdict_fields())
     @REQUESTdata("download")
-    @access("event_admin", "finance_admin", "auditor")
+    @access(Roles.event_admin, Roles.finance_admin, Roles.auditor)
     def view_log(self, rs: RequestState, data: CdEDBObject, download: bool) -> Response:
         """View activities concerning events organized via DB."""
         event_ids = self.eventproxy.list_events(rs)
@@ -1008,7 +1010,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
     @REQUESTdatadict(*EventLogFilter.requestdict_fields())
     @REQUESTdata("download")
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.log_read)
     def view_event_log(
         self,

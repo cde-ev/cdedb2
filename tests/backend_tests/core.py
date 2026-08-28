@@ -25,6 +25,7 @@ from cdedb.common.exceptions import (
 )
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
+from cdedb.common.roles import Realms, Roles
 from cdedb.common.validation.validate import PERSONA_CDE_CREATION
 from tests.common import (
     ANONYMOUS,
@@ -721,7 +722,7 @@ class TestCoreBackend(BackendTest):
             "family_name": "Zeruda-Hime",
             "given_names": "Zelda",
             "username": 'zelda@example.cde',
-            "realm": "ml",
+            "realm": Realms.ml,
             "notes": "Some blah",
         }
         # Create the request anonymously.
@@ -794,7 +795,7 @@ class TestCoreBackend(BackendTest):
             is_event_realm=True,
         )
         case_data = {
-            'realm': "event",
+            'realm': Realms.event,
             'notes': "Some blah",
             'attachment_hash': None,
             'pevent_id': None,
@@ -812,7 +813,7 @@ class TestCoreBackend(BackendTest):
             1,
             len(
                 self.core.genesis_list_cases(
-                    self.key, realms=["event"], stati=(const.GenesisStati.to_review,)
+                    self.key, realms=Realms.event, stati=(const.GenesisStati.to_review,)
                 )
             ),
         )
@@ -820,12 +821,14 @@ class TestCoreBackend(BackendTest):
         assert case_id is not None
         expectation.id = case_id  # type: ignore[assignment]
         self.assertGreater(case_id, 0)
-        self.assertEqual((1, 'event'), self.core.genesis_verify(ANONYMOUS, case_id))
+        self.assertEqual(
+            (1, Realms.event), self.core.genesis_verify(ANONYMOUS, case_id)
+        )
         self.assertEqual(
             2,
             len(
                 self.core.genesis_list_cases(
-                    self.key, realms=["event"], stati=(const.GenesisStati.to_review,)
+                    self.key, realms=Realms.event, stati=(const.GenesisStati.to_review,)
                 )
             ),
         )
@@ -888,7 +891,7 @@ class TestCoreBackend(BackendTest):
             is_ml_realm=True,
         )
         case_data = {
-            'realm': "ml",
+            'realm': Realms.ml,
             'notes': "Some blah",
             'attachment_hash': None,
             'pevent_id': None,
@@ -906,7 +909,7 @@ class TestCoreBackend(BackendTest):
             1,
             len(
                 self.core.genesis_list_cases(
-                    self.key, realms=["ml"], stati=(const.GenesisStati.to_review,)
+                    self.key, realms=Realms.ml, stati=(const.GenesisStati.to_review,)
                 )
             ),
         )
@@ -914,17 +917,17 @@ class TestCoreBackend(BackendTest):
         assert case_id is not None
         expectation.id = case_id  # type: ignore[assignment]
         self.assertGreater(case_id, 0)
-        self.assertEqual((1, "ml"), self.core.genesis_verify(ANONYMOUS, case_id))
+        self.assertEqual((1, Realms.ml), self.core.genesis_verify(ANONYMOUS, case_id))
         self.assertEqual(
             2,
             len(
                 self.core.genesis_list_cases(
-                    self.key, realms=["ml"], stati=(const.GenesisStati.to_review,)
+                    self.key, realms=Realms.ml, stati=(const.GenesisStati.to_review,)
                 )
             ),
         )
         with self.assertRaises(RuntimeError):
-            self.core.genesis_modify_case_realm(self.key, case_id, "event")
+            self.core.genesis_modify_case_realm(self.key, case_id, Realms.event)
         value = self.core.genesis_get_case(self.key, case_id)
         value.ctime = ctime
         self.assertEqual(expectation, value)
@@ -981,7 +984,7 @@ class TestCoreBackend(BackendTest):
             is_cde_realm=True,
         )
         case_data = {
-            'realm': "cde",
+            'realm': Realms.cde,
             'notes': "Some blah",
             'attachment_hash': "really_cool_filename",
             'pevent_id': None,
@@ -999,7 +1002,7 @@ class TestCoreBackend(BackendTest):
             1,
             len(
                 self.core.genesis_list_cases(
-                    self.key, realms=["cde"], stati=(const.GenesisStati.to_review,)
+                    self.key, realms=Realms.cde, stati=(const.GenesisStati.to_review,)
                 )
             ),
         )
@@ -1017,12 +1020,12 @@ class TestCoreBackend(BackendTest):
         expectation.id = case_id  # type: ignore[assignment]
         expectation.attachment_hash = case_data['attachment_hash']  # type: ignore[assignment]
         self.assertLess(0, case_id)
-        self.assertEqual((1, 'cde'), self.core.genesis_verify(ANONYMOUS, case_id))
+        self.assertEqual((1, Realms.cde), self.core.genesis_verify(ANONYMOUS, case_id))
         self.assertEqual(
             2,
             len(
                 self.core.genesis_list_cases(
-                    self.key, realms=["cde"], stati=(const.GenesisStati.to_review,)
+                    self.key, realms=Realms.cde, stati=(const.GenesisStati.to_review,)
                 )
             ),
         )
@@ -1072,11 +1075,11 @@ class TestCoreBackend(BackendTest):
         )
 
     def test_genesis_verify_multiple(self) -> None:
-        self.assertEqual((0, "core"), self.core.genesis_verify(ANONYMOUS, 123))
+        self.assertEqual((0, None), self.core.genesis_verify(ANONYMOUS, 123))
         genesis_data = {
             "given_names": "Max",
             "family_name": "Mailschreiber",
-            "realm": "ml",
+            "realm": Realms.ml,
             "username": "max@mailschreiber.de",
             "notes": "Max möchte Mails mitbekommen.",
         }
@@ -1097,21 +1100,25 @@ class TestCoreBackend(BackendTest):
     def test_verify_personas(self) -> None:
         self.assertFalse(
             self.core.verify_personas(
-                self.key, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1000), {"event"}
+                self.key, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1000), Roles.event
             )
         )
         self.assertFalse(self.core.verify_persona(self.key, 1000))
-        self.assertFalse(self.core.verify_persona(self.key, 5, {"cde"}))
-        self.assertTrue(self.core.verify_persona(self.key, 5, {"event"}))
-        self.assertTrue(self.core.verify_persona(self.key, 2, {"cde"}))
-        self.assertTrue(self.core.verify_persona(self.key, 1, {"meta_admin"}))
+        self.assertFalse(self.core.verify_persona(self.key, 5, Roles.cde))
+        self.assertTrue(self.core.verify_persona(self.key, 5, Roles.event))
+        self.assertTrue(self.core.verify_persona(self.key, 2, Roles.cde))
+        self.assertTrue(self.core.verify_persona(self.key, 1, Roles.meta_admin))
         self.assertTrue(
-            self.core.verify_personas(self.key, (1, 2, 3, 7, 9), {"cde", "member"})
+            self.core.verify_personas(
+                self.key, (1, 2, 3, 7, 9), Roles.cde | Roles.member
+            )
         )
         self.assertFalse(
-            self.core.verify_personas(self.key, (1, 2, 3, 7, 9), {"searchable"})
+            self.core.verify_personas(self.key, (1, 2, 3, 7, 9), Roles.searchable)
         )
-        self.assertTrue(self.core.verify_personas(self.key, (1, 2, 9), {"searchable"}))
+        self.assertTrue(
+            self.core.verify_personas(self.key, (1, 2, 9), Roles.searchable)
+        )
 
     @as_users("vera")
     def test_user_getters(self) -> None:
@@ -1376,8 +1383,8 @@ class TestCoreBackend(BackendTest):
         data = {
             "persona_id": new_admin["id"],
             "notes": "Granting admin privileges for testing.",
-            "is_cde_admin": True,
-            "is_finance_admin": True,
+            Roles.cde_admin.marker: True,
+            Roles.finance_admin.marker: True,
         }
 
         change_id = self.core.initialize_privilege_change(self.key, data)
@@ -1386,6 +1393,9 @@ class TestCoreBackend(BackendTest):
         persona = self.core.get_persona_status(self.key, new_admin["id"])
         self.assertFalse(persona.is_cde_admin)
         self.assertFalse(persona.is_finance_admin)
+        persona_roles = persona.get_user_roles()
+        self.assertNotIn(Roles.cde_admin, persona_roles)
+        self.assertNotIn(Roles.finance_admin, persona_roles)
 
         self.login(admin2)
         self.core.finalize_privilege_change(
@@ -1395,6 +1405,9 @@ class TestCoreBackend(BackendTest):
         persona = self.core.get_persona_status(self.key, new_admin["id"])
         self.assertTrue(persona.is_cde_admin)
         self.assertTrue(persona.is_finance_admin)
+        persona_roles = persona.get_user_roles()
+        self.assertIn(Roles.cde_admin, persona_roles)
+        self.assertIn(Roles.finance_admin, persona_roles)
 
         self.login(admin1)
         core_log_expectation = [
@@ -1447,7 +1460,7 @@ class TestCoreBackend(BackendTest):
     def test_invalid_privilege_change(self) -> None:
         data = {
             "persona_id": USER_DICT["janis"]["id"],
-            "is_meta_admin": True,
+            Roles.meta_admin.marker: True,
             "notes": "For testing.",
         }
         with self.assertRaises(ValueError):
@@ -1455,7 +1468,7 @@ class TestCoreBackend(BackendTest):
 
         data = {
             "persona_id": USER_DICT["emilia"]["id"],
-            "is_core_admin": True,
+            Roles.core_admin.marker: True,
             "notes": "For testing.",
         }
         with self.assertRaises(ValueError):
@@ -1463,7 +1476,7 @@ class TestCoreBackend(BackendTest):
 
         data = {
             "persona_id": USER_DICT["berta"]["id"],
-            "is_finance_admin": True,
+            Roles.finance_admin.marker: True,
             "notes": "For testing.",
         }
         with self.assertRaises(ValueError):
@@ -1471,8 +1484,7 @@ class TestCoreBackend(BackendTest):
 
         data = {
             "persona_id": USER_DICT["ferdinand"]["id"],
-            "is_finance_admin": True,
-            "is_cde_admin": False,
+            Roles.cde_admin.marker: False,
             "notes": "For testing.",
         }
         with self.assertRaises(ValueError):
@@ -1619,7 +1631,7 @@ class TestCoreBackend(BackendTest):
             "family_name": "Zeruda-Hime",
             "given_names": "Zelda",
             "username": 'zeldax@example.cde',
-            'realm': "ml",
+            'realm': Realms.ml,
             "notes": "Some blah",
         }
         case_id = self.core.genesis_request(ANONYMOUS, genesis_data)
@@ -1721,3 +1733,31 @@ class TestCoreBackend(BackendTest):
                     tuple(self.get_sample_data(table, keys=keys).values()),
                     realm=log_realm,
                 )
+
+    def test_searchable(self) -> None:
+        err = "Improper access to member data."
+
+        # Searchable user.
+        with self.switch_user("berta"):
+            # Retrieve self.
+            self.core.get_cde_user(self.key, 2)
+
+            # Retrieve searchable user.
+            self.core.get_cde_user(self.key, 1)
+
+            # Retrieve non-searchable user.
+            with self.assertRaisesRegex(RuntimeError, err):
+                self.core.get_cde_user(self.key, 3)
+
+        # Non-searchable user.
+        with self.switch_user("garcia"):
+            # Retrieve self.
+            self.core.get_cde_user(self.key, 7)
+
+            # Retrieve searchable user.
+            with self.assertRaisesRegex(RuntimeError, err):
+                self.core.get_cde_user(self.key, 1)
+
+            # Retrieve non-searchable user.
+            with self.assertRaisesRegex(RuntimeError, err):
+                self.core.get_cde_user(self.key, 3)

@@ -39,6 +39,7 @@ from cdedb.common.query.defaults import (
     generate_event_course_default_queries,
     generate_event_registration_default_queries,
 )
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import enum_entries_filter
 from cdedb.frontend.common import (
@@ -59,7 +60,7 @@ from cdedb.frontend.event.query_stats import (
 
 
 class EventQueryMixin(EventBaseFrontend):
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_stats | EventPrivileges.courses_read)
     def stats(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Present an overview of the basic stats."""
@@ -188,7 +189,7 @@ class EventQueryMixin(EventBaseFrontend):
             },
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata("download", "is_search")
     def registration_query(
@@ -258,7 +259,7 @@ class EventQueryMixin(EventBaseFrontend):
             rs.values['is_search'] = is_search = False
             return self.render(rs, "query/registration_query", params)
 
-    @access("event", modi={"POST"}, anti_csrf_token_name="store_query")
+    @access(Roles.event, modi={"POST"}, anti_csrf_token_name="store_query")
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("query_scope")
     @REQUESTdatadict(*models.StoredEventQuery.requestdict_fields(creation=True))
@@ -296,7 +297,7 @@ class EventQueryMixin(EventBaseFrontend):
             rs.notify_return_code(query_id)
         return self.redirect(rs, query_scope.get_target(), query_input)
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("query_id", "query_scope")
     def delete_event_query(
@@ -318,7 +319,7 @@ class EventQueryMixin(EventBaseFrontend):
             return self.redirect(rs, query_scope.get_target(), query_input)
         return self.redirect(rs, "event/show_event", query_input)
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_read)
     @REQUESTdata("query_name")
     def event_query_by_name(
@@ -369,7 +370,7 @@ class EventQueryMixin(EventBaseFrontend):
             )
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_read)
     @REQUESTdata("scope")
     def custom_filter_summary(
@@ -397,21 +398,21 @@ class EventQueryMixin(EventBaseFrontend):
             },
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_write)
     def create_registration_filter(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> Response:
         return self.configure_custom_filter_form(rs, event_id, QueryScope.registration)
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_write)
     def create_course_filter(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> Response:
         return self.configure_custom_filter_form(rs, event_id, QueryScope.event_course)
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_write)
     def create_lodgement_filter(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -459,7 +460,7 @@ class EventQueryMixin(EventBaseFrontend):
                 KeyError(n_("A filter with this selection of fields already exists.")),
             ))
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdatadict(*models.CustomQueryFilter.requestdict_fields(creation=True))
     def create_custom_filter(
@@ -487,7 +488,7 @@ class EventQueryMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/custom_filter_summary", {'scope': scope})
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_write)
     def change_custom_filter_form(
         self, rs: RequestState, event_id: vtypes.EventID, custom_filter_id: int
@@ -503,7 +504,7 @@ class EventQueryMixin(EventBaseFrontend):
             rs, event_id, custom_filter.scope, creation=False
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdatadict(*models.CustomQueryFilter.requestdict_fields(creation=False))
     def change_custom_filter(
@@ -535,7 +536,7 @@ class EventQueryMixin(EventBaseFrontend):
             },
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     def delete_custom_filter(
         self, rs: RequestState, event_id: vtypes.EventID, custom_filter_id: int
@@ -550,7 +551,7 @@ class EventQueryMixin(EventBaseFrontend):
             },
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.courses_read | EventPrivileges.registrations_stats)
     @REQUESTdata("download", "is_search")
     def course_query(
@@ -609,7 +610,7 @@ class EventQueryMixin(EventBaseFrontend):
             rs.values['is_search'] = is_search = False
             return self.render(rs, "query/course_query", params)
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.lodgements_read | EventPrivileges.registrations_stats)
     @REQUESTdata("download", "is_search")
     def lodgement_query(
@@ -716,7 +717,7 @@ class EventQueryMixin(EventBaseFrontend):
         else:
             return self.render(rs, query.scope.get_target(redirect=False), params)
 
-    @access("event")
+    @access(Roles.event)
     @REQUESTdata("phrase", "kind", "aux")
     def select_registration(
         self, rs: RequestState, phrase: str, kind: str, aux: vtypes.EventID | None

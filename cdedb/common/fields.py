@@ -2,46 +2,6 @@
 
 """SQL field names of all entities."""
 
-# A set of roles a user may have.
-Role = str
-
-# A set of realms a persona belongs to.
-Realm = str
-
-
-# The following dict defines, which additional fields are required for genesis
-# request for distinct realms. Additionally, it is used to define for which
-# realms genesis requrests are allowed
-REALM_SPECIFIC_GENESIS_FIELDS: dict[Realm, tuple[str, ...]] = {
-    "ml": tuple(),
-    "event": (
-        "gender",
-        "birthday",
-        "telephone",
-        "mobile",
-        "address_supplement",
-        "address",
-        "postal_code",
-        "location",
-        "country",
-    ),
-    "cde": (
-        "gender",
-        "birthday",
-        "telephone",
-        "mobile",
-        "address_supplement",
-        "address",
-        "postal_code",
-        "location",
-        "country",
-        "birth_name",
-        "attachment_hash",
-        "pevent_id",
-        "pcourse_id",
-    ),
-}
-
 #: Fields of a pending privilege change.
 PRIVILEGE_CHANGE_FIELDS = (
     "id",

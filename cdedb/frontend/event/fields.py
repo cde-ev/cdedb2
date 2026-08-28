@@ -25,6 +25,7 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.filter import safe_filter
 from cdedb.frontend.common import (
@@ -45,7 +46,7 @@ EntitySetter = Callable[[RequestState, dict[str, Any]], int]
 
 
 class EventFieldMixin(EventBaseFrontend):
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_read)
     def field_summary_form(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -90,7 +91,7 @@ class EventFieldMixin(EventBaseFrontend):
             rs, "fields/field_summary", {'referenced': referenced, 'locked': locked}
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write)
     @REQUESTdata("nav_tab_active")
     def field_summary(
@@ -149,12 +150,12 @@ class EventFieldMixin(EventBaseFrontend):
             rs, "event/field_summary_form", anchor=(nav_tab_active or "").lstrip("#")
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_write | EventPrivileges.entities_write)
     def prune_field_select(self, rs: RequestState, event_id: vtypes.ID) -> Response:
         return self.render(rs, "fields/prune_field_select")
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write | EventPrivileges.entities_write)
     @REQUESTdata("reg_field_ids", "course_field_ids", "lodge_field_ids")
     @ack_delete()
@@ -326,7 +327,7 @@ class EventFieldMixin(EventBaseFrontend):
 
         return entities, ordered_ids, labels, field
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.entities_write)
     @REQUESTdata("field_id", "ids", "kind")
     def field_multiset_select(
@@ -376,7 +377,7 @@ class EventFieldMixin(EventBaseFrontend):
             },
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.entities_write)
     @REQUESTdata("field_id", "ids", "kind", "change_note")
     def field_multiset_form(
@@ -425,7 +426,7 @@ class EventFieldMixin(EventBaseFrontend):
             get_mandatory_form_fields(self.field_multiset),
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("field_id", "ids", "kind", "change_note")
     def field_multiset(

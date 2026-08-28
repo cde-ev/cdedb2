@@ -26,6 +26,7 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.privileges import EventPrivileges
 from cdedb.common.query import Query, QueryOperators, QueryScope
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import EntitySorter, Sortkey, xsorted
 from cdedb.filter import keydictsort_filter
 from cdedb.frontend.common import (
@@ -51,7 +52,7 @@ from cdedb.frontend.event.lodgement_wishes import (
 
 
 class EventLodgementMixin(EventBaseFrontend):
-    @access("event")
+    @access(Roles.event)
     # TODO Be more lenient here
     @event_guard(EventPrivileges.lodgements_read | EventPrivileges.registrations_stats)
     @REQUESTdata("sort_part_id", "sortkey", "reverse")
@@ -170,7 +171,7 @@ class EventLodgementMixin(EventBaseFrontend):
             },
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.lodgements_write)
     def lodgement_group_summary_form(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -187,7 +188,7 @@ class EventLodgementMixin(EventBaseFrontend):
 
         return self.render(rs, "lodgement/lodgement_group_summary", {'groups': groups})
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.lodgements_write)
     def lodgement_group_summary(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -215,7 +216,7 @@ class EventLodgementMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/lodgement_group_summary")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.lodgements_read | EventPrivileges.registrations_stats)
     def show_lodgement(
         self,
@@ -284,7 +285,7 @@ class EventLodgementMixin(EventBaseFrontend):
 
         return self.render(rs, "lodgement/show_lodgement", params)
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_read)
     def lodgement_wishes_graph_form(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -309,7 +310,7 @@ class EventLodgementMixin(EventBaseFrontend):
             get_mandatory_form_fields(self.lodgement_wishes_graph),
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_read)
     @REQUESTdata(
         'all_participants',
@@ -396,7 +397,7 @@ class EventLodgementMixin(EventBaseFrontend):
         data: bytes = graph.pipe('svg')
         return self.send_file(rs, "image/svg+xml", data=data)
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.lodgements_write)
     @REQUESTdata("group_id")
     def create_lodgement_form(
@@ -419,7 +420,7 @@ class EventLodgementMixin(EventBaseFrontend):
             rs, "lodgement/create_lodgement", {'groups': groups}, mandatory_fields
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.lodgements_write)
     @REQUESTdata("new_group_title")
     @REQUESTdatadict(*models.Lodgement.requestdict_fields(creation=True))
@@ -477,7 +478,7 @@ class EventLodgementMixin(EventBaseFrontend):
         rs.notify_return_code(new_id)
         return self.redirect(rs, "event/show_lodgement", {'lodgement_id': new_id})
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.lodgements_write)
     def change_lodgement_form(
         self,
@@ -498,7 +499,7 @@ class EventLodgementMixin(EventBaseFrontend):
             models.Lodgement.mandatory_form_fields(creation=False),
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.lodgements_write)
     @REQUESTdatadict(*models.Lodgement.requestdict_fields(creation=False))
     def change_lodgement(
@@ -526,7 +527,7 @@ class EventLodgementMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_lodgement")
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.lodgements_write)
     @ack_delete()
     def delete_lodgement(
@@ -550,7 +551,7 @@ class EventLodgementMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/lodgements")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_write)
     def manage_inhabitants_form(
         self,
@@ -671,7 +672,7 @@ class EventLodgementMixin(EventBaseFrontend):
             },
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
     def manage_inhabitants(
         self,
@@ -750,7 +751,7 @@ class EventLodgementMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_lodgement")
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
     def swap_inhabitants(
         self,
@@ -807,7 +808,7 @@ class EventLodgementMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_lodgement")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.lodgements_write)
     def move_lodgements_form(
         self,
@@ -828,7 +829,7 @@ class EventLodgementMixin(EventBaseFrontend):
             get_mandatory_form_fields(self.move_lodgements),
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.lodgements_write)
     @REQUESTdata("lodgement_ids", "target_group_id", "delete_group")
     def move_lodgements(

@@ -28,7 +28,6 @@ from cdedb.backend.session import SessionBackend
 from cdedb.common import (
     IGNORE_WARNINGS_NAME,
     CdEDBObject,
-    Realm,
     RequestState,
     User,
     make_proxy,
@@ -41,7 +40,7 @@ from cdedb.common.exceptions import (
     QuotaException,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, roles_to_db_role
+from cdedb.common.roles import AdminViews, Roles, RoleSet
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -199,6 +198,20 @@ class Application(BaseApp):
                 f"HTTP {error.code}: {error.name}\n{error.description}", status=status
             )
 
+    def _resolve_realm_roles(self, rs: RequestState) -> RoleSet:
+        """Retrieve additional data to determine their realm internal roles."""
+        assert rs.user.persona_id is not None
+        ret = Roles.none()
+
+        if rs.user.persona_id in self.complaintproxy.list_enforcers(rs):
+            ret |= Roles.complaint_enforcer
+
+        if Roles.event in rs.user.new_roles:
+            if rs.user.persona_id in self.eventproxy.get_event_helpers(rs):
+                ret |= Roles.event_helper
+
+        return ret
+
     @werkzeug.wrappers.Request.application  # type: ignore[arg-type]
     def __call__(  # type: ignore[misc]
         self, request: werkzeug.wrappers.Request
@@ -228,7 +241,7 @@ class Application(BaseApp):
                 sessionkey = None
                 user = self.sessionproxy.lookuptoken(apitoken, request.remote_addr)
                 # Error early to make debugging easier.
-                if 'droid' not in user.roles:
+                if Roles.droid not in user.new_roles:
                     raise werkzeug.exceptions.Forbidden("API token invalid.")
             else:
                 user = self.sessionproxy.lookupsession(sessionkey, request.remote_addr)
@@ -308,7 +321,7 @@ class Application(BaseApp):
                 )
 
             # Check anti CSRF token (if required by the endpoint)
-            if handler.anti_csrf.check and 'droid' not in user.roles:
+            if handler.anti_csrf.check and Roles.droid not in user.new_roles:
                 error = frontend.check_anti_csrf(
                     rs, action, handler.anti_csrf.name, handler.anti_csrf.payload
                 )
@@ -325,36 +338,29 @@ class Application(BaseApp):
 
             # Store database connection as private attribute.
             # It will be made accessible for the backends by the make_proxy.
-            rs._conn = self.connpool[roles_to_db_role(user.roles)]
+            rs._conn = self.connpool[user.new_roles.get_db_role()]
 
             # Retrieve entity related privileges for personas.
             # The session backend takes care of this for droids.
             if user.persona_id:
                 # Roles that are managed via the realms internally
-                realms = {"core", "complaint", "cde", "event", "assembly", "ml"}
-                realm_roles: dict[Realm, set[str]] = {realm: set() for realm in realms}
-                if user.persona_id in self.complaintproxy.list_enforcers(rs):
-                    realm_roles['complaint'].add('enforcer')
-                if "event" in rs.user.roles:
-                    if user.persona_id in self.eventproxy.get_event_helpers(rs):
-                        realm_roles['event'].add('event_helper')
-                user.realm_roles = realm_roles
+                user.new_roles |= self._resolve_realm_roles(rs)
 
                 # Insert orga and moderator status context
                 orga: set[vtypes.EventID] = set()
                 caretaker: set[vtypes.EventID] = set()
                 checkin_helper: set[vtypes.EventID] = set()
-                if "event" in user.roles:
+                if Roles.event in user.new_roles:
                     orga = self.eventproxy.orga_info(rs, user.persona_id)
                     caretaker = self.eventproxy.caretaker_info(rs, user.persona_id)
                     checkin_helper = self.eventproxy.checkin_helper_info(
                         rs, user.persona_id
                     )
                 moderator: set[int] = set()
-                if "ml" in user.roles:
+                if Roles.ml in user.new_roles:
                     moderator = self.mlproxy.moderator_info(rs, user.persona_id)
                 presider: set[int] = set()
-                if "assembly" in user.roles:
+                if Roles.assembly in user.new_roles:
                     presider = self.assemblyproxy.presider_info(rs, user.persona_id)
                 user.orga = orga
                 user.caretaker = caretaker
@@ -362,7 +368,7 @@ class Application(BaseApp):
                 user.moderator = moderator
                 user.presider = presider
                 user.init_admin_views_from_cookie(
-                    request.cookies.get(ADMIN_VIEWS_COOKIE_NAME, '')
+                    request.cookies.get(AdminViews.cookie_name(), "")
                 )
 
             try:

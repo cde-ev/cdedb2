@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-08-28 16:55+0200\n"
+"POT-Creation-Date: 2026-08-28 18:25+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -1663,6 +1663,60 @@ msgstr "commentarium mutationis"
 
 msgid "ViolationKind.other"
 msgstr ""
+
+msgid "Roles.core_admin"
+msgstr ""
+
+msgid "Roles.ml_admin"
+msgstr ""
+
+#, fuzzy
+msgid "Roles.assembly_admin"
+msgstr "coetus"
+
+#, fuzzy
+msgid "Roles.event_admin"
+msgstr "administratores eventuum"
+
+#, fuzzy
+msgid "Roles.complaint_admin"
+msgstr "administrator tabellarum epistularum electronicarum"
+
+#, fuzzy
+msgid "Roles.auditor"
+msgstr "Annuntiationes"
+
+#, fuzzy
+msgid "Roles.cdelokal_admin"
+msgstr "administrator CdElocalis"
+
+#, fuzzy
+msgid "Roles.meta_admin"
+msgstr "administrator administratorum"
+
+#, fuzzy
+msgid "Roles.finance_admin"
+msgstr "administrator pecuniae"
+
+#, fuzzy
+msgid "Roles.cde_admin"
+msgstr "administrator CdEi"
+
+#, fuzzy
+msgid "Realms.cde"
+msgstr "regna"
+
+#, fuzzy
+msgid "Realms.event"
+msgstr "regna"
+
+#, fuzzy
+msgid "Realms.ml"
+msgstr "regna"
+
+#, fuzzy
+msgid "Realms.assembly"
+msgstr "coetus"
 
 #, fuzzy
 msgid "IncorrectIBANCV"
@@ -3802,9 +3856,6 @@ msgstr ""
 msgid "Ambiguous course."
 msgstr ""
 
-msgid "Needs both admin privileges."
-msgstr ""
-
 msgid "Event is not concluded yet."
 msgstr ""
 
@@ -4585,40 +4636,17 @@ msgstr ""
 msgid "00_query_ml_user_all"
 msgstr ""
 
-msgid "is_meta_admin"
-msgstr "administrator administratorum"
-
-msgid "is_core_admin"
-msgstr "administrator capitis"
-
-msgid "is_cde_admin"
-msgstr "administrator CdEi"
-
-msgid "is_finance_admin"
-msgstr "administrator pecuniae"
-
-msgid "is_event_admin"
-msgstr "administrator eventuum"
-
-msgid "is_ml_admin"
-msgstr "administrator tabellarum epistularum electronicarum"
-
-msgid "is_assembly_admin"
-msgstr "administrator coetuum"
+#, fuzzy
+msgid "CdE membership & events"
+msgstr "eventus"
 
 #, fuzzy
-msgid "is_cdelokal_admin"
-msgstr "administrator CdEi"
+msgid "CdE events"
+msgstr "eventus"
 
 #, fuzzy
-msgid "is_complaint_admin"
-msgstr "administrator tabellarum epistularum electronicarum"
-
-msgid "is_auditor"
-msgstr ""
-
-msgid "Could not determine any db role."
-msgstr ""
+msgid "CdE mailinglist"
+msgstr "tabellae epistularum electronicarum"
 
 msgid "Superfluous key found."
 msgstr ""
@@ -5210,19 +5238,6 @@ msgstr ""
 
 #, python-format
 msgid "Invalid input for the enumeration %(enum)s"
-msgstr ""
-
-#, python-format
-msgid "role %(role)s not available"
-msgstr ""
-
-msgid "Not available for instant pool"
-msgstr ""
-
-msgid "Connection in use!"
-msgstr ""
-
-msgid "Suppressed exception detected"
 msgstr ""
 
 msgid "Text"
@@ -6338,6 +6353,10 @@ msgstr ""
 #, fuzzy
 msgid "This user does not exist or is no enforcer."
 msgstr "haec videri non possit."
+
+#, fuzzy
+msgid "Invalid realm for genesis."
+msgstr "Annuntiationes"
 
 #, fuzzy
 msgid "Attachment missing."
@@ -9770,42 +9789,6 @@ msgstr "signum arcanum muta"
 
 msgid "Privilege changes will have to be approved by another meta admin."
 msgstr ""
-
-#, fuzzy
-msgid "Meta admin"
-msgstr "administrator administratorum"
-
-#, fuzzy
-msgid "Core admin"
-msgstr "administrator capitis"
-
-#, fuzzy
-msgid "CdE admin"
-msgstr "administrator CdEi"
-
-#, fuzzy
-msgid "Finance admin"
-msgstr "administrator pecuniae"
-
-#, fuzzy
-msgid "Event admin"
-msgstr "administratores eventuum"
-
-#, fuzzy
-msgid "Case archive admin"
-msgstr "vestigium novum crea"
-
-#, fuzzy
-msgid "Mailinglist admin"
-msgstr "administrator tabellarum epistularum electronicarum"
-
-#, fuzzy
-msgid "CdElokal admin"
-msgstr "administrator CdElocalis"
-
-#, fuzzy
-msgid "Assembly admin"
-msgstr "administrator coetuum"
 
 #, python-format
 msgid "Edit %(name)s"
@@ -15694,18 +15677,6 @@ msgstr ""
 #, fuzzy
 msgid "not yet active"
 msgstr "vestigium novum crea"
-
-#, fuzzy
-msgid "CdE membership & events"
-msgstr "eventus"
-
-#, fuzzy
-msgid "CdE events"
-msgstr "eventus"
-
-#, fuzzy
-msgid "CdE mailinglist"
-msgstr "tabellae epistularum electronicarum"
 
 msgid "Wrong format for api token."
 msgstr ""

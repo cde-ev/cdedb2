@@ -6,7 +6,7 @@ eine Änderung angestoßen, die durch {{ user|persona_name(include_nickname=True
 {% if gained %}Dabei wurden für {{ persona|persona_name(include_nickname=True) }} folgende Adminprivilegien hinzugefügt:
 {% endif %}
 {% for privilege in gained %}
-- {{ gettext(privilege) }}
+- {{ gettext(privilege|string) }}
 {% endfor %}
 {% if lost and gained %}
 
@@ -14,7 +14,7 @@ und folgende Privilegien entfernt:
 {% elif lost %}Dabei wurden für {{ persona|persona_name(include_nickname=True) }} folgende Adminprivilegien entfernt:
 {% endif %}
 {% for privilege in lost %}
-- {{ gettext(privilege) }}
+- {{ gettext(privilege|string) }}
 {% endfor %}
 
 Die Datenbank

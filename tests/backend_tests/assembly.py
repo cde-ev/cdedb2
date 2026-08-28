@@ -22,6 +22,7 @@ from cdedb.common import (
 )
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import AssemblyLogFilter
+from cdedb.common.roles import Roles
 from tests.common import (
     USER_DICT,
     BackendTest,
@@ -1899,7 +1900,7 @@ class TestAssemblyBackend(BackendTest):
         self.assertIn(presided_assembly_id, presided_assembly_ids)
         self.assertNotIn(non_presided_assembly_id, presided_assembly_ids)
         self.assertNotIn(
-            "member", self.core.get_roles_single(self.key, other_presider['id'])
+            Roles.member, self.core.get_roles_single(self.key, other_presider['id'])
         )
 
         attendee = get_user("rowena")
@@ -1918,7 +1919,9 @@ class TestAssemblyBackend(BackendTest):
             )
         )
         self.assertFalse(self.assembly.presider_info(self.key, attendee['id']))
-        self.assertNotIn("member", self.core.get_roles_single(self.key, attendee['id']))
+        self.assertNotIn(
+            Roles.member, self.core.get_roles_single(self.key, attendee['id'])
+        )
 
         member = get_user("ferdinand")
         for assembly_id in assembly_ids:
@@ -1928,13 +1931,13 @@ class TestAssemblyBackend(BackendTest):
                 )
             )
         self.assertFalse(self.assembly.presider_info(self.key, member['id']))
-        self.assertIn("member", self.core.get_roles_single(self.key, member['id']))
+        self.assertIn(Roles.member, self.core.get_roles_single(self.key, member['id']))
         execsql(f"""
             UPDATE core.personas SET is_assembly_admin = False
             WHERE id = {member['id']}
         """)
         self.assertNotIn(
-            "assembly_admin", self.core.get_roles_single(self.key, member['id'])
+            Roles.assembly_admin, self.core.get_roles_single(self.key, member['id'])
         )
 
         unprivileged = get_user("daniel")
@@ -1946,7 +1949,7 @@ class TestAssemblyBackend(BackendTest):
                 )
             )
         self.assertNotIn(
-            "member", self.core.get_roles_single(self.key, unprivileged['id'])
+            Roles.member, self.core.get_roles_single(self.key, unprivileged['id'])
         )
 
         some_assemblies_filter = AssemblyLogFilter(

@@ -43,6 +43,7 @@ from cdedb.common.privileges import (
     is_privileged_event as is_privileged,
 )
 from cdedb.common.query.log_filter import EventLogFilter
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import mixed_existence_sorter
 from cdedb.database.connection import Atomizer
 from cdedb.models.droid import OrgaToken
@@ -58,7 +59,7 @@ class EventBackend(
     EventBaseBackend,
     EventLowLevelBackend,
 ):
-    @access("event_admin")
+    @access(Roles.event_admin)
     def delete_event_blockers(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> DeletionBlockers:
@@ -344,7 +345,7 @@ class EventBackend(
 
         return blockers
 
-    @access("event_admin")
+    @access(Roles.event_admin)
     def delete_event(
         self,
         rs: RequestState,
@@ -519,7 +520,7 @@ class EventBackend(
                 )
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def partial_import_event(
         self,
         rs: RequestState,

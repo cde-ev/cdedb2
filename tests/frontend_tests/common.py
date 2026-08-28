@@ -177,7 +177,10 @@ class TestFrontendCommon(FrontendTest):
                 cdedb.enums.NON_TRANSLATED_ENUMS
             ):
                 with self.subTest(lang=lang, enum=enum):
-                    for member in enum:
+                    members = list(enum)
+                    if hasattr(enum, "_translated_members"):
+                        members = enum._translated_members()
+                    for member in members:
                         self.assertNotEqual(
                             translation.gettext(str(member)), str(member)
                         )

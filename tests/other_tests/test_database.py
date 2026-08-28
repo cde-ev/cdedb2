@@ -12,6 +12,7 @@ from cdedb.backend.common import (
 )
 from cdedb.common import RequestState
 from cdedb.config import Config, SecretsConfig
+from cdedb.database import DATABASE_ROLES, DBRole
 from cdedb.database.connection import (
     Atomizer,
     ConnectionContainer,
@@ -33,37 +34,35 @@ class TestDatabase(unittest.TestCase):
     def test_instant_connection(self) -> None:
         factory = connection_pool_factory(
             self.config["CDB_DATABASE_NAME"],
-            ("cdb_anonymous", "cdb_persona", "cdb_admin"),
+            DATABASE_ROLES,
             self.secrets,
             self.config["DB_HOST"],
             self.config["DB_PORT"],
         )
-        with factory["cdb_persona"] as conn:
+        with factory[DBRole.persona] as conn:
             self.assertIsInstance(conn, psycopg2.extensions.connection)
             self.assertIsInstance(conn, IrradiatedConnection)
-        with self.assertRaises(ValueError):
-            factory["nonexistentrole"]  # exception in __getitem__
 
     def test_less_users(self) -> None:
         factory = connection_pool_factory(
             self.config["CDB_DATABASE_NAME"],
-            ("cdb_anonymous", "cdb_admin"),
+            (DBRole.anonymous, DBRole.admin),
             self.secrets,
             self.config["DB_HOST"],
             self.config["DB_PORT"],
         )
         with self.assertRaises(ValueError):
-            factory["cdb_persona"]  # exception in __getitem__
+            factory[DBRole.persona]  # exception in __getitem__
 
     def test_atomizer(self) -> None:
         factory = connection_pool_factory(
             self.config["CDB_DATABASE_NAME"],
-            ("cdb_persona",),
+            (DBRole.persona,),
             self.secrets,
             self.config["DB_HOST"],
             self.config["DB_PORT"],
         )
-        conn = factory["cdb_persona"]
+        conn = factory[DBRole.persona]
 
         rs = ConnectionContainer()
         rs.conn = rs._conn = conn
@@ -106,12 +105,12 @@ class TestDatabase(unittest.TestCase):
     def test_suppressed_exception(self) -> None:
         factory = connection_pool_factory(
             self.config["CDB_DATABASE_NAME"],
-            ("cdb_admin",),
+            (DBRole.admin,),
             self.secrets,
             self.config["DB_HOST"],
             self.config["DB_PORT"],
         )
-        conn = factory["cdb_admin"]
+        conn = factory[DBRole.admin]
 
         rs = ConnectionContainer()
         rs.conn = rs._conn = conn

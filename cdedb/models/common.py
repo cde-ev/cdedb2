@@ -33,7 +33,7 @@ from cdedb.common import (
 )
 from cdedb.common.query import Query, QueryScope, QuerySpec
 from cdedb.common.sorting import Sortkey, collate, xsorted
-from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
+from cdedb.uncommon.intenum import CdEEnum, CdEFlag, CdEIntEnum
 
 if TYPE_CHECKING:
     from cdedb.database.query import DatabaseValue_s
@@ -274,7 +274,7 @@ class CdEDataclass:
             # Convert basic types.
             if isinstance(type_, type):
                 # Convert enum fields into enum members.
-                if issubclass(type_, (CdEEnum, CdEIntEnum)):
+                if issubclass(type_, (CdEEnum, CdEIntEnum, CdEFlag)):
                     if data.get(name) is not None:
                         data[name] = type_(data[name])
 

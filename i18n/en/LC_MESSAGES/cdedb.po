@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-08-28 16:55+0200\n"
+"POT-Creation-Date: 2026-08-28 18:25+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -1406,6 +1406,48 @@ msgstr "Lodgements"
 
 msgid "ViolationKind.other"
 msgstr "Other"
+
+msgid "Roles.core_admin"
+msgstr "Core Admin"
+
+msgid "Roles.ml_admin"
+msgstr "Mailinglist Admin"
+
+msgid "Roles.assembly_admin"
+msgstr "Assembly Admin"
+
+msgid "Roles.event_admin"
+msgstr "Event Admin"
+
+msgid "Roles.complaint_admin"
+msgstr "Case Archive Admin"
+
+msgid "Roles.auditor"
+msgstr "Auditor"
+
+msgid "Roles.cdelokal_admin"
+msgstr "CdElokal Admin"
+
+msgid "Roles.meta_admin"
+msgstr "Meta Admin"
+
+msgid "Roles.finance_admin"
+msgstr "Finance Admin"
+
+msgid "Roles.cde_admin"
+msgstr "CdE Admin"
+
+msgid "Realms.cde"
+msgstr "CdE"
+
+msgid "Realms.event"
+msgstr "Events"
+
+msgid "Realms.ml"
+msgstr "Mailinglists"
+
+msgid "Realms.assembly"
+msgstr "Assemblies"
 
 msgid "IncorrectIBANCV"
 msgstr "Incorrectly configured IBAN"
@@ -3449,9 +3491,6 @@ msgstr ""
 msgid "Ambiguous course."
 msgstr ""
 
-msgid "Needs both admin privileges."
-msgstr ""
-
 msgid "Event is not concluded yet."
 msgstr ""
 
@@ -4162,37 +4201,13 @@ msgstr "All Users"
 msgid "00_query_ml_user_all"
 msgstr "All Users"
 
-msgid "is_meta_admin"
-msgstr "Meta admin"
+msgid "CdE membership & events"
+msgstr ""
 
-msgid "is_core_admin"
-msgstr "Core admin"
+msgid "CdE events"
+msgstr ""
 
-msgid "is_cde_admin"
-msgstr "CdE admin"
-
-msgid "is_finance_admin"
-msgstr "Finance admin"
-
-msgid "is_event_admin"
-msgstr "Event admin"
-
-msgid "is_ml_admin"
-msgstr "Mailinglist admin"
-
-msgid "is_assembly_admin"
-msgstr "Assembly admin"
-
-msgid "is_cdelokal_admin"
-msgstr "CdElokal admin"
-
-msgid "is_complaint_admin"
-msgstr "Case archive admin"
-
-msgid "is_auditor"
-msgstr "Auditor"
-
-msgid "Could not determine any db role."
+msgid "CdE mailinglist"
 msgstr ""
 
 msgid "Superfluous key found."
@@ -4739,19 +4754,6 @@ msgstr ""
 
 #, python-format
 msgid "Invalid input for the enumeration %(enum)s"
-msgstr ""
-
-#, python-format
-msgid "role %(role)s not available"
-msgstr ""
-
-msgid "Not available for instant pool"
-msgstr ""
-
-msgid "Connection in use!"
-msgstr ""
-
-msgid "Suppressed exception detected"
 msgstr ""
 
 msgid "Text"
@@ -5785,6 +5787,9 @@ msgid "Need to unlock case to access attachment."
 msgstr ""
 
 msgid "This user does not exist or is no enforcer."
+msgstr ""
+
+msgid "Invalid realm for genesis."
 msgstr ""
 
 msgid "Attachment missing."
@@ -9007,33 +9012,6 @@ msgid "Change Privileges"
 msgstr ""
 
 msgid "Privilege changes will have to be approved by another meta admin."
-msgstr ""
-
-msgid "Meta admin"
-msgstr ""
-
-msgid "Core admin"
-msgstr ""
-
-msgid "CdE admin"
-msgstr ""
-
-msgid "Finance admin"
-msgstr ""
-
-msgid "Event admin"
-msgstr ""
-
-msgid "Case archive admin"
-msgstr ""
-
-msgid "Mailinglist admin"
-msgstr ""
-
-msgid "CdElokal admin"
-msgstr ""
-
-msgid "Assembly admin"
 msgstr ""
 
 #, python-format
@@ -14505,15 +14483,6 @@ msgid "expired"
 msgstr ""
 
 msgid "not yet active"
-msgstr ""
-
-msgid "CdE membership & events"
-msgstr ""
-
-msgid "CdE events"
-msgstr ""
-
-msgid "CdE mailinglist"
 msgstr ""
 
 msgid "Wrong format for api token."
