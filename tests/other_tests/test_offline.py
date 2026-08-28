@@ -8,7 +8,7 @@ from bin.make_offline_vm import work
 
 import cdedb.models.droid as model_droid
 from cdedb.cli.database import connect
-from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, ALL_ADMIN_VIEWS
+from cdedb.common.roles import AdminViews
 from cdedb.config import SecretsConfig
 from cdedb.frontend.application import Application
 from tests.common import FrontendTest, storage
@@ -17,7 +17,7 @@ from tests.common import FrontendTest, storage
 class TestOffline(FrontendTest):
     @storage
     def test_offline_vm(self) -> None:
-        repopath = self.conf["REPOSITORY_PATH"]
+        repopath: pathlib.Path = self.conf["REPOSITORY_PATH"]
         user = {
             'username': "garcia@example.cde",
             'password': "notthenormalpassword",
@@ -53,7 +53,9 @@ class TestOffline(FrontendTest):
                     new_app, extra_environ=self.app_extra_environ
                 )
                 self.app.reset()
-                self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, ",".join(ALL_ADMIN_VIEWS))
+                self.app.set_cookie(
+                    AdminViews.cookie_name(), AdminViews.serialize(AdminViews)
+                )
 
                 # Test that it's running
                 self.get('/')

@@ -6,5 +6,7 @@ The database module specifies the PostgreSQL layout in several ``*.sql``
 files and provides python code encapsulating our :py:mod:`psycopg` usage.
 """
 
+from cdedb.database.connection import DBRole
+
 #: all available database roles
-DATABASE_ROLES = ("cdb_anonymous", "cdb_persona", "cdb_member", "cdb_admin")
+DATABASE_ROLES = tuple(DBRole)

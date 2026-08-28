@@ -2,6 +2,7 @@ import pathlib
 from collections.abc import Callable
 
 import magic
+from typing_extensions import TypeForm
 
 import cdedb.common.validation.types as vtypes
 from cdedb.backend.common import affirm_validation as affirm
@@ -9,6 +10,8 @@ from cdedb.common import RequestState, get_hash
 from cdedb.common.crypt import get_decrypt, get_encrypt
 
 UsageFunction = Callable[[RequestState, str], bool]
+
+_default_type = vtypes.PDFFile
 
 
 class AttachmentStore:
@@ -27,7 +30,7 @@ class AttachmentStore:
     affirms that it `is_available`.
     """
 
-    def __init__(self, dir_: pathlib.Path, type_: type[bytes] = vtypes.PDFFile):
+    def __init__(self, dir_: pathlib.Path, type_: TypeForm[bytes] = _default_type):
         self._dir = dir_
         self.type = type_
 
@@ -97,7 +100,11 @@ class EncryptedAttachmentStore(AttachmentStore):
     """
 
     def __init__(
-        self, dir_: pathlib.Path, type_: type[bytes] = vtypes.PDFFile, *, secret: bytes
+        self,
+        dir_: pathlib.Path,
+        type_: TypeForm[bytes] = _default_type,
+        *,
+        secret: bytes,
     ):
         super().__init__(dir_=dir_, type_=type_)
         self.encrypt = get_encrypt(secret)

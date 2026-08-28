@@ -19,7 +19,6 @@ from cdedb.common import (
     CdEDBObject,
     LineResolutions,
     RequestState,
-    Role,
     now,
 )
 from cdedb.common.i18n import (
@@ -28,7 +27,7 @@ from cdedb.common.i18n import (
     get_localized_country_codes,
 )
 from cdedb.common.query import QueryOperators
-from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME, extract_roles
+from cdedb.common.roles import AdminViews, Roles, RoleSet
 from cdedb.frontend.common import Worker
 from tests.common import (
     USER_DICT,
@@ -330,7 +329,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_cde_admin_views(self) -> None:
-        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
+        self.app.set_cookie(AdminViews.cookie_name(), "")
 
         self.traverse({'href': '/cde'})
         self._click_admin_view_button(
@@ -391,10 +390,10 @@ class TestCdEFrontend(FrontendTest):
     @as_users("garcia")
     def test_consent_decline(self) -> None:
 
-        def _roles(user: UserIdentifier) -> set[Role]:
-            return extract_roles(
-                self.core.get_persona_status(self.key, get_user(user)['id']).as_dict()
-            )
+        def _roles(user: UserIdentifier) -> RoleSet:
+            return self.core.get_persona_status(
+                self.key, get_user(user)['id']
+            ).get_user_roles()
 
         # First, do not change anything
         self.assertTitle("Einwilligung zur Mitgliedersuche")
@@ -404,7 +403,7 @@ class TestCdEFrontend(FrontendTest):
         self.login(USER_DICT["garcia"])
         f = self.response.forms['nackconsentform']
         self.submit(f)
-        self.assertNotIn("searchable", _roles(self.user))
+        self.assertNotIn(Roles.searchable, _roles(self.user))
         self.logout()
         # Now check, that you are not redirected to form, and search is not shown
         self.login(USER_DICT["garcia"])
@@ -415,13 +414,13 @@ class TestCdEFrontend(FrontendTest):
         self.traverse({'description': 'Datenschutzerklärung'})
         self.assertTitle("Einwilligung zur Mitgliedersuche")
         self.traverse({'description': 'Nichts ändern'})
-        self.assertNotIn("searchable", _roles(self.user))
+        self.assertNotIn(Roles.searchable, _roles(self.user))
         # Now, finally agree to consent
         self.traverse({'description': 'Datenschutzerklärung'})
         self.assertTitle("Einwilligung zur Mitgliedersuche")
         f = self.response.forms['ackconsentform']
         self.submit(f)
-        self.assertIn("searchable", _roles(self.user))
+        self.assertIn(Roles.searchable, _roles(self.user))
 
     @as_users("berta")
     def test_consent_noop(self) -> None:
@@ -459,7 +458,7 @@ class TestCdEFrontend(FrontendTest):
         f = self.response.forms['membersearchform']
         save = "/"
 
-        count = self.conf["QUOTA_VIEWS_PER_DAY"] // 2
+        count: int = self.conf["QUOTA_VIEWS_PER_DAY"] // 2
         for search, title in itertools.cycle((
             ("Anton", "Anton Administrator"),
             ("Inga Iota", "Inga Iota"),
@@ -722,14 +721,17 @@ class TestCdEFrontend(FrontendTest):
         f['near_pc'] = "47239"
         self.submit(f, check_notification=False)
         self.assertValidationError('near_radius', "Darf nicht leer sein.")
+        f = self.response.forms["membersearchform"]
         f['near_pc'] = ""
         f['near_radius'] = 5_000
         self.submit(f, check_notification=False)
         self.assertValidationError('near_pc', "Darf nicht leer sein.")
+        f = self.response.forms["membersearchform"]
         f['near_pc'] = "47239"
         f['near_radius'].force_value(22222)
         self.submit(f, check_notification=False)
         self.assertValidationError('near_radius', "Unzulässige Auswahl.")
+        f = self.response.forms["membersearchform"]
         f['near_radius'] = 5_000
         self.submit(f)
         self.assertPresence("2 Mitglieder gefunden", div='result-count')
@@ -2500,7 +2502,7 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("anton")
     def test_money_transfers_waived_fee(self) -> None:
-        self.get("/core/persona/5/promote?target_realm=cde&submitform=True")
+        self.get("/core/persona/5/promote?target_realm=Realms.cde&submitform=True")
         f = self.response.forms["promotionform"]
         f["trial_member"].checked = True
         f["change_note"] = "a really good reason"

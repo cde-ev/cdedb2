@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-08-27 23:06+0200\n"
+"POT-Creation-Date: 2026-08-29 00:19+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -915,6 +915,9 @@ msgstr "Feld geändert"
 msgid "EventLogCodes.field_removed"
 msgstr "Feld entfernt"
 
+msgid "EventLogCodes.field_pruned"
+msgstr "Feld geleert"
+
 msgid "EventLogCodes.questionnaire_changed"
 msgstr "Fragebogen geändert"
 
@@ -1403,6 +1406,48 @@ msgstr "Unterkünfte"
 
 msgid "ViolationKind.other"
 msgstr "Sonstiges"
+
+msgid "Roles.assembly_admin"
+msgstr "Versammlungs-Admin"
+
+msgid "Roles.core_admin"
+msgstr "Core-Admin"
+
+msgid "Roles.complaint_admin"
+msgstr "Fallarchiv-Admin"
+
+msgid "Roles.cdelokal_admin"
+msgstr "CdElokal-Admin"
+
+msgid "Roles.event_admin"
+msgstr "Veranstaltungs-Admin"
+
+msgid "Roles.ml_admin"
+msgstr "Mailinglisten-Admin"
+
+msgid "Roles.auditor"
+msgstr "Kassenprüfer"
+
+msgid "Roles.meta_admin"
+msgstr "Meta-Admin"
+
+msgid "Roles.cde_admin"
+msgstr "CdE-Admin"
+
+msgid "Roles.finance_admin"
+msgstr "Finanz-Admin"
+
+msgid "Realms.cde"
+msgstr "CdE"
+
+msgid "Realms.event"
+msgstr "Veranstaltungen"
+
+msgid "Realms.ml"
+msgstr "Mailinglisten"
+
+msgid "Realms.assembly"
+msgstr "Versammlungen"
 
 msgid "IncorrectIBANCV"
 msgstr "Falsche IBAN-Konfiguration"
@@ -3287,6 +3332,9 @@ msgstr ""
 "Die Zugehörigkeit und der Datentyp eines Feldes können nicht geändert "
 "werden, falls es in einem Teilnahmebeitrag referenziert wird."
 
+msgid "Unknown event field(s)."
+msgstr "Unbekannte(s) Datenfeld(er)."
+
 msgid "Must be orga to retrieve stored queries."
 msgstr "Du musst Orga sein, um gespeicherte Suchabfragen zu nutzen."
 
@@ -3501,9 +3549,6 @@ msgstr "Kein Kurs gefunden."
 
 msgid "Ambiguous course."
 msgstr "Uneindeutiger Kurs."
-
-msgid "Needs both admin privileges."
-msgstr "Mehr Adminprivilegien benötigt."
 
 msgid "Event is not concluded yet."
 msgstr "Veranstaltung ist noch nicht vorüber."
@@ -4223,38 +4268,14 @@ msgstr "Alle (nicht-archivierten) Accounts"
 msgid "00_query_ml_user_all"
 msgstr "Alle (nicht-archivierten) Accounts"
 
-msgid "is_meta_admin"
-msgstr "Meta-Admin"
+msgid "CdE membership & events"
+msgstr "CdE-Mitgliedschaft und Veranstaltungen"
 
-msgid "is_core_admin"
-msgstr "Core-Admin"
+msgid "CdE events"
+msgstr "CdE-Veranstaltungen"
 
-msgid "is_cde_admin"
-msgstr "CdE-Admin"
-
-msgid "is_finance_admin"
-msgstr "Finanz-Admin"
-
-msgid "is_event_admin"
-msgstr "Veranstaltungs-Admin"
-
-msgid "is_ml_admin"
-msgstr "Mailinglisten-Admin"
-
-msgid "is_assembly_admin"
-msgstr "Versammlungs-Admin"
-
-msgid "is_cdelokal_admin"
-msgstr "CdElokal-Admin"
-
-msgid "is_complaint_admin"
-msgstr "Fallarchiv-Admin"
-
-msgid "is_auditor"
-msgstr "Kassenprüfer:in"
-
-msgid "Could not determine any db role."
-msgstr "Konnte keine Datenbankrolle bestimmen."
+msgid "CdE mailinglist"
+msgstr "CdE-Mailingliste"
 
 msgid "Superfluous key found."
 msgstr "Unerwarteter Eintrag gefunden."
@@ -4818,19 +4839,6 @@ msgstr "SubscriptionState.none wird nicht in die Datenbank geschrieben."
 #, python-format
 msgid "Invalid input for the enumeration %(enum)s"
 msgstr "Ungültige Eingabe für Enumeration %(enum)s."
-
-#, python-format
-msgid "role %(role)s not available"
-msgstr "Rolle %(role)s ist nicht verfügbar"
-
-msgid "Not available for instant pool"
-msgstr "Für den instant pool nicht verfügbar."
-
-msgid "Connection in use!"
-msgstr "Verbindung bereits in Benutzung!"
-
-msgid "Suppressed exception detected"
-msgstr "Unterdrückte Exception gefunden."
 
 msgid "Text"
 msgstr "Text"
@@ -5894,6 +5902,9 @@ msgstr "Fall muss entsperrt sein um auf Anhang zuzugreifen."
 msgid "This user does not exist or is no enforcer."
 msgstr "Dieser Account existiert nicht oder ist kein:e Maßnahmenmanager:in."
 
+msgid "Invalid realm for genesis."
+msgstr "Ungültiger Bereich für Accountanfrage."
+
 msgid "Attachment missing."
 msgstr "Anhang fehlt."
 
@@ -6163,6 +6174,30 @@ msgstr "Keine Anmeldung gefunden."
 
 msgid "Field name not unique."
 msgstr "Feldname nicht eindeutig."
+
+msgid "Nothing selected."
+msgstr "Nichts ausgewählt."
+
+#, python-format
+msgid "Deleted data from %(num)s registrations."
+msgstr "Daten aus %(num)s Anmeldungen gelöscht."
+
+msgid "No registrations."
+msgstr "Keine Anmeldungen."
+
+#, python-format
+msgid "Deleted data from %(num)s courses."
+msgstr "Daten aus %(num)s Kursen gelöscht."
+
+msgid "No courses."
+msgstr "Keine Kurse."
+
+#, python-format
+msgid "Deleted data from %(num)s lodgements."
+msgstr "Daten aus %(num)s Unterkünften gelöscht."
+
+msgid "No lodgements."
+msgstr "Keine Unterkünfte."
 
 msgid "Wrong associated event."
 msgstr "Falsche Veranstaltung referenziert."
@@ -9281,33 +9316,6 @@ msgid "Privilege changes will have to be approved by another meta admin."
 msgstr ""
 "Änderungen der Admin-Privilegien müssen durch einen anderen Meta-Admin "
 "bestätigt werden."
-
-msgid "Meta admin"
-msgstr "Meta-Admins"
-
-msgid "Core admin"
-msgstr "Core-Admins"
-
-msgid "CdE admin"
-msgstr "CdE-Admins"
-
-msgid "Finance admin"
-msgstr "Finanz-Admins"
-
-msgid "Event admin"
-msgstr "Veranstaltungs-Admins"
-
-msgid "Case archive admin"
-msgstr "Fallarchiv-Admins"
-
-msgid "Mailinglist admin"
-msgstr "Mailinglisten-Admins"
-
-msgid "CdElokal admin"
-msgstr "CdElokal-Admins"
-
-msgid "Assembly admin"
-msgstr "Versammlungs-Admins"
 
 #, python-format
 msgid "Edit %(name)s"
@@ -12590,34 +12598,6 @@ msgstr "Betreute Veranstaltungen"
 msgid "Recently Concluded Events"
 msgstr "Kürzlich beendete Veranstaltungen"
 
-msgid "Past Events_[[long form]]"
-msgstr "Vergangene Veranstaltungen"
-
-#, python-format
-msgid ""
-"Previous CdE events, including their courses and participants, can be found "
-"at %(link)s – together with Junior- and SchülerAkademien. Furthermore, there "
-"is a %(list)s of all events which have not been cleansed yet."
-msgstr ""
-"Die früheren CdE-Veranstaltungen mit ihren Teilnehmenden und Kursen findest "
-"Du gemeinsam mit den Schüler- und JuniorAkademien unter %(link)s. Darüber "
-"hinaus gibt es eine %(list)s aller Veranstaltungen, die noch nicht von "
-"persönlichen Daten bereinigt und gelöscht wurden."
-
-msgid "list"
-msgstr "Liste"
-
-#, python-format
-msgid ""
-"Previous CdE events are accessible to members only – together with Junior- "
-"and SchülerAkademien. However, there is a %(list)s of all events which have "
-"not been cleansed yet."
-msgstr ""
-"Die früheren CdE-Veranstaltungen gemeinsam mit den Schüler- und "
-"JuniorAkademien sind nur Mitgliedern zugänglich. Allerdings gibt es eine "
-"%(list)s aller Veranstaltungen, die noch nicht von persönlichen Daten "
-"bereinigt und gelöscht wurden."
-
 #, python-format
 msgid ""
 "Event helpers have comprehensive readonly access to event information which "
@@ -13034,6 +13014,9 @@ msgstr "Beim Checkin anzeigen"
 msgid "Custom Filters"
 msgstr "Eigene Filter"
 
+msgid "Prune Field Data"
+msgstr "Datenfeld leeren"
+
 msgid "Custom Fields Notes"
 msgstr "Notizen zu Datenfeldern"
 
@@ -13076,6 +13059,44 @@ msgstr "Beschreibungstext"
 
 msgid "Value"
 msgstr "Wert"
+
+#, python-format
+msgid "Prune Field Data (%(title)s)"
+msgstr "Datenfeld leeren (%(title)s)"
+
+msgid ""
+"Select a custom data field to prune data stored for this field from all "
+"associated entities (registrations/courses/lodgements)."
+msgstr ""
+"Wähle ein Datenfald aus um die damit verknüpften Daten aus allen Datensätzen "
+"(Anmeldungen/Kursen/Unterkünften) zu löschen."
+
+#, python-format
+msgid ""
+"This will preserve the information whether there was some data stored in the "
+"field. It will do nothing for boolean (%(boolean)s) fields. If you need to "
+"completely remove this information, you can use the multi edit for "
+"registrations or the \"%(set_field)s\" functionality for courses and "
+"lodgements."
+msgstr ""
+"Hierdurch wird die Information beibehalten, ob mit dem Datenfeld Daten "
+"verknüpft waren. Diese Aktion hat keinen Effekt auf Boolsche Datenfelder "
+"(%(boolean)s). Um diese Informationen vollständig zu löschen kannst du die "
+"Massenbearbeitung für Anmeldungen verwenden oder die \"%(set_field)s\"-"
+"Funktion für Kurse und Unterkünfte."
+
+msgid "Set Field (Registrations)"
+msgstr "Datenfeld setzen (Anmeldungen)"
+
+msgid "Set Field (Courses)"
+msgstr "Datenfeld setzen (Kurse)"
+
+msgid "Set Field (Lodgements)"
+msgstr "Datenfeld setzen (Unterkünfte)"
+
+msgid "All data associated with these fields will be irreversibly deleted."
+msgstr ""
+"Alle mit diese Datenfeldern verknüpften Daten werden irreversibel gelöscht."
 
 #, python-format
 msgid "for %(track)s"
@@ -13771,6 +13792,9 @@ msgid ""
 msgstr ""
 "Achtung: Die neue Veranstaltung ist direkt für alle CdE-Mitglieder in der "
 "Liste der verg. Veranstaltungen sichtbar."
+
+msgid "Past Events_[[long form]]"
+msgstr "Vergangene Veranstaltungen"
 
 #, python-format
 msgid "%(count)s Course"
@@ -15566,15 +15590,6 @@ msgstr "abgelaufen"
 
 msgid "not yet active"
 msgstr "noch nicht aktiv"
-
-msgid "CdE membership & events"
-msgstr "CdE-Mitgliedschaft und Veranstaltungen"
-
-msgid "CdE events"
-msgstr "CdE-Veranstaltungen"
-
-msgid "CdE mailinglist"
-msgstr "CdE-Mailingliste"
 
 msgid "Wrong format for api token."
 msgstr "Falsches formatiertes API-Token."

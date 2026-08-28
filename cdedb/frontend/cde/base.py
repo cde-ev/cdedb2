@@ -38,7 +38,7 @@ from cdedb.common.i18n import get_country_code_from_country, get_localized_count
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryConstraint, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import FinanceLogFilter
-from cdedb.common.roles import PERSONA_DEFAULTS
+from cdedb.common.roles import PERSONA_DEFAULTS, Realms, Roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.validate import (
     PERSONA_FULL_CREATION,
@@ -86,13 +86,9 @@ class CdEBaseFrontend(AbstractUserFrontend):
     """This offers services to the members as well as facilities for managing
     the organization."""
 
-    realm = "cde"
+    realm = Realms.cde
 
-    @classmethod
-    def is_admin(cls, rs: RequestState) -> bool:
-        return super().is_admin(rs)
-
-    @access("cde")
+    @access(Roles.cde)
     def index(self, rs: RequestState) -> Response:
         """Render start page."""
         meta_info = self.coreproxy.get_meta_info(rs)
@@ -100,7 +96,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         deadline = None
         annual_fee = self.cdeproxy.annual_membership_fee(rs)
         has_lastschrift = False
-        if "member" in rs.user.roles:
+        if Roles.member in rs.user.new_roles:
             assert rs.user.persona_id is not None
             has_lastschrift = bool(
                 self.cdeproxy.list_lastschrift(
@@ -121,7 +117,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             },
         )
 
-    @access("cde")
+    @access(Roles.cde)
     def membership_qr(self, rs: RequestState) -> Response:
         meta_info = self.coreproxy.get_meta_info(rs)
         user = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
@@ -130,7 +126,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         )
         return self.serve_qrcode(rs, qr)
 
-    @access("member")
+    @access(Roles.member)
     def consent_decision_form(self, rs: RequestState) -> Response:
         """After login ask cde members for decision about searchability. Do
         this only if no decision has been made in the past.
@@ -143,7 +139,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             rs, "consent_decision", {'decided_search': user.decided_search}
         )
 
-    @access("member", modi={"POST"})
+    @access(Roles.member, modi={"POST"})
     @REQUESTdata("ack")
     def consent_decision(self, rs: RequestState, ack: bool) -> Response:
         """Record decision."""
@@ -169,7 +165,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             return self.redirect(rs, "core/index")
         return self.redirect(rs, "cde/index")
 
-    @access("cde_admin", "member")
+    @access(Roles.cde_admin, Roles.member)
     def member_stats(self, rs: RequestState) -> Response:
         """Display stats about our members."""
         simple_stats, other_stats, year_stats, institution_stats = (
@@ -188,11 +184,11 @@ class CdEBaseFrontend(AbstractUserFrontend):
             },
         )
 
-    @access("persona")
+    @access(Roles.persona)
     @REQUESTdata("is_search")
     def member_search(self, rs: RequestState, is_search: bool) -> Response:
         """Search for members."""
-        if "searchable" not in rs.user.roles:
+        if Roles.searchable not in rs.user.new_roles:
             # As this is linked externally, show a meaningful error message to
             # unprivileged users.
             rs.ignore_validation_errors()
@@ -356,7 +352,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             },
         )
 
-    @access("core_admin", "cde_admin")
+    @access(Roles.core_admin, Roles.cde_admin)
     @REQUESTdata("download", "is_search")
     def user_search(
         self, rs: RequestState, download: str | None, is_search: bool
@@ -389,7 +385,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             choices=choices,
         )
 
-    @access("core_admin", "cde_admin")
+    @access(Roles.core_admin, Roles.cde_admin)
     def create_user_form(self, rs: RequestState) -> Response:
         defaults = {
             'is_member': True,
@@ -402,7 +398,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, defaults)
         return super().create_user_form(rs)
 
-    @access("core_admin", "cde_admin", modi={"POST"})
+    @access(Roles.core_admin, Roles.cde_admin, modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['cde']))
     def create_user(self, rs: RequestState, data: CdEDBObject) -> Response:
         defaults = {
@@ -417,7 +413,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         data.update(defaults)
         return super().create_user(rs, data)
 
-    @access("cde_admin")
+    @access(Roles.cde_admin)
     def batch_admission_form(
         self,
         rs: RequestState,
@@ -696,7 +692,10 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'persona',
         }
         relevant_data = [
-            {k: v for k, v in item.items() if k in relevant_keys} for item in data
+            vtypes.BatchAdmissionEntry({
+                k: v for k, v in item.items() if k in relevant_keys
+            })
+            for item in data
         ]
         with TransactionObserver(rs, self, "perform_batch_admission"):
             success, stats = self.cdeproxy.perform_batch_admission(
@@ -748,7 +747,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         else:
             return "low"
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @REQUESTfile("accounts_file")
     @REQUESTdata(
         "membership", "trial_membership", "consent", "sendmail", "finalized", "accounts"
@@ -775,15 +774,17 @@ class CdEBaseFrontend(AbstractUserFrontend):
         The internal parameter finalized is used to explicitly signal at
         what point account creation will happen.
         """
-        accounts_file = check(rs, vtypes.CSVFile | None, accounts_file, "accounts_file")
+        validated_accounts_file = check(
+            rs, vtypes.CSVFile | None, accounts_file, "accounts_file"
+        )
         if rs.has_validation_errors():
             return self.batch_admission_form(rs)
 
-        if accounts_file and accounts:
+        if validated_accounts_file and accounts:
             rs.notify("warning", n_("Only one input method allowed."))
             return self.batch_admission_form(rs)
-        elif accounts_file:
-            rs.values["accounts"] = accounts = accounts_file
+        elif validated_accounts_file:
+            rs.values["accounts"] = accounts = validated_accounts_file
             accountlines = accounts.splitlines()
         elif accounts:
             accountlines = accounts.splitlines()
@@ -949,7 +950,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         )
         return set(lastschrift_ids) - set(transaction_ids.values())
 
-    @access("member", "cde_admin")
+    @access(Roles.member, Roles.cde_admin)
     def view_misc(self, rs: RequestState) -> Response:
         """View miscellaneos things."""
         meta_data = self.coreproxy.get_meta_info(rs)
@@ -958,7 +959,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
 
     @REQUESTdatadict(*FinanceLogFilter.requestdict_fields())
     @REQUESTdata("download")
-    @access("cde_admin", "auditor")
+    @access(Roles.cde_admin, Roles.auditor)
     def view_finance_log(
         self, rs: RequestState, data: CdEDBObject, download: bool
     ) -> Response:

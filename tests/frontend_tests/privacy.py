@@ -4,6 +4,7 @@ import datetime
 import urllib.parse
 
 from cdedb.common import CdEDBObject
+from cdedb.common.roles import AdminViews
 from tests.common import (
     USER_DICT,
     FrontendTest,
@@ -503,9 +504,7 @@ class TestPrivacyFrontend(FrontendTest):
         #                                        check_div=False)
 
     @as_users("annika", "ludwig", "nina", "quintus", "viktor", maintain_data=True)
-    @admin_views(
-        "ml_mod", "ml_mod_cde", "ml_mod_event", "ml_mod_assembly", "ml_mod_cdelokal"
-    )
+    @admin_views(*AdminViews.all_mod_views())
     def test_profile_as_relevant_ml_admin(self) -> None:
         ml_admin = 'nina'
         all_ml = (
@@ -532,7 +531,7 @@ class TestPrivacyFrontend(FrontendTest):
                 )
 
     @as_users("simon", "janis")
-    @admin_views("complaint")
+    @admin_views(AdminViews.complaint)
     def test_profile_as_enforcer(self) -> None:
         self.traverse("Maßnahmenübersicht", "Bertå Beispiel", "Maßnahmen$")
         self.assertTitle("Bertå Beispiel – Maßnahmen")

@@ -28,6 +28,8 @@ MAILMAN_BASIC_AUTH_PASSWORD = "secret"
 API_TOKENS = {
     # resolve API for CyberAka
     "resolve": "a1o2e3u4i5d6h7t8n9s0",
+    # resolve API for Zammad
+    "zammad_resolve": "zammad123very456secure",
     # zero-config partial export in offline mode
     "quick_partial_export": "y1f2i3d4x5b6",
 }

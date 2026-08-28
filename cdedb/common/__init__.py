@@ -30,6 +30,7 @@ from types import UnionType
 from typing import (
     TYPE_CHECKING,
     Any,
+    Self,
     Union,
     cast,
     get_args,
@@ -41,6 +42,7 @@ import phonenumbers
 import psycopg2.extras
 import werkzeug
 import werkzeug.datastructures
+import werkzeug.exceptions
 import werkzeug.routing
 from schulze_condorcet.types import Candidate
 from typing_extensions import TypeForm
@@ -48,14 +50,19 @@ from typing_extensions import TypeForm
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
-from cdedb.common.fields import Realm, Role
 from cdedb.common.n_ import n_
-from cdedb.common.roles import roles_to_admin_views
+from cdedb.common.roles import (
+    AdminViews,
+    AdminViewSet,
+    Roles as _Roles,
+    RoleSet as _RoleSet,
+)
 from cdedb.config import Config
 from cdedb.database.connection import ConnectionContainer
 from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
 
 if TYPE_CHECKING:
+    import cdedb.models.core as models_core
     import cdedb.models.event as models_event
     from cdedb.models.common import CdEDataclassMap
 
@@ -95,9 +102,6 @@ Error = tuple[str | None, Exception]
 NotificationType = str
 Notification = tuple[NotificationType, str, CdEDBObject]
 
-# Admin views a user may activate/deactivate.
-AdminView = str
-
 CdEDBLog = tuple[int, tuple[CdEDBObject, ...]]
 
 PathLike = pathlib.Path | str
@@ -113,8 +117,7 @@ class User:
         *,
         persona_id: vtypes.PersonaID | None = None,
         droid: "APIToken | None" = None,
-        roles: set[Role] | None = None,
-        realm_roles: dict[Realm, set[str]] | None = None,
+        roles: _RoleSet | None = None,
         given_names: str = "",
         nickname: str = "",
         family_name: str = "",
@@ -129,8 +132,7 @@ class User:
         self.droid = droid
         if self.persona_id and self.droid:
             raise ValueError("Cannot be both droid and persona.")
-        self.roles = roles or {"anonymous"}
-        self.realm_roles = realm_roles or {}
+        self.new_roles = roles or _RoleSet({_Roles.anonymous})
         self.username = username
         self.given_names = given_names
         self.nickname = nickname
@@ -142,23 +144,19 @@ class User:
         )
         self.moderator: set[int] = set(moderator) if moderator else set()
         self.presider: set[int] = set(presider) if presider else set()
-        self.admin_views: set[AdminView] = set()
+        self.admin_views: AdminViewSet = AdminViewSet()
 
     @property
-    def all_roles(self) -> set[Role]:
-        return self.roles.union(
-            f"{realm}.{realm_role}"
-            for realm, realm_roles in self.realm_roles.items()
-            for realm_role in realm_roles
-        )
+    def roles(self) -> set[str]:
+        return self.new_roles.as_strings()
 
     @property
-    def available_admin_views(self) -> set[AdminView]:
-        return roles_to_admin_views(self.all_roles)
+    def available_admin_views(self) -> AdminViewSet:
+        return AdminViews.from_roles(self.new_roles)
 
     def init_admin_views_from_cookie(self, enabled_views_cookie: str) -> None:
-        enabled_views = enabled_views_cookie.split(',')
-        self.admin_views = self.available_admin_views & set(enabled_views)
+        enabled_views = AdminViews.deserialize(enabled_views_cookie)
+        self.admin_views = self.available_admin_views & enabled_views
 
     def persona_name(self, include_nickname: bool = False) -> str:
         return make_persona_name(
@@ -168,6 +166,19 @@ class User:
                 'family_name': self.family_name,
             },
             include_nickname=include_nickname,
+        )
+
+    @classmethod
+    def from_persona(
+        cls, status: "models_core.PersonaStatus", persona: "models_core.CorePersona"
+    ) -> Self:
+        return cls(
+            roles=status.get_session_roles(),
+            persona_id=persona.id,
+            username=persona.username,
+            given_names=persona.given_names,
+            nickname=persona.nickname or "",
+            family_name=persona.family_name,
         )
 
 
@@ -403,6 +414,16 @@ class RequestState(ConnectionContainer):
         for key, value in self.retrieve_validation_errors():
             ret.setdefault(key, []).append(value)
         return ret
+
+    def raise_for_validation_errors(self) -> None:
+        if self.has_validation_errors():
+            raise werkzeug.exceptions.BadRequest(
+                "Validation failed! "
+                + " ".join(
+                    f"{key}: {error}"
+                    for key, error in self.retrieve_validation_errors()
+                )
+            )
 
 
 if TYPE_CHECKING:
@@ -720,16 +741,10 @@ def int_to_words(num: int, lang: str) -> str:
 class CustomJSONEncoder(json.JSONEncoder):
     """Custom JSON encoder to handle the types that occur for us."""
 
-    @overload
-    def default(
-        self, obj: datetime.date | datetime.datetime | decimal.Decimal
-    ) -> str: ...
-
-    @overload
-    def default[T](self, obj: set[T]) -> tuple[T, ...]: ...
-
-    def default(self, obj: Any) -> str | tuple[Any, ...] | dict[str, Any]:
+    def default(self, o: Any) -> str | tuple[Any, ...] | dict[str, Any]:
         import cdedb.models.common as models  # noqa: PLC0415  # pylint: disable=import-outside-toplevel
+
+        obj = o
 
         if isinstance(obj, (datetime.datetime, datetime.date)):
             return obj.isoformat()
@@ -862,7 +877,7 @@ def is_list_type(type_: TypeForm[Any]) -> bool:
     """
     return (
         hasattr(type_, "__supertype__")
-        and is_list_type(type_.__supertype__)
+        and is_list_type(type_.__supertype__)  # pyrefly: ignore[internal-error]
         or get_origin(type_) is list  # get_origin(list[something]) is list
     )
 

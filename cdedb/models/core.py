@@ -6,7 +6,6 @@ import copy
 import dataclasses
 import datetime
 import decimal
-import functools
 import logging
 import re
 from enum import auto
@@ -21,6 +20,7 @@ from cdedb.common.exceptions import CryptographyError
 from cdedb.common.i18n import format_country_code
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
+from cdedb.common.roles import Realms, RealmSet, Roles, RoleSet, extract_roles
 from cdedb.common.sorting import Sortkey
 from cdedb.config import Config
 from cdedb.filter import cdedbid_filter
@@ -331,23 +331,19 @@ class Persona(CdEDataclass):
                 ret.add(field.name)
         return ret
 
-    @classmethod
-    def get_realm_bits(cls) -> set[str]:
-        ret = set()
-        for field in dataclasses.fields(cls):
-            if field.name.startswith("is_") and field.name.endswith("_realm"):
-                ret.add(field.name)
-        return ret
+    def _get_user_roles(self) -> RoleSet:
+        """Determine the users roles from their data bits.
 
-    @classmethod
-    def get_admin_bits(cls) -> set[str]:
-        ret = set()
-        for field in dataclasses.fields(cls):
-            if field.name.startswith("is_") and field.name.endswith("_admin"):
-                ret.add(field.name)
-            elif field.name == "is_auditor":
-                ret.add(field.name)
-        return ret
+        BEWARE! This cannot take admin roles into account, unless called on
+        the 'PersonaStatus' subclass.
+
+        BEWARE! This must not be used to determine the acting users privileges, only
+        to determine the roles of a user to be acted upon.
+        """
+        return extract_roles(self.as_dict(), introspection_only=True)
+
+    def get_user_realms(self) -> RealmSet:
+        return Realms.from_user_roles(self._get_user_roles())
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -372,10 +368,26 @@ class PersonaStatus(Persona):
     is_finance_admin: bool = False
     is_auditor: bool = False
 
-    @functools.cached_property
+    def get_user_roles(self) -> RoleSet:
+        """
+        Unlike the method of the parent class this has all the information it needs to
+        fully determine the users roles.
+
+        BEWARE! This still must not be used to determine the acting users privileges.
+        """
+        return self._get_user_roles()
+
+    def get_session_roles(self) -> RoleSet:
+        """
+        Determine the roles of the acting user.
+
+        Unlike 'get_user_roles' this is to be used for user sessions.
+        """
+        return extract_roles(self.as_dict(), introspection_only=False)
+
+    @property
     def is_any_admin(self) -> bool:
-        "Persona has any admin privilege."
-        return any(getattr(self, bit) for bit in self.get_admin_bits())
+        return self.get_user_roles().is_any_admin()
 
     def get_sortkey(self) -> Sortkey:
         return (self.id,)
@@ -611,7 +623,7 @@ class CdEPersona(EventAssemblyPersona):
             msg = f"{CONFIG['PERIODS_PER_YEAR']} periods per year not supported."
             _LOGGER.error(msg)
             return now().date()
-        periods_left = self.balance // CONFIG["MEMBERSHIP_FEE"]
+        periods_left: int = self.balance // CONFIG["MEMBERSHIP_FEE"]
         if self.trial_member:
             periods_left += 1
         if period['balance_done']:
@@ -647,9 +659,10 @@ if PersonaStatus.get_status_bits() != CdEPersona.get_status_bits():
 @dataclasses.dataclass(kw_only=True)
 class GenesisCase(CdEDataclass):
     database_table = "core.genesis_cases"
+    _realm: ClassVar[Realms]
 
     # only changable via separate frontend endpoint
-    realm: vtypes.Realm = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
+    realm: Realms = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
     notes: str
     status: const.GenesisStati = dataclasses.field(metadata=Meta.input_exclude.as_dict)
     ctime: datetime.datetime = dataclasses.field(metadata=Meta.input_exclude.as_dict)
@@ -673,9 +686,9 @@ class GenesisCase(CdEDataclass):
     def get_persona_class(cls) -> type[CorePersona]:
         # extracts the persona class from its type annotation,
         # since this is static information
-        return {
+        return {  # type: ignore[return-value]
             field.type for field in dataclasses.fields(cls) if field.name == "persona"
-        }.pop()  # type: ignore[return-value]
+        }.pop()
 
     @classmethod
     def dataclass_fields(
@@ -741,13 +754,13 @@ class GenesisCase(CdEDataclass):
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
-        realm = data.get("realm")
+        realm = Realms(data["realm"])  # type: ignore[call-arg]
         # Dispatch data to correct dataclass based on realm.
-        if realm == "ml":
+        if realm == Realms.ml:
             return GenesisCaseMl.from_database(data)  # type: ignore[return-value]
-        elif realm == "event":
+        elif realm == Realms.event:
             return GenesisCaseEvent.from_database(data)  # type: ignore[return-value]
-        elif realm == "cde":
+        elif realm == Realms.cde:
             return GenesisCaseCdE.from_database(data)  # type: ignore[return-value]
         else:
             raise RuntimeError
@@ -758,29 +771,16 @@ class GenesisCase(CdEDataclass):
             return NotImplemented
         return self._lt_inner(other)
 
-    available_realms: ClassVar[dict[vtypes.Realm, str]] = {
-        vtypes.Realm("cde"): n_("CdE membership & events"),
-        vtypes.Realm("event"): n_("CdE events"),
-        vtypes.Realm("ml"): n_("CdE mailinglist"),
-    }
-
     @classmethod
-    def get_model_by_realm(cls, realm: str) -> type["GenesisCase"]:
-        return {
-            "ml": GenesisCaseMl,
-            "event": GenesisCaseEvent,
-            "cde": GenesisCaseCdE,
-        }[realm]
+    def get_model_by_realm(cls, realm: Realms) -> type["GenesisCase"]:
+        for subclass in cls.__subclasses__():
+            if subclass._realm == realm:
+                return subclass
+        raise KeyError(realm)
 
     @property
-    def model(self) -> type["GenesisCase"]:
-        return self.get_model_by_realm(self.realm)
-
-    all_admins: ClassVar[set[str]] = {f"{realm}_admin" for realm in available_realms}
-
-    @property
-    def relative_admin(self) -> str:
-        return f"{self.realm}_admin"
+    def relative_admin(self) -> Roles:
+        return self.realm.admin_role
 
     def get_persona_upgrade(self) -> dict[str, Any]:
         """Dict to upgrade an existing persona as the final stage of a genesis case."""
@@ -796,9 +796,22 @@ class GenesisCase(CdEDataclass):
         """Dataclass to create a new persona as the final stage of a genesis case."""
         ...
 
+    @classmethod
+    def get_fields_per_realm(cls) -> dict[str, set[str]]:
+        return {
+            str(realm): {
+                field.name
+                for field in cls.get_model_by_realm(realm).dataclass_fields(
+                    only_persona=True
+                )
+            }
+            for realm in Realms.get_available_genesis_realms()
+        }
+
 
 @dataclasses.dataclass(kw_only=True)
 class GenesisCaseMl(GenesisCase):
+    _realm = Realms.ml
     persona: MlPersona
 
     @classmethod
@@ -821,6 +834,7 @@ class GenesisCaseMl(GenesisCase):
 
 @dataclasses.dataclass(kw_only=True)
 class GenesisCaseEvent(GenesisCase):
+    _realm = Realms.event
     persona: EventPersona
 
     @classmethod
@@ -843,6 +857,7 @@ class GenesisCaseEvent(GenesisCase):
 
 @dataclasses.dataclass(kw_only=True)
 class GenesisCaseCdE(GenesisCase):
+    _realm = Realms.cde
     persona: CdEPersona
     attachment_hash: str = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
 

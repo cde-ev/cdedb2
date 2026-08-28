@@ -11,7 +11,7 @@
     {% endif %}
 {% endblock %}
 {% block content %}
-    {% if "past_event" in user.admin_views %}
+    {% if user.admin_views.has(AdminViews.past_event) %}
         <div class="p">
             {{ util.href(cdedblink("event/create_past_event_form"), gettext("Create Past Event"),
                     aclass="btn btn-success btn-sm", icon="plus") }}
@@ -37,12 +37,12 @@
             {% for pevent in past_events %}
                 <li>
                     {{ util.href(cdedblink("event/show_past_event", {"pevent_id": pevent.id}), pevent.title, readonly=(
-                        (user.roles.isdisjoint(["member", "cde_admin"])
+                        (not user.new_roles.has_any(enums["Roles"].member, enums["Roles"].cde_admin)
                         and (pevent.id not in participated_pevent_ids))
                     )) }}
-                    {% if "past_event" in user.admin_views %}[{{ pevent.shortname }}]{% endif %}
+                    {% if user.admin_views.has(AdminViews.past_event) %}[{{ pevent.shortname }}]{% endif %}
                     {% if not values.get('institution') %}({{ pevent.institution.shortname }}){% endif %}
-                    {% if "past_event" in user.admin_views %}
+                    {% if user.admin_views.has(AdminViews.past_event) %}
                         <small class="text-muted nowrap">
                             {% trans count=stats[pevent.id]['courses'] %}
                                 {{ count }} Course

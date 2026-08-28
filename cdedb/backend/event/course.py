@@ -34,13 +34,14 @@ from cdedb.common.privileges import (
     EventPrivileges,
     is_privileged_event as is_privileged,
 )
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import DatabaseValue_s, ParamDict
 
 
 class EventCourseBackend(EventBaseBackend, abc.ABC):
-    @access("anonymous")
+    @access(Roles.anonymous)
     def list_courses(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> dict[vtypes.CourseID, str]:
@@ -54,7 +55,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
         )
         return {e['id']: e['title'] for e in data}
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def get_courses(
         self,
         rs: RequestState,
@@ -90,7 +91,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
 
             for course in course_data.values():
                 course['event'] = event
-                course["segments"] = []
+                course["segments"] = []  # pyrefly: ignore[implicit-any-empty-container]
             for segment in segment_data:
                 course_data[segment["course_id"]]["segments"].append(segment)
 
@@ -106,7 +107,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
 
     get_course: _GetCourseProtocol = singularize(get_courses, "course_ids", "course_id")
 
-    @access("event")
+    @access(Roles.event)
     def set_course(
         self, rs: RequestState, course_id: vtypes.CourseID, data: CdEDBObject
     ) -> DefaultReturnCode:
@@ -263,7 +264,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def create_course(
         self, rs: RequestState, event_id: vtypes.EventID, data: CdEDBObject
     ) -> vtypes.CourseID:
@@ -297,7 +298,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
             self._set_course_segments(rs, data['segments'], course)
         return new_id
 
-    @access("event")
+    @access(Roles.event)
     def delete_course_blockers(
         self, rs: RequestState, course_id: vtypes.CourseID
     ) -> DeletionBlockers:
@@ -315,7 +316,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
-        course_id = affirm(vtypes.ID, course_id)
+        course_id = affirm(vtypes.CourseID, course_id)
         blockers = {}
 
         attendees = self.sql_select(
@@ -352,7 +353,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
 
         return blockers
 
-    @access("event")
+    @access(Roles.event)
     def delete_course(
         self,
         rs: RequestState,
@@ -474,7 +475,7 @@ class EventCourseBackend(EventBaseBackend, abc.ABC):
                 )
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def get_attendee_stats(
         self, rs: RequestState, course_id: vtypes.CourseID
     ) -> models.CourseAttendees:

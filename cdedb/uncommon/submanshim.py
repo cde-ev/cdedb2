@@ -3,6 +3,7 @@
 Splitting this off now necessitates some corrective action."""
 
 # mypy: disable-error-code="assignment"
+# pyrefly: ignore-errors
 
 from subman.machine import SubscriptionAction, SubscriptionPolicy, SubscriptionState
 

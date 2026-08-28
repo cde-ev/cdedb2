@@ -116,7 +116,7 @@ class CdEDBTestLock:
 
 
 def _load_tests(
-    testpatterns: Optional[List[str]], test_modules: Optional[List[ModuleType]] = None
+    testpatterns: List[str] | None, test_modules: List[ModuleType] | None = None
 ) -> TestSuite:
     """Load all tests from test_modules matching one of testpatterns."""
     test_modules = test_modules or list()
@@ -140,7 +140,7 @@ def run_application_tests(
     testpatterns: Optional[List[str]] = None, *, verbose: bool = False
 ) -> int:
     # load all tests which are not meant to be run separately (f.e. the ldap tests)
-    test_modules = [backend_tests, frontend_tests, other_tests]
+    test_modules: list[ModuleType] = [backend_tests, frontend_tests, other_tests]
     test_suite = _load_tests(testpatterns, test_modules)
 
     if not test_suite.countTestCases():
@@ -337,9 +337,9 @@ if __name__ == '__main__':
     return_code = 0
 
     # Run requested parts of the test suite.
-    do_application = args.all or args.all_application or "application" in args.parts
-    do_ldap = args.all or args.all_ldap or "ldap" in args.parts
-    do_xss = args.all or "xss" in args.parts
+    do_application: bool = args.all or args.all_application or "application" in args.parts
+    do_ldap: bool = args.all or args.all_ldap or "ldap" in args.parts
+    do_xss: bool = args.all or "xss" in args.parts
 
     if do_application:
         # Override testpatterns to run all tests.

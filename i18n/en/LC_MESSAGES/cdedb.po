@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-08-27 23:06+0200\n"
+"POT-Creation-Date: 2026-08-29 00:19+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -915,6 +915,9 @@ msgstr "Field updated"
 msgid "EventLogCodes.field_removed"
 msgstr "Field removed"
 
+msgid "EventLogCodes.field_pruned"
+msgstr "Field pruned"
+
 msgid "EventLogCodes.questionnaire_changed"
 msgstr "Questionanire changed"
 
@@ -1403,6 +1406,48 @@ msgstr "Lodgements"
 
 msgid "ViolationKind.other"
 msgstr "Other"
+
+msgid "Roles.assembly_admin"
+msgstr "Assembly Admin"
+
+msgid "Roles.core_admin"
+msgstr "Core Admin"
+
+msgid "Roles.complaint_admin"
+msgstr "Case Archive Admin"
+
+msgid "Roles.cdelokal_admin"
+msgstr "CdElokal Admin"
+
+msgid "Roles.event_admin"
+msgstr "Event Admin"
+
+msgid "Roles.ml_admin"
+msgstr "Mailinglist Admin"
+
+msgid "Roles.auditor"
+msgstr "Auditor"
+
+msgid "Roles.meta_admin"
+msgstr "Meta Admin"
+
+msgid "Roles.cde_admin"
+msgstr "CdE Admin"
+
+msgid "Roles.finance_admin"
+msgstr "Finance Admin"
+
+msgid "Realms.cde"
+msgstr "CdE"
+
+msgid "Realms.event"
+msgstr "Events"
+
+msgid "Realms.ml"
+msgstr "Mailinglists"
+
+msgid "Realms.assembly"
+msgstr "Assemblies"
 
 msgid "IncorrectIBANCV"
 msgstr "Incorrectly configured IBAN"
@@ -3241,6 +3286,9 @@ msgid ""
 "Cannot change association or kind of a field referenced by an event fee."
 msgstr ""
 
+msgid "Unknown event field(s)."
+msgstr ""
+
 msgid "Must be orga to retrieve stored queries."
 msgstr ""
 
@@ -3441,9 +3489,6 @@ msgid "No course found."
 msgstr ""
 
 msgid "Ambiguous course."
-msgstr ""
-
-msgid "Needs both admin privileges."
 msgstr ""
 
 msgid "Event is not concluded yet."
@@ -4156,37 +4201,13 @@ msgstr "All Users"
 msgid "00_query_ml_user_all"
 msgstr "All Users"
 
-msgid "is_meta_admin"
-msgstr "Meta admin"
+msgid "CdE membership & events"
+msgstr ""
 
-msgid "is_core_admin"
-msgstr "Core admin"
+msgid "CdE events"
+msgstr ""
 
-msgid "is_cde_admin"
-msgstr "CdE admin"
-
-msgid "is_finance_admin"
-msgstr "Finance admin"
-
-msgid "is_event_admin"
-msgstr "Event admin"
-
-msgid "is_ml_admin"
-msgstr "Mailinglist admin"
-
-msgid "is_assembly_admin"
-msgstr "Assembly admin"
-
-msgid "is_cdelokal_admin"
-msgstr "CdElokal admin"
-
-msgid "is_complaint_admin"
-msgstr "Case archive admin"
-
-msgid "is_auditor"
-msgstr "Auditor"
-
-msgid "Could not determine any db role."
+msgid "CdE mailinglist"
 msgstr ""
 
 msgid "Superfluous key found."
@@ -4733,19 +4754,6 @@ msgstr ""
 
 #, python-format
 msgid "Invalid input for the enumeration %(enum)s"
-msgstr ""
-
-#, python-format
-msgid "role %(role)s not available"
-msgstr ""
-
-msgid "Not available for instant pool"
-msgstr ""
-
-msgid "Connection in use!"
-msgstr ""
-
-msgid "Suppressed exception detected"
 msgstr ""
 
 msgid "Text"
@@ -5762,6 +5770,9 @@ msgstr ""
 msgid "This user does not exist or is no enforcer."
 msgstr ""
 
+msgid "Invalid realm for genesis."
+msgstr ""
+
 msgid "Attachment missing."
 msgstr ""
 
@@ -6013,6 +6024,30 @@ msgid "No registration found."
 msgstr ""
 
 msgid "Field name not unique."
+msgstr ""
+
+msgid "Nothing selected."
+msgstr ""
+
+#, python-format
+msgid "Deleted data from %(num)s registrations."
+msgstr ""
+
+msgid "No registrations."
+msgstr ""
+
+#, python-format
+msgid "Deleted data from %(num)s courses."
+msgstr ""
+
+msgid "No courses."
+msgstr ""
+
+#, python-format
+msgid "Deleted data from %(num)s lodgements."
+msgstr ""
+
+msgid "No lodgements."
 msgstr ""
 
 msgid "Wrong associated event."
@@ -8812,33 +8847,6 @@ msgid "Change Privileges"
 msgstr ""
 
 msgid "Privilege changes will have to be approved by another meta admin."
-msgstr ""
-
-msgid "Meta admin"
-msgstr ""
-
-msgid "Core admin"
-msgstr ""
-
-msgid "CdE admin"
-msgstr ""
-
-msgid "Finance admin"
-msgstr ""
-
-msgid "Event admin"
-msgstr ""
-
-msgid "Case archive admin"
-msgstr ""
-
-msgid "Mailinglist admin"
-msgstr ""
-
-msgid "CdElokal admin"
-msgstr ""
-
-msgid "Assembly admin"
 msgstr ""
 
 #, python-format
@@ -11771,26 +11779,6 @@ msgstr ""
 msgid "Recently Concluded Events"
 msgstr ""
 
-msgid "Past Events_[[long form]]"
-msgstr "Past Events"
-
-#, python-format
-msgid ""
-"Previous CdE events, including their courses and participants, can be found "
-"at %(link)s – together with Junior- and SchülerAkademien. Furthermore, there "
-"is a %(list)s of all events which have not been cleansed yet."
-msgstr ""
-
-msgid "list"
-msgstr ""
-
-#, python-format
-msgid ""
-"Previous CdE events are accessible to members only – together with Junior- "
-"and SchülerAkademien. However, there is a %(list)s of all events which have "
-"not been cleansed yet."
-msgstr ""
-
 #, python-format
 msgid ""
 "Event helpers have comprehensive readonly access to event information which "
@@ -12158,6 +12146,9 @@ msgstr ""
 msgid "Custom Filters"
 msgstr ""
 
+msgid "Prune Field Data"
+msgstr ""
+
 msgid "Custom Fields Notes"
 msgstr ""
 
@@ -12189,6 +12180,36 @@ msgid "Description Text"
 msgstr ""
 
 msgid "Value"
+msgstr ""
+
+#, python-format
+msgid "Prune Field Data (%(title)s)"
+msgstr ""
+
+msgid ""
+"Select a custom data field to prune data stored for this field from all "
+"associated entities (registrations/courses/lodgements)."
+msgstr ""
+
+#, python-format
+msgid ""
+"This will preserve the information whether there was some data stored in the "
+"field. It will do nothing for boolean (%(boolean)s) fields. If you need to "
+"completely remove this information, you can use the multi edit for "
+"registrations or the \"%(set_field)s\" functionality for courses and "
+"lodgements."
+msgstr ""
+
+msgid "Set Field (Registrations)"
+msgstr ""
+
+msgid "Set Field (Courses)"
+msgstr ""
+
+msgid "Set Field (Lodgements)"
+msgstr ""
+
+msgid "All data associated with these fields will be irreversibly deleted."
 msgstr ""
 
 #, python-format
@@ -12799,6 +12820,9 @@ msgid ""
 "Warning: The new Event will be immediately visible to all CdE-Members "
 "viewing the list of past Events."
 msgstr ""
+
+msgid "Past Events_[[long form]]"
+msgstr "Past Events"
 
 #, python-format
 msgid "%(count)s Course"
@@ -14442,15 +14466,6 @@ msgid "expired"
 msgstr ""
 
 msgid "not yet active"
-msgstr ""
-
-msgid "CdE membership & events"
-msgstr ""
-
-msgid "CdE events"
-msgstr ""
-
-msgid "CdE mailinglist"
 msgstr ""
 
 msgid "Wrong format for api token."

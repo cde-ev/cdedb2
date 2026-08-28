@@ -34,6 +34,7 @@ import cdedb.models.event.constraint_violations as models_cv
 from cdedb.backend.event.lodgement import LodgementInhabitants
 from cdedb.common import (
     EVENT_SCHEMA_VERSION,
+    AdminViews,
     CdEDBObject,
     CdEDBObjectMap,
     Notification,
@@ -51,6 +52,7 @@ from cdedb.common.privileges import (
 )
 from cdedb.common.query import QueryScope
 from cdedb.common.query.log_filter import EventLogFilter
+from cdedb.common.roles import Realms, Roles
 from cdedb.common.sorting import EntitySorter, KeyFunction, Sortkey, xsorted
 from cdedb.common.validation.validate import PERSONA_FULL_CREATION, filter_none
 from cdedb.filter import enum_entries_filter, keydictsort_filter
@@ -106,7 +108,8 @@ class ConstraintViolationsData(typing.TypedDict):
     attendee_stats: models.AttendeeStats
     all_lodgements: models.LodgementMap
     lodgements: models.LodgementMap
-    inhabitants: dict[vtypes.LodgementID, dict[int, LodgementInhabitants]]
+    involved_inhabitants: dict[vtypes.LodgementID, dict[int, LodgementInhabitants]]
+    uninvolved_inhabitants: dict[vtypes.LodgementID, dict[int, LodgementInhabitants]]
 
 
 def event_guard[F: Callable[..., Any]](
@@ -245,7 +248,7 @@ def event_associated_fields_to_request_multi(
 class EventBaseFrontend(AbstractUserFrontend):
     """Provide the base for event frontend mixins."""
 
-    realm = "event"
+    realm = Realms.event
 
     def render(
         self,
@@ -265,9 +268,13 @@ class EventBaseFrontend(AbstractUserFrontend):
             endpoint: str,
             *,
             event_id: vtypes.EventID | None = None,
-            admin_view_to_consider: str | None = "event_orga",
+            admin_view_to_consider: AdminViews | None = AdminViews.event_orga,
         ) -> bool:
-            endpoint = endpoint.removeprefix(f"{self.realm}/")
+            if admin_view_to_consider is not None:
+                if not isinstance(admin_view_to_consider, AdminViews):
+                    raise TypeError
+
+            endpoint = endpoint.removeprefix(f"{self.realm_str()}/")
             privileges = getattr(getattr(self, endpoint), "event_required_privileges")
 
             if event_id is None and 'event' in rs.ambience:
@@ -286,7 +293,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             event_id = rs.ambience['event'].id
             orga_view = (
                 event_id in rs.user.orga | rs.user.caretaker | rs.user.checkin_helper
-                or 'event_orga' in rs.user.admin_views
+                or AdminViews.event_orga in rs.user.admin_views
             )
             access_is_limited = orga_view and is_event_access_limited(event_id)
         else:
@@ -296,7 +303,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         params = params or {}
         if 'event' in rs.ambience:
             params['is_locked'] = self.is_locked(rs.ambience['event'])
-            if rs.user.persona_id and "event" in rs.user.roles:
+            if rs.user.persona_id and Roles.event in rs.user.new_roles:
                 reg_list = self.eventproxy.list_registrations(
                     rs, rs.ambience['event'].id, rs.user.persona_id
                 )
@@ -340,10 +347,6 @@ class EventBaseFrontend(AbstractUserFrontend):
             rs, templatename, params=params, mandatory_fields=mandatory_fields
         )
 
-    @classmethod
-    def is_admin(cls, rs: RequestState) -> bool:
-        return super().is_admin(rs)
-
     def is_privileged(
         self,
         rs: RequestState,
@@ -385,7 +388,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         """Shorthand to determine locking state of an event."""
         return event.is_locked and not self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
 
-    @access("core_admin", "event_admin")
+    @access(Roles.core_admin, Roles.event_admin)
     def create_user_form(self, rs: RequestState) -> Response:
         defaults = {
             'is_member': False,
@@ -399,7 +402,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             get_mandatory_form_fields(filter_none(PERSONA_FULL_CREATION['event'])),
         )
 
-    @access("core_admin", "event_admin", modi={"POST"})
+    @access(Roles.core_admin, Roles.event_admin, modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['event']))
     def create_user(self, rs: RequestState, data: CdEDBObject) -> Response:
         defaults = {
@@ -412,7 +415,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         data.update(defaults)
         return super().create_user(rs, data)
 
-    @access("core_admin", "event_admin")
+    @access(Roles.core_admin, Roles.event_admin)
     @REQUESTdata("download", "is_search")
     def user_search(
         self, rs: RequestState, download: str | None, is_search: bool
@@ -440,7 +443,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             choices=choices,
         )
 
-    @access("event")
+    @access(Roles.event)
     @REQUESTdata("part_id", "sortkey", "reverse")
     def participant_list(
         self,
@@ -482,7 +485,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             part_ids = rs.ambience['event'].parts.keys()
 
         if len(rs.ambience['event'].parts) == 1:
-            part_id = unwrap(rs.ambience['event'].parts.keys())
+            part_id = unwrap(rs.ambience['event'].parts).id
         return self.render(
             rs,
             "base/participant_list",
@@ -614,6 +617,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             self.eventproxy.list_registrations(rs, event_id, rs.user.persona_id).keys()
         )
         registration = self.eventproxy.get_registration(rs, registration_id)
+        wished_personas: list[models_core.EventPersona]
+        problems: list[Notification]
         if registration['list_consent']:
             data = self._get_participant_list_data(rs, event_id)
             wishes, problems = detect_lodgement_wishes(
@@ -642,7 +647,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             problems=problems,
         )
 
-    @access("event")
+    @access(Roles.event)
     def participant_info(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Display the `participant_info`, accessible only to participants."""
         if not self.is_privileged(rs, EventPrivileges.basic_read):
@@ -709,9 +714,9 @@ class EventBaseFrontend(AbstractUserFrontend):
             entity_id: int, sub_id: int, reg_id: vtypes.RegistrationID
         ) -> bool:
             """The actual check, un-inlined."""
-            instance = registrations[reg_id][aspect][sub_id]
+            instance: CdEDBObject = registrations[reg_id][aspect][sub_id]
             if aspect == 'parts':
-                part = instance
+                part: CdEDBObject = instance
             elif aspect == 'tracks':
                 part = registrations[reg_id]['parts'][tracks[sub_id].part_id]
                 # TODO remove when migrating lodgements to dataclasses here
@@ -798,7 +803,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             rs, self.eventproxy.list_registrations(rs, event.id)
         )
         if registration_id is None:
-            registrations = all_registrations
+            registrations: models.RegistrationMap = all_registrations
         elif registration_id < 0:
             registrations = {}
         else:
@@ -820,7 +825,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             rs, self.eventproxy.list_courses(rs, event.id), _event=event
         )
         if course_id is None:
-            courses = all_courses
+            courses: models.CourseMap = all_courses
         elif course_id < 0:
             courses = {}
         else:
@@ -845,8 +850,11 @@ class EventBaseFrontend(AbstractUserFrontend):
                 rs, [lodgement_id], _event=event
             )
 
-        inhabitants = self.eventproxy.get_grouped_inhabitants(
+        involved_inhabitants = self.eventproxy.get_grouped_inhabitants(
             rs, event.id, involved=True, _registrations=all_registrations
+        )
+        uninvolved_inhabitants = self.eventproxy.get_grouped_inhabitants(
+            rs, event.id, involved=False, _registrations=all_registrations
         )
 
         violations = models_cv.ViolationAux(
@@ -859,7 +867,8 @@ class EventBaseFrontend(AbstractUserFrontend):
             lodgements=lodgements,
             attendee_data=attendee_stats,
             choices_data=choice_stats,
-            inhabitants_data=inhabitants,
+            involved_inhabitants_data=involved_inhabitants,
+            uninvolved_inhabitants_data=uninvolved_inhabitants,
         ).evaluate_all()
 
         return ConstraintViolationsData(
@@ -873,10 +882,11 @@ class EventBaseFrontend(AbstractUserFrontend):
             attendee_stats=attendee_stats,
             all_lodgements=all_lodgements,
             lodgements=lodgements,
-            inhabitants=inhabitants,
+            involved_inhabitants=involved_inhabitants,
+            uninvolved_inhabitants=uninvolved_inhabitants,
         )
 
-    @access("event")
+    @access(Roles.event)
     # TODO Be more thoughtful here, considering the constraint violations rework
     @event_guard(EventPrivileges.all_read)
     @REQUESTdata("min_severity", "violation_kind", _omit_missing=True)
@@ -904,7 +914,7 @@ class EventBaseFrontend(AbstractUserFrontend):
             },
         )
 
-    @access("event.event_helper", "event_admin", "finance_admin")
+    @access(Roles.event_helper, Roles.event_admin, Roles.finance_admin)
     @REQUESTdata(
         "event_ids",
         "violation_classes",
@@ -918,7 +928,7 @@ class EventBaseFrontend(AbstractUserFrontend):
     def constraint_violations_summary(
         self,
         rs: RequestState,
-        event_ids: list[int] | None = None,
+        event_ids: set[int] | None = None,
         violation_classes: list[str] | None = None,
         is_archived: int = -1,
         is_balanced: int = -1,
@@ -928,9 +938,9 @@ class EventBaseFrontend(AbstractUserFrontend):
     ) -> Response:
         rs.ignore_validation_errors()
 
-        is_archived = bool(is_archived) if is_archived != -1 else None
-        is_balanced = bool(is_balanced) if is_balanced != -1 else None
-        is_concluded = bool(is_concluded) if is_concluded != -1 else None
+        is_archived_ = bool(is_archived) if is_archived != -1 else None
+        is_balanced_ = bool(is_balanced) if is_balanced != -1 else None
+        is_concluded_ = bool(is_concluded) if is_concluded != -1 else None
         event_ids = set(event_ids or [])
         min_severity = min_severity or models_cv.ViolationSeverity.INFO  # type: ignore[unreachable]
 
@@ -966,9 +976,9 @@ class EventBaseFrontend(AbstractUserFrontend):
                 'all_events': all_events,
                 'event_options': event_options,
                 'event_ids': event_ids,
-                'is_archived': is_archived,
-                'is_balanced': is_balanced,
-                'is_concluded': is_concluded,
+                'is_archived': is_archived_,
+                'is_balanced': is_balanced_,
+                'is_concluded': is_concluded_,
                 'min_severity': min_severity,
                 'violation_kind': violation_kind,
             },
@@ -976,7 +986,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
     @REQUESTdatadict(*EventLogFilter.requestdict_fields())
     @REQUESTdata("download")
-    @access("event_admin", "finance_admin", "auditor")
+    @access(Roles.event_admin, Roles.finance_admin, Roles.auditor)
     def view_log(self, rs: RequestState, data: CdEDBObject, download: bool) -> Response:
         """View activities concerning events organized via DB."""
         event_ids = self.eventproxy.list_events(rs)
@@ -984,7 +994,7 @@ class EventBaseFrontend(AbstractUserFrontend):
         if self.is_admin(rs):
             registration_map = self.eventproxy.get_registration_map(rs, event_ids)
         else:
-            registration_map = {}
+            registration_map = {}  # pyrefly: ignore[implicit-any-empty-container]
         return self.generic_view_log(
             rs,
             data,
@@ -1000,7 +1010,7 @@ class EventBaseFrontend(AbstractUserFrontend):
 
     @REQUESTdatadict(*EventLogFilter.requestdict_fields())
     @REQUESTdata("download")
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.log_read)
     def view_event_log(
         self,

@@ -19,6 +19,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.past_event as models
 from cdedb.common import (
+    AdminViews,
     CdEDBObject,
     RequestState,
     merge_dicts,
@@ -26,6 +27,7 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryOperators, QueryScope
 from cdedb.common.query.log_filter import PastEventLogFilter
+from cdedb.common.roles import Roles
 from cdedb.frontend.common import (
     CustomCSVDialect,
     REQUESTdata,
@@ -54,7 +56,7 @@ COURSESEARCH_DEFAULTS = {
 
 
 class PastEventMixin(EventBaseFrontend):
-    @access("member", "cde_admin")
+    @access(Roles.member, Roles.cde_admin)
     @REQUESTdata("is_search")
     def past_course_search(self, rs: RequestState, is_search: bool) -> Response:
         """Search for past courses."""
@@ -99,24 +101,21 @@ class PastEventMixin(EventBaseFrontend):
             {'spec': spec, 'result': result, 'count': count},
         )
 
-    @access("event")
+    @access(Roles.event)
     def show_past_event(self, rs: RequestState, pevent_id: int) -> Response:
         """Display concluded event."""
         # If user is not member or cde_admin but event user, check if they were a
         #  participant, otherwise block the request.
         assert rs.user.persona_id is not None
-        if rs.user.roles.isdisjoint([
-            "member",
-            "cde_admin",
-        ]) and not self.pasteventproxy.is_participant(
-            rs, pevent_id, rs.user.persona_id
-        ):
+        if not rs.user.new_roles.has_any(
+            Roles.member, Roles.cde_admin
+        ) and not self.pasteventproxy.is_participant(rs, pevent_id, rs.user.persona_id):
             raise werkzeug.exceptions.Forbidden
 
         course_ids = self.pasteventproxy.list_past_courses(rs, pevent_id)
         courses = self.pasteventproxy.get_past_courses(rs, course_ids)
         total_num, participants = self.pasteventproxy.list_event_participants(
-            rs, pevent_id, honor_admins="past_event" in rs.user.admin_views
+            rs, pevent_id, honor_admins=AdminViews.past_event in rs.user.admin_views
         )
         orgas = [p for p in participants.values() if p.orga_status]
         return self.render(
@@ -130,22 +129,21 @@ class PastEventMixin(EventBaseFrontend):
             },
         )
 
-    @access("event")
+    @access(Roles.event)
     def show_past_course(
         self, rs: RequestState, pevent_id: int, pcourse_id: int
     ) -> Response:
         """Display concluded course."""
         total_num, participants = self.pasteventproxy.get_course_assignments(
-            rs, pcourse_id, honor_admins="past_event" in rs.user.admin_views
+            rs,
+            pcourse_id,
+            honor_admins=AdminViews.past_event in rs.user.admin_views,
         )
         # if user is event user only, check if they were a participant of the event, otherwise block the request
         assert rs.user.persona_id is not None
-        if rs.user.roles.isdisjoint([
-            "member",
-            "cde_admin",
-        ]) and not self.pasteventproxy.is_participant(
-            rs, pevent_id, rs.user.persona_id
-        ):
+        if not rs.user.new_roles.has_any(
+            Roles.member, Roles.cde_admin
+        ) and not self.pasteventproxy.is_participant(rs, pevent_id, rs.user.persona_id):
             raise werkzeug.exceptions.Forbidden
         personas = self.coreproxy.get_past_event_users(rs, participants.keys())
         return self.render(
@@ -158,7 +156,7 @@ class PastEventMixin(EventBaseFrontend):
             },
         )
 
-    @access("event")
+    @access(Roles.event)
     @REQUESTdata("institution")
     def list_past_events(
         self, rs: RequestState, institution: const.PastInstitutions | None = None
@@ -168,7 +166,9 @@ class PastEventMixin(EventBaseFrontend):
             rs.notify('warning', n_("Institution parameter got lost."))
 
         pevent_ids = self.pasteventproxy.list_past_events(rs)
-        pevents = list(self.pasteventproxy.get_past_events(rs, pevent_ids).values())
+        pevents: list[models.PastEvent] = list(
+            self.pasteventproxy.get_past_events(rs, pevent_ids).values()
+        )
 
         # Get an iterator of the past events the user has visited
         # (currently used for hiding links from event realm users without membership)
@@ -204,7 +204,7 @@ class PastEventMixin(EventBaseFrontend):
             },
         )
 
-    @access("cde_admin")
+    @access(Roles.cde_admin)
     def change_past_event_form(self, rs: RequestState, pevent_id: int) -> Response:
         """Render form."""
         merge_dicts(rs.values, rs.ambience['pevent'].as_dict())
@@ -214,7 +214,7 @@ class PastEventMixin(EventBaseFrontend):
             mandatory_fields=models.PastEvent.mandatory_form_fields(creation=False),
         )
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @REQUESTdatadict(*models.PastEvent.requestdict_fields(creation=False))
     def change_past_event(
         self, rs: RequestState, pevent_id: int, data: CdEDBObject
@@ -223,12 +223,11 @@ class PastEventMixin(EventBaseFrontend):
         data = check(rs, models.PastEvent, data)
         if rs.has_validation_errors():
             return self.change_past_event_form(rs, pevent_id)
-        assert data is not None
         code = self.pasteventproxy.set_past_event(rs, pevent_id, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_past_event")
 
-    @access("cde_admin")
+    @access(Roles.cde_admin)
     def create_past_event_form(self, rs: RequestState) -> Response:
         """Render form."""
         return self.render(
@@ -237,7 +236,7 @@ class PastEventMixin(EventBaseFrontend):
             mandatory_fields=models.PastEvent.mandatory_form_fields(creation=True),
         )
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @REQUESTdatadict(*models.PastEvent.requestdict_fields(creation=True))
     @REQUESTdata("courses")
     def create_past_event(
@@ -270,7 +269,6 @@ class PastEventMixin(EventBaseFrontend):
                     )
         if rs.has_validation_errors():
             return self.create_past_event_form(rs)
-        assert data is not None
         with TransactionObserver(rs, self, "create_past_event"):
             new_id = self.pasteventproxy.create_past_event(rs, data)
             for course in thecourses:
@@ -279,7 +277,7 @@ class PastEventMixin(EventBaseFrontend):
         rs.notify_return_code(new_id, success=n_("Event created."))
         return self.redirect(rs, "event/show_past_event", {'pevent_id': new_id})
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @ack_delete()
     def delete_past_event(self, rs: RequestState, pevent_id: int) -> Response:
         """Remove a past event."""
@@ -292,7 +290,7 @@ class PastEventMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/list_past_events")
 
-    @access("cde_admin")
+    @access(Roles.cde_admin)
     def change_past_course_form(
         self, rs: RequestState, pevent_id: int, pcourse_id: int
     ) -> Response:
@@ -304,7 +302,7 @@ class PastEventMixin(EventBaseFrontend):
             mandatory_fields=models.PastCourse.mandatory_form_fields(creation=False),
         )
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @REQUESTdatadict(*models.PastCourse.requestdict_fields(creation=False))
     def change_past_course(
         self, rs: RequestState, pevent_id: int, pcourse_id: int, data: CdEDBObject
@@ -314,12 +312,11 @@ class PastEventMixin(EventBaseFrontend):
         data = check(rs, models.PastCourse, data)
         if rs.has_validation_errors():
             return self.change_past_course_form(rs, pevent_id, pcourse_id)
-        assert data is not None
         code = self.pasteventproxy.set_past_course(rs, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_past_course")
 
-    @access("cde_admin")
+    @access(Roles.cde_admin)
     def create_past_course_form(self, rs: RequestState, pevent_id: int) -> Response:
         """Render form."""
         return self.render(
@@ -328,7 +325,7 @@ class PastEventMixin(EventBaseFrontend):
             mandatory_fields=models.PastCourse.mandatory_form_fields(creation=True),
         )
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @REQUESTdatadict(*models.PastCourse.requestdict_fields(creation=True))
     def create_past_course(
         self, rs: RequestState, pevent_id: int, data: CdEDBObject
@@ -338,12 +335,11 @@ class PastEventMixin(EventBaseFrontend):
         data = check(rs, models.PastCourse, data, creation=True)
         if rs.has_validation_errors():
             return self.create_past_course_form(rs, pevent_id)
-        assert data is not None
         new_id = self.pasteventproxy.create_past_course(rs, data)
         rs.notify_return_code(new_id, success=n_("Course created."))
         return self.redirect(rs, "event/show_past_course", {'pcourse_id': new_id})
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @ack_delete()
     def delete_past_course(
         self, rs: RequestState, pevent_id: int, pcourse_id: int
@@ -361,7 +357,7 @@ class PastEventMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_past_event")
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @REQUESTdata("persona_ids", "orga_status", "music_status")
     def set_participants(
         self,
@@ -381,7 +377,7 @@ class PastEventMixin(EventBaseFrontend):
                 "persona_ids",
                 ValueError(n_("Some of these users do not exist.")),
             ))
-        if not self.coreproxy.verify_personas(rs, persona_ids, {"event"}):
+        if not self.coreproxy.verify_personas(rs, persona_ids, Roles.event):
             rs.append_validation_error((
                 "persona_ids",
                 ValueError(n_("Some of these users are not event users.")),
@@ -397,7 +393,7 @@ class PastEventMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_past_event")
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @REQUESTdata("pcourse_id", "persona_ids", "instructor_status")
     def set_course_assignments(
         self,
@@ -417,7 +413,7 @@ class PastEventMixin(EventBaseFrontend):
                 "persona_ids",
                 ValueError(n_("Some of these users do not exist.")),
             ))
-        if not self.coreproxy.verify_personas(rs, persona_ids, {"event"}):
+        if not self.coreproxy.verify_personas(rs, persona_ids, Roles.event):
             rs.append_validation_error((
                 "persona_ids",
                 ValueError(n_("Some of these users are not event users.")),
@@ -435,7 +431,7 @@ class PastEventMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_past_course", {'pcourse_id': pcourse_id})
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @REQUESTdata("persona_id")
     @ack_delete()
     def remove_participant(
@@ -448,7 +444,7 @@ class PastEventMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_past_event")
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @REQUESTdata("persona_id", "pcourse_id")
     @ack_delete()
     def remove_course_assignment(
@@ -467,7 +463,7 @@ class PastEventMixin(EventBaseFrontend):
 
     @REQUESTdatadict(*PastEventLogFilter.requestdict_fields())
     @REQUESTdata("download")
-    @access("cde_admin", "auditor")
+    @access(Roles.cde_admin, Roles.auditor)
     def view_past_log(
         self, rs: RequestState, data: CdEDBObject, download: bool
     ) -> Response:

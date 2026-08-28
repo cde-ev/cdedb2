@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# pyrefly: ignore-errors[implicit-any-empty-container]
+
 import datetime
 import json
 import pathlib
@@ -19,7 +21,7 @@ from cdedb.common import (
     now,
 )
 from cdedb.common.query import QueryOperators
-from cdedb.common.roles import ADMIN_VIEWS_COOKIE_NAME
+from cdedb.common.roles import AdminViews
 from cdedb.common.validation.validate import parse_datetime
 from cdedb.database.constants import AssemblyLogCodes
 from cdedb.filter import datetime_filter
@@ -278,7 +280,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
     @storage
     @as_users("anton")
     def test_assembly_admin_views(self) -> None:
-        self.app.set_cookie(ADMIN_VIEWS_COOKIE_NAME, '')
+        self.app.set_cookie(AdminViews.cookie_name(), "")
 
         self.traverse({'href': '/assembly/'})
         self._click_admin_view_button(
@@ -1407,6 +1409,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f['filename'] = "//"
         self.submit(f, check_notification=False, check_mandatory_filled=False)
         self.assertValidationError('filename', " Muss ein zulässiger Bezeichner sein")
+        f = self.response.forms['configureattachmentversionform']
         self.assertEqual(f['title'].value, "")
         f['title'] = "Maßgebliche Beschlussvorlage"
         f['authors'] = "Der Vorstand"
@@ -1644,6 +1647,7 @@ class TestAssemblyFrontend(AssemblyTestHelpers):
         f['vote'] = ASSEMBLY_BAR_SHORTNAME
         self.submit(f)
         self.assertTitle("Bester Hof (Internationaler Kongress)")
+        f = self.response.forms['voteform']
         self.assertEqual(ASSEMBLY_BAR_SHORTNAME, f['vote'].value)
         self.assertNonPresence("Du hast Dich enthalten.")
         f = self.response.forms['abstentionform']

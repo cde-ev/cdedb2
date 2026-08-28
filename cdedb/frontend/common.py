@@ -108,7 +108,6 @@ from cdedb.common import (
     NotificationType,
     PathLike,
     RequestState,
-    Role,
     User,
     _tdelta,
     asciificator,
@@ -129,7 +128,6 @@ from cdedb.common.exceptions import (
     PrivilegeError,
     ValidationWarning,
 )
-from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts, TransactionType
@@ -137,11 +135,11 @@ from cdedb.common.query import Query
 from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.common.query.log_filter import GenericLogFilter
 from cdedb.common.roles import (
-    ADMIN_KEYS,
-    ALL_MGMT_ADMIN_VIEWS,
-    ALL_MOD_ADMIN_VIEWS,
     PERSONA_DEFAULTS,
-    roles_to_db_role,
+    AdminViews,
+    Realms,
+    Roles,
+    RoleSet,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation import validate
@@ -162,6 +160,7 @@ from cdedb.filter import (
 from cdedb.models.common import CdEDataclass
 from cdedb.models.core import EmailAddressReport
 from cdedb.models.event import CustomQueryFilter
+from cdedb.uncommon.intenum import CdEFlag
 
 
 class Attachment(typing.TypedDict, total=False):
@@ -207,14 +206,21 @@ class BaseApp(metaclass=abc.ABCMeta):
     inherited by :py:class:`cdedb.frontend.application.Application`.
     """
 
-    realm: ClassVar[str]
+    realm: ClassVar[str | Realms]
+    admin_role: ClassVar[Roles | None] = None
+
+    @classmethod
+    def realm_str(cls) -> str:
+        if isinstance(cls.realm, str):
+            return cls.realm
+        return cls.realm.name
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.conf = Config()
         secrets = SecretsConfig()
         # initialize logging
         if hasattr(self, 'realm') and self.realm:
-            logger_name = f"cdedb.frontend.{self.realm}"
+            logger_name = f"cdedb.frontend.{self.realm_str()}"
         else:
             logger_name = "cdedb.frontend"
         self.logger = logging.getLogger(logger_name)  # logger are thread-safe!
@@ -363,8 +369,8 @@ def periodic(name: str, period: int = 1) -> Callable[[PeriodicMethod], PeriodicJ
       2 means every second invocation of the CronFrontend)
     """
 
-    def decorator(fun: PeriodicMethod) -> PeriodicJob:
-        fun = cast(PeriodicJob, fun)
+    def decorator(fun_: PeriodicMethod) -> PeriodicJob:
+        fun = cast(PeriodicJob, fun_)
         fun.cron = {
             'name': name,
             'period': period,
@@ -442,8 +448,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         )
         self.jinja_env.policies['ext.i18n.trimmed'] = True
         self.jinja_env.policies['json.dumps_kwargs']['cls'] = CustomJSONEncoder
-        self.jinja_env.filters.update(JINJA_FILTERS)
-        self.jinja_env.globals.update({
+        self.jinja_env.filters.update(JINJA_FILTERS)  # pyrefly: ignore[no-matching-overload]
+        self.jinja_env.globals.update({  # pyrefly: ignore[no-matching-overload]
             'now': now,
             'nbsp': "\u00a0",
             'query_mod': query_mod,
@@ -471,16 +477,8 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'I18N_LANGUAGES': self.conf["I18N_LANGUAGES"],
             'I18N_ADVERTISED_LANGUAGES': self.conf["I18N_ADVERTISED_LANGUAGES"],
             'DEFAULT_COUNTRY': self.conf["DEFAULT_COUNTRY"],
-            'ALL_MOD_ADMIN_VIEWS': ALL_MOD_ADMIN_VIEWS,
-            'ALL_MGMT_ADMIN_VIEWS': ALL_MGMT_ADMIN_VIEWS,
+            'AdminViews': AdminViews,
             'EntitySorter': EntitySorter,
-            'roles_allow_genesis_management': lambda roles: (
-                roles
-                & (
-                    {'core_admin'}
-                    | set(f"{realm}_admin" for realm in REALM_SPECIFIC_GENESIS_FIELDS)
-                )
-            ),
             'unwrap': unwrap,
             'MANAGEMENT_ADDRESS': self.conf['MANAGEMENT_ADDRESS'],
             'MAX_QUERY_ORDERS': query_mod.MAX_QUERY_ORDERS,
@@ -520,12 +518,17 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
         )
 
     @classmethod
-    @abc.abstractmethod
     def is_admin(cls, rs: RequestState) -> bool:
         """Since each realm may have its own application level roles, it may
         also have additional roles with elevated privileges.
         """
-        return f"{cls.realm}_admin" in rs.user.roles
+        if cls.admin_role:
+            admin_role = cls.admin_role
+        elif isinstance(cls.realm, Realms):
+            admin_role = cls.realm.admin_role
+        else:
+            raise RuntimeError
+        return admin_role in rs.user.new_roles
 
     def fill_template(
         self, rs: RequestState, modus: str, templatename: str, params: CdEDBObject
@@ -698,7 +701,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             raise NotImplementedError(
                 n_("Requested modus does not exists: %(modus)s"), {'modus': modus}
             )
-        tmpl = pathlib.Path(modus, self.realm, f"{templatename}.tmpl")
+        tmpl = pathlib.Path(modus, self.realm_str(), f"{templatename}.tmpl")
         # sadly, jinja does not catch nicely if the template exists, so we do this here
         if not (self.template_dir / tmpl).is_file():
             raise ValueError(n_("Template not found: %(file)s"), {'file': tmpl})
@@ -947,12 +950,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             msg = n_(
                 "The CdE database is currently under maintenance and is unavailable."
             )
-            if {'core_admin', 'meta_admin'} & rs.user.roles:
+            if (Roles.core_admin | Roles.meta_admin) & rs.user.new_roles:
                 rs.notify('warning', admin_msg)
             else:
                 rs.notify("info", msg)
 
-        defect_addresses = {}
+        defect_addresses: dict[str, EmailAddressReport] = {}
         if rs.user.persona_id:
             defect_addresses = self.coreproxy.get_defect_address_reports(
                 rs, [rs.user.persona_id]
@@ -1245,13 +1248,12 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             choices_lists[k] = list(v.items())
             if query and k in query.spec:
                 query.spec[k].choices = v
-        params = {
+        params: CdEDBObject = {
             'spec': spec,
             'choices_lists': choices_lists,
             'default_queries': default_queries,
             'query': query,
             'scope': scope,
-            'ADMIN_KEYS': ADMIN_KEYS,
         }
         # Tricky logic: In case of no validation errors we perform a query
         if not rs.has_validation_errors() and is_search and query:
@@ -1301,7 +1303,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'image': email.mime.image.MIMEImage,
             'text': email.mime.text.MIMEText,
         }
-        ret = factories[maintype](data, _subtype=subtype)
+        ret = factories[maintype](data, _subtype=subtype)  # pyrefly: ignore[bad-argument-type]
         if attachment.get('filename'):
             ret.add_header(
                 'Content-Disposition', 'attachment', filename=attachment['filename']
@@ -1574,7 +1576,7 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             return n_("Anti CSRF token is required for this form.")
         # noinspection PyProtectedMember
         timeout, val = self.decode_parameter(
-            f"{self.realm}/{action}", token_name, val, rs.user.persona_id
+            f"{self.realm_str()}/{action}", token_name, val, rs.user.persona_id
         )
         if not val:
             if timeout:
@@ -1866,12 +1868,7 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
     This is basically every frontend with exception of 'core'.
     """
 
-    @classmethod
-    @abc.abstractmethod
-    def is_admin(cls, rs: RequestState) -> bool:
-        return super().is_admin(rs)
-
-    # @access("realm_admin")
+    # @access(Roles.realm_admin)
     @abc.abstractmethod
     def create_user_form(self, rs: RequestState) -> werkzeug.Response:
         """Render form."""
@@ -1879,19 +1876,19 @@ class AbstractUserFrontend(AbstractFrontend, metaclass=abc.ABCMeta):
             rs, "create_user", {}, get_mandatory_form_fields(PERSONA_COMMON_FIELDS)
         )
 
-    # @access("realm_admin", modi={"POST"})
+    # @access(Roles.realm_admin, modi={"POST"})
     # @REQUESTdatadict(...)
     @abc.abstractmethod
     def create_user(self, rs: RequestState, data: CdEDBObject) -> werkzeug.Response:
         """Create new user account."""
         merge_dicts(data, PERSONA_DEFAULTS)
         data = check_validation(rs, vtypes.Persona, data, creation=True)
-        if data:
+        if not rs.has_validation_errors():
             exists = self.coreproxy.verify_existence(rs, data['username'])
             if exists:
                 msg = n_("User with this E-Mail exists already.")
                 rs.extend_validation_errors((("username", ValueError(msg)),))
-        if rs.has_validation_errors() or not data:
+        if rs.has_validation_errors():
             return self.create_user_form(rs)
         new_id = self.coreproxy.create_persona(rs, data)
         if new_id:
@@ -1977,7 +1974,10 @@ class CdEMailmanClient(mailmanclient.Client):
             if self.conf["CDEDB_DEV"]:
                 # Some diversity regarding moderation.
                 if dblist.id % 2 == 0:
-                    return HELD_MESSAGE_SAMPLE
+                    return cast(
+                        list[mailmanclient.restobjects.held_message.HeldMessage],
+                        HELD_MESSAGE_SAMPLE,
+                    )
                 else:
                     return []
             return None
@@ -2064,7 +2064,7 @@ class Worker(threading.Thread):
             conf["DB_HOST"],
             conf["DB_PORT"],
         )
-        rrs._conn = connpool[roles_to_db_role(rs.user.roles)]
+        rrs._conn = connpool[rs.user.new_roles.get_db_role()]
         logger = logging.getLogger("cdedb.frontend.worker")
 
         def get_doc(task: WorkerTarget) -> str:
@@ -2080,8 +2080,8 @@ class Worker(threading.Thread):
             if len(task_infos) > 1:
                 task_queue = "\n".join(f"'{n}': {doc}" for _, n, doc in task_infos)
                 logger.debug(f"Worker queue started:\n{task_queue}")
-            p_id = rrs.user.persona_id if rrs.user else None
-            username = rrs.user.username if rrs.user else None
+            p_id = rrs.user.persona_id
+            username = rrs.user.username
             for i, task_info in enumerate(task_infos):
                 logger.debug(
                     f"Task `{task_info.name}`{task_info.doc} started by user"
@@ -2430,7 +2430,6 @@ class AntiCSRFMarker(NamedTuple):
 
 
 class FrontendEndpoint(Protocol):
-    access_list: AbstractSet[Role]
     anti_csrf: AntiCSRFMarker
     modi: AbstractSet[str]
 
@@ -2440,7 +2439,7 @@ class FrontendEndpoint(Protocol):
 
 
 def access[F: Callable[..., Any]](
-    *roles: Role,
+    *roles: RoleSet | Roles,
     modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
     check_anti_csrf: bool | None = None,
     anti_csrf_token_name: str | None = None,
@@ -2459,19 +2458,18 @@ def access[F: Callable[..., Any]](
     :param anti_csrf_token_payload: If given, use this as the payload of the anti csrf
         token. Otherwise a sensible default will be used.
     """
-    access_list = set(roles)
 
     def decorator(fun: F) -> F:
         @functools.wraps(fun)
         def new_fun(
             obj: AbstractFrontend, rs: RequestState, *args: Any, **kwargs: Any
         ) -> werkzeug.Response:
-            if rs.user.all_roles & access_list:
+            if rs.user.new_roles.has_any(*roles):
                 rs.ambience = reconnoitre_ambience(obj, rs)
                 return fun(obj, rs, *args, **kwargs)
             else:
-                expects_persona = any('droid' not in role for role in access_list)
-                if rs.user.all_roles == {"anonymous"} and expects_persona:
+                expects_persona = Roles.all_persona_roles().has_any(*roles)
+                if rs.user.new_roles.is_anonymous() and expects_persona:
                     # Validation errors do not matter on session expiration,
                     # since we redirect to get anyway.
                     # In practice, this is mostly relevant for the anti csrf error.
@@ -2496,16 +2494,18 @@ def access[F: Callable[..., Any]](
                     'realm': obj.__class__.__name__,
                     'endpoint': fun.__name__,
                 }
-                log_msg = msg.format(**params) + f" Roles: {rs.user.all_roles}."
+                log_msg = msg.format(**params) + f" Roles: {rs.user.new_roles}."
                 _LOGGER.error(log_msg)
                 raise werkzeug.exceptions.Forbidden(rs.gettext(msg).format(**params))
 
-        new_fun.access_list = access_list  # type: ignore[attr-defined]
         new_fun.modi = modi  # type: ignore[attr-defined]
         new_fun.anti_csrf = AntiCSRFMarker(  # type: ignore[attr-defined]
             check_anti_csrf
             if check_anti_csrf is not None
-            else not modi <= {'GET', 'HEAD'} and "anonymous" not in roles,
+            else (
+                not modi <= {'GET', 'HEAD'}
+                and not RoleSet({Roles.anonymous}).has_any(*roles)
+            ),
             anti_csrf_token_name or ANTI_CSRF_TOKEN_NAME,
             anti_csrf_token_payload or ANTI_CSRF_TOKEN_PAYLOAD,
         )
@@ -2731,7 +2731,7 @@ def REQUESTdata[F: Callable[..., Any]](
                         # only decode if exists
                         # noinspection PyProtectedMember
                         timeout, val = obj.decode_parameter(
-                            f"{obj.realm}/{fun.__name__}",
+                            f"{obj.realm_str()}/{fun.__name__}",
                             name,
                             val,
                             persona_id=rs.user.persona_id,
@@ -2748,6 +2748,15 @@ def REQUESTdata[F: Callable[..., Any]](
                             kwargs[name] = vals
                         else:
                             kwargs[name] = check_validation(rs, type_, vals, name)
+                    elif isinstance(type_, type) and issubclass(type_, CdEFlag):
+                        vals = rs.request.values.getlist(name)
+                        rs.values.setlist(name, vals)
+                        combined = type_.union(
+                            validated
+                            for val in vals
+                            if (validated := check_validation(rs, type_, val, name))
+                        )
+                        kwargs[name] = combined
                     else:
                         rs.values[name] = val
                         if _postpone_validation:
@@ -3018,13 +3027,13 @@ def ack_delete[F: Callable[..., Any]](
 
 
 @overload
-def check_validation(
+def check_validation[T: CdEDataclass](
     rs: RequestState,
-    type_: type[CdEDataclass],
+    type_: TypeForm[T],
     value: Any,
     name: str | None = None,
     **kwargs: Any,
-) -> CdEDBObject | None: ...
+) -> CdEDBObject: ...
 
 
 @overload
@@ -3034,16 +3043,16 @@ def check_validation[T](
     value: Any,
     name: str | None = None,
     **kwargs: Any,
-) -> T | None: ...
+) -> T: ...
 
 
 def check_validation[T](
     rs: RequestState,
-    type_: TypeForm[T] | type[CdEDataclass],
+    type_: TypeForm[T],
     value: Any,
     name: str | None = None,
     **kwargs: Any,
-) -> T | CdEDBObject | None:
+) -> T | CdEDBObject:
     """Wrapper to call checks in :py:mod:`cdedb.validation`.
 
     This performs the check and appends all occurred errors to the RequestState.
@@ -3063,7 +3072,7 @@ def check_validation[T](
             type_, value, ignore_warnings=rs.ignore_warnings, **kwargs
         )
     rs.extend_validation_errors(errs)
-    return cast(None | T | CdEDBObject, ret)
+    return cast(T | CdEDBObject, ret)
 
 
 def extract_and_check_dataclass_validation[DC: CdEDataclass](
@@ -3078,7 +3087,7 @@ def extract_and_check_dataclass_validation[DC: CdEDataclass](
     data = request_dict_extractor(rs, type_.requestdict_fields(creation=creation))
     if additional_data:
         data.update(additional_data)
-    data = check_validation(rs, type_, data, argname=name, creation=creation, **kwargs)
+    data = check_validation(rs, type_, data, name=name, creation=creation, **kwargs)
     return cast(CdEDBObject | None, data)
 
 
@@ -3188,7 +3197,7 @@ def drow_last_index(prefix: str = "") -> str:
 @overload
 def process_dynamic_input[DC: CdEDataclass](
     rs: RequestState,
-    type_: type[DC],
+    type_: TypeForm[DC],
     existing: Collection[int],
     spec: Mapping[str, Literal["str", "[str]"]],
     *,
@@ -3203,7 +3212,7 @@ def process_dynamic_input[DC: CdEDataclass](
 @overload
 def process_dynamic_input[C: CdEDBObject](
     rs: RequestState,
-    type_: type[C],
+    type_: TypeForm[C],
     existing: Collection[int],
     spec: vtypes.TypeMapping,
     *,
@@ -3218,7 +3227,7 @@ def process_dynamic_input[C: CdEDBObject](
 # TODO maybe retrieve the spec from the type_?
 def process_dynamic_input[C: CdEDBObject, DC: CdEDataclass](
     rs: RequestState,
-    type_: type[C | DC],
+    type_: TypeForm[C | DC],
     existing: Collection[int],
     spec: vtypes.TypeMapping | Mapping[str, Literal["str", "[str]"]],
     *,
@@ -3271,7 +3280,7 @@ def process_dynamic_input[C: CdEDBObject, DC: CdEDataclass](
     deletes = {anid for anid in existing if delete_flags[drow_delete(anid, prefix)]}
     non_deleted_existing = {anid for anid in existing if anid not in deletes}
 
-    existing_data_spec: vtypes.TypeMapping = {
+    existing_data_spec: vtypes.TypeMapping = {  # pyrefly: ignore[bad-assignment]
         drow_name(key, anid, prefix): value  # type: ignore[misc]
         for anid in non_deleted_existing
         for key, value in spec.items()
@@ -3302,14 +3311,17 @@ def process_dynamic_input[C: CdEDBObject, DC: CdEDataclass](
             if skip_validation:
                 continue
             # apply the promised validation
-            ret[anid] = check_validation(
-                rs,
-                type_,
-                entry,
-                field_prefix=field_prefix,
-                field_postfix=f"_{anid}",
-                **additional_validation,
-                id_=anid,
+            ret[anid] = cast(
+                CdEDBObject,
+                check_validation(
+                    rs,
+                    type_,
+                    entry,
+                    field_prefix=field_prefix,
+                    field_postfix=f"_{anid}",
+                    **additional_validation,
+                    id_=anid,
+                ),
             )
 
     # extract the new entries which shall be created
@@ -3332,15 +3344,18 @@ def process_dynamic_input[C: CdEDBObject, DC: CdEDataclass](
                 ret[-marker] = entry
                 marker += 1
                 continue
-            ret[-marker] = check_validation(
-                rs,
-                type_,
-                entry,
-                field_prefix=field_prefix,
-                field_postfix=f"_{-marker}",
-                creation=True,
-                **additional_validation,
-                id_=-marker,
+            ret[-marker] = cast(
+                CdEDBObject,
+                check_validation(
+                    rs,
+                    type_,
+                    entry,
+                    field_prefix=field_prefix,
+                    field_postfix=f"_{-marker}",
+                    creation=True,
+                    **additional_validation,
+                    id_=-marker,
+                ),
             )
         else:
             break
@@ -3518,7 +3533,7 @@ class TransactionObserver:
         name: str,
         *,
         description: str = "",
-        recipients: Collection[str] = (),
+        recipients: Collection[str | None] = (),
     ):
         self.rs = rs
         self.frontend = frontend
@@ -3540,8 +3555,8 @@ class TransactionObserver:
 
     def __exit__(
         self,
-        atype: type[Exception] | None,
-        value: Exception | None,
+        atype: type[BaseException] | None,
+        value: BaseException | None,
         tb: TracebackType | None,
     ) -> Literal[False]:
         if value:
