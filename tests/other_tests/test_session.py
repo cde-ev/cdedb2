@@ -82,13 +82,15 @@ class TestSessionBackend(BackendTest):
             self.session.lookuptoken("random token", "127.0.0.0")
 
         # "resolve" droid api token.
-        resolve_secret = self.secrets['API_TOKENS']['resolve']
-        resolve_token = model_droid.ResolveToken.get_token_string(resolve_secret)
+        resolve_secret: str = self.secrets['API_TOKENS']['resolve']
+        resolve_token = model_droid.CyberAkaResolveToken.get_token_string(
+            resolve_secret
+        )
 
         user = self.session.lookuptoken(resolve_token, "127.0.1.0")
         self.assertIsNone(user.persona_id)
-        self.assertIsInstance(user.droid, model_droid.ResolveToken)
-        assert isinstance(user.droid, model_droid.ResolveToken)
+        self.assertIsInstance(user.droid, model_droid.CyberAkaResolveToken)
+        assert isinstance(user.droid, model_droid.CyberAkaResolveToken)
         self.assertIsNone(user.droid.id)
         self.assertEqual(
             Roles.anonymous | Roles.droid | Roles.droid_resolve | Roles.droid_infra,
@@ -96,13 +98,13 @@ class TestSessionBackend(BackendTest):
         )
 
         # "resolve" droid api token with invalid secret.
-        invalid_resolve_token = model_droid.ResolveToken.get_token_string("abc")
+        invalid_resolve_token = model_droid.CyberAkaResolveToken.get_token_string("abc")
 
         with self.assertRaisesRegex(APITokenError, "Invalid API token."):
             self.session.lookuptoken(invalid_resolve_token, "127.0.1.1")
 
         # "quick_partial_export" droid.
-        qpe_secret = self.secrets['API_TOKENS']['quick_partial_export']
+        qpe_secret: str = self.secrets['API_TOKENS']['quick_partial_export']
         qpe_token = model_droid.QuickPartialExportToken.get_token_string(qpe_secret)
 
         user = self.session.lookuptoken(qpe_token, "127.0.1.2")

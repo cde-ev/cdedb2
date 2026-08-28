@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# pyrefly: ignore-errors[implicit-any-empty-container]
+
 import datetime
 import json
 from collections.abc import Collection
@@ -188,7 +190,7 @@ class TestAssemblyBackend(BackendTest):
     def test_entity_assembly(self) -> None:
         assembly_id = 1
         presider_id = 23
-        log = []
+        log: list[CdEDBObject] = []
         self.login("anton")
         log_offset, _ = self.assembly.retrieve_log(self.key, AssemblyLogFilter())
         self.login("werner")
@@ -833,7 +835,7 @@ class TestAssemblyBackend(BackendTest):
 
     @as_users("werner")
     def test_quorum(self) -> None:
-        data = {
+        data: CdEDBObject = {
             'assembly_id': 1,
             'use_bar': False,
             'candidates': {
@@ -902,7 +904,7 @@ class TestAssemblyBackend(BackendTest):
                 'shortname': "mgv2222",
             }
             assembly_id = self.assembly.create_assembly(self.key, assembly_data)
-            ballot_data = {
+            ballot_data: CdEDBObject = {
                 'assembly_id': assembly_id,
                 'use_bar': False,
                 'candidates': {
@@ -1167,7 +1169,7 @@ class TestAssemblyBackend(BackendTest):
         )
 
         # Create a new attachment.
-        data = {
+        data: CdEDBObject = {
             "assembly_id": assembly_id,
             "title": "Rechenschaftsbericht",
             "authors": "Farin",

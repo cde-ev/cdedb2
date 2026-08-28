@@ -549,6 +549,11 @@ input[type=number].no-number-arrows {
     vertical-align: top;
     line-height: 0.5;
 }
+.selectize-control .selectize-input.disabled {
+    cursor: not-allowed !important;
+    background-color: #eee;
+    opacity: 1;
+}
 .selectize-control.input-slim .selectize-input {
     min-width: 128px;
 }

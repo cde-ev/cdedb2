@@ -18,7 +18,7 @@ class CdEEnumMeta:
         now it produces something like '1'. Sadly this loses all the enum
         information, which we need in many cases.
         """
-        return enum.Enum.__str__(self)
+        return enum.Enum.__str__(self)  # pyrefly: ignore[bad-argument-type]
 
     __repr__ = __str__
 

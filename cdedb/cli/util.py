@@ -8,7 +8,7 @@ import io
 import os
 import pathlib
 import pwd
-from collections.abc import Callable, Generator, Iterator
+from collections.abc import Callable, Generator
 from shutil import which
 from typing import Any
 
@@ -196,7 +196,7 @@ def fake_rs(
 @contextlib.contextmanager
 def redirect_to_file(
     outfile: pathlib.Path | io.StringIO | None, append: bool = False
-) -> Iterator[None]:
+) -> Generator[None]:
     """Context manager to open a file in either append or write mode and redirect both
     stdout and std err into the file.
 

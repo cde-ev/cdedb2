@@ -148,6 +148,7 @@
                      aclass="btn btn-warning btn-sm", icon='file-upload') }}
         {{ util.href(cdedblink("event/custom_filter_summary"), gettext("Custom Filters"), icon="filter", aclass="btn btn-sm btn-info") }}
         {{ util.href(cdedblink("event/part_summary"), gettext("Event Parts"), icon='clock', aclass='btn btn-default btn-sm') }}
+        {{ util.href(cdedblink("event/prune_field_select"), gettext("Prune Field Data"), icon='fire', aclass='btn btn-danger btn-sm') }}
     </div>
     {% if ambience['event']['field_definition_notes'] %}
         {% call util.bootstrap_panel(title=gettext("Custom Fields Notes") + nbsp + generic_event.edit_free_text_button("field_definition_notes"),

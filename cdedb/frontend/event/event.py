@@ -60,7 +60,6 @@ from cdedb.frontend.common import (
     process_dynamic_input,
 )
 from cdedb.frontend.event.base import EventBaseFrontend, event_guard
-from cdedb.models.common import CdEDataclass
 from cdedb.models.ml import (
     EventAssociatedMailinglist,
     EventOrgaMailinglist,
@@ -272,7 +271,7 @@ class EventEventMixin(EventBaseFrontend):
         """Modify an event organized via DB."""
         data = check(
             rs,
-            cast(type[CdEDataclass], models._EventConfigurationMixin),  # abstract model
+            models._EventConfigurationMixin,  # abstract model
             data,
             event=rs.ambience['event'],
         )
@@ -292,7 +291,6 @@ class EventEventMixin(EventBaseFrontend):
             )
         if rs.has_validation_errors():
             return self.change_event_form(rs, event_id)
-        assert data is not None
 
         code = self.eventproxy.set_event(rs, event_id, data)
         rs.notify_return_code(code)
@@ -377,20 +375,20 @@ class EventEventMixin(EventBaseFrontend):
         This somewhat clashes with our usual naming convention, it is
         about the 'minor form' and not about changing minors.
         """
-        minor_form = check(rs, vtypes.PDFFile | None, minor_form, "minor_form")
-        if not minor_form and not delete:
+        validated_form = check(rs, vtypes.PDFFile | None, minor_form, "minor_form")
+        if not validated_form and not delete:
             rs.append_validation_error((
                 "minor_form",
                 ValueError(n_("Must not be empty.")),
             ))
-        if not minor_form and delete and not ack_delete:
+        if not validated_form and delete and not ack_delete:
             rs.append_validation_error((
                 "ack_delete",
                 ValueError(n_("Must be checked.")),
             ))
         if rs.has_validation_errors():
             return self.show_event(rs, event_id)
-        code = self.eventproxy.change_minor_form(rs, event_id, minor_form)
+        code = self.eventproxy.change_minor_form(rs, event_id, validated_form)
         rs.notify_return_code(
             code,
             success=n_("Minor form updated."),
@@ -556,7 +554,7 @@ class EventEventMixin(EventBaseFrontend):
     ) -> CdEDBObject:
         events = self.eventproxy.get_events(rs, self.eventproxy.list_events(rs))
 
-        cutoff = now() - self.conf["EVENT_CHECKIN_HELPER_DURATION"]
+        cutoff: datetime.datetime = now() - self.conf["EVENT_CHECKIN_HELPER_DURATION"]
         count = 0
         for event in events.values():
             for checkin_helper_id in event.checkin_helpers:
@@ -865,7 +863,6 @@ class EventEventMixin(EventBaseFrontend):
         )
         if rs.has_validation_errors():
             return self.add_part_form(rs, event_id)
-        assert data is not None
 
         recipients = []
         if rs.ambience['event'].orga_address:
@@ -951,7 +948,6 @@ class EventEventMixin(EventBaseFrontend):
         data = check(rs, models.EventPart, data, event=rs.ambience["event"])
         if rs.has_validation_errors():
             return self.change_part_form(rs, event_id, part_id)
-        assert data is not None
         has_registrations = self.eventproxy.has_registrations(rs, event_id)
 
         #
@@ -1283,7 +1279,6 @@ class EventEventMixin(EventBaseFrontend):
         )
         if rs.has_validation_errors():
             return self.add_part_group_form(rs, event_id)
-        assert data is not None
         code = self.eventproxy.add_part_group(rs, event_id, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/group_summary")
@@ -1317,7 +1312,6 @@ class EventEventMixin(EventBaseFrontend):
         data = check(rs, models.PartGroup, data, event=rs.ambience["event"])
         if rs.has_validation_errors():
             return self.change_part_group_form(rs, event_id, part_group_id)
-        assert data is not None
         code = self.eventproxy.change_part_group(rs, part_group_id, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/group_summary")
@@ -1356,7 +1350,6 @@ class EventEventMixin(EventBaseFrontend):
         )
         if rs.has_validation_errors():
             return self.add_track_group_form(rs, event_id)
-        assert data is not None
         if data[
             "constraint_type"
         ].is_sync() and not self.eventproxy.may_create_ccs_group(rs, data["track_ids"]):
@@ -1403,7 +1396,6 @@ class EventEventMixin(EventBaseFrontend):
         data = check(rs, models.TrackGroup, data, event=rs.ambience["event"])
         if rs.has_validation_errors():
             return self.change_track_group_form(rs, event_id, track_group_id)
-        assert data is not None
         code = self.eventproxy.change_track_group(rs, track_group_id, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "event/group_summary")
@@ -1689,13 +1681,11 @@ class EventEventMixin(EventBaseFrontend):
             )
         if rs.has_validation_errors():
             return self.create_event_form(rs)
-        assert data is not None
 
         with TransactionObserver(
             rs, self, "create_event", recipients=[self.conf["EVENT_ADMIN_ADDRESS"]]
         ):
             new_id = self.eventproxy.create_event(rs, data)
-            data["id"] = new_id
             event = self.eventproxy.get_event(rs, new_id)
             for fee_ in fee_data:
                 self.eventproxy.create_event_fee(rs, new_id, fee_)

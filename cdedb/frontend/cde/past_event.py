@@ -151,7 +151,9 @@ class CdEPastEventMixin(CdEBaseFrontend):
             rs.notify('warning', n_("Institution parameter got lost."))
 
         pevent_ids = self.pasteventproxy.list_past_events(rs)
-        pevents = list(self.pasteventproxy.get_past_events(rs, pevent_ids).values())
+        pevents: list[models.PastEvent] = list(
+            self.pasteventproxy.get_past_events(rs, pevent_ids).values()
+        )
 
         stats = self.pasteventproxy.past_event_stats(rs)
 
@@ -198,7 +200,6 @@ class CdEPastEventMixin(CdEBaseFrontend):
         data = check(rs, models.PastEvent, data)
         if rs.has_validation_errors():
             return self.change_past_event_form(rs, pevent_id)
-        assert data is not None
         code = self.pasteventproxy.set_past_event(rs, pevent_id, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/show_past_event")
@@ -245,7 +246,6 @@ class CdEPastEventMixin(CdEBaseFrontend):
                     )
         if rs.has_validation_errors():
             return self.create_past_event_form(rs)
-        assert data is not None
         with TransactionObserver(rs, self, "create_past_event"):
             new_id = self.pasteventproxy.create_past_event(rs, data)
             for course in thecourses:
@@ -289,7 +289,6 @@ class CdEPastEventMixin(CdEBaseFrontend):
         data = check(rs, models.PastCourse, data)
         if rs.has_validation_errors():
             return self.change_past_course_form(rs, pevent_id, pcourse_id)
-        assert data is not None
         code = self.pasteventproxy.set_past_course(rs, data)
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/show_past_course")
@@ -313,7 +312,6 @@ class CdEPastEventMixin(CdEBaseFrontend):
         data = check(rs, models.PastCourse, data, creation=True)
         if rs.has_validation_errors():
             return self.create_past_course_form(rs, pevent_id)
-        assert data is not None
         new_id = self.pasteventproxy.create_past_course(rs, data)
         rs.notify_return_code(new_id, success=n_("Course created."))
         return self.redirect(rs, "cde/show_past_course", {'pcourse_id': new_id})

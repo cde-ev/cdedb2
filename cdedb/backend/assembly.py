@@ -1156,6 +1156,7 @@ class AssemblyBackend(AbstractBackend):
                 rs, "assembly.ballots", BALLOT_FIELDS + ('comment',), ballot_ids
             )
             eligible_voters = None
+            are_voting = {}
             if include_is_voting:
                 are_voting = self.are_ballots_voting(rs, ballot_ids)
             ret = {}
@@ -1269,7 +1270,7 @@ class AssemblyBackend(AbstractBackend):
 
                 # new
                 for x in mixed_existence_sorter(new):
-                    new_candidate = copy.deepcopy(data['candidates'][x])
+                    new_candidate: CdEDBObject = copy.deepcopy(data['candidates'][x])
                     new_candidate['ballot_id'] = data['id']
                     ret *= self.sql_insert(rs, "assembly.candidates", new_candidate)
                     self.assembly_log(
@@ -1281,7 +1282,7 @@ class AssemblyBackend(AbstractBackend):
                     )
                 # updated
                 for x in mixed_existence_sorter(updated):
-                    update = copy.deepcopy(data['candidates'][x])
+                    update: CdEDBObject = copy.deepcopy(data['candidates'][x])
                     update['id'] = x
                     ret *= self.sql_update(rs, "assembly.candidates", update)
                     self.assembly_log(
@@ -2279,7 +2280,7 @@ class AssemblyBackend(AbstractBackend):
         """
         ballot_id = affirm(vtypes.ID, ballot_id)
         attachment_ids = affirm(set[vtypes.ID], attachment_ids)
-        attachment_ids = cast(set[vtypes.ID], attachment_ids)  # mypy bug.
+        attachment_ids = cast(set[vtypes.ID], attachment_ids)  # mypy bug.  # pyrefly: ignore[redundant-cast]
 
         with Atomizer(rs):
             ret = 1
@@ -2526,7 +2527,7 @@ class AssemblyBackend(AbstractBackend):
             max_version = self.query_one(rs, query, (attachment_id,))
             if max_version is None:  # pragma: no cover
                 raise ValueError(n_("Attachment does not exist."))
-            version_nr = max_version["max_version_nr"] + 1
+            version_nr: int = max_version["max_version_nr"] + 1
             data['version_nr'] = version_nr
             data['ctime'] = now()
             ret = self.sql_insert(rs, "assembly.attachment_versions", data)

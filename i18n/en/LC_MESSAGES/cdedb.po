@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-08-26 04:26+0200\n"
+"POT-Creation-Date: 2026-08-28 18:25+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -915,6 +915,9 @@ msgstr "Field updated"
 msgid "EventLogCodes.field_removed"
 msgstr "Field removed"
 
+msgid "EventLogCodes.field_pruned"
+msgstr "Field pruned"
+
 msgid "EventLogCodes.questionnaire_changed"
 msgstr "Questionanire changed"
 
@@ -1404,17 +1407,8 @@ msgstr "Lodgements"
 msgid "ViolationKind.other"
 msgstr "Other"
 
-msgid "Roles.meta_admin"
-msgstr "Meta Admin"
-
 msgid "Roles.core_admin"
 msgstr "Core Admin"
-
-msgid "Roles.cde_admin"
-msgstr "CdE Admin"
-
-msgid "Roles.event_admin"
-msgstr "Event Admin"
 
 msgid "Roles.ml_admin"
 msgstr "Mailinglist Admin"
@@ -1422,17 +1416,26 @@ msgstr "Mailinglist Admin"
 msgid "Roles.assembly_admin"
 msgstr "Assembly Admin"
 
-msgid "Roles.finance_admin"
-msgstr "Finance Admin"
-
-msgid "Roles.auditor"
-msgstr "Auditor"
+msgid "Roles.event_admin"
+msgstr "Event Admin"
 
 msgid "Roles.complaint_admin"
 msgstr "Case Archive Admin"
 
+msgid "Roles.auditor"
+msgstr "Auditor"
+
 msgid "Roles.cdelokal_admin"
 msgstr "CdElokal Admin"
+
+msgid "Roles.meta_admin"
+msgstr "Meta Admin"
+
+msgid "Roles.finance_admin"
+msgstr "Finance Admin"
+
+msgid "Roles.cde_admin"
+msgstr "CdE Admin"
 
 msgid "Realms.cde"
 msgstr "CdE"
@@ -3281,6 +3284,9 @@ msgstr ""
 
 msgid ""
 "Cannot change association or kind of a field referenced by an event fee."
+msgstr ""
+
+msgid "Unknown event field(s)."
 msgstr ""
 
 msgid "Must be orga to retrieve stored queries."
@@ -6031,6 +6037,30 @@ msgid "No registration found."
 msgstr ""
 
 msgid "Field name not unique."
+msgstr ""
+
+msgid "Nothing selected."
+msgstr ""
+
+#, python-format
+msgid "Deleted data from %(num)s registrations."
+msgstr ""
+
+msgid "No registrations."
+msgstr ""
+
+#, python-format
+msgid "Deleted data from %(num)s courses."
+msgstr ""
+
+msgid "No courses."
+msgstr ""
+
+#, python-format
+msgid "Deleted data from %(num)s lodgements."
+msgstr ""
+
+msgid "No lodgements."
 msgstr ""
 
 msgid "Wrong associated event."
@@ -12267,6 +12297,9 @@ msgstr ""
 msgid "Custom Filters"
 msgstr ""
 
+msgid "Prune Field Data"
+msgstr ""
+
 msgid "Custom Fields Notes"
 msgstr ""
 
@@ -12298,6 +12331,36 @@ msgid "Description Text"
 msgstr ""
 
 msgid "Value"
+msgstr ""
+
+#, python-format
+msgid "Prune Field Data (%(title)s)"
+msgstr ""
+
+msgid ""
+"Select a custom data field to prune data stored for this field from all "
+"associated entities (registrations/courses/lodgements)."
+msgstr ""
+
+#, python-format
+msgid ""
+"This will preserve the information whether there was some data stored in the "
+"field. It will do nothing for boolean (%(boolean)s) fields. If you need to "
+"completely remove this information, you can use the multi edit for "
+"registrations or the \"%(set_field)s\" functionality for courses and "
+"lodgements."
+msgstr ""
+
+msgid "Set Field (Registrations)"
+msgstr ""
+
+msgid "Set Field (Courses)"
+msgstr ""
+
+msgid "Set Field (Lodgements)"
+msgstr ""
+
+msgid "All data associated with these fields will be irreversibly deleted."
 msgstr ""
 
 #, python-format

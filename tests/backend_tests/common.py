@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import multiprocessing
+import multiprocessing.managers
 import threading
 import unittest
 

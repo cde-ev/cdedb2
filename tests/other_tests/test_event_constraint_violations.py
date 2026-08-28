@@ -1,3 +1,4 @@
+# pyrefly: ignore-errors
 import copy
 import datetime
 import unittest

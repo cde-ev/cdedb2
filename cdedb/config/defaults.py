@@ -283,6 +283,9 @@ MAILMAN_NON_EXPLICIT_DESTINATION_LISTS = {
     "admin@lists.cde-ev.de",
 }
 
+# persona id for the zammad system user
+ZAMMAD_SYSTEM_USER_PERSONA_ID = -1
+
 #################
 # Backend stuff #
 #################

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# pyrefly: ignore-errors[implicit-any-empty-container]
+
 import collections.abc
 import copy
 import datetime
@@ -18,6 +20,7 @@ import cdedb.database.constants as const
 import cdedb.models.event as models
 from cdedb.common import (
     EVENT_SCHEMA_VERSION,
+    AgeClasses,
     CdEDBObject,
     CdEDBObjectMap,
     CourseFilterPositions,
@@ -360,7 +363,7 @@ class TestEventBackend(BackendTest):
             'checkin': False,
             'entries': None,
         }
-        changed_field = {
+        changed_field: CdEDBObject = {
             'kind': const.FieldDatatypes.date,
             'entries': {
                 datetime.date.fromisoformat("2110-08-15"): "early second coming",
@@ -650,7 +653,7 @@ class TestEventBackend(BackendTest):
         for tg_id in event.track_groups.keys():
             self.assertTrue(self.event.delete_track_group(self.key, tg_id))
 
-        new_track_group = {
+        new_track_group: CdEDBObject = {
             'title': "Test",
             'shortname': "Test",
             'constraint_type': const.CourseTrackGroupType.course_choice_sync,
@@ -818,7 +821,7 @@ class TestEventBackend(BackendTest):
         )
         event = self.event.get_event(self.key, event_id)
 
-        new_track = {
+        new_track: CdEDBObject = {
             'title': "Neue Kursschiene",
             'shortname': "Neu",
             'num_choices': 3,
@@ -912,7 +915,7 @@ class TestEventBackend(BackendTest):
         )
         event = self.event.get_event(self.key, event_id)
 
-        new_part = {
+        new_part: CdEDBObject = {
             'title': "Abreise",
             'shortname': "D",
             'part_begin': datetime.date(2222, 11, 11),
@@ -938,6 +941,7 @@ class TestEventBackend(BackendTest):
                 'is_camping_mat': False,
                 'part_id': new_part_id,
                 'registration_id': reg['id'],
+                'age': AgeClasses.full,
             }
 
         new_part_obj = models.EventPart.from_database(new_part)
@@ -1258,8 +1262,10 @@ class TestEventBackend(BackendTest):
     @as_users("emilia")
     def test_registration_participant(self) -> None:
         expectation: CdEDBObject = {
+            'age': AgeClasses.full,
             'amount_paid': decimal.Decimal("0.00"),
             'amount_owed': decimal.Decimal("466.49"),
+            'remaining_owed': decimal.Decimal("466.49"),
             'amount_owed_by_kind': {
                 const.EventFeeType.common: decimal.Decimal("461.49"),
                 const.EventFeeType.external: decimal.Decimal("5.00"),
@@ -1291,6 +1297,7 @@ class TestEventBackend(BackendTest):
             'parental_agreement': True,
             'parts': {
                 1: {
+                    'age': AgeClasses.full,
                     'is_camping_mat': False,
                     'lodgement_id': None,
                     'part_id': 1,
@@ -1298,6 +1305,7 @@ class TestEventBackend(BackendTest):
                     'status': 3,
                 },
                 2: {
+                    'age': AgeClasses.full,
                     'is_camping_mat': False,
                     'lodgement_id': 4,
                     'part_id': 2,
@@ -1305,6 +1313,7 @@ class TestEventBackend(BackendTest):
                     'status': 4,
                 },
                 3: {
+                    'age': AgeClasses.full,
                     'is_camping_mat': False,
                     'lodgement_id': 4,
                     'part_id': 3,
@@ -1408,7 +1417,9 @@ class TestEventBackend(BackendTest):
             self.assertLess(0, new_id)
             new_reg['id'] = new_id
             # amount_owed include non-member additional fee
-            new_reg['amount_owed'] = decimal.Decimal("589.48")
+            new_reg['amount_owed'] = new_reg['remaining_owed'] = decimal.Decimal(
+                "589.48"
+            )
             new_reg['amount_owed_by_kind'] = {
                 const.EventFeeType.common: decimal.Decimal("584.49"),
                 const.EventFeeType.solidary_reduction: decimal.Decimal("-0.01"),
@@ -1423,16 +1434,20 @@ class TestEventBackend(BackendTest):
                 const.EventFeeBudget.cde: decimal.Decimal("5.00"),
             }
             new_reg['amount_paid'] = decimal.Decimal("0.00")
+            new_reg['age'] = AgeClasses.full
             new_reg['payment'] = None
             new_reg['personalized_fees'] = {}
             new_reg['is_member'] = False
             new_reg['fields'] = {}
             new_reg['parts'][1]['part_id'] = 1
             new_reg['parts'][1]['registration_id'] = new_id
+            new_reg['parts'][1]['age'] = AgeClasses.full
             new_reg['parts'][2]['part_id'] = 2
             new_reg['parts'][2]['registration_id'] = new_id
+            new_reg['parts'][2]['age'] = AgeClasses.full
             new_reg['parts'][3]['part_id'] = 3
             new_reg['parts'][3]['registration_id'] = new_id
+            new_reg['parts'][3]['age'] = AgeClasses.full
             new_reg['tracks'][1]['track_id'] = 1
             new_reg['tracks'][1]['registration_id'] = new_id
             new_reg['tracks'][2]['track_id'] = 2
@@ -1458,6 +1473,7 @@ class TestEventBackend(BackendTest):
         )
         expectation: CdEDBObjectMap = {
             1: {
+                'age': AgeClasses.full,
                 'amount_owed': decimal.Decimal("553.99"),
                 'amount_owed_by_kind': {
                     const.EventFeeType.common: decimal.Decimal("573.99"),
@@ -1471,6 +1487,7 @@ class TestEventBackend(BackendTest):
                     const.EventFeeBudget.expenses: decimal.Decimal("553.99"),
                 },
                 'amount_paid': decimal.Decimal("200.00"),
+                'remaining_owed': decimal.Decimal("353.99"),
                 'checkin_periods': [],
                 'ctime': nearly_now(),
                 'event_id': 1,
@@ -1491,6 +1508,7 @@ class TestEventBackend(BackendTest):
                 'parental_agreement': True,
                 'parts': {
                     1: {
+                        'age': AgeClasses.full,
                         'is_camping_mat': False,
                         'lodgement_id': None,
                         'part_id': 1,
@@ -1498,6 +1516,7 @@ class TestEventBackend(BackendTest):
                         'status': const.RegistrationPartStati.not_applied,
                     },
                     2: {
+                        'age': AgeClasses.full,
                         'is_camping_mat': False,
                         'lodgement_id': None,
                         'part_id': 2,
@@ -1505,6 +1524,7 @@ class TestEventBackend(BackendTest):
                         'status': const.RegistrationPartStati.applied,
                     },
                     3: {
+                        'age': AgeClasses.full,
                         'is_camping_mat': False,
                         'lodgement_id': 1,
                         'part_id': 3,
@@ -1543,6 +1563,7 @@ class TestEventBackend(BackendTest):
                 'real_persona_id': None,
             },
             2: {
+                'age': AgeClasses.full,
                 'amount_owed': decimal.Decimal("466.49"),
                 'amount_owed_by_kind': {
                     const.EventFeeType.common: decimal.Decimal("461.49"),
@@ -1556,6 +1577,7 @@ class TestEventBackend(BackendTest):
                     const.EventFeeBudget.cde: decimal.Decimal("5.00"),
                 },
                 'amount_paid': decimal.Decimal("0.00"),
+                'remaining_owed': decimal.Decimal("466.49"),
                 'checkin_periods': [],
                 'ctime': nearly_now(),
                 'event_id': 1,
@@ -1576,6 +1598,7 @@ class TestEventBackend(BackendTest):
                 'parental_agreement': True,
                 'parts': {
                     1: {
+                        'age': AgeClasses.full,
                         'is_camping_mat': False,
                         'lodgement_id': None,
                         'part_id': 1,
@@ -1583,6 +1606,7 @@ class TestEventBackend(BackendTest):
                         'status': const.RegistrationPartStati.waitlist,
                     },
                     2: {
+                        'age': AgeClasses.full,
                         'is_camping_mat': False,
                         'lodgement_id': 4,
                         'part_id': 2,
@@ -1590,6 +1614,7 @@ class TestEventBackend(BackendTest):
                         'status': const.RegistrationPartStati.guest,
                     },
                     3: {
+                        'age': AgeClasses.full,
                         'is_camping_mat': False,
                         'lodgement_id': 4,
                         'part_id': 3,
@@ -1626,6 +1651,7 @@ class TestEventBackend(BackendTest):
                 'real_persona_id': None,
             },
             4: {
+                'age': AgeClasses.u10,
                 'amount_owed': decimal.Decimal("431.99"),
                 'amount_owed_by_kind': {
                     const.EventFeeType.common: decimal.Decimal("431.99"),
@@ -1637,6 +1663,7 @@ class TestEventBackend(BackendTest):
                     const.EventFeeBudget.expenses: decimal.Decimal("431.99"),
                 },
                 'amount_paid': decimal.Decimal("548.48"),
+                'remaining_owed': decimal.Decimal("-116.49"),
                 'checkin_periods': [],
                 'ctime': nearly_now(),
                 'event_id': 1,
@@ -1657,6 +1684,7 @@ class TestEventBackend(BackendTest):
                 'parental_agreement': False,
                 'parts': {
                     1: {
+                        'age': AgeClasses.u10,
                         'is_camping_mat': False,
                         'lodgement_id': None,
                         'part_id': 1,
@@ -1664,6 +1692,7 @@ class TestEventBackend(BackendTest):
                         'status': const.RegistrationPartStati.rejected,
                     },
                     2: {
+                        'age': AgeClasses.u10,
                         'is_camping_mat': False,
                         'lodgement_id': None,
                         'part_id': 2,
@@ -1671,6 +1700,7 @@ class TestEventBackend(BackendTest):
                         'status': const.RegistrationPartStati.cancelled,
                     },
                     3: {
+                        'age': AgeClasses.u10,
                         'is_camping_mat': True,
                         'lodgement_id': 2,
                         'part_id': 3,
@@ -1756,6 +1786,9 @@ class TestEventBackend(BackendTest):
         expectation[4]['amount_owed_by_budget'][const.EventFeeBudget.expenses] = (
             decimal.Decimal("5.50")
         )
+        expectation[4]['remaining_owed'] = (
+            expectation[4]['amount_owed'] - expectation[4]['amount_paid']
+        )
         for key, value in expectation[4]['parts'].items():
             if key in data['parts']:
                 value.update(data['parts'][key])
@@ -1821,7 +1854,7 @@ class TestEventBackend(BackendTest):
         new_id = self.event.create_registration(self.key, new_reg)
         self.assertLess(0, new_id)
         new_reg['id'] = new_id
-        new_reg['amount_owed'] = decimal.Decimal("584.48")
+        new_reg['amount_owed'] = new_reg['remaining_owed'] = decimal.Decimal("584.48")
         new_reg['amount_owed_by_kind'] = {
             const.EventFeeType.common: decimal.Decimal("584.49"),
             const.EventFeeType.solidary_reduction: decimal.Decimal("-0.01"),
@@ -1834,6 +1867,7 @@ class TestEventBackend(BackendTest):
             const.EventFeeBudget.solidarity: decimal.Decimal("-0.01"),
         }
         new_reg['amount_paid'] = decimal.Decimal("0.00")
+        new_reg['age'] = AgeClasses.full
         new_reg['payment'] = None
         new_reg['personalized_fees'] = {}
         new_reg['is_member'] = True
@@ -1841,12 +1875,15 @@ class TestEventBackend(BackendTest):
         new_reg['parts'][1]['part_id'] = 1
         new_reg['parts'][1]['registration_id'] = new_id
         new_reg['parts'][1]['is_camping_mat'] = False
+        new_reg['parts'][1]['age'] = AgeClasses.full
         new_reg['parts'][2]['part_id'] = 2
         new_reg['parts'][2]['registration_id'] = new_id
         new_reg['parts'][2]['is_camping_mat'] = False
+        new_reg['parts'][2]['age'] = AgeClasses.full
         new_reg['parts'][3]['part_id'] = 3
         new_reg['parts'][3]['registration_id'] = new_id
         new_reg['parts'][3]['is_camping_mat'] = False
+        new_reg['parts'][3]['age'] = AgeClasses.full
         new_reg['tracks'][1]['track_id'] = 1
         new_reg['tracks'][1]['registration_id'] = new_id
         new_reg['tracks'][2]['track_id'] = 2
@@ -2115,7 +2152,7 @@ class TestEventBackend(BackendTest):
         self.assertEqual(
             expectation_get, self.event.new_get_lodgements(self.key, (1, 4))
         )
-        new = {
+        new: CdEDBObject = {
             'regular_capacity': 42,
             'title': 'HY',
             'notes': "Notizen",
@@ -2888,6 +2925,7 @@ class TestEventBackend(BackendTest):
         queries = self.event.get_event_queries(self.key, event_id)
         for stored_query in queries.values():
             name, query = stored_query.query_name, stored_query.query
+            assert query is not None
             if name != "Test-Query":
                 self.assertIn(name, expectation)
                 q = expectation[name]
@@ -4997,7 +5035,7 @@ class TestEventBackend(BackendTest):
 
         # Check setting of part groups.
 
-        new_part_group = {
+        new_part_group: CdEDBObject = {
             'title': "Everything",
             'shortname': "all",
             'notes': "Let's see what happens",

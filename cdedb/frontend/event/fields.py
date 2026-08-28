@@ -31,6 +31,7 @@ from cdedb.filter import safe_filter
 from cdedb.frontend.common import (
     REQUESTdata,
     access,
+    ack_delete,
     drow_name,
     process_dynamic_input,
 )
@@ -148,6 +149,90 @@ class EventFieldMixin(EventBaseFrontend):
         return self.redirect(
             rs, "event/field_summary_form", anchor=(nav_tab_active or "").lstrip("#")
         )
+
+    @access(Roles.event)
+    @event_guard(EventPrivileges.basic_write | EventPrivileges.entities_write)
+    def prune_field_select(self, rs: RequestState, event_id: vtypes.ID) -> Response:
+        return self.render(rs, "fields/prune_field_select")
+
+    @access(Roles.event, modi={"POST"})
+    @event_guard(EventPrivileges.basic_write | EventPrivileges.entities_write)
+    @REQUESTdata("reg_field_ids", "course_field_ids", "lodge_field_ids")
+    @ack_delete()
+    def prune_fields(
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        reg_field_ids: Collection[vtypes.ID],
+        course_field_ids: Collection[vtypes.ID],
+        lodge_field_ids: Collection[vtypes.ID],
+    ) -> Response:
+
+        if rs.has_validation_errors():  # ack delete not set or no field ids.
+            return self.prune_field_select(rs, event_id)
+
+        reg_field_ids = set(reg_field_ids)
+        course_field_ids = set(course_field_ids)
+        lodge_field_ids = set(lodge_field_ids)
+
+        field_ids = reg_field_ids | course_field_ids | lodge_field_ids
+
+        if not field_ids <= rs.ambience['event'].fields.keys():
+            err = ValueError(n_("Unknown event field(s)."))
+            if not reg_field_ids <= rs.ambience['event'].fields.keys():
+                rs.append_validation_error(("reg_field_ids", err))
+            if not course_field_ids <= rs.ambience['event'].fields.keys():
+                rs.append_validation_error(("course_field_ids", err))
+            if not lodge_field_ids <= rs.ambience['event'].fields.keys():
+                rs.append_validation_error(("lodge_field_ids", err))
+
+        if not field_ids:
+            for name in (
+                "reg_field_ids",
+                "course_field_ids",
+                "lodge_field_ids",
+            ):
+                rs.append_validation_error((name, ValueError(n_("Nothing selected."))))
+
+        if rs.has_validation_errors():
+            return self.prune_field_select(rs, event_id)
+
+        self.eventproxy.event_keeper_commit(
+            rs, event_id, "Snapshot vor Datenfeld-Leerung."
+        )
+
+        result = self.eventproxy.prune_event_fields(rs, field_ids)
+
+        self.eventproxy.event_keeper_commit(
+            rs, event_id, "Datenfeld-Leerung.", after_change=True
+        )
+
+        if const.FieldAssociations.registration in result:
+            num = result[const.FieldAssociations.registration]
+            rs.notify_return_code(
+                num,
+                success=n_("Deleted data from %(num)s registrations."),
+                info=n_("No registrations."),
+                params={"num": num},
+            )
+        if const.FieldAssociations.course in result:
+            num = result[const.FieldAssociations.course]
+            rs.notify_return_code(
+                num,
+                success=n_("Deleted data from %(num)s courses."),
+                info=n_("No courses."),
+                params={"num": num},
+            )
+        if const.FieldAssociations.lodgement in result:
+            num = result[const.FieldAssociations.lodgement]
+            rs.notify_return_code(
+                num,
+                success=n_("Deleted data from %(num)s lodgements."),
+                info=n_("No lodgements."),
+                params={"num": num},
+            )
+
+        return self.redirect(rs, "event/field_summary_form")
 
     FIELD_REDIRECT = {
         const.FieldAssociations.registration: "event/registration_query",

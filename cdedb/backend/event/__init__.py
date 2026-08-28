@@ -100,7 +100,7 @@ class EventBackend(
         :return: List of blockers, separated by type. The values of the dict
             are the ids of the blockers.
         """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         blockers = {}
 
         # TODO Reduce code duplication
@@ -861,8 +861,7 @@ class EventBackend(
                             keys = {'course_id', 'course_instructor'}
                             for key in keys:
                                 if track[key] in cmap:
-                                    tmp_id = track[key]
-                                    track[key] = cmap[tmp_id]
+                                    track[key] = cmap[track[key]]
                             new_choices = [
                                 cmap.get(course_id, course_id)
                                 for course_id in track['choices']
@@ -870,8 +869,7 @@ class EventBackend(
                             track['choices'] = new_choices
                         for part in new['parts'].values():
                             if part['lodgement_id'] in lmap:
-                                tmp_id = part['lodgement_id']
-                                part['lodgement_id'] = lmap[tmp_id]
+                                part['lodgement_id'] = lmap[part['lodgement_id']]
                         personalized_fees = new.pop('personalized_fees', {})
                         checkin_periods = new.pop('checkin_periods', [])
                         new_id = self.create_registration(rs, new)
@@ -892,8 +890,7 @@ class EventBackend(
                                     for key in keys:
                                         if key in track:
                                             if track[key] in cmap:
-                                                tmp_id = track[key]
-                                                track[key] = cmap[tmp_id]
+                                                track[key] = cmap[track[key]]
                                     if 'choices' in track:
                                         new_choices = [
                                             cmap.get(course_id, course_id)
@@ -904,15 +901,16 @@ class EventBackend(
                                 for part in changed_reg['parts'].values():
                                     if 'lodgement_id' in part:
                                         if part['lodgement_id'] in lmap:
-                                            tmp_id = part['lodgement_id']
-                                            part['lodgement_id'] = lmap[tmp_id]
+                                            part['lodgement_id'] = lmap[
+                                                part['lodgement_id']
+                                            ]
                             changed_reg['id'] = registration_id
                             # Only set registration of "usual" fields are concerned
                             personalized_fees = changed_reg.pop('personalized_fees', {})
                             checkin_periods = changed_reg.pop('checkin_periods', None)
                             if changed_reg.keys() > {'id'}:
                                 # change_note for log entry for registrations
-                                change_note = "Partieller Import."
+                                change_note: str = "Partieller Import."
                                 if data.get('summary'):
                                     change_note = (
                                         "Partieller Import: " + data['summary']

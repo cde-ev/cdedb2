@@ -18,9 +18,9 @@ import importlib.util
 import logging
 import os
 import pathlib
-from collections.abc import Iterator, Mapping, MutableMapping, Sequence
+from collections.abc import Generator, Iterator, Mapping, MutableMapping, Sequence
 from types import ModuleType
-from typing import Any, ClassVar, Final, Self
+from typing import Any, ClassVar, Final, Self, cast
 
 PathLike = pathlib.Path | str
 
@@ -34,7 +34,7 @@ def set_log_level(level: int) -> None:
         handler.setLevel(level)
 
 
-def _import_from_file(path: PathLike | None) -> dict[str, Any]:
+def _import_from_file(path: PathLike | None) -> Mapping[str, Any]:
     """Import all variables from the given file and return them as dict."""
     if path is None:
         _LOGGER.warning("No file path provided")
@@ -50,7 +50,7 @@ def _import_from_file(path: PathLike | None) -> dict[str, Any]:
 
 
 @functools.cache
-def _import_from_file_inner(path_str: str) -> dict[str, Any]:
+def _import_from_file_inner(path_str: str) -> Mapping[str, Any]:
     spec = importlib.util.spec_from_file_location("override", path_str)
     if not spec or not spec.loader:
         raise ImportError(spec, spec.loader if spec else None)  # pragma: no cover
@@ -59,7 +59,7 @@ def _import_from_file_inner(path_str: str) -> dict[str, Any]:
     return dict_from_module(override)
 
 
-def dict_from_module(module: ModuleType) -> dict[str, Any]:
+def dict_from_module(module: ModuleType) -> Mapping[str, Any]:
     return {key: getattr(module, key) for key in dir(module) if not key.startswith("_")}
 
 
@@ -172,7 +172,7 @@ class Config(BaseConfig):
 
         self._configchain = collections.ChainMap(
             *self._configs.values(),
-            self._defaults,
+            cast(dict[str, Any], self._defaults),
         )
 
         if recurse:
@@ -185,7 +185,7 @@ class Config(BaseConfig):
         *,
         config_paths: Sequence[PathLike | None] | None = None,
         **kwargs: Any,
-    ) -> Iterator[None]:
+    ) -> Generator[None]:
         """Allow temporarily overriding config values via context manager."""
 
         _LOGGER.debug(f"Starting config override with {config_paths=} and {kwargs=}.")
@@ -242,9 +242,9 @@ class SecretsConfig(BaseConfig):
 
         # for security reasons, do not use the _SECRETS_DEFAULT in production
         if pathlib.Path("/PRODUCTIONVM").is_file():
-            defaults = {}
+            defaults: dict[str, Any] = {}
         else:
-            defaults = self._defaults
+            defaults = cast(dict[str, Any], self._defaults)
 
         self._configchain = collections.ChainMap(
             self._filter_overrides(self._config._context_manager_overrides),

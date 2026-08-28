@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# pyrefly: ignore-errors[implicit-any-attribute]
+
 """Everything regarding the role model of the CdEDB."""
 
 from collections.abc import Collection
@@ -81,6 +83,7 @@ class Roles(_Roles):
     droid_infra = ()
     droid_orga = ()
     droid_resolve = ()
+    droid_zammad_resolve = ()
     droid_quick_partial_export = ()
 
     @classmethod
@@ -90,6 +93,7 @@ class Roles(_Roles):
             cls.droid_infra,
             cls.droid_orga,
             cls.droid_resolve,
+            cls.droid_zammad_resolve,
             cls.droid_quick_partial_export,
         })
 

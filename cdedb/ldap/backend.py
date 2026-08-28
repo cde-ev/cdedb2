@@ -484,7 +484,7 @@ class LDAPsqlBackend:
     @classmethod
     def lower_ldap_filter_to_sql(
         cls,
-        filter_: FilterLike,
+        filter_: FilterLike | None,
         attr_replacements: InsensitiveDict,  # type: ignore[type-arg]
     ) -> tuple[sql.Composable, list["DatabaseValue_s"]]:
         """Lower the given LDAP filter to a SQL query.

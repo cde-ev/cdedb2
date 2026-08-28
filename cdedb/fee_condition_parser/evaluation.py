@@ -1,7 +1,7 @@
 import dataclasses
 from collections.abc import Set as AbstractSet
 from datetime import date
-from typing import TypedDict
+from typing import TypedDict, cast
 
 import pyparsing as pp
 
@@ -32,14 +32,14 @@ def get_referenced_names(result: pp.ParseResults | None) -> ReferencedNames:
     if result is None:
         return referenced_names
     if result.get_name() == "field":
-        referenced_names.field_names.add(result[0])
+        referenced_names.field_names.add(cast(str, result[0]))
     elif result.get_name() == "part":
-        referenced_names.part_names.add(result[0])
+        referenced_names.part_names.add(cast(str, result[0]))
     elif result.get_name() in {'and', 'or', 'xor'}:
-        referenced_names.update(get_referenced_names(result[0]))
-        referenced_names.update(get_referenced_names(result[1]))
+        referenced_names.update(get_referenced_names(cast(pp.ParseResults, result[0])))
+        referenced_names.update(get_referenced_names(cast(pp.ParseResults, result[1])))
     elif result.get_name() == 'not':
-        referenced_names.update(get_referenced_names(result[0]))
+        referenced_names.update(get_referenced_names(cast(pp.ParseResults, result[0])))
     return referenced_names
 
 
@@ -75,4 +75,4 @@ def evaluate(result: pp.ParseResults, data: EvaluationData) -> bool:
         'bool': lambda x: data['other_values'][x[0]],
     }
     # print(result.get_name())
-    return functions[result.get_name()](result)
+    return functions[str(result.get_name())](result)
