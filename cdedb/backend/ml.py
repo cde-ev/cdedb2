@@ -6,7 +6,7 @@ event and assembly realm in the form of specific mailing lists.
 
 import itertools
 from collections.abc import Collection
-from typing import Any, Protocol, overload
+from typing import Any, Protocol, cast, overload
 
 import subman
 
@@ -40,6 +40,7 @@ from cdedb.common.roles import implying_realms
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import DatabaseValue_s
+from cdedb.filter import cdedbid_filter
 from cdedb.models.ml import (
     ML_TYPE_MAP,
     AssemblyAssociatedMailinglist,
@@ -79,7 +80,7 @@ class MlBackend(AbstractBackend):
     def is_admin(cls, rs: RequestState) -> bool:
         return super().is_admin(rs)
 
-    @access("ml")
+    @access("ml", "droid")
     def get_ml_types(
         self,
         rs: RequestState,
@@ -1930,3 +1931,45 @@ class MlBackend(AbstractBackend):
         return self.ml_log(
             rs, code, mailinglist_id, change_note=change_note, atomized=False
         )
+
+    @access("droid_zammad_resolve")
+    def list_zammad_subscriptions(
+        self, rs: RequestState
+    ) -> dict[vtypes.Email, list[str]]:
+        zammad_user_id: vtypes.PersonaID = self.conf["ZAMMAD_SYSTEM_USER_PERSONA_ID"]
+        zammad_user_id = affirm(vtypes.PersonaID, zammad_user_id)
+
+        query = """
+            SELECT mailinglist_id
+            FROM ml.subscription_states
+            WHERE persona_id = %(persona_id)s
+        """
+        params = {"persona_id": zammad_user_id}
+
+        ml_ids = {e["mailinglist_id"] for e in self.query_all(rs, query, params)}
+        mailinglists = self.get_mailinglists(rs, ml_ids)
+
+        query = """
+            SELECT persona_id, mailinglist_id
+            FROM ml.subscription_states
+            WHERE
+                mailinglist_id = ANY(%(ml_ids)s)
+                AND subscription_state = ANY(%(states)s)
+            ORDER BY mailinglist_id, persona_id
+        """
+        params = {
+            "ml_ids": ml_ids,
+            "states": const.SubscriptionState.subscribing_states(),
+        }
+
+        ret: dict[vtypes.Email, list[str]] = {
+            ml.address: [] for ml in mailinglists.values()
+        }
+        for e in self.query_all(rs, query, params):
+            if e["persona_id"] == zammad_user_id:
+                continue
+            ret[mailinglists[e["mailinglist_id"]].address].append(
+                cdedbid_filter(cast(vtypes.PersonaID, e["persona_id"]))
+            )
+
+        return ret

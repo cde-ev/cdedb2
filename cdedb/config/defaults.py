@@ -278,6 +278,9 @@ MAILMAN_ACCEPTABLE_ALIASES = {
     "sk-schulung24-orga@aka.cde-ev.de": ["schuko24-orga@aka.cde-ev.de"],
 }
 
+# persona id for the zammad system user
+ZAMMAD_SYSTEM_USER_PERSONA_ID = -1
+
 #################
 # Backend stuff #
 #################

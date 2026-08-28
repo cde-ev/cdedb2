@@ -3504,3 +3504,8 @@ class CoreBaseFrontend(AbstractFrontend):
         del result[0][QueryScope.core_user.get_primary_key()]
 
         return self.send_json(rs, unwrap(result))
+
+    @access("droid_zammad_resolve")
+    def api_zammad_list_subscribers(self, rs: RequestState) -> Response:
+        data = self.mlproxy.list_zammad_subscriptions(rs)
+        return self.send_json(rs, data)

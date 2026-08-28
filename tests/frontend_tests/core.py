@@ -3514,6 +3514,18 @@ class TestCoreFrontend(FrontendTest):
         )
         self.get('/core/api/resolve', status=403)
 
+    @prepsql("DELETE FROM ml.subscription_states")
+    @prepsql("""
+        INSERT INTO ml.subscription_states
+            (mailinglist_id, persona_id, subscription_state)
+        VALUES
+            -- One other subscriber on list 1.
+            (1, 1, 1), (1, 2, 1),
+            -- Two other subscribers on list 2.
+            (2, 1, 1), (2, 2, 10), (2, 3, 30),
+                -- Some more non-subscribers on list 2.
+                (2, 4, 2), (2, 5, 11), (2, 6, 20), (2, 7, 40)
+    """)
     def test_zammad_resolve_api(self) -> None:
         at = urllib.parse.quote_plus('@')
         token_key = model_droid.APIToken.request_header_key
@@ -3604,6 +3616,24 @@ class TestCoreFrontend(FrontendTest):
                 "username": USER_DICT["anton"]["username"],
             },
         )
+
+        url3 = "/core/api/zammad/subscribers"
+
+        self.get(url3, status=403)
+
+        self.assertEqual(-1, self.conf["ZAMMAD_SYSTEM_USER_PERSONA_ID"])
+        with self.assertRaises(ValueError):
+            self.get(url3, headers=headers, status=500)
+
+        with self.conf.with_overrides(ZAMMAD_SYSTEM_USER_PERSONA_ID=1):
+            self.get(url3, headers=headers)
+            self.assertEqual(
+                self.response.json,
+                {
+                    "announce@lists.cde-ev.de": ["DB-2-7"],
+                    "werbung@lists.cde-ev.de": ["DB-2-7", "DB-3-5"],
+                },
+            )
 
     @as_users("janis")
     def test_markdown_endpoint(self) -> None:
