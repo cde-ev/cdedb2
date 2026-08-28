@@ -3017,10 +3017,14 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("daniel")
     def test_show_past_event_unprivileged(self) -> None:
-        self.traverse({'description': 'Mitglieder'})
-        self.assertNoLink('event/past/event/list')
-        self.get("/event/past/event/list", status=403)
-        self.get("/event/past/event/1/show", status=403)
+        self.traverse(
+            "Veranstaltungen",
+            "Verg. Veranstaltungen",
+            "PfingstAkademie 2014",
+            "Verg. Veranstaltungen",
+            "VAN",
+        )
+        self.assertNoLink(r"/past/event/\d+/show")
 
     @as_users("berta")
     def test_past_course_counting(self) -> None:
@@ -3537,3 +3541,42 @@ class TestCdEFrontend(FrontendTest):
             for cc, country in get_localized_country_codes(fake_rs):
                 self.assertEqual(cc, get_country_code_from_country(fake_rs, country))
                 self.assertEqual(cc, get_country_code_from_country(fake_rs, cc))
+
+    @as_users("berta", "daniel", "emilia", maintain_data=True)
+    def test_past_event_visibility(self) -> None:
+        self.traverse("Veranstaltungen", "Verg. Veranstaltungen")
+        save = self.response
+
+        # Berta is member but not participant, Emilia is participant.
+        if self.user_in("berta"):
+            self.traverse("FingerAkademie 2020")
+            self.assertPresence("Ferdinand Findus (AL)", div="list-participants")
+            self.assertPresence("und 3 weitere", div="list-participants")
+        elif self.user_in("emilia"):
+            self.traverse("FingerAkademie 2020")
+            self.assertPresence("Charly Clown", div="list-participants")
+            self.assertPresence("Emilia (Emmy) Eventis", div="list-participants")
+            self.assertPresence("Ferdinand Findus (AL)", div="list-participants")
+            self.assertPresence("Garcia Generalis", div="list-participants")
+        else:
+            self.assertNoLink("/past/event/4/show")
+        self.response = save
+
+        # No participants, but Eerta is member.
+        if self.user_in("berta"):
+            self.traverse("Geburtstagsfete")
+            self.assertPresence("keine Teilnehmenden")
+        else:
+            self.assertNoLink("/past/event/2/show")
+        self.response = save
+
+        # Everyone participated.
+        if self.user_in("berta", "daniel", "emilia"):
+            self.traverse("PfingstAkademie 2014")
+            self.assertPresence("Akira Abukara", div="list-participants")
+            self.assertPresence("(Bindi) Beispiel", div="list-participants")
+            self.assertPresence("Charly Clown", div="list-participants")
+            self.assertPresence("Daniel Dino", div="list-participants")
+            self.assertPresence("Emilia (Emmy) Eventis", div="list-participants")
+            self.assertPresence("Ferdinand Findus", div="list-participants")
+        self.response = save

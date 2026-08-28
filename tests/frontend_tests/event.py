@@ -148,10 +148,15 @@ class TestEventFrontend(FrontendTest):
     )
     def test_sidebar(self) -> None:
         self.traverse({'description': 'Veranstaltungen'})
-        everyone = {"Veranstaltungen", "Übersicht", "Veranstaltungshelfer:innen"}
-        past_events = {"Verg. Veranstaltungen", "Kurssuche"}
+        everyone = {
+            "Übersicht",
+            "Alle Veranstaltungen",
+            "Veranstaltungshelfer:innen",
+            "Verg. Veranstaltungen",
+        }
+        past_events = {"Kurssuche"}
         past_event_admin = {"Verg.-Veranstaltungen-Log"}
-        admin = {"Alle Veranstaltungen", "Ungereimtheiten", "Log"}
+        admin = {"Ungereimtheiten", "Log"}
 
         # not event admins (also orgas!)
         if self.user_in('emilia', 'martin', 'werner'):
@@ -288,7 +293,7 @@ class TestEventFrontend(FrontendTest):
 
         # Test Event Administration Admin View
         self.assertNoLink('/event/event/log')
-        self.assertNoLink('/event/event/list', content="Alle Veranstaltungen")
+        self.traverse("Alle Veranstaltungen")
         self.traverse({'href': '/event/event/1/show'})
         self.assertNoLink('/event/event/1/roles/manage')
         self.assertNotIn('deleteeventform', self.response.forms)

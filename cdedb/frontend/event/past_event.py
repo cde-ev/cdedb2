@@ -12,6 +12,7 @@ import csv
 import itertools
 from collections.abc import Sequence
 
+import werkzeug.exceptions
 from werkzeug import Response
 
 import cdedb.common.validation.types as vtypes
@@ -98,9 +99,20 @@ class PastEventMixin(EventBaseFrontend):
             {'spec': spec, 'result': result, 'count': count},
         )
 
-    @access("member", "cde_admin")
+    @access("event")
     def show_past_event(self, rs: RequestState, pevent_id: int) -> Response:
         """Display concluded event."""
+        # If user is not member or cde_admin but event user, check if they were a
+        #  participant, otherwise block the request.
+        assert rs.user.persona_id is not None
+        if rs.user.roles.isdisjoint([
+            "member",
+            "cde_admin",
+        ]) and not self.pasteventproxy.is_participant(
+            rs, pevent_id, rs.user.persona_id
+        ):
+            raise werkzeug.exceptions.Forbidden
+
         course_ids = self.pasteventproxy.list_past_courses(rs, pevent_id)
         courses = self.pasteventproxy.get_past_courses(rs, course_ids)
         total_num, participants = self.pasteventproxy.list_event_participants(
@@ -118,7 +130,7 @@ class PastEventMixin(EventBaseFrontend):
             },
         )
 
-    @access("member", "cde_admin")
+    @access("event")
     def show_past_course(
         self, rs: RequestState, pevent_id: int, pcourse_id: int
     ) -> Response:
@@ -126,6 +138,15 @@ class PastEventMixin(EventBaseFrontend):
         total_num, participants = self.pasteventproxy.get_course_assignments(
             rs, pcourse_id, honor_admins="past_event" in rs.user.admin_views
         )
+        # if user is event user only, check if they were a participant of the event, otherwise block the request
+        assert rs.user.persona_id is not None
+        if rs.user.roles.isdisjoint([
+            "member",
+            "cde_admin",
+        ]) and not self.pasteventproxy.is_participant(
+            rs, pevent_id, rs.user.persona_id
+        ):
+            raise werkzeug.exceptions.Forbidden
         personas = self.coreproxy.get_past_event_users(rs, participants.keys())
         return self.render(
             rs,
@@ -137,7 +158,7 @@ class PastEventMixin(EventBaseFrontend):
             },
         )
 
-    @access("member", "cde_admin")
+    @access("event")
     @REQUESTdata("institution")
     def list_past_events(
         self, rs: RequestState, institution: const.PastInstitutions | None = None
@@ -148,6 +169,13 @@ class PastEventMixin(EventBaseFrontend):
 
         pevent_ids = self.pasteventproxy.list_past_events(rs)
         pevents = list(self.pasteventproxy.get_past_events(rs, pevent_ids).values())
+
+        # Get an iterator of the past events the user has visited
+        # (currently used for hiding links from event realm users without membership)
+        assert rs.user.persona_id is not None
+        participated_pevent_ids = self.pasteventproxy.list_persona_events(
+            rs, rs.user.persona_id
+        ).keys()
 
         stats = self.pasteventproxy.past_event_stats(rs)
 
@@ -172,6 +200,7 @@ class PastEventMixin(EventBaseFrontend):
                 'stats': stats,
                 'institution': institution,
                 'used_institutions': used_institutions,
+                'participated_pevent_ids': participated_pevent_ids,
             },
         )
 
