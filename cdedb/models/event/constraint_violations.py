@@ -40,7 +40,6 @@ import cdedb.models.event as models
 from cdedb.common import (
     AgeClasses,
     CdEDBObject,
-    determine_age_class,
     make_persona_name,
     n_,
     now,
@@ -334,7 +333,12 @@ class ViolationAux:
 
     attendee_data: models.AttendeeStats
     choices_data: models.ChoiceStats
-    inhabitants_data: "dict[vtypes.LodgementID, dict[int, LodgementInhabitants]]"
+    involved_inhabitants_data: (
+        "dict[vtypes.LodgementID, dict[int, LodgementInhabitants]]"
+    )
+    uninvolved_inhabitants_data: (
+        "dict[vtypes.LodgementID, dict[int, LodgementInhabitants]]"
+    )
 
     def evaluate_all(self) -> ViolationList:
         ret = ConstraintViolation.dispatch(self, ViolationContext())
@@ -598,17 +602,6 @@ class RegistrationConstraintViolation(ConstraintViolation, abc.ABC):
             persona = aux.personas[registration_['persona_id']]
             # TODO use dataclass after converting regestrations to dataclass
             registration_['persona'] = persona.as_dict()
-            registration_['age'] = determine_age_class(
-                persona.birthday, aux.event.begin
-            )
-            registration_['remaining_owed'] = (
-                registration_['amount_owed'] - registration_['amount_paid']
-            )
-
-            for part in aux.event.parts.values():
-                registration_['parts'][part.id]['age'] = determine_age_class(
-                    persona.birthday, part.part_begin
-                )
 
         return [
             context.add(registration=registration)
@@ -2083,7 +2076,7 @@ class IncorrectNumInhabitantsCV(LodgementPartConstraintViolation):
         lodgement = context.lodgement
         part = context.part
 
-        inhabitants = aux.inhabitants_data[lodgement.id][part.id]
+        inhabitants = aux.involved_inhabitants_data[lodgement.id][part.id]
         event_over = now().date() > aux.event.end
         severity = None
 
@@ -2214,7 +2207,7 @@ class IllegalMixedLodgementCV(LodgementPartConstraintViolation):
         lodgement = context.lodgement
         part = context.part
 
-        inhabitants = aux.inhabitants_data[lodgement.id][part.id]
+        inhabitants = aux.involved_inhabitants_data[lodgement.id][part.id]
         non_mixing_regs = [reg for reg in inhabitants.all if not reg['mixed_lodging']]
         if not non_mixing_regs:
             return None

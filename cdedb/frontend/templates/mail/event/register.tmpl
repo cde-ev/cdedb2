@@ -40,8 +40,8 @@ Wenn Du dies tust, überweise bitte zuerst deinen Mitgliedsbeitrag und dann dein
 
 {% if account %}
 Überweise dazu bitte {{ fee|money }} auf das folgende Konto.
-Achte bitte bei internationalen Überweisungen darauf, dass der
-Empfänger keine Gebühren zahlen muss.
+Achte bitte bei internationalen Überweisungen darauf, dass die
+Empfänger:in keine Gebühren zahlen muss.
 
 Kontoinhaber:     {{ account.get_account_holder() }}
 IBAN:             {{ account.get_iban()|iban }}

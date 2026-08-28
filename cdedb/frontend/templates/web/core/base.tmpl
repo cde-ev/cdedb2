@@ -93,7 +93,7 @@
             {% if user.admin_views.intersection(('core_user', 'auditor')) %}
                 {{ util.href(cdedblink("core/view_log"), gettext("Account Log"), aclass="list-group-item",
                         icon="far fa-list-alt", active=(sidenav_active=='core_log')) }}
-                {{ util.href(cdedblink("core/view_changelog_meta"), gettext("Userdata Log"), aclass="list-group-item",
+                {{ util.href(cdedblink("core/view_changelog_meta"), gettext("Change Log"), aclass="list-group-item",
                         icon="far fa-list-alt", active=(sidenav_active=='core_change_log')) }}
             {% endif %}
             </div>

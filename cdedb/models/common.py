@@ -255,6 +255,14 @@ class CdEDataclass:
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
+        """Create an instance from the dict returned from the database.
+
+        The ideomatic approach is to retrieve the database fields via
+        `query_one`, using `get_select_query` to construct the query,
+        and put the return value in this function.
+
+        For `query_all`, see `many_from_database`.
+        """
         for field in cls.dataclass_fields():
             # Convert some values after extracting them from the database.
             type_ = field.type

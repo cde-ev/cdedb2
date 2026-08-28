@@ -1225,7 +1225,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         persona = self.coreproxy.get_event_user(rs, rs.user.persona_id, event_id)
         age = determine_age_class(persona.birthday, rs.ambience['event'].begin)
         registration['mixed_lodging'] = registration['mixed_lodging'] and age.may_mix()
-        change_note = "Anmeldung durch Teilnehmer bearbeitet."
+        change_note = "Anmeldung durch Teilnehmer:in bearbeitet."
         code = self.eventproxy.set_registration(
             rs, registration, change_note, orga_input=False
         )
@@ -2515,7 +2515,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                     {r_id: reg['fields'][field_name] for r_id, reg in regs.items()},
                 )
             else:
-                raise RuntimeError(n_("Impossible"))
+                raise RuntimeError(n_("Impossible."))
             sortkey = "checkin_periods.max_checkin_time"
         elif action == 'checkout':
             if checkout_time:
@@ -2527,7 +2527,7 @@ class EventRegistrationMixin(EventBaseFrontend):
                     rs, {r_id: reg['fields'][field_name] for r_id, reg in regs.items()}
                 )
             else:
-                raise RuntimeError(n_("Impossible"))
+                raise RuntimeError(n_("Impossible."))
             sortkey = "checkin_periods.max_checkout_time"
         elif action == 'modify_checkin':
             if not checkin_time:  # delete latest checkins

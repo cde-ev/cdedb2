@@ -79,7 +79,7 @@ class EventLodgementMixin(EventBaseFrontend):
             registration_id=None,
         )
         lodgements = violation_data['lodgements']
-        inhabitants = violation_data['inhabitants']
+        inhabitants = violation_data['involved_inhabitants']
         groups = self.eventproxy.get_lodgement_groups(rs, event_id)
 
         # Sum inhabitants per group, part and status.
@@ -226,16 +226,11 @@ class EventLodgementMixin(EventBaseFrontend):
         """Display details of one lodgement."""
         params: dict[str, Any] = {}
 
-        involved_inhabitants = self.eventproxy.get_grouped_inhabitants(
-            rs, event_id, lodgement_ids=(lodgement_id,), involved=True
-        )[lodgement_id]
-        uninvolved_inhabitants = self.eventproxy.get_grouped_inhabitants(
-            rs, event_id, lodgement_ids=(lodgement_id,), involved=False
-        )[lodgement_id]
-
         violation_data = self.get_constraint_violations(
             rs, rs.ambience['event'], lodgement_id=lodgement_id, registration_id=None
         )
+        involved_inhabitants = violation_data['involved_inhabitants'][lodgement_id]
+        uninvolved_inhabitants = violation_data['uninvolved_inhabitants'][lodgement_id]
 
         lodgements = violation_data['all_lodgements']
         params["groups"] = self.eventproxy.get_lodgement_groups(rs, event_id)
@@ -248,28 +243,19 @@ class EventLodgementMixin(EventBaseFrontend):
             lodgements[sorted_ids[i + 1]] if i + 1 < len(sorted_ids) else None
         )
 
+        params['involved_inhabitants'] = involved_inhabitants
+        params['uninvolved_inhabitants'] = uninvolved_inhabitants
+
         EP = EventPrivileges
-        if self.is_privileged(rs, EP.registrations_read, EP.checkin):
-            params['involved_inhabitants'] = involved_inhabitants
-            params['uninvolved_inhabitants'] = uninvolved_inhabitants
-            params['registrations'] = violation_data['all_registrations']
+        params["show_registrations"] = self.is_privileged(
+            rs, EP.registrations_read, EP.checkin
+        )
+        if params["show_registrations"]:
             params['violations'] = violation_data['violations']
         else:
             params['violations'] = violation_data['violations'].get(
                 registration_id=None
             )
-
-        params['inhabitant_numbers'] = {
-            part_id: (
-                len(involved_inhabitants.get(part_id, LodgementInhabitants()).regular),
-                len(
-                    involved_inhabitants.get(
-                        part_id, LodgementInhabitants()
-                    ).camping_mat
-                ),
-            )
-            for part_id in rs.ambience['event'].parts
-        }
 
         if not any(inhabitants.all for inhabitants in involved_inhabitants.values()):
             merge_dicts(rs.values, {'ack_delete': True})
@@ -730,7 +716,7 @@ class EventLodgementMixin(EventBaseFrontend):
             return self.manage_inhabitants_form(rs, event_id, lodgement_id)
         # Iterate all registrations to find changed ones
         reg_data = []
-        change_note = f"Bewohner von {rs.ambience['lodgement'].title} geändert."
+        change_note = f"Bewohnende von {rs.ambience['lodgement'].title} geändert."
         for reg_id, reg in registrations.items():
             new_reg: CdEDBObject = {
                 'id': reg_id,
@@ -810,7 +796,7 @@ class EventLodgementMixin(EventBaseFrontend):
                     new_reg['parts'][part_id] = {'lodgement_id': lodgement_id}
                     new_regs[reg_id] = new_reg
                 change_notes.append(
-                    f"Bewohner von {lodgements[lodgement_id]} und"
+                    f"Bewohnende von {lodgements[lodgement_id]} und"
                     f" {lodgements[swap_lodgement_id]} für"
                     f" {rs.ambience['event'].parts[part_id].title} getauscht"
                 )

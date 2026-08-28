@@ -41,6 +41,7 @@ import phonenumbers
 import psycopg2.extras
 import werkzeug
 import werkzeug.datastructures
+import werkzeug.exceptions
 import werkzeug.routing
 from schulze_condorcet.types import Candidate
 from typing_extensions import TypeForm
@@ -403,6 +404,16 @@ class RequestState(ConnectionContainer):
         for key, value in self.retrieve_validation_errors():
             ret.setdefault(key, []).append(value)
         return ret
+
+    def raise_for_validation_errors(self) -> None:
+        if self.has_validation_errors():
+            raise werkzeug.exceptions.BadRequest(
+                "Validation failed! "
+                + " ".join(
+                    f"{key}: {error}"
+                    for key, error in self.retrieve_validation_errors()
+                )
+            )
 
 
 if TYPE_CHECKING:

@@ -1,0 +1,11 @@
+#!/bin/sh
+#
+# add updated translation files to the finished merge
+#
+
+if [ -n "$( git diff --cached --name-only --diff-filter=ACM | grep "LC_MESSAGES/cdedb.po" )" ]; then
+    echo "Run post-merge hook to include the changed i18n files in the merge commit..."
+    rm .git/MERGE_HEAD
+    git commit --amend --no-edit
+    echo "... done"
+fi

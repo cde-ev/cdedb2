@@ -1,83 +1,112 @@
-{% set sidenav_active='core_mydata'%}
+{% if is_admin_variant %}
+    {% set sidenav_active='core_manage_users' %}
+{% else %}
+    {% set sidenav_active='core_mydata'%}
+{% endif %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
+{% import "web/generic.tmpl" as generic with context %}
 {% block scripts %}{{ util.cdedb_script('cdedb_helper.js') }}{% endblock %}
 {% set jshint='weak' %}
+
 {% block title %}
-    {% trans %}
-    	Edit Your Data
-    {% endtrans %}
+    {% if is_admin_variant %}
+        {% trans name=committed_persona.get_name() %}Edit {{ name }}{% endtrans %}
+    {% else %}
+        {% trans %}Edit Your Data{%endtrans%}
+    {% endif %}
 {% endblock %}
+
 {% block breadcrumb %}
     {{ super() }}
-    {{ util.breadcrumb_link(show_user_link(user, values['id']), values|persona_name,
-            icon="user") }}
-    {{ util.breadcrumb_link(cdedblink("core/change_user_form"), gettext("Edit Your Data"), active=True) }}
+    {{ util.breadcrumb_link(show_user_link(user, committed_persona.id), committed_persona.get_name(), icon="user") }}
+    {% if is_admin_variant %}
+        {{ util.breadcrumb_link(cdedblink("core/admin_change_user_form"), gettext("Edit Userdata"), active=True) }}
+    {% else %}
+        {{ util.breadcrumb_link(cdedblink("core/change_user_form"), gettext("Edit Your Data"), active=True) }}
+    {% endif %}
 {% endblock %}
+
+{% block heading%}
+    {% if is_admin_variant %}
+        {{ util.context_heading(gettext("Edit Userdata"), committed_persona|persona_name, 'user', gettext("User")) }}
+    {% endif %}
+{% endblock %}
+
 {% block content %}
     <script nonce="{{ csp_nonce }}">
         $(function() {
             $('#changedataform').cdedbProtectChanges();
         });
     </script>
-    <form action="{{ cdedblink('core/change_user') }}" method="POST" id="changedataform" class="form-horizontal" autocomplete="off">
-        {{ util.anti_csrf_token('core/change_user') }}
-        {{ util.input_hidden(name="generation") }}
+
+    <form action="{{ cdedblink('core/admin_change_user' if is_admin_variant else 'core/change_user') }}" method="POST" id="changedataform" class="form-horizontal" autocomplete="off">
+        {{ util.anti_csrf_token('core/admin_change_user' if is_admin_variant else 'core/change_user') }}
+        {{ util.input_hidden(name="generation", value=generation) }}
 
         {{ util.h(n_("Personal Information"), level=4, underline=True) }}
-        {{ util.form_input_text(name="title", label=gettext("Title_[[of a persona]]"),
-            info=gettext("Prefixed academic degree or similar.")) }}
+        {{ util.form_input_text(name="title", label=gettext("Title_[[of a persona]]"), info=gettext("Prefixed academic degree or similar.")) }}
         {{ util.form_input_text(name="given_names", label=gettext("Given Names"),
             info=gettext("For salutation, mailing, nametags and event notices. First name usually used.")) }}
         {{ util.form_input_text(name="legal_given_names", label=gettext("Legal Given Names"),
             info=gettext("(If different from given names) For direct debits and donation receipts. Only visible to %(orgas_and_admins)s.")|format(
                     orgas_and_admins=util.href(docurl("Realm_Core_Privacy"), gettext("Orgas and Admins")))|s) }}
-        {% if 'show_legal_given_names' in shown_fields %}
+        {% if pending_persona.hasattr('show_legal_given_names') %}
             {{ util.form_input_checkbox(name="show_legal_given_names", label=gettext("Show legal given names for member search")) }}
         {% endif %}
         {# Set type="search" as a workaround for LastPass Extension insisting on autofilling this with the user name. #}
-        {{ util.form_input_text(type="search", name="nickname", label=gettext("Nickname"),
-            info=gettext("For nametags and event notices.")) }}
+        {{ util.form_input_text(name="nickname", label=gettext("Nickname"), info=gettext("For nametags and event notices."), type="search") }}
         {{ util.form_input_text(name="family_name", label=gettext("Family Name")) }}
-        {% if "birth_name" in shown_fields %}
+        {% if pending_persona.hasattr("birth_name") %}
             {{ util.form_input_text(name="birth_name", label=gettext("Birth Name"),
                 info=gettext("Original family name after the current family name has changed, for example through marriage.")) }}
         {% endif %}
-        {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix"),
-                info=gettext("Suffixed academic degree or similar.")) }}
+        {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix"), info=gettext("Suffixed academic degree or similar.")) }}
 
-        {% if 'gender' in shown_fields %}
+        {% if pending_persona.hasattr('gender') %}
             {{ util.form_input_select(
                 name="gender", entries=enums['Genders']|enum_entries(processing=gettext), label=gettext("Gender"),
                 info=gettext("For lodgement assignment at events. Only visible to %(orgas_and_admins)s.")|format(
                     orgas_and_admins=util.href(docurl("Realm_Core_Privacy"), gettext("Orgas and Admins")))|s) }}
         {% endif %}
-        {% if "pronouns" in shown_fields %}
+        {% if pending_persona.hasattr("pronouns") %}
             {{ util.form_input_text(name="pronouns", label=gettext("Pronouns"), placeholder=gettext("he/him, she/her, they/them, …")) }}
             {{ util.form_input_checkbox(name="pronouns_nametag", label=gettext("Show pronouns on nametags")) }}
             {{ util.form_input_checkbox(name="pronouns_profile", label=gettext("Show pronouns on profile")) }}
         {% endif %}
+        {% if pending_persona.hasattr("birthday") %}
+            {{ util.form_input_text(name="birthday", label=gettext("Birthday"), type="date") }}
+        {% endif %}
 
-        {% if "paper_expuls" in shown_fields or "donation" in shown_fields %}
+        {% if is_admin_variant %}
+            {{ util.h(n_("Account & Membership"), level=4, underline=True)}}
+        {% elif (pending_persona.hasattr("paper_expuls") or pending_persona.hasattr("donation")) %}
             {{ util.h(n_("Membership"), level=4, underline=True) }}
         {% endif %}
-        {% if "donation" in shown_fields %}
-            {% if has_special_donation %}
-                {{ util.form_input_static(label=gettext("Annual Donation"), value=values["donation"]|money(lang=lang),
-                                          info=gettext("You allow the CdE to withdraw this amount annually"
-                                                       " via direct debit authorization, in addition to the annual membership fee.")
-                                               + " " +
-                                               gettext("Your donation is outside of the minimal and maximal boundary values."
-                                                       " Please contact %(mail)s if you want to change it.")|format(mail=MANAGEMENT_ADDRESS)) }}
-                {{ util.input_hidden(name="donation", value=values["donation"]) }}
+        {% if pending_persona.hasattr("donation") %}
+            {% if is_admin_variant %}
+                {{ util.form_input_text(name="donation", label=gettext("Annual Donation"), type="number", attributes='min="0" step="0.01"'|s, addon="€") }}
             {% else %}
-                {{ util.form_input_text(name="donation", label=gettext("Annual Donation"), type="number",
-                                        attributes='min="%(min)s" max="%(max)s" step="0.01"'|s|format(min=min_donation, max=max_donation), addon="€",
-                                        info=gettext("You allow the CdE to withdraw this amount annually"
-                                                     " via direct debit authorization, in addition to the annual membership fee.")) }}
+                {% if has_special_donation %}
+                    {{ util.form_input_static(label=gettext("Annual Donation"), value=values["donation"]|money(lang=lang),
+                                            info=gettext("You allow the CdE to withdraw this amount annually"
+                                                        " via direct debit authorization, in addition to the annual membership fee.")
+                                                + " " +
+                                                gettext("Your donation is outside of the minimal and maximal boundary values."
+                                                        " Please contact %(mail)s if you want to change it.")|format(mail=MANAGEMENT_ADDRESS)) }}
+                    {{ util.input_hidden(name="donation", value=values["donation"]) }}
+                {% else %}
+                    {{ util.form_input_text(name="donation", label=gettext("Annual Donation"), type="number",
+                                            attributes='min="%(min)s" max="%(max)s" step="0.01"'|s|format(min=min_donation, max=max_donation), addon="€",
+                                            info=gettext("You allow the CdE to withdraw this amount annually"
+                                                        " via direct debit authorization, in addition to the annual membership fee.")) }}
+                {% endif %}
             {% endif %}
         {% endif %}
-        {% if "paper_expuls" in shown_fields %}
+        {% if pending_persona.hasattr("is_searchable") %}
+            {{ util.form_input_checkbox(name="is_searchable", label=gettext("Searchable")) }}
+        {% endif %}
+        {% if pending_persona.hasattr("paper_expuls") %}
             {{ util.form_input_checkbox(name="paper_expuls", label=gettext("Printed exPuls"),
                                         info=gettext("The exPuls is published semi-anually printed and online. "
                                                      "You can find further information about the online version at %(link)s.")|format(
@@ -85,21 +114,26 @@
                                                                     (gettext("Members") + " / " +
                                                                      gettext("Miscellaneous"))))|s) }}
         {% endif %}
+        {% if is_admin_variant %}
+            {{ util.form_input_textarea(name="notes", label=gettext("Admin Notes"), rows="7", markdown=True, info=gettext("Visible to all Admins.")) }}
+        {% endif %}
 
         {{ util.h(n_("Contact Information"), level=4, underline=True) }}
-        {{ util.form_input_static(label=gettext("E-Mail"), value=username,
+        {{ util.form_input_static(label=gettext("E-Mail"), value=committed_persona.username,
                 info=gettext("To Change Your email address, use the button on Your Profile Page.")) }}
-        {% if "telephone" in shown_fields or "mobile" in shown_fields %}
+        {% if pending_persona.hasattr("telephone") %}
             {{ util.form_input_text(name="telephone", label=gettext("Phone"), type="tel") }}
+        {% endif %}
+        {% if pending_persona.hasattr("mobile") %}
             {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel") }}
         {% endif %}
-        {% if "weblink" in shown_fields %}
+        {% if pending_persona.hasattr("weblink") %}
             {{ util.form_input_text(name="weblink", label=gettext("WWW"), markdown=True) }}
         {% endif %}
 
-        {% if "address" in shown_fields %}
+        {% if pending_persona.hasattr("address") %}
             {{ util.h(n_("Address"), level=4, underline=True) }}
-            {% if "paper_expuls" in shown_fields %}
+            {% if pending_persona.hasattr("paper_expuls") %}
                 <p>
                 {% trans %}
                     This should be your primary address. The exPuls will be sent here.
@@ -108,15 +142,15 @@
             {% endif %}
             {{ util.form_input_text(name="address", label=gettext("Street and House Number")) }}
             {{ util.form_input_text(name="address_supplement", label=gettext("Address Supplement")) }}
-            {% if 'show_address' in shown_fields %}
+            {% if pending_persona.hasattr('show_address') %}
                 {{ util.form_input_checkbox(name="show_address", label=gettext("Show precise address for member search")) }}
             {% endif %}
             {{ util.form_input_text(name="postal_code", label=gettext("Zipcode")) }}
             {{ util.form_input_text(name="location", label=gettext("City")) }}
-            {{ util.form_input_select(name="country", label=gettext("Country"), entries=COUNTRY_CODES,
-                                      defaultvalue=DEFAULT_COUNTRY) }}
+            {{ util.form_input_select(name="country", label=gettext("Country"), entries=COUNTRY_CODES, defaultvalue=DEFAULT_COUNTRY) }}
         {% endif %}
-        {% if "address2" in shown_fields %}
+
+        {% if pending_persona.hasattr("address2") %}
             {{ util.h(n_("Second Address"), level=4, underline=True) }}
             <p>
             {% trans %}
@@ -126,15 +160,15 @@
             </p>
             {{ util.form_input_text(name="address2", label=gettext("Street and House Number")) }}
             {{ util.form_input_text(name="address_supplement2", label=gettext("Address Supplement")) }}
-            {% if 'show_address' in shown_fields %}
+            {% if pending_persona.hasattr('show_address') %}
                 {{ util.form_input_checkbox(name="show_address2", label=gettext("Show precise address for member search")) }}
             {% endif %}
             {{ util.form_input_text(name="postal_code2", label=gettext("Zipcode")) }}
             {{ util.form_input_text(name="location2", label=gettext("City")) }}
-            {{ util.form_input_select(name="country2", label=gettext("Country"), entries=COUNTRY_CODES,
-                                      defaultvalue=DEFAULT_COUNTRY) }}
+            {{ util.form_input_select(name="country2", label=gettext("Country"), entries=COUNTRY_CODES, defaultvalue=DEFAULT_COUNTRY) }}
         {% endif %}
-        {% if "specialisation" in shown_fields %}
+
+        {% if pending_persona.hasattr("specialisation") %}
             {{ util.h(n_("Miscellaneous"), level=4, underline=True) }}
             {{ util.form_input_textarea(name="specialisation", label=gettext("Specialisation"), markdown=True) }}
             {{ util.form_input_textarea(name="affiliation", label=gettext("School, University, …"), markdown=True) }}
@@ -142,6 +176,18 @@
             {{ util.form_input_textarea(name="interests", label=gettext("Interests"), markdown=True) }}
             {{ util.form_input_textarea(name="free_form", label=gettext("Miscellaneous"), rows="5", markdown=True) }}
         {% endif %}
-        {{ util.form_input_submit(label=gettext("Save"), cancellink=show_user_link(user, user.persona_id)) }}
+
+        {% if is_admin_variant %}
+            {% call util.bootstrap_panel(aclass="panel-primary") %}
+                {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes")) }}
+            {% endcall %}
+            {% if code == enums['PersonaChangeStati'].pending %}
+                {{ util.form_input_submit(label=gettext("Save (including pending changes)"), cancellink=show_user_link(user, committed_persona.id)) }}
+            {% else %}
+                {{ util.form_input_submit(label=gettext("Save"), cancellink=show_user_link(user, committed_persona.id)) }}
+            {% endif %}
+        {% else %}
+            {{ util.form_input_submit(label=gettext("Save"), cancellink=show_user_link(user, user.persona_id)) }}
+        {% endif %}
     </form>
 {% endblock %}

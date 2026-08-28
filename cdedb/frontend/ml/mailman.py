@@ -154,18 +154,18 @@ Das Abonnement von $member auf der Mailingliste
     $listname
 wurde deaktiviert, da zu viele Mails nicht zugestellt werden konnten.
 
-Dies bedeutet, dass keine weiteren Mails dieser Liste an den Abonnenten versendet
+Dies bedeutet, dass keine weiteren Mails dieser Liste an die Abonnent:in versendet
 werden. Diese Einschränkung ist momentan *nicht* in der CdEDB sichtbar.
 
-Als Moderator kannst du versuchen, den Abonnenten auf einem anderen Weg zu
+Als Moderator kannst du versuchen, die Abonnent:in auf einem anderen Weg zu
 kontaktieren und über den Grund der Unzustellbarkeit zu informieren.
 Die Zustellbenachrichtigung, falls vorhanden, ist angehängt.
 Bei Fragen dazu wende dich an das Adminteam:
     <{self.conf["TROUBLESHOOTING_ADDRESS"]}>
-Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Empfänger mit
+Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Empfänger:innen mit
 ähnlichen Email-Anbietern, kontaktiere bitte auch das Adminteam.
 
-Als Workaround kannst du den Nutzer manuell von der Mailingliste entfernen,
+Als Workaround kannst du den Account manuell von der Mailingliste entfernen,
 15 Minuten warten, und ihn danach wieder auf die Liste abonnieren.
 Dadurch wird das Abonnement vorerst wieder aktiviert.
 """.strip(),
@@ -173,20 +173,20 @@ Dadurch wird das Abonnement vorerst wieder aktiviert.
 Eine Email auf der Mailingliste
     $listname
 konnte an $member nicht zugestellt werden.
-Gegebenenfalls ist es sinnvoll, sie außerhalb der Mailingliste an den
-Nutzer weiterzuleiten.
-Diese Fehlermeldung wird höchstens einmal pro Tag, Nutzer und Liste versendet,
+Gegebenenfalls ist es sinnvoll, sie außerhalb der Mailingliste an die
+Empfänger:in weiterzuleiten.
+Diese Fehlermeldung wird höchstens einmal pro Tag, Account und Liste versendet,
 auch wenn mehrere Emails unzustellbar waren.
 
-Bei Wiederholung wird dies dazu führen, dass dem Nutzer keine Malis dieser Liste
+Bei Wiederholung wird dies dazu führen, dass dem Account keine Mails dieser Liste
 mehr gesendet werden.
 
-Als Moderator kannst du versuchen, den Abonnenten auf einem anderen Weg zu
+Als Moderator kannst du versuchen, die Abonnent:in auf einem anderen Weg zu
 kontaktieren und über den Grund der Unzustellbarkeit zu informieren.
 Die Zustellbenachrichtigung, falls vorhanden, ist angehängt.
 Bei Fragen dazu wende dich an das Adminteam:
     <{self.conf["TROUBLESHOOTING_ADDRESS"]}>
-Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Empfänger mit
+Wenn sich derartige Fehlermeldungen häufen, z.B. für mehrere Empfänger:innen mit
 ähnlichen Email-Anbietern, kontaktiere bitte auch das Adminteam.
 """.strip(),
         }

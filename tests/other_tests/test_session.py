@@ -82,19 +82,21 @@ class TestSessionBackend(BackendTest):
 
         # "resolve" droid api token.
         resolve_secret: str = self.secrets['API_TOKENS']['resolve']
-        resolve_token = model_droid.ResolveToken.get_token_string(resolve_secret)
+        resolve_token = model_droid.CyberAkaResolveToken.get_token_string(
+            resolve_secret
+        )
 
         user = self.session.lookuptoken(resolve_token, "127.0.1.0")
         self.assertIsNone(user.persona_id)
-        self.assertIsInstance(user.droid, model_droid.ResolveToken)
-        assert isinstance(user.droid, model_droid.ResolveToken)
+        self.assertIsInstance(user.droid, model_droid.CyberAkaResolveToken)
+        assert isinstance(user.droid, model_droid.CyberAkaResolveToken)
         self.assertIsNone(user.droid.id)
         self.assertEqual(
             {"anonymous", "droid", "droid_resolve", "droid_infra"}, user.roles
         )
 
         # "resolve" droid api token with invalid secret.
-        invalid_resolve_token = model_droid.ResolveToken.get_token_string("abc")
+        invalid_resolve_token = model_droid.CyberAkaResolveToken.get_token_string("abc")
 
         with self.assertRaisesRegex(APITokenError, "Invalid API token."):
             self.session.lookuptoken(invalid_resolve_token, "127.0.1.1")

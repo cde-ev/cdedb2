@@ -28,9 +28,7 @@ import cdedb.models.past_event as models_past_event
 from cdedb.common import (
     CdEDBObject,
     DefaultReturnCode,
-    Realm,
     RequestState,
-    User,
     get_mandatory_form_fields,
     make_persona_name,
     merge_dicts,
@@ -47,19 +45,17 @@ from cdedb.common.exceptions import (
     PrivilegeError,
     ValidationWarning,
 )
-from cdedb.common.fields import (
-    PERSONA_ASSEMBLY_FIELDS,
-    PERSONA_CDE_FIELDS,
-    PERSONA_CORE_FIELDS,
-    PERSONA_EVENT_FIELDS,
-    PERSONA_ML_FIELDS,
-    PERSONA_STATUS_FIELDS,
-)
 from cdedb.common.i18n import format_country_code, get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
 from cdedb.common.privileges import EventPrivileges, is_privileged_event
-from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
+from cdedb.common.query import (
+    Query,
+    QueryConstraint,
+    QueryOperators,
+    QueryScope,
+    QuerySpecEntry,
+)
 from cdedb.common.query.defaults import DEFAULT_QUERIES
 from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.roles import (
@@ -75,10 +71,10 @@ from cdedb.common.roles import (
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
-    PERSONA_COMMON_FIELDS,
     PERSONA_EVENT_CREATION as EVENT_TRANSITION_FIELDS,
 )
 from cdedb.filter import (
+    cdedbid_filter,
     enum_entries_filter,
     markdown_parse_safe,
     money_filter,
@@ -93,10 +89,12 @@ from cdedb.frontend.common import (
     access,
     ack_delete,
     basic_redirect,
+    cdedburl,
     check_validation as check,
     inspect_validation as inspect,
     periodic,
     request_dict_extractor,
+    request_extractor,
 )
 from cdedb.models.common import CdEDataclassMap
 from cdedb.models.core import CdEPersona
@@ -790,7 +788,7 @@ class CoreBaseFrontend(AbstractFrontend):
             persona.username = REDACTED
             persona.legal_given_names = REDACTED
         else:
-            raise RuntimeError("Impossible")
+            raise RuntimeError("Impossible.")
 
         has_lastschrift = REDACTED
         if isinstance(persona, models.CdEPersona):
@@ -1445,91 +1443,96 @@ class CoreBaseFrontend(AbstractFrontend):
             ret.append(result)
         return self.send_json(rs, {'personas': ret})
 
-    def _changeable_persona_fields(
-        self, rs: RequestState, user: User, restricted: bool = True
-    ) -> set[str]:
-        """Helper to retrieve the appropriate fields for (admin_)change_user.
+    def _get_redacted_persona(
+        self,
+        rs: RequestState,
+        persona_id: int,
+        data: CdEDBObject,
+        admin_access: bool = False,
+    ) -> models.CorePersona:
+        """Helper to retrieve the persona for (admin_)change_user.
 
-        :param restricted: If True, only return fields the user may change
-            themselves, i.e. remove the restricted fields.
+        Since some persona attributes are not meant to be changed there, we use
+        the REDACT mechanic to remove them from the dataset.
+
+        :param data: The latest changelog version of the user.
         """
-        assert user.persona_id is not None
-        ret: set[str] = set()
-        # some fields are of no interest here.
-        hidden_fields = set(PERSONA_STATUS_FIELDS) | {"id", "username"}
-        hidden_cde_fields = (
-            hidden_fields
-            | {
-                "balance",
-                "bub_search",
-                "decided_search",
-                "foto",
-                "trial_member",
-                "honorary_member",
-            }
-        ) - {"is_searchable"}
-        roles_to_fields = {
-            "persona": (set(PERSONA_CORE_FIELDS) | {"notes"}) - hidden_fields,
-            "ml": set(PERSONA_ML_FIELDS) - hidden_fields,
-            "assembly": set(PERSONA_ASSEMBLY_FIELDS) - hidden_fields,
-            "event": set(PERSONA_EVENT_FIELDS) - hidden_fields,
-            "cde": (set(PERSONA_CDE_FIELDS) - hidden_cde_fields),
-        }
-        for role, fields in roles_to_fields.items():
-            if role in user.roles:
-                ret |= fields
+        status = self.coreproxy.get_persona_status(rs, persona_id)
+        status_bits_to_be_redacted = status.get_status_bits()
 
-        # hide the donation property if no active lastschrift exists, to avoid confusion
-        if "donation" in ret and not self.cdeproxy.list_lastschrift(
-            rs, [user.persona_id], active=True
-        ):
-            ret.remove("donation")
+        persona: models.CorePersona
+        if status.is_cde_realm:
+            persona = models.CdEPersona.from_database(data, allow_superfluous=True)
+            persona.balance = persona.REDACTED
+            persona.bub_search = persona.REDACTED
+            persona.decided_search = persona.REDACTED
+            persona.foto = persona.REDACTED
+            persona.trial_member = persona.REDACTED
+            persona.honorary_member = persona.REDACTED
+            # hide the donation property if no active lastschrift exists, to avoid confusion
+            if not self.cdeproxy.list_lastschrift(rs, [persona_id], active=True):
+                persona.donation = persona.REDACTED
+            if admin_access:
+                status_bits_to_be_redacted.remove("is_searchable")
+            if not admin_access:
+                persona.birthday = persona.REDACTED
+        elif status.is_event_realm:
+            persona = models.EventPersona.from_database(data, allow_superfluous=True)
+            if not admin_access:
+                persona.birthday = persona.REDACTED
+        elif status.is_assembly_realm:
+            persona = models.AssemblyPersona.from_database(data, allow_superfluous=True)
+        elif status.is_ml_realm:
+            persona = models.MlPersona.from_database(data, allow_superfluous=True)
+        else:
+            persona = models.CorePersona.from_database(data, allow_superfluous=True)
 
-        # hide the member search toggles if no cde realm
-        for key in ret & {"show_legal_given_names", "show_address", "show_address2"}:
-            if "cde" not in user.roles:
-                ret.remove(key)
+        # Ignore that we initialized the persona with the id of the changelog.
+        persona.id = persona.REDACTED
+        persona.username = persona.REDACTED
+        for bit in status_bits_to_be_redacted:
+            setattr(persona, bit, persona.REDACTED)
 
-        restricted_fields = {"notes", "birthday", "is_searchable"}
-        if restricted:
-            ret -= restricted_fields
-
-        return ret
+        return persona
 
     @access("persona")
     def change_user_form(self, rs: RequestState) -> Response:
         """Render form."""
         assert rs.user.persona_id is not None
-        generation = self.coreproxy.changelog_get_generation(rs, rs.user.persona_id)
-        data = unwrap(
-            self.coreproxy.changelog_get_history(rs, rs.user.persona_id, (generation,))
-        )
+        persona_id = rs.user.persona_id
+        generation = self.coreproxy.changelog_get_generation(rs, persona_id)
+        data = self.coreproxy.changelog_get_one_history(rs, persona_id, generation)
         if data['code'] == const.PersonaChangeStati.pending:
             rs.notify("info", n_("Change pending."))
-        del data['change_note']
-        shown_fields = self._changeable_persona_fields(rs, rs.user, restricted=True)
+        pending_persona = self._get_redacted_persona(rs, persona_id, data)
+        committed_persona = self.coreproxy.get_persona(rs, persona_id)
 
         min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
         max_donation = self.conf["MAXIMAL_LASTSCHRIFT_DONATION"]
-        has_special_donation = (
-            "donation" in shown_fields
-            and not min_donation <= data["donation"] <= max_donation
+        has_special_donation = pending_persona.has("donation") and not (
+            min_donation <= getattr(pending_persona, "donation") <= max_donation
         )
 
-        merge_dicts(rs.values, data)
-        mandatory_fields = (
-            get_mandatory_form_fields(PERSONA_COMMON_FIELDS)
-            | {'address', 'location'}  # we enforce this by hand in change_user
-        )
+        merge_dicts(rs.values, pending_persona.as_dict())
+
+        mandatory_fields = pending_persona.mandatory_form_fields(creation=False)
+        # we enforce this by hand in change_user
+        if pending_persona.hasattr("address"):
+            mandatory_fields.add("address")
+        if pending_persona.hasattr("location"):
+            mandatory_fields.add("location")
+
         return self.render(
             rs,
             "change_user",
             {
-                'username': data['username'],
-                'shown_fields': shown_fields,
+                'pending_persona': pending_persona,
+                'committed_persona': committed_persona,
+                'generation': generation,
                 'min_donation': min_donation,
                 'max_donation': max_donation,
                 'has_special_donation': has_special_donation,
+                'is_admin_variant': False,
             },
             mandatory_fields,
         )
@@ -1539,20 +1542,27 @@ class CoreBaseFrontend(AbstractFrontend):
     def change_user(self, rs: RequestState, generation: int) -> Response:
         """Change own data set."""
         assert rs.user.persona_id is not None
-        attributes = self._changeable_persona_fields(rs, rs.user, restricted=True)
-        data = request_dict_extractor(rs, attributes)
-        data['id'] = rs.user.persona_id
+        persona_id = rs.user.persona_id
+        generation = self.coreproxy.changelog_get_generation(rs, persona_id)
+        data = self.coreproxy.changelog_get_one_history(rs, persona_id, generation)
+        persona = self._get_redacted_persona(rs, persona_id, data)
+        fields = {
+            k: v
+            for k, v in persona.requestdict_fields(creation=False)
+            if getattr(persona, k) != persona.REDACTED
+        }
+        data = request_dict_extractor(rs, fields)
+        data['id'] = persona_id
         data = check(rs, vtypes.Persona, data, "persona")
         if not data:
             rs.ignore_validation_errors()
             return self.change_user_form(rs)
+
         # take special care for annual donations in combination with lastschrift
         if "donation" in data and (
-            lastschrift_ids := self.cdeproxy.list_lastschrift(
-                rs, [rs.user.persona_id], active=True
-            )
+            l_ids := self.cdeproxy.list_lastschrift(rs, [persona_id], active=True)
         ):
-            current = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+            current = self.coreproxy.get_cde_user(rs, persona_id)
             min_donation = self.conf["MINIMAL_LASTSCHRIFT_DONATION"]
             max_donation = self.conf["MAXIMAL_LASTSCHRIFT_DONATION"]
             # The user may specify only donations between a specific minimal and maximal
@@ -1572,9 +1582,7 @@ class CoreBaseFrontend(AbstractFrontend):
                         },
                     ),
                 ))
-            lastschrift = self.cdeproxy.get_lastschrift(
-                rs, unwrap(lastschrift_ids.keys())
-            )
+            lastschrift = self.cdeproxy.get_lastschrift(rs, unwrap(l_ids.keys()))
             # "Enforce" consent of the account holder if the user changed his donation.
             if (
                 current.donation != data["donation"]
@@ -1586,6 +1594,7 @@ class CoreBaseFrontend(AbstractFrontend):
                     " the owner agreed to the change before submitting it here."
                 )
                 rs.append_validation_error(("donation", ValidationWarning(msg)))
+
         # Gender and primary address may not be unset
         if data.get('gender') == const.Genders.not_specified:
             rs.append_validation_error(('gender', ValueError(n_("Must not be empty."))))
@@ -1594,14 +1603,15 @@ class CoreBaseFrontend(AbstractFrontend):
             if address_row in data.keys():
                 if not data[address_row]:
                     rs.append_validation_error((address_row, e))
+
         if rs.has_validation_errors():
             return self.change_user_form(rs)
-        change_note = "Normale Änderung."
+
         code = self.coreproxy.change_persona(
-            rs, data, generation=generation, change_note=change_note
+            rs, data, generation=generation, change_note="Normale Änderung."
         )
         rs.notify_return_code(code)
-        return self.redirect_show_user(rs, rs.user.persona_id)
+        return self.redirect_show_user(rs, persona_id)
 
     @access("core_admin")
     @REQUESTdata("download", "is_search")
@@ -1661,20 +1671,6 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.create_user_form(rs)
         return self.redirect(rs, realm + "/create_user")
 
-    @staticmethod
-    def admin_bits(rs: RequestState) -> set[Realm]:
-        """Determine realms this admin can see.
-
-        This is somewhat involved due to realm inheritance.
-        """
-        ret = {"persona"}
-        if "core_admin" in rs.user.roles:
-            ret |= REALM_INHERITANCE.keys()
-        for realm in REALM_INHERITANCE:
-            if f"{realm}_admin" in rs.user.roles:
-                ret |= {realm} | implied_realms(realm)
-        return ret
-
     @access(*REALM_ADMINS)
     def admin_change_user_form(
         self, rs: RequestState, persona_id: vtypes.PersonaID
@@ -1687,29 +1683,32 @@ class CoreBaseFrontend(AbstractFrontend):
             return self.redirect_show_user(rs, persona_id)
 
         generation = self.coreproxy.changelog_get_generation(rs, persona_id)
-        data = unwrap(
-            self.coreproxy.changelog_get_history(rs, persona_id, (generation,))
-        )
-        del data['change_note']
-        merge_dicts(rs.values, data)
-
+        data = self.coreproxy.changelog_get_one_history(rs, persona_id, generation)
         if data['code'] == const.PersonaChangeStati.pending:
             rs.notify("info", n_("Change pending."))
-        status = self.coreproxy.get_persona_status(rs, rs.ambience['persona'].id)
-        roles = extract_roles(status.as_dict(), introspection_only=True)
-        user = User(persona_id=persona_id, roles=roles)
-        shown_fields = self._changeable_persona_fields(rs, user, restricted=False)
+
+        pending_persona = self._get_redacted_persona(
+            rs, persona_id, data, admin_access=True
+        )
+        merge_dicts(rs.values, pending_persona.as_dict())
+
+        mandatory_fields = pending_persona.mandatory_form_fields(creation=False)
+        # We have users with an unknown birthday (this shouldn't
+        # be a blocker for admins to edit those users at all) and want to
+        # be able to correct wrong birthdays into missing ones.
+        mandatory_fields -= {"birthday"}
+
         return self.render(
             rs,
-            "admin_change_user",
+            "change_user",
             {
-                'admin_bits': self.admin_bits(rs),
-                'shown_fields': shown_fields,
-                # We have users with an unknown birthday (this shouldn't
-                # be a blocker for admins to edit those users at all) and want to
-                # be able to correct wrong birthdays into missing ones.
+                'pending_persona': pending_persona,
+                'committed_persona': rs.ambience['persona'],
+                'generation': generation,
+                'code': data['code'],
+                'is_admin_variant': True,
             },
-            get_mandatory_form_fields(PERSONA_COMMON_FIELDS) - {'birthday'},
+            mandatory_fields,
         )
 
     @access(*REALM_ADMINS, modi={"POST"})
@@ -1724,12 +1723,20 @@ class CoreBaseFrontend(AbstractFrontend):
         """Privileged edit of data set."""
         if not self.coreproxy.is_relative_admin(rs, persona_id):
             raise werkzeug.exceptions.Forbidden(n_("Not a relative admin."))
+        if rs.ambience['persona'].is_archived:
+            rs.notify("error", n_("Persona is archived."))
+            return self.redirect_show_user(rs, persona_id)
+
         # Assure we don't accidently change the original.
-        status = self.coreproxy.get_persona_status(rs, rs.ambience['persona'].id)
-        roles = extract_roles(status.as_dict(), introspection_only=True)
-        user = User(persona_id=persona_id, roles=roles)
-        attributes = self._changeable_persona_fields(rs, user, restricted=False)
-        data = request_dict_extractor(rs, attributes)
+        generation = self.coreproxy.changelog_get_generation(rs, persona_id)
+        data = self.coreproxy.changelog_get_one_history(rs, persona_id, generation)
+        persona = self._get_redacted_persona(rs, persona_id, data, admin_access=True)
+        fields = {
+            k: v
+            for k, v in persona.requestdict_fields(creation=False)
+            if getattr(persona, k) != persona.REDACTED
+        }
+        data = request_dict_extractor(rs, fields)
         data['id'] = persona_id
         data = check(rs, vtypes.Persona, data)
         # take special care for annual donations in combination with lastschrift
@@ -2312,12 +2319,10 @@ class CoreBaseFrontend(AbstractFrontend):
                     n_("Cannot modify own meta admin privileges.")
                 )
             if rs.user.persona_id == change["submitted_by"]:
-                raise werkzeug.exceptions.Forbidden(
-                    n_(
-                        "Only a different admin than the submitter"
-                        " may approve a privilege change."
-                    )
+                msg = n_(
+                    "Only a different admin may approve a privilege change you submitted."
                 )
+                raise werkzeug.exceptions.Forbidden(msg)
         code = self.coreproxy.finalize_privilege_change(rs, change_id, change_status)
         success = n_("Change committed.") if ack else n_("Change rejected.")
         info = n_("Password reset issued for new admin.")
@@ -3155,8 +3160,10 @@ class CoreBaseFrontend(AbstractFrontend):
     @access("core_admin", "cde_admin", "event_admin")
     def list_pending_changes(self, rs: RequestState) -> Response:
         """List non-committed changelog entries."""
-        pending = self.coreproxy.changelog_get_pending_changes(rs)
-        return self.render(rs, "list_pending_changes", {'pending': pending})
+        pending_personas = self.coreproxy.changelog_get_pending_changes(rs)
+        # its ensured that there is up to one pending changelog entry per persona
+        personas = self.coreproxy.get_personas(rs, pending_personas.keys())
+        return self.render(rs, "list_pending_changes", {'personas': personas})
 
     @periodic("pending_changelog_remind")
     def pending_changelog_remind(
@@ -3406,26 +3413,84 @@ class CoreBaseFrontend(AbstractFrontend):
     ) -> DefaultReturnCode:
         return self.coreproxy.set_cron_store(rs, name, data)
 
-    @access("droid_resolve")
-    @REQUESTdata("username")
-    def api_resolve_username(
-        self, rs: RequestState, username: vtypes.Email
-    ) -> Response:
+    def _api_resolve_username(
+        self, rs: RequestState, event_only: bool
+    ) -> tuple[CdEDBObject, ...] | None:
         """API to resolve username to that users given names and family name."""
+        username = request_extractor(rs, {"username": vtypes.Email})["username"]
         if rs.has_validation_errors():
-            err = {'error': tuple(map(str, rs.retrieve_validation_errors()))}
-            return self.send_json(rs, err)
+            return None
 
-        constraints = (
+        constraints: list[QueryConstraint] = [
             ('username', QueryOperators.equal, username),
-            ('is_event_realm', QueryOperators.equal, True),
-        )
+        ]
+
+        if event_only:
+            constraints.append(
+                ('is_event_realm', QueryOperators.equal, True),
+            )
+
         query = Query(
             QueryScope.core_user,
             QueryScope.core_user.get_spec(),
             ("given_names", "family_name", "is_member", "username"),
             constraints,
-            (('personas.id', True),),
+            [],
+        )
+        return self.coreproxy.submit_resolve_api_query(rs, query)
+
+    @access("droid_resolve")
+    def api_cyberaka_resolve_username(self, rs: RequestState) -> Response:
+        result = self._api_resolve_username(rs, event_only=True)
+        if result is None:
+            err = {'error': tuple(map(str, rs.retrieve_validation_errors()))}
+            return self.send_json(rs, err)
+        return self.send_json(rs, unwrap(result) if result else {})
+
+    @access("droid_zammad_resolve")
+    def api_zammad_resolve_username(self, rs: RequestState) -> Response:
+        result = self._api_resolve_username(rs, event_only=False)
+        rs.raise_for_validation_errors()
+        if not result:
+            raise werkzeug.exceptions.NotFound("Username not found.")
+        persona_id = unwrap(result)[QueryScope.core_user.get_primary_key()]
+        return self.send_json(rs, {"persona_id": cdedbid_filter(persona_id)})
+
+    @access("droid_zammad_resolve")
+    @REQUESTdata("persona_id")
+    def api_zammad_resolve_persona_id(
+        self, rs: RequestState, persona_id: vtypes.PersonaID
+    ) -> Response:
+        rs.raise_for_validation_errors()
+
+        query = Query(
+            QueryScope.core_user,
+            QueryScope.core_user.get_spec(),
+            ["given_names", "nickname", "family_name", "username", "foto"],
+            [
+                (
+                    QueryScope.core_user.get_primary_key(),
+                    QueryOperators.equal,
+                    persona_id,
+                )
+            ],
+            [],
         )
         result = self.coreproxy.submit_resolve_api_query(rs, query)
-        return self.send_json(rs, unwrap(result) if result else {})
+
+        if not result:
+            raise werkzeug.exceptions.NotFound(f"Persona {persona_id!r} not found.")
+
+        if foto := result[0]["foto"]:
+            result[0]["foto"] = cdedburl(
+                rs, "core/get_foto", {'foto': foto}, force_external=True
+            )
+
+        del result[0][QueryScope.core_user.get_primary_key()]
+
+        return self.send_json(rs, unwrap(result))
+
+    @access("droid_zammad_resolve")
+    def api_zammad_list_subscribers(self, rs: RequestState) -> Response:
+        data = self.mlproxy.list_zammad_subscriptions(rs)
+        return self.send_json(rs, data)

@@ -971,7 +971,9 @@ class EventCourseMixin(EventBaseFrontend):
 
         # Iterate all registrations to find changed ones
         code = 1
-        change_note = f"Kursteilnehmer von {rs.ambience['course'].shortname} geändert."
+        change_note = (
+            f"Kursteilnehmende von {rs.ambience['course'].shortname} geändert."
+        )
 
         reg_data = []
         for reg_id, registration in registrations.items():
