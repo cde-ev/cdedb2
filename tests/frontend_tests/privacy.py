@@ -783,24 +783,20 @@ class TestPrivacyFrontend(FrontendTest):
         self.assertTitle("CdE-Mitglied suchen")
         self.assertPresence("Keine Mitglieder gefunden.")
 
-    @as_users("charly", "daniel", "garcia", "inga", maintain_data=True)
+    @as_users("charly", "daniel", "garcia", "inga", "werner", maintain_data=True)
     def test_show_past_event(self) -> None:
         akira = "Akira Abukara"
         berta = "Bertå (Bindi) Beispiel"
         charly = "Charly Clown"
         emilia = "Emilia (Emmy) Eventis"
         ferdinand = "Ferdinand Findus"
-        # non-members should not have access if they are no cde admin
-        if self.user_in('daniel'):
-            self.get(
-                '/event/past/event/list',
-                status="403 Zugriff auf EventFrontend/* verweigert.",
-            )
+        # non-members should not have access if they are no cde admin and didn't participate
+        if self.user_in("werner"):
+            self.traverse("Veranstaltungen", "Verg. Veranstaltungen")
+            self.get('/event/past/event/1/show', status=403)
         else:
             self.traverse(
-                {'description': 'Veranstaltungen'},
-                {'description': 'Verg. Veranstaltungen'},
-                {'description': 'PfingstAkademie 2014'},
+                "Veranstaltungen", "Verg. Veranstaltungen", "PfingstAkademie 2014"
             )
 
         # non-searchable users which did not participate should not see any user
@@ -826,23 +822,22 @@ class TestPrivacyFrontend(FrontendTest):
                 self.assertPresence(participant, div='list-participants')
                 self.assertNoLink(participant)
 
-    @as_users("charly", "daniel", "garcia", "inga", maintain_data=True)
+    @as_users("charly", "daniel", "garcia", "inga", "werner", maintain_data=True)
     def test_show_past_course(self) -> None:
         akira = "Akira Abukara"
         emilia = "Emilia (Emmy) Eventis"
         ferdinand = "Ferdinand Findus"
-        # non-members should not have access if they are no cde admin
-        if self.user_in('daniel'):
-            self.get(
-                '/event/past/event/1/course/2/show',
-                status="403 Zugriff auf EventFrontend/* verweigert.",
-            )
+
+        # non-members should not have access if they are no cde admin and didn't participate.
+        if self.user_in("werner"):
+            self.traverse("Veranstaltungen", "Verg. Veranstaltungen")
+            self.get('/event/past/event/1/course/2/show', status=403)
         else:
             self.traverse(
-                {'description': 'Veranstaltungen'},
-                {'description': 'Verg. Veranstaltungen'},
-                {'description': 'PfingstAkademie 2014'},
-                {'description': 'Goethe zum Anfassen'},
+                "Veranstaltungen",
+                "Verg. Veranstaltungen",
+                "PfingstAkademie 2014",
+                "Goethe zum Anfassen",
             )
 
         # non-searchable users which did not participate should not see any user

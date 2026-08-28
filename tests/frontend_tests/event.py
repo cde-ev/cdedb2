@@ -293,7 +293,7 @@ class TestEventFrontend(FrontendTest):
 
         # Test Event Administration Admin View
         self.assertNoLink('/event/event/log')
-        self.assertNoLink('/event/event/list', content="Alle Veranstaltungen")
+        self.traverse("Alle Veranstaltungen")
         self.traverse({'href': '/event/event/1/show'})
         self.assertNoLink('/event/event/1/roles/manage')
         self.assertNotIn('deleteeventform', self.response.forms)

@@ -3017,10 +3017,14 @@ class TestCdEFrontend(FrontendTest):
 
     @as_users("daniel")
     def test_show_past_event_unprivileged(self) -> None:
-        self.traverse({'description': 'Mitglieder'})
-        self.assertNoLink('event/past/event/list')
-        self.get("/event/past/event/list", status=403)
-        self.get("/event/past/event/1/show", status=403)
+        self.traverse(
+            "Veranstaltungen",
+            "Verg. Veranstaltungen",
+            "PfingstAkademie 2014",
+            "Verg. Veranstaltungen",
+            "VAN",
+        )
+        self.assertNoLink(r"/past/event/\d+/show")
 
     @as_users("berta")
     def test_past_course_counting(self) -> None:
