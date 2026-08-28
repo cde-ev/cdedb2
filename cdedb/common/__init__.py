@@ -404,6 +404,16 @@ class RequestState(ConnectionContainer):
             ret.setdefault(key, []).append(value)
         return ret
 
+    def raise_for_validation_errors(self) -> None:
+        if self.has_validation_errors():
+            raise werkzeug.exceptions.BadRequest(
+                "Validation failed! "
+                + " ".join(
+                    f"{key}: {error}"
+                    for key, error in self.retrieve_validation_errors()
+                )
+            )
+
 
 if TYPE_CHECKING:
     from cdedb.backend.common import AbstractBackend
