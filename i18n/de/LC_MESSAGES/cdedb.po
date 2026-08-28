@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-08-28 16:30+0200\n"
+"POT-Creation-Date: 2026-08-28 16:55+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -914,6 +914,9 @@ msgstr "Feld geändert"
 
 msgid "EventLogCodes.field_removed"
 msgstr "Feld entfernt"
+
+msgid "EventLogCodes.field_pruned"
+msgstr "Feld geleert"
 
 msgid "EventLogCodes.questionnaire_changed"
 msgstr "Fragebogen geändert"
@@ -3286,6 +3289,9 @@ msgid ""
 msgstr ""
 "Die Zugehörigkeit und der Datentyp eines Feldes können nicht geändert "
 "werden, falls es in einem Teilnahmebeitrag referenziert wird."
+
+msgid "Unknown event field(s)."
+msgstr "Unbekannte(s) Datenfeld(er)."
 
 msgid "Must be orga to retrieve stored queries."
 msgstr "Du musst Orga sein, um gespeicherte Suchabfragen zu nutzen."
@@ -6176,6 +6182,30 @@ msgstr "Keine Anmeldung gefunden."
 
 msgid "Field name not unique."
 msgstr "Feldname nicht eindeutig."
+
+msgid "Nothing selected."
+msgstr "Nichts ausgewählt."
+
+#, python-format
+msgid "Deleted data from %(num)s registrations."
+msgstr "Daten aus %(num)s Anmeldungen gelöscht."
+
+msgid "No registrations."
+msgstr "Keine Anmeldungen."
+
+#, python-format
+msgid "Deleted data from %(num)s courses."
+msgstr "Daten aus %(num)s Kursen gelöscht."
+
+msgid "No courses."
+msgstr "Keine Kurse."
+
+#, python-format
+msgid "Deleted data from %(num)s lodgements."
+msgstr "Daten aus %(num)s Unterkünften gelöscht."
+
+msgid "No lodgements."
+msgstr "Keine Unterkünfte."
 
 msgid "Wrong associated event."
 msgstr "Falsche Veranstaltung referenziert."
@@ -13180,6 +13210,9 @@ msgstr "Beim Checkin anzeigen"
 msgid "Custom Filters"
 msgstr "Eigene Filter"
 
+msgid "Prune Field Data"
+msgstr "Datenfeld leeren"
+
 msgid "Custom Fields Notes"
 msgstr "Notizen zu Datenfeldern"
 
@@ -13222,6 +13255,44 @@ msgstr "Beschreibungstext"
 
 msgid "Value"
 msgstr "Wert"
+
+#, python-format
+msgid "Prune Field Data (%(title)s)"
+msgstr "Datenfeld leeren (%(title)s)"
+
+msgid ""
+"Select a custom data field to prune data stored for this field from all "
+"associated entities (registrations/courses/lodgements)."
+msgstr ""
+"Wähle ein Datenfald aus um die damit verknüpften Daten aus allen Datensätzen "
+"(Anmeldungen/Kursen/Unterkünften) zu löschen."
+
+#, python-format
+msgid ""
+"This will preserve the information whether there was some data stored in the "
+"field. It will do nothing for boolean (%(boolean)s) fields. If you need to "
+"completely remove this information, you can use the multi edit for "
+"registrations or the \"%(set_field)s\" functionality for courses and "
+"lodgements."
+msgstr ""
+"Hierdurch wird die Information beibehalten, ob mit dem Datenfeld Daten "
+"verknüpft waren. Diese Aktion hat keinen Effekt auf Boolsche Datenfelder "
+"(%(boolean)s). Um diese Informationen vollständig zu löschen kannst du die "
+"Massenbearbeitung für Anmeldungen verwenden oder die \"%(set_field)s\"-"
+"Funktion für Kurse und Unterkünfte."
+
+msgid "Set Field (Registrations)"
+msgstr "Datenfeld setzen (Anmeldungen)"
+
+msgid "Set Field (Courses)"
+msgstr "Datenfeld setzen (Kurse)"
+
+msgid "Set Field (Lodgements)"
+msgstr "Datenfeld setzen (Unterkünfte)"
+
+msgid "All data associated with these fields will be irreversibly deleted."
+msgstr ""
+"Alle mit diese Datenfeldern verknüpften Daten werden irreversibel gelöscht."
 
 #, python-format
 msgid "for %(track)s"

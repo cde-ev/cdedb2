@@ -1241,6 +1241,7 @@ class EventLogCodes(CdEIntEnum):
     field_added = 20  #:
     field_updated = 21  #:
     field_removed = 22  #:
+    field_pruned = 6001  #:
     questionnaire_changed = 30  #:
 
     # Fees (7000)
@@ -1341,6 +1342,7 @@ class EventLogCodes(CdEIntEnum):
             self.field_added: n_("Custom Fields"),
             self.field_updated: n_("Custom Fields"),
             self.field_removed: n_("Custom Fields"),
+            self.field_pruned: n_("Custom Fields"),
             self.questionnaire_changed: n_("Custom Fields"),
             self.event_fee_created: n_("Fees"),
             self.event_fee_modified: n_("Fees"),

@@ -11,7 +11,7 @@ import copy
 import decimal
 from collections.abc import Collection
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -47,6 +47,7 @@ from cdedb.common.privileges import (
     is_privileged_event as is_privileged,
 )
 from cdedb.common.sorting import mixed_existence_sorter
+from cdedb.database.connection import Atomizer
 from cdedb.database.query import DatabaseValue_s, ParamDict
 
 
@@ -336,13 +337,16 @@ class EventLowLevelBackend(AbstractBackend):
         return ret
 
     @internal
-    def _delete_field_values(self, rs: RequestState, field: models.EventField) -> None:
+    def _delete_field_values(self, rs: RequestState, field: models.EventField) -> int:
         """Helper function for deleting the data stored in a custom data field.
 
-        This is used by `_delete_event_field`, when successfully deleting a field
-        definition.
+        This is used by `_delete_event_field` when successfully deleting a field
+        definition and `prune_event_fields` when deleting field contents.
 
-        :param field: The field whose values are to be deleted
+        Returns the number of entities of the fields association, -1 for no entities.
+        This does not incidate whether these entities had any data for the given field.
+
+        :param field: The field whose values are to be deleted.
         """
 
         query = f"""
@@ -351,10 +355,15 @@ class EventLowLevelBackend(AbstractBackend):
             WHERE event_id = %(event_id)s
         """
         params: ParamDict = {"field_name": field.field_name, "event_id": field.event_id}
-        self.query_exec(rs, query, params)
+        return self.query_exec(rs, query, params) or -1
 
     @internal
-    def _cast_field_values(self, rs: RequestState, field: models.EventField) -> None:
+    def _cast_field_values(
+        self,
+        rs: RequestState,
+        *fields: models.EventField,
+        target_kind: const.FieldDatatypes | None = None,
+    ) -> dict[const.FieldAssociations, int]:
         """Helper to cast existing field data to a new type.
 
         This is used by `_set_event_fields`, if the datatype of an existing field is
@@ -362,33 +371,56 @@ class EventLowLevelBackend(AbstractBackend):
 
         If casting fails, the value will be set to `None`, causing data to be lost.
 
+        Returns the number of entities per field association, -1 for no entities.
+        This does not incidate whether these entities had any data for the given fields.
+
         :note: This has to be called inside an atomized context.
 
-        :param field: The field whose values are to be updated
+        :param fields: The fields whose values are to be updated.
+            All fields must belong to the same event.
+        :param target_kind: If given, cast all values to this type.
+            Otherwise use the respective kind of each given field.
         """
         self.affirm_atomized_context(rs)
-        data = self.sql_select(
-            rs,
-            field.association.database_table,
-            ("id", "fields"),
-            [field.event_id],
-            entity_key='event_id',
-        )
-        for entry in data:
-            fdata = entry['fields']
-            value: Any = fdata.get(field.field_name, None)
-            if value is None:
-                continue
-            fdata[field.field_name] = cast_field_value(
-                value,
-                field.kind,
-                argname=f"{field.association.name}.{field.field_name}",
+
+        if not fields:
+            return {}
+
+        event_id = fields[0].event_id
+        if not all(field.event_id == event_id for field in fields):
+            raise ValueError
+
+        grouped: dict[const.FieldAssociations, list[models.EventField]] = {}
+        for field in fields:
+            grouped.setdefault(field.association, []).append(field)
+
+        ret = {}
+        for association, association_fields in grouped.items():
+            data = self.sql_select(
+                rs,
+                association.database_table,
+                ("id", "fields"),
+                [event_id],
+                entity_key=models.EventDataclass.entity_key,
             )
-            new = {
-                'id': entry['id'],
-                'fields': PsycoJson(fdata),
-            }
-            self.sql_update(rs, field.association.database_table, new)
+            ret[association] = 0
+            for entry in data:
+                fdata = entry['fields']
+                for field in association_fields:
+                    value: Any = fdata.get(field.field_name, None)
+                    if value is None:
+                        continue
+                    fdata[field.field_name] = cast_field_value(
+                        value,
+                        target_kind or field.kind,
+                        argname=f"{association.name}.{field.field_name}",
+                    )
+                new = {
+                    'id': entry['id'],
+                    'fields': PsycoJson(fdata),
+                }
+                ret[association] += self.sql_update(rs, association.database_table, new)
+        return ret
 
     get_event: _GetEventProtocol
 
@@ -1217,6 +1249,59 @@ class EventLowLevelBackend(AbstractBackend):
                     )
 
         return ret
+
+    @access("event")
+    def prune_event_fields(
+        self, rs: RequestState, field_ids: Collection[vtypes.ID]
+    ) -> dict[const.FieldAssociations, int]:
+        """Delete all _currently_ stored data for the given fields.
+
+        This does not affect data stored in event keeper.
+
+        Returns the number of affected entities per entity type, limited to
+        the types for which associated fields were given.
+        If there are no entities of a kind, the number will be indicated as -1.
+        """
+        field_ids = affirm(set[vtypes.ID], field_ids)
+        field_ids = cast(set[vtypes.ID], field_ids)  # mypy bug.  # pyrefly: ignore[redundant-cast]
+        if not field_ids:
+            return {}
+
+        with Atomizer(rs):
+            event_id = unwrap(
+                self.sql_select_one(
+                    rs,
+                    models.EventField.database_table,
+                    ["event_id"],
+                    list(field_ids)[0],
+                )
+            )
+            if not event_id:
+                raise ValueError(n_("Unknown event field(s)."))
+
+            event = self.get_event(rs, event_id)
+            if not field_ids <= event.fields.keys():
+                raise ValueError(n_("Unknown event field(s)."))
+
+            if not is_privileged(
+                rs,
+                EventPrivileges.entities_write | EventPrivileges.basic_write,
+                event_id,
+            ):
+                raise PrivilegeError
+
+            fields = [event.fields[field_id] for field_id in field_ids]
+
+            self._cast_field_values(rs, *fields, target_kind=const.FieldDatatypes.bool)
+            ret = self._cast_field_values(rs, *fields)
+            for field in fields:
+                self.event_log(
+                    rs,
+                    const.EventLogCodes.field_pruned,
+                    event_id,
+                    change_note=field.field_name,
+                )
+            return ret
 
     @access("event")
     def has_registrations(self, rs: RequestState, event_id: vtypes.EventID) -> bool:
