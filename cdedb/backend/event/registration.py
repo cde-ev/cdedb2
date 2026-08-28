@@ -24,6 +24,7 @@ import cdedb.database.constants as const
 import cdedb.fee_condition_parser.evaluation as fcp_evaluation
 import cdedb.fee_condition_parser.parsing as fcp_parsing
 import cdedb.fee_condition_parser.roundtrip as fcp_roundtrip
+import cdedb.models.core as models_core
 import cdedb.models.event as models
 import cdedb.models.finance as models_finance
 from cdedb.backend.common import (
@@ -44,6 +45,7 @@ from cdedb.common import (
     RequestState,
     cast_fields,
     deduct_years,
+    determine_age_class,
     now,
     unwrap,
 )
@@ -1028,6 +1030,14 @@ class EventRegistrationBackend(EventBaseBackend):
 
             ret = self._get_registration_data(rs, event_id, registration_ids)
 
+            event = self.get_event(rs, event_id)
+            birthdays = {
+                e["id"]: e["birthday"]
+                for e in self.sql_select(
+                    rs, models_core.Persona.database_table, ["id", "birthday"], personas
+                )
+            }
+
             pdata = self.sql_select(
                 rs,
                 "event.registration_parts",
@@ -1037,7 +1047,11 @@ class EventRegistrationBackend(EventBaseBackend):
             )
             for p in pdata:
                 p['status'] = const.RegistrationPartStati(p['status'])
-                ret[p['registration_id']].setdefault('parts', {})[p['part_id']] = p
+                reg = ret[p['registration_id']]
+                reg.setdefault('parts', {})[p['part_id']] = p
+                p['age'] = determine_age_class(
+                    birthdays[reg['persona_id']], event.parts[p['part_id']].part_begin
+                )
             # Limit to registrations matching stati filter in any part.
             for anid in tuple(ret):
                 if not any(e['status'] in stati for e in ret[anid]['parts'].values()):
@@ -1079,6 +1093,10 @@ class EventRegistrationBackend(EventBaseBackend):
                 reg['checkin_periods'] = []
                 reg['personalized_fees'] = {}
                 reg['fields'] = cast_fields(reg['fields'], event_fields)
+                reg['age'] = determine_age_class(
+                    birthdays[reg['persona_id']], event.begin
+                )
+                reg['remaining_owed'] = reg['amount_owed'] - reg['amount_paid']
             for reg_track in tdata:
                 reg = ret[reg_track['registration_id']]
                 reg['tracks'][reg_track['track_id']] = reg_track
