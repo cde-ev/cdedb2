@@ -139,7 +139,7 @@ class CoreBaseFrontend(AbstractFrontend):
     anonymous access and personas."""
 
     realm = "core"
-    admin_role = Roles.core_admin
+    admin_roles = (Roles.core_admin,)
 
     @access(Roles.anonymous)
     @REQUESTdata("#wants")
