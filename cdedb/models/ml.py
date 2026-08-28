@@ -13,7 +13,7 @@ import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.common.roles import AdminViews, Roles
+from cdedb.common.roles import AdminViews, AdminViewSet, Roles, RoleSet
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.database.constants import (
     MailinglistDomain,
@@ -263,7 +263,7 @@ class Mailinglist(CdEDataclass):
         """
         return False
 
-    relevant_admins: ClassVar[Roles] = Roles.none()
+    relevant_admins: ClassVar[RoleSet] = Roles.none()
 
     @classmethod
     def is_relevant_admin(cls, user: User) -> bool:
@@ -283,27 +283,27 @@ class Mailinglist(CdEDataclass):
     role_map: ClassVar[Mapping[Roles, SubscriptionPolicy]] = {}
 
     @classmethod
-    def moderator_admin_views(cls) -> tuple[AdminViews, ...]:
+    def moderator_admin_views(cls) -> AdminViewSet:
         """All admin views which toggle the moderator view for this mailinglist.
 
         This is must be only used for cosmetic changes, similar to
         core.is_relative_admin_view.
         """
-        return tuple(
+        return (
             AdminViews.from_roles(cls.relevant_admins | Roles.ml_admin)
-            & AdminViews.union(AdminViews.all_mod_views())
+            & AdminViews.all_mod_views()
         )
 
     @classmethod
-    def management_admin_views(cls) -> tuple[AdminViews, ...]:
+    def management_admin_views(cls) -> AdminViewSet:
         """All admin views which toggle the management view for this mailinglist.
 
         This is must be only used for cosmetic changes, similar to
         core.is_relative_admin_view.
         """
-        return tuple(
+        return (
             AdminViews.from_roles(cls.relevant_admins | Roles.ml_admin)
-            & AdminViews.union(AdminViews.all_mgmt_views())
+            & AdminViews.all_mgmt_views()
         )
 
     @classmethod
@@ -358,7 +358,7 @@ class Mailinglist(CdEDataclass):
         for persona in personas.values():
             roles = persona.get_user_roles()
             for role, pol in self.role_map.items():
-                if role in roles:
+                if roles.has(role):
                     ret[persona.id] = pol
                     break
             else:
@@ -492,7 +492,7 @@ class CdEMailinglist(GeneralMailinglist):
     sortkey = MailinglistGroup.cde
     available_domains = [MailinglistDomain.lists, MailinglistDomain.testmail]
     viewer_roles = Roles.cde
-    relevant_admins = Roles.cde_admin
+    relevant_admins = RoleSet({Roles.cde_admin})
 
 
 @dataclass
@@ -502,7 +502,7 @@ class EventMailinglist(GeneralMailinglist):
     sortkey = MailinglistGroup.event
     available_domains = [MailinglistDomain.aka]
     viewer_roles = Roles.event
-    relevant_admins = Roles.event_admin
+    relevant_admins = RoleSet({Roles.event_admin})
     notify_owner_on_bounce = True
     ldap_expose = False
 
@@ -513,7 +513,7 @@ class AssemblyMailinglist(GeneralMailinglist):
 
     sortkey = MailinglistGroup.assembly
     viewer_roles = Roles.assembly
-    relevant_admins = Roles.assembly_admin
+    relevant_admins = RoleSet({Roles.assembly_admin})
     notify_owner_on_bounce = True
     ldap_expose = False
 
@@ -846,7 +846,7 @@ class GeneralMandatoryMailinglist(AllUsersImplicitMeta, Mailinglist):
 
 @dataclass
 class GeneralMeta(GeneralMailinglist):
-    relevant_admins = Roles.core_admin
+    relevant_admins = RoleSet({Roles.core_admin})
 
 
 @dataclass
@@ -888,7 +888,7 @@ class GeneralModeratorMailinglist(ImplicitsSubscribableMeta, Mailinglist):
 
 @dataclass
 class CdELokalModeratorMailinglist(GeneralModeratorMailinglist):
-    relevant_admins = Roles.cdelokal_admin
+    relevant_admins = RoleSet({Roles.cdelokal_admin})
 
     def get_implicit_subscribers(
         self, rs: RequestState, bc: BackendContainer
@@ -917,7 +917,7 @@ class SemiPublicMailinglist(GeneralMailinglist):
 class CdeLokalMailinglist(SemiPublicMailinglist):
     sortkey = MailinglistGroup.cdelokal
     available_domains = [MailinglistDomain.cdelokal]
-    relevant_admins = Roles.cdelokal_admin
+    relevant_admins = RoleSet({Roles.cdelokal_admin})
     ldap_expose = False
 
 

@@ -20,7 +20,7 @@ from cdedb.common.exceptions import CryptographyError
 from cdedb.common.i18n import format_country_code
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
-from cdedb.common.roles import Realms, Roles, extract_roles
+from cdedb.common.roles import Realms, RealmSet, Roles, RoleSet, extract_roles
 from cdedb.common.sorting import Sortkey
 from cdedb.config import Config
 from cdedb.filter import cdedbid_filter
@@ -331,7 +331,7 @@ class Persona(CdEDataclass):
                 ret.add(field.name)
         return ret
 
-    def _get_user_roles(self) -> Roles:
+    def _get_user_roles(self) -> RoleSet:
         """Determine the users roles from their data bits.
 
         BEWARE! This cannot take admin roles into account, unless called on
@@ -342,7 +342,7 @@ class Persona(CdEDataclass):
         """
         return extract_roles(self.as_dict(), introspection_only=True)
 
-    def get_user_realms(self) -> Realms:
+    def get_user_realms(self) -> RealmSet:
         return Realms.from_user_roles(self._get_user_roles())
 
 
@@ -368,7 +368,7 @@ class PersonaStatus(Persona):
     is_finance_admin: bool = False
     is_auditor: bool = False
 
-    def get_user_roles(self) -> Roles:
+    def get_user_roles(self) -> RoleSet:
         """
         Unlike the method of the parent class this has all the information it needs to
         fully determine the users roles.
@@ -377,7 +377,7 @@ class PersonaStatus(Persona):
         """
         return self._get_user_roles()
 
-    def get_session_roles(self) -> Roles:
+    def get_session_roles(self) -> RoleSet:
         """
         Determine the roles of the acting user.
 

@@ -139,6 +139,7 @@ from cdedb.common.roles import (
     AdminViews,
     Realms,
     Roles,
+    RoleSet,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation import validate
@@ -212,7 +213,7 @@ class BaseApp(metaclass=abc.ABCMeta):
     def realm_str(cls) -> str:
         if isinstance(cls.realm, str):
             return cls.realm
-        return str(cls.realm.name)
+        return cls.realm.name
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.conf = Config()
@@ -2418,7 +2419,7 @@ class FrontendEndpoint(Protocol):
 
 
 def access[F: Callable[..., Any]](
-    *roles: Roles,
+    *roles: RoleSet | Roles,
     modi: AbstractSet[str] = frozenset(("GET", "HEAD")),
     check_anti_csrf: bool | None = None,
     anti_csrf_token_name: str | None = None,
@@ -2447,8 +2448,8 @@ def access[F: Callable[..., Any]](
                 rs.ambience = reconnoitre_ambience(obj, rs)
                 return fun(obj, rs, *args, **kwargs)
             else:
-                expects_persona = any(role & ~Roles.all_droid_roles() for role in roles)
-                if rs.user.new_roles == Roles.anonymous and expects_persona:
+                expects_persona = Roles.all_persona_roles().has_any(*roles)
+                if rs.user.new_roles.is_anonymous() and expects_persona:
                     # Validation errors do not matter on session expiration,
                     # since we redirect to get anyway.
                     # In practice, this is mostly relevant for the anti csrf error.
@@ -2483,7 +2484,7 @@ def access[F: Callable[..., Any]](
             if check_anti_csrf is not None
             else (
                 not modi <= {'GET', 'HEAD'}
-                and not any(Roles.anonymous in role for role in roles)
+                and not RoleSet({Roles.anonymous}).has_any(*roles)
             ),
             anti_csrf_token_name or ANTI_CSRF_TOKEN_NAME,
             anti_csrf_token_payload or ANTI_CSRF_TOKEN_PAYLOAD,

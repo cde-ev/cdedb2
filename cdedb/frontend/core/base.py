@@ -12,6 +12,7 @@ import operator
 import pathlib
 import quopri
 import tempfile
+from collections.abc import Collection
 from typing import Any, TypedDict
 
 import segno.helpers
@@ -55,7 +56,9 @@ from cdedb.common.query.log_filter import ChangelogLogFilter, CoreLogFilter
 from cdedb.common.roles import (
     AdminViews,
     Realms,
+    RealmSet,
     Roles,
+    RoleSet,
 )
 from cdedb.common.sorting import EntitySorter, xsorted
 from cdedb.common.validation.validate import (
@@ -406,7 +409,11 @@ class CoreBaseFrontend(AbstractFrontend):
     @access(Roles.persona, modi={"POST"}, check_anti_csrf=False)
     @REQUESTdata("add", "remove", "#wants")
     def modify_active_admin_views(
-        self, rs: RequestState, add: AdminViews, remove: AdminViews, wants: str | None
+        self,
+        rs: RequestState,
+        add: str | None,
+        remove: str | None,
+        wants: str | None,
     ) -> Response:
         """
         Enable or disable admin views for the current user.
@@ -425,18 +432,18 @@ class CoreBaseFrontend(AbstractFrontend):
         if rs.has_validation_errors():
             return response
 
-        enabled_views = AdminViews.from_cookie(
+        enabled_views = AdminViews.deserialize(
             rs.request.cookies.get(AdminViews.cookie_name(), "")
         )
 
         if add:
-            enabled_views |= add
+            enabled_views |= AdminViews.deserialize(add)
         if remove:
-            enabled_views &= ~remove
+            enabled_views -= AdminViews.deserialize(remove)
 
         response.set_cookie(
             AdminViews.cookie_name(),
-            str(enabled_views.value),
+            AdminViews.serialize(enabled_views),
             expires=now() + datetime.timedelta(days=10 * 365),
         )
         return response
@@ -649,21 +656,21 @@ class CoreBaseFrontend(AbstractFrontend):
                                 and status.is_member
                                 and status.is_searchable)
 
-        access_realms = Realms.none()
+        access_realms = RealmSet()
         access_levels = self.AccessLevel(0)
         access_mode = self.AccessMode(0)
         REDACTED = models.CorePersona.REDACTED
 
         # Let users see themselves
         if persona_id == rs.user.persona_id:
-            access_realms |= Realms.all()
+            access_realms |= RealmSet(Realms)
             access_levels |= self.AccessLevel.full
         # Core admins see everything
         if (
             Roles.core_admin in rs.user.new_roles
             and AdminViews.core_user in rs.user.admin_views
         ):
-            access_realms |= Realms.all()
+            access_realms |= RealmSet(Realms)
             access_levels |= self.AccessLevel.full
         # Meta admins see the status bits
         if (
@@ -675,10 +682,7 @@ class CoreBaseFrontend(AbstractFrontend):
         if is_relative_admin:
             access_mode |= self.AccessMode.any_admin
             for realm in Realms:
-                if any(
-                    admin_view in rs.user.admin_views
-                    for admin_view in realm.get_required_user_views()
-                ):
+                if rs.user.admin_views.has_any(*realm.get_required_user_views()):
                     access_realms |= realm
                     # Relative admins can see all data
                     access_levels |= self.AccessLevel.full
@@ -743,16 +747,16 @@ class CoreBaseFrontend(AbstractFrontend):
         if Realms.cde in (access_realms & target_realms):
             persona = self.coreproxy.get_cde_user(rs, persona_id)
         # event and assembly are independent realms, users may have both at the same time
-        elif Realms.event | Realms.assembly in (access_realms & target_realms):
+        elif (access_realms & target_realms).has(Realms.event | Realms.assembly):
             persona = models.EventAssemblyPersona(**{
                 **self.coreproxy.get_assembly_user(rs, persona_id).as_dict(),
                 **self.coreproxy.get_event_user(rs, persona_id, event_id).as_dict(),
             })
-        elif Realms.event in (access_realms & target_realms):
+        elif (access_realms & target_realms).has(Realms.event):
             persona = self.coreproxy.get_event_user(rs, persona_id, event_id)
-        elif Realms.assembly in (access_realms & target_realms):
+        elif (access_realms & target_realms).has(Realms.assembly):
             persona = self.coreproxy.get_assembly_user(rs, persona_id)
-        elif Realms.ml in (access_realms & target_realms):
+        elif (access_realms & target_realms).has(Realms.ml):
             persona = self.coreproxy.get_ml_user(rs, persona_id)
         else:
             persona = self.coreproxy.get_persona(rs, persona_id)
@@ -1772,7 +1776,7 @@ class CoreBaseFrontend(AbstractFrontend):
             "complaint": self.coreproxy.list_admins(rs, "complaint"),
         }
 
-        display_realms = rs.user.new_roles.get_user_realms().as_set()
+        display_realms = rs.user.new_roles.get_user_realms().as_strings()
         if "cde" in display_realms:
             display_realms.add("finance")
             display_realms.add("auditor")
@@ -2144,13 +2148,14 @@ class CoreBaseFrontend(AbstractFrontend):
         self,
         rs: RequestState,
         persona_id: int,
-        roles: Roles,
+        roles: Collection[Roles],
         notes: str,
     ) -> Response:
         """Grant or revoke admin bits."""
         if rs.has_validation_errors():
             return self.change_privileges_form(rs, persona_id)
 
+        roles = RoleSet(roles)
         stati = (const.PrivilegeChangeStati.pending,)
         change_ids = self.coreproxy.list_privilege_changes(rs, persona_id, stati)
         if change_ids:
@@ -2161,11 +2166,11 @@ class CoreBaseFrontend(AbstractFrontend):
             )
 
         reason_map = {
-            Roles.cde: rs.gettext("non-cde user"),
-            Roles.event: rs.gettext("non-event user"),
-            Roles.ml: rs.gettext("non-ml user"),
-            Roles.assembly: rs.gettext("non-assembly user"),
-            Roles.cde_admin: rs.gettext("non-cde admin"),
+            RoleSet({Roles.cde}): rs.gettext("non-cde user"),
+            RoleSet({Roles.event}): rs.gettext("non-event user"),
+            RoleSet({Roles.ml}): rs.gettext("non-ml user"),
+            RoleSet({Roles.assembly}): rs.gettext("non-assembly user"),
+            RoleSet({Roles.cde_admin}): rs.gettext("non-cde admin"),
         }
         persona_status = self.coreproxy.get_persona_status(rs, persona_id)
         persona_roles = persona_status.get_user_roles()
@@ -2173,22 +2178,24 @@ class CoreBaseFrontend(AbstractFrontend):
             "persona_id": persona_id,
             "notes": notes,
             **{
-                admin_role.marker: admin_role in roles
+                admin_role.marker: roles.has(admin_role)
                 for admin_role in Roles.all_admin_roles()
                 # Check if this admin roles has changed.
                 #  Left side of the comparison is the new state, right is the old state.
                 #  Collect only the actually changed admin bits in 'data'.
-                if (admin_role in roles) != (admin_role in persona_roles)
+                if roles.has(admin_role) != persona_roles.has(admin_role)
             },
         }
 
         for admin_role in Roles.all_admin_roles():
-            # Check if this role is currently being granted or
-            #  (is already in effect and is not currently being revoked).
+            # For every admin role we check if this role
+            #  - (is currently being granted) or
+            #  - (is already in effect and is not currently being revoked).
             if data.get(admin_role.marker, admin_role in persona_roles):
-                # If so, check that requirements are (still) met.
-                #  Again: Consider (roles that are currently being granted) and
-                #  (roles that are already in effect and are not being revoked).
+                # If so, we check that requirements are (still) met.
+                #  Again: Consider
+                #  - (roles that are currently being granted) and
+                #  - (roles that are already in effect and are not being revoked).
                 if any(
                     not data.get(required.marker, required in persona_roles)
                     for required in admin_role.required_roles
@@ -2343,12 +2350,12 @@ class CoreBaseFrontend(AbstractFrontend):
                 self.do_mail(rs, "privilege_change_finalized", headers, params)
                 submitter = self.coreproxy.get_persona(rs, change["submitted_by"])
                 to = {"vorstand@cde-ev.de", self.conf["META_ADMIN_ADDRESS"]}
-                gained_privileges = Roles.union(
+                gained_privileges = xsorted(
                     privilege
                     for privilege in Roles.all_admin_roles()
                     if rs.ambience['privilege_change'].get(privilege.marker) is True
                 )
-                lost_privileges = Roles.union(
+                lost_privileges = xsorted(
                     privilege
                     for privilege in Roles.all_admin_roles()
                     if rs.ambience['privilege_change'].get(privilege.marker) is False
@@ -2457,7 +2464,7 @@ class CoreBaseFrontend(AbstractFrontend):
                 "target_realm": target_realm,
                 "missing_realms": ~user_realms,
                 "missing_target_realms": (
-                    (target_realm | target_realm.implied_realms) & ~user_realms
+                    (target_realm.implied_realms | {target_realm}) & ~user_realms
                     if target_realm is not None
                     else None
                 ),

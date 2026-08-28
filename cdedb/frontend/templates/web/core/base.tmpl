@@ -132,7 +132,7 @@
 {% block adminviews %}
     {{ util.admin_views_toggle((
             (gettext("User Administration"), AdminViews.all_user_views(), AdminViews.core_user),
-            (gettext("User Review"), AdminViews.user_review.__or__(AdminViews.genesis), None),
+            (gettext("User Review"), AdminViews.user_review.or_(AdminViews.genesis), None),
             (gettext("Admin Administration"), AdminViews.meta_admin, None),
             (gettext("Core Administration"), AdminViews.core, None),
             (gettext("Auditor"), AdminViews.auditor, None),

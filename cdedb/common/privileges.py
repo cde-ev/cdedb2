@@ -159,11 +159,11 @@ def is_privileged_event_user(
     return (
         # Special case for conclude which requires two admin privileges.
         (
-            (Roles.event_admin | Roles.cde_admin) in user.new_roles
+            user.new_roles.has(Roles.event_admin | Roles.cde_admin)
             and required_privilege == EP.conclude
         )
         or (
-            Roles.event_admin in user.new_roles
+            user.new_roles.has(Roles.event_admin)
             and required_privilege in admin_privileges
         )
         or (event_id in user.orga and required_privilege in orga_privileges)
@@ -174,25 +174,26 @@ def is_privileged_event_user(
         )
         # Due to use in ml realm, users without event realm might come across this
         or (
-            Roles.event_helper in user.new_roles
+            user.new_roles.has(Roles.event_helper)
             and required_privilege in event_helper_privileges
         )
         # finance_admins may book fees and balance events.
         or (
-            Roles.finance_admin in user.new_roles
+            user.new_roles.has(Roles.finance_admin)
             and required_privilege in finance_admin_privileges
         )
         or (
-            Roles.auditor in user.new_roles and required_privilege in auditor_privileges
+            user.new_roles.has(Roles.auditor)
+            and required_privilege in auditor_privileges
         )
         # ml_admins are allowed to do this to be able to manage
         # subscribers of event mailinglists.
         or (
-            Roles.ml_admin in user.new_roles
+            user.new_roles.has(Roles.ml_admin)
             and required_privilege == EP.registrations_read_internal
         )
         or (
-            Roles.droid_quick_partial_export in user.new_roles
+            user.new_roles.has(Roles.droid_quick_partial_export)
             and required_privilege in EP.basic_read | EP.registrations_read
         )
         # or (

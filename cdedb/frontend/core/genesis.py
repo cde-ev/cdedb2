@@ -323,8 +323,9 @@ class CoreGenesisMixin(CoreBaseFrontend):
     @access(*Roles.all_genesis_realm_roles())
     def genesis_list_cases(self, rs: RequestState) -> Response:
         """Compile a list of genesis cases to review."""
-        realms = rs.user.new_roles.get_genesis_realms() & Realms.union(
-            Realms.get_available_genesis_realms()
+        realms = (
+            rs.user.new_roles.get_genesis_realms()
+            & Realms.get_available_genesis_realms().keys()
         )
         data = self.coreproxy.genesis_list_cases(
             rs,
@@ -343,7 +344,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
                 for k, v in cases.items()
                 if v._realm == realm and v.status == const.GenesisStati.to_review
             }
-            for realm in realms
+            for realm in sorted(realms)
         }
         concluded_cases = {
             k: v for k, v in cases.items() if v.status != const.GenesisStati.to_review

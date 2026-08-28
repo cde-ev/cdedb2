@@ -40,7 +40,7 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import VALID_QUERY_OPERATORS, Query, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import GenericLogFilter
-from cdedb.common.roles import Realms, Roles
+from cdedb.common.roles import Realms, Roles, RoleSet
 from cdedb.common.validation import validate
 from cdedb.config import Config
 from cdedb.database.constants import FieldDatatypes, LockType
@@ -105,7 +105,7 @@ def singularize[T](
     return singularized
 
 
-def access[F: Callable[..., Any]](*roles: Roles) -> Callable[[F], F]:
+def access[F: Callable[..., Any]](*roles: RoleSet | Roles) -> Callable[[F], F]:
     """The @access decorator marks a function of a backend for publication.
 
     Think of this as an RPC interface, only published functions are
@@ -119,7 +119,7 @@ def access[F: Callable[..., Any]](*roles: Roles) -> Callable[[F], F]:
         def wrapper(
             self: "AbstractBackend", rs: RequestState, *args: Any, **kwargs: Any
         ) -> Any:
-            if not any(role in rs.user.new_roles for role in roles):
+            if not rs.user.new_roles.has_any(*roles):
                 raise PrivilegeError(
                     n_(
                         "%(user_roles)s is disjoint from %(roles)s for method %(method)s."
@@ -172,7 +172,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
     def realm_str(cls) -> str:
         if isinstance(cls.realm, str):
             return cls.realm
-        return str(cls.realm.name)
+        return cls.realm.name
 
     def __init__(self) -> None:
         self.conf = Config()

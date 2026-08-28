@@ -54,7 +54,7 @@ class TestOffline(FrontendTest):
                 )
                 self.app.reset()
                 self.app.set_cookie(
-                    AdminViews.cookie_name(), str(AdminViews.all().value)
+                    AdminViews.cookie_name(), AdminViews.serialize(AdminViews)
                 )
 
                 # Test that it's running

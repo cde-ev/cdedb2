@@ -24,7 +24,7 @@ from cdedb.common.exceptions import CryptographyError, ParameterInvalidError
 from cdedb.common.parse.util import Accounts
 from cdedb.common.query import QueryOperators
 from cdedb.common.query.log_filter import ChangelogLogFilter
-from cdedb.common.roles import AdminViews, Realms, Roles
+from cdedb.common.roles import AdminViews, Realms, Roles, RoleSet
 from cdedb.filter import iban_filter
 from tests.common import (
     ANONYMOUS,
@@ -1337,9 +1337,13 @@ class TestCoreFrontend(FrontendTest):
         new_privileges1 = Roles.ml_admin
         new_privileges2 = Roles.assembly_admin
         # Grant new admin privileges.
-        self._approve_privilege_change(admin1, admin2, new_admin1, new_privileges1)
+        self._approve_privilege_change(
+            admin1, admin2, new_admin1, new_privileges1, old_privileges=Roles.none()
+        )
         self.logout()
-        self._approve_privilege_change(admin1, admin2, new_admin2, new_privileges2)
+        self._approve_privilege_change(
+            admin1, admin2, new_admin2, new_privileges2, old_privileges=Roles.none()
+        )
         self.logout()
         # Check results of Any Admin query.
         self.login(admin1)
@@ -1374,6 +1378,7 @@ class TestCoreFrontend(FrontendTest):
             USER_DICT["anton"],
             new_admin,
             new_privileges,
+            old_privileges=Roles.none(),
             new_password=new_password,
         )
         user_mail = self.fetch_mail_content(0)
@@ -1391,6 +1396,25 @@ class TestCoreFrontend(FrontendTest):
         self.submit(f)
         for role in new_privileges:
             self.assertPresence(self.gettext(str(role)), div="admin-realms")
+        self.logout()
+
+        # Check privilege form for user with fewer realms.
+        new_admin2 = get_user("emilia")
+        self._approve_privilege_change(
+            get_user("martin"),
+            get_user("anton"),
+            new_admin2,
+            Roles.event_admin | Roles.complaint_admin,
+            Roles.none(),
+        )
+        self.logout()
+        self._approve_privilege_change(
+            get_user("martin"),
+            get_user("anton"),
+            new_admin2,
+            Roles.event_admin,
+            Roles.event_admin | Roles.complaint_admin,
+        )
 
         # Check that we can login with new credentials but not with old.
         self.logout()
@@ -1427,6 +1451,7 @@ class TestCoreFrontend(FrontendTest):
             USER_DICT["martin"],
             new_admin,
             new_privileges,
+            old_privileges=Roles.none(),
         )
         self.assertNonPresence("E-Mail")
         # Check success.
@@ -1483,6 +1508,7 @@ class TestCoreFrontend(FrontendTest):
             USER_DICT["martin"],
             new_admin,
             new_privileges,
+            old_privileges=Roles.none(),
             new_password=new_password,
         )
         # Test archival
@@ -1502,12 +1528,12 @@ class TestCoreFrontend(FrontendTest):
                 self.core.get_persona_status(self.key, user["id"]).get_user_roles()
                 & Roles.all_admin_roles()
             )
-        new_privileges = current_roles & ~Roles.event_admin
-        self._initialize_privilege_change(user, user, user, new_privileges)
-        self.login(user)
-        self.traverse(
-            {'description': "Admin-Änderungen"}, {'description': "Anton Administrator"}
+        new_privileges = current_roles - Roles.event_admin
+        self._initialize_privilege_change(
+            user, user, user, new_privileges, current_roles
         )
+        self.login(user)
+        self.traverse("Admin-Änderungen", "Anton Administrator")
         self.assertPresence(
             "Diese Änderung der Admin-Privilegien wurde von Dir angestoßen",
             div="notifications",
@@ -1532,7 +1558,8 @@ class TestCoreFrontend(FrontendTest):
         admin1: UserIdentifier,
         admin2: UserIdentifier,
         new_admin: UserObject,
-        new_privileges: Roles,
+        new_privileges: RoleSet | Roles,
+        old_privileges: RoleSet | Roles | None = None,
         note: str = "For testing.",
     ) -> None:
         """Helper to initialize a privilege change."""
@@ -1543,7 +1570,32 @@ class TestCoreFrontend(FrontendTest):
         self.traverse({"href": f"/core/persona/{new_admin["id"]}/privileges"})
         self.assertTitle(f"Privilegien ändern für {new_admin["default_name_format"]}")
         f = self.response.forms["privilegechangeform"]
-        f["roles"] = list(new_privileges)
+        if old_privileges is not None:
+            if isinstance(old_privileges, Roles):
+                old_privileges = RoleSet([old_privileges])  # pragma: no cover
+            admin_roles = Roles.all_admin_roles()
+            persona_roles = self.core.get_roles_single(self.key, new_admin["id"])
+            available_admin_roles = [
+                admin_role
+                for admin_role in admin_roles
+                if persona_roles.has(admin_role.required_roles)
+                or admin_roles.has(admin_role.required_roles)
+            ]
+            if old_privileges not in RoleSet(available_admin_roles):
+                self.fail(
+                    f"Invalid old privileges '{old_privileges}', available: '{RoleSet(available_admin_roles)}'"
+                )
+            for i, admin_role in enumerate(available_admin_roles):
+                checkbox = f.get("roles", index=i)
+                self.assertEqual(str(admin_role), checkbox._value)
+                self.assertEqual(
+                    admin_role in old_privileges, checkbox.checked, admin_role
+                )
+        f["roles"] = (
+            list(new_privileges)
+            if isinstance(new_privileges, RoleSet)
+            else [new_privileges]
+        )
         f["notes"] = note
         self.submit(f)
         self.logout()
@@ -1553,12 +1605,15 @@ class TestCoreFrontend(FrontendTest):
         admin1: UserIdentifier,
         admin2: UserIdentifier,
         new_admin: UserObject,
-        new_privileges: Roles,
+        new_privileges: RoleSet | Roles,
+        old_privileges: RoleSet | Roles | None = None,
         note: str = "For testing.",
         new_password: str | None = None,
     ) -> UserObject:
         """Helper to make a user an admin."""
-        self._initialize_privilege_change(admin1, admin2, new_admin, new_privileges)
+        self._initialize_privilege_change(
+            admin1, admin2, new_admin, new_privileges, old_privileges, note
+        )
         # Confirm privilege change.
         self.login(admin2)
         self.traverse(
@@ -1589,11 +1644,14 @@ class TestCoreFrontend(FrontendTest):
         admin1: UserIdentifier,
         admin2: UserIdentifier,
         new_admin: UserObject,
-        new_privileges: Roles,
+        new_privileges: RoleSet | Roles,
+        old_privileges: RoleSet | Roles | None = None,
         note: str = "For testing.",
     ) -> None:
         """Helper to reject a privilege change."""
-        self._initialize_privilege_change(admin1, admin2, new_admin, new_privileges)
+        self._initialize_privilege_change(
+            admin1, admin2, new_admin, new_privileges, old_privileges, note
+        )
         # Confirm privilege change.
         self.login(admin2)
         self.traverse(
@@ -2203,6 +2261,7 @@ class TestCoreFrontend(FrontendTest):
             USER_DICT["martin"],
             USER_DICT["berta"],
             new_privileges,
+            old_privileges=Roles.none(),
         )
         self.logout()
 

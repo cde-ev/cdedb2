@@ -40,7 +40,7 @@ from cdedb.common.exceptions import (
     QuotaException,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.roles import AdminViews, Roles
+from cdedb.common.roles import AdminViews, Roles, RoleSet
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -198,7 +198,8 @@ class Application(BaseApp):
                 f"HTTP {error.code}: {error.name}\n{error.description}", status=status
             )
 
-    def resolve_realm_roles(self, rs: RequestState) -> Roles:
+    def _resolve_realm_roles(self, rs: RequestState) -> RoleSet:
+        """Retrieve additional data to determine their realm internal roles."""
         assert rs.user.persona_id is not None
         ret = Roles.none()
 
@@ -343,7 +344,7 @@ class Application(BaseApp):
             # The session backend takes care of this for droids.
             if user.persona_id:
                 # Roles that are managed via the realms internally
-                user.new_roles |= self.resolve_realm_roles(rs)
+                user.new_roles |= self._resolve_realm_roles(rs)
 
                 # Insert orga and moderator status context
                 orga: set[vtypes.EventID] = set()
