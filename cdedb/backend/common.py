@@ -166,7 +166,7 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
     """
 
     realm: ClassVar[str | Realms]
-    admin_role: ClassVar[Roles | None] = None
+    admin_roles: ClassVar[tuple[Roles | RoleSet, ...] | None] = None
 
     @classmethod
     def realm_str(cls) -> str:
@@ -205,13 +205,13 @@ class AbstractBackend(SqlQueryBackend, metaclass=abc.ABCMeta):
         Maybe this can be beefed up to check for orgas and moderators too,
         but for now it only checks the admin role.
         """
-        if cls.admin_role:
-            admin_role = cls.admin_role
+        if cls.admin_roles:
+            admin_roles = cls.admin_roles
         elif isinstance(cls.realm, Realms):
-            admin_role = cls.realm.admin_role
+            admin_roles = (cls.realm.admin_role,)
         else:
             raise RuntimeError
-        return admin_role in rs.user.new_roles
+        return rs.user.new_roles.has_any(*admin_roles)
 
     # coverage: We do not expect to trigger an exception to be logged by this.
     def cgitb_log(self) -> None:  # pragma: no cover

@@ -8,7 +8,7 @@ import collections
 import copy
 import datetime
 from collections.abc import Collection
-from typing import Any, Protocol
+from typing import Any, ClassVar, Protocol
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
@@ -40,7 +40,7 @@ from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryScope
 from cdedb.common.query.log_filter import PastEventLogFilter
-from cdedb.common.roles import Roles
+from cdedb.common.roles import Roles, RoleSet
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import ParamDict
@@ -55,7 +55,10 @@ class PastEventBackend(AbstractBackend):
     """
 
     realm = "past_event"
-    admin_role = Roles.cde_admin
+    admin_roles: ClassVar[tuple[Roles | RoleSet, ...]] = (
+        Roles.cde_admin,
+        Roles.event_admin,
+    )
 
     def __init__(self) -> None:
         super().__init__()
