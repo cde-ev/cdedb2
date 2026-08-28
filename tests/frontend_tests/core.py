@@ -1572,7 +1572,7 @@ class TestCoreFrontend(FrontendTest):
         f = self.response.forms["privilegechangeform"]
         if old_privileges is not None:
             if isinstance(old_privileges, Roles):
-                old_privileges = RoleSet([old_privileges])
+                old_privileges = RoleSet([old_privileges])  # pragma: no cover
             admin_roles = Roles.all_admin_roles()
             persona_roles = self.core.get_roles_single(self.key, new_admin["id"])
             available_admin_roles = [
