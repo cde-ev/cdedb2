@@ -26,6 +26,7 @@ import cdedb.models.core as models
 import cdedb.models.event as models_event
 import cdedb.models.ml as models_ml
 import cdedb.models.past_event as models_past_event
+from cdedb.backend.past_event import PastEventBackend
 from cdedb.common import (
     CdEDBObject,
     DefaultReturnCode,
@@ -1281,7 +1282,9 @@ class CoreBaseFrontend(AbstractFrontend):
             search_additions.append("username")
             constraints.append(("is_cde_realm", QueryOperators.equal, True))
         elif kind == "past_event_user":
-            if not rs.user.new_roles.has_any(Roles.cde_admin, Roles.auditor):
+            if not rs.user.new_roles.has_any(
+                *PastEventBackend.admin_roles, Roles.auditor
+            ):
                 raise werkzeug.exceptions.Forbidden(n_("Not privileged."))
             # adding archived users to past events is a common task
             scope = QueryScope.all_core_users
