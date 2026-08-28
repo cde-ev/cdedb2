@@ -255,7 +255,7 @@ def _make_backend_shim[B: AbstractBackend](
         if hasattr(backend, "list_enforcers"):
             if rs.user.persona_id in backend.list_enforcers(rs):
                 rs.user.new_roles |= Roles.complaint_enforcer
-        if "event" in rs.user.roles:
+        if Roles.event in rs.user.new_roles:
             if hasattr(backend, "orga_info"):
                 rs.user.orga = backend.orga_info(rs, rs.user.persona_id)
             if hasattr(backend, "caretaker_info"):
@@ -267,9 +267,9 @@ def _make_backend_shim[B: AbstractBackend](
             if hasattr(backend, "get_event_helpers"):
                 if rs.user.persona_id in backend.get_event_helpers(rs):
                     rs.user.new_roles |= Roles.event_helper
-        if "ml" in rs.user.roles and hasattr(backend, "moderator_info"):
+        if Roles.ml in rs.user.new_roles and hasattr(backend, "moderator_info"):
             rs.user.moderator = backend.moderator_info(rs, rs.user.persona_id)
-        if "assembly" in rs.user.roles and hasattr(backend, "presider_info"):
+        if Roles.assembly in rs.user.new_roles and hasattr(backend, "presider_info"):
             rs.user.presider = backend.presider_info(rs, rs.user.persona_id)
         return rs
 
@@ -571,7 +571,8 @@ class BackendTest(CdEDBTest):
         self.login(new_user)
         yield
         self.logout(allow_anonymous=True)
-        self.login(old_user)
+        if old_user["id"]:
+            self.login(old_user)
 
     def user_in(self, *identifiers: UserIdentifier) -> bool:
         """Check whether the current user is any of the given users."""
@@ -1054,13 +1055,13 @@ def as_users(
     return wrapper
 
 
-def admin_views[F: Callable[..., Any]](views: AdminViews) -> Callable[[F], F]:
+def admin_views[F: Callable[..., Any]](*views: AdminViews) -> Callable[[F], F]:
     """Decorate a test to set different initial admin views."""
 
     def decorator(fun: F) -> F:
         @functools.wraps(fun)
         def new_fun(self: FrontendTest, *args: Any, **kwargs: Any) -> Any:
-            self.app.set_cookie(AdminViews.cookie_name(), str(views.value))
+            self.app.set_cookie(AdminViews.cookie_name(), AdminViews.serialize(views))
             return fun(self, *args, **kwargs)
 
         return cast(F, new_fun)
@@ -1160,7 +1161,7 @@ class FrontendTest(BackendTest):
         super().setUp()
         self.app.reset()
         # Make sure all available admin views are enabled.
-        self.app.set_cookie(AdminViews.cookie_name(), str(AdminViews.all().value))
+        self.app.set_cookie(AdminViews.cookie_name(), AdminViews.serialize(AdminViews))
         if prepsql:
             execsql(prepsql)
         self.response = None
@@ -2481,7 +2482,7 @@ class MultiAppFrontendTest(FrontendTest):
         super().setUp(*args, **kwargs)
         for app in self.apps:
             app.reset()
-            app.set_cookie(AdminViews.cookie_name(), str(AdminViews.all().value))
+            app.set_cookie(AdminViews.cookie_name(), AdminViews.serialize(AdminViews))
         self.current_app = 0
 
     def get_response(self) -> webtest.TestResponse:
@@ -2620,7 +2621,7 @@ class CronTest(CdEDBTest):
                 def mail_wrapper(
                     rs: RequestState, name: str, *args: Any, **kwargs: Any
                 ) -> str | None:
-                    self.mails.append(MailTrace(front.realm, name, args, kwargs))
+                    self.mails.append(MailTrace(front.realm_str(), name, args, kwargs))
                     return fun(rs, name, *args, **kwargs)
 
                 return cast(F, mail_wrapper)

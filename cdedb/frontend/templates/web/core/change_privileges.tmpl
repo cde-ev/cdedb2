@@ -30,7 +30,7 @@
                                       value=ambience['persona']|persona_name) }}
             {# see also change_privileges in cdedb.frontend.core and initialize_privilege_change in cdedb.backend.core #}
             {% set admin_roles = enums["Roles"].all_admin_roles() %}
-            {% for admin_role in admin_roles if admin_role.required_roles in persona_roles or admin_role.required_roles in admin_roles %}
+            {% for admin_role in admin_roles if persona_roles.has(admin_role.required_roles) or admin_roles.has(admin_role.required_roles) %}
                 {{ util.form_input_checkbox(name="roles", value=admin_role, label=gettext(admin_role|string), small=True, errorname=admin_role.marker) }}
             {% endfor %}
         </div>

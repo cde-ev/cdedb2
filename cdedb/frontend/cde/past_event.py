@@ -18,6 +18,7 @@ import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 import cdedb.models.past_event as models
 from cdedb.common import (
+    AdminViews,
     CdEDBObject,
     RequestState,
     merge_dicts,
@@ -54,7 +55,7 @@ COURSESEARCH_DEFAULTS = {
 
 
 class CdEPastEventMixin(CdEBaseFrontend):
-    @access("member", "cde_admin")
+    @access(Roles.member, Roles.cde_admin)
     @REQUESTdata("is_search")
     def past_course_search(self, rs: RequestState, is_search: bool) -> Response:
         """Search for past courses."""
@@ -99,13 +100,13 @@ class CdEPastEventMixin(CdEBaseFrontend):
             {'spec': spec, 'result': result, 'count': count},
         )
 
-    @access("member", "cde_admin")
+    @access(Roles.member, Roles.cde_admin)
     def show_past_event(self, rs: RequestState, pevent_id: int) -> Response:
         """Display concluded event."""
         course_ids = self.pasteventproxy.list_past_courses(rs, pevent_id)
         courses = self.pasteventproxy.get_past_courses(rs, course_ids)
         total_num, participants = self.pasteventproxy.list_event_participants(
-            rs, pevent_id, honor_admins="past_event" in rs.user.admin_views
+            rs, pevent_id, honor_admins=AdminViews.past_event in rs.user.admin_views
         )
         orgas = [p for p in participants.values() if p.orga_status]
         return self.render(
@@ -119,13 +120,15 @@ class CdEPastEventMixin(CdEBaseFrontend):
             },
         )
 
-    @access("member", "cde_admin")
+    @access(Roles.member, Roles.cde_admin)
     def show_past_course(
         self, rs: RequestState, pevent_id: int, pcourse_id: int
     ) -> Response:
         """Display concluded course."""
         total_num, participants = self.pasteventproxy.get_course_assignments(
-            rs, pcourse_id, honor_admins="past_event" in rs.user.admin_views
+            rs,
+            pcourse_id,
+            honor_admins=AdminViews.past_event in rs.user.admin_views,
         )
         personas = self.coreproxy.get_past_event_users(rs, participants.keys())
         return self.render(
@@ -138,7 +141,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             },
         )
 
-    @access("member", "cde_admin")
+    @access(Roles.member, Roles.cde_admin)
     @REQUESTdata("institution")
     def list_past_events(
         self, rs: RequestState, institution: const.PastInstitutions | None = None
@@ -176,7 +179,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             },
         )
 
-    @access("cde_admin")
+    @access(Roles.cde_admin)
     def change_past_event_form(self, rs: RequestState, pevent_id: int) -> Response:
         """Render form."""
         merge_dicts(rs.values, rs.ambience['pevent'].as_dict())
@@ -186,7 +189,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             mandatory_fields=models.PastEvent.mandatory_form_fields(creation=False),
         )
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @REQUESTdatadict(*models.PastEvent.requestdict_fields(creation=False))
     def change_past_event(
         self, rs: RequestState, pevent_id: int, data: CdEDBObject
@@ -200,7 +203,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/show_past_event")
 
-    @access("cde_admin")
+    @access(Roles.cde_admin)
     def create_past_event_form(self, rs: RequestState) -> Response:
         """Render form."""
         return self.render(
@@ -209,7 +212,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             mandatory_fields=models.PastEvent.mandatory_form_fields(creation=True),
         )
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @REQUESTdatadict(*models.PastEvent.requestdict_fields(creation=True))
     @REQUESTdata("courses")
     def create_past_event(
@@ -251,7 +254,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         rs.notify_return_code(new_id, success=n_("Event created."))
         return self.redirect(rs, "cde/show_past_event", {'pevent_id': new_id})
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @ack_delete()
     def delete_past_event(self, rs: RequestState, pevent_id: int) -> Response:
         """Remove a past event."""
@@ -264,7 +267,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/list_past_events")
 
-    @access("cde_admin")
+    @access(Roles.cde_admin)
     def change_past_course_form(
         self, rs: RequestState, pevent_id: int, pcourse_id: int
     ) -> Response:
@@ -276,7 +279,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             mandatory_fields=models.PastCourse.mandatory_form_fields(creation=False),
         )
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @REQUESTdatadict(*models.PastCourse.requestdict_fields(creation=False))
     def change_past_course(
         self, rs: RequestState, pevent_id: int, pcourse_id: int, data: CdEDBObject
@@ -291,7 +294,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/show_past_course")
 
-    @access("cde_admin")
+    @access(Roles.cde_admin)
     def create_past_course_form(self, rs: RequestState, pevent_id: int) -> Response:
         """Render form."""
         return self.render(
@@ -300,7 +303,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
             mandatory_fields=models.PastCourse.mandatory_form_fields(creation=True),
         )
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @REQUESTdatadict(*models.PastCourse.requestdict_fields(creation=True))
     def create_past_course(
         self, rs: RequestState, pevent_id: int, data: CdEDBObject
@@ -315,7 +318,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         rs.notify_return_code(new_id, success=n_("Course created."))
         return self.redirect(rs, "cde/show_past_course", {'pcourse_id': new_id})
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @ack_delete()
     def delete_past_course(
         self, rs: RequestState, pevent_id: int, pcourse_id: int
@@ -333,7 +336,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/show_past_event")
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @REQUESTdata("persona_ids", "orga_status", "music_status")
     def set_participants(
         self,
@@ -369,7 +372,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/show_past_event")
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @REQUESTdata("pcourse_id", "persona_ids", "instructor_status")
     def set_course_assignments(
         self,
@@ -407,7 +410,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/show_past_course", {'pcourse_id': pcourse_id})
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @REQUESTdata("persona_id")
     @ack_delete()
     def remove_participant(
@@ -420,7 +423,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/show_past_event")
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @REQUESTdata("persona_id", "pcourse_id")
     @ack_delete()
     def remove_course_assignment(
@@ -439,7 +442,7 @@ class CdEPastEventMixin(CdEBaseFrontend):
 
     @REQUESTdatadict(*PastEventLogFilter.requestdict_fields())
     @REQUESTdata("download")
-    @access("cde_admin", "auditor")
+    @access(Roles.cde_admin, Roles.auditor)
     def view_past_log(
         self, rs: RequestState, data: CdEDBObject, download: bool
     ) -> Response:

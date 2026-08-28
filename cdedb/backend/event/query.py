@@ -38,7 +38,7 @@ from cdedb.common.query import (
     QueryScope,
     QuerySpecEntry,
 )
-from cdedb.common.roles import Realms
+from cdedb.common.roles import Realms, Roles
 from cdedb.database.connection import Atomizer
 from cdedb.models.event import CustomQueryFilter
 
@@ -57,7 +57,7 @@ def _get_field_select_columns(
 
 
 class EventQueryBackend(EventBaseBackend, abc.ABC):
-    @access("event", "core_admin", "ml_admin")
+    @access(Roles.event, Roles.core_admin, Roles.ml_admin)
     def submit_general_query(
         self,
         rs: RequestState,
@@ -373,7 +373,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
             query.constraints.append(("event_id", QueryOperators.equal, event_id))
             query.spec['event_id'] = QuerySpecEntry("bool", "")
         elif query.scope in {QueryScope.event_user, QueryScope.all_event_users}:
-            if not self.is_admin(rs) and "core_admin" not in rs.user.roles:
+            if not self.is_admin(rs) and Roles.core_admin not in rs.user.new_roles:
                 raise PrivilegeError(n_("Admin only."))
 
             # Include only (un)archived users, depending on query scope.
@@ -777,7 +777,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
             raise RuntimeError(n_("Bad scope."), query.scope)
         return self.general_query(rs, query, view=view, aggregate=aggregate)
 
-    @access("event", "droid_quick_partial_export", "droid_orga")
+    @access(Roles.event, Roles.droid_quick_partial_export, Roles.droid_orga)
     def get_event_queries(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> models.CdEDataclassMap[models.StoredEventQuery]:
@@ -793,7 +793,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
                 datum['event'] = event
             return models.StoredEventQuery.many_from_database(data)
 
-    @access("event")
+    @access(Roles.event)
     def delete_event_query(self, rs: RequestState, query_id: int) -> DefaultReturnCode:
         """Delete the stored query with the given query id."""
         query_id = affirm(vtypes.ID, query_id)
@@ -823,7 +823,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
                 )
             return ret
 
-    @access("event")
+    @access(Roles.event)
     def store_event_query(
         self,
         rs: RequestState,
@@ -868,7 +868,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
             )
         return new_id
 
-    @access("event")
+    @access(Roles.event)
     def add_custom_query_filter(
         self,
         rs: RequestState,
@@ -899,7 +899,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
             )
         return new_id
 
-    @access("event")
+    @access(Roles.event)
     def change_custom_query_filter(
         self, rs: RequestState, data: CdEDBObject
     ) -> DefaultReturnCode:
@@ -946,7 +946,7 @@ class EventQueryBackend(EventBaseBackend, abc.ABC):
                 )
             return ret
 
-    @access("event")
+    @access(Roles.event)
     def delete_custom_query_filter(
         self, rs: RequestState, custom_filter_id: int
     ) -> DefaultReturnCode:

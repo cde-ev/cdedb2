@@ -17,8 +17,10 @@
     {{ util.breadcrumb_link(cdedblink("assembly/list_attendees"), gettext("Participants"), active=True) }}
 {% endblock %}
 {% block content %}
-    {% if now() < ambience['assembly']['signup_end'] and ("assembly_presider" in user.admin_views
-                                                          or ambience['assembly']['id'] in user.presider) %}
+    {% if now() < ambience['assembly']['signup_end'] and (
+            user.admin_views.has(AdminViews.assembly_presider)
+            or ambience['assembly']['id'] in user.presider
+        ) %}
         {% call util.bootstrap_panel(title=gettext("Add external participants"), aclass='panel-success panel-condensed',
                 icon='plus') %}
             <p class="text-muted">
@@ -68,7 +70,7 @@
         {% endfor %}
     </div>
 
-    {% if "assembly_presider" in user.admin_views or ambience['assembly']['id'] in user.presider %}
+    {% if user.admin_views.has(AdminViews.assembly_presider) or ambience['assembly']['id'] in user.presider %}
         {% call util.bootstrap_panel(title=gettext("Download"), icon="file-download", aclass="panel-default mosp") %}
             <p class="text-muted">
                 {% trans %}

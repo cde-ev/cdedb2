@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-08-25 17:36+0200\n"
+"POT-Creation-Date: 2026-08-26 04:26+0200\n"
 "PO-Revision-Date: 2024-08-18 18:16+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.schuelerakademie.de>\n"
@@ -3544,9 +3544,6 @@ msgstr "Kein Kurs gefunden."
 msgid "Ambiguous course."
 msgstr "Uneindeutiger Kurs."
 
-msgid "Needs both admin privileges."
-msgstr "Mehr Adminprivilegien benötigt."
-
 msgid "Event is not concluded yet."
 msgstr "Veranstaltung ist noch nicht vorüber."
 
@@ -4264,6 +4261,15 @@ msgstr "Alle (nicht-archivierten) Accounts"
 
 msgid "00_query_ml_user_all"
 msgstr "Alle (nicht-archivierten) Accounts"
+
+msgid "CdE membership & events"
+msgstr "CdE-Mitgliedschaft und Veranstaltungen"
+
+msgid "CdE events"
+msgstr "CdE-Veranstaltungen"
+
+msgid "CdE mailinglist"
+msgstr "CdE-Mailingliste"
 
 msgid "Superfluous key found."
 msgstr "Unerwarteter Eintrag gefunden."
@@ -5908,6 +5914,9 @@ msgstr "Fall muss entsperrt sein um auf Anhang zuzugreifen."
 
 msgid "This user does not exist or is no enforcer."
 msgstr "Dieser Account existiert nicht oder ist kein:e Maßnahmenmanager:in."
+
+msgid "Invalid realm for genesis."
+msgstr "Ungültiger Bereich für Accountanfrage."
 
 msgid "Attachment missing."
 msgstr "Anhang fehlt."
@@ -15535,15 +15544,6 @@ msgstr "abgelaufen"
 
 msgid "not yet active"
 msgstr "noch nicht aktiv"
-
-msgid "CdE membership & events"
-msgstr "CdE-Mitgliedschaft und Veranstaltungen"
-
-msgid "CdE events"
-msgstr "CdE-Veranstaltungen"
-
-msgid "CdE mailinglist"
-msgstr "CdE-Mailingliste"
 
 msgid "Wrong format for api token."
 msgstr "Falsches formatiertes API-Token."

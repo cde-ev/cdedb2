@@ -90,7 +90,7 @@ class EventBaseBackend(EventLowLevelBackend):
             self.conf, 'event_keeper', log_keys=log_keys, log_timestamp_key="ctime"
         )
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def is_locked(self, rs: RequestState, *, event_id: vtypes.EventID) -> bool:
         """Helper to determine if an event is locked."""
         event_id = affirm(vtypes.EventID, event_id)
@@ -108,7 +108,7 @@ class EventBaseBackend(EventLowLevelBackend):
         if self.is_locked(rs, event_id=event_id):
             raise RuntimeError(n_("This event is locked."))
 
-    @access("persona")
+    @access(Roles.persona)
     def orga_infos(
         self, rs: RequestState, persona_ids: Collection[vtypes.PersonaID]
     ) -> dict[vtypes.PersonaID, set[vtypes.EventID]]:
@@ -133,7 +133,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
     orga_info: _OrgaInfoProtocol = singularize(orga_infos, "persona_ids", "persona_id")
 
-    @access("persona")
+    @access(Roles.persona)
     def caretaker_infos(
         self,
         rs: RequestState,
@@ -162,7 +162,7 @@ class EventBaseBackend(EventLowLevelBackend):
         caretaker_infos, "persona_ids", "persona_id"
     )
 
-    @access("persona")
+    @access(Roles.persona)
     def checkin_helper_infos(
         self,
         rs: RequestState,
@@ -191,13 +191,13 @@ class EventBaseBackend(EventLowLevelBackend):
         checkin_helper_infos, "persona_ids", "persona_id"
     )
 
-    @access("persona")
+    @access(Roles.persona)
     def get_event_helpers(self, rs: RequestState) -> set[vtypes.PersonaID]:
         """List all event helpers."""
         data = self.query_all(rs, "SELECT persona_id FROM event.helpers", [])
         return {e['persona_id'] for e in data}
 
-    @access("event", "auditor")
+    @access(Roles.event, Roles.auditor)
     def retrieve_log(self, rs: RequestState, log_filter: EventLogFilter) -> CdEDBLog:
         """Get recorded activity.
 
@@ -215,7 +215,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return self.generic_retrieve_log(rs, log_filter)
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def list_events(
         self,
         rs: RequestState,
@@ -255,7 +255,7 @@ class EventBaseBackend(EventLowLevelBackend):
         data = self.query_all(rs, query, params)
         return {e['id']: e['title'] for e in data}
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def get_events(
         self,
         rs: RequestState,
@@ -316,7 +316,7 @@ class EventBaseBackend(EventLowLevelBackend):
     # The annonation for this lives in the lowlevel backend.
     get_event: _GetEventProtocol = singularize(get_events, "event_ids", "event_id")
 
-    @access("event")
+    @access(Roles.event)
     def verify_shortname_existence(self, rs: RequestState, shortname: str) -> bool:
         """Return True if the given shortname already exists for some event."""
         shortname = affirm(str, shortname)
@@ -326,17 +326,17 @@ class EventBaseBackend(EventLowLevelBackend):
             )
         )
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def get_minor_form_path(self, rs: RequestState, event_id: vtypes.EventID) -> Path:
         event_id = affirm(vtypes.EventID, event_id)
         return self.minor_form_dir / str(event_id)
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def has_minor_form(self, rs: RequestState, event_id: vtypes.EventID) -> bool:
         event_id = affirm(vtypes.EventID, event_id)
         return self.get_minor_form_path(rs, event_id).is_file()
 
-    @access("event")
+    @access(Roles.event)
     def change_minor_form(
         self, rs: RequestState, event_id: vtypes.EventID, minor_form: bytes | None
     ) -> DefaultReturnCode:
@@ -369,7 +369,7 @@ class EventBaseBackend(EventLowLevelBackend):
             )
             return 1
 
-    @access("persona")
+    @access(Roles.persona)
     def validate_event_persona_ids(
         self, rs: RequestState, persona_ids: Collection[vtypes.PersonaID]
     ) -> None:
@@ -381,7 +381,7 @@ class EventBaseBackend(EventLowLevelBackend):
         if not self.core.verify_personas(rs, persona_ids, Roles.event):
             raise ValueError(n_("Some of these personas are not event users."))
 
-    @access("event_admin")
+    @access(Roles.event_admin)
     def add_event_helpers(
         self, rs: RequestState, persona_ids: Collection[vtypes.PersonaID]
     ) -> DefaultReturnCode:
@@ -411,7 +411,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event_admin")
+    @access(Roles.event_admin)
     def remove_event_helper(
         self, rs: RequestState, persona_id: vtypes.PersonaID
     ) -> DefaultReturnCode:
@@ -454,7 +454,7 @@ class EventBaseBackend(EventLowLevelBackend):
         else:
             raise RuntimeError(n_("Impossible."))
 
-    @access("event")
+    @access(Roles.event)
     def add_event_roles(
         self,
         rs: RequestState,
@@ -501,7 +501,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def remove_event_role(
         self,
         rs: RequestState,
@@ -538,7 +538,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def list_orga_tokens(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> dict[int, str]:
@@ -558,7 +558,7 @@ class EventBaseBackend(EventLowLevelBackend):
         )
         return {e['id']: e['title'] for e in data}
 
-    @access("event")
+    @access(Roles.event)
     def get_orga_tokens(
         self, rs: RequestState, orga_token_ids: Collection[int]
     ) -> dict[int, OrgaToken]:
@@ -592,7 +592,7 @@ class EventBaseBackend(EventLowLevelBackend):
         get_orga_tokens, "orga_token_ids", "orga_token_id"
     )
 
-    @access("event")
+    @access(Roles.event)
     def create_orga_token(self, rs: RequestState, data: CdEDBObject) -> tuple[int, str]:
         """Create a new orga token for the given event.
 
@@ -623,7 +623,7 @@ class EventBaseBackend(EventLowLevelBackend):
             )
         return new_id, secret
 
-    @access("event")
+    @access(Roles.event)
     def change_orga_token(
         self, rs: RequestState, data: CdEDBObject
     ) -> DefaultReturnCode:
@@ -659,7 +659,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 )
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def revoke_orga_token(
         self, rs: RequestState, orga_token_id: int
     ) -> DefaultReturnCode:
@@ -693,7 +693,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def delete_orga_token_blockers(
         self, rs: RequestState, orga_token_id: int
     ) -> DeletionBlockers:
@@ -726,7 +726,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return blockers
 
-    @access("event")
+    @access(Roles.event)
     def delete_orga_token(
         self,
         rs: RequestState,
@@ -791,7 +791,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event", "droid_orga")
+    @access(Roles.event, Roles.droid_orga)
     def set_event(
         self,
         rs: RequestState,
@@ -880,7 +880,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event_admin")
+    @access(Roles.event_admin)
     def create_event(self, rs: RequestState, data: CdEDBObject) -> vtypes.EventID:
         """Make a new event organized via DB."""
         data = affirm(models.Event, data, creation=True)
@@ -907,7 +907,7 @@ class EventBaseBackend(EventLowLevelBackend):
             self.event_keeper_create(rs, new_id)
         return new_id
 
-    @access("event")
+    @access(Roles.event)
     def set_event_free_texts(
         self,
         rs: RequestState,
@@ -933,7 +933,7 @@ class EventBaseBackend(EventLowLevelBackend):
             )
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def create_lodgement_group(
         self, rs: RequestState, event_id: vtypes.EventID, data: CdEDBObject
     ) -> vtypes.LodgementGroupID:
@@ -955,7 +955,7 @@ class EventBaseBackend(EventLowLevelBackend):
             )
         return vtypes.LodgementGroupID(vtypes.ID(new_id))
 
-    @access("event")
+    @access(Roles.event)
     def add_part_group(
         self, rs: RequestState, event_id: vtypes.EventID, part_group: CdEDBObject
     ) -> DefaultReturnCode:
@@ -996,7 +996,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def change_part_group(
         self, rs: RequestState, part_group_id: int, part_group: CdEDBObject
     ) -> DefaultReturnCode:
@@ -1028,7 +1028,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def delete_part_group(
         self, rs: RequestState, part_group_id: int
     ) -> DefaultReturnCode:
@@ -1050,7 +1050,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def add_track_group(
         self, rs: RequestState, event_id: vtypes.EventID, track_group: CdEDBObject
     ) -> DefaultReturnCode:
@@ -1101,7 +1101,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def change_track_group(
         self, rs: RequestState, track_group_id: int, track_group: CdEDBObject
     ) -> DefaultReturnCode:
@@ -1136,7 +1136,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def delete_track_group(
         self, rs: RequestState, track_group_id: int
     ) -> DefaultReturnCode:
@@ -1194,7 +1194,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return event
 
-    @access("event")
+    @access(Roles.event)
     def create_event_fee(
         self, rs: RequestState, event_id: vtypes.EventID, data: CdEDBObject
     ) -> DefaultReturnCode:
@@ -1224,7 +1224,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def change_event_fee(
         self, rs: RequestState, fee_id: int, data: CdEDBObject
     ) -> DefaultReturnCode:
@@ -1259,7 +1259,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def delete_event_fee(self, rs: RequestState, fee_id: int) -> DefaultReturnCode:
         fee_id = affirm(vtypes.ID, fee_id)
 
@@ -1317,7 +1317,7 @@ class EventBaseBackend(EventLowLevelBackend):
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> dict[vtypes.RegistrationID, "ComplexRegistrationFee"]: ...
 
-    @access("event")
+    @access(Roles.event)
     def check_orga_addition_limit(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> bool:
@@ -1350,7 +1350,7 @@ class EventBaseBackend(EventLowLevelBackend):
         num = unwrap(self.query_one(rs, query, params))
         return num < self.conf["ORGA_ADD_LIMIT"]
 
-    @access("event", "droid_quick_partial_export", "droid_orga")
+    @access(Roles.event, Roles.droid_quick_partial_export, Roles.droid_orga)
     def get_all_questionnaires(
         self,
         rs: RequestState,
@@ -1389,7 +1389,7 @@ class EventBaseBackend(EventLowLevelBackend):
             row["event"] = event
         return models.questionnaire.QuestionnaireContainer.from_database(data, event)
 
-    @access("event")
+    @access(Roles.event)
     def set_questionnaire(
         self,
         rs: RequestState,
@@ -1436,7 +1436,7 @@ class EventBaseBackend(EventLowLevelBackend):
             )
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def balance_event(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> DefaultReturnCode:
@@ -1459,7 +1459,7 @@ class EventBaseBackend(EventLowLevelBackend):
             self.event_log(rs, const.EventLogCodes.event_balanced, event_id)
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def unbalance_event(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> DefaultReturnCode:
@@ -1482,7 +1482,7 @@ class EventBaseBackend(EventLowLevelBackend):
             self.event_log(rs, const.EventLogCodes.event_unbalanced, event_id)
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def lock_event(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> DefaultReturnCode:
@@ -1501,7 +1501,7 @@ class EventBaseBackend(EventLowLevelBackend):
             self.event_log(rs, const.EventLogCodes.event_locked, event_id)
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def unlock_event(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> DefaultReturnCode:
@@ -1521,7 +1521,7 @@ class EventBaseBackend(EventLowLevelBackend):
             self.event_log(rs, const.EventLogCodes.event_unlocked, event_id)
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def approve_registration(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> DefaultReturnCode:
@@ -1540,7 +1540,7 @@ class EventBaseBackend(EventLowLevelBackend):
             self.event_log(rs, const.EventLogCodes.registration_approved, event_id)
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def unapprove_registration(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> DefaultReturnCode:
@@ -1560,7 +1560,7 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @internal
-    @access("event")
+    @access(Roles.event)
     def set_event_archived(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> DefaultReturnCode:
@@ -1581,7 +1581,7 @@ class EventBaseBackend(EventLowLevelBackend):
             self.event_log(rs, const.EventLogCodes.event_archived, event_id)
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def export_event(self, rs: RequestState, event_id: vtypes.EventID) -> CdEDBObject:
         """Export an event for offline usage or after offline usage.
 
@@ -1698,7 +1698,7 @@ class EventBaseBackend(EventLowLevelBackend):
             )
         return ret
 
-    @access("event", "droid_quick_partial_export", "droid_orga")
+    @access(Roles.event, Roles.droid_quick_partial_export, Roles.droid_orga)
     def partial_export_event(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> CdEDBObject:
@@ -2010,7 +2010,7 @@ class EventBaseBackend(EventLowLevelBackend):
             ret['event']['iban'] = ret['event']['iban'].get_iban()
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def questionnaire_import(
         self,
         rs: RequestState,
@@ -2032,7 +2032,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 ret *= self.set_questionnaire(rs, event_id, kind, questionnaire)
         return ret
 
-    @access("event_admin")
+    @access(Roles.event_admin)
     def event_keeper_create(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> CdEDBObject:
@@ -2046,14 +2046,14 @@ class EventBaseBackend(EventLowLevelBackend):
         assert export is not None
         return export
 
-    @access("event_admin")
+    @access(Roles.event_admin)
     def event_keeper_drop(self, rs: RequestState, event_id: vtypes.EventID) -> None:
         """Published version of EntityKeeper.delete.
 
         :param rs: Required for access check."""
         self._event_keeper.delete(event_id)
 
-    @access("event")
+    @access(Roles.event)
     def event_keeper_commit(
         self,
         rs: RequestState,

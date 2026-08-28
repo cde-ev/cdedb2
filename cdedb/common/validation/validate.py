@@ -137,7 +137,7 @@ from cdedb.common.query import (
     QuerySpec,
 )
 from cdedb.common.query.log_filter import ALL_LOG_FILTERS, GenericLogFilter
-from cdedb.common.roles import Roles, extract_roles
+from cdedb.common.roles import Realms, Roles, extract_roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.data import COUNTRY_CODES, FREQUENCY_LISTS, IBAN_LENGTHS
 from cdedb.common.validation.types import *  # noqa: F403
@@ -933,7 +933,7 @@ def _realm(
     with errs:
         if val not in {"session", "core", "cde", "event", "ml", "assembly"}:
             raise ValidationSummary(ValueError(argname, n_("Not a valid realm.")))
-        if supports_genesis and val not in models_core.GenesisCase.available_realms:
+        if supports_genesis and val not in Realms.get_available_genesis_realms():
             raise ValidationSummary(
                 ValueError(n_("This realm is not supported for genesis."))
             )

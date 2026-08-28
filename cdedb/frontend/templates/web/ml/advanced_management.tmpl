@@ -201,13 +201,13 @@
     </div>
 
     <h2 class="mosp">{% trans %}Unsubscribers{% endtrans %} [{{ all_unsubscriptions|length }}]</h2>
-        <p class="text-muted {% if "ml_mgmt" in user.admin_views %}nosp{% endif %}">
+        <p class="text-muted {% if user.admin_views.has(AdminViews.ml_mgmt) %}nosp{% endif %}">
             {{ util.make_icon('info-circle') }}
             {% trans link=util.href(docurl("Realm_Mailinglist_Management", anchor='explicitly-unsubscribed'), gettext("documentation"), title=gettext("Explicity Unsubscribed State")) %}
                 Users who unsubscribed from this list. They will not be re-added automatically, but may be able to subscribe manually. Consult the {{ link }} for more details.
             {% endtrans %}
         </p>
-        {% if "ml_mgmt" in user.admin_views %}
+        {% if user.admin_views.has(AdminViews.ml_mgmt) %}
             <p class="text-danger">
                 {{ util.make_icon('exclamation-triangle') }}
                 {% trans %}
@@ -225,9 +225,9 @@
                         <li class="hide-hover-container clearfix-after">
                             {# Since they are unsubscribed, giving a mailinglist as context does not make sense. #}
                             {{ util.persona_anchor(all_unsubscriptions[unsubscription],
-                                                   readonly=False if "ml_mgmt" in user.admin_views else True,
+                                                   readonly=False if user.admin_views.has(AdminViews.ml_mgmt) else True,
                                                    aclass='text-muted' if unsubscription in redundant_unsubscriptions else '') }}
-                            {% if "ml_mgmt" in user.admin_views %}
+                            {% if user.admin_views.has(AdminViews.ml_mgmt) %}
                                 {% if unsubscription in redundant_unsubscriptions %}
                                     <form action="{{ cdedblink('ml/reset_unsubscription') }}"
                                           method="POST" style="display: inline;"

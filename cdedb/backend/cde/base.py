@@ -43,7 +43,7 @@ from cdedb.common.exceptions import PrivilegeError, QuotaException
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import CdELogFilter, FinanceLogFilter
-from cdedb.common.roles import Realms
+from cdedb.common.roles import Realms, Roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
@@ -81,16 +81,12 @@ class CdEBaseBackend(AbstractBackend):
     .. note:: The changelog functionality is to be found in the core backend.
     """
 
-    realm = "cde"
+    realm = Realms.cde
 
     def __init__(self) -> None:
         super().__init__()
         self.pastevent = make_proxy(PastEventBackend(), internal=True)
         self.event = make_proxy(EventBackend(), internal=True)
-
-    @classmethod
-    def is_admin(cls, rs: RequestState) -> bool:
-        return super().is_admin(rs)
 
     def cde_log(
         self,
@@ -117,7 +113,7 @@ class CdEBaseBackend(AbstractBackend):
         }
         return self.sql_insert(rs, "cde.log", data)
 
-    @access("cde_admin", "auditor")
+    @access(Roles.cde_admin, Roles.auditor)
     def retrieve_cde_log(self, rs: RequestState, log_filter: CdELogFilter) -> CdEDBLog:
         """Get recorded activity.
 
@@ -127,7 +123,7 @@ class CdEBaseBackend(AbstractBackend):
         log_filter = affirm(CdELogFilter, log_filter)
         return self.generic_retrieve_log(rs, log_filter)
 
-    @access("core_admin", "cde_admin", "auditor")
+    @access(Roles.core_admin, Roles.cde_admin, Roles.auditor)
     def retrieve_finance_log(
         self, rs: RequestState, log_filter: FinanceLogFilter
     ) -> CdEDBLog:
@@ -139,7 +135,7 @@ class CdEBaseBackend(AbstractBackend):
         log_filter = affirm(FinanceLogFilter, log_filter)
         return self.generic_retrieve_log(rs, log_filter)
 
-    @access("finance_admin")
+    @access(Roles.finance_admin)
     def book_money_transfers(
         self, rs: RequestState, transfers: list[CdEDBObject]
     ) -> models_finance.MoneyTransfersResult:
@@ -248,7 +244,7 @@ class CdEBaseBackend(AbstractBackend):
             return models_finance.MoneyTransfersResult(success=False, index=index)
         return result
 
-    @access("cde")
+    @access(Roles.cde)
     def current_period(self, rs: RequestState) -> int:
         """Check for the current semester."""
         query = "SELECT MAX(id) FROM cde.org_period"
@@ -257,7 +253,7 @@ class CdEBaseBackend(AbstractBackend):
             raise ValueError(n_("No period exists."))
         return ret
 
-    @access("member", "cde_admin")
+    @access(Roles.member, Roles.cde_admin)
     def get_member_stats(
         self, rs: RequestState
     ) -> tuple[CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject]:
@@ -605,7 +601,7 @@ class CdEBaseBackend(AbstractBackend):
             )
         return persona_id
 
-    @access("cde_admin")
+    @access(Roles.cde_admin)
     def perform_batch_admission(
         self,
         rs: RequestState,
@@ -664,7 +660,7 @@ class CdEBaseBackend(AbstractBackend):
             return False, index
         return True, stats
 
-    @access("searchable", "core_admin", "cde_admin")
+    @access(Roles.searchable, Roles.core_admin, Roles.cde_admin)
     def submit_general_query(
         self, rs: RequestState, query: Query, aggregate: bool = False
     ) -> tuple[CdEDBObject, ...]:
@@ -689,7 +685,7 @@ class CdEBaseBackend(AbstractBackend):
             QueryScope.past_event_user,
             QueryScope.all_cde_users,
         }:
-            if not {'core_admin', 'cde_admin'} & rs.user.roles:
+            if not rs.user.new_roles.has_any(Roles.core_admin, Roles.cde_admin):
                 raise PrivilegeError(n_("Admin only."))
 
             # Potentially restrict to non-archived users.
@@ -720,7 +716,7 @@ class CdEBaseBackend(AbstractBackend):
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query, aggregate=aggregate)
 
-    @access("searchable")
+    @access(Roles.searchable)
     def get_nearby_postal_codes(
         self, rs: RequestState, postal_code: str, radius: int
     ) -> list[str]:

@@ -10,8 +10,10 @@
 
 
 {% macro print_attachment_version_for_overview(version, add=False, delete=False, delete_attachment=False) %}
-    {% set edit_right = ambience['assembly']['is_active'] and ("assembly_presider" in user.admin_views
-                                                           or ambience['assembly']['id'] in user.presider) %}
+    {% set edit_right = ambience['assembly']['is_active'] and (
+            user.admin_views.has(AdminViews.assembly_presider)
+            or ambience['assembly']['id'] in user.presider
+        ) %}
     {% if not version["dtime"] %}
         {{ util.href(cdedblink("assembly/get_attachment_version",
                                {'attachment_id': version["attachment_id"], 'version_nr': version["version_nr"]}),

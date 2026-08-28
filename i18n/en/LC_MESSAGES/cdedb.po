@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-08-25 17:36+0200\n"
+"POT-Creation-Date: 2026-08-26 04:26+0200\n"
 "PO-Revision-Date: 2024-08-18 18:13+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <dedb@lists.schuelerakademie.de>\n"
@@ -3485,9 +3485,6 @@ msgstr ""
 msgid "Ambiguous course."
 msgstr ""
 
-msgid "Needs both admin privileges."
-msgstr ""
-
 msgid "Event is not concluded yet."
 msgstr ""
 
@@ -4197,6 +4194,15 @@ msgstr "All Users"
 
 msgid "00_query_ml_user_all"
 msgstr "All Users"
+
+msgid "CdE membership & events"
+msgstr ""
+
+msgid "CdE events"
+msgstr ""
+
+msgid "CdE mailinglist"
+msgstr ""
 
 msgid "Superfluous key found."
 msgstr ""
@@ -5775,6 +5781,9 @@ msgid "Need to unlock case to access attachment."
 msgstr ""
 
 msgid "This user does not exist or is no enforcer."
+msgstr ""
+
+msgid "Invalid realm for genesis."
 msgstr ""
 
 msgid "Attachment missing."
@@ -14411,15 +14420,6 @@ msgid "expired"
 msgstr ""
 
 msgid "not yet active"
-msgstr ""
-
-msgid "CdE membership & events"
-msgstr ""
-
-msgid "CdE events"
-msgstr ""
-
-msgid "CdE mailinglist"
 msgstr ""
 
 msgid "Wrong format for api token."

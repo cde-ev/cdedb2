@@ -12,6 +12,7 @@ import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, RequestState, lastschrift_reference, unwrap
 from cdedb.common.n_ import n_
 from cdedb.common.query.log_filter import CdELogFilter
+from cdedb.common.roles import Roles
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     REQUESTdata,
@@ -24,7 +25,7 @@ from cdedb.frontend.common import (
 
 
 class CdESemesterMixin(CdEBaseFrontend):
-    @access("cde_admin")
+    @access(Roles.cde_admin)
     def show_semester(self, rs: RequestState) -> Response:
         """Show information."""
         period_id = self.cdeproxy.current_period(rs)
@@ -83,7 +84,7 @@ class CdESemesterMixin(CdEBaseFrontend):
             },
         )
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     @REQUESTdata("addresscheck", "testrun")
     def semester_bill(
         self, rs: RequestState, addresscheck: bool, testrun: bool
@@ -209,7 +210,7 @@ class CdESemesterMixin(CdEBaseFrontend):
             rs.notify("success", n_("Started sending archival notifications."))
         return self.redirect(rs, "cde/show_semester")
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     def semester_eject(self, rs: RequestState) -> Response:
         """Eject members without enough credit and archive inactive users.
 
@@ -300,7 +301,7 @@ class CdESemesterMixin(CdEBaseFrontend):
         )
         return self.redirect(rs, "cde/show_semester")
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     def semester_balance_update(self, rs: RequestState) -> Response:
         """Deduct membership fees from all member accounts.
 
@@ -326,7 +327,7 @@ class CdESemesterMixin(CdEBaseFrontend):
         rs.notify("success", n_("Started updating balance."))
         return self.redirect(rs, "cde/show_semester")
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     @REQUESTdata("testrun", "skip")
     def expuls_addresscheck(
         self, rs: RequestState, testrun: bool, skip: bool
@@ -376,7 +377,7 @@ class CdESemesterMixin(CdEBaseFrontend):
             rs.notify("success", n_("Started sending mail."))
         return self.redirect(rs, "cde/show_semester")
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     def expuls_advance(self, rs: RequestState) -> Response:
         """Proceed to next expuls."""
         expuls_id = self.cdeproxy.current_expuls(rs)
@@ -392,7 +393,7 @@ class CdESemesterMixin(CdEBaseFrontend):
 
     @REQUESTdatadict(*CdELogFilter.requestdict_fields())
     @REQUESTdata("download")
-    @access("cde_admin", "auditor")
+    @access(Roles.cde_admin, Roles.auditor)
     def view_cde_log(
         self, rs: RequestState, data: CdEDBObject, download: bool
     ) -> Response:

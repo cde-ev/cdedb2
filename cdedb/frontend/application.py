@@ -40,7 +40,7 @@ from cdedb.common.exceptions import (
     QuotaException,
 )
 from cdedb.common.n_ import n_
-from cdedb.common.roles import AdminViews, Roles
+from cdedb.common.roles import AdminViews, Roles, RoleSet
 from cdedb.config import SecretsConfig
 from cdedb.database import DATABASE_ROLES
 from cdedb.database.connection import connection_pool_factory
@@ -198,7 +198,8 @@ class Application(BaseApp):
                 f"HTTP {error.code}: {error.name}\n{error.description}", status=status
             )
 
-    def resolve_realm_roles(self, rs: RequestState) -> Roles:
+    def _resolve_realm_roles(self, rs: RequestState) -> RoleSet:
+        """Retrieve additional data to determine their realm internal roles."""
         assert rs.user.persona_id is not None
         ret = Roles.none()
 
@@ -240,7 +241,7 @@ class Application(BaseApp):
                 sessionkey = None
                 user = self.sessionproxy.lookuptoken(apitoken, request.remote_addr)
                 # Error early to make debugging easier.
-                if 'droid' not in user.roles:
+                if Roles.droid not in user.new_roles:
                     raise werkzeug.exceptions.Forbidden("API token invalid.")
             else:
                 user = self.sessionproxy.lookupsession(sessionkey, request.remote_addr)
@@ -320,7 +321,7 @@ class Application(BaseApp):
                 )
 
             # Check anti CSRF token (if required by the endpoint)
-            if handler.anti_csrf.check and 'droid' not in user.roles:
+            if handler.anti_csrf.check and Roles.droid not in user.new_roles:
                 error = frontend.check_anti_csrf(
                     rs, action, handler.anti_csrf.name, handler.anti_csrf.payload
                 )
@@ -343,23 +344,23 @@ class Application(BaseApp):
             # The session backend takes care of this for droids.
             if user.persona_id:
                 # Roles that are managed via the realms internally
-                user.new_roles |= self.resolve_realm_roles(rs)
+                user.new_roles |= self._resolve_realm_roles(rs)
 
                 # Insert orga and moderator status context
                 orga: set[vtypes.EventID] = set()
                 caretaker: set[vtypes.EventID] = set()
                 checkin_helper: set[vtypes.EventID] = set()
-                if "event" in user.roles:
+                if Roles.event in user.new_roles:
                     orga = self.eventproxy.orga_info(rs, user.persona_id)
                     caretaker = self.eventproxy.caretaker_info(rs, user.persona_id)
                     checkin_helper = self.eventproxy.checkin_helper_info(
                         rs, user.persona_id
                     )
                 moderator: set[int] = set()
-                if "ml" in user.roles:
+                if Roles.ml in user.new_roles:
                     moderator = self.mlproxy.moderator_info(rs, user.persona_id)
                 presider: set[int] = set()
-                if "assembly" in user.roles:
+                if Roles.assembly in user.new_roles:
                     presider = self.assemblyproxy.presider_info(rs, user.persona_id)
                 user.orga = orga
                 user.caretaker = caretaker

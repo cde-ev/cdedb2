@@ -49,7 +49,7 @@ from cdedb.frontend.common import (
 
 
 class CdELastschriftMixin(CdEBaseFrontend):
-    @access("finance_admin")
+    @access(Roles.finance_admin)
     def lastschrift_index(self, rs: RequestState) -> Response:
         """General lastschrift overview.
 
@@ -133,13 +133,15 @@ class CdELastschriftMixin(CdEBaseFrontend):
             },
         )
 
-    @access("member", "finance_admin")
+    @access(Roles.member, Roles.finance_admin)
     def lastschrift_show(self, rs: RequestState, persona_id: int) -> Response:
         """Display all lastschrift information for one member.
 
         Especially all permits and transactions.
         """
-        if not (persona_id == rs.user.persona_id or "finance_admin" in rs.user.roles):
+        if not (
+            persona_id == rs.user.persona_id or Roles.finance_admin in rs.user.new_roles
+        ):
             raise werkzeug.exceptions.Forbidden()
         lastschrift_ids = self.cdeproxy.list_lastschrift(
             rs, persona_ids=(persona_id,), active=None
@@ -187,7 +189,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             },
         )
 
-    @access("finance_admin")
+    @access(Roles.finance_admin)
     def lastschrift_change_form(
         self, rs: RequestState, lastschrift_id: int
     ) -> Response:
@@ -203,7 +205,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             get_mandatory_form_fields(LASTSCHRIFT_COMMON_FIELDS),
         )
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     @REQUESTdatadict(*LASTSCHRIFT_COMMON_FIELDS)
     def lastschrift_change(
         self, rs: RequestState, lastschrift_id: int, data: CdEDBObject
@@ -222,7 +224,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             {'persona_id': rs.ambience['lastschrift']['persona_id']},
         )
 
-    @access("finance_admin")
+    @access(Roles.finance_admin)
     def lastschrift_create_form(
         self, rs: RequestState, persona_id: int | None = None
     ) -> Response:
@@ -242,7 +244,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             mandatory_fields,
         )
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     @REQUESTdatadict(*LASTSCHRIFT_COMMON_FIELDS)
     @REQUESTdata("persona_id", "donation")
     def lastschrift_create(
@@ -290,7 +292,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         rs.notify_return_code(new_id)
         return self.redirect(rs, "cde/lastschrift_show", {'persona_id': persona_id})
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     def lastschrift_revoke(self, rs: RequestState, lastschrift_id: int) -> Response:
         """Disable a permit."""
         if rs.has_validation_errors():
@@ -422,7 +424,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         )
         return sepapain_file
 
-    @access("finance_admin")
+    @access(Roles.finance_admin)
     @REQUESTdata("lastschrift_id", "transaction_ids")
     def lastschrift_download_sepapain(
         self,
@@ -528,7 +530,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             filename = f"i25p_semester{period}.xml"
         return self.send_file(rs, data=sepapain_file, inline=False, filename=filename)
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     @REQUESTdata("lastschrift_id")
     def lastschrift_generate_transactions(
         self, rs: RequestState, lastschrift_id: vtypes.ID | None
@@ -591,7 +593,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         )
         return self.redirect(rs, "cde/lastschrift_index")
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     @REQUESTdata("persona_id")
     def lastschrift_skip(
         self, rs: RequestState, lastschrift_id: int, persona_id: vtypes.ID | None
@@ -614,7 +616,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         else:
             return self.redirect(rs, "cde/lastschrift_index")
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     @REQUESTdata("status", "persona_id")
     def lastschrift_finalize_transaction(
         self,
@@ -641,7 +643,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         else:
             return self.redirect(rs, "cde/lastschrift_index")
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     @REQUESTdata("transaction_ids", "success", "cancelled", "failure")
     def lastschrift_finalize_transactions(
         self,
@@ -676,7 +678,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "cde/lastschrift_index")
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     @REQUESTdata("persona_id")
     def lastschrift_rollback_transaction(
         self,
@@ -716,7 +718,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
         else:
             return self.redirect(rs, "cde/lastschrift_index")
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def lastschrift_subscription_form_fill(self, rs: RequestState) -> Response:
         """Generate a form for configuring direct debit authorization.
 
@@ -743,7 +745,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             get_mandatory_form_fields(self.lastschrift_subscription_form),
         )
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     @REQUESTdata(
         "full_name", "db_id", "username", "address_supplement", "address",
         "postal_code", "location", "country", "iban", "donation", "account_holder",
@@ -828,12 +830,12 @@ class CdELastschriftMixin(CdEBaseFrontend):
             store.setdefault('deleted', []).extend(deleted)
         return store
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def i25p_index(self, rs: RequestState) -> Response:
         """Show information about 'Lastschriftinitiative' (former 'Initiative 25+')."""
         annual_fee = self.cdeproxy.annual_membership_fee(rs)
         has_lastschrift = False
-        if "member" in rs.user.roles:
+        if Roles.member in rs.user.new_roles:
             assert rs.user.persona_id is not None
             has_lastschrift = bool(
                 self.cdeproxy.list_lastschrift(

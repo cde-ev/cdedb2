@@ -37,6 +37,7 @@ from cdedb.common.privileges import (
     EventPrivileges,
     is_privileged_event as is_privileged,
 )
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.database.query import DatabaseValue_s
@@ -77,7 +78,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
             )
         return event_id
 
-    @access("event")
+    @access(Roles.event)
     def get_lodgement_groups(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> models.LodgementGroupMap:
@@ -91,7 +92,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
             models.LodgementGroup.many_from_database(group_data),
         )
 
-    @access("event")
+    @access(Roles.event)
     def set_lodgement_group(
         self, rs: RequestState, group_id: vtypes.LodgementGroupID, data: CdEDBObject
     ) -> DefaultReturnCode:
@@ -121,7 +122,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def delete_lodgement_group_blockers(
         self, rs: RequestState, group_id: vtypes.LodgementGroupID
     ) -> DeletionBlockers:
@@ -149,7 +150,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
 
         return blockers
 
-    @access("event")
+    @access(Roles.event)
     def delete_lodgement_group(
         self,
         rs: RequestState,
@@ -211,7 +212,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
                 )
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def list_lodgements(
         self,
         rs: RequestState,
@@ -248,7 +249,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         )
         return {e['id']: e['title'] for e in data}
 
-    @access("event")
+    @access(Roles.event)
     def new_get_lodgements(
         self,
         rs: RequestState,
@@ -297,7 +298,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
         new_get_lodgements, "lodgement_ids", "lodgement_id"
     )
 
-    @access("event")
+    @access(Roles.event)
     def set_lodgement(
         self, rs: RequestState, lodgement_id: vtypes.LodgementID, data: CdEDBObject
     ) -> DefaultReturnCode:
@@ -364,7 +365,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def create_lodgement(
         self, rs: RequestState, event_id: vtypes.EventID, data: CdEDBObject
     ) -> vtypes.LodgementID:
@@ -392,7 +393,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
             )
         return vtypes.LodgementID(vtypes.ID(new_id))
 
-    @access("event")
+    @access(Roles.event)
     def delete_lodgement_blockers(
         self, rs: RequestState, lodgement_id: vtypes.LodgementID
     ) -> DeletionBlockers:
@@ -421,7 +422,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
 
         return blockers
 
-    @access("event")
+    @access(Roles.event)
     def delete_lodgement(
         self,
         rs: RequestState,
@@ -485,7 +486,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
                 )
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def get_grouped_inhabitants(
         self,
         rs: RequestState,
@@ -569,7 +570,7 @@ class EventLodgementBackend(EventBaseBackend, abc.ABC):
             ret[e['lodgement_id']][e['part_id']] += inhabitants
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def move_lodgements(
         self,
         rs: RequestState,

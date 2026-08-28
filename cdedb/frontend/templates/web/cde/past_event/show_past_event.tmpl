@@ -3,7 +3,7 @@
 {% import "web/util.tmpl" as util with context %}
 {% import "web/cde/past_event/generic.tmpl" as generic with context %}
 
-{% if "past_event" in user.admin_views %}
+{% if user.admin_views.has(AdminViews.past_event) %}
     {% set jshint='weak' %}
     {% block scripts %}
         {{ util.cdedb_script('cdedb_searchpersona.js') }}
@@ -25,14 +25,14 @@
 {% endblock %}
 
 {% block content %}
-    {% if "past_event" in user.admin_views %}
+    {% if user.admin_views.has(AdminViews.past_event) %}
         <div class="p">
         {{ util.href(cdedblink('cde/change_past_event_form'), gettext("Edit"), icon="pen",
                 aclass="btn btn-warning btn-sm") }}
         </div>
     {% endif %}
     <dl class="dl-horizontal">
-        {% if "past_event" in user.admin_views %}
+        {% if user.admin_views.has(AdminViews.past_event) %}
             <dt title="{% trans %}Shortname{% endtrans %}">{% trans %}Shortname{% endtrans %}</dt>
             <dd id="shortname">{{ ambience['pevent']['shortname'] }}</dd>
             <dt title="{% trans %}Cutoff date{% endtrans %}">{% trans %}Cutoff date{% endtrans %}</dt>
@@ -64,8 +64,8 @@
     {% if ambience['pevent']['description'] and ambience['pevent']['participant_info']%}
     <hr />
     {% endif %}
-    {% if ambience['pevent']['participant_info'] and ("past_event" in user.admin_views or user.persona_id in participants) %}
-        {% if "past_event" in user.admin_views and user.persona_id not in participants %}
+    {% if ambience['pevent']['participant_info'] and (user.admin_views.has(AdminViews.past_event) or user.persona_id in participants) %}
+        {% if user.admin_views.has(AdminViews.past_event) and user.persona_id not in participants %}
             <p class="text-info" id="gallery-admin-info">{{ util.make_icon('info-circle') }}
                 {% trans %}
                     As you are no participant of this past event, you can only
@@ -75,12 +75,12 @@
         {% endif %}
        <div id="gallery-link">{{ ambience['pevent']['participant_info']|md }}</div>
     {% endif %}
-    {% if courses or "past_event" in user.admin_views %}
+    {% if courses or user.admin_views.has(AdminViews.past_event) %}
         {% call util.h(n_("Courses"), level=2) %}
             [{{ courses|length }}]
         {% endcall %}
     {% endif %}
-    {% if "past_event" in user.admin_views %}
+    {% if user.admin_views.has(AdminViews.past_event) %}
         <div class="p">
             {{ util.href(cdedblink('cde/create_past_course_form'), gettext("Add Course"), icon="plus",
                     aclass="btn btn-success btn-sm") }}
@@ -100,7 +100,7 @@
     {% call util.h(n_("Participants"), level=2) %}
         [{{ total_participant_number }}]
     {% endcall %}
-    {% if "past_event" in user.admin_views %}
+    {% if user.admin_views.has(AdminViews.past_event) %}
         <div class="panel panel-success panel-condensed">
             <div class="panel-heading">
                 <h4 class="panel-title">{{util.make_icon('plus') }} {% trans %}Add Participant <u>without</u> Course{% endtrans %}</h4>
@@ -171,7 +171,7 @@
                             )
                     {% endif %}
 
-                    {% if "past_event" in user.admin_views %}
+                    {% if user.admin_views.has(AdminViews.past_event) %}
                         <form action="{{ cdedblink('cde/remove_participant') }}" method="POST"
                               id="removeparticipantform{{ participant.persona_id }}" style="display: inline;"
                               class="delete-participant-form hide-hover display-inline">
@@ -208,7 +208,7 @@
             <i>{% trans %}This Event had no Participants.{% endtrans %}</i>
         </p>
     {% endif %}
-    {% if "past_event" in user.admin_views %}
+    {% if user.admin_views.has(AdminViews.past_event) %}
         {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}
             <div class="row">
                 <div class="col-sm-4">

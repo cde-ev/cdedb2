@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-08-25 17:36+0200\n"
+"POT-Creation-Date: 2026-08-26 04:26+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -3848,9 +3848,6 @@ msgstr ""
 msgid "Ambiguous course."
 msgstr ""
 
-msgid "Needs both admin privileges."
-msgstr ""
-
 msgid "Event is not concluded yet."
 msgstr ""
 
@@ -4630,6 +4627,18 @@ msgstr ""
 
 msgid "00_query_ml_user_all"
 msgstr ""
+
+#, fuzzy
+msgid "CdE membership & events"
+msgstr "eventus"
+
+#, fuzzy
+msgid "CdE events"
+msgstr "eventus"
+
+#, fuzzy
+msgid "CdE mailinglist"
+msgstr "tabellae epistularum electronicarum"
 
 msgid "Superfluous key found."
 msgstr ""
@@ -6336,6 +6345,10 @@ msgstr ""
 #, fuzzy
 msgid "This user does not exist or is no enforcer."
 msgstr "haec videri non possit."
+
+#, fuzzy
+msgid "Invalid realm for genesis."
+msgstr "Annuntiationes"
 
 #, fuzzy
 msgid "Attachment missing."
@@ -15592,18 +15605,6 @@ msgstr ""
 #, fuzzy
 msgid "not yet active"
 msgstr "vestigium novum crea"
-
-#, fuzzy
-msgid "CdE membership & events"
-msgstr "eventus"
-
-#, fuzzy
-msgid "CdE events"
-msgstr "eventus"
-
-#, fuzzy
-msgid "CdE mailinglist"
-msgstr "tabellae epistularum electronicarum"
 
 msgid "Wrong format for api token."
 msgstr ""

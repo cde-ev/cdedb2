@@ -95,7 +95,9 @@
     {% endif %}
 
     {# Related pages #}
-    {% set show_admin_buttons = is_relative_admin_view or user.admin_views.intersection(["complaint", "event_user", "ml_user", "assembly_user"]|set) %}
+    {% set show_admin_buttons = is_relative_admin_view or user.admin_views.has_any(
+            AdminViews.complaint, AdminViews.event_user, AdminViews.ml_user, AdminViews.assembly_user
+        ) %}
     {% if quoteable or show_admin_buttons %}
         <div class="p button-par">
             {% if quoteable %}
@@ -107,22 +109,22 @@
                     {{ util.href(cdedblink("core/show_history"), gettext("Change History"),
                                  aclass="btn btn-info btn-sm", icon="clock") }}
                 {% endif %}
-                {% if is_relative_admin_view or "event_user" in user.admin_views %}
+                {% if is_relative_admin_view or user.admin_views.has(AdminViews.event_user) %}
                     {{ util.href(cdedblink("core/show_user_events", {'persona_id': data['id']}),
                                  gettext("Show Event Data"), aclass="btn btn-info btn-sm",
                                  icon="chalkboard-teacher") }}
                 {% endif %}
-                {% if is_relative_admin_view or "ml_user" in user.admin_views %}
+                {% if is_relative_admin_view or user.admin_views.has(AdminViews.ml_user) %}
                     {{ util.href(cdedblink("core/show_user_mailinglists", {'persona_id': data['id']}),
                                  gettext("Show Mailinglist Data"), aclass="btn btn-info btn-sm",
                                  icon="envelope") }}
                 {% endif %}
-                {% if is_relative_admin_view or "assembly_user" in user.admin_views %}
+                {% if is_relative_admin_view or user.admin_views.has(AdminViews.assembly_user) %}
                     {{ util.href(cdedblink("core/show_user_assemblies", {'persona_id': data['id']}),
                                  gettext("Show Assembly Data"), aclass="btn btn-info btn-sm",
                                  icon="bullhorn") }}
                 {% endif %}
-                {% if "complaint" in user.admin_views and user.roles.intersection(["complaint_admin", "complaint_enforcer"]) %}
+                {% if user.admin_views.has(AdminViews.complaint) and user.roles.intersection(["complaint_admin", "complaint_enforcer"]) %}
                     {{ util.href(cdedblink("core/show_user_measures", {'persona_id': data['id']}),
                                  gettext("Show Measures"), aclass="btn btn-info btn-sm", icon="shield-halved") }}
                 {% endif %}
@@ -287,7 +289,7 @@
                         {% for realm in data.get_user_realms() %}
                             {{ util.realm_icon(realm.realm_marker) }}
                         {% endfor %}
-                        {% if 'core_user' in user.admin_views
+                        {% if user.admin_views.has(AdminViews.core_user)
                                 and data.get_user_realms().__invert__()
                                 and not ambience['persona']['is_archived'] %}
                             {{ util.href(cdedblink("core/promote_user_form"), gettext("Add Realm"), icon="pen",
@@ -316,7 +318,7 @@
                             {% else %}
                                 <i>{% trans %}None{% endtrans %}</i>
                             {% endif %}
-                            {% if 'meta_admin' in user.admin_views and not ambience['persona']['is_archived'] %}
+                            {% if user.admin_views.has(AdminViews.meta_admin) and not ambience['persona']['is_archived'] %}
                                 {{ util.href(cdedblink("core/change_privileges_form"), gettext("Edit"), icon="pen",
                                         aclass="btn btn-xs btn-warning") }}
                             {% endif %}
@@ -402,7 +404,7 @@
                         {% if data['balance'] is not none %}
                             {{ data['balance']|money(lang=lang) }}
                         {% endif %}
-                        {% if "finance" in user.admin_views and not ambience['persona']['is_archived'] %}
+                        {% if user.admin_views.has(AdminViews.finance) and not ambience['persona']['is_archived'] %}
                             {{ util.href(cdedblink('core/modify_balance_form'), gettext("Modify Balance"), icon="pen",
                                          aclass="btn btn-xs btn-warning") }}
                         {% endif %}
@@ -425,10 +427,10 @@
                             {{ util.href(cdedblink("core/my_lastschrift") if data['id'] == user.persona_id
                                          else cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
                                          gettext("Direct Debit Authorization"), icon="euro-sign",
-                                         readonly=(data['id'] != user.persona_id and "finance" not in user.admin_views)) }}
+                                         readonly=(data['id'] != user.persona_id and not user.admin_views.has(AdminViews.finance))) }}
                         {% else %}
                             {% trans %}Balance{% endtrans %}
-                            {% if "finance" in user.admin_views and not ambience['persona']['is_archived'] %}
+                            {% if user.admin_views.has(AdminViews.finance) and not ambience['persona']['is_archived'] %}
                                 {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
                                              gettext("New Direct Debit Authorization …"), icon="euro-sign") }}
                             {% else %}
@@ -473,12 +475,12 @@
                     {% else %}
                         —
                     {% endif %}
-                    {%- if "core_user" in user.admin_views or "ml_user" in user.admin_views or data['id'] == user.persona_id %}
+                    {%- if user.admin_views.has_any(AdminViews.core_user, AdminViews.ml_user) or data['id'] == user.persona_id %}
                         {% if email_report and email_report.status in enums['EmailStatus'].notable_states() %}
                             <span class="text-danger">({{gettext(email_report.status|string)}})
                         {% endif %}
                     {% endif %}
-                    {%- if "core_user" in user.admin_views or "ml_user" in user.admin_views %}
+                    {%- if user.admin_views.has_any(AdminViews.core_user, AdminViews.ml_user) %}
                         {% if email_report and data.has('username') %}
                             {{ util.href(cdedblink('core/email_status_overview') + "#emailstatus-"
                                         + get_hash(data['username'].encode('utf-8')), gettext("Manage"),
@@ -781,7 +783,7 @@ automatisch eine Bestätigung per E-Mail
                         </div>
                     </div>
 
-                {% if "core_user" in user.admin_views %}
+                {% if user.admin_views.has(AdminViews.core_user) %}
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">

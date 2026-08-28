@@ -94,7 +94,7 @@ class PaymentData(typing.TypedDict):
 
 
 class EventRegistrationMixin(EventBaseFrontend):
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.payment_write)
     def batch_fees_form(
         self,
@@ -119,7 +119,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             get_mandatory_form_fields(self.batch_fees),
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.payment_write)
     @REQUESTfile("transfers_file")
     @REQUESTdata("send_notifications", "transfers", "checksum")
@@ -396,7 +396,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             "part_options": part_options,
         }
 
-    @access("event")
+    @access(Roles.event)
     @REQUESTdata("preview")
     def register_form(
         self, rs: RequestState, event_id: vtypes.EventID, preview: bool = False
@@ -495,7 +495,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, registration, event_id=event_id
         )
 
-    @access("event")
+    @access(Roles.event)
     @REQUESTdata("persona_id", "part_ids", "field_ids", "is_member", "is_orga", "age")
     def precompute_fee(
         self,
@@ -868,7 +868,7 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         return registration
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     def register(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Register for an event."""
         if rs.has_validation_errors():
@@ -1050,7 +1050,7 @@ class EventRegistrationMixin(EventBaseFrontend):
 
         return store
 
-    @access("event")
+    @access(Roles.event)
     def registration_status(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> Response:
@@ -1145,7 +1145,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         values |= {f"fields.{key}": val for key, val in registration['fields'].items()}
         return values
 
-    @access("event")
+    @access(Roles.event)
     def amend_registration_form(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> Response:
@@ -1183,7 +1183,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             },
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     def amend_registration(
         self, rs: RequestState, event_id: vtypes.EventID
     ) -> Response:
@@ -1232,7 +1232,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/registration_status")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_read, EventPrivileges.checkin)
     def show_registration(
         self,
@@ -1277,7 +1277,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             },
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(
         EventPrivileges.registrations_read,
         EventPrivileges.registrations_read_internal | EventPrivileges.payment_write,
@@ -1302,7 +1302,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             },
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_write)
     def add_new_personalized_fee_form(
         self,
@@ -1332,7 +1332,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             mandatory_fields=mandatory_fields,
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.basic_write | EventPrivileges.registrations_write)
     @REQUESTdata('amount')
     @REQUESTdatadict(*models.EventFee.requestdict_fields(creation=True))
@@ -1368,7 +1368,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs.notify("error", n_("Fee creation failed."))
         return self.redirect(rs, "event/show_registration_fee")
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
     def add_personalized_fee(
         self,
@@ -1395,7 +1395,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_registration_fee")
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
     def delete_personalized_fee(
         self,
@@ -1417,7 +1417,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_registration_fee")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("registration_ids")
     def personalized_fee_multiset_form(
@@ -1497,7 +1497,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             },
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("registration_ids")
     def personalized_fee_multiset(
@@ -1566,7 +1566,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs.notify("info", n_("Nothing changed."))
         return self.redirect(rs, "event/fee_summary")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_write, EventPrivileges.checkin)
     @REQUESTdata("change_note")
     def change_registration_form(
@@ -1609,7 +1609,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             },
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.registrations_write, EventPrivileges.checkin)
     @REQUESTdata("change_note")
     def change_registration(
@@ -1645,7 +1645,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/show_registration")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_write)
     def add_registration_form(
         self, rs: RequestState, event_id: vtypes.EventID
@@ -1670,7 +1670,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             },
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
     def add_registration(self, rs: RequestState, event_id: vtypes.EventID) -> Response:
         """Register a participant by an orga.
@@ -1718,7 +1718,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs.notify_return_code(new_id)
         return self.redirect(rs, "event/show_registration", {'registration_id': new_id})
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
     @ack_delete()
     def delete_registration(
@@ -1745,7 +1745,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "event/registration_query")
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("reg_ids", "change_note")
     def change_registrations_form(
@@ -1860,7 +1860,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             },
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("reg_ids", "change_note")
     def change_registrations(
@@ -1921,7 +1921,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         )
         return self.redirect(rs, scope.get_target(), query.serialize_to_url())
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.checkin)
     @REQUESTdata("part_ids", "checkout")
     def checkin_form(
@@ -1991,7 +1991,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             },
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.checkin)
     @REQUESTdata("from_checkin_page", "part_ids")
     def add_checkin(
@@ -2025,7 +2025,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, 'event/show_registration', {'registration_id': registration_id}
         )
 
-    @access("event", modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.checkin)
     @REQUESTdata("from_checkin_page", "part_ids")
     def add_checkout(
@@ -2058,7 +2058,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, 'event/show_registration', {'registration_id': registration_id}
         )
 
-    @access('event', modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.checkin)
     @REQUESTdata("checkin_time", "checkout_time")
     def add_backdated_checkin_period(
@@ -2141,7 +2141,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, 'event/show_registration', {'registration_id': registration_id}
         )
 
-    @access('event', modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.checkin)
     @REQUESTdata("period_id")
     def change_checkin_period(
@@ -2213,7 +2213,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, 'event/show_registration', {'registration_id': registration_id}
         )
 
-    @access('event', modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.checkin)
     @REQUESTdata("period_id")
     def delete_checkin_period(
@@ -2233,7 +2233,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             rs, 'event/show_registration', {'registration_id': registration_id}
         )
 
-    @access('event')
+    @access(Roles.event)
     @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata("registration_ids", "field_id")
     def checkin_multiset_form(
@@ -2309,7 +2309,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             },
         )
 
-    @access('event', modi={"POST"})
+    @access(Roles.event, modi={"POST"})
     @event_guard(EventPrivileges.registrations_write)
     @REQUESTdata(
         "registration_ids",
@@ -2627,7 +2627,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             semester_fee=self.conf['MEMBERSHIP_FEE'],
         )
 
-    @access("event")
+    @access(Roles.event)
     def registration_fee_qr(
         self,
         rs: RequestState,
@@ -2653,7 +2653,7 @@ class EventRegistrationMixin(EventBaseFrontend):
             amount=payment_data["to_pay"],
         )
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_read)
     @REQUESTdata("reference", "amount")
     def event_payment_qrcode(
@@ -2673,7 +2673,7 @@ class EventRegistrationMixin(EventBaseFrontend):
         qrcode = make_epc_qr(account, reference, amount=amount)
         return self.serve_qrcode(rs, qrcode)
 
-    @access("event")
+    @access(Roles.event)
     @event_guard(EventPrivileges.basic_read)
     @REQUESTdata("reference", "amount")
     def event_payment(

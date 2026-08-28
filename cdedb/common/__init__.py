@@ -49,9 +49,13 @@ from typing_extensions import TypeForm
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError, ValidationWarning
-from cdedb.common.fields import Role
 from cdedb.common.n_ import n_
-from cdedb.common.roles import AdminViews, Roles
+from cdedb.common.roles import (
+    AdminViews,
+    AdminViewSet,
+    Roles as _Roles,
+    RoleSet as _RoleSet,
+)
 from cdedb.config import Config
 from cdedb.database.connection import ConnectionContainer
 from cdedb.uncommon.intenum import CdEEnum, CdEIntEnum
@@ -97,9 +101,6 @@ Error = tuple[str | None, Exception]
 NotificationType = str
 Notification = tuple[NotificationType, str, CdEDBObject]
 
-# Admin views a user may activate/deactivate.
-AdminView = str
-
 CdEDBLog = tuple[int, tuple[CdEDBObject, ...]]
 
 PathLike = pathlib.Path | str
@@ -115,7 +116,7 @@ class User:
         *,
         persona_id: vtypes.PersonaID | None = None,
         droid: "APIToken | None" = None,
-        roles: Roles | None = None,
+        roles: _RoleSet | None = None,
         given_names: str = "",
         nickname: str = "",
         family_name: str = "",
@@ -130,7 +131,7 @@ class User:
         self.droid = droid
         if self.persona_id and self.droid:
             raise ValueError("Cannot be both droid and persona.")
-        self.new_roles = roles or Roles.anonymous
+        self.new_roles = roles or _RoleSet({_Roles.anonymous})
         self.username = username
         self.given_names = given_names
         self.nickname = nickname
@@ -142,27 +143,19 @@ class User:
         )
         self.moderator: set[int] = set(moderator) if moderator else set()
         self.presider: set[int] = set(presider) if presider else set()
-        self.new_admin_views: AdminViews = AdminViews.none()
+        self.admin_views: AdminViewSet = AdminViewSet()
 
     @property
-    def roles(self) -> set[Role]:
-        return self.new_roles.as_set()
+    def roles(self) -> set[str]:
+        return self.new_roles.as_strings()
 
     @property
-    def admin_views(self) -> set[AdminView]:
-        return self.new_admin_views.as_set()
-
-    @property
-    def new_available_admin_views(self) -> AdminViews:
+    def available_admin_views(self) -> AdminViewSet:
         return AdminViews.from_roles(self.new_roles)
 
-    @property
-    def available_admin_views(self) -> set[AdminView]:
-        return self.new_available_admin_views.as_set()
-
     def init_admin_views_from_cookie(self, enabled_views_cookie: str) -> None:
-        enabled_views = AdminViews.from_cookie(enabled_views_cookie)
-        self.new_admin_views = self.new_available_admin_views & enabled_views
+        enabled_views = AdminViews.deserialize(enabled_views_cookie)
+        self.admin_views = self.available_admin_views & enabled_views
 
     def persona_name(self, include_nickname: bool = False) -> str:
         return make_persona_name(
@@ -179,7 +172,7 @@ class User:
         cls, status: "models_core.PersonaStatus", persona: "models_core.CorePersona"
     ) -> Self:
         return cls(
-            roles=status.get_user_roles(),
+            roles=status.get_session_roles(),
             persona_id=persona.id,
             username=persona.username,
             given_names=persona.given_names,

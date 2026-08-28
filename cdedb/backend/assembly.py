@@ -122,7 +122,7 @@ class GroupedBallots:
 class AssemblyBackend(AbstractBackend):
     """This is an entirely unremarkable backend."""
 
-    realm = "assembly"
+    realm = Realms.assembly
 
     def __init__(self) -> None:
         super().__init__()
@@ -131,20 +131,16 @@ class AssemblyBackend(AbstractBackend):
         )
         self.ballot_result_base_path: Path = self.conf['STORAGE_DIR'] / 'ballot_result'
 
-    @classmethod
-    def is_admin(cls, rs: RequestState) -> bool:
-        return super().is_admin(rs)
-
-    @access("assembly")
+    @access(Roles.assembly)
     def get_attachment_store(self, rs: RequestState) -> AttachmentStore:
         return self._attachment_store
 
-    @access("assembly")
+    @access(Roles.assembly)
     def get_ballot_file_path(self, rs: RequestState, ballot_id: int) -> Path:
         ballot_id = affirm(vtypes.ID, ballot_id)
         return self.ballot_result_base_path / str(ballot_id)
 
-    @access("assembly")
+    @access(Roles.assembly)
     def are_assemblies_locked(
         self, rs: RequestState, assembly_ids: Collection[int]
     ) -> dict[int, bool]:
@@ -162,7 +158,7 @@ class AssemblyBackend(AbstractBackend):
         are_assemblies_locked, "assembly_ids", "assembly_id"
     )
 
-    @access("assembly")
+    @access(Roles.assembly)
     def presider_infos(
         self, rs: RequestState, persona_ids: Collection[int]
     ) -> dict[int, set[int]]:
@@ -187,7 +183,7 @@ class AssemblyBackend(AbstractBackend):
         presider_infos, "persona_ids", "persona_id"
     )
 
-    @access("assembly")
+    @access(Roles.assembly)
     def is_presider(
         self,
         rs: RequestState,
@@ -211,7 +207,7 @@ class AssemblyBackend(AbstractBackend):
         return self.is_admin(rs) or assembly_id in rs.user.presider
 
     @internal
-    @access("persona")
+    @access(Roles.persona)
     def may_access(
         self,
         rs: RequestState,
@@ -232,9 +228,9 @@ class AssemblyBackend(AbstractBackend):
 
         Exactly one of assembly_id, ballot_id and attachment_id has to be provided.
         """
-        if "assembly" not in rs.user.roles:
+        if Roles.assembly not in rs.user.new_roles:
             return False
-        if "member" in rs.user.roles or self.is_presider(
+        if Roles.member in rs.user.new_roles or self.is_presider(
             rs,
             assembly_id=assembly_id,
             ballot_id=ballot_id,
@@ -248,7 +244,7 @@ class AssemblyBackend(AbstractBackend):
             attachment_id=attachment_id,
         )
 
-    @access("persona")
+    @access(Roles.persona)
     def may_assemble(
         self,
         rs: RequestState,
@@ -356,7 +352,7 @@ class AssemblyBackend(AbstractBackend):
         }
         return self.query_exec(rs, query, params)
 
-    @access("assembly", "auditor")
+    @access(Roles.assembly, Roles.auditor)
     def retrieve_log(self, rs: RequestState, log_filter: AssemblyLogFilter) -> CdEDBLog:
         """Get recorded activity.
 
@@ -366,7 +362,7 @@ class AssemblyBackend(AbstractBackend):
         log_filter = affirm(AssemblyLogFilter, log_filter)
         assembly_ids = log_filter.assembly_ids()
 
-        if self.is_admin(rs) or "auditor" in rs.user.roles:
+        if self.is_admin(rs) or Roles.auditor in rs.user.new_roles:
             pass
         elif not assembly_ids:
             raise PrivilegeError(n_("Must be admin to access global log."))
@@ -377,7 +373,7 @@ class AssemblyBackend(AbstractBackend):
 
         return self.generic_retrieve_log(rs, log_filter)
 
-    @access("core_admin", "assembly_admin")
+    @access(Roles.core_admin, Roles.assembly_admin)
     def submit_general_query(
         self, rs: RequestState, query: Query, aggregate: bool = False
     ) -> tuple[CdEDBObject, ...]:
@@ -411,7 +407,7 @@ class AssemblyBackend(AbstractBackend):
         return self.general_query(rs, query, aggregate=aggregate)
 
     @internal
-    @access("assembly")
+    @access(Roles.assembly)
     def get_assembly_ids(
         self,
         rs: RequestState,
@@ -436,7 +432,7 @@ class AssemblyBackend(AbstractBackend):
         return ret
 
     @internal
-    @access("assembly")
+    @access(Roles.assembly)
     def get_assembly_id(
         self,
         rs: RequestState,
@@ -468,7 +464,7 @@ class AssemblyBackend(AbstractBackend):
         return unwrap(ret)
 
     @internal
-    @access("assembly", "ml_admin")
+    @access(Roles.assembly, Roles.ml_admin)
     def check_attendance(
         self,
         rs: RequestState,
@@ -498,7 +494,7 @@ class AssemblyBackend(AbstractBackend):
 
         # Rule out people who can not participate at any assembly to prevent
         # privilege errors
-        if persona_id == rs.user.persona_id and "assembly" not in rs.user.roles:
+        if persona_id == rs.user.persona_id and Roles.assembly not in rs.user.new_roles:
             return False
 
         with Atomizer(rs):
@@ -513,7 +509,7 @@ class AssemblyBackend(AbstractBackend):
             params = {"assembly_id": assembly_id, "persona_id": persona_id}
             return bool(self.query_one(rs, query, params))
 
-    @access("assembly")
+    @access(Roles.assembly)
     def does_attend(
         self,
         rs: RequestState,
@@ -532,7 +528,7 @@ class AssemblyBackend(AbstractBackend):
         ballot_id = affirm(vtypes.ID | None, ballot_id)
         return self.check_attendance(rs, assembly_id=assembly_id, ballot_id=ballot_id)
 
-    @access("assembly")
+    @access(Roles.assembly)
     def list_attended_assemblies(
         self, rs: RequestState, persona_id: vtypes.PersonaID
     ) -> set[int]:
@@ -554,7 +550,7 @@ class AssemblyBackend(AbstractBackend):
             )
         }
 
-    @access("assembly", "ml_admin")
+    @access(Roles.assembly, Roles.ml_admin)
     def list_attendees(self, rs: RequestState, assembly_id: int) -> set[int]:
         """Everybody who has subscribed for a specific assembly.
 
@@ -568,7 +564,8 @@ class AssemblyBackend(AbstractBackend):
         """
         assembly_id = affirm(vtypes.ID, assembly_id)
         if not (
-            self.may_access(rs, assembly_id=assembly_id) or "ml_admin" in rs.user.roles
+            self.may_access(rs, assembly_id=assembly_id)
+            or Roles.ml_admin in rs.user.new_roles
         ):
             raise PrivilegeError(n_("Not privileged."))
         attendees = self.sql_select(
@@ -580,7 +577,7 @@ class AssemblyBackend(AbstractBackend):
         )
         return {e['persona_id'] for e in attendees}
 
-    @access("assembly")
+    @access(Roles.assembly)
     def get_attendees(
         self, rs: RequestState, assembly_id: int, cutoff: datetime.datetime
     ) -> AssemblyAttendees:
@@ -642,7 +639,7 @@ class AssemblyBackend(AbstractBackend):
             cutoff=cutoff,
         )
 
-    @access("persona")
+    @access(Roles.persona)
     def list_assemblies(
         self,
         rs: RequestState,
@@ -673,7 +670,7 @@ class AssemblyBackend(AbstractBackend):
             ret = {k: v for k, v in ret.items() if self.may_access(rs, assembly_id=k)}
         return ret
 
-    @access("assembly")
+    @access(Roles.assembly)
     def get_assemblies(
         self, rs: RequestState, assembly_ids: Collection[int]
     ) -> CdEDBObjectMap:
@@ -710,7 +707,7 @@ class AssemblyBackend(AbstractBackend):
         get_assemblies, "assembly_ids", "assembly_id"
     )
 
-    @access("assembly")
+    @access(Roles.assembly)
     def set_assembly(
         self, rs: RequestState, data: CdEDBObject, change_note: str | None = None
     ) -> DefaultReturnCode:
@@ -739,7 +736,7 @@ class AssemblyBackend(AbstractBackend):
                 )
         return ret
 
-    @access("assembly_admin")
+    @access(Roles.assembly_admin)
     def add_assembly_presiders(
         self, rs: RequestState, assembly_id: int, persona_ids: Collection[int]
     ) -> DefaultReturnCode:
@@ -794,7 +791,7 @@ class AssemblyBackend(AbstractBackend):
 
         return ret
 
-    @access("assembly_admin")
+    @access(Roles.assembly_admin)
     def remove_assembly_presider(
         self, rs: RequestState, assembly_id: int, persona_id: int
     ) -> DefaultReturnCode:
@@ -824,7 +821,7 @@ class AssemblyBackend(AbstractBackend):
         return ret
 
     @internal
-    @access("ml_admin", "assembly")
+    @access(Roles.ml_admin, Roles.assembly)
     def list_assembly_presiders(self, rs: RequestState, assembly_id: int) -> set[int]:
         """Retrieve a list of assembly presiders.
 
@@ -841,7 +838,7 @@ class AssemblyBackend(AbstractBackend):
         )
         return {e["persona_id"] for e in data}
 
-    @access("assembly_admin")
+    @access(Roles.assembly_admin)
     def create_assembly(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
         """Make a new assembly."""
         data = affirm(vtypes.Assembly, data, creation=True)
@@ -853,7 +850,7 @@ class AssemblyBackend(AbstractBackend):
                 self.add_assembly_presiders(rs, new_id, data['presiders'])
         return new_id
 
-    @access("assembly_admin")
+    @access(Roles.assembly_admin)
     def delete_assembly_blockers(
         self, rs: RequestState, assembly_id: int
     ) -> DeletionBlockers:
@@ -930,7 +927,7 @@ class AssemblyBackend(AbstractBackend):
 
         return blockers
 
-    @access("assembly_admin")
+    @access(Roles.assembly_admin)
     def delete_assembly(
         self,
         rs: RequestState,
@@ -1016,7 +1013,7 @@ class AssemblyBackend(AbstractBackend):
 
         return ret
 
-    @access("assembly")
+    @access(Roles.assembly)
     def list_ballots(self, rs: RequestState, assembly_id: int | None) -> dict[int, str]:
         """List all ballots of an assembly.
 
@@ -1035,13 +1032,16 @@ class AssemblyBackend(AbstractBackend):
             )
         else:
             # The latter two need this for AssemblyFrontend.view_log
-            if not {'member', 'auditor', 'assembly_admin'} & rs.user.roles:
+            if (
+                not (Roles.member | Roles.auditor | Roles.assembly_admin)
+                & rs.user.new_roles
+            ):
                 raise PrivilegeError
             query = "SELECT id, title FROM assembly.ballots"
             data = self.query_all(rs, query, tuple())
         return {e['id']: e['title'] for e in data}
 
-    @access("assembly")
+    @access(Roles.assembly)
     def are_ballots_locked(
         self, rs: RequestState, ballot_ids: Collection[int]
     ) -> dict[int, bool]:
@@ -1061,7 +1061,7 @@ class AssemblyBackend(AbstractBackend):
         are_ballots_locked, "ballot_ids", "ballot_id"
     )
 
-    @access("assembly")
+    @access(Roles.assembly)
     def is_any_ballot_locked(
         self, rs: RequestState, ballot_ids: Collection[int]
     ) -> bool:
@@ -1072,7 +1072,7 @@ class AssemblyBackend(AbstractBackend):
         ballot_ids = affirm(set[vtypes.ID], ballot_ids)
         return any(lock for lock in self.are_ballots_locked(rs, ballot_ids).values())
 
-    @access("assembly")
+    @access(Roles.assembly)
     def are_ballots_voting(
         self, rs: RequestState, ballot_ids: Collection[int]
     ) -> dict[int, bool]:
@@ -1118,7 +1118,7 @@ class AssemblyBackend(AbstractBackend):
         are_ballots_voting, "ballot_ids", "ballot_id"
     )
 
-    @access("assembly")
+    @access(Roles.assembly)
     def is_ballot_concluded(self, rs: RequestState, ballot_id: int) -> bool:
         """Helper to check whether the given ballot has been concluded."""
         with Atomizer(rs):
@@ -1126,7 +1126,7 @@ class AssemblyBackend(AbstractBackend):
                 rs, ballot_id
             )
 
-    @access("assembly")
+    @access(Roles.assembly)
     def get_ballots(
         self,
         rs: RequestState,
@@ -1202,7 +1202,7 @@ class AssemblyBackend(AbstractBackend):
 
     get_ballot: _GetBallotProtocol = singularize(get_ballots, "ballot_ids", "ballot_id")
 
-    @access("assembly")
+    @access(Roles.assembly)
     def set_ballot(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
         """Update some keys of ballot.
 
@@ -1304,7 +1304,7 @@ class AssemblyBackend(AbstractBackend):
                         )
         return ret
 
-    @access("assembly")
+    @access(Roles.assembly)
     def create_ballot(self, rs: RequestState, data: CdEDBObject) -> int:
         """Make a new ballot
 
@@ -1355,7 +1355,7 @@ class AssemblyBackend(AbstractBackend):
                 self.sql_insert(rs, "assembly.voter_register", entry)
         return new_id
 
-    @access("assembly")
+    @access(Roles.assembly)
     def comment_concluded_ballot(
         self, rs: RequestState, ballot_id: int, comment: str | None = None
     ) -> DefaultReturnCode:
@@ -1390,7 +1390,7 @@ class AssemblyBackend(AbstractBackend):
             )
         return ret
 
-    @access("assembly")
+    @access(Roles.assembly)
     def delete_ballot_blockers(
         self, rs: RequestState, ballot_id: int
     ) -> DeletionBlockers:
@@ -1446,7 +1446,7 @@ class AssemblyBackend(AbstractBackend):
 
         return blockers
 
-    @access("assembly")
+    @access(Roles.assembly)
     def delete_ballot(
         self,
         rs: RequestState,
@@ -1521,7 +1521,7 @@ class AssemblyBackend(AbstractBackend):
                 raise DeletionBlockedError(rs.gettext("Ballot"), blockers.keys())
         return ret
 
-    @access("assembly")
+    @access(Roles.assembly)
     def check_voting_period_extension(self, rs: RequestState, ballot_id: int) -> bool:
         """Update extension status w.r.t. quorum.
 
@@ -1605,7 +1605,7 @@ class AssemblyBackend(AbstractBackend):
                 self.sql_insert(rs, "assembly.voter_register", entry)
         return secret
 
-    @access("assembly")
+    @access(Roles.assembly)
     def external_signup(
         self, rs: RequestState, assembly_id: int, persona_id: int
     ) -> str | None:
@@ -1635,7 +1635,7 @@ class AssemblyBackend(AbstractBackend):
 
         return self.process_signup(rs, assembly_id, persona_id)
 
-    @access("member")
+    @access(Roles.member)
     def signup(self, rs: RequestState, assembly_id: int) -> str | None:
         """Attend the assembly.
 
@@ -1650,7 +1650,7 @@ class AssemblyBackend(AbstractBackend):
         assert rs.user.persona_id is not None
         return self.process_signup(rs, assembly_id, rs.user.persona_id)
 
-    @access("assembly")
+    @access(Roles.assembly)
     def vote(
         self, rs: RequestState, ballot_id: int, vote: str, secret: str | None
     ) -> DefaultReturnCode:
@@ -1714,7 +1714,7 @@ class AssemblyBackend(AbstractBackend):
                 ret = self.sql_update(rs, "assembly.votes", update)
         return ret
 
-    @access("assembly")
+    @access(Roles.assembly)
     def has_voted(self, rs: RequestState, ballot_id: int) -> bool:
         """Look up whether the user has voted in a ballot.
 
@@ -1733,7 +1733,7 @@ class AssemblyBackend(AbstractBackend):
         has_voted = unwrap(self.query_one(rs, query, params))
         return bool(has_voted)
 
-    @access("assembly")
+    @access(Roles.assembly)
     def count_votes(self, rs: RequestState, ballot_id: int) -> int:
         """Look up how many attendees had already voted in a ballot."""
         ballot_id = affirm(vtypes.ID, ballot_id)
@@ -1744,7 +1744,7 @@ class AssemblyBackend(AbstractBackend):
         """
         return unwrap(self.query_one(rs, query, {"ballot_id": ballot_id})) or 0
 
-    @access("assembly")
+    @access(Roles.assembly)
     def get_vote(
         self, rs: RequestState, ballot_id: int, secret: str | None
     ) -> str | None:
@@ -1786,7 +1786,7 @@ class AssemblyBackend(AbstractBackend):
             vote = self.retrieve_vote(rs, ballot_id, secret)
         return vote['vote']
 
-    @access("assembly")
+    @access(Roles.assembly)
     def get_ballot_result(self, rs: RequestState, ballot_id: int) -> bytes | None:
         """Retrieve the content of a result file for a ballot.
 
@@ -1809,7 +1809,7 @@ class AssemblyBackend(AbstractBackend):
                 ret = f.read()
             return ret
 
-    @access("assembly")
+    @access(Roles.assembly)
     def tally_ballot(self, rs: RequestState, ballot_id: int) -> bytes | None:
         """Evaluate the result of a ballot.
 
@@ -1903,7 +1903,7 @@ class AssemblyBackend(AbstractBackend):
         ret = data.encode()
         return ret
 
-    @access("assembly_admin")
+    @access(Roles.assembly_admin)
     def conclude_assembly_blockers(
         self, rs: RequestState, assembly_id: int
     ) -> DeletionBlockers:
@@ -1941,7 +1941,7 @@ class AssemblyBackend(AbstractBackend):
 
         return blockers
 
-    @access("assembly_admin")
+    @access(Roles.assembly_admin)
     def conclude_assembly(
         self,
         rs: RequestState,
@@ -2007,7 +2007,7 @@ class AssemblyBackend(AbstractBackend):
         return ret
 
     @internal
-    @access("assembly")
+    @access(Roles.assembly)
     def may_access_attachments(
         self, rs: RequestState, attachment_ids: Collection[int]
     ) -> bool:
@@ -2024,7 +2024,7 @@ class AssemblyBackend(AbstractBackend):
             )
         return self.may_access(rs, assembly_id=unwrap(assembly_ids))
 
-    @access("assembly")
+    @access(Roles.assembly)
     def add_attachment(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
         """Add a new attachment.
 
@@ -2064,7 +2064,7 @@ class AssemblyBackend(AbstractBackend):
             )
         return new_id
 
-    @access("assembly")
+    @access(Roles.assembly)
     def delete_attachment_blockers(
         self, rs: RequestState, attachment_id: int
     ) -> DeletionBlockers:
@@ -2098,7 +2098,7 @@ class AssemblyBackend(AbstractBackend):
 
         return blockers
 
-    @access("assembly")
+    @access(Roles.assembly)
     def delete_attachment(
         self,
         rs: RequestState,
@@ -2166,7 +2166,7 @@ class AssemblyBackend(AbstractBackend):
                 )
         return ret
 
-    @access("assembly")
+    @access(Roles.assembly)
     def is_attachment_ballot_link_creatable(
         self, rs: RequestState, attachment_id: int, ballot_id: int
     ) -> bool:
@@ -2176,7 +2176,7 @@ class AssemblyBackend(AbstractBackend):
         ballot_id = affirm(vtypes.ID, ballot_id)
         return not self.is_ballot_locked(rs, ballot_id)
 
-    @access("assembly")
+    @access(Roles.assembly)
     def is_attachment_ballot_link_deletable(
         self, rs: RequestState, attachment_id: int, ballot_id: int
     ) -> bool:
@@ -2186,7 +2186,7 @@ class AssemblyBackend(AbstractBackend):
         ballot_id = affirm(vtypes.ID, ballot_id)
         return not self.is_ballot_locked(rs, ballot_id)
 
-    @access("assembly")
+    @access(Roles.assembly)
     def add_attachment_ballot_link(
         self, rs: RequestState, attachment_id: int, ballot_id: int
     ) -> DefaultReturnCode:
@@ -2228,7 +2228,7 @@ class AssemblyBackend(AbstractBackend):
             else:
                 return -1  # TODO: coverage
 
-    @access("assembly")
+    @access(Roles.assembly)
     def remove_attachment_ballot_link(
         self, rs: RequestState, attachment_id: int, ballot_id: int
     ) -> DefaultReturnCode:
@@ -2268,7 +2268,7 @@ class AssemblyBackend(AbstractBackend):
                 )
             return ret
 
-    @access("assembly")
+    @access(Roles.assembly)
     def set_ballot_attachments(
         self, rs: RequestState, ballot_id: int, attachment_ids: Collection[int]
     ) -> DefaultReturnCode:
@@ -2297,7 +2297,7 @@ class AssemblyBackend(AbstractBackend):
                 )
             return ret
 
-    @access("assembly")
+    @access(Roles.assembly)
     def are_attachment_versions_creatable(
         self, rs: RequestState, attachment_ids: Collection[int]
     ) -> dict[int, bool]:
@@ -2320,7 +2320,7 @@ class AssemblyBackend(AbstractBackend):
         are_attachment_versions_creatable, "attachment_ids", "attachment_id"
     )
 
-    @access("assembly")
+    @access(Roles.assembly)
     def are_attachment_versions_deletable(
         self, rs: RequestState, attachment_ids: Collection[int]
     ) -> dict[int, bool]:
@@ -2386,7 +2386,7 @@ class AssemblyBackend(AbstractBackend):
         data = self.query_all(rs, query, params)
         return {e['attachment_id']: e for e in data}
 
-    @access("assembly")
+    @access(Roles.assembly)
     def get_attachments_versions(
         self, rs: RequestState, attachment_ids: Collection[int]
     ) -> dict[int, CdEDBObjectMap]:
@@ -2414,7 +2414,7 @@ class AssemblyBackend(AbstractBackend):
         get_attachments_versions, "attachment_ids", "attachment_id"
     )
 
-    @access("assembly")
+    @access(Roles.assembly)
     def get_attachment_version(
         self, rs: RequestState, attachment_id: int, version_nr: int
     ) -> CdEDBObject:
@@ -2432,7 +2432,7 @@ class AssemblyBackend(AbstractBackend):
         params = {"attachment_id": attachment_id, "version_nr": version_nr}
         return self.query_one(rs, query, params) or {}
 
-    @access("assembly")
+    @access(Roles.assembly)
     def get_latest_attachments_version(
         self, rs: RequestState, attachment_ids: Collection[int]
     ) -> CdEDBObjectMap:
@@ -2453,7 +2453,7 @@ class AssemblyBackend(AbstractBackend):
         get_latest_attachments_version, "attachment_ids", "attachment_id"
     )
 
-    @access("assembly")
+    @access(Roles.assembly)
     def get_definitive_attachments_version(
         self, rs: RequestState, ballot_id: int
     ) -> CdEDBObjectMap:
@@ -2485,7 +2485,7 @@ class AssemblyBackend(AbstractBackend):
                     return self._get_latest_attachments_versions(rs, attachment_ids)
             return {}
 
-    @access("assembly")
+    @access(Roles.assembly)
     def get_attachment_usage(self, rs: RequestState, attachment_hash: str) -> bool:
         """Is an attachment file still referenced by some version?"""
         attachment_hash = affirm(vtypes.Identifier, attachment_hash)
@@ -2495,7 +2495,7 @@ class AssemblyBackend(AbstractBackend):
         """
         return bool(unwrap(self.query_one(rs, query, (attachment_hash,))))
 
-    @access("assembly")
+    @access(Roles.assembly)
     def add_attachment_version(
         self, rs: RequestState, data: CdEDBObject
     ) -> DefaultReturnCode:
@@ -2540,7 +2540,7 @@ class AssemblyBackend(AbstractBackend):
             )
         return ret
 
-    @access("assembly")
+    @access(Roles.assembly)
     def change_attachment_version(
         self, rs: RequestState, data: CdEDBObject
     ) -> DefaultReturnCode:
@@ -2583,7 +2583,7 @@ class AssemblyBackend(AbstractBackend):
             )
         return ret
 
-    @access("assembly")
+    @access(Roles.assembly)
     def remove_attachment_version(
         self, rs: RequestState, attachment_id: int, version_nr: int
     ) -> DefaultReturnCode:
@@ -2648,7 +2648,7 @@ class AssemblyBackend(AbstractBackend):
         )
         return ret
 
-    @access("assembly")
+    @access(Roles.assembly)
     def list_attachments(
         self,
         rs: RequestState,
@@ -2730,7 +2730,7 @@ class AssemblyBackend(AbstractBackend):
         ret = {e['id']: e for e in data}
         return ret
 
-    @access("assembly")
+    @access(Roles.assembly)
     def get_attachments(
         self, rs: RequestState, attachment_ids: Collection[int]
     ) -> CdEDBObjectMap:
@@ -2747,7 +2747,7 @@ class AssemblyBackend(AbstractBackend):
         get_attachments, "attachment_ids", "attachment_id"
     )
 
-    @access("assembly")
+    @access(Roles.assembly)
     def group_ballots_by_config(
         self, rs: RequestState, assembly_id: int
     ) -> dict[BallotConfiguration, set[int]]:
@@ -2774,7 +2774,7 @@ class AssemblyBackend(AbstractBackend):
             for e in self.query_all(rs, query, params)
         }
 
-    @access("assembly")
+    @access(Roles.assembly)
     def group_ballots(self, rs: RequestState, assembly_id: int) -> GroupedBallots:
         query = """
             SELECT
