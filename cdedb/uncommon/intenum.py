@@ -38,7 +38,7 @@ class CdEEnum(CdEEnumMeta, enum.Enum):
     pass
 
 
-class CdEIntFlag(CdEEnumMeta, enum.IntFlag):
+class CdEFlag(CdEEnumMeta, enum.Flag):
     @classmethod
     def none(cls) -> Self:
         return cls(0)
@@ -84,4 +84,4 @@ class CdEIntFlag(CdEEnumMeta, enum.IntFlag):
 
         Note that this means it behaves slightly different than 'has_any'.
         """
-        return any(flag in self for flag in flags)
+        return all(flag in self for flag in flags)

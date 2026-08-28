@@ -128,7 +128,6 @@ from cdedb.common.exceptions import (
     PrivilegeError,
     ValidationWarning,
 )
-from cdedb.common.fields import REALM_SPECIFIC_GENESIS_FIELDS
 from cdedb.common.i18n import get_localized_country_codes
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts, TransactionType
@@ -160,7 +159,7 @@ from cdedb.filter import (
 from cdedb.models.common import CdEDataclass
 from cdedb.models.core import EmailAddressReport
 from cdedb.models.event import CustomQueryFilter
-from cdedb.uncommon.intenum import CdEIntFlag
+from cdedb.uncommon.intenum import CdEFlag
 
 
 class Attachment(typing.TypedDict, total=False):
@@ -479,13 +478,6 @@ class AbstractFrontend(BaseApp, metaclass=abc.ABCMeta):
             'DEFAULT_COUNTRY': self.conf["DEFAULT_COUNTRY"],
             'AdminViews': AdminViews,
             'EntitySorter': EntitySorter,
-            'roles_allow_genesis_management': lambda roles: (
-                roles
-                & (
-                    {'core_admin'}
-                    | set(f"{realm}_admin" for realm in REALM_SPECIFIC_GENESIS_FIELDS)
-                )
-            ),
             'unwrap': unwrap,
             'MANAGEMENT_ADDRESS': self.conf['MANAGEMENT_ADDRESS'],
             'MAX_QUERY_ORDERS': query_mod.MAX_QUERY_ORDERS,
@@ -2735,7 +2727,7 @@ def REQUESTdata[F: Callable[..., Any]](
                             kwargs[name] = vals
                         else:
                             kwargs[name] = check_validation(rs, type_, vals, name)
-                    elif isinstance(type_, type) and issubclass(type_, CdEIntFlag):
+                    elif isinstance(type_, type) and issubclass(type_, CdEFlag):
                         vals = rs.request.values.getlist(name)
                         rs.values.setlist(name, vals)
                         combined = type_.union(

@@ -5,6 +5,7 @@
 from typing import Any, Self
 
 from cdedb.common._roles_meta import _AdminViews, _Realms, _Roles
+from cdedb.common.n_ import n_
 from cdedb.config import Config
 from cdedb.database.connection import DBRole
 
@@ -121,7 +122,10 @@ class Roles(_Roles):
 
     @classmethod
     def all_genesis_realm_roles(cls) -> tuple[Self, ...]:
-        return (cls.core_admin, cls.cde_admin, cls.event_admin, cls.ml_admin)
+        return (
+            cls.core_admin,
+            *(realm.admin_role for realm in Realms.get_available_genesis_realms()),
+        )
 
     def is_any_admin(self) -> bool:
         """Whether there is any admin role in this set of roles."""
@@ -134,6 +138,10 @@ class Roles(_Roles):
     def get_admin_realms(self) -> "Realms":
         """See 'Realms.from_admin_roles'."""
         return Realms.from_admin_roles(self)
+
+    def get_genesis_realms(self) -> "Realms":
+        """See 'Realms.genesis_realms_from_admin_roles'."""
+        return Realms.genesis_realms_from_admin_roles(self)
 
     def get_db_role(self) -> "DBRole":
         if self.is_any_admin():
@@ -195,10 +203,10 @@ class Realms(_Realms):
     [Realms.cde, Realms.ml, Realms.assembly]
     """
 
-    cde = Roles.cde, Roles.cde_admin, "ml", "assembly", "event"
-    event = Roles.event, Roles.event_admin, "ml"
-    ml = Roles.ml, Roles.ml_admin
-    assembly = Roles.assembly, Roles.assembly_admin, "ml"
+    cde = 1, Roles.cde, Roles.cde_admin, "ml", "assembly", "event"
+    event = 2, Roles.event, Roles.event_admin, "ml"
+    ml = 4, Roles.ml, Roles.ml_admin
+    assembly = 8, Roles.assembly, Roles.assembly_admin, "ml"
 
     @classmethod
     def from_user_roles(cls, roles: Roles) -> Self:
@@ -232,6 +240,40 @@ class Realms(_Realms):
         return cls.union(
             realm | realm.implied_realms for realm in cls if realm.admin_role in roles
         )
+
+    @classmethod
+    def get_available_genesis_realms(cls) -> dict[Self, str]:
+        return {
+            cls.cde: n_("CdE membership & events"),
+            cls.event: n_("CdE events"),
+            cls.ml: n_("CdE mailinglist"),
+        }
+
+    @classmethod
+    def genesis_realms_from_admin_roles(cls, roles: Roles) -> Self:
+        """
+        Determine all genesis realms which may be handled by a user with the given roles.
+
+        Note that core admins may handle all genesis realms and that you may not handle
+        genesis for implied realms..
+
+        >>> Realms.genesis_realms_from_admin_roles(Roles.core_admin)
+        Realms.cde|event|ml|assembly
+        >>> Realms.genesis_realms_from_admin_roles(Roles.cde_admin)
+        Realms.cde
+        >>> Realms.genesis_realms_from_admin_roles(Roles.event_admin | Roles.assembly_admin)
+        Realms.event|assembly
+        >>> Realms.genesis_realms_from_admin_roles(Roles.event_admin)
+        Realms.event
+        >>> Realms.genesis_realms_from_admin_roles(Roles.assembly_admin)
+        Realms.assembly
+        >>> Realms.genesis_realms_from_admin_roles(Roles.ml_admin)
+        Realms.ml
+        """
+        if Roles.core_admin in roles:
+            return cls.all()
+
+        return cls.union(realm for realm in cls if realm.admin_role in roles)
 
     @property
     def implying_realms(self) -> Self:
