@@ -856,12 +856,13 @@ class TestCoreBackend(BackendTest):
         expectation.status = const.GenesisStati.successful
         expectation.reviewer = self.user['id']
         new_id = self.core.genesis_decide(self.key, case_id, GenesisDecision.approve)
-        self.assertLess(0, new_id)
-        expectation.persona_id = vtypes.PersonaID(vtypes.ID(new_id))
+        self.assertIsNotNone(new_id)
+        assert new_id is not None  # mypy is stupid.
+        expectation.persona_id = new_id
         self.assertEqual(expectation, self.core.genesis_get_case(self.key, case_id))
 
         value = self.core.get_event_user(self.key, new_id)
-        expectation.persona.id = vtypes.PersonaID(vtypes.ID(new_id))
+        expectation.persona.id = new_id
         self.assertEqual(expectation.persona, value)
 
     @as_users("anton")
@@ -920,8 +921,9 @@ class TestCoreBackend(BackendTest):
         expectation.status = const.GenesisStati.successful
         expectation.reviewer = self.user['id']
         new_id = self.core.genesis_decide(self.key, case_id, GenesisDecision.approve)
-        self.assertLess(0, new_id)
-        expectation.persona_id = vtypes.PersonaID(vtypes.ID(new_id))
+        self.assertIsNotNone(new_id)
+        assert new_id is not None  # mypy is stupid.
+        expectation.persona_id = new_id
         self.assertEqual(expectation, self.core.genesis_get_case(self.key, case_id))
         value = self.core.get_ml_user(self.key, new_id)
         persona_expectation = expectation.persona
@@ -1011,8 +1013,9 @@ class TestCoreBackend(BackendTest):
         new_id = self.core.genesis_decide(
             self.key, case_id, GenesisDecision.approve_grant_trial_membership
         )
-        self.assertLess(0, new_id)
-        expectation.persona_id = vtypes.PersonaID(vtypes.ID(new_id))
+        self.assertIsNotNone(new_id)
+        assert new_id is not None  # mypy is stupid.
+        expectation.persona_id = new_id
         self.assertEqual(expectation, self.core.genesis_get_case(self.key, case_id))
         value = self.core.get_cde_user(self.key, new_id).as_dict()
         persona_expectation = expectation.persona.as_dict()

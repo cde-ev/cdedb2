@@ -604,7 +604,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
         rs: RequestState,
         genesis_case_id: int,
         decision: GenesisDecision,
-        persona_id: int | None,
+        persona_id: vtypes.PersonaID | None,
     ) -> Response:
         """Approve or decline a genensis case.
 
@@ -665,9 +665,17 @@ class CoreGenesisMixin(CoreBaseFrontend):
         persona_id = self.coreproxy.genesis_decide(
             rs, genesis_case_id, decision, persona_id
         )
-        if not persona_id:  # Purely an error case. # pragma: no cover
-            rs.notify("error", n_("Failed."))
-            return self.genesis_show_case(rs, genesis_case_id)
+        if not persona_id:
+            self.do_mail(
+                rs,
+                "genesis/genesis_declined",
+                {
+                    'To': (case.persona.username,),
+                    'Subject': "CdEDB Accountanfrage abgelehnt",
+                },
+            )
+            rs.notify("info", n_("Case rejected."))
+            return self.redirect(rs, "core/genesis_list_cases")
 
         if decision.is_approved() and case.pevent_id and case.realm == Realms.cde:
             code = 1
@@ -699,7 +707,7 @@ class CoreGenesisMixin(CoreBaseFrontend):
             trial_member = self.coreproxy.get_cde_user(rs, persona_id).trial_member
             self.send_welcome_mail(rs, persona, status, is_trial_member=trial_member)
             rs.notify("success", n_("Account upgraded."))
-        elif decision.is_update():
+        else:
             persona = self.coreproxy.get_persona(rs, persona_id)
             reset_link = self._password_reset_link(rs, persona_id)
             self.do_mail(
@@ -709,14 +717,4 @@ class CoreGenesisMixin(CoreBaseFrontend):
                 {'persona': persona, "reset_link": reset_link},
             )
             rs.notify("success", n_("User updated."))
-        else:
-            self.do_mail(
-                rs,
-                "genesis/genesis_declined",
-                {
-                    'To': (case.persona.username,),
-                    'Subject': "CdEDB Accountanfrage abgelehnt",
-                },
-            )
-            rs.notify("info", n_("Case rejected."))
         return self.redirect(rs, "core/genesis_list_cases")
