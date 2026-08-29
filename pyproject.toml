@@ -42,7 +42,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "mypy[faster-cache]==2.3.0",
+    "mypy[faster-cache]==2.3.1",
     "lxml-stubs",
     "ruff==0.16.3",
     "types-bleach",
