@@ -3235,7 +3235,11 @@ class CoreBaseBackend(AbstractBackend):
             raise ValueError(n_("Persona does not exist."))
 
         if not self.is_admin(rs) and Roles.meta_admin not in rs.user.new_roles:
-            if self.get_persona_status(rs, persona_id).is_any_admin:
+            persona_status = self.get_persona_status(rs, persona_id)
+            if (
+                not self._is_relative_admin(rs, persona_status)
+                and persona_status.is_any_admin
+            ):
                 raise AdminPasswordResetError(n_("Preventing reset of admin."))
 
         # This defines a specific account/password combination as purpose
