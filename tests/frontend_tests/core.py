@@ -660,7 +660,7 @@ class TestCoreFrontend(FrontendTest):
         )
         check_kind(
             "past_event_user",
-            cde_admins | auditors,
+            cde_admins | event_admins | auditors,
             ins=("hades",),
             outs=("kalif", "janis"),
         )

@@ -171,8 +171,14 @@ class TestEventFrontend(FrontendTest):
             out = admin - {"Log"}  # This falsely matches the past event log.
         # event admins
         elif self.user_in('annika'):
-            ins = everyone | admin | {"Accounts verwalten"}
-            out = past_events | past_event_admin
+            ins = (
+                everyone
+                | admin
+                | {"Accounts verwalten"}
+                | past_events
+                | past_event_admin
+            )
+            out = set()
         # event helpers
         elif self.user_in('petra'):
             ins = everyone | {"Alle Veranstaltungen", "Ungereimtheiten"} | past_events
