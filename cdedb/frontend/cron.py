@@ -11,6 +11,7 @@ from collections.abc import Collection, Iterator
 from datetime import datetime
 from typing import cast
 
+from cdedb import setup_root_logger
 from cdedb.common import RequestState, User, now
 from cdedb.common.n_ import n_
 from cdedb.common.roles import Roles
@@ -38,6 +39,8 @@ class CronFrontend(BaseApp):
 
     def __init__(self) -> None:
         super().__init__()
+
+        setup_root_logger(identifier="cdedb-cron", replace=True)
 
         self.urlmap = CDEDB_PATHS
         secrets = SecretsConfig()
