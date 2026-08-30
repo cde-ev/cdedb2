@@ -3,6 +3,9 @@
 """Sample data used for dev instances."""
 
 import dataclasses
+import datetime
+
+from cdedb.common import now
 
 
 @dataclasses.dataclass
@@ -11,7 +14,8 @@ class MockHeldMessage:
     sender: str
     subject: str
     reason: str | None
-    msg: str
+    msg: str = dataclasses.field(repr=False)
+    hold_date: datetime.datetime = now()
 
 
 # Sample messages for the case that no mailman instance is available.

@@ -5,10 +5,13 @@
 """Base class providing fundamental ml services."""
 
 import collections
+import datetime
+import email.parser
 from collections.abc import Collection
 from typing import Any
 
 import werkzeug.exceptions
+from mailmanclient import HeldMessage
 from subman.exceptions import SubscriptionError
 from werkzeug import Response
 
@@ -1395,4 +1398,73 @@ class MlBaseFrontend(AbstractUserFrontend):
 
             ml_store['persona_ids'] = requests
             store[str(ml_id)] = ml_store
+        return store
+
+    @periodic("moderation_remind")
+    def moderation_remind(self, rs: RequestState, store: CdEDBObject) -> CdEDBObject:
+        ml_ids = self.mlproxy.list_mailinglists(rs)
+        mls = self.mlproxy.get_mailinglists(rs, ml_ids)
+        today = now().date()
+        cutoff = datetime.timedelta(days=3) - datetime.timedelta(seconds=300)
+
+        if "personas_last_remind" not in store:
+            store["personas_last_remind"] = {}
+
+        def hash_messages(message_data: dict[Mailinglist, list[HeldMessage]]) -> int:
+            return hash(
+                tuple(
+                    (ml.id, *(message.request_id for message in messages))
+                    for ml, messages in message_data.items()
+                )
+            )
+
+        spam_scores: dict[int, str] = {}
+        moderators: dict[vtypes.PersonaID, dict[Mailinglist, list[HeldMessage]]] = {}
+        for ml in mls.values():
+            held = self.get_mailman().get_held_messages(ml)
+            if not held:
+                continue
+
+            for message in held:
+                headers = email.parser.HeaderParser().parsestr(message.msg)
+                spam_scores[message.request_id] = headers.get("X-Spam-Score", "—")
+                if isinstance(message.hold_date, str):
+                    message.hold_date = datetime.datetime.fromisoformat(
+                        message.hold_date
+                    )
+
+            for moderator in ml.moderators:
+                moderators.setdefault(moderator, {})[ml] = held
+
+        personas = self.coreproxy.get_personas(rs, moderators.keys())
+
+        for moderator, message_data in moderators.items():
+            persona = personas[moderator]
+            last_state: tuple[int, str] = store["personas_last_remind"].get(
+                moderator, (0, datetime.date.min.isoformat())
+            )
+            last_hash = last_state[0]
+            last_date = datetime.date.fromisoformat(last_state[1])
+            current_hash = hash_messages(message_data)
+
+            if last_hash == current_hash and today - last_date < cutoff:
+                continue
+
+            self.do_mail(
+                rs,
+                "moderation_remind",
+                {
+                    "To": [persona.username],
+                    "Subject": "Übersicht über ausstehende E-Mail-Moderationen",
+                },
+                {
+                    "persona": persona,
+                    "messages": message_data,
+                    "total": sum(map(len, message_data.values())),
+                    "spam_scores": spam_scores,
+                },
+            )
+
+            store["personas_last_remind"][moderator] = (current_hash, today)
+
         return store
