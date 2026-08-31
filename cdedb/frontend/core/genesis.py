@@ -16,6 +16,7 @@ from cdedb.common import (
     CdEDBObject,
     GenesisDecision,
     RequestState,
+    is_tor_exit_node,
     merge_dicts,
     now,
 )
@@ -160,6 +161,18 @@ class CoreGenesisMixin(CoreBaseFrontend):
             else:
                 rs.notify("error", n_("Email address already in DB. Reset password."))
                 return self.redirect(rs, "core/index")
+        elif (
+            rs.request
+            and rs.request.remote_addr
+            and is_tor_exit_node(rs.request.remote_addr)
+        ):
+            self.logger.warning(
+                f"Blocked genesis request from TOR exit node:"
+                f" {data['given_names']} {data['family_name']} <{data['username']}>"
+                f" from IP {rs.request.remote_addr}"
+            )
+            rs.notify("error", n_("Blocked genesis request from TOR exit node."))
+            return self.redirect(rs, "core/index")
         else:
             new_id = self.coreproxy.genesis_request(rs, data)
             if not new_id:
