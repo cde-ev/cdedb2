@@ -1404,10 +1404,17 @@ class MlBaseFrontend(AbstractUserFrontend):
         ml_ids = self.mlproxy.list_mailinglists(rs)
         mls = self.mlproxy.get_mailinglists(rs, ml_ids)
         today = now().date()
-        cutoff = datetime.timedelta(days=3) - datetime.timedelta(seconds=300)
+        current_hour = now().hour
+        repeat_cutoff = datetime.timedelta(days=3) - datetime.timedelta(seconds=300)
+        new_message_cutoff = datetime.timedelta(days=1) - datetime.timedelta(
+            seconds=300
+        )
+        if not 18 <= current_hour <= 20:
+            return store
 
-        if "personas_last_remind" not in store:
-            store["personas_last_remind"] = {}
+        personas_last_remind: dict[str, tuple[int, str]] = store.setdefault(
+            "personas_last_remind", {}
+        )
 
         def hash_messages(message_data: dict[Mailinglist, list[HeldMessage]]) -> int:
             return hash(
@@ -1432,14 +1439,17 @@ class MlBaseFrontend(AbstractUserFrontend):
 
         for moderator, message_data in moderators.items():
             persona = personas[moderator]
-            last_state: tuple[int, str] = store["personas_last_remind"].get(
-                moderator, (0, datetime.date.min.isoformat())
+            last_state = personas_last_remind.get(
+                str(moderator), (0, datetime.date.min.isoformat())
             )
             last_hash = last_state[0]
             last_date = datetime.date.fromisoformat(last_state[1])
+            time_passed = today - last_date
             current_hash = hash_messages(message_data)
 
-            if last_hash == current_hash and today - last_date < cutoff:
+            if time_passed < new_message_cutoff or (
+                last_hash == current_hash and time_passed < repeat_cutoff
+            ):
                 continue
 
             self.do_mail(
