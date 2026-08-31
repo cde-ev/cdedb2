@@ -15,6 +15,7 @@ class MockHeldMessage:
     subject: str
     reason: str | None
     msg: str = dataclasses.field(repr=False)
+    spam_score: str
     hold_date: datetime.datetime = now()
 
 
@@ -25,6 +26,7 @@ HELD_MESSAGE_SAMPLE = [
         sender='kassenwart@example.cde',
         subject='Finanzbericht',
         reason='Nicht-Abonnent',
+        spam_score="-2.067",
         msg="""
 Received: from mail-il1-f180.google.com (mail-il1-f180.google.com [209.85.166.180])
 	by mail.cde-ev.de (Postfix) with ESMTP id D03062000E7
@@ -87,6 +89,7 @@ Content-Type: text/html; charset="UTF-8"
         sender='illuminati@example.cde',
         subject='Verschwurbelung',
         reason='Zu riesig',
+        spam_score="1.108",
         msg="""
 Received: from mail-il1-f180.google.com (mail-il1-f180.google.com [209.85.166.180])
 	by mail.cde-ev.de (Postfix) with ESMTP id D03062000E7
@@ -155,6 +158,7 @@ Content-Type: text/html; charset="UTF-8"
         sender='nigerian_prince@example.cde',
         subject='unerwartetes Erbe',
         reason='Spam',
+        spam_score="2.725",
         msg="""
 Received: from mail-il1-f180.google.com (mail-il1-f180.google.com [209.85.166.180])
 	by mail.cde-ev.de (Postfix) with ESMTP id D03062000E7

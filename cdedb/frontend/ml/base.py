@@ -6,7 +6,6 @@
 
 import collections
 import datetime
-import email.parser
 from collections.abc import Collection
 from typing import Any
 
@@ -1418,20 +1417,13 @@ class MlBaseFrontend(AbstractUserFrontend):
                 )
             )
 
-        spam_scores: dict[int, str] = {}
         moderators: dict[vtypes.PersonaID, dict[Mailinglist, list[HeldMessage]]] = {}
         for ml in mls.values():
             held = self.get_mailman().get_held_messages(ml)
             if not held:
                 continue
 
-            for message in held:
-                headers = email.parser.HeaderParser().parsestr(message.msg)
-                spam_scores[message.request_id] = headers.get("X-Spam-Score", "—")
-                if isinstance(message.hold_date, str):
-                    message.hold_date = datetime.datetime.fromisoformat(
-                        message.hold_date
-                    )
+            held = xsorted(held, key=lambda m: m.spam_score)
 
             for moderator in ml.moderators:
                 moderators.setdefault(moderator, {})[ml] = held
@@ -1461,10 +1453,9 @@ class MlBaseFrontend(AbstractUserFrontend):
                     "persona": persona,
                     "messages": message_data,
                     "total": sum(map(len, message_data.values())),
-                    "spam_scores": spam_scores,
                 },
             )
 
-            store["personas_last_remind"][moderator] = (current_hash, today)
+            personas_last_remind[str(moderator)] = (current_hash, today.isoformat())
 
         return store

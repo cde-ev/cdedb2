@@ -15,7 +15,7 @@ Link: {{ cdedblink('ml/message_moderation_form', {'mailinglist_id': ml['id']}) }
   Betreff: {{ message.subject }}
   Datum: {{ message.hold_date|datetime(lang="de") }}
   Grund für das Zurückhalten: {{ message.reason }}
-  Spam-Score: {{ spam_scores[message.request_id] }}
+  Spam-Score: {{ message.spam_score }}
 {% endfor %}
 {% if held_messages|length > cutoff %}
 ... und {{ held_messages|length - cutoff }} weitere.
