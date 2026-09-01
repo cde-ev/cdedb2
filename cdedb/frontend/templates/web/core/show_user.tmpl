@@ -21,17 +21,17 @@
 {% block adminviews %}
     {% set views = [] %}
     {% if AccessMode.any_admin in access_mode %}
-        {{ views.append((gettext("User Administration"), ["core_user", "cde_user", "event_user", "ml_user", "assembly_user"], None)) }}
+        {{ views.append((gettext("User Administration"), AdminViews.all_user_views(), None)) }}
     {% endif %}
-    {{ views.append((gettext("Admin Administration"), ["meta_admin"], None)) }}
-    {{ views.append((gettext("Core Administration"), ["core"], None)) }}
-    {{ views.append((gettext("Finance Administration"), ["finance"], None)) }}
-    {{ views.append((gettext("Complaints"), ["complaint"], None)) }}
+    {{ views.append((gettext("Admin Administration"), AdminViews.meta_admin, None)) }}
+    {{ views.append((gettext("Core Administration"), AdminViews.core, None)) }}
+    {{ views.append((gettext("Finance Administration"), AdminViews.finance, None)) }}
+    {{ views.append((gettext("Complaints"), AdminViews.complaint, None)) }}
     {% if AccessMode.moderator in access_mode %}
-        {{ views.append((gettext("Moderator Controls"), ALL_MOD_ADMIN_VIEWS, None)) }}
+        {{ views.append((gettext("Moderator Controls"), AdminViews.all_mod_views(), None)) }}
     {% endif %}
     {% if AccessMode.orga in access_mode %}
-        {{ views.append((gettext("Orga Controls"), ["event_orga"], None)) }}
+        {{ views.append((gettext("Orga Controls"), AdminViews.event_orga, None)) }}
     {% endif %}
 
     {{ util.admin_views_toggle(views) }}
@@ -95,7 +95,9 @@
     {% endif %}
 
     {# Related pages #}
-    {% set show_admin_buttons = is_relative_admin_view or user.admin_views.intersection(["complaint", "event_user", "ml_user"]|set) %}
+    {% set show_admin_buttons = is_relative_admin_view or user.admin_views.has_any(
+            AdminViews.complaint, AdminViews.event_user, AdminViews.ml_user, AdminViews.assembly_user
+        ) %}
     {% if quoteable or show_admin_buttons %}
         <div class="p button-par">
             {% if quoteable %}
@@ -107,17 +109,22 @@
                     {{ util.href(cdedblink("core/show_history"), gettext("Change History"),
                                  aclass="btn btn-info btn-sm", icon="clock") }}
                 {% endif %}
-                {% if is_relative_admin_view or "event_user" in user.admin_views %}
+                {% if is_relative_admin_view or user.admin_views.has(AdminViews.event_user) %}
                     {{ util.href(cdedblink("core/show_user_events", {'persona_id': data['id']}),
                                  gettext("Show Event Data"), aclass="btn btn-info btn-sm",
                                  icon="chalkboard-teacher") }}
                 {% endif %}
-                {% if (is_relative_admin_view or "ml_user" in user.admin_views) and not ambience['persona']['is_archived'] %}
+                {% if is_relative_admin_view or user.admin_views.has(AdminViews.ml_user) %}
                     {{ util.href(cdedblink("core/show_user_mailinglists", {'persona_id': data['id']}),
                                  gettext("Show Mailinglist Data"), aclass="btn btn-info btn-sm",
                                  icon="envelope") }}
                 {% endif %}
-                {% if "complaint" in user.admin_views and user.all_roles.intersection(["complaint_admin", "complaint.enforcer"]) %}
+                {% if is_relative_admin_view or user.admin_views.has(AdminViews.assembly_user) %}
+                    {{ util.href(cdedblink("core/show_user_assemblies", {'persona_id': data['id']}),
+                                 gettext("Show Assembly Data"), aclass="btn btn-info btn-sm",
+                                 icon="bullhorn") }}
+                {% endif %}
+                {% if user.admin_views.has(AdminViews.complaint) and user.roles.intersection(["complaint_admin", "complaint_enforcer"]) %}
                     {{ util.href(cdedblink("core/show_user_measures", {'persona_id': data['id']}),
                                  gettext("Show Measures"), aclass="btn btn-info btn-sm", icon="shield-halved") }}
                 {% endif %}
@@ -279,17 +286,11 @@
                         {% trans %}Realms{% endtrans %}
                     </dt>
                     <dd id="has-realm">
-                        {% set vars = {'any_realm_not': False} %}
-                        {% for bit in data.get_realm_bits() %}
-                            {% if data.is_true(bit) %}
-                                {{ util.realm_icon(bit) }}
-                            {% else %}
-                                {# Dirty hack to workaround Jinjas set drawbacks #}
-                                {% do vars.update({'any_realm_not': True}) %}
-                            {% endif %}
+                        {% for realm in data.get_user_realms() %}
+                            {{ util.realm_icon(realm.realm_marker) }}
                         {% endfor %}
-                        {% if 'core_user' in user.admin_views
-                                and vars['any_realm_not']
+                        {% if user.admin_views.has(AdminViews.core_user)
+                                and data.get_user_realms().__invert__()
                                 and not ambience['persona']['is_archived'] %}
                             {{ util.href(cdedblink("core/promote_user_form"), gettext("Add Realm"), icon="pen",
                                     aclass="btn btn-xs btn-warning") }}
@@ -310,12 +311,14 @@
                             {% trans %}Admin Privileges{% endtrans %}
                         </dt>
                         <dd id="admin-realms">
-                            {% for key in admin_bits %}
-                                {{ util.privilege_icon(key) }}
+                            {% if admin_bits %}
+                                {% for admin_role in admin_bits %}
+                                    {{ util.privilege_icon(admin_role) }}
+                                {% endfor %}
                             {% else %}
                                 <i>{% trans %}None{% endtrans %}</i>
-                            {% endfor %}
-                            {% if 'meta_admin' in user.admin_views and not ambience['persona']['is_archived'] %}
+                            {% endif %}
+                            {% if user.admin_views.has(AdminViews.meta_admin) and not ambience['persona']['is_archived'] %}
                                 {{ util.href(cdedblink("core/change_privileges_form"), gettext("Edit"), icon="pen",
                                         aclass="btn btn-xs btn-warning") }}
                             {% endif %}
@@ -401,7 +404,7 @@
                         {% if data['balance'] is not none %}
                             {{ data['balance']|money(lang=lang) }}
                         {% endif %}
-                        {% if "finance" in user.admin_views and not ambience['persona']['is_archived'] %}
+                        {% if user.admin_views.has(AdminViews.finance) and not ambience['persona']['is_archived'] %}
                             {{ util.href(cdedblink('core/modify_balance_form'), gettext("Modify Balance"), icon="pen",
                                          aclass="btn btn-xs btn-warning") }}
                         {% endif %}
@@ -424,10 +427,10 @@
                             {{ util.href(cdedblink("core/my_lastschrift") if data['id'] == user.persona_id
                                          else cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
                                          gettext("Direct Debit Authorization"), icon="euro-sign",
-                                         readonly=(data['id'] != user.persona_id and "finance" not in user.admin_views)) }}
+                                         readonly=(data['id'] != user.persona_id and not user.admin_views.has(AdminViews.finance))) }}
                         {% else %}
                             {% trans %}Balance{% endtrans %}
-                            {% if "finance" in user.admin_views and not ambience['persona']['is_archived'] %}
+                            {% if user.admin_views.has(AdminViews.finance) and not ambience['persona']['is_archived'] %}
                                 {{ util.href(cdedblink("cde/lastschrift_show", {'persona_id': data['id']}),
                                              gettext("New Direct Debit Authorization …"), icon="euro-sign") }}
                             {% else %}
@@ -472,12 +475,12 @@
                     {% else %}
                         —
                     {% endif %}
-                    {%- if "core_user" in user.admin_views or "ml_user" in user.admin_views or data['id'] == user.persona_id %}
+                    {%- if user.admin_views.has_any(AdminViews.core_user, AdminViews.ml_user) or data['id'] == user.persona_id %}
                         {% if email_report and email_report.status in enums['EmailStatus'].notable_states() %}
                             <span class="text-danger">({{gettext(email_report.status|string)}})
                         {% endif %}
                     {% endif %}
-                    {%- if "core_user" in user.admin_views or "ml_user" in user.admin_views %}
+                    {%- if user.admin_views.has_any(AdminViews.core_user, AdminViews.ml_user) %}
                         {% if email_report and data.has('username') %}
                             {{ util.href(cdedblink('core/email_status_overview') + "#emailstatus-"
                                         + get_hash(data['username'].encode('utf-8')), gettext("Manage"),
@@ -672,7 +675,7 @@ BIC:                {{ meta_info.membership_fee_account.get_bic() }}
 Kreditinstitut:     {{ meta_info.membership_fee_account.get_bank() }}
 Verwendungszweck:   {{ data.membership_fee_reference }}
 
-Bei Überweisungen aus dem Ausland achte bitte darauf, dass der Empfänger
+Bei Überweisungen aus dem Ausland achte bitte darauf, dass die Empfänger:in
 keine Gebühren bezahlen muss.
 
 Nähere Informationen gibt es auf:
@@ -760,10 +763,10 @@ automatisch eine Bestätigung per E-Mail
 
                                     <div class="form-group">
                                         {{ util.input_submit(label=gettext("Archive Account"), icon="eraser",
-                                                aclass="btn btn-danger btn-sm", readonly=data['is_meta_admin'],
+                                                aclass="btn btn-danger btn-sm", readonly=data.is_true('is_meta_admin'),
                                                 title=gettext("Cannot archive meta admins.") if data.is_true('is_meta_admin') else "") }}
-                                        {{ util.ack_delete(gettext("The Account will be archived.")) }}
                                     </div>
+                                    {{ util.ack_delete(gettext("The Account will be archived.")) }}
                                     {{ util.form_input_textarea(name="note", label=gettext("Note"), horizontal=False) }}
                                 </form>
                             </div>
@@ -780,7 +783,7 @@ automatisch eine Bestätigung per E-Mail
                         </div>
                     </div>
 
-                {% if "core_user" in user.admin_views %}
+                {% if user.admin_views.has(AdminViews.core_user) %}
                     <div class="row">
                         <div class="col-sm-4">
                             <div class="p">

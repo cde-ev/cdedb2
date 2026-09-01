@@ -45,6 +45,7 @@ ISORT ?= $(RUFF) check --select I
 COVERAGE ?= $(PYTHONBIN) -m coverage
 MYPY ?= $(UV) run --all-groups mypy
 DMYPY ?= $(UV) run --all-groups dmypy
+PYREFLY ?= $(UV) run --all-groups pyrefly
 
 
 #####################
@@ -110,7 +111,7 @@ i18n-extract: i18n-output-dirs venv
 	$(PYTHONBIN) cdedb/i18n_additional.py > cdedb/.i18n_additional.py
 	$(UV) run pybabel extract --msgid-bugs-address="cdedb@lists.cde-ev.de" \
 		--mapping=./babel.cfg --keywords="rs.gettext rs.ngettext n_" \
-		--output=$(I18NOUTDIR)/cdedb.pot --input-dirs="bin,cdedb"
+		--output=$(I18NOUTDIR)/cdedb.pot --input-dirs="cdedb" 2> /dev/null
 
 i18n-update: $(foreach lang, $(I18N_LANGUAGES), $(I18NDIR)/$(lang)/LC_MESSAGES/cdedb.po)
 
@@ -165,6 +166,10 @@ mypy: venv
 .PHONY: dmypy
 dmypy: venv
 	$(DMYPY) run
+
+.PHONY: pyrefly
+pyrefly: venv
+	$(PYREFLY) check
 
 BANNERLINE := "================================================================================"
 

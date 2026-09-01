@@ -2,8 +2,7 @@
 
 """Services for the assembly realm."""
 
-from typing import Optional
-
+import werkzeug.datastructures
 import werkzeug.exceptions
 from schulze_condorcet.types import Candidate
 from werkzeug import Response
@@ -17,12 +16,14 @@ from cdedb.common import (
     merge_dicts,
 )
 from cdedb.common.n_ import n_
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import xsorted
 from cdedb.frontend.assembly.base import AssemblyBaseFrontend
 from cdedb.frontend.common import (
     REQUESTdata,
     REQUESTfile,
     access,
+    ack_delete,
     assembly_guard,
     check_validation as check,
     periodic,
@@ -38,9 +39,7 @@ ASSEMBLY_BAR_ABBREVIATION = "#"
 class AssemblyAttachmentMixin(AssemblyBaseFrontend):
     """Organize congregations and vote on ballots."""
 
-    realm = "assembly"
-
-    @access("assembly")
+    @access(Roles.assembly)
     def list_attachments(self, rs: RequestState, assembly_id: int) -> Response:
         """Render form."""
         if not self.assemblyproxy.may_assemble(
@@ -90,7 +89,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             },
         )
 
-    @access("assembly")
+    @access(Roles.assembly)
     def get_attachment(
         self, rs: RequestState, assembly_id: int, attachment_id: int
     ) -> Response:
@@ -103,7 +102,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             params={"version_nr": attachment["latest_version_nr"]},
         )
 
-    @access("assembly")
+    @access(Roles.assembly)
     @REQUESTdata("version_nr")
     def get_attachment_version(
         self, rs: RequestState, assembly_id: int, attachment_id: int, version_nr: int
@@ -129,7 +128,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             filename=versions[version_nr]['filename'],
         )
 
-    @access("assembly")
+    @access(Roles.assembly)
     @assembly_guard
     def add_attachment_form(self, rs: RequestState, assembly_id: int) -> Response:
         """Render form."""
@@ -145,7 +144,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             rs, "attachment/add_attachment", mandatory_fields=mandatory_fields
         )
 
-    @access("assembly", modi={"POST"})
+    @access(Roles.assembly, modi={"POST"})
     @assembly_guard
     @REQUESTdata(
         "title", "authors", "filename", "attachment_hash", "attachment_filename"
@@ -156,11 +155,11 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         rs: RequestState,
         assembly_id: int,
         attachment: werkzeug.datastructures.FileStorage,
-        attachment_hash: Optional[vtypes.Identifier],
-        attachment_filename: Optional[str],
+        attachment_hash: vtypes.Identifier | None,
+        attachment_filename: str | None,
         title: str,
-        filename: Optional[vtypes.Identifier],
-        authors: Optional[str],
+        filename: vtypes.Identifier | None,
+        authors: str | None,
     ) -> Response:
         """Create a new attachment."""
         if not rs.ambience['assembly']['is_active']:
@@ -207,22 +206,13 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         rs.notify_return_code(code, success=n_("Attachment added."))
         return self.redirect(rs, "assembly/list_attachments")
 
-    @access("assembly", modi={"POST"})
+    @access(Roles.assembly, modi={"POST"})
     @assembly_guard
-    @REQUESTdata("attachment_ack_delete")
+    @ack_delete("attachment_ack_delete")
     def delete_attachment(
-        self,
-        rs: RequestState,
-        assembly_id: int,
-        attachment_id: int,
-        attachment_ack_delete: bool,
+        self, rs: RequestState, assembly_id: int, attachment_id: int
     ) -> Response:
         """Delete an attachment."""
-        if not attachment_ack_delete:
-            rs.append_validation_error((
-                "attachment_ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
         if rs.has_validation_errors():
             return self.list_attachments(rs, assembly_id)
 
@@ -244,7 +234,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         rs.notify_return_code(code)
         return self.redirect(rs, "assembly/list_attachments")
 
-    @access("assembly")
+    @access(Roles.assembly)
     @assembly_guard
     def add_attachment_version_form(
         self, rs: RequestState, assembly_id: int, attachment_id: int
@@ -283,7 +273,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             mandatory_fields,
         )
 
-    @access("assembly", modi={"POST"})
+    @access(Roles.assembly, modi={"POST"})
     @assembly_guard
     @REQUESTdata(
         "title",
@@ -301,13 +291,13 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         assembly_id: int,
         attachment_id: int,
         attachment: werkzeug.datastructures.FileStorage,
-        attachment_hash: Optional[vtypes.Identifier],
-        attachment_filename: Optional[str],
+        attachment_hash: vtypes.Identifier | None,
+        attachment_filename: str | None,
         title: str,
-        filename: Optional[vtypes.Identifier],
-        authors: Optional[str],
-        changenotes: Optional[str],
-        ack_creation: Optional[bool] = None,
+        filename: vtypes.Identifier | None,
+        authors: str | None,
+        changenotes: str | None,
+        ack_creation: bool | None = None,
     ) -> Response:
         """Create a new version of an existing attachment.
 
@@ -384,7 +374,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         rs.notify_return_code(code, success=n_("Attachment added."))
         return self.redirect(rs, "assembly/list_attachments")
 
-    @access("assembly")
+    @access(Roles.assembly)
     def get_cached_attachment(
         self, rs: RequestState, assembly_id: int, attachment_hash: vtypes.Identifier
     ) -> Response:
@@ -397,7 +387,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             raise werkzeug.exceptions.NotFound(n_("File does not exist."))
         return self.send_file(rs, path=path, mimetype='application/pdf')
 
-    @access("assembly")
+    @access(Roles.assembly)
     @assembly_guard
     def change_attachment_version_form(
         self, rs: RequestState, assembly_id: int, attachment_id: int, version_nr: int
@@ -422,7 +412,7 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
             get_mandatory_form_fields(self.change_attachment_version),
         )
 
-    @access("assembly", modi={"POST"})
+    @access(Roles.assembly, modi={"POST"})
     @assembly_guard
     @REQUESTdata("title", "authors", "filename", "changenotes")
     def change_attachment_version(
@@ -433,8 +423,8 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         version_nr: int,
         title: str,
         filename: vtypes.Identifier,
-        authors: Optional[str],
-        changenotes: Optional[str],
+        authors: str | None,
+        changenotes: str | None,
     ) -> Response:
         """Change the metadata of a new version of an existing attachment."""
         # the check that the attachment belongs to the assembly is already done in
@@ -461,25 +451,13 @@ class AssemblyAttachmentMixin(AssemblyBaseFrontend):
         rs.notify_return_code(code, success=n_("Attachment changed."))
         return self.redirect(rs, "assembly/list_attachments")
 
-    @access("assembly", modi={"POST"})
+    @access(Roles.assembly, modi={"POST"})
     @assembly_guard
-    @REQUESTdata("attachment_ack_delete")
+    @ack_delete("attachment_ack_delete")
     def delete_attachment_version(
-        self,
-        rs: RequestState,
-        assembly_id: int,
-        attachment_id: int,
-        version_nr: int,
-        attachment_ack_delete: bool,
+        self, rs: RequestState, assembly_id: int, attachment_id: int, version_nr: int
     ) -> Response:
         """Delete a version of an attachment."""
-        if not attachment_ack_delete:
-            rs.append_validation_error((
-                "attachment_ack_delete",
-                ValueError(n_("Must be checked.")),
-            ))
-        # the check that the attachment belongs to the assembly is already done in
-        # `reconnoitre_ambience`
         if rs.has_validation_errors():
             return self.list_attachments(rs, assembly_id)
 

@@ -49,7 +49,7 @@ class TestCommon(BasicTest):
                 'is_assembly_realm': True,
                 'is_member': True,
                 'is_searchable': True,
-            }),
+            }).as_strings(),
         )
 
     def test_number_to_words(self) -> None:
@@ -190,7 +190,7 @@ class TestCommon(BasicTest):
                 self.assertIn("Can only unwrap collections.", cmt.exception.args[0])
 
     def test_untranslated_strings(self) -> None:
-        i18n_path = self.conf["REPOSITORY_PATH"] / "i18n"
+        i18n_path: pathlib.Path = self.conf["REPOSITORY_PATH"] / "i18n"
         # list of languages we currently test
         langs = ["en", "de"]
         with tempfile.TemporaryDirectory() as tempdir:
@@ -212,7 +212,7 @@ class TestCommon(BasicTest):
                     capture_output=True,
                     text=True,
                 )
-                expected_outputs = ["pybabel extract", "extracting messages from"]
+                expected_outputs = ["pybabel extract"]
                 output = result.stdout + result.stderr
                 if any(s not in output for s in expected_outputs):
                     self.fail("'make i18n-extract' didn't properly run.")

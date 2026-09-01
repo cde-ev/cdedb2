@@ -9,13 +9,12 @@ The more involved batch admission and the finance log require the "cde_admin" ro
 import collections
 import copy
 import csv
-import datetime
 import decimal
 import itertools
 import operator
 from collections import OrderedDict
 from collections.abc import Collection, Sequence
-from typing import Any, Optional
+from typing import Any, cast
 
 from werkzeug import Response
 from werkzeug.datastructures import FileStorage
@@ -39,7 +38,7 @@ from cdedb.common.i18n import get_country_code_from_country, get_localized_count
 from cdedb.common.n_ import n_
 from cdedb.common.query import QueryConstraint, QueryOperators, QueryScope
 from cdedb.common.query.log_filter import FinanceLogFilter
-from cdedb.common.roles import PERSONA_DEFAULTS
+from cdedb.common.roles import PERSONA_DEFAULTS, Realms, Roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.validate import (
     PERSONA_FULL_CREATION,
@@ -59,7 +58,6 @@ from cdedb.frontend.common import (
     check_validation as check,
     inspect_validation as inspect,
     make_epc_qr,
-    make_membership_fee_reference,
     request_extractor,
 )
 
@@ -88,58 +86,17 @@ class CdEBaseFrontend(AbstractUserFrontend):
     """This offers services to the members as well as facilities for managing
     the organization."""
 
-    realm = "cde"
+    realm = Realms.cde
 
-    @classmethod
-    def is_admin(cls, rs: RequestState) -> bool:
-        return super().is_admin(rs)
-
-    def _calculate_ejection_deadline(
-        self, persona_data: CdEDBObject, period: CdEDBObject
-    ) -> datetime.date:
-        """Helper to calculate when a membership will end."""
-        if not self.conf["PERIODS_PER_YEAR"] == 2:
-            msg = f"{self.conf['PERIODS_PER_YEAR']} periods per year not supported."
-            self.logger.error(msg)
-            return now().date()
-        periods_left = persona_data['balance'] // self.conf["MEMBERSHIP_FEE"]
-        if persona_data['trial_member']:
-            periods_left += 1
-        if period['balance_done']:
-            periods_left += 1
-        deadline = (period.get("semester_start") or now()).date().replace(day=1)
-        # With our buffer zones around the expected semester start dates there
-        # are 3 possible semesters within a year with different deadlines.
-        if deadline.month in range(5, 11):
-            # Start was two months before or 4 months after expected start for
-            # summer semester, so we assume that we are in the summer semester.
-            if periods_left % 2:
-                deadline = deadline.replace(year=deadline.year + 1, month=2)
-            else:
-                deadline = deadline.replace(month=8)
-        else:
-            # Start was two months before or 4 months after expected start for
-            # winter semester, so we assume that we are in a winter semester.
-            if deadline.month in range(1, 5):
-                # We are in the first semester of the year.
-                deadline = deadline.replace(month=2)
-            else:
-                # We are in the last semester of the year.
-                deadline = deadline.replace(year=deadline.year + 1, month=2)
-            if periods_left % 2:
-                deadline = deadline.replace(month=8)
-        return deadline.replace(year=int(deadline.year + periods_left // 2))
-
-    @access("cde")
+    @access(Roles.cde)
     def index(self, rs: RequestState) -> Response:
         """Render start page."""
         meta_info = self.coreproxy.get_meta_info(rs)
-        data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+        persona = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         deadline = None
-        reference = make_membership_fee_reference(data)
         annual_fee = self.cdeproxy.annual_membership_fee(rs)
         has_lastschrift = False
-        if "member" in rs.user.roles:
+        if Roles.member in rs.user.new_roles:
             assert rs.user.persona_id is not None
             has_lastschrift = bool(
                 self.cdeproxy.list_lastschrift(
@@ -147,29 +104,29 @@ class CdEBaseFrontend(AbstractUserFrontend):
                 )
             )
             period = self.cdeproxy.get_period(rs, self.cdeproxy.current_period(rs))
-            deadline = self._calculate_ejection_deadline(data, period)
+            deadline = persona.calculate_ejection_deadline(period)
         return self.render(
             rs,
             "index",
             {
                 'has_lastschrift': has_lastschrift,
-                'data': data,
+                'persona': persona,
                 'meta_info': meta_info,
                 'deadline': deadline,
-                'reference': reference,
                 'annual_fee': annual_fee,
             },
         )
 
-    @access("cde")
+    @access(Roles.cde)
     def membership_qr(self, rs: RequestState) -> Response:
         meta_info = self.coreproxy.get_meta_info(rs)
-        data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
-        reference = make_membership_fee_reference(data)
-        qr = make_epc_qr(meta_info.membership_fee_account, reference, amount=None)
+        user = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+        qr = make_epc_qr(
+            meta_info.membership_fee_account, user.membership_fee_reference, amount=None
+        )
         return self.serve_qrcode(rs, qr)
 
-    @access("member")
+    @access(Roles.member)
     def consent_decision_form(self, rs: RequestState) -> Response:
         """After login ask cde members for decision about searchability. Do
         this only if no decision has been made in the past.
@@ -177,18 +134,18 @@ class CdEBaseFrontend(AbstractUserFrontend):
         This is the default page after login, but most users will instantly
         be redirected.
         """
-        data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+        user = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         return self.render(
-            rs, "consent_decision", {'decided_search': data['decided_search']}
+            rs, "consent_decision", {'decided_search': user.decided_search}
         )
 
-    @access("member", modi={"POST"})
+    @access(Roles.member, modi={"POST"})
     @REQUESTdata("ack")
     def consent_decision(self, rs: RequestState, ack: bool) -> Response:
         """Record decision."""
         if rs.has_validation_errors():
             return self.consent_decision_form(rs)
-        data = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
+        user = self.coreproxy.get_cde_user(rs, rs.user.persona_id)
         new = {
             'id': rs.user.persona_id,
             'decided_search': True,
@@ -204,11 +161,11 @@ class CdEBaseFrontend(AbstractUserFrontend):
         rs.notify_return_code(code, success=message)
         if not code:
             return self.consent_decision_form(rs)
-        if not data['decided_search']:
+        if not user.decided_search:
             return self.redirect(rs, "core/index")
         return self.redirect(rs, "cde/index")
 
-    @access("cde_admin", "member")
+    @access(Roles.cde_admin, Roles.member)
     def member_stats(self, rs: RequestState) -> Response:
         """Display stats about our members."""
         simple_stats, other_stats, year_stats, institution_stats = (
@@ -227,11 +184,11 @@ class CdEBaseFrontend(AbstractUserFrontend):
             },
         )
 
-    @access("persona")
+    @access(Roles.persona)
     @REQUESTdata("is_search")
     def member_search(self, rs: RequestState, is_search: bool) -> Response:
         """Search for members."""
-        if "searchable" not in rs.user.roles:
+        if Roles.searchable not in rs.user.new_roles:
             # As this is linked externally, show a meaningful error message to
             # unprivileged users.
             rs.ignore_validation_errors()
@@ -255,7 +212,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             ),
         }
 
-        result: Optional[Sequence[CdEDBObject]] = None
+        result: Sequence[CdEDBObject] | None = None
         count = 0
 
         if not is_search:
@@ -284,7 +241,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             near_pc = rs.values['near_pc'] = rs.request.values.get('near_pc')
             near_radius = rs.values['near_radius'] = request_extractor(
                 rs,
-                {'near_radius': Optional[int]},
+                {'near_radius': int | None},
             )['near_radius']
             if pl and pu:
                 defaults['qval_postal_code,postal_code2'] = f"{pl:0<5} {pu:0<5}"
@@ -412,10 +369,10 @@ class CdEBaseFrontend(AbstractUserFrontend):
         if appraised:
             rs.ignore_validation_errors()
 
-    @access("core_admin", "cde_admin")
+    @access(Roles.core_admin, Roles.cde_admin)
     @REQUESTdata("download", "is_search")
     def user_search(
-        self, rs: RequestState, download: Optional[str], is_search: bool
+        self, rs: RequestState, download: str | None, is_search: bool
     ) -> Response:
         """Perform search."""
         events = self.pasteventproxy.list_past_events(rs)
@@ -445,7 +402,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
             choices=choices,
         )
 
-    @access("core_admin", "cde_admin")
+    @access(Roles.core_admin, Roles.cde_admin)
     def create_user_form(self, rs: RequestState) -> Response:
         defaults = {
             'is_member': True,
@@ -458,7 +415,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         merge_dicts(rs.values, defaults)
         return super().create_user_form(rs)
 
-    @access("core_admin", "cde_admin", modi={"POST"})
+    @access(Roles.core_admin, Roles.cde_admin, modi={"POST"})
     @REQUESTdatadict(*filter_none(PERSONA_FULL_CREATION['cde']))
     def create_user(self, rs: RequestState, data: CdEDBObject) -> Response:
         defaults = {
@@ -473,12 +430,12 @@ class CdEBaseFrontend(AbstractUserFrontend):
         data.update(defaults)
         return super().create_user(rs, data)
 
-    @access("cde_admin")
+    @access(Roles.cde_admin)
     def batch_admission_form(
         self,
         rs: RequestState,
-        data: Optional[list[CdEDBObject]] = None,
-        csvfields: Optional[tuple[str, ...]] = None,
+        data: list[CdEDBObject] | None = None,
+        csvfields: tuple[str, ...] | None = None,
     ) -> Response:
         """Render form.
 
@@ -544,11 +501,13 @@ class CdEBaseFrontend(AbstractUserFrontend):
             rs.values[f"resolution{datum['lineno']}"] = LineResolutions.none
             warnings.append((None, ValueError(n_("Entry changed."))))
 
-        persona: CdEDBObject = copy.deepcopy(datum['raw'])
-        persona = {
-            key: val.strip() if isinstance(val, str) else val
-            for key, val in persona.items()
-        }
+        persona = cast(
+            CdEDBObject,
+            {
+                key: val.strip() if isinstance(val, str) else val
+                for key, val in copy.deepcopy(datum['raw']).items()
+            },
+        )
         # Adapt input of gender from old convention (this is the format
         # used by external processes, i.e. BuB)
         gender_convert = {
@@ -731,7 +690,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         trial_membership: bool,
         consent: bool,
         sendmail: bool,
-    ) -> tuple[bool, Optional[int], Optional[int]]:
+    ) -> tuple[bool, int | None, int | None]:
         """Resolve all entries in the batch admission form.
 
         :returns: Success information and for positive outcome the
@@ -750,7 +709,10 @@ class CdEBaseFrontend(AbstractUserFrontend):
             'persona',
         }
         relevant_data = [
-            {k: v for k, v in item.items() if k in relevant_keys} for item in data
+            vtypes.BatchAdmissionEntry({
+                k: v for k, v in item.items() if k in relevant_keys
+            })
+            for item in data
         ]
         with TransactionObserver(rs, self, "perform_batch_admission"):
             success, stats = self.cdeproxy.perform_batch_admission(
@@ -762,9 +724,15 @@ class CdEBaseFrontend(AbstractUserFrontend):
             assert isinstance(stats, BatchAdmissionStats)
             # Send mail after the transaction succeeded
             if sendmail:
-                personas = self.coreproxy.get_personas(rs, stats.new_accounts)
+                personas = self.coreproxy.get_cde_users(rs, stats.new_accounts)
+                stati = self.coreproxy.get_personas_status(rs, stats.new_accounts)
                 for persona in personas.values():
-                    self.send_welcome_mail(rs, persona)
+                    self.send_welcome_mail(
+                        rs,
+                        persona,
+                        stati[persona.id],
+                        is_trial_member=persona.trial_member,
+                    )
             count_new = len(stats.new_accounts | stats.new_members)
             return True, count_new, len(stats.modified_accounts)
 
@@ -796,7 +764,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         else:
             return "low"
 
-    @access("cde_admin", modi={"POST"})
+    @access(Roles.cde_admin, modi={"POST"})
     @REQUESTfile("accounts_file")
     @REQUESTdata(
         "membership", "trial_membership", "consent", "sendmail", "finalized", "accounts"
@@ -809,8 +777,8 @@ class CdEBaseFrontend(AbstractUserFrontend):
         consent: bool,
         sendmail: bool,
         finalized: bool,
-        accounts: Optional[str],
-        accounts_file: Optional[FileStorage],
+        accounts: str | None,
+        accounts_file: FileStorage | None,
     ) -> Response:
         """Make a lot of new accounts.
 
@@ -823,15 +791,17 @@ class CdEBaseFrontend(AbstractUserFrontend):
         The internal parameter finalized is used to explicitly signal at
         what point account creation will happen.
         """
-        accounts_file = check(rs, vtypes.CSVFile | None, accounts_file, "accounts_file")
+        validated_accounts_file = check(
+            rs, vtypes.CSVFile | None, accounts_file, "accounts_file"
+        )
         if rs.has_validation_errors():
             return self.batch_admission_form(rs)
 
-        if accounts_file and accounts:
+        if validated_accounts_file and accounts:
             rs.notify("warning", n_("Only one input method allowed."))
             return self.batch_admission_form(rs)
-        elif accounts_file:
-            rs.values["accounts"] = accounts = accounts_file
+        elif validated_accounts_file:
+            rs.values["accounts"] = accounts = validated_accounts_file
             accountlines = accounts.splitlines()
         elif accounts:
             accountlines = accounts.splitlines()
@@ -856,12 +826,12 @@ class CdEBaseFrontend(AbstractUserFrontend):
             params: vtypes.TypeMapping = {
                 # as on the first submit no values for the resolution are transmitted,
                 # we have to cast None -> LineResolutions.none after extraction
-                f"resolution{lineno}": Optional[LineResolutions],
-                f"doppelganger_id{lineno}": Optional[vtypes.ID],
-                f"hash{lineno}": Optional[str],
-                f"is_orga{lineno}": Optional[bool],
-                f"is_instructor{lineno}": Optional[bool],
-                f"update_username{lineno}": Optional[bool],
+                f"resolution{lineno}": LineResolutions | None,
+                f"doppelganger_id{lineno}": vtypes.ID | None,
+                f"hash{lineno}": str | None,
+                f"is_orga{lineno}": bool | None,
+                f"is_instructor{lineno}": bool | None,
+                f"update_username{lineno}": bool | None,
             }
             tmp = request_extractor(rs, params)
             if tmp[f"resolution{lineno}"] is None:
@@ -972,7 +942,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
     def determine_open_permits(
         self,
         rs: RequestState,
-        lastschrift_ids: Optional[Collection[int]] = None,
+        lastschrift_ids: Collection[int] | None = None,
     ) -> set[int]:
         """Find ids, which to debit this period.
 
@@ -997,7 +967,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
         )
         return set(lastschrift_ids) - set(transaction_ids.values())
 
-    @access("member", "cde_admin")
+    @access(Roles.member, Roles.cde_admin)
     def view_misc(self, rs: RequestState) -> Response:
         """View miscellaneos things."""
         meta_data = self.coreproxy.get_meta_info(rs)
@@ -1006,7 +976,7 @@ class CdEBaseFrontend(AbstractUserFrontend):
 
     @REQUESTdatadict(*FinanceLogFilter.requestdict_fields())
     @REQUESTdata("download")
-    @access("cde_admin", "auditor")
+    @access(Roles.cde_admin, Roles.auditor)
     def view_finance_log(
         self, rs: RequestState, data: CdEDBObject, download: bool
     ) -> Response:

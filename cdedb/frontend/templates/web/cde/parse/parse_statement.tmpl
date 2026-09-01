@@ -59,7 +59,17 @@
                         {% if persona %}
                             <li>
                                 {% trans %}Matched User{% endtrans %}:
-                                {{ util.print_doppelganger(persona, link=True) }}
+                                {{ util.persona_anchor(persona, include_nickname=True) }}
+                                {% if persona['is_archived'] %}
+                                    (<i>{{ gettext("archived") }}</i>)
+                                {% else %}
+                                    &lt;{{ persona['username'] }}&gt;
+                                {% endif %}
+                                {%- if persona|hasattr('birthday') and persona['birthday'] %}
+                                    ({{ gettext("born") }}
+                                    {{ persona['birthday']|date(lang=lang) or "-" }})
+                                {% endif %}
+                                {{ persona['id']|cdedbid }}
                             </li>
                         {% endif %}
                         {% if event %}
@@ -199,7 +209,7 @@
             {% endif %}
             </div>
             <div class="p button-par">
-            {% if params["jump_order"][None] %}
+            {% if None in params["jump_order"] %}
                 <a class="btn btn-default btn-sm" href="#transaction-container{{ params["jump_order"][None] }}">
                     {{ util.make_icon('arrow-down') }}
                     {% trans %}

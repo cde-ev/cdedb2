@@ -18,7 +18,7 @@
         {{ util.anti_csrf_token('core/do_username_change') }}
         {{ util.input_hidden(name="new_username") }}
         {{ util.form_input_text(name="password", type="password", label=gettext("Password"),
-                                attributes='autocomplete="current-password"'|s) }}
+                                autocomplete="current-password") }}
         {{ util.form_input_submit(label=gettext("Confirm")) }}
     </form>
 {% endblock %}

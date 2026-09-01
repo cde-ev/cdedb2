@@ -59,7 +59,16 @@ rules = [
         get_("/", endpoint="index"),
         sub(
             "/core",
-            get_("/api/resolve", endpoint="api_resolve_username"),
+            sub(
+                "/api",
+                get_("/resolve", endpoint="api_cyberaka_resolve_username"),
+                sub(
+                    "/zammad",
+                    get_("/address", endpoint="api_zammad_resolve_username"),
+                    get_("/persona", endpoint="api_zammad_resolve_persona_id"),
+                    get_("/subscribers", endpoint="api_zammad_list_subscribers"),
+                ),
+            ),
             post("/markdown/parse", endpoint="markdown_parse"),
             post("/login", endpoint="login"),
             post("/logout", endpoint="logout"),
@@ -96,6 +105,7 @@ rules = [
                 post("/password/change", endpoint="change_password"),
                 get_("/events", endpoint="show_user_events_self"),
                 get_("/mailinglists", endpoint="show_user_mailinglists_self"),
+                get_("/assemblies", endpoint="show_user_assemblies_self"),
                 get_("/lastschrift", endpoint="my_lastschrift"),
             ),
             sub(
@@ -142,6 +152,7 @@ rules = [
                 get_("/show", endpoint="show_user"),
                 get_("/events", endpoint="show_user_events"),
                 get_("/mailinglists", endpoint="show_user_mailinglists"),
+                get_("/assemblies", endpoint="show_user_assemblies"),
                 get_("/measures", endpoint="show_user_measures"),
                 get_("/vcard", endpoint="download_vcard"),
                 get_("/vcard/qr", endpoint="qr_vcard"),
@@ -176,7 +187,7 @@ rules = [
                 get_("/list", endpoint="list_privilege_changes"),
             ),
             sub(
-                "/privileges/<int:privilege_change_id>",
+                "/privileges/<int:change_id>",
                 get_("/show", endpoint="show_privilege_change"),
                 post("/decide", endpoint="decide_privilege_change"),
             ),
@@ -204,7 +215,7 @@ rules = [
                     ),
                     post("/involved/add", endpoint="add_involved"),
                     sub(
-                        "/involved/<int:persona_id>",
+                        "/involved/<int:involved_id>",
                         get_("/companions/change", endpoint="manage_companions_form"),
                         post("/companions/add", endpoint="add_companions"),
                         sub(
@@ -597,7 +608,6 @@ rules = [
                     post("/add", endpoint="add_registration"),
                     get_("/query", endpoint="registration_query"),
                     get_("/status", endpoint="registration_status"),
-                    get_("/qr", endpoint="registration_fee_qr"),
                     get_("/amend", endpoint="amend_registration_form"),
                     post("/amend", endpoint="amend_registration"),
                     get_("/questionnaire", endpoint="additional_questionnaire_form"),
@@ -628,6 +638,7 @@ rules = [
                         sub(
                             "/fee",
                             get_("/summary", endpoint="show_registration_fee"),
+                            get_("/qr", endpoint="registration_fee_qr"),
                             get_("/add", endpoint="add_new_personalized_fee_form"),
                             post("/add", endpoint="add_new_personalized_fee"),
                             sub(
@@ -678,6 +689,8 @@ rules = [
                     get_("/setselect", endpoint="field_multiset_select"),
                     get_("/summary", endpoint="field_summary_form"),
                     post("/summary", endpoint="field_summary"),
+                    get_("/prune", endpoint="prune_field_select"),
+                    post("/prune", endpoint="prune_fields"),
                     sub(
                         "/<int:field_id>",
                         get_("/set", endpoint="field_multiset_form"),

@@ -10,12 +10,13 @@ import decimal
 import enum
 import logging
 from collections.abc import Collection, Mapping, Sequence
-from typing import Optional, cast
+from typing import cast
 
 import psycopg2.extensions
 
 from cdedb.common import CdEDBObject, DefaultReturnCode, PsycoJson, unwrap
-from cdedb.database.connection import ConnectionContainer, n_
+from cdedb.common.n_ import n_
+from cdedb.database.connection import ConnectionContainer
 from cdedb.database.conversions import from_db_output, to_db_input
 from cdedb.models.common import CdEDataclass
 
@@ -93,7 +94,7 @@ class SqlQueryBackend:
 
     def query_one(
         self, container: ConnectionContainer, query: str, params: Params
-    ) -> Optional[CdEDBObject]:
+    ) -> CdEDBObject | None:
         """Execute a query in a safe way (inside a transaction).
 
         :returns: First result of query or None if there is none
@@ -125,7 +126,7 @@ class SqlQueryBackend:
         entity_key: str = "id",
         drop_on_conflict: bool = False,
         update_on_conflict: bool = False,
-        conflict_target: Optional[str] = None,
+        conflict_target: str | None = None,
     ) -> int:
         """Generic SQL insertion query.
 
@@ -214,7 +215,7 @@ class SqlQueryBackend:
         columns: Sequence[str],
         entity: EntityKey,
         entity_key: str = "id",
-    ) -> Optional[CdEDBObject]:
+    ) -> CdEDBObject | None:
         """Generic SQL select query for one row.
 
         See :py:meth:`sql_select` for thoughts on this.

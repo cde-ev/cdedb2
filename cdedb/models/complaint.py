@@ -7,10 +7,11 @@ import functools
 import itertools
 from collections.abc import Collection
 from itertools import chain
-from typing import Self, Union
+from typing import Self
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.core as models_core
 from cdedb.common import CdEDBObject, User, now
 from cdedb.common.n_ import n_
 from cdedb.common.sorting import Sortkey, xsorted
@@ -96,81 +97,98 @@ class Case(CdEDataclass):
     entries: CdEDataclassMap["ComplaintEntry"] = dataclasses.field(
         metadata=Meta.asdict_include.as_dict
     )
-    involved: dict[const.ComplaintInvolvementType, set[int]] = dataclasses.field(
+    involved: dict[vtypes.InvolvedID, "ComplaintInvolved"] = dataclasses.field(
         metadata=Meta.exclude.as_dict,
     )
-    informed_involved: set[int] = dataclasses.field(metadata=Meta.exclude.as_dict)
+
+    personas: CdEDataclassMap[models_core.CorePersona] = dataclasses.field(
+        init=False,
+        compare=False,
+        repr=False,
+        default_factory=dict,
+        metadata=Meta.exclude.as_dict,
+    )
 
     @functools.cached_property
-    def all_involved(self) -> dict[int, const.ComplaintInvolvementType]:
-        return {
-            persona_id: involved_type
-            for involved_type, involved in self.involved.items()
-            for persona_id in involved
-        }
-
-    @functools.cached_property
-    def all_properly_involved(self) -> dict[int, const.ComplaintInvolvementType]:
+    def properly_involved(self) -> dict[vtypes.InvolvedID, "ComplaintInvolved"]:
         """This ignores the withheld type."""
         return {
-            persona_id: involved_type
-            for involved_type, involved in self.involved.items()
-            if involved_type != const.ComplaintInvolvementType.withheld
-            for persona_id in involved
+            involved_id: involved
+            for involved_id, involved in self.involved.items()
+            if involved.involvement_type != const.ComplaintInvolvementType.withheld
         }
 
-    # Companions to set of involved personas they accompany
-    companions: dict[int, set[int]] = dataclasses.field(
-        metadata=Meta.exclude.as_dict,
-    )
+    @functools.cached_property
+    def involved_persona_ids(self) -> set[vtypes.PersonaID]:
+        return {
+            involved.persona_id
+            for involved in self.involved.values()
+            if involved.persona_id is not None
+        }
 
     @functools.cached_property
-    def companions_by_involved(self) -> dict[int, set[int]]:
-        ret: dict[int, set[int]] = {}
-        for companion, accompanied in self.companions.items():
-            for persona_id in accompanied:
-                ret.setdefault(persona_id, set()).add(companion)
+    def properly_involved_persona_ids(self) -> set[vtypes.PersonaID]:
+        return {
+            involved.persona_id
+            for involved in self.properly_involved.values()
+            if involved.persona_id is not None
+        }
+
+    @functools.cached_property
+    def involved_by_type(
+        self,
+    ) -> dict[const.ComplaintInvolvementType, list["ComplaintInvolved"]]:
+        ret: dict[const.ComplaintInvolvementType, list[ComplaintInvolved]] = {}
+        for involved in xsorted(self.involved.values()):
+            ret.setdefault(involved.involvement_type, []).append(involved)
         return ret
 
     @functools.cached_property
+    def involved_by_persona_id(self) -> dict[vtypes.PersonaID, "ComplaintInvolved"]:
+        return {
+            involved.persona_id: involved
+            for involved in self.involved.values()
+            if involved.persona_id
+        }
+
+    def involved_persona_ids_by_type(
+        self, it: const.ComplaintInvolvementType
+    ) -> set[vtypes.PersonaID]:
+        return {
+            involved.persona_id
+            for involved in self.involved.values()
+            if involved.persona_id is not None and involved.involvement_type == it
+        }
+
+    def get_companions(
+        self, is_active: bool | None
+    ) -> dict[vtypes.PersonaID, set[vtypes.InvolvedID]]:
+        """Maps all companions to a set of involved_ids."""
+        ret: dict[vtypes.PersonaID, set[vtypes.InvolvedID]] = {}
+        for involved_id, involved in self.involved.items():
+            for companion_id in involved.get_companions(is_active):
+                ret.setdefault(companion_id, set()).add(involved_id)
+        return ret
+
     def companions_by_involved_type(
-        self,
+        self, is_active: bool | None
     ) -> dict[const.ComplaintInvolvementType, set[int]]:
         ret: dict[const.ComplaintInvolvementType, set[int]] = {}
-        for involvement_type, involved_personas in self.involved.items():
-            for persona_id in involved_personas:
-                companions = self.companions_by_involved.get(persona_id, set())
-                ret.setdefault(involvement_type, set()).update(companions)
-        return ret
-
-    withdrawn_companions: dict[int, set[int]] = dataclasses.field(
-        metadata=Meta.exclude.as_dict,
-    )
-
-    @functools.cached_property
-    def withdrawn_companions_by_involved(self) -> dict[int, set[int]]:
-        ret: dict[int, set[int]] = {}
-        for companion, accompanied in self.withdrawn_companions.items():
-            for persona_id in accompanied:
-                ret.setdefault(persona_id, set()).add(companion)
-        return ret
-
-    @functools.cached_property
-    def active_companions(self) -> dict[int, set[int]]:
-        ret: dict[int, set[int]] = {}
-        for companion, accompanied in self.companions.items():
-            withdrawn = self.withdrawn_companions.get(companion, set())
-            if active_accompanied := (accompanied - withdrawn):
-                ret[companion] = active_accompanied
+        for involved_id, involved in self.involved.items():
+            ret.setdefault(involved.involvement_type, set()).update(
+                involved.get_companions(is_active)
+            )
         return ret
 
     def adverse_companions(
-        self, involved_type: const.ComplaintInvolvementType
+        self, involvement_type: const.ComplaintInvolvementType
     ) -> set[int]:
         return set(
             chain.from_iterable(
-                self.companions_by_involved_type.get(type_, set())
-                for type_ in involved_type.adverse()
+                self.companions_by_involved_type(is_active=True).get(
+                    involvement_type_, set()
+                )
+                for involvement_type_ in involvement_type.adverse()
             )
         )
 
@@ -180,12 +198,13 @@ class Case(CdEDataclass):
         Beware that his is not symmetric."""
         it = const.ComplaintInvolvementType
         return bool(
-            case.all_properly_involved.keys() & self.involved.get(it.target, set())
+            case.properly_involved_persona_ids
+            & self.involved_persona_ids_by_type(it.target)
         ) and bool(
-            case.all_properly_involved.keys()
+            case.properly_involved_persona_ids
             & (
-                self.involved.get(it.affected, set())
-                | self.involved.get(it.appellant, set())
+                self.involved_persona_ids_by_type(it.affected)
+                | self.involved_persona_ids_by_type(it.appellant)
             )
         )
 
@@ -193,11 +212,11 @@ class Case(CdEDataclass):
         """Whether a user can see a case in principle.
 
         For now, assumes the user is at least complaint admin."""
-        return user.persona_id not in self.all_involved
+        return user.persona_id not in self.involved_persona_ids
 
     def get_persona_ids(self, log_entries: tuple[CdEDBObject, ...]) -> set[int]:
-        ret: set[int] = set(self.all_involved)
-        ret.update(self.companions)
+        ret: set[int] = set(self.involved_persona_ids)
+        ret.update(self.get_companions(is_active=None).keys())
         if log_entries:
             ret.update(e['submitted_by'] for e in log_entries if e['submitted_by'])
             ret.update(e['persona_id'] for e in log_entries if e['persona_id'])
@@ -233,7 +252,7 @@ class Case(CdEDataclass):
 
     def list_entries(
         self, log_entries: tuple[CdEDBObject, ...], include_deleted: bool = False
-    ) -> list[Union[CdEDBObject, "ComplaintEntry"]]:
+    ) -> list["CdEDBObject | ComplaintEntry"]:
         mutable_entries = [
             e for e in self.entries.values() if e.active_version or include_deleted
         ]
@@ -258,31 +277,30 @@ class Case(CdEDataclass):
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> Self:
-        data["informed_involved"] = set()
-        new_involved: dict[const.ComplaintInvolvementType, set[int]] = {}
-        for involved in data["involved"]:
-            involved_type = const.ComplaintInvolvementType(involved[1])
-            if involved_type not in new_involved:
-                new_involved[involved_type] = set()
-            new_involved[involved_type].add(involved[0])
-            if involved[2]:
-                data["informed_involved"].add(involved[0])
-        data["involved"] = dict(sorted(new_involved.items()))
+        data["involved"] = {
+            involved_datum[0]: ComplaintInvolved(
+                id=vtypes.InvolvedID(involved_datum[0]),
+                persona_id=vtypes.PersonaID(involved_datum[1]),
+                involvement_type=const.ComplaintInvolvementType(involved_datum[2]),
+                is_informed=bool(involved_datum[3]),
+                _companions={},
+            )
+            for involved_datum in data["involved"]
+        }
 
-        new_companions: dict[int, set[int]] = {}
-        withdrawn_companions: dict[int, set[int]] = {}
-        for companion in data["companions"]:
-            new_companions.setdefault(companion[1], set()).add(companion[0])
-            if companion[2]:
-                withdrawn_companions.setdefault(companion[1], set()).add(companion[0])
-        data["companions"] = new_companions
-        data["withdrawn_companions"] = withdrawn_companions
+        for companion in data.pop("companions"):
+            data["involved"][vtypes.InvolvedID(companion[0])]._companions.update({
+                vtypes.PersonaID(companion[1]): not companion[2]
+            })
 
         data["entries"] = ComplaintEntry.many_from_database(data["entries"])
-        ret = super().from_database(data)
-        for entry in data["entries"].values():
-            entry.case = ret
-        return ret
+        return super().from_database(data)
+
+    def __post_init__(self) -> None:
+        for entry in self.entries.values():
+            entry.case = self
+        for involved in self.involved.values():
+            involved.case = self
 
     @classmethod
     def get_select_query(
@@ -294,8 +312,9 @@ class Case(CdEDataclass):
                 array(
                     SELECT
                         ARRAY[
+                            involved.id,
                             involved.persona_id,
-                            involved.involved_type,
+                            involved.involvement_type,
                             involved.is_informed::int
                         ]
                     FROM {ComplaintInvolved.database_table} AS involved
@@ -304,7 +323,7 @@ class Case(CdEDataclass):
                 array(
                     SELECT
                         ARRAY[
-                            companion.involved_persona_id,
+                            companion.involved_id,
                             companion.companion_persona_id,
                             companion.is_withdrawn::int
                         ]
@@ -331,7 +350,7 @@ class ComplaintEntry(CdEDataclass):
 
     parent_id: vtypes.ID | None = None
 
-    concerned_id: vtypes.CdedbID | None = None
+    concerned_id: vtypes.PersonaID | None = None
 
     is_revoked: bool = dataclasses.field(
         default=False,
@@ -392,10 +411,11 @@ class ComplaintEntry(CdEDataclass):
         data["all_versions"] = list(
             ComplaintEntryVersion.many_from_database(data["all_versions"]).values()
         )
-        ret = super().from_database(data)
-        for version in data["all_versions"]:
-            version.entry = ret
-        return ret
+        return super().from_database(data)
+
+    def __post_init__(self) -> None:
+        for version in self.all_versions:
+            version.entry = self
 
     @classmethod
     def mandatory_form_fields(cls, *, creation: bool) -> set[str]:
@@ -479,13 +499,15 @@ class ComplaintEntryVersion(CdEDataclass):
     )
 
     ctime: datetime.datetime = dataclasses.field(metadata=Meta.input_exclude.as_dict)
-    submitted_by: vtypes.ID = dataclasses.field(metadata=Meta.input_exclude.as_dict)
+    submitted_by: vtypes.PersonaID = dataclasses.field(
+        metadata=Meta.input_exclude.as_dict
+    )
 
     dtime: datetime.datetime | None = dataclasses.field(
         default=None,
         metadata=Meta.input_exclude.as_dict,
     )
-    deleted_by: vtypes.ID | None = dataclasses.field(
+    deleted_by: vtypes.PersonaID | None = dataclasses.field(
         default=None,
         metadata=Meta.input_exclude.as_dict,
     )
@@ -497,16 +519,20 @@ class ComplaintEntryVersion(CdEDataclass):
     marked_for_purge: datetime.datetime | None = dataclasses.field(
         default=None, metadata=Meta.input_exclude.as_dict
     )
-    purged_by: vtypes.ID | None = dataclasses.field(
+    purged_by: vtypes.PersonaID | None = dataclasses.field(
         default=None, metadata=Meta.input_exclude.as_dict
     )
     is_purged: bool = dataclasses.field(
         default=False, metadata=Meta.input_exclude.as_dict
     )
 
-    authors: vtypes.CdedbIDList = dataclasses.field(
+    authors: set[vtypes.PersonaID] = dataclasses.field(
         metadata=Meta.database_exclude.as_dict,
     )
+
+    @functools.cached_property
+    def author_personas(self) -> list[models_core.Persona]:
+        return xsorted(self.entry.case.personas[author] for author in self.authors)
 
     def get_sortkey(self) -> Sortkey:
         return (self.entry_id, self.ctime)
@@ -547,9 +573,40 @@ class ComplaintAuthors:
     entity_key = "entry_version_id"
 
 
-class ComplaintInvolved:
+@dataclasses.dataclass()
+class ComplaintInvolved(CdEDataclass):
     database_table = "complaint.involved"
     entity_key = "case_id"
+
+    id: vtypes.InvolvedID
+    persona_id: vtypes.PersonaID | None
+    case: Case = dataclasses.field(init=False, compare=False, repr=False)
+
+    involvement_type: const.ComplaintInvolvementType
+    is_informed: bool
+    _companions: dict[vtypes.PersonaID, bool]
+
+    @property
+    def persona(self) -> models_core.Persona | None:
+        if self.persona_id:
+            return self.case.personas[self.persona_id]
+        return None
+
+    def get_companions(self, is_active: bool | None) -> dict[vtypes.PersonaID, bool]:
+        if is_active is None:
+            return dict(self._companions)
+        else:
+            return {
+                companion: is_active_
+                for companion, is_active_ in self._companions.items()
+                if is_active == is_active_
+            }
+
+    def get_sortkey(self) -> Sortkey:
+        return (
+            self.involvement_type,
+            self.persona.get_sortkey() if self.persona else (),
+        )
 
 
 class ComplaintCompanion:

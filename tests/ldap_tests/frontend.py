@@ -3,7 +3,6 @@
 
 import ssl
 from collections.abc import Mapping
-from typing import Optional
 
 import ldap3
 from ldap3 import ALL_ATTRIBUTES
@@ -70,7 +69,7 @@ class TestLDAP(BasicTest):
         password: str = test_dua_pw,
         search_base: str = root_dn,
         attributes: list[str] | str = ALL_ATTRIBUTES,
-        excluded_attributes: Optional[list[str]] = None,
+        excluded_attributes: list[str] | None = None,
     ) -> None:
         with ldap3.Connection(
             self.server,
@@ -99,8 +98,8 @@ class TestLDAP(BasicTest):
         self,
         search_filter: str,
         *,
-        except_users: Optional[set[str]] = None,
-        only_duas: Optional[set[str]] = None,
+        except_users: set[str] | None = None,
+        only_duas: set[str] | None = None,
         search_base: str = root_dn,
         attributes: list[str] | str = ALL_ATTRIBUTES,
     ) -> None:
@@ -112,7 +111,7 @@ class TestLDAP(BasicTest):
         """
         except_users = except_users or set()
         # by default, all duas are expected to yield some results
-        only_duas = only_duas or self.DUAs
+        only_duas = only_duas or set(self.DUAs)
         for identities, passwords, exceptions in [
             (self.USERS, self.USER_passwords, except_users),
             (self.DUAs, self.DUA_passwords, only_duas),
@@ -346,7 +345,7 @@ class TestLDAP(BasicTest):
         )
 
         user_id = 2
-        expectation: dict[str, list[str] | list[NearlyNow]] = {
+        expectation = {
             'uid': ['2'],
             'mail': ['berta@example.cde'],
             'ipaUniqueID': ['personas/2'],
@@ -372,7 +371,7 @@ class TestLDAP(BasicTest):
         group_cn = "is_cdelokal_admin"
         expectation: dict[str, list[str] | list[NearlyNow]] = {
             'cn': ['is_cdelokal_admin'],
-            'description': ['CdELokal-Administratoren'],
+            'description': ['CdELokal-Admins'],
             'ipaUniqueID': ['status_groups/is_cdelokal_admin'],
             'uniqueMember': [
                 'uid=1,ou=users,dc=cde-ev,dc=de',
@@ -617,7 +616,7 @@ class TestLDAP(BasicTest):
             'cn=kongress-leitung-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
             'cn=kongress-owner@lists.cde-ev.de,ou=ml-moderators,ou=groups,dc=cde-ev,dc=de',
         }
-        expectation_orga: set[str] = set()
+        expectation_orga = set()
         expectation_presider = {
             'cn=presiders-1,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',
             'cn=presiders-3,ou=assembly-presiders,ou=groups,dc=cde-ev,dc=de',
@@ -744,7 +743,7 @@ class TestLDAP(BasicTest):
             self.assertEqual(['2'], conn.entries[1].entry_attributes_as_dict["uid"])
 
             # second page
-            cookie = conn.result["controls"]["1.2.840.113556.1.4.319"]["value"][
+            cookie: bytes = conn.result["controls"]["1.2.840.113556.1.4.319"]["value"][
                 "cookie"
             ]
             self.assertNotEqual(b"", cookie)
@@ -774,7 +773,9 @@ class TestLDAP(BasicTest):
             cookie = conn.result["controls"]["1.2.840.113556.1.4.319"]["value"][
                 "cookie"
             ]
-            size = conn.result["controls"]["1.2.840.113556.1.4.319"]["value"]["size"]
+            size: int = conn.result["controls"]["1.2.840.113556.1.4.319"]["value"][
+                "size"
+            ]
             self.assertNotEqual(b"", cookie)
             self.assertLess(size, 40)
             conn.search(

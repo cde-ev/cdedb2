@@ -58,27 +58,29 @@
                 {% trans %}Presiders{% endtrans %}
             </dt>
             <dd id="assembly-presiders">
-                {% for anid, entry in presiders|keydictsort(EntitySorter.persona) %}
-                    {{ util.persona_anchor(entry, with_titles=True) }}
+                {# The dict is already sorted. #}
+                {% for presider in presiders.values() %}
+                    {{ util.persona_anchor(presider, with_titles=True) }}
                     {%- if not loop.last %},{% endif %}
                 {% endfor %}
             </dd>
         {% endif %}
     </dl>
 
-    {% if "assembly_mgmt" in user.admin_views and ambience['assembly']['is_active'] %}
+    {% if user.admin_views.has(AdminViews.assembly_presider) and ambience['assembly']['is_active'] %}
         <div class="row">
         <div class="col-md-6" id="manage-presiders">
             {% call util.bootstrap_panel(title=gettext("Presiders"), icon='user-friends') %}
             <ul>
-                {% for anid, entry in presiders|keydictsort(EntitySorter.persona) %}
+                {# The dict is already sorted. #}
+                {% for presider in presiders.values() %}
                     <li class="hide-hover-container clearfix-after">
-                        {{ util.persona_anchor(entry, with_titles=True) }}
-                        ({{ anid|cdedbid }})
+                        {{ util.persona_anchor(presider, with_titles=True) }}
+                        ({{ presider.id|cdedbid }})
                         <form action="{{ cdedblink('assembly/remove_presider') }}" method="POST"
-                                id="removepresiderform{{ anid }}" class="hide-hover display-inline">
+                                id="removepresiderform{{ presider.id }}" class="hide-hover display-inline">
                             {{ util.anti_csrf_token('assembly/remove_presider') }}
-                            {{ util.input_hidden(name="presider_id", value=anid) }}
+                            {{ util.input_hidden(name="presider_id", value=presider.id) }}
                             {{ util.ack_delete(gettext("The presider will be removed from the assembly.")) }}
                             {{ util.input_submit(label="", title=gettext("Remove Presider"), icon='minus',
                                                  aclass='btn btn-xs btn-danger list-button-float') }}
@@ -111,8 +113,10 @@
         </div>
     {% endif %}
 
-    {% if ambience['assembly']['notes'] and ("assembly_presider" in user.admin_views
-                                             or ambience['assembly']['id'] in user.presider) %}
+    {% if ambience['assembly']['notes'] and (
+            user.admin_views.has(AdminViews.assembly_presider)
+            or ambience['assembly']['id'] in user.presider
+        ) %}
         {% call util.bootstrap_panel(title=gettext("Admin Notes"), icon="tag", aclass="panel-default panel-condensed") %}
             <div id="notes">
                 {{ ambience['assembly']['notes']|md }}
@@ -140,9 +144,11 @@
         {% endcall %}
     {% endif %}
 
-    {% if "assembly_mgmt" in user.admin_views or (
+    {% if user.admin_views.has(AdminViews.assembly_mgmt) or (
             values['assembly_id'] in user.presider and ambience['assembly']['is_active'] and (
-                not ambience['assembly']['presider_address'] or not attendee_list_exists)) %}
+                not ambience['assembly']['presider_address'] or not attendee_list_exists
+            )
+        ) %}
         {# This ensures no empty box is shown for presiders. #}
         {% if ambience['assembly']['is_active'] or "ballot_is_locked" not in delete_blockers %}
             {% call util.bootstrap_panel(title=gettext("Actions"), icon="exclamation-triangle", aclass="panel-danger mosp") %}

@@ -3,7 +3,7 @@ Liebes Akademieteam,
 Die folgenden Personen wurden der Veranstaltung "{{ event.title }}"
 durch {{ user|persona_name(include_nickname=True) }} als {{ role_str }} hinzugefügt:
 
-{% for persona in personas %}
+{% for persona in personas.values() %}
 - {{ persona|persona_name(include_nickname=True) }}
 {% endfor %}
 

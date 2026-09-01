@@ -3,6 +3,7 @@
 import collections.abc
 import datetime
 import decimal
+import enum
 import json
 import numbers
 import unittest.mock
@@ -15,6 +16,7 @@ import cdedb.database.constants as const
 import cdedb.models.complaint as models_complaint
 from cdedb.common import CdEDBObject, RequestState, nearly_now, now
 from cdedb.common.query.log_filter import EventLogFilter
+from cdedb.common.roles import Realms
 from cdedb.common.sorting import xsorted
 from tests.common import CronTest, event_keeper, execsql, prepsql, storage
 
@@ -33,10 +35,14 @@ SQL_DATA = dict[
     | decimal.Decimal
     | int
     | bool
-    | dict[str, Any],
+    | dict[str, Any]
+    | enum.Enum,
 ]
 
 RS = cast(RequestState, None)
+
+
+EventID = lambda x: vtypes.EventID(vtypes.ID(x))
 
 
 def format_insert_sql(table: str, data: SQL_DATA) -> str:
@@ -54,6 +60,8 @@ def format_insert_sql(table: str, data: SQL_DATA) -> str:
             tmp[key] = f"{value}"
         elif isinstance(value, collections.abc.Mapping):
             tmp[key] = f"'{json.dumps(value)}'::jsonb"
+        elif isinstance(value, enum.Enum):
+            tmp[key] = f"{value.value}"
         else:
             raise ValueError(f"Unknown datum {key} -> {value}")  # pragma: no cover
     keys = tuple(tmp)
@@ -65,7 +73,7 @@ def format_insert_sql(table: str, data: SQL_DATA) -> str:
 def genesis_template(**kwargs: Any) -> str:
     defaults: SQL_DATA = {
         'ctime': now(),
-        'realm': "ml",
+        'realm': Realms.ml,
         # This seems like a mypy bug:
         'status': const.GenesisStati.to_review.value,
         'username': "zaphod@example.cde",
@@ -626,7 +634,7 @@ class TestCron(CronTest):
         self.assertTrue(store.is_available(old_attachment_hash))
 
     def test_cleanup_event_checkin_helpers(self) -> None:
-        event_id = 1
+        event_id = EventID(1)
         log_filter = EventLogFilter(
             event_id=event_id,
             codes=[
@@ -716,14 +724,14 @@ class TestCron(CronTest):
                 length=None,
                 timestamp=None,
                 ctime=ctime,
-                submitted_by=vtypes.ID(1),
+                submitted_by=cast(vtypes.PersonaID, 1),
                 dtime=ctime,
-                deleted_by=vtypes.ID(1),
+                deleted_by=cast(vtypes.PersonaID, 1),
                 dreason=None,
                 marked_for_purge=marked_for_purge,
-                purged_by=cast(vtypes.ID, user_id),
+                purged_by=cast(vtypes.PersonaID, user_id),
                 is_purged=True,
-                authors=cast(vtypes.CdedbIDList, set()),
+                authors=set(),
             )
 
             case = self.complaint.get_case(RS, case_id)

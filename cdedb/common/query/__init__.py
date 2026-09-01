@@ -17,12 +17,12 @@ import enum
 import itertools
 import re
 from collections.abc import Callable, Collection, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, TypeAlias, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, RequestState, unwrap
 from cdedb.common.n_ import n_
-from cdedb.common.roles import ADMIN_KEYS
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import LOCALE, xsorted
 from cdedb.config import Config
 from cdedb.uncommon.intenum import CdEIntEnum
@@ -35,10 +35,6 @@ _CONFIG = Config()
 
 # The maximal number of sorting criteria that can be used for queries
 MAX_QUERY_ORDERS = 20
-
-CourseMap: TypeAlias = "models.CdEDataclassMap[models.Course]"
-LodgementMap: TypeAlias = "models.CdEDataclassMap[models.Lodgement]"
-LodgementGroupMap: TypeAlias = "models.CdEDataclassMap[models.LodgementGroup]"
 
 
 @enum.unique
@@ -364,10 +360,10 @@ class QueryScope(CdEIntEnum):
             return ret.split(".", 1)[1]
         return ret
 
-    def get_spec(self, *, event: Optional["models.Event"] = None,
-                 courses: Optional[CourseMap] = None,
-                 lodgements: Optional[LodgementMap] = None,
-                 lodgement_groups: Optional[LodgementGroupMap] = None,
+    def get_spec(self, *, event: "models.Event | None" = None,
+                 courses: "models.CourseMap | None" = None,
+                 lodgements: "models.LodgementMap | None" = None,
+                 lodgement_groups: "models.LodgementGroupMap | None" = None,
                  ) -> QuerySpec:
         """Return the query spec for this scope.
 
@@ -428,7 +424,7 @@ class QueryScope(CdEIntEnum):
         return target
 
     def mangle_query_input(self, rs: RequestState,
-                           defaults: Optional[CdEDBObject] = None) -> dict[str, str]:
+                           defaults: CdEDBObject | None = None) -> dict[str, str]:
         """Helper to bundle the extraction of submitted form data for a query.
 
         This simply extracts all the values expected according to the spec of the
@@ -446,8 +442,9 @@ class QueryScope(CdEIntEnum):
         defaults = defaults or {}
         params = {"scope": str(self)}
         if "query_name" in rs.request.values:
-            rs.values["query_name"] = rs.request.values["query_name"]
-            params["query_name"] = rs.values["query_name"]
+            params["query_name"] = rs.values["query_name"] = rs.request.values["query_name"]
+        if "query_group" in rs.request.values:
+            params["query_group"] = rs.values["query_group"] = rs.request.values["query_group"]
         spec = self.get_spec(event=rs.ambience.get("event"))
         for field in spec:
             for prefix in ("qval_", "qsel_", "qop_"):
@@ -588,9 +585,9 @@ _QUERY_SPECS = {
             "is_archived": QuerySpecEntry("bool", n_("Archived Account")),
             **{
                 k: QuerySpecEntry("bool", k, n_("Admin"), translate_prefix=True)
-                for k in ADMIN_KEYS
+                for k in Roles.all_admin_roles().markers()
             },
-            ",".join(ADMIN_KEYS): QuerySpecEntry(
+            ",".join(Roles.all_admin_roles().markers()): QuerySpecEntry(
                 "bool", n_("Any"), n_("Admin"), translate_prefix=True),
             "pevent_id": QuerySpecEntry("id", n_("Past Event")),
             "pcourse_id": QuerySpecEntry("id", n_("Past Course")),
@@ -640,9 +637,9 @@ _QUERY_SPECS = {
             "is_archived": QuerySpecEntry("bool", n_("Archived Account")),
             **{
                 k: QuerySpecEntry("bool", k, n_("Admin"), translate_prefix=True)
-                for k in ADMIN_KEYS
+                for k in Roles.all_admin_roles().markers()
             },
-            ",".join(ADMIN_KEYS): QuerySpecEntry(
+            ",".join(Roles.all_admin_roles().markers()): QuerySpecEntry(
                 "bool", n_("Any"), n_("Admin"), translate_prefix=True),
             "weblink": QuerySpecEntry("str", n_("WWW")),
             "specialisation": QuerySpecEntry("str", n_("Specialisation")),
@@ -687,9 +684,9 @@ _QUERY_SPECS = {
             "is_searchable": QuerySpecEntry("bool", n_("Searchable")),
             **{
                 k: QuerySpecEntry("bool", k, n_("Admin"), translate_prefix=True)
-                for k in ADMIN_KEYS
+                for k in Roles.all_admin_roles().markers()
             },
-            ",".join(ADMIN_KEYS): QuerySpecEntry(
+            ",".join(Roles.all_admin_roles().markers()): QuerySpecEntry(
                 "bool", n_("Any"), n_("Admin"), translate_prefix=True),
             "pevent_id": QuerySpecEntry("enum_int", n_("Past Event")),
             "pcourse_id": QuerySpecEntry("enum_int", n_("Past Course")),
@@ -762,7 +759,7 @@ _QUERY_SPECS = {
             "entry_versions.dreason": QuerySpecEntry("str", n_("Deletion Reason"), title_prefix=n_("Entry Version"), translate_prefix=True),
             "authors.persona_id": QuerySpecEntry("id", n_("Author")),
             "involved.persona_id": QuerySpecEntry("cdedbid", n_("Involved")),
-            "involved.involved_type": QuerySpecEntry("enum_int", n_("Involved Type"), title_prefix=n_("Involved"), translate_prefix=True),
+            "involved.involvement_type": QuerySpecEntry("enum_int", n_("Involved Type"), title_prefix=n_("Involved"), translate_prefix=True),
             "involved.is_informed": QuerySpecEntry("bool", n_("Is Informed"), title_prefix=n_("Involved"), translate_prefix=True),
             "companion.companion_persona_id": QuerySpecEntry("cdedbid", n_("Companion")),
             "companion.is_withdrawn": QuerySpecEntry("bool", n_("Is Withdrawn"), title_prefix=n_("Companion"), translate_prefix=True),
@@ -837,7 +834,7 @@ class Query:
                  fields_of_interest: Collection[str],
                  constraints: Collection[QueryConstraint],
                  order: Sequence[QueryOrder],
-                 name: Optional[str] = None, query_id: Optional[int] = None,
+                 name: str | None = None, query_id: int | None = None,
                  ):
         """
         :param scope: target of FROM clause; key for :py:data:`QUERY_VIEWS`.
@@ -1100,19 +1097,19 @@ def _combine_specs(spec_map: dict[int, QuerySpec], entity_ids: Collection[int],
     return ret
 
 
-def _get_course_choices(courses: Optional[CourseMap]) -> QueryChoices:
+def _get_course_choices(courses: "models.CourseMap | None") -> QueryChoices:
     if courses is None:
         return {}
     return dict((c.id, c.label) for c in xsorted(courses.values()))
 
 
-def _get_lodgement_choices(lodgements: Optional[LodgementMap]) -> QueryChoices:
+def _get_lodgement_choices(lodgements: "models.LodgementMap | None") -> QueryChoices:
     if lodgements is None:
         return {}
     return dict((lodge.id, lodge.title) for lodge in xsorted(lodgements.values()))
 
 
-def _get_lodgement_group_choices(lodgement_groups: Optional[LodgementGroupMap],
+def _get_lodgement_group_choices(lodgement_groups: "models.LodgementGroupMap | None",
                                  ) -> QueryChoices:
     if lodgement_groups is None:
         return {}
@@ -1120,9 +1117,9 @@ def _get_lodgement_group_choices(lodgement_groups: Optional[LodgementGroupMap],
 
 
 def make_registration_query_spec(event: "models.Event",
-                                 courses: Optional[CourseMap] = None,
-                                 lodgements: Optional[LodgementMap] = None,
-                                 lodgement_groups: Optional[LodgementGroupMap] = None,
+                                 courses: "models.CourseMap | None" = None,
+                                 lodgements: "models.LodgementMap | None" = None,
+                                 lodgement_groups: "models.LodgementGroupMap | None" = None,
                                  ) -> QuerySpec:
     """Helper to generate ``QueryScope.registration``'s spec.
 
@@ -1381,7 +1378,7 @@ def make_registration_query_spec(event: "models.Event",
         if constraint := part_group.get('constraint_type'):
             if constraint != const.EventPartGroupType.Statistic:
                 continue
-        part_ids = part_group['parts'].keys()
+        part_ids: Collection[int] = part_group['parts'].keys()
         prefix = part_group['shortname']
         spec.update(_combine_specs(
             part_specs, part_ids,
@@ -1425,9 +1422,10 @@ def make_registration_query_spec(event: "models.Event",
     return spec
 
 
-def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] = None,
-                           lodgements: Optional[LodgementMap] = None,
-                           lodgement_groups: Optional[LodgementGroupMap] = None,
+def make_course_query_spec(event: "models.Event",
+                           courses: "models.CourseMap | None" = None,
+                           lodgements: "models.LodgementMap | None" = None,
+                           lodgement_groups: "models.LodgementGroupMap | None" = None,
                            ) -> QuerySpec:
     """Helper to generate ``QueryScope.event_course``'s spec.
 
@@ -1571,9 +1569,9 @@ def make_course_query_spec(event: "models.Event", courses: Optional[CourseMap] =
 
 
 def make_lodgement_query_spec(event: "models.Event",
-                              courses: Optional[CourseMap] = None,
-                              lodgements: Optional[LodgementMap] = None,
-                              lodgement_groups: Optional[LodgementGroupMap] = None,
+                              courses: "models.CourseMap | None" = None,
+                              lodgements: "models.LodgementMap | None" = None,
+                              lodgement_groups: "models.LodgementGroupMap | None" = None,
                               ) -> QuerySpec:
     """Helper to generate ``QueryScope.lodgement``'s spec.
 
@@ -1651,7 +1649,7 @@ def make_lodgement_query_spec(event: "models.Event",
     sorted_part_groups = [pg.as_dict() for pg in xsorted(event.part_groups.values())]
     sorted_part_groups.append({'parts': event.parts, 'shortname': None})
     for part_group in sorted_part_groups:
-        part_ids = part_group['parts'].keys()
+        part_ids: Collection[int] = part_group['parts'].keys()
         prefix = part_group['shortname']
         spec.update(_combine_specs(
             part_specs, part_ids,

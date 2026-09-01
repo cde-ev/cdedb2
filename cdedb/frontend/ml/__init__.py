@@ -5,13 +5,14 @@
 import email.parser
 import urllib.error
 from collections.abc import Collection, Mapping
-from typing import Optional
 
+import requests
 from werkzeug import Response
 
 import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, RequestState
 from cdedb.common.n_ import n_
+from cdedb.common.roles import Roles
 from cdedb.frontend.common import REQUESTdata, access, mailinglist_guard, periodic
 from cdedb.frontend.ml.base import MlBaseFrontend
 from cdedb.frontend.ml.mailman import MlMailmanMixin
@@ -20,7 +21,7 @@ __all__ = ['MlFrontend']
 
 
 class MlFrontend(MlMailmanMixin, MlBaseFrontend):
-    @access("ml")
+    @access(Roles.ml)
     @mailinglist_guard()
     def message_moderation_form(
         self, rs: RequestState, mailinglist_id: int
@@ -42,7 +43,7 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
         rs: RequestState,
         request_ids: Collection[int],
         action: str,
-        reason: Optional[str] = None,
+        reason: str | None = None,
     ) -> Response:
         """Helper to take care of the communication with mailman."""
         dblist = rs.ambience['mailinglist']
@@ -63,7 +64,7 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
                     held = mmlist.get_held_message(request_id)
                     sender, subject, msg = held.sender, held.subject, held.msg
                     # This destroys the information we just queried.
-                    response = mmlist.moderate_message(
+                    response: requests.Response = mmlist.moderate_message(
                         request_id, action, comment=reason
                     )
                 except urllib.error.HTTPError:
@@ -120,7 +121,7 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
 
         return self.redirect(rs, "ml/message_moderation")
 
-    @access("ml", modi={"POST"})
+    @access(Roles.ml, modi={"POST"})
     @mailinglist_guard()
     @REQUESTdata("request_ids", "action")
     def message_moderation_multi(
@@ -143,7 +144,7 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
             return self.message_moderation_form(rs, mailinglist_id)
         return self._moderate_messages(rs, request_ids, action)
 
-    @access("ml", modi={"POST"})
+    @access(Roles.ml, modi={"POST"})
     @mailinglist_guard()
     @REQUESTdata("request_id", "action", "sender", "reason")
     def message_moderation(
@@ -153,7 +154,7 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
         request_id: int,
         action: str,
         sender: str,
-        reason: Optional[str],
+        reason: str | None,
     ) -> Response:
         """Moderate a held message.
 
@@ -175,7 +176,7 @@ class MlFrontend(MlMailmanMixin, MlBaseFrontend):
 
         return self._moderate_messages(rs, [request_id], action, reason)
 
-    @access("ml_admin", modi={"POST"})
+    @access(Roles.ml_admin, modi={"POST"})
     def manual_mailman_sync(self, rs: RequestState) -> Response:
         """Trigger sync manually"""
         code = self.mailman_sync(rs)

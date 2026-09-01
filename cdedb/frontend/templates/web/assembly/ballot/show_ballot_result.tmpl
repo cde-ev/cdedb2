@@ -57,7 +57,7 @@
 
     <p>
         {% trans %}
-            For the whole page, the candidates are addressed with the following abbreviations.
+            For the whole page, the options are addressed with the following abbreviations.
         {% endtrans %}
     </p>
 
@@ -79,9 +79,9 @@
 
     <p>
         {% trans  gt="<code class=result-separator >></code>"|s, eq="<code class=result-separator >=</code>"|s %}
-            The greater-than character {{ gt }} means that the candidate, represented by their
+            The greater-than character {{ gt }} means that the option, represented by their
             shortname, on the left has higher overall preference than the one on the right.
-            The equals character {{ eq }} means that two or more candidates have the same overall
+            The equals character {{ eq }} means that two or more options have the same overall
             preference across all participants.
         {% endtrans %}
     </p>
@@ -154,11 +154,11 @@
 
     <p>
         {% trans %}
-            The following table contains the pairwise preferences over all candidates. It can be read as
+            The following table contains the pairwise preferences over all options. It can be read as
         {% endtrans %}
         <i>
             {% trans %}
-                the candidate of the xth row is preferred by y voters over the candidate of the zth column.
+                the option of the xth row is preferred by y voters over the option of the zth column.
             {% endtrans %}
         </i>
     </p>
@@ -235,10 +235,10 @@
                 <p>{% trans %}You abstained.{% endtrans %}</p>
             {# This is only for classical votes #}
             {% elif own_vote == ASSEMBLY_BAR_SHORTNAME %}
-                <p>{% trans %}You voted against all candidates.{% endtrans %}</p>
+                <p>{% trans %}You voted against all options.{% endtrans %}</p>
             {% else %}
                 {% if classical %}
-                    <p>{% trans %}You voted for the following candidates:{% endtrans %}</p>
+                    <p>{% trans %}You voted for the following options:{% endtrans %}</p>
                 {% else %}
                     <p>{% trans %}You voted in the following preference:{% endtrans %}</p>
                 {% endif %}

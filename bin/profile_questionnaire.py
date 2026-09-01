@@ -4,9 +4,10 @@ import sys
 
 from cdedb.frontend.common import reconnoitre_ambience, setup_translations
 from cdedb.script import Script
+import cdedb.common.validation.types as vtypes
 
-event_id = int(sys.argv[1])
-persona_id = int(sys.argv[2])
+event_id = vtypes.EventID(vtypes.ID(int(sys.argv[1])))
+persona_id = vtypes.PersonaID(vtypes.ID(int(sys.argv[2])))
 
 # Prepare stuff
 script = Script(dbuser="cdb_member", persona_id=persona_id)

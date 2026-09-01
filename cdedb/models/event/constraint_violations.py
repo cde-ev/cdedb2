@@ -40,8 +40,6 @@ import cdedb.models.event as models
 from cdedb.common import (
     AgeClasses,
     CdEDBObject,
-    CdEDBObjectMap,
-    determine_age_class,
     make_persona_name,
     n_,
     now,
@@ -49,9 +47,11 @@ from cdedb.common import (
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.filter import keydictsort_filter, money_filter
 from cdedb.models.common import CdEDataclassMap
+from cdedb.models.core import EventPersona
 from cdedb.uncommon.intenum import CdEEnum
 
 if TYPE_CHECKING:
+    import cdedb.common.validation.types as vtypes
     from cdedb.frontend.event.lodgement import LodgementInhabitants
 
 
@@ -321,19 +321,24 @@ class ViolationAux:
     """Container for passing event data through to Violations for instantiation."""
 
     event: models.Event
-    registrations: CdEDBObjectMap
-    personas: CdEDBObjectMap
+    registrations: models.RegistrationMap
+    personas: CdEDataclassMap[EventPersona]
 
-    all_courses: CdEDataclassMap[models.Course]
+    all_courses: models.CourseMap
     # Violations are only checked for these courses.
-    courses: CdEDataclassMap[models.Course]
-    all_lodgements: CdEDataclassMap[models.Lodgement]
+    courses: models.CourseMap
+    all_lodgements: models.LodgementMap
     # Violations are only checked for these lodgements.
-    lodgements: CdEDataclassMap[models.Lodgement]
+    lodgements: models.LodgementMap
 
     attendee_data: models.AttendeeStats
     choices_data: models.ChoiceStats
-    inhabitants_data: "dict[int, dict[int, LodgementInhabitants]]"
+    involved_inhabitants_data: (
+        "dict[vtypes.LodgementID, dict[int, LodgementInhabitants]]"
+    )
+    uninvolved_inhabitants_data: (
+        "dict[vtypes.LodgementID, dict[int, LodgementInhabitants]]"
+    )
 
     def evaluate_all(self) -> ViolationList:
         ret = ConstraintViolation.dispatch(self, ViolationContext())
@@ -462,7 +467,7 @@ class ConstraintViolation(abc.ABC):
 
         Need only be overridden if a subclass has additional associated primary entities.
         """
-        ret = {
+        ret: dict[str, tuple[str, CdEDBObject, str]] = {
             'event': (
                 "event/show_event",
                 {'event_id': self.event.id},
@@ -499,7 +504,7 @@ class ConstraintViolation(abc.ABC):
         if self.fee:
             ret['fee'] = (
                 "event/fee_summary",
-                {},
+                {},  # pyrefly: ignore[implicit-any-empty-container]
                 f"#eventfee_{self.fee.id}",
             )
         return ret
@@ -595,18 +600,8 @@ class RegistrationConstraintViolation(ConstraintViolation, abc.ABC):
 
         for registration_ in aux.registrations.values():
             persona = aux.personas[registration_['persona_id']]
-            registration_['persona'] = persona
-            registration_['age'] = determine_age_class(
-                persona['birthday'], aux.event.begin
-            )
-            registration_['remaining_owed'] = (
-                registration_['amount_owed'] - registration_['amount_paid']
-            )
-
-            for part in aux.event.parts.values():
-                registration_['parts'][part.id]['age'] = determine_age_class(
-                    persona['birthday'], part.part_begin
-                )
+            # TODO use dataclass after converting regestrations to dataclass
+            registration_['persona'] = persona.as_dict()
 
         return [
             context.add(registration=registration)
@@ -897,8 +892,8 @@ class NoCourseAssignedCV(RegistrationTrackConstraintViolation):
         registration = context.registration
         track = context.track
 
-        reg_track = registration['tracks'][track.id]
-        reg_part = registration['parts'][track.part_id]
+        reg_track: CdEDBObject = registration['tracks'][track.id]
+        reg_part: CdEDBObject = registration['parts'][track.part_id]
         if not reg_part['status'].is_present():
             return None
         if reg_track['course_id'] is None:
@@ -946,8 +941,8 @@ class IncorrectCourseAssignedCV(RegistrationTrackConstraintViolation):
         registration = context.registration
         track = context.track
 
-        reg_track = registration['tracks'][track.id]
-        reg_part = registration['parts'][track.part_id]
+        reg_track: CdEDBObject = registration['tracks'][track.id]
+        reg_part: CdEDBObject = registration['parts'][track.part_id]
 
         assigned_course: models.Course | None = aux.all_courses.get(
             reg_track['course_id']
@@ -1677,7 +1672,7 @@ class NoLodgementCV(RegistrationPartConstraintViolation):
         registration = context.registration
         part = context.part
 
-        reg_part = registration['parts'][part.id]
+        reg_part: CdEDBObject = registration['parts'][part.id]
         if not reg_part['status'].is_present() or not aux.all_lodgements:
             return None
         if reg_part['lodgement_id'] is None:
@@ -2081,7 +2076,7 @@ class IncorrectNumInhabitantsCV(LodgementPartConstraintViolation):
         lodgement = context.lodgement
         part = context.part
 
-        inhabitants = aux.inhabitants_data[lodgement.id][part.id]
+        inhabitants = aux.involved_inhabitants_data[lodgement.id][part.id]
         event_over = now().date() > aux.event.end
         severity = None
 
@@ -2212,13 +2207,11 @@ class IllegalMixedLodgementCV(LodgementPartConstraintViolation):
         lodgement = context.lodgement
         part = context.part
 
-        inhabitants = aux.inhabitants_data[lodgement.id][part.id]
+        inhabitants = aux.involved_inhabitants_data[lodgement.id][part.id]
         non_mixing_regs = [reg for reg in inhabitants.all if not reg['mixed_lodging']]
         if not non_mixing_regs:
             return None
-        genders = set(
-            aux.personas[reg['persona_id']]['gender'] for reg in inhabitants.all
-        )
+        genders = set(aux.personas[reg['persona_id']].gender for reg in inhabitants.all)
         if const.Genders.not_specified in genders:
             return cls(
                 event=aux.event,

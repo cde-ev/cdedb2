@@ -12,8 +12,8 @@
     {{ util.breadcrumb_link(show_user_link(user, ambience['persona']['id']),
             ambience['persona']|persona_name, icon="user") }}
     {{ util.breadcrumb_link(cdedblink("core/promote_user_form"), gettext("Add Realm"),
-            active=(values['target_realm'] == '')) }}
-    {% if values['target_realm'] %}
+            active=not target_realm) }}
+    {% if target_realm %}
         {{ util.breadcrumb_link(cdedblink("core/promote_user_form"), gettext("Confirm"), active=True) }}
     {% endif %}
 {% endblock %}
@@ -27,21 +27,8 @@
 {% endblock %}
 
 {% block content %}
-   {% with p = ambience['persona'],
-           realms = {'cde': gettext("cde_realm"),
-                     'event': gettext("Event"),
-                     'ml': gettext("Mailinglists"),
-                     'assembly': gettext("Assembly")} %}
-        {#- jinja does not support list comprehension ... #}
-        {%- set myentries = [] %}
-        {%- set not_my_realms = [] %}
-        {%- for realm in realms
-                if not p['is_{}_realm'.format(realm)] %}
-            {%- do myentries.append((realm, realms[realm])) %}
-            {%- do not_my_realms.append(realm) %}
-        {%- endfor %}
-
-        {% if not values['target_realm'] %}
+   {% with persona = ambience['persona'] %}
+        {% if not target_realm %}
             <p>
                 {% trans %}
                     With this Form You can add the User to new Realms in the CdEDB.
@@ -50,10 +37,10 @@
             </p>
             <form action="{{ cdedblink('core/promote_user_form') }}" method="GET" id="realmselectionform"
                     class="form-horizontal">
-                {{ util.form_input_static(gettext("User"), value=p|persona_name,
-                        small=True) }}
-                {{ util.form_input_checkboxes(name="target_realm", entries=myentries, label=gettext("Target Realm"),
-                        radio=True, small=True) }}
+                {{ util.form_input_static(gettext("User"), value=persona|persona_name, small=True) }}
+                {{ util.form_input_checkboxes(
+                        name="target_realm", entries=missing_realms|enum_entries(processing=gettext),
+                        label=gettext("Target Realm"), radio=True, small=True) }}
                 {{ util.form_input_submit(label=gettext("Continue"), icon="chevron-right", small=True) }}
             </form>
 
@@ -62,35 +49,27 @@
             <form action="{{ cdedblink('core/promote_user') }}" method="POST" id="promotionform"
                     class="form-horizontal">
                 {{ util.anti_csrf_token('core/promote_user') }}
-                {{ util.form_input_static(gettext("User"), value=p|persona_name) }}
-                {{ util.form_input_static(gettext("New Realm"), value=realms[values['target_realm']]) }}
+                {{ util.form_input_static(gettext("User"), value=persona|persona_name) }}
+                {{ util.form_input_static(gettext("New Realm"), value=gettext(target_realm|string)) }}
 
-                {% set implicit_realms = [] %}
-                {% if values['target_realm'] == 'cde' %}
-                    {% do implicit_realms.extend(['event', 'assembly', 'ml']) %}
-                {% elif values['target_realm'] in ('event', 'assembly') %}
-                    {% do implicit_realms.extend(['ml']) %}
+                {% if missing_target_realms|length > 1 %}
+                    {% call util.form_input_static(label=gettext("Implied new Realms")) %}
+                        <ul class="slim">
+                            {% for realm in missing_target_realms if realm != target_realm %}
+                                <li>{{ gettext(realm|string) }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endcall %}
                 {% endif %}
-                {% call util.form_input_static(label=gettext("Implied new Realms")) %}
-                    <ul>
-                        {% for i in implicit_realms %}
-                            {% if i in not_my_realms %}
-                                <li>{{ realms[i] }}</li>
-                            {% endif %}
-                        {% endfor %}
-                    </ul>
-                {% endcall %}
 
             <h3 class="heading-underline">{% trans %}Additional Data{% endtrans %}</h3>
                 {{ util.input_hidden(name="target_realm") }}
-                {% if not (p['is_cde_realm'] or p['is_event_realm']) and values['target_realm'] in ('cde', 'event')  %}
+                {% if enums["Realms"].event in missing_target_realms %}
                     {{ util.form_input_text(name="title", label=gettext("Title_[[of a persona]]")) }}
                     {{ util.form_input_text(name="name_supplement", label=gettext("Name Affix")) }}
                     {{ util.form_input_text(name="birthday", label=gettext("Birthday"), type="date") }}
                     {{ util.form_input_select(name="gender", entries=enums['Genders']|enum_entries(processing=gettext),
                                               label=gettext("Gender")) }}
-                {% endif %}
-                {% if not (p['is_cde_realm'] or p['is_event_realm']) and values['target_realm'] in ('cde', 'event')  %}
                     {{ util.form_input_text(name="telephone", label=gettext("Phone"), type="tel") }}
                     {{ util.form_input_text(name="mobile", label=gettext("Mobile Phone"), type="tel") }}
                     {{ util.form_input_text(name="address", label=gettext("Street and House Number")) }}
@@ -100,7 +79,7 @@
                     {{ util.form_input_select(name="country", label=gettext("Country"), entries=COUNTRY_CODES,
                                               defaultvalue=DEFAULT_COUNTRY) }}
                 {% endif %}
-                {% if not p['is_cde_realm'] and values['target_realm'] == 'cde'  %}
+                {% if enums["Realms"].cde in missing_target_realms %}
                     {{ util.form_input_checkbox(name="trial_member", label=gettext("Grant Trial Membership")) }}
 
                     {# Pass previously submitted pevent id to enable selection of pcourse id without js #}
@@ -115,7 +94,7 @@
                         {{ util.form_input_textarea(name="change_note", label=gettext("Changenotes")) }}
                     </div>
                 </div>
-                {% if not p['is_cde_realm'] and values['target_realm'] == 'cde'  %}
+                {% if enums["Realms"].cde in missing_target_realms %}
                     <div class="text-muted">
                         {% trans welcome_mail=util.href(docurl("Handbuch_Email_Templates", anchor="template-welcome-tmpl"),
                                                                         gettext("welcome email")) %}

@@ -9,7 +9,7 @@
 {% block breadcrumb %}
 {{ super() }}
 {{ util.breadcrumb_link(cdedblink("core/list_privilege_changes"), gettext("Privilege Changes")) }}
-{{ util.breadcrumb_link(cdedblink('core/show_privilege_change', {'case_id': ambience['privilege_change']['id']}),
+{{ util.breadcrumb_link(cdedblink('core/show_privilege_change', {'change_id': ambience['privilege_change']['id']}),
         persona|persona_name, icon="user", active="True") }}
 {% endblock %}
 
@@ -24,15 +24,16 @@
 
     <div class="diff-view" id="diff-view">
         <h4 class="heading-underline">{% trans %}Admin Privileges{% endtrans %}</h4>
-        {% for privilege in admin_keys %}
-            {% if ambience['privilege_change'][privilege] is not none %}
+        {% for admin_role in enums["Roles"].all_admin_roles() %}
+            {% if ambience['privilege_change'][admin_role.marker] is not none %}
                 <div class="row">
                     <label class="col-sm-3">
-                        {{ gettext(privilege) }}
+                        {{ gettext(admin_role) }}
                     </label>
                     <div class="col-sm-4">
-                        {{ util.deko_checkbox(ambience['privilege_change'][privilege], anid="{}-display".format(privilege),
-                                              titles=[gettext("to revoke"), gettext("to grant")]) }}
+                        {{ util.deko_checkbox(
+                                ambience['privilege_change'][admin_role.marker], anid="{}-display".format(admin_role.name),
+                                titles=[gettext("to revoke"), gettext("to grant")]) }}
                     </div>
                 </div>
             {% endif %}

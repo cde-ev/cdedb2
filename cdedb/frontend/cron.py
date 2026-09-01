@@ -9,13 +9,13 @@ import inspect
 import pathlib
 from collections.abc import Collection, Iterator
 from datetime import datetime
-from typing import Optional
+from typing import cast
 
 from cdedb.common import RequestState, User, now
 from cdedb.common.n_ import n_
-from cdedb.common.roles import ALL_ROLES
+from cdedb.common.roles import Roles
 from cdedb.config import SecretsConfig
-from cdedb.database import DATABASE_ROLES
+from cdedb.database import DATABASE_ROLES, DBRole
 from cdedb.database.connection import connection_pool_factory
 from cdedb.frontend.assembly import AssemblyFrontend
 from cdedb.frontend.cde import CdEFrontend
@@ -61,8 +61,7 @@ class CronFrontend(BaseApp):
         self.ml = MlFrontend()
 
     def make_request_state(self) -> RequestState:
-        roles = ALL_ROLES | {"cron"}
-        user = User(roles=roles, persona_id=None)
+        user = User(roles=Roles.all_persona_roles() | Roles.cron, persona_id=None)
         lang = "en"
         urls = self.urlmap.bind("db.cde-ev.de", script_name="/db/", url_scheme="https")
         # This is not a real request, so we can go without some of these.
@@ -80,10 +79,10 @@ class CronFrontend(BaseApp):
             lang=lang,
             translations=self.translations,
         )
-        rs._conn = self.connpool['cdb_admin']
+        rs._conn = self.connpool[DBRole.admin]
         return rs
 
-    def execute(self, jobs: Optional[Collection[str]] = None) -> bool:
+    def execute(self, jobs: Collection[str] | None = None) -> bool:
         """
         :param jobs: If jobs is given execute only these jobs.
         """
@@ -91,7 +90,7 @@ class CronFrontend(BaseApp):
         base_state = self.core.get_cron_store(rs, "_base")
         if not base_state:
             base_state = {
-                'tstamp': 0,
+                'tstamp': 0.0,
                 'period': -1,
             }
         if (
@@ -147,4 +146,4 @@ class CronFrontend(BaseApp):
     def find_periodics(frontend: AbstractFrontend) -> Iterator[PeriodicJob]:
         for _, func in inspect.getmembers(frontend, inspect.ismethod):
             if hasattr(func, "cron"):
-                yield func
+                yield cast(PeriodicJob, func)

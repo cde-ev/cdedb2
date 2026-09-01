@@ -42,7 +42,7 @@
             {{ util.form_input_text(name="family_name", label=gettext("Family Name"), small=True) }}
             {# No birth name to avoid mistakes #}
             {{ util.form_input_text(name="username", label=gettext("E-Mail"), small=True, type="email",
-                                    attributes='autocomplete="email"'|s) }}
+                                    autocomplete="email") }}
             {{ util.form_input_select(name="realm", small=True, entries=realm_options,
                                       label=gettext("Rationale"), anid="realm-select") }}
             {{ util.form_input_textarea(name="notes",
@@ -86,9 +86,9 @@
             <script nonce="{{ csp_nonce }}">
                 var $select = $('#realm-select');
                 var $realmSpecificFields = $('.genesis-realm-specific');
-                var fieldsPerRealm = {{ REALM_SPECIFIC_GENESIS_FIELDS|tojson }};
+                var fieldsPerRealm = {{ genesis_fields_per_realm|tojson }};
                 // Add UI specific attachment field which is otherwise not displayed
-                fieldsPerRealm["cde"] += "attachment";
+                fieldsPerRealm["Realms.cde"] += "attachment";
                 var show_realm_specific_fields = function() {
                     $realmSpecificFields.each(function() {
                         if (fieldsPerRealm[$select.val()].indexOf($(this).prop('name')) >= 0) {

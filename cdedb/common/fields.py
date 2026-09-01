@@ -2,135 +2,6 @@
 
 """SQL field names of all entities."""
 
-# A set of roles a user may have.
-Role = str
-
-# A set of realms a persona belongs to.
-Realm = str
-
-
-#: All columns deciding on the current status of a persona
-PERSONA_STATUS_FIELDS = (
-    "is_active",
-    "is_meta_admin",
-    "is_core_admin",
-    "is_cde_admin",
-    "is_finance_admin",
-    "is_event_admin",
-    "is_ml_admin",
-    "is_assembly_admin",
-    "is_complaint_admin",
-    "is_cde_realm",
-    "is_event_realm",
-    "is_ml_realm",
-    "is_assembly_realm",
-    "is_cdelokal_admin",
-    "is_auditor",
-    "is_member",
-    "is_searchable",
-    "is_archived",
-    "is_purged",
-)
-
-#: Names of all columns associated to an abstract persona.
-#: This does not include the ``password_hash`` for security reasons.
-PERSONA_CORE_FIELDS = PERSONA_STATUS_FIELDS + (
-    "id",
-    "username",
-    "family_name",
-    "given_names",
-    "nickname",
-    "legal_given_names",
-    "title",
-    "name_supplement",
-    "show_legal_given_names",
-)
-
-#: Names of columns associated to an event user.
-PERSONA_EVENT_FIELDS = PERSONA_CORE_FIELDS + (
-    "gender",
-    "birthday",
-    "telephone",
-    "mobile",
-    "address_supplement",
-    "address",
-    "postal_code",
-    "location",
-    "country",
-    "pronouns",
-    "pronouns_nametag",
-    "pronouns_profile",
-)
-
-#: Names of columns associated to a cde (former)member
-PERSONA_CDE_FIELDS = PERSONA_EVENT_FIELDS + (
-    "show_address",
-    "show_address2",
-    "address_supplement2",
-    "address2",
-    "postal_code2",
-    "location2",
-    "country2",
-    "weblink",
-    "specialisation",
-    "affiliation",
-    "timeline",
-    "interests",
-    "free_form",
-    "balance",
-    "decided_search",
-    "trial_member",
-    "bub_search",
-    "foto",
-    "paper_expuls",
-    "birth_name",
-    "donation",
-    "honorary_member",
-)
-
-#: Names of columns associated to a ml user.
-PERSONA_ML_FIELDS = PERSONA_CORE_FIELDS
-
-#: Names of columns associated to an assembly user.
-PERSONA_ASSEMBLY_FIELDS = PERSONA_CORE_FIELDS
-
-#: Names of all columns associated to an abstract persona.
-#: This does not include the ``password_hash`` for security reasons.
-PERSONA_ALL_FIELDS = PERSONA_CDE_FIELDS + ("notes",)
-
-# The following dict defines, which additional fields are required for genesis
-# request for distinct realms. Additionally, it is used to define for which
-# realms genesis requrests are allowed
-REALM_SPECIFIC_GENESIS_FIELDS: dict[Realm, tuple[str, ...]] = {
-    "ml": tuple(),
-    "event": (
-        "gender",
-        "birthday",
-        "telephone",
-        "mobile",
-        "address_supplement",
-        "address",
-        "postal_code",
-        "location",
-        "country",
-    ),
-    "cde": (
-        "gender",
-        "birthday",
-        "telephone",
-        "mobile",
-        "address_supplement",
-        "address",
-        "postal_code",
-        "location",
-        "country",
-        "birth_name",
-        "attachment_hash",
-        "pevent_id",
-        "pcourse_id",
-    ),
-}
-
 #: Fields of a pending privilege change.
 PRIVILEGE_CHANGE_FIELDS = (
     "id",
@@ -155,19 +26,6 @@ PRIVILEGE_CHANGE_FIELDS = (
 
 #: Fields of an event-specific role
 EVENT_ROLE_FIELDS = ('id', 'persona_id', 'event_id')
-
-#: Fields of an extended attribute associated to an event entity
-FIELD_DEFINITION_FIELDS = (
-    "id",
-    "event_id",
-    "field_name",
-    "title",
-    "sortkey",
-    "kind",
-    "association",
-    "checkin",
-    "entries",
-)
 
 #: Fields of a registration to an event organized via the CdEDB
 REGISTRATION_FIELDS = (
@@ -205,28 +63,6 @@ REGISTRATION_TRACK_FIELDS = (
     "track_id",
     "course_id",
     "course_instructor",
-)
-
-# Fields of a row in a questionnaire.
-# (This can be displayed in different places according to `kind`).
-QUESTIONNAIRE_ROW_FIELDS = (
-    "event_id",
-    "field_id",
-    "pos",
-    "title",
-    "info",
-    "readonly",
-    "default_value",
-    "kind",
-)
-
-#: Fields for a stored event query.
-STORED_EVENT_QUERY_FIELDS = (
-    "id",
-    "event_id",
-    "query_name",
-    "scope",
-    "serialized_query",
 )
 
 #: Fields of an assembly

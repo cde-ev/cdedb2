@@ -276,7 +276,15 @@ MAILMAN_ACCEPTABLE_ALIASES = {
     "dokuforge2@lists.cde-ev.de": ["df2@dokuforge.de"],
     "vanconference25-orga@aka.cde-ev.de": ["vanconference2@aka.cde-ev.de"],
     "sk-schulung24-orga@aka.cde-ev.de": ["schuko24-orga@aka.cde-ev.de"],
+    "admin-dmarc@lists.cde-ev.de": [r"^dmarc\d+@mail.cde-ev.de"],
 }
+
+MAILMAN_NON_EXPLICIT_DESTINATION_LISTS = {
+    "admin@lists.cde-ev.de",
+}
+
+# persona id for the zammad system user
+ZAMMAD_SYSTEM_USER_PERSONA_ID = -1
 
 #################
 # Backend stuff #

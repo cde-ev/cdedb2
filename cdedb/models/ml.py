@@ -1,7 +1,7 @@
 """Dataclass definitions of mailinglist realm."""
 
+import collections
 import dataclasses
-from collections import OrderedDict
 from collections.abc import Collection, Mapping
 from dataclasses import dataclass, fields
 from typing import TYPE_CHECKING, Any, ClassVar, Optional, Self, cast
@@ -13,7 +13,7 @@ import cdedb.database.constants as const
 from cdedb.common.exceptions import PrivilegeError
 from cdedb.common.privileges import EventPrivileges, is_privileged_event
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
-from cdedb.common.roles import extract_roles
+from cdedb.common.roles import AdminViews, AdminViewSet, Roles, RoleSet
 from cdedb.common.sorting import Sortkey, xsorted
 from cdedb.database.constants import (
     MailinglistDomain,
@@ -99,16 +99,18 @@ class Mailinglist(CdEDataclass):
     roster_visibility: MailinglistRosterVisibility
     is_active: bool
 
-    moderators: set[vtypes.ID] = dataclasses.field(metadata=Meta.io_exclude.as_dict)
+    moderators: set[vtypes.PersonaID] = dataclasses.field(
+        metadata=Meta.io_exclude.as_dict
+    )
     whitelist: set[vtypes.Email] = dataclasses.field(
         metadata=(Meta.io_exclude | Meta.validate_creation_optional).as_dict
     )
 
-    description: Optional[str]
-    additional_footer: Optional[str]
-    subject_prefix: Optional[str]
-    maxsize: Optional[vtypes.PositiveInt]
-    notes: Optional[str]
+    description: str | None
+    additional_footer: str | None
+    subject_prefix: str | None
+    maxsize: vtypes.PositiveInt | None
+    notes: str | None
 
     # some mailinglist types define additional fields
 
@@ -130,7 +132,7 @@ class Mailinglist(CdEDataclass):
             raise TypeError("Cannot instantiate abstract class.")
 
     def get_sortkey(self) -> Sortkey:
-        return (self.title,)
+        return (self.sortkey, self.title)
 
     @property
     def ml_type(self) -> MailinglistTypes:
@@ -162,7 +164,7 @@ class Mailinglist(CdEDataclass):
 
     @classmethod
     def get_select_query(
-        cls, entities: Collection[int], entity_key: Optional[str] = None
+        cls, entities: Collection[int], entity_key: str | None = None
     ) -> tuple[str, tuple["DatabaseValue_s", ...]]:
         simple_fields = cls.database_fields()
         simple_fields.extend(
@@ -206,7 +208,7 @@ class Mailinglist(CdEDataclass):
         additional_fields = set(fields(cls)) - set(fields(Mailinglist))
         return {field.name: field for field in additional_fields}
 
-    viewer_roles: ClassVar[set[str]] = {"ml"}
+    viewer_roles: ClassVar[Roles] = Roles.ml
 
     @classmethod
     def may_view(cls, rs: RequestState) -> bool:
@@ -221,7 +223,7 @@ class Mailinglist(CdEDataclass):
           a user to view a mailinglist. The semantics are similar to `@access`.
         """
         return bool(
-            (cls.viewer_roles | {"ml_admin"}) & rs.user.roles
+            (cls.viewer_roles | Roles.ml_admin) & rs.user.new_roles
         ) or cls.is_relevant_admin(rs.user)
 
     # This fields may be changed by all moderators, even restricted ones.
@@ -261,7 +263,7 @@ class Mailinglist(CdEDataclass):
         """
         return False
 
-    relevant_admins: ClassVar[set[str]] = set()
+    relevant_admins: ClassVar[RoleSet] = Roles.none()
 
     @classmethod
     def is_relevant_admin(cls, user: User) -> bool:
@@ -276,31 +278,33 @@ class Mailinglist(CdEDataclass):
           a user to administrate a mailinglist. The semantics are similar to
           `@access`.
         """
-        return bool((cls.relevant_admins | {"ml_admin"}) & user.roles)
+        return bool((cls.relevant_admins | Roles.ml_admin) & user.new_roles)
 
-    role_map: ClassVar[OrderedDict[str, SubscriptionPolicy]] = OrderedDict()
+    role_map: ClassVar[Mapping[Roles, SubscriptionPolicy]] = {}
 
     @classmethod
-    def moderator_admin_views(cls) -> set[str]:
+    def moderator_admin_views(cls) -> AdminViewSet:
         """All admin views which toggle the moderator view for this mailinglist.
 
         This is must be only used for cosmetic changes, similar to
         core.is_relative_admin_view.
         """
-        return {
-            "ml_mod_" + admin.replace("_admin", "") for admin in cls.relevant_admins
-        } | {"ml_mod"}
+        return (
+            AdminViews.from_roles(cls.relevant_admins | Roles.ml_admin)
+            & AdminViews.all_mod_views()
+        )
 
     @classmethod
-    def management_admin_views(cls) -> set[str]:
+    def management_admin_views(cls) -> AdminViewSet:
         """All admin views which toggle the management view for this mailinglist.
 
         This is must be only used for cosmetic changes, similar to
         core.is_relative_admin_view.
         """
-        return {
-            "ml_mgmt_" + admin.replace("_admin", "") for admin in cls.relevant_admins
-        } | {"ml_mgmt"}
+        return (
+            AdminViews.from_roles(cls.relevant_admins | Roles.ml_admin)
+            & AdminViews.all_mgmt_views()
+        )
 
     @classmethod
     def has_moderator_view(cls, user: User) -> bool:
@@ -309,8 +313,8 @@ class Mailinglist(CdEDataclass):
         This is must be only used for cosmetic changes, similar to
         core.is_relative_admin_view.
         """
-        return cls.is_relevant_admin(user) and bool(
-            cls.moderator_admin_views() & user.admin_views
+        return cls.is_relevant_admin(user) and user.admin_views.has_any(
+            *cls.moderator_admin_views()
         )
 
     @classmethod
@@ -320,18 +324,21 @@ class Mailinglist(CdEDataclass):
         This is must be only used for cosmetic changes, similar to
         core.is_relative_admin_view.
         """
-        return cls.is_relevant_admin(user) and bool(
-            cls.management_admin_views() & user.admin_views
+        return cls.is_relevant_admin(user) and user.admin_views.has_any(
+            *cls.management_admin_views()
         )
 
     def get_subscription_policy(
-        self, rs: RequestState, bc: BackendContainer, persona_id: int
+        self, rs: RequestState, bc: BackendContainer, persona_id: vtypes.PersonaID
     ) -> SubscriptionPolicy:
         """Singularized wrapper for `get_subscription_policies`."""
         return self.get_subscription_policies(rs, bc, (persona_id,))[persona_id]
 
     def get_subscription_policies(
-        self, rs: RequestState, bc: BackendContainer, persona_ids: Collection[int]
+        self,
+        rs: RequestState,
+        bc: BackendContainer,
+        persona_ids: Collection[vtypes.PersonaID],
     ) -> SubscriptionPolicyMap:
         """Determine the SubscriptionPolicy for each given persona with the mailinglist.
 
@@ -345,17 +352,17 @@ class Mailinglist(CdEDataclass):
         methods of the MailinglistBackend.
         """
         # TODO check for access to the ml? Needs ml_backend.
-        personas = bc.core.get_personas(rs, persona_ids)
+        personas = bc.core.get_personas_status(rs, persona_ids)
 
-        ret = {}
-        for persona_id, persona in personas.items():
-            roles = extract_roles(persona, introspection_only=True)
+        ret: SubscriptionPolicyMap = {}
+        for persona in personas.values():
+            roles = persona.get_user_roles()
             for role, pol in self.role_map.items():
-                if role in roles:
-                    ret[persona_id] = pol
+                if roles.has(role):
+                    ret[persona.id] = pol
                     break
             else:
-                ret[persona_id] = SubscriptionPolicy.none
+                ret[persona.id] = SubscriptionPolicy.none
         return ret
 
     def get_implicit_subscribers(
@@ -367,6 +374,23 @@ class Mailinglist(CdEDataclass):
     def periodic_cleanup(self, rs: RequestState) -> bool:
         """Whether or not to do periodic subscription cleanup on this list."""
         return True
+
+    @staticmethod
+    def group_lists(
+        mailinglists: Collection["Mailinglist"] | dict[int, "Mailinglist"],
+    ) -> dict[MailinglistGroup, list["Mailinglist"]]:
+        if isinstance(mailinglists, Mapping):
+            mailinglists = mailinglists.values()
+        ret = collections.defaultdict(list)
+        for ml in xsorted(mailinglists):
+            ret[ml.sortkey].append(ml)
+        return ret
+
+    def __lt__(self, other: "CdEDataclass") -> bool:
+        if not isinstance(other, Mailinglist):
+            return NotImplemented
+
+        return self._lt_inner(other)
 
 
 @dataclass
@@ -393,7 +417,13 @@ class AllUsersImplicitMeta(GeneralMailinglist):
 class AllMembersImplicitMeta(GeneralMailinglist):
     """Metaclass for all mailinglists with members as implicit subscribers."""
 
+    role_map = {
+        Roles.member: SubscriptionPolicy.subscribable,
+    }
+
     maxsize_default = vtypes.PositiveInt(64)
+    # Disallow management by cde admins.
+    relevant_admins = Roles.none()
 
     def get_implicit_subscribers(
         self, rs: RequestState, bc: BackendContainer
@@ -407,7 +437,7 @@ class EventAssociatedMeta(GeneralMailinglist):
     """Metaclass for all event associated mailinglists."""
 
     # Allow empty event_id to mark legacy event-lists.
-    event_id: Optional[vtypes.ID] = None
+    event_id: vtypes.EventID | None = None
 
     def periodic_cleanup(self, rs: RequestState) -> bool:
         """Disable periodic cleanup to freeze legacy event-lists."""
@@ -419,7 +449,7 @@ class TeamMeta(GeneralMailinglist):
     """Metaclass for all team lists."""
 
     sortkey = MailinglistGroup.team
-    viewer_roles = {"persona"}
+    viewer_roles = Roles.persona
     available_domains = [MailinglistDomain.lists]
     maxsize_default = vtypes.PositiveInt(4096)
     notify_owner_on_bounce = True
@@ -461,8 +491,8 @@ class CdEMailinglist(GeneralMailinglist):
 
     sortkey = MailinglistGroup.cde
     available_domains = [MailinglistDomain.lists, MailinglistDomain.testmail]
-    viewer_roles = {"cde"}
-    relevant_admins = {"cde_admin"}
+    viewer_roles = Roles.cde
+    relevant_admins = RoleSet({Roles.cde_admin})
 
 
 @dataclass
@@ -471,8 +501,9 @@ class EventMailinglist(GeneralMailinglist):
 
     sortkey = MailinglistGroup.event
     available_domains = [MailinglistDomain.aka]
-    viewer_roles = {"event"}
-    relevant_admins = {"event_admin"}
+    viewer_roles = Roles.event
+    relevant_admins = RoleSet({Roles.event_admin})
+    notify_owner_on_bounce = True
     ldap_expose = False
 
 
@@ -481,56 +512,47 @@ class AssemblyMailinglist(GeneralMailinglist):
     """Base class for Assembly-Mailinglists."""
 
     sortkey = MailinglistGroup.assembly
-    viewer_roles = {"assembly"}
-    relevant_admins = {"assembly_admin"}
+    viewer_roles = Roles.assembly
+    relevant_admins = RoleSet({Roles.assembly_admin})
     notify_owner_on_bounce = True
     ldap_expose = False
 
 
 @dataclass
 class MemberMailinglist(CdEMailinglist):
-    viewer_roles = {"member"}
+    viewer_roles = Roles.member
 
 
 @dataclass
 class MemberMandatoryMailinglist(AllMembersImplicitMeta, MemberMailinglist):
-    role_map = OrderedDict([
-        ("member", SubscriptionPolicy.subscribable),
-    ])
     # For mandatory lists, ignore all unsubscriptions.
     allow_unsub = False
-    # Disallow management by cde admins.
-    relevant_admins: ClassVar[set[str]] = set()
 
 
 @dataclass
 class MemberOptOutMailinglist(AllMembersImplicitMeta, MemberMailinglist):
-    role_map = OrderedDict([
-        ("member", SubscriptionPolicy.subscribable),
-    ])
-    # Disallow management by cde admins.
-    relevant_admins: ClassVar[set[str]] = set()
+    allow_unsub = True
 
 
 @dataclass
 class MemberOptInMailinglist(MemberMailinglist):
-    role_map = OrderedDict([
-        ("member", SubscriptionPolicy.subscribable),
-    ])
+    role_map = {
+        Roles.member: SubscriptionPolicy.subscribable,
+    }
 
 
 @dataclass
 class MemberModeratedOptInMailinglist(MemberMailinglist):
-    role_map = OrderedDict([
-        ("member", SubscriptionPolicy.moderated_opt_in),
-    ])
+    role_map = {
+        Roles.member: SubscriptionPolicy.moderated_opt_in,
+    }
 
 
 @dataclass
 class MemberInvitationOnlyMailinglist(MemberMailinglist):
-    role_map = OrderedDict([
-        ("member", SubscriptionPolicy.invitation_only),
-    ])
+    role_map = {
+        Roles.member: SubscriptionPolicy.invitation_only,
+    }
 
 
 @dataclass
@@ -546,7 +568,7 @@ class RestrictedTeamMailinglist(TeamMeta, MemberInvitationOnlyMailinglist):
 @dataclass
 class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
     # An additional part group id limits the implicit subscribers.
-    event_part_group_id: Optional[vtypes.ID] = None
+    event_part_group_id: vtypes.ID | None = None
 
     registration_stati: list[const.RegistrationPartStati] = dataclasses.field(
         default_factory=list
@@ -573,7 +595,10 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
         return basic_restriction or additional_restriction
 
     def get_subscription_policies(
-        self, rs: RequestState, bc: BackendContainer, persona_ids: Collection[int]
+        self,
+        rs: RequestState,
+        bc: BackendContainer,
+        persona_ids: Collection[vtypes.PersonaID],
     ) -> SubscriptionPolicyMap:
         """Determine the SubscriptionPolicy for each given persona with the mailinglist.
 
@@ -614,7 +639,7 @@ class EventAssociatedMailinglist(EventAssociatedMeta, EventMailinglist):
 
         event = bc.event.get_event(rs, self.event_id)
 
-        part_ids = []
+        part_ids: list[int] = []
         if self.event_part_group_id:
             if part_group := event.part_groups.get(self.event_part_group_id):
                 part_ids = xsorted(part_group.parts)
@@ -649,7 +674,10 @@ class EventAssociatedExclusiveMailinglist(EventAssociatedMailinglist):
     """
 
     def get_subscription_policies(
-        self, rs: RequestState, bc: BackendContainer, persona_ids: Collection[int]
+        self,
+        rs: RequestState,
+        bc: BackendContainer,
+        persona_ids: Collection[vtypes.PersonaID],
     ) -> SubscriptionPolicyMap:
         """Determine the SubscriptionPolicy for each given persona with the mailinglist.
 
@@ -719,7 +747,7 @@ class EventOrgaMailinglist(
 @dataclass
 class AssemblyAssociatedMailinglist(ImplicitsSubscribableMeta, AssemblyMailinglist):
     # Allow empty assembly_id to mark legacy assembly-lists.
-    assembly_id: Optional[vtypes.ID] = None
+    assembly_id: vtypes.ID | None = None
 
     def periodic_cleanup(self, rs: RequestState) -> bool:
         """Disable periodic cleanup to freeze legacy assembly-lists."""
@@ -802,46 +830,44 @@ class AssemblyPresiderMailinglist(AssemblyAssociatedMailinglist):
 
 @dataclass
 class AssemblyOptInMailinglist(AssemblyMailinglist):
-    role_map = OrderedDict([
-        ("assembly", SubscriptionPolicy.subscribable),
-    ])
+    role_map = {
+        Roles.assembly: SubscriptionPolicy.subscribable,
+    }
 
 
 @dataclass
 class GeneralMandatoryMailinglist(AllUsersImplicitMeta, Mailinglist):
-    role_map = OrderedDict([
-        ("ml", SubscriptionPolicy.subscribable),
-    ])
+    role_map = {
+        Roles.ml: SubscriptionPolicy.subscribable,
+    }
     # For mandatory lists, ignore all unsubscriptions.
     allow_unsub = False
-    # Disallow management by cde admins.
-    relevant_admins: ClassVar[set[str]] = set()
 
 
 @dataclass
 class GeneralMeta(GeneralMailinglist):
-    relevant_admins = {"core_admin"}
+    relevant_admins = RoleSet({Roles.core_admin})
 
 
 @dataclass
 class GeneralOptInMailinglist(GeneralMeta, GeneralMailinglist):
-    role_map = OrderedDict([
-        ("ml", SubscriptionPolicy.subscribable),
-    ])
+    role_map = {
+        Roles.ml: SubscriptionPolicy.subscribable,
+    }
 
 
 @dataclass
 class GeneralModeratedOptInMailinglist(GeneralMeta, GeneralMailinglist):
-    role_map = OrderedDict([
-        ("ml", SubscriptionPolicy.moderated_opt_in),
-    ])
+    role_map = {
+        Roles.ml: SubscriptionPolicy.moderated_opt_in,
+    }
 
 
 @dataclass
 class GeneralInvitationOnlyMailinglist(GeneralMeta, GeneralMailinglist):
-    role_map = OrderedDict([
-        ("ml", SubscriptionPolicy.invitation_only),
-    ])
+    role_map = {
+        Roles.ml: SubscriptionPolicy.invitation_only,
+    }
 
 
 @dataclass
@@ -862,7 +888,7 @@ class GeneralModeratorMailinglist(ImplicitsSubscribableMeta, Mailinglist):
 
 @dataclass
 class CdELokalModeratorMailinglist(GeneralModeratorMailinglist):
-    relevant_admins = {"cdelokal_admin"}
+    relevant_admins = RoleSet({Roles.cdelokal_admin})
 
     def get_implicit_subscribers(
         self, rs: RequestState, bc: BackendContainer
@@ -881,23 +907,24 @@ class CdELokalModeratorMailinglist(GeneralModeratorMailinglist):
 
 @dataclass
 class SemiPublicMailinglist(GeneralMailinglist):
-    role_map = OrderedDict([
-        ("member", SubscriptionPolicy.subscribable),
-        ("ml", SubscriptionPolicy.moderated_opt_in),
-    ])
+    role_map = {
+        Roles.member: SubscriptionPolicy.subscribable,
+        Roles.ml: SubscriptionPolicy.moderated_opt_in,
+    }
 
 
 @dataclass
 class CdeLokalMailinglist(SemiPublicMailinglist):
     sortkey = MailinglistGroup.cdelokal
     available_domains = [MailinglistDomain.cdelokal]
-    relevant_admins = {"cdelokal_admin"}
+    relevant_admins = RoleSet({Roles.cdelokal_admin})
     ldap_expose = False
 
 
 @dataclass
-class PublicMemberImplicitMailinglist(AllMembersImplicitMeta, GeneralOptInMailinglist):
-    pass
+class PublicMemberImplicitMailinglist(AllMembersImplicitMeta):
+    # We want _only_ the role map from the GeneralOptInMailinglist.
+    role_map = GeneralOptInMailinglist.role_map
 
 
 @dataclass

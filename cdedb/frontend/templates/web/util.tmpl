@@ -170,18 +170,19 @@
     {% endif %}
     {%- if title %}<span class="sr-only">{{ title }}</span>{% endif %}{%- endmacro %}
 
-{# Special tri-state macro to represent subscription states
+{# macro to visually represent subscription states
 
-   In contrast to the deko_checkbox, this represents the pending state of someone who has requested subscription by
-   an empty circle. Otherwise, this macro is functionally equivalent.
+    Pending subscriptions are shown with a "pause",
+    "unsubscribed", "blocked" and <no subscription relation> are shown with an "x".
+
 #}
 {% macro state_checkbox(state) %}
     {% if state in enums["SubscriptionState"].subscribing_states() %}
-        <span class="fas fa-check-circle" title="{{ gettext("subscribed") }}" aria-hidden="true"></span>
+        <span class="fas fa-check-circle ml-state-subscribed" title="{{ gettext("subscribed") }}" aria-hidden="true"></span>
     {% elif state == enums["SubscriptionState"].pending %}
-        <span class="far fa-circle" title="{{ gettext("pending") }}" aria-hidden="true"></span>
+        <span class="far fa-circle-pause ml-state-pending" title="{{ gettext("pending") }}" aria-hidden="true"></span>
     {% else %}
-        <span class="far fa-times-circle" title="{{ gettext("not subscribed") }}" aria-hidden="true"></span>
+        <span class="far fa-times-circle ml-state-unsubscribed" title="{{ gettext("not subscribed") }}" aria-hidden="true"></span>
     {% endif %}
 {% endmacro %}
 
@@ -204,7 +205,7 @@
 {% macro persona_anchor(persona, use_legal_name=False, include_nickname=False, with_family_name=True, with_titles=False,
                         quote_me=False, event_id=none, ml_id=none, aclass='', readonly=False, title=none, icon=none) %}
     {{- href(show_user_link(user, persona['id'], quote_me, event_id=event_id, ml_id=ml_id),
-             persona|persona_name(use_legal_name, include_nickname, with_family_name),
+             persona|persona_name(use_legal_name=use_legal_name, include_nickname=include_nickname, with_family_name=with_family_name),
              aclass=aclass, readonly=readonly, title=title, icon=icon) -}}
 {% endmacro %}
 
@@ -326,19 +327,22 @@
     {%- endif %}
 {%- endmacro %}
 
-{% macro ack_delete(protect_text, name="ack_delete") %}
+{% macro ack_delete(protect_text, name="ack_delete", form=False, small=False) %}
     {% set caller_ = caller %}
-    {% call output_errors(name, wrapper=True) %}
-        {% if caller_ %}
-            {{ caller_() }}
-        {% else %}
-            {{ input_checkbox(name=name, aclass="ack-delete", title=protect_text,
-                              label=gettext("Are you sure?")) }}
-        {% endif %}
-        {% if not jshint %}
-            {{ raise_for_test("jshint not set for 'util.ack_delete'.") }}
-        {% endif %}
-    {% endcall %}
+    {% if form %}
+        {{ form_input_checkbox(name=name, aclass="ack-delete", title=protect_text, label=gettext("Are you sure?"), small=small) }}
+    {% else %}
+        {% call output_errors(name, wrapper=True) %}
+            {% if caller_ %}
+                {{ caller_() }}
+            {% else %}
+                {{ input_checkbox(name=name, aclass="ack-delete", title=protect_text, label=gettext("Are you sure?")) }}
+            {% endif %}
+            {% if not jshint %}
+                {{ raise_for_test("jshint not set for 'util.ack_delete'.") }}
+            {% endif %}
+        {% endcall %}
+    {% endif %}
     <script nonce="{{ csp_nonce }}">
         $(document.currentScript).closest('form').cdedbProtectAction("{{ protect_text }}");
     </script>
@@ -391,7 +395,7 @@
    used for purely cosmetical changes, admin views in particular. Furthermore, it is not supported for all input types,
    hence we fake it in some cases by introducing an additional hidden field while renaming the previous one.
    To make a use of the readonly attribute a concious decision, we obsure it by the name actualreadonly. #}
-{% macro input_hidden(name, value=none, defaultvalue='', anid=none, aclass=none, form=none) %}
+{% macro input_hidden(name, value=none, defaultvalue='', anid=none, aclass=none, form=none, attributes="") %}
     <input{{ dict(
         type="hidden",
         name=name,
@@ -399,7 +403,7 @@
         id=anid,
         class=aclass,
         form=form
-    )|xmlattr }}/>
+    )|xmlattr }} {{ attributes }}/>
 {% endmacro %}
 
 {% macro required_marker() -%}
@@ -447,7 +451,7 @@
 {%- endmacro %}
 
 {% macro input_text(name, readonly=False, actualreadonly=False, defaultvalue='', anid=none, aclass='form-control',
-        maxlength=256000, type='text', placeholder=none, arialabel=none, attributes='', enforce_required=True) %}
+        maxlength=256000, type='text', placeholder=none, arialabel=none, attributes='', enforce_required=True, autocomplete=none) %}
     <input{{ dict(
         type=type if type != 'iban' else 'text',
         name=name,
@@ -458,13 +462,14 @@
         disabled="disabled" if readonly,
         readonly="readonly" if actualreadonly,
         required="required" if name in mandatory_fields and enforce_required,
+        autocomplete=autocomplete,
         **{ 'aria-label': arialabel }
     )|xmlattr }}
         {%- if type == 'number' %}
             placeholder="0"
         {%- elif type == 'tel' %}
             placeholder="+49 1234 5678910"
-            pattern="\+?[0-9 \(\)]+"
+            pattern="\+?[0-9 \(\)-]+"
             title="{{ gettext("Phone number in the format +49 1234 5678910") }}"
         {%- elif type == 'date' %}
             placeholder="YYYY-MM-DD"
@@ -495,14 +500,14 @@
 {% macro form_input_text(name, label='', info='', displayerrors=True, readonly=False, actualreadonly=False,
         defaultvalue='', anid=none, maxlength=256000, type='text', placeholder=none, small=False, horizontal=True,
         aclass="", attributes='', addon='', markdown=False, errorname=none, wide=False, outerclass='',
-        enforce_required=True) %}
+        enforce_required=True, autocomplete=none) %}
     {%- set anid = anid or "input-text-{}".format(name) %}
     {%- set caller_ = caller %}
     {%- call form_input_general(name, label, anid, small, info, displayerrors, horizontal, addon=addon,
                                 markdown=markdown, errorname=errorname, wide=wide, aclass=outerclass) %}
         {{- input_text(name, readonly, actualreadonly, defaultvalue, anid, maxlength=maxlength, type=type,
                 placeholder=placeholder, aclass="form-control " + aclass, attributes=attributes,
-                enforce_required=enforce_required) }}
+                enforce_required=enforce_required, autocomplete=autocomplete) }}
         {%- if caller_ %}
             {{- caller_() }}
         {%- endif -%}
@@ -581,7 +586,7 @@
 {# list as default value is not supported yet #}
 {% macro input_checkbox(name, label='', value=True, defaultvalue='', readonly=False, actualreadonly=False, anid=none,
         aclass=none, inline=False, radio=False, arialabel=none, attributes='', title='', formid=none) -%}
-    {% set selected = value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue) %}
+    {% set selected = value|stringIn(values.getlist(name)) or (not name in values and value|string == defaultvalue|string) %}
     <label {{ dict(title=title)|xmlattr }} {% if inline %} class="{{"radio" if radio else "checkbox"}}-inline"{% endif %}>
         <input{{ dict(
             type="radio" if radio else "checkbox",
@@ -592,6 +597,7 @@
             checked="checked" if selected,
             disabled="disabled" if readonly or actualreadonly,
             form=formid,
+            title=title,
             **{ 'aria-label': arialabel }
         )|xmlattr }} {{ attributes }} />
         {{ label -}}
@@ -631,21 +637,22 @@
 
 {% macro form_input_checkbox(name, label="", value=True, info='', displayerrors=True, readonly=False,
         actualreadonly=False, defaultvalue='', anid=none, horizontal=True, small=False, attributes='', aclass='',
-        outerclass='') %}
+        outerclass='', title='', errorname=none) %}
     {#- This is the version for a single checkbox as opposed to form_input_checkboxes(). #}
     {%- set anid = anid or "input-checkbox-{}".format(name) %}
+    {%- set errorname = errorname or name %}
     <div class="form-group
         {{ outerclass }}
-        {{ ("has-warning" if is_warning(name) else "has-error") if name in errors }}
+        {{ ("has-warning" if is_warning(errorname) else "has-error") if errorname in errors }}
     ">
         <div{% if horizontal %} class="
             {{ "col-sm-6 col-sm-offset-2" if small else "col-sm-8 col-sm-offset-4" }}
         "{% endif %}>
             <div class="checkbox{% if readonly or actualreadonly %} disabled{% endif %}">
                 {{ input_checkbox(name, label, value, defaultvalue, readonly, actualreadonly, anid,
-                                  attributes=attributes, aclass=aclass) }}
+                                  attributes=attributes, aclass=aclass, title=title) }}
             </div>
-            {{- output_errors(name, displayerrors) }}
+            {{- output_errors(errorname, displayerrors) }}
             {{- output_info(info) }}
         </div>
     </div>
@@ -819,7 +826,7 @@
     {%- if caller %}{% set value=caller() %}{% endif %}
     {%- call form_input_general(name, label, none, small, info, displayerrors, horizontal, aclass=outerclass, errorname=errorname) %}
         <div {% if name %}name="{{ name }}" {% endif %}class="form-control-static {{ aclass }}"{% if anid %} id="{{ anid }}"{% endif %}>
-            {{ make_icon(icon) if icon }}
+            {{ make_icon(icon) if icon }}{{ nbsp if icon }}
             {{- value -}}
         </div>
     {%- endcall %}
@@ -958,16 +965,16 @@ attribute to each field of a dynamic row. #}
    The properties of the individual buttons are specified through the `views` argument, which is an iterable of
    3-tuples. Each tuple defines (label, view_names, relevant_views) of one button:
      * `label` (1st tuple entry) defines the caption of the button. Should be internationalized.
-     * `view_names` (2nd tuple entry) defines a list of admin_views to be toggled by this button together.
-     * `relevant_views` (3rd tuple entry) defines a list of views, which are the subset of `view_names` that is relevant
-       in the current page's context. The button is only displayed, if one of those views is available to the user.
-       For convenience, `relevant_views` may be set to none, in which case all `view_names` are considered relevant.
+     * `toggleable_views` (2nd tuple entry) defines a collection of admin_views to be toggled by this button together.
+     * `relevant_views` (3rd tuple entry) defines the subset of `toggleable_views` that is relevant in the current
+       page's context. The button is only displayed, if one of those views is available to the user. For convenience,
+       `relevant_views` may be set to none, in which case all `toggleable_views` are considered relevant.
        Example: A button in the Core realm may toggle all user admin views (`core_user`, `cde_user, `event_user`, ...),
        but should only be shown to core admins, i.e. users who have the `core_user` view available.
  #}
 {% macro admin_views_toggle(views) %}
     {% set inner = _admin_views_toggle_inner(views) %}
-    {% if inner %}
+    {% if inner.strip() %}
         <hr />
         <form action="{{ cdedblink('core/modify_active_admin_views') }}" method="post" id="adminviewstoggleform">
             {% if original_request and original_request.url %}
@@ -982,16 +989,17 @@ attribute to each field of a dynamic row. #}
 {# Un-inlined part of admin_views_toggle() to allow detection of empty list of views with the limited capabilities of
    jinja #}
 {% macro _admin_views_toggle_inner(views) -%}
-    {% for label, view_names, relevant_views in views -%}
-        {% set relevant_views = relevant_views if relevant_views is not none else view_names -%}
-        {% if (relevant_views|set).intersection(user.available_admin_views) %}
+    {% for label, toggleable_views, relevant_views in views -%}
+        {% set relevant_views = relevant_views if relevant_views is not none else toggleable_views -%}
+        {% set relevant_views = [relevant_views]|set if relevant_views is not iterable else relevant_views -%}
+        {% if user.available_admin_views.has_any(*relevant_views) %}
             {# The button is "deactivated" as long as there are more "relevant views" which are available for the
                user but are not enabled yet. #}
-            {% set active = not (relevant_views|set).intersection(user.available_admin_views - user.admin_views) -%}
+            {% set active = user.admin_views.has_all(*user.available_admin_views.__and__(relevant_views)) -%}
             <button{{ dict(
                 type="submit",
-                name="view_specifier",
-                value=("-" if active else "+") + view_names|join(','),
+                name="remove" if active else "add",
+                value=AdminViews.serialize(toggleable_views),
                 class="list-group-item list-group-item-info" + (" active" if active else ""),
                 title=(gettext("Hide %(label)s") if active else gettext("Show %(label)s"))|format(label=label)
             )|xmlattr }}>
@@ -1013,15 +1021,16 @@ mailto:
 {%- endmacro %}
 
 {% macro username_mailto(persona, email=none) -%}
+    {% set email = email or (persona["username"] if persona|hasattr("username")) or (persona["persona.username"] if persona|hasattr("persona.username")) or "" %}
     {{ href(
         mailto(
-            address=email or persona["username"] or persona["persona.username"] or "",
+            address=email,
             name="{} {}".format(
-                persona["given_names"] or persona["persona.given_names"] or "",
-                persona["family_name"] or persona["persona.family_name"] or ""
+                (persona["given_names"] if persona|hasattr("given_names")) or (persona["persona.given_names"] if persona|hasattr("persona.given_names")) or "",
+                (persona["family_name"] if persona|hasattr("family_name")) or (persona["persona.family_name"] if persona|hasattr("persona.family_name")) or "",
             )
         ),
-        email or persona["username"] or persona["persona.username"] or ""
+        email
     ) }}
 {%- endmacro %}
 
@@ -1147,22 +1156,23 @@ mailto:
 
 
 {% macro privilege_icon(privilege, desc=False) %}
-    {% with title_icon_map = {
-        "is_meta_admin": (gettext("Meta admin"), "wrench"),
-        "is_core_admin": (gettext("Core admin"), "user"),
-        "is_cde_admin": (gettext("CdE admin"), "graduation-cap"),
-        "is_finance_admin": (gettext("Finance admin"), "euro-sign"),
-        "is_event_admin": (gettext("Event admin"), "chalkboard-teacher"),
-        "is_ml_admin": (gettext("Mailinglist admin"), "envelope"),
-        "is_cdelokal_admin": (gettext("CdElokal admin"), "city"),
-        "is_assembly_admin": (gettext("Assembly admin"), "bullhorn"),
-        "is_complaint_admin": (gettext("Case archive admin"), "gavel"),
-        "is_auditor": (gettext("Auditor"), "search-dollar"),
+    {% with icon_map = {
+        "is_meta_admin": "wrench",
+        "is_core_admin": "user",
+        "is_cde_admin": "graduation-cap",
+        "is_finance_admin": "euro-sign",
+        "is_event_admin": "chalkboard-teacher",
+        "is_ml_admin": "envelope",
+        "is_cdelokal_admin": "city",
+        "is_assembly_admin": "bullhorn",
+        "is_complaint_admin": "gavel",
+        "is_auditor": "search-dollar",
         } %}
-        {% set description, icon = title_icon_map[privilege] %}
-        {{ make_icon(icon, title=description) }}
-        {% if desc %}
-            {{ description }}
+
+        {{ make_icon(icon_map[privilege.marker], title=gettext(privilege|string)) }}
+        {%- if desc %}
+            {{- nbsp -}}
+            {{ gettext(privilege|string) }}
         {% endif %}
     {% endwith %}
 {% endmacro %}

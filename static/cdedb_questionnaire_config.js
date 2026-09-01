@@ -5,6 +5,7 @@
 /** Enum of possible types of custom DataFields. Reflects cdedb.database.constants.FieldDatatypes */
 FieldDatatypes = {
     "str": 1,
+    "multine_str": 50,
     "bool": 2,
     "int": 3,
     "float": 4,
@@ -13,11 +14,12 @@ FieldDatatypes = {
 };
 /** Mapping of CdEDB datafield types to HTML input types */
 var inputTypes = {
-    1 : 'text',
     3 : 'number',
-    4 : 'text',
     5 : 'date',
-    6 : 'datetime-local'};
+    6 : 'datetime-local',
+    10: 'number',
+    20: 'tel',
+};
 
 (function($){
     /**
@@ -67,13 +69,14 @@ var inputTypes = {
 
                 $i.val(defaultvalue);
 
-            // For string type fields, we use a textarea (to allow entering line breaks w/o copy&paste)
+            // For multiline string type fields, we use a textarea (to allow entering line breaks w/o copy&paste).
             } else {
-                $i = $(field_type === FieldDatatypes.str && size > 0 ? '<textarea>' : '<input>', {
-                    'class': "form-control input-defaultvalue drow-input",
+                $i = $(field_type === FieldDatatypes.multine_str ? '<textarea>' : '<input>', {
+                    'class': $input_defaultvalue.attr('class'),
                     'id': $input_defaultvalue.attr('id'),
                     'name': $input_defaultvalue.attr('name'),
-                    'type': inputTypes[field_type]
+                    'type': inputTypes[field_type] ?? 'text',
+                    'rows': 5,
                 })
                     .val(defaultvalue);
 
@@ -94,41 +97,43 @@ var inputTypes = {
      * jQuery plugin to be used on each single row in questionnaire_summary formular. It adds an event listener to the
      * field_id input and calls it to hide/show some labels.
      */
-    $.fn.cdedbQuestionnaireConfig = function(field_list, translations) {
+    $.fn.cdedbQuestionnaireConfig = function(field_list, translations, classes_by_role, all_classes) {
         $(this).each(function(){
             var $container = $(this);
+            var $input_role = $(this).find('.input-role');
             var $input_field = $(this).find('.input-field');
             var $input_group_readonly = $(this).find('.input-readonly').closest('.checkbox');
             var $input_group_defaultvalue = $(this).find('.input-defaultvalue').closest('.form-group');
-            var $input_helpblock_info = $(this).find('.input-info').closest('.form-group').find('.help-block');
 
-            /* Callback handler to be executed when the data field of this questionnaire part is triggered */
+            /* Callback handler for changes to the role input. */
+            var input_role_handler = function() {
+                var val = $(this).val();
+                $container.find(".drow-input").each(function() {
+                    let show_for_role = $(this).data("show_for_role");
+                    if (show_for_role === undefined || show_for_role.includes(val)) {
+                        $(this).closest(".form-group,.checkbox").show();
+                    } else {
+                        $(this).closest(".form-group,.checkbox").hide();
+                    }
+                })
+                $container.removeClass(all_classes);
+                $container.addClass(classes_by_role[val]);
+            };
+
+            /* Callback handler for changes to the selected event field. */
             var input_field_handler = function() {
                 var val = $(this).val();
-                /* Text-only questionnaire part */
-                if (val === '') {
-                    $input_group_readonly.hide();
-                    $input_group_defaultvalue.hide();
-                    $input_helpblock_info.show();
-                    $container.addClass('shaded-info');
-
-                /* Questionnaire part with input field */
-                } else {
-                    $input_group_readonly.show();
-                    $input_group_defaultvalue.show();
-                    $input_helpblock_info.hide();
-                    $container.removeClass('shaded-info');
-
-                    // Change default_value input field's type and attributes according to selected field's type
-                    var field_spec = field_list[val];
-                    if (field_spec) {
-                        var $input_defaultvalue = $container.find('.input-defaultvalue');
-                        replace_defaultvalue_input(field_spec, $input_defaultvalue, translations);
-                    }
+                // Change default_value input field's type and attributes according to selected field's type
+                var field_spec = field_list[val];
+                if (field_spec) {
+                    var $input_defaultvalue = $container.find('.input-defaultvalue');
+                    replace_defaultvalue_input(field_spec, $input_defaultvalue, translations);
                 }
             };
 
-            /* Call input_field_handler() on change of field-input and once for intialization */
+            /* Register handlers for input changes and trigger them once for intialization. */
+            $input_role.on("change", input_role_handler);
+            $input_role.trigger("change");
             $input_field.on("change", input_field_handler);
             $input_field.trigger("change");
         });

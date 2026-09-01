@@ -10,7 +10,6 @@ special in here.
 """
 
 import logging
-from typing import Optional
 
 import psycopg2.extensions
 from passlib.utils import consteq
@@ -20,10 +19,11 @@ from cdedb.backend.common import inspect_validation as inspect
 from cdedb.common import User, n_, now
 from cdedb.common.crypt import verify_password
 from cdedb.common.exceptions import APITokenError
-from cdedb.common.fields import PERSONA_STATUS_FIELDS
-from cdedb.common.roles import extract_roles
+from cdedb.common.roles import Roles
 from cdedb.config import Config, SecretsConfig
+from cdedb.database import DBRole
 from cdedb.database.connection import connection_pool_factory
+from cdedb.models.core import CorePersona, PersonaStatus
 from cdedb.models.droid import (
     DynamicAPIToken,
     StaticAPIToken,
@@ -62,7 +62,7 @@ class SessionBackend:
         # since the competing write will be pretty similar).
         self.connpool = connection_pool_factory(
             self.conf["CDB_DATABASE_NAME"],
-            ("cdb_anonymous", "cdb_persona"),
+            (DBRole.anonymous, DBRole.persona),
             secrets,
             self.conf["DB_HOST"],
             self.conf["DB_PORT"],
@@ -74,13 +74,13 @@ class SessionBackend:
         if self.conf["LOCKDOWN"]:
             return True
         # we do not have the core backend, so we have to query meta info by hand
-        with self.connpool["cdb_anonymous"] as conn:
+        with self.connpool[DBRole.anonymous] as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT info FROM core.meta_info LIMIT 1")
                 data = dict(cur.fetchone() or {})
         return data['info'].get("lockdown_web")
 
-    def lookupsession(self, sessionkey: Optional[str], ip: Optional[str]) -> User:
+    def lookupsession(self, sessionkey: str | None, ip: str | None) -> User:
         """Raison d'etre.
 
         Resolve a session key (originally stored in a cookie) into the
@@ -98,7 +98,7 @@ class SessionBackend:
                 FROM core.sessions
                 WHERE sessionkey = %s
             """
-            with self.connpool["cdb_anonymous"] as conn:
+            with self.connpool[DBRole.anonymous] as conn:
                 with conn.cursor() as cur:
                     cur.execute(query, (sessionkey,))
                     if cur.rowcount == 1:
@@ -128,7 +128,7 @@ class SessionBackend:
                     SET is_active = False
                     WHERE sessionkey = %s
                 """
-                with self.connpool["cdb_anonymous"] as conn:
+                with self.connpool[DBRole.anonymous] as conn:
                     with conn.cursor() as cur:
                         cur.execute(query, (sessionkey,))
 
@@ -136,33 +136,34 @@ class SessionBackend:
             return User()
 
         query = "UPDATE core.sessions SET atime = now() WHERE sessionkey = %s"
-        query2 = f"""
-            SELECT
-                id AS persona_id, given_names, nickname, family_name, username,
-                {', '.join(PERSONA_STATUS_FIELDS)}
-            FROM core.personas
-            WHERE id = %s
-        """
-        with self.connpool["cdb_persona"] as conn:
+        with self.connpool[DBRole.persona] as conn:
             with conn.cursor() as cur:
                 cur.execute(query, (sessionkey,))
-                cur.execute(query2, (persona_id,))
+
+                # retrieve the persona
+                cur.execute(*CorePersona.get_select_query([persona_id]))
                 data = cur.fetchone()
                 assert data is not None
+                persona = CorePersona.from_database(data)
+
+                # retrieve its status bits
+                cur.execute(*PersonaStatus.get_select_query([persona_id]))
+                data = cur.fetchone()
+                assert data is not None
+                status = PersonaStatus.from_database(data)
+
         if self._is_locked_down() and not (
-            data['is_meta_admin'] or data['is_core_admin']
+            status.is_meta_admin or status.is_core_admin
         ):
             # Short circuit in case of lockdown
             return User()
-        if not data["is_active"]:
+        if not status.is_active:
             self.logger.warning(f"Found inactive user {persona_id}")
             return User()
 
-        pkeys = ('persona_id', 'username', 'given_names', 'nickname', 'family_name')
-        vals = {k: data[k] for k in pkeys}
-        return User(roles=extract_roles(data), **vals)
+        return User.from_persona(status=status, persona=persona)
 
-    def lookuptoken(self, apitoken: Optional[str], ip: Optional[str]) -> User:
+    def lookuptoken(self, apitoken: str | None, ip: str | None) -> User:
         """Raison d'etre deux.
 
         Resolve an API token (originally submitted via header) into the
@@ -171,11 +172,11 @@ class SessionBackend:
         A malformed token or a valid token for an unknown droid or
         with an invalid secret will raise an error.
         """
-        apitoken, errs = inspect(vtypes.APITokenString, apitoken)
-        if not apitoken or errs:
+        token, errs = inspect(vtypes.APITokenString, apitoken)
+        if not token or errs:
             raise APITokenError(n_("Malformed API token."))
 
-        droid_name, secret = apitoken
+        droid_name, secret = token
 
         try:
             droid_class, token_id = resolve_droid_name(droid_name)
@@ -200,7 +201,7 @@ class SessionBackend:
             raise
 
         # Prevent non-infrastructure droids from access during lockdown.
-        if self._is_locked_down() and 'droid_infra' not in ret.roles:
+        if self._is_locked_down() and Roles.droid_infra not in ret.new_roles:
             ret = User()
 
         return ret
@@ -211,7 +212,7 @@ class SessionBackend:
         if self.conf['CDEDB_OFFLINE_DEPLOYMENT']:
             raise APITokenError(n_("This API is not available in offline mode."))
 
-        with self.connpool["cdb_anonymous"] as conn:
+        with self.connpool[DBRole.anonymous] as conn:
             with conn.cursor() as cur:
                 query = f"""
                     SELECT

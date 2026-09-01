@@ -14,8 +14,9 @@ from typing import cast
 
 import cdedb.enums
 from cdedb.common.n_ import n_
+from cdedb.common.sorting import xsorted
 from cdedb.common.validation.data import COUNTRY_CODES
-from cdedb.models.event_constraint_violations import ConstraintViolation
+from cdedb.models.event.constraint_violations import ConstraintViolation
 from cdedb.uncommon.intenum import CdEEnumMeta
 
 
@@ -23,10 +24,17 @@ def main() -> None:
     enum_strings = []
     base_cls: type[enum.Enum]
     for base_cls in cast(list[type[enum.Enum]], CdEEnumMeta.__subclasses__()):
-        for enum_cls in base_cls.__subclasses__():
+        subclasses = base_cls.__subclasses__()
+        for enum_cls in subclasses:
+            if hasattr(enum_cls, "__subclasses__"):
+                subclasses.extend(enum_cls.__subclasses__())
             if enum_cls not in cdedb.enums.NON_TRANSLATED_ENUMS:
-                for enum_member in enum_cls:
-                    enum_strings.append(str(enum_member))
+                if hasattr(enum_cls, "_translated_members"):
+                    for enum_member in xsorted(enum_cls._translated_members()):
+                        enum_strings.append(str(enum_member))
+                else:
+                    for enum_member in enum_cls:
+                        enum_strings.append(str(enum_member))
 
     abstract, nonabstract = ConstraintViolation._get_subclasses()
     for cv_cls in abstract:

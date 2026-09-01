@@ -12,6 +12,7 @@ import cdedb.database.constants as const
 from cdedb.common import CdEDBObject, RequestState, lastschrift_reference, unwrap
 from cdedb.common.n_ import n_
 from cdedb.common.query.log_filter import CdELogFilter
+from cdedb.common.roles import Roles
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
     REQUESTdata,
@@ -20,12 +21,11 @@ from cdedb.frontend.common import (
     Worker,
     access,
     make_membership_fee_reference,
-    make_postal_address,
 )
 
 
 class CdESemesterMixin(CdEBaseFrontend):
-    @access("cde_admin")
+    @access(Roles.cde_admin)
     def show_semester(self, rs: RequestState) -> Response:
         """Show information."""
         period_id = self.cdeproxy.current_period(rs)
@@ -84,7 +84,7 @@ class CdESemesterMixin(CdEBaseFrontend):
             },
         )
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     @REQUESTdata("addresscheck", "testrun")
     def semester_bill(
         self, rs: RequestState, addresscheck: bool, testrun: bool
@@ -131,7 +131,7 @@ class CdESemesterMixin(CdEBaseFrontend):
                 # Send mail only if transaction completed successfully.
                 if persona:
                     lastschrift_list = self.cdeproxy.list_lastschrift(
-                        rrs, persona_ids=(persona['id'],)
+                        rrs, persona_ids=(persona.id,)
                     )
                     lastschrift = None
                     if lastschrift_list:
@@ -139,15 +139,13 @@ class CdESemesterMixin(CdEBaseFrontend):
                             rrs, unwrap(lastschrift_list.keys())
                         )
                         lastschrift['reference'] = lastschrift_reference(
-                            persona['id'], lastschrift['id']
+                            persona.id, lastschrift['id']
                         )
 
-                    address = make_postal_address(rrs, persona)
-                    transaction_subject = make_membership_fee_reference(persona)
                     endangered = (
-                        persona['balance'] < self.conf["MEMBERSHIP_FEE"]
-                        and not persona['trial_member']
-                        and not persona['honorary_member']
+                        persona.balance < self.conf["MEMBERSHIP_FEE"]
+                        and not persona.trial_member
+                        and not persona.honorary_member
                         and not lastschrift
                     )
                     if endangered:
@@ -158,15 +156,14 @@ class CdESemesterMixin(CdEBaseFrontend):
                     self.do_mail(
                         rrs,
                         "semester/billing",
-                        {'To': (persona['username'],), 'Subject': subject},
+                        {'To': (persona.username,), 'Subject': subject},
                         {
                             'persona': persona,
                             'fee': self.conf["MEMBERSHIP_FEE"],
                             'annual_fee': annual_fee,
                             'lastschrift': lastschrift,
                             'open_lastschrift': open_lastschrift,
-                            'address': address,
-                            'transaction_subject': transaction_subject,
+                            'address': persona.get_postal_address(rrs),
                             'addresscheck': addresscheck,
                             'meta_info': meta_info,
                         },
@@ -181,12 +178,14 @@ class CdESemesterMixin(CdEBaseFrontend):
                 )
 
                 if persona:
-                    transaction_subject = make_membership_fee_reference(persona)
+                    transaction_subject = make_membership_fee_reference(
+                        persona.as_dict()
+                    )
                     self.do_mail(
                         rrs,
                         "semester/imminent_archival",
                         {
-                            'To': (persona['username'],),
+                            'To': (persona.username,),
                             'Subject': "Bevorstehende Löschung Deines"
                             " CdE-Datenbank-Accounts",
                         },
@@ -211,7 +210,7 @@ class CdESemesterMixin(CdEBaseFrontend):
             rs.notify("success", n_("Started sending archival notifications."))
         return self.redirect(rs, "cde/show_semester")
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     def semester_eject(self, rs: RequestState) -> Response:
         """Eject members without enough credit and archive inactive users.
 
@@ -247,19 +246,17 @@ class CdESemesterMixin(CdEBaseFrontend):
                 )
 
                 if persona:
-                    transaction_subject = make_membership_fee_reference(persona)
                     meta_info = self.coreproxy.get_meta_info(rrs)
                     self.do_mail(
                         rrs,
                         "semester/ejection",
                         {
-                            'To': (persona['username'],),
+                            'To': (persona.username,),
                             'Subject': "Austritt aus dem CdE e.V.",
                         },
                         {
                             'persona': persona,
                             'fee': self.conf["MEMBERSHIP_FEE"],
-                            'transaction_subject': transaction_subject,
                             'meta_info': meta_info,
                         },
                     )
@@ -304,7 +301,7 @@ class CdESemesterMixin(CdEBaseFrontend):
         )
         return self.redirect(rs, "cde/show_semester")
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     def semester_balance_update(self, rs: RequestState) -> Response:
         """Deduct membership fees from all member accounts.
 
@@ -330,7 +327,7 @@ class CdESemesterMixin(CdEBaseFrontend):
         rs.notify("success", n_("Started updating balance."))
         return self.redirect(rs, "cde/show_semester")
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     @REQUESTdata("testrun", "skip")
     def expuls_addresscheck(
         self, rs: RequestState, testrun: bool, skip: bool
@@ -358,15 +355,17 @@ class CdESemesterMixin(CdEBaseFrontend):
                     rrs, expuls_id, testrun
                 )
                 if persona:
-                    address = make_postal_address(rrs, persona)
                     self.do_mail(
                         rrs,
                         "semester/addresscheck",
                         {
-                            'To': (persona['username'],),
+                            'To': (persona.username,),
                             'Subject': "Adressabfrage für den exPuls",
                         },
-                        {'persona': persona, 'address': address},
+                        {
+                            'persona': persona,
+                            'address': persona.get_postal_address(rrs),
+                        },
                     )
             return proceed and not testrun
 
@@ -378,7 +377,7 @@ class CdESemesterMixin(CdEBaseFrontend):
             rs.notify("success", n_("Started sending mail."))
         return self.redirect(rs, "cde/show_semester")
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     def expuls_advance(self, rs: RequestState) -> Response:
         """Proceed to next expuls."""
         expuls_id = self.cdeproxy.current_expuls(rs)
@@ -394,7 +393,7 @@ class CdESemesterMixin(CdEBaseFrontend):
 
     @REQUESTdatadict(*CdELogFilter.requestdict_fields())
     @REQUESTdata("download")
-    @access("cde_admin", "auditor")
+    @access(Roles.cde_admin, Roles.auditor)
     def view_cde_log(
         self, rs: RequestState, data: CdEDBObject, download: bool
     ) -> Response:

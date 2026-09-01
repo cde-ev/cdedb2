@@ -234,8 +234,12 @@ class StaticAPIToken(APIToken):
         return cls._get_token_string(cls.get_droid_name(), secret)
 
 
-class ResolveToken(StaticAPIToken):
+class CyberAkaResolveToken(StaticAPIToken):
     name = "resolve"  #:
+
+
+class ZammadResolveToken(StaticAPIToken):
+    name = "zammad_resolve"  #:
 
 
 class QuickPartialExportToken(StaticAPIToken):
@@ -324,7 +328,7 @@ class OrgaToken(DynamicAPIToken, EventDataclass):
     name = "orga"
 
     #: ID of the event this token is linked to. May not change.
-    event_id: vtypes.ID = field(metadata=Meta.input_update_exclude.as_dict)
+    event_id: vtypes.EventID = field(metadata=Meta.input_update_exclude.as_dict)
 
     #: Table where data for this class of token is stored.
     database_table = "event.orga_apitokens"

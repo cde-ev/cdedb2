@@ -13,9 +13,9 @@ backend parts.
 
 import copy
 import dataclasses
+import datetime
 import decimal
 from collections import OrderedDict
-from typing import Optional
 
 import psycopg2.extensions
 
@@ -44,7 +44,7 @@ from cdedb.common.exceptions import PrivilegeError, QuotaException
 from cdedb.common.n_ import n_
 from cdedb.common.query import Query, QueryOperators, QueryScope, QuerySpecEntry
 from cdedb.common.query.log_filter import CdELogFilter, FinanceLogFilter
-from cdedb.common.roles import implying_realms
+from cdedb.common.roles import Realms, Roles
 from cdedb.common.sorting import xsorted
 from cdedb.common.validation.validate import (
     PERSONA_CDE_CREATION as CDE_TRANSITION_FIELDS,
@@ -82,23 +82,19 @@ class CdEBaseBackend(AbstractBackend):
     .. note:: The changelog functionality is to be found in the core backend.
     """
 
-    realm = "cde"
+    realm = Realms.cde
 
     def __init__(self) -> None:
         super().__init__()
         self.pastevent = make_proxy(PastEventBackend(), internal=True)
         self.event = make_proxy(EventBackend(), internal=True)
 
-    @classmethod
-    def is_admin(cls, rs: RequestState) -> bool:
-        return super().is_admin(rs)
-
     def cde_log(
         self,
         rs: RequestState,
         code: const.CdeLogCodes,
-        persona_id: Optional[int] = None,
-        change_note: Optional[str] = None,
+        persona_id: int | None = None,
+        change_note: str | None = None,
     ) -> DefaultReturnCode:
         """Make an entry in the log.
 
@@ -118,7 +114,7 @@ class CdEBaseBackend(AbstractBackend):
         }
         return self.sql_insert(rs, "cde.log", data)
 
-    @access("cde_admin", "auditor")
+    @access(Roles.cde_admin, Roles.auditor)
     def retrieve_cde_log(self, rs: RequestState, log_filter: CdELogFilter) -> CdEDBLog:
         """Get recorded activity.
 
@@ -128,7 +124,7 @@ class CdEBaseBackend(AbstractBackend):
         log_filter = affirm(CdELogFilter, log_filter)
         return self.generic_retrieve_log(rs, log_filter)
 
-    @access("core_admin", "cde_admin", "auditor")
+    @access(Roles.core_admin, Roles.cde_admin, Roles.auditor)
     def retrieve_finance_log(
         self, rs: RequestState, log_filter: FinanceLogFilter
     ) -> CdEDBLog:
@@ -140,9 +136,9 @@ class CdEBaseBackend(AbstractBackend):
         log_filter = affirm(FinanceLogFilter, log_filter)
         return self.generic_retrieve_log(rs, log_filter)
 
-    @access("finance_admin")
+    @access(Roles.finance_admin)
     def book_money_transfers(
-        self, rs: RequestState, transfers: list[CdEDBObject]
+        self, rs: RequestState, transfers: list[vtypes.MoneyTransferEntry]
     ) -> models_finance.MoneyTransfersResult:
         transfers = affirm(list[vtypes.MoneyTransferEntry], transfers)
         # This ensures that membership fees are handled before event fees for each day.
@@ -159,17 +155,18 @@ class CdEBaseBackend(AbstractBackend):
             with Atomizer(rs):
                 result = models_finance.MoneyTransfersResult()
                 persona_ids = {t['persona_id'] for t in transfers}
-                event_personas = self.core.get_event_users(rs, persona_ids)
+                personas = self.core.get_personas(rs, persona_ids)
                 cde_personas = self.core.get_cde_users(
-                    rs, {p["id"] for p in event_personas.values() if p["is_cde_realm"]}
+                    rs, {p.id for p in personas.values() if p.is_cde_realm}
                 )
                 for index, transfer in enumerate(transfers):
-                    amount, date = transfer['amount'], transfer['date']
+                    amount: decimal.Decimal = transfer['amount']
+                    date: datetime.date = transfer['date']
                     if transfer['registration_id'] is None:
                         if transfer["persona_id"] not in cde_personas:
                             raise ValueError(n_("Persona is not in CdE realm."))
                         cde_persona = cde_personas[transfer["persona_id"]]
-                        new_balance = cde_persona['balance'] + amount
+                        new_balance = cde_persona.balance + amount
                         change_note = changelog_note_template.format(
                             amount=money_filter(amount),
                             new_balance=money_filter(new_balance),
@@ -179,7 +176,7 @@ class CdEBaseBackend(AbstractBackend):
                         # Increase balance.
                         self.core.change_persona_balance(
                             rs,
-                            cde_persona['id'],
+                            cde_persona.id,
                             new_balance,
                             const.FinanceLogCodes.increase_balance,
                             change_note=change_note,
@@ -189,37 +186,39 @@ class CdEBaseBackend(AbstractBackend):
                         # Grant membership if necessary.
                         if (
                             new_balance >= self.conf["MEMBERSHIP_FEE"]
-                            and not cde_persona['is_member']
+                            and not cde_persona.is_member
                         ):
                             code = self.core.change_membership_easy_mode(
-                                rs, cde_persona['id'], is_member=True
+                                rs, cde_persona.id, is_member=True
                             )
                             result.new_members += bool(code)
-                            cde_persona['is_member'] = bool(code)
-                            event_personas[cde_persona["id"]]["is_member"] = bool(code)
+                            cde_persona.is_member = bool(code)
+
+                        # Adjust balance for further steps (multiple payments, emails).
+                        cde_persona.balance = new_balance
 
                         # Add to tally.
                         result.membership_fees.append(
-                            models_finance.MoneyTransfer(
+                            models_finance.MoneyTransferMember(
                                 persona=cde_persona, amount=amount, date=date
                             )
                         )
-
-                        # Remember the changed balance in case of multiple transfers.
-                        cde_persona['balance'] = new_balance
                     else:
-                        event_persona = event_personas[transfer['persona_id']]
+                        persona = personas[transfer['persona_id']]
+                        is_member = False
+                        if persona.id in cde_personas:
+                            is_member = cde_personas[persona.id].is_member
                         registration = self.event.book_registration_payment(
                             rs,
                             registration_id=transfer['registration_id'],
                             amount=amount,
                             date=date,
                             by_orga=False,
-                            is_member=event_persona['is_member'],
+                            is_member=is_member,
                         )
                         event_id = registration['event_id']
-                        ret = models_finance.MoneyTransfer(
-                            persona=event_persona,
+                        ret = models_finance.MoneyTransferEvent(
+                            persona=persona,
                             amount=amount,
                             date=date,
                             registration=registration,
@@ -247,7 +246,7 @@ class CdEBaseBackend(AbstractBackend):
             return models_finance.MoneyTransfersResult(success=False, index=index)
         return result
 
-    @access("cde")
+    @access(Roles.cde)
     def current_period(self, rs: RequestState) -> int:
         """Check for the current semester."""
         query = "SELECT MAX(id) FROM cde.org_period"
@@ -256,7 +255,7 @@ class CdEBaseBackend(AbstractBackend):
             raise ValueError(n_("No period exists."))
         return ret
 
-    @access("member", "cde_admin")
+    @access(Roles.member, Roles.cde_admin)
     def get_member_stats(
         self, rs: RequestState
     ) -> tuple[CdEDBObject, CdEDBObject, CdEDBObject, CdEDBObject]:
@@ -461,7 +460,7 @@ class CdEBaseBackend(AbstractBackend):
         datum: CdEDBObject,
         trial_membership: bool,
         consent: bool,
-    ) -> Optional[int]:
+    ) -> int | None:
         """Uninlined code from perform_batch_admission().
 
         :returns: The affected persona_id, or None if the entry was skipped.
@@ -492,7 +491,8 @@ class CdEBaseBackend(AbstractBackend):
             )
         elif datum['resolution'].is_modification():
             persona_id = datum['doppelganger_id']
-            current = self.core.get_persona(rs, persona_id)
+            # TODO migrate upgrade logic to dataclass
+            current = self.core.get_persona(rs, persona_id).as_dict()
             if current['is_archived']:
                 if current['is_purged']:
                     raise RuntimeError(n_("Cannot restore purged account."))
@@ -547,7 +547,8 @@ class CdEBaseBackend(AbstractBackend):
                     for field in mandatory_fields:
                         promotion[field] = datum['persona'][field]
                 else:
-                    current = self.core.get_event_user(rs, persona_id)
+                    # TODO migrate upgrade logic to dataclasses
+                    current = self.core.get_event_user(rs, persona_id).as_dict()
                     # take care that we do not override existent data
                     current_fields = {
                         field
@@ -565,7 +566,7 @@ class CdEBaseBackend(AbstractBackend):
                     rs, promotion, change_note="Datenübernahme nach Massenaufnahme"
                 )
             if datum['resolution'].do_trial():
-                if current['is_member']:
+                if self.core.get_persona_status(rs, persona_id).is_member:
                     raise RuntimeError(n_("May not grant trial membership to member."))
                 self.core.change_membership_easy_mode(
                     rs, datum['doppelganger_id'], is_member=True, trial_member=True
@@ -602,11 +603,11 @@ class CdEBaseBackend(AbstractBackend):
             )
         return persona_id
 
-    @access("cde_admin")
+    @access(Roles.cde_admin)
     def perform_batch_admission(
         self,
         rs: RequestState,
-        data: list[CdEDBObject],
+        data: list[vtypes.BatchAdmissionEntry],
         trial_membership: bool,
         consent: bool,
     ) -> tuple[bool, BatchAdmissionStats | int | None]:
@@ -661,7 +662,7 @@ class CdEBaseBackend(AbstractBackend):
             return False, index
         return True, stats
 
-    @access("searchable", "core_admin", "cde_admin")
+    @access(Roles.searchable, Roles.core_admin, Roles.cde_admin)
     def submit_general_query(
         self, rs: RequestState, query: Query, aggregate: bool = False
     ) -> tuple[CdEDBObject, ...]:
@@ -686,7 +687,7 @@ class CdEBaseBackend(AbstractBackend):
             QueryScope.past_event_user,
             QueryScope.all_cde_users,
         }:
-            if not {'core_admin', 'cde_admin'} & rs.user.roles:
+            if not rs.user.new_roles.has_any(Roles.core_admin, Roles.cde_admin):
                 raise PrivilegeError(n_("Admin only."))
 
             # Potentially restrict to non-archived users.
@@ -700,20 +701,24 @@ class CdEBaseBackend(AbstractBackend):
                 query.spec['is_event_realm'] = QuerySpecEntry("bool", "")
             else:
                 # Restrict to exactly cde users (not higher).
-                query.constraints.append(("is_cde_realm", QueryOperators.equal, True))
-                query.spec['is_cde_realm'] = QuerySpecEntry("bool", "")
-                for realm in implying_realms('cde'):
+                query.constraints.append((
+                    Realms.cde.realm_marker,
+                    QueryOperators.equal,
+                    True,
+                ))
+                query.spec[Realms.cde.realm_marker] = QuerySpecEntry("bool", "")
+                for realm in Realms.cde.implying_realms:
                     query.constraints.append((
-                        f"is_{realm}_realm",
+                        realm.realm_marker,
                         QueryOperators.equal,
                         False,
                     ))
-                    query.spec[f"is_{realm}_realm"] = QuerySpecEntry("bool", "")
+                    query.spec[realm.realm_marker] = QuerySpecEntry("bool", "")
         else:
             raise RuntimeError(n_("Bad scope."))
         return self.general_query(rs, query, aggregate=aggregate)
 
-    @access("searchable")
+    @access(Roles.searchable)
     def get_nearby_postal_codes(
         self, rs: RequestState, postal_code: str, radius: int
     ) -> list[str]:

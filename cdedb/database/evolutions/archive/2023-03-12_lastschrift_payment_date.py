@@ -13,7 +13,7 @@ core = s.make_core_backend(proxy=False)
 
 def calculate_payment_date(issued_at: datetime.datetime) -> datetime.date:
     """Helper to calculate a payment date that is a valid TARGET2 bankday."""
-    payment_date = issued_at.date() + s.config["SEPA_PAYMENT_OFFSET"]
+    payment_date: datetime.date = issued_at.date() + s.config["SEPA_PAYMENT_OFFSET"]
 
     # Before anything else: check whether we are on special easter days.
     easter = dateutil.easter.easter(payment_date.year)

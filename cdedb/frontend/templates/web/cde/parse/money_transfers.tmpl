@@ -122,7 +122,7 @@
             </table>
         {% endif %}
 
-        {% if values['checksum'] %}
+        {% if 'checksum' in values and values['checksum'] %}
             {{ util.form_input_submit(label=gettext("Confirm"), horizontal=False) }}
             <p class="help-block">
                 {{ util.make_icon('info-circle') }}{{ nbsp }}

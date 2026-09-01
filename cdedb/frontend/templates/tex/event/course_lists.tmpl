@@ -39,8 +39,8 @@
                                 }
                             <<% else %>>
                                 <<<- personas[registrations[reg_id]['persona_id']]|persona_name|te ->>>
-                                <<% if p['age'].is_minor() %>>
-                                    \fbox{<<< p['age'].name|upper|te >>>}
+                                <<% if personas_age[p['id']].is_minor() %>>
+                                    \fbox{<<< personas_age[p['id']].name|upper|te >>>}
                                 <<% endif %>>
                             <<% endif %>>
                     <<% endwith %>>

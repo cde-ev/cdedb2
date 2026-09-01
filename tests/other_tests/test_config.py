@@ -118,6 +118,15 @@ class TestConfig(unittest.TestCase):
         check_config_defaults()
         check_secrets_defaults()
 
+        # Check exception in override:
+
+        with self.assertRaises(RuntimeError):
+            with self.config.with_overrides(URL_PARAMETER_SALT="matrix"):
+                raise RuntimeError()
+
+        check_config_defaults()
+        check_secrets_defaults()
+
         # Check nested overrides:
 
         with self.config.with_overrides(DB_PORT=42, CDB_DATABASE_NAME="skynet"):

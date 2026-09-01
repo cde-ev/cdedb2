@@ -64,7 +64,7 @@
         cdedblink("core/show_case", {'case_id': case.id}),
         gettext("Case %s")|s|format(case.id),
         readonly=not case.is_visible_for(user),
-        aclass="strikethrough" if companion_id in case.withdrawn_companions else ""
+        aclass="strikethrough" if companion_id in case.get_companions(False) else ""
     ) }}
 {% endmacro %}
 

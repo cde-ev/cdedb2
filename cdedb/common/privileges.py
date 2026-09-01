@@ -3,6 +3,7 @@
 from enum import Flag, auto
 
 from cdedb.common import RequestState, User
+from cdedb.common.roles import Roles
 from cdedb.config import Config
 
 _CONF = Config()
@@ -56,7 +57,8 @@ class EventPrivileges(Flag):
     # This privilege allows reading all registration data except for custom fields not
     # visible on the checkin page, as well as editing these registrations and their
     # checkin data.
-    # Most of this is only enforced on template level, i.e. exploitable on write.
+    # TODO This granting partial registrations_read/write access is confusing and
+    # should be refactored.
     checkin = auto()
 
     # create = auto()
@@ -109,7 +111,10 @@ def is_privileged_event_user(
 
     # Limit access to really old events as configured based on id.
     # Any action requiring _any_ of these privileges will be disallowed.
-    limited_access_disallow = EP._registrations_read_dummy | EP.registrations_write
+    # TODO checkin is granting partial registrations_read/write access: not great.
+    limited_access_disallow = (
+        EP._registrations_read_dummy | EP.registrations_write | EP.checkin
+    )
 
     if (
         is_event_access_limited(event_id)
@@ -154,10 +159,13 @@ def is_privileged_event_user(
     return (
         # Special case for conclude which requires two admin privileges.
         (
-            {"event_admin", "cde_admin"} <= user.roles
+            user.new_roles.has(Roles.event_admin | Roles.cde_admin)
             and required_privilege == EP.conclude
         )
-        or ("event_admin" in user.roles and required_privilege in admin_privileges)
+        or (
+            user.new_roles.has(Roles.event_admin)
+            and required_privilege in admin_privileges
+        )
         or (event_id in user.orga and required_privilege in orga_privileges)
         or (event_id in user.caretaker and required_privilege in caretaker_privileges)
         or (
@@ -166,27 +174,30 @@ def is_privileged_event_user(
         )
         # Due to use in ml realm, users without event realm might come across this
         or (
-            "event_helper" in user.realm_roles.get('event', {})
+            user.new_roles.has(Roles.event_helper)
             and required_privilege in event_helper_privileges
         )
         # finance_admins may book fees and balance events.
         or (
-            "finance_admin" in user.roles
+            user.new_roles.has(Roles.finance_admin)
             and required_privilege in finance_admin_privileges
         )
-        or ("auditor" in user.roles and required_privilege in auditor_privileges)
+        or (
+            user.new_roles.has(Roles.auditor)
+            and required_privilege in auditor_privileges
+        )
         # ml_admins are allowed to do this to be able to manage
         # subscribers of event mailinglists.
         or (
-            "ml_admin" in user.roles
+            user.new_roles.has(Roles.ml_admin)
             and required_privilege == EP.registrations_read_internal
         )
         or (
-            "droid_quick_partial_export" in user.roles
+            user.new_roles.has(Roles.droid_quick_partial_export)
             and required_privilege in EP.basic_read | EP.registrations_read
         )
         # or (
-        #     "droid_orga" in user.roles
+        #     Roles.droid_orga in user.new_roles
         #     and required_privilege in OrgaTokenGrants.implied_privileges()
         # )
     )

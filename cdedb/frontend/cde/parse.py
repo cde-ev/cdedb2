@@ -13,7 +13,6 @@ import itertools
 import pathlib
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import Optional
 
 from werkzeug import Response
 from werkzeug.datastructures import FileStorage
@@ -31,6 +30,7 @@ from cdedb.common import (
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts, TransactionType
 from cdedb.common.privileges import EventPrivileges
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import xsorted
 from cdedb.frontend.cde.base import CdEBaseFrontend
 from cdedb.frontend.common import (
@@ -49,12 +49,12 @@ from cdedb.frontend.event import EventFrontend
 
 
 class CdEParseMixin(CdEBaseFrontend):
-    @access("finance_admin")
+    @access(Roles.finance_admin)
     def parse_statement_form(
         self,
         rs: RequestState,
-        data: Optional[CdEDBObject] = None,
-        params: Optional[CdEDBObject] = None,
+        data: CdEDBObject | None = None,
+        params: CdEDBObject | None = None,
     ) -> Response:
         """Render form.
 
@@ -137,9 +137,9 @@ class CdEParseMixin(CdEBaseFrontend):
                 params["has_none"].append(t.t_id)
             if t.event and t.persona:
                 reg_id = self.eventproxy.get_registration_id(
-                    rs, persona_id=t.persona['id'], event_id=t.event.id
+                    rs, persona_id=t.persona.id, event_id=t.event.id
                 )
-                params["registration_ids"][(t.persona['id'], t.event.id)] = reg_id
+                params["registration_ids"][(t.persona.id, t.event.id)] = reg_id
             params["accounts"][t.account] += 1
             if t.event and t.type == TransactionType.EventFee:
                 params["events"][t.event.id] += 1
@@ -147,7 +147,7 @@ class CdEParseMixin(CdEBaseFrontend):
                 params["memberships"] += 1
         return data, params
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     @REQUESTfile("statement_file")
     def parse_statement(
         self, rs: RequestState, statement_file: FileStorage
@@ -174,11 +174,12 @@ class CdEParseMixin(CdEBaseFrontend):
         assert statement_file.filename is not None
         filename = pathlib.Path(statement_file.filename).parts[-1]
         date = parse.date_from_filename(filename)
-        statement_file = check(rs, vtypes.CSVFile, statement_file, "statement_file")
+        validated_statement_file = check(
+            rs, vtypes.CSVFile, statement_file, "statement_file"
+        )
         if rs.has_validation_errors():
             return self.parse_statement_form(rs)
-        assert statement_file is not None
-        statementlines = statement_file.splitlines()
+        statementlines = validated_statement_file.splitlines()
 
         # This does not use the cde csv dialect, but rather the bank's.
         reader = csv.DictReader(statementlines, delimiter=";", quotechar='"')
@@ -212,16 +213,16 @@ class CdEParseMixin(CdEBaseFrontend):
 
         return self.parse_statement_form(rs, data, params)
 
-    @access("finance_admin", modi={"POST"}, check_anti_csrf=False)
+    @access(Roles.finance_admin, modi={"POST"}, check_anti_csrf=False)
     @REQUESTdata("count", "date", "validate", "excel", "db_import", "ignore_warnings")
     def parse_download(
         self,
         rs: RequestState,
         count: int,
         date: datetime.date,
-        validate: Optional[str] = None,
-        excel: Optional[str] = None,
-        db_import: Optional[str] = None,
+        validate: str | None = None,
+        excel: str | None = None,
+        db_import: str | None = None,
         ignore_warnings: bool = False,
     ) -> Response:
         """
@@ -288,13 +289,13 @@ class CdEParseMixin(CdEBaseFrontend):
         )
         return self.send_csv_file(rs, "text/csv", filename, data=csv_data)
 
-    @access("finance_admin")
+    @access(Roles.finance_admin)
     def money_transfers_form(
         self,
         rs: RequestState,
-        data: Optional[list[CdEDBObject]] = None,
-        csvfields: Optional[tuple[str, ...]] = None,
-        saldos: Optional[dict[int, decimal.Decimal]] = None,
+        data: list[CdEDBObject] | None = None,
+        csvfields: tuple[str, ...] | None = None,
+        saldos: dict[int, decimal.Decimal] | None = None,
     ) -> Response:
         events = self.eventproxy.get_events(rs, self.eventproxy.list_events(rs))
         data = data or []
@@ -312,16 +313,16 @@ class CdEParseMixin(CdEBaseFrontend):
             get_mandatory_form_fields(self.money_transfers),
         )
 
-    @access("finance_admin", modi={"POST"})
+    @access(Roles.finance_admin, modi={"POST"})
     @REQUESTfile("transfers_file")
     @REQUESTdata("send_notifications", "transfers", "checksum")
     def money_transfers(
         self,
         rs: RequestState,
         send_notifications: bool,
-        transfers: Optional[str],
-        checksum: Optional[str],
-        transfers_file: Optional[FileStorage],
+        transfers: str | None,
+        checksum: str | None,
+        transfers_file: FileStorage | None,
     ) -> Response:
         """Update member balances.
 
@@ -332,17 +333,17 @@ class CdEParseMixin(CdEBaseFrontend):
         corruption and to explicitly signal at what point the data will
         be committed (for the second purpose it works like a boolean).
         """
-        transfers_file = check(
+        validated_transfers_file = check(
             rs, vtypes.CSVFile | None, transfers_file, "transfers_file"
         )
         if rs.has_validation_errors():
             return self.money_transfers_form(rs)
-        if transfers_file and transfers:
+        if validated_transfers_file and transfers:
             rs.notify("warning", n_("Only one input method allowed."))
             return self.money_transfers_form(rs)
-        elif transfers_file:
-            rs.values["transfers"] = transfers = transfers_file.strip()
-            transferlines = transfers_file.splitlines()
+        elif validated_transfers_file:
+            rs.values["transfers"] = transfers = validated_transfers_file.strip()
+            transferlines = validated_transfers_file.splitlines()
         elif transfers:
             transfers = transfers.strip()
             transferlines = transfers.splitlines()
@@ -422,18 +423,18 @@ class CdEParseMixin(CdEBaseFrontend):
             )
 
         # Here validation is finished
-        transfers = [
-            {
+        transfer_data = [
+            vtypes.MoneyTransferEntry({
                 'persona_id': datum['persona_id'],
                 'registration_id': datum['registration_id'],
                 'amount': datum['amount'],
                 'date': datum['date'],
-            }
+            })
             for datum in data
         ]
         recipients = [self.conf['FINANCE_ADMIN_ADDRESS']]
         with TransactionObserver(rs, self, "money_transfers", recipients=recipients):
-            if result := self.cdeproxy.book_money_transfers(rs, transfers):
+            if result := self.cdeproxy.book_money_transfers(rs, transfer_data):
                 result.send_notifications(
                     rs,
                     send_individual_notifications=send_notifications,

@@ -4,7 +4,7 @@
 
 import collections.abc
 from collections.abc import Callable, Collection, Generator, Iterable, KeysView
-from typing import Any, Protocol, TypeVar
+from typing import Any, Protocol
 
 import icu
 
@@ -20,8 +20,6 @@ COLLATOR = icu.Collator.createInstance(icu.Locale(LOCALE))
 
 # Pseudo objects like assembly, event, course, event part, etc.
 CdEDBObject = dict[str, Any]
-
-T = TypeVar("T")
 
 
 def collate(sortkey: Any) -> Any:
@@ -48,7 +46,7 @@ def collate(sortkey: Any) -> Any:
     return sortkey
 
 
-def xsorted(
+def xsorted[T](
     iterable: Iterable[T],
     *,
     key: Callable[[Any], Any] = lambda x: x,
@@ -63,13 +61,14 @@ def xsorted(
 
 
 class Comparable(Protocol):
-    def __lt__(self, other: Any) -> bool: ...
+    def __lt__(self, other: Any, /) -> bool: ...
 
 
 Sortkey = tuple[Comparable, ...]
 KeyFunction = Callable[[CdEDBObject], Sortkey]
 
 
+# TODO remove once registrations are dataclasses
 def _make_persona_sorter(
     include_nickname: bool = False, family_name_first: bool = True
 ) -> KeyFunction:
@@ -90,7 +89,7 @@ def _make_persona_sorter(
         forename = make_persona_forename(persona, include_nickname=include_nickname)
 
         forename = forename.lower()
-        family_name = persona["family_name"].lower()
+        family_name: str = persona["family_name"].lower()
         if family_name_first:
             return (family_name, forename, persona["id"])
         else:
@@ -100,6 +99,7 @@ def _make_persona_sorter(
 
 
 # don't call argument 'gettext' to avoid extracting string below
+# TODO move to EventPersona dataclass
 def _make_address_sorter(
     gtxt: Callable[[str], str],
     default_country_code: str,
@@ -145,19 +145,6 @@ class EntitySorter:
         return EntitySorter.persona(registration['persona'])
 
     @staticmethod
-    def lodgement(lodgement: CdEDBObject) -> Sortkey:
-        return (lodgement['title'], lodgement['id'])
-
-    @staticmethod
-    def lodgement_by_group(lodgement: CdEDBObject) -> Sortkey:
-        return (
-            lodgement['group_title'],
-            lodgement['group_id'],
-            lodgement['title'],
-            lodgement['id'],
-        )
-
-    @staticmethod
     def candidates(candidates: CdEDBObject) -> Sortkey:
         return (candidates['shortname'], candidates['id'])
 
@@ -182,22 +169,10 @@ class EntitySorter:
     def transaction(transaction: CdEDBObject) -> Sortkey:
         return (transaction['issued_at'], transaction['id'])
 
-    @staticmethod
-    def genesis_case(genesis_case: CdEDBObject) -> Sortkey:
-        return (genesis_case['ctime'], genesis_case['id'])
 
-    @staticmethod
-    def changelog(changelog_entry: CdEDBObject) -> Sortkey:
-        return (
-            changelog_entry['ctime'],
-            changelog_entry['generation'],
-            changelog_entry['persona_id'],
-        )
-
-
-def mixed_existence_sorter(
-    iterable: Collection[int] | KeysView[int],
-) -> Generator[int]:
+def mixed_existence_sorter[T: int](
+    iterable: Collection[T] | KeysView[T],
+) -> Generator[T]:
     """Iterate over a set of indices in the relevant way.
 
     That is first over the non-negative indices in ascending order and

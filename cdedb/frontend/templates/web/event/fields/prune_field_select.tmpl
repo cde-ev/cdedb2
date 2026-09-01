@@ -1,0 +1,73 @@
+{% set sidenav_active="event_field_summary" %}
+{% set jshint="weak" %}
+
+{% extends "web/event/base.tmpl" %}
+{% import "web/util.tmpl" as util with context %}
+
+{% block scripts %}
+    {{ util.cdedb_script('cdedb_helper.js') }}
+    {{ util.cdedb_script('cdedb_multiselect.js') }}
+{% endblock %}
+
+{% block title %}
+    {% trans title=ambience['event']['title'] %}
+        Prune Field Data ({{ title }})
+    {% endtrans %}
+{% endblock %}
+
+{% block heading %}
+    {{ util.context_heading(gettext("Prune Field Data"), ambience['event']['title'],
+                            'chalkboard-teacher', gettext("Event")) }}
+{% endblock %}
+
+{% block breadcrumb %}
+    {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("event/show_event"), ambience['event']['title'], icon="chalkboard-teacher") }}
+    {{ util.breadcrumb_link(cdedblink("event/field_summary"), gettext("Configure Custom Fields")) }}
+    {{ util.breadcrumb_link(cdedblink("event/prune_field_select"), gettext("Prune Field Data"), active=True) }}
+{% endblock %}
+
+{% block content %}
+    <form action="{{ cdedblink('event/prune_fields') }}" method="POST" id="prunefieldsform" class="form-horizontal">
+        <p class="text-info">
+            {{ util.make_icon("info-circle") }}
+            {% trans %}
+                Select a custom data field to prune data stored for this field from all associated entities (registrations/courses/lodgements).
+            {% endtrans %}
+        </p>
+        <p class="text-warning">
+            {{ util.make_icon("exclamation-triangle") }}
+            {% trans boolean = gettext(enums["FieldDatatypes"].bool|string), set_field = gettext("Set Field") %}
+                This will preserve the information whether there was some data stored in the field. It will do nothing for boolean ({{ boolean }}) fields.
+                If you need to completely remove this information, you can use the multi edit for registrations or the "{{ set_field }}" functionality for courses and lodgements.
+            {% endtrans %}
+        </p>
+        <div class="p button-par">
+            {{ util.href(cdedblink("event/field_multiset_select", {'kind': enums['FieldAssociations'].registration}), gettext("Set Field (Registrations)"),
+                          readonly=not is_privileged_for('field_multiset_select'), icon='edit', aclass='btn btn-sm btn-warning') }}
+            {{ util.href(cdedblink("event/field_multiset_select", {'kind': enums['FieldAssociations'].course}), gettext("Set Field (Courses)"),
+                          readonly=not is_privileged_for('field_multiset_select'), icon='edit', aclass='btn btn-sm btn-warning') }}
+            {{ util.href(cdedblink("event/field_multiset_select", {'kind': enums['FieldAssociations'].lodgement}), gettext("Set Field (Lodgements)"),
+                          readonly=not is_privileged_for('field_multiset_select'), icon='edit', aclass='btn btn-sm btn-warning') }}
+        </div>
+
+        {{ util.anti_csrf_token("event/prune_fields") }}
+        {{ util.form_input_multi_select(
+                "reg_field_ids", label=gettext(enums["FieldAssociations"].registration|string), nulloption="", small=True, size=6, selectize="new",
+                entries=ambience["event"].registration_fields|entries(
+                    'id', 'title', group="sort_group", default_group=gettext("Other Fields")
+                ), readonly=not ambience["event"].registration_fields) }}
+        {{ util.form_input_multi_select(
+                "course_field_ids", label=gettext(enums["FieldAssociations"].course|string), nulloption="", small=True, size=6, selectize="new",
+                entries=ambience["event"].course_fields|entries(
+                    'id', 'title', group="sort_group", default_group=gettext("Other Fields")
+                ), readonly=not ambience["event"].course_fields) }}
+        {{ util.form_input_multi_select(
+                "lodge_field_ids", label=gettext(enums["FieldAssociations"].lodgement|string), nulloption="", small=True, size=6, selectize="new",
+                entries=ambience["event"].lodgement_fields|entries(
+                    'id', 'title', group="sort_group", default_group=gettext("Other Fields")
+                ), readonly=not ambience["event"].lodgement_fields) }}
+        {{ util.ack_delete(gettext("All data associated with these fields will be irreversibly deleted."), form=True, small=True) }}
+        {{ util.form_input_submit(label=gettext("Prune Field Data"), icon="fire", aclass="btn btn.xs btn-danger", small=True) }}
+    </form>
+{% endblock %}

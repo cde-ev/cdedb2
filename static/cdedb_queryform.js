@@ -797,6 +797,12 @@
             if (parameters['query_name']) {
                 query_name_input.val(decodeURIComponent(parameters['query_name']));
             }
+            // Reset query group input.
+            query_group_input = $element.find('#query_group_input');
+            query_group_input.val('');
+            if (parameters['query_group']) {
+                query_group_input.val(decodeURIComponent(parameters['query_group']));
+            }
         }
     };
 

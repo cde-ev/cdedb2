@@ -14,12 +14,13 @@ individual entity, or for all entities of a specific type.
 
 import datetime
 import logging
+import pathlib
 import shutil
 import subprocess
 import tempfile
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal
 
 import tabulate
 
@@ -44,7 +45,7 @@ class EntityKeeper:
         """This specifies the base directory where the individual entity repositories
         will be located."""
         self.conf = conf
-        self._dir = self.conf['STORAGE_DIR'] / directory
+        self._dir: pathlib.Path = self.conf['STORAGE_DIR'] / directory
         # Use this keys in this order of the log dict passing in during commits
         self.log_keys = log_keys
         # the key holding the timestamp of log entries
@@ -57,7 +58,7 @@ class EntityKeeper:
     def _run(
         self,
         args: list[Path | str | bytes],
-        cwd: Optional[Path] = None,
+        cwd: Path | None = None,
         *,
         check: Literal["raise", "log", "ignore"] = "raise",
     ) -> subprocess.CompletedProcess[bytes]:
@@ -70,9 +71,7 @@ class EntityKeeper:
             args, cwd=cwd, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
         msg = completed.stdout or ""
-        if check == "raise":
-            completed.check_returncode()
-        elif check == "log":
+        if check in {"log", "raise"}:
             if completed.returncode != 0:
                 self.logger.error(
                     "Git error performing command %s in directory %s: %s",
@@ -80,6 +79,8 @@ class EntityKeeper:
                     cwd,
                     msg,
                 )
+            if check == "raise":
+                completed.check_returncode()
         elif check == "ignore":
             if completed.returncode != 0:
                 self.logger.debug(
@@ -150,8 +151,8 @@ class EntityKeeper:
         author_email: str = "",
         *,
         may_drop: bool = True,
-        logs: Optional[Sequence[CdEDBObject]] = None,
-    ) -> Optional[subprocess.CompletedProcess[bytes]]:
+        logs: Sequence[CdEDBObject] | None = None,
+    ) -> subprocess.CompletedProcess[bytes] | None:
         """Commit a single file representing an entity to a git repository.
 
         In contrast to its friends, we allow some wiggle room for errors here right now
@@ -214,7 +215,7 @@ class EntityKeeper:
             # In particular, this is expected for empty commits.
             return self._run(commit, check="log")
 
-    def latest_logtime(self, entity_id: int) -> Optional[datetime.datetime]:
+    def latest_logtime(self, entity_id: int) -> datetime.datetime | None:
         """Retrieve the ctime of the latest log entry.
 
         This is determined by the timestamp of the commit, which is set to the ctime
@@ -239,7 +240,7 @@ class EntityKeeper:
         timestamp = response.stdout.decode("utf-8").strip()
         return datetime.datetime.fromisoformat(timestamp)
 
-    def _format_logs(self, logs: Sequence[CdEDBObject]) -> Optional[bytes]:
+    def _format_logs(self, logs: Sequence[CdEDBObject]) -> bytes | None:
         if not self.log_keys:
             return None
 

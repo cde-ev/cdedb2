@@ -17,14 +17,14 @@ s = Script(dbuser='cdb_admin')
 past_event = s.make_past_event_backend(proxy=True)
 
 institution_map = {e.shortname: e for e in const.PastInstitutions}
-institution_map['AT'] = institution_map['DSA']
+institution_map['AT'] = institution_map['BuB']
 
 with infile_events.open("r") as f:
     event_data = {
         event_line['Standort_Kurzbez']: {
             'title': event_line['Standort_Langbez'],
             'shortname': event_line['Standort_Kurzbez'],
-            'institution': const.PastInstitutions.bub,
+            'institution': institution_map[event_line['Programm']],
             'description': None,
             'tempus': event_line['Termin_Aka_von'],
         }
@@ -34,24 +34,24 @@ with infile_events.open("r") as f:
 with infile_courses.open("r") as f:
     course_data: CdEDBObject = {}
     for course_line in csv.DictReader(f, dialect=CustomCSVDialect):
-        event_id = course_line['Standort_Kurzbez']
+        event_id = course_line['GLStandorte::Standort_Kurzbez']
         if event_id not in course_data:
             course_data[event_id] = []
         course_data[event_id].append({
-            'nr': course_line['GLKurse::KursNr'],
+            'nr': course_line['KursNr'],
             'title': " – ".join(
                 filter(
                     None,
                     map(
                         str.strip,
                         (
-                            course_line['GLKurse::Kursobertitel'],
-                            course_line['GLKurse::Kursuntertitel'],
+                            course_line['Kursobertitel'],
+                            course_line['Kursuntertitel'],
                         ),
                     ),
                 )
             ),
-            'description': course_line['GLKurse::KursBeschreibung'],
+            'description': course_line['KursBeschreibung'],
         })
 
 with s:

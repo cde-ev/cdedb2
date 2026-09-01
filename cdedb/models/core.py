@@ -6,25 +6,32 @@ import copy
 import dataclasses
 import datetime
 import decimal
-import functools
+import logging
 import re
 from enum import auto
 from secrets import token_urlsafe
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, cast
+from typing import TYPE_CHECKING, Any, ClassVar, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
-from cdedb.common import CdEDBObject, asciificator, now
+from cdedb.common import CdEDBObject, RequestState, asciificator, now
 from cdedb.common.crypt import generate_encrytion_key, get_decrypt, get_encrypt
 from cdedb.common.exceptions import CryptographyError
+from cdedb.common.i18n import format_country_code
 from cdedb.common.n_ import n_
 from cdedb.common.parse.util import Accounts
+from cdedb.common.roles import Realms, RealmSet, Roles, RoleSet, extract_roles
 from cdedb.common.sorting import Sortkey
+from cdedb.config import Config
 from cdedb.filter import cdedbid_filter
 from cdedb.models.common import AbstractFlag, CdEDataclass, MetaFlag as Meta
 
 if TYPE_CHECKING:
     from typing import Self
+
+
+_LOGGER = logging.getLogger(__name__)
+CONFIG = Config()
 
 
 @dataclasses.dataclass
@@ -66,11 +73,11 @@ class MetaInfo(CdEDataclass):
 class EmailAddressReport(CdEDataclass):
     address: vtypes.Email
     status: const.EmailStatus
-    notes: Optional[str] = None
+    notes: str | None = None
     # This persona has this address as username.
-    user_id: Optional[vtypes.ID] = None
+    user_id: vtypes.ID | None = None
     # This persona has this address as explicit mail address for at least one ml.
-    subscriber_id: Optional[vtypes.ID] = None
+    subscriber_id: vtypes.ID | None = None
     # The mailinglists where this address is used as explicit address.
     ml_ids: set[vtypes.ID] = dataclasses.field(default_factory=set)
 
@@ -110,13 +117,13 @@ class AnonymousMessageData(CdEDataclass):
     )
 
     encrypted_data: str
-    persona_id: Optional[vtypes.ID] = dataclasses.field(
+    persona_id: vtypes.ID | None = dataclasses.field(
         init=False, default=None, metadata=Meta.exclude.as_dict
     )
-    username: Optional[vtypes.Email] = dataclasses.field(
+    username: vtypes.Email | None = dataclasses.field(
         init=False, default=None, metadata=Meta.exclude.as_dict
     )
-    subject: Optional[str] = dataclasses.field(
+    subject: str | None = dataclasses.field(
         init=False, default=None, metadata=Meta.exclude.as_dict
     )
 
@@ -190,7 +197,7 @@ class AnonymousMessageData(CdEDataclass):
             raise CryptographyError(*e.args) from None
         self.persona_id, self.username, self.subject = self.parse_data(decrypted)
 
-    def rotate(self, key: Optional[str] = None) -> str:
+    def rotate(self, key: str | None = None) -> str:
         if self.persona_id is None:
             if key is None:
                 raise ValueError("Need decryption key to rotate encryption.")
@@ -294,26 +301,21 @@ class PersonaName:
 
 
 @dataclasses.dataclass(kw_only=True)
-class Persona(CdEDataclass, PersonaName):
+class Persona(CdEDataclass):
     database_table: ClassVar[str] = "core.personas"
 
-    username: vtypes.Email = dataclasses.field(
-        metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict
-    )
-    # This does not include the ``password_hash`` for security reasons.
+    id: vtypes.PersonaID
 
-    # status flags
+    # core
     is_active: bool = True
     is_archived: bool = False
     is_purged: bool = False
 
-    # retrieve all realm bits to enable the dataclass to know if its pure
+    # Retrieve realm bits to enable the dataclass to know if it is pure.
     is_ml_realm: bool = False
     is_assembly_realm: bool = False
     is_event_realm: bool = False
     is_cde_realm: bool = False
-
-    # Do not include admin notes, get this via its own getter.
 
     def __post_init__(self) -> None:
         for field in dataclasses.fields(self):
@@ -322,7 +324,6 @@ class Persona(CdEDataclass, PersonaName):
                     raise RuntimeError("User misses a mandatory realm.")
 
     @classmethod
-    @functools.cache
     def get_status_bits(cls) -> set[str]:
         ret = set()
         for field in dataclasses.fields(cls):
@@ -330,31 +331,81 @@ class Persona(CdEDataclass, PersonaName):
                 ret.add(field.name)
         return ret
 
-    @classmethod
-    @functools.cache
-    def get_realm_bits(cls) -> set[str]:
-        ret = set()
-        for field in dataclasses.fields(cls):
-            if field.name.startswith("is_") and field.name.endswith("_realm"):
-                ret.add(field.name)
-        return ret
+    def _get_user_roles(self) -> RoleSet:
+        """Determine the users roles from their data bits.
 
-    @classmethod
-    @functools.cache
-    def get_admin_bits(cls) -> set[str]:
-        ret = set()
-        for field in dataclasses.fields(cls):
-            if field.name.startswith("is_") and field.name.endswith("_admin"):
-                ret.add(field.name)
-            elif field.name == "is_auditor":
-                ret.add(field.name)
-        return ret
+        BEWARE! This cannot take admin roles into account, unless called on
+        the 'PersonaStatus' subclass.
+
+        BEWARE! This must not be used to determine the acting users privileges, only
+        to determine the roles of a user to be acted upon.
+        """
+        return extract_roles(self.as_dict(), introspection_only=True)
+
+    def get_user_realms(self) -> RealmSet:
+        return Realms.from_user_roles(self._get_user_roles())
+
+
+@dataclasses.dataclass(kw_only=True)
+class PersonaStatus(Persona):
+    # ml
+    is_ml_admin: bool = False
+    is_cdelokal_admin: bool = False
+
+    # assembly
+    is_assembly_admin: bool = False
+
+    # event
+    is_event_admin: bool = False
+    is_complaint_admin: bool = False
+
+    # cde
+    is_member: bool = False
+    is_searchable: bool = False
+    is_cde_admin: bool = False
+    is_core_admin: bool = False
+    is_meta_admin: bool = False
+    is_finance_admin: bool = False
+    is_auditor: bool = False
+
+    def get_user_roles(self) -> RoleSet:
+        """
+        Unlike the method of the parent class this has all the information it needs to
+        fully determine the users roles.
+
+        BEWARE! This still must not be used to determine the acting users privileges.
+        """
+        return self._get_user_roles()
+
+    def get_session_roles(self) -> RoleSet:
+        """
+        Determine the roles of the acting user.
+
+        Unlike 'get_user_roles' this is to be used for user sessions.
+        """
+        return extract_roles(self.as_dict(), introspection_only=False)
+
+    @property
+    def is_any_admin(self) -> bool:
+        return self.get_user_roles().is_any_admin()
+
+    def get_sortkey(self) -> Sortkey:
+        return (self.id,)
+
+
+@dataclasses.dataclass(kw_only=True)
+class CorePersona(Persona, PersonaName):
+    username: vtypes.Email = dataclasses.field(
+        metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict
+    )
+    # This does not include the ``password_hash`` for security reasons.
+    # Do not include admin notes, get this via its own getter.
 
     @property
     def is_pure(self) -> bool:
+        """Persona has no higher realm than the one associated to this class."""
         return False
 
-    # TODO implement this properly
     def get_sortkey(self) -> Sortkey:
         return (self.family_name, self.given_names)
 
@@ -364,9 +415,32 @@ class Persona(CdEDataclass, PersonaName):
             raise RuntimeError
         return ret
 
+    @classmethod
+    def from_database(
+        cls, data: CdEDBObject, allow_superfluous: bool = False
+    ) -> "Self":
+        """Create an instance from the dict returned from the database.
+
+        The ideomatic approach is to retrieve the database fields via
+        `query_one`, using `get_select_query` to construct the query,
+        and put the return value in this function.
+
+        For `query_all`, see `many_from_database`.
+
+        :param allow_superfluous: If true, filter `data` to be a subset of `database_fields`.
+        """
+        if allow_superfluous:
+            database_fields = set(cls.database_fields())
+            data = {k: v for k, v in data.items() if k in database_fields}
+        return super().from_database(data)
+
+    def as_dict(self) -> dict[str, Any]:
+        data = super().as_dict()
+        return {k: v for k, v in data.items() if v != self.REDACTED}
+
 
 @dataclasses.dataclass(kw_only=True)
-class MlPersona(Persona):
+class MlPersona(CorePersona):
     is_ml_realm: bool = dataclasses.field(
         default=False, metadata=PersonaFlag.mandatory_true_flag.as_dict
     )
@@ -391,14 +465,33 @@ class AssemblyPersona(MlPersona):
 
 
 @dataclasses.dataclass(kw_only=True)
+class PastEventPersona(MlPersona):
+    is_event_realm: bool = dataclasses.field(
+        default=False, metadata=PersonaFlag.mandatory_true_flag.as_dict
+    )
+    is_event_admin: bool = False
+    is_complaint_admin: bool = False
+
+    # Can only be True for CdEPersona, but are used heavily to determine visibility.
+    is_member: bool = False
+    is_searchable: bool = False
+
+    @property
+    def is_pure(self) -> bool:
+        return not (self.is_assembly_realm or self.is_cde_realm)
+
+
+@dataclasses.dataclass(kw_only=True)
 class EventPersona(MlPersona):
     is_event_realm: bool = dataclasses.field(
         default=False, metadata=PersonaFlag.mandatory_true_flag.as_dict
     )
     is_event_admin: bool = False
     is_complaint_admin: bool = False
-    # TODO this is currently exposed via partial export, should make a single effort to remove this
+
+    # Can only be True for CdEPersona, but are used heavily to determine visibility.
     is_member: bool = False
+    is_searchable: bool = False
 
     gender: const.Genders = dataclasses.field(
         metadata=PersonaFlag.genesis_validate_creation_mandatory.as_dict
@@ -434,6 +527,32 @@ class EventPersona(MlPersona):
     @property
     def is_pure(self) -> bool:
         return not (self.is_assembly_realm or self.is_cde_realm)
+
+    def get_postal_address(self, rs: RequestState) -> list[str] | None:
+        """Prepare address info for formatting.
+
+        Addresses have some specific formatting wishes, so we are flexible
+        in that we represent an address to be printed as a list of strings
+        each containing one line. The final formatting is now basically join
+        on line breaks.
+
+        Returning None signals that we do not know the address of this persona.
+        """
+        name = self.get_name()
+        ret = [name]
+        if self.address_supplement:
+            ret.append(self.address_supplement)
+        if self.address:
+            ret.append(self.address)
+        if self.postal_code or self.location:
+            ret.append(f"{self.postal_code or ''} {self.location or ''}".strip())
+        country = rs.translations["de"].gettext(format_country_code(self.country or ""))
+        ret.append(country)
+        # Each persona has always a name and a country. However, during realm upgrades, it
+        # may happen that some personas do not have an address even if its mandatory.
+        if ret == [name, country]:
+            return None
+        return ret
 
 
 @dataclasses.dataclass(kw_only=True)
@@ -498,13 +617,52 @@ class CdEPersona(EventAssemblyPersona):
             cdedbid=cdedbid_filter(self.id),
         )
 
+    def calculate_ejection_deadline(self, period: CdEDBObject) -> datetime.date:
+        """Helper to calculate when a membership will end."""
+        if not CONFIG["PERIODS_PER_YEAR"] == 2:
+            msg = f"{CONFIG['PERIODS_PER_YEAR']} periods per year not supported."
+            _LOGGER.error(msg)
+            return now().date()
+        periods_left: int = self.balance // CONFIG["MEMBERSHIP_FEE"]
+        if self.trial_member:
+            periods_left += 1
+        if period['balance_done']:
+            periods_left += 1
+        deadline = (period.get("semester_start") or now()).date().replace(day=1)
+        # With our buffer zones around the expected semester start dates there
+        # are 3 possible semesters within a year with different deadlines.
+        if deadline.month in range(5, 11):
+            # Start was two months before or 4 months after expected start for
+            # summer semester, so we assume that we are in the summer semester.
+            if periods_left % 2:
+                deadline = deadline.replace(year=deadline.year + 1, month=2)
+            else:
+                deadline = deadline.replace(month=8)
+        else:
+            # Start was two months before or 4 months after expected start for
+            # winter semester, so we assume that we are in a winter semester.
+            if deadline.month in range(1, 5):
+                # We are in the first semester of the year.
+                deadline = deadline.replace(month=2)
+            else:
+                # We are in the last semester of the year.
+                deadline = deadline.replace(year=deadline.year + 1, month=2)
+            if periods_left % 2:
+                deadline = deadline.replace(month=8)
+        return deadline.replace(year=int(deadline.year + periods_left // 2))
+
+
+if PersonaStatus.get_status_bits() != CdEPersona.get_status_bits():
+    raise RuntimeError("Persona status bits got out of sync, adjust the dataclasses.")
+
 
 @dataclasses.dataclass(kw_only=True)
 class GenesisCase(CdEDataclass):
     database_table = "core.genesis_cases"
+    _realm: ClassVar[Realms]
 
     # only changable via separate frontend endpoint
-    realm: vtypes.Realm = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
+    realm: Realms = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
     notes: str
     status: const.GenesisStati = dataclasses.field(metadata=Meta.input_exclude.as_dict)
     ctime: datetime.datetime = dataclasses.field(metadata=Meta.input_exclude.as_dict)
@@ -515,7 +673,7 @@ class GenesisCase(CdEDataclass):
         default=None, metadata=Meta.input_exclude.as_dict
     )
 
-    persona: Persona
+    persona: CorePersona
 
     # further information tied to the genesis case but not to persona dataclass
     attachment_hash: str | None = dataclasses.field(
@@ -525,12 +683,12 @@ class GenesisCase(CdEDataclass):
     pcourse_id: int | None
 
     @classmethod
-    def get_persona_class(cls) -> type[Persona]:
+    def get_persona_class(cls) -> type[CorePersona]:
         # extracts the persona class from its type annotation,
         # since this is static information
-        return {
+        return {  # type: ignore[return-value]
             field.type for field in dataclasses.fields(cls) if field.name == "persona"
-        }.pop()  # type: ignore[return-value]
+        }.pop()
 
     @classmethod
     def dataclass_fields(
@@ -596,13 +754,13 @@ class GenesisCase(CdEDataclass):
 
     @classmethod
     def from_database(cls, data: CdEDBObject) -> "Self":
-        realm = data.get("realm")
+        realm = Realms(data["realm"])  # type: ignore[call-arg]
         # Dispatch data to correct dataclass based on realm.
-        if realm == "ml":
+        if realm == Realms.ml:
             return GenesisCaseMl.from_database(data)  # type: ignore[return-value]
-        elif realm == "event":
+        elif realm == Realms.event:
             return GenesisCaseEvent.from_database(data)  # type: ignore[return-value]
-        elif realm == "cde":
+        elif realm == Realms.cde:
             return GenesisCaseCdE.from_database(data)  # type: ignore[return-value]
         else:
             raise RuntimeError
@@ -613,29 +771,16 @@ class GenesisCase(CdEDataclass):
             return NotImplemented
         return self._lt_inner(other)
 
-    available_realms: ClassVar[dict[vtypes.Realm, str]] = {
-        vtypes.Realm("cde"): n_("CdE membership & events"),
-        vtypes.Realm("event"): n_("CdE events"),
-        vtypes.Realm("ml"): n_("CdE mailinglist"),
-    }
-
     @classmethod
-    def get_model_by_realm(cls, realm: str) -> type["GenesisCase"]:
-        return {
-            "ml": GenesisCaseMl,
-            "event": GenesisCaseEvent,
-            "cde": GenesisCaseCdE,
-        }[realm]
+    def get_model_by_realm(cls, realm: Realms) -> type["GenesisCase"]:
+        for subclass in cls.__subclasses__():
+            if subclass._realm == realm:
+                return subclass
+        raise KeyError(realm)
 
     @property
-    def model(self) -> type["GenesisCase"]:
-        return self.get_model_by_realm(self.realm)
-
-    all_admins: ClassVar[set[str]] = {f"{realm}_admin" for realm in available_realms}
-
-    @property
-    def relative_admin(self) -> str:
-        return f"{self.realm}_admin"
+    def relative_admin(self) -> Roles:
+        return self.realm.admin_role
 
     def get_persona_upgrade(self) -> dict[str, Any]:
         """Dict to upgrade an existing persona as the final stage of a genesis case."""
@@ -647,13 +792,26 @@ class GenesisCase(CdEDataclass):
         return ret
 
     @abc.abstractmethod
-    def get_persona_creation(self) -> Persona:
+    def get_persona_creation(self) -> CorePersona:
         """Dataclass to create a new persona as the final stage of a genesis case."""
         ...
+
+    @classmethod
+    def get_fields_per_realm(cls) -> dict[str, set[str]]:
+        return {
+            str(realm): {
+                field.name
+                for field in cls.get_model_by_realm(realm).dataclass_fields(
+                    only_persona=True
+                )
+            }
+            for realm in Realms.get_available_genesis_realms()
+        }
 
 
 @dataclasses.dataclass(kw_only=True)
 class GenesisCaseMl(GenesisCase):
+    _realm = Realms.ml
     persona: MlPersona
 
     @classmethod
@@ -676,6 +834,7 @@ class GenesisCaseMl(GenesisCase):
 
 @dataclasses.dataclass(kw_only=True)
 class GenesisCaseEvent(GenesisCase):
+    _realm = Realms.event
     persona: EventPersona
 
     @classmethod
@@ -698,6 +857,7 @@ class GenesisCaseEvent(GenesisCase):
 
 @dataclasses.dataclass(kw_only=True)
 class GenesisCaseCdE(GenesisCase):
+    _realm = Realms.cde
     persona: CdEPersona
     attachment_hash: str = dataclasses.field(metadata=Meta.input_update_exclude.as_dict)
 

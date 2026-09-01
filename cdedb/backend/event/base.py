@@ -21,10 +21,11 @@ import datetime
 import decimal
 from collections.abc import Collection, Iterable
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, Optional, Protocol, cast
+from typing import TYPE_CHECKING, Literal, Protocol, cast
 
 import cdedb.common.validation.types as vtypes
 import cdedb.database.constants as const
+import cdedb.models.core as models_core
 import cdedb.models.event as models
 from cdedb.backend.common import (
     access,
@@ -33,7 +34,7 @@ from cdedb.backend.common import (
     singularize,
 )
 from cdedb.backend.entity_keeper import EntityKeeper
-from cdedb.backend.event.lowlevel import EventLowLevelBackend
+from cdedb.backend.event.lowlevel import EventLowLevelBackend, _GetEventProtocol
 from cdedb.common import (
     EVENT_SCHEMA_VERSION,
     CdEDBLog,
@@ -43,7 +44,6 @@ from cdedb.common import (
     DeletionBlockers,
     RequestState,
     cast_field_entries,
-    cast_field_value,
     cast_fields,
     json_serialize,
     make_persona_name,
@@ -55,8 +55,6 @@ from cdedb.common.crypt import encrypt_password
 from cdedb.common.exceptions import EventIsBalancedError, PrivilegeError
 from cdedb.common.fields import (
     EVENT_ROLE_FIELDS,
-    PERSONA_EVENT_FIELDS,
-    QUESTIONNAIRE_ROW_FIELDS,
     REGISTRATION_FIELDS,
     REGISTRATION_PART_FIELDS,
     REGISTRATION_TRACK_FIELDS,
@@ -67,6 +65,7 @@ from cdedb.common.privileges import (
     is_privileged_event as is_privileged,
 )
 from cdedb.common.query.log_filter import EventLogFilter
+from cdedb.common.roles import Roles
 from cdedb.common.sorting import xsorted
 from cdedb.database.connection import Atomizer
 from cdedb.filter import datetime_filter
@@ -91,17 +90,17 @@ class EventBaseBackend(EventLowLevelBackend):
             self.conf, 'event_keeper', log_keys=log_keys, log_timestamp_key="ctime"
         )
 
-    @access("anonymous")
-    def is_locked(self, rs: RequestState, *, event_id: int) -> bool:
+    @access(Roles.anonymous)
+    def is_locked(self, rs: RequestState, *, event_id: vtypes.EventID) -> bool:
         """Helper to determine if an event is locked."""
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         query = "SELECT is_locked FROM event.events WHERE id = %s"
         data = self.query_one(rs, query, (event_id,))
         if data is None:
             raise ValueError(n_("Event does not exist"))
         return data['is_locked'] and not self.conf["CDEDB_OFFLINE_DEPLOYMENT"]
 
-    def assert_lock(self, rs: RequestState, *, event_id: int) -> None:
+    def assert_lock(self, rs: RequestState, *, event_id: vtypes.EventID) -> None:
         """Helper to check locking state of an event.
 
         This raises an exception in case of the wrong locking state.
@@ -109,12 +108,12 @@ class EventBaseBackend(EventLowLevelBackend):
         if self.is_locked(rs, event_id=event_id):
             raise RuntimeError(n_("This event is locked."))
 
-    @access("persona")
+    @access(Roles.persona)
     def orga_infos(
-        self, rs: RequestState, persona_ids: Collection[int]
-    ) -> dict[int, set[int]]:
+        self, rs: RequestState, persona_ids: Collection[vtypes.PersonaID]
+    ) -> dict[vtypes.PersonaID, set[vtypes.EventID]]:
         """List events organized by specific personas."""
-        persona_ids = affirm(set[vtypes.ID], persona_ids)
+        persona_ids = affirm(set[vtypes.PersonaID], persona_ids)
         data = self.sql_select(
             rs,
             "event.orgas",
@@ -122,19 +121,26 @@ class EventBaseBackend(EventLowLevelBackend):
             persona_ids,
             entity_key="persona_id",
         )
-        ret: dict[int, set[int]] = {}
+        ret: dict[vtypes.PersonaID, set[vtypes.EventID]] = {}
         for anid in persona_ids:
             ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
         return ret
 
-    @access("persona")
+    class _OrgaInfoProtocol(Protocol):
+        def __call__(
+            self, rs: RequestState, persona_id: vtypes.PersonaID
+        ) -> set[vtypes.EventID]: ...
+
+    orga_info: _OrgaInfoProtocol = singularize(orga_infos, "persona_ids", "persona_id")
+
+    @access(Roles.persona)
     def caretaker_infos(
         self,
         rs: RequestState,
-        persona_ids: Collection[int],
-    ) -> dict[int, set[int]]:
+        persona_ids: Collection[vtypes.PersonaID],
+    ) -> dict[vtypes.PersonaID, set[vtypes.EventID]]:
         """List events cared for by specific personas."""
-        persona_ids = affirm(set[vtypes.ID], persona_ids)
+        persona_ids = affirm(set[vtypes.PersonaID], persona_ids)
         data = self.sql_select(
             rs,
             "event.caretakers",
@@ -142,26 +148,28 @@ class EventBaseBackend(EventLowLevelBackend):
             persona_ids,
             entity_key="persona_id",
         )
-        ret: dict[int, set[int]] = {}
+        ret: dict[vtypes.PersonaID, set[vtypes.EventID]] = {}
         for anid in persona_ids:
             ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
         return ret
 
     class _CaretakerInfoProtocol(Protocol):
-        def __call__(self, rs: RequestState, persona_id: int) -> set[int]: ...
+        def __call__(
+            self, rs: RequestState, persona_id: vtypes.PersonaID
+        ) -> set[vtypes.EventID]: ...
 
     caretaker_info: _CaretakerInfoProtocol = singularize(
         caretaker_infos, "persona_ids", "persona_id"
     )
 
-    @access("persona")
+    @access(Roles.persona)
     def checkin_helper_infos(
         self,
         rs: RequestState,
-        persona_ids: Collection[int],
-    ) -> dict[int, set[int]]:
+        persona_ids: Collection[vtypes.PersonaID],
+    ) -> dict[vtypes.PersonaID, set[vtypes.EventID]]:
         """List events where specific personas are checkin helpers."""
-        persona_ids = affirm(set[vtypes.ID], persona_ids)
+        persona_ids = affirm(set[vtypes.PersonaID], persona_ids)
         data = self.sql_select(
             rs,
             "event.checkin_helpers",
@@ -169,30 +177,27 @@ class EventBaseBackend(EventLowLevelBackend):
             persona_ids,
             entity_key="persona_id",
         )
-        ret: dict[int, set[int]] = {}
+        ret = {}
         for anid in persona_ids:
             ret[anid] = {x['event_id'] for x in data if x['persona_id'] == anid}
         return ret
 
     class _CheckinHelperInfoProtocol(Protocol):
-        def __call__(self, rs: RequestState, persona_id: int) -> set[int]: ...
+        def __call__(
+            self, rs: RequestState, persona_id: vtypes.PersonaID
+        ) -> set[vtypes.EventID]: ...
 
     checkin_helper_info: _CheckinHelperInfoProtocol = singularize(
         checkin_helper_infos, "persona_ids", "persona_id"
     )
 
-    @access("persona")
-    def get_event_helpers(self, rs: RequestState) -> set[vtypes.ID]:
+    @access(Roles.persona)
+    def get_event_helpers(self, rs: RequestState) -> set[vtypes.PersonaID]:
         """List all event helpers."""
         data = self.query_all(rs, "SELECT persona_id FROM event.helpers", [])
         return {e['persona_id'] for e in data}
 
-    class _OrgaInfoProtocol(Protocol):
-        def __call__(self, rs: RequestState, persona_id: int) -> set[int]: ...
-
-    orga_info: _OrgaInfoProtocol = singularize(orga_infos, "persona_ids", "persona_id")
-
-    @access("event", "auditor")
+    @access(Roles.event, Roles.auditor)
     def retrieve_log(self, rs: RequestState, log_filter: EventLogFilter) -> CdEDBLog:
         """Get recorded activity.
 
@@ -210,13 +215,13 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return self.generic_retrieve_log(rs, log_filter)
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def list_events(
         self,
         rs: RequestState,
         current: bool | None = None,
         archived: bool | None = None,
-    ) -> dict[int, str]:
+    ) -> dict[vtypes.EventID, str]:
         """List all events organized via DB.
 
         :returns: Mapping of event ids to titles.
@@ -250,13 +255,13 @@ class EventBaseBackend(EventLowLevelBackend):
         data = self.query_all(rs, query, params)
         return {e['id']: e['title'] for e in data}
 
-    @access("anonymous")
+    @access(Roles.anonymous)
     def get_events(
         self,
         rs: RequestState,
-        event_ids: Collection[int],
-    ) -> models.CdEDataclassMap[models.Event]:
-        event_ids = affirm(set[vtypes.ID], event_ids)
+        event_ids: Collection[vtypes.EventID],
+    ) -> models.EventDataclassMap:
+        event_ids = affirm(set[vtypes.EventID], event_ids)
         with Atomizer(rs):
             event_data = {
                 e['id']: e
@@ -283,13 +288,13 @@ class EventBaseBackend(EventLowLevelBackend):
                 rs, *models.CustomQueryFilter.get_select_query(event_ids)
             )
         for e in event_data.values():
-            e['parts'] = []
-            e['part_groups'] = []
-            e['tracks'] = []
-            e['track_groups'] = []
-            e['fees'] = []
-            e['fields'] = []
-            e['custom_query_filters'] = []
+            e['parts'] = []  # pyrefly: ignore[implicit-any-empty-container]
+            e['part_groups'] = []  # pyrefly: ignore[implicit-any-empty-container]
+            e['tracks'] = []  # pyrefly: ignore[implicit-any-empty-container]
+            e['track_groups'] = []  # pyrefly: ignore[implicit-any-empty-container]
+            e['fees'] = []  # pyrefly: ignore[implicit-any-empty-container]
+            e['fields'] = []  # pyrefly: ignore[implicit-any-empty-container]
+            e['custom_query_filters'] = []  # pyrefly: ignore[implicit-any-empty-container]
         for p in part_data:
             event_data[p['event_id']]['parts'].append(p)
         for pg in part_group_data:
@@ -309,9 +314,9 @@ class EventBaseBackend(EventLowLevelBackend):
         return models.Event.many_from_database(event_data.values())
 
     # The annonation for this lives in the lowlevel backend.
-    get_event = singularize(get_events, "event_ids", "event_id")
+    get_event: _GetEventProtocol = singularize(get_events, "event_ids", "event_id")
 
-    @access("event")
+    @access(Roles.event)
     def verify_shortname_existence(self, rs: RequestState, shortname: str) -> bool:
         """Return True if the given shortname already exists for some event."""
         shortname = affirm(str, shortname)
@@ -321,24 +326,24 @@ class EventBaseBackend(EventLowLevelBackend):
             )
         )
 
-    @access("anonymous")
-    def get_minor_form_path(self, rs: RequestState, event_id: int) -> Path:
-        event_id = affirm(vtypes.ID, event_id)
+    @access(Roles.anonymous)
+    def get_minor_form_path(self, rs: RequestState, event_id: vtypes.EventID) -> Path:
+        event_id = affirm(vtypes.EventID, event_id)
         return self.minor_form_dir / str(event_id)
 
-    @access("anonymous")
-    def has_minor_form(self, rs: RequestState, event_id: int) -> bool:
-        event_id = affirm(vtypes.ID, event_id)
+    @access(Roles.anonymous)
+    def has_minor_form(self, rs: RequestState, event_id: vtypes.EventID) -> bool:
+        event_id = affirm(vtypes.EventID, event_id)
         return self.get_minor_form_path(rs, event_id).is_file()
 
-    @access("event")
+    @access(Roles.event)
     def change_minor_form(
-        self, rs: RequestState, event_id: int, minor_form: Optional[bytes]
+        self, rs: RequestState, event_id: vtypes.EventID, minor_form: bytes | None
     ) -> DefaultReturnCode:
         """Change or remove an event's minor form.
 
         Return 1 on successful change, -1 on successful deletion, 0 otherwise."""
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         minor_form = affirm(vtypes.PDFFile | None, minor_form, file_storage=False)
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Must be orga or admin to change the minor form."))
@@ -364,24 +369,24 @@ class EventBaseBackend(EventLowLevelBackend):
             )
             return 1
 
-    @access("persona")
+    @access(Roles.persona)
     def validate_event_persona_ids(
-        self, rs: RequestState, persona_ids: Collection[int]
+        self, rs: RequestState, persona_ids: Collection[vtypes.PersonaID]
     ) -> None:
         """Validate whether persona_ids are valid for receiving event privileges."""
         if not persona_ids:
             raise ValueError(n_("Must not be empty."))
         if not self.core.verify_ids(rs, persona_ids, is_archived=False):
             raise ValueError(n_("Some of these personas do not exist or are archived."))
-        if not self.core.verify_personas(rs, persona_ids, {"event"}):
+        if not self.core.verify_personas(rs, persona_ids, Roles.event):
             raise ValueError(n_("Some of these personas are not event users."))
 
-    @access("event_admin")
+    @access(Roles.event_admin)
     def add_event_helpers(
-        self, rs: RequestState, persona_ids: Collection[int]
+        self, rs: RequestState, persona_ids: Collection[vtypes.PersonaID]
     ) -> DefaultReturnCode:
         """Add event helpers."""
-        persona_ids = affirm(set[vtypes.ID], persona_ids)
+        persona_ids = affirm(set[vtypes.PersonaID], persona_ids)
 
         ret = 1
         with Atomizer(rs):
@@ -402,16 +407,16 @@ class EventBaseBackend(EventLowLevelBackend):
 
         # Update session helper status
         if rs.user.persona_id in persona_ids:
-            rs.user.realm_roles['event'].add('event_helper')
+            rs.user.new_roles |= Roles.event_helper
 
         return ret
 
-    @access("event_admin")
+    @access(Roles.event_admin)
     def remove_event_helper(
-        self, rs: RequestState, persona_id: int
+        self, rs: RequestState, persona_id: vtypes.PersonaID
     ) -> DefaultReturnCode:
         """Remove a single event helper."""
-        persona_id = affirm(vtypes.ID, persona_id)
+        persona_id = affirm(vtypes.PersonaID, persona_id)
         query = "DELETE FROM event.helpers WHERE persona_id = %s"
         with Atomizer(rs):
             ret = self.query_exec(rs, query, [persona_id])
@@ -425,14 +430,14 @@ class EventBaseBackend(EventLowLevelBackend):
 
             # Update session helper status
             if rs.user.persona_id == persona_id:
-                rs.user.realm_roles['event'].remove('event_helper')
+                rs.user.new_roles &= ~Roles.event_helper
 
         return ret
 
     def _affirm_event_role_privileges(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         role: Literal['orga', 'caretaker', 'checkin_helper'],
     ) -> None:
         if role == 'orga':
@@ -449,12 +454,12 @@ class EventBaseBackend(EventLowLevelBackend):
         else:
             raise RuntimeError(n_("Impossible."))
 
-    @access("event")
+    @access(Roles.event)
     def add_event_roles(
         self,
         rs: RequestState,
-        event_id: int,
-        persona_ids: Collection[int],
+        event_id: vtypes.EventID,
+        persona_ids: Collection[vtypes.PersonaID],
         role: Literal['orga', 'caretaker', 'checkin_helper'],
     ) -> DefaultReturnCode:
         """Add orgas to an event.
@@ -464,8 +469,8 @@ class EventBaseBackend(EventLowLevelBackend):
 
         Note that this requires different privileges than `set_event`.
         """
-        event_id = affirm(vtypes.ID, event_id)
-        persona_ids = affirm(set[vtypes.ID], persona_ids)
+        event_id = affirm(vtypes.EventID, event_id)
+        persona_ids = affirm(set[vtypes.PersonaID], persona_ids)
         self._affirm_event_role_privileges(rs, event_id, role)
 
         ret = 1
@@ -496,20 +501,20 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def remove_event_role(
         self,
         rs: RequestState,
-        event_id: int,
-        persona_id: int,
+        event_id: vtypes.EventID,
+        persona_id: vtypes.PersonaID,
         role: Literal['orga', 'caretaker', 'checkin_helper'],
     ) -> DefaultReturnCode:
         """Remove a single orga of an event.
 
         Note that this requires different privileges than `set_event`.
         """
-        event_id = affirm(vtypes.ID, event_id)
-        persona_id = affirm(vtypes.ID, persona_id)
+        event_id = affirm(vtypes.EventID, event_id)
+        persona_id = affirm(vtypes.PersonaID, persona_id)
         self._affirm_event_role_privileges(rs, event_id, role)
 
         query = f"""
@@ -533,13 +538,15 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event")
-    def list_orga_tokens(self, rs: RequestState, event_id: int) -> dict[int, str]:
+    @access(Roles.event)
+    def list_orga_tokens(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> dict[int, str]:
         """List all orga tokens belonging to one event.
 
         :returns: Mapping of token ids to titles.
         """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         if not is_privileged(rs, EventPrivileges.basic_read, event_id=event_id):
             raise PrivilegeError
         data = self.sql_select(
@@ -551,7 +558,7 @@ class EventBaseBackend(EventLowLevelBackend):
         )
         return {e['id']: e['title'] for e in data}
 
-    @access("event")
+    @access(Roles.event)
     def get_orga_tokens(
         self, rs: RequestState, orga_token_ids: Collection[int]
     ) -> dict[int, OrgaToken]:
@@ -585,7 +592,7 @@ class EventBaseBackend(EventLowLevelBackend):
         get_orga_tokens, "orga_token_ids", "orga_token_id"
     )
 
-    @access("event")
+    @access(Roles.event)
     def create_orga_token(self, rs: RequestState, data: CdEDBObject) -> tuple[int, str]:
         """Create a new orga token for the given event.
 
@@ -616,7 +623,7 @@ class EventBaseBackend(EventLowLevelBackend):
             )
         return new_id, secret
 
-    @access("event")
+    @access(Roles.event)
     def change_orga_token(
         self, rs: RequestState, data: CdEDBObject
     ) -> DefaultReturnCode:
@@ -652,7 +659,7 @@ class EventBaseBackend(EventLowLevelBackend):
                 )
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def revoke_orga_token(
         self, rs: RequestState, orga_token_id: int
     ) -> DefaultReturnCode:
@@ -686,7 +693,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def delete_orga_token_blockers(
         self, rs: RequestState, orga_token_id: int
     ) -> DeletionBlockers:
@@ -719,12 +726,12 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return blockers
 
-    @access("event")
+    @access(Roles.event)
     def delete_orga_token(
         self,
         rs: RequestState,
         orga_token_id: int,
-        cascade: Optional[Collection[str]] = None,
+        cascade: Collection[str] | None = None,
     ) -> DefaultReturnCode:
         """Delete an orga  token.
 
@@ -784,13 +791,13 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event", "droid_orga")
+    @access(Roles.event, Roles.droid_orga)
     def set_event(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         data: CdEDBObject,
-        change_note: Optional[str] = None,
+        change_note: str | None = None,
     ) -> DefaultReturnCode:
         """Update some keys of an event organized via DB.
 
@@ -821,7 +828,7 @@ class EventBaseBackend(EventLowLevelBackend):
           e.g. trying to create a field with a `field_name` that already
           exists for this event. See Issue #1140.
         """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         ret = 1
         with Atomizer(rs):
             current = self.get_event(rs, event_id)
@@ -873,8 +880,8 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event_admin")
-    def create_event(self, rs: RequestState, data: CdEDBObject) -> DefaultReturnCode:
+    @access(Roles.event_admin)
+    def create_event(self, rs: RequestState, data: CdEDBObject) -> vtypes.EventID:
         """Make a new event organized via DB."""
         data = affirm(models.Event, data, creation=True)
         if not data.get('parts'):
@@ -883,7 +890,9 @@ class EventBaseBackend(EventLowLevelBackend):
             edata = {
                 k: v for k, v in data.items() if k in models.Event.database_fields()
             }
-            new_id = self.sql_insert(rs, "event.events", edata)
+            new_id = vtypes.EventID(
+                vtypes.ID(self.sql_insert(rs, "event.events", edata))
+            )
             self.event_log(rs, const.EventLogCodes.event_created, new_id)
             if data.get('orgas'):
                 self.add_event_roles(rs, new_id, data['orgas'], 'orga')
@@ -898,15 +907,15 @@ class EventBaseBackend(EventLowLevelBackend):
             self.event_keeper_create(rs, new_id)
         return new_id
 
-    @access("event")
+    @access(Roles.event)
     def set_event_free_texts(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         data: CdEDBObject,
-        change_note: Optional[str] = None,
+        change_note: str | None = None,
     ) -> DefaultReturnCode:
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         data = affirm(
             cast(type[CdEDataclass], models._EventFreetextMixin), data
         )  # absstract model
@@ -924,12 +933,12 @@ class EventBaseBackend(EventLowLevelBackend):
             )
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def create_lodgement_group(
-        self, rs: RequestState, event_id: int, data: CdEDBObject
-    ) -> DefaultReturnCode:
+        self, rs: RequestState, event_id: vtypes.EventID, data: CdEDBObject
+    ) -> vtypes.LodgementGroupID:
         """Make a new lodgement group."""
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         data = affirm(models.LodgementGroup, data, creation=True)
 
         if not is_privileged(rs, EventPrivileges.lodgements_write, event_id):
@@ -944,13 +953,13 @@ class EventBaseBackend(EventLowLevelBackend):
                 data['event_id'],
                 change_note=data['title'],
             )
-        return new_id
+        return vtypes.LodgementGroupID(vtypes.ID(new_id))
 
-    @access("event")
+    @access(Roles.event)
     def add_part_group(
-        self, rs: RequestState, event_id: int, part_group: CdEDBObject
+        self, rs: RequestState, event_id: vtypes.EventID, part_group: CdEDBObject
     ) -> DefaultReturnCode:
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
 
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
@@ -987,7 +996,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def change_part_group(
         self, rs: RequestState, part_group_id: int, part_group: CdEDBObject
     ) -> DefaultReturnCode:
@@ -1019,7 +1028,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def delete_part_group(
         self, rs: RequestState, part_group_id: int
     ) -> DefaultReturnCode:
@@ -1041,11 +1050,11 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def add_track_group(
-        self, rs: RequestState, event_id: int, track_group: CdEDBObject
+        self, rs: RequestState, event_id: vtypes.EventID, track_group: CdEDBObject
     ) -> DefaultReturnCode:
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
 
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
@@ -1059,7 +1068,7 @@ class EventBaseBackend(EventLowLevelBackend):
             )
             track_group['event_id'] = event_id
             track_ids = track_group.pop("track_ids")
-            is_sync = track_group["constraint_type"].is_sync()
+            is_sync: bool = track_group["constraint_type"].is_sync()
             if is_sync and not self.may_create_ccs_group(rs, track_ids):
                 raise ValueError(
                     n_(
@@ -1092,7 +1101,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def change_track_group(
         self, rs: RequestState, track_group_id: int, track_group: CdEDBObject
     ) -> DefaultReturnCode:
@@ -1127,7 +1136,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def delete_track_group(
         self, rs: RequestState, track_group_id: int
     ) -> DefaultReturnCode:
@@ -1154,13 +1163,13 @@ class EventBaseBackend(EventLowLevelBackend):
         self,
         rs: RequestState,
         *,
-        event_id: int | None = None,
+        event_id: vtypes.EventID | None = None,
         fee_id: int | None = None,
     ) -> models.Event:
         """Uninlined code from the event fee methods."""
         self.affirm_atomized_context(rs)
 
-        event_id = affirm(vtypes.ID | None, event_id)
+        event_id = affirm(vtypes.EventID | None, event_id)
         fee_id = affirm(vtypes.ID | None, fee_id)
 
         if event_id is None:
@@ -1185,20 +1194,20 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return event
 
-    @access("event")
+    @access(Roles.event)
     def create_event_fee(
-        self, rs: RequestState, event_id: int, data: CdEDBObject
+        self, rs: RequestState, event_id: vtypes.EventID, data: CdEDBObject
     ) -> DefaultReturnCode:
+        event_id = affirm(vtypes.EventID, event_id)
         with Atomizer(rs):
             event = self._event_fee_privilege_check(rs, event_id=event_id)
 
-            quest = self.get_questionnaire(rs, event_id)
             data = affirm(
                 models.EventFee,
                 data,
                 event=event,
                 current=None,
-                questionnaire=quest,
+                all_questionnaires=self.get_all_questionnaires(rs, event_id),
                 creation=True,
             )
 
@@ -1215,7 +1224,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def change_event_fee(
         self, rs: RequestState, fee_id: int, data: CdEDBObject
     ) -> DefaultReturnCode:
@@ -1225,13 +1234,12 @@ class EventBaseBackend(EventLowLevelBackend):
             event = self._event_fee_privilege_check(rs, fee_id=fee_id)
             current_fee = event.fees[fee_id]
 
-            quest = self.get_questionnaire(rs, event.id)
             data = affirm(
                 models.EventFee,
                 data,
                 event=event,
                 current=current_fee,
-                questionnaire=quest,
+                all_questionnaires=self.get_all_questionnaires(rs, event.id),
             )
 
             data["id"] = fee_id
@@ -1251,7 +1259,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def delete_event_fee(self, rs: RequestState, fee_id: int) -> DefaultReturnCode:
         fee_id = affirm(vtypes.ID, fee_id)
 
@@ -1259,7 +1267,7 @@ class EventBaseBackend(EventLowLevelBackend):
             event = self._event_fee_privilege_check(rs, fee_id=fee_id)
 
             current_fee = event.fees[fee_id]
-            persona_ids = []
+            persona_ids: list[vtypes.PersonaID] = []
             if current_fee.is_personalized():
                 registration_ids = [
                     e["registration_id"]
@@ -1306,11 +1314,13 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @abc.abstractmethod
     def _update_registrations_amount_owed(
-        self, rs: RequestState, event_id: int
-    ) -> dict[int, "ComplexRegistrationFee"]: ...
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> dict[vtypes.RegistrationID, "ComplexRegistrationFee"]: ...
 
-    @access("event")
-    def check_orga_addition_limit(self, rs: RequestState, event_id: int) -> bool:
+    @access(Roles.event)
+    def check_orga_addition_limit(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> bool:
         """Implement a rate limiting check for orgas adding persons.
 
         Since adding somebody as participant or orga to an event gives all
@@ -1319,7 +1329,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         :returns: True if limit has not been reached.
         """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         if not is_privileged(
             rs, EventPrivileges.registrations_write, event_id=event_id
         ):
@@ -1340,109 +1350,97 @@ class EventBaseBackend(EventLowLevelBackend):
         num = unwrap(self.query_one(rs, query, params))
         return num < self.conf["ORGA_ADD_LIMIT"]
 
-    @access("event", "droid_quick_partial_export", "droid_orga")
-    def get_questionnaire(
+    @access(Roles.event, Roles.droid_quick_partial_export, Roles.droid_orga)
+    def get_all_questionnaires(
         self,
         rs: RequestState,
-        event_id: int,
-        kinds: Optional[Collection[const.QuestionnaireUsages]] = None,
-    ) -> CdEDBQuestionnaire:
-        """Retrieve the questionnaire rows for a specific event.
-
-        Rows are seperated by kind. Specifying a kinds will get you only rows
-        of those kinds, otherwise you get them all.
-        """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id: vtypes.EventID,
+    ) -> models.questionnaire.QuestionnaireContainer:
+        """Retrieve the questionnaire rows for a specific event."""
+        event_id = affirm(vtypes.EventID, event_id)
         event = self.get_event(rs, event_id)
-        kinds = affirm(set[const.QuestionnaireUsages], kinds or [])
-        columns = ', '.join(k for k in QUESTIONNAIRE_ROW_FIELDS if k != 'event_id')
-        query = f"SELECT {columns} FROM {models.QuestionnaireRow.database_table}"
-        constraints = ["event_id = %(event_id)s"]
-        params: CdEDBObject = {"event_id": event_id}
-        if kinds:
-            constraints.append("kind = ANY(%(kinds)s)")
-            params["kinds"] = kinds
-        query += " WHERE " + " AND ".join(c for c in constraints)
-        d = self.query_all(rs, query, params)
-        for row in d:
-            row['kind'] = const.QuestionnaireUsages(row['kind'])
-            if field := event.fields.get(row['field_id']):
-                # Deserialize the stored string into the datatype of the field if able.
-                row['default_value'] = cast_field_value(
-                    row['default_value'], field.kind
-                )
-                # Special case for datetimes: Convert them to the default timezone so
-                #  they can be submitted again even without the timezone.
-                #  This is required for use with 'datetime-local' inputs.
-                if field.kind == const.FieldDatatypes.datetime:
-                    if row['default_value']:
-                        row['default_value'] = row['default_value'].astimezone(
-                            self.conf["DEFAULT_TIMEZONE"]
-                        )
-
-        ret = {
-            k: xsorted([e for e in d if e['kind'] == k], key=lambda x: x['pos'])
-            for k in kinds or const.QuestionnaireUsages
-        }
-        return ret
-
-    @access("event")
-    def set_questionnaire(
-        self, rs: RequestState, event_id: int, data: Optional[CdEDBQuestionnaire]
-    ) -> DefaultReturnCode:
-        """Replace current questionnaire rows for a specific event, by kind.
-
-        This superseeds the current questionnaire for all given kinds.
-        Kinds that are not present in data, will not be touched.
-
-        To delete all questionnaire rows, you can specify data as None.
-        """
-        event_id = affirm(vtypes.ID, event_id)
-        event = self.get_event(rs, event_id)
-        fees_by_field = self.get_event_fees_per_entity(rs, event_id).fields
-        if data is not None:
-            current = self.get_questionnaire(rs, event_id)
-            current.update(data)
-            field_defitions = {k: v.as_dict() for k, v in event.fields.items()}
-            # FIXME what is the correct type here?
-            data = affirm(
-                vtypes.Questionnaire,
-                current,  # type: ignore[assignment]
-                field_definitions=field_defitions,
-                fees_by_field=fees_by_field,
+        data: list[CdEDBObject] = []
+        data.extend(
+            self.query_all(
+                rs,
+                *models.questionnaire.QuestionnaireTextRowMeta.get_select_query([
+                    event_id
+                ]),
             )
+        )
+        data.extend(
+            field_rows := self.query_all(
+                rs,
+                *models.questionnaire.QuestionnaireFieldRow.get_select_query([
+                    event_id
+                ]),
+            )
+        )
+        data.extend(
+            self.query_all(
+                rs,
+                *models.questionnaire.QuestionnaireMagicRow.get_select_query([
+                    event_id
+                ]),
+            )
+        )
+
+        for row in field_rows:
+            row["event"] = event
+        return models.questionnaire.QuestionnaireContainer.from_database(data, event)
+
+    @access(Roles.event)
+    def set_questionnaire(
+        self,
+        rs: RequestState,
+        event_id: vtypes.EventID,
+        kind: const.QuestionnaireUsages,
+        data: list[CdEDBObject],
+    ) -> DefaultReturnCode:
+        """Replace the current questionnaire of the given kind for the given event."""
+        event_id = affirm(vtypes.EventID, event_id)
+        kind = affirm(const.QuestionnaireUsages, kind)
+        data = affirm(
+            vtypes.Questionnaire,
+            data,
+            kind=kind,
+            all_questionnaires=self.get_all_questionnaires(rs, event_id),
+        )
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_lock(rs, event_id=event_id)
         with Atomizer(rs):
-            ret = 1
-            # Allow deletion of enitre questionnaire by specifying None.
-            if data is None:
-                self.sql_delete(
-                    rs, "event.questionnaire_rows", (event_id,), entity_key="event_id"
-                )
-                return 1
-            # Otherwise replace rows for all given kinds.
-            for kind, rows in data.items():
+            # Always delete everything then recreate.
+            for cls in models.questionnaire.QuestionnaireRow.__subclasses__():
                 query = f"""
-                    DELETE FROM {models.QuestionnaireRow.database_table}
-                    WHERE event_id = %(event_id)s AND kind = %(kind)s
+                    DELETE FROM {cls.database_table}
+                    WHERE event_id = %(event_id)s and kind = %(kind)s
                 """
-                self.query_exec(rs, query, {"event_id": event_id, "kind": kind})
-                for pos, row in enumerate(rows):
-                    new_row = copy.deepcopy(row)
-                    new_row['pos'] = pos
-                    new_row['event_id'] = event_id
-                    new_row['kind'] = kind
-                    ret *= self.sql_insert(
-                        rs, models.QuestionnaireRow.database_table, new_row
-                    )
-            self.event_log(rs, const.EventLogCodes.questionnaire_changed, event_id)
+                params = {"event_id": event_id, "kind": kind}
+                self.query_exec(rs, query, params)
+
+            ret = 1
+            for pos, row in enumerate(data):
+                new_row = copy.deepcopy(row)
+                new_row['event_id'] = event_id
+                # The questionnaire import allows specifying fields by name.
+                #  We cannot remove this before, due to validation idempotency.
+                new_row.pop("field_name", None)
+                cls = models.questionnaire.QuestionnaireRow.get_class(new_row["role"])
+                ret *= self.sql_insert(rs, cls.database_table, new_row)
+            self.event_log(
+                rs,
+                const.EventLogCodes.questionnaire_changed,
+                event_id,
+                change_note=rs.log_gettext(str(kind)),
+            )
         return ret
 
-    @access("event")
-    def balance_event(self, rs: RequestState, event_id: int) -> DefaultReturnCode:
-        event_id = affirm(vtypes.ID, event_id)
+    @access(Roles.event)
+    def balance_event(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> DefaultReturnCode:
+        event_id = affirm(vtypes.EventID, event_id)
         if not is_privileged(rs, EventPrivileges.balance, event_id=event_id):
             raise PrivilegeError
         with Atomizer(rs):
@@ -1461,9 +1459,11 @@ class EventBaseBackend(EventLowLevelBackend):
             self.event_log(rs, const.EventLogCodes.event_balanced, event_id)
         return ret
 
-    @access("event")
-    def unbalance_event(self, rs: RequestState, event_id: int) -> DefaultReturnCode:
-        event_id = affirm(vtypes.ID, event_id)
+    @access(Roles.event)
+    def unbalance_event(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> DefaultReturnCode:
+        event_id = affirm(vtypes.EventID, event_id)
         if not is_privileged(rs, EventPrivileges.balance, event_id=event_id):
             raise PrivilegeError
         with Atomizer(rs):
@@ -1482,10 +1482,12 @@ class EventBaseBackend(EventLowLevelBackend):
             self.event_log(rs, const.EventLogCodes.event_unbalanced, event_id)
         return ret
 
-    @access("event")
-    def lock_event(self, rs: RequestState, event_id: int) -> DefaultReturnCode:
+    @access(Roles.event)
+    def lock_event(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> DefaultReturnCode:
         """Lock an event."""
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         if not is_privileged(rs, EventPrivileges.lock, event_id=event_id):
             raise PrivilegeError
         with Atomizer(rs):
@@ -1499,10 +1501,12 @@ class EventBaseBackend(EventLowLevelBackend):
             self.event_log(rs, const.EventLogCodes.event_locked, event_id)
         return ret
 
-    @access("event")
-    def unlock_event(self, rs: RequestState, event_id: int) -> DefaultReturnCode:
+    @access(Roles.event)
+    def unlock_event(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> DefaultReturnCode:
         """Unlock an event."""
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         if not is_privileged(rs, EventPrivileges.lock, event_id=event_id):
             raise PrivilegeError
         with Atomizer(rs):
@@ -1517,11 +1521,11 @@ class EventBaseBackend(EventLowLevelBackend):
             self.event_log(rs, const.EventLogCodes.event_unlocked, event_id)
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def approve_registration(
-        self, rs: RequestState, event_id: int
+        self, rs: RequestState, event_id: vtypes.EventID
     ) -> DefaultReturnCode:
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         if not is_privileged(
             rs, EventPrivileges.approve_registration, event_id=event_id
         ):
@@ -1536,11 +1540,11 @@ class EventBaseBackend(EventLowLevelBackend):
             self.event_log(rs, const.EventLogCodes.registration_approved, event_id)
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def unapprove_registration(
-        self, rs: RequestState, event_id: int
+        self, rs: RequestState, event_id: vtypes.EventID
     ) -> DefaultReturnCode:
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         if not is_privileged(
             rs, EventPrivileges.approve_registration, event_id=event_id
         ):
@@ -1556,9 +1560,11 @@ class EventBaseBackend(EventLowLevelBackend):
         return ret
 
     @internal
-    @access("event")
-    def set_event_archived(self, rs: RequestState, event_id: int) -> DefaultReturnCode:
-        event_id = affirm(vtypes.ID, event_id)
+    @access(Roles.event)
+    def set_event_archived(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> DefaultReturnCode:
+        event_id = affirm(vtypes.EventID, event_id)
         if not is_privileged(rs, EventPrivileges.conclude, event_id=event_id):
             raise PrivilegeError
         with Atomizer(rs):
@@ -1575,8 +1581,8 @@ class EventBaseBackend(EventLowLevelBackend):
             self.event_log(rs, const.EventLogCodes.event_archived, event_id)
         return ret
 
-    @access("event")
-    def export_event(self, rs: RequestState, event_id: int) -> CdEDBObject:
+    @access(Roles.event)
+    def export_event(self, rs: RequestState, event_id: vtypes.EventID) -> CdEDBObject:
         """Export an event for offline usage or after offline usage.
 
         This provides a more general export functionality which could
@@ -1584,7 +1590,7 @@ class EventBaseBackend(EventLowLevelBackend):
 
         :returns: dict holding all data of the exported event
         """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         if not is_privileged(rs, EventPrivileges.all_read, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
 
@@ -1635,8 +1641,11 @@ class EventBaseBackend(EventLowLevelBackend):
                     ('id', 'registration_id', 'track_id', 'course_id', 'rank'),
                 ),
                 models.PersonalizedFee.full_export_spec(),
-                ('event.questionnaire_rows', "event_id", QUESTIONNAIRE_ROW_FIELDS),
+                models.questionnaire.QuestionnaireTextRowMeta.full_export_spec(),
+                models.questionnaire.QuestionnaireFieldRow.full_export_spec(),
+                models.questionnaire.QuestionnaireMagicRow.full_export_spec(),
                 models.StoredEventQuery.full_export_spec(),
+                models.CustomQueryFilter.full_export_spec(),
                 (
                     'event.log',
                     "event_id",
@@ -1680,19 +1689,25 @@ class EventBaseBackend(EventLowLevelBackend):
                     entries = cast_field_entries(entries, kind)
                     entries = normalize_field_entries(entries, kind, coalesce="") or {}
                     e["entries"] = list(map(list, entries.items()))
+            columns = xsorted(
+                set(models_core.PersonaStatus.database_fields())
+                | set(EventPersona.database_fields())
+            )
             ret['core.personas'] = list_to_dict(
-                self.sql_select(rs, "core.personas", PERSONA_EVENT_FIELDS, personas)
+                self.sql_select(rs, "core.personas", columns, personas)
             )
         return ret
 
-    @access("event", "droid_quick_partial_export", "droid_orga")
-    def partial_export_event(self, rs: RequestState, event_id: int) -> CdEDBObject:
+    @access(Roles.event, Roles.droid_quick_partial_export, Roles.droid_orga)
+    def partial_export_event(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> CdEDBObject:
         """Export an event for third-party applications.
 
         This provides a consumer-friendly package of event data which can
         later on be reintegrated with the partial import facility.
         """
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         if not is_privileged(rs, EventPrivileges.basic_read, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
 
@@ -1780,9 +1795,13 @@ class EventBaseBackend(EventLowLevelBackend):
                     entity_key="event_id",
                 )
             )
-            questionnaire = self.get_questionnaire(rs, event_id)
+            questionnaire = self.get_all_questionnaires(rs, event_id).as_dict(full=True)
+            stored_queries = self.get_event_queries(rs, event_id)  # type: ignore[attr-defined]
             persona_ids = tuple(reg['persona_id'] for reg in registrations.values())
-            personas = self.core.get_event_users(rs, persona_ids, event_id)
+            personas = {
+                p.id: p.as_dict()
+                for p in self.core.get_event_users(rs, persona_ids, event_id).values()
+            }
 
         # Now process all the data.
         # basics
@@ -1860,9 +1879,12 @@ class EventBaseBackend(EventLowLevelBackend):
                 del track['track_id']
             registration['tracks'] = tracks
             registration['fields'] = cast_fields(registration['fields'], event.fields)
-            registration['personalized_fees'] = {}
-            for fee_id, fee_amount in personalized_fee_lookup[registration_id].items():
-                registration['personalized_fees'][fee_id] = fee_amount
+            registration['personalized_fees'] = {
+                fee_id: fee_amount
+                for fee_id, fee_amount in personalized_fee_lookup[
+                    registration_id
+                ].items()
+            }
             registration["amount_owed_by_kind"] = {
                 kind.name: amount
                 for kind, amount in registration["amount_owed_by_kind"].items()
@@ -1941,7 +1963,7 @@ class EventBaseBackend(EventLowLevelBackend):
         for f in ('lodge_field_id', 'reimbursement_iban_field_id'):
             new_key = f.removesuffix("_id")
             if ret['event'][f]:
-                field = ret['event']['fields'][ret['event'][f]]
+                field: CdEDBObject = ret['event']['fields'][ret['event'][f]]
                 ret['event'][new_key] = field['field_name']
             else:
                 ret['event'][new_key] = None
@@ -1953,13 +1975,14 @@ class EventBaseBackend(EventLowLevelBackend):
         new_questionnaire = {str(usage): rows for usage, rows in questionnaire.items()}
         for usage, rows in new_questionnaire.items():
             for q in rows:
-                if q['field_id']:
+                if 'field_id' in q:
                     q['field_name'] = event.fields[q['field_id']].field_name
-                else:
-                    q['field_name'] = None
+                    del q['field_id']
+                for key in ("text", "title", "panel_kind"):
+                    if key in q and not q[key]:
+                        del q[key]
                 del q['pos']
                 del q['kind']
-                del q['field_id']
         for field in new_fields.values():
             del field['field_name']
             del field['event_id']
@@ -1967,6 +1990,14 @@ class EventBaseBackend(EventLowLevelBackend):
             field["entries"] = normalize_field_entries(
                 field["entries"], field["kind"], coalesce=""
             )
+        ret["event"]["stored_queries"] = {
+            query.query_name: {
+                "scope": query.scope,
+                "query_group": query.query_group,
+                "serialized_query": query.serialized_query,
+            }
+            for query in stored_queries.values()
+        }
         # personas
         for reg_id, registration in ret['registrations'].items():
             persona = personas[registration['persona_id']]
@@ -1982,36 +2013,34 @@ class EventBaseBackend(EventLowLevelBackend):
             ret['event']['iban'] = ret['event']['iban'].get_iban()
         return ret
 
-    @access("event")
+    @access(Roles.event)
     def questionnaire_import(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         fields: CdEDBObjectMap,
-        questionnaire: CdEDBQuestionnaire,
+        questionnaires: dict[const.QuestionnaireUsages, vtypes.Questionnaire],
     ) -> DefaultReturnCode:
         """Special import for custom datafields and questionnaire rows."""
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         # validation of input is delegated to the setters, because it is rather
         # involved and dependent on each other.
-        # Do not allow special use of `set_questionnaire` for deleting everything.
-        if questionnaire is None:
-            raise ValueError(
-                n_("Cannot use questionnaire import to delete questionnaire.")
-            )
         if not is_privileged(rs, EventPrivileges.basic_write, event_id=event_id):
             raise PrivilegeError(n_("Not privileged."))
         self.assert_lock(rs, event_id=event_id)
 
         with Atomizer(rs):
             ret = self.set_event(rs, event_id, {'fields': fields})
-            ret *= self.set_questionnaire(rs, event_id, questionnaire)
+            for kind, questionnaire in questionnaires.items():
+                ret *= self.set_questionnaire(rs, event_id, kind, questionnaire)
         return ret
 
-    @access("event_admin")
-    def event_keeper_create(self, rs: RequestState, event_id: int) -> CdEDBObject:
+    @access(Roles.event_admin)
+    def event_keeper_create(
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> CdEDBObject:
         """Create a new git repository for keeping track of event changes."""
-        event_id = affirm(vtypes.ID, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         self._event_keeper.init(event_id)
         export = self.event_keeper_commit(
             rs, event_id, "Initialer Commit", is_initial=True
@@ -2020,23 +2049,23 @@ class EventBaseBackend(EventLowLevelBackend):
         assert export is not None
         return export
 
-    @access("event_admin")
-    def event_keeper_drop(self, rs: RequestState, event_id: int) -> None:
+    @access(Roles.event_admin)
+    def event_keeper_drop(self, rs: RequestState, event_id: vtypes.EventID) -> None:
         """Published version of EntityKeeper.delete.
 
         :param rs: Required for access check."""
-        return self._event_keeper.delete(event_id)
+        self._event_keeper.delete(event_id)
 
-    @access("event")
+    @access(Roles.event)
     def event_keeper_commit(
         self,
         rs: RequestState,
-        event_id: int,
+        event_id: vtypes.EventID,
         commit_msg: str,
         *,
         after_change: bool = False,
         is_initial: bool = False,
-    ) -> Optional[CdEDBObject]:
+    ) -> CdEDBObject | None:
         """Commit the current state of the event to its git repository.
 
         In general, there are two scenarios where we want to make a new commit:
@@ -2052,7 +2081,7 @@ class EventBaseBackend(EventLowLevelBackend):
         :returns: The partial export or None. None may only be returned if the commit
             may be dropped.
         """
-        event_id = affirm(int, event_id)
+        event_id = affirm(vtypes.EventID, event_id)
         commit_msg = affirm(str, commit_msg)
 
         may_drop = False if is_initial else not after_change
@@ -2083,8 +2112,8 @@ class EventBaseBackend(EventLowLevelBackend):
 
     @internal
     def _process_event_keeper_logs(
-        self, rs: RequestState, event_id: int
-    ) -> Optional[tuple[CdEDBObject, ...]]:
+        self, rs: RequestState, event_id: vtypes.EventID
+    ) -> tuple[CdEDBObject, ...] | None:
         """Format the log entries since the last commit to make them more readable."""
         with Atomizer(rs):
             timestamp = self._event_keeper.latest_logtime(event_id)
@@ -2114,12 +2143,10 @@ class EventBaseBackend(EventLowLevelBackend):
             )
             # pad the log code column to a fixed width. 31 chars is the current length
             # of our longest log code.
-            entry["Code"] = str(const.EventLogCodes(entry["code"]).name).ljust(31)
+            entry["Code"] = const.EventLogCodes(entry["code"]).name.ljust(31)
             if entry["submitted_by"]:
-                submitter = personas[entry["submitted_by"]]
-                entry["Verantwortlich"] = make_persona_name(submitter)
+                entry["Verantwortlich"] = personas[entry["submitted_by"]].get_name()
             if entry["persona_id"]:
-                affected = personas[entry["persona_id"]]
-                entry["Betroffen"] = make_persona_name(affected)
+                entry["Betroffen"] = personas[entry["persona_id"]].get_name()
             entry["Erläuterung"] = entry["change_note"]
         return entries
