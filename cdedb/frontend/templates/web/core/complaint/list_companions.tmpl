@@ -1,4 +1,4 @@
-{% set sidenav_active='companions' %}
+{% set sidenav_active='complaint_index' %}
 {% extends "web/core/base.tmpl" %}
 {% import "web/util.tmpl" as util with context %}
 {% block title %}
@@ -6,11 +6,12 @@
 {% endblock %}
 {% block breadcrumb %}
     {{ super() }}
+    {{ util.breadcrumb_link(cdedblink("core/complaint_index"), gettext("Cases")) }}
     {{ util.breadcrumb_link(cdedblink("core/list_complaint_helpers"), gettext("Companions_[[plural]]"), active="True") }}
 {% endblock %}
 {% block content %}
     {{ util.h(n_("Active Companions"), level=2) }}
-    <ul>
+    <ul id="active-companions">
         {% for companion in personas if companion.id in active_companions %}
             <li>
                 {{ util.persona_anchor(companion) }}:<br />
@@ -32,7 +33,7 @@
                             Concluded cases:
                         {% endtrans %}
                         {% for case_id in companions_to_cases[companion.id] if not cases[case_id].is_active %}
-                            {{ print_case(case, companion.id) }}
+                            {{ print_case(cases[case_id], companion.id) }}
                         {% endfor %}
                     </span>
                 {% endif %}
@@ -41,7 +42,7 @@
     </ul>
 
     {{ util.h(n_("Inactive Companions"), level=2) }}
-    <ul>
+    <ul id="inactive-companions">
         {% for companion in personas if companion.id not in active_companions %}
             <li>
                 {{ util.persona_anchor(companion) }}:<br />
@@ -64,7 +65,7 @@
         cdedblink("core/show_case", {'case_id': case.id}),
         gettext("Case %s")|s|format(case.id),
         readonly=not case.is_visible_for(user),
-        aclass="strikethrough" if companion_id in case.get_companions(False) else ""
+        aclass="strikethrough" if companion_id in case.get_companions(is_active=False) else ""
     ) }}
 {% endmacro %}
 
