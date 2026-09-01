@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CdEDBv2 2.0\n"
 "Report-Msgid-Bugs-To: cdedb@lists.cde-ev.de\n"
-"POT-Creation-Date: 2026-08-28 18:25+0200\n"
+"POT-Creation-Date: 2026-09-01 15:37+0200\n"
 "PO-Revision-Date: 2019-08-18 18:33+0200\n"
 "Last-Translator: Markus Oehme <markus@jonglieren-jena.de>\n"
 "Language-Team: CdE Datenbank Team <cdedb@lists.cde-ev.de>\n"
@@ -1664,8 +1664,20 @@ msgstr "commentarium mutationis"
 msgid "ViolationKind.other"
 msgstr ""
 
+#, fuzzy
+msgid "Roles.meta_admin"
+msgstr "administrator administratorum"
+
 msgid "Roles.core_admin"
 msgstr ""
+
+#, fuzzy
+msgid "Roles.cde_admin"
+msgstr "administrator CdEi"
+
+#, fuzzy
+msgid "Roles.event_admin"
+msgstr "administratores eventuum"
 
 msgid "Roles.ml_admin"
 msgstr ""
@@ -1675,32 +1687,20 @@ msgid "Roles.assembly_admin"
 msgstr "coetus"
 
 #, fuzzy
-msgid "Roles.event_admin"
-msgstr "administratores eventuum"
-
-#, fuzzy
-msgid "Roles.complaint_admin"
-msgstr "administrator tabellarum epistularum electronicarum"
+msgid "Roles.finance_admin"
+msgstr "administrator pecuniae"
 
 #, fuzzy
 msgid "Roles.auditor"
 msgstr "Annuntiationes"
 
 #, fuzzy
+msgid "Roles.complaint_admin"
+msgstr "administrator tabellarum epistularum electronicarum"
+
+#, fuzzy
 msgid "Roles.cdelokal_admin"
 msgstr "administrator CdElocalis"
-
-#, fuzzy
-msgid "Roles.meta_admin"
-msgstr "administrator administratorum"
-
-#, fuzzy
-msgid "Roles.finance_admin"
-msgstr "administrator pecuniae"
-
-#, fuzzy
-msgid "Roles.cde_admin"
-msgstr "administrator CdEi"
 
 #, fuzzy
 msgid "Realms.cde"
