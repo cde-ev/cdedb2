@@ -27,7 +27,7 @@
                         {% set ns.inactive_cases = true %}
                     {% endif %}
                 {% endfor %}
-                {% if inactive_cases %}
+                {% if ns.inactive_cases %}
                     <span class="text-muted">
                         {% trans %}
                             Concluded cases:
