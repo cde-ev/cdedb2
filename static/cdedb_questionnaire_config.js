@@ -97,7 +97,7 @@ var inputTypes = {
      * jQuery plugin to be used on each single row in questionnaire_summary formular. It adds an event listener to the
      * field_id input and calls it to hide/show some labels.
      */
-    $.fn.cdedbQuestionnaireConfig = function(field_list, translations, classes_by_role, all_classes) {
+    $.fn.cdedbQuestionnaireConfig = function(field_list, translations, classes_by_role, all_classes, duplicate_field_error) {
         $(this).each(function(){
             var $container = $(this);
             var $input_role = $(this).find('.input-role');
@@ -121,6 +121,14 @@ var inputTypes = {
             };
 
             /* Callback handler for changes to the selected event field. */
+            function Counter($array) {
+                var count = {};
+                $array.each(function() {
+                    count[$(this).val()] = (count[$(this).val()] || 0) + 1;
+                });
+                return count;
+            }
+
             var input_field_handler = function() {
                 var val = $(this).val();
                 // Change default_value input field's type and attributes according to selected field's type
@@ -129,6 +137,32 @@ var inputTypes = {
                     var $input_defaultvalue = $container.find('.input-defaultvalue');
                     replace_defaultvalue_input(field_spec, $input_defaultvalue, translations);
                 }
+
+                let form_group = $(this).closest(".form-group");
+                if (form_group.data("original-has-error") === undefined)
+                    form_group.data("original-has-error", form_group.hasClass("has-error"));
+
+                let field_inputs = $(".input-field");
+                let x = Counter(field_inputs);
+
+                field_inputs.each(function () {
+                    let val = $(this).val();
+                    let form_group = $(this).closest(".form-group");
+                    form_group.find(".tmp").remove();
+
+                    let field_name = $(this).find("option:selected").text();
+                    let error = duplicate_field_error.replace("%(field_name)s", field_name);
+                    form_group.find(":contains(" + $(error).text() + ")").remove();
+
+                    if (val === "" || x[val] <= 1) {
+                        if (form_group.data("original-has-error") === false || form_group.find(".help-block").length == 0)
+                            form_group.removeClass("has-error");
+                    }
+                    else {
+                        form_group.addClass("has-error").append($(error).addClass("tmp"));
+                    }
+                })
+                form_group.closest(".tab-container").find(".tab-pane").trigger("has-error-change");
             };
 
             /* Register handlers for input changes and trigger them once for intialization. */
