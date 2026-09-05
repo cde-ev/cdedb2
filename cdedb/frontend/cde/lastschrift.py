@@ -437,7 +437,7 @@ class CdELastschriftMixin(CdEBaseFrontend):
             # selecting nothing means all
             transaction_ids = self.cdeproxy.list_lastschrift_transactions(
                 rs, periods=(period,), stati=(const.LastschriftTransactionStati.issued,)
-            )
+            ).keys()
 
         transactions = self.cdeproxy.get_lastschrift_transactions(
             rs, transaction_ids
